@@ -242,8 +242,7 @@ void QVTKWidgetCustom::initializeGL() {
         auto loadFunc = [](void* userData, const char* name)
                 -> vtkOpenGLRenderWindow::VTKOpenGLAPIProc {
             if (auto* ctx = reinterpret_cast<QOpenGLContext*>(userData))
-                if (auto* sym = ctx->getProcAddress(name))
-                    return sym;
+                if (auto* sym = ctx->getProcAddress(name)) return sym;
             return nullptr;
         };
         rw->SetOpenGLSymbolLoader(loadFunc, QOpenGLContext::currentContext());

@@ -8,7 +8,7 @@
 /**
  * @file CVPluginAPI.h
  * @brief CVPluginAPI library export/import definitions
- * 
+ *
  * Defines macros for proper symbol export/import when building
  * and using the CVPluginAPI shared library. This library provides
  * the plugin interface definitions for CloudViewer plugins.

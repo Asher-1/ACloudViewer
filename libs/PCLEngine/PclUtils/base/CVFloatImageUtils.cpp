@@ -2,7 +2,7 @@
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "base/CVFloatImageUtils.h"
@@ -12,17 +12,26 @@
 #include <limits>
 
 void PclUtils::FloatImageUtils::getColorForFloat(float value,
-                                              unsigned char& r,
-                                              unsigned char& g,
-                                              unsigned char& b) {
+                                                 unsigned char& r,
+                                                 unsigned char& g,
+                                                 unsigned char& b) {
     if (std::isinf(value)) {
         if (value > 0.0f) {
-            r = 150; g = 150; b = 200; return;
+            r = 150;
+            g = 150;
+            b = 200;
+            return;
         }
-        r = 150; g = 200; b = 150; return;
+        r = 150;
+        g = 200;
+        b = 150;
+        return;
     }
     if (!std::isfinite(value)) {
-        r = 200; g = 150; b = 150; return;
+        r = 200;
+        g = 150;
+        b = 150;
+        return;
     }
 
     r = g = b = 0;
@@ -50,20 +59,34 @@ void PclUtils::FloatImageUtils::getColorForFloat(float value,
         r = 255;
         g = static_cast<unsigned char>(std::lrint((value - 6.0) * 255));
     } else {
-        r = 255; g = 255;
+        r = 255;
+        g = 255;
         b = static_cast<unsigned char>(std::lrint((value - 7.0) * 255.0 / 3.0));
     }
 }
 
 void PclUtils::FloatImageUtils::getColorForAngle(float value,
-                                              unsigned char& r,
-                                              unsigned char& g,
-                                              unsigned char& b) {
+                                                 unsigned char& r,
+                                                 unsigned char& g,
+                                                 unsigned char& b) {
     if (std::isinf(value)) {
-        if (value > 0.0f) { r = 150; g = 150; b = 200; return; }
-        r = 150; g = 200; b = 150; return;
+        if (value > 0.0f) {
+            r = 150;
+            g = 150;
+            b = 200;
+            return;
+        }
+        r = 150;
+        g = 200;
+        b = 150;
+        return;
     }
-    if (!std::isfinite(value)) { r = 200; g = 150; b = 150; return; }
+    if (!std::isfinite(value)) {
+        r = 200;
+        g = 150;
+        b = 150;
+        return;
+    }
 
     r = g = b = 0;
     if (value < -M_PI / 2.0f) {
@@ -79,15 +102,15 @@ void PclUtils::FloatImageUtils::getColorForAngle(float value,
                 255 - std::lrint(255 * value / (float(M_PI) / 2.0f)));
     } else {
         g = static_cast<unsigned char>(
-                255 - std::lrint(255 * (value - M_PI / 2.0f) /
-                                 (float(M_PI) / 2.0f)));
+                255 -
+                std::lrint(255 * (value - M_PI / 2.0f) / (float(M_PI) / 2.0f)));
     }
 }
 
 void PclUtils::FloatImageUtils::getColorForHalfAngle(float value,
-                                                  unsigned char& r,
-                                                  unsigned char& g,
-                                                  unsigned char& b) {
+                                                     unsigned char& r,
+                                                     unsigned char& g,
+                                                     unsigned char& b) {
     getColorForAngle(2.0f * value, r, g, b);
 }
 
@@ -120,7 +143,10 @@ unsigned char* PclUtils::FloatImageUtils::getVisualImage(
     for (int i = 0; i < size; ++i) {
         unsigned char &r = *(dataPtr++), &g = *(dataPtr++), &b = *(dataPtr++);
         float v = float_image[i];
-        if (!std::isfinite(v)) { getColorForFloat(v, r, g, b); continue; }
+        if (!std::isfinite(v)) {
+            getColorForFloat(v, r, g, b);
+            continue;
+        }
         v = std::max(0.0f, std::min(1.0f, factor * (v + offset)));
         if (gray_scale) {
             r = g = b = static_cast<unsigned char>(std::lrint(v * 255));
@@ -147,8 +173,8 @@ unsigned char* PclUtils::FloatImageUtils::getVisualImage(
 
     for (int i = 0; i < size; ++i) {
         unsigned char &r = *(dataPtr++), &g = *(dataPtr++), &b = *(dataPtr++);
-        float v = std::max(
-                0.0f, std::min(1.0f, factor * (short_image[i] + offset)));
+        float v = std::max(0.0f,
+                           std::min(1.0f, factor * (short_image[i] + offset)));
         if (gray_scale) {
             r = g = b = static_cast<unsigned char>(std::lrint(v * 255));
         } else {
@@ -181,4 +207,3 @@ unsigned char* PclUtils::FloatImageUtils::getVisualHalfAngleImage(
     }
     return data;
 }
-

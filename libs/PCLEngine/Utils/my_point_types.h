@@ -8,11 +8,11 @@
 /**
  * @file my_point_types.h
  * @brief Custom PCL point type definitions for CloudViewer
- * 
+ *
  * Defines specialized PCL point types for efficient data extraction and
  * conversion between CloudViewer and PCL formats. These types are registered
  * with PCL's point type system for use in PCL algorithms.
- * 
+ *
  * The custom types support:
  * - RGB/RGBA color data only
  * - Intensity values
@@ -33,7 +33,7 @@
 
 /**
  * @brief RGB color data only (no position)
- * 
+ *
  * Custom point type for extracting only RGB/RGBA color information.
  * Uses union for efficient access as float, uint32, or individual bytes.
  * Memory layout matches PCL's standard RGBA format.
@@ -55,7 +55,7 @@ struct OnlyRGB {
 
 /**
  * @brief Intensity value only
- * 
+ *
  * Custom point type for reading intensity scalar fields.
  */
 struct PointI {
@@ -111,7 +111,7 @@ struct UInt8Scalar {
 
 /**
  * @brief Normal vector components only (no position)
- * 
+ *
  * Custom point type for extracting only surface normal information.
  */
 struct OnlyNormals {
@@ -122,7 +122,7 @@ struct OnlyNormals {
 
 /**
  * @brief Normal vector with curvature
- * 
+ *
  * Combines normal vector with surface curvature estimate.
  * Uses PCL's standard normal4D layout (x, y, z, curvature).
  */
@@ -139,7 +139,7 @@ struct OnlyNormalsCurvature {
 
 /**
  * @brief Point position with scalar value
- * 
+ *
  * Combines XYZ coordinates with a single scalar field value.
  */
 struct PointXYZScalar {
@@ -149,7 +149,7 @@ struct PointXYZScalar {
 
 /**
  * @brief Point position with scalar and RGB color
- * 
+ *
  * Combines XYZ coordinates, a scalar field, and RGB/RGBA color.
  * Useful for visualizing scalar fields with custom colormaps.
  */

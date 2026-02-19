@@ -22,11 +22,11 @@ namespace cloudViewer {
 
 /**
  * @brief 3D axis-aligned bounding box template
- * 
+ *
  * Represents an axis-aligned bounding box defined by minimum and
  * maximum corner points. Provides operations for merging, transforming,
  * and querying bounding boxes.
- * 
+ *
  * @tparam T Numeric type for coordinates (e.g., float, double)
  */
 template <typename T>
@@ -34,7 +34,7 @@ class BoundingBoxTpl {
 public:
     /**
      * @brief Default constructor
-     * 
+     *
      * Creates an invalid bounding box initialized to zero.
      */
     BoundingBoxTpl()
@@ -54,7 +54,7 @@ public:
 
     /**
      * @brief Merge two bounding boxes
-     * 
+     *
      * Returns a new bounding box that encompasses both boxes.
      * @param bbox Other bounding box
      * @return Merged bounding box

@@ -17,24 +17,24 @@
 /**
  * @class ccIOPluginInterface
  * @brief Plugin interface for file I/O filters
- * 
+ *
  * Interface for plugins that add support for additional file formats.
  * I/O plugins provide FileIOFilter instances that handle loading and
  * saving of specific file types.
- * 
+ *
  * **Plugin Interface Version: 1.3**
- * 
+ *
  * Typical I/O plugin workflow:
  * 1. Plugin creates FileIOFilter instances in getFilters()
  * 2. Main app registers these filters with the file I/O system
  * 3. Filters appear in Open/Save dialogs automatically
  * 4. User selects file → appropriate filter is invoked
- * 
+ *
  * Supported operations:
  * - Loading point clouds, meshes, and other entities from files
  * - Saving entities to files in custom formats
  * - Format detection and validation
- * 
+ *
  * @see ccPluginInterface
  * @see FileIOFilter
  */
@@ -66,11 +66,11 @@ public:
 
     /**
      * @brief Get list of I/O filters provided by this plugin
-     * 
+     *
      * Returns file format filters that will be integrated into
      * CloudViewer's file I/O system. Each filter handles a specific
      * file format (or family of formats).
-     * 
+     *
      * @return List of FileIOFilter instances (empty if none)
      */
     virtual FilterList getFilters() { return FilterList{}; }

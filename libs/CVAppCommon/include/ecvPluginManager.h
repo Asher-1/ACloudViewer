@@ -17,7 +17,7 @@ class ccPluginInterface;
 /**
  * @typedef ccPluginInterfaceList
  * @brief List of plugin interfaces
- * 
+ *
  * Container type for managing multiple plugin interface pointers.
  * @see ccPluginInterface
  */
@@ -26,17 +26,17 @@ using ccPluginInterfaceList = QVector<ccPluginInterface*>;
 /**
  * @class ccPluginManager
  * @brief Manager for CloudViewer plugins
- * 
+ *
  * Singleton class responsible for plugin lifecycle management including:
  * - Plugin discovery and loading from specified directories
  * - Plugin enable/disable state management
  * - Plugin interface access
  * - Plugin path configuration
- * 
+ *
  * Plugins extend CloudViewer functionality through well-defined interfaces.
  * The manager handles loading plugins at application startup and provides
  * access to loaded plugin instances.
- * 
+ *
  * @see ccPluginInterface
  */
 class CVAPPCOMMON_LIB_API ccPluginManager : public QObject {
@@ -56,12 +56,12 @@ public:
 
     /**
      * @brief Set plugin search paths
-     * 
+     *
      * Configures directories where the manager will search for plugins.
      * @param paths List of directory paths to search for plugins
      */
     void setPaths(const QStringList& paths);
-    
+
     /**
      * @brief Get current plugin search paths
      * @return List of configured plugin search paths
@@ -70,7 +70,7 @@ public:
 
     /**
      * @brief Load all plugins from configured paths
-     * 
+     *
      * Scans plugin directories and loads all valid plugin libraries.
      * Already-loaded plugins are skipped. Disabled plugins are not loaded.
      */
@@ -88,13 +88,13 @@ public:
      * @return true if plugin is enabled, false if disabled
      */
     bool isEnabled(const ccPluginInterface* plugin) const;
-    
+
     /**
      * @brief Enable or disable a plugin
-     * 
+     *
      * Disabled plugins are not loaded at application startup.
      * Changes take effect on next application restart.
-     * 
+     *
      * @param plugin Plugin interface to modify
      * @param enabled New enabled state
      */
@@ -110,7 +110,7 @@ protected:
 private:
     /**
      * @brief Load plugins from paths and add to list
-     * 
+     *
      * Internal method to scan directories and load plugin libraries.
      */
     void loadFromPathsAndAddToList();
@@ -121,6 +121,6 @@ private:
      */
     QStringList disabledPluginIIDs() const;
 
-    QStringList m_pluginPaths;              ///< Plugin search paths
-    ccPluginInterfaceList m_pluginList;     ///< Loaded plugin interfaces
+    QStringList m_pluginPaths;           ///< Plugin search paths
+    ccPluginInterfaceList m_pluginList;  ///< Loaded plugin interfaces
 };

@@ -61,8 +61,7 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_scrollArea->setSizePolicy(QSizePolicy::Preferred,
-                                QSizePolicy::Expanding);
+    m_scrollArea->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     // Small minimum so the scroll area doesn't force blank space for
     // lightweight tools (Contour). Heavy tools (Distance/Protractor) will
     // naturally expand via adjustSize().
@@ -386,36 +385,38 @@ void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
     adjustSize();
     updateGeometry();
 
-    // After adjustSize, ensure the dialog has proper height for content visibility
-    // Strategy: Fixed target heights based on actual tool type (reliable & stable)
+    // After adjustSize, ensure the dialog has proper height for content
+    // visibility Strategy: Fixed target heights based on actual tool type
+    // (reliable & stable)
     if (layout()) layout()->activate();
-    
+
     if (m_scrollArea && m_scrollArea->widget() && tool) {
         // Determine target height based on actual tool type
         int targetH;
-        ecvGenericMeasurementTools::MeasurementType toolType = tool->getMeasurementType();
-        
+        ecvGenericMeasurementTools::MeasurementType toolType =
+                tool->getMeasurementType();
+
         switch (toolType) {
             case ecvGenericMeasurementTools::CONTOUR_WIDGET:
                 // Contour: ultra-compact (minimal components)
                 targetH = 240;
                 break;
-                
+
             case ecvGenericMeasurementTools::DISTANCE_WIDGET:
             case ecvGenericMeasurementTools::PROTRACTOR_WIDGET:
                 // Distance/Protractor: spacious (many parameters + Tips)
                 targetH = 400;
                 break;
-                
+
             default:
                 // Fallback: moderate height
                 targetH = 400;
                 break;
         }
-        
+
         // Apply maximum height constraint
         targetH = qMin(targetH, maximumHeight());
-        
+
         // Only resize if significantly different (avoid jitter)
         if (qAbs(height() - targetH) > 30) {
             resize(width(), targetH);

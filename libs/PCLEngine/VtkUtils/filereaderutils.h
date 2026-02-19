@@ -8,7 +8,7 @@
 /**
  * @file filereaderutils.h
  * @brief VTK file reader utilities for various 3D file formats
- * 
+ *
  * Provides Qt-based file readers for multiple 3D formats:
  * - VTK legacy format
  * - STL (stereolithography)
@@ -19,7 +19,7 @@
  * - FLUENT
  * - ANSYS
  * - Nastran
- * 
+ *
  * All readers are based on Qt's QRunnable for asynchronous loading.
  */
 
@@ -51,7 +51,7 @@ namespace VtkUtils {
  * @brief Template base class for VTK file readers
  * @tparam T VTK reader type
  * @tparam P VTK data object type (default: vtkDataObject)
- * 
+ *
  * Provides common interface for accessing reader and data object.
  */
 template <class T, class P = vtkDataObject>
@@ -73,14 +73,14 @@ public:
     T* reader() const { return m_reader; }
 
 protected:
-    T* m_reader = nullptr;         ///< VTK reader instance
-    P* m_dataObject = nullptr;     ///< Cached data object
+    T* m_reader = nullptr;      ///< VTK reader instance
+    P* m_dataObject = nullptr;  ///< Cached data object
 };
 
 /**
  * @class AbstractFileReader
  * @brief Abstract base class for asynchronous file readers
- * 
+ *
  * Provides common interface for file reading with Qt threading support.
  * Subclasses implement specific format readers using VTK.
  */
@@ -99,7 +99,7 @@ public:
      * @param file Path to file to read
      */
     void setFileName(const QString& file);
-    
+
     /**
      * @brief Get input file name
      * @return Current file path
@@ -111,7 +111,7 @@ public:
      * @param title Reader title
      */
     void setTitle(const QString& title);
-    
+
     /**
      * @brief Get reader title
      * @return Reader title
@@ -132,7 +132,7 @@ protected:
 /**
  * @class VtkFileReader
  * @brief Reader for VTK legacy format files
- * 
+ *
  * Reads VTK's legacy ASCII/binary file format (.vtk extension).
  */
 class QPCL_ENGINE_LIB_API VtkFileReader
@@ -148,7 +148,7 @@ public:
 
     /**
      * @brief Execute file reading
-     * 
+     *
      * Reads VTK file asynchronously. Emits finished() signal when complete.
      */
     void run();
@@ -157,7 +157,7 @@ public:
 /**
  * @class StlFileReader
  * @brief Reader for STL (stereolithography) files
- * 
+ *
  * Reads STL ASCII and binary formats (.stl extension).
  */
 class QPCL_ENGINE_LIB_API StlFileReader : public AbstractFileReader,
@@ -172,7 +172,7 @@ public:
 
     /**
      * @brief Execute file reading
-     * 
+     *
      * Reads STL file asynchronously. Emits finished() signal when complete.
      */
     void run();
@@ -181,7 +181,7 @@ public:
 /**
  * @class ObjFileReader
  * @brief Reader for Wavefront OBJ files
- * 
+ *
  * Reads Wavefront OBJ format (.obj extension) with basic material support.
  */
 class QPCL_ENGINE_LIB_API ObjFileReader : public AbstractFileReader,
@@ -196,7 +196,7 @@ public:
 
     /**
      * @brief Execute file reading
-     * 
+     *
      * Reads OBJ file asynchronously. Emits finished() signal when complete.
      */
     void run();

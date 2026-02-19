@@ -106,10 +106,11 @@
 /**
  * @namespace PCLModules
  * @brief PCL algorithm wrappers and utilities for CloudViewer
- * 
- * This namespace contains wrapper functions for Point Cloud Library (PCL) algorithms,
- * providing simplified interfaces for common point cloud processing tasks:
- * 
+ *
+ * This namespace contains wrapper functions for Point Cloud Library (PCL)
+ * algorithms, providing simplified interfaces for common point cloud processing
+ * tasks:
+ *
  * - Surface reconstruction (Poisson, Greedy, Grid Projection)
  * - Segmentation (Region Growing, Euclidean Clustering, Min-Cut)
  * - Filtering (Voxel Grid, Statistical Outlier Removal, PassThrough)
@@ -117,7 +118,7 @@
  * - Registration (ICP, NDT, RANSAC-based)
  * - Normal estimation and surface analysis
  * - Geometric processing and transformations
- * 
+ *
  * Functions typically return error codes (0 = success, negative = error).
  */
 namespace PCLModules {
@@ -134,7 +135,7 @@ namespace PCLModules {
  * @param paddingSize Grid padding size (default: 2)
  * @param maxSearchLevel Maximum octree search depth (default: 8)
  * @return 0 on success, negative on error
- * 
+ *
  * Performs grid-based surface reconstruction using octree decomposition.
  */
 int QPCL_ENGINE_LIB_API
@@ -156,9 +157,10 @@ GridProjection(const PointCloudNormal::ConstPtr &cloudWithNormals,
  * @param samplesPerNode Minimum samples per octree node (default: 3.0f)
  * @param useConfidence Whether to use normal confidence (default: true)
  * @param useManifold Whether to force manifold output (default: true)
- * @param outputPolygons Whether to output polygons instead of triangles (default: false)
+ * @param outputPolygons Whether to output polygons instead of triangles
+ * (default: false)
  * @return 0 on success, negative on error
- * 
+ *
  * Performs Poisson surface reconstruction using screened Poisson algorithm.
  * Requires oriented normals. Produces watertight meshes.
  */
@@ -187,7 +189,7 @@ GetPoissonReconstruction(const PointCloudNormal::ConstPtr &cloudWithNormals,
  * @param maxAngle Maximum triangle angle in degrees (default: 120)
  * @param normalConsistency Whether to check normal consistency (default: false)
  * @return 0 on success, negative on error
- * 
+ *
  * Fast triangulation method that projects locally and greedily connects points.
  * Good for smooth, uniformly sampled surfaces.
  */
@@ -213,7 +215,7 @@ GetGreedyTriangulation(const PointCloudNormal::ConstPtr &cloudWithNormals,
  * @param coefficients Model coefficients (e.g., plane equation [a,b,c,d])
  * @param modelType PCL model type (default: 0 = SACMODEL_PLANE)
  * @return 0 on success, negative on error
- * 
+ *
  * Projects points onto a surface defined by model coefficients.
  */
 int QPCL_ENGINE_LIB_API GetProjection(
@@ -233,7 +235,7 @@ int QPCL_ENGINE_LIB_API GetProjection(
  * @param coefficientD Plane equation coefficient D (default: 0.0f)
  * @param modelType PCL model type (default: 0 = SACMODEL_PLANE)
  * @return 0 on success, negative on error
- * 
+ *
  * Projects points onto plane defined by Ax + By + Cz + D = 0.
  * Default projects onto XY plane (z=0).
  */
@@ -263,7 +265,7 @@ int QPCL_ENGINE_LIB_API GetProjection(
  * @param smoothness_theta Maximum angle difference for smoothness (degrees)
  * @param curvature Maximum curvature threshold
  * @return 0 on success, negative on error
- * 
+ *
  * Segments point cloud based on surface smoothness criteria.
  * Grows regions from seed points based on normal similarity.
  */
@@ -288,7 +290,7 @@ GetRegionGrowing(const PointCloudT::ConstPtr cloud,
  * @param point_color_diff Color difference threshold between points
  * @param region_color_diff Color difference threshold for region merging
  * @return 0 on success, negative on error
- * 
+ *
  * Segments point cloud based on color similarity.
  * Merges regions with similar average colors.
  */
@@ -307,15 +309,17 @@ GetRegionGrowingRGB(const PointCloudRGB::ConstPtr cloud,
  * @param inliers Output indices of inlier points
  * @param coefficients Output model coefficients (optional)
  * @param methodType SAC method (0=RANSAC, 1=LMEDS, 2=MSAC, 3=RRANSAC, etc.)
- * @param modelType Model type (0=PLANE, 8=CIRCLE2D, 9=SPHERE, 11=CYLINDER, etc.)
+ * @param modelType Model type (0=PLANE, 8=CIRCLE2D, 9=SPHERE, 11=CYLINDER,
+ * etc.)
  * @param distanceThreshold Inlier distance threshold (default: 0.02f)
- * @param probability Desired probability of choosing inlier-only samples (default: 0.95f)
+ * @param probability Desired probability of choosing inlier-only samples
+ * (default: 0.95f)
  * @param maxIterations Maximum RANSAC iterations (default: 100)
  * @param minRadiusLimits Minimum radius for models (default: -10000.0f)
  * @param maxRadiusLimits Maximum radius for models (default: 10000.0f)
  * @param normalDisWeight Weight for normal distance component (default: 0.1f)
  * @return 0 on success, negative on error
- * 
+ *
  * Performs model fitting using RANSAC or other SAC methods.
  * Commonly used for plane, sphere, cylinder, and other primitive detection.
  */
@@ -341,7 +345,7 @@ namespace PCLModules {
 /**
  * @brief Marching cubes reconstruction method
  */
-enum MarchingMethod { 
+enum MarchingMethod {
     HOPPE,  ///< Hoppe signed distance function
     RBF     ///< Radial basis function
 };
@@ -357,7 +361,7 @@ enum MarchingMethod {
  * @param gridResolution Grid resolution per dimension (default: 50)
  * @param percentageExtendGrid Percentage to extend grid (default: 0.0f)
  * @return 1 on success, -1 on error
- * 
+ *
  * Performs isosurface extraction using marching cubes algorithm.
  * HOPPE method uses moving least squares, RBF uses radial basis functions.
  */
@@ -417,7 +421,7 @@ namespace PCLModules {
  * @param outcloud Output point cloud with swapped axes
  * @param flag Axis swap flag: "zxy", "zyx", "xzy", "yxz", "yzx"
  * @return 1 on success
- * 
+ *
  * Performs coordinate axis permutation for coordinate system conversion.
  * Examples:
  * - "zxy": (x,y,z) -> (z,x,y)
@@ -467,7 +471,7 @@ int SwapAxis(const typename pcl::PointCloud<PointInOutT>::ConstPtr inCloud,
  * @param outcloud Output point cloud (NaN removed)
  * @param index Output indices of valid points in original cloud
  * @return 1 on success
- * 
+ *
  * Filters out points with NaN coordinates, producing a clean point cloud.
  * Useful after operations that may produce invalid points.
  */

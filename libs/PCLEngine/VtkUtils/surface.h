@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "qPCL.h"
 #include "point3f.h"
+#include "qPCL.h"
 #include "vtkwidget.h"
 
 class vtkActor;

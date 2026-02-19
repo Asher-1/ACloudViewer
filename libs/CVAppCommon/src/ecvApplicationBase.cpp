@@ -75,7 +75,7 @@ void ecvApplicationBase::InitOpenGL() {
         format.setRedBufferSize(8);
         format.setGreenBufferSize(8);
         format.setBlueBufferSize(8);
-        format.setAlphaBufferSize(8);    // needed for VTK compositing / OIT
+        format.setAlphaBufferSize(8);  // needed for VTK compositing / OIT
 
         // No MSAA at the surface level — VTK handles anti-aliasing internally
         format.setSamples(0);

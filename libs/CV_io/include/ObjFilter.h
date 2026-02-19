@@ -12,7 +12,7 @@
 /**
  * @class ObjFilter
  * @brief Wavefront OBJ mesh file I/O filter
- * 
+ *
  * Handles import/export of meshes in Wavefront OBJ format (.obj).
  * This is a widely-used text-based 3D mesh format that supports:
  * - Vertex positions
@@ -20,9 +20,9 @@
  * - Vertex normals
  * - Face definitions (triangles, quads, polygons)
  * - Material definitions (via .mtl files)
- * 
+ *
  * The OBJ format is human-readable and widely supported by 3D software.
- * 
+ *
  * @see FileIOFilter
  * @see ccMesh
  */
@@ -54,7 +54,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to OBJ file
      * @param entity Entity to save (mesh)

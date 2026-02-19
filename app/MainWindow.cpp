@@ -2009,9 +2009,9 @@ void MainWindow::ChangeStyle(const QString& qssFile) {
         // visible.  This mirrors the behaviour of CloudCompare's
         // QDarkStyleSheet, which always provides an explicit QTreeView
         // background-color in the loaded theme.
-        ecvApp->setStyleSheet(QStringLiteral(
-                "QTreeView, QListView, QTableView"
-                "{ background-color: palette(base); }"));
+        ecvApp->setStyleSheet(
+                QStringLiteral("QTreeView, QListView, QTableView"
+                               "{ background-color: palette(base); }"));
 #else
         ecvApp->setStyleSheet(QString());
 #endif

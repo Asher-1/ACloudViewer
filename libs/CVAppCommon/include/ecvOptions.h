@@ -18,16 +18,16 @@
 /**
  * @class ecvOptions
  * @brief Main application options manager (singleton)
- * 
+ *
  * Manages global application options and preferences including:
  * - Display settings (normals visibility, etc.)
  * - Dialog behavior (native vs custom dialogs)
  * - Logging verbosity levels
  * - User interaction preferences
- * 
+ *
  * Options are automatically persisted to disk and restored on
  * application restart. Uses singleton pattern for global access.
- * 
+ *
  * @see ecvSettingManager
  */
 class CVAPPCOMMON_LIB_API ecvOptions {
@@ -47,7 +47,7 @@ public:  // parameters
 public:  // methods
     /**
      * @brief Default constructor
-     * 
+     *
      * Initializes options with default values.
      */
     ecvOptions();
@@ -59,14 +59,14 @@ public:  // methods
 
     /**
      * @brief Load options from persistent storage
-     * 
+     *
      * Reads saved options from application settings file.
      */
     void fromPersistentSettings();
 
     /**
      * @brief Save options to persistent storage
-     * 
+     *
      * Writes current options to application settings file.
      */
     void toPersistentSettings() const;
@@ -80,14 +80,14 @@ public:  // static methods
 
     /**
      * @brief Release singleton instance
-     * 
+     *
      * Clears the singleton instance. Typically called at shutdown.
      */
     static void ReleaseInstance();
 
     /**
      * @brief Set options from another instance
-     * 
+     *
      * Copies settings from provided options object to singleton.
      * @param options Options to copy
      */

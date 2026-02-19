@@ -1196,8 +1196,7 @@ bool cc2smReader::getVtkPolyDataFromPointCloud(
         // XYZ coordinates
         const CCVector3* P = m_cc_cloud->getPoint(i);
         points->SetPoint(idx, static_cast<double>(P->x),
-                         static_cast<double>(P->y),
-                         static_cast<double>(P->z));
+                         static_cast<double>(P->y), static_cast<double>(P->z));
 
         // Vertex cell: each point is its own vertex cell
         cell[idx * 2] = 1;
@@ -1227,8 +1226,7 @@ bool cc2smReader::getVtkPolyDataFromPointCloud(
         // Normals
         if (hasNormals && normals) {
             const CCVector3& N = m_cc_cloud->getPointNormal(i);
-            float normal[3] = {static_cast<float>(N.x),
-                               static_cast<float>(N.y),
+            float normal[3] = {static_cast<float>(N.x), static_cast<float>(N.y),
                                static_cast<float>(N.z)};
             normals->SetTypedTuple(idx, normal);
         }

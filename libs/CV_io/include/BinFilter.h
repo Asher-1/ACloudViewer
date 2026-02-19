@@ -14,15 +14,15 @@ class QWidget;
 /**
  * @class BinFilter
  * @brief CloudViewer native binary format I/O filter
- * 
+ *
  * Handles import/export of CloudViewer entities in the native .bin format.
  * This is the most efficient format for saving/loading CloudViewer data
  * as it preserves all entity properties, metadata, and relationships.
- * 
+ *
  * Supports two format versions:
  * - V1: Legacy format (older CloudViewer versions)
  * - V2: Current format with improved serialization and parallel loading
- * 
+ *
  * @see FileIOFilter
  */
 class CV_IO_LIB_API BinFilter : public FileIOFilter {
@@ -39,7 +39,7 @@ public:
     static inline QString GetFileFilter() {
         return "CloudViewer entities (*.bin)";
     }
-    
+
     /**
      * @brief Get default file extension
      * @return Extension string "bin"
@@ -73,7 +73,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to BIN file
      * @param entity Entity to save
@@ -100,7 +100,7 @@ public:
 
     /**
      * @brief Load current V2 format BIN file
-     * 
+     *
      * Supports parallel loading for improved performance on large files.
      * @param in Input file stream
      * @param container Container for loaded entities

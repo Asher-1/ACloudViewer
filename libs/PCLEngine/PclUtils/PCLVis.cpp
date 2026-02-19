@@ -71,6 +71,7 @@
 #include "VTKExtensions/InteractionStyle/vtkTrackballPan.h"
 
 // VTK
+#include <vtkAlgorithmOutput.h>
 #include <vtkAreaPicker.h>
 #include <vtkAxes.h>
 #include <vtkAxesActor.h>
@@ -79,9 +80,11 @@
 #include <vtkCaptionActor2D.h>
 #include <vtkCaptionRepresentation.h>
 #include <vtkCellArray.h>
+#include <vtkCubeSource.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
+#include <vtkFollower.h>
 #include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
 #include <vtkJPEGReader.h>
@@ -89,41 +92,38 @@
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
+#include <vtkPNGWriter.h>
 #include <vtkPNMReader.h>
 #include <vtkPointData.h>
 #include <vtkPointPicker.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPropAssembly.h>
 #include <vtkPropPicker.h>
 #include <vtkProperty.h>
+#include <vtkProperty2D.h>
 #include <vtkQImageToImageSource.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkSphereSource.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkTexture.h>
 #include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <vtkTriangle.h>
 #include <vtkTubeFilter.h>
 #include <vtkUnsignedCharArray.h>
+#include <vtkVectorText.h>
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
 #include <vtkWindowToImageFilter.h>
-#include <vtkAlgorithmOutput.h>
-#include <vtkCubeSource.h>
-#include <vtkFollower.h>
-#include <vtkPNGWriter.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty2D.h>
-#include <vtkSphereSource.h>
-#include <vtkTransformPolyDataFilter.h>
-#include <vtkTriangle.h>
-#include <vtkVectorText.h>
 
 #include <fstream>
 #include <sstream>
@@ -979,20 +979,20 @@ void PCLVis::drawDirect(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud) {
     // Build vtkPolyData directly from ccPointCloud (bypasses PCL entirely)
     cc2smReader reader(cloud, true);
     vtkSmartPointer<vtkPolyData> polydata;
-    if (!reader.getVtkPolyDataFromPointCloud(
-                polydata, context.drawParam.showColors,
-                context.drawParam.showSF)) {
+    if (!reader.getVtkPolyDataFromPointCloud(polydata,
+                                             context.drawParam.showColors,
+                                             context.drawParam.showSF)) {
         CVLog::Warning(
                 "[PCLVis::drawDirect] Failed to create vtkPolyData from "
                 "ccPointCloud!");
         return;
     }
 
-    bool hasScalars = (context.drawParam.showColors || context.drawParam.showSF);
+    bool hasScalars =
+            (context.drawParam.showColors || context.drawParam.showSF);
 
     // Check if actor already exists in cloud_actor_map
-    PclUtils::CloudActorMap::iterator am_it =
-            getCloudActorMap()->find(viewID);
+    PclUtils::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
     if (am_it != getCloudActorMap()->end()) {
         // Update existing actor's data in-place
         vtkLODActor* actor = vtkLODActor::SafeDownCast(am_it->second.actor);
@@ -1015,9 +1015,9 @@ void PCLVis::drawDirect(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud) {
                     mapper->ScalarVisibilityOff();
                 }
                 mapper->Update();
-            actor->Modified();
+                actor->Modified();
+            }
         }
-    }
     } else {
         // Create new actor from vtkPolyData
         vtkSmartPointer<vtkLODActor> actor;
@@ -1069,8 +1069,7 @@ void PCLVis::drawMeshDirect(const CC_DRAW_CONTEXT& context,
     }
 
     // Check if actor already exists
-    PclUtils::CloudActorMap::iterator am_it =
-            getCloudActorMap()->find(viewID);
+    PclUtils::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
     if (am_it != getCloudActorMap()->end()) {
         if (context.visFiltering) {
             // Remove and recreate for visibility filtering changes
@@ -1082,8 +1081,7 @@ void PCLVis::drawMeshDirect(const CC_DRAW_CONTEXT& context,
             getCloudActorMap()->erase(am_it);
         } else {
             // Try to update in-place
-            vtkLODActor* actor =
-                    vtkLODActor::SafeDownCast(am_it->second.actor);
+            vtkLODActor* actor = vtkLODActor::SafeDownCast(am_it->second.actor);
             if (actor && actor->GetMapper()) {
                 vtkDataSetMapper* mapper =
                         vtkDataSetMapper::SafeDownCast(actor->GetMapper());
@@ -1111,7 +1109,8 @@ void PCLVis::drawMeshDirect(const CC_DRAW_CONTEXT& context,
                                            viewID, viewport);
                     }
 
-                    // Re-apply per-object light (persists across in-place updates)
+                    // Re-apply per-object light (persists across in-place
+                    // updates)
                     applyLightPropertiesToActor(actor, viewID);
                     return;
                 }
@@ -1156,10 +1155,9 @@ void PCLVis::drawPolylineDirect(const CC_DRAW_CONTEXT& context,
     poly_points->SetNumberOfPoints(static_cast<vtkIdType>(pointCount));
     for (unsigned i = 0; i < pointCount; ++i) {
         const CCVector3* P = polyline->getPoint(i);
-        poly_points->SetPoint(static_cast<vtkIdType>(i),
-                              static_cast<double>(P->x),
-                              static_cast<double>(P->y),
-                              static_cast<double>(P->z));
+        poly_points->SetPoint(
+                static_cast<vtkIdType>(i), static_cast<double>(P->x),
+                static_cast<double>(P->y), static_cast<double>(P->z));
     }
 
     if (closed) {
@@ -1214,18 +1212,17 @@ void PCLVis::updateShadingModeDirect(const CC_DRAW_CONTEXT& context,
     // selection) Normals data is set once and kept - shading mode controls
     // visual effect
     bool has_normal = cloud && cloud->hasNormals();
-        if (has_normal) {
-            vtkDataArray* existingNormals =
-                    polydata->GetPointData()->GetNormals();
-            bool needUpdate = context.forceRedraw || !existingNormals ||
-                              existingNormals->GetNumberOfTuples() !=
+    if (has_normal) {
+        vtkDataArray* existingNormals = polydata->GetPointData()->GetNormals();
+        bool needUpdate = context.forceRedraw || !existingNormals ||
+                          existingNormals->GetNumberOfTuples() !=
                                   polydata->GetNumberOfPoints();
-            if (needUpdate) {
+        if (needUpdate) {
             vtkIdType numPoints = polydata->GetNumberOfPoints();
-                vtkSmartPointer<vtkFloatArray> normals =
-                        vtkSmartPointer<vtkFloatArray>::New();
-                normals->SetNumberOfComponents(3);
-                normals->SetName("Normals");
+            vtkSmartPointer<vtkFloatArray> normals =
+                    vtkSmartPointer<vtkFloatArray>::New();
+            normals->SetNumberOfComponents(3);
+            normals->SetName("Normals");
             normals->SetNumberOfTuples(numPoints);
 
             // Read normals directly from ccPointCloud with visibility
@@ -1243,8 +1240,8 @@ void PCLVis::updateShadingModeDirect(const CC_DRAW_CONTEXT& context,
                                    static_cast<float>(N.z)};
                 normals->SetTypedTuple(idx, normal);
                 ++idx;
-                }
-                polydata->GetPointData()->SetNormals(normals);
+            }
+            polydata->GetPointData()->SetNormals(normals);
         }
     }
 
@@ -1256,16 +1253,15 @@ void PCLVis::updateShadingModeDirect(const CC_DRAW_CONTEXT& context,
     if (has_rgb) {
         vtkDataArray* existingRGB =
                 polydata->GetPointData()->GetArray("SourceRGB");
-        bool needSync =
-                context.forceRedraw || !existingRGB ||
-                existingRGB->GetNumberOfTuples() !=
-                        polydata->GetNumberOfPoints();
-            if (needSync) {
+        bool needSync = context.forceRedraw || !existingRGB ||
+                        existingRGB->GetNumberOfTuples() !=
+                                polydata->GetNumberOfPoints();
+        if (needSync) {
             vtkIdType numPoints = polydata->GetNumberOfPoints();
-                vtkSmartPointer<vtkUnsignedCharArray> colors =
-                        vtkSmartPointer<vtkUnsignedCharArray>::New();
+            vtkSmartPointer<vtkUnsignedCharArray> colors =
+                    vtkSmartPointer<vtkUnsignedCharArray>::New();
             colors->SetName("SourceRGB");
-                colors->SetNumberOfComponents(3);
+            colors->SetNumberOfComponents(3);
             colors->SetNumberOfTuples(numPoints);
 
             unsigned pointCount = cloud->size();
@@ -1284,17 +1280,17 @@ void PCLVis::updateShadingModeDirect(const CC_DRAW_CONTEXT& context,
             }
 
             // Add as named array (NOT as active scalars)
-                    polydata->GetPointData()->AddArray(colors);
+            polydata->GetPointData()->AddArray(colors);
 
-                    // Set flag indicating this polydata has source RGB data
-                    vtkFieldData* fieldData = polydata->GetFieldData();
-                    if (fieldData) {
-                        vtkSmartPointer<vtkIntArray> hasRGB =
-                                vtkSmartPointer<vtkIntArray>::New();
-                        hasRGB->SetName("HasSourceRGB");
-                        hasRGB->SetNumberOfTuples(1);
-                        hasRGB->SetValue(0, 1);
-                        fieldData->AddArray(hasRGB);
+            // Set flag indicating this polydata has source RGB data
+            vtkFieldData* fieldData = polydata->GetFieldData();
+            if (fieldData) {
+                vtkSmartPointer<vtkIntArray> hasRGB =
+                        vtkSmartPointer<vtkIntArray>::New();
+                hasRGB->SetName("HasSourceRGB");
+                hasRGB->SetNumberOfTuples(1);
+                hasRGB->SetValue(0, 1);
+                fieldData->AddArray(hasRGB);
             }
         }
     }
@@ -1347,11 +1343,9 @@ void PCLVis::updateNormalsDirect(const CC_DRAW_CONTEXT& context,
             float nx = static_cast<float>(N.x);
             float ny = static_cast<float>(N.y);
             float nz = static_cast<float>(N.z);
-            if (!std::isfinite(px) || !std::isfinite(py) ||
-                !std::isfinite(pz))
+            if (!std::isfinite(px) || !std::isfinite(py) || !std::isfinite(pz))
                 continue;
-            if (!std::isfinite(nx) || !std::isfinite(ny) ||
-                !std::isfinite(nz))
+            if (!std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz))
                 continue;
 
             points->InsertNextPoint(px, py, pz);
@@ -1459,8 +1453,9 @@ vtkSmartPointer<vtkTransform> PCLVis::getTransformation(
 }
 
 // Legacy updateNormals(PCLCloud) and updateShadingMode(PCLCloud) removed.
-// Use updateNormalsDirect(ccPointCloud*) and updateShadingModeDirect(ccPointCloud*)
-// which operate directly on CV_db types → VTK.
+// Use updateNormalsDirect(ccPointCloud*) and
+// updateShadingModeDirect(ccPointCloud*) which operate directly on CV_db types
+// → VTK.
 
 bool PCLVis::updateScalarBar(const CC_DRAW_CONTEXT& context) {
     std::string viewID = CVTools::FromQString(context.viewID);
@@ -1738,7 +1733,8 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
     return success;
 }
 
-// Legacy addTextureMesh(PCLTextureMesh) removed — use addTextureMeshFromCCMesh instead.
+// Legacy addTextureMesh(PCLTextureMesh) removed — use addTextureMeshFromCCMesh
+// instead.
 bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
                                       const std::string& id,
                                       int viewport) {
@@ -1754,8 +1750,7 @@ bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
     // Check if actor with this ID already exists, and remove it if so
     // This allows updating/reloading meshes with the same ID (e.g., when
     // materials/textures checkbox is toggled)
-    PclUtils::CloudActorMap::iterator am_it =
-            getCloudActorMap()->find(id);
+    PclUtils::CloudActorMap::iterator am_it = getCloudActorMap()->find(id);
     if (am_it != getCloudActorMap()->end()) {
         CVLog::PrintDebug(
                 "[PCLVis::addTextureMeshFromCCMesh] Actor with id <%s> already "
@@ -1857,8 +1852,7 @@ bool PCLVis::addOrientedCube(const ccGLMatrixd& trans,
                              int viewport) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?)
-    PclUtils::ShapeActorMap::iterator am_it =
-            getShapeActorMap()->find(id);
+    PclUtils::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
     if (am_it != getShapeActorMap()->end()) {
         CVLog::Error(
                 "[PCLVis::addCube] A shape with id <%s> already exists!"
@@ -1898,8 +1892,7 @@ bool PCLVis::addOrientedCube(const Eigen::Vector3f& translation,
                              int viewport) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?)
-    PclUtils::ShapeActorMap::iterator am_it =
-            getShapeActorMap()->find(id);
+    PclUtils::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
     if (am_it != getShapeActorMap()->end()) {
         CVLog::Error(
                 "[PCLVis::addCube] A shape with id <%s> already exists!"
@@ -1922,11 +1915,9 @@ bool PCLVis::addOrientedCube(const Eigen::Vector3f& translation,
     Eigen::Affine3f pose = Eigen::Affine3f::Identity();
     pose.translation() = translation;
     pose.rotate(rotation);
-    vtkSmartPointer<vtkMatrix4x4> mat =
-            vtkSmartPointer<vtkMatrix4x4>::New();
+    vtkSmartPointer<vtkMatrix4x4> mat = vtkSmartPointer<vtkMatrix4x4>::New();
     for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            mat->SetElement(i, j, pose.matrix()(i, j));
+        for (int j = 0; j < 4; ++j) mat->SetElement(i, j, pose.matrix()(i, j));
     cubeTransform->SetMatrix(mat);
 
     vtkSmartPointer<vtkTransformPolyDataFilter> cubeFilter =
@@ -1956,8 +1947,7 @@ bool PCLVis::addOrientedCube(const ecvOrientedBBox& obb,
                              int viewport) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?)
-    PclUtils::ShapeActorMap::iterator am_it =
-            getShapeActorMap()->find(id);
+    PclUtils::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
     if (am_it != getShapeActorMap()->end()) {
         CVLog::Error(
                 "[PCLVis::addCube] A shape with id <%s> already exists!"
@@ -2138,9 +2128,8 @@ void PCLVis::removeALL(int viewport) {
 void PCLVis::setPointCloudUniqueColor(
         double r, double g, double b, const std::string& viewID, int viewport) {
     if (contains(viewID)) {
-        setPointCloudRenderingProperties(
-                PclUtils::CV_VISUALIZER_COLOR, r, g, b, viewID,
-                viewport);
+        setPointCloudRenderingProperties(PclUtils::CV_VISUALIZER_COLOR, r, g, b,
+                                         viewID, viewport);
     }
 }
 
@@ -2162,8 +2151,8 @@ void PCLVis::resetScalarColor(const std::string& viewID,
 void PCLVis::setShapeUniqueColor(
         float r, float g, float b, const std::string& viewID, int viewport) {
     if (contains(viewID)) {
-        setShapeRenderingProperties(PclUtils::CV_VISUALIZER_COLOR, r,
-                                    g, b, viewID, viewport);
+        setShapeRenderingProperties(PclUtils::CV_VISUALIZER_COLOR, r, g, b,
+                                    viewID, viewport);
     }
 }
 
@@ -2173,9 +2162,8 @@ void PCLVis::setPointSize(const unsigned char pointSize,
     unsigned char size = pointSize > 16 ? 16 : pointSize;
     size = pointSize < 1 ? 1 : pointSize;
     if (contains(viewID)) {
-        setPointCloudRenderingProperties(
-                PclUtils::CV_VISUALIZER_POINT_SIZE, size, viewID,
-                viewport);
+        setPointCloudRenderingProperties(PclUtils::CV_VISUALIZER_POINT_SIZE,
+                                         size, viewID, viewport);
     }
 }
 
@@ -2200,8 +2188,7 @@ void PCLVis::addScalarFieldToVTK(const std::string& viewID,
     std::string scalarFieldName = sfName.toStdString();
 
     // Get actor from cloud actor map
-    PclUtils::CloudActorMap::iterator am_it =
-            getCloudActorMap()->find(viewID);
+    PclUtils::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
     if (am_it == getCloudActorMap()->end()) {
         return;
     }
@@ -2395,8 +2382,7 @@ void PCLVis::setScalarFieldName(const std::string& viewID,
     }
 
     // Get actor from cloud actor map
-    PclUtils::CloudActorMap::iterator am_it =
-            getCloudActorMap()->find(viewID);
+    PclUtils::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
     if (am_it == getCloudActorMap()->end()) {
         return;
     }
@@ -2449,13 +2435,11 @@ void PCLVis::setPointCloudOpacity(double opacity,
                                   int viewport) {
     if (contains(viewID)) {
         double lastOpacity;
-        getPointCloudRenderingProperties(
-                PclUtils::CV_VISUALIZER_OPACITY,
-                lastOpacity, viewID);
+        getPointCloudRenderingProperties(PclUtils::CV_VISUALIZER_OPACITY,
+                                         lastOpacity, viewID);
         if (opacity != lastOpacity) {
-            setPointCloudRenderingProperties(
-                    PclUtils::CV_VISUALIZER_OPACITY,
-                    opacity, viewID, viewport);
+            setPointCloudRenderingProperties(PclUtils::CV_VISUALIZER_OPACITY,
+                                             opacity, viewID, viewport);
         }
     }
 }
@@ -2464,9 +2448,8 @@ void PCLVis::setShapeOpacity(double opacity,
                              const std::string& viewID,
                              int viewport) {
     if (contains(viewID)) {
-        setShapeRenderingProperties(
-                PclUtils::CV_VISUALIZER_OPACITY,
-                opacity, viewID, viewport);
+        setShapeRenderingProperties(PclUtils::CV_VISUALIZER_OPACITY, opacity,
+                                    viewID, viewport);
     }
 }
 
@@ -2540,9 +2523,8 @@ void PCLVis::setShapeShadingMode(SHADING_MODE mode,
                                  const std::string& viewID,
                                  int viewport) {
     if (contains(viewID)) {
-        setShapeRenderingProperties(
-                PclUtils::CV_VISUALIZER_SHADING,
-                mode, viewID, viewport);
+        setShapeRenderingProperties(PclUtils::CV_VISUALIZER_SHADING, mode,
+                                    viewID, viewport);
     }
 }
 
@@ -2575,8 +2557,8 @@ void PCLVis::setMeshShadingMode(SHADING_MODE mode,
                             vtkSmartPointer<vtkPolyDataNormals>::New();
                     normals->SetInputConnection(
                             mapper->GetInputAlgorithm()->GetOutputPort());
-                    vtkDataSetMapper::SafeDownCast(mapper)
-                            ->SetInputConnection(normals->GetOutputPort());
+                    vtkDataSetMapper::SafeDownCast(mapper)->SetInputConnection(
+                            normals->GetOutputPort());
                 }
             }
             actor->GetProperty()->SetInterpolationToGouraud();
@@ -2595,8 +2577,8 @@ void PCLVis::setMeshShadingMode(SHADING_MODE mode,
                             vtkSmartPointer<vtkPolyDataNormals>::New();
                     normals->SetInputConnection(
                             mapper->GetInputAlgorithm()->GetOutputPort());
-                    vtkDataSetMapper::SafeDownCast(mapper)
-                            ->SetInputConnection(normals->GetOutputPort());
+                    vtkDataSetMapper::SafeDownCast(mapper)->SetInputConnection(
+                            normals->GetOutputPort());
                 }
             }
             actor->GetProperty()->SetInterpolationToPhong();
@@ -3061,8 +3043,8 @@ void PCLVis::resetCameraViewpoint(const std::string& id) {
     }
 }
 
-void PCLVis::createViewPort(double xmin, double ymin, double xmax, double ymax,
-                            int& viewport) {
+void PCLVis::createViewPort(
+        double xmin, double ymin, double xmax, double ymax, int& viewport) {
     vtkSmartPointer<vtkRenderer> ren = vtkSmartPointer<vtkRenderer>::New();
     ren->SetViewport(xmin, ymin, xmax, ymax);
     if (win_) {
@@ -3074,19 +3056,20 @@ void PCLVis::createViewPort(double xmin, double ymin, double xmax, double ymax,
     viewport = static_cast<int>(rens_->GetNumberOfItems()) - 1;
 }
 
-void PCLVis::addCoordinateSystem(double scale, const std::string& id,
+void PCLVis::addCoordinateSystem(double scale,
+                                 const std::string& id,
                                  int viewport) {
     if (contains(id)) return;
 
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
     axes->SetTotalLength(scale, scale, scale);
     axes->SetShaftTypeToCylinder();
-    
+
     // Professional 3D system style - enhance visibility and appearance
     axes->SetCylinderRadius(0.02);  // Thicker shaft for better visibility
-    axes->SetConeRadius(0.06);       // Larger cone for arrow tips
-    axes->SetSphereRadius(0.03);     // Larger sphere at origin
-    
+    axes->SetConeRadius(0.06);      // Larger cone for arrow tips
+    axes->SetSphereRadius(0.03);    // Larger sphere at origin
+
     // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
     axes->GetXAxisShaftProperty()->SetColor(0.8, 0.0, 0.0);
@@ -3094,30 +3077,32 @@ void PCLVis::addCoordinateSystem(double scale, const std::string& id,
     axes->GetYAxisShaftProperty()->SetColor(0.0, 0.8, 0.0);
     axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
     axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 0.8);
-    
+
     // Enable labels for better identification
     axes->SetXAxisLabelText("X");
     axes->SetYAxisLabelText("Y");
     axes->SetZAxisLabelText("Z");
     axes->AxisLabelsOn();
-    
+
     addActorToRenderer(axes, viewport);
     (*shape_actor_map_)[id] = axes;
 }
 
-void PCLVis::addCoordinateSystem(double scale, const Eigen::Affine3f& t,
-                                 const std::string& id, int viewport) {
+void PCLVis::addCoordinateSystem(double scale,
+                                 const Eigen::Affine3f& t,
+                                 const std::string& id,
+                                 int viewport) {
     if (contains(id)) return;
 
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
     axes->SetTotalLength(scale, scale, scale);
     axes->SetShaftTypeToCylinder();
-    
+
     // Professional 3D system style - enhance visibility and appearance
     axes->SetCylinderRadius(0.02);  // Thicker shaft for better visibility
-    axes->SetConeRadius(0.06);       // Larger cone for arrow tips
-    axes->SetSphereRadius(0.03);     // Larger sphere at origin
-    
+    axes->SetConeRadius(0.06);      // Larger cone for arrow tips
+    axes->SetSphereRadius(0.03);    // Larger sphere at origin
+
     // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
     axes->GetXAxisShaftProperty()->SetColor(0.8, 0.0, 0.0);
@@ -3125,7 +3110,7 @@ void PCLVis::addCoordinateSystem(double scale, const Eigen::Affine3f& t,
     axes->GetYAxisShaftProperty()->SetColor(0.0, 0.8, 0.0);
     axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
     axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 0.8);
-    
+
     // Enable labels for better identification
     axes->SetXAxisLabelText("X");
     axes->SetYAxisLabelText("Y");
@@ -3184,14 +3169,13 @@ void PCLVis::saveCameraParameters(const std::string& file) {
     getCameraParameters(camera);
     std::ofstream ofs(file);
     if (ofs.is_open()) {
-        ofs << camera.clip[0] << "," << camera.clip[1] << "/"
-            << camera.focal[0] << "," << camera.focal[1] << ","
-            << camera.focal[2] << "/" << camera.pos[0] << "," << camera.pos[1]
-            << "," << camera.pos[2] << "/" << camera.view[0] << ","
-            << camera.view[1] << "," << camera.view[2] << "/"
-            << camera.fovy << "/" << camera.window_size[0] << ","
-            << camera.window_size[1] << "/" << camera.window_pos[0] << ","
-            << camera.window_pos[1] << std::endl;
+        ofs << camera.clip[0] << "," << camera.clip[1] << "/" << camera.focal[0]
+            << "," << camera.focal[1] << "," << camera.focal[2] << "/"
+            << camera.pos[0] << "," << camera.pos[1] << "," << camera.pos[2]
+            << "/" << camera.view[0] << "," << camera.view[1] << ","
+            << camera.view[2] << "/" << camera.fovy << "/"
+            << camera.window_size[0] << "," << camera.window_size[1] << "/"
+            << camera.window_pos[0] << "," << camera.window_pos[1] << std::endl;
     }
 }
 
@@ -3328,9 +3312,9 @@ bool PCLVis::addShapeActor(vtkSmartPointer<vtkPolyData> polydata,
 bool PCLVis::addCube(const CCVector3d& minPt,
                      const CCVector3d& maxPt,
                      const ecvColor::Rgbf& color,
-                     const std::string& id, int viewport) {
-    vtkSmartPointer<vtkCubeSource> cube =
-            vtkSmartPointer<vtkCubeSource>::New();
+                     const std::string& id,
+                     int viewport) {
+    vtkSmartPointer<vtkCubeSource> cube = vtkSmartPointer<vtkCubeSource>::New();
     cube->SetBounds(minPt.x, maxPt.x, minPt.y, maxPt.y, minPt.z, maxPt.z);
     cube->Update();
     return addShapeActor(cube->GetOutputPort(), color, id, viewport);
@@ -3339,7 +3323,8 @@ bool PCLVis::addCube(const CCVector3d& minPt,
 bool PCLVis::addLine(const CCVector3d& p1,
                      const CCVector3d& p2,
                      const ecvColor::Rgbf& color,
-                     const std::string& id, int viewport) {
+                     const std::string& id,
+                     int viewport) {
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
     points->InsertNextPoint(p1.x, p1.y, p1.z);
     points->InsertNextPoint(p2.x, p2.y, p2.z);
@@ -3354,9 +3339,11 @@ bool PCLVis::addLine(const CCVector3d& p1,
     return addShapeActor(polydata, color, id, viewport);
 }
 
-bool PCLVis::addSphere(const CCVector3d& center, double radius,
+bool PCLVis::addSphere(const CCVector3d& center,
+                       double radius,
                        const ecvColor::Rgbf& color,
-                       const std::string& id, int viewport) {
+                       const std::string& id,
+                       int viewport) {
     vtkSmartPointer<vtkSphereSource> sphere =
             vtkSmartPointer<vtkSphereSource>::New();
     sphere->SetCenter(center.x, center.y, center.z);
@@ -3371,7 +3358,8 @@ bool PCLVis::addText3D(const std::string& text,
                        const CCVector3d& position,
                        double textScale,
                        const ecvColor::Rgbf& color,
-                       const std::string& id, int viewport) {
+                       const std::string& id,
+                       int viewport) {
     if (contains(id)) return false;
 
     vtkSmartPointer<vtkVectorText> textSource =
@@ -3383,7 +3371,8 @@ bool PCLVis::addText3D(const std::string& text,
             vtkSmartPointer<vtkPolyDataMapper>::New();
     textMapper->SetInputConnection(textSource->GetOutputPort());
 
-    vtkSmartPointer<vtkFollower> textActor = vtkSmartPointer<vtkFollower>::New();
+    vtkSmartPointer<vtkFollower> textActor =
+            vtkSmartPointer<vtkFollower>::New();
     textActor->SetMapper(textMapper);
     textActor->SetPosition(position.x, position.y, position.z);
     textActor->SetScale(textScale);
@@ -3405,9 +3394,10 @@ bool PCLVis::addPointCloud(vtkSmartPointer<vtkPolyData> polydata,
                            const std::string& id,
                            int viewport) {
     if (contains(id)) {
-        CVLog::Warning("[PCLVis::addPointCloud] A cloud with id <%s> already "
-                       "exists! Use updatePointCloud instead.",
-                       id.c_str());
+        CVLog::Warning(
+                "[PCLVis::addPointCloud] A cloud with id <%s> already "
+                "exists! Use updatePointCloud instead.",
+                id.c_str());
         return false;
     }
 
@@ -3453,9 +3443,10 @@ bool PCLVis::updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,
                               const std::string& id) {
     auto it = cloud_actor_map_->find(id);
     if (it == cloud_actor_map_->end()) {
-        CVLog::Warning("[PCLVis::updatePointCloud] Cloud with id <%s> not "
-                       "found! Use addPointCloud first.",
-                       id.c_str());
+        CVLog::Warning(
+                "[PCLVis::updatePointCloud] Cloud with id <%s> not "
+                "found! Use addPointCloud first.",
+                id.c_str());
         return false;
     }
 
@@ -3612,10 +3603,9 @@ void PCLVis::showOrientationMarkerWidgetAxes(
         // Professional 3D system style with intuitive direction labels
         // Using standard directional terms instead of medical anatomy terms
         vtkSmartPointer<vtkPropAssembly> assembly = PclTools::CreateCoordinate(
-                1.8, "X", "Y", "Z", 
-                "+X", "-X",     // X axis: positive/negative
-                "+Y", "-Y",     // Y axis: positive/negative
-                "+Z", "-Z");    // Z axis: positive/negative
+                1.8, "X", "Y", "Z", "+X", "-X",  // X axis: positive/negative
+                "+Y", "-Y",                      // Y axis: positive/negative
+                "+Z", "-Z");                     // Z axis: positive/negative
         m_axes_widget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
         m_axes_widget->SetOutlineColor(0.2, 0.2, 0.2);  // Subtle dark outline
         m_axes_widget->SetOrientationMarker(assembly);
@@ -3683,11 +3673,9 @@ PCLVis::getPCLInteractorStyle() {
 vtkProp* PCLVis::getPropById(const std::string& viewId) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?) Check to see if the given ID entry exists
-    PclUtils::CloudActorMap::iterator ca_it =
-            getCloudActorMap()->find(viewId);
+    PclUtils::CloudActorMap::iterator ca_it = getCloudActorMap()->find(viewId);
     // Extra step: check if there is a cloud with the same ID
-    PclUtils::ShapeActorMap::iterator am_it =
-            getShapeActorMap()->find(viewId);
+    PclUtils::ShapeActorMap::iterator am_it = getShapeActorMap()->find(viewId);
 
     bool shape = true;
     // Try to find a shape first
@@ -3749,11 +3737,9 @@ vtkActor* PCLVis::getActorById(const std::string& viewId) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?)
     // Check to see if the given ID entry exists
-    PclUtils::CloudActorMap::iterator ca_it =
-            getCloudActorMap()->find(viewId);
+    PclUtils::CloudActorMap::iterator ca_it = getCloudActorMap()->find(viewId);
     // Extra step: check if there is a cloud with the same ID
-    PclUtils::ShapeActorMap::iterator am_it =
-            getShapeActorMap()->find(viewId);
+    PclUtils::ShapeActorMap::iterator am_it = getShapeActorMap()->find(viewId);
 
     bool shape = true;
     // Try to find a shape first
@@ -3805,11 +3791,9 @@ vtkAbstractWidget* PCLVis::getWidgetById(const std::string& viewId) {
 std::string PCLVis::getIdByActor(vtkProp* actor) {
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?) Check to see if the given ID entry exists
-    PclUtils::CloudActorMap::iterator cloudIt =
-            getCloudActorMap()->begin();
+    PclUtils::CloudActorMap::iterator cloudIt = getCloudActorMap()->begin();
     // Extra step: check if there is a cloud with the same ID
-    PclUtils::ShapeActorMap::iterator shapeIt =
-            getShapeActorMap()->begin();
+    PclUtils::ShapeActorMap::iterator shapeIt = getShapeActorMap()->begin();
 
     for (; cloudIt != getCloudActorMap()->end(); cloudIt++) {
         vtkActor* tempActor = vtkLODActor::SafeDownCast(cloudIt->second.actor);
@@ -3946,10 +3930,9 @@ void PCLVis::setupInteractor(vtkRenderWindowInteractor* iren,
 
 void PCLVis::registerKeyboard() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
-    registerKeyboardCallback(
-            [this](const PclUtils::KeyboardEvent& event) {
-                this->keyboardEventProcess(event);
-            });
+    registerKeyboardCallback([this](const PclUtils::KeyboardEvent& event) {
+        this->keyboardEventProcess(event);
+    });
     CVLog::Print(
             "[annotation keyboard Event] press Delete to remove annotations");
     m_cloud_mutex.unlock();
@@ -3957,10 +3940,9 @@ void PCLVis::registerKeyboard() {
 
 void PCLVis::registerMouse() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
-    registerMouseCallback(
-            [this](const PclUtils::MouseEvent& event) {
-                this->mouseEventProcess(event);
-            });
+    registerMouseCallback([this](const PclUtils::MouseEvent& event) {
+        this->mouseEventProcess(event);
+    });
     CVLog::Print(
             "[annotation mouse Event] click left button to pick annotation");
     m_cloud_mutex.unlock();
@@ -4052,8 +4034,7 @@ void PCLVis::registerAreaPicking() {
     m_cloud_mutex.unlock();
 }
 
-void PCLVis::pointPickingProcess(
-        const PclUtils::PointPickingEvent& event) {
+void PCLVis::pointPickingProcess(const PclUtils::PointPickingEvent& event) {
     if (!m_pointPickingEnabled) return;
 
     int idx = event.getPointIndex();
@@ -4067,8 +4048,7 @@ void PCLVis::pointPickingProcess(
     emit interactorPointPickedEvent(picked_pt, idx, id);
 }
 
-void PCLVis::areaPickingEventProcess(
-        const PclUtils::AreaPickingEvent& event) {
+void PCLVis::areaPickingEventProcess(const PclUtils::AreaPickingEvent& event) {
     if (!m_areaPickingEnabled) return;
 
     m_selected_slice.clear();
@@ -4080,8 +4060,7 @@ void PCLVis::areaPickingEventProcess(
     emit interactorAreaPickedEvent(m_selected_slice);
 }
 
-void PCLVis::keyboardEventProcess(
-        const PclUtils::KeyboardEvent& event) {
+void PCLVis::keyboardEventProcess(const PclUtils::KeyboardEvent& event) {
     // delete annotation
     if (event.keyDown())  // avoid double emitting
     {
@@ -4250,13 +4229,11 @@ void PCLVis::applyLightPropertiesToActor(vtkActor* actor,
     bool isPointCloud = false;
     vtkMapper* mapper = actor->GetMapper();
     if (mapper) {
-        vtkPolyData* polydata =
-                vtkPolyData::SafeDownCast(mapper->GetInput());
+        vtkPolyData* polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
         if (polydata) {
             vtkIdType numPoints = polydata->GetNumberOfPoints();
             vtkIdType numCells = polydata->GetNumberOfCells();
-            isPointCloud = (numCells == 0) ||
-                           (numCells >= numPoints * 0.9);
+            isPointCloud = (numCells == 0) || (numCells >= numPoints * 0.9);
         }
     }
 
@@ -4270,8 +4247,8 @@ void PCLVis::applyLightPropertiesToActor(vtkActor* actor,
     } else {
         // Meshes: ALSO scale by intensity (was previously fixed values)
         double ambient = 0.1 + intensity * 0.2;  // Range: 0.1-0.3
-        double diffuse = intensity * 0.7;         // Range: 0.0-0.7
-        double specular = intensity * 0.2;        // Range: 0.0-0.2
+        double diffuse = intensity * 0.7;        // Range: 0.0-0.7
+        double specular = intensity * 0.2;       // Range: 0.0-0.2
         prop->SetAmbient(ambient);
         prop->SetDiffuse(diffuse);
         prop->SetSpecular(specular);
@@ -4281,8 +4258,8 @@ void PCLVis::applyLightPropertiesToActor(vtkActor* actor,
 }
 
 void PCLVis::setObjectLightIntensity(const std::string& viewID,
-                                      double intensity,
-                                      int viewport) {
+                                     double intensity,
+                                     int viewport) {
     intensity = std::max(0.0, std::min(1.0, intensity));
     m_objectLightIntensity[viewID] = intensity;
 
@@ -4341,8 +4318,7 @@ void PCLVis::setLightIntensity(double intensity) {
     }
 
     if (!headlight) {
-        vtkSmartPointer<vtkLight> newLight =
-                vtkSmartPointer<vtkLight>::New();
+        vtkSmartPointer<vtkLight> newLight = vtkSmartPointer<vtkLight>::New();
         newLight->SetLightTypeToHeadlight();
         newLight->SetColor(1.0, 1.0, 1.0);
         newLight->SwitchOn();

@@ -325,7 +325,7 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                                     "texture failed!");
                         }
                     }
-                } else {                    // Direct rebuild for non-textured mesh
+                } else {  // Direct rebuild for non-textured mesh
                     m_visualizer3D->drawMeshDirect(context, mesh);
                 }
             }
@@ -662,8 +662,8 @@ void PCLDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
             // bboxID, viewport);
             m_visualizer3D->setShapeRenderingProperties(
                     PclUtils::CV_VISUALIZER_REPRESENTATION,
-                    PclUtils::CV_VISUALIZER_REPRESENTATION_WIREFRAME,
-                    bboxID, viewport);
+                    PclUtils::CV_VISUALIZER_REPRESENTATION_WIREFRAME, bboxID,
+                    viewport);
             m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID,
                                          viewport);
             m_visualizer3D->setLightMode(bboxID, viewport);
@@ -679,8 +679,8 @@ void PCLDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
         // Apply opacity if specified in context
         if (context.opacity >= 0.0 && context.opacity <= 1.0) {
             m_visualizer3D->setShapeRenderingProperties(
-                    PclUtils::CV_VISUALIZER_OPACITY, context.opacity,
-                    bboxID, viewport);
+                    PclUtils::CV_VISUALIZER_OPACITY, context.opacity, bboxID,
+                    viewport);
         }
     }
 }
@@ -828,14 +828,13 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                         (unsigned char)param.lineWidget.lineWidth;
                 ecvColor::Rgbf lineColor =
                         ecvTools::TransFormRGB(param.lineWidget.lineColor);
-                m_visualizer3D->addLine(
-                        CCVector3d(param.lineWidget.lineSt.x,
-                                   param.lineWidget.lineSt.y,
-                                   param.lineWidget.lineSt.z),
-                        CCVector3d(param.lineWidget.lineEd.x,
-                                   param.lineWidget.lineEd.y,
-                                   param.lineWidget.lineEd.z),
-                        lineColor, viewID, viewport);
+                m_visualizer3D->addLine(CCVector3d(param.lineWidget.lineSt.x,
+                                                   param.lineWidget.lineSt.y,
+                                                   param.lineWidget.lineSt.z),
+                                        CCVector3d(param.lineWidget.lineEd.x,
+                                                   param.lineWidget.lineEd.y,
+                                                   param.lineWidget.lineEd.z),
+                                        lineColor, viewID, viewport);
                 m_visualizer3D->setLineWidth(lineWidth, viewID, viewport);
             }
             break;
@@ -857,14 +856,14 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             }
             break;
         case WIDGETS_TYPE::WIDGET_CAPTION:
-            if (!m_visualizer3D->updateCaption(
-                        CVTools::FromQString(param.text), param.pos,
-                        param.center, param.color, param.fontSize, viewID,
-                        viewport)) {
-                m_visualizer3D->addCaption(
-                        CVTools::FromQString(param.text), param.pos,
-                        param.center, param.color, param.fontSize, viewID,
-                        param.handleEnabled, viewport);
+            if (!m_visualizer3D->updateCaption(CVTools::FromQString(param.text),
+                                               param.pos, param.center,
+                                               param.color, param.fontSize,
+                                               viewID, viewport)) {
+                m_visualizer3D->addCaption(CVTools::FromQString(param.text),
+                                           param.pos, param.center, param.color,
+                                           param.fontSize, viewID,
+                                           param.handleEnabled, viewport);
             }
             break;
         case WIDGETS_TYPE::WIDGET_LINE_2D:
@@ -975,9 +974,8 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             break;
         case WIDGETS_TYPE::WIDGET_POINTS_2D:
             if (m_visualizer2D) {
-                PclUtils::Vector3ub color =
-                        PclUtils::Vector3ub(
-                                param.color.r, param.color.g, param.color.b);
+                PclUtils::Vector3ub color = PclUtils::Vector3ub(
+                        param.color.r, param.color.g, param.color.b);
                 m_visualizer2D->markPoint(param.rect.x(), param.rect.y(), color,
                                           color, param.radius, viewID,
                                           param.color.a);
@@ -1308,7 +1306,7 @@ double PCLDisplayTools::getLightIntensity() const {
 }
 
 void PCLDisplayTools::setObjectLightIntensity(const QString& viewID,
-                                               double intensity) {
+                                              double intensity) {
     if (!m_visualizer3D) {
         CVLog::Warning("[PCLDisplayTools] No 3D visualizer available");
         return;

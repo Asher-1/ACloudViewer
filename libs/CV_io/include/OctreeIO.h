@@ -16,9 +16,10 @@
 /**
  * @file OctreeIO.h
  * @brief Octree file I/O utilities
- * 
+ *
  * Provides functions for reading and writing octree spatial data structures,
- * which are used for efficient spatial partitioning and nearest neighbor searches.
+ * which are used for efficient spatial partitioning and nearest neighbor
+ * searches.
  */
 
 namespace cloudViewer {
@@ -27,7 +28,7 @@ namespace io {
 
 /**
  * @brief Factory function to create octree from file
- * 
+ *
  * Automatically detects file format from extension.
  * @param filename Input file path
  * @param format Format hint ("auto" for auto-detection)
@@ -38,7 +39,7 @@ std::shared_ptr<geometry::Octree> CV_IO_LIB_API CreateOctreeFromFile(
 
 /**
  * @brief Read octree from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param octree Output octree object
@@ -51,7 +52,7 @@ bool CV_IO_LIB_API ReadOctree(const std::string &filename,
 
 /**
  * @brief Write octree to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * @param filename Output file path
  * @param octree Octree to write

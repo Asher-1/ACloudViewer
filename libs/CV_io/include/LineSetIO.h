@@ -16,7 +16,7 @@
 /**
  * @file LineSetIO.h
  * @brief LineSet file I/O utilities
- * 
+ *
  * Provides functions for reading and writing line set geometries,
  * which represent collections of connected line segments.
  */
@@ -26,7 +26,7 @@ namespace io {
 
 /**
  * @brief Factory function to create line set from file
- * 
+ *
  * Automatically detects file format from extension.
  * @param filename Input file path
  * @param format Format hint ("auto" for auto-detection)
@@ -40,7 +40,7 @@ CreateLineSetFromFile(const std::string &filename,
 
 /**
  * @brief Read line set from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param lineset Output line set object
@@ -55,7 +55,7 @@ bool CV_IO_LIB_API ReadLineSet(const std::string &filename,
 
 /**
  * @brief Write line set to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * Binary/compression parameters are used if supported by the format.
  * @param filename Output file path

@@ -129,9 +129,9 @@ void QUIWidget::setStyle(QString &qssFile) {
         // minimal default stylesheet so that view widgets whose .ui files
         // carry inline stylesheets (branch images, etc.) still get their
         // background painted correctly.
-        qApp->setStyleSheet(QStringLiteral(
-                "QTreeView, QListView, QTableView"
-                "{ background-color: palette(base); }"));
+        qApp->setStyleSheet(
+                QStringLiteral("QTreeView, QListView, QTableView"
+                               "{ background-color: palette(base); }"));
     }
 #endif
 }

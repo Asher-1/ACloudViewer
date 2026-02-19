@@ -30,13 +30,13 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // VTK
 // #include <QVTKWidget.h>
 #include <QVTKOpenGLNativeWidget.h>
-#include <vtkVersionMacros.h>
 #include <vtkDataSet.h>
 #include <vtkLODActor.h>
 #include <vtkPlanes.h>
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkVersionMacros.h>
 
 // QPCL_ENGINE_LIB
 #include <Utils/PCLCloud.h>

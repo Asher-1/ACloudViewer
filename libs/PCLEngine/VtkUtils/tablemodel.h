@@ -10,8 +10,8 @@
 #include <QAbstractTableModel>
 #include <QVector>
 
-#include "qPCL.h"
 #include "point3f.h"
+#include "qPCL.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>

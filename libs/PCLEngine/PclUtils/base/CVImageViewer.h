@@ -2,17 +2,15 @@
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// CVImageViewer.h – Standalone 2D image viewer replacing
-// pcl::visualization::ImageViewer.  Uses only VTK + PclUtils types.
 
 #pragma once
 
-#include "base/CVContextItem.h"
-#include "base/CVFloatImageUtils.h"
-#include "base/CVVisualizerTypes.h"  // PclUtils::MouseEvent, KeyboardEvent, Vector3ub
-
+#include <pcl/correspondence.h>
+#include <pcl/geometry/planar_polygon.h>
+#include <pcl/memory.h>
+#include <pcl/point_types.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include <vtkInteractorStyleImage.h>
@@ -20,16 +18,15 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 
-#include <pcl/correspondence.h>
-#include <pcl/geometry/planar_polygon.h>
-#include <pcl/memory.h>
-#include <pcl/point_types.h>
-
 #include <algorithm>
 #include <functional>
 #include <limits>
 #include <string>
 #include <vector>
+
+#include "base/CVContextItem.h"
+#include "base/CVFloatImageUtils.h"
+#include "base/CVVisualizerTypes.h"  // PclUtils::MouseEvent, KeyboardEvent, Vector3ub
 
 class vtkImageSlice;
 class vtkContextActor;
@@ -41,7 +38,8 @@ class vtkImageData;
 namespace PclUtils {
 
 // ============================================================================
-// ImageViewerInteractorStyle – replaces pcl::visualization::ImageViewerInteractorStyle
+// ImageViewerInteractorStyle – replaces
+// pcl::visualization::ImageViewerInteractorStyle
 // ============================================================================
 class ImageViewerInteractorStyle : public vtkInteractorStyleImage {
 public:
@@ -87,11 +85,13 @@ public:
     // ------------------------------------------------------------------
     // Mono image
     // ------------------------------------------------------------------
-    void showMonoImage(const unsigned char* data, unsigned width,
+    void showMonoImage(const unsigned char* data,
+                       unsigned width,
                        unsigned height,
                        const std::string& layer_id = "mono_image",
                        double opacity = 1.0);
-    void addMonoImage(const unsigned char* data, unsigned width,
+    void addMonoImage(const unsigned char* data,
+                      unsigned width,
                       unsigned height,
                       const std::string& layer_id = "mono_image",
                       double opacity = 1.0);
@@ -137,27 +137,28 @@ public:
     // ------------------------------------------------------------------
     // RGB image
     // ------------------------------------------------------------------
-    void showRGBImage(const unsigned char* data, unsigned width,
+    void showRGBImage(const unsigned char* data,
+                      unsigned width,
                       unsigned height,
                       const std::string& layer_id = "rgb_image",
                       double opacity = 1.0);
-    void addRGBImage(const unsigned char* data, unsigned width,
+    void addRGBImage(const unsigned char* data,
+                     unsigned width,
                      unsigned height,
                      const std::string& layer_id = "rgb_image",
-                     double opacity = 1.0, bool autoresize = true);
+                     double opacity = 1.0,
+                     bool autoresize = true);
 
     template <typename T>
-    inline void showRGBImage(
-            const typename pcl::PointCloud<T>::ConstPtr& cloud,
-            const std::string& layer_id = "rgb_image",
-            double opacity = 1.0) {
+    inline void showRGBImage(const typename pcl::PointCloud<T>::ConstPtr& cloud,
+                             const std::string& layer_id = "rgb_image",
+                             double opacity = 1.0) {
         return showRGBImage<T>(*cloud, layer_id, opacity);
     }
     template <typename T>
-    inline void addRGBImage(
-            const typename pcl::PointCloud<T>::ConstPtr& cloud,
-            const std::string& layer_id = "rgb_image",
-            double opacity = 1.0) {
+    inline void addRGBImage(const typename pcl::PointCloud<T>::ConstPtr& cloud,
+                            const std::string& layer_id = "rgb_image",
+                            double opacity = 1.0) {
         return addRGBImage<T>(*cloud, layer_id, opacity);
     }
     template <typename T>
@@ -172,67 +173,83 @@ public:
     // ------------------------------------------------------------------
     // Float / short / angle images
     // ------------------------------------------------------------------
-    void showFloatImage(const float* data, unsigned int width,
+    void showFloatImage(const float* data,
+                        unsigned int width,
                         unsigned int height,
                         float min_value = std::numeric_limits<float>::min(),
                         float max_value = std::numeric_limits<float>::max(),
                         bool grayscale = false,
                         const std::string& layer_id = "float_image",
                         double opacity = 1.0);
-    void addFloatImage(const float* data, unsigned int width,
+    void addFloatImage(const float* data,
+                       unsigned int width,
                        unsigned int height,
                        float min_value = std::numeric_limits<float>::min(),
                        float max_value = std::numeric_limits<float>::max(),
                        bool grayscale = false,
                        const std::string& layer_id = "float_image",
                        double opacity = 1.0);
-    void showShortImage(
-            const unsigned short* data, unsigned int width,
-            unsigned int height,
-            unsigned short min_value =
-                    std::numeric_limits<unsigned short>::min(),
-            unsigned short max_value =
-                    std::numeric_limits<unsigned short>::max(),
-            bool grayscale = false,
-            const std::string& layer_id = "short_image",
-            double opacity = 1.0);
-    void addShortImage(
-            const unsigned short* data, unsigned int width,
-            unsigned int height,
-            unsigned short min_value =
-                    std::numeric_limits<unsigned short>::min(),
-            unsigned short max_value =
-                    std::numeric_limits<unsigned short>::max(),
-            bool grayscale = false,
-            const std::string& layer_id = "short_image",
-            double opacity = 1.0);
-    void showAngleImage(const float* data, unsigned width, unsigned height,
+    void showShortImage(const unsigned short* data,
+                        unsigned int width,
+                        unsigned int height,
+                        unsigned short min_value =
+                                std::numeric_limits<unsigned short>::min(),
+                        unsigned short max_value =
+                                std::numeric_limits<unsigned short>::max(),
+                        bool grayscale = false,
+                        const std::string& layer_id = "short_image",
+                        double opacity = 1.0);
+    void addShortImage(const unsigned short* data,
+                       unsigned int width,
+                       unsigned int height,
+                       unsigned short min_value =
+                               std::numeric_limits<unsigned short>::min(),
+                       unsigned short max_value =
+                               std::numeric_limits<unsigned short>::max(),
+                       bool grayscale = false,
+                       const std::string& layer_id = "short_image",
+                       double opacity = 1.0);
+    void showAngleImage(const float* data,
+                        unsigned width,
+                        unsigned height,
                         const std::string& layer_id = "angle_image",
                         double opacity = 1.0);
-    void addAngleImage(const float* data, unsigned width, unsigned height,
+    void addAngleImage(const float* data,
+                       unsigned width,
+                       unsigned height,
                        const std::string& layer_id = "angle_image",
                        double opacity = 1.0);
-    void showHalfAngleImage(const float* data, unsigned width,
+    void showHalfAngleImage(const float* data,
+                            unsigned width,
                             unsigned height,
                             const std::string& layer_id = "half_angle_image",
                             double opacity = 1.0);
-    void addHalfAngleImage(const float* data, unsigned width, unsigned height,
+    void addHalfAngleImage(const float* data,
+                           unsigned width,
+                           unsigned height,
                            const std::string& layer_id = "half_angle_image",
                            double opacity = 1.0);
 
     // ------------------------------------------------------------------
     // Markers / points
     // ------------------------------------------------------------------
-    void markPoint(std::size_t u, std::size_t v, Vector3ub fg_color,
-                   Vector3ub bg_color = red_color, double radius = 3.0,
+    void markPoint(std::size_t u,
+                   std::size_t v,
+                   Vector3ub fg_color,
+                   Vector3ub bg_color = red_color,
+                   double radius = 3.0,
                    const std::string& layer_id = "points",
                    double opacity = 1.0);
-    void markPoints(const std::vector<int>& uv, Vector3ub fg_color,
-                    Vector3ub bg_color = red_color, double size = 3.0,
+    void markPoints(const std::vector<int>& uv,
+                    Vector3ub fg_color,
+                    Vector3ub bg_color = red_color,
+                    double size = 3.0,
                     const std::string& layer_id = "markers",
                     double opacity = 1.0);
-    void markPoints(const std::vector<float>& uv, Vector3ub fg_color,
-                    Vector3ub bg_color = red_color, double size = 3.0,
+    void markPoints(const std::vector<float>& uv,
+                    Vector3ub fg_color,
+                    Vector3ub bg_color = red_color,
+                    double size = 3.0,
                     const std::string& layer_id = "markers",
                     double opacity = 1.0);
 
@@ -254,30 +271,30 @@ public:
     }
     template <typename T>
     SignalConnection registerKeyboardCallback(
-            void (T::*callback)(const KeyboardEvent&, void*), T& instance,
+            void (T::*callback)(const KeyboardEvent&, void*),
+            T& instance,
             void* cookie = nullptr) {
-        return registerKeyboardCallback(
-                [=, &instance](const KeyboardEvent& e) {
-                    (instance.*callback)(e, cookie);
-                });
+        return registerKeyboardCallback([=, &instance](const KeyboardEvent& e) {
+            (instance.*callback)(e, cookie);
+        });
     }
     SignalConnection registerKeyboardCallback(
             std::function<void(const KeyboardEvent&)> cb);
 
-    SignalConnection registerMouseCallback(
-            void (*callback)(const MouseEvent&, void*),
-            void* cookie = nullptr) {
+    SignalConnection registerMouseCallback(void (*callback)(const MouseEvent&,
+                                                            void*),
+                                           void* cookie = nullptr) {
         return registerMouseCallback(
                 [=](const MouseEvent& e) { (*callback)(e, cookie); });
     }
     template <typename T>
     SignalConnection registerMouseCallback(
-            void (T::*callback)(const MouseEvent&, void*), T& instance,
+            void (T::*callback)(const MouseEvent&, void*),
+            T& instance,
             void* cookie = nullptr) {
-        return registerMouseCallback(
-                [=, &instance](const MouseEvent& e) {
-                    (instance.*callback)(e, cookie);
-                });
+        return registerMouseCallback([=, &instance](const MouseEvent& e) {
+            (instance.*callback)(e, cookie);
+        });
     }
     SignalConnection registerMouseCallback(
             std::function<void(const MouseEvent&)> cb);
@@ -298,43 +315,65 @@ public:
     // ------------------------------------------------------------------
     // 2D primitives
     // ------------------------------------------------------------------
-    bool addCircle(unsigned int x, unsigned int y, double radius,
+    bool addCircle(unsigned int x,
+                   unsigned int y,
+                   double radius,
                    const std::string& layer_id = "circles",
                    double opacity = 1.0);
-    bool addCircle(unsigned int x, unsigned int y, double radius, double r,
-                   double g, double b,
+    bool addCircle(unsigned int x,
+                   unsigned int y,
+                   double radius,
+                   double r,
+                   double g,
+                   double b,
                    const std::string& layer_id = "circles",
                    double opacity = 1.0);
-    bool addRectangle(const pcl::PointXY& min_pt, const pcl::PointXY& max_pt,
+    bool addRectangle(const pcl::PointXY& min_pt,
+                      const pcl::PointXY& max_pt,
                       const std::string& layer_id = "rectangles",
                       double opacity = 1.0);
-    bool addRectangle(const pcl::PointXY& min_pt, const pcl::PointXY& max_pt,
-                      double r, double g, double b,
+    bool addRectangle(const pcl::PointXY& min_pt,
+                      const pcl::PointXY& max_pt,
+                      double r,
+                      double g,
+                      double b,
                       const std::string& layer_id = "rectangles",
                       double opacity = 1.0);
-    bool addRectangle(unsigned int x_min, unsigned int x_max,
-                      unsigned int y_min, unsigned int y_max,
+    bool addRectangle(unsigned int x_min,
+                      unsigned int x_max,
+                      unsigned int y_min,
+                      unsigned int y_max,
                       const std::string& layer_id = "rectangles",
                       double opacity = 1.0);
-    bool addRectangle(unsigned int x_min, unsigned int x_max,
-                      unsigned int y_min, unsigned int y_max, double r,
-                      double g, double b,
-                      const std::string& layer_id = "rectangles",
-                      double opacity = 1.0);
-    template <typename T>
-    bool addRectangle(const typename pcl::PointCloud<T>::ConstPtr& image,
-                      const T& min_pt, const T& max_pt,
-                      const std::string& layer_id = "rectangles",
-                      double opacity = 1.0);
-    template <typename T>
-    bool addRectangle(const typename pcl::PointCloud<T>::ConstPtr& image,
-                      const T& min_pt, const T& max_pt, double r, double g,
+    bool addRectangle(unsigned int x_min,
+                      unsigned int x_max,
+                      unsigned int y_min,
+                      unsigned int y_max,
+                      double r,
+                      double g,
                       double b,
                       const std::string& layer_id = "rectangles",
                       double opacity = 1.0);
     template <typename T>
     bool addRectangle(const typename pcl::PointCloud<T>::ConstPtr& image,
-                      const pcl::PointCloud<T>& mask, double r, double g,
+                      const T& min_pt,
+                      const T& max_pt,
+                      const std::string& layer_id = "rectangles",
+                      double opacity = 1.0);
+    template <typename T>
+    bool addRectangle(const typename pcl::PointCloud<T>::ConstPtr& image,
+                      const T& min_pt,
+                      const T& max_pt,
+                      double r,
+                      double g,
+                      double b,
+                      const std::string& layer_id = "rectangles",
+                      double opacity = 1.0);
+    template <typename T>
+    bool addRectangle(const typename pcl::PointCloud<T>::ConstPtr& image,
+                      const pcl::PointCloud<T>& mask,
+                      double r,
+                      double g,
                       double b,
                       const std::string& layer_id = "rectangles",
                       double opacity = 1.0);
@@ -344,28 +383,47 @@ public:
                       const std::string& layer_id = "image_mask",
                       double opacity = 1.0);
 
-    bool addFilledRectangle(unsigned int x_min, unsigned int x_max,
-                            unsigned int y_min, unsigned int y_max,
+    bool addFilledRectangle(unsigned int x_min,
+                            unsigned int x_max,
+                            unsigned int y_min,
+                            unsigned int y_max,
                             const std::string& layer_id = "boxes",
                             double opacity = 0.5);
-    bool addFilledRectangle(unsigned int x_min, unsigned int x_max,
-                            unsigned int y_min, unsigned int y_max, double r,
-                            double g, double b,
+    bool addFilledRectangle(unsigned int x_min,
+                            unsigned int x_max,
+                            unsigned int y_min,
+                            unsigned int y_max,
+                            double r,
+                            double g,
+                            double b,
                             const std::string& layer_id = "boxes",
                             double opacity = 0.5);
-    bool addLine(unsigned int x_min, unsigned int y_min, unsigned int x_max,
-                 unsigned int y_max, double r, double g, double b,
+    bool addLine(unsigned int x_min,
+                 unsigned int y_min,
+                 unsigned int x_max,
+                 unsigned int y_max,
+                 double r,
+                 double g,
+                 double b,
                  const std::string& layer_id = "line",
                  double opacity = 1.0);
-    bool addLine(unsigned int x_min, unsigned int y_min, unsigned int x_max,
+    bool addLine(unsigned int x_min,
+                 unsigned int y_min,
+                 unsigned int x_max,
                  unsigned int y_max,
                  const std::string& layer_id = "line",
                  double opacity = 1.0);
-    bool addText(unsigned int x, unsigned int y, const std::string& text,
-                 double r, double g, double b,
+    bool addText(unsigned int x,
+                 unsigned int y,
+                 const std::string& text,
+                 double r,
+                 double g,
+                 double b,
                  const std::string& layer_id = "line",
                  double opacity = 1.0);
-    bool addText(unsigned int x, unsigned int y, const std::string& text,
+    bool addText(unsigned int x,
+                 unsigned int y,
+                 const std::string& text,
                  const std::string& layer_id = "line",
                  double opacity = 1.0);
 
@@ -374,7 +432,10 @@ public:
     // ------------------------------------------------------------------
     template <typename T>
     bool addMask(const typename pcl::PointCloud<T>::ConstPtr& image,
-                 const pcl::PointCloud<T>& mask, double r, double g, double b,
+                 const pcl::PointCloud<T>& mask,
+                 double r,
+                 double g,
+                 double b,
                  const std::string& layer_id = "image_mask",
                  double opacity = 0.5);
     template <typename T>
@@ -384,8 +445,10 @@ public:
                  double opacity = 0.5);
     template <typename T>
     bool addPlanarPolygon(const typename pcl::PointCloud<T>::ConstPtr& image,
-                          const pcl::PlanarPolygon<T>& polygon, double r,
-                          double g, double b,
+                          const pcl::PlanarPolygon<T>& polygon,
+                          double r,
+                          double g,
+                          double b,
                           const std::string& layer_id = "planar_polygon",
                           double opacity = 1.0);
     template <typename T>
@@ -397,7 +460,9 @@ public:
     // ------------------------------------------------------------------
     // Layer management
     // ------------------------------------------------------------------
-    bool addLayer(const std::string& layer_id, int width, int height,
+    bool addLayer(const std::string& layer_id,
+                  int width,
+                  int height,
                   double opacity = 0.5);
     void removeLayer(const std::string& layer_id);
 
@@ -426,10 +491,14 @@ protected:
     void emitMouseEvent(unsigned long event_id);
     void emitKeyboardEvent(unsigned long event_id);
 
-    static void MouseCallback(vtkObject*, unsigned long eid,
-                               void* clientdata, void* calldata);
-    static void KeyboardCallback(vtkObject*, unsigned long eid,
-                                  void* clientdata, void* calldata);
+    static void MouseCallback(vtkObject*,
+                              unsigned long eid,
+                              void* clientdata,
+                              void* calldata);
+    static void KeyboardCallback(vtkObject*,
+                                 unsigned long eid,
+                                 void* clientdata,
+                                 void* calldata);
 
 protected:  // types
     struct ExitMainLoopTimerCallback : public vtkCommand {
@@ -437,7 +506,8 @@ protected:  // types
         static ExitMainLoopTimerCallback* New() {
             return new ExitMainLoopTimerCallback;
         }
-        void Execute(vtkObject*, unsigned long event_id,
+        void Execute(vtkObject*,
+                     unsigned long event_id,
                      void* call_data) override {
             if (event_id != vtkCommand::TimerEvent) return;
             int timer_id = *static_cast<int*>(call_data);
@@ -468,8 +538,10 @@ protected:
 
     using LayerMap = std::vector<Layer>;
 
-    LayerMap::iterator createLayer(const std::string& layer_id, int width,
-                                   int height, double opacity = 0.5,
+    LayerMap::iterator createLayer(const std::string& layer_id,
+                                   int width,
+                                   int height,
+                                   double opacity = 0.5,
                                    bool fill_box = true);
 
     Signal<void(const MouseEvent&)> mouse_signal_;
@@ -511,4 +583,3 @@ protected:
 // Template implementations
 // ============================================================================
 #include "CVImageViewer.hpp"
-

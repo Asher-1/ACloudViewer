@@ -28,24 +28,24 @@ class ecvMainAppInterface;
 /**
  * @class ccPickingHub
  * @brief Central hub for managing entity/point/triangle picking
- * 
+ *
  * Coordinates picking operations across the application and plugins.
  * Multiple picking listeners can register to receive picking events,
  * with support for exclusive picking modes.
- * 
+ *
  * Features:
  * - Multiple listener registration
  * - Exclusive picking mode (single listener)
  * - Automatic picking mode management per window
  * - Support for different picking modes (point, triangle, entity, etc.)
- * 
+ *
  * Picking workflow:
  * 1. Listener registers with hub via addListener()
  * 2. Hub enables picking mode in active window
  * 3. User clicks in 3D view
  * 4. Hub receives picked item and forwards to all listeners
  * 5. Listeners process the picked item
- * 
+ *
  * @see ccPickingListener
  * @see ecvDisplayTools::PICKING_MODE
  */
@@ -59,7 +59,7 @@ public:
      * @param parent Parent QObject (optional)
      */
     ccPickingHub(ecvMainAppInterface* app, QObject* parent = nullptr);
-    
+
     /**
      * @brief Destructor
      */
@@ -73,13 +73,15 @@ public:
 
     /**
      * @brief Register a picking listener
-     * 
+     *
      * Adds a listener that will receive picking events. Optionally
      * enables exclusive mode and/or automatically starts picking.
-     * 
+     *
      * @param listener Listener to register
-     * @param exclusive Prevent other listeners from registering (default: false)
-     * @param autoStartPicking Auto-enable picking in active window (default: true)
+     * @param exclusive Prevent other listeners from registering (default:
+     * false)
+     * @param autoStartPicking Auto-enable picking in active window (default:
+     * true)
      * @param mode Picking mode to use (default: point or triangle)
      * @return true if registered successfully, false if failed
      *         (e.g., incompatible mode or exclusive lock active)
@@ -92,12 +94,13 @@ public:
 
     /**
      * @brief Unregister a picking listener
-     * 
+     *
      * Removes listener from receiving picking events. Optionally
      * disables picking mode if this was the last listener.
-     * 
+     *
      * @param listener Listener to unregister
-     * @param autoStopPickingIfLast Auto-disable picking if no listeners remain (default: true)
+     * @param autoStopPickingIfLast Auto-disable picking if no listeners remain
+     * (default: true)
      */
     void removeListener(ccPickingListener* listener,
                         bool autoStopPickingIfLast = true);
@@ -116,10 +119,10 @@ public:
 
     /**
      * @brief Check if hub is locked by exclusive listener
-     * 
+     *
      * Locked means an exclusive listener is registered and
      * no other listeners can be added until it's removed.
-     * 
+     *
      * @return true if locked (exclusive mode active)
      */
     bool isLocked() const { return m_exclusive && !m_listeners.empty(); }
@@ -131,13 +134,13 @@ public slots:
      * @param window Newly active window
      */
     void onActiveWindowChanged(QMdiSubWindow* window);
-    
+
     /**
      * @brief Handle active window deletion
      * @param window Deleted window
      */
     void onActiveWindowDeleted(QObject* window);
-    
+
     /**
      * @brief Process picked item from display
      * @param entity Picked entity (or nullptr)
@@ -146,7 +149,11 @@ public slots:
      * @param y Screen Y coordinate
      * @param P 3D picked point coordinates
      */
-    void processPickedItem(ccHObject* entity, unsigned itemIdx, int x, int y, const CCVector3& P);
+    void processPickedItem(ccHObject* entity,
+                           unsigned itemIdx,
+                           int x,
+                           int y,
+                           const CCVector3& P);
 
 protected:
     std::set<ccPickingListener*> m_listeners;  ///< Registered listeners

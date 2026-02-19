@@ -137,14 +137,12 @@ void CVPointPickingCallback::Execute(vtkObject* caller,
     }
 }
 
-int CVPointPickingCallback::performSinglePick(
-        vtkRenderWindowInteractor* iren) {
+int CVPointPickingCallback::performSinglePick(vtkRenderWindowInteractor* iren) {
     vtkPointPicker* point_picker =
             vtkPointPicker::SafeDownCast(iren->GetPicker());
 
     if (!point_picker) {
-        CVLog::Error(
-                "Point picker not available, not selecting any points!");
+        CVLog::Error("Point picker not available, not selecting any points!");
         return -1;
     }
 
@@ -158,14 +156,15 @@ int CVPointPickingCallback::performSinglePick(
     return static_cast<int>(point_picker->GetPointId());
 }
 
-int CVPointPickingCallback::performSinglePick(
-        vtkRenderWindowInteractor* iren, float& x, float& y, float& z) {
+int CVPointPickingCallback::performSinglePick(vtkRenderWindowInteractor* iren,
+                                              float& x,
+                                              float& y,
+                                              float& z) {
     vtkPointPicker* point_picker =
             vtkPointPicker::SafeDownCast(iren->GetPicker());
 
     if (!point_picker) {
-        CVLog::Error(
-                "Point picker not available, not selecting any points!");
+        CVLog::Error("Point picker not available, not selecting any points!");
         return -1;
     }
 
@@ -230,22 +229,19 @@ int CVPointPickingCallback::performAreaPick(
 
         vtkSmartPointer<vtkVertexGlyphFilter> glyph_filter =
                 vtkSmartPointer<vtkVertexGlyphFilter>::New();
-        glyph_filter->SetInputConnection(
-                extract_geometry->GetOutputPort());
+        glyph_filter->SetInputConnection(extract_geometry->GetOutputPort());
         glyph_filter->Update();
 
         vtkPolyData* selected = glyph_filter->GetOutput();
         vtkIdTypeArray* global_ids = vtkIdTypeArray::SafeDownCast(
                 selected->GetPointData()->GetArray("Indices"));
 
-        if (!global_ids->GetSize() || !selected->GetNumberOfPoints())
-            continue;
+        if (!global_ids->GetSize() || !selected->GetNumberOfPoints()) continue;
 
         std::vector<int> actor_indices;
         actor_indices.reserve(selected->GetNumberOfPoints());
         for (vtkIdType i = 0; i < selected->GetNumberOfPoints(); i++)
-            actor_indices.push_back(
-                    static_cast<int>(global_ids->GetValue(i)));
+            actor_indices.push_back(static_cast<int>(global_ids->GetValue(i)));
 
         pt_numb += selected->GetNumberOfPoints();
 
@@ -303,8 +299,7 @@ void vtkCustomInteractorStyle::Initialize() {
     lut_actor_->SetWidth(0.9);
     lut_actor_->SetHeight(0.1);
     lut_actor_->SetNumberOfLabels(lut_actor_->GetNumberOfLabels() * 2);
-    vtkSmartPointer<vtkTextProperty> prop =
-            lut_actor_->GetLabelTextProperty();
+    vtkSmartPointer<vtkTextProperty> prop = lut_actor_->GetLabelTextProperty();
     prop->SetFontSize(10);
     lut_actor_->SetLabelTextProperty(prop);
     lut_actor_->SetTitleTextProperty(prop);
@@ -346,8 +341,7 @@ PclUtils::SignalConnection vtkCustomInteractorStyle::registerMouseCallback(
     return mouse_signal_.connect(std::move(cb));
 }
 
-PclUtils::SignalConnection
-vtkCustomInteractorStyle::registerKeyboardCallback(
+PclUtils::SignalConnection vtkCustomInteractorStyle::registerKeyboardCallback(
         std::function<void(const PclUtils::KeyboardEvent&)> cb) {
     return keyboard_signal_.connect(std::move(cb));
 }
@@ -376,8 +370,7 @@ void vtkCustomInteractorStyle::saveScreenshot(const std::string& file) {
     snapshot_writer_->Write();
 }
 
-bool vtkCustomInteractorStyle::saveCameraParameters(
-        const std::string& file) {
+bool vtkCustomInteractorStyle::saveCameraParameters(const std::string& file) {
     FindPokedRenderer(Interactor->GetEventPosition()[0],
                       Interactor->GetEventPosition()[1]);
 
@@ -434,8 +427,7 @@ void vtkCustomInteractorStyle::getCameraParameters(PclUtils::Camera& camera,
     }
 }
 
-bool vtkCustomInteractorStyle::loadCameraParameters(
-        const std::string& file) {
+bool vtkCustomInteractorStyle::loadCameraParameters(const std::string& file) {
     std::ifstream fs;
     std::string line;
     std::vector<std::string> camera;
@@ -542,8 +534,10 @@ bool vtkCustomInteractorStyle::getCameraParameters(
                 "size!");
         return false;
     }
-    camera_temp.window_size[0] = static_cast<int>(atof(win_size_st.at(0).c_str()));
-    camera_temp.window_size[1] = static_cast<int>(atof(win_size_st.at(1).c_str()));
+    camera_temp.window_size[0] =
+            static_cast<int>(atof(win_size_st.at(0).c_str()));
+    camera_temp.window_size[1] =
+            static_cast<int>(atof(win_size_st.at(1).c_str()));
 
     auto win_pos_st = splitString(win_pos_str, ',');
     if (win_pos_st.size() != 2) {
@@ -552,8 +546,10 @@ bool vtkCustomInteractorStyle::getCameraParameters(
                 "position!");
         return false;
     }
-    camera_temp.window_pos[0] = static_cast<int>(atof(win_pos_st.at(0).c_str()));
-    camera_temp.window_pos[1] = static_cast<int>(atof(win_pos_st.at(1).c_str()));
+    camera_temp.window_pos[0] =
+            static_cast<int>(atof(win_pos_st.at(0).c_str()));
+    camera_temp.window_pos[1] =
+            static_cast<int>(atof(win_pos_st.at(1).c_str()));
 
     setCameraParameters(camera_temp);
 
@@ -898,7 +894,7 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         case 'L': {
             // Direct VTK path: no PCL handlers to list.
             // Log a simple message instead.
-                    CVLog::Print(
+            CVLog::Print(
                     "[vtkCustomInteractorStyle] Direct VTK rendering mode: "
                     "no PCL color/geometry handlers available.");
             break;
@@ -1211,51 +1207,51 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             // Reset camera to viewpoint from cloud actors
             if (cloud_actors_ && !cloud_actors_->empty()) {
                 static PclUtils::CloudActorMap::iterator it =
-                    cloud_actors_->begin();
-            bool found_transformation = false;
+                        cloud_actors_->begin();
+                bool found_transformation = false;
                 for (unsigned idx = 0; idx < cloud_actors_->size();
                      ++idx, ++it) {
-                if (it == cloud_actors_->end()) it = cloud_actors_->begin();
+                    if (it == cloud_actors_->end()) it = cloud_actors_->begin();
 
                     const PclUtils::CloudActorEntry& actor = it->second;
-                if (actor.viewpoint_transformation_.GetPointer()) {
-                    found_transformation = true;
-                    break;
+                    if (actor.viewpoint_transformation_.GetPointer()) {
+                        found_transformation = true;
+                        break;
+                    }
                 }
-            }
 
-            if (found_transformation) {
+                if (found_transformation) {
                     const PclUtils::CloudActorEntry& actor = it->second;
-                cam->SetPosition(
-                        actor.viewpoint_transformation_->GetElement(0, 3),
-                        actor.viewpoint_transformation_->GetElement(1, 3),
-                        actor.viewpoint_transformation_->GetElement(2, 3));
+                    cam->SetPosition(
+                            actor.viewpoint_transformation_->GetElement(0, 3),
+                            actor.viewpoint_transformation_->GetElement(1, 3),
+                            actor.viewpoint_transformation_->GetElement(2, 3));
 
-                cam->SetFocalPoint(
-                        actor.viewpoint_transformation_->GetElement(0, 3) -
+                    cam->SetFocalPoint(
+                            actor.viewpoint_transformation_->GetElement(0, 3) -
                                     actor.viewpoint_transformation_->GetElement(
                                             0, 2),
-                        actor.viewpoint_transformation_->GetElement(1, 3) -
+                            actor.viewpoint_transformation_->GetElement(1, 3) -
                                     actor.viewpoint_transformation_->GetElement(
                                             1, 2),
-                        actor.viewpoint_transformation_->GetElement(2, 3) -
+                            actor.viewpoint_transformation_->GetElement(2, 3) -
                                     actor.viewpoint_transformation_->GetElement(
                                             2, 2));
 
-                cam->SetViewUp(
-                        actor.viewpoint_transformation_->GetElement(0, 1),
-                        actor.viewpoint_transformation_->GetElement(1, 1),
-                        actor.viewpoint_transformation_->GetElement(2, 1));
-            } else {
-                cam->SetPosition(0, 0, 0);
-                cam->SetFocalPoint(0, 0, 1);
-                cam->SetViewUp(0, -1, 0);
-            }
+                    cam->SetViewUp(
+                            actor.viewpoint_transformation_->GetElement(0, 1),
+                            actor.viewpoint_transformation_->GetElement(1, 1),
+                            actor.viewpoint_transformation_->GetElement(2, 1));
+                } else {
+                    cam->SetPosition(0, 0, 0);
+                    cam->SetFocalPoint(0, 0, 1);
+                    cam->SetViewUp(0, -1, 0);
+                }
 
-            if (it != cloud_actors_->end())
-                ++it;
-            else
-                it = cloud_actors_->begin();
+                if (it != cloud_actors_->end())
+                    ++it;
+                else
+                    it = cloud_actors_->begin();
             } else {
                 cam->SetPosition(0, 0, 0);
                 cam->SetFocalPoint(0, 0, 1);
@@ -1329,9 +1325,8 @@ void vtkCustomInteractorStyle::OnMouseMove() {
     int x = this->Interactor->GetEventPosition()[0];
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
-            PclUtils::MouseEvent::MouseMove,
-            PclUtils::MouseEvent::NoButton, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
+            PclUtils::MouseEvent::MouseMove, PclUtils::MouseEvent::NoButton, x,
+            y, Interactor->GetAltKey(), Interactor->GetControlKey(),
             Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
@@ -1365,17 +1360,15 @@ void vtkCustomInteractorStyle::OnLeftButtonDown() {
     if (Interactor->GetRepeatCount() == 0) {
         PclUtils::MouseEvent event(
                 PclUtils::MouseEvent::MouseButtonPress,
-                PclUtils::MouseEvent::LeftButton, x, y,
-                Interactor->GetAltKey(), Interactor->GetControlKey(),
-                Interactor->GetShiftKey(),
+                PclUtils::MouseEvent::LeftButton, x, y, Interactor->GetAltKey(),
+                Interactor->GetControlKey(), Interactor->GetShiftKey(),
                 vtkInteractorStyleRubberBandPick::CurrentMode);
         mouse_signal_(event);
     } else {
         PclUtils::MouseEvent event(
                 PclUtils::MouseEvent::MouseDblClick,
-                PclUtils::MouseEvent::LeftButton, x, y,
-                Interactor->GetAltKey(), Interactor->GetControlKey(),
-                Interactor->GetShiftKey(),
+                PclUtils::MouseEvent::LeftButton, x, y, Interactor->GetAltKey(),
+                Interactor->GetControlKey(), Interactor->GetShiftKey(),
                 vtkInteractorStyleRubberBandPick::CurrentMode);
         mouse_signal_(event);
     }
@@ -1390,9 +1383,8 @@ void vtkCustomInteractorStyle::OnLeftButtonUp() {
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
             PclUtils::MouseEvent::MouseButtonRelease,
-            PclUtils::MouseEvent::LeftButton, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
-            Interactor->GetShiftKey(),
+            PclUtils::MouseEvent::LeftButton, x, y, Interactor->GetAltKey(),
+            Interactor->GetControlKey(), Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
     this->OnButtonUp(1);
@@ -1431,9 +1423,8 @@ void vtkCustomInteractorStyle::OnMiddleButtonUp() {
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
             PclUtils::MouseEvent::MouseButtonRelease,
-            PclUtils::MouseEvent::MiddleButton, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
-            Interactor->GetShiftKey(),
+            PclUtils::MouseEvent::MiddleButton, x, y, Interactor->GetAltKey(),
+            Interactor->GetControlKey(), Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
     this->OnButtonUp(2);
@@ -1473,9 +1464,8 @@ void vtkCustomInteractorStyle::OnRightButtonUp() {
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
             PclUtils::MouseEvent::MouseButtonRelease,
-            PclUtils::MouseEvent::RightButton, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
-            Interactor->GetShiftKey(),
+            PclUtils::MouseEvent::RightButton, x, y, Interactor->GetAltKey(),
+            Interactor->GetControlKey(), Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
     this->OnButtonUp(3);
@@ -1487,9 +1477,8 @@ void vtkCustomInteractorStyle::OnMouseWheelForward() {
     int x = this->Interactor->GetEventPosition()[0];
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
-            PclUtils::MouseEvent::MouseScrollUp,
-            PclUtils::MouseEvent::VScroll, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
+            PclUtils::MouseEvent::MouseScrollUp, PclUtils::MouseEvent::VScroll,
+            x, y, Interactor->GetAltKey(), Interactor->GetControlKey(),
             Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
@@ -1519,9 +1508,8 @@ void vtkCustomInteractorStyle::OnMouseWheelBackward() {
     int y = this->Interactor->GetEventPosition()[1];
     PclUtils::MouseEvent event(
             PclUtils::MouseEvent::MouseScrollDown,
-            PclUtils::MouseEvent::VScroll, x, y,
-            Interactor->GetAltKey(), Interactor->GetControlKey(),
-            Interactor->GetShiftKey(),
+            PclUtils::MouseEvent::VScroll, x, y, Interactor->GetAltKey(),
+            Interactor->GetControlKey(), Interactor->GetShiftKey(),
             vtkInteractorStyleRubberBandPick::CurrentMode);
     mouse_signal_(event);
     if (Interactor->GetRepeatCount()) mouse_signal_(event);
@@ -1772,9 +1760,9 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
                 if (actor && actor->GetMapper() &&
                     actor->GetMapper()->GetInput() &&
                     actor->GetMapper()
-                         ->GetInput()
-                         ->GetPointData()
-                         ->GetScalars()) {
+                            ->GetInput()
+                            ->GetPointData()
+                            ->GetScalars()) {
                     lut_actor_->SetLookupTable(
                             actor->GetMapper()->GetLookupTable());
                     lut_actor_->Modified();
@@ -1787,13 +1775,13 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
             CVLog::Warning(
                     "[updateLookUpTableDisplay] Could not find any "
                     "actor with id <%s>!",
-                        lut_actor_id_.c_str());
+                    lut_actor_id_.c_str());
             if (lut_enabled_) {
-                    CurrentRenderer->RemoveActor(lut_actor_);
-                    lut_enabled_ = false;
-                }
-                return;
+                CurrentRenderer->RemoveActor(lut_actor_);
+                lut_enabled_ = false;
             }
+            return;
+        }
     } else {
         // Search all clouds
         if (cloud_actors_) {
@@ -1804,17 +1792,17 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
                     continue;
                 if (!act.actor->GetMapper()->GetInput() ||
                     !act.actor->GetMapper()
-                         ->GetInput()
-                         ->GetPointData()
-                         ->GetScalars())
-                continue;
+                             ->GetInput()
+                             ->GetPointData()
+                             ->GetScalars())
+                    continue;
 
                 vtkScalarsToColors* lut =
                         act.actor->GetMapper()->GetLookupTable();
-            lut_actor_->SetLookupTable(lut);
-            lut_actor_->Modified();
-            actor_found = true;
-            break;
+                lut_actor_->SetLookupTable(lut);
+                lut_actor_->Modified();
+                actor_found = true;
+                break;
             }
         }
 

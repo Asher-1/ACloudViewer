@@ -10,7 +10,7 @@
 /**
  * @file CVMath.h
  * @brief Mathematical utility functions for conversions and comparisons
- * 
+ *
  * Provides methods for angle conversion and floating-point comparisons.
  * Note: These are intentionally not templates - they are short methods
  * and templates would be overkill for these cases.

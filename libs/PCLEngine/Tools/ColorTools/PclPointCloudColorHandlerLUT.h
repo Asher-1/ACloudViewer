@@ -11,21 +11,21 @@
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
+#include <pcl/common/point_tests.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/common/point_tests.h>
 #include <vtkDataArray.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnsignedCharArray.h>
 
-// PclUtils color handler base (replaces pcl::visualization::PointCloudColorHandler)
-#include "base/CVVisualizerTypes.h"
-
+// PclUtils color handler base (replaces
+// pcl::visualization::PointCloudColorHandler)
 #include "PclCloudLUT.h"
+#include "base/CVVisualizerTypes.h"
 
 template <typename PointT>
 class PclPointCloudColorHandlerLUT
-        : public PclUtils::PointCloudColorHandler<PointT> {
+    : public PclUtils::PointCloudColorHandler<PointT> {
 public:
     typedef pcl::PointCloud<PointT> PointCloud;
     typedef typename PointCloud::Ptr PointCloudPtr;
@@ -55,7 +55,9 @@ public:
     inline bool isCapable() const override { return (capable_); }
 
     /** \brief Abstract getName method. */
-    std::string getName() const override { return "PclPointCloudColorHandlerLUT"; }
+    std::string getName() const override {
+        return "PclPointCloudColorHandlerLUT";
+    }
 
     /** \brief Abstract getFieldName method. */
     std::string getFieldName() const override { return ""; }

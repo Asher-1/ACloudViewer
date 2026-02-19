@@ -12,16 +12,16 @@
 /**
  * @class OFFFilter
  * @brief Object File Format (OFF) mesh I/O filter
- * 
+ *
  * Handles import/export of meshes in OFF format, a simple ASCII format
  * for representing polygon meshes. OFF format features:
  * - Vertex positions (X, Y, Z)
  * - Face definitions (vertex indices)
  * - Optional vertex colors
  * - Simple, human-readable text format
- * 
+ *
  * OFF is commonly used in computational geometry and academic research.
- * 
+ *
  * @see http://people.sc.fsu.edu/~jburkardt/data/off/off.html
  * @see FileIOFilter
  * @see ccMesh
@@ -54,7 +54,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to OFF file
      * @param entity Entity to save (mesh)

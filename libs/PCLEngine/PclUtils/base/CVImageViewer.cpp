@@ -2,7 +2,7 @@
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
@@ -12,7 +12,6 @@
 #include "base/CVImageViewer.h"
 
 #include <pcl/common/time.h>  // DO_EVERY
-
 #include <vtkCamera.h>
 #include <vtkContextActor.h>
 #include <vtkContextScene.h>
@@ -22,8 +21,8 @@
 #include <vtkImageSliceMapper.h>
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
-#include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
 #include <vtkVersion.h>
 
 // ============================================================================
@@ -42,7 +41,7 @@ void PclUtils::ImageViewerInteractorStyle::OnChar() {
 }
 
 void PclUtils::ImageViewerInteractorStyle::adjustCamera(vtkImageData* image,
-                                                     vtkRenderer* ren) {
+                                                        vtkRenderer* ren) {
     double origin[3], spacing[3];
     int extent[6];
     image->GetOrigin(origin);
@@ -146,17 +145,17 @@ PclUtils::ImageViewer::ImageViewer(const std::string& window_title)
     resetStoppedFlag();
 }
 
-PclUtils::ImageViewer::~ImageViewer() {
-    interactor_->DestroyTimer(timer_id_);
-}
+PclUtils::ImageViewer::~ImageViewer() { interactor_->DestroyTimer(timer_id_); }
 
 // ------------------------------------------------------------------
 // RGB image
 // ------------------------------------------------------------------
 void PclUtils::ImageViewer::addRGBImage(const unsigned char* rgb_data,
-                                     unsigned width, unsigned height,
-                                     const std::string& layer_id,
-                                     double opacity, bool autoresize) {
+                                        unsigned width,
+                                        unsigned height,
+                                        const std::string& layer_id,
+                                        double opacity,
+                                        bool autoresize) {
     if (autoresize &&
         (unsigned(getSize()[0]) != width || unsigned(getSize()[1]) != height))
         setSize(width, height);
@@ -167,12 +166,11 @@ void PclUtils::ImageViewer::addRGBImage(const unsigned char* rgb_data,
         am_it = createLayer(layer_id, width, height, opacity, false);
 
     void* data = const_cast<void*>(reinterpret_cast<const void*>(rgb_data));
-    vtkSmartPointer<vtkImageData> image =
-            vtkSmartPointer<vtkImageData>::New();
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
     image->SetExtent(0, width - 1, 0, height - 1, 0, 0);
     image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
-    image->GetPointData()->GetScalars()->SetVoidArray(data,
-                                                      3 * width * height, 1);
+    image->GetPointData()->GetScalars()->SetVoidArray(data, 3 * width * height,
+                                                      1);
     algo_->SetInputData(image);
     algo_->Update();
     slice_->GetMapper()->SetInputConnection(algo_->GetOutputPort());
@@ -181,9 +179,10 @@ void PclUtils::ImageViewer::addRGBImage(const unsigned char* rgb_data,
 }
 
 void PclUtils::ImageViewer::showRGBImage(const unsigned char* rgb_data,
-                                      unsigned width, unsigned height,
-                                      const std::string& layer_id,
-                                      double opacity) {
+                                         unsigned width,
+                                         unsigned height,
+                                         const std::string& layer_id,
+                                         double opacity) {
     addRGBImage(rgb_data, width, height, layer_id, opacity);
     render();
 }
@@ -192,9 +191,10 @@ void PclUtils::ImageViewer::showRGBImage(const unsigned char* rgb_data,
 // Mono image
 // ------------------------------------------------------------------
 void PclUtils::ImageViewer::addMonoImage(const unsigned char* data,
-                                      unsigned width, unsigned height,
-                                      const std::string& layer_id,
-                                      double opacity) {
+                                         unsigned width,
+                                         unsigned height,
+                                         const std::string& layer_id,
+                                         double opacity) {
     if (unsigned(getSize()[0]) != width || unsigned(getSize()[1]) != height)
         setSize(width, height);
 
@@ -204,8 +204,7 @@ void PclUtils::ImageViewer::addMonoImage(const unsigned char* data,
         am_it = createLayer(layer_id, width, height, opacity, false);
 
     void* d = const_cast<void*>(reinterpret_cast<const void*>(data));
-    vtkSmartPointer<vtkImageData> image =
-            vtkSmartPointer<vtkImageData>::New();
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
     image->SetExtent(0, width - 1, 0, height - 1, 0, 0);
     image->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
     image->GetPointData()->GetScalars()->SetVoidArray(d, width * height, 1);
@@ -218,16 +217,18 @@ void PclUtils::ImageViewer::addMonoImage(const unsigned char* data,
 }
 
 void PclUtils::ImageViewer::showMonoImage(const unsigned char* data,
-                                       unsigned width, unsigned height,
-                                       const std::string& layer_id,
-                                       double opacity) {
+                                          unsigned width,
+                                          unsigned height,
+                                          const std::string& layer_id,
+                                          double opacity) {
     addMonoImage(data, width, height, layer_id, opacity);
     render();
 }
 
 void PclUtils::ImageViewer::addMonoImage(
         const pcl::PointCloud<pcl::Intensity>& cloud,
-        const std::string& layer_id, double opacity) {
+        const std::string& layer_id,
+        double opacity) {
     if (data_size_ < cloud.width * cloud.height) {
         data_size_ = cloud.width * cloud.height * 3;
         data_.resize(data_size_);
@@ -239,14 +240,16 @@ void PclUtils::ImageViewer::addMonoImage(
 
 void PclUtils::ImageViewer::showMonoImage(
         const pcl::PointCloud<pcl::Intensity>& cloud,
-        const std::string& layer_id, double opacity) {
+        const std::string& layer_id,
+        double opacity) {
     addMonoImage(cloud, layer_id, opacity);
     render();
 }
 
 void PclUtils::ImageViewer::addMonoImage(
         const pcl::PointCloud<pcl::Intensity8u>& cloud,
-        const std::string& layer_id, double opacity) {
+        const std::string& layer_id,
+        double opacity) {
     if (data_size_ < cloud.width * cloud.height) {
         data_size_ = cloud.width * cloud.height * 3;
         data_.resize(data_size_);
@@ -258,7 +261,8 @@ void PclUtils::ImageViewer::addMonoImage(
 
 void PclUtils::ImageViewer::showMonoImage(
         const pcl::PointCloud<pcl::Intensity8u>& cloud,
-        const std::string& layer_id, double opacity) {
+        const std::string& layer_id,
+        double opacity) {
     addMonoImage(cloud, layer_id, opacity);
     render();
 }
@@ -267,11 +271,13 @@ void PclUtils::ImageViewer::showMonoImage(
 // Float / short / angle images
 // ------------------------------------------------------------------
 void PclUtils::ImageViewer::addFloatImage(const float* float_image,
-                                       unsigned int width, unsigned int height,
-                                       float min_value, float max_value,
-                                       bool grayscale,
-                                       const std::string& layer_id,
-                                       double opacity) {
+                                          unsigned int width,
+                                          unsigned int height,
+                                          float min_value,
+                                          float max_value,
+                                          bool grayscale,
+                                          const std::string& layer_id,
+                                          double opacity) {
     unsigned char* rgb = FloatImageUtils::getVisualImage(
             float_image, width, height, min_value, max_value, grayscale);
     addRGBImage(rgb, width, height, layer_id, opacity);
@@ -279,20 +285,23 @@ void PclUtils::ImageViewer::addFloatImage(const float* float_image,
 }
 
 void PclUtils::ImageViewer::showFloatImage(const float* float_image,
-                                        unsigned int width,
-                                        unsigned int height, float min_value,
-                                        float max_value, bool grayscale,
-                                        const std::string& layer_id,
-                                        double opacity) {
+                                           unsigned int width,
+                                           unsigned int height,
+                                           float min_value,
+                                           float max_value,
+                                           bool grayscale,
+                                           const std::string& layer_id,
+                                           double opacity) {
     addFloatImage(float_image, width, height, min_value, max_value, grayscale,
                   layer_id, opacity);
     render();
 }
 
 void PclUtils::ImageViewer::addAngleImage(const float* angle_image,
-                                       unsigned int width, unsigned int height,
-                                       const std::string& layer_id,
-                                       double opacity) {
+                                          unsigned int width,
+                                          unsigned int height,
+                                          const std::string& layer_id,
+                                          double opacity) {
     unsigned char* rgb =
             FloatImageUtils::getVisualAngleImage(angle_image, width, height);
     addRGBImage(rgb, width, height, layer_id, opacity);
@@ -300,19 +309,19 @@ void PclUtils::ImageViewer::addAngleImage(const float* angle_image,
 }
 
 void PclUtils::ImageViewer::showAngleImage(const float* angle_image,
-                                        unsigned int width,
-                                        unsigned int height,
-                                        const std::string& layer_id,
-                                        double opacity) {
+                                           unsigned int width,
+                                           unsigned int height,
+                                           const std::string& layer_id,
+                                           double opacity) {
     addAngleImage(angle_image, width, height, layer_id, opacity);
     render();
 }
 
 void PclUtils::ImageViewer::addHalfAngleImage(const float* angle_image,
-                                           unsigned int width,
-                                           unsigned int height,
-                                           const std::string& layer_id,
-                                           double opacity) {
+                                              unsigned int width,
+                                              unsigned int height,
+                                              const std::string& layer_id,
+                                              double opacity) {
     unsigned char* rgb = FloatImageUtils::getVisualHalfAngleImage(
             angle_image, width, height);
     addRGBImage(rgb, width, height, layer_id, opacity);
@@ -320,21 +329,22 @@ void PclUtils::ImageViewer::addHalfAngleImage(const float* angle_image,
 }
 
 void PclUtils::ImageViewer::showHalfAngleImage(const float* angle_image,
-                                            unsigned int width,
-                                            unsigned int height,
-                                            const std::string& layer_id,
-                                            double opacity) {
+                                               unsigned int width,
+                                               unsigned int height,
+                                               const std::string& layer_id,
+                                               double opacity) {
     addHalfAngleImage(angle_image, width, height, layer_id, opacity);
     render();
 }
 
 void PclUtils::ImageViewer::addShortImage(const unsigned short* short_image,
-                                       unsigned int width, unsigned int height,
-                                       unsigned short min_value,
-                                       unsigned short max_value,
-                                       bool grayscale,
-                                       const std::string& layer_id,
-                                       double opacity) {
+                                          unsigned int width,
+                                          unsigned int height,
+                                          unsigned short min_value,
+                                          unsigned short max_value,
+                                          bool grayscale,
+                                          const std::string& layer_id,
+                                          double opacity) {
     unsigned char* rgb = FloatImageUtils::getVisualImage(
             short_image, width, height, min_value, max_value, grayscale);
     addRGBImage(rgb, width, height, layer_id, opacity);
@@ -342,13 +352,13 @@ void PclUtils::ImageViewer::addShortImage(const unsigned short* short_image,
 }
 
 void PclUtils::ImageViewer::showShortImage(const unsigned short* short_image,
-                                        unsigned int width,
-                                        unsigned int height,
-                                        unsigned short min_value,
-                                        unsigned short max_value,
-                                        bool grayscale,
-                                        const std::string& layer_id,
-                                        double opacity) {
+                                           unsigned int width,
+                                           unsigned int height,
+                                           unsigned short min_value,
+                                           unsigned short max_value,
+                                           bool grayscale,
+                                           const std::string& layer_id,
+                                           double opacity) {
     addShortImage(short_image, width, height, min_value, max_value, grayscale,
                   layer_id, opacity);
     render();
@@ -483,14 +493,18 @@ void PclUtils::ImageViewer::emitKeyboardEvent(unsigned long event_id) {
     keyboard_signal_(event);
 }
 
-void PclUtils::ImageViewer::MouseCallback(vtkObject*, unsigned long eid,
-                                       void* clientdata, void*) {
+void PclUtils::ImageViewer::MouseCallback(vtkObject*,
+                                          unsigned long eid,
+                                          void* clientdata,
+                                          void*) {
     ImageViewer* window = reinterpret_cast<ImageViewer*>(clientdata);
     window->emitMouseEvent(eid);
 }
 
-void PclUtils::ImageViewer::KeyboardCallback(vtkObject*, unsigned long eid,
-                                          void* clientdata, void*) {
+void PclUtils::ImageViewer::KeyboardCallback(vtkObject*,
+                                             unsigned long eid,
+                                             void* clientdata,
+                                             void*) {
     ImageViewer* window = reinterpret_cast<ImageViewer*>(clientdata);
     window->emitKeyboardEvent(eid);
 }
@@ -499,7 +513,10 @@ void PclUtils::ImageViewer::KeyboardCallback(vtkObject*, unsigned long eid,
 // Layer management
 // ------------------------------------------------------------------
 PclUtils::ImageViewer::LayerMap::iterator PclUtils::ImageViewer::createLayer(
-        const std::string& layer_id, int width, int height, double opacity,
+        const std::string& layer_id,
+        int width,
+        int height,
+        double opacity,
         bool fill_box) {
     Layer l;
     l.layer_name = layer_id;
@@ -511,8 +528,7 @@ PclUtils::ImageViewer::LayerMap::iterator PclUtils::ImageViewer::createLayer(
                 vtkSmartPointer<context_items::FilledRectangle>::New();
         rect->setColors(0, 0, 0);
         rect->setOpacity(opacity);
-        rect->set(0, 0, static_cast<float>(width),
-                  static_cast<float>(height));
+        rect->set(0, 0, static_cast<float>(width), static_cast<float>(height));
         l.actor->GetScene()->AddItem(rect);
     }
     ren_->AddActor(l.actor);
@@ -520,8 +536,10 @@ PclUtils::ImageViewer::LayerMap::iterator PclUtils::ImageViewer::createLayer(
     return layer_map_.end() - 1;
 }
 
-bool PclUtils::ImageViewer::addLayer(const std::string& layer_id, int width,
-                                  int height, double opacity) {
+bool PclUtils::ImageViewer::addLayer(const std::string& layer_id,
+                                     int width,
+                                     int height,
+                                     double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it != layer_map_.end()) return false;
@@ -540,10 +558,14 @@ void PclUtils::ImageViewer::removeLayer(const std::string& layer_id) {
 // ------------------------------------------------------------------
 // 2D primitives
 // ------------------------------------------------------------------
-bool PclUtils::ImageViewer::addCircle(unsigned int x, unsigned int y,
-                                   double radius, double r, double g,
-                                   double b, const std::string& layer_id,
-                                   double opacity) {
+bool PclUtils::ImageViewer::addCircle(unsigned int x,
+                                      unsigned int y,
+                                      double radius,
+                                      double r,
+                                      double g,
+                                      double b,
+                                      const std::string& layer_id,
+                                      double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -562,17 +584,23 @@ bool PclUtils::ImageViewer::addCircle(unsigned int x, unsigned int y,
     return true;
 }
 
-bool PclUtils::ImageViewer::addCircle(unsigned int x, unsigned int y,
-                                   double radius,
-                                   const std::string& layer_id,
-                                   double opacity) {
+bool PclUtils::ImageViewer::addCircle(unsigned int x,
+                                      unsigned int y,
+                                      double radius,
+                                      const std::string& layer_id,
+                                      double opacity) {
     return addCircle(x, y, radius, 0.0, 1.0, 0.0, layer_id, opacity);
 }
 
-bool PclUtils::ImageViewer::addFilledRectangle(
-        unsigned int x_min, unsigned int x_max, unsigned int y_min,
-        unsigned int y_max, double r, double g, double b,
-        const std::string& layer_id, double opacity) {
+bool PclUtils::ImageViewer::addFilledRectangle(unsigned int x_min,
+                                               unsigned int x_max,
+                                               unsigned int y_min,
+                                               unsigned int y_max,
+                                               double r,
+                                               double g,
+                                               double b,
+                                               const std::string& layer_id,
+                                               double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -593,20 +621,24 @@ bool PclUtils::ImageViewer::addFilledRectangle(
 }
 
 bool PclUtils::ImageViewer::addFilledRectangle(unsigned int x_min,
-                                            unsigned int x_max,
-                                            unsigned int y_min,
-                                            unsigned int y_max,
-                                            const std::string& layer_id,
-                                            double opacity) {
+                                               unsigned int x_max,
+                                               unsigned int y_min,
+                                               unsigned int y_max,
+                                               const std::string& layer_id,
+                                               double opacity) {
     return addFilledRectangle(x_min, x_max, y_min, y_max, 0.0, 1.0, 0.0,
                               layer_id, opacity);
 }
 
-bool PclUtils::ImageViewer::addRectangle(unsigned int x_min, unsigned int x_max,
-                                      unsigned int y_min, unsigned int y_max,
-                                      double r, double g, double b,
-                                      const std::string& layer_id,
-                                      double opacity) {
+bool PclUtils::ImageViewer::addRectangle(unsigned int x_min,
+                                         unsigned int x_max,
+                                         unsigned int y_min,
+                                         unsigned int y_max,
+                                         double r,
+                                         double g,
+                                         double b,
+                                         const std::string& layer_id,
+                                         double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -625,19 +657,23 @@ bool PclUtils::ImageViewer::addRectangle(unsigned int x_min, unsigned int x_max,
     return true;
 }
 
-bool PclUtils::ImageViewer::addRectangle(unsigned int x_min, unsigned int x_max,
-                                      unsigned int y_min, unsigned int y_max,
-                                      const std::string& layer_id,
-                                      double opacity) {
+bool PclUtils::ImageViewer::addRectangle(unsigned int x_min,
+                                         unsigned int x_max,
+                                         unsigned int y_min,
+                                         unsigned int y_max,
+                                         const std::string& layer_id,
+                                         double opacity) {
     return addRectangle(x_min, x_max, y_min, y_max, 0.0, 1.0, 0.0, layer_id,
                         opacity);
 }
 
 bool PclUtils::ImageViewer::addRectangle(const pcl::PointXY& min_pt,
-                                      const pcl::PointXY& max_pt, double r,
-                                      double g, double b,
-                                      const std::string& layer_id,
-                                      double opacity) {
+                                         const pcl::PointXY& max_pt,
+                                         double r,
+                                         double g,
+                                         double b,
+                                         const std::string& layer_id,
+                                         double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -656,17 +692,21 @@ bool PclUtils::ImageViewer::addRectangle(const pcl::PointXY& min_pt,
 }
 
 bool PclUtils::ImageViewer::addRectangle(const pcl::PointXY& min_pt,
-                                      const pcl::PointXY& max_pt,
-                                      const std::string& layer_id,
-                                      double opacity) {
+                                         const pcl::PointXY& max_pt,
+                                         const std::string& layer_id,
+                                         double opacity) {
     return addRectangle(min_pt, max_pt, 0.0, 1.0, 0.0, layer_id, opacity);
 }
 
-bool PclUtils::ImageViewer::addLine(unsigned int x_min, unsigned int y_min,
-                                 unsigned int x_max, unsigned int y_max,
-                                 double r, double g, double b,
-                                 const std::string& layer_id,
-                                 double opacity) {
+bool PclUtils::ImageViewer::addLine(unsigned int x_min,
+                                    unsigned int y_min,
+                                    unsigned int x_max,
+                                    unsigned int y_max,
+                                    double r,
+                                    double g,
+                                    double b,
+                                    const std::string& layer_id,
+                                    double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -685,19 +725,24 @@ bool PclUtils::ImageViewer::addLine(unsigned int x_min, unsigned int y_min,
     return true;
 }
 
-bool PclUtils::ImageViewer::addLine(unsigned int x_min, unsigned int y_min,
-                                 unsigned int x_max, unsigned int y_max,
-                                 const std::string& layer_id,
-                                 double opacity) {
+bool PclUtils::ImageViewer::addLine(unsigned int x_min,
+                                    unsigned int y_min,
+                                    unsigned int x_max,
+                                    unsigned int y_max,
+                                    const std::string& layer_id,
+                                    double opacity) {
     return addLine(x_min, y_min, x_max, y_max, 0.0, 1.0, 0.0, layer_id,
                    opacity);
 }
 
-bool PclUtils::ImageViewer::addText(unsigned int x, unsigned int y,
-                                 const std::string& text_string, double r,
-                                 double g, double b,
-                                 const std::string& layer_id,
-                                 double opacity) {
+bool PclUtils::ImageViewer::addText(unsigned int x,
+                                    unsigned int y,
+                                    const std::string& text_string,
+                                    double r,
+                                    double g,
+                                    double b,
+                                    const std::string& layer_id,
+                                    double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -715,21 +760,24 @@ bool PclUtils::ImageViewer::addText(unsigned int x, unsigned int y,
     return true;
 }
 
-bool PclUtils::ImageViewer::addText(unsigned int x, unsigned int y,
-                                 const std::string& text,
-                                 const std::string& layer_id,
-                                 double opacity) {
+bool PclUtils::ImageViewer::addText(unsigned int x,
+                                    unsigned int y,
+                                    const std::string& text,
+                                    const std::string& layer_id,
+                                    double opacity) {
     return addText(x, y, text, 0.0, 1.0, 0.0, layer_id, opacity);
 }
 
 // ------------------------------------------------------------------
 // Mark points
 // ------------------------------------------------------------------
-void PclUtils::ImageViewer::markPoint(std::size_t u, std::size_t v,
-                                   Vector3ub fg_color, Vector3ub bg_color,
-                                   double radius,
-                                   const std::string& layer_id,
-                                   double opacity) {
+void PclUtils::ImageViewer::markPoint(std::size_t u,
+                                      std::size_t v,
+                                      Vector3ub fg_color,
+                                      Vector3ub bg_color,
+                                      double radius,
+                                      const std::string& layer_id,
+                                      double opacity) {
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end())
@@ -755,10 +803,11 @@ void PclUtils::ImageViewer::markPoint(std::size_t u, std::size_t v,
 }
 
 void PclUtils::ImageViewer::markPoints(const std::vector<int>& uv,
-                                    Vector3ub fg_color, Vector3ub bg_color,
-                                    double size,
-                                    const std::string& layer_id,
-                                    double opacity) {
+                                       Vector3ub fg_color,
+                                       Vector3ub bg_color,
+                                       double size,
+                                       const std::string& layer_id,
+                                       double opacity) {
     if (uv.empty()) return;
     std::vector<float> float_uv(uv.size());
     for (std::size_t i = 0; i < uv.size(); ++i)
@@ -767,10 +816,11 @@ void PclUtils::ImageViewer::markPoints(const std::vector<int>& uv,
 }
 
 void PclUtils::ImageViewer::markPoints(const std::vector<float>& uv,
-                                    Vector3ub fg_color, Vector3ub bg_color,
-                                    double size,
-                                    const std::string& layer_id,
-                                    double opacity) {
+                                       Vector3ub fg_color,
+                                       Vector3ub bg_color,
+                                       double size,
+                                       const std::string& layer_id,
+                                       double opacity) {
     if (uv.empty()) return;
 
     LayerMap::iterator am_it = std::find_if(
@@ -828,4 +878,3 @@ void PclUtils::ImageViewer::convertIntensityCloud8uToUChar(
     for (const auto& point : cloud.points)
         data[j++] = static_cast<unsigned char>(point.intensity);
 }
-

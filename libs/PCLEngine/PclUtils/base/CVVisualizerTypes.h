@@ -39,7 +39,7 @@ class vtkProp;
 /**
  * @namespace PclUtils
  * @brief Utilities and types for PCL-based visualization
- * 
+ *
  * This namespace contains custom types and utilities that replace or extend
  * PCL visualization components, providing a more flexible and maintainable
  * interface for 3D visualization in CloudViewer.
@@ -57,10 +57,10 @@ class Signal;
 
 /**
  * @brief Represents a connection to a Signal
- * 
+ *
  * Manages the lifetime of a callback connection to a Signal.
  * Can be used to disconnect the callback when no longer needed.
- * 
+ *
  * @see Signal
  */
 class SignalConnection {
@@ -72,7 +72,7 @@ public:
 
     /**
      * @brief Disconnect this slot from its signal
-     * 
+     *
      * After calling this, the callback will no longer be invoked.
      * Safe to call multiple times.
      */
@@ -100,11 +100,11 @@ private:
 
 /**
  * @brief Lightweight multicast signal (replaces boost::signals2::signal)
- * 
+ *
  * Thread-safe signal/slot mechanism for event handling.
  * Multiple callbacks can be connected to a single signal, and all will
  * be invoked when the signal is triggered.
- * 
+ *
  * Usage example:
  * @code
  *   Signal<void(const MouseEvent&)> mouse_signal;
@@ -114,7 +114,7 @@ private:
  *   mouse_signal(event);  // fires all connected slots
  *   conn.disconnect();    // removes the slot
  * @endcode
- * 
+ *
  * @tparam Args... Callback function signature
  */
 template <typename... Args>
@@ -141,12 +141,11 @@ public:
         auto disconnect_handle =
                 std::make_shared<std::function<void()>>([this, slot_id]() {
                     std::lock_guard<std::mutex> lock2(mutex_);
-                    slots_.erase(
-                            std::remove_if(slots_.begin(), slots_.end(),
-                                           [slot_id](const Slot& s) {
-                                               return s.id == slot_id;
-                                           }),
-                            slots_.end());
+                    slots_.erase(std::remove_if(slots_.begin(), slots_.end(),
+                                                [slot_id](const Slot& s) {
+                                                    return s.id == slot_id;
+                                                }),
+                                 slots_.end());
                 });
         slots_.push_back({slot_id, std::move(fn), disconnect_handle});
         return SignalConnection(disconnect_handle);
@@ -215,8 +214,7 @@ struct CloudActorEntry {
 using CloudActorMap = std::unordered_map<std::string, CloudActorEntry>;
 using CloudActorMapPtr = std::shared_ptr<CloudActorMap>;
 
-using ShapeActorMap =
-        std::unordered_map<std::string, vtkSmartPointer<vtkProp>>;
+using ShapeActorMap = std::unordered_map<std::string, vtkSmartPointer<vtkProp>>;
 using ShapeActorMapPtr = std::shared_ptr<ShapeActorMap>;
 
 using CoordinateActorMap =
@@ -276,10 +274,10 @@ struct Camera {
      *  \param[out] proj the projection matrix (column-major Eigen 4x4)
      */
     void computeProjectionMatrix(Eigen::Matrix4d& proj) const {
-        double aspect = (window_size[1] != 0)
-                                ? static_cast<double>(window_size[0]) /
-                                          window_size[1]
-                                : 1.0;
+        double aspect =
+                (window_size[1] != 0)
+                        ? static_cast<double>(window_size[0]) / window_size[1]
+                        : 1.0;
         double nearVal = clip[0];
         double farVal = clip[1];
         double f = 1.0 / std::tan(fovy / 2.0);
@@ -433,13 +431,9 @@ private:
 // ============================================================================
 class PointPickingEvent {
 public:
-    PointPickingEvent(int idx)
-        : PointPickingEvent(idx, -1, -1, -1) {}
-    PointPickingEvent(int idx,
-                      float x,
-                      float y,
-                      float z,
-                      const std::string& name = "")
+    PointPickingEvent(int idx) : PointPickingEvent(idx, -1, -1, -1) {}
+    PointPickingEvent(
+            int idx, float x, float y, float z, const std::string& name = "")
         : idx_(idx),
           idx2_(-1),
           x_(x),
@@ -606,7 +600,9 @@ public:
         capable_ = true;
     }
 
-    std::string getName() const override { return "PointCloudColorHandlerCustom"; }
+    std::string getName() const override {
+        return "PointCloudColorHandlerCustom";
+    }
     std::string getFieldName() const override { return ""; }
 
     vtkSmartPointer<vtkDataArray> getColor() const override {
@@ -615,8 +611,7 @@ public:
         auto scalars = vtkSmartPointer<vtkUnsignedCharArray>::New();
         scalars->SetNumberOfComponents(3);
         scalars->SetName("Colors");
-        const vtkIdType npts =
-                static_cast<vtkIdType>(cloud_->size());
+        const vtkIdType npts = static_cast<vtkIdType>(cloud_->size());
         scalars->SetNumberOfTuples(npts);
         unsigned char* colors = scalars->GetPointer(0);
         for (vtkIdType i = 0; i < npts; ++i) {
@@ -678,8 +673,7 @@ public:
         if (!cloud_ || cloud_->empty()) return;
         points = vtkSmartPointer<vtkPoints>::New();
         points->SetDataTypeToFloat();
-        points->SetNumberOfPoints(
-                static_cast<vtkIdType>(cloud_->size()));
+        points->SetNumberOfPoints(static_cast<vtkIdType>(cloud_->size()));
         for (std::size_t i = 0; i < cloud_->size(); ++i) {
             const auto& p = (*cloud_)[i];
             points->SetPoint(static_cast<vtkIdType>(i), p.x, p.y, p.z);
@@ -691,4 +685,3 @@ private:
 };
 
 }  // namespace PclUtils
-

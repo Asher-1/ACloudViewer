@@ -8,7 +8,7 @@
 /**
  * @file PCLCloud.h
  * @brief Common PCL type definitions for CloudViewer
- * 
+ *
  * Provides convenient type aliases for frequently used PCL point cloud types,
  * reducing verbosity and improving code readability throughout the codebase.
  */

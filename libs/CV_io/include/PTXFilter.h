@@ -12,7 +12,7 @@
 /**
  * @class PTXFilter
  * @brief PTX (Leica Cyclone) point cloud I/O filter
- * 
+ *
  * Handles import of point clouds in PTX format, which is the native
  * ASCII format for Leica Cyclone laser scanner data. PTX files contain:
  * - Registered scan data with transformation matrices
@@ -20,9 +20,9 @@
  * - Intensity values
  * - RGB color (optional)
  * - Scanner position and orientation
- * 
+ *
  * PTX format is commonly used for terrestrial laser scanning (TLS) data.
- * 
+ *
  * @note This filter currently supports loading only (no export)
  * @see FileIOFilter
  * @see ccPointCloud

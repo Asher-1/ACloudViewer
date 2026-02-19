@@ -34,27 +34,27 @@ class NormalizedProgress;
 /**
  * @class DgmOctree
  * @brief Octree structure for spatial indexing
- * 
+ *
  * Implements a hierarchical octree structure for efficient spatial queries
  * on 3D point clouds. Based on the octree structure developed during
  * Daniel Girardeau-Montaut's PhD thesis (Chapter 4).
- * 
+ *
  * The octree subdivides 3D space recursively, with each level doubling
  * the resolution. Supports up to MAX_OCTREE_LEVEL levels of subdivision.
- * 
+ *
  * Key features:
  * - Efficient nearest neighbor search
  * - Radius search
  * - Frustum culling
  * - Multi-threaded operations
- * 
+ *
  * @see GenericOctree
  */
 class CV_CORE_LIB_API DgmOctree : public GenericOctree {
 public:
     /**
      * @brief Get binary shift for a subdivision level
-     * 
+     *
      * Returns the bit shift used to truncate a full cell code to obtain
      * the cell code at a specific subdivision level.
      * @param level Subdivision level
@@ -64,7 +64,7 @@ public:
 
     /**
      * @brief Get octree length at a subdivision level
-     * 
+     *
      * Returns the number of cells along one axis at the specified level.
      * @param level Subdivision level
      * @return Octree length (2^level)
@@ -77,7 +77,7 @@ public:
 
     /**
      * @brief Maximum octree subdivision level
-     * 
+     *
      * Number of bits used to encode cell position: 3 * MAX_OCTREE_LEVEL.
      * Value depends on 32-bit vs 64-bit architecture.
      * @warning Never pass as reference (constant initializer)
@@ -90,19 +90,20 @@ public:
 
     /**
      * @brief Type for octree cell codes
-     * 
+     *
      * Requires 3 bits per level for encoding cell position.
      * @warning Never pass as reference (constant initializer)
      */
 #ifdef OCTREE_CODES_64_BITS
-    using CellCode = unsigned long long;  ///< 64-bit codes (max 21 levels, uses more memory)
+    using CellCode = unsigned long long;  ///< 64-bit codes (max 21 levels, uses
+                                          ///< more memory)
 #else
-    using CellCode = unsigned;            ///< 32-bit codes (max 10 levels)
+    using CellCode = unsigned;  ///< 32-bit codes (max 10 levels)
 #endif
 
     /**
      * @brief Maximum octree length at deepest level
-     * 
+     *
      * Number of cells along one axis at maximum subdivision.
      * @warning Never pass as reference (constant initializer)
      */
@@ -127,7 +128,7 @@ public:
     /**
      * @struct PointDescriptor
      * @brief Point descriptor for nearest neighbor search
-     * 
+     *
      * Associates a point with its index and squared distance to query point.
      * Includes comparison operator for efficient sorting.
      */
@@ -178,12 +179,12 @@ public:
     /**
      * @struct CellDescriptor
      * @brief Cell descriptor for neighbor search
-     * 
+     *
      * Associates a cell center with its first point index in the neighbors set.
      */
     struct CellDescriptor {
-        CCVector3 center;   ///< Cell center coordinates
-        unsigned index;     ///< First point index in NeighboursSet
+        CCVector3 center;  ///< Cell center coordinates
+        unsigned index;    ///< First point index in NeighboursSet
 
         /**
          * @brief Default constructor

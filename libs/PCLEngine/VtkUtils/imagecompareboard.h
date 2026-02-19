@@ -9,8 +9,8 @@
 
 #include <QWidget>
 
-#include "qPCL.h"
 #include "imagecompareboard.h"
+#include "qPCL.h"
 
 namespace Widgets {
 

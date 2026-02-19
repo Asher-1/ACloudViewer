@@ -29,7 +29,7 @@
 
 /**
  * @brief 2D Vector template class
- * 
+ *
  * A lightweight 2D vector class with basic vector operations.
  * @tparam Type The numeric type of vector components (e.g., float, double)
  */
@@ -40,7 +40,7 @@ public:
         struct {
             Type x, y;  ///< Vector components
         };
-        Type u[2];      ///< Array access to components
+        Type u[2];  ///< Array access to components
     };
 
     /**
@@ -48,7 +48,7 @@ public:
      * @return Number of dimensions (2)
      */
     inline std::size_t rows() const { return dimensions(); }
-    
+
     /**
      * @brief Get number of dimensions
      * @return Number of dimensions (2)
@@ -60,7 +60,7 @@ public:
      * @return Pointer to raw data array
      */
     inline Type* data() { return u; }
-    
+
     /**
      * @brief Get const raw data pointer
      * @return Const pointer to raw data array
@@ -69,7 +69,7 @@ public:
 
     /**
      * @brief Default constructor
-     * 
+     *
      * Initializes vector to (s, s).
      * @param s Default initialization value for both coordinates (default: 0)
      */
@@ -77,7 +77,7 @@ public:
 
     /**
      * @brief Constructor from coordinates
-     * 
+     *
      * Initializes vector to (_x, _y).
      * @param _x X coordinate
      * @param _y Y coordinate
@@ -89,13 +89,13 @@ public:
      * @return Squared Euclidean norm
      */
     inline Type norm2() const { return (x * x) + (y * y); }
-    
+
     /**
      * @brief Compute norm
      * @return Euclidean norm
      */
     inline Type norm() const { return std::sqrt(norm2()); }
-    
+
     /**
      * @brief Normalize vector to unit length
      */
@@ -110,12 +110,12 @@ public:
      * @return Dot product
      */
     inline Type dot(const Vector2Tpl& v) const { return (x * v.x) + (y * v.y); }
-    
+
     /**
      * @brief Compute 2D cross product
      * @param v Other vector
-     * @return Positive value for counter-clockwise turn, negative for clockwise,
-     *         zero if parallel
+     * @return Positive value for counter-clockwise turn, negative for
+     * clockwise, zero if parallel
      */
     inline Type cross(const Vector2Tpl& v) const { return x * v.y - y * v.x; }
 
@@ -173,7 +173,7 @@ public:
 
 /**
  * @brief 3D Tuple template class
- * 
+ *
  * A lightweight 3D tuple/vector class with basic arithmetic operations.
  * @tparam Type The numeric type of tuple components (e.g., float, double)
  */
@@ -185,7 +185,7 @@ public:
         struct {
             Type x, y, z;  ///< Tuple components
         };
-        Type u[3];         ///< Array access to components
+        Type u[3];  ///< Array access to components
     };
 
     /**
@@ -193,7 +193,7 @@ public:
      * @return Number of dimensions (3)
      */
     inline std::size_t rows() const { return dimensions(); }
-    
+
     /**
      * @brief Get number of dimensions
      * @return Number of dimensions (3)
@@ -205,7 +205,7 @@ public:
      * @return Pointer to raw data array
      */
     inline Type* data() { return u; }
-    
+
     /**
      * @brief Get const raw data pointer
      * @return Const pointer to raw data array
@@ -214,14 +214,14 @@ public:
 
     /**
      * @brief Default constructor
-     * 
+     *
      * Initializes tuple to (0, 0, 0).
      */
     inline Tuple3Tpl() : x(0), y(0), z(0) {}
 
     /**
      * @brief Constructor from triplet of values
-     * 
+     *
      * Initializes tuple to (a, b, c).
      * @param a X component
      * @param b Y component

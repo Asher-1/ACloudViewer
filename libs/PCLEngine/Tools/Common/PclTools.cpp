@@ -53,7 +53,8 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
-// vtkVertexBufferObjectMapper removed - not needed with modern VTK OpenGL2 backend
+// vtkVertexBufferObjectMapper removed - not needed with modern VTK OpenGL2
+// backend
 
 #include <VTKExtensions/Utility/vtkDiscretizableColorTransferFunctionCustom.h>
 #include <VTKExtensions/Views/vtkContext2DScalarBarActor.h>
@@ -592,13 +593,14 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     axes->SetXAxisLabelText(xLabel.c_str());
     axes->SetYAxisLabelText(yLabel.c_str());
     axes->SetZAxisLabelText(zLabel.c_str());
-    
+
     // Professional 3D system style - enhanced visibility
-    // Note: For default arrow type, use NormalizedShaftLength and NormalizedTipLength
+    // Note: For default arrow type, use NormalizedShaftLength and
+    // NormalizedTipLength
     axes->SetNormalizedShaftLength(0.85, 0.85, 0.85);  // 85% shaft, 15% tip
-    axes->SetNormalizedTipLength(0.15, 0.15, 0.15);     // Arrow tip length
+    axes->SetNormalizedTipLength(0.15, 0.15, 0.15);    // Arrow tip length
     axes->SetShaftTypeToLine();  // Use line shaft with arrow tips
-    
+
     // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
     axes->GetXAxisShaftProperty()->SetColor(1.0, 0.0, 0.0);
@@ -606,7 +608,7 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     axes->GetYAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
     axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
     axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 1.0);
-    
+
     axes->SetTotalLength(axesLength, axesLength, axesLength);
 
     vtkSmartPointer<vtkAnnotatedCubeActor> cube =
@@ -621,11 +623,13 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     cube->SetYFaceTextRotation(180);
     cube->SetZFaceTextRotation(-90);
     cube->SetFaceTextScale(0.50);  // Smaller text to fit within cube faces
-    cube->GetCubeProperty()->SetColor(0.8, 0.8, 0.8);  // Neutral gray for cube body
+    cube->GetCubeProperty()->SetColor(0.8, 0.8,
+                                      0.8);  // Neutral gray for cube body
     cube->GetTextEdgesProperty()->SetLineWidth(1);  // Standard text edges
     cube->GetTextEdgesProperty()->SetDiffuse(0);
     cube->GetTextEdgesProperty()->SetAmbient(1);
-    cube->GetTextEdgesProperty()->SetColor(0.2, 0.2, 0.2);  // Darker edges for better contrast
+    cube->GetTextEdgesProperty()->SetColor(
+            0.2, 0.2, 0.2);  // Darker edges for better contrast
     // this static function improves the appearance of the text edges
     // since they are overlaid on a surface rendering of the cube's faces
     vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
@@ -654,7 +658,7 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     tpropX->SetFontSize(14);
     tpropX->SetColor(1.0, 0.0, 0.0);  // Red to match X axis
     axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tpropX);
-    
+
     // Y axis label - Green
     vtkSmartPointer<vtkTextProperty> tpropY =
             vtkSmartPointer<vtkTextProperty>::New();
@@ -664,7 +668,7 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     tpropY->SetFontSize(14);
     tpropY->SetColor(0.0, 1.0, 0.0);  // Green to match Y axis
     axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tpropY);
-    
+
     // Z axis label - Blue
     vtkSmartPointer<vtkTextProperty> tpropZ =
             vtkSmartPointer<vtkTextProperty>::New();
@@ -1362,8 +1366,8 @@ PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(
     }
 
     // Display cameras to user
-    // NOTE: showCameras was removed along with pcl::visualization::PCLVisualizer dependency.
-    // if (show_cameras) {
+    // NOTE: showCameras was removed along with
+    // pcl::visualization::PCLVisualizer dependency. if (show_cameras) {
     //     CVLog::Print(
     //             "Displaying cameras. Press \'q\' to continue texture
     //             mapping");

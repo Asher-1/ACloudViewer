@@ -14,16 +14,16 @@ class ccGBLSensor;
 /**
  * @class DepthMapFileFilter
  * @brief Depth map file I/O filter (ASCII format)
- * 
+ *
  * Handles export of depth map data from ground-based laser (GBL) sensors
  * to ASCII text files. Depth maps represent range/distance measurements
  * in a 2D grid format, typically from terrestrial laser scanners.
- * 
+ *
  * Output format:
  * - ASCII text (.txt, .asc)
  * - Grid-based layout
  * - Contains depth/range values
- * 
+ *
  * @note This filter currently supports saving only (no import)
  * @see FileIOFilter
  * @see ccGBLSensor
@@ -53,7 +53,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to depth map file
      * @param entity Entity to save (must be GBL sensor)

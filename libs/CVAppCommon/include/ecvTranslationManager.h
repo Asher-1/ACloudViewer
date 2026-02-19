@@ -16,23 +16,23 @@
 /**
  * @class ccTranslationManager
  * @brief Manager for application translations/localization
- * 
+ *
  * Singleton class that handles loading and switching between language
  * translations. Supports multiple translation file prefixes (for plugins
  * and core application) and automatic language detection.
- * 
+ *
  * Translation file naming convention:
  * - Format: `<prefix>_<lang>.qm` (compiled) or `<prefix>_<lang>.ts` (source)
  * - Language: 2-letter ISO 639 code (lowercase)
  * - Example: `CloudViewer_fr.qm` for French, `CloudViewer_de.qm` for German
- * 
+ *
  * Features:
  * - Multiple translation file registration (core + plugins)
  * - Automatic language detection from system locale
  * - Runtime language switching
  * - Menu population with available languages
  * - Persistent language preference storage
- * 
+ *
  * @see QTranslator
  */
 class CVAPPCOMMON_LIB_API ccTranslationManager : public QObject {
@@ -52,17 +52,17 @@ public:
 
     /**
      * @brief Register translation file prefix
-     * 
+     *
      * Registers a translation file prefix for loading. Files should
      * follow the naming convention: `<prefix>_<lang>.qm`
-     * 
+     *
      * Example: For prefix "CloudViewer" and path "/app/translations",
      * the manager will look for:
      * - CloudViewer_en.qm
      * - CloudViewer_fr.qm
      * - CloudViewer_de.qm
      * - etc.
-     * 
+     *
      * @param prefix File prefix (e.g., "CloudViewer")
      * @param path Directory containing translation files
      */
@@ -70,7 +70,7 @@ public:
 
     /**
      * @brief Load translations for current language
-     * 
+     *
      * Loads all registered translation files for the currently
      * selected or system-default language.
      */
@@ -78,21 +78,21 @@ public:
 
     /**
      * @brief Load translations for specific language
-     * 
+     *
      * Loads all registered translation files for the specified language.
      * Language code should be 2-letter ISO 639 lowercase (e.g., "en", "fr").
-     * 
+     *
      * @param language ISO 639 language code
      */
     void loadTranslation(QString language);
 
     /**
      * @brief Populate menu with language choices
-     * 
+     *
      * Scans translation directory and adds menu items for each
      * available language. User can select language from menu to
      * switch at runtime.
-     * 
+     *
      * @param menu Menu to populate with language items
      * @param pathToTranslationFiles Path to scan for translation files
      */
@@ -127,7 +127,7 @@ private:
 
     /**
      * @brief Get list of available languages
-     * 
+     *
      * Scans translation directory for available language files.
      * @param appName Application name
      * @param pathToTranslationFiles Path to scan

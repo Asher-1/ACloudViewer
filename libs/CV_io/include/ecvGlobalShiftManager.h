@@ -24,18 +24,19 @@ class ccHObject;
 /**
  * @class ecvGlobalShiftManager
  * @brief Manager for handling large coordinate shifts and scales
- * 
+ *
  * Helper class to automatically handle coordinate shift and scale when loading
  * entities with very large or very small coordinates. This is essential for
  * maintaining precision in floating-point calculations.
- * 
- * When point cloud coordinates are very large (e.g., UTM coordinates in meters),
- * floating-point precision can be lost. This manager automatically detects such
- * cases and suggests appropriate coordinate shifts to bring values closer to zero.
- * 
+ *
+ * When point cloud coordinates are very large (e.g., UTM coordinates in
+ * meters), floating-point precision can be lost. This manager automatically
+ * detects such cases and suggests appropriate coordinate shifts to bring values
+ * closer to zero.
+ *
  * Similarly, when dimensions are very large or very small, automatic scaling
  * can be applied to improve numerical stability.
- * 
+ *
  * @see CCVector3d
  */
 class CV_IO_LIB_API ecvGlobalShiftManager {
@@ -44,19 +45,19 @@ public:
      * @brief Strategy for handling coordinate shift/scale
      */
     enum Mode {
-        NO_DIALOG,              ///< No dialog, no automatic shift
-        NO_DIALOG_AUTO_SHIFT,   ///< Automatic shift without dialog
-        DIALOG_IF_NECESSARY,    ///< Show dialog only if shift needed
-        ALWAYS_DISPLAY_DIALOG   ///< Always show dialog
+        NO_DIALOG,             ///< No dialog, no automatic shift
+        NO_DIALOG_AUTO_SHIFT,  ///< Automatic shift without dialog
+        DIALOG_IF_NECESSARY,   ///< Show dialog only if shift needed
+        ALWAYS_DISPLAY_DIALOG  ///< Always show dialog
     };
 
     /**
      * @brief Handle coordinate shift/scale for a 3D point
-     * 
+     *
      * Main entry point for coordinate transformation management. Analyzes
-     * the given point and diagonal length to determine if shift/scale is needed,
-     * and handles user interaction according to the specified mode.
-     * 
+     * the given point and diagonal length to determine if shift/scale is
+     * needed, and handles user interaction according to the specified mode.
+     *
      * @param P Input 3D point to analyze
      * @param diagonal Bounding box diagonal length
      * @param mode Interaction mode
@@ -82,14 +83,14 @@ public:
      * @return true if coordinates are too large
      */
     static bool NeedShift(const CCVector3d& P);
-    
+
     /**
      * @brief Check if single coordinate needs shifting
      * @param d Coordinate value to check
      * @return true if coordinate is too large (absolute value)
      */
     static bool NeedShift(double d);
-    
+
     /**
      * @brief Check if dimension needs rescaling
      * @param d Dimension value (e.g., diagonal length)
@@ -99,14 +100,14 @@ public:
 
     /**
      * @brief Suggest optimal shift for a 3D point
-     * 
+     *
      * Calculates an appropriate coordinate shift to bring point
      * coordinates closer to zero while maintaining precision.
      * @param P Point in global coordinates
      * @return Suggested coordinate shift
      */
     static CCVector3d BestShift(const CCVector3d& P);
-    
+
     /**
      * @brief Suggest optimal scale for a dimension
      * @param d Dimension value in global space
@@ -119,7 +120,7 @@ public:
      * @return Max coordinate threshold
      */
     static double MaxCoordinateAbsValue() { return MAX_COORDINATE_ABS_VALUE; }
-    
+
     /**
      * @brief Set maximum acceptable absolute coordinate value
      * @param value New max coordinate threshold
@@ -133,7 +134,7 @@ public:
      * @return Max diagonal length threshold
      */
     static double MaxBoundgBoxDiagonal() { return MAX_DIAGONAL_LENGTH; }
-    
+
     /**
      * @brief Set maximum acceptable bounding box diagonal
      * @param value New max diagonal threshold
@@ -158,10 +159,10 @@ public:  // Shift and scale info
      * @brief Container for coordinate shift and scale information
      */
     struct ShiftInfo {
-        CCVector3d shift;   ///< Coordinate shift vector
-        double scale;       ///< Scale factor
-        QString name;       ///< Descriptive name
-        bool preserve;      ///< Whether to preserve for future use
+        CCVector3d shift;  ///< Coordinate shift vector
+        double scale;      ///< Scale factor
+        QString name;      ///< Descriptive name
+        bool preserve;     ///< Whether to preserve for future use
 
         /**
          * @brief Default constructor
@@ -169,7 +170,7 @@ public:  // Shift and scale info
          */
         ShiftInfo(QString str = QString("unnamed"))
             : shift(0, 0, 0), scale(1.0), name(str), preserve(true) {}
-        
+
         /**
          * @brief Constructor with shift and scale
          * @param str Descriptive name
@@ -186,7 +187,7 @@ public:  // Shift and scale info
      * @return true if info was retrieved successfully
      */
     static bool GetLast(ShiftInfo& info);
-    
+
     /**
      * @brief Get all stored shift/scale infos
      * @param infos Output vector of shift information

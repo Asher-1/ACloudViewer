@@ -33,8 +33,8 @@ vtkStandardNewMacro(Markers);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void PclUtils::ContextItem::setColors(unsigned char r,
-                                   unsigned char g,
-                                   unsigned char b) {
+                                      unsigned char g,
+                                      unsigned char b) {
     colors[0] = r;
     colors[1] = g;
     colors[2] = b;
@@ -45,9 +45,7 @@ PclUtils::ContextImageItem::ContextImageItem() {
     image = vtkSmartPointer<vtkImageData>::New();
 }
 
-void PclUtils::ContextImageItem::set(float _x,
-                                  float _y,
-                                  vtkImageData* _image) {
+void PclUtils::ContextImageItem::set(float _x, float _y, vtkImageData* _image) {
     x = _x;
     y = _y;
     image->DeepCopy(_image);
@@ -76,9 +74,9 @@ bool PclUtils::context_items::Point::Paint(vtkContext2D* painter) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void PclUtils::context_items::Line::set(float start_x,
-                                     float start_y,
-                                     float end_x,
-                                     float end_y) {
+                                        float start_y,
+                                        float end_x,
+                                        float end_y) {
     params.resize(4);
     params[0] = start_x;
     params[1] = start_y;
@@ -128,9 +126,9 @@ bool PclUtils::context_items::Disk::Paint(vtkContext2D* painter) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void PclUtils::context_items::Rectangle::set(float x,
-                                          float y,
-                                          float w,
-                                          float h) {
+                                             float y,
+                                             float w,
+                                             float h) {
     params.resize(4);
     params[0] = x;
     params[1] = y;
@@ -183,8 +181,8 @@ bool PclUtils::context_items::Polygon::Paint(vtkContext2D* painter) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void PclUtils::context_items::Text::set(float x,
-                                     float y,
-                                     const std::string& _text) {
+                                        float y,
+                                        const std::string& _text) {
     params.resize(2);
     params[0] = x;
     params[1] = y;
@@ -207,8 +205,8 @@ bool PclUtils::context_items::Text::Paint(vtkContext2D* painter) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void PclUtils::context_items::Markers::setPointColors(unsigned char r,
-                                                   unsigned char g,
-                                                   unsigned char b) {
+                                                      unsigned char g,
+                                                      unsigned char b) {
     point_colors[0] = r;
     point_colors[1] = g;
     point_colors[2] = b;

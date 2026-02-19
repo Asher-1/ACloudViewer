@@ -14,9 +14,9 @@
 
 #include <Utils/PCLConv.h>
 
-#include "base/CustomContextItem.h"
 #include "Tools/Common/PclTools.h"
 #include "Tools/Common/ecvTools.h"
+#include "base/CustomContextItem.h"
 
 // CV_CORE_LIB
 #include <CVPlatform.h>
@@ -148,7 +148,8 @@ void ImageVis::enable2Dviewer(bool state) {
     }
 }
 
-void ImageVis::mouseEventProcess(const PclUtils::MouseEvent& event, void* args) {
+void ImageVis::mouseEventProcess(const PclUtils::MouseEvent& event,
+                                 void* args) {
     if (event.getButton() == PclUtils::MouseEvent::RightButton &&
         event.getType() == PclUtils::MouseEvent::MouseMove) {
         std::string id = pickItem(event);
@@ -390,7 +391,8 @@ PclUtils::ImageViewer::LayerMap::iterator ImageVis::createLayer(
     l.actor->DragableOff();
     if (fill_box) {
         vtkSmartPointer<PclUtils::context_items::FilledRectangle> rect =
-                vtkSmartPointer<PclUtils::context_items::FilledRectangle>::New();
+                vtkSmartPointer<
+                        PclUtils::context_items::FilledRectangle>::New();
         rect->setColors(0, 0, 0);
         rect->setOpacity(opacity);
         rect->set(x, y, static_cast<float>(width), static_cast<float>(height));

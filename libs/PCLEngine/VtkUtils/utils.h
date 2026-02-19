@@ -8,7 +8,7 @@
 /**
  * @file utils.h
  * @brief General utility functions for CloudViewer
- * 
+ *
  * Provides miscellaneous helper functions including:
  * - Random number generation
  * - Color conversion (Qt ↔ VTK)
@@ -31,7 +31,7 @@ class vtkActor;
 /**
  * @namespace Utils
  * @brief General utility functions for CloudViewer
- * 
+ *
  * Collection of helper functions for common operations.
  */
 namespace Utils {
@@ -50,7 +50,7 @@ QString QPCL_ENGINE_LIB_API character(int index);
 /**
  * @brief Open file explorer at path
  * @param path Directory path to open
- * 
+ *
  * Opens system file explorer/finder at specified location.
  */
 void QPCL_ENGINE_LIB_API explorer(const QString& path);
@@ -95,7 +95,7 @@ inline static std::complex<T> random(int low, int high) {
  * @brief Convert Qt color to VTK color
  * @param clr Qt color to convert
  * @param vtkClr Output VTK color array (double[3])
- * 
+ *
  * Converts QColor to VTK's RGB format (0.0-1.0 range).
  */
 void QPCL_ENGINE_LIB_API vtkColor(const QColor& clr, double* vtkClr);
@@ -104,7 +104,7 @@ void QPCL_ENGINE_LIB_API vtkColor(const QColor& clr, double* vtkClr);
  * @brief Convert VTK color to Qt color
  * @param pClr VTK color array (double[3])
  * @return Qt QColor
- * 
+ *
  * Converts VTK's RGB format to QColor.
  */
 QColor QPCL_ENGINE_LIB_API qColor(double* pClr);
@@ -113,7 +113,7 @@ QColor QPCL_ENGINE_LIB_API qColor(double* pClr);
  * @brief Convert Qt color to HSV values
  * @param clr Qt color
  * @param hsv Output HSV array (double[3])
- * 
+ *
  * Converts QColor to HSV (Hue, Saturation, Value) format.
  */
 void QPCL_ENGINE_LIB_API qColor2HSV(const QColor& clr, double* hsv);

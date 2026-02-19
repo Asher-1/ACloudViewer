@@ -8,14 +8,13 @@
 #pragma once
 
 // PclUtils types (replaces pcl::visualization types)
-#include "base/CVVisualizerTypes.h"
-
 #include <vtkCommand.h>
 #include <vtkInteractorStyleRubberBandPick.h>
-#include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
+#include <vtkRendererCollection.h>
 #include <vtkSmartPointer.h>
 
+#include "base/CVVisualizerTypes.h"
 #include "qPCL.h"
 
 class vtkRendererCollection;
@@ -34,9 +33,7 @@ namespace VTKExtensions {
 // ============================================================================
 class QPCL_ENGINE_LIB_API CVPointPickingCallback : public vtkCommand {
 public:
-    static CVPointPickingCallback* New() {
-        return new CVPointPickingCallback;
-    }
+    static CVPointPickingCallback* New() { return new CVPointPickingCallback; }
 
     ~CVPointPickingCallback() override = default;
 
@@ -80,7 +77,8 @@ public:
     /** \brief Empty destructor */
     ~vtkCustomInteractorStyle() override;
 
-    // ======== Initialization (ported from PCLVisualizerInteractorStyle) ========
+    // ======== Initialization (ported from PCLVisualizerInteractorStyle)
+    // ========
 
     /** \brief Initialization routine. Must be called before anything else. */
     virtual void Initialize();
@@ -108,8 +106,7 @@ public:
     }
 
     /** \brief Pass a set of renderers to the interactor style. */
-    void setRendererCollection(
-            vtkSmartPointer<vtkRendererCollection>& rens) {
+    void setRendererCollection(vtkSmartPointer<vtkRendererCollection>& rens) {
         rens_ = rens;
     }
 
@@ -154,7 +151,8 @@ public:
     /** \brief Get camera file for camera parameter saving/restoring. */
     std::string getCameraFile() const { return camera_file_; }
 
-    /** \brief Change the default keyboard modifier from ALT to something else. */
+    /** \brief Change the default keyboard modifier from ALT to something else.
+     */
     inline void setKeyboardModifier(
             const PclUtils::InteractorKeyboardModifier& modifier) {
         modifier_ = modifier;

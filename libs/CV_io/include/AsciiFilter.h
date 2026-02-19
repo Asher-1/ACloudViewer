@@ -20,17 +20,17 @@
 /**
  * @class AsciiFilter
  * @brief ASCII point cloud I/O filter
- * 
+ *
  * Handles import/export of point clouds in various ASCII text formats
  * including TXT, ASC, NEU, XYZ, XYZRGB, XYZN, PTS, and CSV.
- * 
+ *
  * Supports:
  * - Multiple column formats
  * - Custom separators (space, comma, semicolon, tab)
  * - Optional headers
  * - Color and scalar field data
  * - Normal vectors
- * 
+ *
  * @see FileIOFilter
  */
 class CV_IO_LIB_API AsciiFilter : public FileIOFilter {
@@ -59,7 +59,7 @@ public:
     CC_FILE_ERROR loadFile(const QString& filename,
                            ccHObject& container,
                            LoadParameters& parameters) override;
-    
+
     /**
      * @brief Check if entity type can be saved
      * @param type Entity type
@@ -70,7 +70,7 @@ public:
     bool canSave(CV_CLASS_ENUM type,
                  bool& multiple,
                  bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to file
      * @param entity Entity to save
@@ -84,7 +84,7 @@ public:
 
     /**
      * @brief Load point cloud from byte array
-     * 
+     *
      * Loads ASCII point cloud data directly from memory.
      * @param data ASCII data as byte array
      * @param sourceName Name for the loaded cloud
@@ -109,13 +109,13 @@ public:  // Default / persistent settings
      * @param prec Decimal precision for coordinates
      */
     static void SetOutputCoordsPrecision(int prec);
-    
+
     /**
      * @brief Set scalar field precision for output
      * @param prec Decimal precision for scalar values
      */
     static void SetOutputSFPrecision(int prec);
-    
+
     /**
      * @brief Set output separator type
      * @param separatorIndex Separator index:
@@ -125,19 +125,19 @@ public:  // Default / persistent settings
      *        - 3: tab
      */
     static void SetOutputSeparatorIndex(int separatorIndex);
-    
+
     /**
      * @brief Set scalar field output order
      * @param state true to save SF before color (default: color then SF)
      */
     static void SaveSFBeforeColor(bool state);
-    
+
     /**
      * @brief Set whether to save column names header
      * @param state true to save column names (default: false)
      */
     static void SaveColumnsNamesHeader(bool state);
-    
+
     /**
      * @brief Set whether to save point count header
      * @param state true to save point count on first line (default: false)

@@ -8,7 +8,7 @@
 /**
  * @file vtkutils.h
  * @brief VTK utility functions for CloudViewer
- * 
+ *
  * Provides helper functions and templates for working with VTK in CloudViewer:
  * - Image conversion (VTK ↔ Qt QImage)
  * - Actor creation from geometric sources
@@ -32,15 +32,15 @@
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
 
-#include "qPCL.h"
 #include "point3f.h"
+#include "qPCL.h"
 #include "utils.h"
 #include "vector4f.h"
 
 /**
  * @def VTK_CREATE
  * @brief Macro for creating VTK smart pointers
- * 
+ *
  * Convenient macro to create and initialize VTK smart pointers in one line.
  * Example: VTK_CREATE(vtkActor, actor);
  */
@@ -56,7 +56,7 @@ class vtkPolyDataAlgorithm;
 /**
  * @namespace VtkUtils
  * @brief VTK utility functions for CloudViewer
- * 
+ *
  * Collection of helper functions for VTK visualization and data conversion.
  * Provides bridges between VTK, Qt, and CloudViewer data structures.
  */
@@ -70,7 +70,7 @@ namespace VtkUtils {
  * @brief Convert VTK image to Qt QImage
  * @param imageData VTK image data to convert
  * @return Qt QImage representation
- * 
+ *
  * Converts VTK's native image format to Qt's QImage for display in Qt widgets.
  */
 QImage QPCL_ENGINE_LIB_API vtkImageDataToQImage(vtkImageData* imageData);
@@ -79,7 +79,7 @@ QImage QPCL_ENGINE_LIB_API vtkImageDataToQImage(vtkImageData* imageData);
  * @brief Convert Qt QImage to VTK image
  * @param img Qt image to convert
  * @param imageData Output VTK image data
- * 
+ *
  * Converts Qt QImage to VTK's native image format for VTK processing.
  */
 void QPCL_ENGINE_LIB_API qImageToVtkImage(QImage& img, vtkImageData* imageData);
@@ -88,7 +88,7 @@ void QPCL_ENGINE_LIB_API qImageToVtkImage(QImage& img, vtkImageData* imageData);
  * @brief Take snapshot of VTK widget
  * @param widget VTK OpenGL widget to capture
  * @return Qt image containing the snapshot
- * 
+ *
  * Captures the current render window content as a QImage.
  */
 QImage QPCL_ENGINE_LIB_API vtkWidgetSnapshot(QVTKOpenGLNativeWidget* widget);
@@ -101,7 +101,7 @@ QImage QPCL_ENGINE_LIB_API vtkWidgetSnapshot(QVTKOpenGLNativeWidget* widget);
  * @brief Initialize VTK object once (raw pointer version)
  * @tparam T VTK object type
  * @param obj Pointer to object pointer
- * 
+ *
  * Creates VTK object only if pointer is null. Safe for multiple calls.
  */
 template <class T>
@@ -113,7 +113,7 @@ void vtkInitOnce(T** obj) {
  * @brief Initialize VTK object once (smart pointer version)
  * @tparam T VTK object type
  * @param obj Smart pointer to object
- * 
+ *
  * Creates VTK object only if smart pointer is null. Safe for multiple calls.
  */
 template <class T>
@@ -125,7 +125,7 @@ void vtkInitOnce(vtkSmartPointer<T>& obj) {
  * @brief Safely delete VTK object
  * @tparam T VTK object type
  * @param obj Object to delete
- * 
+ *
  * Deletes VTK object if non-null. Handles reference counting properly.
  */
 template <class T>
@@ -141,7 +141,7 @@ void vtkSafeDelete(T* obj) {
  * @brief Create actor from VTK algorithm
  * @param algo VTK polydata algorithm source
  * @return Configured VTK actor with mapper
- * 
+ *
  * Creates actor with mapper connected to algorithm output.
  */
 static inline vtkActor* createSourceActor(vtkPolyDataAlgorithm* algo) {
@@ -157,7 +157,7 @@ static inline vtkActor* createSourceActor(vtkPolyDataAlgorithm* algo) {
  * @class SourceSetter
  * @brief Template class for configuring VTK sources
  * @tparam T VTK source type
- * 
+ *
  * Base template for source configuration. Specialized for specific sources.
  */
 template <class T>
@@ -192,7 +192,7 @@ public:
  * @tparam T VTK source type
  * @param setter Optional source configurator
  * @return Configured VTK actor
- * 
+ *
  * Creates actor from VTK geometric source with optional custom configuration.
  */
 template <class T>
@@ -215,7 +215,7 @@ static inline vtkActor* createSourceActor(SourceSetter<T>* setter = nullptr) {
  * @param points List of 3D points
  * @param scalars Optional scalar values for each point
  * @return VTK actor with Delaunay triangulation surface
- * 
+ *
  * Creates a triangulated surface from points using Delaunay triangulation.
  * Optional scalar values are mapped to vertices for coloring.
  */
@@ -254,7 +254,7 @@ static vtkActor* createSurfaceActor(
  * @tparam Mapper VTK mapper type (default: vtkPolyDataMapper)
  * @param data VTK data object to visualize
  * @return VTK actor configured with mapper
- * 
+ *
  * Generic template for creating actors from any VTK data object.
  */
 template <class DataObject, class Mapper = vtkPolyDataMapper>
@@ -272,7 +272,7 @@ static inline vtkActor* createActorFromData(DataObject* data) {
  * @brief Export VTK actor to file
  * @param actor VTK actor to export
  * @param outfile Output file path
- * 
+ *
  * Exports actor geometry to file. Format determined by file extension.
  */
 void QPCL_ENGINE_LIB_API exportActorToFile(vtkActor* actor,

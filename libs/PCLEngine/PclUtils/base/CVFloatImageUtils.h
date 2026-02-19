@@ -2,10 +2,8 @@
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// CVFloatImageUtils.h - Standalone float-to-RGB color mapping utilities.
-// Replaces pcl::visualization::FloatImageUtils with no PCL dependency.
 
 #pragma once
 
@@ -61,4 +59,3 @@ public:
 };
 
 }  // namespace PclUtils
-

@@ -16,17 +16,17 @@ class ccGenericMesh;
 /**
  * @class STLFilter
  * @brief StereoLithography (STL) mesh file I/O filter
- * 
+ *
  * Handles import/export of meshes in STL format (.stl), a widely-used
  * format for 3D printing and CAD applications. Supports both ASCII and
  * binary STL formats.
- * 
+ *
  * STL format characteristics:
  * - Stores triangular mesh geometry only (vertices and normals)
  * - No color, texture, or material information
  * - Binary format is more compact and faster to process
  * - ASCII format is human-readable but larger
- * 
+ *
  * @see http://www.ennex.com/~fabbers/StL.asp
  * @see FileIOFilter
  * @see ccMesh
@@ -59,7 +59,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to STL file
      * @param entity Entity to save (mesh)
@@ -82,7 +82,7 @@ protected:
     CC_FILE_ERROR saveToASCIIFile(ccGenericMesh* mesh,
                                   FILE* theFile,
                                   QWidget* parentWidget = 0);
-    
+
     /**
      * @brief Save mesh to binary STL file
      * @param mesh Mesh to save

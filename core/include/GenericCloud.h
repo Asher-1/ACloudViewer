@@ -18,7 +18,7 @@ namespace cloudViewer {
 /**
  * @class GenericCloud
  * @brief Generic 3D point cloud interface
- * 
+ *
  * Provides an abstract interface for 3D point cloud data communication
  * between library components and client applications. This interface
  * defines basic operations such as iteration, bounding box computation,
@@ -38,7 +38,7 @@ public:
 
     /**
      * @brief Function type for point operations
-     * 
+     *
      * Used with forEach() to apply operations to each point.
      */
     using genericPointAction =
@@ -49,7 +49,7 @@ public:
      * @return Number of points
      */
     virtual unsigned size() const = 0;
-    
+
     /**
      * @brief Check if cloud has any points
      * @return true if cloud contains at least one point
@@ -58,7 +58,7 @@ public:
 
     /**
      * @brief Apply a function to all points
-     * 
+     *
      * Fast iteration mechanism that applies the given function to each point.
      * @param action Function to apply (see genericPointAction)
      */
@@ -73,14 +73,14 @@ public:
 
     /**
      * @brief Test point visibility
-     * 
+     *
      * Returns the visibility state of a point relative to a sensor.
      * The visibility definition follows Daniel Girardeau-Montaut's PhD
      * manuscript (Chapter 2, section 2-3-3). This method is called before
-     * performing point-to-cloud comparisons. If the result is not POINT_VISIBLE,
-     * the comparison is skipped and the scalar field value is set to this
-     * visibility value.
-     * 
+     * performing point-to-cloud comparisons. If the result is not
+     * POINT_VISIBLE, the comparison is skipped and the scalar field value is
+     * set to this visibility value.
+     *
      * @param P 3D point to test
      * @return Visibility state (default: POINT_VISIBLE)
      * @note Should be overloaded if this functionality is required
@@ -96,9 +96,9 @@ public:
 
     /**
      * @brief Get the next point from the iterator
-     * 
+     *
      * Returns the next point and advances the global iterator position.
-     * 
+     *
      * @return Pointer to next point (nullptr if no more points)
      * @warning The returned object may not be persistent
      * @warning This method may not be compatible with parallel strategies
@@ -109,11 +109,11 @@ public:
 
     /**
      * @brief Enable the scalar field
-     * 
+     *
      * If the scalar field structure is not initialized, this method triggers
      * its creation. The structure size should be pre-reserved to match the
      * number of points in the cloud.
-     * 
+     *
      * @return true if successful
      */
     virtual bool enableScalarField() = 0;
