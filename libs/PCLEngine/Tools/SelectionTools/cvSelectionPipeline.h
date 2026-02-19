@@ -20,11 +20,11 @@
 #include "qPCL.h"
 
 // VTK
+#include <vtkSelection.h>  // Full definition needed for vtkSmartPointer<vtkSelection> members
 #include <vtkSmartPointer.h>
 
 // Forward declarations
 class cvHardwareSelector;
-class vtkSelection;
 class vtkIntArray;
 class vtkIdTypeArray;
 class vtkDataObject;

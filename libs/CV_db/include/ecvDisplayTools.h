@@ -48,191 +48,292 @@ class ecvGenericVisualizer3D;
 // ============================================================================
 
 /**
- * @brief Data Axes Grid properties structure
- * Encapsulates all properties for vtkCubeAxesActor configuration
+ * @struct AxesGridProperties
+ * @brief Data Axes Grid properties structure (ParaView-compatible)
+ * 
+ * Encapsulates all properties for vtkCubeAxesActor configuration,
+ * providing ParaView-style axis grid visualization with customizable
+ * labels, bounds, and appearance.
  */
 struct CV_DB_LIB_API AxesGridProperties {
     // Basic properties
-    bool visible = false;
-    CCVector3 color = CCVector3(255, 255, 255);  // White (RGB 0-255)
-    double lineWidth = 1.0;
-    double spacing = 1.0;
-    int subdivisions = 10;
-    bool showLabels = true;
-    double opacity = 1.0;
+    bool visible = false;                            ///< Axes grid visibility
+    CCVector3 color = CCVector3(255, 255, 255);      ///< Color (RGB 0-255, default: white)
+    double lineWidth = 1.0;                          ///< Line width in pixels
+    double spacing = 1.0;                            ///< Grid spacing
+    int subdivisions = 10;                           ///< Number of subdivisions
+    bool showLabels = true;                          ///< Show axis labels
+    double opacity = 1.0;                            ///< Opacity (0.0-1.0)
 
     // Extended properties (ParaView-style)
-    bool showGrid = false;  // Show grid lines (default OFF like ParaView)
-    QString xTitle = "X-Axis";
-    QString yTitle = "Y-Axis";
-    QString zTitle = "Z-Axis";
-    bool xUseCustomLabels = false;
-    bool yUseCustomLabels = false;
-    bool zUseCustomLabels = false;
-    bool useCustomBounds = false;
+    bool showGrid = false;                           ///< Show grid lines (default: OFF)
+    QString xTitle = "X-Axis";                       ///< X-axis title
+    QString yTitle = "Y-Axis";                       ///< Y-axis title
+    QString zTitle = "Z-Axis";                       ///< Z-axis title
+    bool xUseCustomLabels = false;                   ///< Use custom X labels
+    bool yUseCustomLabels = false;                   ///< Use custom Y labels
+    bool zUseCustomLabels = false;                   ///< Use custom Z labels
+    bool useCustomBounds = false;                    ///< Use custom axis bounds
 
     // Custom labels (ParaView-style: value -> label string)
-    QList<QPair<double, QString>> xCustomLabels;
-    QList<QPair<double, QString>> yCustomLabels;
-    QList<QPair<double, QString>> zCustomLabels;
+    QList<QPair<double, QString>> xCustomLabels;     ///< X-axis custom labels
+    QList<QPair<double, QString>> yCustomLabels;     ///< Y-axis custom labels
+    QList<QPair<double, QString>> zCustomLabels;     ///< Z-axis custom labels
 
     // Custom bounds (ParaView-style: explicit min/max for each axis)
-    double xMin = 0.0, xMax = 1.0;
-    double yMin = 0.0, yMax = 1.0;
-    double zMin = 0.0, zMax = 1.0;
+    double xMin = 0.0, xMax = 1.0;                   ///< X-axis bounds
+    double yMin = 0.0, yMax = 1.0;                   ///< Y-axis bounds
+    double zMin = 0.0, zMax = 1.0;                   ///< Z-axis bounds
 
-    // Constructor with defaults
+    /**
+     * @brief Default constructor
+     */
     AxesGridProperties() = default;
 };
 
+/**
+ * @class ecvDisplayTools
+ * @brief Main display and rendering management class
+ * 
+ * Central singleton class for managing all visualization, rendering, and user
+ * interaction in CloudViewer. Provides a comprehensive interface for:
+ * 
+ * - 3D/2D rendering and display control
+ * - Camera manipulation (position, orientation, projection)
+ * - Entity picking (point, triangle, object selection)
+ * - Mouse/keyboard interaction handling
+ * - Viewport management
+ * - Visual overlays (axes, grids, labels, widgets)
+ * - Screenshot and rendering to file
+ * - Perspective/orthographic projection switching
+ * 
+ * This class follows the singleton pattern and integrates with both Qt (for UI)
+ * and VTK/OpenGL (for 3D rendering).
+ * 
+ * @see ecvGenericDisplayTools
+ * @see ecvGenericVisualizer3D
+ * @see ecvGenericVisualizer2D
+ */
 class CV_DB_LIB_API ecvDisplayTools : public QObject,
                                       public ecvGenericDisplayTools {
     Q_OBJECT
 public:
     /**
-    \param mainWidget MainWindow widget (optional)
-    **/
+     * @brief Initialize the display tools singleton
+     * @param displayTools Display tools instance
+     * @param win Main window widget
+     * @param stereoMode Enable stereo rendering mode (default: false)
+     */
     static void Init(ecvDisplayTools* displayTools,
                      QMainWindow* win,
                      bool stereoMode = false);
+    
+    /**
+     * @brief Get the singleton instance
+     * @return Pointer to the singleton instance
+     */
     static ecvDisplayTools* TheInstance();
 
+    /**
+     * @brief Release and destroy the singleton instance
+     */
     static void ReleaseInstance();
 
-    //! Destructor
+    /**
+     * @brief Virtual destructor
+     */
     virtual ~ecvDisplayTools() override;
 
-    //! Schedules a full redraw
-    /** Any previously scheduled redraw will be cancelled.
-            \warning The redraw will be cancelled if redraw/update is called
-    before. \param maxDelay_ms the maximum delay for the call to redraw (in ms)
-    **/
+    /**
+     * @brief Schedule a full redraw
+     * 
+     * Schedules a complete redraw (no LOD) after a specified delay.
+     * Any previously scheduled redraw will be cancelled.
+     * @param maxDelay_ms Maximum delay before redraw (milliseconds)
+     * @warning Cancelled if redraw/update is called before delay expires
+     */
     void scheduleFullRedraw(unsigned maxDelay_ms);
 
-    //! Cancels any scheduled redraw
+    /**
+     * @brief Cancel any scheduled redraw
+     */
     void cancelScheduledRedraw();
 
 public:
-    //! Picking mode
+    /**
+     * @brief Picking mode enumeration
+     * 
+     * Defines the type of picking operation for user selection.
+     */
     enum PICKING_MODE {
-        NO_PICKING,
-        ENTITY_PICKING,
-        ENTITY_RECT_PICKING,
-        FAST_PICKING,
-        POINT_PICKING,
-        TRIANGLE_PICKING,
-        POINT_OR_TRIANGLE_PICKING,
-        POINT_OR_TRIANGLE_OR_LABEL_PICKING,
-        LABEL_PICKING,
-        DEFAULT_PICKING,
+        NO_PICKING,                          ///< No picking enabled
+        ENTITY_PICKING,                      ///< Pick entire entities
+        ENTITY_RECT_PICKING,                 ///< Rectangular entity selection
+        FAST_PICKING,                        ///< Fast picking (optimized)
+        POINT_PICKING,                       ///< Pick individual points
+        TRIANGLE_PICKING,                    ///< Pick mesh triangles
+        POINT_OR_TRIANGLE_PICKING,           ///< Pick points or triangles
+        POINT_OR_TRIANGLE_OR_LABEL_PICKING,  ///< Pick points, triangles, or labels
+        LABEL_PICKING,                       ///< Pick labels only
+        DEFAULT_PICKING,                     ///< Default picking mode
     };
 
-    //! Interaction flags (mostly with the mouse)
+    /**
+     * @brief Interaction flags for mouse/keyboard handling
+     * 
+     * Bitflags defining enabled interaction types and signal emissions.
+     * Can be combined to create custom interaction modes.
+     */
     enum INTERACTION_FLAG {
+        // No interaction
+        INTERACT_NONE = 0,                      ///< No interactions enabled
 
-        // no interaction
-        INTERACT_NONE = 0,
+        // Camera interactions
+        INTERACT_ROTATE = 1,                    ///< Enable camera rotation
+        INTERACT_PAN = 2,                       ///< Enable camera panning
+        INTERACT_CTRL_PAN = 4,                  ///< Enable Ctrl+pan
+        INTERACT_ZOOM_CAMERA = 8,               ///< Enable camera zoom
+        INTERACT_2D_ITEMS = 16,                 ///< Enable 2D item interaction (labels, etc.)
+        INTERACT_CLICKABLE_ITEMS = 32,          ///< Enable hot zone interaction
 
-        // camera interactions
-        INTERACT_ROTATE = 1,
-        INTERACT_PAN = 2,
-        INTERACT_CTRL_PAN = 4,
-        INTERACT_ZOOM_CAMERA = 8,
-        INTERACT_2D_ITEMS = 16,         // labels, etc.
-        INTERACT_CLICKABLE_ITEMS = 32,  // hot zone
+        // Options / modifiers
+        INTERACT_TRANSFORM_ENTITIES = 64,       ///< Enable entity transformation
 
-        // options / modifiers
-        INTERACT_TRANSFORM_ENTITIES = 64,
-
-        // signals
-        INTERACT_SIG_RB_CLICKED = 128,  // right button clicked
-        INTERACT_SIG_LB_CLICKED = 256,  // left button clicked
-        INTERACT_SIG_MOUSE_MOVED =
-                512,  // mouse moved (only if a button is clicked)
-        INTERACT_SIG_BUTTON_RELEASED = 1024,  // mouse button released
-        INTERACT_SIG_MB_CLICKED = 2048,       // middle button clicked
-        INTERACT_SEND_ALL_SIGNALS =
+        // Signals
+        INTERACT_SIG_RB_CLICKED = 128,          ///< Emit right button clicked signal
+        INTERACT_SIG_LB_CLICKED = 256,          ///< Emit left button clicked signal
+        INTERACT_SIG_MOUSE_MOVED = 512,         ///< Emit mouse moved signal (when button pressed)
+        INTERACT_SIG_BUTTON_RELEASED = 1024,    ///< Emit button released signal
+        INTERACT_SIG_MB_CLICKED = 2048,         ///< Emit middle button clicked signal
+        INTERACT_SEND_ALL_SIGNALS =             ///< Emit all signals
                 INTERACT_SIG_RB_CLICKED | INTERACT_SIG_LB_CLICKED |
                 INTERACT_SIG_MB_CLICKED | INTERACT_SIG_MOUSE_MOVED |
                 INTERACT_SIG_BUTTON_RELEASED,
 
-        // default modes
-        MODE_PAN_ONLY = INTERACT_PAN | INTERACT_ZOOM_CAMERA |
-                        INTERACT_2D_ITEMS | INTERACT_CLICKABLE_ITEMS,
-        MODE_TRANSFORM_CAMERA = INTERACT_ROTATE | MODE_PAN_ONLY,
-        MODE_TRANSFORM_ENTITIES =
+        // Default interaction modes
+        MODE_PAN_ONLY =                         ///< Pan and zoom only
+                INTERACT_PAN | INTERACT_ZOOM_CAMERA |
+                INTERACT_2D_ITEMS | INTERACT_CLICKABLE_ITEMS,
+        MODE_TRANSFORM_CAMERA =                 ///< Camera transformation mode
+                INTERACT_ROTATE | MODE_PAN_ONLY,
+        MODE_TRANSFORM_ENTITIES =               ///< Entity transformation mode
                 INTERACT_ROTATE | INTERACT_PAN | INTERACT_ZOOM_CAMERA |
                 INTERACT_TRANSFORM_ENTITIES | INTERACT_CLICKABLE_ITEMS,
     };
     Q_DECLARE_FLAGS(INTERACTION_FLAGS, INTERACTION_FLAG)
 
-    // Default interaction modes (with the mouse!)
+    /**
+     * @brief Get pan-only interaction mode
+     * @return Pan-only interaction flags
+     */
     static INTERACTION_FLAGS PAN_ONLY();
+    
+    /**
+     * @brief Get camera transformation mode
+     * @return Camera transformation interaction flags
+     */
     static INTERACTION_FLAGS TRANSFORM_CAMERA();
+    
+    /**
+     * @brief Get entity transformation mode
+     * @return Entity transformation interaction flags
+     */
     static INTERACTION_FLAGS TRANSFORM_ENTITIES();
 
-    //! Default message positions on screen
+    /**
+     * @brief Message display positions on screen
+     */
     enum MessagePosition {
-        LOWER_LEFT_MESSAGE,
-        UPPER_CENTER_MESSAGE,
-        SCREEN_CENTER_MESSAGE,
+        LOWER_LEFT_MESSAGE,      ///< Lower-left corner
+        UPPER_CENTER_MESSAGE,    ///< Upper-center
+        SCREEN_CENTER_MESSAGE,   ///< Screen center
     };
 
-    //! Message type
+    /**
+     * @brief Message type enumeration
+     * 
+     * Defines the type of on-screen message, allowing only one
+     * message of each type to be displayed simultaneously.
+     */
     enum MessageType {
-        CUSTOM_MESSAGE,
-        SCREEN_SIZE_MESSAGE,
-        PERSPECTIVE_STATE_MESSAGE,
-        SUN_LIGHT_STATE_MESSAGE,
-        CUSTOM_LIGHT_STATE_MESSAGE,
-        MANUAL_TRANSFORMATION_MESSAGE,
-        MANUAL_SEGMENTATION_MESSAGE,
-        ROTAION_LOCK_MESSAGE,
-        FULL_SCREEN_MESSAGE,
+        CUSTOM_MESSAGE,                   ///< Custom user message
+        SCREEN_SIZE_MESSAGE,              ///< Screen size info
+        PERSPECTIVE_STATE_MESSAGE,        ///< Perspective mode state
+        SUN_LIGHT_STATE_MESSAGE,          ///< Sun light state
+        CUSTOM_LIGHT_STATE_MESSAGE,       ///< Custom light state
+        MANUAL_TRANSFORMATION_MESSAGE,    ///< Manual transformation mode
+        MANUAL_SEGMENTATION_MESSAGE,      ///< Manual segmentation mode
+        ROTAION_LOCK_MESSAGE,             ///< Rotation lock state
+        FULL_SCREEN_MESSAGE,              ///< Full screen mode state
     };
 
-    //! Pivot symbol visibility
+    /**
+     * @brief Pivot symbol visibility modes
+     */
     enum PivotVisibility {
-        PIVOT_HIDE,
-        PIVOT_SHOW_ON_MOVE,
-        PIVOT_ALWAYS_SHOW,
+        PIVOT_HIDE,              ///< Always hide pivot
+        PIVOT_SHOW_ON_MOVE,      ///< Show pivot only during camera movement
+        PIVOT_ALWAYS_SHOW,       ///< Always show pivot
     };
 
-    //! Temporary Message to display in the lower-left corner
+    /**
+     * @struct MessageToDisplay
+     * @brief Temporary on-screen message descriptor
+     * 
+     * Contains all information needed to display a temporary message
+     * on screen, including content, position, validity time, and type.
+     */
     struct CV_DB_LIB_API MessageToDisplay {
+        /**
+         * @brief Default constructor
+         */
         MessageToDisplay()
             : messageValidity_sec(0),
               position(LOWER_LEFT_MESSAGE),
               type(CUSTOM_MESSAGE) {}
 
-        //! Message
-        QString message;
-        //! Message end time (sec)
-        qint64 messageValidity_sec;
-        //! Message position on screen
-        MessagePosition position;
-        //! Message type
-        MessageType type;
+        QString message;                    ///< Message text
+        qint64 messageValidity_sec;         ///< Message expiration time (seconds)
+        MessagePosition position;           ///< Display position on screen
+        MessageType type;                   ///< Message type
     };
 
-    //! List of messages to display
+    /**
+     * @brief List of currently displayed messages
+     */
     std::list<MessageToDisplay> m_messagesToDisplay;
 
-    //! Optional output metrics (from computeProjectionMatrix)
+    /**
+     * @struct ProjectionMetrics
+     * @brief Optional output metrics from projection matrix computation
+     * 
+     * Contains computed camera and scene metrics useful for advanced
+     * rendering operations and debugging.
+     */
     struct CV_DB_LIB_API ProjectionMetrics {
+        /**
+         * @brief Default constructor
+         */
         ProjectionMetrics()
             : zNear(0.0),
               zFar(0.0),
               cameraToBBCenterDist(0.0),
               bbHalfDiag(0.0) {}
 
-        double zNear;
-        double zFar;
-        double cameraToBBCenterDist;
-        double bbHalfDiag;
+        double zNear;                       ///< Near clipping plane distance
+        double zFar;                        ///< Far clipping plane distance
+        double cameraToBBCenterDist;        ///< Camera to bounding box center distance
+        double bbHalfDiag;                  ///< Half diagonal of bounding box
     };
 
-    //! Precomputed stuff for the 'hot zone'
+    /**
+     * @struct HotZone
+     * @brief Hot zone (interactive UI overlay) properties
+     * 
+     * Manages the "hot zone" - an interactive overlay in the upper-right corner
+     * displaying clickable controls for point size, line width, bubble-view mode,
+     * and fullscreen mode. Includes pre-computed layout metrics for efficient rendering.
+     */
     struct CV_DB_LIB_API HotZone {
         // display font
         QFont font;
@@ -371,15 +472,22 @@ public:
         }
     };
 
-    //! Displays a string at a given 2D position
-    /** This method should be called solely during 2D pass rendering.
-            The coordinates are expressed relatively to the current viewport (y
-    = 0 at the top!). \param text string \param x horizontal position of string
-    origin \param y vertical position of string origin \param align alignment
-    position flags \param bkgAlpha background transparency (0 by default) \param
-    rgbColor text color (optional) \param font optional font (otherwise default
-    one will be used)
-    **/
+    /**
+     * @brief Display text at 2D screen position
+     * 
+     * Renders text during 2D pass. Coordinates are relative to viewport
+     * with y=0 at the top.
+     * 
+     * @param text Text string to display
+     * @param x Horizontal position (pixels)
+     * @param y Vertical position (pixels, 0 = top)
+     * @param align Alignment flags (default: ALIGN_DEFAULT)
+     * @param bkgAlpha Background transparency (0.0-1.0, default: 0)
+     * @param rgbColor Text color RGB (optional, uses default if nullptr)
+     * @param font Font to use (optional, uses default if nullptr)
+     * @param id Unique identifier for the text (optional)
+     * @note Call only during 2D rendering pass
+     */
     static void DisplayText(const QString& text,
                             int x,
                             int y,
@@ -389,91 +497,233 @@ public:
                             const QFont* font = nullptr,
                             const QString& id = "");
 
+    /**
+     * @brief Display text with draw context
+     * @param CONTEXT Drawing context containing text parameters
+     */
     static void DisplayText(const CC_DRAW_CONTEXT& CONTEXT) {
         TheInstance()->displayText(CONTEXT);
     }
+    
+    /**
+     * @brief Virtual interface for displaying text (to be overridden)
+     * @param CONTEXT Drawing context
+     */
     inline virtual void displayText(
             const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
-    //! Displays a string at a given 3D position
-    /** This method should be called solely during 3D pass rendering (see
-    paintGL). \param str string \param pos3D 3D position of string origin \param
-    rgbColor color (optional: if let to 0, default text rendering color is used)
-            \param font font (optional)
-    **/
+    /**
+     * @brief Display 3D label at world position
+     * 
+     * Renders text label at a 3D position during 3D rendering pass.
+     * @param str Label text
+     * @param pos3D 3D world position
+     * @param color Text color (optional, uses default if nullptr)
+     * @param font Font to use (optional)
+     * @note Call only during 3D rendering pass
+     */
     static void Display3DLabel(const QString& str,
                                const CCVector3& pos3D,
                                const ecvColor::Rgbub* color = nullptr,
                                const QFont& font = QFont());
 
-public:  //! Draws the main 3D layer
+public:  // Main 3D layer drawing methods
+    /**
+     * @brief Set focus to the screen widget
+     */
     static void SetFocusToScreen();
+    
+    /**
+     * @brief Mark display for refresh
+     */
     static void ToBeRefreshed();
+    
+    /**
+     * @brief Refresh the display
+     * @param only2D Refresh only 2D elements (default: false)
+     * @param forceRedraw Force complete redraw (default: true)
+     */
     static void RefreshDisplay(bool only2D = false, bool forceRedraw = true);
+    
+    /**
+     * @brief Redraw the display
+     * @param only2D Redraw only 2D elements (default: false)
+     * @param forceRedraw Force complete redraw (default: true)
+     */
     static void RedrawDisplay(bool only2D = false, bool forceRedraw = true);
+    
+    /**
+     * @brief Check if entities should be removed
+     */
     static void CheckIfRemove();
+    
+    /**
+     * @brief Draw an object
+     * @param context Drawing context
+     * @param obj Object to draw
+     */
     inline static void Draw(const CC_DRAW_CONTEXT& context,
                             const ccHObject* obj) {
         TheInstance()->draw(context, obj);
     }
+    
+    /**
+     * @brief Virtual draw interface (to be overridden)
+     * @param context Drawing context
+     * @param obj Object to draw
+     */
     inline virtual void draw(const CC_DRAW_CONTEXT& context,
                              const ccHObject* obj) { /* do nothing */ }
 
+    /**
+     * @brief Update mesh textures
+     * @param context Drawing context
+     * @param mesh Mesh with textures to update
+     */
     inline static void UpdateMeshTextures(const CC_DRAW_CONTEXT& context,
                                           const ccGenericMesh* mesh) {
         TheInstance()->updateMeshTextures(context, mesh);
     }
+    
+    /**
+     * @brief Virtual interface for updating mesh textures
+     * @param context Drawing context
+     * @param mesh Mesh to update
+     */
     inline virtual void updateMeshTextures(
             const CC_DRAW_CONTEXT& context,
             const ccGenericMesh* mesh) { /* do nothing */ }
 
+    /**
+     * @brief Draw axis-aligned bounding box
+     * @param context Drawing context
+     * @param bbox Bounding box to draw
+     */
     inline static void DrawBBox(const CC_DRAW_CONTEXT& context,
                                 const ccBBox* bbox) {
         TheInstance()->drawBBox(context, bbox);
     }
+    
+    /**
+     * @brief Virtual interface for drawing bounding box
+     * @param context Drawing context
+     * @param bbox Bounding box
+     */
     inline virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                                  const ccBBox* bbox) { /* do nothing */ }
 
+    /**
+     * @brief Draw oriented bounding box
+     * @param context Drawing context
+     * @param obb Oriented bounding box to draw
+     */
     inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                         const ecvOrientedBBox* obb) {
         TheInstance()->drawOrientedBBox(context, obb);
     }
+    
+    /**
+     * @brief Virtual interface for drawing oriented bounding box
+     * @param context Drawing context
+     * @param obb Oriented bounding box
+     */
     inline virtual void drawOrientedBBox(
             const CC_DRAW_CONTEXT& context,
             const ecvOrientedBBox* obb) { /* do nothing */ }
 
+    /**
+     * @brief Remove bounding box from view
+     * @param context Drawing context
+     */
     static void RemoveBB(CC_DRAW_CONTEXT context);
+    
+    /**
+     * @brief Remove bounding box by view ID
+     * @param viewId View identifier
+     */
     static void RemoveBB(const QString& viewId);
+    
+    /**
+     * @brief Change entity properties
+     * @param propertyParam Property parameters to apply
+     * @param autoUpdate Auto-update display (default: true)
+     */
     static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam,
                                        bool autoUpdate = true);
+    
+    /**
+     * @brief Virtual interface for changing entity properties
+     * @param propertyParam Property parameters
+     */
     inline virtual void changeEntityProperties(
             PROPERTY_PARAM& propertyParam) { /* do nothing */ }
+    
+    /**
+     * @brief Draw widgets (2D/3D overlays)
+     * @param param Widget parameters
+     * @param update Update display immediately (default: false)
+     */
     static void DrawWidgets(const WIDGETS_PARAMETER& param,
                             bool update = false);
+    
+    /**
+     * @brief Virtual interface for drawing widgets
+     * @param param Widget parameters
+     */
     inline virtual void drawWidgets(
             const WIDGETS_PARAMETER& param) { /* do nothing */ }
+    
+    /**
+     * @brief Remove widgets by parameters
+     * @param param Widget parameters identifying widgets to remove
+     * @param update Update display immediately (default: false)
+     */
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
                               bool update = false);
+    
+    /**
+     * @brief Remove all widgets from display
+     * @param update Update display immediately (default: true)
+     */
     static void RemoveAllWidgets(bool update = true);
+    
+    /**
+     * @brief Remove 3D label by view ID
+     * @param view_id View identifier of the label
+     */
     static void Remove3DLabel(const QString& view_id);
 
+    /**
+     * @brief Draw coordinate system axes
+     * @param scale Scale factor for axes size (default: 1.0)
+     * @param id Unique identifier (default: "reference")
+     * @param viewport Viewport index (default: 0)
+     */
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
                                        int viewport = 0) {
         TheInstance()->drawCoordinates(scale, id, viewport);
     }
 
+    /**
+     * @brief Virtual interface for drawing coordinate axes
+     * @param scale Scale factor
+     * @param id Identifier
+     * @param viewport Viewport index
+     */
     inline virtual void drawCoordinates(double scale = 1.0,
                                         const std::string& id = "reference",
                                         int viewport = 0) { /* do nothing */ }
 
-    /// Rotate camera with axis given about angle.
-    ///
-    /// \param pos The mouse position on screen.
-    /// \param axis The rotation axis.
-    /// \param angle The ration angle in degrees.
-    /// notify the external memory manager that the memory is no longer needed.
-    /// It's up to the external manager to free the memory.
+    /**
+     * @brief Rotate camera around arbitrary axis
+     * 
+     * Rotates the camera about a specified axis by a given angle.
+     * @param pos Mouse position on screen
+     * @param axis Rotation axis in world coordinates
+     * @param angle Rotation angle in degrees
+     * @param viewport Viewport index (default: 0)
+     */
     inline static void RotateWithAxis(const CCVector2i& pos,
                                       const CCVector3d& axis,
                                       double angle,
@@ -481,21 +731,46 @@ public:  //! Draws the main 3D layer
         TheInstance()->rotateWithAxis(pos, axis, angle, viewport);
     }
 
+    /**
+     * @brief Virtual interface for axis rotation
+     * @param pos Mouse position
+     * @param axis Rotation axis
+     * @param angle Rotation angle (degrees)
+     * @param viewport Viewport index
+     */
     inline virtual void rotateWithAxis(const CCVector2i& pos,
                                        const CCVector3d& axis,
                                        double angle,
                                        int viewport = 0) { /* do nothing */ }
 
+    /**
+     * @brief Toggle orientation marker visibility
+     * @param state Show marker (default: true)
+     */
     inline static void ToggleOrientationMarker(bool state = true) {
         TheInstance()->toggleOrientationMarker(state);
         UpdateScreen();
     }
+    
+    /**
+     * @brief Virtual interface for toggling orientation marker
+     * @param state Visibility state
+     */
     inline virtual void toggleOrientationMarker(
             bool state = true) { /* do nothing */ }
 
+    /**
+     * @brief Check if orientation marker is shown
+     * @return true if marker is visible
+     */
     inline static bool OrientationMarkerShown() {
         return TheInstance()->orientationMarkerShown();
     }
+    
+    /**
+     * @brief Virtual interface for checking marker visibility
+     * @return Marker visibility state
+     */
     inline virtual bool orientationMarkerShown() {
         return false; /* do nothing */
     }
@@ -630,8 +905,8 @@ public:  //! Draws the main 3D layer
     }
     inline virtual bool isCameraOrientationWidgetShown() const { return false; }
 
-    /// Set global light intensity (ParaView-style, affects all scene objects)
-    /// Directly modifies the renderer's default light intensity
+    /// Set global default light intensity (ParaView-style)
+    /// Modifies the renderer's headlight intensity for the entire scene.
     /// @param intensity Light intensity (0.0-1.0, default 1.0)
     inline static void SetLightIntensity(double intensity) {
         TheInstance()->setLightIntensity(intensity);
@@ -639,103 +914,276 @@ public:  //! Draws the main 3D layer
     }
     inline virtual void setLightIntensity(double intensity) { /* do nothing */ }
 
-    /// Get current global light intensity
+    /// Get current global default light intensity
     /// @return Current light intensity (0.0-1.0)
     inline static double GetLightIntensity() {
         return TheInstance()->getLightIntensity();
     }
     inline virtual double getLightIntensity() const { return 1.0; }
 
+    /// Set light intensity for a specific object (per-object)
+    /// @param viewID The view ID of the target object
+    /// @param intensity Light intensity (0.0-1.0)
+    inline static void SetObjectLightIntensity(const QString& viewID,
+                                                double intensity) {
+        TheInstance()->setObjectLightIntensity(viewID, intensity);
+        UpdateScreen();
+    }
+    inline virtual void setObjectLightIntensity(const QString& /*viewID*/,
+                                                 double /*intensity*/) {}
+
+    /// Get light intensity for a specific object
+    /// @param viewID The view ID of the target object
+    /// @return Object's light intensity (falls back to global default)
+    inline static double GetObjectLightIntensity(const QString& viewID) {
+        return TheInstance()->getObjectLightIntensity(viewID);
+    }
+    inline virtual double getObjectLightIntensity(
+            const QString& /*viewID*/) const {
+        return 1.0;
+    }
+
 private:
+    /**
+     * @brief Internal 3D drawing method
+     * @param CONTEXT Drawing context
+     */
     static void Draw3D(CC_DRAW_CONTEXT& CONTEXT);
 
-public:  // main interface
+public:  // Main interface accessors
+    /**
+     * @brief Get 3D visualizer instance
+     * @return Pointer to 3D visualizer
+     */
     inline static ecvGenericVisualizer3D* GetVisualizer3D() {
         return TheInstance()->getVisualizer3D();
     }
+    
+    /**
+     * @brief Virtual interface for getting 3D visualizer
+     * @return 3D visualizer pointer
+     */
     inline virtual ecvGenericVisualizer3D* getVisualizer3D() {
         return nullptr; /* do nothing */
     }
+    
+    /**
+     * @brief Get 2D visualizer instance
+     * @return Pointer to 2D visualizer
+     */
     inline static ecvGenericVisualizer2D* GetVisualizer2D() {
         return TheInstance()->getVisualizer2D();
     }
+    
+    /**
+     * @brief Virtual interface for getting 2D visualizer
+     * @return 2D visualizer pointer
+     */
     inline virtual ecvGenericVisualizer2D* getVisualizer2D() {
         return nullptr; /* do nothing */
     }
 
+    /**
+     * @brief Get current screen widget
+     * @return Current screen widget pointer
+     */
     inline static QWidget* GetCurrentScreen() {
         if (!TheInstance()) return nullptr;
         return TheInstance()->m_currentScreen;
     }
+    
+    /**
+     * @brief Set current screen widget
+     * @param widget Screen widget to set as current
+     */
     static void SetCurrentScreen(QWidget* widget);
+    
+    /**
+     * @brief Get main screen widget
+     * @return Main screen widget pointer
+     */
     inline static QWidget* GetMainScreen() {
         if (!TheInstance()) return nullptr;
         return TheInstance()->m_mainScreen;
     }
+    
+    /**
+     * @brief Set main screen widget
+     * @param widget Screen widget to set as main
+     */
     inline static void SetMainScreen(QWidget* widget) {
         TheInstance()->m_mainScreen = widget;
     }
 
+    /**
+     * @brief Get main window
+     * @return Main window pointer
+     */
     inline static QMainWindow* GetMainWindow() { return TheInstance()->m_win; }
+    
+    /**
+     * @brief Set main window
+     * @param win Main window to set
+     */
     inline static void SetMainWindow(QMainWindow* win) {
         TheInstance()->m_win = win;
     }
 
+    /**
+     * @brief Convert screen coordinates to centered GL coordinates
+     * @param x Screen X coordinate
+     * @param y Screen Y coordinate
+     * @return Centered GL coordinates
+     */
     static QPointF ToCenteredGLCoordinates(int x, int y);
+    
+    /**
+     * @brief Convert screen coordinates to VTK coordinates
+     * @param x Screen X coordinate
+     * @param y Screen Y coordinate
+     * @param z Screen Z coordinate (default: 0)
+     * @return VTK 3D coordinates
+     */
     static CCVector3d ToVtkCoordinates(int x, int y, int z = 0);
+    
+    /**
+     * @brief Convert point to VTK coordinates (in-place)
+     * @param sP Point to convert
+     */
     static void ToVtkCoordinates(CCVector3d& sP);
+    
+    /**
+     * @brief Convert 2D point to VTK coordinates (in-place)
+     * @param sP Point to convert
+     */
     static void ToVtkCoordinates(CCVector2i& sP);
 
-    //! Returns window own DB
+    /**
+     * @brief Get window's own database root
+     * @return Window database root object
+     */
     inline static ccHObject* GetOwnDB() { return TheInstance()->m_winDBRoot; }
-    //! Adds an entity to window own DB
-    /** By default no dependency link is established between the entity and the
-     *window (DB).
-     **/
+    
+    /**
+     * @brief Add entity to window's own database
+     * 
+     * By default, no dependency link is established between the entity
+     * and the window database.
+     * @param obj Object to add
+     * @param noDependency No dependency link (default: true)
+     */
     static void AddToOwnDB(ccHObject* obj, bool noDependency = true);
 
-    //! Removes an entity from window own DB
+    /**
+     * @brief Remove entity from window's own database
+     * @param obj Object to remove
+     */
     static void RemoveFromOwnDB(ccHObject* obj);
 
+    /**
+     * @brief Set global scene database root
+     * @param root Scene database root object
+     */
     static void SetSceneDB(ccHObject* root);
+    
+    /**
+     * @brief Get global scene database root
+     * @return Scene database root object
+     */
     inline static ccHObject* GetSceneDB() {
         return TheInstance()->m_globalDBRoot;
     }
 
+    /**
+     * @brief Update name and pose recursively for all objects
+     */
     static void UpdateNamePoseRecursive();
 
+    /**
+     * @brief Set redraw flag recursively for all objects
+     * @param redraw Redraw flag state (default: false)
+     */
     static void SetRedrawRecursive(bool redraw = false);
+    
+    /**
+     * @brief Set redraw flag recursively for object hierarchy
+     * @param obj Root object for recursion
+     * @param redraw Redraw flag state (default: false)
+     */
     static void SetRedrawRecursive(ccHObject* obj, bool redraw = false);
 
-    //! Returns the visible objects bounding-box
+    /**
+     * @brief Get bounding box of all visible objects
+     * @param box Output bounding box
+     */
     static void GetVisibleObjectsBB(ccBBox& box);
 
-    //! Rotates the base view matrix
-    /** Warning: 'base view' marix is either:
-            - the rotation around the object in object-centered mode
-            - the rotation around the camera center in viewer-centered mode
-            (see setPerspectiveState).
-    **/
+    /**
+     * @brief Rotate the base view matrix
+     * 
+     * The 'base view' matrix represents:
+     * - In object-centered mode: rotation around the object
+     * - In viewer-centered mode: rotation around the camera center
+     * @param rotMat Rotation matrix to apply
+     * @see setPerspectiveState
+     */
     static void RotateBaseViewMat(const ccGLMatrixd& rotMat);
 
+    /**
+     * @brief Get base view matrix
+     * @return Reference to base view matrix
+     */
     inline static ccGLMatrixd& GetBaseViewMat() {
         return TheInstance()->m_viewportParams.viewMat;
     }
+    
+    /**
+     * @brief Set base view matrix
+     * @param mat View matrix to set
+     */
     static void SetBaseViewMat(ccGLMatrixd& mat);
 
+    /**
+     * @brief Set view IDs to be removed
+     * @param removeinfos List of removal information
+     */
     static void SetRemoveViewIDs(std::vector<removeInfo>& removeinfos);
+    
+    /**
+     * @brief Set remove-all flag
+     * @param state Remove-all flag state
+     */
     inline static void SetRemoveAllFlag(bool state) {
         TheInstance()->m_removeAllFlag = state;
     }
 
+    /**
+     * @brief Transform camera view matrix
+     * @param viewMat View transformation matrix
+     */
     inline static void TransformCameraView(const ccGLMatrixd& viewMat) {
         TheInstance()->transformCameraView(viewMat);
     }
+    
+    /**
+     * @brief Virtual interface for view transformation
+     * @param viewMat View matrix
+     */
     inline virtual void transformCameraView(
             const ccGLMatrixd& viewMat) { /* do nothing */ }
+    
+    /**
+     * @brief Transform camera projection matrix
+     * @param projMat Projection transformation matrix
+     */
     inline static void TransformCameraProjection(const ccGLMatrixd& projMat) {
         TheInstance()->transformCameraProjection(projMat);
     }
+    
+    /**
+     * @brief Virtual interface for projection transformation
+     * @param projMat Projection matrix
+     */
     inline virtual void transformCameraProjection(
             const ccGLMatrixd& projMat) { /* do nothing */ }
 
@@ -895,19 +1343,53 @@ public:  // main interface
     }
     inline virtual void fullScreen(bool state) { /* do nothing */ }
 
+    /**
+     * @brief Zoom camera by factor
+     * @param zoomFactor Zoom multiplier
+     * @param viewport Viewport index (default: 0)
+     */
     static void ZoomCamera(double zoomFactor, int viewport = 0);
+    
+    /**
+     * @brief Virtual interface for camera zoom
+     * @param zoomFactor Zoom multiplier
+     * @param viewport Viewport index
+     */
     inline virtual void zoomCamera(double zoomFactor, int viewport = 0) {}
+    
+    /**
+     * @brief Get camera focal distance
+     * @param viewport Viewport index (default: 0)
+     * @return Focal distance
+     */
     inline static double GetCameraFocalDistance(int viewport = 0) {
         return TheInstance()->getCameraFocalDistance(viewport);
     }
+    
+    /**
+     * @brief Virtual interface for getting focal distance
+     * @param viewport Viewport index
+     * @return Focal distance
+     */
     inline virtual double getCameraFocalDistance(int viewport = 0) {
         return 100.0; /* do nothing */
     }
 
+    /**
+     * @brief Set camera focal distance
+     * @param focal_distance Focal distance to set
+     * @param viewport Viewport index (default: 0)
+     */
     inline static void SetCameraFocalDistance(double focal_distance,
                                               int viewport = 0) {
         TheInstance()->setCameraFocalDistance(focal_distance, viewport);
     }
+    
+    /**
+     * @brief Virtual interface for setting focal distance
+     * @param focal_distance Focal distance
+     * @param viewport Viewport index
+     */
     inline virtual void setCameraFocalDistance(
             double focal_distance, int viewport = 0) { /* do nothing */ }
 
@@ -1694,9 +2176,24 @@ public:  // visualization matrix transformation
         TheInstance()->m_showDebugTraces = !TheInstance()->m_showDebugTraces;
     }
 
-    //! Picking parameters
+    /**
+     * @struct PickingParameters
+     * @brief Parameters for picking operations
+     * 
+     * Encapsulates all parameters needed for entity/point/triangle picking,
+     * including picking mode, screen region, and database search scope.
+     */
     struct PickingParameters {
-        //! Default constructor
+        /**
+         * @brief Constructor with parameters
+         * @param _mode Picking mode (default: NO_PICKING)
+         * @param _centerX Center X coordinate (default: 0)
+         * @param _centerY Center Y coordinate (default: 0)
+         * @param _pickWidth Pick region width (default: 5)
+         * @param _pickHeight Pick region height (default: 5)
+         * @param _pickInSceneDB Search in scene DB (default: true)
+         * @param _pickInLocalDB Search in local DB (default: true)
+         */
         PickingParameters(PICKING_MODE _mode = NO_PICKING,
                           int _centerX = 0,
                           int _centerY = 0,
@@ -1712,13 +2209,13 @@ public:  // visualization matrix transformation
               pickInSceneDB(_pickInSceneDB),
               pickInLocalDB(_pickInLocalDB) {}
 
-        PICKING_MODE mode;
-        int centerX;
-        int centerY;
-        int pickWidth;
-        int pickHeight;
-        bool pickInSceneDB;
-        bool pickInLocalDB;
+        PICKING_MODE mode;          ///< Picking mode
+        int centerX;                ///< Pick region center X
+        int centerY;                ///< Pick region center Y
+        int pickWidth;              ///< Pick region width (pixels)
+        int pickHeight;             ///< Pick region height (pixels)
+        bool pickInSceneDB;         ///< Search in scene database
+        bool pickInLocalDB;         ///< Search in local database
     };
 
     //! Processes the clickable items
@@ -1817,23 +2314,41 @@ public:
     //! Viewport parameters (zoom, etc.)
     ecvViewportParameters m_viewportParams;
 
-    //! Clickable item
+    /**
+     * @struct ClickableItem
+     * @brief Clickable UI item in hot zone
+     * 
+     * Represents an interactive item in the hot zone overlay,
+     * with an associated role and screen area.
+     */
     struct ClickableItem {
+        /**
+         * @brief Clickable item roles
+         */
         enum Role {
-            NO_ROLE,
-            INCREASE_POINT_SIZE,
-            DECREASE_POINT_SIZE,
-            INCREASE_LINE_WIDTH,
-            DECREASE_LINE_WIDTH,
-            LEAVE_BUBBLE_VIEW_MODE,
-            LEAVE_FULLSCREEN_MODE,
+            NO_ROLE,                    ///< No role assigned
+            INCREASE_POINT_SIZE,        ///< Increase point size button
+            DECREASE_POINT_SIZE,        ///< Decrease point size button
+            INCREASE_LINE_WIDTH,        ///< Increase line width button
+            DECREASE_LINE_WIDTH,        ///< Decrease line width button
+            LEAVE_BUBBLE_VIEW_MODE,     ///< Exit bubble-view mode button
+            LEAVE_FULLSCREEN_MODE,      ///< Exit fullscreen mode button
         };
 
+        /**
+         * @brief Default constructor
+         */
         ClickableItem() : role(NO_ROLE) {}
+        
+        /**
+         * @brief Constructor with role and area
+         * @param _role Item role
+         * @param _area Screen area rectangle
+         */
         ClickableItem(Role _role, QRect _area) : role(_role), area(_area) {}
 
-        Role role;
-        QRect area;
+        Role role;      ///< Item role/function
+        QRect area;     ///< Screen area (pixels)
     };
 
     //! Currently displayed clickable items
@@ -2065,33 +2580,44 @@ public slots:
 
 signals:
 
-    //! Signal emitted when an entity is selected in the 3D view
+    /**
+     * @brief Signal emitted when entity selection changes
+     * @param entity Selected entity (nullptr if deselected)
+     */
     void entitySelectionChanged(ccHObject* entity);
-    //! Signal emitted when multiple entities are selected in the 3D view
+    
+    /**
+     * @brief Signal emitted when multiple entities are selected
+     * @param entIDs Set of selected entity IDs
+     */
     void entitiesSelectionChanged(std::unordered_set<int> entIDs);
 
-    //! Signal emitted when a point (or a triangle) is picked
-    /** \param entity 'picked' entity
-            \param subEntityID point or triangle index in entity
-            \param x mouse cursor x position
-            \param y mouse cursor y position
-            \param P the picked point
-    **/
+    /**
+     * @brief Signal emitted when point or triangle is picked
+     * @param entity Picked entity
+     * @param subEntityID Point or triangle index within entity
+     * @param x Mouse cursor X position (pixels)
+     * @param y Mouse cursor Y position (pixels)
+     * @param P 3D coordinates of picked point
+     */
     void itemPicked(ccHObject* entity,
                     unsigned subEntityID,
                     int x,
                     int y,
                     const CCVector3& P);
 
-    //! Signal emitted when an item is picked (FAST_PICKING mode only)
-    /** \param entity entity
-            \param subEntityID point or triangle index in entity
-            \param x mouse cursor x position
-            \param y mouse cursor y position
-    **/
+    /**
+     * @brief Signal emitted during fast picking (FAST_PICKING mode)
+     * @param entity Picked entity
+     * @param subEntityID Point or triangle index
+     * @param x Mouse cursor X position (pixels)
+     * @param y Mouse cursor Y position (pixels)
+     */
     void itemPickedFast(ccHObject* entity, int subEntityID, int x, int y);
 
-    //! Signal emitted when fast picking is finished (FAST_PICKING mode only)
+    /**
+     * @brief Signal emitted when fast picking completes
+     */
     void fastPickingFinished();
 
     /*** Camera link mode (interactive modifications of the view/camera are
