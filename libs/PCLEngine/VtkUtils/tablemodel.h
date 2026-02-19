@@ -10,7 +10,7 @@
 #include <QAbstractTableModel>
 #include <QVector>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "point3f.h"
 
 // CV_CORE_LIB

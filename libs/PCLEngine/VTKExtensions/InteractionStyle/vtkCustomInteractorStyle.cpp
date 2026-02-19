@@ -341,27 +341,27 @@ void vtkCustomInteractorStyle::AddManipulator(vtkCameraManipulator* m) {
 
 // ======== Event callback registration ========
 
-boost::signals2::connection vtkCustomInteractorStyle::registerMouseCallback(
+PclUtils::SignalConnection vtkCustomInteractorStyle::registerMouseCallback(
         std::function<void(const PclUtils::MouseEvent&)> cb) {
-    return mouse_signal_.connect(cb);
+    return mouse_signal_.connect(std::move(cb));
 }
 
-boost::signals2::connection
+PclUtils::SignalConnection
 vtkCustomInteractorStyle::registerKeyboardCallback(
         std::function<void(const PclUtils::KeyboardEvent&)> cb) {
-    return keyboard_signal_.connect(cb);
+    return keyboard_signal_.connect(std::move(cb));
 }
 
-boost::signals2::connection
+PclUtils::SignalConnection
 vtkCustomInteractorStyle::registerPointPickingCallback(
         std::function<void(const PclUtils::PointPickingEvent&)> cb) {
-    return point_picking_signal_.connect(cb);
+    return point_picking_signal_.connect(std::move(cb));
 }
 
-boost::signals2::connection
+PclUtils::SignalConnection
 vtkCustomInteractorStyle::registerAreaPickingCallback(
         std::function<void(const PclUtils::AreaPickingEvent&)> cb) {
-    return area_picking_signal_.connect(cb);
+    return area_picking_signal_.connect(std::move(cb));
 }
 
 // ======== Screenshot & Camera ========

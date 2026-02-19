@@ -70,6 +70,7 @@
 #include <vtkProp.h>
 #include <vtkPropCollection.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkVariant.h>

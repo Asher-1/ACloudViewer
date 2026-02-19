@@ -2238,11 +2238,17 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             QSlider* slider = container->findChild<QSlider*>();
             QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
 
-            // Get current light intensity from backend (default 1.0 for normal
-            // intensity)
-            double intensity = 1.0;  // Default
-            if (ecvDisplayTools::TheInstance()) {
-                intensity = ecvDisplayTools::TheInstance()->getLightIntensity();
+            // Get per-object light intensity (falls back to global default)
+            double intensity = 1.0;
+            if (ecvDisplayTools::TheInstance() && m_currentObject) {
+                QString viewID = m_currentObject->getViewId();
+                if (!viewID.isEmpty()) {
+                    intensity =
+                            ecvDisplayTools::GetObjectLightIntensity(viewID);
+                } else {
+                    intensity =
+                            ecvDisplayTools::TheInstance()->getLightIntensity();
+                }
             }
 
             // Set both controls (slider triggers spinbox sync via signal)
@@ -3624,10 +3630,17 @@ void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
         return;
     }
 
-    // Apply light intensity to backend
-    ecvDisplayTools::TheInstance()->setLightIntensity(intensity);
+    if (m_currentObject) {
+        // Per-object: apply light intensity to the selected object only
+        QString viewID = m_currentObject->getViewId();
+        if (!viewID.isEmpty()) {
+            ecvDisplayTools::SetObjectLightIntensity(viewID, intensity);
+            return;
+        }
+    }
 
-    // Trigger screen update
+    // Fallback: global light intensity (headlight)
+    ecvDisplayTools::TheInstance()->setLightIntensity(intensity);
     ecvDisplayTools::UpdateScreen();
 }
 

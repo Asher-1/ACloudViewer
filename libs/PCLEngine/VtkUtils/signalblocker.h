@@ -9,7 +9,7 @@
 
 #include <QObject>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace VtkUtils {
 

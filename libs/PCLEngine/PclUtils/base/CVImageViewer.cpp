@@ -230,10 +230,10 @@ void PclUtils::ImageViewer::addMonoImage(
         const std::string& layer_id, double opacity) {
     if (data_size_ < cloud.width * cloud.height) {
         data_size_ = cloud.width * cloud.height * 3;
-        data_.reset(new unsigned char[data_size_]);
+        data_.resize(data_size_);
     }
     convertIntensityCloudToUChar(cloud, data_);
-    return addMonoImage(data_.get(), cloud.width, cloud.height, layer_id,
+    return addMonoImage(data_.data(), cloud.width, cloud.height, layer_id,
                         opacity);
 }
 
@@ -249,10 +249,10 @@ void PclUtils::ImageViewer::addMonoImage(
         const std::string& layer_id, double opacity) {
     if (data_size_ < cloud.width * cloud.height) {
         data_size_ = cloud.width * cloud.height * 3;
-        data_.reset(new unsigned char[data_size_]);
+        data_.resize(data_size_);
     }
     convertIntensityCloud8uToUChar(cloud, data_);
-    return addMonoImage(data_.get(), cloud.width, cloud.height, layer_id,
+    return addMonoImage(data_.data(), cloud.width, cloud.height, layer_id,
                         opacity);
 }
 
@@ -379,7 +379,7 @@ void PclUtils::ImageViewer::spinOnce(int time, bool force_redraw) {
 // ------------------------------------------------------------------
 // Callbacks
 // ------------------------------------------------------------------
-boost::signals2::connection PclUtils::ImageViewer::registerMouseCallback(
+PclUtils::SignalConnection PclUtils::ImageViewer::registerMouseCallback(
         std::function<void(const MouseEvent&)> callback) {
     if (mouse_signal_.empty()) {
         interactor_->GetInteractorStyle()->AddObserver(
@@ -404,7 +404,7 @@ boost::signals2::connection PclUtils::ImageViewer::registerMouseCallback(
     return mouse_signal_.connect(callback);
 }
 
-boost::signals2::connection PclUtils::ImageViewer::registerKeyboardCallback(
+PclUtils::SignalConnection PclUtils::ImageViewer::registerKeyboardCallback(
         std::function<void(const KeyboardEvent&)> callback) {
     if (keyboard_signal_.empty()) {
         interactor_->AddObserver(vtkCommand::KeyPressEvent, keyboard_command_);
@@ -815,7 +815,7 @@ void PclUtils::ImageViewer::setSize(int xw, int yw) { win_->SetSize(xw, yw); }
 // ------------------------------------------------------------------
 void PclUtils::ImageViewer::convertIntensityCloudToUChar(
         const pcl::PointCloud<pcl::Intensity>& cloud,
-        boost::shared_array<unsigned char> data) {
+        std::vector<unsigned char>& data) {
     int j = 0;
     for (const auto& point : cloud.points)
         data[j++] = static_cast<unsigned char>(point.intensity * 255);
@@ -823,7 +823,7 @@ void PclUtils::ImageViewer::convertIntensityCloudToUChar(
 
 void PclUtils::ImageViewer::convertIntensityCloud8uToUChar(
         const pcl::PointCloud<pcl::Intensity8u>& cloud,
-        boost::shared_array<unsigned char> data) {
+        std::vector<unsigned char>& data) {
     int j = 0;
     for (const auto& point : cloud.points)
         data[j++] = static_cast<unsigned char>(point.intensity);

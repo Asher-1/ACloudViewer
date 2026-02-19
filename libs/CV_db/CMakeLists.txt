@@ -57,8 +57,8 @@ endif ()
 target_compile_definitions(${PROJECT_NAME} PRIVATE CV_DB_LIBRARY_BUILD)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        CXX_VISIBILITY_PRESET hidden
-        )
+    CXX_VISIBILITY_PRESET hidden
+)
 
 if (NOT APPLE) # no need to copy targets on macos due to rpath
     cloudViewer_install_targets(${PROJECT_NAME})

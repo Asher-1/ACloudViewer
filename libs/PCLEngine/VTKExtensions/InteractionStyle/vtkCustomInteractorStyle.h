@@ -10,7 +10,6 @@
 // PclUtils types (replaces pcl::visualization types)
 #include "base/CVVisualizerTypes.h"
 
-#include <boost/signals2/signal.hpp>
 #include <vtkCommand.h>
 #include <vtkInteractorStyleRubberBandPick.h>
 #include <vtkRendererCollection.h>
@@ -117,19 +116,19 @@ public:
     // ======== Event callback registration ========
 
     /** \brief Register a callback function for mouse events */
-    boost::signals2::connection registerMouseCallback(
+    PclUtils::SignalConnection registerMouseCallback(
             std::function<void(const PclUtils::MouseEvent&)> cb);
 
     /** \brief Register a callback function for keyboard events */
-    boost::signals2::connection registerKeyboardCallback(
+    PclUtils::SignalConnection registerKeyboardCallback(
             std::function<void(const PclUtils::KeyboardEvent&)> cb);
 
     /** \brief Register a callback function for point picking events */
-    boost::signals2::connection registerPointPickingCallback(
+    PclUtils::SignalConnection registerPointPickingCallback(
             std::function<void(const PclUtils::PointPickingEvent&)> cb);
 
     /** \brief Register a callback function for area picking events */
-    boost::signals2::connection registerAreaPickingCallback(
+    PclUtils::SignalConnection registerAreaPickingCallback(
             std::function<void(const PclUtils::AreaPickingEvent&)> cb);
 
     // ======== Screenshot & Camera ========
@@ -300,11 +299,11 @@ protected:
     /** \brief Stores the point picker when switching to an area picker. */
     vtkSmartPointer<vtkPointPicker> point_picker_;
 
-    boost::signals2::signal<void(const PclUtils::MouseEvent&)> mouse_signal_;
-    boost::signals2::signal<void(const PclUtils::KeyboardEvent&)> keyboard_signal_;
-    boost::signals2::signal<void(const PclUtils::PointPickingEvent&)>
+    PclUtils::Signal<void(const PclUtils::MouseEvent&)> mouse_signal_;
+    PclUtils::Signal<void(const PclUtils::KeyboardEvent&)> keyboard_signal_;
+    PclUtils::Signal<void(const PclUtils::PointPickingEvent&)>
             point_picking_signal_;
-    boost::signals2::signal<void(const PclUtils::AreaPickingEvent&)>
+    PclUtils::Signal<void(const PclUtils::AreaPickingEvent&)>
             area_picking_signal_;
 
     /** \brief True if we're using red-blue colors for anaglyphic stereo. */

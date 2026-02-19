@@ -11,7 +11,7 @@
 #include <QRect>
 #include <QStyle>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class QPCL_ENGINE_LIB_API FlowLayout : public QLayout {
 public:

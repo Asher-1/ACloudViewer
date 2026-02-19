@@ -9,9 +9,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
+#include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -33,7 +36,156 @@
 
 class vtkProp;
 
+/**
+ * @namespace PclUtils
+ * @brief Utilities and types for PCL-based visualization
+ * 
+ * This namespace contains custom types and utilities that replace or extend
+ * PCL visualization components, providing a more flexible and maintainable
+ * interface for 3D visualization in CloudViewer.
+ */
 namespace PclUtils {
+
+// ============================================================================
+// Signal / Connection - lightweight replacement for boost::signals2
+// Thread-safe multicast signal with connection management.
+// ============================================================================
+
+// Forward-declare Signal so SignalConnection's friend declaration is valid.
+template <typename Signature>
+class Signal;
+
+/**
+ * @brief Represents a connection to a Signal
+ * 
+ * Manages the lifetime of a callback connection to a Signal.
+ * Can be used to disconnect the callback when no longer needed.
+ * 
+ * @see Signal
+ */
+class SignalConnection {
+public:
+    /**
+     * @brief Default constructor (unconnected state)
+     */
+    SignalConnection() = default;
+
+    /**
+     * @brief Disconnect this slot from its signal
+     * 
+     * After calling this, the callback will no longer be invoked.
+     * Safe to call multiple times.
+     */
+    void disconnect() {
+        if (auto d = disconnect_fn_.lock()) {
+            (*d)();
+        }
+    }
+
+    /**
+     * @brief Check if this connection is still active
+     * @return true if connected to a signal, false if disconnected
+     */
+    bool connected() const { return !disconnect_fn_.expired(); }
+
+private:
+    template <typename>
+    friend class Signal;
+
+    explicit SignalConnection(std::shared_ptr<std::function<void()>> fn)
+        : disconnect_fn_(fn) {}
+
+    std::weak_ptr<std::function<void()>> disconnect_fn_;
+};
+
+/**
+ * @brief Lightweight multicast signal (replaces boost::signals2::signal)
+ * 
+ * Thread-safe signal/slot mechanism for event handling.
+ * Multiple callbacks can be connected to a single signal, and all will
+ * be invoked when the signal is triggered.
+ * 
+ * Usage example:
+ * @code
+ *   Signal<void(const MouseEvent&)> mouse_signal;
+ *   auto conn = mouse_signal.connect([](const MouseEvent& e) {
+ *       std::cout << "Mouse at " << e.getX() << ", " << e.getY() << std::endl;
+ *   });
+ *   mouse_signal(event);  // fires all connected slots
+ *   conn.disconnect();    // removes the slot
+ * @endcode
+ * 
+ * @tparam Args... Callback function signature
+ */
+template <typename... Args>
+class Signal<void(Args...)> {
+    struct Slot {
+        std::size_t id;
+        std::function<void(Args...)> fn;
+        std::shared_ptr<std::function<void()>> disconnect_handle;
+    };
+
+public:
+    Signal() = default;
+
+    // Non-copyable, movable
+    Signal(const Signal&) = delete;
+    Signal& operator=(const Signal&) = delete;
+    Signal(Signal&&) = default;
+    Signal& operator=(Signal&&) = default;
+
+    /** \brief Connect a callback. Returns a SignalConnection. */
+    SignalConnection connect(std::function<void(Args...)> fn) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto slot_id = next_id_++;
+        auto disconnect_handle =
+                std::make_shared<std::function<void()>>([this, slot_id]() {
+                    std::lock_guard<std::mutex> lock2(mutex_);
+                    slots_.erase(
+                            std::remove_if(slots_.begin(), slots_.end(),
+                                           [slot_id](const Slot& s) {
+                                               return s.id == slot_id;
+                                           }),
+                            slots_.end());
+                });
+        slots_.push_back({slot_id, std::move(fn), disconnect_handle});
+        return SignalConnection(disconnect_handle);
+    }
+
+    /** \brief Fire the signal — invoke all connected slots. */
+    void operator()(Args... args) const {
+        std::vector<std::function<void(Args...)>> snapshot;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            snapshot.reserve(slots_.size());
+            for (auto& s : slots_) snapshot.push_back(s.fn);
+        }
+        for (auto& fn : snapshot) fn(args...);
+    }
+
+    /** \brief Returns true if no slots are connected. */
+    bool empty() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return slots_.empty();
+    }
+
+    /** \brief Number of connected slots. */
+    std::size_t num_slots() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return slots_.size();
+    }
+
+    /** \brief Disconnect all slots. */
+    void disconnect_all_slots() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        slots_.clear();
+    }
+
+private:
+    mutable std::mutex mutex_;
+    std::vector<Slot> slots_;
+    std::size_t next_id_{0};
+};
 
 // ============================================================================
 // Vector3ub - replaces pcl::visualization::Vector3ub

@@ -20,9 +20,6 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 
-#include <boost/shared_array.hpp>
-#include <boost/signals2/signal.hpp>
-
 #include <pcl/correspondence.h>
 #include <pcl/geometry/planar_polygon.h>
 #include <pcl/memory.h>
@@ -249,14 +246,14 @@ public:
     // ------------------------------------------------------------------
     // Keyboard / mouse callbacks
     // ------------------------------------------------------------------
-    boost::signals2::connection registerKeyboardCallback(
+    SignalConnection registerKeyboardCallback(
             void (*callback)(const KeyboardEvent&, void*),
             void* cookie = nullptr) {
         return registerKeyboardCallback(
                 [=](const KeyboardEvent& e) { (*callback)(e, cookie); });
     }
     template <typename T>
-    boost::signals2::connection registerKeyboardCallback(
+    SignalConnection registerKeyboardCallback(
             void (T::*callback)(const KeyboardEvent&, void*), T& instance,
             void* cookie = nullptr) {
         return registerKeyboardCallback(
@@ -264,17 +261,17 @@ public:
                     (instance.*callback)(e, cookie);
                 });
     }
-    boost::signals2::connection registerKeyboardCallback(
+    SignalConnection registerKeyboardCallback(
             std::function<void(const KeyboardEvent&)> cb);
 
-    boost::signals2::connection registerMouseCallback(
+    SignalConnection registerMouseCallback(
             void (*callback)(const MouseEvent&, void*),
             void* cookie = nullptr) {
         return registerMouseCallback(
                 [=](const MouseEvent& e) { (*callback)(e, cookie); });
     }
     template <typename T>
-    boost::signals2::connection registerMouseCallback(
+    SignalConnection registerMouseCallback(
             void (T::*callback)(const MouseEvent&, void*), T& instance,
             void* cookie = nullptr) {
         return registerMouseCallback(
@@ -282,7 +279,7 @@ public:
                     (instance.*callback)(e, cookie);
                 });
     }
-    boost::signals2::connection registerMouseCallback(
+    SignalConnection registerMouseCallback(
             std::function<void(const MouseEvent&)> cb);
 
     // ------------------------------------------------------------------
@@ -416,13 +413,13 @@ protected:
 
     void convertIntensityCloudToUChar(
             const pcl::PointCloud<pcl::Intensity>& cloud,
-            boost::shared_array<unsigned char> data);
+            std::vector<unsigned char>& data);
     void convertIntensityCloud8uToUChar(
             const pcl::PointCloud<pcl::Intensity8u>& cloud,
-            boost::shared_array<unsigned char> data);
+            std::vector<unsigned char>& data);
     template <typename T>
     void convertRGBCloudToUChar(const pcl::PointCloud<T>& cloud,
-                                boost::shared_array<unsigned char>& data);
+                                std::vector<unsigned char>& data);
 
     void resetStoppedFlag() { stopped_ = false; }
 
@@ -475,8 +472,8 @@ protected:
                                    int height, double opacity = 0.5,
                                    bool fill_box = true);
 
-    boost::signals2::signal<void(const MouseEvent&)> mouse_signal_;
-    boost::signals2::signal<void(const KeyboardEvent&)> keyboard_signal_;
+    Signal<void(const MouseEvent&)> mouse_signal_;
+    Signal<void(const KeyboardEvent&)> keyboard_signal_;
 
     vtkSmartPointer<vtkRenderWindowInteractor> interactor_;
     vtkSmartPointer<vtkCallbackCommand> mouse_command_;
@@ -490,7 +487,7 @@ protected:
     vtkSmartPointer<vtkImageSlice> slice_;
     vtkSmartPointer<ImageViewerInteractorStyle> interactor_style_;
 
-    boost::shared_array<unsigned char> data_;
+    std::vector<unsigned char> data_;
     std::size_t data_size_;
     bool stopped_;
     int timer_id_;

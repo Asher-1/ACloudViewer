@@ -21,124 +21,294 @@
 // SYSTEM
 #include <vector>
 
+class QScrollArea;
+class QVBoxLayout;
 class ccHObject;
 class ccPickingHub;
 class ecvFontPropertyWidget;
 
-//! Dialog for managing measurement tools (Distance, Contour, Protractor)
+/**
+ * @class ecvMeasurementTool
+ * @brief Interactive measurement tool dialog
+ * 
+ * Overlay dialog for creating and managing various types of measurements in
+ * 3D views. Supports multiple measurement types including:
+ * 
+ * - **Distance**: Point-to-point, point-to-plane, plane-to-plane distances
+ * - **Angle**: Angular measurements (protractor)
+ * - **Area**: Surface area and perimeter measurements
+ * - **Volume**: 3D volume calculations
+ * - **Contour**: Polyline contour measurements
+ * 
+ * Features:
+ * - Multiple measurement instances support
+ * - Interactive point picking in 3D views
+ * - Customizable colors and fonts for measurement display
+ * - Export measurements to file
+ * - Real-time measurement updates during point selection
+ * - DPI-adaptive UI layout
+ * 
+ * The tool integrates with CloudViewer's picking system to enable
+ * interactive point/entity selection for measurement creation.
+ * 
+ * @see ecvGenericMeasurementTools
+ * @see ccOverlayDialog
+ * @see ccPickingListener
+ */
 class ecvMeasurementTool : public ccOverlayDialog,
                            public Ui::MeasurementToolDlg,
                            public ccPickingListener {
     Q_OBJECT
 
 public:
-    //! Default constructor
+    /**
+     * @brief Constructor
+     * @param parent Parent widget
+     */
     explicit ecvMeasurementTool(QWidget* parent);
-    //! Default destructor
+    
+    /**
+     * @brief Destructor
+     * 
+     * Cleans up measurement tool instances and releases associated entities.
+     */
     virtual ~ecvMeasurementTool();
 
-    // inherited from ccOverlayDialog
+    /**
+     * @brief Link tool to a 3D display window
+     * 
+     * Establishes connection with display window for rendering measurements
+     * and handling picking events.
+     * 
+     * @param win Display window to link with
+     * @return true if linked successfully
+     */
     virtual bool linkWith(QWidget* win) override;
+    
+    /**
+     * @brief Start the measurement tool
+     * 
+     * Activates measurement mode, enables picking, and shows the dialog.
+     * @return true if started successfully
+     */
     virtual bool start() override;
+    
+    /**
+     * @brief Stop the measurement tool
+     * 
+     * Deactivates measurement mode, disables picking, and hides the dialog.
+     * @param state Final state (true = accept, false = reject)
+     */
     virtual void stop(bool state) override;
 
+    /**
+     * @brief Set current measurement tool
+     * @param tool Measurement tool to set as active
+     */
     void setMeasurementTool(ecvGenericMeasurementTools* tool);
+    
+    /**
+     * @brief Get current measurement tool
+     * @return Pointer to active measurement tool
+     */
     ecvGenericMeasurementTools* getMeasurementTool() const { return m_tool; }
 
-    //! Adds an entity
-    /** \return success, if the entity is eligible for measurement
-     **/
+    /**
+     * @brief Add entity for measurement
+     * 
+     * Associates an entity (point cloud, mesh, etc.) with the measurement tool.
+     * Entity must be eligible for the current measurement type.
+     * 
+     * @param anObject Entity to associate
+     * @return true if entity is eligible and was added successfully
+     */
     bool addAssociatedEntity(ccHObject* anObject);
 
-    //! Returns the current number of associated entities
+    /**
+     * @brief Get number of associated entities
+     * @return Count of entities currently associated with measurement
+     */
     unsigned getNumberOfAssociatedEntity() const;
 
+    /**
+     * @brief Get output measurement entities
+     * 
+     * Returns container of measurement result entities (labels, polylines, etc.)
+     * that were created by the tool.
+     * 
+     * @return Container of output entities
+     */
     inline ccHObject::Container getOutputs() const { return m_out_entities; }
 
-    //! Inherited from ccPickingListener
+    /**
+     * @brief Handle picked item event
+     * 
+     * Called when user picks a point/entity in 3D view. Updates measurement
+     * based on picked item.
+     * 
+     * @param pi Picked item information
+     */
     void onItemPicked(const PickedItem& pi) override;
 
 protected slots:
+    /**
+     * @brief Reset measurement to initial state
+     */
     void reset();
+    
+    /**
+     * @brief Close the measurement dialog
+     */
     void closeDialog();
+    
+    /**
+     * @brief Update measurement display in 3D view
+     */
     void updateMeasurementDisplay();
+    
+    /**
+     * @brief Toggle widget visibility
+     * @param state Visibility state
+     */
     void toggleWidget(bool state);
+    
+    /**
+     * @brief Export measurement to file
+     */
     void exportMeasurement();
+    
+    /**
+     * @brief Handle measurement instance change
+     * @param index New instance index
+     */
     void onInstanceChanged(int index);
+    
+    /**
+     * @brief Add new measurement instance
+     */
     void addInstance();
+    
+    /**
+     * @brief Remove current measurement instance
+     */
     void removeInstance();
+    
+    /**
+     * @brief Handle point picking request
+     * @param pointIndex Index of point to pick
+     */
     void onPointPickingRequested(int pointIndex);
+    
+    /**
+     * @brief Handle cancelled point picking
+     */
     void onPointPickingCancelled();
+    
+    /**
+     * @brief Handle color selection button click
+     */
     void onColorButtonClicked();
+    
+    /**
+     * @brief Handle font properties change
+     */
     void onFontPropertiesChanged();
 
 protected:
-    //! Updates the measurement result display
+    /**
+     * @brief Update measurement result display
+     * 
+     * Updates the numerical/text display of measurement results.
+     */
     void updateResultDisplay();
 
-    //! Updates UI from current tool
+    /**
+     * @brief Update UI from current tool state
+     * 
+     * Synchronizes UI controls with current measurement tool properties.
+     */
     void updateUIFromTool();
 
-    //! Updates tool from UI
+    /**
+     * @brief Update tool from UI state
+     * 
+     * Synchronizes measurement tool properties with UI control values.
+     */
     void updateToolFromUI();
 
-    //! Releases all associated entities
+    /**
+     * @brief Release all associated entities
+     * 
+     * Clears and deletes all entities associated with measurements.
+     */
     void releaseAssociatedEntities();
 
-    //! Creates a new measurement tool instance
+    /**
+     * @brief Create new measurement tool instance
+     * @param type Type of measurement tool to create
+     * @return Pointer to new measurement tool
+     */
     ecvGenericMeasurementTools* createMeasurementTool(
             ecvGenericMeasurementTools::MeasurementType type);
 
-    //! Updates instances combo box
+    /**
+     * @brief Update instances combo box
+     * 
+     * Refreshes list of available measurement instances in UI.
+     */
     void updateInstancesComboBox();
 
-    //! Switches to the specified tool's UI
+    /**
+     * @brief Switch to tool's UI
+     * @param tool Tool to switch to
+     */
     void switchToToolUI(ecvGenericMeasurementTools* tool);
 
-    //! Updates color button appearance based on current color
-    //! @param color Optional color to display. If not provided, uses
-    //! m_currentColor
+    /**
+     * @brief Update color button appearance
+     * @param color Color to display (uses m_currentColor if not specified)
+     */
     void updateColorButtonAppearance(const QColor& color = QColor());
 
-    //! Applies color to all tool instances (or current tool if "Apply all" is
-    //! unchecked)
-    //! @param color Optional color to apply. If not provided, uses
-    //! m_currentColor
+    /**
+     * @brief Apply color to tool instances
+     * 
+     * Applies color to all instances or just current one based on
+     * "Apply to all" checkbox state.
+     * @param color Color to apply (uses m_currentColor if not specified)
+     */
     void applyColorToAllTools(const QColor& color = QColor());
 
-    //! Applies font properties to tool instances (all or current based on
-    //! checkbox)
+    /**
+     * @brief Apply font properties to tool instances
+     * 
+     * Applies font settings to all or current tool based on checkbox.
+     */
     void applyFontToTools();
 
-    //! Current measurement tool
-    ecvGenericMeasurementTools* m_tool;
+    ecvGenericMeasurementTools* m_tool;  ///< Current active measurement tool
 
-    //! List of all measurement tool instances
-    QList<ecvGenericMeasurementTools*> m_toolInstances;
+    QList<ecvGenericMeasurementTools*> m_toolInstances;  ///< All tool instances
 
-    ecvGenericMeasurementTools::MeasurementType m_measurementType;
+    ecvGenericMeasurementTools::MeasurementType m_measurementType;  ///< Current measurement type
 
-    //! Associated entities container
-    ccHObject m_entityContainer;
+    ccHObject m_entityContainer;  ///< Container for associated entities
 
-    ccHObject::Container m_out_entities;
+    ccHObject::Container m_out_entities;  ///< Output measurement entities
 
-    //! Flag to prevent recursive updates
-    bool m_updatingFromTool;
+    bool m_updatingFromTool;  ///< Flag to prevent recursive UI updates
 
-    //! Picking hub for point selection
-    ccPickingHub* m_pickingHub;
+    ccPickingHub* m_pickingHub;  ///< Picking hub for point selection
 
-    //! Current point selection mode (0=none, 1=point1, 2=point2, 3=center)
-    int m_pickPointMode;
+    int m_pickPointMode;  ///< Point selection mode (0=none, 1-3=specific points)
 
-    //! Current measurement color (default: green)
-    QColor m_currentColor;
+    QColor m_currentColor;  ///< Current measurement color
 
-    //! Font property widget
-    ecvFontPropertyWidget* m_fontPropertyWidget = nullptr;
+    ecvFontPropertyWidget* m_fontPropertyWidget;  ///< Font property editor
 
-    //! VTK widget reference from linkWith (for creating shortcuts in new
-    //! instances)
-    QWidget* m_linkedWidget = nullptr;
+    QWidget* m_linkedWidget;  ///< Linked VTK display widget
+
+    QScrollArea* m_scrollArea;  ///< Scroll area for parameters (DPI-adaptive)
+
+    QVBoxLayout* m_parametersLayout;  ///< Parameters layout container
 };

@@ -40,7 +40,7 @@ inline void getRandomColors(double& r, double& g, double& b,
 template <typename T>
 void PclUtils::ImageViewer::convertRGBCloudToUChar(
         const pcl::PointCloud<T>& cloud,
-        boost::shared_array<unsigned char>& data) {
+        std::vector<unsigned char>& data) {
     int j = 0;
     for (const auto& point : cloud) {
         data[j++] = point.r;
@@ -56,10 +56,10 @@ void PclUtils::ImageViewer::addRGBImage(const pcl::PointCloud<T>& cloud,
                                      double opacity) {
     if (data_size_ < cloud.width * cloud.height) {
         data_size_ = cloud.width * cloud.height * 3;
-        data_.reset(new unsigned char[data_size_]);
+        data_.resize(data_size_);
     }
     convertRGBCloudToUChar(cloud, data_);
-    return addRGBImage(data_.get(), cloud.width, cloud.height, layer_id,
+    return addRGBImage(data_.data(), cloud.width, cloud.height, layer_id,
                        opacity);
 }
 
@@ -310,7 +310,7 @@ bool PclUtils::ImageViewer::showCorrespondences(
 
     if (data_size_ < static_cast<std::size_t>(src_size + tgt_size)) {
         data_size_ = src_size + tgt_size;
-        data_.reset(new unsigned char[data_size_]);
+        data_.resize(data_size_);
     }
 
     int j = 0;
@@ -339,7 +339,7 @@ bool PclUtils::ImageViewer::showCorrespondences(
     }
 
     void* data =
-            const_cast<void*>(reinterpret_cast<const void*>(data_.get()));
+            const_cast<void*>(reinterpret_cast<const void*>(data_.data()));
 
     vtkSmartPointer<vtkImageData> image =
             vtkSmartPointer<vtkImageData>::New();

@@ -19,33 +19,55 @@ class GenericIndexedCloud;
 class KDTree;
 class ScalarField;
 
-//! Common point cloud registration algorithms
+/**
+ * @class RegistrationTools
+ * @brief Point cloud registration algorithms
+ * 
+ * Provides common algorithms for aligning point clouds, including ICP
+ * (Iterative Closest Point) and Horn's method. Supports optional scale
+ * estimation and transformation constraints.
+ * 
+ * @see HornRegistrationTools
+ * @see ICPRegistrationTools
+ */
 class CV_CORE_LIB_API RegistrationTools : public CVToolbox {
 public:
-    //! Shortcut to PointProjectionTools::ScaledTransformation
+    /**
+     * @brief Transformation type (with optional scale)
+     */
     using ScaledTransformation = PointProjectionTools::Transformation;
 
-    //! Transformation constraints
+    /**
+     * @brief Transformation constraint flags
+     * 
+     * Bitflags to constrain registration transformations by disabling
+     * specific rotation axes or translation directions.
+     */
     enum TRANSFORMATION_FILTERS {
-        SKIP_NONE = 0,
-        SKIP_RXY = 1,
-        SKIP_RYZ = 2,
-        SKIP_RXZ = 4,
-        SKIP_ROTATION = 7,
-        SKIP_TX = 8,
-        SKIP_TY = 16,
-        SKIP_TZ = 32,
-        SKIP_TRANSLATION = 56,
+        SKIP_NONE = 0,           ///< No constraints
+        SKIP_RXY = 1,            ///< Skip rotation around XY axes
+        SKIP_RYZ = 2,            ///< Skip rotation around YZ axes
+        SKIP_RXZ = 4,            ///< Skip rotation around XZ axes
+        SKIP_ROTATION = 7,       ///< Skip all rotations (RXY|RYZ|RXZ)
+        SKIP_TX = 8,             ///< Skip translation along X
+        SKIP_TY = 16,            ///< Skip translation along Y
+        SKIP_TZ = 32,            ///< Skip translation along Z
+        SKIP_TRANSLATION = 56,   ///< Skip all translations (TX|TY|TZ)
     };
 
-    //! 'Filters' a transformation by constraining it about some rotation axes
-    //! and/or along some translation directions
-    /**	\param inTrans input transformation
-            \param transformationFilters filters to be applied on the resulting
-    transformation at each step (experimental) - see
-    RegistrationTools::TRANSFORMATION_FILTERS flags \param outTrans output
-    transformation
-    **/
+    /**
+     * @brief Filter transformation with constraints
+     * 
+     * Applies constraints to a transformation by zeroing out specified
+     * rotation and/or translation components.
+     * 
+     * @param inTrans Input transformation
+     * @param transformationFilters Constraint flags (@see TRANSFORMATION_FILTERS)
+     * @param toBeAlignedGravityCenter Centroid of cloud to align
+     * @param referenceGravityCenter Centroid of reference cloud
+     * @param outTrans Output filtered transformation
+     * @note Experimental feature
+     */
     static void FilterTransformation(const ScaledTransformation& inTrans,
                                      int transformationFilters,
                                      const CCVector3& toBeAlignedGravityCenter,
@@ -86,18 +108,31 @@ protected:
                                       CCVector3* Gx = nullptr);
 };
 
-//! Horn point cloud registration algorithm
-/** See 'Closed-form solution of absolute orientation using unit quaternions',
- *B.K.P. Horn, 1987.
- **/
+/**
+ * @class HornRegistrationTools
+ * @brief Horn's closed-form registration algorithm
+ * 
+ * Implements Horn's method for computing absolute orientation (rotation,
+ * translation, and optionally scale) between two point sets using
+ * unit quaternions.
+ * 
+ * Reference: "Closed-form solution of absolute orientation using unit
+ * quaternions", B.K.P. Horn, 1987.
+ * 
+ * @see RegistrationTools
+ */
 class CV_CORE_LIB_API HornRegistrationTools : public RegistrationTools {
 public:
-    //! Returns "absolute orientation" (scale + transformation) between two set
-    //! of (unordered) points
-    /** Warning: both clouds must have the same size (and at least 3 points)
-            Output transformation is from the left (L) to the right (R)
-    coordinate system \param lCloud left cloud {Pl} \param rCloud right cloud
-    {Pr} \param trans resulting transformation: Pr = s.R.Pl + T \param
+    /**
+     * @brief Compute absolute orientation between two point sets
+     * 
+     * Computes the optimal transformation (rotation, translation, and
+     * optionally scale) that aligns the left cloud to the right cloud.
+     * 
+     * @param lCloud Left cloud {Pl}
+     * @param rCloud Right cloud {Pr}
+     * @param trans Output transformation: Pr = s*R*Pl + T
+     * @param
     fixedScale force scale parameter to 1.0 \return success
     **/
     static bool FindAbsoluteOrientation(GenericCloud* lCloud,

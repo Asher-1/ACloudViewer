@@ -17,54 +17,69 @@ class GenericProgressCallback;
 class GenericCloud;
 class ScalarField;
 
-//! Several algorithms to compute point-clouds geometric characteristics
-//! (curvature, density, etc.)
+/**
+ * @class GeometricalAnalysisTools
+ * @brief Algorithms for computing point cloud geometric characteristics
+ * 
+ * Provides various algorithms to compute geometric properties of point clouds
+ * including curvature, density, roughness, and other local features. These
+ * tools are essential for point cloud analysis, segmentation, and classification.
+ * 
+ * @see Neighbourhood
+ * @see DgmOctree
+ */
 class CV_CORE_LIB_API GeometricalAnalysisTools : public CVToolbox {
 public:
+    /**
+     * @brief Geometric characteristics that can be computed
+     */
     enum GeomCharacteristic {
-        Feature,            /**< See Neighbourhood::GeomFeature **/
-        Curvature,          /**< See Neighbourhood::CurvatureType **/
-        LocalDensity,       /**< Accurate local density (see
-                               GeometricalAnalysisTools::Density) **/
-        ApproxLocalDensity, /**< Approximate local density (see
-                               GeometricalAnalysisTools::Density) **/
-        Roughness,          /**< Roughness **/
-        MomentOrder1        /**< 1st order moment **/
+        Feature,            ///< Geometric feature (@see Neighbourhood::GeomFeature)
+        Curvature,          ///< Surface curvature (@see Neighbourhood::CurvatureType)
+        LocalDensity,       ///< Accurate local density (@see Density)
+        ApproxLocalDensity, ///< Approximate local density (@see Density)
+        Roughness,          ///< Surface roughness
+        MomentOrder1        ///< First order moment
     };
 
-    //! Density measurement
+    /**
+     * @brief Density measurement methods
+     */
     enum Density {
-        DENSITY_KNN =
-                1,  /**< The number of points inside the neighborhing sphere **/
-        DENSITY_2D, /**< The number of points divided by the area of the circle
-                       that has the same radius as the neighborhing sphere (2D
-                       approximation) **/
-        DENSITY_3D, /**< The number of points divided by the neighborhing sphere
-                       volume (3D) **/
+        DENSITY_KNN = 1,  ///< Number of points in neighborhood sphere
+        DENSITY_2D,       ///< Points / circle area (2D projection)
+        DENSITY_3D,       ///< Points / sphere volume (3D)
     };
 
+    /**
+     * @brief Error codes for analysis operations
+     */
     enum ErrorCode {
-        NoError = 0,
-        InvalidInput = -1,
-        NotEnoughPoints = -2,
-        OctreeComputationFailed = -3,
-        ProcessFailed = -4,
-        UnhandledCharacteristic = -5,
-        NotEnoughMemory = -6,
-        ProcessCancelledByUser = -7
+        NoError = 0,                    ///< Success
+        InvalidInput = -1,              ///< Invalid input parameters
+        NotEnoughPoints = -2,           ///< Insufficient points
+        OctreeComputationFailed = -3,   ///< Octree creation failed
+        ProcessFailed = -4,             ///< Processing failed
+        UnhandledCharacteristic = -5,   ///< Unsupported characteristic
+        NotEnoughMemory = -6,           ///< Out of memory
+        ProcessCancelledByUser = -7     ///< User cancelled
     };
-    //! Unified way to compute a geometric characteristic
-    /** Once the main geometric characterstic is chosen, the subOption parameter
-    is used to specify the actual feature / curvature type / local density
-    computation algorithm if necessary. \param c geometric characterstic \param
-    subOption feature / curvature type / local density computation algorithm or
-    nothing (0) \param cloud cloud to compute the characteristic on \param
-    kernelRadius neighbouring sphere radius \param roughnessUpDir up direction
-    to compute signed roughness values (optional) \param progressCb client
-    application can get some notification of the process progress through this
-    callback mechanism (see GenericProgressCallback) \param inputOctree if not
-    set as input, octree will be automatically computed. \return succes
-    **/
+    /**
+     * @brief Compute a geometric characteristic
+     * 
+     * Unified method to compute various geometric properties. Once the main
+     * characteristic is chosen, use subOption to specify details (e.g., specific
+     * feature type, curvature type, or density algorithm).
+     * 
+     * @param c Geometric characteristic to compute
+     * @param subOption Feature/curvature type or density algorithm (0 if N/A)
+     * @param cloud Point cloud to analyze
+     * @param kernelRadius Neighborhood sphere radius
+     * @param roughnessUpDir Up direction for signed roughness (optional)
+     * @param progressCb Progress callback (optional)
+     * @param inputOctree Pre-computed octree (optional, computed if nullptr)
+     * @return Error code (NoError on success)
+     */
     static ErrorCode ComputeCharactersitic(
             GeomCharacteristic c,
             int subOption,
@@ -74,28 +89,30 @@ public:
             GenericProgressCallback* progressCb = nullptr,
             DgmOctree* inputOctree = nullptr);
 
-    //! Computes the local density (approximate)
-    /** Old method (based only on the distance to the nearest neighbor).
-            \warning As only one neighbor is extracted, the DENSITY_KNN type
-    corresponds in fact to the (inverse) distance to the nearest neighbor.
-            \warning This method assumes the input scalar field is different
-    from the output one. \param cloud processed cloud \param densityType the
-    'type' of density to compute \param progressCb client application can get
-    some notification of the process progress through this callback mechanism
-    (see GenericProgressCallback) \param inputOctree if not set as input, octree
-    will be automatically computed. \return success (0) or error code (<0)
-    **/
+    /**
+     * @brief Compute approximate local density
+     * 
+     * Legacy method based only on distance to nearest neighbor.
+     * @param cloud Point cloud to analyze
+     * @param densityType Density measurement type
+     * @param progressCb Progress callback (optional)
+     * @param inputOctree Pre-computed octree (optional)
+     * @return Error code (NoError on success)
+     * @warning DENSITY_KNN corresponds to inverse nearest neighbor distance
+     * @warning Assumes input and output scalar fields are different
+     */
     static ErrorCode ComputeLocalDensityApprox(
             GenericIndexedCloudPersist* cloud,
             Density densityType,
             GenericProgressCallback* progressCb = nullptr,
             DgmOctree* inputOctree = nullptr);
 
-    //! Computes the gravity center of a point cloud
-    /** \warning this method uses the cloud global iterator
-            \param theCloud cloud
-            \return gravity center
-    **/
+    /**
+     * @brief Compute the gravity center (centroid) of a point cloud
+     * @param theCloud Input point cloud
+     * @return Gravity center coordinates
+     * @warning Uses the cloud's global iterator
+     */
     static CCVector3 ComputeGravityCenter(const GenericCloud* theCloud);
 
     //! Computes the weighted gravity center of a point cloud

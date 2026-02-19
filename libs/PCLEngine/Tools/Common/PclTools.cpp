@@ -588,16 +588,25 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
         const std::string& zPlus,
         const std::string& zMinus) {
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
-    axes->SetShaftTypeToCylinder();
+    // Use default arrow shaft type for clean arrow appearance
     axes->SetXAxisLabelText(xLabel.c_str());
     axes->SetYAxisLabelText(yLabel.c_str());
     axes->SetZAxisLabelText(zLabel.c_str());
+    
+    // Professional 3D system style - enhanced visibility
+    // Note: For default arrow type, use NormalizedShaftLength and NormalizedTipLength
+    axes->SetNormalizedShaftLength(0.85, 0.85, 0.85);  // 85% shaft, 15% tip
+    axes->SetNormalizedTipLength(0.15, 0.15, 0.15);     // Arrow tip length
+    axes->SetShaftTypeToLine();  // Use line shaft with arrow tips
+    
+    // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
     axes->GetXAxisShaftProperty()->SetColor(1.0, 0.0, 0.0);
-    axes->GetYAxisTipProperty()->SetColor(1.0, 1.0, 0.0);
-    axes->GetYAxisShaftProperty()->SetColor(1.0, 1.0, 0.0);
-    axes->GetZAxisTipProperty()->SetColor(0.0, 1.0, 0.0);
-    axes->GetZAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetYAxisTipProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetYAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
+    axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 1.0);
+    
     axes->SetTotalLength(axesLength, axesLength, axesLength);
 
     vtkSmartPointer<vtkAnnotatedCubeActor> cube =
@@ -611,46 +620,60 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     cube->SetXFaceTextRotation(180);
     cube->SetYFaceTextRotation(180);
     cube->SetZFaceTextRotation(-90);
-    cube->SetFaceTextScale(0.65);
-    cube->GetCubeProperty()->SetColor(0.5, 1, 1);
-    cube->GetTextEdgesProperty()->SetLineWidth(1);
+    cube->SetFaceTextScale(0.50);  // Smaller text to fit within cube faces
+    cube->GetCubeProperty()->SetColor(0.8, 0.8, 0.8);  // Neutral gray for cube body
+    cube->GetTextEdgesProperty()->SetLineWidth(1);  // Standard text edges
     cube->GetTextEdgesProperty()->SetDiffuse(0);
     cube->GetTextEdgesProperty()->SetAmbient(1);
-    cube->GetTextEdgesProperty()->SetColor(0.1800, 0.2800, 0.2300);
+    cube->GetTextEdgesProperty()->SetColor(0.2, 0.2, 0.2);  // Darker edges for better contrast
     // this static function improves the appearance of the text edges
     // since they are overlaid on a surface rendering of the cube's faces
     vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
+    // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     cube->GetXPlusFaceProperty()->SetColor(1.0, 0.0, 0.0);
     cube->GetXPlusFaceProperty()->SetInterpolationToFlat();
     cube->GetXMinusFaceProperty()->SetColor(1.0, 0.0, 0.0);
     cube->GetXMinusFaceProperty()->SetInterpolationToFlat();
-    cube->GetYPlusFaceProperty()->SetColor(1.0, 1.0, 0.0);
+    cube->GetYPlusFaceProperty()->SetColor(0.0, 1.0, 0.0);
     cube->GetYPlusFaceProperty()->SetInterpolationToFlat();
-    cube->GetYMinusFaceProperty()->SetColor(1.0, 1.0, 0.0);
+    cube->GetYMinusFaceProperty()->SetColor(0.0, 1.0, 0.0);
     cube->GetYMinusFaceProperty()->SetInterpolationToFlat();
-    cube->GetZPlusFaceProperty()->SetColor(0.0, 1.0, 0.0);
+    cube->GetZPlusFaceProperty()->SetColor(0.0, 0.0, 1.0);
     cube->GetZPlusFaceProperty()->SetInterpolationToFlat();
-    cube->GetZMinusFaceProperty()->SetColor(0.0, 1.0, 0.0);
+    cube->GetZMinusFaceProperty()->SetColor(0.0, 0.0, 1.0);
     cube->GetZMinusFaceProperty()->SetInterpolationToFlat();
 
-    vtkSmartPointer<vtkTextProperty> tprop4 =
+    // Professional text properties for axis labels - match axis colors
+    // X axis label - Red
+    vtkSmartPointer<vtkTextProperty> tpropX =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop4->ShadowOn();
-    tprop4->SetFontFamilyToArial();
-
-    // tprop.SetFontFamilyToTimes();
-    axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tprop4);
-    //
-    vtkSmartPointer<vtkTextProperty> tprop2 =
+    tpropX->ShadowOn();
+    tpropX->SetFontFamilyToArial();
+    tpropX->BoldOn();
+    tpropX->SetFontSize(14);
+    tpropX->SetColor(1.0, 0.0, 0.0);  // Red to match X axis
+    axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tpropX);
+    
+    // Y axis label - Green
+    vtkSmartPointer<vtkTextProperty> tpropY =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop2->ShallowCopy(tprop4);
-    axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tprop2);
-    //
-    vtkSmartPointer<vtkTextProperty> tprop3 =
+    tpropY->ShadowOn();
+    tpropY->SetFontFamilyToArial();
+    tpropY->BoldOn();
+    tpropY->SetFontSize(14);
+    tpropY->SetColor(0.0, 1.0, 0.0);  // Green to match Y axis
+    axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tpropY);
+    
+    // Z axis label - Blue
+    vtkSmartPointer<vtkTextProperty> tpropZ =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop3->ShallowCopy(tprop4);
-    axes->GetZAxisCaptionActor2D()->SetCaptionTextProperty(tprop3);
+    tpropZ->ShadowOn();
+    tpropZ->SetFontFamilyToArial();
+    tpropZ->BoldOn();
+    tpropZ->SetFontSize(14);
+    tpropZ->SetColor(0.0, 0.0, 1.0);  // Blue to match Z axis
+    axes->GetZAxisCaptionActor2D()->SetCaptionTextProperty(tpropZ);
 
     vtkSmartPointer<vtkPropAssembly> assembly =
             vtkSmartPointer<vtkPropAssembly>::New();
