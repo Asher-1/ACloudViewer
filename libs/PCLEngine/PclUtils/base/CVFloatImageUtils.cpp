@@ -11,6 +11,9 @@
 #include <cmath>
 #include <limits>
 
+// CV_CORE_LIB
+#include <CVConst.h>
+
 void PclUtils::FloatImageUtils::getColorForFloat(float value,
                                                  unsigned char& r,
                                                  unsigned char& g,

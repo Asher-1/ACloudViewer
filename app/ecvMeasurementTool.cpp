@@ -35,6 +35,7 @@
 #include <QScrollArea>
 #include <QSizePolicy>
 #include <QVBoxLayout>
+#include <QWindow>
 
 #ifdef USE_PCL_BACKEND
 #include <Tools/MeasurementTools/PclMeasurementTools.h>
@@ -81,8 +82,15 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
     // Compute DPI-adaptive max height for the WHOLE dialog (not just scroll
     // area). The scroll area expands to fill remaining space; capping the
     // dialog prevents it from covering the entire render window.
-    QScreen* screen = this->screen();
-    if (!screen) screen = QApplication::primaryScreen();
+    QScreen* screen = nullptr;
+    // Try to get the screen from the window handle (works in all Qt versions)
+    if (windowHandle()) {
+        screen = windowHandle()->screen();
+    }
+    // Fall back to primary screen
+    if (!screen) {
+        screen = QApplication::primaryScreen();
+    }
     if (screen) {
         int screenHeight = screen->availableGeometry().height();
         qreal dpr = screen->devicePixelRatio();
