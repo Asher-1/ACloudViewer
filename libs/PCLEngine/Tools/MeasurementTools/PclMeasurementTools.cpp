@@ -10,6 +10,8 @@
 #include <CVLog.h>
 #include <PclUtils/PCLVis.h>
 #include <ecvDisplayTools.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 
 #include "cvContourTool.h"
 #include "cvDistanceTool.h"

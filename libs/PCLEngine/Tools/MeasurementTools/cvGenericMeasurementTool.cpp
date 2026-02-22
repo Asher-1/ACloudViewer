@@ -14,6 +14,9 @@
 #endif
 
 // LOCAL
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+
 #include "PclUtils/PCLVis.h"
 #include "VtkUtils/vtkutils.h"
 

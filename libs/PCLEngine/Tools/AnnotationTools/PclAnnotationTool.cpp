@@ -33,6 +33,7 @@
 #endif
 
 // VTK
+#include <vtkPolyData.h>
 #include <vtkRenderWindowInteractor.h>
 
 // QT
@@ -233,8 +234,18 @@ void PclAnnotationTool::refresh() {
 
     m_colorHandler.setInputCloud(m_baseCloud);
     m_colorHandler.setLabel(m_cloudLabel);
-    m_viewer->addPointCloud<PointIntensity>(m_baseCloud, m_colorHandler,
-                                            m_annotationCloudId, 0);
+    {
+        // Convert PCL cloud to VTK polydata + colors
+        PclUtils::PointCloudGeometryHandlerXYZ<PointIntensity> geometry(
+                m_baseCloud);
+        vtkSmartPointer<vtkPoints> points;
+        geometry.getGeometry(points);
+        vtkSmartPointer<vtkPolyData> polydata =
+                vtkSmartPointer<vtkPolyData>::New();
+        polydata->SetPoints(points);
+        vtkSmartPointer<vtkDataArray> colors = m_colorHandler.getColor();
+        m_viewer->addPointCloud(polydata, colors, m_annotationCloudId, 0);
+    }
 
     // show annotation if exists
     showAnnotation();
@@ -602,8 +613,16 @@ void PclAnnotationTool::defaultColorPoint(std::vector<int>& slice) {
 
 void PclAnnotationTool::updateCloud() {
     if (!m_viewer || m_viewer->contains(m_annotationCloudId)) {
-        m_viewer->updatePointCloud<PointIntensity>(m_baseCloud, m_colorHandler,
-                                                   m_annotationCloudId);
+        // Convert PCL cloud to VTK polydata + colors
+        PclUtils::PointCloudGeometryHandlerXYZ<PointIntensity> geometry(
+                m_baseCloud);
+        vtkSmartPointer<vtkPoints> points;
+        geometry.getGeometry(points);
+        vtkSmartPointer<vtkPolyData> polydata =
+                vtkSmartPointer<vtkPolyData>::New();
+        polydata->SetPoints(points);
+        vtkSmartPointer<vtkDataArray> colors = m_colorHandler.getColor();
+        m_viewer->updatePointCloud(polydata, colors, m_annotationCloudId);
         ecvDisplayTools::UpdateScreen();
     }
 }
@@ -611,7 +630,7 @@ void PclAnnotationTool::updateCloud() {
 void PclAnnotationTool::setPointSize(const std::string& viewID, int viewport) {
     if (!m_viewer) return;
     m_viewer->setPointCloudRenderingProperties(
-            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
+            PclUtils::CV_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclAnnotationTool::showAnnotation() {

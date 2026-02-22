@@ -170,34 +170,13 @@ void cvContourTool::createUi() {
     // Create fresh config UI for this tool instance
     m_configUi = new Ui::ContourToolDlg;
     QWidget* configWidget = new QWidget(this);
-    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
-    // This ensures the widget only takes the space it needs
-    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    configWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    // CRITICAL: Set layout size constraint to ensure minimum size calculation
-    // This prevents extra whitespace on the right
-    if (configWidget->layout()) {
-        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
-    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Contour Parameters"));
 
-    // CRITICAL: Use Qt's automatic sizing based on sizeHint
-    // This ensures each tool adapts to its own content without interference
-    // Reset size constraints to allow Qt's layout system to work properly
-    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
-    this->setMinimumSize(0, 0);
-    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
-    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-
-    // Let Qt calculate the optimal size based on content
-    // Order matters: adjust configWidget first, then the main widget
-    configWidget->adjustSize();
-    this->adjustSize();
-    // Force layout update to apply size changes
-    this->updateGeometry();
-    // CRITICAL: Process events to ensure layout is fully updated
-    QApplication::processEvents();
+    // Let parent dialog handle sizing via scroll area — no local adjustSize
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     // Connect display options
     connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled, this,

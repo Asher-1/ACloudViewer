@@ -11,14 +11,41 @@
 
 #ifdef CV_GDAL_SUPPORT
 
-//! Raster grid format file I/O filter
-/** Multiple formats are handled: see GDAL (http://www.gdal.org/)
- **/
+/**
+ * @class RasterGridFilter
+ * @brief Raster grid format I/O filter (GDAL-based)
+ *
+ * Handles import of raster grid data using the GDAL (Geospatial Data
+ * Abstraction Library). Supports a wide variety of raster formats including:
+ * - GeoTIFF (.tif, .tiff)
+ * - ESRI ASCII Grid (.asc)
+ * - ERDAS Imagine (.img)
+ * - NetCDF (.nc)
+ * - HDF (.hdf, .h5)
+ * - And many more (see GDAL documentation)
+ *
+ * Raster data is typically converted to point clouds or 2.5D surfaces,
+ * with elevation values from the raster grid.
+ *
+ * @note Requires GDAL library support (CV_GDAL_SUPPORT)
+ * @see http://www.gdal.org/
+ * @see FileIOFilter
+ * @see ccPointCloud
+ */
 class CV_IO_LIB_API RasterGridFilter : public FileIOFilter {
 public:
+    /**
+     * @brief Constructor
+     */
     RasterGridFilter();
 
-    // inherited from FileIOFilter
+    /**
+     * @brief Load raster grid file
+     * @param filename Input raster file path
+     * @param container Container for loaded entities
+     * @param parameters Loading parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     CC_FILE_ERROR loadFile(const QString& filename,
                            ccHObject& container,
                            LoadParameters& parameters) override;

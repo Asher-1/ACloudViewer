@@ -36,6 +36,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkVersionMacros.h>
 
 // QPCL_ENGINE_LIB
 #include <Utils/PCLCloud.h>
@@ -134,6 +135,12 @@ public:
     }
 
 protected:
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+    // FIX: VTK 9.4+ glad loading race condition with Qt6.
+    // Ensure glad is loaded before VTK uses GL functions in initializeGL().
+    virtual void initializeGL() override;
+#endif
+
     // events handling
     virtual bool event(QEvent* evt) override;
     virtual void wheelEvent(QWheelEvent* event) override;

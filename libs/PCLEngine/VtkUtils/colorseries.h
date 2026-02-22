@@ -9,7 +9,7 @@
 
 #include <QColor>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace Utils {
 

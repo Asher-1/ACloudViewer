@@ -29,6 +29,7 @@
 #include <vtkLabeledDataMapper.h>
 #include <vtkMapper.h>
 #include <vtkMaskPoints.h>
+#include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProp.h>
@@ -36,6 +37,7 @@
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
 #include <vtkTextProperty.h>
@@ -1497,6 +1499,7 @@ QString cvTooltipFormatter::formatPointTooltip(vtkPolyData* polyData,
                 arrayName == "DatasetName" ||
                 arrayName == "MaterialNames" ||
                 arrayName.compare("RGB", Qt::CaseInsensitive) == 0 ||
+                arrayName.compare("SourceRGB", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Colors", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Normals", Qt::CaseInsensitive) == 0) {
                 continue;
@@ -1764,6 +1767,7 @@ QString cvTooltipFormatter::formatCellTooltip(vtkPolyData* polyData,
                 arrayName == "DatasetName" ||
                 arrayName == "MaterialNames" ||
                 arrayName.compare("RGB", Qt::CaseInsensitive) == 0 ||
+                arrayName.compare("SourceRGB", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Colors", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Normals", Qt::CaseInsensitive) == 0) {
                 continue;

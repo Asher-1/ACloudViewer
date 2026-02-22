@@ -123,6 +123,17 @@ void QUIWidget::setStyle(QString &qssFile) {
         qApp->setStyleSheet(qss);
         file.close();
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    else {
+        // Qt6 fix: same rationale as MainWindow::ChangeStyle() – provide a
+        // minimal default stylesheet so that view widgets whose .ui files
+        // carry inline stylesheets (branch images, etc.) still get their
+        // background painted correctly.
+        qApp->setStyleSheet(
+                QStringLiteral("QTreeView, QListView, QTableView"
+                               "{ background-color: palette(base); }"));
+    }
+#endif
 }
 
 void QUIWidget::setStyle(const QString &qssFile,

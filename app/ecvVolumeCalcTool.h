@@ -20,28 +20,81 @@ class ccPointCloud;
 class ccPolyline;
 class QComboBox;
 
-//! Volume calculation tool (dialog)
+/**
+ * @class ccVolumeCalcTool
+ * @brief Volume calculation tool dialog
+ *
+ * Interactive tool for computing volumes between two point clouds or
+ * between a point cloud and a reference plane. Uses 2.5D rasterization
+ * to create a grid-based height map for volume calculations.
+ *
+ * Features:
+ * - Volume computation between two clouds (ground/ceiling model)
+ * - Added/removed volume analysis
+ * - Surface area calculation
+ * - Multiple projection types (min, max, average, median)
+ * - Empty cell filling strategies
+ * - Export results as point cloud or report
+ * - Real-time 2D visualization of height grid
+ *
+ * Applications:
+ * - Earthwork volume calculations
+ * - Stockpile volume measurements
+ * - Cut/fill analysis
+ * - Terrain change detection
+ *
+ * @see cc2Point5DimEditor
+ * @see ccRasterGrid
+ */
 class ccVolumeCalcTool : public QDialog,
                          public cc2Point5DimEditor,
                          public Ui::VolumeCalcDialog {
     Q_OBJECT
 
 public:
-    //! Default constructor
+    /**
+     * @brief Constructor
+     * @param cloud1 First point cloud (ground)
+     * @param cloud2 Second point cloud (ceiling)
+     * @param parent Parent widget
+     */
     ccVolumeCalcTool(ccGenericPointCloud* cloud1,
                      ccGenericPointCloud* cloud2,
                      QWidget* parent = 0);
 
-    //! Destructor
+    /**
+     * @brief Destructor
+     */
     ~ccVolumeCalcTool();
 
-    // Inherited from cc2Point5DimEditor
+    /**
+     * @brief Get grid step (inherited from cc2Point5DimEditor)
+     * @return Grid cell size
+     */
     virtual double getGridStep() const override;
+
+    /**
+     * @brief Get projection dimension (inherited from cc2Point5DimEditor)
+     * @return Projection axis (0=X, 1=Y, 2=Z)
+     */
     virtual unsigned char getProjectionDimension() const override;
+
+    /**
+     * @brief Get projection type (inherited from cc2Point5DimEditor)
+     * @return Projection type (min, max, average, etc.)
+     */
     virtual ccRasterGrid::ProjectionType getTypeOfProjection() const override;
 
-    //! Report info
+    /**
+     * @struct ReportInfo
+     * @brief Volume calculation report information
+     *
+     * Contains all computed volume and surface metrics.
+     */
     struct ReportInfo {
+        /**
+         * @brief Default constructor
+         */
         ReportInfo()
             : volume(0),
               addedVolume(0),
@@ -52,16 +105,21 @@ public:
               groundNonMatchingPercent(0),
               averageNeighborsPerCell(0) {}
 
+        /**
+         * @brief Convert report to formatted text
+         * @param precision Number of decimal places (default: 6)
+         * @return Formatted report string
+         */
         QString toText(int precision = 6) const;
 
-        double volume;
-        double addedVolume;
-        double removedVolume;
-        double surface;
-        float matchingPrecent;
-        float ceilNonMatchingPercent;
-        float groundNonMatchingPercent;
-        double averageNeighborsPerCell;
+        double volume;                   ///< Net volume
+        double addedVolume;              ///< Added material volume
+        double removedVolume;            ///< Removed material volume
+        double surface;                  ///< Surface area
+        float matchingPrecent;           ///< Percentage of matching cells
+        float ceilNonMatchingPercent;    ///< Percentage of ceiling-only cells
+        float groundNonMatchingPercent;  ///< Percentage of ground-only cells
+        double averageNeighborsPerCell;  ///< Average neighbors per grid cell
     };
 
     //! Static accessor

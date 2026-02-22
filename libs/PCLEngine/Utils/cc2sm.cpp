@@ -21,8 +21,12 @@
 
 // VTK
 #include <vtkCellArray.h>
+#include <vtkFieldData.h>
 #include <vtkFloatArray.h>
+#include <vtkIdTypeArray.h>
+#include <vtkIntArray.h>
 #include <vtkMatrix4x4.h>
+#include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkStringArray.h>
@@ -1113,6 +1117,146 @@ bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
             pcl::concatenateFields(normal_cloud2, cloud, aux);
             cloud = aux;
         }
+    }
+
+    return true;
+}
+
+bool cc2smReader::getVtkPolyDataFromPointCloud(
+        vtkSmartPointer<vtkPolyData>& polydata,
+        bool showColors,
+        bool showSF) const {
+    if (!m_cc_cloud || m_cc_cloud->size() == 0) {
+        return false;
+    }
+
+    unsigned pointCount = m_cc_cloud->size();
+    unsigned realNum = m_partialVisibility ? m_visibilityNum : pointCount;
+
+    if (realNum == 0) {
+        return false;
+    }
+
+    vtkIdType numPoints = static_cast<vtkIdType>(realNum);
+
+    // Create vtkPoints
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    points->SetDataTypeToFloat();
+    points->SetNumberOfPoints(numPoints);
+
+    // Create vertex cells (one vertex per point, same as PCL's addPointCloud)
+    vtkSmartPointer<vtkCellArray> vertices =
+            vtkSmartPointer<vtkCellArray>::New();
+    // VTK cell format: (numIds, id0) for each vertex
+    vtkSmartPointer<vtkIdTypeArray> cells =
+            vtkSmartPointer<vtkIdTypeArray>::New();
+    cells->SetNumberOfValues(numPoints * 2);
+    vtkIdType* cell = cells->GetPointer(0);
+
+    // Create colors if needed (showColors=RGB, showSF=scalar field colors)
+    // NOTE: Do NOT set a name on this array. It must remain unnamed so that
+    // SetScalars() registers it as the active scalars at an index that won't
+    // be overwritten by updateShadingModeDirect's AddArray("SourceRGB").
+    // This matches PCL's PointCloudColorHandlerRGBField behavior.
+    vtkSmartPointer<vtkUnsignedCharArray> colors = nullptr;
+    bool needColors = showColors || showSF;
+    if (needColors) {
+        colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
+        colors->SetNumberOfComponents(3);
+        colors->SetNumberOfTuples(numPoints);
+    }
+
+    // Create normals if available (always export for Find Data / tooltips)
+    vtkSmartPointer<vtkFloatArray> normals = nullptr;
+    bool hasNormals = m_cc_cloud->hasNormals();
+    if (hasNormals) {
+        normals = vtkSmartPointer<vtkFloatArray>::New();
+        normals->SetNumberOfComponents(3);
+        normals->SetNumberOfTuples(numPoints);
+        normals->SetName("Normals");
+    }
+
+    // Get scalar field for SF color display
+    cloudViewer::ScalarField* displayedSF = nullptr;
+    if (showSF && m_cc_cloud->sfShown()) {
+        int sfIdx = m_cc_cloud->getCurrentDisplayedScalarFieldIndex();
+        if (sfIdx >= 0) {
+            displayedSF = m_cc_cloud->getScalarField(sfIdx);
+        }
+    }
+
+    // Fill data with visibility filtering
+    vtkIdType idx = 0;
+    for (unsigned i = 0; i < pointCount; ++i) {
+        if (m_partialVisibility) {
+            if (m_cc_cloud->getTheVisibilityArray().at(i) != POINT_VISIBLE)
+                continue;
+        }
+
+        // XYZ coordinates
+        const CCVector3* P = m_cc_cloud->getPoint(i);
+        points->SetPoint(idx, static_cast<double>(P->x),
+                         static_cast<double>(P->y), static_cast<double>(P->z));
+
+        // Vertex cell: each point is its own vertex cell
+        cell[idx * 2] = 1;
+        cell[idx * 2 + 1] = idx;
+
+        // Colors (SF colors or RGB)
+        if (needColors && colors) {
+            unsigned char color[3];
+            if (showSF && displayedSF) {
+                ScalarType scalar = displayedSF->getValue(i);
+                const ecvColor::Rgb* col =
+                        m_cc_cloud->getScalarValueColor(scalar);
+                color[0] = static_cast<unsigned char>(col->r);
+                color[1] = static_cast<unsigned char>(col->g);
+                color[2] = static_cast<unsigned char>(col->b);
+            } else if (m_cc_cloud->hasColors()) {
+                const ecvColor::Rgb& rgb = m_cc_cloud->getPointColor(i);
+                color[0] = static_cast<unsigned char>(rgb.r);
+                color[1] = static_cast<unsigned char>(rgb.g);
+                color[2] = static_cast<unsigned char>(rgb.b);
+            } else {
+                color[0] = color[1] = color[2] = 255;
+            }
+            colors->SetTypedTuple(idx, color);
+        }
+
+        // Normals
+        if (hasNormals && normals) {
+            const CCVector3& N = m_cc_cloud->getPointNormal(i);
+            float normal[3] = {static_cast<float>(N.x), static_cast<float>(N.y),
+                               static_cast<float>(N.z)};
+            normals->SetTypedTuple(idx, normal);
+        }
+
+        ++idx;
+    }
+
+    // Assemble polydata
+    vertices->SetCells(numPoints, cells);
+
+    polydata = vtkSmartPointer<vtkPolyData>::New();
+    polydata->SetPoints(points);
+    polydata->SetVerts(vertices);
+
+    if (needColors && colors) {
+        polydata->GetPointData()->SetScalars(colors);
+    }
+
+    if (hasNormals && normals) {
+        polydata->GetPointData()->SetNormals(normals);
+    }
+
+    // Add "HasSourceRGB" flag if cloud has RGB colors (for Find Data)
+    if (m_cc_cloud->hasColors()) {
+        vtkSmartPointer<vtkIntArray> hasRGB =
+                vtkSmartPointer<vtkIntArray>::New();
+        hasRGB->SetName("HasSourceRGB");
+        hasRGB->SetNumberOfTuples(1);
+        hasRGB->SetValue(0, 1);
+        polydata->GetFieldData()->AddArray(hasRGB);
     }
 
     return true;

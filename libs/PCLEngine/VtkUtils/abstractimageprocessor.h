@@ -11,7 +11,7 @@
 #include <vtkImageLaplacian.h>
 #include <vtkJPEGReader.h>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "signalledrunable.h"
 
 namespace VtkUtils {

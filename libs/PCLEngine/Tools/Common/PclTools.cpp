@@ -53,9 +53,8 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
-#if VTK_RENDERING_BACKEND_OPENGL_VERSION < 2
-#include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
-#endif
+// vtkVertexBufferObjectMapper removed - not needed with modern VTK OpenGL2
+// backend
 
 #include <VTKExtensions/Utility/vtkDiscretizableColorTransferFunctionCustom.h>
 #include <VTKExtensions/Views/vtkContext2DScalarBarActor.h>
@@ -63,11 +62,11 @@
 #include <VTKExtensions/Views/vtkScalarBarRepresentationCustom.h>
 #include <VTKExtensions/Widgets/vtkScalarBarWidgetCustom.h>
 
-// PCL
+// PCL (data types only, no visualization)
+#include <pcl/common/io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/io/vtk_lib_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
 
 #if defined(_WIN32)
 // Remove macros defined in Windows.h
@@ -590,16 +589,26 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
         const std::string& zPlus,
         const std::string& zMinus) {
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
-    axes->SetShaftTypeToCylinder();
+    // Use default arrow shaft type for clean arrow appearance
     axes->SetXAxisLabelText(xLabel.c_str());
     axes->SetYAxisLabelText(yLabel.c_str());
     axes->SetZAxisLabelText(zLabel.c_str());
+
+    // Professional 3D system style - enhanced visibility
+    // Note: For default arrow type, use NormalizedShaftLength and
+    // NormalizedTipLength
+    axes->SetNormalizedShaftLength(0.85, 0.85, 0.85);  // 85% shaft, 15% tip
+    axes->SetNormalizedTipLength(0.15, 0.15, 0.15);    // Arrow tip length
+    axes->SetShaftTypeToLine();  // Use line shaft with arrow tips
+
+    // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
     axes->GetXAxisShaftProperty()->SetColor(1.0, 0.0, 0.0);
-    axes->GetYAxisTipProperty()->SetColor(1.0, 1.0, 0.0);
-    axes->GetYAxisShaftProperty()->SetColor(1.0, 1.0, 0.0);
-    axes->GetZAxisTipProperty()->SetColor(0.0, 1.0, 0.0);
-    axes->GetZAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetYAxisTipProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetYAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
+    axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 1.0);
+
     axes->SetTotalLength(axesLength, axesLength, axesLength);
 
     vtkSmartPointer<vtkAnnotatedCubeActor> cube =
@@ -613,46 +622,62 @@ vtkSmartPointer<vtkPropAssembly> PclTools::CreateCoordinate(
     cube->SetXFaceTextRotation(180);
     cube->SetYFaceTextRotation(180);
     cube->SetZFaceTextRotation(-90);
-    cube->SetFaceTextScale(0.65);
-    cube->GetCubeProperty()->SetColor(0.5, 1, 1);
-    cube->GetTextEdgesProperty()->SetLineWidth(1);
+    cube->SetFaceTextScale(0.50);  // Smaller text to fit within cube faces
+    cube->GetCubeProperty()->SetColor(0.8, 0.8,
+                                      0.8);  // Neutral gray for cube body
+    cube->GetTextEdgesProperty()->SetLineWidth(1);  // Standard text edges
     cube->GetTextEdgesProperty()->SetDiffuse(0);
     cube->GetTextEdgesProperty()->SetAmbient(1);
-    cube->GetTextEdgesProperty()->SetColor(0.1800, 0.2800, 0.2300);
+    cube->GetTextEdgesProperty()->SetColor(
+            0.2, 0.2, 0.2);  // Darker edges for better contrast
     // this static function improves the appearance of the text edges
     // since they are overlaid on a surface rendering of the cube's faces
     vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
+    // Standard 3D system colors: X=Red, Y=Green, Z=Blue
     cube->GetXPlusFaceProperty()->SetColor(1.0, 0.0, 0.0);
     cube->GetXPlusFaceProperty()->SetInterpolationToFlat();
     cube->GetXMinusFaceProperty()->SetColor(1.0, 0.0, 0.0);
     cube->GetXMinusFaceProperty()->SetInterpolationToFlat();
-    cube->GetYPlusFaceProperty()->SetColor(1.0, 1.0, 0.0);
+    cube->GetYPlusFaceProperty()->SetColor(0.0, 1.0, 0.0);
     cube->GetYPlusFaceProperty()->SetInterpolationToFlat();
-    cube->GetYMinusFaceProperty()->SetColor(1.0, 1.0, 0.0);
+    cube->GetYMinusFaceProperty()->SetColor(0.0, 1.0, 0.0);
     cube->GetYMinusFaceProperty()->SetInterpolationToFlat();
-    cube->GetZPlusFaceProperty()->SetColor(0.0, 1.0, 0.0);
+    cube->GetZPlusFaceProperty()->SetColor(0.0, 0.0, 1.0);
     cube->GetZPlusFaceProperty()->SetInterpolationToFlat();
-    cube->GetZMinusFaceProperty()->SetColor(0.0, 1.0, 0.0);
+    cube->GetZMinusFaceProperty()->SetColor(0.0, 0.0, 1.0);
     cube->GetZMinusFaceProperty()->SetInterpolationToFlat();
 
-    vtkSmartPointer<vtkTextProperty> tprop4 =
+    // Professional text properties for axis labels - match axis colors
+    // X axis label - Red
+    vtkSmartPointer<vtkTextProperty> tpropX =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop4->ShadowOn();
-    tprop4->SetFontFamilyToArial();
+    tpropX->ShadowOn();
+    tpropX->SetFontFamilyToArial();
+    tpropX->BoldOn();
+    tpropX->SetFontSize(14);
+    tpropX->SetColor(1.0, 0.0, 0.0);  // Red to match X axis
+    axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tpropX);
 
-    // tprop.SetFontFamilyToTimes();
-    axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tprop4);
-    //
-    vtkSmartPointer<vtkTextProperty> tprop2 =
+    // Y axis label - Green
+    vtkSmartPointer<vtkTextProperty> tpropY =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop2->ShallowCopy(tprop4);
-    axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tprop2);
-    //
-    vtkSmartPointer<vtkTextProperty> tprop3 =
+    tpropY->ShadowOn();
+    tpropY->SetFontFamilyToArial();
+    tpropY->BoldOn();
+    tpropY->SetFontSize(14);
+    tpropY->SetColor(0.0, 1.0, 0.0);  // Green to match Y axis
+    axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tpropY);
+
+    // Z axis label - Blue
+    vtkSmartPointer<vtkTextProperty> tpropZ =
             vtkSmartPointer<vtkTextProperty>::New();
-    tprop3->ShallowCopy(tprop4);
-    axes->GetZAxisCaptionActor2D()->SetCaptionTextProperty(tprop3);
+    tpropZ->ShadowOn();
+    tpropZ->SetFontFamilyToArial();
+    tpropZ->BoldOn();
+    tpropZ->SetFontSize(14);
+    tpropZ->SetColor(0.0, 0.0, 1.0);  // Blue to match Z axis
+    axes->GetZAxisCaptionActor2D()->SetCaptionTextProperty(tpropZ);
 
     vtkSmartPointer<vtkPropAssembly> assembly =
             vtkSmartPointer<vtkPropAssembly>::New();
@@ -1143,112 +1168,10 @@ vtkSmartPointer<vtkPolyData> PclTools::CreatePolyDataFromLineSet(
 namespace {
 using namespace pcl;
 
-/** \brief Display a 3D representation showing the a cloud and a list of camera
- * with their 6DOf poses */
-void showCameras(pcl::texture_mapping::CameraVector cams,
-                 pcl::PointCloud<PointT>::Ptr& cloud) {
-    // visualization object
-    pcl::visualization::PCLVisualizer visu("cameras");
-
-    // add a visual for each camera at the correct pose
-    for (std::size_t i = 0; i < cams.size(); ++i) {
-        // read current camera
-        pcl::TextureMapping<PointT>::Camera cam = cams[i];
-        double focal = cam.focal_length;
-        double height = cam.height;
-        double width = cam.width;
-
-        // create a 5-point visual for each camera
-        PointT p1, p2, p3, p4, p5;
-        p1.x = 0;
-        p1.y = 0;
-        p1.z = 0;
-        double dist = 0.75;
-        double minX, minY, maxX, maxY;
-        maxX = dist * tan(std::atan(width / (2.0 * focal)));
-        minX = -maxX;
-        maxY = dist * tan(std::atan(height / (2.0 * focal)));
-        minY = -maxY;
-        p2.x = minX;
-        p2.y = minY;
-        p2.z = dist;
-        p3.x = maxX;
-        p3.y = minY;
-        p3.z = dist;
-        p4.x = maxX;
-        p4.y = maxY;
-        p4.z = dist;
-        p5.x = minX;
-        p5.y = maxY;
-        p5.z = dist;
-        p1 = pcl::transformPoint(p1, cam.pose);
-        p2 = pcl::transformPoint(p2, cam.pose);
-        p3 = pcl::transformPoint(p3, cam.pose);
-        p4 = pcl::transformPoint(p4, cam.pose);
-        p5 = pcl::transformPoint(p5, cam.pose);
-        std::stringstream ss;
-        ss << "Cam #" << i + 1;
-        visu.addText3D(ss.str(), p1, 0.1, 1.0, 1.0, 1.0, ss.str());
-
-        ss.str("");
-        ss << "camera_" << i << "line1";
-        visu.addLine(p1, p2, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line2";
-        visu.addLine(p1, p3, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line3";
-        visu.addLine(p1, p4, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line4";
-        visu.addLine(p1, p5, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line5";
-        visu.addLine(p2, p5, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line6";
-        visu.addLine(p5, p4, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line7";
-        visu.addLine(p4, p3, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line8";
-        visu.addLine(p3, p2, ss.str());
-    }
-
-    // add a coordinate system
-    visu.addCoordinateSystem(1.0, "global");
-
-    // add the mesh's cloud (colored on Z axis)
-    pcl::visualization::PointCloudColorHandlerGenericField<PointT>
-            color_handler(cloud, "z");
-    visu.addPointCloud(cloud, color_handler, "cloud");
-
-    // reset camera
-    visu.resetCamera();
-
-    // wait for user input
-    visu.spin();
-}
-
-/** \brief Display a 3D representation showing the a cloud and a list of camera
- * with their 6DOf poses */
-void showTextureMesh(const PCLTextureMesh::ConstPtr textureMesh) {
-    // visualization object
-    pcl::visualization::PCLVisualizer visu("TextureMesh");
-
-    // add a coordinate system
-    visu.addCoordinateSystem(1.0, "global");
-
-    // add the mesh's cloud (colored on Z axis)
-    visu.addTextureMesh(*textureMesh, "texture");
-
-    // reset camera
-    visu.resetCamera();
-
-    // wait for user input
-    visu.spin();
-}
+// NOTE: showCameras() and showTextureMesh() removed.
+// They were standalone debug visualization functions that depended on
+// pcl::visualization::PCLVisualizer.  If needed, they can be rewritten
+// using the application's own PCLVis class.
 
 /** \brief Helper function that jump to a specific line of a text file */
 std::ifstream& GotoLine(std::ifstream& file, unsigned int num) {
@@ -1443,11 +1366,13 @@ PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(
     }
 
     // Display cameras to user
-    if (show_cameras) {
-        CVLog::Print(
-                "Displaying cameras. Press \'q\' to continue texture mapping");
-        showCameras(cameras, cloud);
-    }
+    // NOTE: showCameras was removed along with
+    // pcl::visualization::PCLVisualizer dependency. if (show_cameras) {
+    //     CVLog::Print(
+    //             "Displaying cameras. Press \'q\' to continue texture
+    //             mapping");
+    //     showCameras(cameras, cloud);
+    // }
 
     // Create materials for each texture (and one extra for occluded faces)
     mesh->tex_materials.resize(cameras.size() + 1);

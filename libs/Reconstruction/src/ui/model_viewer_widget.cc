@@ -206,7 +206,11 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
   format.setOption(QSurfaceFormat::DebugContext);
 #endif
   setFormat(format);
-  QSurfaceFormat::setDefaultFormat(format);
+  // NOTE: Do NOT call QSurfaceFormat::setDefaultFormat() here.
+  // The application-wide default is already set in InitOpenGL() before
+  // QApplication construction.  Overriding it at widget creation time
+  // can break shared context compatibility in Qt6 and interfere with
+  // other OpenGL widgets (e.g. QVTKOpenGLNativeWidget).
 
   SetPointColormap(new PointColormapPhotometric());
   SetImageColormap(new ImageColormapUniform());

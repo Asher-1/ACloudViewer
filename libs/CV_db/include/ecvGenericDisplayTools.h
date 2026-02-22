@@ -20,16 +20,40 @@
 #include <cmath>
 #include <iostream>
 
-//! Generic display tools
+/**
+ * @class ecvGenericDisplayTools
+ * @brief Generic display tools for 3D visualization
+ *
+ * Provides a comprehensive set of tools for 3D rendering, including
+ * coordinate transformations, projection matrices, and text rendering.
+ * This class uses the singleton pattern for global access.
+ */
 class CV_DB_LIB_API ecvGenericDisplayTools : public cloudViewer::CVToolbox {
 public:
-    //! Default destructor
+    /**
+     * @brief Default destructor
+     */
     virtual ~ecvGenericDisplayTools() {}
 
+    /**
+     * @brief Get the singleton instance
+     * @return Pointer to the singleton instance
+     */
     static ecvGenericDisplayTools* GetInstance();
+
+    /**
+     * @brief Set the singleton instance
+     * @param tool Pointer to the display tools instance
+     */
     static void SetInstance(ecvGenericDisplayTools* tool);
 
 public:
+    /**
+     * @brief Modify font size based on zoom factor
+     * @param fontSize Base font size
+     * @param zoomFactor Zoom multiplication factor
+     * @return Scaled font size (minimum 1)
+     */
     static int FontSizeModifier(int fontSize, float zoomFactor) {
         int scaledFontSize =
                 static_cast<int>(std::floor(fontSize * zoomFactor));
@@ -38,54 +62,113 @@ public:
         return scaledFontSize;
     }
 
-    //! Returns perspective mode
+    /**
+     * @brief Get perspective projection state
+     * @return true if perspective projection is enabled
+     */
     static bool GetPerspectiveState() {
         assert(GetInstance());
         return GetInstance()->getPerspectiveState();
     }
+
+    /**
+     * @brief Get perspective state for a viewport
+     * @param viewport Viewport index (default: 0)
+     * @return true if perspective is enabled
+     */
     inline virtual bool getPerspectiveState(int viewport = 0) const {
         return false;
     }
 
+    /**
+     * @brief Convert 2D display coordinates to 3D world coordinates
+     * @tparam iType Input coordinate type
+     * @tparam oType Output coordinate type
+     * @param input2D Input 2D display coordinates
+     * @param output3D Output 3D world coordinates
+     */
     template <typename iType, typename oType>
     static void ToWorldPoint(const Vector3Tpl<iType>& input2D,
                              Vector3Tpl<oType>& output3D) {
         GetInstance()->toWorldPoint(input2D, output3D);
     }
 
+    /**
+     * @brief Convert 2D display point to 3D world point (double precision)
+     * @param input2D Input 2D coordinates
+     * @param output3D Output 3D world coordinates
+     */
     inline virtual void toWorldPoint(const CCVector3d& input2D,
                                      CCVector3d& output3D) { /* do nothing */ }
-    // inline static void ToWorldPoint(CCVector3 & p) {
-    // s_tools->toWorldPoint(p); }
+
+    /**
+     * @brief Convert 2D display point to 3D world point (float to double)
+     * @param input2D Input 2D coordinates
+     * @param output3D Output 3D world coordinates
+     */
     inline virtual void toWorldPoint(const CCVector3& input2D,
                                      CCVector3d& output3D) { /* do nothing */ }
 
+    /**
+     * @brief Convert 3D world coordinates to 2D display coordinates
+     * @tparam iType Input coordinate type
+     * @tparam oType Output coordinate type
+     * @param input3D Input 3D world coordinates
+     * @param output2D Output 2D display coordinates
+     */
     template <typename iType, typename oType>
     inline static void ToDisplayPoint(const Vector3Tpl<iType>& input3D,
                                       Vector3Tpl<oType>& output2D) {
         GetInstance()->toDisplayPoint(input3D, output2D);
     }
+
+    /**
+     * @brief Convert 3D world point to 2D display point (double precision)
+     * @param input3D Input 3D world coordinates
+     * @param output2D Output 2D display coordinates
+     */
     inline virtual void toDisplayPoint(const CCVector3d& input3D,
                                        CCVector3d& output2D) { /* do nothing */
     }
-    // inline static void ToDisplayPoint(const CCVector3 & worldPos, CCVector3d
-    // & displayPos) { s_tools->toDisplayPoint(worldPos, displayPos); }
+
+    /**
+     * @brief Convert 3D world point to 2D display point (float to double)
+     * @param input3D Input 3D world coordinates
+     * @param output2D Output 2D display coordinates
+     */
     inline virtual void toDisplayPoint(const CCVector3& input3D,
                                        CCVector3d& output2D) { /* do nothing */
     }
 
-    //! Text alignment
+    /**
+     * @brief Text alignment options
+     *
+     * Bitflags for specifying horizontal and vertical text alignment.
+     */
     enum TextAlign {
-        ALIGN_HLEFT = 1,
-        ALIGN_HMIDDLE = 2,
-        ALIGN_HRIGHT = 4,
-        ALIGN_VTOP = 8,
-        ALIGN_VMIDDLE = 16,
-        ALIGN_VBOTTOM = 32,
-        ALIGN_DEFAULT = 1 | 8
+        ALIGN_HLEFT = 1,       ///< Align text to the left
+        ALIGN_HMIDDLE = 2,     ///< Center text horizontally
+        ALIGN_HRIGHT = 4,      ///< Align text to the right
+        ALIGN_VTOP = 8,        ///< Align text to the top
+        ALIGN_VMIDDLE = 16,    ///< Center text vertically
+        ALIGN_VBOTTOM = 32,    ///< Align text to the bottom
+        ALIGN_DEFAULT = 1 | 8  ///< Default: left and top
     };
 
 public:  // GLU equivalent methods
+    /**
+     * @brief Create a perspective frustum projection matrix
+     *
+     * Equivalent to gluFrustum. Creates an asymmetric perspective projection.
+     * @param left Left clipping plane coordinate
+     * @param right Right clipping plane coordinate
+     * @param bottom Bottom clipping plane coordinate
+     * @param top Top clipping plane coordinate
+     * @param znear Near clipping plane distance (must be > 0)
+     * @param zfar Far clipping plane distance (must be > 0)
+     * @return Projection matrix
+     * @note left != right, bottom != top, znear != zfar
+     */
     static ccGLMatrixd Frustum(double left,
                                double right,
                                double bottom,
@@ -131,8 +214,19 @@ public:  // GLU equivalent methods
         return outMatrix;
     }
 
-    // inspired from https://www.opengl.org/wiki/GluPerspective_code and
-    // http://www.songho.ca/opengl/gl_projectionmatrix.html
+    /**
+     * @brief Create a symmetric perspective projection matrix
+     *
+     * Equivalent to gluPerspective. Creates a symmetric perspective projection.
+     * Inspired from https://www.opengl.org/wiki/GluPerspective_code and
+     * http://www.songho.ca/opengl/gl_projectionmatrix.html
+     *
+     * @param fovyInDegrees Field of view angle in degrees (Y direction)
+     * @param aspectRatio Aspect ratio (width/height)
+     * @param znear Near clipping plane distance (must be > 0)
+     * @param zfar Far clipping plane distance (must be > 0)
+     * @return Projection matrix
+     */
     static ccGLMatrixd Perspective(double fovyInDegrees,
                                    double aspectRatio,
                                    double znear,
@@ -171,6 +265,19 @@ public:  // GLU equivalent methods
         return outMatrix;
     }
 
+    /**
+     * @brief Create an orthographic projection matrix
+     *
+     * Equivalent to glOrtho. Creates an orthographic (parallel) projection.
+     * @param left Left clipping plane coordinate
+     * @param right Right clipping plane coordinate
+     * @param bottom Bottom clipping plane coordinate
+     * @param top Top clipping plane coordinate
+     * @param nearVal Near clipping plane distance
+     * @param farVal Far clipping plane distance
+     * @return Projection matrix
+     * @note left != right, bottom != top, nearVal != farVal
+     */
     static ccGLMatrixd Ortho(double left,
                              double right,
                              double bottom,
