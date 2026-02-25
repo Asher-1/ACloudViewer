@@ -692,7 +692,7 @@
   <widget class="QDockWidget" name="DockableDBTree">
    <property name="minimumSize">
     <size>
-     <width>146</width>
+     <width>180</width>
      <height>175</height>
     </size>
    </property>
@@ -766,7 +766,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <widget class="QDockWidget" name="propertyDock">
    <property name="minimumSize">
     <size>
-     <width>109</width>
+     <width>180</width>
      <height>142</height>
     </size>
    </property>

@@ -459,12 +459,14 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
 
 void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
                                              int screenHeight) {
-    Q_UNUSED(screenWidth);
     Q_UNUSED(screenHeight);
 
     // Get all dock widgets
     QList<QDockWidget*> dockWidgets =
             m_mainWindow->findChildren<QDockWidget*>();
+
+    // Find the DockableDBTree widget
+    QDockWidget* dbTreeDock = nullptr;
 
     // Setup dock widgets based on their registered positions
     for (QDockWidget* dw : dockWidgets) {
@@ -476,7 +478,24 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
             m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dw);
             dw->hide();  // Hide by default for cleaner initial layout
         }
+        // Find DockableDBTree
+        if (dw->objectName() == "DockableDBTree") {
+            dbTreeDock = dw;
+        }
         // Other dock widgets are handled by MainWindow
+    }
+
+    // Set reasonable default width for DB Tree based on screen width
+    if (dbTreeDock) {
+        // Calculate default width as 15% of screen width, with min 200 and max
+        // 300
+        int defaultWidth =
+                qBound(200, static_cast<int>(screenWidth * 0.15), 300);
+        m_mainWindow->resizeDocks({dbTreeDock}, {defaultWidth}, Qt::Horizontal);
+        CVLog::PrintDebug(
+                QString("[ecvLayoutManager] DB Tree default width set to %1 "
+                        "pixels")
+                        .arg(defaultWidth));
     }
 
     CVLog::PrintVerbose("[ecvLayoutManager] Dock widget layout configured");

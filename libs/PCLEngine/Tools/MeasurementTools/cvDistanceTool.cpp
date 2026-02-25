@@ -153,12 +153,19 @@ void cvDistanceTool::initTool() {
     }
 
     // Following ParaView's approach:
-    // 1. InstantiateHandleRepresentation is already called in
-    // vtkLineRepresentation constructor
-    // 2. Replace the default handles with custom axis handles for full XYZL
-    // support Use template version for type-safe creation
+    // For VTK 9.3+, use default vtkPointHandleRepresentation3D which has native
+    // custom axis support
+    // For VTK < 9.3, use our custom implementation
+#if !((VTK_MAJOR_VERSION > 9) || \
+      (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3))
+    // VTK < 9.3: Use custom implementation
     m_rep->ReplaceHandleRepresentationsTyped<
             cvCustomAxisHandleRepresentation>();
+#else
+    // VTK 9.3+: Use default implementation with native custom axis support
+    // vtkLineRepresentation already instantiates vtkPointHandleRepresentation3D
+    // which has SetCustomTranslationAxisOn() and SetCustomTranslationAxis()
+#endif
 
     // 2. Configure appearance AFTER instantiation but BEFORE enabling
     configureLineRepresentation(m_rep);  // 3D mode only
@@ -692,11 +699,6 @@ bool cvDistanceTool::getColor(double& r, double& g, double& b) const {
 }
 
 void cvDistanceTool::lockInteraction() {
-    CVLog::PrintDebug(QString("[cvDistanceTool::lockInteraction] Tool=%1, "
-                              "m_pickingHelpers.size()=%2")
-                              .arg((quintptr)this, 0, 16)
-                              .arg(m_pickingHelpers.size()));
-
     // Disable VTK widget interaction (handles cannot be moved)
     if (m_widget) {
         m_widget->SetProcessEvents(0);  // Disable event processing
