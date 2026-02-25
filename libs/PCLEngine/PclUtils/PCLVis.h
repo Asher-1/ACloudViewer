@@ -717,20 +717,51 @@ public:
     // ========== View Properties (ParaView-compatible) ==========
 
     /**
-     * @brief Set global light intensity (ParaView-style)
+     * @brief Set global default light intensity
+     * @param intensity Light intensity (0.0-1.0)
      *
-     * Directly modifies the renderer's default light intensity.
-     * This affects all objects in the scene uniformly.
-     *
-     * @param intensity Light intensity (0.0-1.0, default 1.0)
+     * Sets the default light intensity for new objects and updates
+     * the headlight intensity in the renderer.
      */
     void setLightIntensity(double intensity);
 
     /**
-     * @brief Get current global light intensity
-     * @return Current light intensity (0.0-1.0)
+     * @brief Get global default light intensity
+     * @return Current global light intensity (0.0-1.0)
      */
     double getLightIntensity() const;
+
+    /**
+     * @brief Set per-object light intensity
+     * @param viewID Unique identifier of the object
+     * @param intensity Light intensity for this object (0.0-1.0)
+     * @param viewport Viewport ID (default: 0)
+     *
+     * Sets a custom light intensity for a specific object, overriding
+     * the global default. Affects the object's material properties.
+     */
+    void setObjectLightIntensity(const std::string& viewID,
+                                 double intensity,
+                                 int viewport = 0);
+
+    /**
+     * @brief Get per-object light intensity
+     * @param viewID Unique identifier of the object
+     * @return Object-specific light intensity, or global default if not set
+     */
+    double getObjectLightIntensity(const std::string& viewID) const;
+
+    /**
+     * @brief Apply light properties to a VTK actor
+     * @param actor Pointer to vtkActor to configure
+     * @param viewID View ID for per-object settings (optional)
+     *
+     * Applies light intensity settings to an actor's material properties.
+     * Uses per-object intensity if available, otherwise global default.
+     * Called automatically when actors are created or updated.
+     */
+    void applyLightPropertiesToActor(vtkActor* actor,
+                                     const std::string& viewID = "");
 
     // ========================================================================
     // Data Axes Grid (Unified Interface with DataAxesGridProperties struct)
@@ -795,6 +826,8 @@ protected:
 
     // View Properties (ParaView-compatible)
     double m_lightIntensity;  // Current light intensity (0.0-1.0)
+    std::map<std::string, double>
+            m_objectLightIntensity;  // Per-object light intensity
 
     // Axes Grid actors (ParaView-style)
     // Data Axes Grid: one per object (viewID -> actor mapping)

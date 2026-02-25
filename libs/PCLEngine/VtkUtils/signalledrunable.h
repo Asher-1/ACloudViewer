@@ -10,7 +10,7 @@
 #include <QObject>
 #include <QRunnable>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace VtkUtils {
 

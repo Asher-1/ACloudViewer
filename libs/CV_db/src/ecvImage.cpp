@@ -44,7 +44,9 @@ ccImage::ccImage(const QImage& image, const QString& name)
 
 bool ccImage::load(const QString& filename, QString& error) {
     QImageReader reader(filename);
-    // m_image = QImage(filename);
+    // Automatically apply EXIF orientation metadata so that
+    // images taken with a rotated camera are displayed upright.
+    reader.setAutoTransform(true);
     QImage image = reader.read();
     if (image.isNull()) {
         error = reader.errorString();

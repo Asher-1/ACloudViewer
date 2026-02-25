@@ -153,12 +153,19 @@ void cvDistanceTool::initTool() {
     }
 
     // Following ParaView's approach:
-    // 1. InstantiateHandleRepresentation is already called in
-    // vtkLineRepresentation constructor
-    // 2. Replace the default handles with custom axis handles for full XYZL
-    // support Use template version for type-safe creation
+    // For VTK 9.3+, use default vtkPointHandleRepresentation3D which has native
+    // custom axis support
+    // For VTK < 9.3, use our custom implementation
+#if !((VTK_MAJOR_VERSION > 9) || \
+      (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3))
+    // VTK < 9.3: Use custom implementation
     m_rep->ReplaceHandleRepresentationsTyped<
             cvCustomAxisHandleRepresentation>();
+#else
+    // VTK 9.3+: Use default implementation with native custom axis support
+    // vtkLineRepresentation already instantiates vtkPointHandleRepresentation3D
+    // which has SetCustomTranslationAxisOn() and SetCustomTranslationAxis()
+#endif
 
     // 2. Configure appearance AFTER instantiation but BEFORE enabling
     configureLineRepresentation(m_rep);  // 3D mode only
@@ -278,15 +285,8 @@ void cvDistanceTool::createUi() {
     // Create fresh config UI for this tool instance
     m_configUi = new Ui::DistanceToolDlg;
     QWidget* configWidget = new QWidget(this);
-    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
-    // This ensures the widget only takes the space it needs
-    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    configWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    // CRITICAL: Set layout size constraint to ensure minimum size calculation
-    // This prevents extra whitespace on the right
-    if (configWidget->layout()) {
-        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
-    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Distance Parameters"));
 
@@ -297,48 +297,23 @@ void cvDistanceTool::createUi() {
             m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
 
-    // CRITICAL: Ensure Tips label can display full text with ParaView-style
-    // compact layout ParaView uses Minimum sizePolicy to prevent horizontal
-    // expansion This must be done AFTER text is set (including macOS text
-    // replacement)
+    // Ensure Tips label wraps text properly
     if (m_configUi->instructionLabel) {
-        // ParaView-style: Use Minimum sizePolicy to prevent horizontal
-        // expansion The label will wrap text based on its natural width, not a
-        // fixed maximum
-        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Minimum,
+        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Preferred,
                                                     QSizePolicy::Minimum);
-        // CRITICAL: Remove any maximum height constraint to allow full text
-        // display
-        m_configUi->instructionLabel->setMaximumHeight(
-                16777215);  // QWIDGETSIZE_MAX equivalent
-        // Remove maximum width constraint - let it wrap naturally based on
-        // parent width
-        m_configUi->instructionLabel->setMaximumWidth(
-                16777215);  // QWIDGETSIZE_MAX equivalent
         m_configUi->instructionLabel->setWordWrap(true);
-        // Force the label to update its size based on wrapped text
-        // This ensures the label expands vertically to show all text
-        m_configUi->instructionLabel->adjustSize();
-        // CRITICAL: Update geometry to ensure layout recalculates
-        m_configUi->instructionLabel->updateGeometry();
     }
 
-    // CRITICAL: Use Qt's automatic sizing based on sizeHint
-    // This ensures each tool adapts to its own content without interference
-    // Reset size constraints to allow Qt's layout system to work properly
-    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
-    this->setMinimumSize(0, 0);
-    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
-    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    // Collapsible Tips: toggle label visibility via group box checkbox
+    if (m_configUi->shortcutsTipsGroupBox) {
+        m_configUi->instructionLabel->setVisible(
+                m_configUi->shortcutsTipsGroupBox->isChecked());
+        connect(m_configUi->shortcutsTipsGroupBox, &QGroupBox::toggled,
+                m_configUi->instructionLabel, &QWidget::setVisible);
+    }
 
-    // Let Qt calculate the optimal size based on content
-    // Order matters: adjust configWidget first, then the main widget
-    configWidget->adjustSize();
-    this->adjustSize();
-    // Force layout update to apply size changes
-    this->updateGeometry();
-    // CRITICAL: Process events to ensure layout is fully updated
-    QApplication::processEvents();
+    // Let parent dialog handle sizing via scroll area — no local adjustSize
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     connect(m_configUi->point1XSpinBox,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -724,11 +699,6 @@ bool cvDistanceTool::getColor(double& r, double& g, double& b) const {
 }
 
 void cvDistanceTool::lockInteraction() {
-    CVLog::PrintDebug(QString("[cvDistanceTool::lockInteraction] Tool=%1, "
-                              "m_pickingHelpers.size()=%2")
-                              .arg((quintptr)this, 0, 16)
-                              .arg(m_pickingHelpers.size()));
-
     // Disable VTK widget interaction (handles cannot be moved)
     if (m_widget) {
         m_widget->SetProcessEvents(0);  // Disable event processing

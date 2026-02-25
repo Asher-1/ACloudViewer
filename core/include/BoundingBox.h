@@ -20,15 +20,31 @@
 
 namespace cloudViewer {
 
-//! Bounding box structure
+/**
+ * @brief 3D axis-aligned bounding box template
+ *
+ * Represents an axis-aligned bounding box defined by minimum and
+ * maximum corner points. Provides operations for merging, transforming,
+ * and querying bounding boxes.
+ *
+ * @tparam T Numeric type for coordinates (e.g., float, double)
+ */
 template <typename T>
 class BoundingBoxTpl {
 public:
-    //! Default constructor
+    /**
+     * @brief Default constructor
+     *
+     * Creates an invalid bounding box initialized to zero.
+     */
     BoundingBoxTpl()
         : m_bbMin(0, 0, 0), m_bbMax(0, 0, 0), color_(0, 0, 0), m_valid(false) {}
 
-    //! Constructor from two vectors (lower min. and upper max. corners)
+    /**
+     * @brief Constructor from corner points
+     * @param minCorner Minimum corner (lower bounds)
+     * @param maxCorner Maximum corner (upper bounds)
+     */
     BoundingBoxTpl(const Vector3Tpl<T>& minCorner,
                    const Vector3Tpl<T>& maxCorner)
         : m_bbMin(minCorner),
@@ -36,7 +52,13 @@ public:
           color_(0, 0, 0),
           m_valid(true) {}
 
-    //! Returns the 'sum' of this bounding-box and another one
+    /**
+     * @brief Merge two bounding boxes
+     *
+     * Returns a new bounding box that encompasses both boxes.
+     * @param bbox Other bounding box
+     * @return Merged bounding box
+     */
     BoundingBoxTpl<T> operator+(const BoundingBoxTpl<T>& bbox) const {
         if (!m_valid) return bbox;
         if (!bbox.isValid()) return *this;
@@ -55,7 +77,11 @@ public:
         return tempBox;
     }
 
-    //! In place 'sum' of this bounding-box with another one
+    /**
+     * @brief Merge another bounding box into this one (in-place)
+     * @param bbox Other bounding box
+     * @return Reference to this bounding box
+     */
     const BoundingBoxTpl<T>& operator+=(const BoundingBoxTpl<T>& bbox) {
         if (bbox.isValid()) {
             add(bbox.minCorner());
@@ -65,7 +91,11 @@ public:
         return *this;
     }
 
-    //! Shifts the bounding box with a vector
+    /**
+     * @brief Shift the bounding box by a vector (in-place)
+     * @param V Translation vector
+     * @return Reference to this bounding box
+     */
     virtual const BoundingBoxTpl<T>& operator+=(const Vector3Tpl<T>& V) {
         if (m_valid) {
             m_bbMin += V;
@@ -75,7 +105,11 @@ public:
         return *this;
     }
 
-    //! Shifts the bounding box with a vector
+    /**
+     * @brief Shift the bounding box by negative vector (in-place)
+     * @param V Translation vector
+     * @return Reference to this bounding box
+     */
     virtual const BoundingBoxTpl<T>& operator-=(const Vector3Tpl<T>& V) {
         if (m_valid) {
             m_bbMin -= V;
@@ -85,7 +119,11 @@ public:
         return *this;
     }
 
-    //! Scales the bounding box
+    /**
+     * @brief Scale the bounding box (in-place)
+     * @param scaleFactor Scale factor
+     * @return Reference to this bounding box
+     */
     virtual const BoundingBoxTpl<T>& operator*=(T scaleFactor) {
         if (m_valid) {
             m_bbMin *= scaleFactor;
@@ -95,7 +133,12 @@ public:
         return *this;
     }
 
-    //! Rotates the bounding box
+    /**
+     * @brief Rotate the bounding box (in-place)
+     * @param mat Rotation matrix
+     * @return Reference to this bounding box
+     * @note This recomputes the axis-aligned bounds after rotation
+     */
     virtual const BoundingBoxTpl<T>& operator*=(const SquareMatrixTpl<T>& mat) {
         if (m_valid) {
             Vector3Tpl<T> boxCorners[8];

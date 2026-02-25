@@ -25,7 +25,7 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class vtkActor;
 class vtkProp;

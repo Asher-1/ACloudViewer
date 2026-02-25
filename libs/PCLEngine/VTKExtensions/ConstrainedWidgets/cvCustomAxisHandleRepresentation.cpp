@@ -10,6 +10,9 @@
 #include <vtkMath.h>
 #include <vtkObjectFactory.h>
 
+// For logging
+#include <CVLog.h>
+
 vtkStandardNewMacro(cvCustomAxisHandleRepresentation);
 
 #if !((VTK_MAJOR_VERSION > 9) || \
@@ -28,38 +31,27 @@ cvCustomAxisHandleRepresentation::~cvCustomAxisHandleRepresentation() = default;
 
 //------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::SetCustomTranslationAxisOn() {
-    if (!this->CustomAxisEnabled) {
-        this->CustomAxisEnabled = true;
-        // Disable standard axis constraints
-        this->SetTranslationAxis(-1);  // -1 = Axis::NONE
-        this->Modified();
-    }
+    this->CustomAxisEnabled = true;
+    // Clear base class TranslationAxis to prevent conflict with standard axes
+    // (In VTK 9.3+, this would be Axis::Custom, but VTK 9.2 doesn't have it)
+    this->Superclass::SetTranslationAxis(-1);
 }
 
 //------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::SetCustomTranslationAxisOff() {
-    if (this->CustomAxisEnabled) {
-        this->CustomAxisEnabled = false;
-        this->Modified();
-    }
+    this->CustomAxisEnabled = false;
+    // Also clear base class TranslationAxis to fully align with ParaView
+    // behavior
+    this->Superclass::SetTranslationAxis(-1);
 }
 
 //------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::SetCustomTranslationAxis(
         double axis[3]) {
-    bool changed = false;
     for (int i = 0; i < 3; i++) {
-        if (this->CustomTranslationAxis[i] != axis[i]) {
-            this->CustomTranslationAxis[i] = axis[i];
-            changed = true;
-        }
+        this->CustomTranslationAxis[i] = axis[i];
     }
-
-    if (changed) {
-        // Normalize the axis vector
-        vtkMath::Normalize(this->CustomTranslationAxis);
-        this->Modified();
-    }
+    vtkMath::Normalize(this->CustomTranslationAxis);
 }
 
 //------------------------------------------------------------------------------
@@ -71,6 +63,24 @@ void cvCustomAxisHandleRepresentation::SetCustomTranslationAxis(double x,
 }
 
 //------------------------------------------------------------------------------
+void cvCustomAxisHandleRepresentation::SetTranslationAxisOff() {
+    this->CustomAxisEnabled = false;
+    // Also clear base class TranslationAxis to fully align with ParaView
+    // behavior
+    this->Superclass::SetTranslationAxis(-1);
+}
+
+//------------------------------------------------------------------------------
+int cvCustomAxisHandleRepresentation::DetermineConstraintAxis(
+        int constraint, double* x, double* startPickPoint) {
+    if (this->CustomAxisEnabled) {
+        return -1;  // Don't auto-constrain to X/Y/Z when custom axis is active
+    }
+    return this->Superclass::DetermineConstraintAxis(constraint, x,
+                                                     startPickPoint);
+}
+
+//------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::GetTranslationVector(const double* p1,
                                                             const double* p2,
                                                             double* v) const {
@@ -78,30 +88,9 @@ void cvCustomAxisHandleRepresentation::GetTranslationVector(const double* p1,
     vtkMath::Subtract(p2, p1, p12);
 
     if (this->CustomAxisEnabled) {
-        // Project the translation vector onto the custom axis
-        // Following ParaView's implementation in vtkHandleRepresentation.cxx
         vtkMath::ProjectVector(p12, this->CustomTranslationAxis, v);
     } else {
-        // Use standard translation (or axis-constrained if TranslationAxis is
-        // set)
-        int translationAxis =
-                const_cast<cvCustomAxisHandleRepresentation*>(this)
-                        ->GetTranslationAxis();
-        if (translationAxis == -1) {  // Axis::NONE
-            // Free translation
-            for (int i = 0; i < 3; ++i) {
-                v[i] = p12[i];
-            }
-        } else {
-            // Standard axis constraint (X=0, Y=1, Z=2)
-            for (int i = 0; i < 3; ++i) {
-                if (translationAxis == i) {
-                    v[i] = p12[i];
-                } else {
-                    v[i] = 0.0;
-                }
-            }
-        }
+        this->Superclass::GetTranslationVector(p1, p2, v);
     }
 }
 
@@ -116,12 +105,8 @@ void cvCustomAxisHandleRepresentation::Translate(const double* p1,
 //------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::Translate(const double* v) {
     if (this->CustomAxisEnabled) {
-        // Project the translation vector onto the custom axis
-        // Following ParaView's implementation in vtkHandleRepresentation.cxx
         double dir[3];
         vtkMath::ProjectVector(v, this->CustomTranslationAxis, dir);
-
-        // Apply the translation
         double* worldPos = this->GetWorldPosition();
         double newPos[3];
         for (int i = 0; i < 3; ++i) {
@@ -129,7 +114,6 @@ void cvCustomAxisHandleRepresentation::Translate(const double* v) {
         }
         this->SetWorldPosition(newPos);
     } else {
-        // Use base class implementation for standard axes
         this->Superclass::Translate(v);
     }
 }

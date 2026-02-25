@@ -33,6 +33,7 @@
 #endif
 
 // VTK
+#include <vtkPolyData.h>
 #include <vtkRenderWindowInteractor.h>
 
 // QT

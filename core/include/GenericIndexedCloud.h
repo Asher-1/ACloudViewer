@@ -12,36 +12,56 @@
 
 namespace cloudViewer {
 
-//! A generic 3D point cloud with index-based point access
-/** Implements the GenericCloud interface.
- **/
+/**
+ * @class GenericIndexedCloud
+ * @brief Generic 3D point cloud with index-based access
+ *
+ * Extends GenericCloud to provide direct indexed access to points.
+ * This interface allows efficient random access to individual points
+ * by their index.
+ *
+ * @warning Some methods may return non-persistent pointers
+ * @warning Some methods may not be compatible with parallel strategies
+ */
 class CV_CORE_LIB_API GenericIndexedCloud : virtual public GenericCloud {
 public:
-    //! Default destructor
+    /**
+     * @brief Virtual destructor
+     */
     ~GenericIndexedCloud() override = default;
 
-    //! Returns the ith point
-    /**	Virtual method to request a point with a specific index.
-            WARNINGS:
-            - the returned object may not be persistent!
-            - THIS METHOD MAY NOT BE COMPATIBLE WITH PARALLEL STRATEGIES
-            (see the DgmOctree::executeFunctionForAllCellsAtLevel_MT and
-            DgmOctree::executeFunctionForAllCellsAtStartingLevel_MT methods).
-            Consider the other version of getPoint instead or the
-            GenericIndexedCloudPersist class.
-            \param index of the requested point (between 0 and the cloud size
-    minus 1) \return the requested point (undefined behavior if index is
-    invalid)
-    **/
+    /**
+     * @brief Get point by index (pointer version)
+     *
+     * Returns a pointer to the point at the specified index.
+     *
+     * @param index Point index (must be < size())
+     * @return Pointer to the point
+     * @warning The returned pointer may not be persistent
+     * @warning This method may not be compatible with parallel strategies
+     * @see DgmOctree::executeFunctionForAllCellsAtLevel_MT
+     * @see GenericIndexedCloudPersist for persistent access
+     * @note Undefined behavior if index is invalid
+     */
     virtual const CCVector3* getPoint(unsigned index) const = 0;
 
-    //! Returns the ith point
-    /**	Virtual method to request a point with a specific index.
-            Index must be valid (undefined behavior if index is invalid)
-            \param index of the requested point (between 0 and the cloud size
-    minus 1) \param P output point
-    **/
+    /**
+     * @brief Get point by index (copy version)
+     *
+     * Copies the point at the specified index to the output parameter.
+     * @param index Point index (must be < size())
+     * @param P Output point (will be filled with point coordinates)
+     * @note Undefined behavior if index is invalid
+     */
     virtual void getPoint(unsigned index, CCVector3& P) const = 0;
+
+    /**
+     * @brief Get point by index (array version)
+     *
+     * Copies the point coordinates to a double array.
+     * @param index Point index (must be < size())
+     * @param P Output array [x, y, z]
+     */
     virtual void getPoint(unsigned index, double P[3]) const {
         const CCVector3* pt = getPoint(index);
         P[0] = pt->x;
@@ -49,13 +69,20 @@ public:
         P[2] = pt->z;
     };
 
-    //! Returns whether normals are available
+    /**
+     * @brief Check if normals are available
+     * @return true if per-point normals are available
+     */
     virtual bool normalsAvailable() const { return false; }
 
-    //! If per-point normals are available, returns the one at a specific index
-    /** \warning If overriden, this method should return a valid normal for all
-     *points
-     **/
+    /**
+     * @brief Get normal by index
+     *
+     * If normals are available, returns the normal at the specified index.
+     * @param index Point index
+     * @return Pointer to normal (nullptr if normals not available)
+     * @warning If overridden, should return valid normals for all points
+     */
     virtual const CCVector3* getNormal(unsigned index) const {
         (void)index;
         return nullptr;

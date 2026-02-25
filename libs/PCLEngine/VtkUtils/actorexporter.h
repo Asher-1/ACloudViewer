@@ -10,7 +10,7 @@
 #include <QRunnable>
 #include <QString>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class vtkActor;
 namespace VtkUtils {

@@ -1354,7 +1354,7 @@ void PCLDisplayTools::setLightIntensity(double intensity) {
         return;
     }
 
-    // Delegate to PCLVis
+    // Delegate to PCLVis (global default)
     m_visualizer3D->setLightIntensity(intensity);
 }
 
@@ -1365,6 +1365,26 @@ double PCLDisplayTools::getLightIntensity() const {
 
     // Delegate to PCLVis
     return m_visualizer3D->getLightIntensity();
+}
+
+void PCLDisplayTools::setObjectLightIntensity(const QString& viewID,
+                                              double intensity) {
+    if (!m_visualizer3D) {
+        CVLog::Warning("[PCLDisplayTools] No 3D visualizer available");
+        return;
+    }
+
+    std::string id = CVTools::FromQString(viewID);
+    m_visualizer3D->setObjectLightIntensity(id, intensity);
+}
+
+double PCLDisplayTools::getObjectLightIntensity(const QString& viewID) const {
+    if (!m_visualizer3D) {
+        return 1.0;
+    }
+
+    std::string id = CVTools::FromQString(viewID);
+    return m_visualizer3D->getObjectLightIntensity(id);
 }
 
 // ============================================================================

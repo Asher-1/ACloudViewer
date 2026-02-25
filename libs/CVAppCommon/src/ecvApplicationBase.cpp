@@ -48,23 +48,17 @@ void ecvApplicationBase::InitOpenGL() {
     **/
     {
         QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-
-        format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
         format.setStencilBufferSize(0);
-
 #ifdef CV_GL_WINDOW_USE_QWINDOW
         format.setStereo(true);
 #endif
+        format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
 #ifdef Q_OS_MAC
         format.setVersion(3, 3);  // must be 3.3
         format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
-// #ifdef Q_OS_UNIX
-//         ////enables automatic scaling based on the monitor's pixel density
-//         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-// #endif
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)) && \
         (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
         // These attributes are deprecated in Qt6 (high DPI is enabled by

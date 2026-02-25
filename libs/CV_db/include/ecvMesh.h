@@ -31,64 +31,114 @@ class ccPolyline;
 class ecvOrientedBBox;
 class ecvProgressDialog;
 
-//! Triangular mesh
+/**
+ * @class ccMesh
+ * @brief Triangular mesh representation
+ *
+ * Implements a triangular mesh structure with support for:
+ * - Vertex positions (from associated point cloud)
+ * - Per-vertex normals
+ * - Texture coordinates
+ * - Materials
+ * - Triangle-based topology
+ *
+ * The mesh references an external point cloud for vertex positions,
+ * allowing efficient memory management and data sharing.
+ */
 class CV_DB_LIB_API ccMesh : public ccGenericMesh {
 public:
-    //! Default ccMesh constructor
-    /** \param vertices the vertices cloud
-     **/
+    /**
+     * @brief Default constructor
+     * @param vertices Associated vertices cloud (optional)
+     */
     explicit ccMesh(ccGenericPointCloud* vertices = nullptr);
 
+    /**
+     * @brief Copy constructor
+     * @param mesh Source mesh to copy
+     */
     ccMesh(const ccMesh& mesh);
 
-    /// \brief Parameterized Constructor.
-    ///
-    /// \param vertices list of vertices.
-    /// \param triangles list of triangles.
+    /**
+     * @brief Parameterized constructor from vertex and triangle lists
+     * @param vertices List of vertex positions
+     * @param triangles List of triangles (each triangle = 3 vertex indices)
+     */
     explicit ccMesh(const std::vector<Eigen::Vector3d>& vertices,
                     const std::vector<Eigen::Vector3i>& triangles);
 
-    //! ccMesh constructor (from a cloudViewer::GenericIndexedMesh)
-    /** The GenericIndexedMesh should refer to a known ccGenericPointCloud.
-            \param giMesh the GenericIndexedMesh
-            \param giVertices giMesh vertices
-    **/
+    /**
+     * @brief Constructor from GenericIndexedMesh
+     *
+     * Creates a ccMesh from a generic indexed mesh structure.
+     * @param giMesh Generic indexed mesh
+     * @param giVertices Vertex cloud for the mesh
+     * @note The GenericIndexedMesh should reference a known ccGenericPointCloud
+     */
     explicit ccMesh(cloudViewer::GenericIndexedMesh* giMesh,
                     ccGenericPointCloud* giVertices);
 
-    //! Default destructor
+    /**
+     * @brief Destructor
+     */
     ~ccMesh() override;
 
-    //! Returns class ID
+    /**
+     * @brief Get class ID
+     * @return Class identifier (CV_TYPES::MESH)
+     */
     CV_CLASS_ENUM getClassID() const override { return CV_TYPES::MESH; }
 
-    //! Sets the associated vertices cloud (warning)
+    /**
+     * @brief Set the associated vertices cloud
+     * @param cloud Vertices cloud to associate
+     * @warning Changing the associated cloud may invalidate existing data
+     */
     void setAssociatedCloud(ccGenericPointCloud* cloud);
 
-    // Creates associated vertices cloud internally.
+    /**
+     * @brief Create internal vertices cloud
+     *
+     * Creates and initializes an internal point cloud for storing vertices.
+     * @return true if successful
+     */
     bool CreateInternalCloud();
 
-    //! Clones this entity
-    /** All the main features of the entity are cloned, except from the octree
-            \param vertices vertices set to use (will be automatically - AND
-    OPTIMALLY - cloned if 0) \param clonedMaterials for internal use \param
-    clonedNormsTable for internal use \param cloneTexCoords for internal use
-            \return a copy of this entity
-    **/
+    /**
+     * @brief Clone the mesh
+     *
+     * Creates a deep copy of the mesh with all features except the octree.
+     * @param vertices Vertices to use (auto-cloned if nullptr)
+     * @param clonedMaterials Cloned materials (for internal use)
+     * @param clonedNormsTable Cloned normals table (for internal use)
+     * @param cloneTexCoords Cloned texture coordinates (for internal use)
+     * @return Cloned mesh
+     */
     ccMesh* cloneMesh(ccGenericPointCloud* vertices = nullptr,
                       ccMaterialSet* clonedMaterials = nullptr,
                       NormsIndexesTableType* clonedNormsTable = nullptr,
                       TextureCoordsContainer* cloneTexCoords = nullptr);
 
-    //! Creates a new mesh from a selection of triangles (partial clone)
-    /** Similar to ccPointCloud::partialClone but for meshes.
-        \param triangleIndices Indices of triangles to include in the partial
-    clone \param warnings [optional] to store warnings \return a partial clone
-    of this mesh (or nullptr if an error occurred)
-    **/
+    /**
+     * @brief Create partial mesh from triangle selection
+     *
+     * Similar to ccPointCloud::partialClone but for meshes.
+     * @param triangleIndices Indices of triangles to include
+     * @param warnings Optional pointer to store warning flags
+     * @return Partial clone (nullptr on error)
+     */
     ccMesh* partialClone(const std::vector<unsigned>& triangleIndices,
                          int* warnings = nullptr) const;
 
+    /**
+     * @brief Get ordered triangle vertices
+     *
+     * Returns triangle vertex indices in ascending order.
+     * @param vidx0 First vertex index
+     * @param vidx1 Second vertex index
+     * @param vidx2 Third vertex index
+     * @return Ordered vertex indices
+     */
     static inline cloudViewer::VerticesIndexes GetOrderedTriangle(int vidx0,
                                                                   int vidx1,
                                                                   int vidx2) {
@@ -106,25 +156,43 @@ public:
                                             static_cast<unsigned int>(vidx2));
     }
 
-    //! Creates a Delaunay 2.5D mesh from a point cloud
-    /** See cloudViewer::PointProjectionTools::computeTriangulation.
-     **/
+    /**
+     * @brief Create Delaunay 2.5D triangulation from point cloud
+     *
+     * Performs 2D or 2.5D Delaunay triangulation on a point cloud.
+     * @param cloud Input point cloud
+     * @param type Triangulation type
+     * @param updateNormals Whether to compute normals (default: false)
+     * @param maxEdgeLength Maximum edge length (0 for unlimited)
+     * @param dim Projection dimension (default: 2)
+     * @return Triangulated mesh (nullptr on error)
+     * @see cloudViewer::PointProjectionTools::computeTriangulation
+     */
     static ccMesh* Triangulate(ccGenericPointCloud* cloud,
                                cloudViewer::TRIANGULATION_TYPES type,
                                bool updateNormals = false,
                                PointCoordinateType maxEdgeLength = 0,
                                unsigned char dim = 2);
 
-    //! Creates a Delaunay 2.5D mesh from two polylines
+    /**
+     * @brief Create mesh from two polylines
+     *
+     * Triangulates the region between two polylines.
+     * @param p1 First polyline
+     * @param p2 Second polyline
+     * @param projectionDir Optional projection direction
+     * @return Triangulated mesh (nullptr on error)
+     */
     static ccMesh* TriangulateTwoPolylines(ccPolyline* p1,
                                            ccPolyline* p2,
                                            CCVector3* projectionDir = nullptr);
 
-    //! Merges another mesh into this one
-    /** \param mesh mesh to be merged in this one
-            \param createSubMesh whether to create a submesh entity
-    corresponding to the added mesh \return success
-    **/
+    /**
+     * @brief Merge another mesh into this one
+     * @param mesh Mesh to merge
+     * @param createSubMesh Whether to create a submesh entity
+     * @return true if successful
+     */
     bool merge(const ccMesh* mesh, bool createSubMesh);
 
     ccMesh& operator=(const ccMesh& mesh);

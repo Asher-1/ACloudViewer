@@ -15,7 +15,24 @@
 
 #include "CVAppCommon.h"
 
-//! ecvSettingManager
+/**
+ * @class ecvSettingManager
+ * @brief Application settings manager (singleton)
+ *
+ * Extends QSettings to provide centralized management of application
+ * settings with additional features:
+ * - Window and dialog state persistence (position, size, dock widgets)
+ * - Hierarchical key-value storage with section support
+ * - Settings backup/restore functionality
+ * - Automatic sanity checking for UI element positions
+ * - Modified signal for change notifications
+ *
+ * Settings are typically stored in INI format on all platforms.
+ * Uses singleton pattern for global access throughout the application.
+ *
+ * @see QSettings
+ * @see ecvOptions
+ */
 class QDialog;
 class QMainWindow;
 class QDockWidget;
@@ -24,44 +41,115 @@ class CVAPPCOMMON_LIB_API ecvSettingManager : public QSettings {
     typedef QSettings Superclass;
 
 public:
-    //! Destructor
+    /**
+     * @brief Destructor
+     */
     ~ecvSettingManager() override {}
 
-    //! Returns the (unique) static instance
-    /** \param autoInit automatically initialize the console instance (with no
-     *widget!) if not done already
-     **/
+    /**
+     * @brief Get singleton instance
+     * @param autoInit Automatically initialize if not already done
+     * @return Pointer to settings manager singleton
+     */
     static ecvSettingManager *TheInstance(bool autoInit = true);
 
-    //! Releases unique instance
+    /**
+     * @brief Release singleton instance
+     *
+     * Clears the singleton. Typically called at application shutdown.
+     */
     static void ReleaseInstance();
 
-    static void Init(const QString &path);  //
+    /**
+     * @brief Initialize settings manager with custom path
+     * @param path Path to settings file
+     */
+    static void Init(const QString &path);
+
+    /**
+     * @brief Set a value in settings (static convenience method)
+     * @param section Settings section/group
+     * @param key Setting key
+     * @param value Value to store
+     */
     static void setValue(const QString &section,
                          const QString &key,
-                         const QVariant &value);                        //
-    static void removeNode(const QString &section);                     //
-    static void removeKey(const QString &section, const QString &key);  //
+                         const QVariant &value);
+
+    /**
+     * @brief Remove entire settings section
+     * @param section Section to remove
+     */
+    static void removeNode(const QString &section);
+
+    /**
+     * @brief Remove specific key from section
+     * @param section Settings section
+     * @param key Key to remove
+     */
+    static void removeKey(const QString &section, const QString &key);
+
+    /**
+     * @brief Get a value from settings (static convenience method)
+     * @param section Settings section/group
+     * @param key Setting key
+     * @param defaultValue Default value if key doesn't exist
+     * @return Stored value or default
+     */
     static QVariant getValue(const QString &section,
                              const QString &key,
-                             const QVariant &defaultValue = QVariant());  //
+                             const QVariant &defaultValue = QVariant());
 
+    /**
+     * @brief Save main window state
+     *
+     * Saves window geometry, dock widget positions, and toolbar states.
+     * @param window Main window to save
+     * @param key Storage key identifier
+     */
     virtual void saveState(const QMainWindow &window, const QString &key);
+
+    /**
+     * @brief Save dialog state
+     *
+     * Saves dialog geometry and position.
+     * @param dialog Dialog to save
+     * @param key Storage key identifier
+     */
     virtual void saveState(const QDialog &dialog, const QString &key);
 
+    /**
+     * @brief Restore main window state
+     *
+     * Restores previously saved window geometry, dock widgets, and toolbars.
+     * @param key Storage key identifier
+     * @param window Main window to restore
+     */
     virtual void restoreState(const QString &key, QMainWindow &window);
+
+    /**
+     * @brief Restore dialog state
+     *
+     * Restores previously saved dialog geometry.
+     * @param key Storage key identifier
+     * @param dialog Dialog to restore
+     */
     virtual void restoreState(const QString &key, QDialog &dialog);
 
     /**
-     * Calling this method will cause the modified signal to be emitted.
+     * @brief Emit modified signal
+     *
+     * Manually trigger the modified() signal to notify listeners
+     * that settings have changed.
      */
     virtual void alertSettingsModified();
 
     /**
-     * Creates a new backup file for the current settings.
-     * If `filename` is empty, then a backup file name will automatically be
-     * picked. On success returns the backup file name, on failure an empty
-     * string is returned.
+     * @brief Create settings backup file
+     *
+     * Creates a backup copy of the current settings file.
+     * @param filename Backup filename (auto-generated if empty)
+     * @return Backup filename on success, empty string on failure
      */
     QString backup(const QString &filename = QString());
 
@@ -111,20 +199,29 @@ public:
 #endif
 protected:
     /**
-     * ensure that when window state is being loaded, if dock windows are
-     * beyond the viewport, we correct them.
+     * @brief Sanity check dock widget position
+     *
+     * Ensures dock widgets are within visible viewport when restoring state.
+     * Prevents dock widgets from being positioned off-screen.
+     * @param docke_widget Dock widget to check
      */
     virtual void sanityCheckDock(QDockWidget *docke_widget);
 
 private:
-    //! Default constructor
-    /** Constructor is protected to avoid using this object as a non static
-     *class.
-     **/
+    /**
+     * @brief Default constructor (private for singleton)
+     *
+     * Constructor is private to enforce singleton pattern.
+     */
     ecvSettingManager() {}
 
-    QSharedPointer<QSettings> m_iniFile;
+    QSharedPointer<QSettings> m_iniFile;  ///< Underlying settings file handle
 
 signals:
+    /**
+     * @brief Signal emitted when settings are modified
+     *
+     * Listeners can connect to this signal to be notified of setting changes.
+     */
     void modified();
 };

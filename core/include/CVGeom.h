@@ -27,52 +27,96 @@
 #pragma warning(disable : 4201)
 #endif
 
-//! 2D Vector
+/**
+ * @brief 2D Vector template class
+ *
+ * A lightweight 2D vector class with basic vector operations.
+ * @tparam Type The numeric type of vector components (e.g., float, double)
+ */
 template <typename Type>
 class Vector2Tpl {
 public:
     union {
         struct {
-            Type x, y;
+            Type x, y;  ///< Vector components
         };
-        Type u[2];
+        Type u[2];  ///< Array access to components
     };
 
+    /**
+     * @brief Get number of rows (dimensions)
+     * @return Number of dimensions (2)
+     */
     inline std::size_t rows() const { return dimensions(); }
+
+    /**
+     * @brief Get number of dimensions
+     * @return Number of dimensions (2)
+     */
     inline std::size_t dimensions() const { return 2; }
 
+    /**
+     * @brief Get raw data pointer
+     * @return Pointer to raw data array
+     */
     inline Type* data() { return u; }
+
+    /**
+     * @brief Get const raw data pointer
+     * @return Const pointer to raw data array
+     */
     inline const Type* data() const { return u; }
 
-    //! Default constructor
-    /** Inits vector to (0,0).
-            \param s default init value for both coordinates
-    **/
+    /**
+     * @brief Default constructor
+     *
+     * Initializes vector to (s, s).
+     * @param s Default initialization value for both coordinates (default: 0)
+     */
     inline explicit Vector2Tpl(Type s = 0) : x(s), y(s) {}
 
-    //! Constructor from a couple of coordinates
-    /** Inits vector to (x,y).
-            \param _x x coordinate
-            \param _y y coordinate
-    **/
+    /**
+     * @brief Constructor from coordinates
+     *
+     * Initializes vector to (_x, _y).
+     * @param _x X coordinate
+     * @param _y Y coordinate
+     */
     inline Vector2Tpl(Type _x, Type _y) : x(_x), y(_y) {}
 
-    //! Returns vector square norm
+    /**
+     * @brief Compute squared norm
+     * @return Squared Euclidean norm
+     */
     inline Type norm2() const { return (x * x) + (y * y); }
-    //! Returns vector norm
+
+    /**
+     * @brief Compute norm
+     * @return Euclidean norm
+     */
     inline Type norm() const { return std::sqrt(norm2()); }
-    //! Sets vector norm to unity
+
+    /**
+     * @brief Normalize vector to unit length
+     */
     inline void normalize() {
         Type n = norm2();
         if (n > 0) *this /= std::sqrt(n);
     }
 
-    //! Dot product
+    /**
+     * @brief Compute dot product
+     * @param v Other vector
+     * @return Dot product
+     */
     inline Type dot(const Vector2Tpl& v) const { return (x * v.x) + (y * v.y); }
-    //! Cross product
-    /** \return a positive value if (u,v) makes a counter-clockwise turn,
-     *negative for clockwise turn, and zero if the vectors are parallel
-     **/
+
+    /**
+     * @brief Compute 2D cross product
+     * @param v Other vector
+     * @return Positive value for counter-clockwise turn, negative for
+     * clockwise, zero if parallel
+     */
     inline Type cross(const Vector2Tpl& v) const { return x * v.y - y * v.x; }
 
     //! Inverse operator
@@ -127,35 +171,68 @@ public:
     inline const Type& operator[](unsigned i) const { return u[i]; }
 };
 
-//! 3-Tuple structure (templated version)
+/**
+ * @brief 3D Tuple template class
+ *
+ * A lightweight 3D tuple/vector class with basic arithmetic operations.
+ * @tparam Type The numeric type of tuple components (e.g., float, double)
+ */
 template <class Type>
 class Tuple3Tpl {
 public:
     // The 3 tuple values as a union (array/separate values)
     union {
         struct {
-            Type x, y, z;
+            Type x, y, z;  ///< Tuple components
         };
-        Type u[3];
+        Type u[3];  ///< Array access to components
     };
 
+    /**
+     * @brief Get number of rows (dimensions)
+     * @return Number of dimensions (3)
+     */
     inline std::size_t rows() const { return dimensions(); }
+
+    /**
+     * @brief Get number of dimensions
+     * @return Number of dimensions (3)
+     */
     inline std::size_t dimensions() const { return 3; }
 
+    /**
+     * @brief Get raw data pointer
+     * @return Pointer to raw data array
+     */
     inline Type* data() { return u; }
+
+    /**
+     * @brief Get const raw data pointer
+     * @return Const pointer to raw data array
+     */
     inline const Type* data() const { return u; }
 
-    //! Default constructor
-    /** Inits tuple to (0, 0, 0).
-     **/
+    /**
+     * @brief Default constructor
+     *
+     * Initializes tuple to (0, 0, 0).
+     */
     inline Tuple3Tpl() : x(0), y(0), z(0) {}
 
-    //! Constructor from a triplet of values
-    /** Inits typle to (a,b,c).
-     **/
+    /**
+     * @brief Constructor from triplet of values
+     *
+     * Initializes tuple to (a, b, c).
+     * @param a X component
+     * @param b Y component
+     * @param c Z component
+     */
     inline Tuple3Tpl(Type a, Type b, Type c) : x(a), y(b), z(c) {}
 
-    //! Constructor from an array of 3 elements
+    /**
+     * @brief Constructor from array
+     * @param p Array of 3 elements
+     */
     inline explicit Tuple3Tpl(const Type p[]) : x(p[0]), y(p[1]), z(p[2]) {}
 
     //! Inverse operator

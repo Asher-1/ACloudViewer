@@ -9,7 +9,7 @@
 
 #include <QWidget>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace Widgets {
 class TagWidgetPrivate;

@@ -18,19 +18,50 @@
 
 class cc2DLabel;
 
-//! Dialog/interactor to graphically pick a list of points
-/** Options let the user export the list to an ASCII file, a new cloud, a
- *polyline, etc.
- **/
+/**
+ * @class ccPointListPickingDlg
+ * @brief Interactive point list picking dialog
+ *
+ * Dialog for graphically picking and managing a list of points from
+ * point clouds. Provides tools to:
+ *
+ * - Pick points interactively in 3D view
+ * - Display picked points with labels and markers
+ * - Export point list to various formats:
+ *   - ASCII files (XYZ, IXYZ, GXYZ, LXYZ)
+ *   - New point cloud
+ *   - Polyline
+ * - Edit point list (add, remove points)
+ * - Configure marker appearance and labeling
+ *
+ * Use cases:
+ * - Ground control point (GCP) selection
+ * - Reference point marking
+ * - Distance/area measurement preparation
+ * - Feature point extraction
+ * - Coordinate extraction
+ *
+ * @see ccPointPickingGenericInterface
+ * @see ccPickingHub
+ */
 class ccPointListPickingDlg : public ccPointPickingGenericInterface,
                               public Ui::PointListPickingDlg {
     Q_OBJECT
 
 public:
-    //! Default constructor
+    /**
+     * @brief Constructor
+     * @param pickingHub Picking hub for point selection
+     * @param parent Parent widget
+     */
     explicit ccPointListPickingDlg(ccPickingHub* pickingHub, QWidget* parent);
 
-    //! Associates dialog with cloud
+    /**
+     * @brief Associate dialog with point cloud
+     *
+     * Links the dialog with a specific point cloud for picking operations.
+     * @param cloud Point cloud to pick from
+     */
     void linkWithCloud(ccPointCloud* cloud);
 
 protected slots:

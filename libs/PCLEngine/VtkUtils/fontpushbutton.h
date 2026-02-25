@@ -9,7 +9,7 @@
 
 #include <QPushButton>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace Widgets {
 

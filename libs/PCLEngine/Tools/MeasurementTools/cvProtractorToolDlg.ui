@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -36,39 +36,72 @@
     <number>4</number>
    </property>
    <item>
-    <widget class="QLabel" name="instructionLabel">
+    <widget class="QGroupBox" name="shortcutsTipsGroupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
+     <property name="title">
+      <string>Tips</string>
      </property>
-     <property name="text">
-      <string>Note: Use '1'/'C'/'2' to place P1/Center/P2 on a mesh respectively. 
-Combine with 'Ctrl' to snap to the closest mesh point.
-Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</string>
-     </property>
-     <property name="wordWrap">
+     <property name="checkable">
       <bool>true</bool>
      </property>
-     <property name="margin">
-      <number>3</number>
+     <property name="checked">
+      <bool>true</bool>
      </property>
-     <property name="styleSheet">
-      <string>QLabel {
+     <layout class="QVBoxLayout" name="shortcutsTipsLayout">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="leftMargin">
+       <number>3</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <property name="rightMargin">
+       <number>3</number>
+      </property>
+      <property name="bottomMargin">
+       <number>3</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="instructionLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Note: Use '1'/'C'/'2' to place P1/Center/P2 on a mesh respectively. 
+Combine with 'Ctrl' to snap to the closest mesh point.
+Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="margin">
+         <number>3</number>
+        </property>
+        <property name="styleSheet">
+         <string>QLabel {
    background-color: #FFF9E6;
    border: 1px solid #FFD700;
    border-radius: 2px;
    padding: 3px;
    color: #333;
 }</string>
-     </property>
+        </property>
+        <property name="minimumHeight">
+         <number>75</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -80,7 +113,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="4">
+     <item row="0" column="1">
       <widget class="QDoubleSpinBox" name="angleSpinBox">
        <property name="readOnly">
         <bool>true</bool>
@@ -148,9 +181,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>X: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -173,9 +212,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Y: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -198,9 +243,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Z: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -260,9 +311,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>X: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -285,9 +342,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Y: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -310,9 +373,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Z: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -372,9 +441,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>X: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -397,9 +472,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Y: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -422,9 +503,15 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          <property name="prefix">
           <string>Z: </string>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>55</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -444,21 +531,21 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
        </item>
       </layout>
      </item>
-     <item row="4" column="0">
+     <item row="4" column="0" colspan="2">
       <widget class="Line" name="line_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
-     <item row="5" column="0">
+     <item row="5" column="0" colspan="2">
       <widget class="QLabel" name="label_11">
        <property name="text">
         <string>Display:</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
+     <item row="6" column="0" colspan="2">
       <layout class="QHBoxLayout" name="visibilityLayout">
        <item>
         <widget class="QCheckBox" name="widgetVisibilityCheckBox">
@@ -475,7 +562,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
        </item>
       </layout>
      </item>
-     <item row="7" column="0">
+     <item row="7" column="0" colspan="2">
       <layout class="QHBoxLayout" name="arcVisibilityLayout">
        <item>
         <widget class="QCheckBox" name="arcVisibilityCheckBox">
