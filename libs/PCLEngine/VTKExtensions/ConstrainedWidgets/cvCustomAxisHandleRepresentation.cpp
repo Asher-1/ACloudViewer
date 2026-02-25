@@ -134,7 +134,15 @@ void cvCustomAxisHandleRepresentation::PrintSelf(ostream& os,
 
 #else
 
-// VTK 9.3+ implementation - just use base class
+// VTK 9.3+ implementation
+//------------------------------------------------------------------------------
+void cvCustomAxisHandleRepresentation::SetTranslationAxisOff() {
+    // In VTK 9.3+, base class SetTranslationAxisOff() handles all axes including custom
+    // Just forward to base class implementation
+    this->Superclass::SetTranslationAxisOff();
+}
+
+//------------------------------------------------------------------------------
 void cvCustomAxisHandleRepresentation::PrintSelf(ostream& os,
                                                  vtkIndent indent) {
     this->Superclass::PrintSelf(os, indent);

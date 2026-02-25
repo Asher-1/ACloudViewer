@@ -152,20 +152,9 @@ void cvDistanceTool::initTool() {
         m_rep->SetRenderer(m_renderer);
     }
 
-    // Following ParaView's approach:
-    // For VTK 9.3+, use default vtkPointHandleRepresentation3D which has native
-    // custom axis support
-    // For VTK < 9.3, use our custom implementation
-#if !((VTK_MAJOR_VERSION > 9) || \
-      (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3))
-    // VTK < 9.3: Use custom implementation
+    // Replace handle representations with custom types for all VTK versions support custom axis
     m_rep->ReplaceHandleRepresentationsTyped<
             cvCustomAxisHandleRepresentation>();
-#else
-    // VTK 9.3+: Use default implementation with native custom axis support
-    // vtkLineRepresentation already instantiates vtkPointHandleRepresentation3D
-    // which has SetCustomTranslationAxisOn() and SetCustomTranslationAxis()
-#endif
 
     // 2. Configure appearance AFTER instantiation but BEFORE enabling
     configureLineRepresentation(m_rep);  // 3D mode only
