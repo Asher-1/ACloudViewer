@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// 控制层实现 - 从 ParaView vtkLineWidget2.cxx 直接移植
+// Controller implementation - directly ported from ParaView vtkLineWidget2.cxx
 
 #include "cvConstrainedDistanceWidget.h"
 
@@ -204,6 +204,7 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
 
     if (event == vtkCommand::KeyPressEvent) {
         if (keySym == "X") {
+            // 100% ParaView vtkLineWidget2 implementation
             rep->GetPoint1Representation()->SetXTranslationAxisOn();
             rep->GetPoint2Representation()->SetXTranslationAxisOn();
             rep->GetLineHandleRepresentation()->SetXTranslationAxisOn();
@@ -211,6 +212,7 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
             rep->GetPoint2Representation()->SetConstrained(true);
             rep->GetLineHandleRepresentation()->SetConstrained(true);
         } else if (keySym == "Y") {
+            // 100% ParaView vtkLineWidget2 implementation
             rep->GetPoint1Representation()->SetYTranslationAxisOn();
             rep->GetPoint2Representation()->SetYTranslationAxisOn();
             rep->GetLineHandleRepresentation()->SetYTranslationAxisOn();
@@ -218,6 +220,7 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
             rep->GetPoint2Representation()->SetConstrained(true);
             rep->GetLineHandleRepresentation()->SetConstrained(true);
         } else if (keySym == "Z") {
+            // 100% ParaView vtkLineWidget2 implementation
             rep->GetPoint1Representation()->SetZTranslationAxisOn();
             rep->GetPoint2Representation()->SetZTranslationAxisOn();
             rep->GetLineHandleRepresentation()->SetZTranslationAxisOn();
@@ -226,14 +229,27 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
             rep->GetLineHandleRepresentation()->SetConstrained(true);
         } else if (keySym == "L") {
             // Constrain to line axis (ParaView-aligned)
+            // Calculate line direction vector
             double p1[3], p2[3], v[3];
             rep->GetPoint1WorldPosition(p1);
             rep->GetPoint2WorldPosition(p2);
             vtkMath::Subtract(p2, p1, v);
             vtkMath::Normalize(v);
 
-            // Unified interface for all VTK versions via
-            // cvCustomAxisHandleRepresentation
+#if (VTK_MAJOR_VERSION > 9) || \
+        (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3)
+            // VTK 9.3+: Use native custom axis support
+            rep->GetPoint1Representation()->SetCustomTranslationAxis(v);
+            rep->GetPoint1Representation()->SetCustomTranslationAxisOn();
+            rep->GetPoint2Representation()->SetCustomTranslationAxis(v);
+            rep->GetPoint2Representation()->SetCustomTranslationAxisOn();
+            rep->GetLineHandleRepresentation()->SetCustomTranslationAxis(v);
+            rep->GetLineHandleRepresentation()->SetCustomTranslationAxisOn();
+            rep->GetPoint1Representation()->SetConstrained(true);
+            rep->GetPoint2Representation()->SetConstrained(true);
+            rep->GetLineHandleRepresentation()->SetConstrained(true);
+#else
+            // VTK < 9.3: Use cvCustomAxisHandleRepresentation
             auto* h1 = dynamic_cast<cvCustomAxisHandleRepresentation*>(
                     rep->GetPoint1Representation());
             auto* h2 = dynamic_cast<cvCustomAxisHandleRepresentation*>(
@@ -242,39 +258,70 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
                     rep->GetLineHandleRepresentation());
 
             if (h1 && h2 && hLine) {
-                // Use our custom cvCustomAxisHandleRepresentation which provides
-                // unified interface for all VTK versions
-                h1->SetCustomTranslationAxisOn();
                 h1->SetCustomTranslationAxis(v);
-                h2->SetCustomTranslationAxisOn();
+                h1->SetCustomTranslationAxisOn();
                 h2->SetCustomTranslationAxis(v);
-                hLine->SetCustomTranslationAxisOn();
+                h2->SetCustomTranslationAxisOn();
                 hLine->SetCustomTranslationAxis(v);
+                hLine->SetCustomTranslationAxisOn();
                 h1->SetConstrained(true);
                 h2->SetConstrained(true);
                 hLine->SetConstrained(true);
             } else {
-                // Fallback: Representations are not cvCustomAxisHandleRepresentation
-                // Cannot safely call SetCustomTranslationAxis methods on base class
-                // Log warning and skip custom axis constraint
                 CVLog::Warning(
-                        "[cvConstrainedDistanceWidget] 'L' key pressed but handle "
-                        "representations are not cvCustomAxisHandleRepresentation. "
-                        "Custom axis constraint not supported for this widget.");
+                        "[cvConstrainedDistanceWidget] VTK < 9.3 requires "
+                        "cvCustomAxisHandleRepresentation for 'L' key");
             }
+#endif
         }
     } else if (event == vtkCommand::KeyReleaseEvent) {
         // ParaView-aligned: L/X/Y/Z all handled identically
         if (keySym == "L" || keySym == "X" || keySym == "Y" || keySym == "Z") {
+#if (VTK_MAJOR_VERSION > 9) || \
+        (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3)
+            // VTK 9.3+: SetTranslationAxisOff is sufficient
+            // Base class handles both standard and custom axes
             rep->GetPoint1Representation()->SetTranslationAxisOff();
             rep->GetPoint2Representation()->SetTranslationAxisOff();
             rep->GetLineHandleRepresentation()->SetTranslationAxisOff();
+#else
+            // VTK < 9.3: SetTranslationAxisOff is NOT virtual
+            // Must explicitly clear custom axis for
+            // cvCustomAxisHandleRepresentation
+            auto* h1 = dynamic_cast<cvCustomAxisHandleRepresentation*>(
+                    rep->GetPoint1Representation());
+            auto* h2 = dynamic_cast<cvCustomAxisHandleRepresentation*>(
+                    rep->GetPoint2Representation());
+            auto* hLine = dynamic_cast<cvCustomAxisHandleRepresentation*>(
+                    rep->GetLineHandleRepresentation());
+
+            if (h1) {
+                h1->SetCustomTranslationAxisOff();
+                h1->SetTranslationAxisOff();  // Also clear standard axis
+            } else {
+                rep->GetPoint1Representation()->SetTranslationAxisOff();
+            }
+
+            if (h2) {
+                h2->SetCustomTranslationAxisOff();
+                h2->SetTranslationAxisOff();
+            } else {
+                rep->GetPoint2Representation()->SetTranslationAxisOff();
+            }
+
+            if (hLine) {
+                hLine->SetCustomTranslationAxisOff();
+                hLine->SetTranslationAxisOff();
+            } else {
+                rep->GetLineHandleRepresentation()->SetTranslationAxisOff();
+            }
+#endif
             rep->GetPoint1Representation()->SetConstrained(false);
             rep->GetPoint2Representation()->SetConstrained(false);
             rep->GetLineHandleRepresentation()->SetConstrained(false);
 
             // Synchronize cursor position with actual handle position
-            // This fixes the "十字星和handle分离" issue
+            // This fixes the "crosshair and handle separation" issue
             double pos1[3], pos2[3], posLine[3];
             rep->GetPoint1Representation()->GetWorldPosition(pos1);
             rep->GetPoint2Representation()->GetWorldPosition(pos2);

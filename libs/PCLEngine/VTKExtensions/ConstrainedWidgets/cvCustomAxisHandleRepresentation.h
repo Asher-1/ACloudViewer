@@ -26,32 +26,40 @@ public:
     static cvCustomAxisHandleRepresentation* New();
     vtkTypeMacro(cvCustomAxisHandleRepresentation,
                  vtkPointHandleRepresentation3D);
-    void PrintSelf(ostream& os, vtkIndent indent) override;
+    void PrintSelf(ostream& os, vtkIndent indent);
 
 #if !((VTK_MAJOR_VERSION > 9) || \
       (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3))
-    // These methods are only needed for VTK < 9.3
-    // In VTK 9.3+, the base class already has these
+    // ========================================================================
+    // VTK < 9.3 specific - backport VTK 9.3+ functionality
+    // Implement all VTK 9.3+ interfaces for compatibility
+    // ========================================================================
 
     /**
-     * @brief Enable custom translation axis mode
+     * @brief Enable custom translation axis mode (backport from VTK 9.3+)
      */
     void SetCustomTranslationAxisOn();
 
     /**
-     * @brief Disable custom translation axis mode
+     * @brief Disable custom translation axis mode (backport from VTK 9.3+)
      */
     void SetCustomTranslationAxisOff();
 
     /**
-     * @brief Set the custom translation axis vector
+     * @brief Set the custom translation axis vector (backport from VTK 9.3+)
      * @param axis The axis vector (will be normalized internally)
      */
     void SetCustomTranslationAxis(double axis[3]);
     void SetCustomTranslationAxis(double x, double y, double z);
 
     /**
-     * @brief Get the custom translation axis
+     * @brief Override SetTranslationAxisOff to also turn off custom axis
+     * This ensures ParaView-style unified release works correctly
+     */
+    void SetTranslationAxisOff();
+
+    /**
+     * @brief Get the custom translation axis (backport from VTK 9.3+)
      */
     vtkGetVector3Macro(CustomTranslationAxis, double);
 
@@ -60,11 +68,9 @@ public:
      */
     bool IsCustomAxisEnabled() const { return this->CustomAxisEnabled; }
 
-    /**
-     * @brief Override SetTranslationAxisOff to also turn off custom axis
-     * This ensures ParaView-style unified release works correctly
-     */
-    void SetTranslationAxisOff();
+protected:
+    cvCustomAxisHandleRepresentation();
+    ~cvCustomAxisHandleRepresentation();
 
     /**
      * @brief Override GetTranslationVector to support custom axis
@@ -90,22 +96,15 @@ public:
                                 double* x,
                                 double* startPickPoint);
 
-protected:
-    cvCustomAxisHandleRepresentation();
-    ~cvCustomAxisHandleRepresentation();
-
     bool CustomAxisEnabled;
     double CustomTranslationAxis[3];
 
 #else
-    // For VTK 9.3+, the base class already has SetCustomTranslationAxis support
-    // We still need to override SetTranslationAxisOff to ensure custom axis is cleared
-    
-    /**
-     * @brief Override SetTranslationAxisOff to also clear custom axis
-     * This ensures ParaView-style unified key release works correctly
-     */
-    void SetTranslationAxisOff();
+    // ========================================================================
+    // VTK 9.3+ specific - minimal implementation
+    // Base class already provides complete custom axis support
+    // No need to override anything, just inherit base class functionality
+    // ========================================================================
 
 protected:
     cvCustomAxisHandleRepresentation() {}
