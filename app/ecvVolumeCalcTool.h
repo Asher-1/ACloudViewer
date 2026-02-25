@@ -23,11 +23,11 @@ class QComboBox;
 /**
  * @class ccVolumeCalcTool
  * @brief Volume calculation tool dialog
- * 
+ *
  * Interactive tool for computing volumes between two point clouds or
  * between a point cloud and a reference plane. Uses 2.5D rasterization
  * to create a grid-based height map for volume calculations.
- * 
+ *
  * Features:
  * - Volume computation between two clouds (ground/ceiling model)
  * - Added/removed volume analysis
@@ -36,13 +36,13 @@ class QComboBox;
  * - Empty cell filling strategies
  * - Export results as point cloud or report
  * - Real-time 2D visualization of height grid
- * 
+ *
  * Applications:
  * - Earthwork volume calculations
  * - Stockpile volume measurements
  * - Cut/fill analysis
  * - Terrain change detection
- * 
+ *
  * @see cc2Point5DimEditor
  * @see ccRasterGrid
  */
@@ -72,13 +72,13 @@ public:
      * @return Grid cell size
      */
     virtual double getGridStep() const override;
-    
+
     /**
      * @brief Get projection dimension (inherited from cc2Point5DimEditor)
      * @return Projection axis (0=X, 1=Y, 2=Z)
      */
     virtual unsigned char getProjectionDimension() const override;
-    
+
     /**
      * @brief Get projection type (inherited from cc2Point5DimEditor)
      * @return Projection type (min, max, average, etc.)
@@ -88,7 +88,7 @@ public:
     /**
      * @struct ReportInfo
      * @brief Volume calculation report information
-     * 
+     *
      * Contains all computed volume and surface metrics.
      */
     struct ReportInfo {
@@ -112,14 +112,14 @@ public:
          */
         QString toText(int precision = 6) const;
 
-        double volume;                      ///< Net volume
-        double addedVolume;                 ///< Added material volume
-        double removedVolume;               ///< Removed material volume
-        double surface;                     ///< Surface area
-        float matchingPrecent;              ///< Percentage of matching cells
-        float ceilNonMatchingPercent;       ///< Percentage of ceiling-only cells
-        float groundNonMatchingPercent;     ///< Percentage of ground-only cells
-        double averageNeighborsPerCell;     ///< Average neighbors per grid cell
+        double volume;                   ///< Net volume
+        double addedVolume;              ///< Added material volume
+        double removedVolume;            ///< Removed material volume
+        double surface;                  ///< Surface area
+        float matchingPrecent;           ///< Percentage of matching cells
+        float ceilNonMatchingPercent;    ///< Percentage of ceiling-only cells
+        float groundNonMatchingPercent;  ///< Percentage of ground-only cells
+        double averageNeighborsPerCell;  ///< Average neighbors per grid cell
     };
 
     //! Static accessor

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace VtkUtils {
 

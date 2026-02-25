@@ -12,16 +12,16 @@
 /**
  * @class VTKFilter
  * @brief VTK (Visualization Toolkit) file I/O filter
- * 
+ *
  * Handles import/export of point clouds and meshes in VTK legacy format (.vtk).
  * VTK is a widely-used format in scientific visualization that supports:
  * - Point clouds (POLYDATA with vertices)
  * - Meshes (POLYDATA with polygons)
  * - Scalar fields and vector fields
  * - Both ASCII and binary formats
- * 
+ *
  * This filter supports the legacy VTK file format (not XML-based .vtp/.vtu).
- * 
+ *
  * @see FileIOFilter
  * @see ccPointCloud
  * @see ccMesh
@@ -54,7 +54,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to VTK file
      * @param entity Entity to save (point cloud or mesh)

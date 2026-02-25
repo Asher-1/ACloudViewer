@@ -16,7 +16,7 @@
 /**
  * @file ImageIO.h
  * @brief Image file I/O utilities
- * 
+ *
  * Provides functions for reading and writing images in various formats
  * (PNG, JPEG, etc.), including support for in-memory image data.
  */
@@ -26,7 +26,7 @@ namespace io {
 
 /**
  * @brief Factory function to create image from file
- * 
+ *
  * Automatically detects image format from file extension.
  * @param filename Input image file path
  * @return Shared pointer to loaded image (empty if loading fails)
@@ -36,7 +36,7 @@ CreateImageFromFile(const std::string &filename);
 
 /**
  * @brief Factory function to create image from memory
- * 
+ *
  * Decodes image data from memory buffer.
  * @param image_format Image format ("png", "jpg", etc.)
  * @param image_data_ptr Pointer to image data in memory
@@ -50,7 +50,7 @@ CreateImageFromMemory(const std::string &image_format,
 
 /**
  * @brief Read image from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input image file path
  * @param image Output image object
@@ -61,7 +61,7 @@ bool CV_IO_LIB_API ReadImage(const std::string &filename,
 
 /**
  * @brief Read image from memory buffer
- * 
+ *
  * Decodes image data from memory based on specified format.
  * @param image_format Image format ("png", "jpg", etc.)
  * @param image_data_ptr Pointer to image data in memory
@@ -79,12 +79,12 @@ constexpr int kCloudViewerImageIODefaultQuality = -1;
 
 /**
  * @brief Write image to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * Quality parameter is format-specific:
  * - PNG: [0-9] where <=2 is fast write, >=3 is balanced (default)
  * - JPEG: [0-100] where 70-95 is typical, 90 is default
- * 
+ *
  * @param filename Output image file path
  * @param image Image to write
  * @param quality Quality parameter (format-specific, -1 for default)

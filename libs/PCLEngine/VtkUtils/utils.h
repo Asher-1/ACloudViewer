@@ -12,7 +12,7 @@
 #include <QtMath>
 #include <complex>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class vtkActor;
 namespace Utils {

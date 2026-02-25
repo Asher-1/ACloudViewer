@@ -14,7 +14,7 @@
 /**
  * @class RasterGridFilter
  * @brief Raster grid format I/O filter (GDAL-based)
- * 
+ *
  * Handles import of raster grid data using the GDAL (Geospatial Data
  * Abstraction Library). Supports a wide variety of raster formats including:
  * - GeoTIFF (.tif, .tiff)
@@ -23,10 +23,10 @@
  * - NetCDF (.nc)
  * - HDF (.hdf, .h5)
  * - And many more (see GDAL documentation)
- * 
+ *
  * Raster data is typically converted to point clouds or 2.5D surfaces,
  * with elevation values from the raster grid.
- * 
+ *
  * @note Requires GDAL library support (CV_GDAL_SUPPORT)
  * @see http://www.gdal.org/
  * @see FileIOFilter

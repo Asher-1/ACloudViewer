@@ -21,7 +21,7 @@
 #include <QObject>
 #include <QRunnable>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "vtkutils.h"
 
 class vtkDataArray;

@@ -23,7 +23,7 @@
 /**
  * @class ecvGenericDisplayTools
  * @brief Generic display tools for 3D visualization
- * 
+ *
  * Provides a comprehensive set of tools for 3D rendering, including
  * coordinate transformations, projection matrices, and text rendering.
  * This class uses the singleton pattern for global access.
@@ -40,7 +40,7 @@ public:
      * @return Pointer to the singleton instance
      */
     static ecvGenericDisplayTools* GetInstance();
-    
+
     /**
      * @brief Set the singleton instance
      * @param tool Pointer to the display tools instance
@@ -70,7 +70,7 @@ public:
         assert(GetInstance());
         return GetInstance()->getPerspectiveState();
     }
-    
+
     /**
      * @brief Get perspective state for a viewport
      * @param viewport Viewport index (default: 0)
@@ -100,7 +100,7 @@ public:
      */
     inline virtual void toWorldPoint(const CCVector3d& input2D,
                                      CCVector3d& output3D) { /* do nothing */ }
-    
+
     /**
      * @brief Convert 2D display point to 3D world point (float to double)
      * @param input2D Input 2D coordinates
@@ -121,7 +121,7 @@ public:
                                       Vector3Tpl<oType>& output2D) {
         GetInstance()->toDisplayPoint(input3D, output2D);
     }
-    
+
     /**
      * @brief Convert 3D world point to 2D display point (double precision)
      * @param input3D Input 3D world coordinates
@@ -130,7 +130,7 @@ public:
     inline virtual void toDisplayPoint(const CCVector3d& input3D,
                                        CCVector3d& output2D) { /* do nothing */
     }
-    
+
     /**
      * @brief Convert 3D world point to 2D display point (float to double)
      * @param input3D Input 3D world coordinates
@@ -142,23 +142,23 @@ public:
 
     /**
      * @brief Text alignment options
-     * 
+     *
      * Bitflags for specifying horizontal and vertical text alignment.
      */
     enum TextAlign {
-        ALIGN_HLEFT = 1,      ///< Align text to the left
-        ALIGN_HMIDDLE = 2,    ///< Center text horizontally
-        ALIGN_HRIGHT = 4,     ///< Align text to the right
-        ALIGN_VTOP = 8,       ///< Align text to the top
-        ALIGN_VMIDDLE = 16,   ///< Center text vertically
-        ALIGN_VBOTTOM = 32,   ///< Align text to the bottom
-        ALIGN_DEFAULT = 1 | 8 ///< Default: left and top
+        ALIGN_HLEFT = 1,       ///< Align text to the left
+        ALIGN_HMIDDLE = 2,     ///< Center text horizontally
+        ALIGN_HRIGHT = 4,      ///< Align text to the right
+        ALIGN_VTOP = 8,        ///< Align text to the top
+        ALIGN_VMIDDLE = 16,    ///< Center text vertically
+        ALIGN_VBOTTOM = 32,    ///< Align text to the bottom
+        ALIGN_DEFAULT = 1 | 8  ///< Default: left and top
     };
 
 public:  // GLU equivalent methods
     /**
      * @brief Create a perspective frustum projection matrix
-     * 
+     *
      * Equivalent to gluFrustum. Creates an asymmetric perspective projection.
      * @param left Left clipping plane coordinate
      * @param right Right clipping plane coordinate
@@ -216,11 +216,11 @@ public:  // GLU equivalent methods
 
     /**
      * @brief Create a symmetric perspective projection matrix
-     * 
+     *
      * Equivalent to gluPerspective. Creates a symmetric perspective projection.
      * Inspired from https://www.opengl.org/wiki/GluPerspective_code and
      * http://www.songho.ca/opengl/gl_projectionmatrix.html
-     * 
+     *
      * @param fovyInDegrees Field of view angle in degrees (Y direction)
      * @param aspectRatio Aspect ratio (width/height)
      * @param znear Near clipping plane distance (must be > 0)
@@ -267,7 +267,7 @@ public:  // GLU equivalent methods
 
     /**
      * @brief Create an orthographic projection matrix
-     * 
+     *
      * Equivalent to glOrtho. Creates an orthographic (parallel) projection.
      * @param left Left clipping plane coordinate
      * @param right Right clipping plane coordinate

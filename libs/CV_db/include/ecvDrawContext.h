@@ -23,7 +23,7 @@ class ccScalarField;
 
 /**
  * @brief Display parameters of a 3D entity
- * 
+ *
  * This structure defines what visual attributes should be displayed
  * when rendering a 3D entity.
  */
@@ -38,7 +38,7 @@ struct glDrawParams {
 
 /**
  * @brief Property modes for entity rendering parameters
- * 
+ *
  * Defines which property is being set or modified on a drawable entity.
  */
 enum PROPERTY_MODE {
@@ -51,10 +51,10 @@ enum PROPERTY_MODE {
 
 /**
  * @brief Shading modes for mesh rendering
- * 
+ *
  * Defines the shading algorithm used for rendering surfaces.
  */
-enum SHADING_MODE { 
+enum SHADING_MODE {
     ECV_SHADING_FLAT,     ///< Flat shading (constant per face)
     ECV_SHADING_GOURAUD,  ///< Gouraud shading (interpolated per vertex)
     ECV_SHADING_PHONG     ///< Phong shading (per-pixel lighting)
@@ -62,91 +62,91 @@ enum SHADING_MODE {
 
 /**
  * @brief Mesh rendering modes
- * 
+ *
  * Defines how a mesh should be rendered.
  */
 enum MESH_RENDERING_MODE {
-    ECV_POINTS_MODE,      ///< Render as points (vertices only)
-    ECV_WIREFRAME_MODE,   ///< Render as wireframe (edges)
-    ECV_SURFACE_MODE,     ///< Render as filled surface
+    ECV_POINTS_MODE,     ///< Render as points (vertices only)
+    ECV_WIREFRAME_MODE,  ///< Render as wireframe (edges)
+    ECV_SURFACE_MODE,    ///< Render as filled surface
 };
 
 /**
  * @brief Entity type enumeration
- * 
+ *
  * Defines all types of entities that can be rendered in the scene.
  */
 enum ENTITY_TYPE {
-    ECV_HIERARCHY_OBJECT,      ///< Hierarchical object container
-    ECV_POINT_CLOUD,           ///< Point cloud entity
-    ECV_MARK_POINT,            ///< Marker point
-    ECV_MESH,                  ///< Mesh/polygon mesh entity
-    ECV_SHAPE,                 ///< Generic shape
-    ECV_OCTREE,                ///< Octree structure
-    ECV_KDTREE,                ///< KD-tree structure
-    ECV_FACET,                 ///< Planar facet
-    ECV_LINES_3D,              ///< 3D lines
-    ECV_LINES_2D,              ///< 2D lines
-    ECV_TRIANGLE_2D,           ///< 2D triangle
-    ECV_RECTANGLE_2D,          ///< 2D rectangle
-    ECV_POLYLINE_2D,           ///< 2D polyline
-    ECV_CIRCLE_2D,             ///< 2D circle
-    ECV_POLYGON,               ///< Polygon
-    ECV_2DLABLE,               ///< 2D label
-    ECV_2DLABLE_VIEWPORT,      ///< Viewport-anchored 2D label
-    ECV_CAPTION,               ///< Caption text
-    ECV_SCALAR_BAR,            ///< Scalar/color bar
-    ECV_TEXT3D,                ///< 3D text
-    ECV_TEXT2D,                ///< 2D text
-    ECV_IMAGE,                 ///< Image entity
-    ECV_SENSOR,                ///< Sensor entity
-    ECV_ALL,                   ///< All entities
-    ECV_NONE,                  ///< No entity
+    ECV_HIERARCHY_OBJECT,  ///< Hierarchical object container
+    ECV_POINT_CLOUD,       ///< Point cloud entity
+    ECV_MARK_POINT,        ///< Marker point
+    ECV_MESH,              ///< Mesh/polygon mesh entity
+    ECV_SHAPE,             ///< Generic shape
+    ECV_OCTREE,            ///< Octree structure
+    ECV_KDTREE,            ///< KD-tree structure
+    ECV_FACET,             ///< Planar facet
+    ECV_LINES_3D,          ///< 3D lines
+    ECV_LINES_2D,          ///< 2D lines
+    ECV_TRIANGLE_2D,       ///< 2D triangle
+    ECV_RECTANGLE_2D,      ///< 2D rectangle
+    ECV_POLYLINE_2D,       ///< 2D polyline
+    ECV_CIRCLE_2D,         ///< 2D circle
+    ECV_POLYGON,           ///< Polygon
+    ECV_2DLABLE,           ///< 2D label
+    ECV_2DLABLE_VIEWPORT,  ///< Viewport-anchored 2D label
+    ECV_CAPTION,           ///< Caption text
+    ECV_SCALAR_BAR,        ///< Scalar/color bar
+    ECV_TEXT3D,            ///< 3D text
+    ECV_TEXT2D,            ///< 2D text
+    ECV_IMAGE,             ///< Image entity
+    ECV_SENSOR,            ///< Sensor entity
+    ECV_ALL,               ///< All entities
+    ECV_NONE,              ///< No entity
 };
 
 /**
  * @brief Widget type enumeration
- * 
+ *
  * Defines all types of widgets (visual aids) that can be displayed.
  */
 enum WIDGETS_TYPE {
-    WIDGET_BBOX,           ///< Bounding box widget
-    WIDGET_IMAGE,          ///< Image widget
-    WIDGET_LINE_2D,        ///< 2D line widget
-    WIDGET_TRIANGLE_2D,    ///< 2D triangle widget
-    WIDGET_POINTS_2D,      ///< 2D points widget
-    WIDGET_CIRCLE_2D,      ///< 2D circle widget
-    WIDGET_RECTANGLE_2D,   ///< 2D rectangle widget
-    WIDGET_POLYGONMESH,    ///< Polygon mesh widget
-    WIDGET_COORDINATE,     ///< Coordinate system widget
-    WIDGET_POLYLINE,       ///< 3D polyline widget
-    WIDGET_POLYLINE_2D,    ///< 2D polyline widget
-    WIDGET_LINE_3D,        ///< 3D line widget
-    WIDGET_SPHERE,         ///< Sphere widget
-    WIDGET_CAPTION,        ///< Caption widget
-    WIDGET_SCALAR_BAR,     ///< Scalar bar widget
-    WIDGET_T3D,            ///< 3D text widget
-    WIDGET_T2D,            ///< 2D text widget
+    WIDGET_BBOX,          ///< Bounding box widget
+    WIDGET_IMAGE,         ///< Image widget
+    WIDGET_LINE_2D,       ///< 2D line widget
+    WIDGET_TRIANGLE_2D,   ///< 2D triangle widget
+    WIDGET_POINTS_2D,     ///< 2D points widget
+    WIDGET_CIRCLE_2D,     ///< 2D circle widget
+    WIDGET_RECTANGLE_2D,  ///< 2D rectangle widget
+    WIDGET_POLYGONMESH,   ///< Polygon mesh widget
+    WIDGET_COORDINATE,    ///< Coordinate system widget
+    WIDGET_POLYLINE,      ///< 3D polyline widget
+    WIDGET_POLYLINE_2D,   ///< 2D polyline widget
+    WIDGET_LINE_3D,       ///< 3D line widget
+    WIDGET_SPHERE,        ///< Sphere widget
+    WIDGET_CAPTION,       ///< Caption widget
+    WIDGET_SCALAR_BAR,    ///< Scalar bar widget
+    WIDGET_T3D,           ///< 3D text widget
+    WIDGET_T2D,           ///< 2D text widget
 };
 
 /**
  * @brief Property parameters for entity rendering
- * 
+ *
  * This structure encapsulates various rendering properties that can be
  * applied to a drawable entity, such as color, opacity, point size, etc.
  */
 struct CV_DB_LIB_API PROPERTY_PARAM {
-    QString viewId;                           ///< View identifier
-    int viewport = 0;                         ///< Viewport index
-    PointCoordinateType lineWidth = 2;        ///< Line width for rendering
-    unsigned char pointSize = 1;              ///< Point size for rendering
-    ccHObject* entity;                        ///< Target entity
-    ecvColor::Rgb color;                      ///< Color property
+    QString viewId;                     ///< View identifier
+    int viewport = 0;                   ///< Viewport index
+    PointCoordinateType lineWidth = 2;  ///< Line width for rendering
+    unsigned char pointSize = 1;        ///< Point size for rendering
+    ccHObject* entity;                  ///< Target entity
+    ecvColor::Rgb color;                ///< Color property
 
-    double opacity = 1.0;                     ///< Opacity value [0, 1]
-    PROPERTY_MODE property;                   ///< Property mode
-    SHADING_MODE shadingMode;                 ///< Shading mode
-    ENTITY_TYPE entityType;                   ///< Entity type
+    double opacity = 1.0;      ///< Opacity value [0, 1]
+    PROPERTY_MODE property;    ///< Property mode
+    SHADING_MODE shadingMode;  ///< Shading mode
+    ENTITY_TYPE entityType;    ///< Entity type
 
     /**
      * @brief Constructor for color property
@@ -233,16 +233,16 @@ struct CV_DB_LIB_API PROPERTY_PARAM {
 
 /**
  * @brief Line widget structure
- * 
+ *
  * Represents a 3D line widget with start/end points, width, and color.
  */
 struct CV_DB_LIB_API LineWidget {
-    CCVector3 lineSt;           ///< Line start point
-    CCVector3 lineEd;           ///< Line end point
-    float lineWidth;            ///< Line width
-    ecvColor::Rgb lineColor;    ///< Line color
-    bool valid;                 ///< Whether the line widget is valid
-    
+    CCVector3 lineSt;         ///< Line start point
+    CCVector3 lineEd;         ///< Line end point
+    float lineWidth;          ///< Line width
+    ecvColor::Rgb lineColor;  ///< Line color
+    bool valid;               ///< Whether the line widget is valid
+
     /**
      * @brief Default constructor
      * @param width Line width (default: 2.0)
@@ -271,7 +271,7 @@ struct CV_DB_LIB_API LineWidget {
 
 /**
  * @brief Information structure for entity removal
- * 
+ *
  * Stores information about entities to be removed from the view.
  */
 struct CV_DB_LIB_API removeInfo {
@@ -294,7 +294,7 @@ struct CV_DB_LIB_API removeInfo {
 
 /**
  * @brief Information structure for entity visibility
- * 
+ *
  * Stores information about entities to be hidden in the view.
  */
 struct CV_DB_LIB_API hideInfo {
@@ -317,7 +317,7 @@ struct CV_DB_LIB_API hideInfo {
 
 /**
  * @brief Transformation information structure
- * 
+ *
  * Encapsulates all transformation parameters including rotation, scale,
  * and translation for entity manipulation.
  */
@@ -326,8 +326,8 @@ struct CV_DB_LIB_API TransformInfo {
      * @brief Rotation parameters using angle-axis representation
      */
     struct RotateParam {
-        double angle;         ///< Rotation angle in degrees
-        CCVector3 rotAxis;    ///< Rotation axis
+        double angle;       ///< Rotation angle in degrees
+        CCVector3 rotAxis;  ///< Rotation axis
     };
 
     RotateParam rotateParam;         ///< Angle-axis rotation parameters
@@ -337,16 +337,16 @@ struct CV_DB_LIB_API TransformInfo {
     bool isTranslate = false;        ///< Whether translation is applied
     bool isPositionChanged = false;  ///< Whether position has changed
 
-    double quaternion[4];            ///< Quaternion representation
+    double quaternion[4];  ///< Quaternion representation
 
-    CCVector3d eulerZYX;            ///< Euler angles in ZYX order (degrees)
+    CCVector3d eulerZYX;  ///< Euler angles in ZYX order (degrees)
 
-    CCVector3 scaleXYZ;             ///< Scale factors for X, Y, Z axes
+    CCVector3 scaleXYZ;  ///< Scale factors for X, Y, Z axes
 
-    CCVector3 transVecStart;        ///< Translation start vector
-    CCVector3 transVecEnd;          ///< Translation end vector
+    CCVector3 transVecStart;  ///< Translation start vector
+    CCVector3 transVecEnd;    ///< Translation end vector
 
-    CCVector3 position;             ///< Position vector
+    CCVector3 position;  ///< Position vector
 
     /**
      * @brief Set the position
@@ -434,7 +434,7 @@ struct CV_DB_LIB_API TransformInfo {
         eulerZYX[1] = yAngle;
         eulerZYX[2] = xAngle;
     }
-    
+
     /**
      * @brief Set rotation using Euler angles array
      * @param zyxAngle Array of Euler angles [Z, Y, X] (degrees)
@@ -453,7 +453,7 @@ struct CV_DB_LIB_API TransformInfo {
     void setRotation(double angle, double x, double y, double z) {
         setRotation(angle, CCVector3d(x, y, z));
     }
-    
+
     /**
      * @brief Set rotation using angle-axis representation
      * @param angle Rotation angle (degrees)
@@ -465,7 +465,7 @@ struct CV_DB_LIB_API TransformInfo {
         rotateParam.angle = angle;
         rotateParam.rotAxis = axis;
     }
-    
+
     /**
      * @brief Set rotation using angle-axis representation (double precision)
      * @param angle Rotation angle (degrees)
@@ -486,7 +486,7 @@ struct CV_DB_LIB_API TransformInfo {
         isScale = true;
         scaleXYZ = scale;
     }
-    
+
     /**
      * @brief Set translation start vector
      * @param trans Translation start vector
@@ -495,7 +495,7 @@ struct CV_DB_LIB_API TransformInfo {
         isTranslate = true;
         transVecStart = trans;
     }
-    
+
     /**
      * @brief Set translation end vector
      * @param trans Translation end vector
@@ -508,7 +508,7 @@ struct CV_DB_LIB_API TransformInfo {
 
 /**
  * @brief Text rendering parameters
- * 
+ *
  * Parameters for rendering text in 2D or 3D space.
  */
 struct CV_DB_LIB_API ecvTextParam {
@@ -516,32 +516,33 @@ struct CV_DB_LIB_API ecvTextParam {
     double textScale = 1.0;                          ///< Text scale factor
     double opacity = 1.0;                            ///< Text opacity [0, 1]
     CCVector3d textPos = CCVector3d(0.0, 0.0, 0.0);  ///< Text position
-    QString text = "";                                ///< Text content
+    QString text = "";                               ///< Text content
     QFont font = QFont();                            ///< Font settings
 };
 
 /**
  * @brief Drawing flags for controlling render behavior
- * 
+ *
  * Bitflags that control various aspects of rendering such as 2D/3D mode,
  * entity picking, LOD, etc.
  */
 enum CC_DRAWING_FLAGS {
-    CC_DRAW_2D = 0x0001,                 ///< Draw in 2D mode
-    CC_DRAW_3D = 0x0002,                 ///< Draw in 3D mode
-    CC_DRAW_FOREGROUND = 0x0004,         ///< Draw in foreground
-    CC_LIGHT_ENABLED = 0x0008,           ///< Enable lighting
-    CC_SKIP_UNSELECTED = 0x0010,         ///< Skip unselected entities
-    CC_SKIP_SELECTED = 0x0020,           ///< Skip selected entities
-    CC_SKIP_ALL = 0x0030,                ///< Skip all entities (UNSELECTED | SELECTED)
-    CC_ENTITY_PICKING = 0x0040,          ///< Enable entity picking mode
-    // CC_FREE_FLAG	  = 0x0080,		// UNUSED (formerly CC_DRAW_POINT_NAMES)
-    // CC_FREE_FLAG	  = 0x0100,		// UNUSED (formerly CC_DRAW_TRI_NAMES)
-    CC_FAST_ENTITY_PICKING = 0x0200,     ///< Fast entity picking mode
-    // UNUSED (formerly CC_DRAW_ANY_NAMES = CC_DRAW_ENTITY_NAMES | CC_DRAW_POINT_NAMES | CC_DRAW_TRI_NAMES)
-    // CC_FREE_FLAG	  = 0x03C0,
-    CC_LOD_ACTIVATED = 0x0400,           ///< Level of detail (LOD) activated
-    CC_VIRTUAL_TRANS_ENABLED = 0x0800    ///< Virtual transformation enabled
+    CC_DRAW_2D = 0x0001,          ///< Draw in 2D mode
+    CC_DRAW_3D = 0x0002,          ///< Draw in 3D mode
+    CC_DRAW_FOREGROUND = 0x0004,  ///< Draw in foreground
+    CC_LIGHT_ENABLED = 0x0008,    ///< Enable lighting
+    CC_SKIP_UNSELECTED = 0x0010,  ///< Skip unselected entities
+    CC_SKIP_SELECTED = 0x0020,    ///< Skip selected entities
+    CC_SKIP_ALL = 0x0030,         ///< Skip all entities (UNSELECTED | SELECTED)
+    CC_ENTITY_PICKING = 0x0040,   ///< Enable entity picking mode
+    // CC_FREE_FLAG	  = 0x0080,		// UNUSED (formerly
+    // CC_DRAW_POINT_NAMES) CC_FREE_FLAG	  = 0x0100,		//
+    // UNUSED (formerly CC_DRAW_TRI_NAMES)
+    CC_FAST_ENTITY_PICKING = 0x0200,  ///< Fast entity picking mode
+    // UNUSED (formerly CC_DRAW_ANY_NAMES = CC_DRAW_ENTITY_NAMES |
+    // CC_DRAW_POINT_NAMES | CC_DRAW_TRI_NAMES) CC_FREE_FLAG	  = 0x03C0,
+    CC_LOD_ACTIVATED = 0x0400,         ///< Level of detail (LOD) activated
+    CC_VIRTUAL_TRANS_ENABLED = 0x0800  ///< Virtual transformation enabled
 };
 
 // Drawing flags testing macros (see ccDrawableObject)
@@ -561,94 +562,95 @@ enum CC_DRAWING_FLAGS {
 
 /**
  * @brief OpenGL drawing context
- * 
+ *
  * Comprehensive structure containing all parameters needed for rendering
- * entities in the 3D/2D views, including colors, materials, flags, LOD settings,
- * and transformation information.
+ * entities in the 3D/2D views, including colors, materials, flags, LOD
+ * settings, and transformation information.
  */
 struct ccGLDrawContext {
-    int drawingFlags;                        ///< Drawing flags (see CC_DRAWING_FLAGS)
-    bool forceRedraw;                        ///< Force redraw
-    bool visFiltering;                       ///< Visibility filtering enabled
-    TransformInfo transformInfo;             ///< Transformation information
-    ecvTextParam textParam;                  ///< Text rendering parameters
+    int drawingFlags;             ///< Drawing flags (see CC_DRAWING_FLAGS)
+    bool forceRedraw;             ///< Force redraw
+    bool visFiltering;            ///< Visibility filtering enabled
+    TransformInfo transformInfo;  ///< Transformation information
+    ecvTextParam textParam;       ///< Text rendering parameters
 
-    QString viewID;                          ///< View identifier
-    int defaultViewPort;                     ///< Default viewport index
-    int normalDensity;                       ///< Normal vector display density (%)
-    float normalScale;                       ///< Normal vector scale factor
+    QString viewID;       ///< View identifier
+    int defaultViewPort;  ///< Default viewport index
+    int normalDensity;    ///< Normal vector display density (%)
+    float normalScale;    ///< Normal vector scale factor
 
-    float opacity;                           ///< Global opacity
+    float opacity;  ///< Global opacity
 
-    bool visible;                            ///< Whether entities are visible
-    unsigned char defaultLineWidth;          ///< Default line width
-    unsigned char currentLineWidth;          ///< Current line width
-    unsigned char defaultPointSize;          ///< Default point size
-    glDrawParams drawParam;                  ///< Draw parameters
-    MESH_RENDERING_MODE meshRenderingMode;   ///< Mesh rendering mode
-    ENTITY_TYPE hideShowEntityType;          ///< Entity type for hide/show
+    bool visible;                           ///< Whether entities are visible
+    unsigned char defaultLineWidth;         ///< Default line width
+    unsigned char currentLineWidth;         ///< Current line width
+    unsigned char defaultPointSize;         ///< Default point size
+    glDrawParams drawParam;                 ///< Draw parameters
+    MESH_RENDERING_MODE meshRenderingMode;  ///< Mesh rendering mode
+    ENTITY_TYPE hideShowEntityType;         ///< Entity type for hide/show
 
-    QString removeViewID;                    ///< View ID for entity removal
-    ENTITY_TYPE removeEntityType;            ///< Entity type for removal
+    QString removeViewID;          ///< View ID for entity removal
+    ENTITY_TYPE removeEntityType;  ///< Entity type for removal
 
-    bool clearDepthLayer;                    ///< Clear depth buffer
-    bool clearColorLayer;                    ///< Clear color buffer
+    bool clearDepthLayer;  ///< Clear depth buffer
+    bool clearColorLayer;  ///< Clear color buffer
 
-    int glW;                                 ///< OpenGL screen width
-    int glH;                                 ///< OpenGL screen height
-    float devicePixelRatio;                  ///< Device pixel ratio (1 or 2 for HD)
+    int glW;                 ///< OpenGL screen width
+    int glH;                 ///< OpenGL screen height
+    float devicePixelRatio;  ///< Device pixel ratio (1 or 2 for HD)
 
-    float renderZoom;                        ///< Render zoom factor
+    float renderZoom;  ///< Render zoom factor
 
-    ccMaterial::Shared defaultMat;           ///< Default material
+    ccMaterial::Shared defaultMat;  ///< Default material
 
-    ecvColor::Rgbaf defaultMeshFrontDiff;    ///< Default mesh color (front)
-    ecvColor::Rgbaf defaultMeshBackDiff;     ///< Default mesh color (back)
-    ecvColor::Rgb defaultMeshColor;          ///< Default mesh color
+    ecvColor::Rgbaf defaultMeshFrontDiff;  ///< Default mesh color (front)
+    ecvColor::Rgbaf defaultMeshBackDiff;   ///< Default mesh color (back)
+    ecvColor::Rgb defaultMeshColor;        ///< Default mesh color
 
-    ecvColor::Rgb defaultPolylineColor;      ///< Default polyline color
+    ecvColor::Rgb defaultPolylineColor;  ///< Default polyline color
 
-    ecvColor::Rgbub pointsDefaultCol;        ///< Default point color
-    ecvColor::Rgbub pointsCurrentCol;        ///< Current point color
-    ecvColor::Rgbub textDefaultCol;          ///< Default text color
-    ecvColor::Rgbub labelDefaultBkgCol;      ///< Default label background color
+    ecvColor::Rgbub pointsDefaultCol;    ///< Default point color
+    ecvColor::Rgbub pointsCurrentCol;    ///< Current point color
+    ecvColor::Rgbub textDefaultCol;      ///< Default text color
+    ecvColor::Rgbub labelDefaultBkgCol;  ///< Default label background color
 
-    ecvColor::Rgbf viewDefaultBkgCol;        ///< Default view background color
+    ecvColor::Rgbf viewDefaultBkgCol;  ///< Default view background color
 
-    ecvColor::Rgbub labelDefaultMarkerCol;   ///< Default label marker color
-    ecvColor::Rgbub bbDefaultCol;            ///< Default bounding box color
+    ecvColor::Rgbub labelDefaultMarkerCol;  ///< Default label marker color
+    ecvColor::Rgbub bbDefaultCol;           ///< Default bounding box color
 
-    ecvColor::Rgbub backgroundCol;           ///< Background color (primary)
-    ecvColor::Rgbub backgroundCol2;          ///< Background color (secondary)
-    bool drawBackgroundGradient;             ///< Draw background gradient
+    ecvColor::Rgbub backgroundCol;   ///< Background color (primary)
+    ecvColor::Rgbub backgroundCol2;  ///< Background color (secondary)
+    bool drawBackgroundGradient;     ///< Draw background gradient
 
-    bool decimateCloudOnMove;                ///< Decimate clouds during camera movement
-    unsigned minLODPointCount;               ///< Min points for LOD activation
-    unsigned char currentLODLevel;           ///< Current LOD level
-    bool moreLODPointsAvailable;             ///< More LOD points available
-    bool higherLODLevelsAvailable;           ///< Higher LOD levels available
+    bool decimateCloudOnMove;       ///< Decimate clouds during camera movement
+    unsigned minLODPointCount;      ///< Min points for LOD activation
+    unsigned char currentLODLevel;  ///< Current LOD level
+    bool moreLODPointsAvailable;    ///< More LOD points available
+    bool higherLODLevelsAvailable;  ///< Higher LOD levels available
 
-    bool decimateMeshOnMove;                 ///< Decimate meshes during camera movement
-    unsigned minLODTriangleCount;            ///< Min triangles for LOD activation
+    bool decimateMeshOnMove;       ///< Decimate meshes during camera movement
+    unsigned minLODTriangleCount;  ///< Min triangles for LOD activation
 
-    ccScalarField* sfColorScaleToDisplay;    ///< Scalar field color scale to display
+    ccScalarField*
+            sfColorScaleToDisplay;  ///< Scalar field color scale to display
 
-    bool useVBOs;                            ///< Use VBOs for rendering
+    bool useVBOs;  ///< Use VBOs for rendering
 
-    float labelMarkerSize;                   ///< Label marker size (radius)
-    float labelMarkerTextShift_pix;          ///< Label marker text shift (pixels)
+    float labelMarkerSize;           ///< Label marker size (radius)
+    float labelMarkerTextShift_pix;  ///< Label marker text shift (pixels)
 
-    unsigned dispNumberPrecision;            ///< Numerical display precision
+    unsigned dispNumberPrecision;  ///< Numerical display precision
 
-    unsigned labelOpacity;                   ///< Label background opacity
+    unsigned labelOpacity;  ///< Label background opacity
 
-    unsigned stereoPassIndex;                ///< Stereo rendering pass index
+    unsigned stereoPassIndex;  ///< Stereo rendering pass index
 
-    bool drawRoundedPoints;                  ///< Draw rounded points
+    bool drawRoundedPoints;  ///< Draw rounded points
 
     /**
      * @brief Default constructor
-     * 
+     *
      * Initializes all drawing context parameters to their default values.
      */
     ccGLDrawContext()
@@ -712,48 +714,48 @@ using CC_DRAW_CONTEXT = ccGLDrawContext;
 
 /**
  * @brief Widget parameters structure
- * 
+ *
  * Comprehensive parameters for rendering various types of widgets
  * including images, text, shapes, and 3D objects.
  */
 struct CV_DB_LIB_API WIDGETS_PARAMETER {
 public:
     // General parameters
-    ccHObject* entity;             ///< Associated entity
-    WIDGETS_TYPE type;             ///< Widget type
-    QString viewID;                ///< View identifier
-    int viewport = 0;              ///< Viewport index
-    ecvColor::Rgbaf color;         ///< Widget color
+    ccHObject* entity;      ///< Associated entity
+    WIDGETS_TYPE type;      ///< Widget type
+    QString viewID;         ///< View identifier
+    int viewport = 0;       ///< Viewport index
+    ecvColor::Rgbaf color;  ///< Widget color
 
-    CC_DRAW_CONTEXT context;       ///< Drawing context
+    CC_DRAW_CONTEXT context;  ///< Drawing context
 
-    int fontSize = 10;             ///< Font size for text widgets
+    int fontSize = 10;  ///< Font size for text widgets
 
     // Image widget parameters
-    QImage image;                  ///< Image data
-    double opacity = 1.0;          ///< Image opacity
+    QImage image;          ///< Image data
+    double opacity = 1.0;  ///< Image opacity
 
     // Text widget parameters
-    QString text;                  ///< Text content
+    QString text;  ///< Text content
 
     // Rectangle widget parameters
-    bool filled = true;            ///< Whether rectangle is filled
-    QRect rect;                    ///< Rectangle dimensions
+    bool filled = true;  ///< Whether rectangle is filled
+    QRect rect;          ///< Rectangle dimensions
 
     // 2D shape parameters (line, triangle, quad)
-    QPoint p1;                     ///< First point
-    QPoint p2;                     ///< Second point
-    QPoint p3;                     ///< Third point
-    QPoint p4 = QPoint(-1, -1);    ///< Fourth point (optional)
+    QPoint p1;                   ///< First point
+    QPoint p2;                   ///< Second point
+    QPoint p3;                   ///< Third point
+    QPoint p4 = QPoint(-1, -1);  ///< Fourth point (optional)
 
     // Circle/sphere parameters
-    float radius;                  ///< Radius
-    CCVector3 center;              ///< 3D center
-    CCVector2 pos;                 ///< 2D position
-    bool handleEnabled = false;    ///< Enable interactive handle
+    float radius;                ///< Radius
+    CCVector3 center;            ///< 3D center
+    CCVector2 pos;               ///< 2D position
+    bool handleEnabled = false;  ///< Enable interactive handle
 
     // 3D line parameters
-    LineWidget lineWidget;         ///< Line widget data
+    LineWidget lineWidget;  ///< Line widget data
 
     /**
      * @brief Constructor with widget type

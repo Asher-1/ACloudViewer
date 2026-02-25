@@ -48,7 +48,7 @@ class VoxelGrid;
 /**
  * @class RansacParams
  * @brief RANSAC shape detection parameters
- * 
+ *
  * Contains all parameters needed for RANSAC-based primitive shape detection
  * in point clouds, including distance thresholds, support requirements,
  * and enabled primitive types.
@@ -59,27 +59,28 @@ public:
      * @brief Supported primitive types for RANSAC detection
      */
     enum RANSAC_PRIMITIVE_TYPES {
-        RPT_PLANE = 0,      ///< Planar surfaces
-        RPT_SPHERE = 1,     ///< Spherical surfaces
-        RPT_CYLINDER = 2,   ///< Cylindrical surfaces
-        RPT_CONE = 3,       ///< Conical surfaces
-        RPT_TORUS = 4,      ///< Toroidal surfaces
+        RPT_PLANE = 0,     ///< Planar surfaces
+        RPT_SPHERE = 1,    ///< Spherical surfaces
+        RPT_CYLINDER = 2,  ///< Cylindrical surfaces
+        RPT_CONE = 3,      ///< Conical surfaces
+        RPT_TORUS = 4,     ///< Toroidal surfaces
     };
 
 public:
-    float epsilon;                                    ///< Distance threshold for shape fitting
-    float bitmapEpsilon;                              ///< Bitmap resolution for shape detection
-    unsigned supportPoints;                           ///< Minimum points required for a primitive
-    float maxNormalDev_deg;                           ///< Max normal deviation from ideal (degrees)
-    float probability;                                ///< Probability threshold for sampling
-    bool randomColor;                                 ///< Color detected shapes randomly
-    std::vector<RANSAC_PRIMITIVE_TYPES> primEnabled; ///< Enabled primitive types
-    float minRadius;                                  ///< Minimum radius threshold
-    float maxRadius;                                  ///< Maximum radius threshold
-    
+    float epsilon;           ///< Distance threshold for shape fitting
+    float bitmapEpsilon;     ///< Bitmap resolution for shape detection
+    unsigned supportPoints;  ///< Minimum points required for a primitive
+    float maxNormalDev_deg;  ///< Max normal deviation from ideal (degrees)
+    float probability;       ///< Probability threshold for sampling
+    bool randomColor;        ///< Color detected shapes randomly
+    std::vector<RANSAC_PRIMITIVE_TYPES>
+            primEnabled;  ///< Enabled primitive types
+    float minRadius;      ///< Minimum radius threshold
+    float maxRadius;      ///< Maximum radius threshold
+
     /**
      * @brief Default constructor
-     * 
+     *
      * Initializes parameters with default values and enables plane, sphere,
      * and cylinder detection.
      */
@@ -99,7 +100,7 @@ public:
 
     /**
      * @brief Scaled constructor
-     * 
+     *
      * Initializes parameters with scaled epsilon values.
      * @param scale Scale factor for distance thresholds
      */
@@ -121,7 +122,7 @@ public:
 /**
  * @class RansacResult
  * @brief Result of RANSAC shape detection
- * 
+ *
  * Contains the detected primitive shape and the indices of points
  * that belong to this shape.
  */
@@ -132,13 +133,13 @@ public:
      * @return String representation of the primitive type
      */
     std::string getTypeName() const;
-    
+
     /**
      * @brief Get drawing precision for the primitive
      * @return Number of steps for rendering
      */
     unsigned getDrawingPrecision() const;
-    
+
     /**
      * @brief Set drawing precision for the primitive
      * @param steps Number of steps for rendering
@@ -147,8 +148,9 @@ public:
     bool setDrawingPrecision(unsigned steps);
 
 public:
-    std::vector<size_t> indices;                    ///< Indices of points in this shape
-    std::shared_ptr<ccGenericPrimitive> primitive;  ///< Detected primitive shape
+    std::vector<size_t> indices;  ///< Indices of points in this shape
+    std::shared_ptr<ccGenericPrimitive>
+            primitive;  ///< Detected primitive shape
 };
 
 /**
@@ -170,7 +172,7 @@ class PinholeCameraIntrinsic;
 
 /**
  * @brief Maximum number of points per cloud
- * 
+ *
  * Point clouds will be chunked above this limit to avoid memory issues.
  * The value depends on the platform architecture (32-bit vs 64-bit).
  */
@@ -184,7 +186,7 @@ const unsigned CC_MAX_NUMBER_OF_POINTS_PER_CLOUD =
 /**
  * @class ccPointCloud
  * @brief 3D point cloud with associated features
- * 
+ *
  * Comprehensive point cloud class supporting multiple features:
  * - RGB colors
  * - Compressed normals
@@ -192,9 +194,10 @@ const unsigned CC_MAX_NUMBER_OF_POINTS_PER_CLOUD =
  * - Octree structure
  * - Per-point visibility
  * - Child objects (meshes, calibrated images, etc.)
- * 
+ *
  * This is the primary point cloud representation in CloudViewer, providing
- * extensive functionality for point cloud manipulation, analysis, and rendering.
+ * extensive functionality for point cloud manipulation, analysis, and
+ * rendering.
  */
 class CV_DB_LIB_API ccPointCloud
     : public cloudViewer::PointCloudTpl<ccGenericPointCloud> {

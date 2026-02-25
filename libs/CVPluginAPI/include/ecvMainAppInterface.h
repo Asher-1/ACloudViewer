@@ -23,11 +23,11 @@ class ccPickingHub;
 /**
  * @class ecvMainAppInterface
  * @brief Main application interface for plugins
- * 
+ *
  * Abstract interface that provides plugins with access to the main
  * CloudViewer application functionality. Plugins receive an instance
  * of this interface and can use it to:
- * 
+ *
  * - Access the main window and UI elements
  * - Manage overlay dialogs in the MDI area
  * - Load files and add/remove entities from the database
@@ -35,11 +35,11 @@ class ccPickingHub;
  * - Manage entity selection
  * - Display console messages
  * - Access shared resources (color scales, picking hub, etc.)
- * 
+ *
  * This interface follows the facade pattern, providing a simplified
  * and stable API for plugin development while insulating plugins
  * from internal application implementation details.
- * 
+ *
  * @see ccPluginInterface
  */
 class ecvMainAppInterface {
@@ -57,16 +57,16 @@ public:
 
     /**
      * @brief Register an overlay dialog in MDI area
-     * 
+     *
      * Overlay dialogs are displayed above the 3D views in the central
      * MDI area. Position is relative to one of the MDI area's corners
      * and automatically updates when the window is resized.
-     * 
+     *
      * Registered dialogs are automatically released on application exit.
-     * 
+     *
      * @param dlg Overlay dialog to register
      * @param pos Corner position for dialog placement
-     * 
+     *
      * @note Call updateOverlayDialogsPlacement() after registration
      * @note Consider freezing UI during tool operation to prevent
      *       other overlay dialogs from appearing
@@ -76,7 +76,7 @@ public:
 
     /**
      * @brief Unregister and delete an overlay dialog
-     * 
+     *
      * @param dlg Overlay dialog to unregister
      * @warning Dialog object will be deleted (via QObject::deleteLater)
      */
@@ -84,7 +84,7 @@ public:
 
     /**
      * @brief Force update of all overlay dialog positions
-     * 
+     *
      * Recalculates and updates positions for all registered overlay dialogs.
      * Call after window resize or dialog registration.
      */
@@ -98,10 +98,10 @@ public:
 
     /**
      * @brief Load a file
-     * 
+     *
      * Attempts to load entities from the specified file using
      * appropriate file filters.
-     * 
+     *
      * @param filename Path to file to load
      * @param silent Suppress error/info dialogs
      * @return Loaded entity (or nullptr on failure)
@@ -110,10 +110,10 @@ public:
 
     /**
      * @brief Add entity to database
-     * 
+     *
      * Adds entity to the database tree and optionally performs
      * additional operations (zoom, expand tree, etc.).
-     * 
+     *
      * @param obj Entity to add
      * @param updateZoom Update zoom to fit new entity
      * @param autoExpandDBTree Auto-expand DB tree to show new entity
@@ -128,7 +128,7 @@ public:
 
     /**
      * @brief Remove entity from database tree
-     * 
+     *
      * Removes entity and automatically detaches it from parent.
      * @param obj Entity to remove
      * @param autoDelete Automatically delete object after removal
@@ -138,11 +138,11 @@ public:
     /**
      * @struct ccHObjectContext
      * @brief Backup context for temporarily removed objects
-     * 
+     *
      * Stores parent-child relationship and flags for objects
      * temporarily removed from the database tree. Used to restore
      * objects to their original state.
-     * 
+     *
      * @see removeObjectTemporarilyFromDBTree()
      * @see putObjectBackIntoDBTree()
      */
@@ -154,11 +154,11 @@ public:
 
     /**
      * @brief Temporarily remove object from database tree
-     * 
+     *
      * Removes object from tree while preserving context for later
      * restoration. Use before making structural modifications to
      * the database tree.
-     * 
+     *
      * @param obj Object to remove temporarily
      * @return Context information for restoration
      * @warning May change currently selected entities
@@ -169,10 +169,10 @@ public:
 
     /**
      * @brief Restore object to database tree
-     * 
+     *
      * Adds object back to tree using saved context information.
      * Call after completing database tree modifications.
-     * 
+     *
      * @param obj Object to restore
      * @param context Saved context from removeObjectTemporarilyFromDBTree()
      * @see removeObjectTemporarilyFromDBTree()
@@ -216,10 +216,10 @@ public:
 
     /**
      * @brief Display message in console
-     * 
+     *
      * Prints message to application console with specified severity level.
      * Message formatting/coloring depends on level.
-     * 
+     *
      * @param message Message text to display
      * @param level Message severity level (default: standard)
      */
@@ -229,7 +229,7 @@ public:
 
     /**
      * @brief Force console widget to be displayed
-     * 
+     *
      * Makes console window visible if hidden.
      */
     virtual void forceConsoleDisplay() = 0;
@@ -242,14 +242,14 @@ public:
 
     /**
      * @brief Refresh all displays with pending updates
-     * 
+     *
      * Redraws all GL windows that have the refresh flag set.
      * @param only2D Refresh only 2D layer (false = full 3D+2D refresh)
      * @param forceRedraw Force complete redraw (default: true)
      * @see ccDrawableObject::prepareDisplayForRefresh
      */
     virtual void refreshAll(bool only2D = false, bool forceRedraw = true) = 0;
-    
+
     /**
      * @brief Redraw all displays (alias for refreshAll)
      * @param only2D Redraw only 2D layer
@@ -276,7 +276,7 @@ public:
      */
     virtual void refreshSelected(bool only2D = false,
                                  bool forceRedraw = true) = 0;
-    
+
     /**
      * @brief Refresh specific object
      * @param obj Object to refresh
@@ -286,7 +286,7 @@ public:
     virtual void refreshObject(ccHObject* obj,
                                bool only2D = false,
                                bool forceRedraw = true) = 0;
-    
+
     /**
      * @brief Refresh multiple objects
      * @param objs Objects to refresh
@@ -296,7 +296,7 @@ public:
     virtual void refreshObjects(ccHObject::Container objs,
                                 bool only2D = false,
                                 bool forceRedraw = true) = 0;
-    
+
     /**
      * @brief Reset bounding box for selected entities
      */
@@ -304,7 +304,7 @@ public:
 
     /**
      * @brief Update UI to reflect selection state
-     * 
+     *
      * Updates menus and property browser to match current entity selection.
      * Should be called after any changes to selected entities.
      */
@@ -312,7 +312,7 @@ public:
 
     /**
      * @brief Freeze or unfreeze user interface
-     * 
+     *
      * Disables/enables UI elements to prevent user interaction
      * during lengthy operations.
      * @param state true = freeze, false = unfreeze
@@ -327,7 +327,7 @@ public:
 
     /**
      * @brief Display histogram dialog
-     * 
+     *
      * Shows a histogram visualization dialog with specified data.
      * @param histoValues Histogram bin values
      * @param minVal Minimum value (X-axis)
@@ -352,12 +352,12 @@ public:
      * @param view View orientation (top, front, side, etc.)
      */
     virtual void setView(CC_VIEW_ORIENTATION view) = 0;
-    
+
     /**
      * @brief Toggle object-centered perspective in active window
      */
     virtual void toggleActiveWindowCenteredPerspective() = 0;
-    
+
     /**
      * @brief Toggle viewer-centered perspective in active window
      */
@@ -367,13 +367,13 @@ public:
      * @brief Zoom to fit selected entities
      */
     virtual void zoomOnSelectedEntities() = 0;
-    
+
     /**
      * @brief Zoom to fit specific entities
      * @param obj Entities to zoom to
      */
     virtual void zoomOnEntities(ccHObject* obj) = 0;
-    
+
     /**
      * @brief Set global zoom (fit all entities)
      */
@@ -383,7 +383,7 @@ public:
      * @brief Increase point display size
      */
     virtual void increasePointSize() = 0;
-    
+
     /**
      * @brief Decrease point display size
      */
@@ -394,7 +394,7 @@ public:
      * @param viewWidget Widget to add
      */
     virtual void addWidgetToQMdiArea(QWidget* viewWidget) = 0;
-    
+
     /**
      * @brief Get currently active display window
      * @return Pointer to active window widget
@@ -406,7 +406,7 @@ public:
      * @param state Fullscreen state (true = enable)
      */
     virtual void toggleExclusiveFullScreen(bool state) = 0;
-    
+
     /**
      * @brief Toggle 3D view visibility
      * @param state View visibility (true = show)

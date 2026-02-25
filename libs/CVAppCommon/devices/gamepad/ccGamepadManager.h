@@ -7,7 +7,6 @@
 
 #pragma once
 
-
 #include "CVAppCommon.h"
 
 // Qt

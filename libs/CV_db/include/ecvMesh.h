@@ -34,14 +34,14 @@ class ecvProgressDialog;
 /**
  * @class ccMesh
  * @brief Triangular mesh representation
- * 
+ *
  * Implements a triangular mesh structure with support for:
  * - Vertex positions (from associated point cloud)
  * - Per-vertex normals
  * - Texture coordinates
  * - Materials
  * - Triangle-based topology
- * 
+ *
  * The mesh references an external point cloud for vertex positions,
  * allowing efficient memory management and data sharing.
  */
@@ -69,7 +69,7 @@ public:
 
     /**
      * @brief Constructor from GenericIndexedMesh
-     * 
+     *
      * Creates a ccMesh from a generic indexed mesh structure.
      * @param giMesh Generic indexed mesh
      * @param giVertices Vertex cloud for the mesh
@@ -98,7 +98,7 @@ public:
 
     /**
      * @brief Create internal vertices cloud
-     * 
+     *
      * Creates and initializes an internal point cloud for storing vertices.
      * @return true if successful
      */
@@ -106,7 +106,7 @@ public:
 
     /**
      * @brief Clone the mesh
-     * 
+     *
      * Creates a deep copy of the mesh with all features except the octree.
      * @param vertices Vertices to use (auto-cloned if nullptr)
      * @param clonedMaterials Cloned materials (for internal use)
@@ -121,7 +121,7 @@ public:
 
     /**
      * @brief Create partial mesh from triangle selection
-     * 
+     *
      * Similar to ccPointCloud::partialClone but for meshes.
      * @param triangleIndices Indices of triangles to include
      * @param warnings Optional pointer to store warning flags
@@ -132,7 +132,7 @@ public:
 
     /**
      * @brief Get ordered triangle vertices
-     * 
+     *
      * Returns triangle vertex indices in ascending order.
      * @param vidx0 First vertex index
      * @param vidx1 Second vertex index
@@ -158,7 +158,7 @@ public:
 
     /**
      * @brief Create Delaunay 2.5D triangulation from point cloud
-     * 
+     *
      * Performs 2D or 2.5D Delaunay triangulation on a point cloud.
      * @param cloud Input point cloud
      * @param type Triangulation type
@@ -176,7 +176,7 @@ public:
 
     /**
      * @brief Create mesh from two polylines
-     * 
+     *
      * Triangulates the region between two polylines.
      * @param p1 First polyline
      * @param p2 Second polyline

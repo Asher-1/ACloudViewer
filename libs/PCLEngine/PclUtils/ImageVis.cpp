@@ -666,14 +666,18 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         double yc = pos[1] + (height - 1) * 0.5;
         double zd = 3.346065;  // Default distance used in base class
 
+        // Reset ViewUp to default (0,1,0) so the image is always displayed
+        // upright, regardless of any prior 3D scene rotation.
+        camera->SetViewUp(0.0, 1.0, 0.0);
         camera->SetFocalPoint(xc, yc, 0.0);
         camera->SetPosition(xc, yc, zd);
         // Use parallel scale based on image height (similar to base class)
         camera->SetParallelScale(0.5 * height);
         camera->ParallelProjectionOn();
 
-        // Reset camera to ensure proper view
-        ren_->ResetCamera();
+        // Only reset clipping range (not the full camera) to preserve
+        // the focal point, position, and ViewUp we just configured.
+        ren_->ResetCameraClippingRange();
     }
 
     // Mark image slice as modified to trigger rendering update

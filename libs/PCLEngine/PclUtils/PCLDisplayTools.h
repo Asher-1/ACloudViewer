@@ -502,6 +502,21 @@ public:
      */
     double getLightIntensity() const override;
 
+    /**
+     * @brief Set light intensity for a specific object (per-object)
+     * @param viewID The view ID of the target ccHObject
+     * @param intensity Light intensity (0.0-1.0)
+     */
+    void setObjectLightIntensity(const QString& viewID,
+                                 double intensity) override;
+
+    /**
+     * @brief Get light intensity for a specific object
+     * @param viewID The view ID of the target ccHObject
+     * @return Object's light intensity (falls back to global default)
+     */
+    double getObjectLightIntensity(const QString& viewID) const override;
+
     // ========================================================================
     // Data Axes Grid (Unified Interface with AxesGridProperties)
     // ========================================================================

@@ -22,11 +22,11 @@ class ScalarField;
 /**
  * @class RegistrationTools
  * @brief Point cloud registration algorithms
- * 
+ *
  * Provides common algorithms for aligning point clouds, including ICP
  * (Iterative Closest Point) and Horn's method. Supports optional scale
  * estimation and transformation constraints.
- * 
+ *
  * @see HornRegistrationTools
  * @see ICPRegistrationTools
  */
@@ -39,30 +39,31 @@ public:
 
     /**
      * @brief Transformation constraint flags
-     * 
+     *
      * Bitflags to constrain registration transformations by disabling
      * specific rotation axes or translation directions.
      */
     enum TRANSFORMATION_FILTERS {
-        SKIP_NONE = 0,           ///< No constraints
-        SKIP_RXY = 1,            ///< Skip rotation around XY axes
-        SKIP_RYZ = 2,            ///< Skip rotation around YZ axes
-        SKIP_RXZ = 4,            ///< Skip rotation around XZ axes
-        SKIP_ROTATION = 7,       ///< Skip all rotations (RXY|RYZ|RXZ)
-        SKIP_TX = 8,             ///< Skip translation along X
-        SKIP_TY = 16,            ///< Skip translation along Y
-        SKIP_TZ = 32,            ///< Skip translation along Z
-        SKIP_TRANSLATION = 56,   ///< Skip all translations (TX|TY|TZ)
+        SKIP_NONE = 0,          ///< No constraints
+        SKIP_RXY = 1,           ///< Skip rotation around XY axes
+        SKIP_RYZ = 2,           ///< Skip rotation around YZ axes
+        SKIP_RXZ = 4,           ///< Skip rotation around XZ axes
+        SKIP_ROTATION = 7,      ///< Skip all rotations (RXY|RYZ|RXZ)
+        SKIP_TX = 8,            ///< Skip translation along X
+        SKIP_TY = 16,           ///< Skip translation along Y
+        SKIP_TZ = 32,           ///< Skip translation along Z
+        SKIP_TRANSLATION = 56,  ///< Skip all translations (TX|TY|TZ)
     };
 
     /**
      * @brief Filter transformation with constraints
-     * 
+     *
      * Applies constraints to a transformation by zeroing out specified
      * rotation and/or translation components.
-     * 
+     *
      * @param inTrans Input transformation
-     * @param transformationFilters Constraint flags (@see TRANSFORMATION_FILTERS)
+     * @param transformationFilters Constraint flags (@see
+     * TRANSFORMATION_FILTERS)
      * @param toBeAlignedGravityCenter Centroid of cloud to align
      * @param referenceGravityCenter Centroid of reference cloud
      * @param outTrans Output filtered transformation
@@ -111,24 +112,24 @@ protected:
 /**
  * @class HornRegistrationTools
  * @brief Horn's closed-form registration algorithm
- * 
+ *
  * Implements Horn's method for computing absolute orientation (rotation,
  * translation, and optionally scale) between two point sets using
  * unit quaternions.
- * 
+ *
  * Reference: "Closed-form solution of absolute orientation using unit
  * quaternions", B.K.P. Horn, 1987.
- * 
+ *
  * @see RegistrationTools
  */
 class CV_CORE_LIB_API HornRegistrationTools : public RegistrationTools {
 public:
     /**
      * @brief Compute absolute orientation between two point sets
-     * 
+     *
      * Computes the optimal transformation (rotation, translation, and
      * optionally scale) that aligns the left cloud to the right cloud.
-     * 
+     *
      * @param lCloud Left cloud {Pl}
      * @param rCloud Right cloud {Pr}
      * @param trans Output transformation: Pr = s*R*Pl + T

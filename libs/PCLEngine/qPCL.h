@@ -7,6 +7,21 @@
 
 #pragma once
 
+/**
+ * @file qPCL.h
+ * @brief PCLEngine library export/import definitions
+ *
+ * Defines macros for proper symbol export/import when building
+ * and using the PCLEngine shared library. This library provides
+ * PCL (Point Cloud Library) integration for CloudViewer.
+ *
+ * The PCLEngine module bridges CloudViewer and PCL, providing:
+ * - PCL visualization tools
+ * - Point cloud conversion utilities (CloudViewer ↔ PCL)
+ * - PCL algorithm wrappers
+ * - Measurement and filtering tools
+ */
+
 #include <QtCore/QtGlobal>
 
 #if defined(ECV_PCL_ENGINE_LIBRARY_BUILD)

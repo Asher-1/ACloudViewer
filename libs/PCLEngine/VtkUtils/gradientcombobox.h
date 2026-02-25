@@ -9,7 +9,7 @@
 
 #include <QComboBox>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class QListWidgetItem;
 namespace Widgets {

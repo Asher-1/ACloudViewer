@@ -11,7 +11,7 @@
 
 #include <QObject>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 class vtkInteractorObserver;
 namespace VtkUtils {
