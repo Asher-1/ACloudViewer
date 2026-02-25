@@ -12,13 +12,13 @@
 /**
  * @class ImageFileFilter
  * @brief Image file I/O filter (Qt-supported formats)
- * 
+ *
  * Handles loading and saving of image files in all formats supported by Qt,
  * including PNG, JPEG, BMP, TIFF, GIF, etc. Images are loaded as ccImage
  * entities that can be displayed in the 3D view.
- * 
+ *
  * Supported formats depend on Qt's QImage capabilities and installed plugins.
- * 
+ *
  * @see FileIOFilter
  * @see ccImage
  */
@@ -50,7 +50,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to image file
      * @param entity Entity to save (must be image type)
@@ -64,7 +64,7 @@ public:
 
     /**
      * @brief Show file dialog to select input image
-     * 
+     *
      * Helper method to display a file open dialog for image selection.
      * @param dialogTitle Dialog window title
      * @param imageLoadPath Initial directory path
@@ -77,7 +77,7 @@ public:
 
     /**
      * @brief Show file dialog to select output image
-     * 
+     *
      * Helper method to display a file save dialog for image export.
      * @param dialogTitle Dialog window title
      * @param baseName Default base filename

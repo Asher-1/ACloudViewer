@@ -52,7 +52,7 @@ class ccCameraSensor;
 /**
  * @namespace PclTools
  * @brief Utility functions for PCL/VTK visualization and geometry manipulation
- * 
+ *
  * Provides helper functions for:
  * - Texture mesh creation and mapping
  * - VTK actor creation from datasets
@@ -73,7 +73,7 @@ namespace PclTools {
  * @param show_cameras Whether to visualize camera positions (default: false)
  * @param verbose Enable verbose output (default: false)
  * @return PCL texture mesh with mapped textures
- * 
+ *
  * Loads mesh and applies texture mapping using camera parameters.
  */
 QPCL_ENGINE_LIB_API PCLTextureMesh::Ptr CreateTexturingMesh(
@@ -117,7 +117,7 @@ PCLTextureMesh::Ptr CreateTexturingMesh(
  * @brief Get default scalar interpolation setting for VTK dataset
  * @param data VTK dataset to check
  * @return 0 if interpolation should be off, 1 if on
- * 
+ *
  * Returns 0 (off) for polydata with only vertices, 1 (on) otherwise.
  * Used by CreateActorFromVTKDataSet methods.
  */
@@ -133,8 +133,9 @@ inline int GetDefaultScalarInterpolationForDataSet(vtkDataSet* data) {
  * @param actor Output VTK actor
  * @param use_scalars Use scalar data for coloring (default: true)
  * @param use_vbos Use vertex buffer objects (default: false)
- * 
- * Creates a renderable actor from a VTK dataset with appropriate mapper settings.
+ *
+ * Creates a renderable actor from a VTK dataset with appropriate mapper
+ * settings.
  */
 void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
                                vtkSmartPointer<vtkActor>& actor,
@@ -147,7 +148,7 @@ void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
  * @param actor Output VTK LOD actor
  * @param use_scalars Use scalar data for coloring (default: true)
  * @param use_vbos Use vertex buffer objects (default: false)
- * 
+ *
  * Creates a level-of-detail actor for improved rendering performance.
  */
 void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
@@ -158,7 +159,7 @@ void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
 /**
  * @brief Allocate VTK unstructured grid
  * @param polydata Output unstructured grid smart pointer
- * 
+ *
  * Helper function to allocate and initialize an unstructured grid.
  */
 void AllocVtkUnstructuredGrid(vtkSmartPointer<vtkUnstructuredGrid>& polydata);

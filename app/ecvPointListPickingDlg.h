@@ -21,10 +21,10 @@ class cc2DLabel;
 /**
  * @class ccPointListPickingDlg
  * @brief Interactive point list picking dialog
- * 
+ *
  * Dialog for graphically picking and managing a list of points from
  * point clouds. Provides tools to:
- * 
+ *
  * - Pick points interactively in 3D view
  * - Display picked points with labels and markers
  * - Export point list to various formats:
@@ -33,14 +33,14 @@ class cc2DLabel;
  *   - Polyline
  * - Edit point list (add, remove points)
  * - Configure marker appearance and labeling
- * 
+ *
  * Use cases:
  * - Ground control point (GCP) selection
  * - Reference point marking
  * - Distance/area measurement preparation
  * - Feature point extraction
  * - Coordinate extraction
- * 
+ *
  * @see ccPointPickingGenericInterface
  * @see ccPickingHub
  */
@@ -58,7 +58,7 @@ public:
 
     /**
      * @brief Associate dialog with point cloud
-     * 
+     *
      * Links the dialog with a specific point cloud for picking operations.
      * @param cloud Point cloud to pick from
      */

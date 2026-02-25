@@ -19,18 +19,19 @@ namespace cloudViewer {
 /**
  * @class ScalarField
  * @brief Mono-dimensional array of scalar values
- * 
+ *
  * A scalar field is a one-dimensional array of scalar values that can be
  * associated with a point cloud for storing per-point attributes such as
  * intensity, distance, elevation, etc. Invalid values are represented by NaN.
- * 
- * This class extends std::vector<ScalarType> and is shareable (reference counted).
+ *
+ * This class extends std::vector<ScalarType> and is shareable (reference
+ * counted).
  */
 class ScalarField : public std::vector<ScalarType>, public CCShareable {
 public:
     /**
      * @brief Default constructor
-     * 
+     *
      * Creates a new scalar field with an optional name.
      * @param name Scalar field name (optional)
      * @note [SHAREABLE] Call 'link' when associating to an object
@@ -64,8 +65,9 @@ public:
 
     /**
      * @brief Compute mean and variance
-     * 
-     * Calculates the mean value and optionally the variance of the scalar field.
+     *
+     * Calculates the mean value and optionally the variance of the scalar
+     * field.
      * @param mean Output: mean value
      * @param variance Output: variance (optional, nullptr to skip)
      */
@@ -74,7 +76,7 @@ public:
 
     /**
      * @brief Compute min and max values
-     * 
+     *
      * Determines and caches the minimum and maximum values in the field.
      */
     CV_CORE_LIB_API virtual void computeMinAndMax();
@@ -90,7 +92,7 @@ public:
 
     /**
      * @brief Mark value as invalid
-     * 
+     *
      * Sets the value at the specified index to NaN.
      * @param index Index of value to invalidate
      */
@@ -107,7 +109,7 @@ public:
      * @return Cached minimum value
      */
     inline ScalarType getMin() const { return m_minVal; }
-    
+
     /**
      * @brief Get maximum value
      * @return Cached maximum value
@@ -131,11 +133,12 @@ public:
      * @return true if successful
      */
     CV_CORE_LIB_API bool reserveSafe(std::size_t count);
-    
+
     /**
      * @brief Resize memory (exception-safe)
      * @param count New size
-     * @param initNewElements Whether to initialize new elements (default: false)
+     * @param initNewElements Whether to initialize new elements (default:
+     * false)
      * @param valueForNewElements Value for initialization (default: 0)
      * @return true if successful
      */

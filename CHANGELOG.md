@@ -29,9 +29,17 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Add --network host flag to docker run command
         - Add network connectivity check before running tests
         - Skip tests gracefully if network is unavailable (wheel is already built successfully)
+    - Fix light intensity adjustment issues
+    - Fix image slice display orientation in 2D viewer
+        - Reset camera ViewUp to (0,1,0) so image is always upright regardless of 3D scene rotation
+        - Use ResetCameraClippingRange() instead of ResetCamera() to preserve configured camera parameters
+    - Clean up OpenGL surface format initialization order in ecvApplicationBase
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
+    - Apply EXIF orientation when loading images
+        - Use QImageReader::setAutoTransform(true) in ccImage::load and ImageFileFilter::loadFile
+        - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
 
 ### Supported Platforms:
 - Windows `x86/64`

@@ -18,7 +18,7 @@ class ccHObject;
 /**
  * @file AutoIO.h
  * @brief Automatic file I/O utilities for Python interface
- * 
+ *
  * Provides high-level, format-agnostic file I/O functions that automatically
  * detect file formats and dispatch to appropriate readers/writers. Designed
  * primarily for Python bindings but also useful for C++ applications.
@@ -34,12 +34,12 @@ namespace io {
 struct ReadTriangleMeshOptions {
     /// Enables post-processing on the mesh (smoothing, validation, etc.)
     bool enable_post_processing = false;
-    
+
     /// Print progress to stdout about loading progress
     /// Also see \p update_progress if you want custom progress indicators
     /// or the ability to cancel loading
     bool print_progress = false;
-    
+
     /// Callback invoked as reading progresses
     /// Parameter is percentage completion (0.0-100.0)
     /// Return true to continue loading, false to stop and cleanup
@@ -48,7 +48,7 @@ struct ReadTriangleMeshOptions {
 
 /**
  * @brief Factory function to create entity from file
- * 
+ *
  * Automatically detects file format and creates appropriate entity.
  * @param filename Input file path
  * @param format Format hint ("auto" for auto-detection, or specific format)
@@ -62,7 +62,7 @@ CreateEntityFromFile(const std::string& filename,
 
 /**
  * @brief Read entity from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param obj Output entity object
@@ -77,7 +77,7 @@ bool CV_IO_LIB_API ReadEntity(const std::string& filename,
 
 /**
  * @brief Write entity to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * Binary/compression parameters are used if supported by the format.
  * @param filename Output file path

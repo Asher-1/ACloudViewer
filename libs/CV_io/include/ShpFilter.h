@@ -23,19 +23,19 @@ class GenericDBFField;
 /**
  * @class ShpFilter
  * @brief ESRI Shapefile (.shp) I/O filter
- * 
+ *
  * Handles import/export of geospatial vector data in ESRI Shapefile format.
  * Shapefiles are widely used in GIS applications and consist of multiple files:
  * - .shp: geometry data
  * - .shx: shape index
  * - .dbf: attribute data (dBase format)
  * - .prj: coordinate system (optional)
- * 
+ *
  * Supported geometry types:
  * - Points (2D/3D)
  * - Polylines (2D/3D)
  * - Polygons (2D/3D)
- * 
+ *
  * @see http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
  * @see FileIOFilter
  * @see ccPolyline
@@ -68,7 +68,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to Shapefile
      * @param entity Entity to save (polylines, points)
@@ -82,7 +82,7 @@ public:
 
     /**
      * @brief Save entity with custom attribute fields
-     * 
+     *
      * Extended save method that allows specifying custom DBF attribute fields.
      * @param entity Entity to save
      * @param fields Vector of DBF field definitions
@@ -103,7 +103,7 @@ public:
     void treatClosedPolylinesAsPolygons(bool state) {
         m_closedPolylinesAsPolygons = state;
     }
-    
+
     /**
      * @brief Check if closed polylines are treated as polygons
      * @return true if closed polylines are polygons
@@ -128,7 +128,8 @@ protected:
     //! Whether to consider closed polylines as polygons or not
     bool m_closedPolylinesAsPolygons = true;
 
-    //! Whether to save 3D poly as 2D (note: all polylines from shapefiles are loaded as 3D)
+    //! Whether to save 3D poly as 2D (note: all polylines from shapefiles are
+    //! loaded as 3D)
     bool m_save3DPolyAs2D = false;
 
     //! Whether to save the 3D height in .dbf file

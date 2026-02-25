@@ -859,6 +859,11 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context,
         if (cloud_rgb) {
             if (!updatePointCloud(cloud_rgb, viewID)) {
                 addPointCloud(cloud_rgb, viewID, viewport);
+                // Apply light properties for newly added point cloud
+                vtkActor* actor = getActorById(viewID);
+                if (actor) {
+                    applyLightPropertiesToActor(actor, viewID);
+                }
             }
         }
     } else {
@@ -871,6 +876,11 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context,
             if (!updatePointCloud<PointT>(cloud_xyz, single_color, viewID)) {
                 addPointCloud<PointT>(cloud_xyz, single_color, viewID,
                                       viewport);
+                // Apply light properties for newly added point cloud
+                vtkActor* actor = getActorById(viewID);
+                if (actor) {
+                    applyLightPropertiesToActor(actor, viewID);
+                }
             }
         }
     }
@@ -894,9 +904,19 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context, const PCLMesh::Ptr& pclMesh) {
             removeMesh(viewID, viewport);
         }
         addPolygonMesh(*pclMesh, viewID, viewport);
+        // Apply light properties for newly added mesh
+        vtkActor* actor = getActorById(viewID);
+        if (actor) {
+            applyLightPropertiesToActor(actor, viewID);
+        }
     } else {
         if (!updatePolygonMesh(*pclMesh, viewID)) {
             addPolygonMesh(*pclMesh, viewID, viewport);
+            // Apply light properties for newly added mesh
+            vtkActor* actor = getActorById(viewID);
+            if (actor) {
+                applyLightPropertiesToActor(actor, viewID);
+            }
         }
     }
 
@@ -981,6 +1001,9 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context, const ccSensor* sensor) {
 
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[viewID] = linesActor;
+
+    // Apply light properties
+    applyLightPropertiesToActor(linesActor, viewID);
 }
 
 void PCLVis::draw(const CC_DRAW_CONTEXT& context,
@@ -1006,6 +1029,9 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context,
 
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[viewID] = linesActor;
+
+    // Apply light properties
+    applyLightPropertiesToActor(linesActor, viewID);
 }
 
 void PCLVis::transformEntities(const CC_DRAW_CONTEXT& context) {
@@ -1503,6 +1529,10 @@ bool PCLVis::addPolyline(const PCLPolygon::ConstPtr pclPolygon,
 
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[id] = actor;
+
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
+
     return (true);
 }
 
@@ -1825,6 +1855,9 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
     // Save the pointer/ID pair to the global actor map
     (*getCloudActorMap())[id].actor = actor;
 
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
+
     // Save the viewpoint transformation matrix to the global actor map
     // Store smart pointer in member map to ensure lifetime extends beyond
     // function scope
@@ -1925,6 +1958,9 @@ bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
 
     // Save the pointer/ID pair to the global actor map
     (*getCloudActorMap())[id].actor = actor;
+
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
     // Store smart pointer in member map to ensure lifetime extends beyond
     // function scope
     transformation_map_[id] = transformation;
@@ -1974,6 +2010,9 @@ bool PCLVis::addOrientedCube(const ccGLMatrixd& trans,
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[id] = actor;
 
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
+
     return (true);
 }
 
@@ -2015,6 +2054,9 @@ bool PCLVis::addOrientedCube(const Eigen::Vector3f& translation,
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[id] = actor;
 
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
+
     return (true);
 }
 
@@ -2051,6 +2093,9 @@ bool PCLVis::addOrientedCube(const ecvOrientedBBox& obb,
 
     // Save the pointer/ID pair to the global actor map
     (*getShapeActorMap())[id] = actor;
+
+    // Apply light properties
+    applyLightPropertiesToActor(actor, id);
 
     return (true);
 }
@@ -2889,13 +2934,20 @@ void PCLVis::hideOrientationMarkerWidgetAxes() {
 void PCLVis::showOrientationMarkerWidgetAxes(
         vtkRenderWindowInteractor* interactor) {
     if (!m_axes_widget) {
+        // Professional 3D system style with intuitive direction labels
+        // Using standard directional terms instead of medical anatomy terms
         vtkSmartPointer<vtkPropAssembly> assembly = PclTools::CreateCoordinate(
-                1.5, "x", "y", "z", "R", "L", "A", "P", "I", "S");
+                1.8, "X", "Y", "Z", "+X", "-X",  // X axis: positive/negative
+                "+Y", "-Y",                      // Y axis: positive/negative
+                "+Z", "-Z");                     // Z axis: positive/negative
         m_axes_widget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
         m_axes_widget->SetOutlineColor(0.9300, 0.5700, 0.1300);
+        m_axes_widget->SetOutlineColor(0.2, 0.2, 0.2);  // Subtle dark outline
         m_axes_widget->SetOrientationMarker(assembly);
         m_axes_widget->SetInteractor(interactor);
         m_axes_widget->SetViewport(0.8, 0.0, 1.0, 0.2);
+        // Larger viewport for better visibility, position in lower-left
+        m_axes_widget->SetViewport(0.0, 0.0, 0.2, 0.2);
         m_axes_widget->SetEnabled(true);
         m_axes_widget->InteractiveOff();
     } else {
@@ -3144,9 +3196,8 @@ void PCLVis::addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
         // Should we add the actor to all renderers?
         if (viewport == 0) {
             renderer->AddActor(actor);
-        } else if (viewport ==
-                   i)  // add the actor only to the specified viewport
-        {
+        } else if (viewport == i) {
+            // add the actor only to the specified viewport
             renderer->AddActor(actor);
         }
         ++i;
@@ -3445,6 +3496,83 @@ QImage PCLVis::renderToImage(int zoomFactor,
 // View Properties Implementation (ParaView-compatible)
 // ============================================================================
 
+void PCLVis::applyLightPropertiesToActor(vtkActor* actor,
+                                         const std::string& viewID) {
+    if (!actor) return;
+    vtkProperty* prop = actor->GetProperty();
+    if (!prop) return;
+
+    // Resolve the effective intensity: per-object if stored, else global
+    double intensity = m_lightIntensity;
+    if (!viewID.empty()) {
+        auto it = m_objectLightIntensity.find(viewID);
+        if (it != m_objectLightIntensity.end()) {
+            intensity = it->second;
+        }
+    }
+
+    // Enable lighting on the actor
+    prop->SetLighting(true);
+
+    // Determine if the actor is a point cloud or a mesh
+    bool isPointCloud = false;
+    vtkMapper* mapper = actor->GetMapper();
+    if (mapper) {
+        vtkPolyData* polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
+        if (polydata) {
+            vtkIdType numPoints = polydata->GetNumberOfPoints();
+            vtkIdType numCells = polydata->GetNumberOfCells();
+            isPointCloud = (numCells == 0) || (numCells >= numPoints * 0.9);
+        }
+    }
+
+    if (isPointCloud) {
+        // Point clouds: scale ambient/diffuse by intensity
+        double ambient = 0.1 + intensity * 0.5;  // Range: 0.1-0.6
+        double diffuse = 0.3 + intensity * 0.5;  // Range: 0.3-0.8
+        prop->SetAmbient(ambient);
+        prop->SetDiffuse(diffuse);
+        prop->SetSpecular(0.1);
+    } else {
+        // Meshes: ALSO scale by intensity (was previously fixed values)
+        double ambient = 0.1 + intensity * 0.2;  // Range: 0.1-0.3
+        double diffuse = intensity * 0.7;        // Range: 0.0-0.7
+        double specular = intensity * 0.2;       // Range: 0.0-0.2
+        prop->SetAmbient(ambient);
+        prop->SetDiffuse(diffuse);
+        prop->SetSpecular(specular);
+    }
+
+    actor->Modified();
+}
+
+void PCLVis::setObjectLightIntensity(const std::string& viewID,
+                                     double intensity,
+                                     int viewport) {
+    intensity = std::max(0.0, std::min(1.0, intensity));
+    m_objectLightIntensity[viewID] = intensity;
+
+    // Apply to the actor immediately if it exists
+    vtkActor* actor = getActorById(viewID);
+    if (actor) {
+        applyLightPropertiesToActor(actor, viewID);
+    }
+
+    // Trigger render update
+    vtkRenderWindow* win = getRenderWindow();
+    if (win) {
+        win->Render();
+    }
+}
+
+double PCLVis::getObjectLightIntensity(const std::string& viewID) const {
+    auto it = m_objectLightIntensity.find(viewID);
+    if (it != m_objectLightIntensity.end()) {
+        return it->second;
+    }
+    return m_lightIntensity;  // Fall back to global default
+}
+
 void PCLVis::setLightIntensity(double intensity) {
     // Clamp intensity to valid range (0.0-1.0), matching ParaView
     m_lightIntensity = std::max(0.0, std::min(1.0, intensity));
@@ -3456,86 +3584,40 @@ void PCLVis::setLightIntensity(double intensity) {
         return;
     }
 
-    // Remove all existing lights to start fresh
-    renderer->RemoveAllLights();
+    // IMPORTANT: Do NOT call renderer->RemoveAllLights() here!
+    // VTK's vtkRenderer stores an internal CreatedLight raw pointer. Calling
+    // RemoveAllLights() destroys that light but leaves the dangling pointer,
+    // which causes a segfault on the next Render() cycle.
 
-    // Create a new headlight with the desired intensity
-    vtkSmartPointer<vtkLight> light = vtkSmartPointer<vtkLight>::New();
-    light->SetLightTypeToHeadlight();  // Headlight follows camera
-    light->SetIntensity(m_lightIntensity);
-    light->SetColor(1.0, 1.0, 1.0);  // White light
-    light->SwitchOn();               // Explicitly turn on the light
-    renderer->AddLight(light);
+    // Disable automatic light creation so VTK won't interfere
+    renderer->AutomaticLightCreationOff();
 
-    // Force lighting to be enabled on the renderer
-    renderer->LightFollowCameraOn();  // Ensure light follows camera
-
-    // Update all actors to use lighting (important for proper light response)
-    // This includes both mesh actors and point cloud actors
-    vtkActorCollection* actors = renderer->GetActors();
-    if (actors) {
-        actors->InitTraversal();
-        vtkActor* actor = actors->GetNextActor();
-        while (actor) {
-            vtkProperty* prop = actor->GetProperty();
-            if (prop) {
-                // Enable lighting for this actor
-                prop->SetLighting(true);
-
-                // Distinguish between point clouds and meshes
-                // Point clouds typically have only vertices (no cells or only
-                // vertex cells) Meshes have polygons/triangles (cells)
-                bool isPointCloud = false;
-                vtkMapper* mapper = actor->GetMapper();
-                if (mapper) {
-                    vtkPolyData* polydata =
-                            vtkPolyData::SafeDownCast(mapper->GetInput());
-                    if (polydata) {
-                        // Check if it's a point cloud: has points but no
-                        // meaningful cells (or only vertex cells, which are
-                        // used for point rendering)
-                        vtkIdType numPoints = polydata->GetNumberOfPoints();
-                        vtkIdType numCells = polydata->GetNumberOfCells();
-                        // Point clouds typically have cells only for vertex
-                        // rendering (one cell per point) Meshes have far fewer
-                        // cells (triangles/polygons) than points
-                        isPointCloud = (numCells == 0) ||
-                                       (numCells >= numPoints * 0.9);
-                    }
-                }
-
-                if (isPointCloud) {
-                    // Point clouds with vertex colors: adjust ambient/diffuse
-                    // to match light intensity VTK rendering: final_color =
-                    // vertex_color * (ambient + diffuse * light_intensity +
-                    // specular) To make point clouds darker when light is low
-                    // and brighter when light is high:
-                    // - Low intensity: low ambient + low diffuse = darker
-                    // - High intensity: higher ambient + higher diffuse =
-                    // brighter We scale both ambient and diffuse proportionally
-                    // to light intensity
-                    double baseAmbient =
-                            0.1;  // Minimum ambient (for very low light)
-                    double baseDiffuse = 0.3;  // Minimum diffuse
-                    double ambient = baseAmbient +
-                                     m_lightIntensity * 0.5;  // Range: 0.1-0.6
-                    double diffuse = baseDiffuse +
-                                     m_lightIntensity * 0.5;  // Range: 0.3-0.8
-                    prop->SetAmbient(ambient);
-                    prop->SetDiffuse(diffuse);
-                    prop->SetSpecular(0.1);  // Low specular for point clouds
-                } else {
-                    // Meshes use standard lighting properties
-                    // These values work well for meshes with materials/textures
-                    prop->SetAmbient(0.3);  // Standard ambient for meshes
-                    prop->SetDiffuse(0.7);  // Standard diffuse for meshes
-                    prop->SetSpecular(
-                            0.2);  // Some specular for mesh highlights
-                }
+    // Find or create the headlight
+    vtkLightCollection* lights = renderer->GetLights();
+    vtkLight* headlight = nullptr;
+    if (lights) {
+        lights->InitTraversal();
+        vtkLight* light = nullptr;
+        while ((light = lights->GetNextItem())) {
+            if (light->GetLightType() == VTK_LIGHT_TYPE_HEADLIGHT) {
+                headlight = light;
+                break;
             }
-            actor = actors->GetNextActor();
         }
     }
+
+    if (!headlight) {
+        vtkSmartPointer<vtkLight> newLight = vtkSmartPointer<vtkLight>::New();
+        newLight->SetLightTypeToHeadlight();
+        newLight->SetColor(1.0, 1.0, 1.0);
+        newLight->SwitchOn();
+        renderer->AddLight(newLight);
+        headlight = newLight;
+    }
+
+    // Update headlight intensity
+    headlight->SetIntensity(m_lightIntensity);
+    renderer->LightFollowCameraOn();
 
     // Trigger render update
     vtkRenderWindow* win = getRenderWindow();

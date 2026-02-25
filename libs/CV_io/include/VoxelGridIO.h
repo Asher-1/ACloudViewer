@@ -16,10 +16,11 @@
 /**
  * @file VoxelGridIO.h
  * @brief Voxel grid file I/O utilities
- * 
+ *
  * Provides functions for reading and writing voxel grids, which are
  * 3D regular grids where each cell (voxel) can store occupancy or other data.
- * Voxel grids are commonly used for volumetric representations and collision detection.
+ * Voxel grids are commonly used for volumetric representations and collision
+ * detection.
  */
 
 namespace cloudViewer {
@@ -27,7 +28,7 @@ namespace io {
 
 /**
  * @brief Factory function to create voxel grid from file
- * 
+ *
  * Automatically detects file format from extension.
  * @param filename Input file path
  * @param format Format hint ("auto" for auto-detection)
@@ -41,7 +42,7 @@ CreateVoxelGridFromFile(const std::string &filename,
 
 /**
  * @brief Read voxel grid from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param voxelgrid Output voxel grid object
@@ -56,7 +57,7 @@ bool CV_IO_LIB_API ReadVoxelGrid(const std::string &filename,
 
 /**
  * @brief Write voxel grid to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * Binary/compression parameters are used if supported by the format.
  * @param filename Output file path

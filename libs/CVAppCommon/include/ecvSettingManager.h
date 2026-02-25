@@ -18,7 +18,7 @@
 /**
  * @class ecvSettingManager
  * @brief Application settings manager (singleton)
- * 
+ *
  * Extends QSettings to provide centralized management of application
  * settings with additional features:
  * - Window and dialog state persistence (position, size, dock widgets)
@@ -26,10 +26,10 @@
  * - Settings backup/restore functionality
  * - Automatic sanity checking for UI element positions
  * - Modified signal for change notifications
- * 
+ *
  * Settings are typically stored in INI format on all platforms.
  * Uses singleton pattern for global access throughout the application.
- * 
+ *
  * @see QSettings
  * @see ecvOptions
  */
@@ -55,7 +55,7 @@ public:
 
     /**
      * @brief Release singleton instance
-     * 
+     *
      * Clears the singleton. Typically called at application shutdown.
      */
     static void ReleaseInstance();
@@ -65,7 +65,7 @@ public:
      * @param path Path to settings file
      */
     static void Init(const QString &path);
-    
+
     /**
      * @brief Set a value in settings (static convenience method)
      * @param section Settings section/group
@@ -75,20 +75,20 @@ public:
     static void setValue(const QString &section,
                          const QString &key,
                          const QVariant &value);
-    
+
     /**
      * @brief Remove entire settings section
      * @param section Section to remove
      */
     static void removeNode(const QString &section);
-    
+
     /**
      * @brief Remove specific key from section
      * @param section Settings section
      * @param key Key to remove
      */
     static void removeKey(const QString &section, const QString &key);
-    
+
     /**
      * @brief Get a value from settings (static convenience method)
      * @param section Settings section/group
@@ -102,16 +102,16 @@ public:
 
     /**
      * @brief Save main window state
-     * 
+     *
      * Saves window geometry, dock widget positions, and toolbar states.
      * @param window Main window to save
      * @param key Storage key identifier
      */
     virtual void saveState(const QMainWindow &window, const QString &key);
-    
+
     /**
      * @brief Save dialog state
-     * 
+     *
      * Saves dialog geometry and position.
      * @param dialog Dialog to save
      * @param key Storage key identifier
@@ -120,16 +120,16 @@ public:
 
     /**
      * @brief Restore main window state
-     * 
+     *
      * Restores previously saved window geometry, dock widgets, and toolbars.
      * @param key Storage key identifier
      * @param window Main window to restore
      */
     virtual void restoreState(const QString &key, QMainWindow &window);
-    
+
     /**
      * @brief Restore dialog state
-     * 
+     *
      * Restores previously saved dialog geometry.
      * @param key Storage key identifier
      * @param dialog Dialog to restore
@@ -138,7 +138,7 @@ public:
 
     /**
      * @brief Emit modified signal
-     * 
+     *
      * Manually trigger the modified() signal to notify listeners
      * that settings have changed.
      */
@@ -146,7 +146,7 @@ public:
 
     /**
      * @brief Create settings backup file
-     * 
+     *
      * Creates a backup copy of the current settings file.
      * @param filename Backup filename (auto-generated if empty)
      * @return Backup filename on success, empty string on failure
@@ -200,7 +200,7 @@ public:
 protected:
     /**
      * @brief Sanity check dock widget position
-     * 
+     *
      * Ensures dock widgets are within visible viewport when restoring state.
      * Prevents dock widgets from being positioned off-screen.
      * @param docke_widget Dock widget to check
@@ -210,7 +210,7 @@ protected:
 private:
     /**
      * @brief Default constructor (private for singleton)
-     * 
+     *
      * Constructor is private to enforce singleton pattern.
      */
     ecvSettingManager() {}
@@ -220,7 +220,7 @@ private:
 signals:
     /**
      * @brief Signal emitted when settings are modified
-     * 
+     *
      * Listeners can connect to this signal to be notified of setting changes.
      */
     void modified();

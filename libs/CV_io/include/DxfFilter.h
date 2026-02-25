@@ -12,7 +12,7 @@
 /**
  * @class DxfFilter
  * @brief AutoCAD DXF (Drawing Exchange Format) file I/O filter
- * 
+ *
  * Handles import/export of CAD entities in AutoCAD DXF format (.dxf).
  * DXF is a text-based or binary format for exchanging CAD data between
  * applications. Supports:
@@ -21,10 +21,10 @@
  * - Lines and arcs
  * - Text entities
  * - Layers and colors
- * 
+ *
  * This filter is primarily used for importing/exporting polyline data
  * and simple geometric entities.
- * 
+ *
  * @see FileIOFilter
  * @see ccPolyline
  */
@@ -56,7 +56,7 @@ public:
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to DXF file
      * @param entity Entity to save (polylines, etc.)

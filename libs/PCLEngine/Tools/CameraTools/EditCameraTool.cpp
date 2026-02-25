@@ -148,9 +148,8 @@ void EditCameraTool::resetViewDirection(double look_x,
                                         double up_y,
                                         double up_z) {
     if (s_viewer) {
-        s_viewer->setCameraPosition(CCVector3d(0.0, 0.0, 0.0),
-                                    CCVector3d(look_x, look_y, look_z),
-                                    CCVector3d(up_x, up_y, up_z));
+        s_viewer->setCameraPosition(0.0, 0.0, 0.0, look_x, look_y, look_z, up_x,
+                                    up_y, up_z);
         s_viewer->synchronizeGeometryBounds();
         double bounds[6];
         s_viewer->getVisibleGeometryBounds().GetBounds(bounds);

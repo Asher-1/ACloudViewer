@@ -13,7 +13,7 @@
 
 /**
  * @brief PLY format type names
- * 
+ *
  * String representations of all supported PLY data types.
  */
 static const char e_ply_type_names[][12] = {
@@ -24,7 +24,7 @@ static const char e_ply_type_names[][12] = {
 
 /**
  * @brief PLY format storage mode names
- * 
+ *
  * String representations of PLY storage/encoding modes.
  */
 static const char e_ply_storage_mode_names[][24] = {
@@ -33,22 +33,22 @@ static const char e_ply_storage_mode_names[][24] = {
 /**
  * @struct plyProperty
  * @brief PLY file property descriptor
- * 
+ *
  * Describes a single property (attribute) within a PLY element.
  */
 struct plyProperty {
-    p_ply_property prop;      ///< RPly property handle
-    const char* propName;     ///< Property name
-    e_ply_type type;          ///< Property data type
-    e_ply_type length_type;   ///< List length type (for list properties)
-    e_ply_type value_type;    ///< List value type (for list properties)
-    int elemIndex;            ///< Element index
+    p_ply_property prop;     ///< RPly property handle
+    const char* propName;    ///< Property name
+    e_ply_type type;         ///< Property data type
+    e_ply_type length_type;  ///< List length type (for list properties)
+    e_ply_type value_type;   ///< List value type (for list properties)
+    int elemIndex;           ///< Element index
 };
 
 /**
  * @struct plyElement
  * @brief PLY file element descriptor
- * 
+ *
  * Describes a PLY element (e.g., vertex, face) and its properties.
  */
 struct plyElement {
@@ -63,10 +63,10 @@ struct plyElement {
 /**
  * @class PlyFilter
  * @brief Stanford PLY file I/O filter
- * 
+ *
  * Handles import/export of point clouds and meshes in Stanford PLY format.
  * Supports both ASCII and binary (little/big endian) encodings.
- * 
+ *
  * PLY format can store:
  * - Point positions
  * - Colors (RGB/RGBA)
@@ -74,7 +74,7 @@ struct plyElement {
  * - Texture coordinates
  * - Mesh faces
  * - Custom properties
- * 
+ *
  * @see FileIOFilter
  */
 class CV_IO_LIB_API PlyFilter : public FileIOFilter {
@@ -111,7 +111,7 @@ public:
     bool canSave(CV_CLASS_ENUM type,
                  bool& multiple,
                  bool& exclusive) const override;
-    
+
     /**
      * @brief Save entity to PLY file
      * @param entity Entity to save
@@ -125,7 +125,7 @@ public:
 
     /**
      * @brief Load PLY file with texture
-     * 
+     *
      * Custom loading method that also loads an associated texture file.
      * @param filename Input PLY file path
      * @param textureFilename Texture image file path

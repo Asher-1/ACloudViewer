@@ -8,7 +8,7 @@
 /**
  * @file CVAppCommon.h
  * @brief CVAppCommon library export/import definitions
- * 
+ *
  * Defines macros for proper symbol export/import when building
  * and using the CVAppCommon shared library. This library provides
  * common functionality for CloudViewer applications.

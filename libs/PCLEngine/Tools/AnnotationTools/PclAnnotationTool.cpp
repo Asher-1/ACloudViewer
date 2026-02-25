@@ -234,18 +234,8 @@ void PclAnnotationTool::refresh() {
 
     m_colorHandler.setInputCloud(m_baseCloud);
     m_colorHandler.setLabel(m_cloudLabel);
-    {
-        // Convert PCL cloud to VTK polydata + colors
-        PclUtils::PointCloudGeometryHandlerXYZ<PointIntensity> geometry(
-                m_baseCloud);
-        vtkSmartPointer<vtkPoints> points;
-        geometry.getGeometry(points);
-        vtkSmartPointer<vtkPolyData> polydata =
-                vtkSmartPointer<vtkPolyData>::New();
-        polydata->SetPoints(points);
-        vtkSmartPointer<vtkDataArray> colors = m_colorHandler.getColor();
-        m_viewer->addPointCloud(polydata, colors, m_annotationCloudId, 0);
-    }
+    m_viewer->addPointCloud<PointIntensity>(m_baseCloud, m_colorHandler,
+                                            m_annotationCloudId, 0);
 
     // show annotation if exists
     showAnnotation();
@@ -613,16 +603,8 @@ void PclAnnotationTool::defaultColorPoint(std::vector<int>& slice) {
 
 void PclAnnotationTool::updateCloud() {
     if (!m_viewer || m_viewer->contains(m_annotationCloudId)) {
-        // Convert PCL cloud to VTK polydata + colors
-        PclUtils::PointCloudGeometryHandlerXYZ<PointIntensity> geometry(
-                m_baseCloud);
-        vtkSmartPointer<vtkPoints> points;
-        geometry.getGeometry(points);
-        vtkSmartPointer<vtkPolyData> polydata =
-                vtkSmartPointer<vtkPolyData>::New();
-        polydata->SetPoints(points);
-        vtkSmartPointer<vtkDataArray> colors = m_colorHandler.getColor();
-        m_viewer->updatePointCloud(polydata, colors, m_annotationCloudId);
+        m_viewer->updatePointCloud<PointIntensity>(m_baseCloud, m_colorHandler,
+                                                   m_annotationCloudId);
         ecvDisplayTools::UpdateScreen();
     }
 }

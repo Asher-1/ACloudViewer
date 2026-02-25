@@ -20,11 +20,12 @@ class ScalarField;
 /**
  * @class GeometricalAnalysisTools
  * @brief Algorithms for computing point cloud geometric characteristics
- * 
+ *
  * Provides various algorithms to compute geometric properties of point clouds
  * including curvature, density, roughness, and other local features. These
- * tools are essential for point cloud analysis, segmentation, and classification.
- * 
+ * tools are essential for point cloud analysis, segmentation, and
+ * classification.
+ *
  * @see Neighbourhood
  * @see DgmOctree
  */
@@ -34,12 +35,12 @@ public:
      * @brief Geometric characteristics that can be computed
      */
     enum GeomCharacteristic {
-        Feature,            ///< Geometric feature (@see Neighbourhood::GeomFeature)
-        Curvature,          ///< Surface curvature (@see Neighbourhood::CurvatureType)
-        LocalDensity,       ///< Accurate local density (@see Density)
-        ApproxLocalDensity, ///< Approximate local density (@see Density)
-        Roughness,          ///< Surface roughness
-        MomentOrder1        ///< First order moment
+        Feature,    ///< Geometric feature (@see Neighbourhood::GeomFeature)
+        Curvature,  ///< Surface curvature (@see Neighbourhood::CurvatureType)
+        LocalDensity,        ///< Accurate local density (@see Density)
+        ApproxLocalDensity,  ///< Approximate local density (@see Density)
+        Roughness,           ///< Surface roughness
+        MomentOrder1         ///< First order moment
     };
 
     /**
@@ -55,22 +56,22 @@ public:
      * @brief Error codes for analysis operations
      */
     enum ErrorCode {
-        NoError = 0,                    ///< Success
-        InvalidInput = -1,              ///< Invalid input parameters
-        NotEnoughPoints = -2,           ///< Insufficient points
-        OctreeComputationFailed = -3,   ///< Octree creation failed
-        ProcessFailed = -4,             ///< Processing failed
-        UnhandledCharacteristic = -5,   ///< Unsupported characteristic
-        NotEnoughMemory = -6,           ///< Out of memory
-        ProcessCancelledByUser = -7     ///< User cancelled
+        NoError = 0,                   ///< Success
+        InvalidInput = -1,             ///< Invalid input parameters
+        NotEnoughPoints = -2,          ///< Insufficient points
+        OctreeComputationFailed = -3,  ///< Octree creation failed
+        ProcessFailed = -4,            ///< Processing failed
+        UnhandledCharacteristic = -5,  ///< Unsupported characteristic
+        NotEnoughMemory = -6,          ///< Out of memory
+        ProcessCancelledByUser = -7    ///< User cancelled
     };
     /**
      * @brief Compute a geometric characteristic
-     * 
+     *
      * Unified method to compute various geometric properties. Once the main
-     * characteristic is chosen, use subOption to specify details (e.g., specific
-     * feature type, curvature type, or density algorithm).
-     * 
+     * characteristic is chosen, use subOption to specify details (e.g.,
+     * specific feature type, curvature type, or density algorithm).
+     *
      * @param c Geometric characteristic to compute
      * @param subOption Feature/curvature type or density algorithm (0 if N/A)
      * @param cloud Point cloud to analyze
@@ -91,7 +92,7 @@ public:
 
     /**
      * @brief Compute approximate local density
-     * 
+     *
      * Legacy method based only on distance to nearest neighbor.
      * @param cloud Point cloud to analyze
      * @param densityType Density measurement type

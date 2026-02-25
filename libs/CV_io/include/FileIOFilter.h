@@ -18,38 +18,38 @@ class ccHObject;
 
 /**
  * @brief File I/O error codes
- * 
+ *
  * Enumeration of possible errors that can occur during file I/O operations.
  */
 enum CC_FILE_ERROR {
-    CC_FERR_NO_ERROR,                           ///< No error
-    CC_FERR_BAD_ARGUMENT,                       ///< Invalid argument
-    CC_FERR_UNKNOWN_FILE,                       ///< Unknown file format
-    CC_FERR_WRONG_FILE_TYPE,                    ///< Wrong file type
-    CC_FERR_WRITING,                            ///< Error writing file
-    CC_FERR_READING,                            ///< Error reading file
-    CC_FERR_NO_SAVE,                            ///< Save not supported
-    CC_FERR_NO_LOAD,                            ///< Load not supported
-    CC_FERR_BAD_ENTITY_TYPE,                    ///< Unsupported entity type
-    CC_FERR_CANCELED_BY_USER,                   ///< Operation canceled by user
-    CC_FERR_NOT_ENOUGH_MEMORY,                  ///< Insufficient memory
-    CC_FERR_MALFORMED_FILE,                     ///< Malformed file structure
-    CC_FERR_CONSOLE_ERROR,                      ///< Console error
-    CC_FERR_BROKEN_DEPENDENCY_ERROR,            ///< Broken dependency
-    CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN, ///< Unknown plugin file
-    CC_FERR_THIRD_PARTY_LIB_FAILURE,            ///< Third-party library failure
-    CC_FERR_THIRD_PARTY_LIB_EXCEPTION,          ///< Third-party library exception
-    CC_FERR_NOT_IMPLEMENTED,                    ///< Feature not implemented
-    CC_FERR_INTERNAL,                           ///< Internal error
+    CC_FERR_NO_ERROR,                            ///< No error
+    CC_FERR_BAD_ARGUMENT,                        ///< Invalid argument
+    CC_FERR_UNKNOWN_FILE,                        ///< Unknown file format
+    CC_FERR_WRONG_FILE_TYPE,                     ///< Wrong file type
+    CC_FERR_WRITING,                             ///< Error writing file
+    CC_FERR_READING,                             ///< Error reading file
+    CC_FERR_NO_SAVE,                             ///< Save not supported
+    CC_FERR_NO_LOAD,                             ///< Load not supported
+    CC_FERR_BAD_ENTITY_TYPE,                     ///< Unsupported entity type
+    CC_FERR_CANCELED_BY_USER,                    ///< Operation canceled by user
+    CC_FERR_NOT_ENOUGH_MEMORY,                   ///< Insufficient memory
+    CC_FERR_MALFORMED_FILE,                      ///< Malformed file structure
+    CC_FERR_CONSOLE_ERROR,                       ///< Console error
+    CC_FERR_BROKEN_DEPENDENCY_ERROR,             ///< Broken dependency
+    CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN,  ///< Unknown plugin file
+    CC_FERR_THIRD_PARTY_LIB_FAILURE,    ///< Third-party library failure
+    CC_FERR_THIRD_PARTY_LIB_EXCEPTION,  ///< Third-party library exception
+    CC_FERR_NOT_IMPLEMENTED,            ///< Feature not implemented
+    CC_FERR_INTERNAL,                   ///< Internal error
 };
 
 /**
  * @class FileIOFilter
  * @brief Generic file I/O filter base class
- * 
- * Abstract base class providing a common interface for file import/export filters.
- * Specific file format handlers must inherit from this class and implement
- * the virtual methods for loading and saving.
+ *
+ * Abstract base class providing a common interface for file import/export
+ * filters. Specific file format handlers must inherit from this class and
+ * implement the virtual methods for loading and saving.
  */
 class FileIOFilter {
 public:
@@ -61,14 +61,14 @@ public:
     /**
      * @struct LoadParameters
      * @brief Parameters for loading files
-     * 
+     *
      * Contains settings for coordinate shift handling, normal computation,
      * and dialog display during file loading.
      */
     struct LoadParameters {
         /**
          * @brief Default constructor
-         * 
+         *
          * Initializes all parameters to their default values.
          */
         LoadParameters()
@@ -81,20 +81,21 @@ public:
               parentWidget(nullptr),
               sessionStart(true) {}
 
-        ecvGlobalShiftManager::Mode shiftHandlingMode;  ///< How to handle large coordinates
-        bool alwaysDisplayLoadDialog;                   ///< Always display load dialog
-        bool* coordinatesShiftEnabled;                  ///< Output: whether shift was applied
-        CCVector3d* coordinatesShift;                   ///< Output: applied coordinate shift
-        bool preserveShiftOnSave;                       ///< Preserve shift when saving
-        bool autoComputeNormals;                        ///< Auto-compute normals if possible
-        QWidget* parentWidget;                          ///< Parent widget for dialogs
-        bool sessionStart;                              ///< Whether this is the first load of a session
+        ecvGlobalShiftManager::Mode
+                shiftHandlingMode;      ///< How to handle large coordinates
+        bool alwaysDisplayLoadDialog;   ///< Always display load dialog
+        bool* coordinatesShiftEnabled;  ///< Output: whether shift was applied
+        CCVector3d* coordinatesShift;   ///< Output: applied coordinate shift
+        bool preserveShiftOnSave;       ///< Preserve shift when saving
+        bool autoComputeNormals;        ///< Auto-compute normals if possible
+        QWidget* parentWidget;          ///< Parent widget for dialogs
+        bool sessionStart;  ///< Whether this is the first load of a session
     };
 
     /**
      * @struct SaveParameters
      * @brief Parameters for saving files
-     * 
+     *
      * Contains settings for dialog display during file saving.
      */
     struct SaveParameters {
@@ -128,7 +129,7 @@ public:  // public interface
 
     /**
      * @brief Get file filter strings
-     * 
+     *
      * Returns filter strings for file dialogs, e.g., "ASCII file (*.asc)".
      * @param onImport true for import filters, false for export filters
      * @return List of filter strings
@@ -144,7 +145,7 @@ public:  // public interface
 public:  // public interface (to be reimplemented by each I/O filter)
     /**
      * @brief Load entities from a file
-     * 
+     *
      * This method must be implemented by derived classes.
      * @param filename File path to load from
      * @param container Container to store loaded entities
@@ -163,7 +164,7 @@ public:  // public interface (to be reimplemented by each I/O filter)
 
     /**
      * @brief Save entities to a file
-     * 
+     *
      * This method must be implemented by derived classes.
      * @param entity Entity or group of entities to save
      * @param filename Output file path
@@ -200,7 +201,7 @@ public:  // public interface (to be reimplemented by each I/O filter)
 public:  // static methods
     /**
      * @brief Get list of all available import filters
-     * 
+     *
      * Returns a list of filter strings for use in file dialogs.
      * Includes "All (*)" as the first item.
      * @return List of import filter strings
@@ -209,7 +210,7 @@ public:  // static methods
 
     /**
      * @brief Load file using a specific filter
-     * 
+     *
      * Convenience method to load entities from a file using a known filter.
      * @param filename File path to load
      * @param parameters Loading parameters
@@ -224,7 +225,7 @@ public:  // static methods
 
     /**
      * @brief Load file with automatic filter selection
-     * 
+     *
      * Convenience method to load entities from a file. If fileFilter is empty,
      * the best filter is automatically determined from the file extension.
      * @param filename File path to load

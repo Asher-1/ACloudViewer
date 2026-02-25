@@ -14,7 +14,7 @@
 /**
  * @file FeatureIO.h
  * @brief Feature descriptor file I/O utilities
- * 
+ *
  * Provides functions for reading and writing feature descriptors,
  * which are typically used for point cloud registration and matching.
  * Features can be FPFH, SHOT, or other descriptor types.
@@ -25,7 +25,7 @@ namespace io {
 
 /**
  * @brief Read feature descriptors from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param feature Output feature descriptor object
@@ -36,7 +36,7 @@ bool CV_IO_LIB_API ReadFeature(const std::string &filename,
 
 /**
  * @brief Write feature descriptors to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * @param filename Output file path
  * @param feature Feature descriptor to write

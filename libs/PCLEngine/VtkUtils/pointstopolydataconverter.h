@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>

@@ -8,7 +8,7 @@
 /**
  * @file CV_io.h
  * @brief CV_io library export/import definitions
- * 
+ *
  * Defines macros for proper symbol export/import when building
  * and using the CV_io shared library.
  */

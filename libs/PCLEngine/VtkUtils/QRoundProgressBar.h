@@ -9,7 +9,7 @@
 
 #include <QWidget>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 /**
  * @brief The QRoundProgressBar class represents a circular progress bar and

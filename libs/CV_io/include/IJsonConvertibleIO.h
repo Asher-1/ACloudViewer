@@ -19,7 +19,7 @@
 /**
  * @file IJsonConvertibleIO.h
  * @brief JSON serialization I/O utilities
- * 
+ *
  * Provides functions for reading and writing objects that implement the
  * IJsonConvertible interface, enabling JSON-based serialization and
  * deserialization. Also includes utility macros for enum-string conversion.
@@ -30,7 +30,7 @@ namespace io {
 
 /**
  * @brief Read JSON-convertible object from file (general entrance)
- * 
+ *
  * Automatically selects appropriate reader based on file extension.
  * @param filename Input file path
  * @param object Output object implementing IJsonConvertible
@@ -42,7 +42,7 @@ ReadIJsonConvertible(const std::string &filename,
 
 /**
  * @brief Write JSON-convertible object to file (general entrance)
- * 
+ *
  * Automatically selects appropriate writer based on file extension.
  * @param filename Output file path
  * @param object Object to write
@@ -95,16 +95,17 @@ bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
 /**
  * @defgroup EnumStringConversion Enum-String Conversion Macros
  * @brief Macros for bidirectional enum-string conversion
- * 
+ *
  * Based on nlohmann/json macro implementation (MIT license).
- * @see https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
- * 
+ * @see
+ * https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
+ *
  * Usage example:
  * @code
  * // In header file:
  * enum IMAGE_FORMAT { FORMAT_INVALID, FORMAT_PNG, FORMAT_JPG };
  * DECLARE_STRINGIFY_ENUM(IMAGE_FORMAT)
- * 
+ *
  * // In cpp file:
  * STRINGIFY_ENUM(IMAGE_FORMAT, {
  *     {FORMAT_INVALID, nullptr},
@@ -112,17 +113,17 @@ bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
  *     {FORMAT_JPG, "jpg"}
  * })
  * @endcode
- * 
+ *
  * This creates two functions:
  * - `enum_to_string(const ENUM_TYPE &e) -> std::string`
  * - `enum_from_string(const std::string &str, ENUM_TYPE &e) -> void`
- * 
+ *
  * Invalid string values are mapped to the first specified enum value.
  * @{
  */
 /**
  * @brief Declare enum-to-string conversion functions in header
- * 
+ *
  * Use this macro in header files to declare conversion functions.
  * Must be paired with STRINGIFY_ENUM in the implementation file.
  * @param ENUM_TYPE The enum type to declare conversions for
@@ -134,7 +135,7 @@ bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
 
 /**
  * @brief Define enum-to-string conversion functions in implementation
- * 
+ *
  * Use this macro in cpp files to implement conversion functions.
  * Must be paired with DECLARE_STRINGIFY_ENUM in the header file.
  * @param ENUM_TYPE The enum type to define conversions for
@@ -163,7 +164,7 @@ bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
         cloudViewer::utility::LogDebug("{} -> {}", str, enum_to_string(e)); \
     }
 
-/** @} */ // end of EnumStringConversion group
+/** @} */  // end of EnumStringConversion group
 
 }  // namespace io
 }  // namespace cloudViewer
