@@ -152,9 +152,14 @@ void cvDistanceTool::initTool() {
         m_rep->SetRenderer(m_renderer);
     }
 
-    // Replace handle representations with custom types for all VTK versions support custom axis
+    // Replace handle representations with custom types only for VTK < 9.3
+    // VTK 9.3+ already has native custom axis support in base class
+#if !((VTK_MAJOR_VERSION > 9) || \
+      (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 3))
+    // VTK < 9.3: Use cvCustomAxisHandleRepresentation for custom axis support
     m_rep->ReplaceHandleRepresentationsTyped<
             cvCustomAxisHandleRepresentation>();
+#endif
 
     // 2. Configure appearance AFTER instantiation but BEFORE enabling
     configureLineRepresentation(m_rep);  // 3D mode only
