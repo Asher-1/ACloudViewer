@@ -20,104 +20,195 @@
 class ccExternalFactory;
 class ccCommandLineInterface;
 
-//! Plugin type
+/**
+ * @brief Plugin type enumeration
+ *
+ * Defines the type/category of CloudViewer plugin.
+ * Multiple types can be combined using bitwise OR.
+ */
 enum CC_PLUGIN_TYPE {
-    ECV_STD_PLUGIN = 1,
-    ECV_PCL_ALGORITHM_PLUGIN = 2,
-    ECV_IO_FILTER_PLUGIN = 4,
+    ECV_STD_PLUGIN = 1,            ///< Standard plugin with custom actions
+    ECV_PCL_ALGORITHM_PLUGIN = 2,  ///< PCL algorithm plugin
+    ECV_IO_FILTER_PLUGIN = 4,      ///< File I/O filter plugin
 };
 
-//! Standard ECV plugin interface
-/** Version 3.2
- **/
+/**
+ * @class ccPluginInterface
+ * @brief Base interface for all CloudViewer plugins
+ *
+ * Abstract interface that all CloudViewer plugins must implement.
+ * Defines the plugin contract including:
+ *
+ * - Plugin identification (name, description, type, IID)
+ * - Metadata (authors, maintainers, references)
+ * - Plugin lifecycle (start/stop)
+ * - Custom object factory support
+ * - Command-line integration
+ *
+ * Plugins are dynamically loaded at runtime and interact with the
+ * main application through well-defined interfaces. This design
+ * allows extending CloudViewer functionality without modifying
+ * the core application.
+ *
+ * **Plugin Interface Version: 3.2**
+ *
+ * @see ecvMainAppInterface
+ * @see ccPluginManager
+ */
 class ccPluginInterface {
 public:
-    // Contact represents a person and is used for authors and maintainer lists
+    /**
+     * @struct Contact
+     * @brief Contact information for a person
+     *
+     * Represents a person with name and email, used for
+     * author and maintainer lists.
+     */
     struct Contact {
-        QString name;
-        QString email;
+        QString name;   ///< Person's name
+        QString email;  ///< Email address
     };
 
+    /// List of contacts
     typedef QList<Contact> ContactList;
 
-    // Reference represents a journal article or online post about the plugin
-    // where the user can find more information.
+    /**
+     * @struct Reference
+     * @brief Reference to publication or online resource
+     *
+     * Represents a journal article or website where users
+     * can find more information about the plugin.
+     */
     struct Reference {
-        QString article;
-        QString url;
+        QString article;  ///< Article title or description
+        QString url;      ///< URL to resource
     };
 
+    /// List of references
     using ReferenceList = QList<Reference>;
 
 public:
-    //! Virtual destructor
+    /**
+     * @brief Virtual destructor
+     */
     virtual ~ccPluginInterface() = default;
 
-    //! Returns plugin type (standard or OpenGL filter)
+    /**
+     * @brief Get plugin type
+     * @return Plugin type (standard, PCL algorithm, I/O filter, etc.)
+     */
     virtual CC_PLUGIN_TYPE getType() const = 0;
 
-    //! Is this plugin a core plugin?
+    /**
+     * @brief Check if this is a core plugin
+     *
+     * Core plugins are essential plugins shipped with CloudViewer.
+     * @return true if core plugin, false if third-party
+     */
     virtual bool isCore() const = 0;
 
-    //! Returns (short) name (for menu entry, etc.)
+    /**
+     * @brief Get plugin short name
+     *
+     * Short name displayed in menus and plugin lists.
+     * @return Plugin name (e.g., "My Plugin")
+     */
     virtual QString getName() const = 0;
 
-    //! Returns long name/description (for tooltip, etc.)
+    /**
+     * @brief Get plugin description
+     *
+     * Detailed description shown in tooltips and about dialogs.
+     * @return Plugin description
+     */
     virtual QString getDescription() const = 0;
 
-    //! Returns icon
-    /** Should be reimplemented if necessary
-     **/
+    /**
+     * @brief Get plugin icon
+     *
+     * Optional icon displayed in menus and toolbars.
+     * Default implementation returns empty icon.
+     * @return Plugin icon (or empty icon if not provided)
+     */
     virtual QIcon getIcon() const { return QIcon(); }
 
-    //! Returns a list of references (articles and websites) for the plugin
-    //! This is optional.
-    //! See qDummyPlugin for a real example.
-    //! Added in v3.1 of the plugin interface.
+    /**
+     * @brief Get list of references
+     *
+     * Optional list of publications or online resources about the plugin.
+     * Users can consult these for more detailed information.
+     *
+     * @return List of references (empty if none)
+     * @note Added in plugin interface v3.1
+     */
     virtual ReferenceList getReferences() const { return ReferenceList{}; }
 
-    //! Returns a list of the authors' names and email addresses
-    //! This is optional.
-    //! See qDummyPlugin for a real example.
-    //! Added in v3.1 of the plugin interface.
+    /**
+     * @brief Get list of authors
+     *
+     * Optional list of plugin authors with contact information.
+     * @return List of author contacts (empty if not provided)
+     * @note Added in plugin interface v3.1
+     */
     virtual ContactList getAuthors() const { return ContactList{}; }
 
-    //! Returns a list of the maintainers' names and email addresses
-    //! This is optional.
-    //! See qDummyPlugin for a real example.
-    //! Added in v3.1 of the plugin interface.
+    /**
+     * @brief Get list of maintainers
+     *
+     * Optional list of current plugin maintainers with contact info.
+     * @return List of maintainer contacts (empty if not provided)
+     * @note Added in plugin interface v3.1
+     */
     virtual ContactList getMaintainers() const { return ContactList{}; }
 
-    //! Starts the plugin
-    /** Should be reimplemented if necessary.
-            Used when 'starting' a plugin from the command line
-            (to start a background service, a thread, etc.)
-    **/
+    /**
+     * @brief Start the plugin
+     *
+     * Called when plugin is started from command line or by the application.
+     * Can be used to initialize background services, threads, etc.
+     *
+     * Default implementation returns true (success).
+     * @return true if started successfully, false on failure
+     */
     virtual bool start() { return true; }
 
-    //! Stops the plugin
-    /** Should be reimplemented if necessary.
-            Used to stop a plugin previously started (see
-    ccPluginInterface::start).
-    **/
+    /**
+     * @brief Stop the plugin
+     *
+     * Called to stop a previously started plugin. Should clean up
+     * resources, stop threads, etc.
+     *
+     * Default implementation does nothing.
+     * @see start()
+     */
     virtual void stop() {}
 
-    //! Returns the plugin's custom object factory (if any)
-    /** Plugins may provide a factory to build custom objects.
-            This allows qCC_db to properly code and decode the custom
-            objects stream in BIN files. Custom objects must inherit the
-            ccCustomHObject or ccCustomLeafObject interfaces.
-    **/
+    /**
+     * @brief Get custom object factory
+     *
+     * Plugins can provide a factory to create custom object types.
+     * This enables proper serialization of custom objects in BIN files.
+     *
+     * Custom objects must inherit ccCustomHObject or ccCustomLeafObject.
+     *
+     * @return Pointer to custom factory (or nullptr if not provided)
+     */
     virtual ccExternalFactory* getCustomObjectsFactory() const {
         return nullptr;
     }
 
-    //! Optional: registers commands (for the command line mode)
-    /** Does nothing by default.
-            \warning: don't use keywords that are already used by the main
-    application or other plugins! (use a unique prefix for all commands if
-    possible)
-    **/
+    /**
+     * @brief Register command-line commands
+     *
+     * Optional method to register custom commands for command-line mode.
+     * Allows plugins to be controlled via command-line interface.
+     *
+     * Default implementation does nothing.
+     *
+     * @param cmd Command-line interface to register commands with
+     * @warning Use unique command prefixes to avoid conflicts with
+     *          other plugins and the main application
+     */
     virtual void registerCommands(ccCommandLineInterface* cmd) {
         Q_UNUSED(cmd);
     }
@@ -125,11 +216,21 @@ public:
 protected:
     friend class ccPluginManager;
 
-    //! Set the IID of the plugin (which comes from Q_PLUGIN_METADATA).
-    //! It is used to uniquely identify the plugin.
+    /**
+     * @brief Set plugin interface ID
+     *
+     * Internal method called by plugin manager to set the unique
+     * interface ID (from Q_PLUGIN_METADATA).
+     * @param iid Interface ID string
+     */
     virtual void setIID(const QString& iid) = 0;
 
-    //! Get the IID of the plugin.
+    /**
+     * @brief Get plugin interface ID
+     *
+     * Returns the unique interface ID used to identify the plugin.
+     * @return Interface ID string
+     */
     virtual const QString& IID() const = 0;
 };
 

@@ -15,90 +15,127 @@
 
 namespace cloudViewer {
 
-//! A generic 3D point cloud interface for data communication between library
-//! and client applications
+/**
+ * @class GenericCloud
+ * @brief Generic 3D point cloud interface
+ *
+ * Provides an abstract interface for 3D point cloud data communication
+ * between library components and client applications. This interface
+ * defines basic operations such as iteration, bounding box computation,
+ * and scalar field access.
+ */
 class CV_CORE_LIB_API GenericCloud {
 public:
-    //! Default constructor
+    /**
+     * @brief Default constructor
+     */
     GenericCloud() = default;
 
-    //! Default destructor
+    /**
+     * @brief Default destructor
+     */
     virtual ~GenericCloud() = default;
 
-    //! Generic function applied to a point (used by foreach)
+    /**
+     * @brief Function type for point operations
+     *
+     * Used with forEach() to apply operations to each point.
+     */
     using genericPointAction =
             std::function<void(const CCVector3&, ScalarType&)>;
 
-    //! Returns the number of points
-    /**	Virtual method to request the cloud size
-            \return the cloud size
-    **/
+    /**
+     * @brief Get the number of points in the cloud
+     * @return Number of points
+     */
     virtual unsigned size() const = 0;
+
+    /**
+     * @brief Check if cloud has any points
+     * @return true if cloud contains at least one point
+     */
     inline virtual bool hasPoints() const { return size() != 0; }
 
-    //! Fast iteration mechanism
-    /**	Virtual method to apply a function to the whole cloud
-            \param action the function to apply (see
-    GenericCloud::genericPointAction)
-    **/
+    /**
+     * @brief Apply a function to all points
+     *
+     * Fast iteration mechanism that applies the given function to each point.
+     * @param action Function to apply (see genericPointAction)
+     */
     virtual void forEach(genericPointAction action) = 0;
 
-    //! Returns the cloud bounding box
-    /**	Virtual method to request the cloud bounding box limits
-            \param bbMin lower bounding-box limits (Xmin,Ymin,Zmin)
-            \param bbMax higher bounding-box limits (Xmax,Ymax,Zmax)
-    **/
+    /**
+     * @brief Get the bounding box of the cloud
+     * @param bbMin Output: minimum bounds (Xmin, Ymin, Zmin)
+     * @param bbMax Output: maximum bounds (Xmax, Ymax, Zmax)
+     */
     virtual void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) = 0;
 
-    //! Returns a given point visibility state (relatively to a sensor for
-    //! instance)
-    /**	Generic method to request a point visibility (should be overloaded if
-    this functionality is required). The point visibility is such as defined in
-    Daniel Girardeau-Montaut's PhD manuscript (see Chapter 2, section 2-3-3). In
-    this case, a ground based laser sensor model should be used to determine it.
-            This method is called before performing any point-to-cloud
-    comparison. If the result is not POINT_VISIBLE, then the comparison won't be
-    performed and the scalar field value associated to this point will be this
-    visibility value. \param P the 3D point to test \return visibility (default:
-    POINT_VISIBLE)
-    **/
+    /**
+     * @brief Test point visibility
+     *
+     * Returns the visibility state of a point relative to a sensor.
+     * The visibility definition follows Daniel Girardeau-Montaut's PhD
+     * manuscript (Chapter 2, section 2-3-3). This method is called before
+     * performing point-to-cloud comparisons. If the result is not
+     * POINT_VISIBLE, the comparison is skipped and the scalar field value is
+     * set to this visibility value.
+     *
+     * @param P 3D point to test
+     * @return Visibility state (default: POINT_VISIBLE)
+     * @note Should be overloaded if this functionality is required
+     */
     virtual inline unsigned char testVisibility(const CCVector3& P) const {
         return POINT_VISIBLE;
     }
 
-    //! Sets the cloud iterator at the beginning
-    /**	Virtual method to handle the cloud global iterator
-     **/
+    /**
+     * @brief Reset cloud iterator to the beginning
+     */
     virtual void placeIteratorAtBeginning() = 0;
 
-    //! Returns the next point (relatively to the global iterator position)
-    /**	Virtual method to handle the cloud global iterator.
-            Global iterator position should be increased by one each time
-            this method is called.
-            Warning:
-            - the returned object may not be persistent!
-            - THIS METHOD MAY NOT BE COMPATIBLE WITH PARALLEL STRATEGIES
-            (see the DgmOctree::executeFunctionForAllCellsAtLevel_MT and
-            DgmOctree::executeFunctionForAllCellsAtStartingLevel_MT methods).
-            \return pointer on next point (or 0 if no more)
-    **/
+    /**
+     * @brief Get the next point from the iterator
+     *
+     * Returns the next point and advances the global iterator position.
+     *
+     * @return Pointer to next point (nullptr if no more points)
+     * @warning The returned object may not be persistent
+     * @warning This method may not be compatible with parallel strategies
+     * @see DgmOctree::executeFunctionForAllCellsAtLevel_MT
+     * @see DgmOctree::executeFunctionForAllCellsAtStartingLevel_MT
+     */
     virtual const CCVector3* getNextPoint() = 0;
 
-    //!	Enables the scalar field associated to the cloud
-    /** If the scalar field structure is not yet initialized/allocated,
-            this method gives the signal for its creation. Otherwise, if
-    possible the structure size should be pre-reserved with the same number of
-            elements as the point cloud.
-    **/
+    /**
+     * @brief Enable the scalar field
+     *
+     * If the scalar field structure is not initialized, this method triggers
+     * its creation. The structure size should be pre-reserved to match the
+     * number of points in the cloud.
+     *
+     * @return true if successful
+     */
     virtual bool enableScalarField() = 0;
 
-    //! Returns true if the scalar field is enabled, false otherwise
+    /**
+     * @brief Check if scalar field is enabled
+     * @return true if scalar field is enabled
+     */
     virtual bool isScalarFieldEnabled() const = 0;
 
-    //! Sets the ith point associated scalar value
+    /**
+     * @brief Set scalar value for a point
+     * @param pointIndex Index of the point
+     * @param value Scalar value to set
+     */
     virtual void setPointScalarValue(unsigned pointIndex, ScalarType value) = 0;
 
-    //! Returns the ith point associated scalar value
+    /**
+     * @brief Get scalar value for a point
+     * @param pointIndex Index of the point
+     * @return Scalar value
+     */
     virtual ScalarType getPointScalarValue(unsigned pointIndex) const = 0;
 };
 

@@ -40,6 +40,7 @@
 #include <vtkIntArray.h>
 #include <vtkMapper.h>
 #include <vtkPointData.h>
+#include <vtkPolyData.h>
 #include <vtkProp.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>

@@ -20,8 +20,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
 
-#include "../qPCL.h"
 #include "point3f.h"
+#include "qPCL.h"
 #include "utils.h"
 #include "vector4f.h"
 

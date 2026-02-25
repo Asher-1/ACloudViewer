@@ -13,7 +13,7 @@
 #include <QPushButton>
 #include <QString>
 
-#include "../qPCL.h"
+#include "qPCL.h"
 
 namespace Widgets {
 

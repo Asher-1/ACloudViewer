@@ -61,6 +61,12 @@ public:
     bool IsCustomAxisEnabled() const { return this->CustomAxisEnabled; }
 
     /**
+     * @brief Override SetTranslationAxisOff to also turn off custom axis
+     * This ensures ParaView-style unified release works correctly
+     */
+    void SetTranslationAxisOff();
+
+    /**
      * @brief Override GetTranslationVector to support custom axis
      */
     void GetTranslationVector(const double* p1,
@@ -72,6 +78,14 @@ public:
      */
     void Translate(const double* p1, const double* p2) override;
     void Translate(const double* v) override;
+
+    /**
+     * @brief Override DetermineConstraintAxis to prevent automatic axis
+     * determination when custom axis is enabled
+     */
+    int DetermineConstraintAxis(int constraint,
+                                double* x,
+                                double* startPickPoint) override;
 
 protected:
     cvCustomAxisHandleRepresentation();
