@@ -68,54 +68,48 @@ public:
 
     /**
      * @brief Override GetTranslationVector to support custom axis
+     * Note: Not marked override for VTK 9.2 compatibility
      */
     void GetTranslationVector(const double* p1,
                               const double* p2,
-                              double* v) const override;
+                              double* v) const;
 
     /**
      * @brief Override Translate to support custom axis
+     * Note: Not marked override for VTK 9.2 compatibility
      */
-    void Translate(const double* p1, const double* p2) override;
-    void Translate(const double* v) override;
+    void Translate(const double* p1, const double* p2);
+    void Translate(const double* v);
 
     /**
      * @brief Override DetermineConstraintAxis to prevent automatic axis
      * determination when custom axis is enabled
+     * Note: Not marked override for VTK 9.2 compatibility
      */
     int DetermineConstraintAxis(int constraint,
                                 double* x,
-                                double* startPickPoint) override;
+                                double* startPickPoint);
 
 protected:
     cvCustomAxisHandleRepresentation();
-    ~cvCustomAxisHandleRepresentation() override;
+    ~cvCustomAxisHandleRepresentation();
 
     bool CustomAxisEnabled;
     double CustomTranslationAxis[3];
 
 #else
-    // For VTK 9.3+, just forward to base class methods
-    void SetCustomTranslationAxisOn() {
-        this->Superclass::SetCustomTranslationAxisOn();
-    }
-
-    void SetCustomTranslationAxisOff() {
-        this->Superclass::SetTranslationAxisOff();
-    }
-
-    void SetCustomTranslationAxis(double axis[3]) {
-        this->Superclass::SetCustomTranslationAxis(axis);
-    }
-
-    void SetCustomTranslationAxis(double x, double y, double z) {
-        double axis[3] = {x, y, z};
-        this->Superclass::SetCustomTranslationAxis(axis);
-    }
+    // For VTK 9.3+, the base class already has SetCustomTranslationAxis support
+    // We still need to override SetTranslationAxisOff to ensure custom axis is cleared
+    
+    /**
+     * @brief Override SetTranslationAxisOff to also clear custom axis
+     * This ensures ParaView-style unified key release works correctly
+     */
+    void SetTranslationAxisOff();
 
 protected:
     cvCustomAxisHandleRepresentation() {}
-    ~cvCustomAxisHandleRepresentation() override {}
+    ~cvCustomAxisHandleRepresentation() {}
 #endif
 
 private:

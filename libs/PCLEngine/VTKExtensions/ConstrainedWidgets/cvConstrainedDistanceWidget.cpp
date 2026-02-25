@@ -242,7 +242,8 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
                     rep->GetLineHandleRepresentation());
 
             if (h1 && h2 && hLine) {
-                // VTK < 9.3: Use our custom cvCustomAxisHandleRepresentation
+                // Use our custom cvCustomAxisHandleRepresentation which provides
+                // unified interface for all VTK versions
                 h1->SetCustomTranslationAxisOn();
                 h1->SetCustomTranslationAxis(v);
                 h2->SetCustomTranslationAxisOn();
@@ -253,16 +254,13 @@ void cvConstrainedDistanceWidget::ProcessKeyEvents(vtkObject* caller,
                 h2->SetConstrained(true);
                 hLine->SetConstrained(true);
             } else {
-                rep->GetPoint1Representation()->SetCustomTranslationAxisOn();
-                rep->GetPoint1Representation()->SetCustomTranslationAxis(v);
-                rep->GetPoint2Representation()->SetCustomTranslationAxisOn();
-                rep->GetPoint2Representation()->SetCustomTranslationAxis(v);
-                rep->GetLineHandleRepresentation()
-                        ->SetCustomTranslationAxisOn();
-                rep->GetLineHandleRepresentation()->SetCustomTranslationAxis(v);
-                rep->GetPoint1Representation()->SetConstrained(true);
-                rep->GetPoint2Representation()->SetConstrained(true);
-                rep->GetLineHandleRepresentation()->SetConstrained(true);
+                // Fallback: Representations are not cvCustomAxisHandleRepresentation
+                // Cannot safely call SetCustomTranslationAxis methods on base class
+                // Log warning and skip custom axis constraint
+                CVLog::Warning(
+                        "[cvConstrainedDistanceWidget] 'L' key pressed but handle "
+                        "representations are not cvCustomAxisHandleRepresentation. "
+                        "Custom axis constraint not supported for this widget.");
             }
         }
     } else if (event == vtkCommand::KeyReleaseEvent) {
