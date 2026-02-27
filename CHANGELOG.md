@@ -41,6 +41,7 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Use QImageReader::setAutoTransform(true) in ccImage::load and ImageFileFilter::loadFile
         - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
     - Upgrade to pybind11 3.0 for python plugins
+    - Add CodeQL CI support
 
 ### Supported Platforms:
 - Windows `x86/64`

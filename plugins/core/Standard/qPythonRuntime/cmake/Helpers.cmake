@@ -238,20 +238,20 @@ function(copy_python_dll)
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Debug build")
     install(
-      FILES "${Python_RUNTIME_LIBRARY_DIRS}/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}_d.dll"
-        # install the python3 base dll as well because some libs will try to
-        # find it (PySide and PyQT for example)
-        "${Python_RUNTIME_LIBRARY_DIRS}/python${Python_VERSION_MAJOR}_d.dll"
-      DESTINATION ${CLOUDCOMPARE_DEST_FOLDER}
+      FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}_d.dll"
+      # install the python3 base dll as well because some libs will try to
+      # find it (PySide and PyQT for example)
+      "${PYTHON_BASE_PREFIX}/python${Python_VERSION_MAJOR}_d.dll"
+      DESTINATION ${CC_PYTHON_INSTALL_DIR}
     )
   else()
     install(
-      FILES "${Python_RUNTIME_LIBRARY_DIRS}/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.dll"
-            # install the python3 base dll as well because some libs will try to
-            # find it (PySide and PyQT for example)
-            "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}.dll"
-            DESTINATION ${CLOUDCOMPARE_DEST_FOLDER}
-      )
+      FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.dll"
+      # install the python3 base dll as well because some libs will try to
+      # find it (PySide and PyQT for example)
+      "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}.dll"
+      DESTINATION ${CC_PYTHON_INSTALL_DIR}
+    )
   endif()
 endfunction()
 
