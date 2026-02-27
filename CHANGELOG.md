@@ -40,6 +40,7 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Apply EXIF orientation when loading images
         - Use QImageReader::setAutoTransform(true) in ccImage::load and ImageFileFilter::loadFile
         - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
+    - Upgrade to pybind11 3.0 for python plugins
 
 ### Supported Platforms:
 - Windows `x86/64`
