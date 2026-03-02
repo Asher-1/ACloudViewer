@@ -14,12 +14,16 @@
 #include "vtkObjectFactory.h"
 #include "vtkPen.h"
 #include "vtkStdString.h"
+#include "vtkVersion.h"
+
+#if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
+#include "vtkUnicodeString.h"
+#endif
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkBoundingRectContextDevice2D)
 
-        //-----------------------------------------------------------------------------
-        vtkBoundingRectContextDevice2D::vtkBoundingRectContextDevice2D()
+    vtkBoundingRectContextDevice2D::vtkBoundingRectContextDevice2D()
     : Initialized(false), DelegateDevice(NULL) {
     this->Reset();
 }
@@ -83,6 +87,16 @@ void vtkBoundingRectContextDevice2D::DrawString(float* point,
     this->AddPoint(point[0] + bounds[0] + bounds[2],
                    point[1] + bounds[1] + bounds[3]);
 }
+
+#if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
+//-----------------------------------------------------------------------------
+void vtkBoundingRectContextDevice2D::DrawString(
+        float* point, const vtkUnicodeString& string) {
+    // Convert vtkUnicodeString to vtkStdString and reuse existing
+    // implementation
+    this->DrawString(point, vtkStdString(string.utf8_str()));
+}
+#endif
 
 //-----------------------------------------------------------------------------
 void vtkBoundingRectContextDevice2D::DrawMathTextString(
@@ -371,6 +385,19 @@ void vtkBoundingRectContextDevice2D::ComputeStringBounds(
         this->DelegateDevice->ComputeStringBounds(string, bounds);
     }
 }
+
+#if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
+//-----------------------------------------------------------------------------
+void vtkBoundingRectContextDevice2D::ComputeStringBounds(
+        const vtkUnicodeString& string, float bounds[4]) {
+    // Convert vtkUnicodeString to vtkStdString and reuse existing
+    // implementation
+    if (this->DelegateDevice) {
+        this->DelegateDevice->ComputeStringBounds(
+                vtkStdString(string.utf8_str()), bounds);
+    }
+}
+#endif
 
 //-----------------------------------------------------------------------------
 void vtkBoundingRectContextDevice2D::ComputeJustifiedStringBounds(
