@@ -51,7 +51,8 @@ public:
 
 #if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
     /**
-     * Expand bounding box to contain the string's bounding box (VTK 9.1 compatibility).
+     * Expand bounding box to contain the string's bounding box (VTK 9.1
+     * compatibility).
      */
     void DrawString(float* point, const vtkUnicodeString& string) override;
 #endif
@@ -247,7 +248,8 @@ public:
 
 #if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
     /**
-     * Forward string bounds calculation to the delegate device (VTK 9.1 compatibility).
+     * Forward string bounds calculation to the delegate device (VTK 9.1
+     * compatibility).
      */
     void ComputeStringBounds(const vtkUnicodeString& string,
                              float bounds[4]) override;
