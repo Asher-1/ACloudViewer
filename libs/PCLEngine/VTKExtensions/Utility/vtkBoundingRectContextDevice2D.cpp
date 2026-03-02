@@ -23,7 +23,7 @@
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkBoundingRectContextDevice2D)
 
-    vtkBoundingRectContextDevice2D::vtkBoundingRectContextDevice2D()
+        vtkBoundingRectContextDevice2D::vtkBoundingRectContextDevice2D()
     : Initialized(false), DelegateDevice(NULL) {
     this->Reset();
 }
