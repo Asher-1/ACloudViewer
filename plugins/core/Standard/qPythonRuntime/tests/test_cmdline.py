@@ -43,12 +43,6 @@ def test_normal_distribution(acloudviewer_exe):
 def test_normal_kdtree(acloudviewer_exe):
     assert_command_runs(
         acloudviewer_exe, "-SILENT", "-O", f"{abspath}/data/a_cloud.bin", "-PYTHON_SCRIPT",
-        os.path.join(abspath, "scripts", "kdtree.py"))
-
-
-def test_normal_kdtree(acloudviewer_exe):
-    assert_command_runs(
-        acloudviewer_exe, "-SILENT", "-O", f"{abspath}/data/a_cloud.bin", "-PYTHON_SCRIPT",
         os.path.join(abspath, "scripts", "true_kdtree.py"))
 
 

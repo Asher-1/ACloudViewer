@@ -37,6 +37,7 @@ void define_ccIndexedTransformation(py::module &m);
 void define_ccPlane(py::module &);
 void define_ccTorus(py::module &);
 void define_ccBox(py::module &);
+void define_ccDisc(py::module &m);
 void define_ccDish(py::module &);
 void define_ccCone(py::module &);
 void define_ccCylinder(py::module &);
@@ -58,7 +59,6 @@ void define_ccRasterGrid(py::module &m);
 void define_ccQuadric(py::module &m);
 void define_ccPolyline(py::module &m);
 void define_ccCircle(py::module &m);
-void define_ccDisc(py::module &m);
 
 template <class T> using observer_ptr = std::unique_ptr<T, py::nodelete>;
 
@@ -138,10 +138,10 @@ void define_qcc_db(py::module &m)
     define_ccPlane(m);
     define_ccTorus(m);
     define_ccBox(m);
+    define_ccDisc(m);
     define_ccDish(m);
     define_ccCone(m);
     define_ccCylinder(m);
-    define_ccDisc(m);
     define_ccQuadric(m);
     define_cc2DLabel(m);
     define_ccColorScale(m);
