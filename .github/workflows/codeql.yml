@@ -1,0 +1,234 @@
+name: "CodeQL Security Analysis"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, reopened, synchronize]
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Python analysis - lightweight, no compilation needed
+  analyze-python:
+    name: Analyze Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      # Required for all workflows
+      security-events: write
+      # Required to fetch internal or private CodeQL packs
+      packages: read
+      # Only required for workflows in private repositories
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f python/requirements.txt ]; then pip install -r python/requirements.txt || true; fi
+          if [ -f plugins/core/Standard/qPythonRuntime/requirements-dev.txt ]; then pip install -r plugins/core/Standard/qPythonRuntime/requirements-dev.txt || true; fi
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: python
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:python"
+
+  # C++ analysis - uses project's dependency installation script
+  analyze-cpp:
+    name: Analyze C++
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # GitHub Actions max limit is 6 hours (360 minutes)
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    env:
+      # Qt paths
+      QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
+      QT_DIR: /usr/lib/x86_64-linux-gnu/qt5
+      QT_ROOT: /usr/lib/x86_64-linux-gnu/qt5
+      QTDIR: /usr/lib/x86_64-linux-gnu/qt5
+      PARALLEL_JOBS: 4
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Maximize build space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+                      /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+          echo "=== After cleanup ==="
+          df -h /
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo SUDO=sudo ./util/install_deps_ubuntu.sh assume-yes
+
+      - name: Install CMake 3.29.2 (same as Docker CI)
+        run: |
+          CMAKE_VERSION=cmake-3.29.2-linux-x86_64
+          CMAKE_VER=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2)
+          wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/${CMAKE_VERSION}.tar.gz -P /tmp
+          sudo tar -C /opt -xf /tmp/${CMAKE_VERSION}.tar.gz
+          sudo ln -sf /opt/${CMAKE_VERSION}/bin/cmake  /usr/local/bin/cmake
+          sudo ln -sf /opt/${CMAKE_VERSION}/bin/ctest  /usr/local/bin/ctest
+          sudo ln -sf /opt/${CMAKE_VERSION}/bin/cpack  /usr/local/bin/cpack
+          cmake --version
+          rm -f /tmp/${CMAKE_VERSION}.tar.gz
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get install -y \
+            ninja-build pkg-config \
+            libeigen3-dev libboost-all-dev libflann-dev libglew-dev \
+            libqhull-dev libjsoncpp-dev libusb-1.0-0-dev \
+            libopenni-dev libopenni2-dev libssl-dev \
+            zlib1g-dev libbz2-dev libzstd-dev \
+            freeglut3-dev libpcap-dev nasm \
+            libquazip5-dev liblaszip-dev libxerces-c-dev \
+            libtbb-dev libopenblas-dev liblapack-dev liblapacke-dev
+
+      - name: Install Qt5
+        run: |
+          sudo apt-get install -y \
+            qtbase5-dev qttools5-dev qttools5-dev-tools \
+            libqt5svg5-dev libqt5opengl5-dev libqt5websockets5-dev \
+            libqt5xmlpatterns5-dev libqt5x11extras5-dev libqt5networkauth5-dev \
+            qt5-image-formats-plugins qttranslations5-l10n \
+            qtdeclarative5-dev qtdeclarative5-dev-tools \
+            libqt5quickcontrols2-5 \
+            libxcb-xkb1 libxcb-shape0 libxcb-randr0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-xinerama0 libxkbcommon-x11-0 libxcb-render-util0
+
+      - name: Install VTK and PCL from system packages
+        run: |
+          sudo apt-get install -y libpcl-dev libvtk9-qt-dev
+          echo "=== VTK ==="
+          dpkg -l | grep libvtk | head -5 || true
+          echo "=== PCL ==="
+          dpkg -l | grep libpcl | head -5 || true
+          echo "=== TBB ==="
+          dpkg -l | grep libtbb | head -3 || true
+
+      # CRITICAL: Configure CMake BEFORE CodeQL init.
+      # CodeQL sets LD_PRELOAD to trace all processes, which causes cmake configure
+      # to hang on try_compile checks and FetchContent downloads. The configure step
+      # does not compile any project code, so CodeQL tracing is not needed here.
+      - name: Configure CMake
+        run: |
+          mkdir -p build && cd build
+          cmake \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUSE_SYSTEM_TBB=ON \
+            -DBUILD_JUPYTER_EXTENSION=OFF \
+            -DBUILD_LIBREALSENSE=OFF \
+            -DBUILD_AZURE_KINECT=OFF \
+            -DBUILD_PYTORCH_OPS=OFF \
+            -DBUILD_TENSORFLOW_OPS=OFF \
+            -DBUNDLE_CLOUDVIEWER_ML=OFF \
+            -DBUILD_BENCHMARKS=OFF \
+            -DBUILD_UNIT_TESTS=OFF \
+            -DBUILD_WEBRTC=OFF \
+            -DBUILD_EXAMPLES=OFF \
+            -DBUILD_CUDA_MODULE=OFF \
+            -DBUILD_OPENCV=OFF \
+            -DBUILD_RECONSTRUCTION=OFF \
+            -DBUILD_PYTHON_MODULE=OFF \
+            -DPLUGIN_PYTHON=OFF \
+            -DWITH_OPENMP=ON \
+            -DWITH_IPP=OFF \
+            -DWITH_SIMD=OFF \
+            -DUSE_SIMD=OFF \
+            -DUSE_PCL_BACKEND=ON \
+            -DCVCORELIB_USE_CGAL=OFF \
+            -DCVCORELIB_SHARED=ON \
+            -DCVCORELIB_USE_QT_CONCURRENT=ON \
+            -DOPTION_USE_GDAL=OFF \
+            -DOPTION_USE_DXF_LIB=ON \
+            -DPLUGIN_IO_QLAS=ON \
+            -DPLUGIN_IO_QCORE=ON \
+            -DPLUGIN_IO_QMESH=ON \
+            -DPLUGIN_IO_QADDITIONAL=OFF \
+            -DPLUGIN_IO_QCSV_MATRIX=OFF \
+            -DPLUGIN_IO_QDRACO=OFF \
+            -DPLUGIN_IO_QE57=OFF \
+            -DPLUGIN_IO_QPDAL=OFF \
+            -DPLUGIN_IO_QPHOTOSCAN=OFF \
+            -DPLUGIN_IO_QFBX=OFF \
+            -DPLUGIN_IO_QSTEP=OFF \
+            -DPLUGIN_STANDARD_QCSF=ON \
+            -DPLUGIN_STANDARD_QM3C2=ON \
+            -DPLUGIN_STANDARD_QPCL=ON \
+            -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
+            -DPOISSON_RECON_WITH_OPEN_MP=ON \
+            -DPLUGIN_STANDARD_QRANSAC_SD=ON \
+            -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
+            -DPLUGIN_STANDARD_QCORK=OFF \
+            -DPLUGIN_STANDARD_QJSONRPC=OFF \
+            -DPLUGIN_STANDARD_QCLOUDLAYERS=OFF \
+            -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=OFF \
+            -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=OFF \
+            -DPLUGIN_STANDARD_QANIMATION=OFF \
+            -DPLUGIN_STANDARD_QCANUPO=OFF \
+            -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=OFF \
+            -DPLUGIN_STANDARD_QCOMPASS=OFF \
+            -DPLUGIN_STANDARD_QFACETS=OFF \
+            -DPLUGIN_STANDARD_QMPLANE=OFF \
+            -DPLUGIN_STANDARD_QSRA=OFF \
+            -DPLUGIN_STANDARD_3DMASC=OFF \
+            -DPLUGIN_STANDARD_QVOXFALL=OFF \
+            -DPLUGIN_STANDARD_G3POINT=OFF \
+            ..
+
+      # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          queries: security-and-quality
+
+      - name: Build
+        run: |
+          cd build
+          make -j${PARALLEL_JOBS} || true
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:c-cpp"

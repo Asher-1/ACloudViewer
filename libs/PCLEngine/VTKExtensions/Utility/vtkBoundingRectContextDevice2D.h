@@ -9,6 +9,7 @@
 
 #include "qPCL.h"
 #include "vtkContextDevice2D.h"
+#include "vtkVersion.h"
 
 class vtkAbstractContextItem;
 
@@ -47,6 +48,14 @@ public:
      * Expand bounding box to contain the string's bounding box.
      */
     void DrawString(float* point, const vtkStdString& string) override;
+
+#if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
+    /**
+     * Expand bounding box to contain the string's bounding box (VTK 9.1
+     * compatibility).
+     */
+    void DrawString(float* point, const vtkUnicodeString& string) override;
+#endif
 
     /**
      * Expand bounding box to contain the string's bounding box.
@@ -236,6 +245,15 @@ public:
      */
     void ComputeStringBounds(const vtkStdString& string,
                              float bounds[4]) override;
+
+#if VTK_MAJOR_VERSION < 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION < 2)
+    /**
+     * Forward string bounds calculation to the delegate device (VTK 9.1
+     * compatibility).
+     */
+    void ComputeStringBounds(const vtkUnicodeString& string,
+                             float bounds[4]) override;
+#endif
 
     /**
      * Forward string bounds calculation to the delegate device.
