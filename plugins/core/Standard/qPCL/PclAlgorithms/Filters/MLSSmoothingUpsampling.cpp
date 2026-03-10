@@ -8,10 +8,10 @@
 #include "MLSSmoothingUpsampling.h"
 
 // Local
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
 #include "dialogs/MLSDialog.h"
 
 // ECV_PLUGINS
@@ -25,7 +25,7 @@
 #include <QMainWindow>
 
 #ifdef LP_PCL_PATCH_ENABLED
-#include <Utils/copy.h>
+#include <PclUtils/copy.h>
 #endif
 
 MLSSmoothingUpsampling::MLSSmoothingUpsampling()

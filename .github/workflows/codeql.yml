@@ -175,7 +175,7 @@ jobs:
             -DWITH_IPP=OFF \
             -DWITH_SIMD=OFF \
             -DUSE_SIMD=OFF \
-            -DUSE_PCL_BACKEND=ON \
+            -DUSE_VTK_BACKEND=ON \
             -DCVCORELIB_USE_CGAL=OFF \
             -DCVCORELIB_SHARED=ON \
             -DCVCORELIB_USE_QT_CONCURRENT=ON \

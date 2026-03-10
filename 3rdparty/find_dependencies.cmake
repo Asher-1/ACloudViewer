@@ -2534,7 +2534,7 @@ if (WIN32)
     endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 
-    if (USE_PCL_BACKEND)
+    if (CLOUDVIEWER_NEED_PCL)
         include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
         import_3rdparty_library(3rdparty_pcl
             INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
@@ -2557,11 +2557,10 @@ if (WIN32)
             message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
             target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
         endif()
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
     endif()
 else()
     # PCL
-    if(USE_PCL_BACKEND AND USE_SYSTEM_PCL)
+    if(CLOUDVIEWER_NEED_PCL AND USE_SYSTEM_PCL)
         find_package_3rdparty_library(3rdparty_pcl
             PACKAGE PCL
             TARGETS
@@ -2676,8 +2675,8 @@ else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 endif()
 
-if (USE_PCL_BACKEND AND NOT TARGET 3rdparty_pcl)
-    message(FATAL_ERROR "PCL backend is enabled but PCL is not found. Please install PCL or disable PCL backend.")
+if (CLOUDVIEWER_NEED_PCL AND NOT TARGET 3rdparty_pcl)
+    message(FATAL_ERROR "A plugin requiring PCL is enabled but PCL is not found. Please install PCL or disable the PCL-dependent plugins (PLUGIN_STANDARD_QPCL, PLUGIN_STANDARD_MASONRY_QAUTO_SEG, PLUGIN_STANDARD_MASONRY_QMANUAL_SEG).")
 endif()
 
 # Compactify list of external modules.

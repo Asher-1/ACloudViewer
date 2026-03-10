@@ -250,7 +250,7 @@ build_mac_wheel() {
         "-DCVCORELIB_SHARED=ON"
         "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
-        "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
+        "-DUSE_VTK_BACKEND=OFF" # no need vtk for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
@@ -366,7 +366,7 @@ build_gui_app() {
                 "-DWITH_IPP=ON"
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
-                "-DUSE_PCL_BACKEND=ON"
+                "-DUSE_VTK_BACKEND=ON"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_OPENCV=ON"
@@ -520,7 +520,7 @@ build_pip_package() {
         "-DCVCORELIB_SHARED=ON"
         "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
-        "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
+        "-DUSE_VTK_BACKEND=OFF" # no need vtk for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
@@ -890,7 +890,7 @@ build_docs() {
         "-DBUILD_EXAMPLES=OFF"
         "-DBUILD_DOCUMENTATION=ON"
         "-DBUILD_PYTHON_MODULE=ON"
-        "-DUSE_PCL_BACKEND=OFF" # no need pcl for documentation
+        "-DUSE_VTK_BACKEND=OFF" # no need vtk for documentation
         "-DBUILD_JUPYTER_EXTENSION=OFF"
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"

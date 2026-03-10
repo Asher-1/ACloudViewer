@@ -2800,6 +2800,15 @@ void ccPointCloud::getDrawingParameters(glDrawParams& params) const {
         params.showNorms = false;
         params.showSF = false;
     } else {
+        // Ensure the displayed SF has a color scale (may be missing after
+        // deserialization or if the SF was created without one)
+        if (sfShown() && m_currentDisplayedScalarField &&
+            !m_currentDisplayedScalarField->getColorScale()) {
+            m_currentDisplayedScalarField->setColorScale(
+                    ccColorScalesManager::GetUniqueInstance()->getDefaultScale(
+                            ccColorScalesManager::BGYR));
+        }
+
         // a scalar field must have been selected for display!
         params.showSF = hasDisplayedScalarField() && sfShown() &&
                         m_currentDisplayedScalarField->currentSize() >= size();
@@ -3230,8 +3239,14 @@ void ccPointCloud::setCurrentDisplayedScalarField(int index) {
             static_cast<ccScalarField*>(getScalarField(index));
 
     if (m_currentDisplayedScalarFieldIndex >= 0 &&
-        m_currentDisplayedScalarField)
+        m_currentDisplayedScalarField) {
         setCurrentOutScalarField(m_currentDisplayedScalarFieldIndex);
+        if (!m_currentDisplayedScalarField->getColorScale()) {
+            m_currentDisplayedScalarField->setColorScale(
+                    ccColorScalesManager::GetUniqueInstance()->getDefaultScale(
+                            ccColorScalesManager::BGYR));
+        }
+    }
 }
 
 void ccPointCloud::deleteScalarField(int index) {

@@ -7,11 +7,11 @@
 
 #include "EuclideanClusterSegmentation.h"
 
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/ecvPclTools.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
-#include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/EuclideanClusterDlg.h"
 
 // CV_DB_LIB
@@ -114,9 +114,9 @@ int EuclideanClusterSegmentation::compute() {
     }
 
     bool error = false;
-    ccHObject* group =
-            ecvTools::GetClousterGroup(cloud, clusterIndices, m_minClusterSize,
-                                       m_randomClusterColor, error);
+    ccHObject* group = ecvPclTools::GetClousterGroup(
+            cloud, clusterIndices, m_minClusterSize, m_randomClusterColor,
+            error);
 
     if (group) {
         group->setName(group->getName() +

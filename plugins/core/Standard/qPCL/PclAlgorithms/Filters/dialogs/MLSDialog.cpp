@@ -10,7 +10,7 @@
 #include "../MLSSmoothingUpsampling.h"
 
 // PCL
-#include "PclUtils/PCLModules.h"
+#include <PclUtils/PCLModules.h>
 
 using namespace PCLModules;
 

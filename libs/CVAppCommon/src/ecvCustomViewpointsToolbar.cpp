@@ -15,7 +15,7 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
 #include <Tools/CameraTools/EditCameraTool.h>
 #endif
 
@@ -160,7 +160,7 @@ void ecvCustomViewpointsToolbar::DeleteCustomViewpoint() {
 
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::addCurrentViewpointToCustomViewpoints() {
-#ifdef USE_PCL_BACKEND  // update camera parameters in case
+#ifdef USE_VTK_BACKEND  // update camera parameters in case
     EditCameraTool::UpdateCameraInfo();
 #endif
 
@@ -169,7 +169,7 @@ void ecvCustomViewpointsToolbar::addCurrentViewpointToCustomViewpoints() {
 
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::ApplyCustomViewpoint() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     if (ecvDisplayTools::GetCurrentScreen()) {
         int customViewpointIndex;
         QAction* action = qobject_cast<QAction*>(this->sender());

@@ -16,8 +16,9 @@ project(QPCL_PLUGIN_ALGORIGHM_LIB)
 # Qt5/Qt6 compatibility
 # Note: Widgets is already found in CMakeExternalLibs.cmake
 
-if (USE_PCL_BACKEND)
-    include_directories(${QPCL_ENGINE_LIB_SOURCE_DIR})
+if (USE_VTK_BACKEND)
+    include_directories(${QVTK_ENGINE_LIB_SOURCE_DIR})
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
     # CURRENT DIR
     file(GLOB header_list *.h)
@@ -50,6 +51,11 @@ if (USE_PCL_BACKEND)
     file(GLOB_RECURSE recognition_list ${CMAKE_CURRENT_SOURCE_DIR}/Recognitions/*)
     source_group("PclAlgorithms\\Recognitions" FILES ${recognition_list})
 
+    # PCL UTILS (conversion utilities)
+    SET(QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/../PclUtils)
+    file(GLOB_RECURSE pclutils_list ${QPCL_UTILS}/*)
+    source_group("PclUtils" FILES ${pclutils_list})
+
     # add library
     add_library(${PROJECT_NAME}
             ${header_list}
@@ -59,11 +65,13 @@ if (USE_PCL_BACKEND)
             ${feature_list}
             ${surface_list}
             ${segment_list}
-            ${recognition_list})
+            ${recognition_list}
+            ${pclutils_list})
 
     target_include_directories(${PROJECT_NAME}
             PUBLIC
             ${PCL_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/..
             )
     if (CMAKE_VERSION VERSION_LESS 3.13)
         link_directories(${PCL_LIBRARY_DIRS})
@@ -76,6 +84,6 @@ if (USE_PCL_BACKEND)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS})
     target_link_libraries(${PROJECT_NAME}
             CVPluginAPI
-            QPCL_ENGINE_LIB)
+            QVTK_ENGINE_LIB)
     target_link_libraries(${PROJECT_NAME} 3rdparty_pcl)
 endif ()

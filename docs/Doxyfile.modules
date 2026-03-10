@@ -33,9 +33,9 @@ INPUT += @PROJECT_SOURCE_DIR@/libs/CV_db/include
 # File I/O module
 INPUT += @PROJECT_SOURCE_DIR@/libs/CV_io/include
 
-# Module 5: PCLEngine
-# PCL integration module
-INPUT += @PROJECT_SOURCE_DIR@/libs/PCLEngine/include
+# Module 5: VtkEngine
+# VTK rendering engine module
+INPUT += @PROJECT_SOURCE_DIR@/libs/VtkEngine
 
 # Module 6: Reconstruction
 # 3D reconstruction module (COLMAP-based)
@@ -83,7 +83,7 @@ ENABLED_SECTIONS += MODULE_CORE \
                     MODULE_ECV_IO
 
 # Advanced modules group  
-ENABLED_SECTIONS += MODULE_PCL \
+ENABLED_SECTIONS += MODULE_VTK_ENGINE \
                     MODULE_RECONSTRUCTION \
                     MODULE_PYTHON
 

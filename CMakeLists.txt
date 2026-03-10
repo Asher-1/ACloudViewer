@@ -152,20 +152,23 @@ if(LINUX_AARCH64 OR APPLE_AARCH64)
 else()
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                   OFF)
 endif()
-if(WIN32)
-    message(STATUS "force to build from source with pcl and vtk on windows due to no suitable prebuild libs.")
-    set(USE_SYSTEM_PCL OFF)
-    set(USE_SYSTEM_VTK OFF)
-else()
-    if (USE_PCL_BACKEND)
-        message(STATUS "force to search system with pcl and vtk on linux or macos due to no suitable prebuild libs.")
-        set(USE_SYSTEM_PCL ON)
+# Determine if PCL is required by any enabled plugin
+option(CLOUDVIEWER_NEED_PCL          "Need PCL for enabled plugins"             OFF)
+if (PLUGIN_STANDARD_QPCL OR PLUGIN_STANDARD_MASONRY_QAUTO_SEG OR PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
+    set(CLOUDVIEWER_NEED_PCL ON)
+endif()
+
+if(NOT WIN32)
+    if (USE_VTK_BACKEND)
+        message(STATUS "force to search system VTK on linux or macos due to no suitable prebuild libs.")
         set(USE_SYSTEM_VTK ON)
     else()
-        # Must build vtk from source when building wheels on linux platform
-        set(USE_SYSTEM_PCL OFF)
         set(USE_SYSTEM_VTK OFF)
         set(BUILD_VTK_FROM_SOURCE ON)
+    endif()
+    if (CLOUDVIEWER_NEED_PCL)
+        message(STATUS "force to search system PCL on linux or macos due to no suitable prebuild libs.")
+        set(USE_SYSTEM_PCL ON)
     endif()
 endif()
 
@@ -205,9 +208,8 @@ endif()
 
 option(PACKAGE "Package the build results with zip or not"                      OFF)
 
-# PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND "Check to use pcl library as backend"                    ON )
-option(WITH_PCL_NURBS "Use Pcl on_nurbs module or not"                          OFF)
+# VTK ENGINE SUPPORT
+option(USE_VTK_BACKEND "Check to use VTK library as backend"                    ON )
 
 # other options
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING 
@@ -422,9 +424,9 @@ include(CMakeSetCompilerOptions)
 # Note: Eigen will auto-detect EIGEN_HAS_CXX17_OVERALIGN based on compiler/C++ standard.
 # We don't explicitly define it here to avoid redefine warnings - Eigen's auto-detection
 # will handle it correctly when C++17 is available.
-if (DEFINED UBUNTU_VERSION AND USE_PCL_BACKEND)
+if (DEFINED UBUNTU_VERSION AND CLOUDVIEWER_NEED_PCL)
     if (UBUNTU_VERSION VERSION_GREATER_EQUAL "22.04")
-        # Fix Ubuntu 22.04+ crash issues with Eigen alignment
+        # Fix Ubuntu 22.04+ crash issues with Eigen alignment when PCL is enabled
         add_compile_definitions(EIGEN_MAX_ALIGN_BYTES=0)
         message(STATUS "Eigen alignment disabled for PCL compatibility on Ubuntu ${UBUNTU_VERSION} (EIGEN_MAX_ALIGN_BYTES=0)")
     else()

@@ -7,12 +7,12 @@
 
 #include "SACSegmentation.h"
 
-#include <Utils/PCLCloud.h>
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLCloud.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/ecvPclTools.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
-#include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/SACSegmentationDlg.h"
 
 // CV_DB_LIB
@@ -157,7 +157,7 @@ int SACSegmentation::compute() {
     }
 
     bool error = false;
-    ccHObject* group = ecvTools::GetSegmentationGroup(
+    ccHObject* group = ecvPclTools::GetSegmentationGroup(
             cloud, m_exportRemaining ? cloudRemained : nullptr,
             cloudExtractions, true, error);
 
