@@ -84,23 +84,23 @@ I/O operations for various file formats:
 - ``FileIOFilter`` - Base I/O filter class
 - Plugin-based architecture for format extensions
 
-PCLEngine
-^^^^^^^^^
+VtkEngine
+^^^^^^^^
 
-Integration with Point Cloud Library (PCL):
+VTK rendering engine and visualization tools:
 
-**Algorithms**:
+**Capabilities**:
 
-- **Filtering**: Statistical outlier removal, voxel grid, pass-through
-- **Registration**: ICP, NDT, GICP
-- **Segmentation**: RANSAC, region growing, Euclidean clustering
-- **Surface Reconstruction**: Poisson, Greedy Projection, MLS
+- **Interactive 3D Rendering**: Point clouds, meshes, and other 3D data
+- **Scene Graph Management**: Hierarchical scene organization
+- **User Interactions**: Camera controls, selection, measurement tools
+- **Visualization Tools**: Color mapping, scalar fields, annotations
 
 **Key Features**:
 
-- Seamless conversion between ACloudViewer and PCL data types
-- Access to 100+ PCL algorithms
-- Optimized for large-scale point clouds
+- VTK-based rendering pipeline
+- Rich set of interaction and annotation tools
+- Support for large-scale 3D visualization
 
 Reconstruction
 ^^^^^^^^^^^^^^

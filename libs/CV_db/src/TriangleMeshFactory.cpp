@@ -1431,7 +1431,7 @@ ccMesh &ccMesh::ComputeAdjacencyList() {
 std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
-        const std::shared_ptr<ccPointCloud> pcl_init /* = nullptr */,
+        const std::shared_ptr<ccPointCloud> pc_init /* = nullptr */,
         bool use_triangle_normal /* = false */,
         int seed /* = -1 */) {
     if (number_of_points <= 0) {
@@ -1441,14 +1441,14 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
         utility::LogError(
                 "[SamplePointsPoissonDisk] input mesh has no triangles");
     }
-    if (pcl_init == nullptr && init_factor < 1) {
+    if (pc_init == nullptr && init_factor < 1) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
+                "[SamplePointsPoissonDisk] either pass pc_init with #points "
                 "> number_of_points or init_factor > 1");
     }
-    if (pcl_init != nullptr && pcl_init->size() < number_of_points) {
+    if (pc_init != nullptr && pc_init->size() < number_of_points) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
+                "[SamplePointsPoissonDisk] either pass pc_init with #points "
                 "> number_of_points, or init_factor > 1");
     }
 
@@ -1457,28 +1457,28 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     // Compute init points using uniform sampling
-    std::shared_ptr<ccPointCloud> pcl;
-    if (pcl_init == nullptr) {
-        pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
-                                        triangle_areas, surface_area,
-                                        use_triangle_normal, seed);
+    std::shared_ptr<ccPointCloud> pc;
+    if (pc_init == nullptr) {
+        pc = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
+                                       triangle_areas, surface_area,
+                                       use_triangle_normal, seed);
     } else {
-        pcl = std::make_shared<ccPointCloud>();
-        *pcl = *pcl_init;
+        pc = std::make_shared<ccPointCloud>();
+        *pc = *pc_init;
     }
 
     // Set-up sample elimination
     double alpha = 8;    // constant defined in paper
     double beta = 0.5;   // constant defined in paper
     double gamma = 1.5;  // constant defined in paper
-    double ratio = double(number_of_points) / double(pcl->size());
+    double ratio = double(number_of_points) / double(pc->size());
     double r_max = 2 * std::sqrt((surface_area / number_of_points) /
                                  (2 * std::sqrt(3.)));
     double r_min = r_max * beta * (1 - std::pow(ratio, gamma));
 
-    std::vector<double> weights(pcl->size());
-    std::vector<bool> deleted(pcl->size(), false);
-    cloudViewer::geometry::KDTreeFlann kdtree(*pcl);
+    std::vector<double> weights(pc->size());
+    std::vector<bool> deleted(pc->size(), false);
+    cloudViewer::geometry::KDTreeFlann kdtree(*pc);
 
     auto WeightFcn = [&](double d2) {
         double d = std::sqrt(d2);
@@ -1491,7 +1491,7 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
     auto ComputePointWeight = [&](int pidx0) {
         std::vector<int> nbs;
         std::vector<double> dists2;
-        kdtree.SearchRadius(pcl->getEigenPoint(static_cast<size_t>(pidx0)),
+        kdtree.SearchRadius(pc->getEigenPoint(static_cast<size_t>(pidx0)),
                             r_max, nbs, dists2);
         double weight = 0;
         for (size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
@@ -1514,13 +1514,13 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
     std::priority_queue<QueueEntry, std::vector<QueueEntry>,
                         decltype(WeightCmp)>
             queue(WeightCmp);
-    for (size_t pidx0 = 0; pidx0 < pcl->size(); ++pidx0) {
+    for (size_t pidx0 = 0; pidx0 < pc->size(); ++pidx0) {
         ComputePointWeight(int(pidx0));
         queue.push(QueueEntry(int(pidx0), weights[pidx0]));
     };
 
     // sample elimination
-    size_t current_number_of_points = pcl->size();
+    size_t current_number_of_points = pc->size();
     while (current_number_of_points > number_of_points) {
         int pidx;
         double weight;
@@ -1539,48 +1539,47 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
         // update weights
         std::vector<int> nbs;
         std::vector<double> dists2;
-        kdtree.SearchRadius(pcl->getEigenPoint(static_cast<size_t>(pidx)),
-                            r_max, nbs, dists2);
+        kdtree.SearchRadius(pc->getEigenPoint(static_cast<size_t>(pidx)), r_max,
+                            nbs, dists2);
         for (int nb : nbs) {
             ComputePointWeight(nb);
             queue.push(QueueEntry(nb, weights[nb]));
         }
     }
 
-    // update pcl
-    bool has_vert_normal = pcl->hasNormals();
-    bool has_vert_color = pcl->hasColors();
+    // update pc
+    bool has_vert_normal = pc->hasNormals();
+    bool has_vert_color = pc->hasColors();
     bool has_textures_ = hasTextures();
     bool has_triangle_uvs_ = hasTriangleUvs();
     size_t next_free = 0;
-    for (size_t idx = 0; idx < pcl->size(); ++idx) {
+    for (size_t idx = 0; idx < pc->size(); ++idx) {
         if (!deleted[idx]) {
-            pcl->setPoint(next_free,
-                          *pcl->getPoint(static_cast<unsigned>(idx)));
+            pc->setPoint(next_free, *pc->getPoint(static_cast<unsigned>(idx)));
             if (has_vert_normal) {
-                pcl->setPointNormal(
+                pc->setPointNormal(
                         next_free,
-                        pcl->getPointNormal(static_cast<unsigned>(idx)));
+                        pc->getPointNormal(static_cast<unsigned>(idx)));
             }
             if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
-                pcl->setPointColor(
+                pc->setPointColor(
                         static_cast<unsigned>(next_free),
-                        pcl->getPointColor(static_cast<unsigned>(idx)));
+                        pc->getPointColor(static_cast<unsigned>(idx)));
             }
             next_free++;
         }
     }
 
-    // pcl->shrinkToFit();
-    pcl->resize(static_cast<unsigned>(next_free));
+    // pc->shrinkToFit();
+    pc->resize(static_cast<unsigned>(next_free));
     if (has_vert_normal) {
-        pcl->resizeTheNormsTable();
+        pc->resizeTheNormsTable();
     }
     if (has_vert_color) {
-        pcl->resizeTheRGBTable();
+        pc->resizeTheRGBTable();
     }
 
-    return pcl;
+    return pc;
 }
 
 std::unordered_map<Eigen::Vector2i,

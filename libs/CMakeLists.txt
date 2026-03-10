@@ -78,9 +78,10 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     endif ()
 endif ()
 
-# PCL ENGINE LIB
-if (USE_PCL_BACKEND)
-	add_subdirectory( PCLEngine ) # must always be included after CV_db and CV_io (dependency)
+# VTK ENGINE LIB
+if (USE_VTK_BACKEND)
+	add_subdirectory( VtkEngine ) # must always be included after CV_db and CV_io (dependency)
+	set(QVTK_ENGINE_LIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/VtkEngine PARENT_SCOPE)
 endif()
 
 add_subdirectory( CVAppCommon )

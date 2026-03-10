@@ -75,7 +75,7 @@ class ecvFilterTool;
 class ecvAnnotationsTool;
 class ecvMeasurementTool;
 
-#if defined(USE_PCL_BACKEND)
+#if defined(USE_VTK_BACKEND)
 class cvViewSelectionManager;
 class cvSelectionData;
 class cvSelectionHighlighter;
@@ -271,7 +271,7 @@ public:  // inherited from ecvMainAppInterface
     void zoomOnEntities(ccHObject* obj) override;
     void setGlobalZoom() override;
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     //! Get the selection manager instance
     cvViewSelectionManager* getSelectionManager() const;
 
@@ -302,7 +302,7 @@ private:
     // This should be called after all toolbars are created/modified
     void updateAllToolbarIconSizes();
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     //! Initialize selection tool controller (ParaView-style architecture)
     void initSelectionController();
     //! Disable all active selection tools
@@ -623,7 +623,7 @@ private slots:
     void doActionExportPlaneInfo();
     void doActionExportCloudInfo();
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     void onSelectionFinished(const cvSelectionData& selectionData);
     void onSelectionRestored(const cvSelectionData& selection);
     void onSelectionToolActivated(QAction* action);
@@ -768,7 +768,7 @@ private:
     //! Measurement Tool dialog (Distance, Contour, Protractor)
     ecvMeasurementTool* m_measurementTool;
 
-#if defined(USE_PCL_BACKEND)
+#if defined(USE_VTK_BACKEND)
     //! Selection tool controller (manages all selection tools, ParaView-style)
     //! This is a singleton, but we keep a pointer for convenience
     cvSelectionToolController* m_selectionController;

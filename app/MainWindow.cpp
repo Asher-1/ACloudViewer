@@ -175,20 +175,24 @@
 #include "reconstruction/ReconstructionWidget.h"
 #endif
 
-// QPCL_ENGINE_LIB
-#ifdef USE_PCL_BACKEND
-#include <PclUtils/PCLDisplayTools.h>
-#include <Tools/AnnotationTools/PclAnnotationTool.h>
+// QVTK_ENGINE_LIB
+#ifdef USE_VTK_BACKEND
+#include <Tools/AnnotationTools/VtkAnnotationTool.h>
 #include <Tools/CameraTools/EditCameraTool.h>
-#include <Tools/Common/CurveFitting.h>
-#include <Tools/FilterTools/PclFiltersTool.h>
-#include <Tools/MeasurementTools/PclMeasurementTools.h>
+#include <Tools/FilterTools/VtkFiltersTool.h>
+#include <Tools/MeasurementTools/VtkMeasurementTools.h>
 #include <Tools/SelectionTools/cvFindDataDockWidget.h>
 #include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
 #include <Tools/SelectionTools/cvSelectionToolController.h>
 #include <Tools/SelectionTools/cvViewSelectionManager.h>
-#include <Tools/TransformTools/PclTransformTool.h>
+#include <Tools/TransformTools/VtkTransformTool.h>
+#include <Visualization/VtkDisplayTools.h>
+#endif
+
+// QPCL_PLUGIN_ALGORIGHM_LIB
+#ifdef PLUGIN_STANDARD_QPCL
+#include <PclUtils/CurveFitting.h>
 #endif
 
 // CV_PYTHON_LIB
@@ -296,7 +300,7 @@ MainWindow::MainWindow()
       m_filterLabelTool(nullptr),
       m_measurementTool(nullptr),
       m_dssTool(nullptr),
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
       m_selectionController(nullptr),
       m_findDataDock(nullptr),
 #endif
@@ -372,7 +376,7 @@ MainWindow::MainWindow()
     // Create Find Data dock widget (ParaView-style selection properties panel)
     // This dock is independent of selection tool state and can be shown/hidden
     // by the user
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     {
         m_findDataDock = new cvFindDataDockWidget(this);
         // Add dock to the right side (like ParaView)
@@ -418,7 +422,7 @@ MainWindow::MainWindow()
     initSelectionController();
 #else
     CVLog::Warning(
-            "[MainWindow] USE_PCL_BACKEND not defined - Find Data dock not "
+            "[MainWindow] USE_VTK_BACKEND not defined - Find Data dock not "
             "created");
 #endif
 
@@ -652,7 +656,8 @@ void MainWindow::initial() {
     }
 
     bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
-    ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
+    ecvDisplayTools::Init(new Visualization::VtkDisplayTools(), this,
+                          stereoMode);
 
     // init themes
     initThemes();
@@ -2311,7 +2316,7 @@ void MainWindow::addToDB(ccHObject* obj,
         refreshObject(obj);
     }
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     // ParaView-style: When new entities are added, refresh Data Producer combo
     // but do NOT disable selection tools (ParaView doesn't do this)
     // Reference: ParaView's pqSelectionManager::onSourceAdded() simply connects
@@ -2338,7 +2343,7 @@ void MainWindow::doActionEditCamera() {
     QMdiSubWindow* qWin = m_mdiArea->activeSubWindow();
     if (!qWin) return;
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     if (!m_cpeDlg) {
         m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
         EditCameraTool* tool =
@@ -3223,9 +3228,9 @@ void MainWindow::activateTranslateRotateMode() {
 
     if (!getActiveWindow()) return;
 
-#ifdef USE_PCL_BACKEND
-    PclTransformTool* pclTransTool =
-            new PclTransformTool(ecvDisplayTools::GetVisualizer3D());
+#ifdef USE_VTK_BACKEND
+    VtkTransformTool* pclTransTool =
+            new VtkTransformTool(ecvDisplayTools::GetVisualizer3D());
     if (!m_transTool) m_transTool = new ccGraphicalTransformationTool(this);
     if (m_transTool->getNumberOfValidEntities() != 0) {
         m_transTool->clear();
@@ -3234,7 +3239,7 @@ void MainWindow::activateTranslateRotateMode() {
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 
     if (!m_transTool->setTansformTool(pclTransTool) ||
         !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
@@ -3657,7 +3662,7 @@ void MainWindow::handleEscapeKey() {
     CVLog::PrintDebug("[MainWindow] Disabling all selection tools");
     // Disable all selection tools via controller
     // The controller handles unchecking all actions
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     if (m_selectionController) {
         m_selectionController->handleEscapeKey();
     }
@@ -3680,7 +3685,7 @@ void MainWindow::handleEscapeKey() {
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     switch (event->key()) {
         case Qt::Key_Escape:
-            CVLog::Print(
+            CVLog::PrintDebug(
                     "[MainWindow::keyPressEvent] ESC key received, calling "
                     "handleEscapeKey");
             handleEscapeKey();
@@ -4676,7 +4681,7 @@ void MainWindow::setGlobalZoom() {
 // (ParaView-style)
 //=============================================================================
 
-#if defined(USE_PCL_BACKEND)
+#if defined(USE_VTK_BACKEND)
 void MainWindow::initSelectionController() {
     // Get the singleton controller
     m_selectionController = cvSelectionToolController::instance();
@@ -6849,7 +6854,7 @@ void MainWindow::doConvertPolylinesToMesh() {
 }
 
 void MainWindow::doBSplineFittingFromCloud() {
-#ifdef USE_PCL_BACKEND
+#ifdef PLUGIN_STANDARD_QPCL
     // find candidates
     std::vector<ccPointCloud*> clouds;
     {
@@ -10336,36 +10341,36 @@ void MainWindow::doActionEditGlobalShiftAndScale() {
 
 // Tools measurement menu methods
 void MainWindow::activateDistanceMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionMeasurementMode(
             ecvGenericMeasurementTools::MeasurementType::DISTANCE_WIDGET);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateProtractorMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionMeasurementMode(
             ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateContourMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionMeasurementMode(
             ecvGenericMeasurementTools::MeasurementType::CONTOUR_WIDGET);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::doActionMeasurementMode(int mode) {
@@ -10400,14 +10405,14 @@ void MainWindow::doActionMeasurementMode(int mode) {
         registerOverlayDialog(m_measurementTool, Qt::TopRightCorner);
     }
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
     if (!viewer) {
         CVLog::Error("[MainWindow] No visualizer available!");
         return;
     }
 
-    ecvGenericMeasurementTools* measurementTool = new PclMeasurementTools(
+    ecvGenericMeasurementTools* measurementTool = new VtkMeasurementTools(
             viewer, ecvGenericMeasurementTools::MeasurementType(mode));
 
     // Add the new tool instance to the measurement tool dialog
@@ -10439,111 +10444,111 @@ void MainWindow::doActionMeasurementMode(int mode) {
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateClippingMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::CLIP_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateSliceMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::SLICE_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateProbeMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::PROBE_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateDecimateMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::DECIMATE_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateIsoSurfaceMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::ISOSURFACE_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateThresholdMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::THRESHOLD_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateSmoothMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::SMOOTH_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateGlyphMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::GLYPH_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::activateStreamlineMode() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doActionFilterMode(ecvGenericFiltersTool::FilterType::STREAMLINE_FILTER);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::doActionFilterMode(int mode) {
     if (!haveOneSelection()) return;
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     ecvGenericFiltersTool* filter =
-            new PclFiltersTool(ecvDisplayTools::GetVisualizer3D(),
+            new VtkFiltersTool(ecvDisplayTools::GetVisualizer3D(),
                                ecvGenericFiltersTool::FilterType(mode));
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 
     // we have to use a local copy: 'unselectEntity' will change the set of
     // currently selected entities!
@@ -10600,23 +10605,23 @@ void MainWindow::doActionFilterMode(int mode) {
 }
 
 void MainWindow::doBoxAnnotation() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doAnnotations(ecvGenericAnnotationTool::AnnotationMode::BOUNDINGBOX);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::doSemanticAnnotation() {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     doAnnotations(ecvGenericAnnotationTool::AnnotationMode::SEMANTICS);
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 }
 
 void MainWindow::doAnnotations(int mode) {
@@ -10631,8 +10636,8 @@ void MainWindow::doAnnotations(int mode) {
         return;
     }
 
-#ifdef USE_PCL_BACKEND
-    PclAnnotationTool* annoTools = new PclAnnotationTool(
+#ifdef USE_VTK_BACKEND
+    VtkAnnotationTool* annoTools = new VtkAnnotationTool(
             ecvDisplayTools::GetVisualizer3D(),
             ecvGenericAnnotationTool::AnnotationMode(mode));
     if (!m_annoTool) {
@@ -10647,7 +10652,7 @@ void MainWindow::doAnnotations(int mode) {
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
     return;
-#endif  // USE_PCL_BACKEND
+#endif  // USE_VTK_BACKEND
 
     if (!m_annoTool->setAnnotationsTool(annoTools) ||
         !m_annoTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {

@@ -176,31 +176,35 @@ Working with Meshes
        return mesh;
    }
 
-Using PCL Algorithms
-~~~~~~~~~~~~~~~~~~~~
+Using VtkEngine for Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The VtkEngine module provides ``Visualization::VtkVis`` for low-level VTK rendering
+and ``Visualization::VtkDisplayTools`` as the high-level bridge between CloudViewer
+entities and VTK viewers.
 
 .. code-block:: cpp
 
-   #include <PCLEngine.h>
+   #include <Visualization/VtkVis.h>
    #include <ccPointCloud.h>
+   #include <vtkPolyData.h>
+   #include <vtkSmartPointer.h>
 
-   void applyPCLFilter(ccPointCloud* cloud) {
-       // Apply statistical outlier removal
-       PCLEngine engine;
-       
-       // Configure filter parameters
-       engine.setParameter("meanK", 50);
-       engine.setParameter("stddevMulThresh", 1.0);
-       
-       // Apply filter
-       ccPointCloud* filtered = engine.applyStatisticalOutlierRemoval(cloud);
-       
-       if (filtered) {
-           std::cout << "Filtered cloud has " << filtered->size() 
-                     << " points (from " << cloud->size() << ")" << std::endl;
-           // Use filtered cloud...
-           delete filtered;
-       }
+   void visualizePointCloud(vtkSmartPointer<vtkPolyData> polydata) {
+       using namespace Visualization;
+
+       // VtkVis wraps VTK rendering (renderer, render window, interactor)
+       // Typically created and managed by VtkDisplayTools inside ACloudViewer
+       auto vis = get3DViewer();  // obtained from VtkDisplayTools
+
+       // Add a VTK polydata point cloud to the scene
+       vis->addPointCloud(polydata, "my_cloud");
+
+       // Configure rendering properties
+       vis->setPointCloudRenderingProperties(
+           /*property=*/1, /*pointSize=*/2.0, "my_cloud");
+
+       vis->resetCamera();
    }
 
 Octree Operations
@@ -259,7 +263,7 @@ Basic CMakeLists.txt
    target_link_libraries(my_app PRIVATE 
        ACloudViewer::Core
        ACloudViewer::IO
-       ACloudViewer::PCLEngine
+       ACloudViewer::VtkEngine
    )
 
 Advanced CMakeLists.txt
@@ -278,7 +282,7 @@ Advanced CMakeLists.txt
        Core
        IO
        DB
-       PCLEngine
+       VtkEngine
        Reconstruction
    )
 
@@ -300,7 +304,7 @@ Advanced CMakeLists.txt
        ACloudViewer::Core
        ACloudViewer::IO
        ACloudViewer::DB
-       ACloudViewer::PCLEngine
+       ACloudViewer::VtkEngine
        Qt5::Core
        Qt5::Widgets
        Qt5::OpenGL

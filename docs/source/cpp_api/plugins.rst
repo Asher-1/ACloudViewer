@@ -25,7 +25,7 @@ Plugin Architecture
    │   ├── cloudViewer (3D processing)
    │   ├── CV_db (database)
    │   ├── CV_io (I/O operations)
-   │   └── PCLEngine (PCL integration)
+   │   └── VtkEngine (VTK rendering engine)
    │
    └── Plugin System
        ├── CVPluginAPI (Plugin interface)

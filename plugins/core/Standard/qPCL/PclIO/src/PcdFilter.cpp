@@ -10,13 +10,11 @@
 #include <liblzf/lzf.h>
 
 // Dialog
+#include <PclUtils/PCLConv.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/sm2cc.h>
 #include <ui_PCDOutputFormatDlg.h>
 #include <ui_savePCDFileDlg.h>
-
-// PclUtils
-#include <PCLConv.h>
-#include <cc2sm.h>
-#include <sm2cc.h>
 
 // CV_CORE_LIB
 #include <CVTools.h>

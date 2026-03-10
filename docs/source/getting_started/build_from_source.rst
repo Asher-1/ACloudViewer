@@ -99,8 +99,8 @@ Feature Options
      - Enable 3D reconstruction features
    * - ``BUILD_PYTHON_MODULE``
      - Build Python bindings
-   * - ``USE_PCL_BACKEND``
-     - Use PCL as processing backend
+   * - ``USE_VTK_BACKEND``
+     - Use VTK as processing backend
    * - ``WITH_OPENMP``
      - Enable OpenMP parallel processing
    * - ``WITH_SIMD``
@@ -181,7 +181,7 @@ Building Application (Full Configuration)
        -DUSE_SIMD=ON \
        -DPACKAGE=ON \
        -DUSE_QT6=OFF \
-       -DUSE_PCL_BACKEND=ON \
+       -DUSE_VTK_BACKEND=ON \
        -DBUILD_WEBRTC=OFF \
        -DBUILD_OPENCV=ON \
        -DBUILD_RECONSTRUCTION=ON \
@@ -344,7 +344,7 @@ Building Application
        -DWITH_SIMD=ON \
        -DUSE_SIMD=ON \
        -DPACKAGE=ON \
-       -DUSE_PCL_BACKEND=ON \
+       -DUSE_VTK_BACKEND=ON \
        -DBUILD_WEBRTC=OFF \
        -DBUILD_OPENCV=OFF \
        -DUSE_SYSTEM_OPENCV=OFF \
@@ -510,7 +510,7 @@ Building Application
        -DBUILD_BENCHMARKS=OFF `
        -DBUILD_OPENCV=ON `
        -DBUILD_RECONSTRUCTION=ON `
-       -DUSE_PCL_BACKEND=ON `
+       -DUSE_VTK_BACKEND=ON `
        -DWITH_PCL_NURBS=ON `
        -DCVCORELIB_USE_CGAL=ON `
        -DCVCORELIB_SHARED=ON `

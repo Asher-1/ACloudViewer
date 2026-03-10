@@ -252,7 +252,7 @@ function Build-GuiApp {
         "-DWITH_IPP=ON",
         "-DWITH_SIMD=ON",
         "-DWITH_PCL_NURBS=$WITH_PCL_NURBS",
-        "-DUSE_PCL_BACKEND=ON",
+        "-DUSE_VTK_BACKEND=ON",
         "-DUSE_SIMD=ON",
         "-DPACKAGE=$PACKAGE",
         "-DBUILD_OPENCV=ON",
@@ -433,7 +433,7 @@ function Build-PipPackage {
         "-DCVCORELIB_SHARED=ON",
         "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
-        "-DUSE_PCL_BACKEND=OFF",
+        "-DUSE_VTK_BACKEND=OFF",
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",

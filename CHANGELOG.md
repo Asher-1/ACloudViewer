@@ -33,7 +33,6 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix image slice display orientation in 2D viewer
         - Reset camera ViewUp to (0,1,0) so image is always upright regardless of 3D scene rotation
         - Use ResetCameraClippingRange() instead of ResetCamera() to preserve configured camera parameters
-    - Clean up OpenGL surface format initialization order in ecvApplicationBase
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
@@ -42,6 +41,11 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
     - Upgrade to pybind11 3.0 for python plugins
     - Add CodeQL CI support
+    - Clean up OpenGL surface format initialization order in ecvApplicationBase
+    - Rename PCLUtils to Visualization
+    - Remove pcl data structure dependency to speedup loading data and rendering
+    - Rename PCLEngine to VTKEngine and remove pcl dependency with VTKEngine
+    - Set PLUGIN_STANDARD_QPCL=OFF as default
 
 ### Supported Platforms:
 - Windows `x86/64`

@@ -13,9 +13,9 @@ target_link_libraries(${PROJECT_NAME}
         CVPluginAPI
         )
 
-if (USE_PCL_BACKEND)
-    include_directories(${QPCL_ENGINE_LIB_SOURCE_DIR})
-    target_link_libraries(${PROJECT_NAME} QPCL_ENGINE_LIB)
+if (USE_VTK_BACKEND)
+    include_directories(${QVTK_ENGINE_LIB_SOURCE_DIR})
+    target_link_libraries(${PROJECT_NAME} QVTK_ENGINE_LIB)
 endif ()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD)

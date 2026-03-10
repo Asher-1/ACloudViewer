@@ -9,8 +9,6 @@ if (PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
 
     AddPlugin(NAME ${PROJECT_NAME})
 
-    include_directories(${QPCL_ENGINE_LIB_SOURCE_DIR})
-
     target_sources(${PROJECT_NAME}
             PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/qManualSeg.h
@@ -25,24 +23,21 @@ if (PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
             ${CMAKE_CURRENT_SOURCE_DIR}
             )
 
-    if (USE_PCL_BACKEND)
-        # [C/C++]>[General]>[Additional Include Directories]
-        target_include_directories(${PROJECT_NAME}
+    # PCL dependency (KdTree, transforms)
+    target_include_directories(${PROJECT_NAME}
+            PUBLIC
+            ${PCL_INCLUDE_DIRS}
+            )
+    if (CMAKE_VERSION VERSION_LESS 3.13)
+        link_directories(${PCL_LIBRARY_DIRS})
+    else ()
+        target_link_directories(${PROJECT_NAME}
                 PUBLIC
-                ${PCL_INCLUDE_DIRS}
+                ${PCL_LIBRARY_DIRS}
                 )
-        # For Use Not PreCompiled Features
-        if (CMAKE_VERSION VERSION_LESS 3.13)
-            link_directories(${PCL_LIBRARY_DIRS})
-        else ()
-            target_link_directories(${PROJECT_NAME}
-                    PUBLIC
-                    ${PCL_LIBRARY_DIRS}
-                    )
-        endif ()
-        target_compile_definitions(${PROJECT_NAME} PUBLIC ${PCL_DEFINITIONS})
-        target_link_libraries(${PROJECT_NAME} 3rdparty_pcl QPCL_ENGINE_LIB)
     endif ()
+    target_compile_definitions(${PROJECT_NAME} PUBLIC ${PCL_DEFINITIONS})
+    target_link_libraries(${PROJECT_NAME} 3rdparty_pcl)
 
     if (BUILD_OPENCV)
         add_dependencies(${PROJECT_NAME} 3rdparty_opencv)
