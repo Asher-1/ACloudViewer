@@ -1,0 +1,63 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+/// @file vtkplotwidget.h
+/// @brief Base widget for VTK chart-based plots (2D, 3D, pie).
+
+// #define vtkRenderingCore_AUTOINIT
+// 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // opengl2
+// #define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL) // opengl2
+
+// #include <vtkAutoInit.h>
+
+// VTK_MODULE_INIT(vtkRenderingOpenGL) // opengl2
+// VTK_MODULE_INIT(vtkInteractionStyle)
+// VTK_MODULE_INIT(vtkRenderingContextOpenGL) // opengl2
+
+// #include <vtkAutoInit.h>
+//  VTK_MODULE_INIT(vtkRenderingFreeType)
+//  VTK_MODULE_INIT(vtkRenderingOpenGL2);
+//  VTK_MODULE_INIT(vtkInteractionStyle);
+
+#include <QVTKOpenGLNativeWidget.h>
+
+#include "qVTK.h"
+
+class vtkChartXY;
+class vtkContextItem;
+class vtkContextView;
+namespace VtkUtils {
+
+class VtkPlotWidgetPrivate;
+/// @class VtkPlotWidget
+/// @brief Base class for VTK chart widgets; provides OpenGL render window and
+/// context view.
+class VtkPlotWidget : public QVTKOpenGLNativeWidget {
+    Q_OBJECT
+public:
+    explicit VtkPlotWidget(QWidget* parent = nullptr);
+    virtual ~VtkPlotWidget();
+
+    /// @return Chart context item (implementation-specific)
+    virtual vtkContextItem* chart() const = 0;
+
+    /// @return VTK context view for chart rendering
+    vtkContextView* contextView() const;
+    /// @return VTK render window
+    vtkRenderWindow* GetRenderWindow() { return this->renderWindow(); }
+
+protected:
+    void init();
+
+private:
+    VtkPlotWidgetPrivate* d_ptr;
+    Q_DISABLE_COPY(VtkPlotWidget)
+};
+
+}  // namespace VtkUtils

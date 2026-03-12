@@ -8,10 +8,10 @@
 #include "ExtractSIFT.h"
 
 // LOCAL
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
 #include "dialogs/SIFTExtractDlg.h"
 
 // CV_DB_LIB

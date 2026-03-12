@@ -102,13 +102,13 @@ ACloudViewer is organized into several key modules that work together to provide
 │                        <b>Core Processing Layer</b>                         │
 │                                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ cloudViewer  │  │   CV_db     │  │   CV_io     │  │  PCLEngine   │     │
+│  │ cloudViewer  │  │   CV_db      │  │   CV_io      │  │  VtkEngine   │     │
 │  │              │  │              │  │              │  │              │     │
-│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
-│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
-│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │     │
-│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │     │
-│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │     │
+│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • VTK        │     │
+│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Rendering  │     │
+│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Visualiz.  │     │
+│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Interact.  │     │
+│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Tools      │     │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
 │                                                                             │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
@@ -150,11 +150,11 @@ Here's a brief overview of the different components and how they fit together to
 
 - **CV_db**: Database and entity management for complex 3D scenes
 - **CV_io**: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)
-- **PCLEngine**: Integration with Point Cloud Library (PCL)
-  - Filtering algorithms
-  - Registration (ICP, NDT)
-  - Segmentation
-  - Surface reconstruction
+- **VtkEngine**: VTK rendering engine and visualization tools
+  - Interactive 3D rendering
+  - Scene graph management
+  - User interactions
+  - Measurement and annotation tools
 
 - **Reconstruction**: 3D reconstruction algorithms
   - Surface reconstruction

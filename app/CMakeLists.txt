@@ -202,14 +202,19 @@ if (BUILD_PYTHON_MODULE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE)
 endif ()
 
-if (USE_PCL_BACKEND)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DVTK_VERSION=\"${VTK_VERSION}\")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DPCL_VERSION=\"${PCL_VERSION}\")
+if (USE_VTK_BACKEND)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_VTK_BACKEND -DVTK_VERSION=\"${VTK_VERSION}\")
     target_link_directories(${PROJECT_NAME}
-            PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+            PUBLIC ${QVTK_ENGINE_LIB_SOURCE_DIR}
             )
-    include_directories(${QPCL_ENGINE_LIB_SOURCE_DIR})
-    target_link_libraries(${PROJECT_NAME} QPCL_ENGINE_LIB)
+    include_directories(${QVTK_ENGINE_LIB_SOURCE_DIR})
+    target_link_libraries(${PROJECT_NAME} QVTK_ENGINE_LIB)
+
+endif ()
+
+if (CLOUDVIEWER_NEED_PCL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE CLOUDVIEWER_NEED_PCL -DPCL_VERSION=\"${PCL_VERSION}\")
+    target_link_libraries(${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
 endif ()
 
 # Add custom preprocessor definitions

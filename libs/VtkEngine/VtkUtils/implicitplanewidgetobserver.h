@@ -1,0 +1,34 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+/// @file implicitplanewidgetobserver.h
+/// @brief Observer for implicit plane widget that emits origin and normal.
+
+#include "abstractwidgetobserver.h"
+
+namespace VtkUtils {
+
+/// @class ImplicitPlaneWidgetObserver
+/// @brief Observes vtkImplicitPlaneWidget EndInteractionEvent and emits plane
+/// origin and normal.
+class QVTK_ENGINE_LIB_API ImplicitPlaneWidgetObserver
+    : public AbstractWidgetObserver {
+    Q_OBJECT
+public:
+    explicit ImplicitPlaneWidgetObserver(QObject* parent = nullptr);
+
+signals:
+    void originChanged(double* origin);
+    void normalChanged(double* normal);
+
+protected:
+    void Execute(vtkObject* caller, unsigned long eventId, void* callData);
+};
+
+}  // namespace VtkUtils

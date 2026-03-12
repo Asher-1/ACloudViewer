@@ -70,7 +70,7 @@ export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig
 export GMP_DIR=$CONDA_PREFIX
 export MPFR_DIR=$CONDA_PREFIX
 
-# fix no such file: /usr/lib/libGL.so when building libPCLEngine
+# fix no such file: /usr/lib/libGL.so when building libVtkEngine
 if [ -f "/usr/lib/libGL.so" ]; then
     echo "/usr/lib/libGL.so has been already, no need to soft link!"
 else

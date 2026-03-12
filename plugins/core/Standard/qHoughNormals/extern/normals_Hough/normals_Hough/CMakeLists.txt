@@ -26,4 +26,3 @@ Normals.h
 pc_io.cpp
 pc_io.h)
 target_link_libraries(Hough_Exec ${EXTRA_LIBS} ${PROJECT_LINK_LIB} )
-target_link_libraries(Hough_Exec 3rdparty_pcl)

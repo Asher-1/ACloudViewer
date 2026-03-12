@@ -258,6 +258,7 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          CV_CORE_LIB_API= \
                          CV_IO_LIB_API= \
                          CLOUDVIEWER_API= \
+                         QVTK_ENGINE_LIB_API= \
                          __attribute__(x)=
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
