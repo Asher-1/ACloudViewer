@@ -1,6 +1,6 @@
 set QT_DIR=D:\develop\software\Qt\Qt5.13.2\5.13.2\msvc2017_64\bin
 
-set SRC_DIRS=common app plugins/core libs/PCLEngine libs/cCV_db libs/OpenGLEngine libs/CV_io
+set SRC_DIRS=common app plugins/core libs/VtkEngine libs/cCV_db libs/OpenGLEngine libs/CV_io
 
 echo "Updating translation files"
 

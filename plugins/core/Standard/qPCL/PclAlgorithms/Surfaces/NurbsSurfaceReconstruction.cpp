@@ -7,11 +7,11 @@
 
 #include "NurbsSurfaceReconstruction.h"
 
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/ecvPclTools.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
-#include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/NurbsSurfaceDlg.h"
 
 // CV_DB_LIB
@@ -159,7 +159,7 @@ int NurbsSurfaceReconstruction::compute() {
     if (m_fitBSplineCurve && outCurve->points.size() > 1) {
         PCLCloud::Ptr curve_sm(new PCLCloud);
         TO_PCL_CLOUD(*outCurve, *curve_sm);
-        curvePoly = ecvTools::GetPolylines(curve_sm, "nurbs-curve", true);
+        curvePoly = ecvPclTools::GetPolylines(curve_sm, "nurbs-curve", true);
     }
 
     PCLCloud out_cloud_sm(mesh.cloud);

@@ -7,10 +7,10 @@
 
 #include "GreedyTriangulation.h"
 
-#include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/sm2cc.h>
 
-#include "PclUtils/PCLModules.h"
 #include "dialogs/GreedyTriangulationDlg.h"
 
 // CV_DB_LIB

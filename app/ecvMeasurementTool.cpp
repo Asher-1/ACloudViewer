@@ -37,8 +37,8 @@
 #include <QVBoxLayout>
 #include <QWindow>
 
-#ifdef USE_PCL_BACKEND
-#include <Tools/MeasurementTools/PclMeasurementTools.h>
+#ifdef USE_VTK_BACKEND
+#include <Tools/MeasurementTools/VtkMeasurementTools.h>
 #endif
 
 ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
@@ -171,14 +171,14 @@ ecvMeasurementTool::~ecvMeasurementTool() {
 
 ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
         ecvGenericMeasurementTools::MeasurementType type) {
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
     if (!viewer) {
         CVLog::Error("[ecvMeasurementTool] No visualizer available!");
         return nullptr;
     }
 
-    ecvGenericMeasurementTools* tool = new PclMeasurementTools(viewer, type);
+    ecvGenericMeasurementTools* tool = new VtkMeasurementTools(viewer, type);
     if (tool) {
         if (m_entityContainer.getChildrenNumber() > 0) {
             tool->setInputData(m_entityContainer.getFirstChild());
@@ -195,9 +195,9 @@ ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
             // Apply settings from first existing instance of same type
             ecvGenericMeasurementTools* firstInstance = m_toolInstances[0];
             if (firstInstance->getMeasurementType() == type) {
-#ifdef USE_PCL_BACKEND
-                PclMeasurementTools* firstPclTool =
-                        qobject_cast<PclMeasurementTools*>(firstInstance);
+#ifdef USE_VTK_BACKEND
+                VtkMeasurementTools* firstPclTool =
+                        qobject_cast<VtkMeasurementTools*>(firstInstance);
                 if (firstPclTool) {
                     double r = 0.0, g = 1.0, b = 0.0;
                     if (firstPclTool->getColor(r, g, b)) {
@@ -298,9 +298,9 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
             ecvGenericMeasurementTools* firstInstance = m_toolInstances[0];
             if (firstInstance->getMeasurementType() ==
                 tool->getMeasurementType()) {
-#ifdef USE_PCL_BACKEND
-                PclMeasurementTools* firstPclTool =
-                        qobject_cast<PclMeasurementTools*>(firstInstance);
+#ifdef USE_VTK_BACKEND
+                VtkMeasurementTools* firstPclTool =
+                        qobject_cast<VtkMeasurementTools*>(firstInstance);
                 if (firstPclTool) {
                     double r = 0.0, g = 1.0, b = 0.0;
                     if (firstPclTool->getColor(r, g, b)) {
@@ -717,8 +717,8 @@ void ecvMeasurementTool::updateUIFromTool() {
     m_updatingFromTool = true;
 
     // Update color button and font widget from current tool's properties
-#ifdef USE_PCL_BACKEND
-    PclMeasurementTools* pclTool = qobject_cast<PclMeasurementTools*>(m_tool);
+#ifdef USE_VTK_BACKEND
+    VtkMeasurementTools* pclTool = qobject_cast<VtkMeasurementTools*>(m_tool);
     if (pclTool) {
         // CRITICAL: Always update UI from current tool's actual color
         // Different tool types are completely isolated - UI always reflects
@@ -932,8 +932,8 @@ void ecvMeasurementTool::onColorButtonClicked() {
     // This ensures the color picker shows the correct color for the current
     // tool
     QColor initialColor = QColor(0, 255, 0);  // Default green
-#ifdef USE_PCL_BACKEND
-    PclMeasurementTools* pclTool = qobject_cast<PclMeasurementTools*>(m_tool);
+#ifdef USE_VTK_BACKEND
+    VtkMeasurementTools* pclTool = qobject_cast<VtkMeasurementTools*>(m_tool);
     if (pclTool) {
         double r = 0.0, g = 1.0, b = 0.0;
         if (pclTool->getColor(r, g, b)) {

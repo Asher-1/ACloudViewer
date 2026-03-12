@@ -44,12 +44,12 @@ protected:
     float m_leafSize;
     bool m_useVoxelGrid;
 
-    // PCLUtils::FeatureCloud parameters
+    // PCLModules::FeatureCloud parameters
     int m_maxThreadCount;
     float m_normalRadius;
     float m_featureRadius;
 
-    // PCLUtils::TemplateMatching parameters
+    // PCLModules::TemplateMatching parameters
     int m_maxIterations;
     float m_minSampleDistance;
     float m_maxCorrespondenceDistance;

@@ -6,9 +6,9 @@ project( QPCL_IO_PLUGIN )
 AddPlugin( NAME ${PROJECT_NAME} TYPE io )
 
 include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_SOURCE_DIR}/Filters )
-if (USE_PCL_BACKEND) 
-    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
-    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR}/PclUtils )
+if (USE_VTK_BACKEND) 
+    include_directories( ${QVTK_ENGINE_LIB_SOURCE_DIR} )
+    include_directories( ${QVTK_ENGINE_LIB_SOURCE_DIR}/Visualization )
 endif()
 include_directories( ${PCL_INCLUDE_DIRS} )
 
@@ -19,7 +19,7 @@ add_subdirectory( ui )
 link_directories( ${PCL_LIBRARY_DIRS} )
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS})
 target_link_libraries(	${PROJECT_NAME}
-						QPCL_ENGINE_LIB
+						QVTK_ENGINE_LIB
 						QPCL_PLUGIN_ALGORIGHM_LIB
 						3rdparty_liblzf)
 

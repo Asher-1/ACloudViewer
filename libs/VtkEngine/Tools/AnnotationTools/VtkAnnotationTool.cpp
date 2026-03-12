@@ -1,0 +1,772 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "VtkAnnotationTool.h"
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
+// Local
+#include <Converters/Cc2Vtk.h>
+
+#include "Tools/AnnotationTools/Annotaion.h"
+#include "Tools/Common/ecvTools.h"
+#include "Visualization/VtkVis.h"
+
+// CV_CORE_LIB
+#include <CVGeom.h>
+#include <CVLog.h>
+#include <CVTools.h>
+#include <ClassMap.h>
+
+// CV_DB_LIB
+#include <ecvDisplayTools.h>
+#include <ecvPointCloud.h>
+
+#ifdef USE_TBB
+#include <tbb/parallel_for.h>
+#endif
+
+// VTK
+#include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkRenderWindowInteractor.h>
+
+// QT
+#include <QDir>
+#include <QFileInfo>
+
+#define DEFAULT_POINT 0
+#define SELECTED_POINT -1
+
+using namespace Visualization;
+
+VtkAnnotationTool::VtkAnnotationTool(AnnotationMode mode)
+    : ecvGenericAnnotationTool(mode) {}
+
+VtkAnnotationTool::VtkAnnotationTool(ecvGenericVisualizer3D* viewer,
+                                     AnnotationMode mode)
+    : ecvGenericAnnotationTool(mode) {
+    this->initialize(viewer);
+}
+
+VtkAnnotationTool::~VtkAnnotationTool() {}
+
+////////////////////Initialization///////////////////////////
+void VtkAnnotationTool::initialize(ecvGenericVisualizer3D* viewer) {
+    assert(viewer);
+    setVisualizer(viewer);
+
+    resetMode();
+
+    // init annotation manager
+    m_annoManager.reset(
+            new Annotaions(m_annotationMode == AnnotationMode::BOUNDINGBOX
+                                   ? m_viewer->getRenderWindowInteractor()
+                                   : nullptr));
+
+    m_currPickedAnnotation = nullptr;
+
+    m_baseCloud = nullptr;
+    m_cloudLabel = nullptr;
+}
+
+bool VtkAnnotationTool::loadClassesFromFile(const std::string& file) {
+    std::ifstream input(file.c_str(), std::ios_base::in);
+    if (!input.good()) {
+        CVLog::Error(tr("Cannot open file : %1").arg(file.c_str()));
+        return false;
+    }
+
+    std::vector<std::string> labels;
+    std::string value;
+    while (input >> value) {
+        if (value == "") continue;
+        labels.push_back(value);
+    }
+    CVLog::Print(
+            tr("load %1 classes from %2").arg(labels.size()).arg(file.c_str()));
+    initAnnotationLabels(labels);
+    return true;
+}
+
+void VtkAnnotationTool::initAnnotationLabels(
+        const std::vector<std::string>& labelList) {
+    if (labelList.empty()) return;
+
+    // cache annotation type history
+    std::vector<int> tempIndex;
+    for (auto anno : m_annoManager->getAnnotations()) {
+        tempIndex.push_back(Annotation::GetTypeIndex(anno->getType()));
+    }
+
+    // init label type
+    Annotation::GetTypes()->clear();
+    for (size_t i = 0; i < labelList.size(); ++i) {
+        if (labelList[i] == "") {
+            continue;
+        }
+        Annotation::GetTypes()->push_back(labelList[i]);
+    }
+
+    // update existing annotation type
+    int index = -1;
+
+    std::vector<Annotation*> toBeRemovedAnnotations;
+    for (auto anno : m_annoManager->getAnnotations()) {
+        index++;
+        if (Annotation::GetTypes()->size() - 1 < tempIndex[index]) {
+            toBeRemovedAnnotations.push_back(anno);
+            CVLog::Warning(tr("drop annotaion[%1] which is out of range or "
+                              "current classSets")
+                                   .arg(anno->getType().c_str()));
+            continue;
+        }
+
+        anno->setType(Annotation::GetTypes()->at(tempIndex[index]));
+        m_annoManager->updateBalloonByIndex(index);
+        labelCloudByAnnotation(anno);
+    }
+
+    // remove invalid annotations
+    for (size_t i = 0; i < toBeRemovedAnnotations.size(); ++i) {
+        removeAnnotation(toBeRemovedAnnotations[i]);
+    }
+
+    updateCloud();
+}
+
+void VtkAnnotationTool::toggleInteractor() {
+    if (!m_viewer) return;
+
+    m_viewer->toggleAreaPicking();
+}
+
+void VtkAnnotationTool::getAnnotationLabels(
+        std::vector<std::string>& labelList) {
+    // get label types
+    labelList.clear();
+    for (size_t i = 0; i < Annotation::GetTypes()->size(); ++i) {
+        if (Annotation::GetTypes()->at(i) == "") {
+            continue;
+        }
+        labelList.push_back(Annotation::GetTypes()->at(i));
+    }
+}
+
+bool VtkAnnotationTool::getCurrentAnnotations(std::vector<int>& annos) const {
+    return m_annoManager && m_annoManager->getAnnotations(annos);
+}
+
+bool VtkAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewport) {
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::setInputCloud] ENTRY viewer=%p cloud=%p",
+            static_cast<void*>(m_viewer), static_cast<void*>(cloud));
+
+    m_baseCloud = Converters::Cc2Vtk::PointCloudToPolyData(cloud, false, false,
+                                                           false, false);
+    if (!m_baseCloud || !m_baseCloud->GetPoints() ||
+        m_baseCloud->GetNumberOfPoints() < 1) {
+        CVLog::Warning("[VtkAnnotationTool::setInputCloud] baseCloud invalid");
+        return false;
+    }
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::setInputCloud] polydata OK npts=%lld",
+            m_baseCloud->GetNumberOfPoints());
+
+    // hide origin cloud
+    {
+        m_baseCloudId = cloud->getViewId().toStdString();
+        vtkActor* modelActor = m_viewer->getActorById(m_baseCloudId);
+        CVLog::PrintDebug(
+                "[VtkAnnotationTool::setInputCloud] baseCloudId=%s "
+                "modelActor=%p",
+                m_baseCloudId.c_str(), static_cast<void*>(modelActor));
+        if (modelActor) {
+            modelActor->SetVisibility(0);
+        }
+    }
+
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::setInputCloud] calling preserve(%lld)",
+            m_baseCloud->GetNumberOfPoints());
+    m_annoManager->preserve(
+            static_cast<size_t>(m_baseCloud->GetNumberOfPoints()));
+    CVLog::PrintDebug("[VtkAnnotationTool::setInputCloud] preserve done");
+
+    m_pointcloudFileName = CVTools::FromQString(cloud->getFullPath());
+    QFileInfo fileInfo(cloud->getFullPath());
+
+    QString annoName = fileInfo.baseName();
+    if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+        annoName = fileInfo.baseName() + ".boxes";
+    } else if (m_annotationMode == AnnotationMode::SEMANTICS) {
+        annoName = fileInfo.baseName() + ".labels";
+    }
+
+    QDir dir(fileInfo.absolutePath());
+
+    // 1. load classes file if exists in current file path
+    QString classesFile = dir.absoluteFilePath("Classets.classes");
+    CVLog::PrintDebug("[VtkAnnotationTool::setInputCloud] loading classes...");
+    if (!(QFile::exists(classesFile) &&
+          loadClassesFromFile(CVTools::FromQString(classesFile)))) {
+        this->loadDefaultClasses();
+    }
+    CVLog::PrintDebug("[VtkAnnotationTool::setInputCloud] classes loaded");
+
+    // 2. load labels or boxes annotaion file if exists in curren file path
+    m_annotationFileName = CVTools::FromQString(dir.absoluteFilePath(annoName));
+    {
+        if (QFile::exists(CVTools::ToQString(m_annotationFileName))) {
+            m_annoManager->loadAnnotations(m_annotationFileName,
+                                           m_annotationMode);
+            if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+                CVLog::Print(tr("%1: load %2 boxes")
+                                     .arg(m_annotationFileName.c_str())
+                                     .arg(m_annoManager->getSize()));
+            } else if (m_annotationMode == AnnotationMode::SEMANTICS) {
+                CVLog::Print(tr("%1: load %2 classes")
+                                     .arg(m_annotationFileName.c_str())
+                                     .arg(m_annoManager->getSize()));
+            }
+        }
+    }
+
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::setInputCloud] calling refresh()...");
+    refresh();
+    CVLog::PrintDebug("[VtkAnnotationTool::setInputCloud] DONE");
+    return true;
+}
+
+void VtkAnnotationTool::refresh() {
+    CVLog::PrintDebug("[VtkAnnotationTool::refresh] ENTRY");
+    vtkIdType npts = m_baseCloud->GetNumberOfPoints();
+    m_cloudLabel = new int[static_cast<size_t>(npts)];
+    memset(m_cloudLabel, DEFAULT_POINT,
+           static_cast<size_t>(npts) * sizeof(int));
+    labelCloudByAnnotations();
+    CVLog::PrintDebug("[VtkAnnotationTool::refresh] labels done");
+
+    m_colorHandler.setInputPoints(m_baseCloud->GetPoints());
+    m_colorHandler.setLabel(m_cloudLabel);
+
+    auto scalars = m_colorHandler.getColor();
+    if (scalars) {
+        m_baseCloud->GetPointData()->SetScalars(scalars);
+    }
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::refresh] colors done, adding cloud...");
+    m_viewer->addPointCloud(m_baseCloud, m_annotationCloudId, 0);
+    CVLog::PrintDebug(
+            "[VtkAnnotationTool::refresh] cloud added, showing annos...");
+
+    showAnnotation();
+    CVLog::PrintDebug("[VtkAnnotationTool::refresh] calling updateCloud...");
+    updateCloud();
+    CVLog::PrintDebug("[VtkAnnotationTool::refresh] DONE");
+}
+
+void VtkAnnotationTool::start() {
+    if (m_viewer) {
+        m_viewer->setAreaPickingEnabled(true);
+        m_viewer->setPointPickingEnabled(false);
+
+        if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+            m_viewer->setActorPickingEnabled(true);
+        }
+
+        connect(m_viewer, &VtkVis::interactorPickedEvent, this,
+                &VtkAnnotationTool::pickedEventProcess);
+        connect(m_viewer, &VtkVis::interactorKeyboardEvent, this,
+                &VtkAnnotationTool::keyboardEventProcess);
+        connect(m_viewer, &VtkVis::interactorAreaPickedEvent, this,
+                &VtkAnnotationTool::areaPickingEventProcess);
+    }
+}
+
+void VtkAnnotationTool::stop() {
+    CVLog::PrintDebug("[VtkAnnotationTool::stop] ENTRY");
+    if (m_viewer) {
+        m_viewer->setAreaPickingEnabled(false);
+        m_viewer->setPointPickingEnabled(true);
+
+        if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+            m_viewer->setActorPickingEnabled(false);
+        }
+
+        disconnect(m_viewer, &VtkVis::interactorPickedEvent, this,
+                   &VtkAnnotationTool::pickedEventProcess);
+        disconnect(m_viewer, &VtkVis::interactorKeyboardEvent, this,
+                   &VtkAnnotationTool::keyboardEventProcess);
+        disconnect(m_viewer, &VtkVis::interactorAreaPickedEvent, this,
+                   &VtkAnnotationTool::areaPickingEventProcess);
+    }
+
+    resetMode();
+    CVLog::PrintDebug("[VtkAnnotationTool::stop] calling clear()...");
+    clear();
+    CVLog::PrintDebug("unregister annotations tool successfully");
+}
+
+void VtkAnnotationTool::setVisualizer(ecvGenericVisualizer3D* viewer) {
+    if (viewer) {
+        m_viewer = reinterpret_cast<VtkVis*>(viewer);
+        if (!m_viewer) {
+            CVLog::Warning(
+                    "[VtkAnnotationTool::setVisualizer] viewer is Null!");
+        }
+    } else {
+        CVLog::Warning("[VtkAnnotationTool::setVisualizer] viewer is Null!");
+    }
+}
+//////////////////////////////////////////////////////////////
+
+////////////////////Register callback////////////////////////
+void VtkAnnotationTool::intersectMode() {
+    m_intersectMode = true;
+    m_unionMode = false;
+    m_trimMode = false;
+}
+
+void VtkAnnotationTool::unionMode() {
+    m_intersectMode = false;
+    m_unionMode = true;
+    m_trimMode = false;
+}
+
+void VtkAnnotationTool::trimMode() {
+    m_intersectMode = false;
+    m_unionMode = false;
+    m_trimMode = true;
+}
+
+void VtkAnnotationTool::resetMode() {
+    m_intersectMode = false;
+    m_unionMode = false;
+    m_trimMode = false;
+}
+
+////////////////////Callback function///////////////////////////
+void VtkAnnotationTool::pointPickingProcess(int index) {}
+
+void VtkAnnotationTool::areaPickingEventProcess(
+        const std::vector<int>& new_selected_slice) {
+    if (new_selected_slice.empty() || !m_viewer) return;
+
+    int s = m_viewer->getRenderWindowInteractor()->GetShiftKey();
+    int c = m_viewer->getRenderWindowInteractor()->GetControlKey();
+    int a = m_viewer->getRenderWindowInteractor()->GetAltKey();
+    bool skip = a;
+
+    // remove existed annotated points
+    std::vector<int> selected_slice;
+    filterPickedSlice(new_selected_slice, selected_slice, skip);
+    if (selected_slice.empty()) return;
+
+    if (!m_last_selected_slice.empty()) {
+        defaultColorPoint(m_last_selected_slice);
+    }
+
+    if (s && c || m_intersectMode) {  // intersection
+        m_last_selected_slice = ecvTools::IntersectionVector(
+                m_last_selected_slice, selected_slice);
+    } else if (s || m_unionMode) {  // union
+        m_last_selected_slice =
+                ecvTools::UnionVector(m_last_selected_slice, selected_slice);
+    } else if (c || m_trimMode) {  // remove
+        m_last_selected_slice =
+                ecvTools::DiffVector(m_last_selected_slice, selected_slice);
+    } else {  // new
+        m_last_selected_slice = selected_slice;
+    }
+
+    highlightPoint(m_last_selected_slice);
+    updateCloud();
+}
+
+void VtkAnnotationTool::pickedEventProcess(vtkActor* actor) {
+    if (m_currPickedAnnotation) {
+        m_currPickedAnnotation->unpicked();
+        m_currPickedAnnotation = nullptr;
+    }
+
+    if (!actor) {
+        return;
+    }
+
+    // get the correspond annotation
+    m_currPickedAnnotation = m_annoManager->getAnnotation(actor);
+    if (m_currPickedAnnotation) {
+        m_currPickedAnnotation->picked(m_viewer->getRenderWindowInteractor());
+        emit ecvGenericAnnotationTool::objectPicked(true);
+    } else {
+        emit ecvGenericAnnotationTool::objectPicked(false);
+    }
+}
+
+void VtkAnnotationTool::keyboardEventProcess(const std::string& symKey) {
+    // delete annotation
+    if (symKey == "Delete") {
+        if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+            if (m_currPickedAnnotation) {
+                CVLog::Print(
+                        tr("remove box annotation [%1] with %2 points")
+                                .arg(m_currPickedAnnotation->getType().c_str())
+                                .arg(m_currPickedAnnotation->getSlice()
+                                             .size()));
+                removeAnnotation(m_currPickedAnnotation);
+                updateCloud();
+            }
+        } else if (m_annotationMode == AnnotationMode::SEMANTICS) {
+            if (!m_annoManager->getAnnotations().empty()) {
+                Annotation* anno = m_annoManager->getAnnotations().back();
+                CVLog::Print(tr("remove last annotation [%1] with %2 points")
+                                     .arg(anno->getType().c_str())
+                                     .arg(anno->getSlice().size()));
+                removeAnnotation(anno);
+                updateCloud();
+            } else {
+                CVLog::Warning("no annotation exists!");
+            }
+        }
+    }
+}
+///////////////////////////////////////////////////////////////
+
+////////////////////Core processing////////////////////////////
+void VtkAnnotationTool::filterPickedSlice(const std::vector<int>& inSlices,
+                                          std::vector<int>& outSlices,
+                                          bool skip) {
+    if (!outSlices.empty()) {
+        outSlices.clear();
+    }
+
+    for (auto& x : inSlices) {
+        if (m_annoManager->getLabelByIndex(x) == DEFAULT_POINT || skip) {
+            outSlices.push_back(x);
+        }
+    }
+}
+
+void VtkAnnotationTool::fastLabelCloud(const std::vector<int>& inSlices,
+                                       int label) {
+    int num = static_cast<int>(inSlices.size());
+    if (!m_cloudLabel || !m_baseCloud || num == 0) return;
+
+    const int max_idx = static_cast<int>(m_baseCloud->GetNumberOfPoints());
+#ifdef USE_TBB
+    tbb::parallel_for(0, num,
+                      [&](int dataIndex)
+#else
+
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
+    for (int dataIndex = 0; dataIndex < num; ++dataIndex)
+#endif
+                      {
+                          int idx = inSlices[dataIndex];
+                          if (idx >= 0 && idx < max_idx) {
+                              m_cloudLabel[idx] = label;
+                          }
+                      }
+#ifdef USE_TBB
+    );
+#endif
+}
+
+void VtkAnnotationTool::changeAnnotationType(const std::string& type) {
+    // create annotation from last selected slice
+    if (m_last_selected_slice.size() > 3) {
+        createAnnotationFromSelectPoints(type);
+    } else {
+        // show annotation interactor if current picked annotation is not None
+        if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+            if (m_currPickedAnnotation) {
+                CVLog::Print(
+                        tr("Change current picked annotation type from [%1] to "
+                           "[%2].")
+                                .arg(m_currPickedAnnotation->getType().c_str(),
+                                     type.c_str()));
+                changeAnnotationType(m_currPickedAnnotation, type);
+            } else {
+                CVLog::Warning(
+                        tr("No box picked now! Please pick one box and try "
+                           "again!"));
+            }
+        } else if (m_annotationMode == AnnotationMode::SEMANTICS) {
+            std::vector<Annotation*>& annos = m_annoManager->getAnnotations();
+            if (!annos.empty() && annos.back()->getType() != type) {
+                CVLog::Print(tr("Change last annotation type from [%1] to [%2]")
+                                     .arg(annos.back()->getType().c_str(),
+                                          type.c_str()));
+                changeAnnotationType(annos.back(), type);
+            } else {
+                CVLog::Warning(
+                        tr("No annotation exists now! Please create one and "
+                           "try again!"));
+            }
+        }
+    }
+}
+
+void VtkAnnotationTool::selectExistedAnnotation(const std::string& type) {
+    if (m_annotationMode == AnnotationMode::SEMANTICS) {
+        m_lastSelectedAnnotations.clear();
+        m_annoManager->getAnnotations(type, m_lastSelectedAnnotations);
+        if (m_lastSelectedAnnotations.empty()) {
+            CVLog::Warning(tr("Cannot find annotation type [%1], ignore it!")
+                                   .arg(type.c_str()));
+            return;
+        } else {
+            m_last_selected_slice.clear();
+            for (Annotation* anno : m_lastSelectedAnnotations) {
+                if (anno) {
+                    m_last_selected_slice.insert(m_last_selected_slice.end(),
+                                                 anno->getSlice().begin(),
+                                                 anno->getSlice().end());
+                    m_annoManager->remove(anno);
+                }
+            }
+
+            if (m_last_selected_slice.empty()) {
+                return;
+            }
+
+            highlightPoint(m_last_selected_slice);
+            updateCloud();
+        }
+    }
+}
+
+void VtkAnnotationTool::changeAnnotationType(Annotation* anno,
+                                             const std::string& type) {
+    if (!anno) return;
+
+    anno->setType(type);
+    m_annoManager->updateBalloonByAnno(anno);
+    m_annoManager->updateLabels(anno, false);
+    showAnnotation(anno);
+    updateCloud();
+}
+
+void VtkAnnotationTool::exportAnnotations() {
+    m_annoManager->saveAnnotations(m_annotationFileName, int(m_annotationMode));
+    CVLog::Print(tr("Annotations file has been saved to %1")
+                         .arg(CVTools::ToQString(m_annotationFileName)));
+}
+
+void VtkAnnotationTool::createAnnotationFromSelectPoints(std::string type) {
+    if (m_last_selected_slice.size() > 3) {
+        Annotation* anno = nullptr;
+        if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+            anno = new Annotation(m_baseCloud->GetPoints(),
+                                  m_last_selected_slice, type);
+        } else if (m_annotationMode == AnnotationMode::SEMANTICS) {
+            anno = new Annotation(m_last_selected_slice, type);
+        }
+
+        m_annoManager->add(anno);
+        m_last_selected_slice.clear();
+        showAnnotation(anno);
+        updateCloud();
+    } else {
+        CVLog::Warning(tr(
+                "No points selected or selected points number is less than 3"));
+    }
+}
+
+void VtkAnnotationTool::labelCloudByAnnotations() {
+    if (!m_cloudLabel) return;
+    for (auto anno : m_annoManager->getAnnotations()) {
+        labelCloudByAnnotation(anno);
+    }
+}
+
+void VtkAnnotationTool::labelCloudByAnnotation(const Annotation* anno) {
+    if (!anno || anno->getSlice().empty()) return;
+    fastLabelCloud(anno->getSlice(), Annotation::GetTypeIndex(anno->getType()));
+}
+
+void VtkAnnotationTool::resetCloudByAnnotation(const Annotation* anno) {
+    if (!m_viewer || !m_viewer->contains(m_annotationCloudId) || !anno ||
+        anno->getSlice().empty()) {
+        return;
+    }
+
+    fastLabelCloud(anno->getSlice(), DEFAULT_POINT);
+}
+
+void VtkAnnotationTool::updateCloudLabel(const std::string& type) {
+    if (!m_cloudLabel || m_last_selected_slice.size() < 1) return;
+
+    fastLabelCloud(m_last_selected_slice, Annotation::GetTypeIndex(type));
+}
+
+void VtkAnnotationTool::loadDefaultClasses() {
+    std::vector<std::string> labels;
+    for (auto it : ClassMap::SemanticMap) {
+        labels.push_back(it.second);
+    }
+
+    initAnnotationLabels(labels);
+}
+///////////////////////////////////////////////////////////////
+
+////////////////////Visualization///////////////////////////
+void VtkAnnotationTool::highlightPoint(std::vector<int>& slice) {
+    if (slice.size() < 1) return;
+
+    fastLabelCloud(slice, SELECTED_POINT);
+}
+
+void VtkAnnotationTool::defaultColorPoint(std::vector<int>& slice) {
+    if (!m_viewer || !m_viewer->contains(m_annotationCloudId)) return;
+
+    if (slice.empty()) {
+        if (m_cloudLabel && m_baseCloud) {
+            memset(m_cloudLabel, DEFAULT_POINT,
+                   static_cast<size_t>(m_baseCloud->GetNumberOfPoints()) *
+                           sizeof(int));
+        }
+        return;
+    }
+
+    fastLabelCloud(slice, DEFAULT_POINT);
+}
+
+void VtkAnnotationTool::updateCloud() {
+    if (!m_viewer || !m_viewer->contains(m_annotationCloudId) || !m_baseCloud) {
+        return;
+    }
+    auto scalars = m_colorHandler.getColor();
+    if (scalars) {
+        m_baseCloud->GetPointData()->SetScalars(scalars);
+    }
+    m_baseCloud->Modified();
+    m_viewer->updatePointCloud(m_baseCloud, m_annotationCloudId);
+    CVLog::PrintDebug("[VtkAnnotationTool::updateCloud] calling UpdateScreen");
+    ecvDisplayTools::UpdateScreen();
+    CVLog::PrintDebug("[VtkAnnotationTool::updateCloud] UpdateScreen done");
+}
+
+void VtkAnnotationTool::setPointSize(const std::string& viewID, int viewport) {
+    if (!m_viewer) return;
+    m_viewer->setPointCloudRenderingProperties(
+            Visualization::VtkVis::PCL_VISUALIZER_POINT_SIZE, 5, viewID,
+            viewport);
+}
+
+void VtkAnnotationTool::showAnnotation() {
+    for (auto anno : m_annoManager->getAnnotations()) {
+        showAnnotation(anno);
+    }
+}
+
+void VtkAnnotationTool::hideAnnotation() {
+    for (auto anno : m_annoManager->getAnnotations()) {
+        hideAnnotation(anno);
+    }
+}
+
+void VtkAnnotationTool::showOrigin() {
+    if (!m_viewer) return;
+
+    vtkActor* originActor = m_viewer->getActorById(m_baseCloudId);
+    if (originActor) {
+        originActor->SetVisibility(1);
+    }
+
+    vtkActor* annotatedActor = m_viewer->getActorById(m_annotationCloudId);
+    if (annotatedActor) {
+        annotatedActor->SetVisibility(0);
+    }
+}
+
+void VtkAnnotationTool::hideOrigin() {
+    vtkActor* originActor = m_viewer->getActorById(m_baseCloudId);
+    if (originActor) {
+        originActor->SetVisibility(0);
+    }
+
+    vtkActor* annotatedActor = m_viewer->getActorById(m_annotationCloudId);
+    if (annotatedActor) {
+        annotatedActor->SetVisibility(1);
+    }
+}
+
+void VtkAnnotationTool::reset() {
+    removeAnnotation();
+    m_currPickedAnnotation = nullptr;
+    m_last_selected_slice.clear();
+}
+
+void VtkAnnotationTool::clear() {
+    CVLog::PrintDebug("[VtkAnnotationTool::clear] ENTRY viewer=%p",
+                      static_cast<void*>(m_viewer));
+    if (!m_viewer) return;
+
+    CVLog::PrintDebug("[VtkAnnotationTool::clear] removePointCloud...");
+    m_viewer->removePointCloud(m_annotationCloudId);
+    CVLog::PrintDebug("[VtkAnnotationTool::clear] reset()...");
+    reset();
+    CVLog::PrintDebug("[VtkAnnotationTool::clear] release()...");
+    m_annoManager->release();
+
+    // show origin cloud
+    {
+        vtkActor* modelActor = m_viewer->getActorById(m_baseCloudId);
+        if (modelActor) {
+            modelActor->SetVisibility(1);
+        }
+    }
+
+    if (m_cloudLabel) {
+        delete[] m_cloudLabel;
+        m_cloudLabel = nullptr;
+    }
+    CVLog::PrintDebug("[VtkAnnotationTool::clear] DONE");
+}
+
+void VtkAnnotationTool::showAnnotation(const Annotation* anno) {
+    if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+        if (!m_viewer) return;
+        m_viewer->addActorToRenderer(anno->getActor());
+    }
+    labelCloudByAnnotation(anno);
+}
+
+void VtkAnnotationTool::removeAnnotation() {
+    hideAnnotation();
+    m_annoManager->clear();
+    std::vector<int> temp;
+    defaultColorPoint(temp);
+    updateCloud();
+}
+
+void VtkAnnotationTool::removeAnnotation(Annotation* anno) {
+    hideAnnotation(anno);
+    m_annoManager->remove(anno);
+}
+
+void VtkAnnotationTool::hideAnnotation(Annotation* anno) {
+    if (m_currPickedAnnotation) {
+        m_currPickedAnnotation->unpicked();
+        m_currPickedAnnotation = nullptr;
+    }
+
+    resetCloudByAnnotation(anno);
+
+    if (m_annotationMode == AnnotationMode::BOUNDINGBOX) {
+        if (!m_viewer) return;
+        m_viewer->removeActorFromRenderer(anno->getActor());
+    }
+}
+///////////////////////////////////////////////////////////////

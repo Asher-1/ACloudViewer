@@ -1726,7 +1726,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                                 this->getViewId());
         param.center = position;
         // CRITICAL: m_labelROI uses logical pixels (calculated from
-        // logicalW/logicalH) PCLVis::addCaption divides pos2D by
+        // logicalW/logicalH) VtkVis::addCaption divides pos2D by
         // getRenderWindow()->GetSize() to get relative coordinates
         //
         // Coordinate system analysis:
@@ -1761,7 +1761,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         // Convert from Qt coordinate system (top-left) to VTK coordinate system
         // (bottom-left) VTK expects Y coordinate where 0 is at bottom, Qt has
         // Y=0 at top So we need to invert Y: VTK_Y = windowHeight - Qt_Y Since
-        // PCLVis::addCaption divides by GetSize(), we pass pixel coordinates If
+        // VtkVis::addCaption divides by GetSize(), we pass pixel coordinates If
         // GetSize() returns logical pixels (Qt convention), this works
         // correctly
         float vtkY = logicalH - posY;

@@ -17,7 +17,7 @@
 #include <ecvDisplayTools.h>
 #include <ecvGenericCameraTool.h>
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
 #include <Tools/CameraTools/EditCameraTool.h>
 #endif
 
@@ -324,7 +324,7 @@ void ecvCustomViewpointButtonDlg::importConfigurations() {
 
     ecvDisplayTools::LoadCameraParameters(CVTools::FromQString(filename));
 
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     EditCameraTool::UpdateCameraInfo();
 #else
     CVLog::Warning(
@@ -375,7 +375,7 @@ void ecvCustomViewpointButtonDlg::appendRow() {
     const int numRows = this->ui->rowCount();
     assert(numRows < MAXIMUM_NUMBER_OF_ITEMS);
     this->ui->setNumberOfRows(numRows + 1);
-#ifdef USE_PCL_BACKEND
+#ifdef USE_VTK_BACKEND
     EditCameraTool::UpdateCameraInfo();
 #else
     CVLog::Warning(
