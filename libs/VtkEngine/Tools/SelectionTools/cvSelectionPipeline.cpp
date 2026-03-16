@@ -37,16 +37,20 @@
 
 // VTK
 #include <vtkActor.h>
+#include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkDataObject.h>
 #include <vtkDataSet.h>
+#include <vtkExtractSelectedFrustum.h>
 #include <vtkIdTypeArray.h>
 #include <vtkInformation.h>
 #include <vtkIntArray.h>
 #include <vtkMapper.h>
+#include <vtkPlanes.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkProp.h>
+#include <vtkPropCollection.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkSelection.h>
@@ -902,6 +906,141 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
 }
 
 //-----------------------------------------------------------------------------
+// Frustum-based through-selection (ParaView-style)
+// Reference: ParaView's vtkSMRenderViewProxy::SelectFrustumInternal()
+//-----------------------------------------------------------------------------
+
+cvSelectionData cvSelectionPipeline::performFrustumSelection(
+        const int region[4], FieldAssociation fieldAssoc) {
+    if (!m_viewer || !m_renderer) {
+        CVLog::Warning(
+                "[cvSelectionPipeline::performFrustumSelection] "
+                "Invalid viewer or renderer");
+        return cvSelectionData();
+    }
+
+    int x0 = std::min(region[0], region[2]);
+    int y0 = std::min(region[1], region[3]);
+    int x1 = std::max(region[0], region[2]);
+    int y1 = std::max(region[1], region[3]);
+
+    if (x0 == x1 || y0 == y1) {
+        CVLog::Warning(
+                "[cvSelectionPipeline::performFrustumSelection] "
+                "Zero-area selection region");
+        return cvSelectionData();
+    }
+
+    // Convert screen rectangle to 8 world-space frustum corners
+    // (4 near-plane corners at z=0, 4 far-plane corners at z=1)
+    double frustum[32];
+    int idx = 0;
+    int corners[4][2] = {{x0, y0}, {x0, y1}, {x1, y0}, {x1, y1}};
+    for (auto& corner : corners) {
+        for (int z = 0; z <= 1; ++z) {
+            m_renderer->SetDisplayPoint(corner[0], corner[1], z);
+            m_renderer->DisplayToWorld();
+            double* wp = m_renderer->GetWorldPoint();
+            if (wp[3] != 0.0) {
+                frustum[idx * 4 + 0] = wp[0] / wp[3];
+                frustum[idx * 4 + 1] = wp[1] / wp[3];
+                frustum[idx * 4 + 2] = wp[2] / wp[3];
+            } else {
+                frustum[idx * 4 + 0] = wp[0];
+                frustum[idx * 4 + 1] = wp[1];
+                frustum[idx * 4 + 2] = wp[2];
+            }
+            frustum[idx * 4 + 3] = 1.0;
+            ++idx;
+        }
+    }
+
+    auto extractor = vtkSmartPointer<vtkExtractSelectedFrustum>::New();
+    extractor->CreateFrustum(frustum);
+
+    cvSelectionData result;
+    result = cvSelectionData(QVector<qint64>(),
+                             fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                     ? cvSelectionData::CELLS
+                                     : cvSelectionData::POINTS);
+
+    QVector<qint64> allIds;
+    vtkActor* bestActor = nullptr;
+    vtkPolyData* bestPolyData = nullptr;
+    vtkIdType bestCount = 0;
+
+    auto props = m_renderer->GetViewProps();
+    props->InitTraversal();
+    while (auto* prop = props->GetNextProp()) {
+        auto* actor = vtkActor::SafeDownCast(prop);
+        if (!actor || !actor->GetPickable() || !actor->GetVisibility() ||
+            !actor->GetMapper())
+            continue;
+
+        auto* input = actor->GetMapper()->GetInput();
+        if (!input) continue;
+        auto* ds = vtkDataSet::SafeDownCast(input);
+        if (!ds) continue;
+
+        double bounds[6];
+        ds->GetBounds(bounds);
+        if (!extractor->OverallBoundsTest(bounds)) continue;
+
+        vtkIdType startOffset = allIds.size();
+
+        if (fieldAssoc == FIELD_ASSOCIATION_POINTS) {
+            for (vtkIdType i = 0; i < ds->GetNumberOfPoints(); ++i) {
+                double pt[3];
+                ds->GetPoint(i, pt);
+                if (extractor->GetFrustum()->EvaluateFunction(pt) <= 0.0) {
+                    allIds.append(static_cast<qint64>(i));
+                }
+            }
+        } else {
+            for (vtkIdType i = 0; i < ds->GetNumberOfCells(); ++i) {
+                double bounds_cell[6];
+                ds->GetCell(i)->GetBounds(bounds_cell);
+                double center[3] = {(bounds_cell[0] + bounds_cell[1]) * 0.5,
+                                    (bounds_cell[2] + bounds_cell[3]) * 0.5,
+                                    (bounds_cell[4] + bounds_cell[5]) * 0.5};
+                if (extractor->GetFrustum()->EvaluateFunction(center) <= 0.0) {
+                    allIds.append(static_cast<qint64>(i));
+                }
+            }
+        }
+
+        vtkIdType selectedInActor = allIds.size() - startOffset;
+        if (selectedInActor > bestCount) {
+            bestCount = selectedInActor;
+            bestActor = actor;
+            bestPolyData = vtkPolyData::SafeDownCast(ds);
+        }
+    }
+
+    if (allIds.isEmpty()) {
+        CVLog::PrintVerbose(
+                "[cvSelectionPipeline::performFrustumSelection] "
+                "No items selected in frustum");
+        return cvSelectionData();
+    }
+
+    result = cvSelectionData(allIds, fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                             ? cvSelectionData::CELLS
+                                             : cvSelectionData::POINTS);
+
+    if (bestActor) {
+        result.setActorInfo(bestActor, bestPolyData);
+    }
+
+    CVLog::PrintVerbose(
+            "[cvSelectionPipeline] Frustum selection: %d %s selected",
+            allIds.size(),
+            fieldAssoc == FIELD_ASSOCIATION_CELLS ? "cells" : "points");
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
 // Helper method to reduce code duplication
 //-----------------------------------------------------------------------------
 
@@ -942,6 +1081,85 @@ cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
 
     return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS,
                                   "selectPointsOnSurface");
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::selectCellsInFrustum(const int region[4]) {
+    return performFrustumSelection(region, FIELD_ASSOCIATION_CELLS);
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::selectPointsInFrustum(
+        const int region[4]) {
+    return performFrustumSelection(region, FIELD_ASSOCIATION_POINTS);
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::selectBlocksOnSurface(
+        const int region[4]) {
+    cvSelectionData cellSel = selectCellsOnSurface(region);
+    return expandToBlockSelection(cellSel);
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::selectBlocksInFrustum(
+        const int region[4]) {
+    cvSelectionData cellSel = selectCellsInFrustum(region);
+    return expandToBlockSelection(cellSel);
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::expandToBlockSelection(
+        const cvSelectionData& partialSelection) {
+    if (partialSelection.isEmpty() || !partialSelection.hasActorInfo()) {
+        return partialSelection;
+    }
+
+    QVector<qint64> allCellIds;
+    vtkActor* primaryActor = nullptr;
+    vtkPolyData* primaryPolyData = nullptr;
+    vtkIdType primaryCount = 0;
+
+    for (const auto& info : partialSelection.actorInfos()) {
+        if (!info.actor || !info.actor->GetMapper()) continue;
+
+        auto* ds =
+                vtkDataSet::SafeDownCast(info.actor->GetMapper()->GetInput());
+        if (!ds) continue;
+
+        vtkIdType numCells = ds->GetNumberOfCells();
+        vtkIdType startOffset = allCellIds.size();
+        for (vtkIdType i = 0; i < numCells; ++i) {
+            allCellIds.append(static_cast<qint64>(i));
+        }
+
+        if (numCells > primaryCount) {
+            primaryCount = numCells;
+            primaryActor = info.actor;
+            primaryPolyData = vtkPolyData::SafeDownCast(ds);
+        }
+    }
+
+    if (allCellIds.isEmpty()) {
+        return partialSelection;
+    }
+
+    cvSelectionData result(allCellIds, cvSelectionData::CELLS);
+    if (primaryActor) {
+        result.setActorInfo(primaryActor, primaryPolyData);
+    }
+
+    for (const auto& info : partialSelection.actorInfos()) {
+        if (info.actor != primaryActor) {
+            result.addActorInfo(info);
+        }
+    }
+
+    CVLog::Print(
+            "[cvSelectionPipeline] Block selection: %d actors, %d total cells",
+            partialSelection.actorCount(), allCellIds.size());
+
+    return result;
 }
 
 //-----------------------------------------------------------------------------

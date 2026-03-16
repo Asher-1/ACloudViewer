@@ -25,6 +25,7 @@
 #include "cvViewSelectionManager.h"
 
 // LOCAL
+#include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "Visualization/VtkVis.h"
 
 // CV_CORE_LIB
@@ -780,6 +781,10 @@ void cvRenderViewSelectionReaction::selectionChanged(vtkObject* caller,
 
         case SelectionMode::SELECT_BLOCKS:
             selectBlock(region, selectionModifier);
+            break;
+
+        case SelectionMode::SELECT_FRUSTUM_BLOCKS:
+            selectFrustumBlocks(region, selectionModifier);
             break;
 
         case SelectionMode::ZOOM_TO_BOX:
@@ -1555,17 +1560,51 @@ void cvRenderViewSelectionReaction::selectPointsOnSurface(
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::selectFrustumCells(int region[4],
                                                        int selectionModifier) {
-    // Frustum selection implementation
-    // For now, use surface selection as fallback
-    selectCellsOnSurface(region, selectionModifier);
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (!pipeline) {
+        CVLog::Warning(
+                "[cvRenderViewSelectionReaction::selectFrustumCells] "
+                "No pipeline available");
+        return;
+    }
+
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+    if (highlighter) {
+        highlighter->setHighlightsVisible(false);
+    }
+
+    cvSelectionData selection = pipeline->selectCellsInFrustum(region);
+
+    if (highlighter) {
+        highlighter->setHighlightsVisible(true);
+    }
+
+    finalizeSelection(selection, selectionModifier, "FrustumCells");
 }
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::selectFrustumPoints(int region[4],
                                                         int selectionModifier) {
-    // Frustum selection implementation
-    // For now, use surface selection as fallback
-    selectPointsOnSurface(region, selectionModifier);
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (!pipeline) {
+        CVLog::Warning(
+                "[cvRenderViewSelectionReaction::selectFrustumPoints] "
+                "No pipeline available");
+        return;
+    }
+
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+    if (highlighter) {
+        highlighter->setHighlightsVisible(false);
+    }
+
+    cvSelectionData selection = pipeline->selectPointsInFrustum(region);
+
+    if (highlighter) {
+        highlighter->setHighlightsVisible(true);
+    }
+
+    finalizeSelection(selection, selectionModifier, "FrustumPoints");
 }
 
 //-----------------------------------------------------------------------------
@@ -1684,8 +1723,51 @@ void cvRenderViewSelectionReaction::selectPolygonPoints(vtkIntArray* polygon,
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::selectBlock(int region[4],
                                                 int selectionModifier) {
-    // Block selection - for now delegate to cell selection
-    selectCellsOnSurface(region, selectionModifier);
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (!pipeline) {
+        CVLog::Warning(
+                "[cvRenderViewSelectionReaction::selectBlock] "
+                "No pipeline available");
+        return;
+    }
+
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+    if (highlighter) {
+        highlighter->setHighlightsVisible(false);
+    }
+
+    cvSelectionData selection = pipeline->selectBlocksOnSurface(region);
+
+    if (highlighter) {
+        highlighter->setHighlightsVisible(true);
+    }
+
+    finalizeSelection(selection, selectionModifier, "BlockSurface");
+}
+
+//-----------------------------------------------------------------------------
+void cvRenderViewSelectionReaction::selectFrustumBlocks(int region[4],
+                                                        int selectionModifier) {
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (!pipeline) {
+        CVLog::Warning(
+                "[cvRenderViewSelectionReaction::selectFrustumBlocks] "
+                "No pipeline available");
+        return;
+    }
+
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+    if (highlighter) {
+        highlighter->setHighlightsVisible(false);
+    }
+
+    cvSelectionData selection = pipeline->selectBlocksInFrustum(region);
+
+    if (highlighter) {
+        highlighter->setHighlightsVisible(true);
+    }
+
+    finalizeSelection(selection, selectionModifier, "FrustumBlocks");
 }
 
 //-----------------------------------------------------------------------------
@@ -1809,14 +1891,8 @@ void cvRenderViewSelectionReaction::restoreStyle() {
         // Fallback: If no previous style saved, try to get VtkVis's default
         // style
         Visualization::VtkVis* pclVis = getVtkVis();
-        if (pclVis) {
-            // VtkVis typically uses vtkInteractorStyleTrackballCamera
-            auto defaultStyle =
-                    vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-            if (m_renderer) {
-                defaultStyle->SetDefaultRenderer(m_renderer);
-            }
-            m_interactor->SetInteractorStyle(defaultStyle);
+        if (pclVis && pclVis->get3DInteractorStyle()) {
+            m_interactor->SetInteractorStyle(pclVis->get3DInteractorStyle());
         }
     }
     m_selectionStyle = nullptr;
@@ -1825,8 +1901,7 @@ void cvRenderViewSelectionReaction::restoreStyle() {
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::setRubberBand3DStyle(
         bool renderOnMouseMove) {
-    // Helper: Create and set vtkInteractorStyleRubberBand3D
-    // This style: Left=RubberBand, Middle=Pan, Right=Zoom (NO rotation!)
+    // Left=Select, Right=Rotate, Shift+Right=Zoom, Middle=Pan, Scroll=Zoom
     auto style = vtkSmartPointer<vtkInteractorStyleRubberBand3D>::New();
     if (!renderOnMouseMove) {
         style->RenderOnMouseMoveOff();
@@ -1842,8 +1917,8 @@ void cvRenderViewSelectionReaction::setRubberBand3DStyle(
 void cvRenderViewSelectionReaction::setupInteractorStyle() {
     // Reference: pqRenderViewSelectionReaction::beginSelection() lines 338-437
     // ParaView uses INTERACTION_MODE_SELECTION which maps to
-    // vtkInteractorStyleRubberBand3D This style: Left=RubberBand, Middle=Pan,
-    // Right=Zoom (NO rotation!)
+    // vtkInteractorStyleRubberBand3D
+    // Bindings: Left=Select, Right=Rotate, Shift+Right=Zoom, Middle=Pan
 
     if (!m_interactor) return;
     storeCurrentStyle();

@@ -33,6 +33,11 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix image slice display orientation in 2D viewer
         - Reset camera ViewUp to (0,1,0) so image is always upright regardless of 3D scene rotation
         - Use ResetCameraClippingRange() instead of ResetCamera() to preserve configured camera parameters
+    - Fix bbox selection block issues
+    - Fix interactor style shortcuts conflicts issues 
+    - Fix interactor Usertimer issues with mouse
+    - Fix select points/cells through tools issues
+    - Fix select block through or on surface tools issues
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations

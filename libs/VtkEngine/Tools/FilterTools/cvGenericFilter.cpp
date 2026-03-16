@@ -326,6 +326,7 @@ void cvGenericFilter::showOutline(bool show) {
 
         VtkUtils::vtkInitOnce(m_outlineActor);
         m_outlineActor->SetMapper(mapper);
+        m_outlineActor->PickableOff();
         addActor(m_outlineActor);
     }
 
