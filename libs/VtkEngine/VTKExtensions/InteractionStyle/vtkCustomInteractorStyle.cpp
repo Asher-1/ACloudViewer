@@ -14,6 +14,8 @@
 
 #include <FileSystem.h>
 
+#include <cctype>
+
 #include "vtkCameraManipulator.h"
 
 // CV_CORE_LIB
@@ -62,6 +64,7 @@ vtkCustomInteractorStyle::vtkCustomInteractorStyle()
       lut_actor_id_("") {
     this->CenterOfRotation[0] = this->CenterOfRotation[1] =
             this->CenterOfRotation[2] = 0;
+    this->UseTimers = 0;
 }
 
 //-------------------------------------------------------------------------
@@ -121,7 +124,9 @@ void vtkCustomInteractorStyle::OnChar() {
                       Interactor->GetEventPosition()[1]);
     if (Interactor->GetKeyCode() >= '0' && Interactor->GetKeyCode() <= '9')
         return;
-    std::string key(Interactor->GetKeySym());
+    const char* keySym = Interactor->GetKeySym();
+    if (!keySym) return;
+    std::string key(keySym);
     if (key.find("XF86ZoomIn") != std::string::npos)
         zoomIn();
     else if (key.find("XF86ZoomOut") != std::string::npos)
@@ -140,7 +145,14 @@ void vtkCustomInteractorStyle::OnChar() {
             break;
     }
 
-    switch (Interactor->GetKeyCode()) {
+    // Use keySym for matching because GetKeyCode() returns control characters
+    // when Ctrl is held (e.g. Ctrl+J = ASCII 10, not 'j')
+    char keyChar = Interactor->GetKeyCode();
+    if (key.size() == 1) {
+        keyChar = key[0];
+    }
+
+    switch (keyChar) {
         case 'a':
         case 'A':
         case 'h':
@@ -157,8 +169,8 @@ void vtkCustomInteractorStyle::OnChar() {
         case 'G':
         case 'o':
         case 'O':
-        case 'u':
-        case 'U':
+        case 'k':
+        case 'K':
         case 'q':
         case 'Q':
         case 'x':
@@ -227,324 +239,85 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             break;
     }
 
-    // Save camera parameters (Ctrl+S)
-    if ((Interactor->GetKeySym()[0] == 'S' ||
-         Interactor->GetKeySym()[0] == 's') &&
-        ctrl && !alt && !shift) {
-        if (camera_file_.empty()) {
-            vtkRenderer* ren = Interactor->GetRenderWindow()
-                                       ->GetRenderers()
-                                       ->GetFirstRenderer();
-            if (ren) {
-                vtkCamera* cam = ren->GetActiveCamera();
-                if (cam) {
-                    cam->GetPosition(saved_cam_pos_);
-                    cam->GetFocalPoint(saved_cam_focal_);
-                    cam->GetViewUp(saved_cam_viewup_);
-                    cam->GetClippingRange(saved_cam_clip_);
-                    camera_saved_ = true;
-                    CVLog::Print(
-                            "Camera parameters saved, you can press CTRL + R "
-                            "to restore.");
-                }
-            }
-        } else {
-            if (saveCameraParameters(camera_file_)) {
-                CVLog::Print(
-                        "Save camera parameters to %s, you can press CTRL + R "
-                        "to restore.",
-                        camera_file_.c_str());
-            } else {
-                CVLog::Error(
-                        "[vtkCustomInteractorStyle] Can't save camera "
-                        "parameters to file: %s.",
-                        camera_file_.c_str());
-            }
-        }
-    }
+    const char* keySym = Interactor->GetKeySym();
+    if (!keySym) return;
+    std::string key(keySym);
 
-    // Restore camera parameters (Ctrl+R)
-    if ((Interactor->GetKeySym()[0] == 'R' ||
-         Interactor->GetKeySym()[0] == 'r') &&
-        ctrl && !alt && !shift) {
-        if (camera_file_.empty()) {
-            if (camera_saved_) {
-                vtkRenderer* ren = Interactor->GetRenderWindow()
-                                           ->GetRenderers()
-                                           ->GetFirstRenderer();
-                if (ren) {
-                    vtkCamera* cam = ren->GetActiveCamera();
-                    if (cam) {
-                        cam->SetPosition(saved_cam_pos_);
-                        cam->SetFocalPoint(saved_cam_focal_);
-                        cam->SetViewUp(saved_cam_viewup_);
-                        cam->SetClippingRange(saved_cam_clip_);
-                        ren->ResetCameraClippingRange();
-                        ren->Render();
-                    }
-                }
-                CVLog::Print("Camera parameters restored.");
-            } else {
-                CVLog::Print("No camera parameters saved for restoring.");
-            }
-        } else {
-            if (cloudViewer::utility::filesystem::FileExists(camera_file_)) {
-                if (loadCameraParameters(camera_file_)) {
-                    CVLog::Print("Restore camera parameters from %s.",
-                                 camera_file_.c_str());
-                } else {
-                    CVLog::Error(
-                            "Can't restore camera parameters from file: %s.",
-                            camera_file_.c_str());
-                }
-            } else {
-                CVLog::Print("No camera parameters saved in %s for restoring.",
-                             camera_file_.c_str());
-            }
-        }
-    }
-
-    std::string key(Interactor->GetKeySym());
     if (key.find("XF86ZoomIn") != std::string::npos)
         zoomIn();
     else if (key.find("XF86ZoomOut") != std::string::npos)
         zoomOut();
 
-    switch (Interactor->GetKeyCode()) {
+    // Use keySym for single-char keys because GetKeyCode() returns control
+    // characters when Ctrl is held (e.g. Ctrl+J = ASCII 10, not 'j')
+    char keyChar = Interactor->GetKeyCode();
+    if (key.size() == 1) {
+        keyChar = key[0];
+    }
+
+    // Delegate modifier-based shortcuts to handleShortcut (single source of
+    // truth for Ctrl+Alt and Ctrl+Shift combos). This avoids duplicating the
+    // logic that is also called from QVTKWidgetCustom::event().
+    if (ctrl || alt) {
+        handleShortcut(keyChar, ctrl, alt, shift, Interactor);
+    }
+
+    switch (keyChar) {
         case 'h':
         case 'H': {
-            CVLog::Print(
-                    "| Help:"
-                    "-------"
-                    "          CTRL + SHIFT + p, P   : switch to a point-based "
-                    "representation"
-                    "          CTRL + SHIFT + w, W   : switch to a "
-                    "wireframe-based "
-                    "representation (where available)"
-                    "          CTRL + SHIFT + s, S   : switch to a "
-                    "surface-based "
-                    "representation (where available)"
-                    ""
-                    "          CTRL + ALT + j, J   : take a .PNG snapshot of "
-                    "the current "
-                    "window view"
-                    "          CTRL + ALT + c, C   : display current "
-                    "camera/window "
-                    "parameters"
-                    "          f, F   : fly to point mode"
-                    ""
-                    "          e, E   : exit the interactor"
-                    "          q, Q   : stop and call VTK's TerminateApp"
-                    ""
-                    "          CTRL + SHIFT + +/-   : increment/decrement "
-                    "overall point size"
-                    "          CTRL + ALT + +/-: zoom in/out "
-                    ""
-                    "          CTRL + ALT + g, G   : display scale grid "
-                    "(on/off)"
-                    "          CTRL + ALT + u, U   : display lookup table "
-                    "(on/off)"
-                    ""
-                    "    CTRL + ALT + o, O         : switch between "
-                    "perspective/parallel "
-                    "projection (default = perspective)"
-                    "    r, R [+ ALT] : reset camera [to viewpoint = {0, 0, 0} "
-                    "-> center_{x, y, z}]"
-                    "    CTRL + s, S  : save camera parameters"
-                    "    CTRL + r, R  : restore camera parameters"
-                    ""
-                    "    CTRL + ALT + s, S   : turn stereo mode on/off"
-                    "    CTRL + ALT + f, F   : switch between maximized window "
-                    "mode "
-                    "and original size"
-                    ""
-                    "    SHIFT + left click   : select a point"
-                    ""
-                    "          a, A   : toggle rubber band selection mode for "
-                    "left mouse button");
-            break;
-        }
-
-        case 'p':
-        case 'P': {
-            if (shift && ctrl) {
-                vtkSmartPointer<vtkActorCollection> ac =
-                        CurrentRenderer->GetActors();
-                vtkCollectionSimpleIterator ait;
-                for (ac->InitTraversal(ait);
-                     vtkActor* actor = ac->GetNextActor(ait);) {
-                    for (actor->InitPathTraversal();
-                         vtkAssemblyPath* path = actor->GetNextPath();) {
-                        vtkSmartPointer<vtkActor> apart =
-                                reinterpret_cast<vtkActor*>(
-                                        path->GetLastNode()->GetViewProp());
-                        apart->GetProperty()->SetRepresentationToPoints();
-                    }
-                }
-            }
-            break;
-        }
-
-        case 'w':
-        case 'W': {
-            if (shift && ctrl) {
-                vtkSmartPointer<vtkActorCollection> ac =
-                        CurrentRenderer->GetActors();
-                vtkCollectionSimpleIterator ait;
-                for (ac->InitTraversal(ait);
-                     vtkActor* actor = ac->GetNextActor(ait);) {
-                    for (actor->InitPathTraversal();
-                         vtkAssemblyPath* path = actor->GetNextPath();) {
-                        vtkSmartPointer<vtkActor> apart =
-                                reinterpret_cast<vtkActor*>(
-                                        path->GetLastNode()->GetViewProp());
-                        apart->GetProperty()->SetRepresentationToWireframe();
-                        apart->GetProperty()->SetLighting(false);
-                    }
-                }
-            }
-            break;
-        }
-
-        case 'j':
-        case 'J': {
-            if (alt && ctrl) {
-                char cam_fn[80], snapshot_fn[80];
-                unsigned t = static_cast<unsigned>(time(0));
-                sprintf(snapshot_fn, "screenshot-%d.png", t);
-                saveScreenshot(snapshot_fn);
-
-                sprintf(cam_fn, "screenshot-%d.cam", t);
-                saveCameraParameters(cam_fn);
-
+            if (!ctrl && !alt) {
+                CVLog::Print("[VtkEngine] Keyboard Shortcuts:");
                 CVLog::Print(
-                        "Screenshot (%s) and camera information (%s) "
-                        "successfully "
-                        "captured.",
-                        snapshot_fn, cam_fn);
+                        "---------------------------------------------"
+                        "--");
+                CVLog::Print(
+                        "  Mouse: Left=Rotate, Middle=Pan, Right=Zoom, "
+                        "Scroll=Zoom");
+                CVLog::Print("  Shift + left click  : Select a point");
+                CVLog::Print("  View Controls:");
+                CVLog::Print("    r, R              : Reset camera");
+                CVLog::Print(
+                        "    r, R + ALT        : Reset to viewpoint origin");
+                CVLog::Print("    f, F              : Fly to picked point");
+                CVLog::Print(
+                        "    Ctrl+Alt + O      : Toggle "
+                        "perspective/parallel");
+                CVLog::Print(
+                        "    Ctrl+Alt + F      : Toggle maximize/restore "
+                        "window");
+                CVLog::Print("    Ctrl+Alt + +/-    : Zoom in/out");
+                CVLog::Print("  Display Controls:");
+                CVLog::Print("    Ctrl+Shift + P    : Point representation");
+                CVLog::Print(
+                        "    Ctrl+Shift + W    : Wireframe representation");
+                CVLog::Print("    Ctrl+Shift + S    : Surface representation");
+                CVLog::Print(
+                        "    Ctrl+Shift + +/-  : Increase/decrease point "
+                        "size");
+                CVLog::Print("    Ctrl+Alt + G      : Toggle scale grid");
+                CVLog::Print("    Ctrl+Alt + K      : Toggle lookup table");
+                CVLog::Print("  Camera:");
+                CVLog::Print("    Ctrl + S          : Save camera parameters");
+                CVLog::Print(
+                        "    Ctrl + R          : Restore camera parameters");
+                CVLog::Print("    Ctrl+Alt + C      : Print camera parameters");
+                CVLog::Print("    Ctrl+Alt + J      : Take screenshot (.PNG)");
+                CVLog::Print("  Other:");
+                CVLog::Print(
+                        "    a, A              : Toggle rubber band "
+                        "selection");
+                CVLog::Print("    e, E / q, Q       : Exit / Quit");
+                CVLog::Print("    h, H              : Show this help");
+                CVLog::Print(
+                        "---------------------------------------------"
+                        "--");
             }
             break;
         }
-        case 'c':
-        case 'C': {
-            if (alt && ctrl) {
-                vtkSmartPointer<vtkCamera> cam = Interactor->GetRenderWindow()
-                                                         ->GetRenderers()
-                                                         ->GetFirstRenderer()
-                                                         ->GetActiveCamera();
-                double clip[2], focal[3], pos[3], view[3];
-                cam->GetClippingRange(clip);
-                cam->GetFocalPoint(focal);
-                cam->GetPosition(pos);
-                cam->GetViewUp(view);
-                int* win_pos = Interactor->GetRenderWindow()->GetPosition();
-                int* win_size = Interactor->GetRenderWindow()->GetSize();
-                std::cerr << "Clipping plane [near,far] " << clip[0] << ", "
-                          << clip[1] << endl
-                          << "Focal point [x,y,z] " << focal[0] << ", "
-                          << focal[1] << ", " << focal[2] << endl
-                          << "Position [x,y,z] " << pos[0] << ", " << pos[1]
-                          << ", " << pos[2] << endl
-                          << "View up [x,y,z] " << view[0] << ", " << view[1]
-                          << ", " << view[2] << endl
-                          << "Camera view angle [degrees] "
-                          << cam->GetViewAngle() << endl
-                          << "Window size [x,y] " << win_size[0] << ", "
-                          << win_size[1] << endl
-                          << "Window position [x,y] " << win_pos[0] << ", "
-                          << win_pos[1] << endl;
-            }
-            break;
-        }
-        case '=': {
-            if (alt || ctrl) {
-                zoomIn();
-            }
-            break;
-        }
-        case 43: {  // KEY_PLUS
-            if (alt && ctrl) {
-                zoomIn();
-            } else if (shift && ctrl) {
-                vtkSmartPointer<vtkActorCollection> ac =
-                        CurrentRenderer->GetActors();
-                vtkCollectionSimpleIterator ait;
-                for (ac->InitTraversal(ait);
-                     vtkActor* actor = ac->GetNextActor(ait);) {
-                    for (actor->InitPathTraversal();
-                         vtkAssemblyPath* path = actor->GetNextPath();) {
-                        vtkSmartPointer<vtkActor> apart =
-                                reinterpret_cast<vtkActor*>(
-                                        path->GetLastNode()->GetViewProp());
-                        float psize = apart->GetProperty()->GetPointSize();
-                        if (psize < 63.0f)
-                            apart->GetProperty()->SetPointSize(psize + 1.0f);
-                    }
-                }
-            }
-            break;
-        }
-        case 45: {  // KEY_MINUS
-            if (alt && ctrl) {
-                zoomOut();
-            } else if (shift && ctrl) {
-                vtkSmartPointer<vtkActorCollection> ac =
-                        CurrentRenderer->GetActors();
-                vtkCollectionSimpleIterator ait;
-                for (ac->InitTraversal(ait);
-                     vtkActor* actor = ac->GetNextActor(ait);) {
-                    for (actor->InitPathTraversal();
-                         vtkAssemblyPath* path = actor->GetNextPath();) {
-                        vtkSmartPointer<vtkActor> apart =
-                                static_cast<vtkActor*>(
-                                        path->GetLastNode()->GetViewProp());
-                        float psize = apart->GetProperty()->GetPointSize();
-                        if (psize > 1.0f)
-                            apart->GetProperty()->SetPointSize(psize - 1.0f);
-                    }
-                }
-            }
-            break;
-        }
+
         case 'f':
         case 'F': {
-            if (keymod) {
-                if (alt && ctrl) {
-                    int* temp = Interactor->GetRenderWindow()->GetScreenSize();
-                    int scr_size[2];
-                    scr_size[0] = temp[0];
-                    scr_size[1] = temp[1];
-
-                    temp = Interactor->GetRenderWindow()->GetSize();
-                    int win_size[2];
-                    win_size[0] = temp[0];
-                    win_size[1] = temp[1];
-                    if (win_size[0] == max_win_height_ &&
-                        win_size[1] == max_win_width_) {
-                        Interactor->GetRenderWindow()->SetSize(win_height_,
-                                                               win_width_);
-                        Interactor->GetRenderWindow()->SetPosition(win_pos_x_,
-                                                                   win_pos_y_);
-                        Interactor->GetRenderWindow()->Render();
-                        Interactor->Render();
-                    } else {
-                        int* win_pos =
-                                Interactor->GetRenderWindow()->GetPosition();
-                        win_pos_x_ = win_pos[0];
-                        win_pos_y_ = win_pos[1];
-                        win_height_ = win_size[0];
-                        win_width_ = win_size[1];
-                        Interactor->GetRenderWindow()->SetSize(scr_size[0],
-                                                               scr_size[1]);
-                        Interactor->GetRenderWindow()->Render();
-                        Interactor->Render();
-                        int* win_size =
-                                Interactor->GetRenderWindow()->GetSize();
-                        max_win_height_ = win_size[0];
-                        max_win_width_ = win_size[1];
-                    }
-                }
-            } else {
+            if (!keymod) {
                 AnimState = VTKIS_ANIM_ON;
                 vtkAssemblyPath* path = NULL;
                 Interactor->GetPicker()->Pick(Interactor->GetEventPosition()[0],
@@ -558,80 +331,6 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                     Interactor->FlyTo(CurrentRenderer,
                                       picker->GetPickPosition());
                 AnimState = VTKIS_ANIM_OFF;
-            }
-            break;
-        }
-        case 's':
-        case 'S': {
-            if (alt && ctrl) {
-                int stereo_render =
-                        Interactor->GetRenderWindow()->GetStereoRender();
-                if (!stereo_render) {
-                    if (stereo_anaglyph_mask_default_) {
-                        Interactor->GetRenderWindow()->SetAnaglyphColorMask(4,
-                                                                            3);
-                        stereo_anaglyph_mask_default_ = false;
-                    } else {
-                        Interactor->GetRenderWindow()->SetAnaglyphColorMask(2,
-                                                                            5);
-                        stereo_anaglyph_mask_default_ = true;
-                    }
-                }
-                Interactor->GetRenderWindow()->SetStereoRender(!stereo_render);
-                Interactor->GetRenderWindow()->Render();
-                Interactor->Render();
-            } else if (shift && ctrl) {
-                vtkInteractorStyleRubberBandPick::OnKeyDown();
-                vtkSmartPointer<vtkActorCollection> ac =
-                        CurrentRenderer->GetActors();
-                vtkCollectionSimpleIterator ait;
-                for (ac->InitTraversal(ait);
-                     vtkActor* actor = ac->GetNextActor(ait);) {
-                    for (actor->InitPathTraversal();
-                         vtkAssemblyPath* path = actor->GetNextPath();) {
-                        vtkSmartPointer<vtkActor> apart =
-                                reinterpret_cast<vtkActor*>(
-                                        path->GetLastNode()->GetViewProp());
-                        apart->GetProperty()->SetRepresentationToSurface();
-                        apart->GetProperty()->SetLighting(true);
-                    }
-                }
-            }
-            break;
-        }
-
-        case 'g':
-        case 'G': {
-            if (alt && ctrl) {
-                if (!grid_enabled_) {
-                    grid_actor_->TopAxisVisibilityOn();
-                    CurrentRenderer->AddViewProp(grid_actor_);
-                    grid_enabled_ = true;
-                } else {
-                    CurrentRenderer->RemoveViewProp(grid_actor_);
-                    grid_enabled_ = false;
-                }
-            }
-            break;
-        }
-
-        case 'o':
-        case 'O': {
-            if (alt && ctrl) {
-                vtkSmartPointer<vtkCamera> cam =
-                        CurrentRenderer->GetActiveCamera();
-                int flag = cam->GetParallelProjection();
-                cam->SetParallelProjection(!flag);
-
-                CurrentRenderer->SetActiveCamera(cam);
-                CurrentRenderer->Render();
-            }
-            break;
-        }
-        case 'u':
-        case 'U': {
-            if (alt && ctrl) {
-                this->updateLookUpTableDisplay(true);
             }
             break;
         }
@@ -723,7 +422,7 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             return;
         }
         default: {
-            vtkInteractorStyleRubberBandPick::OnKeyDown();
+            if (!ctrl && !alt) vtkInteractorStyleRubberBandPick::OnKeyDown();
             break;
         }
     }
@@ -780,6 +479,8 @@ void vtkCustomInteractorStyle::OnMouseMove() {
                     this->Interactor->GetEventPosition()[1],
                     this->CurrentRenderer, this->Interactor);
             this->InvokeEvent(vtkCommand::InteractionEvent);
+        } else {
+            vtkInteractorStyleRubberBandPick::OnMouseMove();
         }
     } else {
         vtkInteractorStyleRubberBandPick::OnMouseMove();
@@ -808,7 +509,9 @@ void vtkCustomInteractorStyle::OnLeftButtonDown() {
     }
     this->OnButtonDown(1, this->Interactor->GetShiftKey(),
                        this->Interactor->GetControlKey());
-    vtkInteractorStyleRubberBandPick::OnLeftButtonDown();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnLeftButtonDown();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -821,7 +524,9 @@ void vtkCustomInteractorStyle::OnLeftButtonUp() {
             Interactor->GetControlKey(), Interactor->GetShiftKey());
     mouse_signal_(event);
     this->OnButtonUp(1);
-    vtkInteractorStyleRubberBandPick::OnLeftButtonUp();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnLeftButtonUp();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -845,7 +550,9 @@ void vtkCustomInteractorStyle::OnMiddleButtonDown() {
     }
     this->OnButtonDown(2, this->Interactor->GetShiftKey(),
                        this->Interactor->GetControlKey());
-    vtkInteractorStyleRubberBandPick::OnMiddleButtonDown();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnMiddleButtonDown();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -859,7 +566,9 @@ void vtkCustomInteractorStyle::OnMiddleButtonUp() {
                                    Interactor->GetShiftKey());
     mouse_signal_(event);
     this->OnButtonUp(2);
-    vtkInteractorStyleRubberBandPick::OnMiddleButtonUp();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnMiddleButtonUp();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -884,7 +593,9 @@ void vtkCustomInteractorStyle::OnRightButtonDown() {
 
     this->OnButtonDown(3, this->Interactor->GetShiftKey(),
                        this->Interactor->GetControlKey());
-    vtkInteractorStyleRubberBandPick::OnRightButtonDown();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnRightButtonDown();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -898,7 +609,9 @@ void vtkCustomInteractorStyle::OnRightButtonUp() {
                                    Interactor->GetShiftKey());
     mouse_signal_(event);
     this->OnButtonUp(3);
-    vtkInteractorStyleRubberBandPick::OnRightButtonUp();
+    if (this->CurrentMode == VTKISRBP_SELECT) {
+        vtkInteractorStyleRubberBandPick::OnRightButtonUp();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1262,6 +975,343 @@ void vtkCustomInteractorStyle::PrintSelf(ostream& os, vtkIndent indent) {
        << endl;
     os << indent << "RotationFactor: " << this->RotationFactor << endl;
     os << indent << "CameraManipulators: " << this->CameraManipulators << endl;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+bool vtkCustomInteractorStyle::handleShortcut(char key,
+                                              bool ctrl,
+                                              bool alt,
+                                              bool shift,
+                                              vtkRenderWindowInteractor* iren) {
+    if (!iren) iren = Interactor;
+    if (!rens_ || !iren) return false;
+
+    if (iren->GetRenderWindow() && iren->GetRenderWindow()->GetRenderers()) {
+        vtkRendererCollection* rens = iren->GetRenderWindow()->GetRenderers();
+        rens->InitTraversal();
+        CurrentRenderer = rens->GetNextItem();
+    }
+    if (!CurrentRenderer) return false;
+
+    char lk = std::tolower(static_cast<unsigned char>(key));
+
+    // Ctrl+Alt shortcuts
+    if (ctrl && alt) {
+        switch (lk) {
+            case 'j': {
+                char cam_fn[80], snapshot_fn[80];
+                unsigned t = static_cast<unsigned>(time(0));
+                sprintf(snapshot_fn, "screenshot-%d.png", t);
+                saveScreenshot(snapshot_fn);
+                sprintf(cam_fn, "screenshot-%d.cam", t);
+                saveCameraParameters(cam_fn);
+                CVLog::Print(
+                        "Screenshot (%s) and camera information (%s) captured.",
+                        snapshot_fn, cam_fn);
+                return true;
+            }
+            case 'c': {
+                vtkSmartPointer<vtkCamera> cam =
+                        CurrentRenderer->GetActiveCamera();
+                double clip[2], focal[3], pos[3], view[3];
+                cam->GetClippingRange(clip);
+                cam->GetFocalPoint(focal);
+                cam->GetPosition(pos);
+                cam->GetViewUp(view);
+                int* win_pos = iren->GetRenderWindow()->GetPosition();
+                int* win_size = iren->GetRenderWindow()->GetSize();
+                CVLog::Print("Clipping [%.3f, %.3f]", clip[0], clip[1]);
+                CVLog::Print("Focal [%.3f, %.3f, %.3f]", focal[0], focal[1],
+                             focal[2]);
+                CVLog::Print("Position [%.3f, %.3f, %.3f]", pos[0], pos[1],
+                             pos[2]);
+                CVLog::Print("ViewUp [%.3f, %.3f, %.3f]", view[0], view[1],
+                             view[2]);
+                CVLog::Print("ViewAngle %.1f deg", cam->GetViewAngle());
+                CVLog::Print("Window [%d x %d] at [%d, %d]", win_size[0],
+                             win_size[1], win_pos[0], win_pos[1]);
+                return true;
+            }
+            case 'g': {
+                if (!grid_enabled_) {
+                    grid_actor_->TopAxisVisibilityOn();
+                    CurrentRenderer->AddViewProp(grid_actor_);
+                    grid_enabled_ = true;
+                } else {
+                    CurrentRenderer->RemoveViewProp(grid_actor_);
+                    grid_enabled_ = false;
+                }
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            case 'k': {
+                bool wasEnabled = lut_enabled_;
+                this->updateLookUpTableDisplay(true);
+                if (lut_enabled_ != wasEnabled) {
+                    CVLog::Print("[VtkEngine] LUT display %s",
+                                 lut_enabled_ ? "enabled" : "disabled");
+                } else {
+                    CVLog::Print(
+                            "[VtkEngine] LUT toggle: no scalar data available");
+                }
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            case 'o': {
+                vtkSmartPointer<vtkCamera> cam =
+                        CurrentRenderer->GetActiveCamera();
+                int flag = cam->GetParallelProjection();
+                cam->SetParallelProjection(!flag);
+                CurrentRenderer->SetActiveCamera(cam);
+                CurrentRenderer->Render();
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            case 'f': {
+                int* temp = iren->GetRenderWindow()->GetScreenSize();
+                int scr_size[2] = {temp[0], temp[1]};
+                temp = iren->GetRenderWindow()->GetSize();
+                int win_size[2] = {temp[0], temp[1]};
+                if (win_size[0] == max_win_height_ &&
+                    win_size[1] == max_win_width_) {
+                    iren->GetRenderWindow()->SetSize(win_height_, win_width_);
+                    iren->GetRenderWindow()->SetPosition(win_pos_x_,
+                                                         win_pos_y_);
+                } else {
+                    int* wp = iren->GetRenderWindow()->GetPosition();
+                    win_pos_x_ = wp[0];
+                    win_pos_y_ = wp[1];
+                    win_height_ = win_size[0];
+                    win_width_ = win_size[1];
+                    iren->GetRenderWindow()->SetSize(scr_size[0], scr_size[1]);
+                    int* ws = iren->GetRenderWindow()->GetSize();
+                    max_win_height_ = ws[0];
+                    max_win_width_ = ws[1];
+                }
+                iren->GetRenderWindow()->Render();
+                iren->Render();
+                return true;
+            }
+            case 's': {
+                int stereo = iren->GetRenderWindow()->GetStereoRender();
+                if (!stereo) {
+                    if (stereo_anaglyph_mask_default_) {
+                        iren->GetRenderWindow()->SetAnaglyphColorMask(4, 3);
+                        stereo_anaglyph_mask_default_ = false;
+                    } else {
+                        iren->GetRenderWindow()->SetAnaglyphColorMask(2, 5);
+                        stereo_anaglyph_mask_default_ = true;
+                    }
+                }
+                iren->GetRenderWindow()->SetStereoRender(!stereo);
+                iren->GetRenderWindow()->Render();
+                iren->Render();
+                return true;
+            }
+            default:
+                break;
+        }
+        if (key == '+' || key == '=') {
+            zoomIn();
+            rens_->Render();
+            iren->Render();
+            return true;
+        }
+        if (key == '-') {
+            zoomOut();
+            rens_->Render();
+            iren->Render();
+            return true;
+        }
+    }
+
+    // Ctrl+Shift shortcuts
+    if (ctrl && shift && !alt) {
+        switch (lk) {
+            case 'p': {
+                vtkSmartPointer<vtkActorCollection> ac =
+                        CurrentRenderer->GetActors();
+                vtkCollectionSimpleIterator ait;
+                for (ac->InitTraversal(ait);
+                     vtkActor* actor = ac->GetNextActor(ait);) {
+                    for (actor->InitPathTraversal();
+                         vtkAssemblyPath* path = actor->GetNextPath();) {
+                        auto* apart = reinterpret_cast<vtkActor*>(
+                                path->GetLastNode()->GetViewProp());
+                        apart->GetProperty()->SetRepresentationToPoints();
+                    }
+                }
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            case 'w': {
+                vtkSmartPointer<vtkActorCollection> ac =
+                        CurrentRenderer->GetActors();
+                vtkCollectionSimpleIterator ait;
+                for (ac->InitTraversal(ait);
+                     vtkActor* actor = ac->GetNextActor(ait);) {
+                    for (actor->InitPathTraversal();
+                         vtkAssemblyPath* path = actor->GetNextPath();) {
+                        auto* apart = reinterpret_cast<vtkActor*>(
+                                path->GetLastNode()->GetViewProp());
+                        apart->GetProperty()->SetRepresentationToWireframe();
+                        apart->GetProperty()->SetLighting(false);
+                    }
+                }
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            case 's': {
+                vtkSmartPointer<vtkActorCollection> ac =
+                        CurrentRenderer->GetActors();
+                vtkCollectionSimpleIterator ait;
+                for (ac->InitTraversal(ait);
+                     vtkActor* actor = ac->GetNextActor(ait);) {
+                    for (actor->InitPathTraversal();
+                         vtkAssemblyPath* path = actor->GetNextPath();) {
+                        auto* apart = reinterpret_cast<vtkActor*>(
+                                path->GetLastNode()->GetViewProp());
+                        apart->GetProperty()->SetRepresentationToSurface();
+                        apart->GetProperty()->SetLighting(true);
+                    }
+                }
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+            default:
+                break;
+        }
+        if (key == '+' || key == '=') {
+            vtkSmartPointer<vtkActorCollection> ac =
+                    CurrentRenderer->GetActors();
+            vtkCollectionSimpleIterator ait;
+            for (ac->InitTraversal(ait);
+                 vtkActor* actor = ac->GetNextActor(ait);) {
+                for (actor->InitPathTraversal();
+                     vtkAssemblyPath* path = actor->GetNextPath();) {
+                    auto* apart = reinterpret_cast<vtkActor*>(
+                            path->GetLastNode()->GetViewProp());
+                    float psize = apart->GetProperty()->GetPointSize();
+                    if (psize < 63.0f)
+                        apart->GetProperty()->SetPointSize(psize + 1.0f);
+                }
+            }
+            rens_->Render();
+            iren->Render();
+            return true;
+        }
+        if (key == '-') {
+            vtkSmartPointer<vtkActorCollection> ac =
+                    CurrentRenderer->GetActors();
+            vtkCollectionSimpleIterator ait;
+            for (ac->InitTraversal(ait);
+                 vtkActor* actor = ac->GetNextActor(ait);) {
+                for (actor->InitPathTraversal();
+                     vtkAssemblyPath* path = actor->GetNextPath();) {
+                    auto* apart = static_cast<vtkActor*>(
+                            path->GetLastNode()->GetViewProp());
+                    float psize = apart->GetProperty()->GetPointSize();
+                    if (psize > 1.0f)
+                        apart->GetProperty()->SetPointSize(psize - 1.0f);
+                }
+            }
+            rens_->Render();
+            iren->Render();
+            return true;
+        }
+    }
+
+    // Ctrl-only shortcuts (no Alt, no Shift)
+    if (ctrl && !alt && !shift) {
+        switch (lk) {
+            case 's': {
+                if (camera_file_.empty()) {
+                    vtkRenderer* ren = iren->GetRenderWindow()
+                                               ->GetRenderers()
+                                               ->GetFirstRenderer();
+                    if (ren) {
+                        vtkCamera* cam = ren->GetActiveCamera();
+                        if (cam) {
+                            cam->GetPosition(saved_cam_pos_);
+                            cam->GetFocalPoint(saved_cam_focal_);
+                            cam->GetViewUp(saved_cam_viewup_);
+                            cam->GetClippingRange(saved_cam_clip_);
+                            camera_saved_ = true;
+                            CVLog::Print(
+                                    "Camera parameters saved, you can press "
+                                    "CTRL + R to restore.");
+                        }
+                    }
+                } else {
+                    if (saveCameraParameters(camera_file_)) {
+                        CVLog::Print(
+                                "Save camera parameters to %s, you can press "
+                                "CTRL + R to restore.",
+                                camera_file_.c_str());
+                    } else {
+                        CVLog::Error(
+                                "[vtkCustomInteractorStyle] Can't save camera "
+                                "parameters to file: %s.",
+                                camera_file_.c_str());
+                    }
+                }
+                return true;
+            }
+            case 'r': {
+                if (camera_file_.empty()) {
+                    if (camera_saved_) {
+                        vtkRenderer* ren = iren->GetRenderWindow()
+                                                   ->GetRenderers()
+                                                   ->GetFirstRenderer();
+                        if (ren) {
+                            vtkCamera* cam = ren->GetActiveCamera();
+                            if (cam) {
+                                cam->SetPosition(saved_cam_pos_);
+                                cam->SetFocalPoint(saved_cam_focal_);
+                                cam->SetViewUp(saved_cam_viewup_);
+                                cam->SetClippingRange(saved_cam_clip_);
+                                ren->ResetCameraClippingRange();
+                                ren->Render();
+                            }
+                        }
+                        CVLog::Print("Camera parameters restored.");
+                    } else {
+                        CVLog::Print(
+                                "No camera parameters saved for restoring.");
+                    }
+                } else {
+                    if (cloudViewer::utility::filesystem::FileExists(
+                                camera_file_)) {
+                        if (loadCameraParameters(camera_file_)) {
+                            CVLog::Print("Restore camera parameters from %s.",
+                                         camera_file_.c_str());
+                        } else {
+                            CVLog::Error(
+                                    "Can't restore camera parameters from "
+                                    "file: %s.",
+                                    camera_file_.c_str());
+                        }
+                    } else {
+                        CVLog::Print(
+                                "No camera parameters saved in %s for "
+                                "restoring.",
+                                camera_file_.c_str());
+                    }
+                }
+                return true;
+            }
+            default:
+                break;
+        }
+    }
+
+    return false;
 }
 
 }  // namespace VTKExtensions

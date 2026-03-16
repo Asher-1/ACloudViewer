@@ -497,11 +497,18 @@ protected:
     void selectPolygonPoints(vtkIntArray* polygon, int selectionModifier);
 
     /**
-     * @brief Select blocks
+     * @brief Select blocks on surface (whole actors)
      * @param region Screen-space rectangle [x1, y1, x2, y2]
      * @param selectionModifier Selection modifier
      */
     void selectBlock(int region[4], int selectionModifier);
+
+    /**
+     * @brief Select blocks through frustum (whole actors, including occluded)
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @param selectionModifier Selection modifier
+     */
+    void selectFrustumBlocks(int region[4], int selectionModifier);
 
     //-------------------------------------------------------------------------
     // Internal helpers

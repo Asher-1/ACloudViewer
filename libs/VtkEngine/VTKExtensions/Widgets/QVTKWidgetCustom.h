@@ -53,6 +53,10 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 class QMainWindow;
 class ecvDisplayTools;
 
+namespace VTKExtensions {
+class vtkCustomInteractorStyle;
+}
+
 class vtkCamera;
 class vtkRenderer;
 class vtkRenderWindowInteractor;
@@ -86,6 +90,11 @@ public:
     }
     void initVtk(vtkSmartPointer<vtkRenderWindowInteractor> interactor,
                  bool useVBO = false);
+
+    void setCustomInteractorStyle(
+            VTKExtensions::vtkCustomInteractorStyle* style) {
+        m_customStyle = style;
+    }
 
     void setMultiViewports(bool multi = true);
     bool multiViewports() const;
@@ -209,6 +218,8 @@ protected:
     ScaleBarWidget* m_scaleBar = nullptr;
 
     VtkWidgetPrivate* d_ptr;
+
+    VTKExtensions::vtkCustomInteractorStyle* m_customStyle = nullptr;
 
     // Timer for delayed 2D label update after wheel zoom
     QTimer* m_wheelZoomUpdateTimer = nullptr;

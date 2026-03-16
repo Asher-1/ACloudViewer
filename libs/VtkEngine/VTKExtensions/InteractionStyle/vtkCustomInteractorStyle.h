@@ -26,28 +26,37 @@ namespace VTKExtensions {
  * @class vtkCustomInteractorStyle
  * @brief Custom VTK interactor style for CloudViewer applications.
  *
- * Defines rendering style and custom actions triggered by key presses:
+ * Provides camera manipulation via mouse (left=rotate, middle=pan, right=zoom)
+ * and the following keyboard shortcuts:
  *
- * -        p, P   : switch to a point-based representation
- * -        w, W   : switch to a wireframe-based representation (where
- * available)
- * -        s, S   : switch to a surface-based representation (where available)
- * -        j, J   : take a .PNG snapshot of the current window view
- * -        c, C   : display current camera/window parameters
- * -        f, F   : fly to point mode
- * -        e, E   : exit the interactor
- * -        q, Q   : stop and call VTK's TerminateApp
- * -       + / -   : increment/decrement overall point size
- * -        g, G   : display scale grid (on/off)
- * -        u, U   : display lookup table (on/off)
- * -  r, R [+ ALT] : reset camera [to viewpoint = {0, 0, 0} -> center_{x, y,
- * z}]
- * -  CTRL + s, S  : save camera parameters
- * -  CTRL + r, R  : restore camera parameters
- * -  ALT + s, S   : turn stereo mode on/off
- * -  ALT + f, F   : switch between maximized window mode and original size
- * -  SHIFT + left click   : select a point
- * -        x, X   : toggle rubber band selection mode for left mouse button
+ * View Controls:
+ * -  r, R              : reset camera
+ * -  r, R + ALT        : reset to viewpoint origin
+ * -  f, F              : fly to picked point
+ * -  Ctrl+Alt + O      : toggle perspective/parallel projection
+ * -  Ctrl+Alt + F      : toggle maximize/restore window
+ * -  Ctrl+Alt + +/-    : zoom in/out
+ *
+ * Display Controls:
+ * -  Ctrl+Shift + P    : point representation
+ * -  Ctrl+Shift + W    : wireframe representation
+ * -  Ctrl+Shift + S    : surface representation
+ * -  Ctrl+Shift + +/-  : increase/decrease point size
+ * -  Ctrl+Alt + G      : toggle scale grid
+ * -  Ctrl+Alt + K      : toggle lookup table
+ *
+ * Camera:
+ * -  Ctrl + S          : save camera parameters
+ * -  Ctrl + R          : restore camera parameters
+ * -  Ctrl+Alt + C      : print camera parameters
+ * -  Ctrl+Alt + J      : take screenshot (.PNG)
+ *
+ * Other:
+ * -  Ctrl+Alt + S      : toggle stereo mode
+ * -  a, A              : toggle rubber band selection
+ * -  e, E              : exit the interactor
+ * -  q, Q              : quit (TerminateApp)
+ * -  h, H              : show help
  */
 class QVTK_ENGINE_LIB_API vtkCustomInteractorStyle
     : public vtkInteractorStyleBase {
@@ -60,6 +69,21 @@ public:
     ~vtkCustomInteractorStyle() override;
 
     void toggleAreaPicking();
+
+    /// @brief Directly execute a keyboard shortcut from Qt key event data.
+    /// Bypasses VTK's key event system for reliable cross-platform operation.
+    /// @param key Lowercase letter ('j','c','g',...) or symbol ('+','-','=')
+    /// @param ctrl Control modifier state
+    /// @param alt Alt modifier state
+    /// @param shift Shift modifier state
+    /// @param iren Optional interactor override (used when this style is
+    ///             detached from the active interactor, e.g. during selection)
+    /// @return true if the shortcut was handled
+    bool handleShortcut(char key,
+                        bool ctrl,
+                        bool alt,
+                        bool shift,
+                        vtkRenderWindowInteractor* iren = nullptr);
 
     /// @param win Render window to set
     inline void setRenderWindow(const vtkSmartPointer<vtkRenderWindow>& win) {

@@ -82,6 +82,8 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
                                     getQVtkWidget()->GetRenderWindow());
     getQVtkWidget()->initVtk(m_visualizer3D->getRenderWindowInteractor(),
                              false);
+    getQVtkWidget()->setCustomInteractorStyle(
+            m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
 
     if (ecvDisplayTools::USE_2D) {

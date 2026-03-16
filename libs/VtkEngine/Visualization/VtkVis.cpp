@@ -2306,6 +2306,7 @@ bool VtkVis::addOrientedCube(const ecvOrientedBBox& obb,
     actor->GetProperty()->SetRepresentationToSurface();
     Eigen::Vector3d color = obb.GetColor();
     actor->GetProperty()->SetColor(color(0), color(1), color(2));
+    actor->PickableOff();
     addActorToRenderer(actor, viewport);
 
     // Save the pointer/ID pair to the global actor map
@@ -2346,6 +2347,7 @@ bool VtkVis::addCube(double xMin,
     VtkRendering::CreateActorFromVTKDataSet(data, actor, false);
     actor->GetProperty()->SetRepresentationToWireframe();
     actor->GetProperty()->SetColor(r, g, b);
+    actor->PickableOff();
     addActorToRenderer(actor, viewport);
 
     (*getShapeActorMap())[id] = actor;
@@ -3523,7 +3525,6 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
         iren->SetInteractorStyle(ThreeDInteractorStyle);
         ThreeDInteractorStyle->Initialize();
         ThreeDInteractorStyle->setRendererCollection(rens_);
-        ThreeDInteractorStyle->UseTimersOn();
     }
     iren->SetDesiredUpdateRate(30.0);
     iren->Initialize();
@@ -3696,7 +3697,9 @@ void VtkVis::OnAreaPicking(vtkObject* caller,
     props->InitTraversal();
     while (auto* prop = props->GetNextProp()) {
         auto* actor = vtkActor::SafeDownCast(prop);
-        if (!actor || !actor->GetVisibility() || !actor->GetMapper()) continue;
+        if (!actor || !actor->GetPickable() || !actor->GetVisibility() ||
+            !actor->GetMapper())
+            continue;
         auto* input = actor->GetMapper()->GetInput();
         if (!input) continue;
         auto* ds = vtkDataSet::SafeDownCast(input);
