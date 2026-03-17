@@ -1026,10 +1026,9 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
     }
 
     const auto& primary = actorSelections[bestIdx];
-    cvSelectionData result(primary.ids,
-                           fieldAssoc == FIELD_ASSOCIATION_CELLS
-                                   ? cvSelectionData::CELLS
-                                   : cvSelectionData::POINTS);
+    cvSelectionData result(primary.ids, fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                                ? cvSelectionData::CELLS
+                                                : cvSelectionData::POINTS);
 
     result.setActorInfo(primary.actor, primary.polyData);
     for (int i = 0; i < actorSelections.size(); ++i) {
@@ -1136,8 +1135,7 @@ cvSelectionData cvSelectionPipeline::expandToBlockSelection(
         return partialSelection;
     }
 
-    auto* ds = vtkDataSet::SafeDownCast(
-            primaryActor->GetMapper()->GetInput());
+    auto* ds = vtkDataSet::SafeDownCast(primaryActor->GetMapper()->GetInput());
     if (!ds) return partialSelection;
 
     vtkIdType numCells = ds->GetNumberOfCells();

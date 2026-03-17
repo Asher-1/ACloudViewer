@@ -484,8 +484,7 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
 
     // 18% of screen width, clamped to [250, 380].  The wider range
     // accommodates Slider+SpinBox combos (Point Gaussian, Opacity, etc.)
-    int defaultWidth =
-            qBound(250, static_cast<int>(screenWidth * 0.18), 380);
+    int defaultWidth = qBound(250, static_cast<int>(screenWidth * 0.18), 380);
 
     QList<QDockWidget*> leftDocks;
     QList<int> leftSizes;

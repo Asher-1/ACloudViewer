@@ -790,9 +790,8 @@ void cvSelectionPropertiesWidget::setupUi() {
             m_filterSelectionContainer, &QWidget::setVisible);
     connect(m_filterSelectionExpander, &cvExpanderButton::toggled,
             [this](bool) {
-                QTimer::singleShot(0, this, [this]() {
-                    updateScrollContentWidth();
-                });
+                QTimer::singleShot(0, this,
+                                   [this]() { updateScrollContentWidth(); });
             });
 
     // 6. Compact Statistics Section (ParaView-style: no tabs)
@@ -974,19 +973,19 @@ void cvSelectionPropertiesWidget::onFilterApplyClicked() {
             break;
         }
         case 3: {
-            filtered = filter->filterByNormalAngle(
-                    polyData, m_selectionData, 0, 0, 1, minVal, maxVal);
+            filtered = filter->filterByNormalAngle(polyData, m_selectionData, 0,
+                                                   0, 1, minVal, maxVal);
             break;
         }
         case 4: {
-            filtered =
-                    filter->filterByArea(polyData, m_selectionData, minVal, maxVal);
+            filtered = filter->filterByArea(polyData, m_selectionData, minVal,
+                                            maxVal);
             break;
         }
         case 5: {
-            filtered = filter->filterByNeighborCount(
-                    polyData, m_selectionData, static_cast<int>(minVal),
-                    static_cast<int>(maxVal));
+            filtered = filter->filterByNeighborCount(polyData, m_selectionData,
+                                                     static_cast<int>(minVal),
+                                                     static_cast<int>(maxVal));
             break;
         }
         default:
@@ -1892,8 +1891,7 @@ bool cvSelectionPropertiesWidget::updateSelection(
                                        polyData->GetPointData());
         if (attrData) {
             for (int i = 0; i < attrData->GetNumberOfArrays(); ++i) {
-                QString name =
-                        QString::fromUtf8(attrData->GetArrayName(i));
+                QString name = QString::fromUtf8(attrData->GetArrayName(i));
                 if (!name.startsWith("vtk", Qt::CaseInsensitive)) {
                     m_filterAttributeCombo->addItem(name);
                 }
