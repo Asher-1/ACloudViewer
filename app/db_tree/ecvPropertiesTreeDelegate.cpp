@@ -1829,18 +1829,16 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             spinBox->setDecimals(3);
             spinBox->setMinimumWidth(60);
 
-            connect(slider, &QSlider::valueChanged, this,
-                    [spinBox](int value) {
-                        spinBox->blockSignals(true);
-                        spinBox->setValue(value / 1000.0);
-                        spinBox->blockSignals(false);
-                    });
+            connect(slider, &QSlider::valueChanged, this, [spinBox](int value) {
+                spinBox->blockSignals(true);
+                spinBox->setValue(value / 1000.0);
+                spinBox->blockSignals(false);
+            });
             connect(spinBox,
-                    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                    this, [slider](double value) {
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                    [slider](double value) {
                         slider->blockSignals(true);
-                        slider->setValue(
-                                static_cast<int>(value * 1000.0));
+                        slider->setValue(static_cast<int>(value * 1000.0));
                         slider->blockSignals(false);
                     });
 
@@ -1848,14 +1846,11 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     const_cast<ccPropertiesTreeDelegate*>(this);
             connect(slider, &QAbstractSlider::valueChanged, self,
                     [self](int value) {
-                        self->cloudPointGaussianRadiusChanged(
-                                value / 1000.0);
+                        self->cloudPointGaussianRadiusChanged(value / 1000.0);
                     });
             connect(spinBox,
-                    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                    self,
-                    &ccPropertiesTreeDelegate::
-                            cloudPointGaussianRadiusChanged);
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), self,
+                    &ccPropertiesTreeDelegate::cloudPointGaussianRadiusChanged);
 
             layout->addWidget(slider, 1);
             layout->addWidget(spinBox, 0);
@@ -2844,8 +2839,8 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             redraw = true;
             break;
         case OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE: {
-            m_currentObject->setPointGaussianEmissive(
-                    item->checkState() == Qt::Checked);
+            m_currentObject->setPointGaussianEmissive(item->checkState() ==
+                                                      Qt::Checked);
             ecvDisplayTools::SetRedrawRecursive(false);
         }
             redraw = true;

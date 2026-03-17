@@ -93,7 +93,6 @@
 #include <vtkCubeSource.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
-#include <vtkPointGaussianMapper.h>
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
 #include <vtkJPEGReader.h>
@@ -106,6 +105,7 @@
 #include <vtkPNMReader.h>
 #include <vtkPlanes.h>
 #include <vtkPointData.h>
+#include <vtkPointGaussianMapper.h>
 #include <vtkPointPicker.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -162,10 +162,8 @@ static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
 void VtkVis::installClippingRangeObserver(vtkSmartPointer<vtkRenderer> ren) {
     // 1) Intercept ResetCameraClippingRangeEvent so we override VTK's
     //    ComputeVisiblePropBounds-based clipping with our GeometryBounds.
-    auto clippingObs =
-            vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
-    clippingObs->SetCallback(*this,
-                             &VtkVis::internalResetCameraClippingRange);
+    auto clippingObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+    clippingObs->SetCallback(*this, &VtkVis::internalResetCameraClippingRange);
     ren->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, clippingObs);
 
     // 2) ParaView BUG #13534: reset clipping on every render.
@@ -174,10 +172,8 @@ void VtkVis::installClippingRangeObserver(vtkSmartPointer<vtkRenderer> ren) {
     //    Rotate()/Dolly() that check AutoAdjustCameraClippingRange.
     //    Hooking StartEvent on the render window ensures clipping is
     //    always correct before the frame is drawn.
-    auto renderObs =
-            vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
-    renderObs->SetCallback(*this,
-                           &VtkVis::internalResetCameraClippingRange);
+    auto renderObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+    renderObs->SetCallback(*this, &VtkVis::internalResetCameraClippingRange);
     win_->AddObserver(vtkCommand::StartEvent, renderObs);
 }
 
@@ -3106,8 +3102,8 @@ void VtkVis::setMeshRenderingMode(MESH_RENDERING_MODE mode,
 }
 
 void VtkVis::setMeshStippling(bool enabled,
-                               const std::string& viewID,
-                               int viewport) {
+                              const std::string& viewID,
+                              int viewport) {
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
 
@@ -3172,11 +3168,11 @@ static const PGPreset s_pgPresets[] = {
 }  // namespace
 
 void VtkVis::setPointGaussianRendering(bool enabled,
-                                        double gaussianRadius,
-                                        int shaderPreset,
-                                        bool emissive,
-                                        const std::string& viewID,
-                                        int viewport) {
+                                       double gaussianRadius,
+                                       int shaderPreset,
+                                       bool emissive,
+                                       const std::string& viewID,
+                                       int viewport) {
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
 
@@ -3188,15 +3184,14 @@ void VtkVis::setPointGaussianRendering(bool enabled,
             vtkPolyData::SafeDownCast(currentMapper->GetInput());
 
     if (enabled) {
-        int presetIdx = std::max(0, std::min(shaderPreset,
-                                             static_cast<int>(
-                                                     ccDrawableObject::
-                                                             PG_PRESET_COUNT) -
-                                             1));
+        int presetIdx = std::max(
+                0,
+                std::min(shaderPreset,
+                         static_cast<int>(ccDrawableObject::PG_PRESET_COUNT) -
+                                 1));
         const PGPreset& preset = s_pgPresets[presetIdx];
 
-        auto* existingPG =
-                vtkPointGaussianMapper::SafeDownCast(currentMapper);
+        auto* existingPG = vtkPointGaussianMapper::SafeDownCast(currentMapper);
         if (existingPG) {
             existingPG->SetScaleFactor(gaussianRadius);
             existingPG->SetSplatShaderCode(preset.shaderCode);
