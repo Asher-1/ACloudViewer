@@ -365,6 +365,7 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     m_propertiesTreeWidget->setModel(m_propertiesModel);
     m_propertiesTreeWidget->header()->setSectionResizeMode(
             QHeaderView::Interactive);
+    m_propertiesTreeWidget->header()->setStretchLastSection(true);
     m_propertiesTreeWidget->setEnabled(false);
 
     // Properties tree signals/slots connection

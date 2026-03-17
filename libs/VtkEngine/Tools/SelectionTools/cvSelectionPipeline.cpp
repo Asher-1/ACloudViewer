@@ -958,16 +958,12 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
     auto extractor = vtkSmartPointer<vtkExtractSelectedFrustum>::New();
     extractor->CreateFrustum(frustum);
 
-    cvSelectionData result;
-    result = cvSelectionData(QVector<qint64>(),
-                             fieldAssoc == FIELD_ASSOCIATION_CELLS
-                                     ? cvSelectionData::CELLS
-                                     : cvSelectionData::POINTS);
-
-    QVector<qint64> allIds;
-    vtkActor* bestActor = nullptr;
-    vtkPolyData* bestPolyData = nullptr;
-    vtkIdType bestCount = 0;
+    struct ActorSelection {
+        vtkActor* actor;
+        vtkPolyData* polyData;
+        QVector<qint64> ids;
+    };
+    QVector<ActorSelection> actorSelections;
 
     auto props = m_renderer->GetViewProps();
     props->InitTraversal();
@@ -986,14 +982,13 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
         ds->GetBounds(bounds);
         if (!extractor->OverallBoundsTest(bounds)) continue;
 
-        vtkIdType startOffset = allIds.size();
-
+        QVector<qint64> ids;
         if (fieldAssoc == FIELD_ASSOCIATION_POINTS) {
             for (vtkIdType i = 0; i < ds->GetNumberOfPoints(); ++i) {
                 double pt[3];
                 ds->GetPoint(i, pt);
                 if (extractor->GetFrustum()->EvaluateFunction(pt) <= 0.0) {
-                    allIds.append(static_cast<qint64>(i));
+                    ids.append(static_cast<qint64>(i));
                 }
             }
         } else {
@@ -1004,38 +999,56 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
                                     (bounds_cell[2] + bounds_cell[3]) * 0.5,
                                     (bounds_cell[4] + bounds_cell[5]) * 0.5};
                 if (extractor->GetFrustum()->EvaluateFunction(center) <= 0.0) {
-                    allIds.append(static_cast<qint64>(i));
+                    ids.append(static_cast<qint64>(i));
                 }
             }
         }
 
-        vtkIdType selectedInActor = allIds.size() - startOffset;
-        if (selectedInActor > bestCount) {
-            bestCount = selectedInActor;
-            bestActor = actor;
-            bestPolyData = vtkPolyData::SafeDownCast(ds);
+        if (!ids.isEmpty()) {
+            actorSelections.append(
+                    {actor, vtkPolyData::SafeDownCast(ds), std::move(ids)});
         }
     }
 
-    if (allIds.isEmpty()) {
+    if (actorSelections.isEmpty()) {
         CVLog::PrintVerbose(
                 "[cvSelectionPipeline::performFrustumSelection] "
                 "No items selected in frustum");
         return cvSelectionData();
     }
 
-    result = cvSelectionData(allIds, fieldAssoc == FIELD_ASSOCIATION_CELLS
-                                             ? cvSelectionData::CELLS
-                                             : cvSelectionData::POINTS);
-
-    if (bestActor) {
-        result.setActorInfo(bestActor, bestPolyData);
+    // Use the actor with the most selected items as primary
+    // (consistent with hardware selection behavior)
+    int bestIdx = 0;
+    for (int i = 1; i < actorSelections.size(); ++i) {
+        if (actorSelections[i].ids.size() > actorSelections[bestIdx].ids.size())
+            bestIdx = i;
     }
 
+    const auto& primary = actorSelections[bestIdx];
+    cvSelectionData result(primary.ids,
+                           fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                   ? cvSelectionData::CELLS
+                                   : cvSelectionData::POINTS);
+
+    result.setActorInfo(primary.actor, primary.polyData);
+    for (int i = 0; i < actorSelections.size(); ++i) {
+        if (i != bestIdx) {
+            cvActorSelectionInfo info;
+            info.actor = actorSelections[i].actor;
+            info.polyData = actorSelections[i].polyData;
+            result.addActorInfo(info);
+        }
+    }
+
+    int totalSelected = 0;
+    for (const auto& as : actorSelections) totalSelected += as.ids.size();
     CVLog::PrintVerbose(
-            "[cvSelectionPipeline] Frustum selection: %d %s selected",
-            allIds.size(),
-            fieldAssoc == FIELD_ASSOCIATION_CELLS ? "cells" : "points");
+            "[cvSelectionPipeline] Frustum selection: %d %s from %d actors "
+            "(%d primary)",
+            totalSelected,
+            fieldAssoc == FIELD_ASSOCIATION_CELLS ? "cells" : "points",
+            actorSelections.size(), primary.ids.size());
 
     return result;
 }
@@ -1115,39 +1128,28 @@ cvSelectionData cvSelectionPipeline::expandToBlockSelection(
         return partialSelection;
     }
 
-    QVector<qint64> allCellIds;
-    vtkActor* primaryActor = nullptr;
-    vtkPolyData* primaryPolyData = nullptr;
-    vtkIdType primaryCount = 0;
-
-    for (const auto& info : partialSelection.actorInfos()) {
-        if (!info.actor || !info.actor->GetMapper()) continue;
-
-        auto* ds =
-                vtkDataSet::SafeDownCast(info.actor->GetMapper()->GetInput());
-        if (!ds) continue;
-
-        vtkIdType numCells = ds->GetNumberOfCells();
-        vtkIdType startOffset = allCellIds.size();
-        for (vtkIdType i = 0; i < numCells; ++i) {
-            allCellIds.append(static_cast<qint64>(i));
-        }
-
-        if (numCells > primaryCount) {
-            primaryCount = numCells;
-            primaryActor = info.actor;
-            primaryPolyData = vtkPolyData::SafeDownCast(ds);
-        }
-    }
-
-    if (allCellIds.isEmpty()) {
+    // Block selection: select ALL cells of the primary actor
+    // (the actor that was partially selected). This matches ParaView's
+    // behavior where block selection selects entire blocks/actors.
+    vtkActor* primaryActor = partialSelection.primaryActor();
+    if (!primaryActor || !primaryActor->GetMapper()) {
         return partialSelection;
     }
 
-    cvSelectionData result(allCellIds, cvSelectionData::CELLS);
-    if (primaryActor) {
-        result.setActorInfo(primaryActor, primaryPolyData);
+    auto* ds = vtkDataSet::SafeDownCast(
+            primaryActor->GetMapper()->GetInput());
+    if (!ds) return partialSelection;
+
+    vtkIdType numCells = ds->GetNumberOfCells();
+    QVector<qint64> allCellIds;
+    allCellIds.reserve(numCells);
+    for (vtkIdType i = 0; i < numCells; ++i) {
+        allCellIds.append(static_cast<qint64>(i));
     }
+
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(ds);
+    cvSelectionData result(allCellIds, cvSelectionData::CELLS);
+    result.setActorInfo(primaryActor, polyData);
 
     for (const auto& info : partialSelection.actorInfos()) {
         if (info.actor != primaryActor) {
@@ -1155,9 +1157,10 @@ cvSelectionData cvSelectionPipeline::expandToBlockSelection(
         }
     }
 
-    CVLog::Print(
-            "[cvSelectionPipeline] Block selection: %d actors, %d total cells",
-            partialSelection.actorCount(), allCellIds.size());
+    CVLog::PrintVerbose(
+            "[cvSelectionPipeline] Block selection: %d actors touched, "
+            "primary has %d cells",
+            partialSelection.actorCount(), numCells);
 
     return result;
 }

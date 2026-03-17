@@ -229,6 +229,12 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                     pointUniqueColor.r, pointUniqueColor.g, pointUniqueColor.b,
                     viewID, viewport);
         }
+
+        m_visualizer3D->setPointGaussianRendering(
+                ecvCloud->pointGaussianEnabled(),
+                ecvCloud->pointGaussianRadius(),
+                ecvCloud->pointGaussianShaderPreset(),
+                ecvCloud->pointGaussianEmissive(), viewID, viewport);
     }
 }
 
@@ -368,6 +374,12 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                     meshColor.r, meshColor.g, meshColor.b, viewID, viewport);
         }
         m_visualizer3D->setPointCloudOpacity(context.opacity, viewID, viewport);
+        m_visualizer3D->setMeshStippling(mesh->stipplingEnabled(), viewID,
+                                         viewport);
+        m_visualizer3D->setPointGaussianRendering(
+                mesh->pointGaussianEnabled(), mesh->pointGaussianRadius(),
+                mesh->pointGaussianShaderPreset(),
+                mesh->pointGaussianEmissive(), viewID, viewport);
     }
 }
 

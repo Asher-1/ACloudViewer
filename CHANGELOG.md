@@ -4,6 +4,14 @@ ACloudViewer Version History
 v3.9.5-Beta (Asher) - 02/02/2026
 --------------------------------
 
+- New features:
+    - Add Point Gaussian rendering support for point clouds and meshes
+      - 6 shader presets: Gaussian Blur, Sphere, Black-edged Circle, Plain Circle, Triangle, Square Outline
+      - Configurable Gaussian Radius with Slider + SpinBox UI (like Light Intensity)
+      - Emissive mode toggle
+      - Properties available for both point clouds and meshes via ccDrawableObject base class
+    - Add mesh stippling rendering support
+      - Approximated via reduced opacity + edge visibility (VTK OpenGL2 backend)
 - Bug fixes:
     - Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid
         - Create per-thread std::vector<geometry::Voxel> in parallel with OpenMP
@@ -38,6 +46,18 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix interactor Usertimer issues with mouse
     - Fix select points/cells through tools issues
     - Fix select block through or on surface tools issues
+    - Fix camera clipping range for elongated 3D point clouds (ParaView BUG #13534 alignment)
+        - Add ResetCameraClippingRangeEvent observer on renderer to override VTK default clipping with GeometryBounds
+        - Add StartEvent observer on render window to reset clipping before every render frame
+        - Remove ScaleAboutCenter(2,2,2) hack, use VTK's built-in ExpandBounds + ClippingRangeExpansion
+        - Add cached bounds mechanism to avoid expensive ComputeVisiblePropBounds per frame
+        - GeometryBoundsDirty flag tracks when bounds need recomputation (on actor add/remove)
+    - Fix Freeze Selection behavior to align with ParaView
+        - Freeze now stores a snapshot of current selection IDs (was incorrectly creating new objects)
+        - Remove extraction logic from MainWindow freeze handler (Extract button handles object creation)
+    - Fix Point Gaussian sub-properties not greyed out when disabled
+        - Shader Preset, Gaussian Radius, and Emissive are now disabled when Point Gaussian is unchecked
+        - Sub-properties dynamically enable/disable when checkbox state changes
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
@@ -51,6 +71,9 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Remove pcl data structure dependency to speedup loading data and rendering
     - Rename PCLEngine to VTKEngine and remove pcl dependency with VTKEngine
     - Set PLUGIN_STANDARD_QPCL=OFF as default
+    - Align Freeze/Extract Selection with ParaView behavior
+        - Freeze: converts dynamic selection to persistent index-based snapshot
+        - Extract: creates new ccHObject from selected elements and adds to scene
 
 ### Supported Platforms:
 - Windows `x86/64`
