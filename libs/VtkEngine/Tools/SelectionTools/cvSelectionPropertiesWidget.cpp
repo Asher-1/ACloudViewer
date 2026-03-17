@@ -774,7 +774,28 @@ void cvSelectionPropertiesWidget::setupUi() {
                 });
             });
 
-    // 5. Compact Statistics Section (ParaView-style: no tabs)
+    // 5. Filter Selection Section
+    m_filterSelectionExpander = new cvExpanderButton(m_scrollContent);
+    m_filterSelectionExpander->setText(tr("Filter Selection"));
+    m_filterSelectionExpander->setChecked(false);
+    scrollLayout->addWidget(m_filterSelectionExpander);
+
+    m_filterSelectionContainer = new QWidget(m_scrollContent);
+    m_filterSelectionContainer->setMinimumHeight(50);
+    m_filterSelectionContainer->setVisible(false);
+    setupFilterSelectionSection();
+    scrollLayout->addWidget(m_filterSelectionContainer);
+
+    connect(m_filterSelectionExpander, &cvExpanderButton::toggled,
+            m_filterSelectionContainer, &QWidget::setVisible);
+    connect(m_filterSelectionExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    updateScrollContentWidth();
+                });
+            });
+
+    // 6. Compact Statistics Section (ParaView-style: no tabs)
     m_compactStatsExpander = new cvExpanderButton(m_scrollContent);
     m_compactStatsExpander->setText(tr("Selection Statistics"));
     m_compactStatsExpander->setChecked(false);  // Collapsed by default
@@ -861,6 +882,150 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
 
     // Note: Plot Distribution button removed - feature not fully implemented
     // Can be re-added when histogram plotting is available
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::setupFilterSelectionSection() {
+    QVBoxLayout* layout = new QVBoxLayout(m_filterSelectionContainer);
+    layout->setContentsMargins(8, 4, 8, 4);
+    layout->setSpacing(4);
+
+    QFormLayout* formLayout = new QFormLayout();
+    formLayout->setSpacing(4);
+
+    m_filterTypeCombo = new QComboBox();
+    m_filterTypeCombo->addItem(tr("Attribute Range"));
+    m_filterTypeCombo->addItem(tr("Bounding Box"));
+    m_filterTypeCombo->addItem(tr("Distance from Point"));
+    m_filterTypeCombo->addItem(tr("Normal Angle"));
+    m_filterTypeCombo->addItem(tr("Cell Area"));
+    m_filterTypeCombo->addItem(tr("Neighbor Count"));
+    formLayout->addRow(tr("Filter Type:"), m_filterTypeCombo);
+
+    m_filterAttributeCombo = new QComboBox();
+    formLayout->addRow(tr("Attribute:"), m_filterAttributeCombo);
+
+    m_filterMinSpin = new QDoubleSpinBox();
+    m_filterMinSpin->setRange(-1e12, 1e12);
+    m_filterMinSpin->setDecimals(6);
+    formLayout->addRow(tr("Min Value:"), m_filterMinSpin);
+
+    m_filterMaxSpin = new QDoubleSpinBox();
+    m_filterMaxSpin->setRange(-1e12, 1e12);
+    m_filterMaxSpin->setDecimals(6);
+    m_filterMaxSpin->setValue(1.0);
+    formLayout->addRow(tr("Max Value:"), m_filterMaxSpin);
+
+    layout->addLayout(formLayout);
+
+    m_filterApplyButton = new QPushButton(tr("Apply Filter"));
+    m_filterApplyButton->setToolTip(
+            tr("Filter current selection using the specified criteria"));
+    connect(m_filterApplyButton, &QPushButton::clicked, this,
+            &cvSelectionPropertiesWidget::onFilterApplyClicked);
+    layout->addWidget(m_filterApplyButton);
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::onFilterApplyClicked() {
+    if (m_selectionData.isEmpty()) {
+        CVLog::Warning("[Filter] No selection to filter");
+        return;
+    }
+
+    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    if (!polyData) {
+        CVLog::Warning("[Filter] Cannot access selection data for filtering");
+        return;
+    }
+
+    if (!m_selectionManager) {
+        CVLog::Warning("[Filter] No selection manager available");
+        return;
+    }
+
+    cvSelectionFilter* filter = m_selectionManager->getFilter();
+    if (!filter) {
+        CVLog::Warning("[Filter] No filter available");
+        return;
+    }
+
+    int filterType = m_filterTypeCombo->currentIndex();
+    double minVal = m_filterMinSpin->value();
+    double maxVal = m_filterMaxSpin->value();
+    QString attrName = m_filterAttributeCombo->currentText();
+
+    cvSelectionData filtered;
+    switch (filterType) {
+        case 0: {
+            filtered = filter->filterByAttributeRange(polyData, m_selectionData,
+                                                      attrName, minVal, maxVal);
+            break;
+        }
+        case 1: {
+            double bounds[6] = {minVal, maxVal, minVal, maxVal, minVal, maxVal};
+            filtered = filter->filterByBoundingBox(polyData, m_selectionData,
+                                                   bounds);
+            break;
+        }
+        case 2: {
+            filtered = filter->filterByDistanceFromPoint(
+                    polyData, m_selectionData, 0, 0, 0, minVal, maxVal);
+            break;
+        }
+        case 3: {
+            filtered = filter->filterByNormalAngle(
+                    polyData, m_selectionData, 0, 0, 1, minVal, maxVal);
+            break;
+        }
+        case 4: {
+            filtered =
+                    filter->filterByArea(polyData, m_selectionData, minVal, maxVal);
+            break;
+        }
+        case 5: {
+            filtered = filter->filterByNeighborCount(
+                    polyData, m_selectionData, static_cast<int>(minVal),
+                    static_cast<int>(maxVal));
+            break;
+        }
+        default:
+            return;
+    }
+
+    if (filtered.isEmpty()) {
+        CVLog::Warning("[Filter] Filter produced empty result");
+        return;
+    }
+
+    int oldCount = m_selectionData.count();
+
+    // Propagate actor info from original selection so highlighting works
+    vtkActor* primaryActor = m_selectionData.primaryActor();
+    if (primaryActor && primaryActor->GetMapper()) {
+        vtkPolyData* actorPoly = vtkPolyData::SafeDownCast(
+                primaryActor->GetMapper()->GetInput());
+        filtered.setActorInfo(primaryActor, actorPoly);
+    }
+    for (const auto& info : m_selectionData.actorInfos()) {
+        if (info.actor != primaryActor) {
+            filtered.addActorInfo(info);
+        }
+    }
+
+    // Update the manager's selection (triggers selectionChanged signal)
+    m_selectionManager->setCurrentSelection(filtered);
+
+    // Update the highlighter to reflect filtered selection
+    if (m_highlighter) {
+        m_highlighter->highlightSelection(filtered);
+    }
+
+    // Update our own UI (spreadsheet, statistics, etc.)
+    updateSelection(filtered, polyData);
+
+    CVLog::Print("[Filter] Applied filter: %d -> %d items", oldCount,
+                 filtered.count());
 }
 
 //-----------------------------------------------------------------------------
@@ -1709,6 +1874,32 @@ bool cvSelectionPropertiesWidget::updateSelection(
     // (ParaView behavior: can only add selection when one exists)
     if (m_addSelectionButton) {
         m_addSelectionButton->setEnabled(m_selectionCount > 0);
+    }
+
+    // Update Filter Selection section
+    if (m_filterApplyButton) {
+        m_filterApplyButton->setEnabled(m_selectionCount > 0);
+    }
+    if (m_filterAttributeCombo && polyData) {
+        m_filterAttributeCombo->blockSignals(true);
+        m_filterAttributeCombo->clear();
+        bool isCellFilter =
+                (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
+        vtkDataSetAttributes* attrData =
+                isCellFilter ? static_cast<vtkDataSetAttributes*>(
+                                       polyData->GetCellData())
+                             : static_cast<vtkDataSetAttributes*>(
+                                       polyData->GetPointData());
+        if (attrData) {
+            for (int i = 0; i < attrData->GetNumberOfArrays(); ++i) {
+                QString name =
+                        QString::fromUtf8(attrData->GetArrayName(i));
+                if (!name.startsWith("vtk", Qt::CaseInsensitive)) {
+                    m_filterAttributeCombo->addItem(name);
+                }
+            }
+        }
+        m_filterAttributeCombo->blockSignals(false);
     }
 
     return true;
@@ -3868,22 +4059,25 @@ void cvSelectionPropertiesWidget::onFreezeClicked() {
         return;
     }
 
-    // Freeze selection: Create a static copy that won't change with new
-    // selections In ParaView, this converts the selection to an
-    // "AppendSelection" filter For CloudViewer, we save current selection to
-    // bookmarks with "Frozen_" prefix
+    // ParaView "Freeze Selection": converts dynamic selection (frustum/query)
+    // to static index-based selection.  In CloudViewer, selections are already
+    // index-based, so "freeze" means: take a snapshot of the current IDs and
+    // keep them as the active selection.  This prevents the selection from
+    // being lost when the user starts a new selection action.
+    //
+    // The frozen copy is stored in the manager; subsequent selection actions
+    // will merge with (or replace) it depending on the selection modifier.
 
-    QString frozenName = QString("Frozen_%1")
-                                 .arg(QDateTime::currentDateTime().toString(
-                                         "yyyyMMdd_HHmmss"));
+    if (m_selectionManager) {
+        cvSelectionData frozen(m_selectionData);
+        m_selectionManager->setCurrentSelection(frozen, false);
+    }
 
-    // Bookmark functionality removed - UI not implemented
-    CVLog::Print(
-            QString("[cvSelectionPropertiesWidget] Selection frozen as: %1")
-                    .arg(frozenName));
-
-    QMessageBox::information(this, tr("Freeze Selection"),
-                             tr("Selection frozen as: %1").arg(frozenName));
+    int count = m_selectionData.count();
+    QString assoc = m_selectionData.fieldTypeString();
+    CVLog::Print(QString("[Selection] Frozen %1 %2 as index-based selection")
+                         .arg(count)
+                         .arg(assoc));
 
     emit freezeSelectionRequested();
 }
@@ -4217,8 +4411,7 @@ void cvSelectionPropertiesWidget::onToggleFieldDataClicked(bool checked) {
             }
         }
 
-        // Limit rows
-        int rowCount = std::min(1000, static_cast<int>(maxTuples));
+        int rowCount = static_cast<int>(maxTuples);
         m_spreadsheetTable->setRowCount(rowCount);
 
         // Populate rows
@@ -6337,8 +6530,7 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(
             QHeaderView::ResizeToContents);
 
     // Populate rows
-    int rowCount =
-            std::min(1000, static_cast<int>(ids.size()));  // Limit to 1000 rows
+    int rowCount = static_cast<int>(ids.size());
     m_spreadsheetTable->setRowCount(rowCount);
 
     for (int row = 0; row < rowCount; ++row) {

@@ -89,6 +89,10 @@ public:
         OBJECT_CONE_BOTTOM_RADIUS,
         OBJECT_CONE_TOP_RADIUS,
         OBJECT_CLOUD_POINT_SIZE,
+        OBJECT_CLOUD_POINT_GAUSSIAN,
+        OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS,
+        OBJECT_CLOUD_POINT_GAUSSIAN_PRESET,
+        OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE,
         OBJECT_NAME_IN_3D,
         OBJECT_FACET_CONTOUR,
         OBJECT_FACET_MESH,
@@ -223,6 +227,8 @@ private:
     void sensorIndexChanged(double);
     void updateCurrentEntity(bool redraw = true);
     void cloudPointSizeChanged(int);
+    void cloudPointGaussianRadiusChanged(double);
+    void cloudPointGaussianPresetChanged(int);
     void polyineWidthChanged(int);
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
@@ -269,6 +275,8 @@ protected:
 
     //! Returns whether the editor is wide (i.e. spans on two columns) or not
     bool isWideEditor(int itemData) const;
+
+    void setPointGaussianSubPropsEnabled(bool enabled);
 
     //! Updates the current model (assuming object is the same)
     void updateModel();

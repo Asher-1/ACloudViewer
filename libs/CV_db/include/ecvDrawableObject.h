@@ -165,6 +165,57 @@ public:  // Temporary color
         setRedraw(false);
     }
 
+    //! Point Gaussian shader presets (matching ParaView)
+    enum PointGaussianShaderPreset {
+        PG_GAUSSIAN_BLUR = 0,
+        PG_SPHERE,
+        PG_BLACK_EDGED_CIRCLE,
+        PG_PLAIN_CIRCLE,
+        PG_TRIANGLE,
+        PG_SQUARE_OUTLINE,
+        PG_PRESET_COUNT
+    };
+
+    //! Returns whether Point Gaussian (splat) rendering is enabled
+    inline bool pointGaussianEnabled() const { return m_pointGaussianEnabled; }
+
+    //! Enables/disables Point Gaussian (splat) rendering
+    inline void setPointGaussianEnabled(bool state) {
+        m_pointGaussianEnabled = state;
+        setRedraw(false);
+    }
+
+    //! Returns the Point Gaussian splat radius
+    inline double pointGaussianRadius() const { return m_pointGaussianRadius; }
+
+    //! Sets the Point Gaussian splat radius
+    inline void setPointGaussianRadius(double radius) {
+        m_pointGaussianRadius = radius;
+        setRedraw(false);
+    }
+
+    //! Returns the Point Gaussian shader preset
+    inline int pointGaussianShaderPreset() const {
+        return m_pointGaussianShaderPreset;
+    }
+
+    //! Sets the Point Gaussian shader preset
+    inline void setPointGaussianShaderPreset(int preset) {
+        m_pointGaussianShaderPreset = preset;
+        setRedraw(false);
+    }
+
+    //! Returns whether Point Gaussian emissive mode is enabled
+    inline bool pointGaussianEmissive() const {
+        return m_pointGaussianEmissive;
+    }
+
+    //! Enables/disables Point Gaussian emissive mode
+    inline void setPointGaussianEmissive(bool state) {
+        m_pointGaussianEmissive = state;
+        setRedraw(false);
+    }
+
 public:  // Transformation matrix management (for display only)
     //! Associates entity with a GL transformation (rotation + translation)
     /** \warning FOR DISPLAY PURPOSE ONLY (i.e. should only be temporary)
@@ -298,6 +349,18 @@ protected:  // members
 
     //! Active clipping planes (used for display only)
     ccClipPlaneSet m_clipPlanes;
+
+    //! Point Gaussian (splat) rendering enabled
+    bool m_pointGaussianEnabled;
+
+    //! Point Gaussian splat radius
+    double m_pointGaussianRadius;
+
+    //! Point Gaussian shader preset index
+    int m_pointGaussianShaderPreset;
+
+    //! Point Gaussian emissive mode
+    bool m_pointGaussianEmissive;
 
     //! The stack of pushed display states
     std::vector<DisplayState::Shared> m_displayStateStack;

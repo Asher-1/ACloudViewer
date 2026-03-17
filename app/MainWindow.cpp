@@ -184,6 +184,7 @@
 #include <Tools/SelectionTools/cvFindDataDockWidget.h>
 #include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Tools/SelectionTools/cvSelectionPropertiesWidget.h>
 #include <Tools/SelectionTools/cvSelectionToolController.h>
 #include <Tools/SelectionTools/cvViewSelectionManager.h>
 #include <Tools/TransformTools/VtkTransformTool.h>

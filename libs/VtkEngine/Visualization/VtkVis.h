@@ -376,8 +376,11 @@ public:
      */
     void resetCameraClippingRange(int viewport = 0);
     void internalResetCameraClippingRange() {
-        this->resetCameraClippingRange(0);
+        this->resetCameraClippingCached(0);
     }
+    void installClippingRangeObserver(vtkSmartPointer<vtkRenderer> ren);
+    void invalidateGeometryBounds() { GeometryBoundsDirty = true; }
+    void resetCameraClippingCached(int viewport);
     /** @param bbox Bounding box to fit camera to
      */
     void resetCamera(const ccBBox* bbox);
@@ -728,6 +731,32 @@ public:
     void setMeshRenderingMode(MESH_RENDERING_MODE mode,
                               const std::string& viewID,
                               int viewport = 0);
+
+    /** @brief Enable/disable stippling effect on a mesh actor.
+     *  Uses reduced opacity + edge visibility to simulate polygon stippling.
+     *  @param enabled Whether stippling is enabled
+     *  @param viewID The mesh's view ID
+     *  @param viewport Viewport index
+     */
+    void setMeshStippling(bool enabled,
+                          const std::string& viewID,
+                          int viewport = 0);
+
+    /** @brief Enable/disable Point Gaussian rendering for a point cloud.
+     *  When enabled, replaces the standard mapper with vtkPointGaussianMapper
+     *  for splat-based rendering. When disabled, restores the standard mapper.
+     *  @param enabled Whether Point Gaussian rendering is enabled
+     *  @param gaussianRadius Splat radius (default 0.01)
+     *  @param viewID The point cloud's view ID
+     *  @param viewport Viewport index
+     */
+    void setPointGaussianRendering(bool enabled,
+                                   double gaussianRadius,
+                                   int shaderPreset,
+                                   bool emissive,
+                                   const std::string& viewID,
+                                   int viewport = 0);
+
     void setLightMode(const std::string& viewID, int viewport = 0);
     void setPointCloudOpacity(double opacity,
                               const std::string& viewID,
@@ -830,6 +859,7 @@ protected:
     PropActorMapPtr m_prop_map;
 
     vtkBoundingBox GeometryBounds;
+    bool GeometryBoundsDirty = true;
     vtkSmartPointer<VTKExtensions::vtkPVCenterAxesActor> m_centerAxes;
     vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
             TwoDInteractorStyle;
