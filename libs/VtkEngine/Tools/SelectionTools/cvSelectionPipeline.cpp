@@ -288,30 +288,52 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
         return nullptr;
     }
 
-    // Get the first selection node
-    if (selection->GetNumberOfNodes() == 0) {
+    unsigned int numNodes = selection->GetNumberOfNodes();
+    if (numNodes == 0) {
         CVLog::Print("[cvSelectionPipeline] Selection has no nodes");
         return nullptr;
     }
 
-    vtkSelectionNode* node = selection->GetNode(0);
-    if (!node) {
-        CVLog::Warning("[cvSelectionPipeline] Invalid selection node");
-        return nullptr;
-    }
-
-    // Get the selection list
-    vtkIdTypeArray* selectionList =
-            vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
-    if (!selectionList) {
-        return nullptr;
-    }
-
-    // Return a copy (automatic memory management)
-    vtkSmartPointer<vtkIdTypeArray> copy =
+    // ParaView merges IDs from all matching selection nodes via
+    // vtkSelection::Union. We collect IDs from all nodes whose field type
+    // matches the requested association.
+    vtkSmartPointer<vtkIdTypeArray> merged =
             vtkSmartPointer<vtkIdTypeArray>::New();
-    copy->DeepCopy(selectionList);
-    return copy;
+
+    int targetFieldType = (fieldAssociation == SURFACE_CELLS ||
+                           fieldAssociation == FRUSTUM_CELLS ||
+                           fieldAssociation == POLYGON_CELLS)
+                                  ? vtkSelectionNode::CELL
+                                  : vtkSelectionNode::POINT;
+
+    for (unsigned int i = 0; i < numNodes; ++i) {
+        vtkSelectionNode* node = selection->GetNode(i);
+        if (!node) continue;
+
+        int nodeFieldType = node->GetFieldType();
+        if (nodeFieldType != targetFieldType &&
+            nodeFieldType != vtkSelectionNode::POINT &&
+            nodeFieldType != vtkSelectionNode::CELL) {
+            nodeFieldType = targetFieldType;
+        }
+        if (numNodes > 1 && nodeFieldType != targetFieldType) {
+            continue;
+        }
+
+        vtkIdTypeArray* selectionList =
+                vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+        if (!selectionList) continue;
+
+        for (vtkIdType j = 0; j < selectionList->GetNumberOfTuples(); ++j) {
+            merged->InsertNextValue(selectionList->GetValue(j));
+        }
+    }
+
+    if (merged->GetNumberOfTuples() == 0) {
+        return nullptr;
+    }
+
+    return merged;
 }
 
 //-----------------------------------------------------------------------------

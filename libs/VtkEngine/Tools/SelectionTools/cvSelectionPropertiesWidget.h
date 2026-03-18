@@ -224,6 +224,7 @@ private slots:
                                          double z,
                                          double tolerance,
                                          bool isCell);
+    vtkPolyData* getPolyDataForDataProducer() const;
     void onSpreadsheetItemClicked(QTableWidgetItem* item);
 
     // Legacy slots (existing functionality)

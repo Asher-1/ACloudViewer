@@ -59,6 +59,8 @@
 #include <vtkActor.h>
 #include <vtkCell.h>
 #include <vtkCellData.h>
+#include <vtkCellLocator.h>
+#include <vtkNew.h>
 #include <vtkDataArray.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
@@ -879,8 +881,13 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     connect(m_extractButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onExtractClicked);
 
-    // Note: Plot Distribution button removed - feature not fully implemented
-    // Can be re-added when histogram plotting is available
+    // Plot Over Time button
+    m_plotOverTimeButton = new QPushButton(tr("Plot Over Time"));
+    m_plotOverTimeButton->setToolTip(tr("Plot selection over time"));
+    m_plotOverTimeButton->setFixedHeight(25);
+    m_plotOverTimeButton->setEnabled(false);
+    connect(m_plotOverTimeButton, &QPushButton::clicked, this,
+            &cvSelectionPropertiesWidget::onPlotOverTimeClicked);
 }
 
 //-----------------------------------------------------------------------------
@@ -1328,12 +1335,6 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
             &cvSelectionPropertiesWidget::
                     onEditInteractiveLabelPropertiesClicked);
     displayLayout->addWidget(m_editInteractiveLabelPropertiesButton);
-
-    // Add vertical spacer at bottom (ParaView-style)
-    displayLayout->addStretch();
-
-    // Layout is already set on m_selectionDisplayContainer
-    // No need for setupCollapsibleGroupBox - handled by cvExpanderButton
 }
 
 //-----------------------------------------------------------------------------
@@ -1618,27 +1619,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     dataLayout->addWidget(m_spreadsheetTable, 2, 0, 1,
                           5);  // Row 2, spanning all 5 columns
 
-    // Row 3: Action buttons (ParaView-style: Freeze | Extract | Plot Over Time)
-    // These buttons span all 5 columns
-    QHBoxLayout* actionLayout = new QHBoxLayout();
-    actionLayout->setSpacing(3);
-
-    // Freeze button (ParaView style)
-    actionLayout->addWidget(m_freezeButton);
-
-    // Extract button (ParaView style)
-    actionLayout->addWidget(m_extractButton);
-
-    // Plot Over Time button (ParaView style)
-    m_plotOverTimeButton = new QPushButton(tr("Plot Over Time"));
-    m_plotOverTimeButton->setToolTip(tr("Plot selection over time"));
-    m_plotOverTimeButton->setEnabled(false);  // Enabled when selection exists
-    connect(m_plotOverTimeButton, &QPushButton::clicked, this,
-            &cvSelectionPropertiesWidget::onPlotOverTimeClicked);
-    actionLayout->addWidget(m_plotOverTimeButton);
-
-    dataLayout->addLayout(actionLayout, 3, 0, 1,
-                          5);  // Row 3, spanning all 5 columns
+    // Buttons (Freeze, Extract, Plot Over Time) are placed in the
+    // buttonContainer created by the caller after setupSelectedDataHeader().
 
     // Layout is already set on m_selectedDataSpreadsheetContainer
     // No need for setupCollapsibleGroupBox - handled by cvExpanderButton
@@ -1765,9 +1747,11 @@ bool cvSelectionPropertiesWidget::updateSelection(
     }
 
     // Update Data Producer from source object name (ParaView style)
-    cvViewSelectionManager* manager = cvViewSelectionManager::instance();
-    if (manager) {
-        ccHObject* sourceObj = manager->getSourceObject();
+    cvViewSelectionManager* mgr =
+            m_selectionManager ? m_selectionManager
+                               : cvViewSelectionManager::instance();
+    if (mgr) {
+        ccHObject* sourceObj = mgr->getSourceObject();
         if (sourceObj) {
             QString sourceName = sourceObj->getName();
             setDataProducerName(sourceName);
@@ -1793,10 +1777,11 @@ bool cvSelectionPropertiesWidget::updateSelection(
 
     // Get polyData if not provided (using centralized ParaView-style method)
     if (!polyData) {
-        // First try from selection manager (most reliable source)
-        cvViewSelectionManager* manager = cvViewSelectionManager::instance();
-        if (manager) {
-            polyData = manager->getPolyData();
+        cvViewSelectionManager* mgr2 =
+                m_selectionManager ? m_selectionManager
+                                   : cvViewSelectionManager::instance();
+        if (mgr2) {
+            polyData = mgr2->getPolyData();
         }
 
         // Fallback to getPolyDataForSelection
@@ -4120,13 +4105,8 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
         // Cell selection on mesh -> export as mesh
         onExportToMeshClicked();
     } else {
-        // Point selection OR cell selection on point cloud -> export as point
-        // cloud For cell selection on point cloud, the cell IDs ARE the point
-        // IDs (each vertex is a cell in VTK point cloud representation)
         onExportToPointCloudClicked();
     }
-
-    emit extractSelectionRequested();
 }
 
 //-----------------------------------------------------------------------------
@@ -4479,7 +4459,16 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     // Execute the query with support for multiple query rows
     // ParaView reference: pqFindDataWidget::pqInternals::findData()
     if (m_queryRows.isEmpty()) {
-        CVLog::Warning("[cvSelectionPropertiesWidget] No query rows available");
+        // ParaView: empty query clears the selection
+        CVLog::Print("[cvSelectionPropertiesWidget] No query rows - clearing selection");
+        m_selectionData.clear();
+        if (m_selectionManager) {
+            m_selectionManager->setCurrentSelection(m_selectionData);
+        }
+        vtkPolyData* polyData = getPolyDataForSelection(nullptr);
+        if (polyData) {
+            updateSelection(m_selectionData, polyData);
+        }
         return;
     }
 
@@ -4696,10 +4685,14 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         savedSelections.append({attr, op});
     }
 
-    // Update selection
+    // Update selection and notify manager
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     m_selectionData = combinedResult;
     updateSelection(m_selectionData, polyData);
+
+    if (m_selectionManager) {
+        m_selectionManager->setCurrentSelection(m_selectionData);
+    }
 
     // Restore query row selections (they may have been reset by
     // updateAttributeCombo)
@@ -4842,7 +4835,11 @@ void cvSelectionPropertiesWidget::onClearClicked() {
         pclVis->UpdateScreen();
     }
 
-    // Emit signal to notify other components
+    // Notify selection manager
+    if (m_selectionManager) {
+        m_selectionManager->clearSelection();
+    }
+
     emit selectionCleared();
 
     CVLog::Print("[cvSelectionPropertiesWidget] Selection and query cleared.");
@@ -5706,6 +5703,53 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
 }
 
 //-----------------------------------------------------------------------------
+vtkPolyData* cvSelectionPropertiesWidget::getPolyDataForDataProducer() const {
+    if (!m_dataProducerCombo || m_dataProducerCombo->currentIndex() <= 0) {
+        return nullptr;
+    }
+
+    QString producerName = m_dataProducerCombo->currentText();
+    Visualization::VtkVis* pclVis =
+            const_cast<cvSelectionPropertiesWidget*>(this)->getVtkVis();
+    if (!pclVis) return nullptr;
+
+    vtkRendererCollection* renderers = pclVis->getRendererCollection();
+    if (!renderers) return nullptr;
+
+    renderers->InitTraversal();
+    vtkRenderer* renderer;
+    while ((renderer = renderers->GetNextItem()) != nullptr) {
+        vtkActorCollection* actors = renderer->GetActors();
+        if (!actors) continue;
+
+        actors->InitTraversal();
+        vtkActor* actor;
+        while ((actor = actors->GetNextActor()) != nullptr) {
+            if (!actor->GetVisibility()) continue;
+
+            vtkPolyData* actorPolyData = vtkPolyData::SafeDownCast(
+                    actor->GetMapper() ? actor->GetMapper()->GetInput()
+                                       : nullptr);
+            if (!actorPolyData) continue;
+
+            vtkFieldData* fieldData = actorPolyData->GetFieldData();
+            if (!fieldData) continue;
+
+            vtkStringArray* nameArray = vtkStringArray::SafeDownCast(
+                    fieldData->GetAbstractArray("DatasetName"));
+            if (nameArray && nameArray->GetNumberOfTuples() > 0) {
+                QString name =
+                        QString::fromStdString(nameArray->GetValue(0));
+                if (name == producerName) {
+                    return actorPolyData;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         const QString& attribute,
         const QString& op,
@@ -5725,7 +5769,11 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
     // - is mean: within tolerance of mean
     // - is NaN: check for NaN values
 
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    // ParaView queries the selected Data Producer's full dataset
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         CVLog::Warning("[executeFindDataQuery] No data available");
         return cvSelectionData();
@@ -5905,6 +5953,7 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         double sum = 0.0;
         minVal = std::numeric_limits<double>::max();
         maxVal = std::numeric_limits<double>::lowest();
+        vtkIdType validCount = 0;
 
         for (vtkIdType i = 0; i < numElements; ++i) {
             double val = getValue(i);
@@ -5912,9 +5961,10 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                 sum += val;
                 minVal = std::min(minVal, val);
                 maxVal = std::max(maxVal, val);
+                ++validCount;
             }
         }
-        meanVal = numElements > 0 ? sum / numElements : 0.0;
+        meanVal = validCount > 0 ? sum / validCount : 0.0;
     }
 
     // Find matching elements
@@ -5952,6 +6002,7 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
             // Match if within tolerance of mean
             matchResult = (std::abs(val - meanVal) <= queryValue);
         } else if (op == tr("is in range")) {
+            // ParaView uses strict inequality: ({term} > {value_min}) & ({term} < {value_max})
             matchResult = (val > queryValueMin && val < queryValueMax);
         } else if (op == tr("is one of")) {
             for (double v : queryValueList) {
@@ -5987,7 +6038,10 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
     // ParaView-style location-based query execution
     // Implements "nearest to" (Point) and "containing" (Cell) operators
 
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         CVLog::Warning(
                 "[executeFindDataQuery] No polyData available for "
@@ -6046,22 +6100,30 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                              .arg(z));
 
     } else if (op == tr("containing")) {
-        // Find cells that contain the target point
+        // Find cells that contain the target point using vtkCellLocator
         // ParaView: cellContainsPoint(inputs, [location])
-        // This requires a cell locator for accurate containment tests
         double targetPt[3] = {x, y, z};
 
-        // Simple bounding box test for now
-        // For more accurate results, would need vtkCellLocator
-        for (vtkIdType i = 0; i < polyData->GetNumberOfCells(); ++i) {
-            double bounds[6];
-            polyData->GetCellBounds(i, bounds);
+        vtkNew<vtkCellLocator> locator;
+        locator->SetDataSet(polyData);
+        locator->BuildLocator();
 
-            // Check if point is within cell bounds
-            if (targetPt[0] >= bounds[0] && targetPt[0] <= bounds[1] &&
-                targetPt[1] >= bounds[2] && targetPt[1] <= bounds[3] &&
-                targetPt[2] >= bounds[4] && targetPt[2] <= bounds[5]) {
-                matchingIds.append(static_cast<qint64>(i));
+        double closestPt[3], dist2;
+        vtkIdType cellId;
+        int subId;
+        locator->FindClosestPoint(targetPt, closestPt, cellId, subId, dist2);
+
+        if (cellId >= 0) {
+            vtkCell* cell = polyData->GetCell(cellId);
+            if (cell) {
+                double pcoords[3];
+                double weights[64];
+                int inside = cell->EvaluatePosition(targetPt, closestPt,
+                                                    subId, pcoords, dist2,
+                                                    weights);
+                if (inside == 1) {
+                    matchingIds.append(static_cast<qint64>(cellId));
+                }
             }
         }
 
@@ -6084,7 +6146,10 @@ void cvSelectionPropertiesWidget::performFindData(const QString& attribute,
                                                   const QString& value,
                                                   bool isCell) {
     // Perform the query and create selection
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         QMessageBox::warning(this, tr("Find Data"),
                              tr("No data available to query."));
