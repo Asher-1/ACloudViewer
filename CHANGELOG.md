@@ -12,6 +12,7 @@ v3.9.5-Beta (Asher) - 02/02/2026
       - Properties available for both point clouds and meshes via ccDrawableObject base class
     - Add mesh stippling rendering support
       - Approximated via reduced opacity + edge visibility (VTK OpenGL2 backend)
+
 - Bug fixes:
     - Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid
         - Create per-thread std::vector<geometry::Voxel> in parallel with OpenMP
@@ -58,6 +59,16 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix Point Gaussian sub-properties not greyed out when disabled
         - Shader Preset, Gaussian Radius, and Emissive are now disabled when Point Gaussian is unchecked
         - Sub-properties dynamically enable/disable when checkbox state changes
+    - Fix Selection Tools "Create Data" panel bugs
+        - Fix double extractSelectionRequested signal emission causing duplicate handlers
+        - Fix updateSelection using singleton instead of injected m_selectionManager
+        - Fix button layout: Freeze/Extract/PlotOverTime buttons were duplicated in two layouts
+        - Fix "containing" operator to use vtkCellLocator for accurate point-in-cell tests (was bounding box only)
+        - Fix Find Data / Clear Selection not notifying selection manager
+    - Fix DB tree and properties panel default width too narrow
+        - Increase minimum width from 180px to 240px for both panels
+        - Increase default width range to 250-380px (18% of screen width)
+        - Properties tree value column now stretches to fill available space
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
@@ -78,7 +89,7 @@ v3.9.5-Beta (Asher) - 02/02/2026
 ### Supported Platforms:
 - Windows `x86/64`
 - Linux `x86/64`
-- MacOS `X64 && arm64 (M1-4)`
+- MacOS `arm64 (M1-5)`
 
 
 v3.9.4 (Asher) - 02/01/2026
@@ -252,7 +263,7 @@ v3.9.4 (Asher) - 02/01/2026
 ### Supported Platforms:
 - Windows `x86/64`
 - Linux `x86/64`
-- MacOS `X64 && arm64 (M1-4)`
+- MacOS `arm64 (M1-4)`
 
 v3.9.3 (Asher) - 10/14/2025
 ----------------------

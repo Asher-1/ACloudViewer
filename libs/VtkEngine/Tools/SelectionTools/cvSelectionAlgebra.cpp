@@ -1083,7 +1083,8 @@ cvSelectionData cvSelectionFilter::filterByAttributeRange(
 
         double value = array->GetComponent(id, 0);
 
-        if (value >= minValue && value <= maxValue) {
+        // ParaView uses strict inequality for range: (term > min) & (term < max)
+        if (value > minValue && value < maxValue) {
             filteredIds.append(id);
         }
     }
