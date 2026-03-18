@@ -60,12 +60,12 @@
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkCellLocator.h>
-#include <vtkNew.h>
 #include <vtkDataArray.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
 #include <vtkIdTypeArray.h>
 #include <vtkMapper.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -1747,9 +1747,9 @@ bool cvSelectionPropertiesWidget::updateSelection(
     }
 
     // Update Data Producer from source object name (ParaView style)
-    cvViewSelectionManager* mgr =
-            m_selectionManager ? m_selectionManager
-                               : cvViewSelectionManager::instance();
+    cvViewSelectionManager* mgr = m_selectionManager
+                                          ? m_selectionManager
+                                          : cvViewSelectionManager::instance();
     if (mgr) {
         ccHObject* sourceObj = mgr->getSourceObject();
         if (sourceObj) {
@@ -4460,7 +4460,9 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     // ParaView reference: pqFindDataWidget::pqInternals::findData()
     if (m_queryRows.isEmpty()) {
         // ParaView: empty query clears the selection
-        CVLog::Print("[cvSelectionPropertiesWidget] No query rows - clearing selection");
+        CVLog::Print(
+                "[cvSelectionPropertiesWidget] No query rows - clearing "
+                "selection");
         m_selectionData.clear();
         if (m_selectionManager) {
             m_selectionManager->setCurrentSelection(m_selectionData);
@@ -5738,8 +5740,7 @@ vtkPolyData* cvSelectionPropertiesWidget::getPolyDataForDataProducer() const {
             vtkStringArray* nameArray = vtkStringArray::SafeDownCast(
                     fieldData->GetAbstractArray("DatasetName"));
             if (nameArray && nameArray->GetNumberOfTuples() > 0) {
-                QString name =
-                        QString::fromStdString(nameArray->GetValue(0));
+                QString name = QString::fromStdString(nameArray->GetValue(0));
                 if (name == producerName) {
                     return actorPolyData;
                 }
@@ -6002,7 +6003,8 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
             // Match if within tolerance of mean
             matchResult = (std::abs(val - meanVal) <= queryValue);
         } else if (op == tr("is in range")) {
-            // ParaView uses strict inequality: ({term} > {value_min}) & ({term} < {value_max})
+            // ParaView uses strict inequality: ({term} > {value_min}) & ({term}
+            // < {value_max})
             matchResult = (val > queryValueMin && val < queryValueMax);
         } else if (op == tr("is one of")) {
             for (double v : queryValueList) {
@@ -6118,9 +6120,8 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
             if (cell) {
                 double pcoords[3];
                 double weights[64];
-                int inside = cell->EvaluatePosition(targetPt, closestPt,
-                                                    subId, pcoords, dist2,
-                                                    weights);
+                int inside = cell->EvaluatePosition(targetPt, closestPt, subId,
+                                                    pcoords, dist2, weights);
                 if (inside == 1) {
                     matchingIds.append(static_cast<qint64>(cellId));
                 }
