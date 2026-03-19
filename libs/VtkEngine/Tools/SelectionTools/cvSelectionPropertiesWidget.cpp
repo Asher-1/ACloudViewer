@@ -3467,63 +3467,73 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
         return;
     }
 
-    // ParaView: check element type compatibility
+    // Capture selection data BEFORE any modal dialog.
+    // QMessageBox::warning runs a nested event loop that may allow other
+    // callbacks to modify m_selectionData (ParaView avoids this by deep-copying
+    // the proxy before showing the dialog).
+    cvSelectionData capturedData = m_selectionData;
+
     bool newIsCell =
-            (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
+            (capturedData.fieldAssociation() == cvSelectionData::CELLS);
     bool typeMismatch = false;
+
     if (!m_savedSelections.isEmpty()) {
         bool existingIsCell =
                 (m_savedSelections.first().data.fieldAssociation() ==
                  cvSelectionData::CELLS);
         if (existingIsCell != newIsCell) {
-            auto answer = QMessageBox::warning(
+            QMessageBox::StandardButton answer = QMessageBox::warning(
                     this, tr("Different Element Type"),
                     tr("The current active selection has a different "
                        "element type compared to chosen element type.\n"
                        "Are you sure you want to continue?"),
-                    QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
-            if (answer == QMessageBox::Cancel) {
+                    QMessageBox::Ok | QMessageBox::Cancel,
+                    QMessageBox::Cancel);
+            if (answer != QMessageBox::Ok) {
                 return;
             }
-            // ParaView behavior: CombineSelection returns false when types
-            // differ, but the result is still copied back — effectively
-            // replacing all saved selections with just the new one
             typeMismatch = true;
-            updateElementTypeDisplay(newIsCell);
+            CVLog::Print(
+                    QString("[cvSelectionPropertiesWidget] Element type "
+                            "mismatch: replacing %1 with %2")
+                            .arg(existingIsCell ? "Cell" : "Point")
+                            .arg(newIsCell ? "Cell" : "Point"));
         }
     }
-    // ParaView: enable element type info when first selection is added
-    if (m_elementTypeValue && !m_elementTypeValue->isEnabled()) {
+
+    // ParaView: setElementType — update display for the new type
+    if (m_elementTypeValue) {
         m_elementTypeValue->setEnabled(true);
         updateElementTypeDisplay(newIsCell);
     }
 
-    // If type mismatch: clear existing saved selections (ParaView behavior)
+    // ParaView behavior: CombineSelection returns false when types differ;
+    // the copy-back replaces all saved selections with just the new one.
     if (typeMismatch) {
         m_savedSelections.clear();
         m_selectionNameCounter = 0;
+        m_expressionEdit->blockSignals(true);
         m_expressionEdit->clear();
+        m_expressionEdit->blockSignals(false);
     }
 
     SavedSelection saved;
     saved.name = generateSelectionName();
     saved.type = tr("ID Selection");
     saved.color = generateSelectionColor();
-    saved.data = m_selectionData;
+    saved.data = capturedData;
 
     m_savedSelections.append(saved);
     updateSelectionEditorTable();
 
     // ParaView CombineSelection ADDITION logic:
     // existing expression | new_name
-    // With InsideOut handling and proper parenthesization
     QString existingExpr = m_expressionEdit->text();
     QString newExpr;
 
     if (existingExpr.isEmpty()) {
         newExpr = saved.name;
     } else {
-        // ParaView wraps multi-input expressions in parentheses
         QString wrappedExisting = existingExpr;
         if (m_savedSelections.size() > 2) {
             wrappedExisting = QString("(%1)").arg(existingExpr);
@@ -3538,20 +3548,21 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
         m_expressionEdit->setEnabled(true);
     }
 
-    // ParaView: disable + button until a new selection is made
     if (m_addSelectionButton) {
         m_addSelectionButton->setEnabled(false);
     }
 
-    // ParaView: clear interactive selection after adding
     clearInteractiveSelection();
     m_selectionData.clear();
     emit selectionAdded(saved.data);
 
-    CVLog::PrintVerbose(
-            QString("[cvSelectionPropertiesWidget] Added selection: %1 "
-                    "(+ button disabled until new selection)")
-                    .arg(saved.name));
+    CVLog::Print(
+            QString("[cvSelectionPropertiesWidget] Added selection: %1 (%2, "
+                    "%3 elements%4)")
+                    .arg(saved.name)
+                    .arg(newIsCell ? "Cell" : "Point")
+                    .arg(capturedData.count())
+                    .arg(typeMismatch ? ", replaced old type" : ""));
 }
 
 //-----------------------------------------------------------------------------
@@ -3759,16 +3770,6 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
                          "%1 elements")
                          .arg(result.count()));
 
-    // Apply selection color from saved selections
-    // ParaView sets SelectionColors on AppendSelections; we apply the first
-    // saved selection's color to the SELECTED highlight mode
-    if (m_highlighter && !m_savedSelections.isEmpty()) {
-        QColor selColor = m_savedSelections.first().color;
-        m_highlighter->setHighlightColor(selColor.redF(), selColor.greenF(),
-                                         selColor.blueF(),
-                                         cvSelectionHighlighter::SELECTED);
-    }
-
     // Set the combined selection as the current selection
     if (m_selectionManager) {
         m_selectionManager->setCurrentSelection(result);
@@ -3776,6 +3777,49 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
         vtkPolyData* polyData = getPolyDataForSelection(&result);
         if (polyData) {
             updateSelection(result, polyData);
+
+            // ParaView-style per-selection coloring:
+            // Build (selection, color) pairs and use multi-color highlight
+            // so each sub-selection renders with its own color from the
+            // Selection Editor's Color column.
+            if (m_highlighter && !m_savedSelections.isEmpty()) {
+                QSet<vtkIdType> resultIdSet;
+                if (result.vtkArray()) {
+                    for (vtkIdType i = 0;
+                         i < result.vtkArray()->GetNumberOfTuples(); ++i) {
+                        resultIdSet.insert(result.vtkArray()->GetValue(i));
+                    }
+                }
+
+                QVector<QPair<vtkSmartPointer<vtkIdTypeArray>, QColor>>
+                        selectionsWithColors;
+                for (const auto& saved : m_savedSelections) {
+                    if (saved.data.isEmpty() || !saved.data.vtkArray()) {
+                        continue;
+                    }
+                    vtkSmartPointer<vtkIdTypeArray> intersectedIds =
+                            vtkSmartPointer<vtkIdTypeArray>::New();
+                    for (vtkIdType i = 0;
+                         i < saved.data.vtkArray()->GetNumberOfTuples();
+                         ++i) {
+                        vtkIdType id = saved.data.vtkArray()->GetValue(i);
+                        if (resultIdSet.contains(id)) {
+                            intersectedIds->InsertNextValue(id);
+                        }
+                    }
+                    if (intersectedIds->GetNumberOfTuples() > 0) {
+                        selectionsWithColors.append(qMakePair(
+                                intersectedIds, saved.color));
+                    }
+                }
+
+                if (!selectionsWithColors.isEmpty()) {
+                    m_highlighter->highlightMultiColorSelections(
+                            polyData, selectionsWithColors,
+                            result.fieldAssociation(),
+                            cvSelectionHighlighter::SELECTED);
+                }
+            }
 
             CVLog::Print(
                     QString("[cvSelectionPropertiesWidget] Activated combined "
