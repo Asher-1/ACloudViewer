@@ -3487,17 +3487,15 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
                     tr("The current active selection has a different "
                        "element type compared to chosen element type.\n"
                        "Are you sure you want to continue?"),
-                    QMessageBox::Ok | QMessageBox::Cancel,
-                    QMessageBox::Cancel);
+                    QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
             if (answer != QMessageBox::Ok) {
                 return;
             }
             typeMismatch = true;
-            CVLog::Print(
-                    QString("[cvSelectionPropertiesWidget] Element type "
-                            "mismatch: replacing %1 with %2")
-                            .arg(existingIsCell ? "Cell" : "Point")
-                            .arg(newIsCell ? "Cell" : "Point"));
+            CVLog::Print(QString("[cvSelectionPropertiesWidget] Element type "
+                                 "mismatch: replacing %1 with %2")
+                                 .arg(existingIsCell ? "Cell" : "Point")
+                                 .arg(newIsCell ? "Cell" : "Point"));
         }
     }
 
@@ -3800,16 +3798,15 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
                     vtkSmartPointer<vtkIdTypeArray> intersectedIds =
                             vtkSmartPointer<vtkIdTypeArray>::New();
                     for (vtkIdType i = 0;
-                         i < saved.data.vtkArray()->GetNumberOfTuples();
-                         ++i) {
+                         i < saved.data.vtkArray()->GetNumberOfTuples(); ++i) {
                         vtkIdType id = saved.data.vtkArray()->GetValue(i);
                         if (resultIdSet.contains(id)) {
                             intersectedIds->InsertNextValue(id);
                         }
                     }
                     if (intersectedIds->GetNumberOfTuples() > 0) {
-                        selectionsWithColors.append(qMakePair(
-                                intersectedIds, saved.color));
+                        selectionsWithColors.append(
+                                qMakePair(intersectedIds, saved.color));
                     }
                 }
 
