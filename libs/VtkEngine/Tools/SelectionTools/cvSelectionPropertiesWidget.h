@@ -176,6 +176,7 @@ private slots:
             const cvSelectionLabelPropertiesDialog::LabelProperties& props);
 
     // === Selection Editor slots ===
+    void clearInteractiveSelection();
     void onExpressionChanged(const QString& text);
     void onAddActiveSelectionClicked();
     void onRemoveSelectedSelectionClicked();
@@ -283,6 +284,7 @@ private:
     qint64 extractIdFromItemText(const QString& itemText);
     // updateBookmarkCombo removed - UI not implemented
     void updateSelectionEditorTable();
+    void updateElementTypeDisplay(bool isCellType);
     QString generateSelectionName();
     QColor generateSelectionColor() const;
 
