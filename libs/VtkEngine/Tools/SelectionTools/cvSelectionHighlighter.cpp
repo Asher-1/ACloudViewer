@@ -20,7 +20,9 @@
 #include <vtkAbstractArray.h>
 #include <vtkActor.h>
 #include <vtkActor2D.h>
+#include <vtkAppendFilter.h>
 #include <vtkCellCenters.h>
+#include <vtkCellData.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkDataSetMapper.h>
@@ -41,8 +43,6 @@
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
 #include <vtkTextProperty.h>
-#include <vtkAppendFilter.h>
-#include <vtkCellData.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
@@ -402,7 +402,8 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
                 selectionsWithColors,
         int fieldAssociation,
         HighlightMode mode) {
-    if (!m_enabled || !m_viewer || !polyData || selectionsWithColors.isEmpty()) {
+    if (!m_enabled || !m_viewer || !polyData ||
+        selectionsWithColors.isEmpty()) {
         return false;
     }
 
@@ -454,9 +455,8 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
         vtkUnstructuredGrid* extracted =
                 vtkUnstructuredGrid::SafeDownCast(extractor->GetOutput());
-        if (!extracted ||
-            (extracted->GetNumberOfCells() == 0 &&
-             extracted->GetNumberOfPoints() == 0)) {
+        if (!extracted || (extracted->GetNumberOfCells() == 0 &&
+                           extracted->GetNumberOfPoints() == 0)) {
             continue;
         }
 
@@ -495,8 +495,8 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
     appendFilter->Update();
     vtkDataSet* merged = appendFilter->GetOutput();
-    if (!merged || (merged->GetNumberOfCells() == 0 &&
-                    merged->GetNumberOfPoints() == 0)) {
+    if (!merged ||
+        (merged->GetNumberOfCells() == 0 && merged->GetNumberOfPoints() == 0)) {
         return false;
     }
 
