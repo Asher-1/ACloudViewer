@@ -94,6 +94,16 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Add Element Type icon display (pqPointData.svg / pqCellData.svg) matching ParaView's setElementType
         - Fix onTableSelectionChanged to hide PRESELECTED highlight when no row is selected (ParaView hideInteractiveSelection)
         - Apply saved selection color to SELECTED highlight when Activate Combined is clicked
+    - Fix Selection Editor per-selection coloring not applied on Activate Combined (ParaView alignment)
+        - Each sub-selection now renders with its own Color column color via per-cell/point scalar coloring
+        - Previously only used the first saved selection's color for all highlights
+        - Add highlightMultiColorSelections() to cvSelectionHighlighter: extracts geometry per sub-selection, assigns vtkSelectionColor array, merges with vtkAppendFilter, renders with ScalarVisibilityOn + DirectScalars
+        - Activate Combined now intersects each saved selection's IDs with the expression result and passes per-selection colors
+    - Fix Selection Editor Add Selection element type mismatch not replacing properly
+        - Deep-copy m_selectionData before showing QMessageBox to prevent nested event loop race condition
+        - Fix dialog return value check: use != Ok instead of == Cancel to handle non-standard close
+        - Block expression edit signals during clear to prevent cascading state changes
+        - Always update element type display when adding selections
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations

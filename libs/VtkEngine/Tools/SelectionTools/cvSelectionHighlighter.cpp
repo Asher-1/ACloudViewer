@@ -41,6 +41,9 @@
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
 #include <vtkTextProperty.h>
+#include <vtkAppendFilter.h>
+#include <vtkCellData.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
 //-----------------------------------------------------------------------------
@@ -390,6 +393,204 @@ bool cvSelectionHighlighter::highlightSelection(
     }
 
     return success;
+}
+
+//-----------------------------------------------------------------------------
+bool cvSelectionHighlighter::highlightMultiColorSelections(
+        vtkPolyData* polyData,
+        const QVector<QPair<vtkSmartPointer<vtkIdTypeArray>, QColor>>&
+                selectionsWithColors,
+        int fieldAssociation,
+        HighlightMode mode) {
+    if (!m_enabled || !m_viewer || !polyData || selectionsWithColors.isEmpty()) {
+        return false;
+    }
+
+    bool isPointSelection = (fieldAssociation != 0);
+    vtkIdType maxValidId = isPointSelection ? polyData->GetNumberOfPoints()
+                                            : polyData->GetNumberOfCells();
+
+    vtkSmartPointer<vtkAppendFilter> appendFilter =
+            vtkSmartPointer<vtkAppendFilter>::New();
+    appendFilter->MergePointsOff();
+
+    bool hasValidExtraction = false;
+
+    for (const auto& pair : selectionsWithColors) {
+        vtkIdTypeArray* selection = pair.first;
+        const QColor& color = pair.second;
+
+        if (!selection || selection->GetNumberOfTuples() == 0) {
+            continue;
+        }
+
+        vtkSmartPointer<vtkIdTypeArray> validSelection =
+                vtkSmartPointer<vtkIdTypeArray>::New();
+        for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
+            vtkIdType id = selection->GetValue(i);
+            if (id >= 0 && id < maxValidId) {
+                validSelection->InsertNextValue(id);
+            }
+        }
+        if (validSelection->GetNumberOfTuples() == 0) {
+            continue;
+        }
+
+        vtkSmartPointer<vtkSelectionNode> selectionNode =
+                createSelectionNode(validSelection, fieldAssociation);
+        if (!selectionNode) {
+            continue;
+        }
+
+        vtkSmartPointer<vtkSelection> vtkSel =
+                vtkSmartPointer<vtkSelection>::New();
+        vtkSel->AddNode(selectionNode);
+
+        vtkSmartPointer<vtkExtractSelection> extractor =
+                vtkSmartPointer<vtkExtractSelection>::New();
+        extractor->SetInputData(0, polyData);
+        extractor->SetInputData(1, vtkSel);
+        extractor->Update();
+
+        vtkUnstructuredGrid* extracted =
+                vtkUnstructuredGrid::SafeDownCast(extractor->GetOutput());
+        if (!extracted ||
+            (extracted->GetNumberOfCells() == 0 &&
+             extracted->GetNumberOfPoints() == 0)) {
+            continue;
+        }
+
+        vtkSmartPointer<vtkUnsignedCharArray> colorArray =
+                vtkSmartPointer<vtkUnsignedCharArray>::New();
+        colorArray->SetName("vtkSelectionColor");
+        colorArray->SetNumberOfComponents(3);
+
+        unsigned char r = static_cast<unsigned char>(color.red());
+        unsigned char g = static_cast<unsigned char>(color.green());
+        unsigned char b = static_cast<unsigned char>(color.blue());
+
+        if (isPointSelection) {
+            vtkIdType numPoints = extracted->GetNumberOfPoints();
+            colorArray->SetNumberOfTuples(numPoints);
+            for (vtkIdType i = 0; i < numPoints; ++i) {
+                colorArray->SetTuple3(i, r, g, b);
+            }
+            extracted->GetPointData()->SetScalars(colorArray);
+        } else {
+            vtkIdType numCells = extracted->GetNumberOfCells();
+            colorArray->SetNumberOfTuples(numCells);
+            for (vtkIdType i = 0; i < numCells; ++i) {
+                colorArray->SetTuple3(i, r, g, b);
+            }
+            extracted->GetCellData()->SetScalars(colorArray);
+        }
+
+        appendFilter->AddInputData(extracted);
+        hasValidExtraction = true;
+    }
+
+    if (!hasValidExtraction) {
+        return false;
+    }
+
+    appendFilter->Update();
+    vtkDataSet* merged = appendFilter->GetOutput();
+    if (!merged || (merged->GetNumberOfCells() == 0 &&
+                    merged->GetNumberOfPoints() == 0)) {
+        return false;
+    }
+
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData(merged);
+    mapper->ScalarVisibilityOn();
+    mapper->SetColorModeToDirectScalars();
+    if (isPointSelection) {
+        mapper->SetScalarModeToUsePointData();
+    } else {
+        mapper->SetScalarModeToUseCellData();
+    }
+
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    vtkProperty* prop = actor->GetProperty();
+    double opacity = 1.0;
+
+    switch (mode) {
+        case HOVER:
+            opacity = m_hoverOpacity;
+            prop->SetLineWidth(static_cast<float>(m_hoverLineWidth));
+            prop->SetPointSize(static_cast<float>(m_hoverPointSize));
+            break;
+        case PRESELECTED:
+            opacity = m_preselectedOpacity;
+            prop->SetLineWidth(static_cast<float>(m_preselectedLineWidth));
+            prop->SetPointSize(static_cast<float>(m_preselectedPointSize));
+            break;
+        case SELECTED:
+            opacity = m_selectedOpacity;
+            prop->SetLineWidth(static_cast<float>(m_selectedLineWidth));
+            prop->SetPointSize(static_cast<float>(m_selectedPointSize));
+            break;
+        case BOUNDARY:
+            opacity = m_boundaryOpacity;
+            prop->SetLineWidth(static_cast<float>(m_boundaryLineWidth));
+            prop->SetPointSize(static_cast<float>(m_boundaryPointSize));
+            break;
+    }
+
+    prop->SetOpacity(opacity);
+    prop->SetRenderLinesAsTubes(true);
+    prop->SetAmbient(0.6);
+    prop->SetDiffuse(0.8);
+    prop->SetSpecular(0.5);
+    prop->SetSpecularPower(30.0);
+    prop->SetRenderLinesAsTubes(true);
+    prop->SetRenderPointsAsSpheres(true);
+    prop->EdgeVisibilityOn();
+    prop->SetEdgeColor(1.0, 1.0, 1.0);
+
+    if (fieldAssociation == 0) {
+        prop->SetRepresentationToWireframe();
+    } else {
+        prop->SetRepresentationToPoints();
+    }
+
+    actor->SetPickable(false);
+
+    QString actorId;
+    switch (mode) {
+        case HOVER:
+            removeActorFromVisualizer(m_hoverActorId);
+            m_hoverActor = actor;
+            actorId = m_hoverActorId;
+            break;
+        case PRESELECTED:
+            removeActorFromVisualizer(m_preselectedActorId);
+            m_preselectedActor = actor;
+            actorId = m_preselectedActorId;
+            break;
+        case SELECTED:
+            removeActorFromVisualizer(m_selectedActorId);
+            m_selectedActor = actor;
+            actorId = m_selectedActorId;
+            break;
+        case BOUNDARY:
+            removeActorFromVisualizer(m_boundaryActorId);
+            m_boundaryActor = actor;
+            actorId = m_boundaryActorId;
+            break;
+    }
+
+    addActorToVisualizer(actor, actorId);
+
+    CVLog::Print(QString("[cvSelectionHighlighter] Multi-color highlight: %1 "
+                         "sub-selections in mode %2")
+                         .arg(selectionsWithColors.size())
+                         .arg(mode));
+
+    return true;
 }
 
 //-----------------------------------------------------------------------------
