@@ -198,6 +198,12 @@ public:
     void clearHighlights();
 
     /**
+     * @brief Clear highlight for a specific mode
+     * @param mode The highlight mode to clear
+     */
+    void clearHighlight(HighlightMode mode);
+
+    /**
      * @brief Clear only hover highlight (keep selected/preselected)
      * @note Used during hover to avoid clearing persistent selections
      */

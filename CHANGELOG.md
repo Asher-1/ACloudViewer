@@ -69,6 +69,31 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Increase minimum width from 180px to 240px for both panels
         - Increase default width range to 250-380px (18% of screen width)
         - Properties tree value column now stretches to fill available space
+    - Fix Create Selection "is in range" operator using wrong comparison (ParaView alignment)
+        - Change from closed interval (>=, <=) to open interval (>, <) to match ParaView expression: ({term} > {value_min}) & ({term} < {value_max})
+        - Fix filterByAttributeRange to use same open interval semantics
+        - Fix mean value calculation to exclude NaN elements from denominator
+    - Fix Create Selection querying wrong dataset when Data Producer is selected
+        - Add getPolyDataForDataProducer() to resolve polyData from the selected Data Producer combo
+        - executeFindDataQuery and performFindData now prioritize Data Producer's polyData
+        - Fixes intensity-based selection returning more points than ParaView
+    - Fix Selection Pipeline extractSelectionIds only using first selection node
+        - Merge IDs from all matching selection nodes (ParaView vtkSelection::Union behavior)
+        - Properly filter nodes by field type (CELL vs POINT)
+    - Fix Create Selection not clearing selection when query is empty (ParaView alignment)
+    - Fix Selection Editor bugs to align with ParaView pqSelectionEditor behavior
+        - Fix removing selection not updating expression (renumber remaining names, clean dangling operators, handle negated !sN)
+        - Add element type compatibility check when adding selection (warn on Point vs Cell mismatch; on confirm, clear existing selections and replace with new type — matches ParaView CombineSelection behavior)
+        - Clear saved selections when data producer changes (prevents stale IDs from previous source)
+        - Add clearInteractiveSelection() matching ParaView's behavior (clear table selection + PRESELECTED 3D highlight)
+        - Call clearInteractiveSelection on Add, Remove, Remove All, and Activate Combined
+        - Add clearHighlight(HighlightMode) API to cvSelectionHighlighter for per-mode clearing
+        - Change table selection mode from ExtendedSelection to SingleSelection to match ParaView
+        - Fix Remove All not re-enabling Add button and not disabling Expression/ElementType
+        - Fix table columns not stretching (add QHeaderView::Stretch, remove resizeColumnsToContents)
+        - Add Element Type icon display (pqPointData.svg / pqCellData.svg) matching ParaView's setElementType
+        - Fix onTableSelectionChanged to hide PRESELECTED highlight when no row is selected (ParaView hideInteractiveSelection)
+        - Apply saved selection color to SELECTED highlight when Activate Combined is clicked
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations

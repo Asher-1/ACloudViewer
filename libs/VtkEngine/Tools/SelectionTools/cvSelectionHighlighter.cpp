@@ -451,9 +451,37 @@ void cvSelectionHighlighter::clearHighlights() {
 }
 
 //-----------------------------------------------------------------------------
+void cvSelectionHighlighter::clearHighlight(HighlightMode mode) {
+    switch (mode) {
+        case HOVER:
+            removeActorFromVisualizer(m_hoverActorId);
+            m_hoverActor = nullptr;
+            break;
+        case PRESELECTED:
+            removeActorFromVisualizer(m_preselectedActorId);
+            m_preselectedActor = nullptr;
+            break;
+        case SELECTED:
+            removeActorFromVisualizer(m_selectedActorId);
+            m_selectedActor = nullptr;
+            break;
+        case BOUNDARY:
+            removeActorFromVisualizer(m_boundaryActorId);
+            m_boundaryActor = nullptr;
+            break;
+    }
+
+    Visualization::VtkVis* pclVis = getVtkVis();
+    if (pclVis) {
+        vtkRenderWindow* renWin = pclVis->getRenderWindow();
+        if (renWin) {
+            renWin->Render();
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionHighlighter::clearHoverHighlight() {
-    // Remove ONLY hover highlight, keep selected/preselected/boundary
-    // This is used during hover updates to avoid clearing persistent selections
     removeActorFromVisualizer(m_hoverActorId);
     m_hoverActor = nullptr;
 }
