@@ -3481,8 +3481,7 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
                     tr("The current active selection has a different "
                        "element type compared to chosen element type.\n"
                        "Are you sure you want to continue?"),
-                    QMessageBox::Ok | QMessageBox::Cancel,
-                    QMessageBox::Cancel);
+                    QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
             if (answer == QMessageBox::Cancel) {
                 return;
             }
@@ -3581,7 +3580,8 @@ void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
                     .arg(removedName));
 
     if (m_savedSelections.isEmpty()) {
-        // ParaView: when all removed, call full reset (same as removeAllSelections)
+        // ParaView: when all removed, call full reset (same as
+        // removeAllSelections)
         m_selectionNameCounter = 0;
         m_expressionEdit->clear();
         m_expressionEdit->setEnabled(false);
@@ -3609,8 +3609,7 @@ void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
     QMap<QString, QString> nameMap;
     for (int i = 0; i < m_savedSelections.size(); ++i) {
         QString oldName = m_savedSelections[i].name;
-        QString newName =
-                QString("s%1").arg(newIdx);
+        QString newName = QString("s%1").arg(newIdx);
         if (oldName != newName) {
             nameMap[oldName] = newName;
         }
