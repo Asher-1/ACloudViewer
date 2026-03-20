@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5f8ff"/>
+      <stop offset="100%" stop-color="#e0e8f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="5" fill="url(#bg)"/>
+  <g id="cam1" transform="translate(3,5)">
+    <rect x="0" y="0" width="10" height="7" rx="1.5" fill="#2b6cb0"/>
+    <rect x="10" y="1.5" width="2.5" height="4" rx="0.6" fill="#2b6cb0"/>
+    <circle cx="5" cy="3.5" r="2.2" fill="#fff"/>
+    <g stroke="#d97706" stroke-width="0.75" stroke-linecap="round" fill="none">
+      <line x1="13" y1="2.5" x2="17" y2="1"/>
+      <line x1="13" y1="3.5" x2="18" y2="3.5"/>
+      <line x1="13" y1="4.5" x2="17" y2="6"/>
+    </g>
+  </g>
+  <g id="cam2" transform="translate(3,12.5)">
+    <rect x="0" y="0" width="10" height="7" rx="1.5" fill="#3182ce"/>
+    <rect x="10" y="1.5" width="2.5" height="4" rx="0.6" fill="#3182ce"/>
+    <circle cx="5" cy="3.5" r="2.2" fill="#fff"/>
+    <g stroke="#d97706" stroke-width="0.75" stroke-linecap="round" fill="none">
+      <line x1="13" y1="2.5" x2="17" y2="1"/>
+      <line x1="13" y1="3.5" x2="18" y2="3.5"/>
+      <line x1="13" y1="4.5" x2="17" y2="6"/>
+    </g>
+  </g>
+  <g id="cam3" transform="translate(3,20)">
+    <rect x="0" y="0" width="10" height="7" rx="1.5" fill="#2563eb"/>
+    <rect x="10" y="1.5" width="2.5" height="4" rx="0.6" fill="#2563eb"/>
+    <circle cx="5" cy="3.5" r="2.2" fill="#fff"/>
+    <g stroke="#d97706" stroke-width="0.75" stroke-linecap="round" fill="none">
+      <line x1="13" y1="2.5" x2="17" y2="1"/>
+      <line x1="13" y1="3.5" x2="18" y2="3.5"/>
+      <line x1="13" y1="4.5" x2="17" y2="6"/>
+    </g>
+  </g>
+  <!-- v2 badge -->
+  <rect x="20" y="22" width="10" height="7" rx="1.8" fill="#22c55e" stroke="#16a34a" stroke-width="0.35"/>
+  <text x="25" y="27.2" text-anchor="middle" font-family="system-ui, Segoe UI, sans-serif" font-size="5.2" font-weight="700" fill="#ffffff">v2</text>
+</svg>

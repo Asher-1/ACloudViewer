@@ -176,6 +176,10 @@ Available Standard Plugins
 * **qAnimation**: Create animations and camera paths
 * **qG3Point**: Geotechnical 3-point problem solver
 
+**Image-Based Rendering & Neural Radiance**
+
+* **qSIBR**: SIBR framework integration — real-time 3D Gaussian Splatting (CUDA), ULR novel-view synthesis, textured mesh and point-based viewing, remote training viewer, and dataset preprocessing tools. Bidirectional interaction with ACloudViewer: entity selection auto-fills viewer paths, results import back with zoom-to-fit. Enable with ``-DPLUGIN_STANDARD_QSIBR=ON``.
+
 **Advanced Processing**
 
 * **qPCL**: Integration with Point Cloud Library (PCL) algorithms

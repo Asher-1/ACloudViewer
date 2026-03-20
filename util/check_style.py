@@ -734,6 +734,7 @@ def main():
         'plugins/core/Standard/qHoughNormals/extern/',
         'plugins/core/Standard/qAnimation/extern/',
         'plugins/core/Standard/qCork/extern/',
+        'plugins/core/Standard/qSIBR/3rdparty/',
         # Other external libraries
         'libs/CV_io/extern/',
     ]

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="aw" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#5f6368"/></marker>
+    <marker id="ag" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#34a853"/></marker>
+  </defs>
+
+  <text x="450" y="22" text-anchor="middle" font-size="15" font-weight="700" fill="#202124">3D Gaussian Splatting -- End-to-End Workflow</text>
+
+  <!-- Step 1 -->
+  <rect x="10" y="40" width="145" height="115" rx="10" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="83" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#1a73e8">(1) Select Entity</text>
+  <text x="83" y="76" text-anchor="middle" font-size="9" fill="#5f6368">ACloudViewer</text>
+  <line x1="18" y1="82" x2="148" y2="82" stroke="#dadce0"/>
+  <text x="83" y="98" text-anchor="middle" font-size="9" fill="#333">Select point cloud</text>
+  <text x="83" y="112" text-anchor="middle" font-size="9" fill="#333">or load PLY from</text>
+  <text x="83" y="126" text-anchor="middle" font-size="9" fill="#333">3DGS training output</text>
+  <text x="83" y="146" text-anchor="middle" font-size="8" fill="#1a73e8">-&gt; enables Quick View</text>
+
+  <path d="M155,97 L185,97" fill="none" stroke="#5f6368" stroke-width="1.5" marker-end="url(#aw)"/>
+
+  <!-- Step 2 -->
+  <rect x="190" y="40" width="145" height="115" rx="10" fill="#fef7e0" stroke="#f9ab00" stroke-width="1.5"/>
+  <text x="263" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#e37400">(2) Configure</text>
+  <text x="263" y="76" text-anchor="middle" font-size="9" fill="#5f6368">SIBROptionsDialog</text>
+  <line x1="198" y1="82" x2="328" y2="82" stroke="#dadce0"/>
+  <text x="263" y="98" text-anchor="middle" font-size="9" fill="#333">Model path (auto-filled)</text>
+  <text x="263" y="112" text-anchor="middle" font-size="9" fill="#333">Dataset path (optional)</text>
+  <text x="263" y="126" text-anchor="middle" font-size="9" fill="#333">CUDA device / Interop</text>
+  <text x="263" y="146" text-anchor="middle" font-size="8" fill="#e37400">QSettings remembers</text>
+
+  <path d="M335,97 L365,97" fill="none" stroke="#5f6368" stroke-width="1.5" marker-end="url(#aw)"/>
+
+  <!-- Step 3 -->
+  <rect x="370" y="40" width="145" height="115" rx="10" fill="#f3e8fd" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="443" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#7c3aed">(3) SIBR Viewer</text>
+  <text x="443" y="76" text-anchor="middle" font-size="9" fill="#5f6368">GaussianView (GLFW)</text>
+  <line x1="378" y1="82" x2="508" y2="82" stroke="#dadce0"/>
+  <text x="443" y="98" text-anchor="middle" font-size="9" fill="#333">CUDA rasterization</text>
+  <text x="443" y="112" text-anchor="middle" font-size="9" fill="#333">Real-time navigation</text>
+  <text x="443" y="126" text-anchor="middle" font-size="9" fill="#333">ImGui debug panels</text>
+  <text x="443" y="146" text-anchor="middle" font-size="8" fill="#7c3aed">860K+ gaussians @ 60fps</text>
+
+  <path d="M515,97 L545,97" fill="none" stroke="#5f6368" stroke-width="1.5" marker-end="url(#aw)"/>
+
+  <!-- Step 4 -->
+  <rect x="550" y="40" width="145" height="115" rx="10" fill="#e6f4ea" stroke="#34a853" stroke-width="1.5"/>
+  <text x="623" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#137333">(4) Import Result</text>
+  <text x="623" y="76" text-anchor="middle" font-size="9" fill="#5f6368">viewerResultReady</text>
+  <line x1="558" y1="82" x2="688" y2="82" stroke="#dadce0"/>
+  <text x="623" y="98" text-anchor="middle" font-size="9" fill="#333">Import splat PLY</text>
+  <text x="623" y="112" text-anchor="middle" font-size="9" fill="#333">Import SfM cloud</text>
+  <text x="623" y="126" text-anchor="middle" font-size="9" fill="#333">User confirmation</text>
+  <text x="623" y="146" text-anchor="middle" font-size="8" fill="#137333">-&gt; QMessageBox prompt</text>
+
+  <path d="M695,97 L725,97" fill="none" stroke="#34a853" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- Step 5 -->
+  <rect x="730" y="40" width="160" height="115" rx="10" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="810" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#1a73e8">(5) Display</text>
+  <text x="810" y="76" text-anchor="middle" font-size="9" fill="#5f6368">ACloudViewer</text>
+  <line x1="738" y1="82" x2="882" y2="82" stroke="#dadce0"/>
+  <text x="810" y="98" text-anchor="middle" font-size="9" fill="#333">Add to DB tree</text>
+  <text x="810" y="112" text-anchor="middle" font-size="9" fill="#333">Zoom-to-fit</text>
+  <text x="810" y="126" text-anchor="middle" font-size="9" fill="#333">Select entity</text>
+  <text x="810" y="146" text-anchor="middle" font-size="8" fill="#1a73e8">Refresh all views</text>
+
+  <!-- Data flow section -->
+  <rect x="10" y="175" width="880" height="135" rx="10" fill="#f8f9fa" stroke="#dadce0"/>
+  <text x="450" y="196" text-anchor="middle" font-size="12" font-weight="700" fill="#202124">Data Flow Detail</text>
+
+  <rect x="28" y="210" width="120" height="82" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+  <text x="88" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#1a73e8">ACloudViewer</text>
+  <text x="88" y="244" text-anchor="middle" font-size="8" fill="#5f6368">Selected entity</text>
+  <text x="88" y="256" text-anchor="middle" font-size="8" fill="#5f6368">QSettings paths</text>
+  <text x="88" y="268" text-anchor="middle" font-size="8" fill="#5f6368">DB tree state</text>
+
+  <rect x="190" y="210" width="120" height="82" rx="6" fill="#fef7e0" stroke="#f9ab00"/>
+  <text x="250" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#e37400">Options Dialog</text>
+  <text x="250" y="244" text-anchor="middle" font-size="8" fill="#5f6368">Pre-fill from entity</text>
+  <text x="250" y="256" text-anchor="middle" font-size="8" fill="#5f6368">Load QSettings</text>
+  <text x="250" y="268" text-anchor="middle" font-size="8" fill="#5f6368">Save on accept</text>
+
+  <rect x="352" y="210" width="120" height="82" rx="6" fill="#fce8e6" stroke="#ea4335"/>
+  <text x="412" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#c5221f">ViewerThread</text>
+  <text x="412" y="244" text-anchor="middle" font-size="8" fill="#5f6368">parseMainArgs</text>
+  <text x="412" y="256" text-anchor="middle" font-size="8" fill="#5f6368">GaussianView ctor</text>
+  <text x="412" y="268" text-anchor="middle" font-size="8" fill="#5f6368">GLFW event loop</text>
+
+  <rect x="514" y="210" width="120" height="82" rx="6" fill="#fff3e0" stroke="#e65100"/>
+  <text x="574" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#e65100">CUDA + OpenGL</text>
+  <text x="574" y="244" text-anchor="middle" font-size="8" fill="#5f6368">CudaRasterizer</text>
+  <text x="574" y="256" text-anchor="middle" font-size="8" fill="#5f6368">GL-CUDA interop</text>
+  <text x="574" y="268" text-anchor="middle" font-size="8" fill="#5f6368">FBO rendering</text>
+
+  <rect x="676" y="210" width="195" height="82" rx="6" fill="#e6f4ea" stroke="#34a853"/>
+  <text x="774" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#137333">Result Import</text>
+  <text x="774" y="244" text-anchor="middle" font-size="8" fill="#5f6368">emit resultReady(plyPath)</text>
+  <text x="774" y="256" text-anchor="middle" font-size="8" fill="#5f6368">loadFile() -&gt; addToDB</text>
+  <text x="774" y="268" text-anchor="middle" font-size="8" fill="#5f6368">zoomOnEntities + setSelected</text>
+
+  <path d="M148,251 L190,251" fill="none" stroke="#5f6368" stroke-width="1.2" marker-end="url(#aw)"/>
+  <path d="M310,251 L352,251" fill="none" stroke="#5f6368" stroke-width="1.2" marker-end="url(#aw)"/>
+  <path d="M472,251 L514,251" fill="none" stroke="#5f6368" stroke-width="1.2" marker-end="url(#aw)"/>
+  <path d="M634,251 L676,251" fill="none" stroke="#34a853" stroke-width="1.2" marker-end="url(#ag)"/>
+</svg>

@@ -3,7 +3,17 @@ ACloudViewer Version History
 
 v3.9.5-Beta (Asher) - 02/02/2026
 --------------------------------
-
+- New plugins:
+    - Add qSIBR plugin: Full SIBR (System for Image Based Rendering) integration
+      - Embedded SIBR core engine (system, graphics, assets, raycaster, scene, video, view, renderer, imgproc)
+      - ULR Viewer, ULR v2/v3 Viewer, Textured Mesh Viewer, Point-Based Viewer
+      - 3D Gaussian Splatting Viewer with CudaRasterizer (CUDA required)
+      - Remote Gaussian Viewer for live training monitoring
+      - 10 dataset preprocessing tools (prepareColmap4Sibr, alignMeshes, textureMesh, etc.)
+      - Parameter configuration dialog for viewer settings (resolution, model path, CUDA device)
+      - Multi-threaded viewer architecture with GLFW windows in separate QThreads
+      - Reuses ACloudViewer 3rdparty targets (OpenGL, OpenMP, Boost, OpenCV, GLEW, GLFW, Assimp, Embree, Eigen, zlib, tinyfiledialogs)
+  
 - New features:
     - Add Point Gaussian rendering support for point clouds and meshes
       - 6 shader presets: Gaussian Blur, Sphere, Black-edged Circle, Plain Circle, Triangle, Square Outline

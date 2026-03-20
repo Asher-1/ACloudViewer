@@ -143,6 +143,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_QTREEISO=ON
                 -DPLUGIN_STANDARD_QVOXFALL=ON
                 -DPLUGIN_STANDARD_G3POINT=ON
+                -DPLUGIN_STANDARD_QSIBR=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON
