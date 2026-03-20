@@ -62,8 +62,8 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_highgui=ON
             -DBUILD_opencv_imgcodecs=ON
             -DBUILD_opencv_imgproc=ON
-            -DBUILD_opencv_features2d=OFF
-            -DBUILD_opencv_flann=OFF
+            -DBUILD_opencv_features2d=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_flann=${PLUGIN_STANDARD_QSIBR}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
@@ -87,8 +87,9 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=OFF
-            -DBUILD_opencv_videoio=OFF
+            -DBUILD_opencv_video=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_videoio=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF
             -DWITH_GSTREAMER=OFF
             -DWITH_GTK=OFF

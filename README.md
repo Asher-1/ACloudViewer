@@ -45,6 +45,7 @@ More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/)
 * 3D data structures
 * 3D data processing algorithms
 * Scene reconstruction (based on colmap)
+* **3D Gaussian Splatting** real-time rendering and novel view synthesis (SIBR plugin)
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
@@ -127,6 +128,25 @@ Selection and Measurement Tools:
   <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/protractor_measurement_tools.png">
 </p>
 
+
+## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
+
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SIBR_viewer.png">
+</p>
+
+ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
+enabling real-time **3D Gaussian Splatting** rendering and novel view synthesis directly within the application.
+
+Key capabilities:
+* **3D Gaussian Splatting Viewer** — Real-time CUDA-accelerated rendering of trained 3DGS models
+* **Remote Gaussian Viewer** — Live connection to a running 3DGS training process for monitoring
+* **ULR / ULR v2 Viewer** — Unstructured Lumigraph Rendering for novel view synthesis
+* **Textured Mesh & Point-Based Viewers** — View IBR datasets with scene debug overlays
+* **Bidirectional interaction** — Select entities in ACloudViewer, auto-detect best viewer, import results back with auto-zoom
+
+Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
+See [qSIBR plugin documentation](plugins/core/Standard/qSIBR/README.md) for details.
 
 ## CloudViewer app
 

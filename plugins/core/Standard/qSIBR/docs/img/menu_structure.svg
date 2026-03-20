@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 520" font-family="Segoe UI, Arial, sans-serif">
+
+  <text x="220" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#202124">Plugin Menu Structure</text>
+
+  <!-- Menu bar -->
+  <rect x="10" y="36" width="420" height="26" rx="4" fill="#f1f3f4" stroke="#dadce0"/>
+  <text x="30" y="53" font-size="11" fill="#5f6368">File</text>
+  <text x="60" y="53" font-size="11" fill="#5f6368">Edit</text>
+  <text x="96" y="53" font-size="11" fill="#5f6368">View</text>
+  <text x="134" y="53" font-size="11" fill="#5f6368">Tools</text>
+  <text x="182" y="53" font-size="11" fill="#1a73e8" font-weight="600">Plugins</text>
+  <text x="236" y="53" font-size="11" fill="#5f6368">Help</text>
+
+  <!-- First dropdown -->
+  <rect x="160" y="62" width="180" height="28" rx="5" fill="#fff" stroke="#dadce0"/>
+  <text x="175" y="81" font-size="11" fill="#333">SIBR Viewer  &gt;</text>
+
+  <!-- Submenu -->
+  <rect x="120" y="92" width="310" height="418" rx="7" fill="#fff" stroke="#dadce0"/>
+
+  <!-- ULR -->
+  <rect x="130" y="102" width="290" height="28" rx="4" fill="#f8f9fa"/>
+  <circle cx="146" cy="116" r="7" fill="#4285f4"/><text x="146" y="119" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">U</text>
+  <text x="162" y="120" font-size="11" fill="#333">ULR Viewer</text>
+  <text x="404" y="120" text-anchor="end" font-size="9" fill="#9aa0a6">IBR pipeline</text>
+
+  <!-- ULRv2 -->
+  <rect x="130" y="134" width="290" height="28" rx="4" fill="#fff"/>
+  <circle cx="146" cy="148" r="7" fill="#7baaf7"/><text x="146" y="151" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">V</text>
+  <text x="162" y="152" font-size="11" fill="#333">ULR v2/v3 Viewer</text>
+  <text x="404" y="152" text-anchor="end" font-size="9" fill="#9aa0a6">masks + Poisson</text>
+
+  <!-- Textured Mesh -->
+  <rect x="130" y="166" width="290" height="28" rx="4" fill="#f8f9fa"/>
+  <circle cx="146" cy="180" r="7" fill="#ea4335"/><text x="146" y="183" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">M</text>
+  <text x="162" y="184" font-size="11" fill="#333">Textured Mesh Viewer</text>
+  <text x="404" y="184" text-anchor="end" font-size="9" fill="#9aa0a6">mesh + debug</text>
+
+  <!-- Point-Based -->
+  <rect x="130" y="198" width="290" height="28" rx="4" fill="#fff"/>
+  <circle cx="146" cy="212" r="7" fill="#34a853"/><text x="146" y="215" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">P</text>
+  <text x="162" y="216" font-size="11" fill="#333">Point-Based Viewer</text>
+  <text x="404" y="216" text-anchor="end" font-size="9" fill="#9aa0a6">fast cloud</text>
+
+  <!-- Separator -->
+  <line x1="140" y1="234" x2="410" y2="234" stroke="#dadce0"/>
+
+  <!-- 3DGS -->
+  <rect x="130" y="240" width="290" height="28" rx="4" fill="#fff3e0"/>
+  <circle cx="146" cy="254" r="7" fill="#e65100"/><text x="146" y="257" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">G</text>
+  <text x="162" y="258" font-size="11" fill="#333" font-weight="600">3D Gaussian Splatting Viewer</text>
+  <text x="404" y="258" text-anchor="end" font-size="9" fill="#e65100">CUDA</text>
+
+  <!-- Remote -->
+  <rect x="130" y="272" width="290" height="28" rx="4" fill="#e0f7fa"/>
+  <circle cx="146" cy="286" r="7" fill="#00838f"/><text x="146" y="289" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">R</text>
+  <text x="162" y="290" font-size="11" fill="#333">Remote Gaussian Viewer</text>
+  <text x="404" y="290" text-anchor="end" font-size="9" fill="#00838f">network</text>
+
+  <!-- Separator -->
+  <line x1="140" y1="308" x2="410" y2="308" stroke="#dadce0"/>
+
+  <!-- Quick View -->
+  <rect x="130" y="314" width="290" height="28" rx="4" fill="#e8f0fe"/>
+  <circle cx="146" cy="328" r="7" fill="#1a73e8"/><text x="146" y="331" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">Q</text>
+  <text x="162" y="332" font-size="11" fill="#1a73e8" font-weight="600">Quick View in SIBR</text>
+  <text x="404" y="332" text-anchor="end" font-size="9" fill="#1a73e8">from selection</text>
+
+  <!-- Export -->
+  <rect x="130" y="346" width="290" height="28" rx="4" fill="#f8f9fa"/>
+  <circle cx="146" cy="360" r="7" fill="#5f6368"/><text x="146" y="363" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">E</text>
+  <text x="162" y="364" font-size="11" fill="#333">Export for SIBR</text>
+  <text x="404" y="364" text-anchor="end" font-size="9" fill="#9aa0a6">from selection</text>
+
+  <!-- Separator -->
+  <line x1="140" y1="382" x2="410" y2="382" stroke="#dadce0"/>
+
+  <!-- Dataset Tools -->
+  <rect x="130" y="388" width="290" height="28" rx="4" fill="#f8f9fa"/>
+  <circle cx="146" cy="402" r="7" fill="#5f6368"/><text x="146" y="405" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">T</text>
+  <text x="162" y="406" font-size="11" fill="#333">Dataset Tools</text>
+  <text x="404" y="406" text-anchor="end" font-size="9" fill="#9aa0a6">&gt; submenu</text>
+
+  <!-- Annotation box -->
+  <rect x="130" y="428" width="290" height="72" rx="5" fill="#f1f3f4"/>
+  <text x="145" y="446" font-size="9" fill="#5f6368">Quick View and Export are enabled when an</text>
+  <text x="145" y="460" font-size="9" fill="#1a73e8" font-weight="600">entity is selected in the DB tree.</text>
+  <text x="145" y="478" font-size="9" fill="#5f6368">3DGS requires CUDA build.</text>
+  <text x="145" y="492" font-size="9" fill="#5f6368">Remote requires network access to training server.</text>
+</svg>

@@ -89,6 +89,22 @@ if (UNIX AND NOT APPLE)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
     )
+
+    # deploy SIBR plugin runtime assets (shaders, resources, config)
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${MAIN_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
     
     if (${PLUGIN_PYTHON} STREQUAL "ON") 
         file(COPY 
@@ -148,6 +164,22 @@ elseif (WIN32)
         USE_SOURCE_PERMISSIONS
         )
 
+    # deploy SIBR plugin runtime assets (shaders, resources, config)
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${MAIN_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+
     if (${PLUGIN_PYTHON} STREQUAL "ON")
         file(COPY 
             "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins-python"
@@ -175,6 +207,25 @@ elseif (WIN32)
         COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
                 -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS}) -Recursive"
     )
+endif()
+
+## deploy SIBR plugin runtime assets for macOS (.app bundle)
+if (APPLE)
+    set(_sibr_macos_dest "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents/MacOS")
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${_sibr_macos_dest}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${_sibr_macos_dest}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
 endif()
 
 ## deploy CloudViewer
