@@ -33,9 +33,10 @@ FFVideoEncoder::FFVideoEncoder(const std::string &_filepath,
     /** Init FFMPEG, registering available codec plugins. */
     if (!ffmpegInitDone) {
         SIBR_LOG << "[FFMPEG] Registering all." << std::endl;
-        // Ignore next line warning.
-#pragma warning(suppress : 4996)
+        // av_register_all() is deprecated in FFmpeg 4.0+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
         av_register_all();
+#endif
         ffmpegInitDone = true;
     }
 
@@ -68,7 +69,13 @@ void FFVideoEncoder::close() {
     }
 
     if (video_st) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 48, 101)
         avcodec_close(video_st->codec);
+#else
+        if (pCodecCtx) {
+            avcodec_free_context(&pCodecCtx);
+        }
+#endif
         av_free(frameYUV);
     }
     avio_close(pFormatCtx->pb);
@@ -93,7 +100,11 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
 
     pFormatCtx = avformat_alloc_context();
 
-    fmt = av_guess_format(NULL, out_file, NULL);
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
+    fmt = const_cast<AVOutputFormat*>(av_guess_format(NULL, out_file, NULL));
+#else
+    fmt = const_cast<AVOutputFormat*>(av_guess_format(NULL, out_file, NULL));
+#endif
     pFormatCtx->oformat = fmt;
 
     const bool isH264 = pFormatCtx->oformat->video_codec == AV_CODEC_ID_H264;
@@ -110,7 +121,7 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
         return;
     }
 
-    pCodec = avcodec_find_encoder(pFormatCtx->oformat->video_codec);
+    pCodec = const_cast<AVCodec*>(avcodec_find_encoder(pFormatCtx->oformat->video_codec));
     if (!pCodec) {
         SIBR_WRG << "[FFMPEG] Could not find codec." << std::endl;
         return;
@@ -123,7 +134,15 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
         return;
     }
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 48, 101)
     pCodecCtx = video_st->codec;
+#else
+    pCodecCtx = avcodec_alloc_context3(pCodec);
+    if (!pCodecCtx) {
+        SIBR_WRG << "[FFMPEG] Could not allocate codec context." << std::endl;
+        return;
+    }
+#endif
     pCodecCtx->codec_id = fmt->video_codec;
     pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
     pCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -154,8 +173,22 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
                  << std::endl;
         return;
     }
+    
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+    // In newer FFmpeg, copy codec parameters from context to stream
+    res = avcodec_parameters_from_context(video_st->codecpar, pCodecCtx);
+    if (res < 0) {
+        SIBR_WRG << "[FFMPEG] Failed to copy codec parameters, error: " << res << std::endl;
+        return;
+    }
+#endif
+    
     // Write the file header.
-    avformat_write_header(pFormatCtx, NULL);
+    res = avformat_write_header(pFormatCtx, NULL);
+    if (res < 0) {
+        SIBR_WRG << "[FFMPEG] Failed to write header, error: " << res << std::endl;
+        return;
+    }
 
     // Prepare the scratch frame.
     frameYUV = av_frame_alloc();
@@ -218,8 +251,9 @@ bool FFVideoEncoder::operator<<(const sibr::ImageRGB &frame) {
 
 #ifndef HEADLESS
 bool FFVideoEncoder::encode(AVFrame *frame) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 48, 101)
+    // Old API (FFmpeg < 3.1)
     int got_picture = 0;
-
     int ret = avcodec_encode_video2(pCodecCtx, pkt, frameYUV, &got_picture);
     if (ret < 0) {
         SIBR_WRG << "[FFMPEG] Failed to encode frame." << std::endl;
@@ -230,6 +264,33 @@ bool FFVideoEncoder::encode(AVFrame *frame) {
         ret = av_write_frame(pFormatCtx, pkt);
         av_packet_unref(pkt);
     }
+#else
+    // New API (FFmpeg >= 3.1)
+    int ret = avcodec_send_frame(pCodecCtx, frameYUV);
+    if (ret < 0) {
+        SIBR_WRG << "[FFMPEG] Failed to send frame for encoding." << std::endl;
+        return false;
+    }
+    
+    while (ret >= 0) {
+        ret = avcodec_receive_packet(pCodecCtx, pkt);
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+            break;
+        } else if (ret < 0) {
+            SIBR_WRG << "[FFMPEG] Error during encoding." << std::endl;
+            return false;
+        }
+        
+        pkt->stream_index = video_st->index;
+        ret = av_write_frame(pFormatCtx, pkt);
+        av_packet_unref(pkt);
+        
+        if (ret < 0) {
+            SIBR_WRG << "[FFMPEG] Error writing frame." << std::endl;
+            return false;
+        }
+    }
+#endif
 
     return true;
 }

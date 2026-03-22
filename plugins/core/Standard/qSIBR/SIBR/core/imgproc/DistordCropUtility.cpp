@@ -7,6 +7,8 @@
 
 #include "DistordCropUtility.hpp"
 
+#include <algorithm>
+
 namespace sibr {
 
 bool DistordCropUtility::isBlack(const sibr::Vector3ub& pixelColor,
@@ -77,8 +79,11 @@ DistordCropUtility::Bounds DistordCropUtility::getBounds(
     int w = img.w() - 1;
     int h = img.h() - 1;
 
-    sibr::Array2d<bool> wasVisited(img.w(), img.h(), false);
-    sibr::Array2d<bool> isBlack(img.w(), img.h(), false);
+    // std::vector<bool> has no bool const_reference; Array2d(bool)(w,h,false) won't compile.
+    sibr::Array2d<bool> wasVisited(img.w(), img.h());
+    sibr::Array2d<bool> isBlack(img.w(), img.h());
+    std::fill(wasVisited.vector().begin(), wasVisited.vector().end(), false);
+    std::fill(isBlack.vector().begin(), isBlack.vector().end(), false);
     std::priority_queue<sibr::Vector2i> pixelsQueue;
 
     // init with boundary pixel (set initial pixelQueue)

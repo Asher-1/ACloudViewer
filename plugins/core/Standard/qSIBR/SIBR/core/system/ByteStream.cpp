@@ -13,6 +13,22 @@
 #include <string.h>
 #endif
 
+// Save and undefine macOS system macros before including our header and implementing methods
+#ifdef __APPLE__
+#pragma push_macro("htonl")
+#pragma push_macro("htons")
+#pragma push_macro("ntohl")
+#pragma push_macro("ntohs")
+#pragma push_macro("htonll")
+#pragma push_macro("ntohll")
+#undef htonl
+#undef htons
+#undef ntohl
+#undef ntohs
+#undef htonll
+#undef ntohll
+#endif
+
 #include "core/system/ByteStream.hpp"
 
 namespace sibr {
@@ -44,15 +60,15 @@ void ByteStream::memoryDump(void) const {
 uint64 ByteStream::htonll(uint64 n) {
     if (ByteStream::systemIsBigEndian()) return n;
     // Else we are on a little endian system
-    uint32 out = 0;
-    out |= (n & 0xFF00000000000000) >> 56;
-    out |= (n & 0x00FF000000000000) >> 40;
-    out |= (n & 0x0000FF0000000000) >> 24;
-    out |= (n & 0x000000FF00000000) >> 8;
-    out |= (n & 0x00000000FF000000) << 8;
-    out |= (n & 0x0000000000FF0000) << 24;
-    out |= (n & 0x000000000000FF00) << 40;
-    out |= (n & 0x00000000000000FF) << 56;
+    uint64 out = 0;
+    out |= (n & 0xFF00000000000000ULL) >> 56;
+    out |= (n & 0x00FF000000000000ULL) >> 40;
+    out |= (n & 0x0000FF0000000000ULL) >> 24;
+    out |= (n & 0x000000FF00000000ULL) >> 8;
+    out |= (n & 0x00000000FF000000ULL) << 8;
+    out |= (n & 0x0000000000FF0000ULL) << 24;
+    out |= (n & 0x000000000000FF00ULL) << 40;
+    out |= (n & 0x00000000000000FFULL) << 56;
     return out;
 }
 
@@ -199,3 +215,13 @@ ByteStream& ByteStream::operator<<(double d) {
 }
 
 }  // namespace sibr
+
+// Restore macOS system macros after our implementation
+#ifdef __APPLE__
+#pragma pop_macro("htonl")
+#pragma pop_macro("htons")
+#pragma pop_macro("ntohl")
+#pragma pop_macro("ntohs")
+#pragma pop_macro("htonll")
+#pragma pop_macro("ntohll")
+#endif

@@ -240,17 +240,17 @@ namespace sibr
 		 *\param  ids N-d coordinates
 		 *\return a reference to the corresponding value.
 		 */
-		T & multiAt(const std::vector<int> & ids) {
-			return this.at(ids.at(ids.size() - N)).multiAt(ids);
-		}
+	T & multiAt(const std::vector<int> & ids) {
+		return this->at(ids.at(ids.size() - N)).multiAt(ids);
+	}
 
-		/** Getter
-		 *\param  ids N-d coordinates
-		 *\return a const reference to the corresponding value.
-		 */
-		const T & multiAt(const std::vector<int> & ids) const {
-			return this.at(ids.at(ids.size() - N)).multiAt(ids);
-		}
+	/** Getter
+	 *\param  ids N-d coordinates
+	 *\return a const reference to the corresponding value.
+	 */
+	const T & multiAt(const std::vector<int> & ids) const {
+		return this->at(ids.at(ids.size() - N)).multiAt(ids);
+	}
 
 		/** Get the size along each dimension.
 		 *\return the N-d size
@@ -275,14 +275,14 @@ namespace sibr
 
 	protected:
 
-		/** Helper to get the dimensions.
-		 *\param v will contain the size along each axis
-		 */
-		void dimsRecur(std::vector<int> & v) const
-		{
-			v.push_back((int)this.size());
-			this.at(0).dimsRecur(v);
-		}
+	/** Helper to get the dimensions.
+	 *\param v will contain the size along each axis
+	 */
+	void dimsRecur(std::vector<int> & v) const
+	{
+		v.push_back((int)this->size());
+		this->at(0).dimsRecur(v);
+	}
 	};
 
 	/** Base multi-dimensional vector class (a 1D vector). 
@@ -312,37 +312,37 @@ namespace sibr
 		MultiVector(const std::vector<int> & dims, const T & t = T())
 			: std::vector<T>(dims.at(dims.size()-1), t) { }
 
-		/** Getter
-		 *\param  ids N-d coordinates
-		 *\return a reference to the corresponding value.
-		 */
-		T & multiAt(const std::vector<int> & ids) {
-			return this.at(ids.at(ids.size() - 1));
-		}
+	/** Getter
+	 *\param  ids N-d coordinates
+	 *\return a reference to the corresponding value.
+	 */
+	T & multiAt(const std::vector<int> & ids) {
+		return this->at(ids.at(ids.size() - 1));
+	}
 
-		/** Getter
-		 *\param  ids N-d coordinates
-		 *\return a const reference to the corresponding value.
-		 */
-		const T & multiAt(const std::vector<int> & ids) const {
-			return this.at(ids.at(ids.size() - 1));
-		}
+	/** Getter
+	 *\param  ids N-d coordinates
+	 *\return a const reference to the corresponding value.
+	 */
+	const T & multiAt(const std::vector<int> & ids) const {
+		return this->at(ids.at(ids.size() - 1));
+	}
 
-		/**Print the size along each dimension.
-		 */
-		void dimsDisplay() const {
-			std::cout << " [ " << this.size() << " ] " << std::endl;
-		}
+	/**Print the size along each dimension.
+	 */
+	void dimsDisplay() const {
+		std::cout << " [ " << this->size() << " ] " << std::endl;
+	}
 
-	protected:
+protected:
 
-		/** Helper to get the dimensions.
-		 *\param v will contain the size along each axis
-		 */
-		void dimsRecur(std::vector<int> & v) const
-		{
-			v.push_back((int)this.size());
-		}
+	/** Helper to get the dimensions.
+	 *\param v will contain the size along each axis
+	 */
+	void dimsRecur(std::vector<int> & v) const
+	{
+		v.push_back((int)this->size());
+	}
 
 	};
 
