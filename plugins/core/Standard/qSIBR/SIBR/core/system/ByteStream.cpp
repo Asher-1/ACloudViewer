@@ -13,7 +13,8 @@
 #include <string.h>
 #endif
 
-// Save and undefine macOS system macros before including our header and implementing methods
+// Save and undefine macOS system macros before including our header and
+// implementing methods
 #ifdef __APPLE__
 #pragma push_macro("htonl")
 #pragma push_macro("htons")

@@ -101,9 +101,9 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
     pFormatCtx = avformat_alloc_context();
 
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-    fmt = const_cast<AVOutputFormat*>(av_guess_format(NULL, out_file, NULL));
+    fmt = const_cast<AVOutputFormat *>(av_guess_format(NULL, out_file, NULL));
 #else
-    fmt = const_cast<AVOutputFormat*>(av_guess_format(NULL, out_file, NULL));
+    fmt = const_cast<AVOutputFormat *>(av_guess_format(NULL, out_file, NULL));
 #endif
     pFormatCtx->oformat = fmt;
 
@@ -121,7 +121,8 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
         return;
     }
 
-    pCodec = const_cast<AVCodec*>(avcodec_find_encoder(pFormatCtx->oformat->video_codec));
+    pCodec = const_cast<AVCodec *>(
+            avcodec_find_encoder(pFormatCtx->oformat->video_codec));
     if (!pCodec) {
         SIBR_WRG << "[FFMPEG] Could not find codec." << std::endl;
         return;
@@ -173,20 +174,22 @@ void FFVideoEncoder::init(const sibr::Vector2i &size) {
                  << std::endl;
         return;
     }
-    
+
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
     // In newer FFmpeg, copy codec parameters from context to stream
     res = avcodec_parameters_from_context(video_st->codecpar, pCodecCtx);
     if (res < 0) {
-        SIBR_WRG << "[FFMPEG] Failed to copy codec parameters, error: " << res << std::endl;
+        SIBR_WRG << "[FFMPEG] Failed to copy codec parameters, error: " << res
+                 << std::endl;
         return;
     }
 #endif
-    
+
     // Write the file header.
     res = avformat_write_header(pFormatCtx, NULL);
     if (res < 0) {
-        SIBR_WRG << "[FFMPEG] Failed to write header, error: " << res << std::endl;
+        SIBR_WRG << "[FFMPEG] Failed to write header, error: " << res
+                 << std::endl;
         return;
     }
 
@@ -271,7 +274,7 @@ bool FFVideoEncoder::encode(AVFrame *frame) {
         SIBR_WRG << "[FFMPEG] Failed to send frame for encoding." << std::endl;
         return false;
     }
-    
+
     while (ret >= 0) {
         ret = avcodec_receive_packet(pCodecCtx, pkt);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -280,11 +283,11 @@ bool FFVideoEncoder::encode(AVFrame *frame) {
             SIBR_WRG << "[FFMPEG] Error during encoding." << std::endl;
             return false;
         }
-        
+
         pkt->stream_index = video_st->index;
         ret = av_write_frame(pFormatCtx, pkt);
         av_packet_unref(pkt);
-        
+
         if (ret < 0) {
             SIBR_WRG << "[FFMPEG] Error writing frame." << std::endl;
             return false;

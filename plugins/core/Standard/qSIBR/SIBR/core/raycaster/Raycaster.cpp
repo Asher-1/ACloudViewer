@@ -58,7 +58,8 @@ bool Raycaster::init(RTCSceneFlags sceneType) {
         // The two following macros set flagbits on the control register
         // used by SSE (see
         // http://softpixel.com/~cwright/programming/simd/sse.php)
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+        defined(_M_IX86)
         _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);  // Enable 'Flush Zero' bit
         _MM_SET_DENORMALS_ZERO_MODE(
                 _MM_DENORMALS_ZERO_ON);  // Enable 'Denormals Zero'bit
@@ -232,7 +233,8 @@ bool Raycaster::hitSomething(const Ray& inray, float minDist) {
     if (init() == false)
         SIBR_ERR << "cannot initialize embree, failed cast rays." << std::endl;
     else {
-        // embree4: rtcOccluded1 signature changed, context parameter is now optional (NULL)
+        // embree4: rtcOccluded1 signature changed, context parameter is now
+        // optional (NULL)
         rtcOccluded1(*_scene.get(), &ray, NULL);
     }
     return ray.tfar < 0.0f;
@@ -259,7 +261,8 @@ std::array<bool, 8> Raycaster::hitSomething8(const std::array<Ray, 8>& inray,
     if (init() == false)
         SIBR_ERR << "cannot initialize embree, failed cast rays." << std::endl;
     else {
-        // embree4: rtcOccluded8 signature changed, context parameter is now optional (NULL)
+        // embree4: rtcOccluded8 signature changed, context parameter is now
+        // optional (NULL)
         rtcOccluded8(valid8, *_scene.get(), &ray, NULL);
     }
 
@@ -291,7 +294,8 @@ RayHit Raycaster::intersect(const Ray& inray, float minDist) {
     if (init() == false)
         SIBR_ERR << "cannot initialize embree, failed cast rays." << std::endl;
     else {
-        // embree4: rtcIntersect1 signature changed, context parameter is now optional (NULL)
+        // embree4: rtcIntersect1 signature changed, context parameter is now
+        // optional (NULL)
         rtcIntersect1(*_scene.get(), &rh, NULL);
         rh.hit.Ng_x =
                 -rh.hit.Ng_x;  // EMBREE_FIXME: only correct for
@@ -340,7 +344,8 @@ std::array<RayHit, 8> Raycaster::intersect8(const std::array<Ray, 8>& inray,
     if (init() == false)
         SIBR_ERR << "cannot initialize embree, failed cast rays." << std::endl;
     else {
-        // embree4: rtcIntersect8 signature changed, context parameter is now optional (NULL)
+        // embree4: rtcIntersect8 signature changed, context parameter is now
+        // optional (NULL)
         rtcIntersect8(valid8.data(), *_scene.get(), &rh, NULL);
     }
 

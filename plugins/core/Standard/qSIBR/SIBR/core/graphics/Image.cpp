@@ -8,6 +8,7 @@
 #include "core/graphics/Image.hpp"
 
 #include <fstream>
+
 #include "core/system/ByteStream.hpp"
 
 namespace sibr {
@@ -341,13 +342,13 @@ sibr::Vector2i IImage::imageResolution(const std::string &file_path) {
     uint32_t temp = 0;
     int32_t width = -1;
     int32_t height = -1;
-    
+
     // Temporarily undefine macOS system macros for ByteStream calls
 #ifdef __APPLE__
 #pragma push_macro("ntohl")
 #undef ntohl
 #endif
-    
+
     switch (extension_id) {
         case PNG:
             file.seekg(16);
@@ -379,12 +380,12 @@ sibr::Vector2i IImage::imageResolution(const std::string &file_path) {
             return get_jpeg_size(file);
             break;
     }
-    
-    // Restore macOS system macros
+
+        // Restore macOS system macros
 #ifdef __APPLE__
 #pragma pop_macro("ntohl")
 #endif
-    
+
     return sibr::Vector2i(width, height);
 }
 
