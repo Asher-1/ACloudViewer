@@ -117,7 +117,7 @@ int main(const int argc, const char* const* argv) {
         } else if (is_regular_file(p) && p.extension() == ".txt" &&
                    p.stem().string() == "resolutions") {
             // read resolutions file
-            ifstream inputFile(p.string());
+            std::ifstream inputFile(p.string());
 
             std::string line;
             while (getline(inputFile, line)) {

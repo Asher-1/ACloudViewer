@@ -37,6 +37,8 @@ conda activate cloudViewer
 
 ## Building APP
 
+**qSIBR (SIBR / ULR viewers):** GitHub Actions macOS workflow uses `util/ci_utils.sh` `build_gui_app`, which sets `PLUGIN_STANDARD_QSIBR=OFF` on Darwin. The example below matches that. To experiment locally, use `-DPLUGIN_STANDARD_QSIBR=ON` or `export PLUGIN_STANDARD_QSIBR=ON` before `build_gui_app`.
+
 ```
 PS: no opencv support due to some issues on local macos machine
 
@@ -65,7 +67,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPACKAGE=ON \
         -DUSE_VTK_BACKEND=ON \
         -DBUILD_WEBRTC=OFF \
-        -DBUILD_OPENCV=OFF \
+        -DBUILD_OPENCV=ON \
         -DUSE_SYSTEM_OPENCV=OFF \
         -DBUILD_RECONSTRUCTION=ON \
         -DBUILD_CUDA_MODULE=OFF \
@@ -95,8 +97,8 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_STANDARD_QCORK=ON \
         -DPLUGIN_STANDARD_QJSONRPC=ON \
         -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
-        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=OFF \
-        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=OFF \
+        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
+        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
         -DPLUGIN_STANDARD_QANIMATION=ON \
         -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
         -DPLUGIN_STANDARD_QCANUPO=ON \
@@ -116,6 +118,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_STANDARD_QTREEISO=OFF \
         -DPLUGIN_STANDARD_QVOXFALL=ON \
         -DPLUGIN_STANDARD_G3POINT=ON \
+        -DPLUGIN_STANDARD_QSIBR=OFF \
         -DPLUGIN_PYTHON=ON \
         -DBUILD_PYTHON_MODULE=ON \
         -DBUILD_WITH_CONDA=ON \

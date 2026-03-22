@@ -178,7 +178,7 @@ Available Standard Plugins
 
 **Image-Based Rendering & Neural Radiance**
 
-* **qSIBR**: SIBR framework integration — real-time 3D Gaussian Splatting (CUDA), ULR novel-view synthesis, textured mesh and point-based viewing, remote training viewer, and dataset preprocessing tools. Bidirectional interaction with ACloudViewer: entity selection auto-fills viewer paths, results import back with zoom-to-fit. Enable with ``-DPLUGIN_STANDARD_QSIBR=ON``.
+* **qSIBR**: SIBR framework integration — real-time 3D Gaussian Splatting (CUDA), ULR novel-view synthesis, textured mesh and point-based viewing, remote training viewer, and dataset preprocessing tools. Bidirectional interaction with ACloudViewer: entity selection auto-fills viewer paths, results import back with zoom-to-fit. Enable with ``-DPLUGIN_STANDARD_QSIBR=ON`` (not supported on macOS due to OpenGL-on-Metal limitations 4.1 +).
 
 **Advanced Processing**
 

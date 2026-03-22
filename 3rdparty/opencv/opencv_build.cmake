@@ -50,9 +50,9 @@ ExternalProject_Add(ext_opencv
             -DWITH_FFMPEG=OFF
             -DBUILD_JASPER=ON
             -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
-            -DBUILD_PNG=ON             #编译opencv 3rdparty自带的libpng
+            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            #macOS使用系统libpng避免SDK冲突，其他平台使用内置版本
             -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
-            -DBUILD_ZLIB=ON            #编译opencv 3rdparty自带的libzlib
+            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           #macOS使用系统zlib避免SDK冲突，其他平台使用内置版本
             -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
             -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
             # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf

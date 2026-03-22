@@ -31,16 +31,16 @@ namespace sibr
 
 	/// uint contexpr helper, defining the number of command line tokens required to init T
 	template<typename T>
-	constexpr uint NumberOfArg = 1;
+	inline constexpr uint NumberOfArg = 1;
 	/// uint contexpr helper, defining the number of command line tokens required to init T
 	template<>
-	constexpr uint NumberOfArg<bool> = 0;
+	inline constexpr uint NumberOfArg<bool> = 0;
 	/// uint contexpr helper, defining the number of command line tokens required to init T
 	template<>
-	constexpr uint NumberOfArg<Switch> = 0;
+	inline constexpr uint NumberOfArg<Switch> = 0;
 	/// uint contexpr helper, defining the number of command line tokens required to init T
 	template<typename T, uint N>
-	constexpr uint NumberOfArg<sibr::Vector<T, N>> = N * NumberOfArg<T>;
+	inline constexpr uint NumberOfArg<sibr::Vector<T, N>> = N * NumberOfArg<T>;
 
 	/// Helper to extract values from a vector of strings.
 	template<typename T> struct ValueGetter {

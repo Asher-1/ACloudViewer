@@ -16,6 +16,21 @@
 # include <iomanip>
 # include "core/system/Config.hpp"
 
+// Save and undefine macOS system macros that conflict with our method names
+#ifdef __APPLE__
+#pragma push_macro("htonl")
+#pragma push_macro("htons")
+#pragma push_macro("ntohl")
+#pragma push_macro("ntohs")
+#pragma push_macro("htonll")
+#pragma push_macro("ntohll")
+#undef htonl
+#undef htons
+#undef ntohl
+#undef ntohs
+#undef htonll
+#undef ntohll
+#endif
 
 namespace sibr
 {
@@ -455,3 +470,13 @@ namespace sibr
 		*/
 
 	} // namespace sibr
+
+// Restore macOS system macros after our class definition
+#ifdef __APPLE__
+#pragma pop_macro("htonl")
+#pragma pop_macro("htons")
+#pragma pop_macro("ntohl")
+#pragma pop_macro("ntohs")
+#pragma pop_macro("htonll")
+#pragma pop_macro("ntohll")
+#endif
