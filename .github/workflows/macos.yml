@@ -151,6 +151,70 @@ jobs:
           files: |
             ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }}
 
+  agent-integration:
+    name: Agent Integration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [MacOS]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14]
+
+    steps:
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download ACloudViewer installer
+        uses: actions/download-artifact@v4
+        with:
+          name: ACloudViewer-app-macosx-${{ runner.arch }}
+          path: /tmp/acv-installer/
+
+      - name: Install ACloudViewer (mount DMG)
+        run: |
+          DMG=$(find /tmp/acv-installer/ -name "*.dmg" | head -1)
+          if [ -z "$DMG" ]; then
+            echo "::error::No .dmg installer found"
+            exit 1
+          fi
+          hdiutil attach "$DMG" -nobrowse -noverify
+          VOLUME=$(find /Volumes -maxdepth 1 -name "ACloudViewer*" | head -1)
+          if [ -z "$VOLUME" ]; then
+            echo "::error::DMG did not mount as expected"
+            exit 1
+          fi
+          cp -R "$VOLUME"/*.app "$HOME/ACloudViewer.app" || \
+            cp -R "$VOLUME"/ "$HOME/ACloudViewer"
+          hdiutil detach "$VOLUME"
+          if [ -d "$HOME/ACloudViewer.app" ]; then
+            echo "$HOME/ACloudViewer.app/Contents/MacOS" >> "$GITHUB_PATH"
+            echo "ACV_BINARY=$HOME/ACloudViewer.app/Contents/MacOS/ACloudViewer" >> "$GITHUB_ENV"
+          else
+            echo "$HOME/ACloudViewer" >> "$GITHUB_PATH"
+            echo "ACV_BINARY=$HOME/ACloudViewer/ACloudViewer.sh" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+
+      - name: Level 3 — Headless processing tests
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+
   build-wheel:
     name: Build wheel
     permissions:

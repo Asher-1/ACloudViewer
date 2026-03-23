@@ -44,24 +44,59 @@ public:
     explicit JsonRPCPlugin(QObject *parent = nullptr);
     ~JsonRPCPlugin() override = default;
 
-    // Inherited from ccStdPluginInterface
     QList<QAction *> getActions() override;
+
 public slots:
     void triggered(bool checked);
     JsonRPCResult execute(QString method, QMap<QString, QVariant> params);
 
 private:
-    //! Default action
-    /** You can add as many actions as you want in a plugin.
-            Each action will correspond to an icon in the dedicated
-            toolbar and an entry in the plugin menu.
-    **/
-    QAction *m_action{nullptr};
+    // File I/O
+    JsonRPCResult rpcOpen(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcExport(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcFileConvert(const QMap<QString, QVariant> &params);
+    // Scene tree
+    JsonRPCResult rpcSceneList(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcSceneInfo(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcSceneRemove(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcSceneSetVisible(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcSceneSelect(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcClear(const QMap<QString, QVariant> &params);
+    // View control
+    JsonRPCResult rpcViewSetOrientation(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcViewZoomFit(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcViewRefresh(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcViewSetPerspective(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcViewSetPointSize(const QMap<QString, QVariant> &params);
+    // Transform
+    JsonRPCResult rpcTransformApply(const QMap<QString, QVariant> &params);
+    // Entity properties
+    JsonRPCResult rpcEntityRename(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcEntitySetColor(const QMap<QString, QVariant> &params);
+    // Mesh processing
+    JsonRPCResult rpcMeshSimplify(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcMeshSmooth(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcMeshSubdivide(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcMeshSamplePoints(const QMap<QString, QVariant> &params);
+    // Cloud colorization
+    JsonRPCResult rpcCloudPaintUniform(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudPaintByHeight(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudPaintByScalarField(const QMap<QString, QVariant> &params);
+    // Cloud processing
+    JsonRPCResult rpcCloudComputeNormals(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudSubsample(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudCrop(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudGetScalarFields(const QMap<QString, QVariant> &params);
+    // View capture
+    JsonRPCResult rpcViewScreenshot(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcViewGetCamera(const QMap<QString, QVariant> &params);
+    // Reconstruction (Colmap)
+    JsonRPCResult rpcColmapReconstruct(const QMap<QString, QVariant> &params);
+    // Introspection
+    JsonRPCResult rpcMethodsList(const QMap<QString, QVariant> &params);
 
-protected:
-    // jcon::JsonRpcTcpServer rpc_server;
-    // QTcpServer rpc_server;
-    // QWebSocketServer wsrpc_server(QStringLiteral("ACloudViewer"),
-    // QWebSocketServer::NonSecureMode);
+    void redraw();
+
+    QAction *m_action{nullptr};
     JsonRPCServer rpc_server;
 };
