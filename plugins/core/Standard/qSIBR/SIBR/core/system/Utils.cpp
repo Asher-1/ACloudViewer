@@ -323,7 +323,8 @@ std::string queryExecutableDirectory() {
 #endif
 }
 
-/** True if \p root contains the SIBR tree copied by qSIBR CMake (see SIBR_BIN_DIR). */
+/** True if \p root contains the SIBR tree copied by qSIBR CMake (see
+ * SIBR_BIN_DIR). */
 bool looksLikeSibrAssetRoot(const std::string& root) {
     if (root.empty()) return false;
     return directoryExists(root + "/sibr_resources") ||

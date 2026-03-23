@@ -270,12 +270,13 @@ void InitEnvironment() {
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
-    // Set UTF-8 code page for console output to properly display Chinese characters
-    // CP_UTF8 = 65001
+    // Set UTF-8 code page for console output to properly display Chinese
+    // characters CP_UTF8 = 65001
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
-    
-    // This will allow printf to function on windows when opened from command line
+
+    // This will allow printf to function on windows when opened from command
+    // line
     DWORD stdout_type = GetFileType(GetStdHandle(STD_OUTPUT_HANDLE));
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         if (stdout_type ==
