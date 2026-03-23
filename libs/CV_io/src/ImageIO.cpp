@@ -15,11 +15,12 @@
 // clang-format on
 #include <FileSystem.h>
 #include <Logging.h>
-#include "FileSystemUtils.h"
 
 #include <array>
 #include <fstream>
 #include <unordered_map>
+
+#include "FileSystemUtils.h"
 
 namespace cloudViewer {
 

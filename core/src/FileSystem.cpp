@@ -620,21 +620,20 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     }
     std::wstring filename_w(filename_wlen, L'\0');
     MultiByteToWideChar(CP_UTF8, 0, filename.c_str(),
-                       static_cast<int>(filename.length()),
-                       &filename_w[0], filename_wlen);
-    
+                        static_cast<int>(filename.length()), &filename_w[0],
+                        filename_wlen);
+
     // Convert UTF-8 mode to UTF-16
-    int mode_wlen = MultiByteToWideChar(CP_UTF8, 0, mode.c_str(),
-                                       static_cast<int>(mode.length()),
-                                       nullptr, 0);
+    int mode_wlen =
+            MultiByteToWideChar(CP_UTF8, 0, mode.c_str(),
+                                static_cast<int>(mode.length()), nullptr, 0);
     if (mode_wlen == 0) {
         return nullptr;
     }
     std::wstring mode_w(mode_wlen, L'\0');
     MultiByteToWideChar(CP_UTF8, 0, mode.c_str(),
-                       static_cast<int>(mode.length()),
-                       &mode_w[0], mode_wlen);
-    
+                        static_cast<int>(mode.length()), &mode_w[0], mode_wlen);
+
     fp = _wfopen(filename_w.c_str(), mode_w.c_str());
 #endif
     return fp;
