@@ -88,6 +88,7 @@
 #  ifdef SIBR_STATIC_DEFINE
 #    define SIBR_EXPORT
 #    define SIBR_NO_EXPORT
+#    define SIBR_SYSTEM_EXPORT
 #  else
 #    ifndef SIBR_SYSTEM_EXPORT
 #      ifdef SIBR_SYSTEM_EXPORTS

@@ -20,6 +20,7 @@
 #  ifdef SIBR_STATIC_DEFINE
 #    define SIBR_EXPORT
 #    define SIBR_NO_EXPORT
+#    define SIBR_IMGPROC_EXPORT
 #  else
 #    ifndef SIBR_IMGPROC_EXPORT
 #      ifdef SIBR_IMGPROC_EXPORTS

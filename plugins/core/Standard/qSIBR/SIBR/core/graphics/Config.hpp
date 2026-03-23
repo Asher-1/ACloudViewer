@@ -38,6 +38,7 @@
 #  ifdef SIBR_STATIC_DEFINE
 #    define SIBR_EXPORT
 #    define SIBR_NO_EXPORT
+#    define SIBR_GRAPHICS_EXPORT
 #  else
 #    ifndef SIBR_GRAPHICS_EXPORT
 #      ifdef SIBR_GRAPHICS_EXPORTS
