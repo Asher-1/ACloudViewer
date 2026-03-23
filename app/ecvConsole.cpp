@@ -487,6 +487,12 @@ bool ecvConsole::setLogFile(const QString& logPrefix) {
 
         m_mutex.lock();
         m_logStream = new QTextStream(&m_logFile);
+        // Set UTF-8 encoding for proper Chinese character support
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        m_logStream->setEncoding(QStringConverter::Utf8);
+#else
+        m_logStream->setCodec("UTF-8");
+#endif
         // Write header to log file
         *m_logStream << "========================================"
                      << QtCompat::endl;

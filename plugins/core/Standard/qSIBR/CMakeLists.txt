@@ -167,6 +167,8 @@ if(PLUGIN_STANDARD_QSIBR)
     target_link_libraries(sibr_imgui PUBLIC
         ${SIBR_GLEW_LIBS} ${SIBR_GLFW_LIBS} ${SIBR_OPENGL_LIBS}
     )
+    # Windows: imconfig.h defaults to dllimport unless IMGUI_EXPORTS; we build imgui as STATIC — must match all TUs (sibr_graphics, etc.).
+    target_compile_definitions(sibr_imgui PUBLIC IMGUI_STATIC_DEFINE)
     if(NOT MSVC)
         target_compile_options(sibr_imgui PRIVATE -fpermissive -Wno-error)
     endif()
@@ -180,6 +182,23 @@ if(PLUGIN_STANDARD_QSIBR)
         find_package(PkgConfig QUIET)
         if(PkgConfig_FOUND)
             pkg_check_modules(FFMPEG QUIET libavcodec libavformat libavutil libswscale)
+        endif()
+    endif()
+
+    # MSVC needs explicit lib dirs when linking bare names (avformat, ...). Do not rely on
+    # CMake cache CONDA_PREFIX (often unset or a placeholder); prefer pkg-config / FindFFmpeg paths.
+    set(SIBR_FFMPEG_LINK_DIRS "")
+    if(FFMPEG_FOUND AND FFMPEG_LIBRARY_DIRS)
+        set(SIBR_FFMPEG_LINK_DIRS ${FFMPEG_LIBRARY_DIRS})
+    elseif(FFMPEG_FOUND AND FFMPEG_LIBRARY_DIR)
+        set(SIBR_FFMPEG_LINK_DIRS ${FFMPEG_LIBRARY_DIR})
+    elseif(FFmpeg_FOUND AND DEFINED FFmpeg_LIBRARY_DIRS AND FFmpeg_LIBRARY_DIRS)
+        set(SIBR_FFMPEG_LINK_DIRS ${FFmpeg_LIBRARY_DIRS})
+    elseif(DEFINED ENV{CONDA_PREFIX})
+        if(EXISTS "$ENV{CONDA_PREFIX}/Library/lib")
+            set(SIBR_FFMPEG_LINK_DIRS "$ENV{CONDA_PREFIX}/Library/lib")
+        elseif(EXISTS "$ENV{CONDA_PREFIX}/lib")
+            set(SIBR_FFMPEG_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
         endif()
     endif()
 
@@ -217,6 +236,7 @@ if(PLUGIN_STANDARD_QSIBR)
         "${SIBR_3RDPARTY_DIR}/mrf/maxflow.cpp"
     )
     target_include_directories(sibr_mrf PUBLIC "${SIBR_3RDPARTY_DIR}/mrf")
+    target_compile_definitions(sibr_mrf PUBLIC MRF_STATIC_DEFINE)
     set_target_properties(sibr_mrf PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
     # =============================================
@@ -260,6 +280,8 @@ if(PLUGIN_STANDARD_QSIBR)
 
     # sibr_system (base library)
     sibr_add_library(sibr_system "${SIBR_SRC_DIR}/core/system")
+    # Static libs: propagate so all TUs agree on export macros (no dllimport/dllexport mismatch).
+    target_compile_definitions(sibr_system PUBLIC SIBR_STATIC_DEFINE)
     target_link_libraries(sibr_system PUBLIC
         ${SIBR_BOOST_LIBS}
         ${SIBR_FILEDIALOG_LIBS}
@@ -302,6 +324,7 @@ if(PLUGIN_STANDARD_QSIBR)
 
     # sibr_raycaster
     sibr_add_library(sibr_raycaster "${SIBR_SRC_DIR}/core/raycaster")
+    target_compile_definitions(sibr_raycaster PUBLIC SIBR_STATIC_RAYCASTER_DEFINE)
     target_link_libraries(sibr_raycaster PUBLIC
         sibr_graphics
         sibr_assets
@@ -326,15 +349,15 @@ if(PLUGIN_STANDARD_QSIBR)
 
     # sibr_video (exclude VideoUtils.cpp which needs opencv2/ximgproc contrib module)
     sibr_add_library(sibr_video "${SIBR_SRC_DIR}/core/video")
+    target_compile_definitions(sibr_video PUBLIC SIBR_STATIC_VIDEO_DEFINE)
     get_target_property(_video_srcs sibr_video SOURCES)
     list(FILTER _video_srcs EXCLUDE REGEX "VideoUtils\\.cpp$")
     set_target_properties(sibr_video PROPERTIES SOURCES "${_video_srcs}")
     target_link_libraries(sibr_video PUBLIC sibr_graphics)
     if(FFMPEG_FOUND OR FFmpeg_FOUND)
         target_include_directories(sibr_video PRIVATE ${FFMPEG_INCLUDE_DIRS})
-        # Add FFmpeg library directories to linker search path
-        if(DEFINED CONDA_PREFIX)
-            target_link_directories(sibr_video PRIVATE ${CONDA_PREFIX}/lib)
+        if(SIBR_FFMPEG_LINK_DIRS)
+            target_link_directories(sibr_video PRIVATE ${SIBR_FFMPEG_LINK_DIRS})
         endif()
         target_link_libraries(sibr_video PUBLIC ${FFMPEG_LIBRARIES})
         target_compile_definitions(sibr_video PRIVATE SIBR_HAS_FFMPEG)
@@ -342,6 +365,7 @@ if(PLUGIN_STANDARD_QSIBR)
 
     # sibr_view
     sibr_add_library(sibr_view "${SIBR_SRC_DIR}/core/view")
+    target_compile_definitions(sibr_view PUBLIC SIBR_STATIC_VIEW_DEFINE)
     target_link_libraries(sibr_view PUBLIC
         sibr_graphics
         sibr_assets
@@ -726,8 +750,8 @@ if(PLUGIN_STANDARD_QSIBR)
     )
     # Add FFmpeg libraries for sibr_video support (if found)
     if(FFMPEG_FOUND OR FFmpeg_FOUND)
-        if(DEFINED CONDA_PREFIX)
-            target_link_directories(${PROJECT_NAME} PRIVATE ${CONDA_PREFIX}/lib)
+        if(SIBR_FFMPEG_LINK_DIRS)
+            target_link_directories(${PROJECT_NAME} PRIVATE ${SIBR_FFMPEG_LINK_DIRS})
         endif()
         target_link_libraries(${PROJECT_NAME} ${FFMPEG_LIBRARIES})
     endif()

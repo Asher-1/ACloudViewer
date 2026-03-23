@@ -21,6 +21,7 @@
 # ifdef SIBR_STATIC_DEFINE
 #   define SIBR_EXPORT
 #   define SIBR_NO_EXPORT
+#   define SIBR_SCENE_EXPORT
 # else
 #   ifndef SIBR_SCENE_EXPORT
 #     ifdef SIBR_SCENE_EXPORTS

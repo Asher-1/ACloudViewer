@@ -295,11 +295,9 @@ size_t getAvailableMem() {
 #endif
 }
 
-SIBR_SYSTEM_EXPORT std::string getInstallDirectory() {
-    // ACloudViewer places SIBR assets (shaders/, sibr_resources/,
-    // ibr_resources.ini) alongside the executable, so we return
-    // the directory containing the running binary on every platform.
+namespace {
 
+std::string queryExecutableDirectory() {
 #ifdef SIBR_OS_WINDOWS
     char exePath[MAX_PATH];
     unsigned int len =
@@ -310,7 +308,7 @@ SIBR_SYSTEM_EXPORT std::string getInstallDirectory() {
                  << std::endl;
         return "";
     }
-    std::string installDirectory = parentDirectory(exePath);
+    return parentDirectory(exePath);
 #else
     char result[PATH_MAX];
     ssize_t c = readlink("/proc/self/exe", result, PATH_MAX - 1);
@@ -321,10 +319,36 @@ SIBR_SYSTEM_EXPORT std::string getInstallDirectory() {
         return "";
     }
     result[c] = '\0';
-    std::string installDirectory(dirname(result));
+    return std::string(dirname(result));
 #endif
+}
 
-    return installDirectory;
+/** True if \p root contains the SIBR tree copied by qSIBR CMake (see SIBR_BIN_DIR). */
+bool looksLikeSibrAssetRoot(const std::string& root) {
+    if (root.empty()) return false;
+    return directoryExists(root + "/sibr_resources") ||
+           fileExists(root + "/ibr_resources.ini");
+}
+
+}  // namespace
+
+SIBR_SYSTEM_EXPORT std::string getInstallDirectory() {
+    // ACloudViewer copies shaders/, sibr_resources/, ibr_resources.ini under
+    // CMAKE_BINARY_DIR/bin (SIBR_BIN_DIR). With VS/Xcode multi-config, the
+    // executable lives in bin/Release or bin/Debug, so the asset root is the
+    // parent of the exe directory. Fall back to exe dir when assets sit there.
+
+    const std::string exeDir = queryExecutableDirectory();
+    if (exeDir.empty()) return "";
+
+    if (looksLikeSibrAssetRoot(exeDir)) return exeDir;
+
+    const std::string parentOfExe = parentDirectory(exeDir);
+    if (!parentOfExe.empty() && parentOfExe != exeDir &&
+        looksLikeSibrAssetRoot(parentOfExe))
+        return parentOfExe;
+
+    return exeDir;
 }
 
 SIBR_SYSTEM_EXPORT std::string getBinDirectory() {

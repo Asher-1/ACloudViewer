@@ -16,6 +16,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "rply.h"
 
 /* ----------------------------------------------------------------------
@@ -347,6 +351,44 @@ static int ply_read_header_magic(p_ply ply) {
 }
 
 /* ----------------------------------------------------------------------
+ * Windows UTF-8 file path support
+ * ---------------------------------------------------------------------- */
+#ifdef _WIN32
+static FILE* ply_fopen_utf8(const char* filename, const char* mode) {
+    int wchars_num = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    if (wchars_num == 0) return NULL;
+    
+    wchar_t* wfilename = (wchar_t*)malloc(wchars_num * sizeof(wchar_t));
+    if (!wfilename) return NULL;
+    
+    MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wchars_num);
+    
+    int wmode_num = MultiByteToWideChar(CP_UTF8, 0, mode, -1, NULL, 0);
+    if (wmode_num == 0) {
+        free(wfilename);
+        return NULL;
+    }
+    
+    wchar_t* wmode = (wchar_t*)malloc(wmode_num * sizeof(wchar_t));
+    if (!wmode) {
+        free(wfilename);
+        return NULL;
+    }
+    
+    MultiByteToWideChar(CP_UTF8, 0, mode, -1, wmode, wmode_num);
+    
+    FILE* fp = _wfopen(wfilename, wmode);
+    
+    free(wfilename);
+    free(wmode);
+    
+    return fp;
+}
+#else
+#define ply_fopen_utf8 fopen
+#endif
+
+/* ----------------------------------------------------------------------
  * Exported functions
  * ---------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------
@@ -371,7 +413,7 @@ p_ply ply_open(const char *name, p_ply_error_cb error_cb,
         return NULL;
     }
     assert(name);
-    fp = fopen(name, "rb");
+    fp = ply_fopen_utf8(name, "rb");
     if (!fp) {
         error_cb(ply, "Unable to open file");
         free(ply);
@@ -459,7 +501,7 @@ p_ply ply_create(const char *name, e_ply_storage_mode storage_mode,
         return NULL;
     }
     assert(name && storage_mode <= PLY_DEFAULT);
-    fp = fopen(name, "wb");
+    fp = ply_fopen_utf8(name, "wb");
     if (!fp) {
         error_cb(ply, "Unable to create file");
         free(ply);
