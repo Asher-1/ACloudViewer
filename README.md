@@ -148,6 +148,40 @@ Key capabilities:
 Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
 See [qSIBR plugin documentation](plugins/core/Standard/qSIBR/README.md) for details.
 
+## AI Agent Integration
+
+ACloudViewer can be controlled by AI agents (OpenClaw, Cursor, Claude Code) through
+a unified integration layer providing three interfaces:
+
+| Interface | Protocol | Use Case |
+|-----------|----------|----------|
+| **JSON-RPC Plugin** | WebSocket (port 6001) | Real-time GUI control from agents |
+| **MCP Server** | Model Context Protocol (stdio) | OpenClaw, Cursor IDE, Claude Code |
+| **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing |
+
+```bash
+# Install the CLI harness (headless or GUI control)
+pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
+
+# Convert point cloud formats
+cli-anything-acloudviewer --mode headless convert input.ply output.pcd
+
+# Subsample with voxel grid
+cli-anything-acloudviewer --mode headless process subsample input.ply -o sub.ply --voxel-size 0.05
+
+# Start MCP server for AI agent frameworks
+cli-anything-acloudviewer-mcp --mode auto
+```
+
+The headless mode invokes the ACloudViewer binary directly (no Python bindings needed),
+supporting all 40+ file formats including plugin-provided ones (LAS/LAZ, E57, FBX, PCD, Draco).
+
+Enable the JSON-RPC plugin with `-DPLUGIN_STANDARD_QJSONRPC=ON` at build time.
+
+Browse available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/).
+See [agent-integration/](agent-integration/) for full documentation, MCP tool reference,
+and the unified test suite.
+
 ## CloudViewer app
 
 <p align="center">

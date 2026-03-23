@@ -175,3 +175,69 @@ jobs:
           prerelease: false
           files: |
             ACloudViewer-*.run
+
+  agent-integration:
+    name: Agent Integration (${{ matrix.CI_CONFIG }})
+    runs-on: ${{ matrix.RUNNER }}
+    needs: [build-and-run-docker]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - CI_CONFIG: cpu-focal
+            RUNNER: ubuntu-20.04
+          - CI_CONFIG: cpu-jammy
+            RUNNER: ubuntu-22.04
+          - CI_CONFIG: cpu-noble
+            RUNNER: ubuntu-24.04
+
+    steps:
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libxcb-xinerama0 libfontconfig1
+
+      - name: Download ACloudViewer installer
+        uses: actions/download-artifact@v4
+        with:
+          name: ACloudViewer-devel-linux-x86_64-${{ matrix.CI_CONFIG }}
+          path: /tmp/acv-installer/
+
+      - name: Install ACloudViewer (headless .run installer)
+        env:
+          QT_QPA_PLATFORM: minimal
+        run: |
+          INSTALLER=$(find /tmp/acv-installer/ -name "*.run" | head -1)
+          if [ -z "$INSTALLER" ]; then
+            echo "::error::No .run installer found"
+            exit 1
+          fi
+          chmod +x "$INSTALLER"
+          "$INSTALLER" --root "$HOME/ACloudViewer" \
+            --accept-licenses --accept-messages --confirm-command install
+          echo "$HOME/ACloudViewer" >> "$GITHUB_PATH"
+          echo "ACV_BINARY=$HOME/ACloudViewer/ACloudViewer.sh" >> "$GITHUB_ENV"
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+
+      - name: Level 3 — Headless processing tests
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"

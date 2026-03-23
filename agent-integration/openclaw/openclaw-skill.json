@@ -1,0 +1,34 @@
+{
+  "name": "acloudviewer",
+  "display_name": "ACloudViewer",
+  "version": "2.0.0",
+  "description": "3D point cloud and mesh processing — load, convert, subsample, compute normals, measure distances, reconstruct meshes. Headless mode uses ACloudViewer binary CLI, GUI mode uses JSON-RPC.",
+  "author": "ACloudViewer Contributors",
+  "homepage": "https://asher-1.github.io/ACloudViewer",
+  "repository": "https://github.com/ACloudViewer/ACloudViewer",
+  "license": "MIT",
+  "category": "3d",
+  "tags": ["point-cloud", "mesh", "3d", "visualization", "icp", "distance", "reconstruction"],
+  "mcp": {
+    "command": "cli-anything-acloudviewer-mcp",
+    "args": ["--mode", "auto"],
+    "type": "stdio"
+  },
+  "install": {
+    "pip": "cli-anything-acloudviewer[mcp]"
+  },
+  "requires": {
+    "binary": "ACloudViewer desktop application (headless CLI or GUI mode)"
+  },
+  "tools_count": 23,
+  "tool_categories": {
+    "file_io": ["open_file", "convert_format", "batch_convert", "list_formats"],
+    "processing": ["subsample", "compute_normals", "sor_filter", "crop", "density", "curvature", "roughness", "color_banding"],
+    "distance": ["c2c_distance", "c2m_distance"],
+    "registration": ["icp_registration"],
+    "mesh": ["delaunay", "sample_mesh"],
+    "scene": ["scene_list", "scene_info"],
+    "view": ["screenshot", "get_camera"],
+    "utility": ["get_info", "list_rpc_methods"]
+  }
+}

@@ -236,6 +236,84 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
+  agent-integration:
+    name: Agent Integration (Level 3)
+    runs-on: windows-2022
+    needs: [windows]
+
+    steps:
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download all ACloudViewer installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ACloudViewer-*.exe
+          path: ${{ runner.temp }}/acv-installer/
+          merge-multiple: true
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+
+      - name: Test each ACloudViewer installer
+        env:
+          QT_QPA_PLATFORM: minimal
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $installers = Get-ChildItem "${{ runner.temp }}\acv-installer\" -Filter "*.exe" -Recurse
+          if ($installers.Count -eq 0) {
+            Write-Error "No .exe installers found"
+            exit 1
+          }
+          $failed = 0
+          $total = $installers.Count
+          $idx = 0
+          foreach ($installer in $installers) {
+            $idx++
+            $installDir = Join-Path $env:USERPROFILE "ACloudViewer-Test-$idx"
+            Write-Host "::group::[$idx/$total] Testing $($installer.Name)"
+            Write-Host "Install dir: $installDir"
+
+            & $installer.FullName --root $installDir `
+              --accept-licenses --accept-messages --confirm-command install
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Installation failed for $($installer.Name)"
+              $failed++
+              Write-Host "::endgroup::"
+              continue
+            }
+
+            $env:PATH = "$installDir;$env:PATH"
+            $env:ACV_BINARY = Join-Path $installDir "ACloudViewer.exe"
+
+            python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+            if ($LASTEXITCODE -ne 0) { $failed++ }
+
+            if (Test-Path (Join-Path $installDir "maintenancetool.exe")) {
+              & (Join-Path $installDir "maintenancetool.exe") purge `
+                --accept-licenses --accept-messages --confirm-command 2>&1 | Out-Null
+            } else {
+              Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
+            }
+            Write-Host "::endgroup::"
+          }
+          Write-Host "Tested $total installer(s), $failed failure(s)"
+          if ($failed -gt 0) { exit 1 }
+
   build-wheel:
     name: Build wheel
     permissions:

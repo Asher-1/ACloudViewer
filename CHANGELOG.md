@@ -3,6 +3,30 @@ ACloudViewer Version History
 
 v3.9.5-Beta (Asher) - 02/02/2026
 --------------------------------
+- Agent integration:
+    - Add agent-integration module for AI agent frameworks (OpenClaw, Cursor, Claude Code)
+    - JSON-RPC plugin: expand from 12 to 32 RPC methods
+      - Cloud colorization: paintUniform, paintByHeight, paintByScalarField
+      - Scene management: scene.list, scene.info, scene.remove, scene.setVisible, scene.select
+      - View control: screenshot, getCamera, setPerspective, setPointSize
+      - Entity: rename, setColor
+      - Mesh processing: simplify, smooth, subdivide, samplePoints
+      - Transform, scalar fields, and more
+    - MCP (Model Context Protocol) server: 23 tools for AI agent interaction
+      - Headless mode: calls ACloudViewer binary via subprocess (-SILENT CLI)
+      - GUI mode: controls running ACloudViewer via JSON-RPC WebSocket
+      - No dependency on cloudViewer Python package or open3d
+    - CLI harness: 15 processing commands (subsample, normals, ICP, SOR, C2C/C2M distance, etc.)
+    - OpenClaw skill configuration (openclaw-skill.json)
+    - Cursor IDE MCP configuration (.cursor/mcp.json)
+    - Unified 5-level test suite (33 integration tests + 21 harness tests)
+    - GitHub Actions CI workflow for agent-integration tests (Level 1/2/5)
+    - Python package: cli-anything-acloudviewer (CLI: cli-anything-acloudviewer,
+      MCP: cli-anything-acloudviewer-mcp) under the standard cli_anything namespace
+    - Colmap-based 3D reconstruction: automatic pipeline, individual SfM/MVS steps,
+      meshing, model conversion (14 CLI commands, 8 MCP tools)
+    - Fix: CVLog::Print arg() crash with QMap parameter (use qDebug instead)
+
 - New plugins:
     - Add qSIBR plugin: Full SIBR (System for Image Based Rendering) integration
       - Embedded SIBR core engine (system, graphics, assets, raycaster, scene, video, view, renderer, imgproc)
