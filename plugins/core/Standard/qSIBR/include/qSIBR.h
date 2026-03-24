@@ -27,6 +27,7 @@ public:
 
     void onNewSelection(const ccHObject::Container& selectedEntities) override;
     QList<QAction*> getActions() override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected slots:
     void launchULRViewer();

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <chrono>
 #include <core/imgproc/CropScaleImageUtility.hpp>
 #include <core/system/CommandLineArgs.hpp>
 

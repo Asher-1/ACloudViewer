@@ -81,12 +81,14 @@ private:
     // Cloud colorization
     JsonRPCResult rpcCloudPaintUniform(const QMap<QString, QVariant> &params);
     JsonRPCResult rpcCloudPaintByHeight(const QMap<QString, QVariant> &params);
-    JsonRPCResult rpcCloudPaintByScalarField(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudPaintByScalarField(
+            const QMap<QString, QVariant> &params);
     // Cloud processing
     JsonRPCResult rpcCloudComputeNormals(const QMap<QString, QVariant> &params);
     JsonRPCResult rpcCloudSubsample(const QMap<QString, QVariant> &params);
     JsonRPCResult rpcCloudCrop(const QMap<QString, QVariant> &params);
-    JsonRPCResult rpcCloudGetScalarFields(const QMap<QString, QVariant> &params);
+    JsonRPCResult rpcCloudGetScalarFields(
+            const QMap<QString, QVariant> &params);
     // View capture
     JsonRPCResult rpcViewScreenshot(const QMap<QString, QVariant> &params);
     JsonRPCResult rpcViewGetCamera(const QMap<QString, QVariant> &params);
