@@ -543,7 +543,7 @@ int main(int argc, char* argv[]) {
     }
 
     bool commandLine = (numRealArgs > 1) && (argv[1][0] == '-');
-    
+
     // On macOS, Qt requires a display server even for -SILENT mode by default.
     // To enable true headless operation on macOS (e.g., in CI environments),
     // we check if -SILENT mode is requested and if QT_QPA_PLATFORM is not set,
