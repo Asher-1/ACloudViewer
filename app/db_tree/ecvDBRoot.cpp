@@ -852,7 +852,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             // Check if Axes Grid is visible - if so, hide
                             // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::TheInstance()) {
+                            if (ecvDisplayTools::HasInstance()) {
                                 AxesGridProperties axesGridProps;
                                 ecvDisplayTools::TheInstance()
                                         ->getDataAxesGridProperties(
@@ -884,7 +884,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             // Check if Axes Grid is visible - if so, hide
                             // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::TheInstance()) {
+                            if (ecvDisplayTools::HasInstance()) {
                                 AxesGridProperties axesGridProps;
                                 ecvDisplayTools::TheInstance()
                                         ->getDataAxesGridProperties(

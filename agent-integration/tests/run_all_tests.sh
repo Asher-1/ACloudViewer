@@ -163,6 +163,11 @@ if [[ "$CLI_INSTALLED" == "true" ]]; then
     for cmd in "convert --help" "batch-convert --help" "formats" "process --help" \
                "reconstruct --help" "reconstruct auto --help" "sibr --help" \
                "scene --help" "view --help" "session --help" "info"; do
+        if [[ "$OS_TYPE" == "macos" ]]; then
+            case "$cmd" in
+                sibr*) skip "CLI subcommand: $cmd (SIBR not supported on macOS)"; continue ;;
+            esac
+        fi
         if cli-anything-acloudviewer $cmd >/dev/null 2>&1; then
             pass "CLI subcommand: $cmd"
         else
@@ -296,7 +301,9 @@ print('Created test.ply')
                 fail "Formats command"
             fi
 
-            if cli-anything-acloudviewer sibr --help >/dev/null 2>&1; then
+            if [[ "$OS_TYPE" == "macos" ]]; then
+                skip "SIBR CLI group (not supported on macOS)"
+            elif cli-anything-acloudviewer sibr --help >/dev/null 2>&1; then
                 pass "SIBR CLI group available"
             else
                 skip "SIBR CLI group not available"
@@ -563,6 +570,10 @@ Path('$RPC_TMPDIR/test.ply').write_text('\n'.join(lines) + '\n')
     done
 
     rm -rf "$RPC_TMPDIR" "$SHOT_DIR"
+
+    # Final cleanup: ensure the scene is completely clean after tests
+    _rpc clear >/dev/null 2>&1
+    _rpc view.refresh >/dev/null 2>&1
 
     # CLI GUI info
     if [[ "$CLI_INSTALLED" == "true" ]]; then

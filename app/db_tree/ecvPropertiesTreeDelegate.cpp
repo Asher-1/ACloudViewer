@@ -2431,7 +2431,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             disconnect(checkbox, nullptr, this, nullptr);
             connect(checkbox, &QCheckBox::toggled, this,
                     [this, viewID](bool checked) {
-                        if (!ecvDisplayTools::TheInstance()) return;
+                        if (!ecvDisplayTools::HasInstance()) return;
 
                         // Get current properties using struct-based interface
                         AxesGridProperties props;
@@ -2627,7 +2627,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                         // Check if Axes Grid is visible - if so, hide
                         // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::TheInstance()) {
+                        if (ecvDisplayTools::HasInstance()) {
                             AxesGridProperties axesGridProps;
                             ecvDisplayTools::TheInstance()
                                     ->getDataAxesGridProperties(context.viewID,
@@ -2661,7 +2661,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                         // Check if Axes Grid is visible - if so, hide
                         // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::TheInstance()) {
+                        if (ecvDisplayTools::HasInstance()) {
                             AxesGridProperties axesGridProps;
                             ecvDisplayTools::TheInstance()
                                     ->getDataAxesGridProperties(context.viewID,
@@ -3806,7 +3806,7 @@ void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
 // ParaView-style View Properties implementation
 
 void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 
@@ -3835,8 +3835,7 @@ void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
         return;
     }
 
-    // Check if we have a valid display tools instance
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 

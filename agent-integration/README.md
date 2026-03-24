@@ -190,7 +190,8 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 
 ```
 agent-integration/
-├── README.md               # This file (CLI, MCP, RPC reference)
+├── README.md               # This file — unified reference (CLI, MCP, RPC, testing)
+├── cli/                    # CLI harness source (installed via pip)
 ├── mcp/
 │   └── README.md           # MCP server setup and tool reference
 ├── openclaw/
@@ -313,6 +314,7 @@ cli-anything-acloudviewer export 42 output.obj
 cli-anything-acloudviewer convert input.ply output.obj        # positional args
 cli-anything-acloudviewer convert input.pcd output.drc        # Draco compressed
 cli-anything-acloudviewer batch-convert ./scans/ ./out/ -f .ply
+cli-anything-acloudviewer batch-convert ./models/ ./out/ -f .stl --filter-ext .obj .fbx
 cli-anything-acloudviewer formats                             # list supported formats
 ```
 
@@ -339,6 +341,10 @@ cli-anything-acloudviewer view zoom --entity 42      # zoom to entity
 cli-anything-acloudviewer view refresh               # force redraw
 cli-anything-acloudviewer view screenshot -o shot.png --width 1920 --height 1080
 cli-anything-acloudviewer view camera                # get camera parameters
+cli-anything-acloudviewer view perspective object    # object-centered perspective
+cli-anything-acloudviewer view perspective viewer    # viewer-centered perspective
+cli-anything-acloudviewer view pointsize +           # increase point size
+cli-anything-acloudviewer view pointsize -           # decrease point size
 ```
 
 ### Processing (Headless)
@@ -431,12 +437,15 @@ ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
 cli-anything-acloudviewer session status             # show session info
 cli-anything-acloudviewer session undo               # undo last operation
 cli-anything-acloudviewer session redo               # redo
+cli-anything-acloudviewer session save project.json  # save session
+cli-anything-acloudviewer session history            # show undo history
 ```
 
 ### Utility & JSON Output
 
 ```bash
 cli-anything-acloudviewer info                       # backend and version info
+cli-anything-acloudviewer methods                    # list RPC methods (GUI)
 cli-anything-acloudviewer --json scene list           # structured JSON output
 cli-anything-acloudviewer --json process subsample input.ply -o sub.ply --voxel-size 0.05
 cli-anything-acloudviewer --json reconstruct auto ./images/ -w ./workspace/

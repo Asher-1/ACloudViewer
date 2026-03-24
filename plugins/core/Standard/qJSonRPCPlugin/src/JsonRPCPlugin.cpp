@@ -494,6 +494,9 @@ JsonRPCResult JsonRPCPlugin::rpcFileConvert(
         }
     }
 
+    if (ecvDisplayTools::HasInstance()) {
+        loaded->removeFromRenderScreen(true);
+    }
     delete loaded;
 
     if (saveErr != CC_FERR_NO_ERROR) {
@@ -594,6 +597,11 @@ JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>&) {
     while ((child = root->getChild(0)) != nullptr) {
         m_app->removeFromDB(child, true);
     }
+
+    CC_DRAW_CONTEXT ctx;
+    ctx.removeEntityType = ENTITY_TYPE::ECV_ALL;
+    ecvDisplayTools::RemoveEntities(ctx);
+
     redraw();
     return JsonRPCResult::success(0);
 }
