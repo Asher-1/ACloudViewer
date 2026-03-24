@@ -53,6 +53,17 @@ PLUGIN_CPP = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/src/JsonRPCPlugin
 PLUGIN_H = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/include/JsonRPCPlugin.h"
 SIBR_COMMANDS_H = REPO_ROOT / "plugins/core/Standard/qSIBR/include/qSIBRCommands.h"
 
+
+def _read_repo_text(path: Path) -> str:
+    """Read repository sources as UTF-8.
+
+    On Windows, :meth:`Path.read_text` without ``encoding=`` uses the ANSI
+    code page (e.g. GBK), which breaks on UTF-8 C++ sources containing
+    non-ASCII (smart quotes, symbols in comments, etc.).
+    """
+    return path.read_text(encoding="utf-8")
+
+
 # ── Binary discovery (build dir → installed → env var) ────────────────────
 
 def _find_build_binary() -> str | None:
@@ -208,7 +219,7 @@ class TestLevel1_CppPlugin:
         assert PLUGIN_H.exists()
 
     def test_level1_plugin_has_dispatch_table(self):
-        src = PLUGIN_CPP.read_text()
+        src = _read_repo_text(PLUGIN_CPP)
         for method in ["open", "file.convert", "scene.list",
                         "cloud.computeNormals", "cloud.paintUniform",
                         "cloud.paintByHeight", "cloud.paintByScalarField",
@@ -218,7 +229,7 @@ class TestLevel1_CppPlugin:
                 f"Missing dispatch for '{method}'"
 
     def test_level1_colmap_reconstruct_params(self):
-        src = PLUGIN_CPP.read_text()
+        src = _read_repo_text(PLUGIN_CPP)
         assert "rpcColmapReconstruct" in src
         for param in ["image_path", "workspace_path", "quality",
                        "data_type", "mesher", "camera_model",
@@ -227,7 +238,7 @@ class TestLevel1_CppPlugin:
             assert param in src, f"colmap.reconstruct missing param: {param}"
 
     def test_level1_file_convert_params(self):
-        src = PLUGIN_CPP.read_text()
+        src = _read_repo_text(PLUGIN_CPP)
         assert "rpcFileConvert" in src
         for param in ["input", "output", "input_filter", "output_filter"]:
             assert param in src, f"file.convert missing param: {param}"
@@ -238,7 +249,7 @@ class TestLevel1_CppPlugin:
 
     @_skip_sibr_on_macos
     def test_level1_sibr_viewer_command_structure(self):
-        src = SIBR_COMMANDS_H.read_text()
+        src = _read_repo_text(SIBR_COMMANDS_H)
         assert 'COMMAND_SIBR_VIEWER' in src
         assert 'CommandSIBRViewer' in src
         for viewer in ["ulr", "ulrv2", "texturedmesh",
@@ -248,14 +259,14 @@ class TestLevel1_CppPlugin:
 
     @_skip_sibr_on_macos
     def test_level1_sibr_viewer_options(self):
-        src = SIBR_COMMANDS_H.read_text()
+        src = _read_repo_text(SIBR_COMMANDS_H)
         for opt in ["--path", "--model-path", "--width", "--height",
                      "--iteration", "--device", "--no-interop", "--ip", "--port"]:
             assert opt in src, f"SIBR_VIEWER missing option: {opt}"
 
     @_skip_sibr_on_macos
     def test_level1_sibr_tool_command_structure(self):
-        src = SIBR_COMMANDS_H.read_text()
+        src = _read_repo_text(SIBR_COMMANDS_H)
         assert 'COMMAND_SIBR_TOOL' in src
         assert 'CommandSIBRTool' in src
         for tool in ["prepareColmap4Sibr", "tonemapper", "unwrapMesh",
@@ -263,12 +274,12 @@ class TestLevel1_CppPlugin:
             assert tool in src, f"SIBR_TOOL missing tool: {tool}"
 
     def test_level1_rpc_method_count(self):
-        src = PLUGIN_CPP.read_text()
+        src = _read_repo_text(PLUGIN_CPP)
         count = src.count('add("')
         assert count >= 25, f"Expected ≥25 RPC methods in methods.list, found {count}"
 
     def test_level1_header_declares_all_methods(self):
-        h = PLUGIN_H.read_text()
+        h = _read_repo_text(PLUGIN_H)
         for method in ["rpcOpen", "rpcExport", "rpcFileConvert",
                         "rpcSceneList", "rpcSceneInfo",
                         "rpcEntityRename", "rpcEntitySetColor",
@@ -285,7 +296,7 @@ class TestLevel1_CppPlugin:
     def test_level1_cursor_mcp_config_exists(self):
         mcp_json = REPO_ROOT / ".cursor" / "mcp.json"
         assert mcp_json.exists(), "Missing .cursor/mcp.json"
-        data = json.loads(mcp_json.read_text())
+        data = json.loads(_read_repo_text(mcp_json))
         assert "mcpServers" in data
         assert "acloudviewer" in data["mcpServers"]
         server = data["mcpServers"]["acloudviewer"]
@@ -299,8 +310,14 @@ class TestLevel1_CppPlugin:
             cmd += ["--", "-j4"]
         else:
             cmd += ["--", "/m"]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        assert result.returncode == 0, f"Build failed:\n{result.stderr[-2000:]}"
+        # Avoid text=True on Windows: MSBuild may emit bytes that are not valid
+        # in the process ANSI code page (e.g. GBK), which breaks subprocess's decoder.
+        result = subprocess.run(cmd, capture_output=True, timeout=300)
+        stderr = (result.stderr or b"").decode(errors="replace")
+        stdout = (result.stdout or b"").decode(errors="replace")
+        assert result.returncode == 0, (
+            f"Build failed:\n{stderr[-2000:]}\n{stdout[-2000:]}"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -444,7 +461,15 @@ _SAMPLE_PLY_BODY = "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) 
 def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     """Lightweight env setup for invoking the binary directly (no harness)."""
     env = os.environ.copy()
-    env["QT_QPA_PLATFORM"] = "offscreen"
+    
+    # Qt platform plugin selection for headless operation
+    # On Linux/Windows: use offscreen plugin
+    # On macOS: As of the latest update, main.cpp automatically detects -SILENT
+    #           mode and sets QT_QPA_PLATFORM=minimal for headless operation.
+    #           We only set it here if not already set for non-macOS platforms.
+    if not IS_MACOS:
+        env["QT_QPA_PLATFORM"] = "offscreen"
+    
     if binary_path.endswith((".sh", ".bat")):
         return env
     bin_dir = str(Path(binary_path).parent)
@@ -455,6 +480,10 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     elif IS_MACOS:
         env["DYLD_LIBRARY_PATH"] = sep.join(
             filter(None, [bin_dir, lib_dir, env.get("DYLD_LIBRARY_PATH", "")]))
+        # On macOS, ensure Qt plugins are findable
+        qt_plugin_path = Path(binary_path).parent.parent / "PlugIns"
+        if qt_plugin_path.exists():
+            env["QT_PLUGIN_PATH"] = str(qt_plugin_path)
     else:
         env["LD_LIBRARY_PATH"] = sep.join(
             filter(None, [bin_dir, lib_dir, env.get("LD_LIBRARY_PATH", "")]))
@@ -468,6 +497,9 @@ class TestLevel3_HeadlessProcessing:
     These tests do NOT require the CLI harness — they invoke the binary
     directly via subprocess so they work with both installed binaries and
     build-directory binaries.
+    
+    Note: On macOS, -SILENT mode now automatically uses the minimal platform
+    plugin for true headless operation without requiring a display server.
     """
 
     @pytest.fixture
