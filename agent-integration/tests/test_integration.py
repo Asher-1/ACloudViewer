@@ -37,6 +37,8 @@ import pytest
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 
+_skip_sibr_on_macos = pytest.mark.skipif(IS_MACOS, reason="SIBR not supported on macOS")
+
 # ── Path configuration (env-var overridable) ──────────────────────────────
 
 REPO_ROOT = Path(os.environ.get(
@@ -230,9 +232,11 @@ class TestLevel1_CppPlugin:
         for param in ["input", "output", "input_filter", "output_filter"]:
             assert param in src, f"file.convert missing param: {param}"
 
+    @_skip_sibr_on_macos
     def test_level1_sibr_commands_exist(self):
         assert SIBR_COMMANDS_H.exists(), "Missing qSIBRCommands.h"
 
+    @_skip_sibr_on_macos
     def test_level1_sibr_viewer_command_structure(self):
         src = SIBR_COMMANDS_H.read_text()
         assert 'COMMAND_SIBR_VIEWER' in src
@@ -242,12 +246,14 @@ class TestLevel1_CppPlugin:
             assert viewer in src.lower(), \
                 f"SIBR_VIEWER missing viewer type: {viewer}"
 
+    @_skip_sibr_on_macos
     def test_level1_sibr_viewer_options(self):
         src = SIBR_COMMANDS_H.read_text()
         for opt in ["--path", "--model-path", "--width", "--height",
                      "--iteration", "--device", "--no-interop", "--ip", "--port"]:
             assert opt in src, f"SIBR_VIEWER missing option: {opt}"
 
+    @_skip_sibr_on_macos
     def test_level1_sibr_tool_command_structure(self):
         src = SIBR_COMMANDS_H.read_text()
         assert 'COMMAND_SIBR_TOOL' in src
@@ -322,7 +328,7 @@ class TestLevel2_CLIHarness:
         "session --help",
         "reconstruct --help",
         "reconstruct auto --help",
-        "sibr --help",
+        pytest.param("sibr --help", marks=_skip_sibr_on_macos),
         "info --help",
         "info",
     ])
@@ -357,6 +363,7 @@ class TestLevel2_CLIHarness:
             capture_output=True, text=True, timeout=10)
         assert r.returncode == 0
 
+    @_skip_sibr_on_macos
     def test_level2_sibr_subcommands(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "sibr", "--help"],
@@ -368,6 +375,7 @@ class TestLevel2_CLIHarness:
                      "distord-crop", "tool"]:
             assert cmd in r.stdout, f"Missing sibr subcommand: {cmd}"
 
+    @_skip_sibr_on_macos
     def test_level2_sibr_viewer_subcommand(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "sibr", "--help"],
@@ -539,6 +547,7 @@ class TestLevel3_CLIHarness:
         assert ".ply" in data["point_cloud"]
         assert ".obj" in data["mesh"]
 
+    @_skip_sibr_on_macos
     def test_level3_cli_sibr_available(self, cli_env):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "sibr", "--help"],
@@ -1110,6 +1119,7 @@ class TestLevel5_MCPServer:
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 
+    @_skip_sibr_on_macos
     def test_level5_mcp_sibr_tools(self):
         try:
             from cli_anything.acloudviewer.mcp_server import list_tools
