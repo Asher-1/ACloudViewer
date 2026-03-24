@@ -1,6 +1,5 @@
-"""Shared fixtures for agent integration tests."""
+"""Shared fixtures and discovery for agent integration tests."""
 import os
-import subprocess
 import pytest
 
 
@@ -29,3 +28,15 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(pytest.mark.level4)
             elif "Level5" in name:
                 item.add_marker(pytest.mark.level5)
+
+
+def pytest_report_header(config):
+    """Print discovery info so users know what will actually run."""
+    from test_integration import REPO_ROOT, BUILD_DIR, BINARY_PATH, HAS_CLI
+    lines = [
+        f"ACV repo root : {REPO_ROOT}",
+        f"ACV build dir : {BUILD_DIR} ({'exists' if BUILD_DIR.exists() else 'NOT FOUND'})",
+        f"ACV binary    : {BINARY_PATH or 'NOT FOUND'}",
+        f"CLI harness   : {'available' if HAS_CLI else 'not installed'}",
+    ]
+    return lines
