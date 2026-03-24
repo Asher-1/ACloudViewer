@@ -7,6 +7,7 @@
 
 #include "qSIBR.h"
 
+#include <ecvCommandLineInterface.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMainAppInterface.h>
 
@@ -23,6 +24,7 @@
 
 #include "SIBROptionsDialog.h"
 #include "SIBRViewerThread.h"
+#include "qSIBRCommands.h"
 
 qSIBR::qSIBR(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qSIBR/info.json") {}
@@ -34,6 +36,15 @@ qSIBR::~qSIBR() {
         delete viewer;
     }
     m_activeViewers.clear();
+}
+
+void qSIBR::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandSIBRTool));
 }
 
 void qSIBR::onNewSelection(const ccHObject::Container& selectedEntities) {

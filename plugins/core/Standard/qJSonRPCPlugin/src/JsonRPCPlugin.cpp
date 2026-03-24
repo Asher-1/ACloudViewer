@@ -148,23 +148,39 @@ JsonRPCResult JsonRPCPlugin::execute(QString method,
         const QVariant& v = it.value();
         QString typeTag;
         switch (v.type()) {
-            case QVariant::Int:       typeTag = "int";    break;
-            case QVariant::LongLong:  typeTag = "int64";  break;
-            case QVariant::Double:    typeTag = "double"; break;
-            case QVariant::Bool:      typeTag = "bool";   break;
-            case QVariant::String:    typeTag = "string"; break;
-            case QVariant::List:      typeTag = "list";   break;
-            case QVariant::Map:       typeTag = "map";    break;
-            default:                  typeTag = v.typeName(); break;
+            case QVariant::Int:
+                typeTag = "int";
+                break;
+            case QVariant::LongLong:
+                typeTag = "int64";
+                break;
+            case QVariant::Double:
+                typeTag = "double";
+                break;
+            case QVariant::Bool:
+                typeTag = "bool";
+                break;
+            case QVariant::String:
+                typeTag = "string";
+                break;
+            case QVariant::List:
+                typeTag = "list";
+                break;
+            case QVariant::Map:
+                typeTag = "map";
+                break;
+            default:
+                typeTag = v.typeName();
+                break;
         }
         paramParts << QString("  %1 [%2] = %3")
-                          .arg(it.key(), typeTag, v.toString());
+                              .arg(it.key(), typeTag, v.toString());
     }
     QString paramStr = paramParts.isEmpty()
-                           ? QStringLiteral("(none)")
-                           : QString("{\n%1\n}").arg(paramParts.join("\n"));
+                               ? QStringLiteral("(none)")
+                               : QString("{\n%1\n}").arg(paramParts.join("\n"));
     CVLog::Print(QString("[JsonRPC] execute  method: \"%1\"  params: %2")
-                     .arg(method, paramStr));
+                         .arg(method, paramStr));
     if (m_app == nullptr) {
         return JsonRPCResult::error(-32603, "Application not ready");
     }
@@ -1084,8 +1100,8 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
     QString workspace = params.value("workspace_path").toString();
     if (imagePath.isEmpty() || workspace.isEmpty()) {
         return JsonRPCResult::error(
-            -32602,
-            "Missing 'image_path' and/or 'workspace_path' parameters");
+                -32602,
+                "Missing 'image_path' and/or 'workspace_path' parameters");
     }
 
     QString colmapBin = params.value("colmap_binary", "colmap").toString();
@@ -1098,11 +1114,9 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
 
     QStringList args;
     args << "automatic_reconstructor"
-         << "--workspace_path" << workspace
-         << "--image_path" << imagePath
-         << "--quality" << quality
-         << "--data_type" << dataType
-         << "--mesher" << mesher;
+         << "--workspace_path" << workspace << "--image_path" << imagePath
+         << "--quality" << quality << "--data_type" << dataType << "--mesher"
+         << mesher;
     if (!useGpu) {
         args << "--use_gpu" << "0";
     }
@@ -1116,15 +1130,17 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
     if (!process.waitForFinished(timeoutMs)) {
         process.kill();
         return JsonRPCResult::error(
-            3, "Colmap timed out after " + QString::number(timeoutMs) + "ms");
+                3,
+                "Colmap timed out after " + QString::number(timeoutMs) + "ms");
     }
 
     if (process.exitCode() != 0) {
         QString err = process.readAllStandardError().trimmed();
         if (err.isEmpty()) err = process.readAllStandardOutput().trimmed();
         return JsonRPCResult::error(
-            3, "Colmap failed (exit " + QString::number(process.exitCode()) +
-                   "): " + err.left(500));
+                3, "Colmap failed (exit " +
+                           QString::number(process.exitCode()) +
+                           "): " + err.left(500));
     }
 
     QJsonObject result;
@@ -1192,7 +1208,8 @@ JsonRPCResult JsonRPCPlugin::rpcMethodsList(const QMap<QString, QVariant>&) {
     add("transform.apply", "Apply 4x4 matrix: {entity_id, matrix[16]}");
     add("colmap.reconstruct",
         "Run Colmap automatic_reconstructor: {image_path, workspace_path, "
-        "?quality, ?data_type, ?mesher, ?use_gpu, ?colmap_binary, ?timeout_ms}");
+        "?quality, ?data_type, ?mesher, ?use_gpu, ?colmap_binary, "
+        "?timeout_ms}");
     add("methods.list", "List available RPC methods");
     return JsonRPCResult::success(QJsonDocument(methods).toVariant());
 }
