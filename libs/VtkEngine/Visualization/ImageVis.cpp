@@ -280,6 +280,12 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
     }
 }
 
+void ImageVis::removeAllLayers() {
+    std::vector<std::string> ids;
+    for (const auto& kv : m_imageInfoMap) ids.push_back(kv.first);
+    for (const auto& id : ids) removeLayer(id);
+}
+
 void ImageVis::removeLayer(const std::string& layer_id) {
     bool isImageLayer = m_imageInfoMap.find(layer_id) != m_imageInfoMap.end();
 

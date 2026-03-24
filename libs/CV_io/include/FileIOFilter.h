@@ -198,6 +198,16 @@ public:  // public interface (to be reimplemented by each I/O filter)
         return false;
     }
 
+    /**
+     * @brief Check if a GUI (QApplication) is available
+     *
+     * Returns true only if the running application is a QApplication
+     * (not just QCoreApplication). Use this before creating any QWidget,
+     * QDialog, QMessageBox, etc. to avoid crashes in headless/CLI mode.
+     * @return true if GUI widgets can be safely created
+     */
+    CV_IO_LIB_API static bool IsGuiAvailable();
+
 public:  // static methods
     /**
      * @brief Get list of all available import filters

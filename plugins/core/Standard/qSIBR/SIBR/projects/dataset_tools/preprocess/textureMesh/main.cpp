@@ -27,7 +27,7 @@ struct TexturingAppArgs : virtual BasicIBRAppArgs {
 };
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_textureMesh(int ac, char** av) {
+extern "C" int sibr_tool_textureMesh(int ac, char** av) {
 #else
 int main(int ac, char** av) {
 #endif

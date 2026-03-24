@@ -56,11 +56,11 @@ claude mcp add cli-anything-acloudviewer -- cli-anything-acloudviewer-mcp
 }
 ```
 
-## Available Tools (23)
+## Available Tools (39)
 
 ### File I/O & Conversion
 - **`open_file`** — Load a 3D file (GUI) or verify existence (headless)
-- **`convert_format`** — Convert between formats (PLY, PCD, OBJ, STL, LAS, etc.)
+- **`convert_format`** — Convert between formats (PLY, PCD, OBJ, STL, LAS, DRC, etc.)
 - **`batch_convert`** — Convert all files in a directory
 - **`list_formats`** — List supported formats by category
 
@@ -85,6 +85,26 @@ claude mcp add cli-anything-acloudviewer -- cli-anything-acloudviewer-mcp
 - **`delaunay`** — Delaunay triangulation (mesh from point cloud)
 - **`sample_mesh`** — Sample points from mesh surface
 
+### 3D Reconstruction (COLMAP)
+- **`colmap_auto_reconstruct`** — Full automatic reconstruction pipeline (features → matching → sparse → dense → mesh). Supports `--camera-model` for specifying camera type (SIMPLE_PINHOLE, PINHOLE, SIMPLE_RADIAL, RADIAL, OPENCV, OPENCV_FISHEYE, FULL_OPENCV, etc.)
+- **`colmap_extract_features`** — Extract image features (SIFT)
+- **`colmap_match_features`** — Match features between image pairs
+- **`colmap_sparse_reconstruct`** — Sparse point cloud from SfM (Structure from Motion)
+- **`colmap_undistort`** — Undistort images using estimated camera parameters
+- **`colmap_dense_stereo`** — Dense stereo reconstruction (depth/normal maps)
+- **`colmap_stereo_fusion`** — Fuse dense stereo into point cloud
+- **`colmap_poisson_mesh`** — Poisson surface reconstruction from dense point cloud
+- **`colmap_delaunay_mesh`** — Delaunay meshing from dense point cloud
+- **`colmap_image_texturer`** — Texture a mesh using input images
+- **`colmap_model_converter`** — Convert Colmap model between formats (BIN, TXT, NVM, etc.)
+- **`colmap_analyze_model`** — Analyze a Colmap reconstruction model (statistics)
+
+### SIBR (Image-Based Rendering)
+- **`sibr_tool`** — Run any SIBR dataset tool by name
+- **`sibr_prepare_colmap`** — Prepare a Colmap reconstruction for SIBR viewers
+- **`sibr_texture_mesh`** — Texture a mesh using SIBR pipeline
+- **`sibr_unwrap_mesh`** — UV-unwrap a mesh for texturing
+
 ### Scene & View (GUI only)
 - **`scene_list`** — List scene entities
 - **`scene_info`** — Entity details
@@ -92,7 +112,7 @@ claude mcp add cli-anything-acloudviewer -- cli-anything-acloudviewer-mcp
 - **`get_camera`** — Camera parameters
 
 ### Utility
-- **`get_info`** — Backend mode, binary path
+- **`get_session_info`** — Backend mode, binary path, session status
 - **`list_rpc_methods`** — Available RPC methods (GUI)
 
 ## Architecture

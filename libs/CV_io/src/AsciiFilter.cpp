@@ -93,18 +93,19 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity,
                                       const SaveParameters& parameters) {
     assert(entity && !filename.isEmpty());
 
-    AsciiSaveDlg saveDialog(parameters.parentWidget);
-
-    saveDialog.setCoordsPrecision(s_outputCoordPrecision);
-    saveDialog.setSfPrecision(s_outputSFPrecision);
-    saveDialog.setSeparatorIndex(s_outputSeparatorIndex);
-    saveDialog.enableSwapColorAndSF(s_saveSFBeforeColor);
-    saveDialog.enableSaveColumnsNamesHeader(s_saveColumnsNamesHeader);
-    saveDialog.enableSavePointCountHeader(s_savePointCountHeader);
-
     // if the dialog shouldn't be shown, we'll simply take the default values!
     static bool s_showDialog = true;
-    if (parameters.alwaysDisplaySaveDialog && s_showDialog) {
+    if (parameters.alwaysDisplaySaveDialog && s_showDialog &&
+        FileIOFilter::IsGuiAvailable()) {
+        AsciiSaveDlg saveDialog(parameters.parentWidget);
+
+        saveDialog.setCoordsPrecision(s_outputCoordPrecision);
+        saveDialog.setSfPrecision(s_outputSFPrecision);
+        saveDialog.setSeparatorIndex(s_outputSeparatorIndex);
+        saveDialog.enableSwapColorAndSF(s_saveSFBeforeColor);
+        saveDialog.enableSaveColumnsNamesHeader(s_saveColumnsNamesHeader);
+        saveDialog.enableSavePointCountHeader(s_savePointCountHeader);
+
         if (!saveDialog.exec()) {
             return CC_FERR_CANCELED_BY_USER;
         }
@@ -213,9 +214,12 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity,
 
     // non static parameters
     int normalPrecision = 2 + sizeof(PointCoordinateType);
-    QChar separator(saveDialog.getSeparator());
-    bool saveFloatColors = saveDialog.saveFloatColors();
-    bool saveAlphaChannel = saveDialog.saveAlphaChannel();
+    static const unsigned char s_separators[] = {' ', ';', ',', '\t'};
+    int sepIdx = std::max(0, std::min(s_outputSeparatorIndex,
+                                      static_cast<int>(sizeof(s_separators) - 1)));
+    QChar separator(s_separators[sepIdx]);
+    bool saveFloatColors = false;
+    bool saveAlphaChannel = false;
 
     if (s_saveColumnsNamesHeader) {
         QString header("//");
@@ -409,20 +413,17 @@ CC_FILE_ERROR AsciiFilter::loadStream(
         return CC_FERR_NO_LOAD;
     }
 
+    if (!FileIOFilter::IsGuiAvailable()) {
+        CVLog::Warning(
+                "[ASCII] Cannot load ASCII files in headless mode "
+                "(format auto-detection requires a GUI dialog).");
+        return CC_FERR_NOT_IMPLEMENTED;
+    }
+
     AsciiOpenDlg openDialog(parameters.parentWidget);
     openDialog.setInput(filenameOrTitle, &stream);
 
     bool forceDialogDisplay = parameters.alwaysDisplayLoadDialog;
-    // if we should try to avoid displaying the dialog
-    // DGM: actually, we respect the wish of the caller by default ;)
-    // if (!forceDialogDisplay)
-    //{
-    //	//we must check that the automatically guessed sequence is ok
-    //	if (!openDialog.safeSequence())
-    //	{
-    //		forceDialogDisplay = true;
-    //	}
-    // }
 
     if (openDialog.restorePreviousContext()) {
         // if we can/should use the previous sequence ('Apply all')

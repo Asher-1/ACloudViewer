@@ -160,7 +160,7 @@ void colmapSave(const std::string& filename,
  * (*): requires an input/output resolution (often only for the aspect ratio).
  * */
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_cameraConverter(int ac, char** av) {
+extern "C" int sibr_tool_cameraConverter(int ac, char** av) {
 #else
 int main(int ac, char** av) {
 #endif

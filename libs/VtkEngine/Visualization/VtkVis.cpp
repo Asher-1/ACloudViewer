@@ -2600,14 +2600,84 @@ void VtkVis::removeText2D(const std::string& viewId, int viewport) {
 }
 
 void VtkVis::removeALL(int viewport) {
-    // Remove all point clouds
+    // Remove all point clouds (also removes normals and data axes grids)
     std::vector<std::string> cloudIds;
     for (const auto& kv : *cloud_actor_map_) cloudIds.push_back(kv.first);
     for (const auto& id : cloudIds) removePointClouds(id, viewport);
-    // Remove all shapes
+
+    // Remove all shapes (also removes data axes grids)
     std::vector<std::string> shapeIds;
     for (const auto& kv : *shape_actor_map_) shapeIds.push_back(kv.first);
     for (const auto& id : shapeIds) removeShapes(id, viewport);
+
+    // Remove all coordinate systems
+    if (coordinate_actor_map_) {
+        std::vector<std::string> coordIds;
+        for (const auto& kv : *coordinate_actor_map_) coordIds.push_back(kv.first);
+        for (const auto& id : coordIds) {
+            auto cit = coordinate_actor_map_->find(id);
+            if (cit != coordinate_actor_map_->end()) {
+                if (cit->second) removeActorFromRenderer(cit->second, viewport);
+                coordinate_actor_map_->erase(cit);
+            }
+        }
+    }
+
+    // Remove all widgets
+    if (m_widget_map) {
+        std::vector<std::string> widgetIds;
+        for (const auto& kv : *m_widget_map) widgetIds.push_back(kv.first);
+        for (const auto& id : widgetIds) removeWidgets(id, viewport);
+    }
+
+    // Remove all props
+    if (m_prop_map) {
+        for (auto& kv : *m_prop_map) {
+            if (kv.second) removeActorFromRenderer(kv.second, viewport);
+        }
+        m_prop_map->clear();
+    }
+
+    // Remove remaining data axes grids not already removed by cloud/shape cleanup
+    vtkRenderer* renderer = getCurrentRenderer(viewport);
+    if (renderer) {
+        for (auto& pair : m_dataAxesGridMap) {
+            if (pair.second) {
+                renderer->RemoveActor(pair.second);
+            }
+        }
+    }
+    m_dataAxesGridMap.clear();
+
+    // Clear transformation cache
+    transformation_map_.clear();
+
+    // Clear source object map (pointers to DB objects that may have been deleted)
+    m_sourceObjectMap.clear();
+
+    // Safety sweep: remove any stray actors from all renderers that aren't
+    // infrastructure (center axes).  This catches actors that slipped through
+    // the tracked maps above.
+    getRendererCollection()->InitTraversal();
+    vtkRenderer* ren = nullptr;
+    while ((ren = getRendererCollection()->GetNextItem()) != nullptr) {
+        vtkPropCollection* props = ren->GetViewProps();
+        if (!props) continue;
+
+        std::vector<vtkProp*> toRemove;
+        props->InitTraversal();
+        vtkProp* prop = nullptr;
+        while ((prop = props->GetNextProp()) != nullptr) {
+            if (prop == static_cast<vtkProp*>(m_centerAxes.GetPointer()))
+                continue;
+            toRemove.push_back(prop);
+        }
+        for (vtkProp* p : toRemove) {
+            ren->RemoveViewProp(p);
+        }
+    }
+
+    GeometryBoundsDirty = true;
 }
 /******************************** Entities Removement
  * *********************************/

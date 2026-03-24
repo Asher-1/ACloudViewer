@@ -84,6 +84,24 @@ function(AddPluginWrapper)
       CACHE INTERNAL "Internal plugin wrapper list"
   )
 
+  # Place Python wrappers in a separate directory during build so they don't
+  # get loaded by Qt's plugin scanner (they lack Q_PLUGIN_METADATA).
+  # Path must match getPluginsWrappersPath() in load_plugins.cpp.
+  if(APPLE)
+    # macOS: appDir=build/bin/ACloudViewer.app/Contents/MacOS → cdUp → Contents/cvPythonPlugins
+    set(_WRAPPER_BUILD_DIR "${CMAKE_BINARY_DIR}/bin/${MAIN_APP_NAME}/${MAIN_APP_NAME}.app/Contents/cvPythonPlugins")
+  elseif(WIN32 AND MSVC)
+    # Windows MSVC: appDir=build/bin/<config> → plugins-python sibling
+    set(_WRAPPER_BUILD_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/plugins-python")
+  else()
+    # Linux: appDir=build/bin → cdUp → build/plugins-python
+    set(_WRAPPER_BUILD_DIR "${CMAKE_BINARY_DIR}/plugins-python")
+  endif()
+  set_target_properties(${PLUGIN_WRAPPER_NAME} PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY "${_WRAPPER_BUILD_DIR}"
+      RUNTIME_OUTPUT_DIRECTORY "${_WRAPPER_BUILD_DIR}"
+  )
+
   # Install the wrapper
   install(TARGETS ${PLUGIN_WRAPPER_NAME}
           LIBRARY DESTINATION "${INSTALL_PLUGINS_WRAPPERS_PATH}"

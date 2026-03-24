@@ -360,7 +360,7 @@ struct AlignMeshesArgs : virtual BasicIBRAppArgs {
 };
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_alignMeshes(int ac, char** av) {
+extern "C" int sibr_tool_alignMeshes(int ac, char** av) {
 #else
 int main(int ac, char** av) {
 #endif

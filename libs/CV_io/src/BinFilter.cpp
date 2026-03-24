@@ -388,9 +388,12 @@ ccHObject* FindRobust(ccHObject* root,
 static bool ContinueAfterError(bool& forceLoadAfterError,
                                bool couldBeAMemoryIssue = false) {
     if (!forceLoadAfterError) {
-        // If forceLoadAfterError, it means we haven't asked the question yet,
-        // so let's do it
-        if (QMessageBox::Yes ==
+        if (!FileIOFilter::IsGuiAvailable()) {
+            CVLog::Warning(
+                    "[BIN] File reading error encountered in headless mode. "
+                    "Attempting to load partial data.");
+            forceLoadAfterError = true;
+        } else if (QMessageBox::Yes ==
             QMessageBox::critical(
                     nullptr, QObject::tr("Reading error"),
                     couldBeAMemoryIssue
@@ -1128,13 +1131,19 @@ CC_FILE_ERROR BinFilter::LoadFileV1(QFile& in,
     CVLog::Print("[BIN] Version 1.0");
 
     if (nbScansTotal > 99) {
-        if (QMessageBox::question(nullptr, QString("Oops"),
-                                  QString("Hum, do you really expect to load "
-                                          "%1 point clouds?")
-                                          .arg(nbScansTotal),
-                                  QMessageBox::Yes,
-                                  QMessageBox::No) == QMessageBox::No)
-            return CC_FERR_WRONG_FILE_TYPE;
+        if (FileIOFilter::IsGuiAvailable()) {
+            if (QMessageBox::question(nullptr, QString("Oops"),
+                                      QString("Hum, do you really expect to "
+                                              "load %1 point clouds?")
+                                              .arg(nbScansTotal),
+                                      QMessageBox::Yes,
+                                      QMessageBox::No) == QMessageBox::No)
+                return CC_FERR_WRONG_FILE_TYPE;
+        } else {
+            CVLog::Warning(
+                    "[BIN] Loading %u point clouds in headless mode.",
+                    nbScansTotal);
+        }
     } else if (nbScansTotal == 0) {
         return CC_FERR_NO_LOAD;
     }

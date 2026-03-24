@@ -378,6 +378,22 @@ int main(int argc, char* argv[]) {
         QApplication::processEvents();
     }
 
+    // In command-line mode, suppress verbose startup logs (plugin loading,
+    // global shift restore, color scale manager, etc.) unless the user
+    // explicitly passes -VERBOSE.
+    if (commandLine) {
+        bool hasVerboseFlag = false;
+        for (int i = 1; i < argc; ++i) {
+            if (QString(argv[i]).toUpper() == "-VERBOSE") {
+                hasVerboseFlag = true;
+                break;
+            }
+        }
+        if (!hasVerboseFlag) {
+            CVLog::SetVerbosityLevel(CVLog::LOG_WARNING);
+        }
+    }
+
     // init environment
     InitEnvironment();
 
