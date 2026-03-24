@@ -43,6 +43,13 @@ pip install -e ".[mcp,dev]"
 
 ### 3. Use from the Command Line
 
+> **Windows users:** For file conversion and batch operations, **always use `--mode headless`**:
+> ```bash
+> cli-anything-acloudviewer --mode headless convert input.ply output.pcd
+> cli-anything-acloudviewer --mode headless batch-convert ./scans/ ./out/ -f .ply
+> ```
+> The default `--mode auto` may hang if port 6001 is listening but unresponsive. `--mode headless` invokes the binary directly.
+
 ```bash
 # Interactive REPL
 cli-anything-acloudviewer
@@ -71,6 +78,9 @@ cli-anything-acloudviewer reconstruct extract-features ./images/ -w ./workspace/
 cli-anything-acloudviewer reconstruct sparse ./workspace/
 cli-anything-acloudviewer reconstruct dense-stereo ./workspace/
 cli-anything-acloudviewer reconstruct poisson ./workspace/
+
+# Windows-specific: use safe wrapper scripts (force headless mode)
+# See agent-integration/scripts/ for acv-convert-safe.ps1 and acv-batch-convert-safe.ps1
 
 # SIBR dataset preparation (requires SIBR plugin)
 cli-anything-acloudviewer sibr prepare-colmap ./workspace/
