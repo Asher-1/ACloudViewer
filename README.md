@@ -96,37 +96,49 @@ cloudViewer example reconstruction/gui
 ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
 Please stay tuned for MacOS. Download ACloudViewer from the [release page](https://github.com/Asher-1/ACloudViewer/releases).
 
-Semantic Annotation Tool:
+---
 
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Annotaion.png">
-</p>
+#### Semantic Annotation
 
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SemanticAnnotation.png" >
-</p>
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Annotaion.png" width="100%">
+<br><sub><b>Annotation Interface</b></sub>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SemanticAnnotation.png" width="100%">
+<br><sub><b>Semantic Labeling</b></sub>
+</td>
+</tr>
+</table>
 
+---
 
-Reconstruction Tool:
+#### Reconstruction & Measurement
 
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Reconstruction.png" >
-</p>
-
-
-Selection and Measurement Tools:
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/selection_tools.png">
-</p>
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ruler_measurement_tools.png">
-</p>
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/protractor_measurement_tools.png">
-</p>
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Reconstruction.png" width="100%">
+<br><sub><b>Reconstruction Tool</b></sub>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/selection_tools.png" width="100%">
+<br><sub><b>Selection Tools</b></sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ruler_measurement_tools.png" width="100%">
+<br><sub><b>Ruler Measurement</b></sub>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/protractor_measurement_tools.png" width="100%">
+<br><sub><b>Protractor Measurement</b></sub>
+</td>
+</tr>
+</table>
 
 
 ## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
@@ -182,23 +194,26 @@ Browse available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-A
 See [agent-integration/](agent-integration/) for full documentation, MCP tool reference,
 and the unified test suite.
 
-## CloudViewer app
+## CloudViewer App & CloudViewer-ML
 
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/CloudViewerApp.png">
-</p>
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/CloudViewerApp.png" width="100%">
+<br><sub><b>CloudViewer App</b></sub>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/gifs/getting_started_ml_visualizer.gif" width="100%">
+<br><sub><b>CloudViewer-ML</b></sub>
+</td>
+</tr>
+</table>
 
-CloudViewer-Viewer is a standalone 3D viewer app available on Ubuntu and Windows.
-Please stay tuned for MacOS. Download CloudViewer app from the
+**CloudViewer App** — A standalone 3D viewer app available on Ubuntu and Windows.
+Please stay tuned for MacOS. Download from the
 [release page](https://github.com/Asher-1/ACloudViewer/releases).
 
-## CloudViewer-ML
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/gifs/getting_started_ml_visualizer.gif">
-</p>
-
-CloudViewer-ML is an extension of CloudViewer for 3D machine learning tasks. It builds on
+**CloudViewer-ML** — An extension of CloudViewer for 3D machine learning tasks. It builds on
 top of the CloudViewer core library and extends it with machine learning tools for
 3D data processing. To try it out, install CloudViewer with PyTorch or TensorFlow and check out
 [CloudViewer-ML](https://github.com/Asher-1/CloudViewer-ML).

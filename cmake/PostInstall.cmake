@@ -258,6 +258,18 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     endif()
 endif()
 
+## 2.5. Patch version in deployed data files (.desktop, config, etc.)
+set(MAIN_DESKTOP "${DEPLOY_PACKAGES_PATH}/${MAIN_APP_NAME}/data/${MAIN_APP_NAME}.desktop")
+if (EXISTS "${MAIN_DESKTOP}")
+    replace_version_in_file("${MAIN_DESKTOP}")
+endif()
+if (${BUILD_GUI} STREQUAL "ON")
+    set(CV_DESKTOP "${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/data/${CLOUDVIEWER_APP_NAME}.desktop")
+    if (EXISTS "${CV_DESKTOP}")
+        replace_version_in_file("${CV_DESKTOP}")
+    endif()
+endif()
+
 ## 3. Package
 set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
