@@ -1,10 +1,22 @@
 """ACloudViewer Agent Integration — Self-Contained Verification Tests.
 
-Run from the ACloudViewer repo:
-    cd agent-integration/tests
+All paths can be overridden via environment variables so the tests work
+both in CI (installed binary) and local dev (build directory).
+
+Environment variables:
+    ACV_REPO_ROOT   - Repository root (default: auto-detect from __file__)
+    ACV_BUILD_DIR   - CMake build directory (default: $REPO_ROOT/build_app)
+    ACV_BINARY      - ACloudViewer binary path (default: auto-discover)
+    ACV_RPC_URL     - JSON-RPC WebSocket URL (default: ws://localhost:6001)
+
+Usage:
+    # CI (installed binary + CLI harness)
     python -m pytest test_integration.py -v
 
-Or with specific levels:
+    # Local dev (build directory, no CLI harness)
+    ACV_BUILD_DIR=~/code/ACloudViewer/build_app python -m pytest test_integration.py -v
+
+    # Specific levels
     python -m pytest test_integration.py -v -k "level1"
     python -m pytest test_integration.py -v -k "level2"
     python -m pytest test_integration.py -v -k "level3"
@@ -22,14 +34,73 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-BUILD_DIR = REPO_ROOT / "build_app"
-PLUGIN_CPP = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/src/JsonRPCPlugin.cpp"
-PLUGIN_H = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/include/JsonRPCPlugin.h"
-
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 
+# ── Path configuration (env-var overridable) ──────────────────────────────
+
+REPO_ROOT = Path(os.environ.get(
+    "ACV_REPO_ROOT",
+    str(Path(__file__).resolve().parent.parent.parent),
+))
+BUILD_DIR = Path(os.environ.get(
+    "ACV_BUILD_DIR",
+    str(REPO_ROOT / "build_app"),
+))
+PLUGIN_CPP = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/src/JsonRPCPlugin.cpp"
+PLUGIN_H = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/include/JsonRPCPlugin.h"
+
+# ── Binary discovery (build dir → installed → env var) ────────────────────
+
+def _find_build_binary() -> str | None:
+    """Find the ACloudViewer binary in the build directory."""
+    if IS_WINDOWS:
+        candidates = ["bin/ACloudViewer.exe", "bin/Release/ACloudViewer.exe",
+                       "bin/Debug/ACloudViewer.exe", "Release/ACloudViewer.exe"]
+    elif IS_MACOS:
+        candidates = ["bin/ACloudViewer", "bin/ACloudViewer.app/Contents/MacOS/ACloudViewer"]
+    else:
+        candidates = ["bin/ACloudViewer", "ACloudViewer"]
+    for c in candidates:
+        p = BUILD_DIR / c
+        if p.exists():
+            return str(p)
+    return None
+
+
+def _find_any_binary() -> str | None:
+    """Find ACloudViewer binary: env var → build dir → CLI harness discovery."""
+    env_binary = os.environ.get("ACV_BINARY")
+    if env_binary and Path(env_binary).exists():
+        return env_binary
+
+    build_bin = _find_build_binary()
+    if build_bin:
+        return build_bin
+
+    try:
+        from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
+        return ACloudViewerBackend.find_binary()
+    except ImportError:
+        pass
+
+    if IS_WINDOWS:
+        names = ("ACloudViewer.bat", "ACloudViewer.exe")
+    elif IS_MACOS:
+        names = ("ACloudViewer",)
+    else:
+        names = ("ACloudViewer.sh", "ACloudViewer")
+    for name in names:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+
+BINARY_PATH = _find_any_binary()
+HAS_BINARY = BINARY_PATH is not None
+
+# ── CLI harness detection ────────────────────────────────────────────────
 
 def _check_cli_available() -> bool:
     if shutil.which("cli-anything-acloudviewer") is None:
@@ -45,8 +116,10 @@ def _check_cli_available() -> bool:
 
 HAS_CLI = _check_cli_available()
 
-from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
-HAS_BINARY = ACloudViewerBackend.find_binary() is not None
+try:
+    from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
+except ImportError:
+    ACloudViewerBackend = None  # type: ignore[assignment,misc]
 
 try:
     from websockets.sync.client import connect as ws_connect
@@ -195,35 +268,94 @@ class TestLevel2_CLIHarness:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Level 3: Headless Processing Tests (requires cloudViewer)
+# Level 3: Headless Processing Tests (requires ACloudViewer binary)
 # ═══════════════════════════════════════════════════════════════════════════
 
+_SAMPLE_PLY_HEADER = (
+    "ply\nformat ascii 1.0\n"
+    "element vertex 100\n"
+    "property float x\nproperty float y\nproperty float z\n"
+    "end_header\n"
+)
+_SAMPLE_PLY_BODY = "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) + "\n"
+
+
+def _build_env_for_binary(binary_path: str) -> dict[str, str]:
+    """Lightweight env setup for invoking the binary directly (no harness)."""
+    env = os.environ.copy()
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    if binary_path.endswith((".sh", ".bat")):
+        return env
+    bin_dir = str(Path(binary_path).parent)
+    lib_dir = str(Path(bin_dir) / "lib")
+    sep = ";" if IS_WINDOWS else ":"
+    if IS_WINDOWS:
+        env["PATH"] = sep.join(filter(None, [bin_dir, lib_dir, env.get("PATH", "")]))
+    elif IS_MACOS:
+        env["DYLD_LIBRARY_PATH"] = sep.join(
+            filter(None, [bin_dir, lib_dir, env.get("DYLD_LIBRARY_PATH", "")]))
+    else:
+        env["LD_LIBRARY_PATH"] = sep.join(
+            filter(None, [bin_dir, lib_dir, env.get("LD_LIBRARY_PATH", "")]))
+    return env
+
+
 @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
-@pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
 class TestLevel3_HeadlessProcessing:
-    """Test headless processing via ACloudViewer binary (not Python API)."""
+    """Test headless processing via ACloudViewer binary directly.
+
+    These tests do NOT require the CLI harness — they invoke the binary
+    directly via subprocess so they work with both installed binaries and
+    build-directory binaries.
+    """
 
     @pytest.fixture
     def sample_ply(self, tmp_path):
-        """Create a minimal PLY file for testing."""
         ply_path = tmp_path / "test.ply"
-        ply_path.write_text(
-            "ply\nformat ascii 1.0\n"
-            "element vertex 100\n"
-            "property float x\nproperty float y\nproperty float z\n"
-            "end_header\n" +
-            "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) + "\n"
-        )
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(ply_path)
 
-    def test_level3_binary_can_load(self, sample_ply):
-        """Verify the ACloudViewer binary can load a PLY file."""
-        from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
-        backend = ACloudViewerBackend(mode="headless")
-        result = backend._run_cli(["-O", sample_ply, "-SAVE_CLOUDS"])
-        assert result is not None
+    @pytest.fixture
+    def acv_env(self):
+        return _build_env_for_binary(BINARY_PATH)
 
-    def test_level3_subsample(self, sample_ply, tmp_path):
+    def test_level3_binary_can_load(self, sample_ply, acv_env):
+        """Verify the binary can load a PLY file."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply, "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60, env=acv_env)
+        assert r.returncode == 0, f"Binary load failed:\n{r.stderr[-2000:]}"
+
+    def test_level3_subsample(self, sample_ply, tmp_path, acv_env):
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-SS", "SPATIAL", "0.2", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        combined = r.stdout + r.stderr
+        assert "Result:" in combined or r.returncode == 0, \
+            f"Subsample failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_normals(self, sample_ply, acv_env, tmp_path):
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply, "-COMPUTE_NORMALS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, f"Normals failed:\n{(r.stdout + r.stderr)[-2000:]}"
+
+
+@pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
+@pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+class TestLevel3_CLIHarness:
+    """Test headless processing via the CLI harness (requires pip install)."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    def test_level3_cli_subsample(self, sample_ply, tmp_path):
         out = str(tmp_path / "sub.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
@@ -231,7 +363,7 @@ class TestLevel3_HeadlessProcessing:
             capture_output=True, text=True, timeout=60)
         assert r.returncode == 0
 
-    def test_level3_normals(self, sample_ply, tmp_path):
+    def test_level3_cli_normals(self, sample_ply, tmp_path):
         out = str(tmp_path / "normals.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
@@ -239,7 +371,7 @@ class TestLevel3_HeadlessProcessing:
             capture_output=True, text=True, timeout=60)
         assert r.returncode == 0
 
-    def test_level3_formats_command(self):
+    def test_level3_cli_formats(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless", "formats"],
             capture_output=True, text=True, timeout=10)

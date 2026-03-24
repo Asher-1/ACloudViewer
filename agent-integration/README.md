@@ -16,8 +16,13 @@ automation scripts, and external tools via three complementary interfaces:
 Build ACloudViewer with the plugin enabled:
 
 ```bash
+# Linux / macOS
 cmake -DPLUGIN_STANDARD_QJSONRPC=ON ..
 make -j$(nproc)
+
+# Windows (Visual Studio)
+cmake -DPLUGIN_STANDARD_QJSONRPC=ON ..
+cmake --build . --config Release -- /m
 ```
 
 Launch ACloudViewer, then activate the JSON-RPC server from the plugin menu
@@ -94,9 +99,21 @@ python -m pytest test_integration.py -v -k "level3"  # headless processing
 python -m pytest test_integration.py -v -k "level4"  # GUI RPC
 python -m pytest test_integration.py -v -k "level5"  # MCP server
 
-# shell runner
+# shell runner (Linux / macOS / Git Bash on Windows)
 ./run_all_tests.sh --level 2
 ```
+
+### Platform Notes
+
+| Platform | Installer | Headless Install |
+|----------|-----------|------------------|
+| **Linux** | `.run` (Qt IFW) | `QT_QPA_PLATFORM=minimal installer --root <dir> --accept-licenses --accept-messages --confirm-command install` |
+| **Windows** | `.exe` (Qt IFW) | Same flags as Linux; set `QT_QPA_PLATFORM=minimal` env var |
+| **macOS** | `.dmg` | `hdiutil attach <dmg> -nobrowse -noverify && cp -R /Volumes/ACloudViewer*/*.app ~/` |
+
+- **pytest** (`test_integration.py`) is the primary cross-platform test runner
+- **`run_all_tests.sh`** requires Bash (Git Bash or WSL on Windows)
+- Set `ACV_BINARY` environment variable to the installed binary path on any platform
 
 | Level | Tests | Dependencies |
 |-------|-------|-------------|

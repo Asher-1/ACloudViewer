@@ -298,7 +298,13 @@ jobs:
             }
 
             $env:PATH = "$installDir;$env:PATH"
-            $env:ACV_BINARY = Join-Path $installDir "ACloudViewer.exe"
+            $batFile = Join-Path $installDir "ACloudViewer.bat"
+            $exeFile = Join-Path $installDir "ACloudViewer.exe"
+            if (Test-Path $batFile) {
+              $env:ACV_BINARY = $batFile
+            } else {
+              $env:ACV_BINARY = $exeFile
+            }
 
             python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
             if ($LASTEXITCODE -ne 0) { $failed++ }
