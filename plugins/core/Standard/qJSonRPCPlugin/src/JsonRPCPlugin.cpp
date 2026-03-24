@@ -23,7 +23,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QtGui>
-
 #include <cmath>
 
 // ---------------------------------------------------------------------------
@@ -144,12 +143,12 @@ void JsonRPCPlugin::triggered(bool checked) {
 // ---------------------------------------------------------------------------
 
 static QString variantToLogString(const QVariant& v, int depth = 0) {
-    if (v.isNull() || !v.isValid())
-        return QStringLiteral("null");
+    if (v.isNull() || !v.isValid()) return QStringLiteral("null");
 
     switch (static_cast<int>(v.type())) {
         case QVariant::Bool:
-            return v.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+            return v.toBool() ? QStringLiteral("true")
+                              : QStringLiteral("false");
         case QVariant::Int:
             return QString::number(v.toInt());
         case QVariant::UInt:
@@ -160,8 +159,7 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
             return QString::number(v.toULongLong());
         case QVariant::Double: {
             double d = v.toDouble();
-            if (d == static_cast<long long>(d) &&
-                std::abs(d) < 1e15)
+            if (d == static_cast<long long>(d) && std::abs(d) < 1e15)
                 return QString::number(static_cast<long long>(d));
             return QString::number(d, 'g', 10);
         }
@@ -186,8 +184,8 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
             if (map.isEmpty()) return QStringLiteral("{}");
             QStringList items;
             for (auto it = map.constBegin(); it != map.constEnd(); ++it)
-                items << QStringLiteral("%1: %2")
-                              .arg(it.key(), variantToLogString(it.value(), depth + 1));
+                items << QStringLiteral("%1: %2").arg(
+                        it.key(), variantToLogString(it.value(), depth + 1));
             return QStringLiteral("{%1}").arg(items.join(", "));
         }
         case QVariant::StringList: {
@@ -205,8 +203,7 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
             return QStringLiteral("'%1'").arg(v.toChar());
         default: {
             QString s = v.toString();
-            if (!s.isEmpty())
-                return QStringLiteral("\"%1\"").arg(s);
+            if (!s.isEmpty()) return QStringLiteral("\"%1\"").arg(s);
             return QStringLiteral("<%1>").arg(v.typeName());
         }
     }
@@ -215,25 +212,36 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
 static QString variantTypeTag(const QVariant& v) {
     if (v.isNull() || !v.isValid()) return QStringLiteral("null");
     switch (static_cast<int>(v.type())) {
-        case QVariant::Bool:       return QStringLiteral("bool");
-        case QVariant::Int:        return QStringLiteral("int");
-        case QVariant::UInt:       return QStringLiteral("uint");
-        case QVariant::LongLong:   return QStringLiteral("int64");
-        case QVariant::ULongLong:  return QStringLiteral("uint64");
+        case QVariant::Bool:
+            return QStringLiteral("bool");
+        case QVariant::Int:
+            return QStringLiteral("int");
+        case QVariant::UInt:
+            return QStringLiteral("uint");
+        case QVariant::LongLong:
+            return QStringLiteral("int64");
+        case QVariant::ULongLong:
+            return QStringLiteral("uint64");
         case QVariant::Double: {
             double d = v.toDouble();
-            if (d == static_cast<long long>(d) &&
-                std::abs(d) < 1e15)
+            if (d == static_cast<long long>(d) && std::abs(d) < 1e15)
                 return QStringLiteral("int");
             return QStringLiteral("double");
         }
-        case QVariant::String:     return QStringLiteral("string");
-        case QVariant::List:       return QStringLiteral("list");
-        case QVariant::Map:        return QStringLiteral("map");
-        case QVariant::StringList: return QStringLiteral("stringlist");
-        case QVariant::ByteArray:  return QStringLiteral("bytes");
-        case QVariant::Char:       return QStringLiteral("char");
-        default:                   return QString::fromLatin1(v.typeName());
+        case QVariant::String:
+            return QStringLiteral("string");
+        case QVariant::List:
+            return QStringLiteral("list");
+        case QVariant::Map:
+            return QStringLiteral("map");
+        case QVariant::StringList:
+            return QStringLiteral("stringlist");
+        case QVariant::ByteArray:
+            return QStringLiteral("bytes");
+        case QVariant::Char:
+            return QStringLiteral("char");
+        default:
+            return QString::fromLatin1(v.typeName());
     }
 }
 
@@ -248,8 +256,7 @@ JsonRPCResult JsonRPCPlugin::execute(QString method,
         QStringList paramParts;
         for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
             paramParts << QStringLiteral("  %1 [%2] = %3")
-                                  .arg(it.key(),
-                                       variantTypeTag(it.value()),
+                                  .arg(it.key(), variantTypeTag(it.value()),
                                        variantToLogString(it.value()));
         }
         CVLog::Print(QString("[JsonRPC] %1 {\n%2\n}")
@@ -1318,8 +1325,7 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
                 openParams["filename"] = path;
                 openParams["silent"] = true;
                 auto openResult = rpcOpen(openParams);
-                if (!openResult.isError)
-                    imported.append(path);
+                if (!openResult.isError) imported.append(path);
             }
         };
         tryImport("textured_mesh");

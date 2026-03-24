@@ -2613,7 +2613,8 @@ void VtkVis::removeALL(int viewport) {
     // Remove all coordinate systems
     if (coordinate_actor_map_) {
         std::vector<std::string> coordIds;
-        for (const auto& kv : *coordinate_actor_map_) coordIds.push_back(kv.first);
+        for (const auto& kv : *coordinate_actor_map_)
+            coordIds.push_back(kv.first);
         for (const auto& id : coordIds) {
             auto cit = coordinate_actor_map_->find(id);
             if (cit != coordinate_actor_map_->end()) {
@@ -2638,7 +2639,8 @@ void VtkVis::removeALL(int viewport) {
         m_prop_map->clear();
     }
 
-    // Remove remaining data axes grids not already removed by cloud/shape cleanup
+    // Remove remaining data axes grids not already removed by cloud/shape
+    // cleanup
     vtkRenderer* renderer = getCurrentRenderer(viewport);
     if (renderer) {
         for (auto& pair : m_dataAxesGridMap) {
@@ -2652,7 +2654,8 @@ void VtkVis::removeALL(int viewport) {
     // Clear transformation cache
     transformation_map_.clear();
 
-    // Clear source object map (pointers to DB objects that may have been deleted)
+    // Clear source object map (pointers to DB objects that may have been
+    // deleted)
     m_sourceObjectMap.clear();
 
     // Safety sweep: remove any stray actors from all renderers that aren't
