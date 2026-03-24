@@ -955,16 +955,18 @@ int SIBRViewerThread::runRemoteGaussianViewer() {
 
 // Embedded tool entry points (compiled from dataset_tools/preprocess/*/main.cpp
 // with SIBR_TOOL_EMBEDDED defined).
-extern int sibr_tool_alignMeshes(int, char**);
-extern int sibr_tool_cameraConverter(int, char**);
-extern int sibr_tool_clippingPlanes(int, const char**);
-extern int sibr_tool_cropFromCenter(int, const char**);
-extern int sibr_tool_distordCrop(int, const char* const*);
-extern int sibr_tool_nvmToSIBR(int, const char**);
-extern int sibr_tool_prepareColmap4Sibr(int, const char**);
-extern int sibr_tool_textureMesh(int, char**);
-extern int sibr_tool_tonemapper(int, char**);
-extern int sibr_tool_unwrapMesh(int, char**);
+extern "C" {
+int sibr_tool_alignMeshes(int, char**);
+int sibr_tool_cameraConverter(int, char**);
+int sibr_tool_clippingPlanes(int, const char**);
+int sibr_tool_cropFromCenter(int, const char**);
+int sibr_tool_distordCrop(int, const char* const*);
+int sibr_tool_nvmToSIBR(int, const char**);
+int sibr_tool_prepareColmap4Sibr(int, const char**);
+int sibr_tool_textureMesh(int, char**);
+int sibr_tool_tonemapper(int, char**);
+int sibr_tool_unwrapMesh(int, char**);
+}
 
 int SIBRViewerThread::runDatasetTool() {
     emit viewerLog(

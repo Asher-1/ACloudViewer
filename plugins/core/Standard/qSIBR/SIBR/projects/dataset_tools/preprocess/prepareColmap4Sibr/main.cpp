@@ -30,7 +30,7 @@ struct ColmapPreprocessArgs : public BasicIBRAppArgs {
 };
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_prepareColmap4Sibr(int argc, const char** argv) {
+extern "C" int sibr_tool_prepareColmap4Sibr(int argc, const char** argv) {
 #else
 int main(const int argc, const char** argv) {
 #endif

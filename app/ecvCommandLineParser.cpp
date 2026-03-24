@@ -36,6 +36,7 @@
 // commands
 constexpr char COMMAND_HELP[] = "HELP";
 constexpr char COMMAND_SILENT_MODE[] = "SILENT";
+constexpr char COMMAND_VERBOSE[] = "VERBOSE";
 
 /*****************************************************/
 /*************** ccCommandLineParser *****************/
@@ -82,6 +83,14 @@ int ccCommandLineParser::Parse(int nargs,
                                           COMMAND_SILENT_MODE)) {
         parser->arguments().pop_front();
         parser->toggleSilentMode(true);
+    }
+
+    // consume -VERBOSE flag (verbosity was already set in main.cpp;
+    // just remove it from the argument list so it's not treated as a command)
+    if (!parser->arguments().empty() &&
+        ccCommandLineInterface::IsCommand(parser->arguments().front(),
+                                          COMMAND_VERBOSE)) {
+        parser->arguments().pop_front();
     }
 
     QScopedPointer<QDialog> consoleDlg(nullptr);

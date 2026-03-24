@@ -203,6 +203,87 @@ List all scalar fields on a point cloud.
 
 ---
 
+### cloud.paintUniform
+
+Paint all points in a cloud with a uniform color.
+
+**Params:** `{entity_id: int, r: int, g: int, b: int}` (0-255 per channel)
+
+---
+
+### cloud.paintByHeight
+
+Colorize a point cloud by height (Z-axis gradient).
+
+**Params:** `{entity_id: int}`
+
+---
+
+### cloud.paintByScalarField
+
+Colorize a point cloud by a scalar field.
+
+**Params:** `{entity_id: int, field_index: int}`
+
+---
+
+### mesh.simplify
+
+Simplify a triangle mesh (reduce triangle count).
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Mesh entity ID |
+| `method` | string | `"quadric"` | `"quadric"` (Quadric Edge Collapse) or `"vertex_clustering"` |
+| `target_triangles` | int | `10000` | Target triangle count (used by `quadric`) |
+| `voxel_size` | float | `0.05` | Voxel size (used by `vertex_clustering`) |
+
+---
+
+### mesh.smooth
+
+Smooth a triangle mesh.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Mesh entity ID |
+| `method` | string | `"laplacian"` | `"laplacian"`, `"taubin"`, or `"simple"` |
+| `iterations` | int | `5` | Number of smoothing iterations |
+| `lambda` | float | `0.5` | Smoothing factor (Laplacian) |
+| `mu` | float | `-0.53` | Shrinkage correction factor (Taubin only) |
+
+---
+
+### mesh.subdivide
+
+Subdivide a triangle mesh.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Mesh entity ID |
+| `method` | string | `"midpoint"` | `"midpoint"` or `"loop"` |
+| `iterations` | int | `1` | Number of subdivision iterations |
+
+---
+
+### mesh.samplePoints
+
+Sample points from a mesh surface.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Mesh entity ID |
+| `method` | string | `"uniform"` | `"uniform"` or `"poisson_disk"` |
+| `count` | int | `100000` | Number of points to sample |
+
+**Returns:** New point cloud entity info.
+
+---
+
 ### view.setOrientation
 
 Set camera view orientation.
@@ -266,6 +347,70 @@ Apply a 4x4 transformation matrix to an entity.
 **Params:** `{entity_id: int, matrix: array[16]}`
 
 Matrix is in column-major order (OpenGL convention).
+
+---
+
+### file.convert
+
+Load a file in one format and save it in another.
+
+**Params:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `input` | string | yes | Input file path |
+| `output` | string | yes | Output file path (extension determines format) |
+| `input_filter` | string | no | Force input file filter name |
+| `output_filter` | string | no | Force output file filter name |
+
+**Returns:** `{input, output, status}`
+
+**Example:**
+
+```json
+{
+  "jsonrpc": "2.0", "id": 1,
+  "method": "file.convert",
+  "params": {"input": "/data/cloud.ply", "output": "/data/cloud.pcd"}
+}
+```
+
+---
+
+### colmap.reconstruct
+
+Launch COLMAP automatic reconstructor as a subprocess. Performs feature extraction,
+matching, sparse reconstruction, dense reconstruction, and meshing.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `image_path` | string | required | Path to input images directory |
+| `workspace_path` | string | required | Path to workspace directory |
+| `quality` | string | `"HIGH"` | `LOW`, `MEDIUM`, `HIGH`, or `EXTREME` |
+| `data_type` | string | `"INDIVIDUAL"` | `INDIVIDUAL`, `VIDEO`, or `INTERNET` |
+| `mesher` | string | `"POISSON"` | `POISSON` or `DELAUNAY` |
+| `camera_model` | string | `""` | Camera model: `SIMPLE_PINHOLE`, `PINHOLE`, `SIMPLE_RADIAL`, `RADIAL`, `OPENCV`, `OPENCV_FISHEYE`, `FULL_OPENCV`, `SIMPLE_RADIAL_FISHEYE`, `RADIAL_FISHEYE`, `THIN_PRISM_FISHEYE` (empty = auto-detect) |
+| `single_camera` | bool | `false` | All images share the same camera intrinsics |
+| `use_gpu` | bool | `true` | Enable GPU acceleration |
+| `colmap_binary` | string | `"colmap"` | Path to COLMAP binary |
+| `timeout_ms` | int | `7200000` | Timeout in milliseconds (2 hours default) |
+
+**Returns:** `{workspace, image_path, quality, status, ?fused_ply}`
+
+**Example:**
+
+```json
+{
+  "jsonrpc": "2.0", "id": 1,
+  "method": "colmap.reconstruct",
+  "params": {
+    "image_path": "/data/images/",
+    "workspace_path": "/data/workspace/",
+    "quality": "HIGH",
+    "use_gpu": true
+  }
+}
+```
 
 ---
 

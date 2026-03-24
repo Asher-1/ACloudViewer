@@ -101,6 +101,10 @@ QString ImageFileFilter::GetSaveFilename(const QString& dialogTitle,
         }
     }
 
+    if (!FileIOFilter::IsGuiAvailable()) {
+        return QString();
+    }
+
     QString outputFilename = QFileDialog::getSaveFileName(
             parentWidget, dialogTitle,
             imageSavePath +
@@ -125,6 +129,10 @@ QString ImageFileFilter::GetLoadFilename(const QString& dialogTitle,
     }
     // we convert this list into a proper "filters" string
     QString imageFilter = QString("Image (%1)").arg(imageExts.join(" "));
+
+    if (!FileIOFilter::IsGuiAvailable()) {
+        return QString();
+    }
 
     return QFileDialog::getOpenFileName(parentWidget, dialogTitle,
                                         imageLoadPath, imageFilter);

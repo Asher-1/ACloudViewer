@@ -54,6 +54,32 @@ cli-anything-acloudviewer process subsample input.ply -o output.ply --voxel-size
 
 # Force headless (no GUI needed)
 cli-anything-acloudviewer --mode headless process icp source.ply target.ply
+
+# Format conversion (positional: INPUT_FILE OUTPUT_FILE)
+cli-anything-acloudviewer convert input.ply output.obj
+cli-anything-acloudviewer convert input.pcd output.drc               # Draco compressed
+cli-anything-acloudviewer batch-convert ./scans/ ./converted/ -f .ply
+
+# Automatic 3D reconstruction from images
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --quality high
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --quality low --no-dense
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --camera-model OPENCV
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --camera-model PINHOLE --quality extreme
+
+# Individual reconstruction steps
+cli-anything-acloudviewer reconstruct extract-features ./images/ -w ./workspace/
+cli-anything-acloudviewer reconstruct sparse ./workspace/
+cli-anything-acloudviewer reconstruct dense-stereo ./workspace/
+cli-anything-acloudviewer reconstruct poisson ./workspace/
+
+# SIBR dataset preparation (requires SIBR plugin)
+cli-anything-acloudviewer sibr prepare-colmap ./workspace/
+cli-anything-acloudviewer sibr texture-mesh ./workspace/
+
+# SIBR Viewers (via ACloudViewer binary directly)
+# ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
+# ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
+# ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
 ```
 
 ### 4. Use as an MCP Server (OpenClaw / Cursor / Claude Code)
@@ -117,11 +143,11 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 
 | Level | Tests | Dependencies |
 |-------|-------|-------------|
-| 1 | C++ plugin source, build, dispatch table | cmake (optional) |
-| 2 | CLI commands, help, JSON output, session | `cli-anything-acloudviewer` |
-| 3 | Format conversion, subsample, normals, batch | `ACloudViewer binary` |
-| 4 | WebSocket ping, scene list, camera, methods | Running ACloudViewer |
-| 5 | MCP tool definitions, entry point | `mcp` Python package |
+| 1 | C++ plugin source, build, dispatch table, SIBR commands | cmake (optional) |
+| 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
+| 3 | Format conversion, subsample, normals, batch, PLY→ASC/BIN/VTK | `ACloudViewer binary` |
+| 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
+| 5 | MCP tools (processing, Colmap, SIBR), entry point | `mcp` Python package |
 
 ## Architecture
 
@@ -164,17 +190,18 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 
 ```
 agent-integration/
-├── README.md               # This file
+├── README.md               # This file (CLI, MCP, RPC reference)
 ├── mcp/
 │   └── README.md           # MCP server setup and tool reference
-├── cli/
-│   └── README.md           # CLI harness command reference
 ├── openclaw/
 │   ├── README.md           # OpenClaw integration guide
 │   └── openclaw-skill.json # OpenClaw skill manifest
 ├── docs/
 │   ├── JSON-RPC-API.md     # Full JSON-RPC method reference
 │   └── TESTING.md          # End-to-end testing guide
+├── tests/
+│   ├── test_integration.py # Pytest test suite (Levels 1-5)
+│   └── run_all_tests.sh    # Bash test runner
 └── examples/
     ├── websocket_client.py # Minimal WebSocket client example
     └── batch_process.py    # Headless batch processing example
@@ -182,7 +209,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **26 methods** over WebSocket JSON-RPC 2.0:
+The `qJSonRPCPlugin` exposes **33 methods** over WebSocket JSON-RPC 2.0:
 
 ### File I/O
 | Method | Parameters | Description |
@@ -214,6 +241,9 @@ The `qJSonRPCPlugin` exposes **26 methods** over WebSocket JSON-RPC 2.0:
 | `cloud.subsample` | `{entity_id, method, ?step, ?count}` | Subsample |
 | `cloud.crop` | `{entity_id, min_x..max_z}` | Crop by bbox |
 | `cloud.getScalarFields` | `{entity_id}` | List scalar fields |
+| `cloud.paintUniform` | `{entity_id, r, g, b}` | Paint uniform color |
+| `cloud.paintByHeight` | `{entity_id, ?axis}` | Colorize by height |
+| `cloud.paintByScalarField` | `{entity_id, sf_name}` | Colorize by scalar field |
 
 ### View Control
 | Method | Parameters | Description |
@@ -231,6 +261,19 @@ The `qJSonRPCPlugin` exposes **26 methods** over WebSocket JSON-RPC 2.0:
 |--------|-----------|-------------|
 | `transform.apply` | `{entity_id, matrix[16]}` | Apply 4x4 matrix |
 
+### Mesh Processing
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `mesh.simplify` | `{entity_id, target_count}` | Reduce triangle count |
+| `mesh.smooth` | `{entity_id, iterations}` | Laplacian smoothing |
+| `mesh.subdivide` | `{entity_id}` | Subdivide mesh |
+| `mesh.samplePoints` | `{entity_id, count}` | Sample points from surface |
+
+### Reconstruction
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `colmap.reconstruct` | `{image_path, workspace_path, ?quality, ?data_type, ?mesher, ?use_gpu}` | Full Colmap automatic reconstruction |
+
 ### Introspection
 | Method | Parameters | Description |
 |--------|-----------|-------------|
@@ -239,17 +282,165 @@ The `qJSonRPCPlugin` exposes **26 methods** over WebSocket JSON-RPC 2.0:
 
 ## MCP Tools Overview
 
-The MCP server exposes **23 tools** for AI agent use:
+The MCP server exposes **39 tools** for AI agent use:
 
 | Category | Tools |
 |----------|-------|
-| **File I/O** | `open_file`, `export_file`, `convert_format`, `batch_convert`, `list_formats` |
-| **Scene** | `scene_list`, `scene_info`, `scene_remove`, `scene_set_visible`, `clear_scene`, `entity_rename`, `cloud_scalar_fields` |
-| **View** | `set_view`, `zoom_fit`, `refresh_view`, `screenshot`, `get_camera` |
-| **Transform** | `apply_transform` |
-| **Processing** | `subsample`, `compute_normals`, `icp_registration`, `colored_icp`, `ransac_registration`, `outlier_removal`, `crop_point_cloud` |
-| **Reconstruction** | `mesh_reconstruction`, `reconstruct_from_images`, `reconstruct_mesh`, `tsdf_integrate`, `gaussian_splatting_train` |
-| **Info** | `get_info`, `list_rpc_methods` |
+| **File I/O** | `open_file`, `convert_format`, `batch_convert`, `list_formats` |
+| **Scene** | `scene_list`, `scene_info` |
+| **View** | `screenshot`, `get_camera` |
+| **Processing** | `subsample`, `compute_normals`, `crop`, `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding` |
+| **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model` |
+| **SIBR** | `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh` |
+| **Info** | `get_session_info`, `list_rpc_methods` |
+
+## CLI Command Reference
+
+### REPL Mode
+
+```bash
+cli-anything-acloudviewer                          # enter interactive REPL
+cli-anything-acloudviewer --mode gui               # force GUI backend
+cli-anything-acloudviewer --mode headless           # force headless
+```
+
+### File I/O
+
+```bash
+cli-anything-acloudviewer open /path/to/scene.ply
+cli-anything-acloudviewer open scene.ply --silent
+cli-anything-acloudviewer export 42 output.obj
+cli-anything-acloudviewer convert input.ply output.obj        # positional args
+cli-anything-acloudviewer convert input.pcd output.drc        # Draco compressed
+cli-anything-acloudviewer batch-convert ./scans/ ./out/ -f .ply
+cli-anything-acloudviewer formats                             # list supported formats
+```
+
+### Scene Tree (GUI mode)
+
+```bash
+cli-anything-acloudviewer scene list               # list all entities
+cli-anything-acloudviewer scene list --flat         # non-recursive
+cli-anything-acloudviewer scene info 42             # entity details
+cli-anything-acloudviewer scene remove 42           # remove entity
+cli-anything-acloudviewer scene show 42             # make visible
+cli-anything-acloudviewer scene hide 42             # make hidden
+cli-anything-acloudviewer scene select 42 43 44     # select entities
+cli-anything-acloudviewer clear                     # clear all
+```
+
+### View Control (GUI mode)
+
+```bash
+cli-anything-acloudviewer view orient top           # set view orientation
+cli-anything-acloudviewer view orient iso1           # isometric view
+cli-anything-acloudviewer view zoom                  # zoom to fit all
+cli-anything-acloudviewer view zoom --entity 42      # zoom to entity
+cli-anything-acloudviewer view refresh               # force redraw
+cli-anything-acloudviewer view screenshot -o shot.png --width 1920 --height 1080
+cli-anything-acloudviewer view camera                # get camera parameters
+```
+
+### Processing (Headless)
+
+```bash
+cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
+cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
+cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply
+cli-anything-acloudviewer process sor input.ply -o clean.ply --knn 6 --std 1.0
+cli-anything-acloudviewer process c2c-dist compared.ply reference.ply -o dist.ply
+cli-anything-acloudviewer process c2m-dist cloud.ply mesh.obj -o dist.ply
+cli-anything-acloudviewer process density input.ply -o density.ply --radius 0.05
+cli-anything-acloudviewer process curvature input.ply -o curv.ply
+cli-anything-acloudviewer process roughness input.ply -o rough.ply --radius 0.1
+cli-anything-acloudviewer process delaunay input.ply -o mesh.ply
+cli-anything-acloudviewer process sample-mesh mesh.obj -o cloud.ply --density 100
+cli-anything-acloudviewer process color-banding input.ply -o colored.ply
+```
+
+### 3D Reconstruction (Colmap)
+
+```bash
+# Automatic end-to-end reconstruction
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --quality high
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --quality low --no-dense
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --camera-model OPENCV
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --camera-model SIMPLE_PINHOLE --quality extreme
+
+# Step-by-step pipeline
+cli-anything-acloudviewer reconstruct extract-features ./images/ -d ./database.db
+cli-anything-acloudviewer reconstruct match ./database.db --method exhaustive
+cli-anything-acloudviewer reconstruct sparse -d ./database.db --image-path ./images/ -o ./sparse/
+cli-anything-acloudviewer reconstruct undistort --image-path ./images/ -i ./sparse/0 -o ./dense/
+cli-anything-acloudviewer reconstruct dense-stereo ./dense/
+cli-anything-acloudviewer reconstruct fuse ./dense/ -o ./dense/fused.ply
+cli-anything-acloudviewer reconstruct poisson ./dense/fused.ply -o ./mesh.ply
+cli-anything-acloudviewer reconstruct delaunay-mesh ./dense/fused.ply -o ./mesh_delaunay.ply
+cli-anything-acloudviewer reconstruct texture-mesh ./dense/ -o ./textured/ --mesh ./mesh_delaunay.ply
+
+# Model utilities
+cli-anything-acloudviewer reconstruct convert-model ./sparse/0 -o ./model.ply --output-type PLY
+cli-anything-acloudviewer reconstruct analyze-model ./sparse/0
+cli-anything-acloudviewer reconstruct mesh input.ply -o mesh.ply
+```
+
+**Supported camera models** (for `--camera-model`):
+
+| Model | Parameters | Description |
+|-------|-----------|-------------|
+| `SIMPLE_PINHOLE` | 3 | f, cx, cy |
+| `PINHOLE` | 4 | fx, fy, cx, cy |
+| `SIMPLE_RADIAL` | 4 | f, cx, cy, k (default) |
+| `RADIAL` | 5 | f, cx, cy, k1, k2 |
+| `OPENCV` | 8 | fx, fy, cx, cy, k1, k2, p1, p2 |
+| `OPENCV_FISHEYE` | 8 | fx, fy, cx, cy, k1, k2, k3, k4 |
+| `FULL_OPENCV` | 12 | fx, fy, cx, cy, k1-k6 |
+| `SIMPLE_RADIAL_FISHEYE` | 4 | f, cx, cy, k |
+| `RADIAL_FISHEYE` | 5 | f, cx, cy, k1, k2 |
+| `THIN_PRISM_FISHEYE` | 12 | fx, fy, cx, cy, k1-k4, p1, p2, sx1, sx2 |
+
+**Quality levels**: `low`, `medium`, `high`, `extreme`
+
+### SIBR Dataset Tools
+
+```bash
+cli-anything-acloudviewer sibr prepare-colmap ./workspace/
+cli-anything-acloudviewer sibr texture-mesh ./workspace/
+cli-anything-acloudviewer sibr unwrap-mesh ./workspace/
+cli-anything-acloudviewer sibr tonemapper ./dataset/
+cli-anything-acloudviewer sibr align-meshes ./dataset/
+cli-anything-acloudviewer sibr camera-converter ./dataset/
+cli-anything-acloudviewer sibr nvm-to-sibr ./dataset/
+cli-anything-acloudviewer sibr crop-from-center ./dataset/
+cli-anything-acloudviewer sibr clipping-planes ./dataset/
+cli-anything-acloudviewer sibr distord-crop ./dataset/
+cli-anything-acloudviewer sibr tool <tool-name> [tool-args...]
+```
+
+SIBR viewers are invoked directly via the ACloudViewer binary:
+
+```bash
+ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
+ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
+ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
+```
+
+### Session Management
+
+```bash
+cli-anything-acloudviewer session status             # show session info
+cli-anything-acloudviewer session undo               # undo last operation
+cli-anything-acloudviewer session redo               # redo
+```
+
+### Utility & JSON Output
+
+```bash
+cli-anything-acloudviewer info                       # backend and version info
+cli-anything-acloudviewer --json scene list           # structured JSON output
+cli-anything-acloudviewer --json process subsample input.ply -o sub.ply --voxel-size 0.05
+cli-anything-acloudviewer --json reconstruct auto ./images/ -w ./workspace/
+```
 
 ## Supported File Formats (Complete)
 

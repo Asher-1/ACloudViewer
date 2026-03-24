@@ -25,7 +25,7 @@ struct UVMapperArgs : public AppArgs {
 };
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_unwrapMesh(int ac, char** av) {
+extern "C" int sibr_tool_unwrapMesh(int ac, char** av) {
 #else
 int main(int ac, char** av) {
 #endif

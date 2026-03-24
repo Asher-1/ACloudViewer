@@ -41,7 +41,7 @@ void tonemap(const sibr::ImageRGB32F& hdrImg,
 }
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_tonemapper(int ac, char** av) {
+extern "C" int sibr_tool_tonemapper(int ac, char** av) {
 #else
 int main(int ac, char** av) {
 #endif

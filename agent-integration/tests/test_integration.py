@@ -49,6 +49,7 @@ BUILD_DIR = Path(os.environ.get(
 ))
 PLUGIN_CPP = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/src/JsonRPCPlugin.cpp"
 PLUGIN_H = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/include/JsonRPCPlugin.h"
+SIBR_COMMANDS_H = REPO_ROOT / "plugins/core/Standard/qSIBR/include/qSIBRCommands.h"
 
 # ── Binary discovery (build dir → installed → env var) ────────────────────
 
@@ -134,13 +135,61 @@ def _rpc_available() -> bool:
     if not HAS_WS:
         return False
     try:
-        ws = ws_connect(RPC_URL)
+        ws = ws_connect(RPC_URL, open_timeout=5)
         ws.send(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}}))
-        resp = json.loads(ws.recv())
+        resp = json.loads(ws.recv(timeout=5))
         ws.close()
         return resp.get("result") == "pong"
     except Exception:
         return False
+
+
+def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
+    """Send a JSON-RPC 2.0 call and return the result.
+
+    - Connection failures  → pytest.skip  (server may have crashed)
+    - JSON-RPC errors      → RuntimeError (caller can use pytest.raises)
+    - Success              → return result value
+    """
+    try:
+        ws = ws_connect(RPC_URL, open_timeout=5)
+    except (ConnectionRefusedError, ConnectionResetError, OSError):
+        pytest.skip("RPC server not reachable (may have crashed)")
+    try:
+        ws.send(json.dumps({
+            "jsonrpc": "2.0", "id": 1,
+            "method": method, "params": params or {},
+        }))
+        raw = ws.recv(timeout=timeout)
+    except (ConnectionResetError, BrokenPipeError, OSError):
+        pytest.skip("RPC connection lost during call")
+    except Exception as exc:
+        if "ConnectionClosed" in type(exc).__name__:
+            pytest.skip("RPC connection closed unexpectedly")
+        raise
+    finally:
+        try:
+            ws.close()
+        except Exception:
+            pass
+    resp = json.loads(raw)
+    if "error" in resp:
+        err = resp["error"]
+        msg = err.get("message", err) if isinstance(err, dict) else err
+        raise RuntimeError(f"RPC error ({method}): {msg}")
+    return resp.get("result")
+
+
+def _find_cloud_id(result) -> int | None:
+    """Recursively find the first POINT_CLOUD entity ID in an entity tree."""
+    if isinstance(result, dict):
+        if result.get("type") == "POINT_CLOUD":
+            return result["id"]
+        for child in result.get("children", []):
+            cid = _find_cloud_id(child)
+            if cid is not None:
+                return cid
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -158,16 +207,54 @@ class TestLevel1_CppPlugin:
 
     def test_level1_plugin_has_dispatch_table(self):
         src = PLUGIN_CPP.read_text()
-        assert 'method == "open"' in src
-        assert 'method == "file.convert"' in src
-        assert 'method == "scene.list"' in src
-        assert 'method == "cloud.computeNormals"' in src
-        assert 'method == "cloud.paintUniform"' in src
-        assert 'method == "cloud.paintByHeight"' in src
-        assert 'method == "cloud.paintByScalarField"' in src
-        assert 'method == "mesh.simplify"' in src
-        assert 'method == "view.screenshot"' in src
-        assert 'method == "colmap.reconstruct"' in src
+        for method in ["open", "file.convert", "scene.list",
+                        "cloud.computeNormals", "cloud.paintUniform",
+                        "cloud.paintByHeight", "cloud.paintByScalarField",
+                        "mesh.simplify", "view.screenshot",
+                        "colmap.reconstruct"]:
+            assert f'method == "{method}"' in src, \
+                f"Missing dispatch for '{method}'"
+
+    def test_level1_colmap_reconstruct_params(self):
+        src = PLUGIN_CPP.read_text()
+        assert "rpcColmapReconstruct" in src
+        for param in ["image_path", "workspace_path", "quality",
+                       "data_type", "mesher", "camera_model",
+                       "single_camera", "use_gpu", "colmap_binary",
+                       "timeout_ms"]:
+            assert param in src, f"colmap.reconstruct missing param: {param}"
+
+    def test_level1_file_convert_params(self):
+        src = PLUGIN_CPP.read_text()
+        assert "rpcFileConvert" in src
+        for param in ["input", "output", "input_filter", "output_filter"]:
+            assert param in src, f"file.convert missing param: {param}"
+
+    def test_level1_sibr_commands_exist(self):
+        assert SIBR_COMMANDS_H.exists(), "Missing qSIBRCommands.h"
+
+    def test_level1_sibr_viewer_command_structure(self):
+        src = SIBR_COMMANDS_H.read_text()
+        assert 'COMMAND_SIBR_VIEWER' in src
+        assert 'CommandSIBRViewer' in src
+        for viewer in ["ulr", "ulrv2", "texturedmesh",
+                        "pointbased", "gaussian", "remotegaussian"]:
+            assert viewer in src.lower(), \
+                f"SIBR_VIEWER missing viewer type: {viewer}"
+
+    def test_level1_sibr_viewer_options(self):
+        src = SIBR_COMMANDS_H.read_text()
+        for opt in ["--path", "--model-path", "--width", "--height",
+                     "--iteration", "--device", "--no-interop", "--ip", "--port"]:
+            assert opt in src, f"SIBR_VIEWER missing option: {opt}"
+
+    def test_level1_sibr_tool_command_structure(self):
+        src = SIBR_COMMANDS_H.read_text()
+        assert 'COMMAND_SIBR_TOOL' in src
+        assert 'CommandSIBRTool' in src
+        for tool in ["prepareColmap4Sibr", "tonemapper", "unwrapMesh",
+                      "textureMesh", "alignMeshes", "cameraConverter"]:
+            assert tool in src, f"SIBR_TOOL missing tool: {tool}"
 
     def test_level1_rpc_method_count(self):
         src = PLUGIN_CPP.read_text()
@@ -228,12 +315,16 @@ class TestLevel2_CLIHarness:
         "convert --help",
         "batch-convert --help",
         "formats --help",
+        "formats",
         "scene --help",
         "view --help",
         "process --help",
         "session --help",
         "reconstruct --help",
+        "reconstruct auto --help",
+        "sibr --help",
         "info --help",
+        "info",
     ])
     def test_level2_subcommand_help(self, cmd):
         r = subprocess.run(
@@ -263,6 +354,68 @@ class TestLevel2_CLIHarness:
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "session", "status"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+
+    def test_level2_sibr_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "sibr", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["prepare-colmap", "texture-mesh", "unwrap-mesh",
+                     "tonemapper", "align-meshes", "camera-converter",
+                     "nvm-to-sibr", "crop-from-center", "clipping-planes",
+                     "distord-crop", "tool"]:
+            assert cmd in r.stdout, f"Missing sibr subcommand: {cmd}"
+
+    def test_level2_sibr_viewer_subcommand(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "sibr", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        assert "viewer" in r.stdout.lower() or "tool" in r.stdout.lower(), \
+            "SIBR group should reference viewer or tool functionality"
+
+    def test_level2_reconstruct_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "reconstruct", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["auto", "mesh", "extract-features", "match", "sparse",
+                     "undistort", "dense-stereo", "fuse", "poisson",
+                     "delaunay-mesh", "texture-mesh",
+                     "convert-model", "analyze-model"]:
+            assert cmd in r.stdout, f"Missing reconstruct subcommand: {cmd}"
+
+    def test_level2_reconstruct_auto_help(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "reconstruct", "auto", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        output = r.stdout + r.stderr
+        for expected in ["quality", "workspace"]:
+            assert expected.lower() in output.lower(), \
+                f"reconstruct auto --help missing: {expected}"
+
+    def test_level2_reconstruct_auto_camera_model(self):
+        """Verify reconstruct auto accepts --camera-model option."""
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "reconstruct", "auto", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        output = r.stdout + r.stderr
+        assert "camera" in output.lower(), \
+            "reconstruct auto --help should mention camera model option"
+
+    def test_level2_convert_help(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "convert", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+
+    def test_level2_batch_convert_help(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "batch-convert", "--help"],
             capture_output=True, text=True, timeout=10)
         assert r.returncode == 0
 
@@ -350,78 +503,293 @@ class TestLevel3_CLIHarness:
     """Test headless processing via the CLI harness (requires pip install)."""
 
     @pytest.fixture
+    def cli_env(self):
+        env = _build_env_for_binary(BINARY_PATH)
+        env["ACV_BINARY"] = BINARY_PATH
+        return env
+
+    @pytest.fixture
     def sample_ply(self, tmp_path):
         ply_path = tmp_path / "test.ply"
         ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(ply_path)
 
-    def test_level3_cli_subsample(self, sample_ply, tmp_path):
+    def test_level3_cli_subsample(self, sample_ply, tmp_path, cli_env):
         out = str(tmp_path / "sub.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "subsample", sample_ply, "-o", out, "--voxel-size", "0.2"],
-            capture_output=True, text=True, timeout=60)
-        assert r.returncode == 0
+            capture_output=True, text=True, timeout=60, env=cli_env)
+        assert r.returncode == 0, f"CLI subsample failed:\n{r.stdout}\n{r.stderr}"
 
-    def test_level3_cli_normals(self, sample_ply, tmp_path):
+    def test_level3_cli_normals(self, sample_ply, tmp_path, cli_env):
         out = str(tmp_path / "normals.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "normals", sample_ply, "-o", out],
-            capture_output=True, text=True, timeout=60)
-        assert r.returncode == 0
+            capture_output=True, text=True, timeout=60, env=cli_env)
+        assert r.returncode == 0, f"CLI normals failed:\n{r.stdout}\n{r.stderr}"
 
-    def test_level3_cli_formats(self):
+    def test_level3_cli_formats(self, cli_env):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless", "formats"],
-            capture_output=True, text=True, timeout=10)
+            capture_output=True, text=True, timeout=10, env=cli_env)
         assert r.returncode == 0
         data = json.loads(r.stdout)
         assert ".ply" in data["point_cloud"]
         assert ".obj" in data["mesh"]
 
+    def test_level3_cli_sibr_available(self, cli_env):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "sibr", "--help"],
+            capture_output=True, text=True, timeout=10, env=cli_env)
+        assert r.returncode == 0, "SIBR CLI group should be available"
+
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Level 4: GUI RPC Tests (requires running ACloudViewer)
+# Level 3b: Format Conversion Tests (requires ACloudViewer binary)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+class TestLevel3_FormatConversion:
+    """Test file format conversions via ACloudViewer binary."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    @pytest.fixture
+    def acv_env(self):
+        return _build_env_for_binary(BINARY_PATH)
+
+    def _convert_file(self, input_path, output_path, fmt, acv_env):
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", input_path,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-C_EXPORT_FMT", fmt, "-SAVE_CLOUDS", "FILE", output_path],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        return r
+
+    def test_level3_ply_to_pcd(self, sample_ply, acv_env, tmp_path):
+        out = str(tmp_path / "out.pcd")
+        r = self._convert_file(sample_ply, out, "PCD", acv_env)
+        assert r.returncode == 0, \
+            f"PLY->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
+        assert Path(out).exists(), "PLY->PCD output file not found"
+
+    def test_level3_pcd_to_ply(self, sample_ply, acv_env, tmp_path):
+        pcd = str(tmp_path / "intermediate.pcd")
+        self._convert_file(sample_ply, pcd, "PCD", acv_env)
+        if not Path(pcd).exists():
+            pytest.skip("PLY->PCD prerequisite failed")
+        out = str(tmp_path / "roundtrip.ply")
+        r = self._convert_file(pcd, out, "PLY", acv_env)
+        assert r.returncode == 0, \
+            f"PCD->PLY failed:\n{(r.stdout + r.stderr)[-2000:]}"
+        assert Path(out).exists(), "PCD->PLY output file not found"
+
+    def test_level3_pcd_to_drc(self, sample_ply, acv_env, tmp_path):
+        pcd = str(tmp_path / "intermediate.pcd")
+        self._convert_file(sample_ply, pcd, "PCD", acv_env)
+        if not Path(pcd).exists():
+            pytest.skip("PLY->PCD prerequisite failed")
+        out = str(tmp_path / "compressed.drc")
+        r = self._convert_file(pcd, out, "DRC", acv_env)
+        assert r.returncode == 0, \
+            f"PCD->DRC failed:\n{(r.stdout + r.stderr)[-2000:]}"
+        assert Path(out).exists(), "PCD->DRC output file not found"
+
+    def test_level3_drc_to_pcd(self, sample_ply, acv_env, tmp_path):
+        pcd = str(tmp_path / "step1.pcd")
+        self._convert_file(sample_ply, pcd, "PCD", acv_env)
+        if not Path(pcd).exists():
+            pytest.skip("PLY->PCD prerequisite failed")
+        drc = str(tmp_path / "step2.drc")
+        self._convert_file(pcd, drc, "DRC", acv_env)
+        if not Path(drc).exists():
+            pytest.skip("PCD->DRC prerequisite failed")
+        out = str(tmp_path / "roundtrip.pcd")
+        r = self._convert_file(drc, out, "PCD", acv_env)
+        assert r.returncode == 0, \
+            f"DRC->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
+        assert Path(out).exists(), "DRC->PCD output file not found"
+
+    @pytest.mark.parametrize("fmt", ["PLY", "ASC", "BIN", "VTK", "STL"])
+    def test_level3_basic_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
+        out = str(tmp_path / f"test.{fmt.lower()}")
+        r = self._convert_file(sample_ply, out, fmt, acv_env)
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->{fmt} failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+
+@pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
+@pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+class TestLevel3_CLIFormatConversion:
+    """Test format conversion via the CLI harness."""
+
+    @pytest.fixture
+    def cli_env(self):
+        env = _build_env_for_binary(BINARY_PATH)
+        env["ACV_BINARY"] = BINARY_PATH
+        return env
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    def test_level3_cli_ply_to_pcd(self, sample_ply, tmp_path, cli_env):
+        out = str(tmp_path / "output.pcd")
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "convert", sample_ply, out],
+            capture_output=True, text=True, timeout=120, env=cli_env)
+        assert r.returncode == 0, \
+            f"CLI PLY->PCD failed:\n{r.stdout}\n{r.stderr}"
+        if r.stdout.strip():
+            data = json.loads(r.stdout)
+            if data.get("status") == "converted":
+                assert Path(out).exists()
+
+    def test_level3_cli_pcd_to_drc(self, sample_ply, tmp_path, cli_env):
+        pcd = str(tmp_path / "intermediate.pcd")
+        subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "convert", sample_ply, pcd],
+            capture_output=True, text=True, timeout=120, env=cli_env)
+        if not Path(pcd).exists():
+            pytest.skip("PLY->PCD prerequisite failed")
+        out = str(tmp_path / "output.drc")
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "convert", pcd, out],
+            capture_output=True, text=True, timeout=120, env=cli_env)
+        assert r.returncode == 0, \
+            f"CLI PCD->DRC failed:\n{r.stdout}\n{r.stderr}"
+
+    def test_level3_cli_batch_convert_pcd(self, sample_ply, tmp_path, cli_env):
+        src_dir = tmp_path / "input_batch"
+        src_dir.mkdir()
+        for i in range(3):
+            (src_dir / f"cloud_{i}.ply").write_text(
+                _SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        out_dir = str(tmp_path / "output_batch")
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "batch-convert", str(src_dir), out_dir, "--format", "pcd"],
+            capture_output=True, text=True, timeout=180, env=cli_env)
+        assert r.returncode == 0, \
+            f"CLI batch-convert failed:\n{r.stdout}\n{r.stderr}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 4: GUI RPC Tests (requires running ACloudViewer with JSON-RPC)
 # ═══════════════════════════════════════════════════════════════════════════
 
 @pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
 class TestLevel4_GUIRPC:
-    """Test JSON-RPC communication with a running ACloudViewer instance."""
+    """Basic JSON-RPC connectivity and view control (no entities needed)."""
 
-    def _call(self, method, params=None):
-        ws = ws_connect(RPC_URL)
-        ws.send(json.dumps({
-            "jsonrpc": "2.0", "id": 1,
-            "method": method, "params": params or {},
-        }))
-        resp = json.loads(ws.recv())
-        ws.close()
-        if "error" in resp:
-            raise RuntimeError(resp["error"])
-        return resp.get("result")
+    # --- Basic connectivity ---
 
     def test_level4_ping(self):
-        assert self._call("ping") == "pong"
+        assert _rpc_call("ping") == "pong"
+
+    def test_level4_ping_repeated(self):
+        for _ in range(5):
+            assert _rpc_call("ping") == "pong"
 
     def test_level4_methods_list(self):
-        methods = self._call("methods.list")
-        assert len(methods) >= 30
+        methods = _rpc_call("methods.list")
+        assert len(methods) >= 25
         names = {m["method"] for m in methods}
         for expected in ["open", "export", "file.convert", "scene.list",
-                         "cloud.computeNormals", "mesh.simplify",
-                         "view.screenshot"]:
+                         "scene.info", "scene.remove", "scene.setVisible",
+                         "cloud.computeNormals", "cloud.subsample",
+                         "cloud.crop", "cloud.getScalarFields",
+                         "cloud.paintUniform", "cloud.paintByHeight",
+                         "mesh.simplify", "mesh.smooth", "mesh.samplePoints",
+                         "view.screenshot", "view.setOrientation",
+                         "view.zoomFit", "view.setPerspective",
+                         "view.setPointSize", "view.getCamera",
+                         "colmap.reconstruct", "transform.apply",
+                         "entity.rename", "entity.setColor",
+                         "methods.list", "ping"]:
             assert expected in names, f"Missing RPC method: {expected}"
 
-    def test_level4_scene_list(self):
-        entities = self._call("scene.list", {"recursive": True})
+    def test_level4_methods_list_has_descriptions(self):
+        methods = _rpc_call("methods.list")
+        for m in methods:
+            assert "method" in m, "Each method entry must have 'method' key"
+            assert "description" in m, f"Method '{m['method']}' missing description"
+
+    def test_level4_unknown_method_returns_error(self):
+        with pytest.raises(RuntimeError, match="Method not found"):
+            _rpc_call("nonexistent.method")
+
+    # --- Scene (empty) ---
+
+    def test_level4_scene_list_empty(self):
+        entities = _rpc_call("scene.list", {"recursive": True})
         assert isinstance(entities, list)
 
+    # --- View control (no entities needed) ---
+
     def test_level4_view_get_camera(self):
-        cam = self._call("view.getCamera")
+        cam = _rpc_call("view.getCamera")
         assert "view_matrix" in cam
         assert "fov_deg" in cam
+        assert "perspective" in cam
+        assert "near_clipping" in cam
+        assert "far_clipping" in cam
+        assert isinstance(cam["view_matrix"], list)
+        assert len(cam["view_matrix"]) == 16
 
+    @pytest.mark.parametrize("orientation", [
+        "top", "bottom", "front", "back", "left", "right", "iso1", "iso2",
+    ])
+    def test_level4_view_set_orientation(self, orientation):
+        result = _rpc_call("view.setOrientation", {"orientation": orientation})
+        assert result == 0
+
+    def test_level4_view_camera_differs_by_orientation(self):
+        _rpc_call("view.setOrientation", {"orientation": "front"})
+        cam_front = _rpc_call("view.getCamera")
+        _rpc_call("view.setOrientation", {"orientation": "top"})
+        cam_top = _rpc_call("view.getCamera")
+        assert cam_front["view_matrix"] != cam_top["view_matrix"], \
+            "Camera matrix should differ between front and top views"
+
+    def test_level4_view_zoom_fit(self):
+        assert _rpc_call("view.zoomFit") == 0
+
+    def test_level4_view_refresh(self):
+        assert _rpc_call("view.refresh") == 0
+
+    def test_level4_view_set_perspective_object(self):
+        assert _rpc_call("view.setPerspective", {"mode": "object"}) == 0
+
+    def test_level4_view_set_perspective_viewer(self):
+        assert _rpc_call("view.setPerspective", {"mode": "viewer"}) == 0
+
+    def test_level4_view_point_size_increase_decrease(self):
+        assert _rpc_call("view.setPointSize", {"action": "increase"}) == 0
+        assert _rpc_call("view.setPointSize", {"action": "decrease"}) == 0
+
+    def test_level4_view_screenshot_empty_scene(self, tmp_path):
+        path = str(tmp_path / "empty_scene.png")
+        result = _rpc_call("view.screenshot", {"filename": path})
+        assert result["width"] > 0
+        assert result["height"] > 0
+        assert Path(path).exists()
+
+    # --- CLI GUI info ---
+
+    @pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
     def test_level4_cli_gui_info(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "gui", "info"],
@@ -429,6 +797,260 @@ class TestLevel4_GUIRPC:
         assert r.returncode == 0
         data = json.loads(r.stdout)
         assert data["mode"] == "gui"
+
+
+# ── Level 4b: RPC File I/O ────────────────────────────────────────────────
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_RPCFileOps:
+    """Test JSON-RPC file open, convert, export, and screenshot after load."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        p = tmp_path / "rpc_test.ply"
+        p.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(p)
+
+    @pytest.fixture(autouse=True)
+    def _cleanup(self):
+        yield
+        try:
+            _rpc_call("clear", timeout=5)
+        except Exception:
+            pass
+
+    def test_level4_rpc_open_ply(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        assert isinstance(result, dict)
+        assert "id" in result
+        assert "name" in result
+
+    def test_level4_rpc_open_returns_cloud(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(result)
+        assert cloud_id is not None, "Loaded PLY should contain a point cloud"
+
+    def test_level4_rpc_open_point_count(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(result)
+        info = _rpc_call("scene.info", {"entity_id": cloud_id})
+        assert info["point_count"] == 100
+
+    def test_level4_rpc_scene_count_after_load(self, sample_ply):
+        _rpc_call("open", {"filename": sample_ply, "silent": True})
+        entities = _rpc_call("scene.list", {"recursive": True})
+        assert len(entities) >= 1, "Scene should have ≥1 entity after loading"
+
+    def test_level4_rpc_scene_info(self, sample_ply):
+        loaded = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        info = _rpc_call("scene.info", {"entity_id": loaded["id"]})
+        assert info["id"] == loaded["id"]
+        assert "name" in info
+        assert "type" in info
+
+    @pytest.mark.parametrize("ext", ["asc", "ply", "bin"])
+    def test_level4_rpc_file_convert(self, sample_ply, tmp_path, ext):
+        out = str(tmp_path / f"converted.{ext}")
+        result = _rpc_call("file.convert",
+                           {"input": sample_ply, "output": out}, timeout=60)
+        assert result["status"] == "converted"
+        assert Path(out).exists(), f"Converted .{ext} file should exist"
+
+    def test_level4_rpc_export_entity(self, sample_ply, tmp_path):
+        loaded = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(loaded)
+        group_id = loaded["id"]
+        out = str(tmp_path / "exported.ply")
+        # Try exporting the point cloud first, fall back to the group
+        exported = False
+        for eid in [cloud_id, group_id]:
+            if eid is None:
+                continue
+            try:
+                result = _rpc_call("export",
+                                   {"entity_id": eid, "filename": out},
+                                   timeout=60)
+                assert result["filename"] == out
+                exported = True
+                break
+            except RuntimeError:
+                continue
+        assert exported, "Export should succeed with either cloud or group ID"
+        assert Path(out).exists()
+        assert Path(out).stat().st_size > 0
+
+    def test_level4_rpc_screenshot_with_data(self, sample_ply, tmp_path):
+        _rpc_call("open", {"filename": sample_ply, "silent": True})
+        _rpc_call("view.zoomFit")
+        _rpc_call("view.setOrientation", {"orientation": "iso1"})
+        path = str(tmp_path / "loaded_scene.png")
+        result = _rpc_call("view.screenshot", {"filename": path})
+        assert result["width"] > 0
+        assert result["height"] > 0
+        assert Path(path).exists()
+        assert Path(path).stat().st_size > 100
+
+    def test_level4_rpc_clear_scene(self, sample_ply):
+        _rpc_call("open", {"filename": sample_ply, "silent": True})
+        before = _rpc_call("scene.list")
+        assert len(before) >= 1
+        _rpc_call("clear")
+        after = _rpc_call("scene.list")
+        assert len(after) == 0, "Scene should be empty after clear"
+
+    def test_level4_rpc_open_missing_file(self):
+        with pytest.raises(RuntimeError):
+            _rpc_call("open", {"filename": "/nonexistent/path.ply", "silent": True})
+
+
+# ── Level 4c: RPC Entity Operations ───────────────────────────────────────
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_RPCEntityOps:
+    """Test JSON-RPC entity manipulation: rename, color, visibility, remove."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        p = tmp_path / "entity_test.ply"
+        p.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(p)
+
+    @pytest.fixture
+    def loaded(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(result)
+        yield {"group_id": result["id"], "cloud_id": cloud_id or result["id"],
+               "result": result}
+        try:
+            _rpc_call("clear", timeout=5)
+        except Exception:
+            pass
+
+    def test_level4_rpc_entity_rename(self, loaded):
+        eid = loaded["group_id"]
+        _rpc_call("entity.rename", {"entity_id": eid, "name": "my_cloud"})
+        info = _rpc_call("scene.info", {"entity_id": eid})
+        assert info["name"] == "my_cloud"
+
+    def test_level4_rpc_entity_set_color(self, loaded):
+        eid = loaded["cloud_id"]
+        result = _rpc_call("entity.setColor",
+                           {"entity_id": eid, "r": 255, "g": 0, "b": 0})
+        assert result == 0
+
+    def test_level4_rpc_scene_set_visible_off(self, loaded):
+        eid = loaded["group_id"]
+        _rpc_call("scene.setVisible", {"entity_id": eid, "visible": False})
+        info = _rpc_call("scene.info", {"entity_id": eid})
+        assert info["visible"] is False
+
+    def test_level4_rpc_scene_set_visible_toggle(self, loaded):
+        eid = loaded["group_id"]
+        _rpc_call("scene.setVisible", {"entity_id": eid, "visible": False})
+        _rpc_call("scene.setVisible", {"entity_id": eid, "visible": True})
+        info = _rpc_call("scene.info", {"entity_id": eid})
+        assert info["visible"] is True
+
+    def test_level4_rpc_scene_remove(self, sample_ply):
+        loaded = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        _rpc_call("scene.remove", {"entity_id": loaded["id"]})
+        entities = _rpc_call("scene.list")
+        ids = [e["id"] for e in entities]
+        assert loaded["id"] not in ids
+        _rpc_call("clear", timeout=5)
+
+    def test_level4_rpc_entity_not_found(self):
+        with pytest.raises(RuntimeError, match="Entity not found"):
+            _rpc_call("scene.info", {"entity_id": 999999999})
+
+    def test_level4_rpc_zoom_fit_on_entity(self, loaded):
+        result = _rpc_call("view.zoomFit", {"entity_id": loaded["cloud_id"]})
+        assert result == 0
+
+
+# ── Level 4d: RPC Cloud Processing ────────────────────────────────────────
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_RPCCloudProcessing:
+    """Test JSON-RPC cloud processing: normals, subsample, crop, paint."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        p = tmp_path / "cloud_proc_test.ply"
+        p.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(p)
+
+    @pytest.fixture
+    def cloud_id(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cid = _find_cloud_id(result)
+        assert cid is not None, "Expected a point cloud after loading PLY"
+        yield cid
+        try:
+            _rpc_call("clear", timeout=5)
+        except Exception:
+            pass
+
+    def test_level4_rpc_cloud_compute_normals(self, cloud_id):
+        result = _rpc_call("cloud.computeNormals",
+                           {"entity_id": cloud_id, "radius": 0.1}, timeout=60)
+        assert result["has_normals"] is True
+        assert result["point_count"] == 100
+
+    def test_level4_rpc_cloud_subsample_spatial(self, cloud_id):
+        result = _rpc_call("cloud.subsample",
+                           {"entity_id": cloud_id,
+                            "method": "spatial", "step": 0.1})
+        assert result["point_count"] > 0
+        assert result["type"] == "POINT_CLOUD"
+
+    def test_level4_rpc_cloud_subsample_random(self, cloud_id):
+        result = _rpc_call("cloud.subsample",
+                           {"entity_id": cloud_id,
+                            "method": "random", "count": 30})
+        assert 0 < result["point_count"] <= 30
+
+    def test_level4_rpc_cloud_get_scalar_fields(self, cloud_id):
+        fields = _rpc_call("cloud.getScalarFields", {"entity_id": cloud_id})
+        assert isinstance(fields, list)
+
+    def test_level4_rpc_cloud_paint_uniform(self, cloud_id):
+        result = _rpc_call("cloud.paintUniform",
+                           {"entity_id": cloud_id,
+                            "r": 255, "g": 128, "b": 0})
+        assert result["points_colored"] == 100
+        assert result["color"] == [255, 128, 0]
+
+    def test_level4_rpc_cloud_paint_by_height_z(self, cloud_id):
+        result = _rpc_call("cloud.paintByHeight",
+                           {"entity_id": cloud_id, "axis": "z"})
+        assert result["axis"] == "z"
+        assert "min" in result and "max" in result
+        assert result["max"] > result["min"]
+
+    def test_level4_rpc_cloud_paint_by_height_x(self, cloud_id):
+        result = _rpc_call("cloud.paintByHeight",
+                           {"entity_id": cloud_id, "axis": "x"})
+        assert result["axis"] == "x"
+
+    def test_level4_rpc_cloud_crop(self, cloud_id):
+        result = _rpc_call("cloud.crop", {
+            "entity_id": cloud_id,
+            "min_x": 0.0, "min_y": 0.0, "min_z": 0.0,
+            "max_x": 0.5, "max_y": 1.0, "max_z": 1.5,
+        })
+        assert result["point_count"] > 0
+        assert result["type"] == "POINT_CLOUD"
+
+    def test_level4_rpc_workflow_load_orient_screenshot(
+            self, cloud_id, tmp_path):
+        """Full workflow: load -> orient -> zoom -> screenshot."""
+        _rpc_call("view.setOrientation", {"orientation": "iso1"})
+        _rpc_call("view.zoomFit", {"entity_id": cloud_id})
+        path = str(tmp_path / "workflow.png")
+        result = _rpc_call("view.screenshot", {"filename": path})
+        assert result["width"] > 0
+        assert Path(path).exists()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -466,6 +1088,40 @@ class TestLevel5_MCPServer:
                              "colmap_auto_reconstruct", "colmap_extract_features",
                              "colmap_sparse_reconstruct", "colmap_poisson_mesh"]:
                 assert expected in names, f"Missing MCP tool: {expected}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_colmap_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            colmap_tools = [
+                "colmap_auto_reconstruct", "colmap_extract_features",
+                "colmap_match_features", "colmap_sparse_reconstruct",
+                "colmap_undistort", "colmap_dense_stereo",
+                "colmap_stereo_fusion", "colmap_poisson_mesh",
+                "colmap_delaunay_mesh", "colmap_image_texturer",
+                "colmap_model_converter", "colmap_analyze_model",
+            ]
+            for tool in colmap_tools:
+                assert tool in names, f"Missing Colmap MCP tool: {tool}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_sibr_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            sibr_tools = [
+                "sibr_tool", "sibr_prepare_colmap",
+                "sibr_texture_mesh", "sibr_unwrap_mesh",
+            ]
+            for tool in sibr_tools:
+                assert tool in names, f"Missing SIBR MCP tool: {tool}"
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 

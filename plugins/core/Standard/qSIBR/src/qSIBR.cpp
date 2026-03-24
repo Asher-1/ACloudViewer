@@ -45,6 +45,8 @@ void qSIBR::registerCommands(ccCommandLineInterface* cmd) {
     }
     cmd->registerCommand(
             ccCommandLineInterface::Command::Shared(new CommandSIBRTool));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandSIBRViewer));
 }
 
 void qSIBR::onNewSelection(const ccHObject::Container& selectedEntities) {

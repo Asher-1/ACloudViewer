@@ -71,7 +71,7 @@ too.
 using namespace sibr;
 
 #ifdef SIBR_TOOL_EMBEDDED
-int sibr_tool_distordCrop(int argc, const char* const* argv) {
+extern "C" int sibr_tool_distordCrop(int argc, const char* const* argv) {
 #else
 int main(const int argc, const char* const* argv) {
 #endif

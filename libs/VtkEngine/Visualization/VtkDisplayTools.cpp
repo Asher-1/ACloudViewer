@@ -739,6 +739,17 @@ void VtkDisplayTools::toggleOrientationMarker(bool state) {
 }
 
 void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
+    if (context.removeEntityType == ENTITY_TYPE::ECV_ALL) {
+        if (m_visualizer3D) {
+            m_visualizer3D->removeEntities(context);
+            m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        }
+        if (m_visualizer2D) {
+            m_visualizer2D->removeAllLayers();
+        }
+        return;
+    }
+
     if (context.removeEntityType == ENTITY_TYPE::ECV_IMAGE ||
         context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
         context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||

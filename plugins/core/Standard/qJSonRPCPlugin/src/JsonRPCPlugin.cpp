@@ -24,6 +24,8 @@
 #include <QJsonObject>
 #include <QtGui>
 
+#include <cmath>
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -141,46 +143,123 @@ void JsonRPCPlugin::triggered(bool checked) {
 // RPC method dispatch
 // ---------------------------------------------------------------------------
 
+static QString variantToLogString(const QVariant& v, int depth = 0) {
+    if (v.isNull() || !v.isValid())
+        return QStringLiteral("null");
+
+    switch (static_cast<int>(v.type())) {
+        case QVariant::Bool:
+            return v.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+        case QVariant::Int:
+            return QString::number(v.toInt());
+        case QVariant::UInt:
+            return QString::number(v.toUInt());
+        case QVariant::LongLong:
+            return QString::number(v.toLongLong());
+        case QVariant::ULongLong:
+            return QString::number(v.toULongLong());
+        case QVariant::Double: {
+            double d = v.toDouble();
+            if (d == static_cast<long long>(d) &&
+                std::abs(d) < 1e15)
+                return QString::number(static_cast<long long>(d));
+            return QString::number(d, 'g', 10);
+        }
+        case QVariant::String:
+            return QStringLiteral("\"%1\"").arg(v.toString());
+        case QVariant::List: {
+            if (depth > 3) return QStringLiteral("[...]");
+            const QVariantList list = v.toList();
+            if (list.isEmpty()) return QStringLiteral("[]");
+            if (list.size() > 20) {
+                return QStringLiteral("[%1 items]").arg(list.size());
+            }
+            QStringList items;
+            items.reserve(list.size());
+            for (const QVariant& item : list)
+                items << variantToLogString(item, depth + 1);
+            return QStringLiteral("[%1]").arg(items.join(", "));
+        }
+        case QVariant::Map: {
+            if (depth > 3) return QStringLiteral("{...}");
+            const QVariantMap map = v.toMap();
+            if (map.isEmpty()) return QStringLiteral("{}");
+            QStringList items;
+            for (auto it = map.constBegin(); it != map.constEnd(); ++it)
+                items << QStringLiteral("%1: %2")
+                              .arg(it.key(), variantToLogString(it.value(), depth + 1));
+            return QStringLiteral("{%1}").arg(items.join(", "));
+        }
+        case QVariant::StringList: {
+            const QStringList sl = v.toStringList();
+            if (sl.isEmpty()) return QStringLiteral("[]");
+            QStringList quoted;
+            quoted.reserve(sl.size());
+            for (const QString& s : sl)
+                quoted << QStringLiteral("\"%1\"").arg(s);
+            return QStringLiteral("[%1]").arg(quoted.join(", "));
+        }
+        case QVariant::ByteArray:
+            return QStringLiteral("<bytes:%1>").arg(v.toByteArray().size());
+        case QVariant::Char:
+            return QStringLiteral("'%1'").arg(v.toChar());
+        default: {
+            QString s = v.toString();
+            if (!s.isEmpty())
+                return QStringLiteral("\"%1\"").arg(s);
+            return QStringLiteral("<%1>").arg(v.typeName());
+        }
+    }
+}
+
+static QString variantTypeTag(const QVariant& v) {
+    if (v.isNull() || !v.isValid()) return QStringLiteral("null");
+    switch (static_cast<int>(v.type())) {
+        case QVariant::Bool:       return QStringLiteral("bool");
+        case QVariant::Int:        return QStringLiteral("int");
+        case QVariant::UInt:       return QStringLiteral("uint");
+        case QVariant::LongLong:   return QStringLiteral("int64");
+        case QVariant::ULongLong:  return QStringLiteral("uint64");
+        case QVariant::Double: {
+            double d = v.toDouble();
+            if (d == static_cast<long long>(d) &&
+                std::abs(d) < 1e15)
+                return QStringLiteral("int");
+            return QStringLiteral("double");
+        }
+        case QVariant::String:     return QStringLiteral("string");
+        case QVariant::List:       return QStringLiteral("list");
+        case QVariant::Map:        return QStringLiteral("map");
+        case QVariant::StringList: return QStringLiteral("stringlist");
+        case QVariant::ByteArray:  return QStringLiteral("bytes");
+        case QVariant::Char:       return QStringLiteral("char");
+        default:                   return QString::fromLatin1(v.typeName());
+    }
+}
+
 JsonRPCResult JsonRPCPlugin::execute(QString method,
                                      QMap<QString, QVariant> params) {
-    QStringList paramParts;
-    for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
-        const QVariant& v = it.value();
-        QString typeTag;
-        switch (v.type()) {
-            case QVariant::Int:
-                typeTag = "int";
-                break;
-            case QVariant::LongLong:
-                typeTag = "int64";
-                break;
-            case QVariant::Double:
-                typeTag = "double";
-                break;
-            case QVariant::Bool:
-                typeTag = "bool";
-                break;
-            case QVariant::String:
-                typeTag = "string";
-                break;
-            case QVariant::List:
-                typeTag = "list";
-                break;
-            case QVariant::Map:
-                typeTag = "map";
-                break;
-            default:
-                typeTag = v.typeName();
-                break;
+    // --- Log ---
+    if (method == "ping") {
+        CVLog::PrintDebug("[JsonRPC] ping");
+    } else if (params.isEmpty()) {
+        CVLog::Print(QString("[JsonRPC] %1").arg(method));
+    } else {
+        QStringList paramParts;
+        for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
+            paramParts << QStringLiteral("  %1 [%2] = %3")
+                                  .arg(it.key(),
+                                       variantTypeTag(it.value()),
+                                       variantToLogString(it.value()));
         }
-        paramParts << QString("  %1 [%2] = %3")
-                              .arg(it.key(), typeTag, v.toString());
+        CVLog::Print(QString("[JsonRPC] %1 {\n%2\n}")
+                             .arg(method, paramParts.join("\n")));
     }
-    QString paramStr = paramParts.isEmpty()
-                               ? QStringLiteral("(none)")
-                               : QString("{\n%1\n}").arg(paramParts.join("\n"));
-    CVLog::Print(QString("[JsonRPC] execute  method: \"%1\"  params: %2")
-                         .arg(method, paramStr));
+
+    // --- Methods that don't require m_app ---
+    if (method == "ping") return JsonRPCResult::success("pong");
+    if (method == "methods.list") return rpcMethodsList(params);
+
     if (m_app == nullptr) {
         return JsonRPCResult::error(-32603, "Application not ready");
     }
@@ -238,10 +317,6 @@ JsonRPCResult JsonRPCPlugin::execute(QString method,
     // --- Reconstruction (Colmap) ---
     if (method == "colmap.reconstruct") return rpcColmapReconstruct(params);
 
-    // --- Introspection ---
-    if (method == "methods.list") return rpcMethodsList(params);
-    if (method == "ping") return JsonRPCResult::success("pong");
-
     return JsonRPCResult::error(-32601, "Method not found: " + method);
 }
 
@@ -253,16 +328,19 @@ JsonRPCResult JsonRPCPlugin::rpcOpen(const QMap<QString, QVariant>& params) {
     if (filename.isEmpty()) {
         return JsonRPCResult::error(-32602, "Missing 'filename' parameter");
     }
+    if (!QFile::exists(filename)) {
+        return JsonRPCResult::error(-32602, "File not found: " + filename);
+    }
 
     CCVector3d loadCoordinatesShift(0, 0, 0);
     bool loadCoordinatesTransEnabled = false;
 
     FileIOFilter::LoadParameters parameters;
-    parameters.alwaysDisplayLoadDialog = !params.contains("silent");
-    parameters.shiftHandlingMode = ecvGlobalShiftManager::DIALOG_IF_NECESSARY;
+    parameters.alwaysDisplayLoadDialog = false;
+    parameters.shiftHandlingMode = ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT;
     parameters.coordinatesShift = &loadCoordinatesShift;
     parameters.coordinatesShiftEnabled = &loadCoordinatesTransEnabled;
-    parameters.parentWidget = m_app->getActiveWindow();
+    parameters.parentWidget = nullptr;
 
     CC_FILE_ERROR res = CC_FERR_NO_ERROR;
     ccHObject* newGroup = FileIOFilter::LoadFromFile(
@@ -323,8 +401,19 @@ JsonRPCResult JsonRPCPlugin::rpcExport(const QMap<QString, QVariant>& params) {
     saveParams.alwaysDisplaySaveDialog = false;
     saveParams.parentWidget = m_app->getActiveWindow();
 
-    CC_FILE_ERROR err = FileIOFilter::SaveToFile(entity, filename, saveParams,
-                                                 params["filter"].toString());
+    CC_FILE_ERROR err = CC_FERR_UNKNOWN_FILE;
+    QString filterName = params["filter"].toString();
+    if (!filterName.isEmpty()) {
+        err = FileIOFilter::SaveToFile(entity, filename, saveParams,
+                                       filterName);
+    } else {
+        QString ext = QFileInfo(filename).suffix().toLower();
+        auto filter = FileIOFilter::FindBestFilterForExtension(ext);
+        if (filter) {
+            err = FileIOFilter::SaveToFile(entity, filename, saveParams,
+                                           filter);
+        }
+    }
 
     if (err != CC_FERR_NO_ERROR) {
         return JsonRPCResult::error(
@@ -347,6 +436,9 @@ JsonRPCResult JsonRPCPlugin::rpcFileConvert(
         return JsonRPCResult::error(
                 -32602, "Missing 'input' and/or 'output' parameters");
     }
+    if (!QFile::exists(inputFile)) {
+        return JsonRPCResult::error(-32602, "File not found: " + inputFile);
+    }
 
     CCVector3d shift(0, 0, 0);
     bool shiftEnabled = false;
@@ -365,19 +457,39 @@ JsonRPCResult JsonRPCPlugin::rpcFileConvert(
                                                QString::number(loadErr) + ")");
     }
 
+    // If the loader returned a group wrapping a single entity, unwrap it
+    // so that format-specific filters (e.g. AsciiFilter) receive the
+    // actual point cloud / mesh instead of a hierarchy container.
+    ccHObject* toSave = loaded;
+    if (loaded->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+        unsigned nChildren = loaded->getChildrenNumber();
+        if (nChildren == 1) {
+            toSave = loaded->getChild(0);
+        } else if (nChildren > 1) {
+            for (unsigned i = 0; i < nChildren; ++i) {
+                ccHObject* child = loaded->getChild(i);
+                if (child->isKindOf(CV_TYPES::POINT_CLOUD) ||
+                    child->isKindOf(CV_TYPES::MESH)) {
+                    toSave = child;
+                    break;
+                }
+            }
+        }
+    }
+
     FileIOFilter::SaveParameters saveParams;
     saveParams.alwaysDisplaySaveDialog = false;
 
     CC_FILE_ERROR saveErr = CC_FERR_UNKNOWN_FILE;
     QString filterName = params["output_filter"].toString();
     if (!filterName.isEmpty()) {
-        saveErr = FileIOFilter::SaveToFile(loaded, outputFile, saveParams,
+        saveErr = FileIOFilter::SaveToFile(toSave, outputFile, saveParams,
                                            filterName);
     } else {
         QString ext = QFileInfo(outputFile).suffix().toLower();
         auto filter = FileIOFilter::FindBestFilterForExtension(ext);
         if (filter) {
-            saveErr = FileIOFilter::SaveToFile(loaded, outputFile, saveParams,
+            saveErr = FileIOFilter::SaveToFile(toSave, outputFile, saveParams,
                                                filter);
         }
     }
@@ -1108,6 +1220,8 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
     QString quality = params.value("quality", "HIGH").toString();
     QString dataType = params.value("data_type", "INDIVIDUAL").toString();
     QString mesher = params.value("mesher", "POISSON").toString();
+    QString cameraModel = params.value("camera_model", "").toString();
+    bool singleCamera = params.value("single_camera", false).toBool();
     bool useGpu = params.value("use_gpu", true).toBool();
 
     QDir().mkpath(workspace);
@@ -1117,6 +1231,12 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
          << "--workspace_path" << workspace << "--image_path" << imagePath
          << "--quality" << quality << "--data_type" << dataType << "--mesher"
          << mesher;
+    if (!cameraModel.isEmpty()) {
+        args << "--camera_model" << cameraModel;
+    }
+    if (singleCamera) {
+        args << "--single_camera" << "1";
+    }
     if (!useGpu) {
         args << "--use_gpu" << "0";
     }
@@ -1149,9 +1269,55 @@ JsonRPCResult JsonRPCPlugin::rpcColmapReconstruct(
     result["quality"] = quality;
     result["status"] = "completed";
 
-    QString fusedPly = workspace + "/dense/0/fused.ply";
-    if (QFile::exists(fusedPly)) {
-        result["fused_ply"] = fusedPly;
+    QJsonObject outputs;
+    for (int idx = 0; idx < 10; ++idx) {
+        QString denseDir = workspace + "/dense/" + QString::number(idx);
+        if (!QDir(denseDir).exists()) break;
+
+        QString fusedPly = denseDir + "/fused.ply";
+        if (QFile::exists(fusedPly)) {
+            QJsonArray arr = outputs.value("fused_ply").toArray();
+            arr.append(fusedPly);
+            outputs["fused_ply"] = arr;
+        }
+        for (const QString& meshName :
+             {"meshed-poisson.ply", "meshed-delaunay.ply"}) {
+            QString meshPath = denseDir + "/" + meshName;
+            if (QFile::exists(meshPath)) {
+                QJsonArray arr = outputs.value("mesh").toArray();
+                arr.append(meshPath);
+                outputs["mesh"] = arr;
+            }
+        }
+        QString texturedObj = denseDir + "/textured.obj";
+        if (QFile::exists(texturedObj)) {
+            QJsonArray arr = outputs.value("textured_mesh").toArray();
+            arr.append(texturedObj);
+            outputs["textured_mesh"] = arr;
+        }
+    }
+    result["outputs"] = outputs;
+
+    bool importResults = params.value("import_results", true).toBool();
+    if (importResults && m_app) {
+        QJsonArray imported;
+        auto tryImport = [&](const QString& key) {
+            QJsonArray paths = outputs.value(key).toArray();
+            for (const QJsonValue& v : paths) {
+                QString path = v.toString();
+                if (!QFile::exists(path)) continue;
+                QMap<QString, QVariant> openParams;
+                openParams["filename"] = path;
+                openParams["silent"] = true;
+                auto openResult = rpcOpen(openParams);
+                if (!openResult.isError)
+                    imported.append(path);
+            }
+        };
+        tryImport("textured_mesh");
+        tryImport("mesh");
+        tryImport("fused_ply");
+        result["imported"] = imported;
     }
 
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
@@ -1208,8 +1374,8 @@ JsonRPCResult JsonRPCPlugin::rpcMethodsList(const QMap<QString, QVariant>&) {
     add("transform.apply", "Apply 4x4 matrix: {entity_id, matrix[16]}");
     add("colmap.reconstruct",
         "Run Colmap automatic_reconstructor: {image_path, workspace_path, "
-        "?quality, ?data_type, ?mesher, ?use_gpu, ?colmap_binary, "
-        "?timeout_ms}");
+        "?quality, ?data_type, ?mesher, ?camera_model, ?single_camera, "
+        "?use_gpu, ?import_results, ?colmap_binary, ?timeout_ms}");
     add("methods.list", "List available RPC methods");
     return JsonRPCResult::success(QJsonDocument(methods).toVariant());
 }

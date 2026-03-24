@@ -74,7 +74,7 @@ bool AutoReadEntity(const std::string& filename,
 
     FileIOFilter::LoadParameters parameters;
     {
-        parameters.alwaysDisplayLoadDialog = params.print_progress;
+        parameters.alwaysDisplayLoadDialog = false;
         parameters.shiftHandlingMode = ecvGlobalShiftManager::NO_DIALOG;
         parameters.coordinatesShift = &loadCoordinatesShift;
         parameters.coordinatesShiftEnabled = &loadCoordinatesTransEnabled;
@@ -240,7 +240,7 @@ bool AutoWriteEntity(const std::string& filename,
                      const WritePointCloudOption& params) {
     FileIOFilter::SaveParameters parameters;
     {
-        parameters.alwaysDisplaySaveDialog = params.print_progress;
+        parameters.alwaysDisplaySaveDialog = false;
         parameters.parentWidget = nullptr;
     }
 

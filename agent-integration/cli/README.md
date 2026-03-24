@@ -71,6 +71,42 @@ cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
 cli-anything-acloudviewer process icp source.ply target.ply --threshold 0.02
 ```
 
+### Format Conversion
+
+```bash
+cli-anything-acloudviewer convert input.ply output.pcd
+cli-anything-acloudviewer convert input.pcd output.drc
+cli-anything-acloudviewer convert mesh.obj mesh.stl
+cli-anything-acloudviewer batch-convert ./input_dir/ ./output_dir/ -f .pcd
+cli-anything-acloudviewer batch-convert ./models/ ./converted/ -f .stl --filter-ext .obj .fbx
+cli-anything-acloudviewer formats                    # list supported formats
+```
+
+### 3D Reconstruction (Colmap)
+
+```bash
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./workspace/ --quality HIGH
+cli-anything-acloudviewer reconstruct auto ./images/ -w ./ws/ --camera-model PINHOLE
+cli-anything-acloudviewer reconstruct extract-features ./images/ -w ./workspace/
+cli-anything-acloudviewer reconstruct match ./workspace/
+cli-anything-acloudviewer reconstruct sparse ./workspace/
+cli-anything-acloudviewer reconstruct undistort ./workspace/
+cli-anything-acloudviewer reconstruct dense-stereo ./workspace/
+cli-anything-acloudviewer reconstruct fuse ./workspace/
+cli-anything-acloudviewer reconstruct poisson ./workspace/
+cli-anything-acloudviewer reconstruct texture-mesh ./workspace/
+```
+
+Supported camera models: `SIMPLE_PINHOLE`, `PINHOLE`, `SIMPLE_RADIAL`, `RADIAL`, `OPENCV`, `OPENCV_FISHEYE`, `FULL_OPENCV`, `SIMPLE_RADIAL_FISHEYE`, `RADIAL_FISHEYE`, `THIN_PRISM_FISHEYE`
+
+### SIBR (Image-Based Rendering)
+
+```bash
+cli-anything-acloudviewer sibr prepare-colmap ./dataset/
+cli-anything-acloudviewer sibr texture-mesh ./dataset/
+cli-anything-acloudviewer sibr unwrap-mesh ./dataset/
+```
+
 ### Session Management
 
 ```bash
