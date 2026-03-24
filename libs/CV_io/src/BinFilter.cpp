@@ -393,19 +393,22 @@ static bool ContinueAfterError(bool& forceLoadAfterError,
                     "[BIN] File reading error encountered in headless mode. "
                     "Attempting to load partial data.");
             forceLoadAfterError = true;
-        } else if (QMessageBox::Yes ==
-            QMessageBox::critical(
-                    nullptr, QObject::tr("Reading error"),
-                    couldBeAMemoryIssue
-                            ? QObject::tr("The file couldn't be completely "
+        } else if (
+                QMessageBox::Yes ==
+                QMessageBox::critical(
+                        nullptr, QObject::tr("Reading error"),
+                        couldBeAMemoryIssue
+                                ? QObject::tr(
+                                          "The file couldn't be completely "
                                           "loaded, but some entities were "
                                           "loaded.\nDo you want to take the "
                                           "risk to load them? (CC could crash)")
-                            : QObject::tr("The file seems corrupted, but some "
+                                : QObject::tr(
+                                          "The file seems corrupted, but some "
                                           "entities were loaded.\nDo you want "
                                           "to take the risk to load them? (CC "
                                           "could crash)"),
-                    QMessageBox::Yes, QMessageBox::No)) {
+                        QMessageBox::Yes, QMessageBox::No)) {
             forceLoadAfterError = true;
         }
     }
@@ -1140,9 +1143,8 @@ CC_FILE_ERROR BinFilter::LoadFileV1(QFile& in,
                                       QMessageBox::No) == QMessageBox::No)
                 return CC_FERR_WRONG_FILE_TYPE;
         } else {
-            CVLog::Warning(
-                    "[BIN] Loading %u point clouds in headless mode.",
-                    nbScansTotal);
+            CVLog::Warning("[BIN] Loading %u point clouds in headless mode.",
+                           nbScansTotal);
         }
     } else if (nbScansTotal == 0) {
         return CC_FERR_NO_LOAD;

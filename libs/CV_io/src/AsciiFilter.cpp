@@ -215,8 +215,9 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity,
     // non static parameters
     int normalPrecision = 2 + sizeof(PointCoordinateType);
     static const unsigned char s_separators[] = {' ', ';', ',', '\t'};
-    int sepIdx = std::max(0, std::min(s_outputSeparatorIndex,
-                                      static_cast<int>(sizeof(s_separators) - 1)));
+    int sepIdx =
+            std::max(0, std::min(s_outputSeparatorIndex,
+                                 static_cast<int>(sizeof(s_separators) - 1)));
     QChar separator(s_separators[sepIdx]);
     bool saveFloatColors = false;
     bool saveAlphaChannel = false;

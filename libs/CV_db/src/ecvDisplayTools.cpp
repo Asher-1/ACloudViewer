@@ -242,9 +242,7 @@ ecvDisplayTools* ecvDisplayTools::TheInstance() {
     return s_tools.instance;
 }
 
-bool ecvDisplayTools::HasInstance() {
-    return s_tools.instance != nullptr;
-}
+bool ecvDisplayTools::HasInstance() { return s_tools.instance != nullptr; }
 
 void ecvDisplayTools::ReleaseInstance() {
     if (s_tools.instance) {
