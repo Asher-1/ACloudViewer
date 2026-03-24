@@ -305,19 +305,53 @@ class TestLevel1_CppPlugin:
     def test_level1_plugin_builds(self):
         if not (BUILD_DIR / "CMakeCache.txt").exists():
             pytest.skip("No build directory")
+        
+        # Check if plugin already exists and is built
+        if IS_WINDOWS:
+            plugin_paths = [
+                BUILD_DIR / "bin/Release/plugins/QJSON_RPC_PLUGIN.dll",
+                BUILD_DIR / "bin/Debug/plugins/QJSON_RPC_PLUGIN.dll",
+                BUILD_DIR / "plugins/core/Standard/qJSonRPCPlugin/Release/QJSON_RPC_PLUGIN.dll",
+            ]
+        elif IS_MACOS:
+            plugin_paths = [
+                BUILD_DIR / "bin/plugins/QJSON_RPC_PLUGIN.dylib",
+            ]
+        else:
+            plugin_paths = [
+                BUILD_DIR / "bin/plugins/QJSON_RPC_PLUGIN.so",
+            ]
+        
+        # If plugin exists, do a quick build check (should be fast if up-to-date)
+        plugin_exists = any(p.exists() for p in plugin_paths)
+        timeout = 180 if plugin_exists else 900  # 3 min if exists, 15 min for full build
+        
         cmd = ["cmake", "--build", str(BUILD_DIR), "--target", "QJSON_RPC_PLUGIN"]
         if not IS_WINDOWS:
             cmd += ["--", "-j4"]
         else:
             cmd += ["--", "/m"]
+        
         # Avoid text=True on Windows: MSBuild may emit bytes that are not valid
         # in the process ANSI code page (e.g. GBK), which breaks subprocess's decoder.
-        result = subprocess.run(cmd, capture_output=True, timeout=300)
-        stderr = (result.stderr or b"").decode(errors="replace")
-        stdout = (result.stdout or b"").decode(errors="replace")
-        assert result.returncode == 0, (
-            f"Build failed:\n{stderr[-2000:]}\n{stdout[-2000:]}"
-        )
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=timeout)
+            stderr = (result.stderr or b"").decode(errors="replace")
+            stdout = (result.stdout or b"").decode(errors="replace")
+            assert result.returncode == 0, (
+                f"Build failed (returncode={result.returncode}):\n"
+                f"Last 2000 chars of stderr:\n{stderr[-2000:]}\n"
+                f"Last 2000 chars of stdout:\n{stdout[-2000:]}"
+            )
+        except subprocess.TimeoutExpired as e:
+            # Provide helpful context about what might have caused the timeout
+            pytest.fail(
+                f"Build timed out after {timeout}s. "
+                f"Plugin {'existed' if plugin_exists else 'did not exist'} before build. "
+                f"This might indicate: (1) slow dependencies compilation, "
+                f"(2) hanging build process, or (3) insufficient timeout. "
+                f"Try running manually: cmake --build {BUILD_DIR} --target QJSON_RPC_PLUGIN"
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

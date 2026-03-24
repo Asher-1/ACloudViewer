@@ -32,6 +32,9 @@
 #include <QtConcurrentMap>
 #include <QtCore>
 #endif
+// QCoreApplication and QEventLoop are needed for processEvents in all builds
+#include <QCoreApplication>
+#include <QEventLoop>
 #endif
 
 namespace cloudViewer {

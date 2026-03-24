@@ -2,6 +2,8 @@
 
 ## Quick Start
 
+> **Windows users:** If CLI tests hang, see [../docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md#windows-cli-anything-acloudviewer-convert-hangs--freezes).
+
 ```bash
 # Run all tests (auto-skips levels where deps are missing)
 # Works on Linux, macOS, and Windows — the primary test entry point
