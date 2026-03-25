@@ -629,15 +629,19 @@ class TestLevel3_CLIHarness:
 class TestLevel3_FormatConversion:
     """Test file format conversions via ACloudViewer binary."""
 
-    @pytest.fixture
-    def sample_ply(self, tmp_path):
-        ply_path = tmp_path / "test.ply"
-        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
-        return str(ply_path)
-
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def acv_env(self):
         return _build_env_for_binary(BINARY_PATH)
+
+    @pytest.fixture(scope="class")
+    def shared_dir(self, tmp_path_factory):
+        return tmp_path_factory.mktemp("bin_convert")
+
+    @pytest.fixture(scope="class")
+    def sample_ply(self, shared_dir):
+        ply_path = shared_dir / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
 
     def _convert_file(self, input_path, output_path, fmt, acv_env):
         r = subprocess.run(
@@ -647,45 +651,68 @@ class TestLevel3_FormatConversion:
             capture_output=True, text=True, timeout=120, env=acv_env)
         return r
 
-    def test_level3_ply_to_pcd(self, sample_ply, acv_env, tmp_path):
-        out = str(tmp_path / "out.pcd")
-        r = self._convert_file(sample_ply, out, "PCD", acv_env)
+    @pytest.fixture(scope="class")
+    def converted_pcd(self, sample_ply, shared_dir, acv_env):
+        """PLY->PCD conversion shared across tests that need a PCD input."""
+        out = str(shared_dir / "converted.pcd")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-C_EXPORT_FMT", "PCD", "-SAVE_CLOUDS", "FILE", out],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        return out, r
+
+    @pytest.fixture(scope="class")
+    def converted_drc(self, converted_pcd, shared_dir, acv_env):
+        """PCD->DRC conversion shared across tests that need a DRC input."""
+        pcd, _ = converted_pcd
+        if not Path(pcd).exists():
+            return None, None
+        out = str(shared_dir / "converted.drc")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", pcd,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-C_EXPORT_FMT", "DRC", "-SAVE_CLOUDS", "FILE", out],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        return out, r
+
+    def test_level3_ply_to_pcd(self, converted_pcd):
+        out, r = converted_pcd
         assert r.returncode == 0, \
             f"PLY->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
         assert Path(out).exists(), "PLY->PCD output file not found"
 
-    def test_level3_pcd_to_ply(self, sample_ply, acv_env, tmp_path):
-        pcd = str(tmp_path / "intermediate.pcd")
-        self._convert_file(sample_ply, pcd, "PCD", acv_env)
+    def test_level3_pcd_to_ply(self, converted_pcd, shared_dir, acv_env):
+        pcd, pcd_r = converted_pcd
         if not Path(pcd).exists():
-            pytest.skip("PLY->PCD prerequisite failed")
-        out = str(tmp_path / "roundtrip.ply")
+            pytest.skip(
+                f"PLY->PCD prerequisite failed (rc={pcd_r.returncode}):\n"
+                f"{(pcd_r.stdout + pcd_r.stderr)[-1000:]}"
+            )
+        out = str(shared_dir / "roundtrip.ply")
         r = self._convert_file(pcd, out, "PLY", acv_env)
         assert r.returncode == 0, \
             f"PCD->PLY failed:\n{(r.stdout + r.stderr)[-2000:]}"
         assert Path(out).exists(), "PCD->PLY output file not found"
 
-    def test_level3_pcd_to_drc(self, sample_ply, acv_env, tmp_path):
-        pcd = str(tmp_path / "intermediate.pcd")
-        self._convert_file(sample_ply, pcd, "PCD", acv_env)
-        if not Path(pcd).exists():
+    def test_level3_pcd_to_drc(self, converted_drc):
+        if converted_drc[0] is None:
             pytest.skip("PLY->PCD prerequisite failed")
-        out = str(tmp_path / "compressed.drc")
-        r = self._convert_file(pcd, out, "DRC", acv_env)
+        out, r = converted_drc
         assert r.returncode == 0, \
             f"PCD->DRC failed:\n{(r.stdout + r.stderr)[-2000:]}"
         assert Path(out).exists(), "PCD->DRC output file not found"
 
-    def test_level3_drc_to_pcd(self, sample_ply, acv_env, tmp_path):
-        pcd = str(tmp_path / "step1.pcd")
-        self._convert_file(sample_ply, pcd, "PCD", acv_env)
-        if not Path(pcd).exists():
+    def test_level3_drc_to_pcd(self, converted_drc, shared_dir, acv_env):
+        if converted_drc[0] is None:
             pytest.skip("PLY->PCD prerequisite failed")
-        drc = str(tmp_path / "step2.drc")
-        self._convert_file(pcd, drc, "DRC", acv_env)
+        drc, drc_r = converted_drc
         if not Path(drc).exists():
-            pytest.skip("PCD->DRC prerequisite failed")
-        out = str(tmp_path / "roundtrip.pcd")
+            pytest.skip(
+                f"PCD->DRC prerequisite failed (rc={drc_r.returncode}):\n"
+                f"{(drc_r.stdout + drc_r.stderr)[-1000:]}"
+            )
+        out = str(shared_dir / "roundtrip.pcd")
         r = self._convert_file(drc, out, "PCD", acv_env)
         assert r.returncode == 0, \
             f"DRC->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
@@ -705,40 +732,48 @@ class TestLevel3_FormatConversion:
 class TestLevel3_CLIFormatConversion:
     """Test format conversion via the CLI harness."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def cli_env(self):
         env = _build_env_for_binary(BINARY_PATH)
         env["ACV_BINARY"] = BINARY_PATH
         return env
 
-    @pytest.fixture
-    def sample_ply(self, tmp_path):
-        ply_path = tmp_path / "test.ply"
+    @pytest.fixture(scope="class")
+    def shared_dir(self, tmp_path_factory):
+        return tmp_path_factory.mktemp("cli_convert")
+
+    @pytest.fixture(scope="class")
+    def sample_ply(self, shared_dir):
+        ply_path = shared_dir / "test.ply"
         ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(ply_path)
 
-    def test_level3_cli_ply_to_pcd(self, sample_ply, tmp_path, cli_env):
-        out = str(tmp_path / "output.pcd")
+    @pytest.fixture(scope="class")
+    def converted_pcd(self, sample_ply, shared_dir, cli_env):
+        """PLY->PCD conversion shared across tests that need a PCD input."""
+        out = str(shared_dir / "converted.pcd")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "convert", sample_ply, out],
             capture_output=True, text=True, timeout=120, env=cli_env)
+        return out, r
+
+    def test_level3_cli_ply_to_pcd(self, converted_pcd):
+        out, r = converted_pcd
         assert r.returncode == 0, \
             f"CLI PLY->PCD failed:\n{r.stdout}\n{r.stderr}"
-        if r.stdout.strip():
-            data = json.loads(r.stdout)
-            if data.get("status") == "converted":
-                assert Path(out).exists()
+        assert Path(out).exists(), \
+            f"CLI PLY->PCD returned 0 but output file missing.\n" \
+            f"stdout: {r.stdout}\nstderr: {r.stderr}"
 
-    def test_level3_cli_pcd_to_drc(self, sample_ply, tmp_path, cli_env):
-        pcd = str(tmp_path / "intermediate.pcd")
-        subprocess.run(
-            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "convert", sample_ply, pcd],
-            capture_output=True, text=True, timeout=120, env=cli_env)
+    def test_level3_cli_pcd_to_drc(self, converted_pcd, shared_dir, cli_env):
+        pcd, pcd_r = converted_pcd
         if not Path(pcd).exists():
-            pytest.skip("PLY->PCD prerequisite failed")
-        out = str(tmp_path / "output.drc")
+            pytest.skip(
+                f"PLY->PCD prerequisite failed (rc={pcd_r.returncode}):\n"
+                f"stdout: {pcd_r.stdout}\nstderr: {pcd_r.stderr}"
+            )
+        out = str(shared_dir / "output.drc")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "convert", pcd, out],
@@ -746,13 +781,13 @@ class TestLevel3_CLIFormatConversion:
         assert r.returncode == 0, \
             f"CLI PCD->DRC failed:\n{r.stdout}\n{r.stderr}"
 
-    def test_level3_cli_batch_convert_pcd(self, sample_ply, tmp_path, cli_env):
-        src_dir = tmp_path / "input_batch"
-        src_dir.mkdir()
+    def test_level3_cli_batch_convert_pcd(self, sample_ply, shared_dir, cli_env):
+        src_dir = shared_dir / "input_batch"
+        src_dir.mkdir(exist_ok=True)
         for i in range(3):
             (src_dir / f"cloud_{i}.ply").write_text(
                 _SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
-        out_dir = str(tmp_path / "output_batch")
+        out_dir = str(shared_dir / "output_batch")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "batch-convert", str(src_dir), out_dir, "--format", "pcd"],

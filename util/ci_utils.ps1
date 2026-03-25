@@ -313,12 +313,25 @@ function Build-GuiApp {
     Write-Host ""
     Write-Host "Running cmake $($cmakeGuiOptions -join ' ') .."
     & cmake -G $env:GENERATOR -A $env:ARCHITECTURE $cmakeGuiOptions ..
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "cmake configure failed with exit code $LASTEXITCODE"
+    }
 
     Write-Host ""
     Write-Host "Build & install ACloudViewer..."
     
     & cmake --build . --config Release --verbose --parallel $env:NPROC
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "cmake --build failed with exit code $LASTEXITCODE"
+    }
+
     & cmake --install . --config Release --verbose
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "cmake --install failed with exit code $LASTEXITCODE"
+    }
 
     Write-Host ""
     Pop-Location
@@ -449,9 +462,17 @@ function Build-PipPackage {
 
     Write-Host "Executing cmake command..."
     cmake -G $env:GENERATOR -A $env:ARCHITECTURE -DBUILD_CUDA_MODULE=OFF $cmakeOptions ..
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "cmake configure (CPU) failed with exit code $LASTEXITCODE"
+    }
 
     Write-Host "`nPackaging CloudViewer CPU pip package..."
     cmake --build . --target pip-package --config Release --parallel $env:NPROC
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "cmake --build (CPU pip-package) failed with exit code $LASTEXITCODE"
+    }
     Write-Host "Finish make pip-package for cpu"
 
     Write-Host "Backup lib/python_package/pip_package/cloudviewer*.whl to build path"
@@ -481,9 +502,17 @@ function Build-PipPackage {
         cmake   -DBUILD_CUDA_MODULE=ON `
                 -DBUILD_COMMON_CUDA_ARCHS=ON `
                 $cmakeOptions ..
+        if ($LASTEXITCODE -ne 0) {
+            Pop-Location
+            throw "cmake configure (CUDA) failed with exit code $LASTEXITCODE"
+        }
 
         Write-Host "`ncmake --build with cuda..."
         cmake --build . --target pip-package --config Release --parallel $env:NPROC
+        if ($LASTEXITCODE -ne 0) {
+            Pop-Location
+            throw "cmake --build (CUDA pip-package) failed with exit code $LASTEXITCODE"
+        }
         Write-Host "Finish cmake --build with cuda"
     }
 
