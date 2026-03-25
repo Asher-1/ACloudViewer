@@ -179,6 +179,7 @@ jobs:
   agent-integration:
     name: Agent Integration (${{ matrix.CI_CONFIG }})
     runs-on: ${{ matrix.RUNNER }}
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     needs: [build-and-run-docker]
     strategy:
       fail-fast: false
@@ -212,10 +213,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libgl1-mesa-dev libfontconfig1 \
-            libxcb-xinerama0 libxcb-icccm4 libxcb-image0 \
-            libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 \
-            libxkbcommon-x11-0
+            libgl1-mesa-dev libfontconfig1 libfreetype6 \
+            libxcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-shm0 \
+            libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
+            libxcb-xkb1 libxcb-xinput0 \
+            libxkbcommon0 libxkbcommon-x11-0 \
+            libx11-xcb1
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
@@ -240,7 +245,7 @@ jobs:
 
       - name: Install agent harness
         run: |
-          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
       - name: Level 3 — Headless processing tests
         run: |

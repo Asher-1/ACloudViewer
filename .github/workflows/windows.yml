@@ -50,7 +50,7 @@ jobs:
     runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python_version: ['3.12']
         BUILD_SHARED_LIBS: [ON, OFF]
@@ -237,9 +237,15 @@ jobs:
         run: Get-PSDrive
 
   agent-integration:
-    name: Agent Integration (Level 3)
+    name: Agent Integration (Level 3) ${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'CUDA' || 'CPU' }}
     runs-on: windows-2022
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     needs: [windows]
+
+    strategy:
+      fail-fast: true
+      matrix:
+        BUILD_CUDA_MODULE: [ON, OFF]
 
     steps:
       - name: Checkout ACloudViewer
@@ -258,67 +264,57 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Download all ACloudViewer installers
+      - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
         with:
-          pattern: ACloudViewer-*.exe
+          pattern: ACloudViewer-*-${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'cuda' || 'cpu' }}-*.exe
           path: ${{ runner.temp }}/acv-installer/
           merge-multiple: true
 
       - name: Install agent harness
         run: |
-          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
-      - name: Test each ACloudViewer installer
+      - name: Test ACloudViewer installer
         env:
           QT_QPA_PLATFORM: minimal
         run: |
           $ErrorActionPreference = 'Continue'
-          $installers = Get-ChildItem "${{ runner.temp }}\acv-installer\" -Filter "*.exe" -Recurse
-          if ($installers.Count -eq 0) {
-            Write-Error "No .exe installers found"
+          $installer = Get-ChildItem "${{ runner.temp }}\acv-installer\" -Filter "*.exe" -Recurse | Select-Object -First 1
+          if (-not $installer) {
+            Write-Error "No .exe installer found for ${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'CUDA' || 'CPU' }} variant"
             exit 1
           }
-          $failed = 0
-          $total = $installers.Count
-          $idx = 0
-          foreach ($installer in $installers) {
-            $idx++
-            $installDir = Join-Path $env:USERPROFILE "ACloudViewer-Test-$idx"
-            Write-Host "::group::[$idx/$total] Testing $($installer.Name)"
-            Write-Host "Install dir: $installDir"
 
-            & $installer.FullName --root $installDir `
-              --accept-licenses --accept-messages --confirm-command install
-            if ($LASTEXITCODE -ne 0) {
-              Write-Error "Installation failed for $($installer.Name)"
-              $failed++
-              Write-Host "::endgroup::"
-              continue
-            }
+          $installDir = Join-Path $env:USERPROFILE "ACloudViewer-Test"
+          Write-Host "Testing $($installer.Name)"
+          Write-Host "Install dir: $installDir"
 
-            $env:PATH = "$installDir;$env:PATH"
-            $batFile = Join-Path $installDir "ACloudViewer.bat"
-            $exeFile = Join-Path $installDir "ACloudViewer.exe"
-            if (Test-Path $batFile) {
-              $env:ACV_BINARY = $batFile
-            } else {
-              $env:ACV_BINARY = $exeFile
-            }
-
-            python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
-            if ($LASTEXITCODE -ne 0) { $failed++ }
-
-            if (Test-Path (Join-Path $installDir "maintenancetool.exe")) {
-              & (Join-Path $installDir "maintenancetool.exe") purge `
-                --accept-licenses --accept-messages --confirm-command 2>&1 | Out-Null
-            } else {
-              Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
-            }
-            Write-Host "::endgroup::"
+          & $installer.FullName --root $installDir `
+            --accept-licenses --accept-messages --confirm-command install
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Installation failed for $($installer.Name)"
+            exit 1
           }
-          Write-Host "Tested $total installer(s), $failed failure(s)"
-          if ($failed -gt 0) { exit 1 }
+
+          $env:PATH = "$installDir;$env:PATH"
+          $batFile = Join-Path $installDir "ACloudViewer.bat"
+          $exeFile = Join-Path $installDir "ACloudViewer.exe"
+          if (Test-Path $batFile) {
+            $env:ACV_BINARY = $batFile
+          } else {
+            $env:ACV_BINARY = $exeFile
+          }
+
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          if (Test-Path (Join-Path $installDir "maintenancetool.exe")) {
+            & (Join-Path $installDir "maintenancetool.exe") purge `
+              --accept-licenses --accept-messages --confirm-command 2>&1 | Out-Null
+          } else {
+            Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
+          }
 
   build-wheel:
     name: Build wheel
@@ -328,7 +324,7 @@ jobs:
     runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
-      fail-fast: false
+      fail-fast: true
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         BUILD_CUDA_MODULE: [ON, OFF]

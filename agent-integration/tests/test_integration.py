@@ -496,13 +496,13 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     """Lightweight env setup for invoking the binary directly (no harness)."""
     env = os.environ.copy()
     
-    # Qt platform plugin selection for headless operation
-    # On Linux/Windows: use offscreen plugin
-    # On macOS: As of the latest update, main.cpp automatically detects -SILENT
-    #           mode and sets QT_QPA_PLATFORM=minimal for headless operation.
-    #           We only set it here if not already set for non-macOS platforms.
+    # On Linux/Windows: force offscreen Qt platform for headless CI.
+    # On macOS: leave unset; main.cpp probes for offscreen/minimal plugins
+    # and falls back to cocoa (always available on macOS runners).
     if not IS_MACOS:
         env["QT_QPA_PLATFORM"] = "offscreen"
+    else:
+        env.pop("QT_QPA_PLATFORM", None)
     
     if binary_path.endswith((".sh", ".bat")):
         return env

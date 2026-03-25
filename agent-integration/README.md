@@ -54,13 +54,19 @@ pip install -e ".[mcp,dev]"
 # Interactive REPL
 cli-anything-acloudviewer
 
-# One-shot commands
+# One-shot commands (GUI needed)
 cli-anything-acloudviewer open /path/to/scene.ply
 cli-anything-acloudviewer --json scene list
-cli-anything-acloudviewer process subsample input.ply -o output.ply --voxel-size 0.05
+cli-anything-acloudviewer view screenshot ./screenshot.png
+
+# SIBR Viewers (GUI needed)
+ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
+ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
+ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
 
 # Force headless (no GUI needed)
 cli-anything-acloudviewer --mode headless process icp source.ply target.ply
+cli-anything-acloudviewer process subsample input.ply -o output.ply --voxel-size 0.05
 
 # Format conversion (positional: INPUT_FILE OUTPUT_FILE)
 cli-anything-acloudviewer convert input.ply output.obj
@@ -86,10 +92,6 @@ cli-anything-acloudviewer reconstruct poisson ./workspace/
 cli-anything-acloudviewer sibr prepare-colmap ./workspace/
 cli-anything-acloudviewer sibr texture-mesh ./workspace/
 
-# SIBR Viewers (via ACloudViewer binary directly)
-# ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
-# ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
-# ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
 ```
 
 ### 4. Use as an MCP Server (OpenClaw / Cursor / Claude Code)

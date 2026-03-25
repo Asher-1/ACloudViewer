@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Minimal WebSocket JSON-RPC client for ACloudViewer.
 
+Connects to the JSON-RPC plugin running inside ACloudViewer GUI and
+demonstrates: ping, method listing, file loading, scene querying,
+and build-info introspection (CPU vs CUDA).
+
 Usage:
-    python websocket_client.py                      # ping
-    python websocket_client.py /path/to/scene.ply   # load and list
+    python websocket_client.py                      # ping + list methods
+    python websocket_client.py /path/to/scene.ply   # load and list scene
 """
 
 import json
@@ -54,6 +58,12 @@ def main():
             entities = call(ws, "scene.list", {"recursive": True})
             print(f"\nScene entities ({len(entities)}):")
             print(json.dumps(entities, indent=2))
+
+            # Show details of first entity
+            if entities:
+                info = call(ws, "scene.info", {"entity_id": entities[0]["id"]})
+                print(f"\nEntity info:")
+                print(json.dumps(info, indent=2))
 
 
 if __name__ == "__main__":

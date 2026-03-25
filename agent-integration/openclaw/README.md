@@ -13,7 +13,7 @@ Search for "acloudviewer" in the ClawHub marketplace and toggle it on.
 1. Install the CLI package:
 
 ```bash
-pip install 'cli-anything-acloudviewer[mcp]'
+pip install 'cli-anything-acloudviewer'
 ```
 
 2. Add to your `openclaw.json`:

@@ -112,4 +112,4 @@ python -m pytest cli_anything/acloudviewer/tests/ -v
 | Connection refused on port 6001 | Enable the JsonRPC plugin in ACloudViewer |
 | "cloudViewer not installed" | Ensure ACloudViewer binary is on PATH or set ACV_BINARY env var |
 | Screenshot is black | Ensure the viewport has loaded geometry first |
-| MCP tools not showing | Check `pip install 'cli-anything-acloudviewer[mcp]'` |
+| MCP tools not showing | Check `pip install 'cli-anything-acloudviewer'` |
