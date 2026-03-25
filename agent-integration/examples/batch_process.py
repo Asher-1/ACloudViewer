@@ -2,6 +2,7 @@
 """Headless batch processing example using the cloudViewer Python API.
 
 Demonstrates: load -> subsample -> compute normals -> ICP -> export
+Works with both CPU and CUDA builds (auto-detected at import time).
 
 Usage:
     python batch_process.py source.ply target.ply output_dir/
@@ -11,9 +12,25 @@ import sys
 from pathlib import Path
 
 
+def print_build_info():
+    """Print cloudViewer build configuration summary."""
+    import cloudViewer as cv
+
+    print(f"cloudViewer version : {cv.__version__}")
+    print(f"Device API          : {cv.__DEVICE_API__}")
+    print(f"CUDA module built   : {cv._build_config.get('BUILD_CUDA_MODULE', False)}")
+    if cv._build_config.get("BUILD_CUDA_MODULE"):
+        cuda_count = cv.core.cuda.device_count()
+        print(f"CUDA device count   : {cuda_count}")
+        if cuda_count > 0 and cv.__DEVICE_API__ == "cuda":
+            device = cv.core.Device("CUDA:0")
+            print(f"Active CUDA device  : {device}")
+    print()
+
+
 def main():
     if len(sys.argv) < 4:
-        print("Usage: batch_process.py <source.ply> <target.ply> <output_dir/>")
+        print("Usage: batch_process.py <source path> <target path> <output directory>")
         sys.exit(1)
 
     source_path, target_path, output_dir = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -25,7 +42,7 @@ def main():
         print("cloudViewer not installed. Install with: pip install cloudViewer")
         sys.exit(1)
 
-    print(f"cloudViewer version: {cv.__version__}")
+    print_build_info()
 
     # Load point clouds
     print(f"Loading source: {source_path}")

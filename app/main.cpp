@@ -544,19 +544,31 @@ int main(int argc, char* argv[]) {
 
     bool commandLine = (numRealArgs > 1) && (argv[1][0] == '-');
 
-    // On macOS, Qt requires a display server even for -SILENT mode by default.
-    // To enable true headless operation on macOS (e.g., in CI environments),
-    // we check if -SILENT mode is requested and if QT_QPA_PLATFORM is not set,
-    // then we try to use the minimal platform plugin or cocoa without display.
+    // macOS: for -SILENT (headless) mode, try offscreen platform if no
+    // QT_QPA_PLATFORM is set.  The "minimal" plugin is not shipped in the
+    // macOS bundle (only "cocoa" is), so we fall back gracefully:
+    //   offscreen > minimal > (leave unset → Qt picks cocoa, which works
+    //   on macOS runners because WindowServer is always available).
     if (commandLine && numRealArgs > 1) {
         QString firstArg = QString(argv[1]).toUpper();
-        if (firstArg == "-SILENT") {
-            // Check if QT_QPA_PLATFORM is not already set
-            if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
-                // Try minimal platform first (works without display server)
-                // If minimal is not available, Qt will fall back to cocoa
-                qputenv("QT_QPA_PLATFORM", "minimal");
+        if (firstArg == "-SILENT" &&
+            qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+            QStringList candidates = {"offscreen", "minimal"};
+            QString pluginDir = QCoreApplication::applicationDirPath() +
+                                "/../PlugIns/platforms";
+            if (!QDir(pluginDir).exists())
+                pluginDir =
+                        QCoreApplication::applicationDirPath() + "/platforms";
+            bool found = false;
+            for (const auto& name : candidates) {
+                QString pattern = QString("libq%1*").arg(name);
+                if (QDir(pluginDir).entryList({pattern}).size() > 0) {
+                    qputenv("QT_QPA_PLATFORM", name.toUtf8());
+                    found = true;
+                    break;
+                }
             }
+            (void)found;
         }
     }
 #else

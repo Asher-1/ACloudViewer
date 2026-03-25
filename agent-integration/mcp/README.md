@@ -6,7 +6,7 @@ run via the **ACloudViewer binary** (`-SILENT` CLI mode), not any Python 3D libr
 ## Installation
 
 ```bash
-pip install 'cli-anything-acloudviewer[mcp]'
+pip install 'cli-anything-acloudviewer'
 ```
 
 ## Running

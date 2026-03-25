@@ -15,7 +15,7 @@
     "type": "stdio"
   },
   "install": {
-    "pip": "cli-anything-acloudviewer[mcp]"
+    "pip": "cli-anything-acloudviewer"
   },
   "requires": {
     "binary": "ACloudViewer desktop application (headless CLI or GUI mode)"

@@ -52,7 +52,7 @@ jobs:
 
       - name: Install agent harness
         run: |
-          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
       - name: Verify CLI entry point
         run: |

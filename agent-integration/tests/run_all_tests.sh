@@ -616,7 +616,7 @@ print(len(tools))
         fail "MCP server entry point"
     fi
 else
-    skip "MCP SDK not installed (pip install 'cli-anything-acloudviewer[mcp]')"
+    skip "MCP SDK not installed (pip install 'cli-anything-acloudviewer')"
 fi
 
 # ─── Summary ────────────────────────────────────────────────────────────────

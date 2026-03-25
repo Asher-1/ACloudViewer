@@ -154,6 +154,7 @@ jobs:
   agent-integration:
     name: Agent Integration (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     needs: [MacOS]
     strategy:
       fail-fast: false
@@ -233,7 +234,7 @@ jobs:
 
       - name: Install agent harness
         run: |
-          pip install -e "_cli-anything/acloudviewer/agent-harness[dev,mcp]"
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
       - name: Level 3 — Headless processing tests
         run: |
