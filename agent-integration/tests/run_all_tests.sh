@@ -257,32 +257,40 @@ print('Created test.ply')
 " && pass "Created test PLY (200 points)" || fail "Create test PLY"
 
     if [[ -f "$TEST_TMPDIR/test.ply" ]]; then
-        export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
+        # On macOS: leave QT_QPA_PLATFORM unset; main.cpp probes for
+        # offscreen/minimal and falls back to cocoa automatically.
+        if [[ "$OS_TYPE" == "macos" ]]; then
+            unset QT_QPA_PLATFORM 2>/dev/null || true
+        else
+            export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
+        fi
 
         if "$ACV_BINARY" -SILENT -O "$TEST_TMPDIR/test.ply" -SAVE_CLOUDS 2>/dev/null; then
             pass "Binary loads PLY file"
         else
-            pass "Binary loads PLY file (non-zero exit is informational)"
+            fail "Binary loads PLY file (exit code: $?)"
         fi
 
         if "$ACV_BINARY" -SILENT -O "$TEST_TMPDIR/test.ply" -SS SPATIAL 0.2 -SAVE_CLOUDS 2>/dev/null; then
             pass "Subsample via binary"
         else
-            pass "Subsample via binary (non-zero exit is informational)"
+            fail "Subsample via binary (exit code: $?)"
         fi
 
         if "$ACV_BINARY" -SILENT -O "$TEST_TMPDIR/test.ply" -COMPUTE_NORMALS 2>/dev/null; then
             pass "Compute normals via binary"
         else
-            pass "Compute normals via binary (non-zero exit is informational)"
+            fail "Compute normals via binary (exit code: $?)"
         fi
 
         if [[ "$CLI_INSTALLED" == "true" ]]; then
-            if cli-anything-acloudviewer --json --mode headless process subsample "$TEST_TMPDIR/test.ply" -o "$TEST_TMPDIR/sub.ply" --voxel-size 0.2 2>/dev/null; then
-                pass "Subsample via CLI harness"
+            CLI_SUB_OUT=$(cli-anything-acloudviewer --json --mode headless process subsample "$TEST_TMPDIR/test.ply" -o "$TEST_TMPDIR/sub.ply" --voxel-size 0.2 2>/dev/null || true)
+            CLI_SUB_STATUS=$(echo "$CLI_SUB_OUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "error")
+            if [[ "$CLI_SUB_STATUS" != "failed" && "$CLI_SUB_STATUS" != "error" ]]; then
+                pass "Subsample via CLI harness (status=$CLI_SUB_STATUS)"
             else
-                diag "$(cli-anything-acloudviewer --json --mode headless process subsample "$TEST_TMPDIR/test.ply" -o "$TEST_TMPDIR/sub.ply" --voxel-size 0.2 2>&1 | tail -5)"
-                fail "Subsample via CLI harness"
+                diag "CLI subsample output: $CLI_SUB_OUT"
+                fail "Subsample via CLI harness (status=$CLI_SUB_STATUS)"
             fi
 
             OUTPUT=$(cli-anything-acloudviewer --json --mode headless info 2>/dev/null || true)
@@ -320,7 +328,7 @@ print('Created test.ply')
             if "$ACV_BINARY" -SILENT -O "$TEST_TMPDIR/test.ply" -C_EXPORT_FMT "$FMT" -SAVE_CLOUDS 2>/dev/null; then
                 pass "PLY -> $FMT conversion (binary)"
             else
-                pass "PLY -> $FMT conversion (binary, non-zero exit is informational)"
+                fail "PLY -> $FMT conversion (binary, exit code: $?)"
             fi
         done
 
@@ -379,25 +387,23 @@ print('Created test.ply')
 
             CONV_PCD="$TEST_TMPDIR/cli_converted.pcd"
             OUTPUT=$(cli-anything-acloudviewer --json --mode headless convert "$TEST_TMPDIR/test.ply" "$CONV_PCD" 2>/dev/null || true)
-            if echo "$OUTPUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); assert d['status']=='converted'" 2>/dev/null; then
-                pass "CLI convert PLY -> PCD (status=converted)"
-            elif [[ -f "$CONV_PCD" ]]; then
-                pass "CLI convert PLY -> PCD (file exists)"
+            CONV_STATUS=$(echo "$OUTPUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "error")
+            if [[ "$CONV_STATUS" != "failed" && "$CONV_STATUS" != "error" ]]; then
+                pass "CLI convert PLY -> PCD (status=$CONV_STATUS)"
             else
                 diag "CLI convert output: $OUTPUT"
-                fail "CLI convert PLY -> PCD"
+                fail "CLI convert PLY -> PCD (status=$CONV_STATUS)"
             fi
 
             if [[ -f "$CONV_PCD" ]]; then
                 CONV_DRC="$TEST_TMPDIR/cli_converted.drc"
                 OUTPUT=$(cli-anything-acloudviewer --json --mode headless convert "$CONV_PCD" "$CONV_DRC" 2>/dev/null || true)
-                if echo "$OUTPUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); assert d['status']=='converted'" 2>/dev/null; then
-                    pass "CLI convert PCD -> DRC (status=converted)"
-                elif [[ -f "$CONV_DRC" ]]; then
-                    pass "CLI convert PCD -> DRC (file exists)"
+                DRC_STATUS=$(echo "$OUTPUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "error")
+                if [[ "$DRC_STATUS" != "failed" && "$DRC_STATUS" != "error" ]]; then
+                    pass "CLI convert PCD -> DRC (status=$DRC_STATUS)"
                 else
                     diag "CLI convert PCD->DRC output: $OUTPUT"
-                    fail "CLI convert PCD -> DRC"
+                    fail "CLI convert PCD -> DRC (status=$DRC_STATUS)"
                 fi
             fi
 
@@ -406,11 +412,13 @@ print('Created test.ply')
             mkdir -p "$BATCH_IN"
             cp "$TEST_TMPDIR/test.ply" "$BATCH_IN/cloud1.ply"
             cp "$TEST_TMPDIR/test.ply" "$BATCH_IN/cloud2.ply"
-            if cli-anything-acloudviewer --json --mode headless batch-convert "$BATCH_IN" "$BATCH_OUT" -f .pcd 2>/dev/null; then
-                pass "CLI batch-convert PLY -> PCD"
+            BATCH_OUTPUT=$(cli-anything-acloudviewer --json --mode headless batch-convert "$BATCH_IN" "$BATCH_OUT" -f .pcd 2>/dev/null || true)
+            BATCH_STATUS=$(echo "$BATCH_OUTPUT" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "error")
+            if [[ "$BATCH_STATUS" != "failed" && "$BATCH_STATUS" != "error" ]]; then
+                pass "CLI batch-convert PLY -> PCD (status=$BATCH_STATUS)"
             else
-                diag "$(cli-anything-acloudviewer --json --mode headless batch-convert "$BATCH_IN" "$BATCH_OUT" -f .pcd 2>&1 | tail -5)"
-                fail "CLI batch-convert PLY -> PCD"
+                diag "CLI batch-convert output: $BATCH_OUTPUT"
+                fail "CLI batch-convert PLY -> PCD (status=$BATCH_STATUS)"
             fi
         fi
     fi

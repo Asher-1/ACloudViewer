@@ -6,15 +6,13 @@
 
 <h4>
     <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/#about">About</a> |
+    <a href="https://asher-1.github.io/CLI-Anything/">CLI-Anything</a> |
     <a href="https://asher-1.github.io/ACloudViewer/#quickstart">Quick Start</a> |
     <a href="https://asher-1.github.io/ACloudViewer/#download">Download</a> |
     <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html">Build Guide</a> |
     <a href="https://asher-1.github.io/ACloudViewer/#gallery">Gallery</a> |
     <a href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a> |
     <a href="https://github.com/Asher-1/ACloudViewer/releases">Releases</a> |
-    <a href="https://github.com/Asher-1/ACloudViewer/blob/main/CONTRIBUTING.md">Contribute</a> |
-    <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a>
 </h4>
 
 
