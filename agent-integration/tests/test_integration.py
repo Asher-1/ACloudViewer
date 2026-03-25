@@ -595,6 +595,9 @@ class TestLevel3_CLIHarness:
              "process", "subsample", sample_ply, "-o", out, "--voxel-size", "0.2"],
             capture_output=True, text=True, timeout=60, env=cli_env)
         assert r.returncode == 0, f"CLI subsample failed:\n{r.stdout}\n{r.stderr}"
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", \
+            f"CLI subsample status=failed:\n{r.stdout}"
 
     def test_level3_cli_normals(self, sample_ply, tmp_path, cli_env):
         out = str(tmp_path / "normals.ply")
@@ -603,6 +606,9 @@ class TestLevel3_CLIHarness:
              "process", "normals", sample_ply, "-o", out],
             capture_output=True, text=True, timeout=60, env=cli_env)
         assert r.returncode == 0, f"CLI normals failed:\n{r.stdout}\n{r.stderr}"
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", \
+            f"CLI normals status=failed:\n{r.stdout}"
 
     def test_level3_cli_formats(self, cli_env):
         r = subprocess.run(
@@ -762,9 +768,9 @@ class TestLevel3_CLIFormatConversion:
         out, r = converted_pcd
         assert r.returncode == 0, \
             f"CLI PLY->PCD failed:\n{r.stdout}\n{r.stderr}"
-        assert Path(out).exists(), \
-            f"CLI PLY->PCD returned 0 but output file missing.\n" \
-            f"stdout: {r.stdout}\nstderr: {r.stderr}"
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", \
+            f"CLI PLY->PCD status=failed:\n{r.stdout}"
 
     def test_level3_cli_pcd_to_drc(self, converted_pcd, shared_dir, cli_env):
         pcd, pcd_r = converted_pcd
@@ -780,6 +786,9 @@ class TestLevel3_CLIFormatConversion:
             capture_output=True, text=True, timeout=120, env=cli_env)
         assert r.returncode == 0, \
             f"CLI PCD->DRC failed:\n{r.stdout}\n{r.stderr}"
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", \
+            f"CLI PCD->DRC status=failed:\n{r.stdout}"
 
     def test_level3_cli_batch_convert_pcd(self, sample_ply, shared_dir, cli_env):
         src_dir = shared_dir / "input_batch"
@@ -794,6 +803,9 @@ class TestLevel3_CLIFormatConversion:
             capture_output=True, text=True, timeout=180, env=cli_env)
         assert r.returncode == 0, \
             f"CLI batch-convert failed:\n{r.stdout}\n{r.stderr}"
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", \
+            f"CLI batch-convert status=failed:\n{r.stdout}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
