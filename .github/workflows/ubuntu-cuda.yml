@@ -178,9 +178,9 @@ jobs:
 
   agent-integration:
     name: Agent Integration (${{ matrix.CI_CONFIG }})
-    runs-on: ${{ matrix.RUNNER }}
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-24.04
     needs: [build-and-run-docker]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
       matrix:
