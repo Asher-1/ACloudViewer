@@ -86,7 +86,34 @@ cli-anything-acloudviewer-mcp --mode headless
 npx @modelcontextprotocol/inspector cli-anything-acloudviewer-mcp
 ```
 
-## Test 5: Unit Tests
+## Test 5: Pytest Integration Suite (agent-integration)
+
+The unified pytest suite in `agent-integration/tests/test_integration.py`
+covers five test levels:
+
+```bash
+cd agent-integration/tests
+
+# Run all levels (auto-skips unavailable dependencies)
+python -m pytest test_integration.py -v
+
+# Run a specific level
+python -m pytest test_integration.py -v -k "level1"   # C++ source checks
+python -m pytest test_integration.py -v -k "level2"   # CLI commands
+python -m pytest test_integration.py -v -k "level3"   # Headless processing
+python -m pytest test_integration.py -v -k "level4"   # GUI RPC
+python -m pytest test_integration.py -v -k "level5"   # MCP tools
+```
+
+| Level | Tests | Dependencies |
+|-------|-------|-------------|
+| 1 | Plugin C++ source, method registry (40+ reg entries), header declarations, build | cmake (optional) |
+| 2 | CLI help, subcommands, JSON output, session, SIBR, reconstruct | `cli-anything-acloudviewer` |
+| 3 | Format conversion (PLY/PCD/DRC/ASC/BIN/VTK/STL), subsample, normals, batch | ACloudViewer binary |
+| 4 | RPC ping, scene CRUD, cloud SF ops, normals, merge, crop, mesh, camera, view, workflow | Running ACloudViewer |
+| 5 | MCP tool count (95+), tool names, Colmap tools (13), SIBR tools, entry point | `mcp` Python package |
+
+## Test 6: CLI-Anything Harness Tests
 
 ```bash
 cd /path/to/CLI-Anything/acloudviewer/agent-harness
@@ -96,7 +123,7 @@ python -m pytest cli_anything/acloudviewer/tests/ -v
 
 Expected: all core tests pass, GUI tests skip unless `ACLOUDVIEWER_E2E_GUI=1`.
 
-## Test 6: Full Integration Test
+## Test 7: Full Integration Test (GUI)
 
 Set the environment variable and run with a live ACloudViewer instance:
 
@@ -113,3 +140,5 @@ python -m pytest cli_anything/acloudviewer/tests/ -v
 | "cloudViewer not installed" | Ensure ACloudViewer binary is on PATH or set ACV_BINARY env var |
 | Screenshot is black | Ensure the viewport has loaded geometry first |
 | MCP tools not showing | Check `pip install 'cli-anything-acloudviewer'` |
+| RPC error missing details | Check the `data` field in the error response for structured context |
+| Test says "Missing method X" | Run `methods.list` to verify registered methods vs test expectations |

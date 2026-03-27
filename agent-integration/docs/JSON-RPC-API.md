@@ -37,9 +37,16 @@ Or on error:
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "error": { "code": -32602, "message": "Missing parameter" }
+  "error": {
+    "code": -32602,
+    "message": "Missing parameter",
+    "data": { "param": "filename", "hint": "Provide the absolute path to the file" }
+  }
 }
 ```
+
+The `data` field provides structured diagnostic context (entity IDs, parameter
+names, hints) to help callers understand and recover from errors.
 
 ## Methods
 
@@ -414,9 +421,211 @@ matching, sparse reconstruction, dense reconstruction, and meshing.
 
 ---
 
+### cloud.setActiveSf
+
+Set the active scalar field on a point cloud.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Point cloud entity ID |
+| `field_index` | int | -1 | Scalar field index (use -1 with `field_name`) |
+| `field_name` | string | `""` | Scalar field name (ignored if `field_index >= 0`) |
+
+**Returns:** `{entity_id, active_sf_index, active_sf_name}`
+
+---
+
+### cloud.removeSf
+
+Remove a specific scalar field from a point cloud.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Point cloud entity ID |
+| `field_index` | int | -1 | Scalar field index to remove |
+| `field_name` | string | `""` | Scalar field name (if index = -1) |
+
+**Returns:** `{entity_id, removed_index, remaining_count}`
+
+---
+
+### cloud.removeAllSfs
+
+Remove all scalar fields from a point cloud.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id, removed_count}`
+
+---
+
+### cloud.renameSf
+
+Rename a scalar field.
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Point cloud entity ID |
+| `new_name` | string | required | New scalar field name |
+| `field_index` | int | -1 | Scalar field index to rename |
+| `field_name` | string | `""` | Current scalar field name (if index = -1) |
+
+**Returns:** `{entity_id, field_index, old_name, new_name}`
+
+---
+
+### cloud.filterSf
+
+Filter (keep) points where the active scalar field is within a value range.
+
+**Params:**
+| Name | Type | Description |
+|------|------|-------------|
+| `entity_id` | int | Point cloud entity ID |
+| `min` | double | Minimum SF value (inclusive) |
+| `max` | double | Maximum SF value (inclusive) |
+
+**Returns:** New entity info (filtered cloud added to DB).
+
+---
+
+### cloud.coordToSf
+
+Create a scalar field from point coordinate components (X, Y, or Z).
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Point cloud entity ID |
+| `dimension` | string | `"z"` | `"x"`, `"y"`, or `"z"` |
+
+**Returns:** `{entity_id, dimension, sf_count}`
+
+---
+
+### cloud.removeRgb
+
+Remove RGB color data from a point cloud.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id}`
+
+---
+
+### cloud.removeNormals
+
+Remove normals from a point cloud.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id}`
+
+---
+
+### cloud.invertNormals
+
+Flip the direction of all normals on a point cloud.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id, point_count}`
+
+---
+
+### cloud.merge
+
+Group multiple point clouds together.
+
+**Params:** `{entity_ids: array[int]}`
+
+**Returns:** `{merged_count, group_id, group_name}`
+
+---
+
+### mesh.extractVertices
+
+Extract mesh vertices as a new point cloud entity.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** New point cloud entity info.
+
+---
+
+### mesh.flipTriangles
+
+Flip the winding order of all triangles in a mesh (reverses face normals).
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id, triangle_count}`
+
+---
+
+### mesh.volume
+
+Compute the enclosed volume of a closed mesh.
+
+**Params:** `{entity_id: int}`
+
+**Returns:** `{entity_id, volume}`
+
+---
+
+### mesh.merge
+
+Group multiple meshes together.
+
+**Params:** `{entity_ids: array[int]}`
+
+**Returns:** `{merged_count, group_id, group_name}`
+
+---
+
+### colmap.run
+
+Execute any COLMAP subcommand as a subprocess. Supports all 44+ COLMAP
+subcommands (e.g. `feature_extractor`, `exhaustive_matcher`, `mapper`,
+`image_undistorter`, `patch_match_stereo`, `stereo_fusion`,
+`poisson_mesher`, `model_converter`, `bundle_adjuster`, etc.).
+
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `command` | string | required | COLMAP subcommand name |
+| `args` | array[string] | `[]` | Positional arguments |
+| `kwargs` | object | `{}` | Named arguments (`--key value` pairs) |
+| `colmap_binary` | string | `"colmap"` | Path to COLMAP binary |
+| `timeout_ms` | int | `600000` | Timeout in ms (10 min default) |
+
+**Returns:** `{command, exit_code, stdout, stderr}`
+
+**Example:**
+
+```json
+{
+  "jsonrpc": "2.0", "id": 1,
+  "method": "colmap.run",
+  "params": {
+    "command": "feature_extractor",
+    "kwargs": {
+      "database_path": "/data/db.db",
+      "image_path": "/data/images/"
+    }
+  }
+}
+```
+
+---
+
 ### methods.list
 
-List all available RPC methods with descriptions.
+List all available RPC methods with descriptions. The method list is
+dynamically generated from the internal method registry.
 
 **Returns:** Array of `{method, description}`.
 
@@ -435,3 +644,34 @@ List all available RPC methods with descriptions.
 | 5 | Processing failed |
 | 6 | No active window |
 | 7 | Screenshot save failed |
+| 8 | Not a mesh |
+| 9 | Scalar field not found |
+| 10 | COLMAP subprocess failed |
+
+All error responses include a `data` field with structured context:
+
+```json
+{
+  "error": {
+    "code": 2,
+    "message": "Entity not found",
+    "data": { "entity_id": 42, "hint": "Use scene.list to verify entity IDs" }
+  }
+}
+```
+
+## Method Registry
+
+The plugin uses a dynamic method registry (`registerMethods()`) that
+associates each method name with a description and handler function. The
+`methods.list` RPC call returns the full registry, enabling runtime
+discovery of all available methods by agents and tools.
+
+## Logging
+
+All RPC requests and responses are logged to both the terminal and the GUI
+console:
+
+- **Request log**: Method name, parameter names with type tags, and values
+- **Response log**: Status (OK / ERROR), elapsed time in milliseconds,
+  result summary or error details with structured data

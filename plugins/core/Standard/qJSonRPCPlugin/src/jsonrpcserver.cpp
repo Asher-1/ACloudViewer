@@ -103,6 +103,9 @@ void JsonRPCServer::processTextMessage(QString message) {
         if (!result.error_message.isEmpty()) {
             error["message"] = result.error_message;
         }
+        if (!result.error_data.isNull() && result.error_data.isValid()) {
+            error["data"] = QJsonValue::fromVariant(result.error_data);
+        }
         response["error"] = error;
     } else {
         response["result"] = QJsonValue::fromVariant(result.result);

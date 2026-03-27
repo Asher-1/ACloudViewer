@@ -222,7 +222,9 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **33 methods** over WebSocket JSON-RPC 2.0:
+The `qJSonRPCPlugin` exposes **48+ methods** over WebSocket JSON-RPC 2.0.
+Methods are dynamically registered via a method registry — call `methods.list`
+for the live catalog.
 
 ### File I/O
 | Method | Parameters | Description |
@@ -258,6 +260,24 @@ The `qJSonRPCPlugin` exposes **33 methods** over WebSocket JSON-RPC 2.0:
 | `cloud.paintByHeight` | `{entity_id, ?axis}` | Colorize by height |
 | `cloud.paintByScalarField` | `{entity_id, sf_name}` | Colorize by scalar field |
 
+### Point Cloud Scalar Field Management
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `cloud.setActiveSf` | `{entity_id, ?field_index, ?field_name}` | Set active scalar field |
+| `cloud.removeSf` | `{entity_id, ?field_index, ?field_name}` | Remove a scalar field |
+| `cloud.removeAllSfs` | `{entity_id}` | Remove all scalar fields |
+| `cloud.renameSf` | `{entity_id, new_name, ?field_index}` | Rename a scalar field |
+| `cloud.filterSf` | `{entity_id, min, max}` | Filter points by SF range |
+| `cloud.coordToSf` | `{entity_id, ?dimension}` | Create SF from coordinates |
+
+### Point Cloud Geometry
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `cloud.removeRgb` | `{entity_id}` | Remove color data |
+| `cloud.removeNormals` | `{entity_id}` | Remove normals |
+| `cloud.invertNormals` | `{entity_id}` | Flip normal directions |
+| `cloud.merge` | `{entity_ids}` | Group multiple clouds |
+
 ### View Control
 | Method | Parameters | Description |
 |--------|-----------|-------------|
@@ -281,31 +301,46 @@ The `qJSonRPCPlugin` exposes **33 methods** over WebSocket JSON-RPC 2.0:
 | `mesh.smooth` | `{entity_id, iterations}` | Laplacian smoothing |
 | `mesh.subdivide` | `{entity_id}` | Subdivide mesh |
 | `mesh.samplePoints` | `{entity_id, count}` | Sample points from surface |
+| `mesh.extractVertices` | `{entity_id}` | Extract vertices as point cloud |
+| `mesh.flipTriangles` | `{entity_id}` | Flip triangle winding order |
+| `mesh.volume` | `{entity_id}` | Compute enclosed volume |
+| `mesh.merge` | `{entity_ids}` | Group multiple meshes |
 
 ### Reconstruction
 | Method | Parameters | Description |
 |--------|-----------|-------------|
-| `colmap.reconstruct` | `{image_path, workspace_path, ?quality, ?data_type, ?mesher, ?use_gpu}` | Full Colmap automatic reconstruction |
+| `colmap.reconstruct` | `{image_path, workspace_path, ?quality, ...}` | Full automatic reconstruction |
+| `colmap.run` | `{command, ?args, ?kwargs, ?timeout_ms}` | Run any COLMAP subcommand |
 
 ### Introspection
 | Method | Parameters | Description |
 |--------|-----------|-------------|
-| `methods.list` | `{}` | List all RPC methods |
+| `methods.list` | `{}` | List all RPC methods (dynamic registry) |
 | `ping` | `{}` | Health check |
 
 ## MCP Tools Overview
 
-The MCP server exposes **39 tools** for AI agent use:
+The MCP server exposes **95+ tools** for AI agent use:
 
 | Category | Tools |
 |----------|-------|
-| **File I/O** | `open_file`, `convert_format`, `batch_convert`, `list_formats` |
-| **Scene** | `scene_list`, `scene_info` |
-| **View** | `screenshot`, `get_camera` |
-| **Processing** | `subsample`, `compute_normals`, `crop`, `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding` |
-| **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model` |
-| **SIBR** | `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh` |
-| **Info** | `get_session_info`, `list_rpc_methods` |
+| **File I/O** | `open_file`, `convert_format`, `batch_convert`, `list_formats`, `export_entity` |
+| **Scene** | `scene_list`, `scene_info`, `scene_remove`, `scene_set_visible`, `scene_select`, `scene_clear` |
+| **Entity** | `entity_rename`, `entity_set_color` |
+| **View** | `screenshot`, `get_camera`, `view_set_orientation`, `view_zoom_fit`, `view_refresh`, `view_set_perspective`, `view_set_point_size` |
+| **Cloud Processing** | `subsample`, `compute_normals`, `crop`, `cloud_paint_uniform`, `cloud_paint_by_height`, `cloud_paint_by_scalar_field`, `cloud_get_scalar_fields` |
+| **Cloud SF Management** | `set_active_sf`, `remove_sf`, `remove_all_sfs`, `rename_sf`, `sf_arithmetic`, `sf_operation`, `coord_to_sf`, `sf_gradient`, `filter_sf`, `sf_color_scale`, `sf_convert_to_rgb` |
+| **Cloud SF (GUI)** | `cloud_set_active_sf`, `cloud_remove_sf`, `cloud_remove_all_sfs`, `cloud_rename_sf`, `cloud_filter_sf`, `cloud_coord_to_sf`, `cloud_remove_rgb` |
+| **Cloud Geometry (GUI)** | `cloud_remove_normals_gui`, `cloud_invert_normals_gui`, `cloud_merge_gui` |
+| **Normals** | `octree_normals`, `orient_normals_mst`, `invert_normals`, `clear_normals`, `normals_to_dip`, `normals_to_sfs` |
+| **Mesh Processing** | `mesh_simplify`, `mesh_smooth`, `mesh_subdivide`, `mesh_sample_points`, `mesh_volume`, `extract_vertices`, `flip_triangles`, `merge_meshes` |
+| **Mesh (GUI)** | `mesh_extract_vertices_gui`, `mesh_flip_triangles_gui`, `mesh_volume_gui`, `mesh_merge_gui` |
+| **Advanced Processing** | `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding`, `extract_connected_components`, `approx_density`, `geometric_feature`, `moment`, `best_fit_plane`, `rasterize`, `stat_test` |
+| **Misc** | `remove_rgb`, `remove_scan_grids`, `match_centers`, `drop_global_shift`, `closest_point_set`, `merge_clouds` |
+| **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model`, `colmap_run` |
+| **SIBR** | `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
+| **Transform** | `transform_apply`, `transform_apply_file` |
+| **Info** | `get_info`, `list_rpc_methods` |
 
 ## CLI Command Reference
 
