@@ -297,13 +297,16 @@ jobs:
             exit 1
           }
 
-          $env:PATH = "$installDir;$env:PATH"
-          $batFile = Join-Path $installDir "ACloudViewer.bat"
+          $env:PATH = "$installDir;$installDir\lib;$env:PATH"
           $exeFile = Join-Path $installDir "ACloudViewer.exe"
-          if (Test-Path $batFile) {
+          $batFile = Join-Path $installDir "ACloudViewer.bat"
+          if (Test-Path $exeFile) {
+            $env:ACV_BINARY = $exeFile
+          } elseif (Test-Path $batFile) {
             $env:ACV_BINARY = $batFile
           } else {
-            $env:ACV_BINARY = $exeFile
+            Write-Error "Neither ACloudViewer.exe nor .bat found in $installDir"
+            exit 1
           }
 
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
