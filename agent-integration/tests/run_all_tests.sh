@@ -162,7 +162,9 @@ if [[ "$CLI_INSTALLED" == "true" ]]; then
 
     for cmd in "convert --help" "batch-convert --help" "formats" "process --help" \
                "reconstruct --help" "reconstruct auto --help" "sibr --help" \
-               "scene --help" "view --help" "session --help" "info"; do
+               "scene --help" "view --help" "session --help" "info" \
+               "entity --help" "cloud --help" "mesh --help" "transform --help" \
+               "export --help" "clear --help" "methods --help"; do
         if [[ "$OS_TYPE" == "macos" ]]; then
             case "$cmd" in
                 sibr*) skip "CLI subcommand: $cmd (SIBR not supported on macOS)"; continue ;;
@@ -613,11 +615,11 @@ tools = asyncio.run(list_tools())
 print(len(tools))
 " 2>&1)
     TOOL_COUNT_NUM=$(echo "$TOOL_COUNT" | grep -E '^[0-9]+$' | tail -1)
-    if [[ -n "$TOOL_COUNT_NUM" && "$TOOL_COUNT_NUM" -ge 20 ]]; then
-        pass "MCP server defines $TOOL_COUNT_NUM tools (expected ≥20)"
+    if [[ -n "$TOOL_COUNT_NUM" && "$TOOL_COUNT_NUM" -ge 80 ]]; then
+        pass "MCP server defines $TOOL_COUNT_NUM tools (expected ≥80)"
     else
         echo "    [diag] MCP list_tools output: $TOOL_COUNT"
-        fail "MCP tool listing: got ${TOOL_COUNT_NUM:-0} (expected ≥20)"
+        fail "MCP tool listing: got ${TOOL_COUNT_NUM:-0} (expected ≥80)"
     fi
 
     if command -v cli-anything-acloudviewer-mcp &>/dev/null; then
