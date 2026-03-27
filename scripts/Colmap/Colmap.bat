@@ -46,6 +46,12 @@ goto extract_argument_loop
 :after_extract_argument_loop
 
 if "%COMMAND%"=="" set COMMAND=gui
-start /b "" "%SCRIPT_PATH%Colmap.exe" %COMMAND% %ARGUMENTS% >nul 2>nul
-exit
 
+rem Non-GUI subcommands run in foreground so callers can capture output.
+if /I not "%COMMAND%"=="gui" (
+    "%SCRIPT_PATH%Colmap.exe" %COMMAND% %ARGUMENTS%
+    exit /b %ERRORLEVEL%
+) else (
+    start /b "" "%SCRIPT_PATH%Colmap.exe" %COMMAND% %ARGUMENTS% >nul 2>nul
+    exit
+)

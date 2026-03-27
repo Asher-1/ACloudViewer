@@ -64,6 +64,22 @@ def _read_repo_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _resolve_exe(binary_path: str) -> str:
+    """On Windows, resolve .bat wrappers to the underlying .exe.
+
+    The .bat wrapper uses ``start /b ... >nul`` which backgrounds the process
+    and discards output — incompatible with synchronous subprocess.run.
+    """
+    if not IS_WINDOWS:
+        return binary_path
+    p = Path(binary_path)
+    if p.suffix.lower() == ".bat":
+        exe = p.with_suffix(".exe")
+        if exe.exists():
+            return str(exe)
+    return binary_path
+
+
 # ── Binary discovery (build dir → installed → env var) ────────────────────
 
 def _find_build_binary() -> str | None:
@@ -111,7 +127,8 @@ def _find_any_binary() -> str | None:
     return None
 
 
-BINARY_PATH = _find_any_binary()
+_RAW_BINARY_PATH = _find_any_binary()
+BINARY_PATH = _resolve_exe(_RAW_BINARY_PATH) if _RAW_BINARY_PATH else None
 HAS_BINARY = BINARY_PATH is not None
 
 # ── CLI harness detection ────────────────────────────────────────────────
@@ -494,18 +511,17 @@ _SAMPLE_PLY_BODY = "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) 
 
 def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     """Lightweight env setup for invoking the binary directly (no harness)."""
+    binary_path = _resolve_exe(binary_path)
     env = os.environ.copy()
-    
-    # On Linux/Windows: force offscreen Qt platform for headless CI.
-    # On macOS: leave unset; main.cpp probes for offscreen/minimal plugins
-    # and falls back to cocoa (always available on macOS runners).
+
     if not IS_MACOS:
+        # On Linux/Windows: force offscreen Qt platform for headless CI.
         env["QT_QPA_PLATFORM"] = "offscreen"
     else:
+        # On macOS: leave unset; main.cpp probes for offscreen/minimal plugins
+        # and falls back to cocoa (always available on macOS runners).
         env.pop("QT_QPA_PLATFORM", None)
-    
-    if binary_path.endswith((".sh", ".bat")):
-        return env
+
     bin_dir = str(Path(binary_path).parent)
     lib_dir = str(Path(bin_dir) / "lib")
     sep = ";" if IS_WINDOWS else ":"
@@ -514,7 +530,6 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     elif IS_MACOS:
         env["DYLD_LIBRARY_PATH"] = sep.join(
             filter(None, [bin_dir, lib_dir, env.get("DYLD_LIBRARY_PATH", "")]))
-        # On macOS, ensure Qt plugins are findable
         qt_plugin_path = Path(binary_path).parent.parent / "PlugIns"
         if qt_plugin_path.exists():
             env["QT_PLUGIN_PATH"] = str(qt_plugin_path)
