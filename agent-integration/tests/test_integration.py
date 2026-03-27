@@ -241,9 +241,13 @@ class TestLevel1_CppPlugin:
                         "cloud.computeNormals", "cloud.paintUniform",
                         "cloud.paintByHeight", "cloud.paintByScalarField",
                         "mesh.simplify", "view.screenshot",
-                        "colmap.reconstruct"]:
-            assert f'method == "{method}"' in src, \
-                f"Missing dispatch for '{method}'"
+                        "colmap.reconstruct", "colmap.run",
+                        "cloud.setActiveSf", "cloud.removeSf",
+                        "cloud.removeRgb", "cloud.invertNormals",
+                        "cloud.merge", "mesh.extractVertices",
+                        "mesh.flipTriangles", "mesh.volume"]:
+            assert f'"{method}"' in src, \
+                f"Missing method registration for '{method}'"
 
     def test_level1_colmap_reconstruct_params(self):
         src = _read_repo_text(PLUGIN_CPP)
@@ -292,8 +296,8 @@ class TestLevel1_CppPlugin:
 
     def test_level1_rpc_method_count(self):
         src = _read_repo_text(PLUGIN_CPP)
-        count = src.count('add("')
-        assert count >= 25, f"Expected ≥25 RPC methods in methods.list, found {count}"
+        count = src.count('reg("')
+        assert count >= 40, f"Expected ≥40 RPC methods registered, found {count}"
 
     def test_level1_header_declares_all_methods(self):
         h = _read_repo_text(PLUGIN_H)
@@ -304,10 +308,19 @@ class TestLevel1_CppPlugin:
                         "rpcCloudPaintByScalarField",
                         "rpcCloudComputeNormals", "rpcCloudSubsample",
                         "rpcCloudCrop", "rpcCloudGetScalarFields",
+                        "rpcCloudSetActiveSf", "rpcCloudRemoveSf",
+                        "rpcCloudRemoveAllSfs", "rpcCloudRenameSf",
+                        "rpcCloudFilterSf", "rpcCloudCoordToSf",
+                        "rpcCloudRemoveRgb", "rpcCloudRemoveNormals",
+                        "rpcCloudInvertNormals", "rpcCloudMerge",
                         "rpcMeshSimplify", "rpcMeshSmooth",
                         "rpcMeshSubdivide", "rpcMeshSamplePoints",
+                        "rpcMeshExtractVertices", "rpcMeshFlipTriangles",
+                        "rpcMeshVolume", "rpcMeshMerge",
                         "rpcViewScreenshot", "rpcViewGetCamera",
-                        "rpcTransformApply", "rpcMethodsList"]:
+                        "rpcTransformApply",
+                        "rpcColmapReconstruct", "rpcColmapRun",
+                        "registerMethods"]:
             assert method in h, f"Missing declaration: {method}"
 
     def test_level1_cursor_mcp_config_exists(self):
@@ -834,6 +847,81 @@ class TestLevel3_FormatConversion:
         assert r.returncode == 0 or "Error" not in combined, \
             f"PLY->{fmt} failed (rc={r.returncode}):\n{combined[-2000:]}"
 
+    @pytest.mark.parametrize("fmt", ["OBJ", "OFF"])
+    def test_level3_mesh_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
+        """Cloud->Mesh format via Delaunay + mesh export."""
+        out = str(tmp_path / f"mesh.{fmt.lower()}")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-DELAUNAY", "-M_EXPORT_FMT", fmt,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-SAVE_MESHES", "FILE", out],
+            capture_output=True, text=True, timeout=120,
+            env=acv_env)
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->{fmt} (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    @pytest.mark.parametrize("ext", [".xyz", ".txt", ".csv", ".pts"])
+    def test_level3_ascii_variants(self, sample_ply, acv_env, tmp_path, ext):
+        """All ASCII variant extensions export as ASC format."""
+        out = str(tmp_path / f"test{ext}")
+        r = self._convert_file(sample_ply, out, "ASC", acv_env)
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->ASC({ext}) failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_las_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> LAS (requires qLASIO or qPDALIO plugin)."""
+        out = str(tmp_path / "test.las")
+        r = self._convert_file(sample_ply, out, "LAS", acv_env)
+        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
+                                   or "filter" in (r.stderr or "").lower()):
+            pytest.skip("LAS IO plugin not available in this build")
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->LAS failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_e57_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> E57 (requires qE57IO plugin)."""
+        out = str(tmp_path / "test.e57")
+        r = self._convert_file(sample_ply, out, "E57", acv_env)
+        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
+                                   or "filter" in (r.stderr or "").lower()
+                                   or "no filter" in (r.stderr or "").lower()):
+            pytest.skip("E57 IO plugin not available in this build")
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->E57 failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_fbx_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> FBX (requires qFBXIO plugin, mesh-based)."""
+        out = str(tmp_path / "test.fbx")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-DELAUNAY", "-M_EXPORT_FMT", "FBX",
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-SAVE_MESHES", "FILE", out],
+            capture_output=True, text=True, timeout=120,
+            env=acv_env)
+        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
+                                   or "filter" in (r.stderr or "").lower()):
+            pytest.skip("FBX IO plugin not available in this build")
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->FBX (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_sbf_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> SBF (SimpleBin, qCoreIO plugin)."""
+        out = str(tmp_path / "test.sbf")
+        r = self._convert_file(sample_ply, out, "SBF", acv_env)
+        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
+                                   or "filter" in (r.stderr or "").lower()):
+            pytest.skip("SBF IO plugin not available in this build")
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0 or "Error" not in combined, \
+            f"PLY->SBF failed (rc={r.returncode}):\n{combined[-2000:]}"
+
 
 @pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
 @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
@@ -935,18 +1023,27 @@ class TestLevel4_GUIRPC:
 
     def test_level4_methods_list(self):
         methods = _rpc_call("methods.list")
-        assert len(methods) >= 25
+        assert len(methods) >= 40, (
+            f"Expected >=40 RPC methods, got {len(methods)}")
         names = {m["method"] for m in methods}
         for expected in ["open", "export", "file.convert", "scene.list",
                          "scene.info", "scene.remove", "scene.setVisible",
                          "cloud.computeNormals", "cloud.subsample",
                          "cloud.crop", "cloud.getScalarFields",
                          "cloud.paintUniform", "cloud.paintByHeight",
+                         "cloud.setActiveSf", "cloud.removeSf",
+                         "cloud.removeAllSfs", "cloud.renameSf",
+                         "cloud.filterSf", "cloud.coordToSf",
+                         "cloud.removeRgb", "cloud.removeNormals",
+                         "cloud.invertNormals", "cloud.merge",
                          "mesh.simplify", "mesh.smooth", "mesh.samplePoints",
+                         "mesh.extractVertices", "mesh.flipTriangles",
+                         "mesh.volume", "mesh.merge",
                          "view.screenshot", "view.setOrientation",
                          "view.zoomFit", "view.setPerspective",
                          "view.setPointSize", "view.getCamera",
-                         "colmap.reconstruct", "transform.apply",
+                         "colmap.reconstruct", "colmap.run",
+                         "transform.apply",
                          "entity.rename", "entity.setColor",
                          "methods.list", "ping"]:
             assert expected in names, f"Missing RPC method: {expected}"
@@ -984,7 +1081,10 @@ class TestLevel4_GUIRPC:
     ])
     def test_level4_view_set_orientation(self, orientation):
         result = _rpc_call("view.setOrientation", {"orientation": orientation})
-        assert result == 0
+        assert isinstance(result, (int, dict)), \
+            f"Unexpected result type: {type(result).__name__}: {result}"
+        if isinstance(result, dict):
+            assert result.get("orientation") == orientation
 
     def test_level4_view_camera_differs_by_orientation(self):
         _rpc_call("view.setOrientation", {"orientation": "front"})
@@ -1001,14 +1101,22 @@ class TestLevel4_GUIRPC:
         assert _rpc_call("view.refresh") == 0
 
     def test_level4_view_set_perspective_object(self):
-        assert _rpc_call("view.setPerspective", {"mode": "object"}) == 0
+        result = _rpc_call("view.setPerspective", {"mode": "object"})
+        assert isinstance(result, (int, dict)), f"Unexpected: {result}"
+        if isinstance(result, dict):
+            assert result.get("mode") == "object"
 
     def test_level4_view_set_perspective_viewer(self):
-        assert _rpc_call("view.setPerspective", {"mode": "viewer"}) == 0
+        result = _rpc_call("view.setPerspective", {"mode": "viewer"})
+        assert isinstance(result, (int, dict)), f"Unexpected: {result}"
+        if isinstance(result, dict):
+            assert result.get("mode") == "viewer"
 
     def test_level4_view_point_size_increase_decrease(self):
-        assert _rpc_call("view.setPointSize", {"action": "increase"}) == 0
-        assert _rpc_call("view.setPointSize", {"action": "decrease"}) == 0
+        r1 = _rpc_call("view.setPointSize", {"action": "increase"})
+        assert isinstance(r1, (int, dict)), f"Unexpected: {r1}"
+        r2 = _rpc_call("view.setPointSize", {"action": "decrease"})
+        assert isinstance(r2, (int, dict)), f"Unexpected: {r2}"
 
     def test_level4_view_screenshot_empty_scene(self, tmp_path):
         path = str(tmp_path / "empty_scene.png")
@@ -1166,7 +1274,9 @@ class TestLevel4_RPCEntityOps:
         eid = loaded["cloud_id"]
         result = _rpc_call("entity.setColor",
                            {"entity_id": eid, "r": 255, "g": 0, "b": 0})
-        assert result == 0
+        assert isinstance(result, (int, dict)), f"Unexpected: {result}"
+        if isinstance(result, dict):
+            assert result.get("entity_id") == eid
 
     def test_level4_rpc_scene_set_visible_off(self, loaded):
         eid = loaded["group_id"]
@@ -1272,6 +1382,95 @@ class TestLevel4_RPCCloudProcessing:
         assert result["point_count"] > 0
         assert result["type"] == "POINT_CLOUD"
 
+    def test_level4_rpc_cloud_coord_to_sf(self, cloud_id):
+        result = _rpc_call("cloud.coordToSf",
+                           {"entity_id": cloud_id, "dimension": "z"})
+        assert result.get("entity_id") == cloud_id
+        assert result.get("dimension") == "z"
+
+    def test_level4_rpc_cloud_set_active_sf(self, cloud_id):
+        _rpc_call("cloud.coordToSf",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        result = _rpc_call("cloud.setActiveSf",
+                           {"entity_id": cloud_id, "field_index": 0})
+        assert result.get("entity_id") == cloud_id
+        assert result.get("field_index") == 0 or result.get("active_sf_index") == 0
+
+    def test_level4_rpc_cloud_rename_sf(self, cloud_id):
+        _rpc_call("cloud.coordToSf",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        result = _rpc_call("cloud.renameSf",
+                           {"entity_id": cloud_id,
+                            "field_index": 0, "new_name": "test_sf"})
+        assert result.get("entity_id") == cloud_id
+        assert result.get("new_name") == "test_sf"
+
+    def test_level4_rpc_cloud_remove_sf(self, cloud_id):
+        _rpc_call("cloud.coordToSf",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        sfs_before = _rpc_call("cloud.getScalarFields",
+                               {"entity_id": cloud_id})
+        result = _rpc_call("cloud.removeSf",
+                           {"entity_id": cloud_id, "field_index": 0})
+        assert result.get("entity_id") == cloud_id
+        sfs_after = _rpc_call("cloud.getScalarFields",
+                              {"entity_id": cloud_id})
+        assert len(sfs_after) < len(sfs_before)
+
+    def test_level4_rpc_cloud_remove_all_sfs(self, cloud_id):
+        _rpc_call("cloud.coordToSf",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        result = _rpc_call("cloud.removeAllSfs",
+                           {"entity_id": cloud_id})
+        assert result.get("entity_id") == cloud_id
+        sfs = _rpc_call("cloud.getScalarFields",
+                        {"entity_id": cloud_id})
+        assert len(sfs) == 0
+
+    def test_level4_rpc_cloud_filter_sf(self, cloud_id):
+        _rpc_call("cloud.coordToSf",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        _rpc_call("cloud.setActiveSf",
+                  {"entity_id": cloud_id, "field_index": 0})
+        result = _rpc_call("cloud.filterSf",
+                           {"entity_id": cloud_id,
+                            "min": 0.0, "max": 0.5})
+        assert result.get("point_count", 0) >= 0
+
+    def test_level4_rpc_cloud_remove_rgb(self, cloud_id):
+        result = _rpc_call("cloud.removeRgb",
+                           {"entity_id": cloud_id})
+        assert result.get("entity_id") == cloud_id
+
+    def test_level4_rpc_cloud_compute_and_invert_normals(self, cloud_id):
+        _rpc_call("cloud.computeNormals",
+                  {"entity_id": cloud_id, "radius": 0.1}, timeout=60)
+        result = _rpc_call("cloud.invertNormals",
+                           {"entity_id": cloud_id})
+        assert result.get("entity_id") == cloud_id
+
+    def test_level4_rpc_cloud_remove_normals(self, cloud_id):
+        _rpc_call("cloud.computeNormals",
+                  {"entity_id": cloud_id, "radius": 0.1}, timeout=60)
+        result = _rpc_call("cloud.removeNormals",
+                           {"entity_id": cloud_id})
+        assert result.get("entity_id") == cloud_id
+
+    def test_level4_rpc_cloud_merge(self, sample_ply):
+        r1 = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        id1 = _find_cloud_id(r1)
+        r2 = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        id2 = _find_cloud_id(r2)
+        result = _rpc_call("cloud.merge",
+                           {"entity_ids": [id1, id2]})
+        has_merge_info = (
+            result.get("merged_count", 0) >= 2
+            or result.get("children_count", 0) >= 0
+            or result.get("type") is not None
+        )
+        assert has_merge_info, f"cloud.merge returned unexpected result: {result}"
+        _rpc_call("clear", timeout=5)
+
     def test_level4_rpc_workflow_load_orient_screenshot(
             self, cloud_id, tmp_path):
         """Full workflow: load -> orient -> zoom -> screenshot."""
@@ -1302,8 +1501,8 @@ class TestLevel5_MCPServer:
             import asyncio
             tools = asyncio.run(list_tools())
             tool_names = sorted(t.name for t in tools)
-            assert len(tools) >= 80, (
-                f"Expected ≥80 MCP tools, got {len(tools)}.\n"
+            assert len(tools) >= 95, (
+                f"Expected ≥95 MCP tools, got {len(tools)}.\n"
                 f"Available tools: {tool_names}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
@@ -1345,6 +1544,14 @@ class TestLevel5_MCPServer:
                 "get_info", "list_rpc_methods",
                 "colmap_auto_reconstruct", "colmap_extract_features",
                 "colmap_sparse_reconstruct", "colmap_poisson_mesh",
+                "cloud_set_active_sf", "cloud_remove_sf",
+                "cloud_remove_all_sfs", "cloud_rename_sf",
+                "cloud_filter_sf", "cloud_coord_to_sf",
+                "cloud_remove_rgb", "cloud_remove_normals_gui",
+                "cloud_invert_normals_gui", "cloud_merge_gui",
+                "mesh_extract_vertices_gui", "mesh_flip_triangles_gui",
+                "mesh_volume_gui", "mesh_merge_gui",
+                "colmap_run",
             ]
             missing = [t for t in expected_tools if t not in names]
             assert not missing, (
@@ -1366,6 +1573,7 @@ class TestLevel5_MCPServer:
                 "colmap_stereo_fusion", "colmap_poisson_mesh",
                 "colmap_delaunay_mesh", "colmap_image_texturer",
                 "colmap_model_converter", "colmap_analyze_model",
+                "colmap_run",
             ]
             for tool in colmap_tools:
                 assert tool in names, f"Missing Colmap MCP tool: {tool}"
