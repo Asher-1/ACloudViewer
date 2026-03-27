@@ -514,13 +514,12 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     binary_path = _resolve_exe(binary_path)
     env = os.environ.copy()
 
-    if not IS_MACOS:
-        # On Linux/Windows: force offscreen Qt platform for headless CI.
-        env["QT_QPA_PLATFORM"] = "offscreen"
-    else:
-        # On macOS: leave unset; main.cpp probes for offscreen/minimal plugins
-        # and falls back to cocoa (always available on macOS runners).
+    if IS_MACOS:
         env.pop("QT_QPA_PLATFORM", None)
+    elif "QT_QPA_PLATFORM" not in env:
+        # Windows: windeployqt doesn't ship qoffscreen; default to minimal.
+        # Linux: offscreen is always available.
+        env["QT_QPA_PLATFORM"] = "minimal" if IS_WINDOWS else "offscreen"
 
     bin_dir = str(Path(binary_path).parent)
     lib_dir = str(Path(bin_dir) / "lib")
@@ -743,6 +742,11 @@ class TestLevel3_FormatConversion:
     def test_level3_basic_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
         out = str(tmp_path / f"test.{fmt.lower()}")
         r = self._convert_file(sample_ply, out, fmt, acv_env)
+        if IS_WINDOWS and r.returncode >= 0xC0000000:
+            pytest.fail(
+                f"PLY->{fmt} crashed (rc=0x{r.returncode:08X}):\n"
+                f"{(r.stdout + r.stderr)[-2000:]}"
+            )
         combined = r.stdout + r.stderr
         assert r.returncode == 0 or "Error" not in combined, \
             f"PLY->{fmt} failed (rc={r.returncode}):\n{combined[-2000:]}"

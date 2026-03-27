@@ -261,6 +261,8 @@ print('Created test.ply')
         # offscreen/minimal and falls back to cocoa automatically.
         if [[ "$OS_TYPE" == "macos" ]]; then
             unset QT_QPA_PLATFORM 2>/dev/null || true
+        elif [[ "$OS_TYPE" == "windows" ]]; then
+            export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-minimal}"
         else
             export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
         fi
