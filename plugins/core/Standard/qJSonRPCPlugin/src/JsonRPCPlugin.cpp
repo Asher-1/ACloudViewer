@@ -303,16 +303,16 @@ static void prettyAppend(QStringList& out,
             if (nested && depth + 1 < maxDepth) {
                 QString compact = variantToLogString(it.value(), depth + 1);
                 if (compact.length() <= 80) {
-                    out << prefix + it.key().leftJustified(maxKeyLen)
-                                       + QStringLiteral(" : ") + compact;
+                    out << prefix + it.key().leftJustified(maxKeyLen) +
+                                    QStringLiteral(" : ") + compact;
                 } else {
                     out << prefix + it.key() + QStringLiteral(":");
                     prettyAppend(out, it.value(), child, depth + 1, maxDepth);
                 }
             } else {
-                out << prefix + it.key().leftJustified(maxKeyLen)
-                               + QStringLiteral(" : ")
-                               + variantToLogString(it.value(), depth + 1);
+                out << prefix + it.key().leftJustified(maxKeyLen) +
+                                QStringLiteral(" : ") +
+                                variantToLogString(it.value(), depth + 1);
             }
         }
     } else if (vtype == QVariant::List || vtype == QVariant::StringList) {
@@ -337,9 +337,8 @@ static void prettyAppend(QStringList& out,
 
         const int show = qMin(list.size(), 10);
         if (list.size() > 10)
-            out << prefix
-                           + QStringLiteral("(%1 items, first 10)")
-                                     .arg(list.size());
+            out << prefix + QStringLiteral("(%1 items, first 10)")
+                                    .arg(list.size());
 
         const QString child = prefix + QStringLiteral("  ");
         for (int i = 0; i < show; ++i) {
@@ -349,8 +348,8 @@ static void prettyAppend(QStringList& out,
                 out << prefix + QStringLiteral("[%1]:").arg(i);
                 prettyAppend(out, list[i], child, depth + 1, maxDepth);
             } else {
-                out << prefix + QStringLiteral("[%1]: ").arg(i)
-                               + variantToLogString(list[i], depth + 1);
+                out << prefix + QStringLiteral("[%1]: ").arg(i) +
+                                variantToLogString(list[i], depth + 1);
             }
         }
         if (list.size() > 10) out << prefix + QStringLiteral("...");
@@ -655,10 +654,10 @@ void JsonRPCPlugin::logResponse(const QString& method,
     if (result.isError) {
         QStringList lines;
         lines << QStringLiteral("[JsonRPC] << %1 FAILED [%2] (%3ms): %4")
-                        .arg(method)
-                        .arg(result.error_code)
-                        .arg(elapsedMs)
-                        .arg(result.error_message);
+                         .arg(method)
+                         .arg(result.error_code)
+                         .arg(elapsedMs)
+                         .arg(result.error_message);
         if (!result.error_data.isNull() && result.error_data.isValid()) {
             QString pretty = prettyFormatResult(result.error_data);
             if (pretty.contains('\n')) {
@@ -673,8 +672,8 @@ void JsonRPCPlugin::logResponse(const QString& method,
         QString pretty = prettyFormatResult(result.result);
         QStringList lines;
         lines << QStringLiteral("[JsonRPC] << %1 OK (%2ms)")
-                        .arg(method)
-                        .arg(elapsedMs);
+                         .arg(method)
+                         .arg(elapsedMs);
         if (pretty.contains('\n')) {
             lines << QStringLiteral("  | result:");
             lines << pretty;
