@@ -396,6 +396,13 @@ class TestLevel2_CLIHarness:
         "session --help",
         "reconstruct --help",
         "reconstruct auto --help",
+        "entity --help",
+        "cloud --help",
+        "mesh --help",
+        "transform --help",
+        "export --help",
+        "clear --help",
+        "methods --help",
         pytest.param("sibr --help", marks=_skip_sibr_on_macos),
         "info --help",
         "info",
@@ -404,7 +411,9 @@ class TestLevel2_CLIHarness:
         r = subprocess.run(
             ["cli-anything-acloudviewer"] + cmd.split(),
             capture_output=True, text=True, timeout=10)
-        assert r.returncode == 0
+        assert r.returncode == 0, (
+            f"CLI '{cmd}' failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:1000]}\nstderr: {r.stderr[:1000]}")
 
     def test_level2_process_subcommands(self):
         r = subprocess.run(
@@ -413,8 +422,76 @@ class TestLevel2_CLIHarness:
         assert r.returncode == 0
         for cmd in ["subsample", "normals", "icp", "sor",
                      "c2c-dist", "c2m-dist", "density", "curvature",
-                     "roughness", "delaunay", "sample-mesh", "color-banding"]:
+                     "roughness", "delaunay", "sample-mesh", "color-banding",
+                     "set-active-sf", "remove-all-sfs", "remove-sf", "rename-sf",
+                     "sf-arithmetic", "sf-op", "coord-to-sf", "sf-gradient",
+                     "filter-sf", "sf-to-rgb",
+                     "octree-normals", "orient-normals", "invert-normals",
+                     "clear-normals", "normals-to-dip", "normals-to-sfs",
+                     "extract-cc", "approx-density", "feature", "moment",
+                     "best-fit-plane", "mesh-volume", "extract-vertices",
+                     "flip-triangles", "merge-clouds", "merge-meshes",
+                     "remove-rgb", "remove-scan-grids",
+                     "drop-global-shift", "rasterize", "stat-test"]:
             assert cmd in r.stdout, f"Missing process subcommand: {cmd}"
+
+    def test_level2_scene_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "scene", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["list", "info", "remove", "show", "hide", "select", "clear"]:
+            assert cmd in r.stdout, f"Missing scene subcommand: {cmd}"
+
+    def test_level2_view_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "view", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["screenshot", "camera", "orient", "zoom", "refresh",
+                     "perspective", "pointsize"]:
+            assert cmd in r.stdout, f"Missing view subcommand: {cmd}"
+
+    def test_level2_entity_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "entity", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["rename", "set-color"]:
+            assert cmd in r.stdout, f"Missing entity subcommand: {cmd}"
+
+    def test_level2_cloud_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "cloud", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["paint-uniform", "paint-by-height", "paint-by-scalar-field",
+                     "get-scalar-fields", "crop"]:
+            assert cmd in r.stdout, f"Missing cloud subcommand: {cmd}"
+
+    def test_level2_mesh_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "mesh", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["simplify", "smooth", "subdivide", "sample-points"]:
+            assert cmd in r.stdout, f"Missing mesh subcommand: {cmd}"
+
+    def test_level2_transform_subcommands(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "transform", "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0
+        for cmd in ["apply", "apply-file"]:
+            assert cmd in r.stdout, f"Missing transform subcommand: {cmd}"
+
+    def test_level2_session_history(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "session", "history"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, (
+            f"session history failed:\nstdout: {r.stdout[:500]}\nstderr: {r.stderr[:500]}")
 
     def test_level2_headless_info(self):
         r = subprocess.run(
@@ -608,10 +685,13 @@ class TestLevel3_CLIHarness:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "subsample", sample_ply, "-o", out, "--voxel-size", "0.2"],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        assert r.returncode == 0, f"CLI subsample failed:\n{r.stdout}\n{r.stderr}"
+        assert r.returncode == 0, (
+            f"CLI subsample failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert data.get("status") != "failed", \
-            f"CLI subsample status=failed:\n{r.stdout}"
+        assert data.get("status") != "failed", (
+            f"CLI subsample returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
     def test_level3_cli_normals(self, sample_ply, tmp_path, cli_env):
         out = str(tmp_path / "normals.ply")
@@ -619,10 +699,13 @@ class TestLevel3_CLIHarness:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "normals", sample_ply, "-o", out],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        assert r.returncode == 0, f"CLI normals failed:\n{r.stdout}\n{r.stderr}"
+        assert r.returncode == 0, (
+            f"CLI normals failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert data.get("status") != "failed", \
-            f"CLI normals status=failed:\n{r.stdout}"
+        assert data.get("status") != "failed", (
+            f"CLI normals returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
     def test_level3_cli_formats(self, cli_env):
         r = subprocess.run(
@@ -785,29 +868,33 @@ class TestLevel3_CLIFormatConversion:
 
     def test_level3_cli_ply_to_pcd(self, converted_pcd):
         out, r = converted_pcd
-        assert r.returncode == 0, \
-            f"CLI PLY->PCD failed:\n{r.stdout}\n{r.stderr}"
+        assert r.returncode == 0, (
+            f"CLI PLY->PCD failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert data.get("status") != "failed", \
-            f"CLI PLY->PCD status=failed:\n{r.stdout}"
+        assert data.get("status") != "failed", (
+            f"CLI PLY->PCD returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
     def test_level3_cli_pcd_to_drc(self, converted_pcd, shared_dir, cli_env):
         pcd, pcd_r = converted_pcd
         if not Path(pcd).exists():
             pytest.skip(
                 f"PLY->PCD prerequisite failed (rc={pcd_r.returncode}):\n"
-                f"stdout: {pcd_r.stdout}\nstderr: {pcd_r.stderr}"
+                f"stdout: {pcd_r.stdout[:1000]}\nstderr: {pcd_r.stderr[:1000]}"
             )
         out = str(shared_dir / "output.drc")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "convert", pcd, out],
             capture_output=True, text=True, timeout=120, env=cli_env)
-        assert r.returncode == 0, \
-            f"CLI PCD->DRC failed:\n{r.stdout}\n{r.stderr}"
+        assert r.returncode == 0, (
+            f"CLI PCD->DRC failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert data.get("status") != "failed", \
-            f"CLI PCD->DRC status=failed:\n{r.stdout}"
+        assert data.get("status") != "failed", (
+            f"CLI PCD->DRC returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
     def test_level3_cli_batch_convert_pcd(self, sample_ply, shared_dir, cli_env):
         src_dir = shared_dir / "input_batch"
@@ -820,11 +907,13 @@ class TestLevel3_CLIFormatConversion:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "batch-convert", str(src_dir), out_dir, "--format", "pcd"],
             capture_output=True, text=True, timeout=180, env=cli_env)
-        assert r.returncode == 0, \
-            f"CLI batch-convert failed:\n{r.stdout}\n{r.stderr}"
+        assert r.returncode == 0, (
+            f"CLI batch-convert failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert data.get("status") != "failed", \
-            f"CLI batch-convert status=failed:\n{r.stdout}"
+        assert data.get("status") != "failed", (
+            f"CLI batch-convert returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1212,7 +1301,10 @@ class TestLevel5_MCPServer:
             from cli_anything.acloudviewer.mcp_server import list_tools
             import asyncio
             tools = asyncio.run(list_tools())
-            assert len(tools) >= 28, f"Expected ≥28 MCP tools, got {len(tools)}"
+            tool_names = sorted(t.name for t in tools)
+            assert len(tools) >= 80, (
+                f"Expected ≥80 MCP tools, got {len(tools)}.\n"
+                f"Available tools: {tool_names}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 
@@ -1222,13 +1314,42 @@ class TestLevel5_MCPServer:
             import asyncio
             tools = asyncio.run(list_tools())
             names = {t.name for t in tools}
-            for expected in ["open_file", "convert_format", "batch_convert",
-                             "scene_list", "subsample", "icp_registration",
-                             "screenshot", "list_formats", "c2c_distance",
-                             "c2m_distance", "delaunay", "sor_filter",
-                             "colmap_auto_reconstruct", "colmap_extract_features",
-                             "colmap_sparse_reconstruct", "colmap_poisson_mesh"]:
-                assert expected in names, f"Missing MCP tool: {expected}"
+            expected_tools = [
+                "open_file", "convert_format", "batch_convert", "list_formats",
+                "export_entity",
+                "scene_list", "scene_info", "scene_remove", "scene_set_visible",
+                "scene_select", "scene_clear",
+                "entity_rename", "entity_set_color",
+                "cloud_get_scalar_fields", "cloud_paint_uniform",
+                "cloud_paint_by_height", "cloud_paint_by_scalar_field",
+                "mesh_simplify", "mesh_smooth", "mesh_subdivide", "mesh_sample_points",
+                "subsample", "compute_normals", "icp_registration", "sor_filter",
+                "c2c_distance", "c2m_distance", "crop", "delaunay",
+                "density", "curvature", "roughness", "sample_mesh", "color_banding",
+                "set_active_sf", "remove_all_sfs", "remove_sf", "rename_sf",
+                "sf_arithmetic", "sf_operation", "coord_to_sf", "sf_gradient",
+                "filter_sf", "sf_color_scale", "sf_convert_to_rgb",
+                "octree_normals", "orient_normals_mst", "invert_normals",
+                "clear_normals", "normals_to_dip", "normals_to_sfs",
+                "extract_connected_components", "approx_density",
+                "geometric_feature", "moment", "best_fit_plane",
+                "mesh_volume", "extract_vertices", "flip_triangles",
+                "merge_clouds", "merge_meshes",
+                "remove_rgb", "remove_scan_grids", "match_centers",
+                "drop_global_shift", "closest_point_set",
+                "rasterize", "stat_test",
+                "screenshot", "get_camera",
+                "view_set_orientation", "view_zoom_fit", "view_refresh",
+                "view_set_perspective", "view_set_point_size",
+                "transform_apply", "transform_apply_file",
+                "get_info", "list_rpc_methods",
+                "colmap_auto_reconstruct", "colmap_extract_features",
+                "colmap_sparse_reconstruct", "colmap_poisson_mesh",
+            ]
+            missing = [t for t in expected_tools if t not in names]
+            assert not missing, (
+                f"Missing MCP tools: {missing}\n"
+                f"Available tools: {sorted(names)}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 
@@ -1261,9 +1382,15 @@ class TestLevel5_MCPServer:
             sibr_tools = [
                 "sibr_tool", "sibr_prepare_colmap",
                 "sibr_texture_mesh", "sibr_unwrap_mesh",
+                "sibr_tonemapper", "sibr_align_meshes",
+                "sibr_camera_converter", "sibr_nvm_to_sibr",
+                "sibr_crop_from_center", "sibr_clipping_planes",
+                "sibr_distord_crop",
             ]
-            for tool in sibr_tools:
-                assert tool in names, f"Missing SIBR MCP tool: {tool}"
+            missing = [t for t in sibr_tools if t not in names]
+            assert not missing, (
+                f"Missing SIBR MCP tools: {missing}\n"
+                f"Available SIBR tools: {sorted(n for n in names if n.startswith('sibr_'))}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 
