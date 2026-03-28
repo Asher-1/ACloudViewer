@@ -197,10 +197,10 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
         case QVariant::String:
             return QStringLiteral("\"%1\"").arg(v.toString());
         case QVariant::List: {
-            if (depth > 3) return QStringLiteral("[...]");
+            if (depth > 5) return QStringLiteral("[...]");  // Increased from 3 to 5
             const QVariantList list = v.toList();
             if (list.isEmpty()) return QStringLiteral("[]");
-            if (list.size() > 20)
+            if (list.size() > 100)  // Increased from 20 to 100
                 return QStringLiteral("[%1 items]").arg(list.size());
             QStringList items;
             items.reserve(list.size());
@@ -209,7 +209,7 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
             return QStringLiteral("[%1]").arg(items.join(", "));
         }
         case QVariant::Map: {
-            if (depth > 3) return QStringLiteral("{...}");
+            if (depth > 5) return QStringLiteral("{...}");  // Increased from 3 to 5
             const QVariantMap map = v.toMap();
             if (map.isEmpty()) return QStringLiteral("{}");
             QStringList items;
@@ -299,17 +299,16 @@ static void prettyAppend(QStringList& out,
         const QString child = prefix + QStringLiteral("  ");
         for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
             const int ct = static_cast<int>(it.value().type());
-            const bool nested = (ct == QVariant::Map || ct == QVariant::List);
-            if (nested && depth + 1 < maxDepth) {
-                QString compact = variantToLogString(it.value(), depth + 1);
-                if (compact.length() <= 80) {
-                    out << prefix + it.key().leftJustified(maxKeyLen) +
-                                    QStringLiteral(" : ") + compact;
-                } else {
-                    out << prefix + it.key() + QStringLiteral(":");
-                    prettyAppend(out, it.value(), child, depth + 1, maxDepth);
-                }
+            // Treat ALL Maps and Lists as nested, regardless of their content
+            // This ensures objects like bbox are always beautifully formatted
+            const bool isMapOrList = (ct == QVariant::Map || ct == QVariant::List);
+            
+            if (isMapOrList && depth + 1 < maxDepth) {
+                // Multi-line format for Maps/Lists
+                out << prefix + it.key().leftJustified(maxKeyLen) + QStringLiteral(":");
+                prettyAppend(out, it.value(), child, depth + 1, maxDepth);
             } else {
+                // Simple values on same line
                 out << prefix + it.key().leftJustified(maxKeyLen) +
                                 QStringLiteral(" : ") +
                                 variantToLogString(it.value(), depth + 1);
@@ -329,15 +328,15 @@ static void prettyAppend(QStringList& out,
         }
         if (allSimple) {
             QString compact = variantToLogString(v, depth);
-            if (compact.length() <= 120) {
+            if (compact.length() <= 200) {  // Increased from 120 to 200
                 out << prefix + compact;
                 return;
             }
         }
 
-        const int show = qMin(list.size(), 10);
-        if (list.size() > 10)
-            out << prefix + QStringLiteral("(%1 items, first 10)")
+        const int show = qMin(list.size(), 50);  // Increased from 10 to 50
+        if (list.size() > 50)  // Increased from 10 to 50
+            out << prefix + QStringLiteral("(%1 items, first 50)")
                                     .arg(list.size());
 
         const QString child = prefix + QStringLiteral("  ");
@@ -352,7 +351,7 @@ static void prettyAppend(QStringList& out,
                                 variantToLogString(list[i], depth + 1);
             }
         }
-        if (list.size() > 10) out << prefix + QStringLiteral("...");
+        if (list.size() > 50) out << prefix + QStringLiteral("...");  // Increased from 10 to 50
     } else {
         out << prefix + variantToLogString(v, depth);
     }
@@ -365,11 +364,10 @@ static QString prettyFormatResult(const QVariant& v) {
         return variantToLogString(v, 0);
     }
 
-    QString compact = variantToLogString(v, 0);
-    if (compact.length() <= 100) return compact;
-
+    // Always use multi-line format for Maps and Lists for beautiful JSON display
+    // This ensures structured data like bbox is displayed with proper indentation
     QStringList lines;
-    prettyAppend(lines, v, QStringLiteral("  |   "), 0, 4);
+    prettyAppend(lines, v, QStringLiteral("  |   "), 0, 6);  // Increased from 4 to 6
     return lines.join(QChar('\n'));
 }
 
@@ -630,14 +628,14 @@ void JsonRPCPlugin::logRequest(const QString& method,
         QString valStr = variantToLogString(it.value());
         QString tag = variantTypeTag(it.value());
 
-        if (valStr.length() <= 80) {
+        if (valStr.length() <= 150) {  // Increased from 80 to 150
             lines << QStringLiteral("  | %1 : %2  (%3)")
                              .arg(it.key().leftJustified(maxKeyLen), valStr,
                                   tag);
         } else {
             lines << QStringLiteral("  | %1 :  (%2)")
                              .arg(it.key().leftJustified(maxKeyLen), tag);
-            prettyAppend(lines, it.value(), QStringLiteral("  |   "), 0, 3);
+            prettyAppend(lines, it.value(), QStringLiteral("  |   "), 0, 6);  // Increased from 3 to 6
         }
     }
     CVLog::Print(lines.join("\n"));

@@ -28,8 +28,10 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QSize>
 #include <QStandardPaths>
 #include <QThread>
 #include <QTime>
@@ -75,6 +77,36 @@ void ecvCustomQListWidget::keyPressEvent(QKeyEvent* event) {
     } else {
         QListWidget::keyPressEvent(event);
     }
+}
+
+int ecvCustomQListWidget::sizeHintForColumn(int column) const {
+    // Calculate the maximum width needed for all items
+    int maxWidth = 0;
+    QFontMetrics fm(font());
+    
+    for (int i = 0; i < count(); ++i) {
+        QListWidgetItem* listItem = item(i);
+        if (listItem) {
+            QString text = listItem->text();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+            int textWidth = fm.horizontalAdvance(text);
+#else
+            int textWidth = fm.width(text);
+#endif
+            maxWidth = qMax(maxWidth, textWidth);
+        }
+    }
+    
+    // Add some padding for margins and scrollbar
+    return maxWidth + 40;
+}
+
+void ecvCustomQListWidget::updateHorizontalScrollRange() {
+    // Force the widget to recalculate its content size
+    updateGeometries();
+    
+    // Schedule a layout update
+    scheduleDelayedItemsLayout();
 }
 
 // ecvConsole
@@ -175,7 +207,7 @@ void ecvConsole::EnableQtMessages(bool state) {
                                 s_showQtMessagesInConsole);
 }
 
-void ecvConsole::Init(QListWidget* textDisplay /*=0*/,
+void ecvConsole::Init(ecvCustomQListWidget* textDisplay /*=0*/,
                       QWidget* parentWidget /*=0*/,
                       MainWindow* parentWindow /*=0*/,
                       bool redirectToStdOut /*=false*/) {
@@ -227,6 +259,7 @@ void ecvConsole::refresh() {
     if (m_textDisplay && !m_queue.isEmpty()) {
         // Note: Message filtering based on verbosity level is now done in
         // CVLog::LogMessage(), so we just display all messages in the queue
+        
         for (QVector<ConsoleItemType>::const_iterator it = m_queue.constBegin();
              it != m_queue.constEnd(); ++it) {
             // it->second = message severity
@@ -259,6 +292,9 @@ void ecvConsole::refresh() {
             m_textDisplay->addItem(item);
         }
 
+        // Update horizontal scrollbar range to handle long text
+        m_textDisplay->updateHorizontalScrollRange();
+
         m_textDisplay->scrollToBottom();
     }
 
@@ -281,21 +317,31 @@ void ecvConsole::logMessage(const QString& message, int level) {
     // QString filename = __FILE__;
     // QString functionname = __FUNCTION__;
 
-    QString formatedMessage =
-            QStringLiteral("[") + DATETIME + QStringLiteral("] ") + message;
-
     if (s_redirectToStdOut) {
         printf("%s\n", qPrintable(message));
     }
     if (m_textDisplay || m_logStream) {
         m_mutex.lock();
 
+        // Split multi-line messages for better display
+        QStringList lines = message.split('\n');
+        
         // Write to log file immediately for crash safety (all messages)
         // UI update will still be handled by the timer for performance
         if (m_logStream) {
-            *m_logStream << formatedMessage << QtCompat::endl;
-            // Flush immediately for ERROR/WARNING, or every few messages for
-            // others
+            // Write first line with timestamp
+            QString firstLine = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + 
+                              (lines.isEmpty() ? message : lines[0]);
+            *m_logStream << firstLine << QtCompat::endl;
+            
+            // Write remaining lines with indentation (no timestamp)
+            for (int i = 1; i < lines.size(); ++i) {
+                if (!lines[i].trimmed().isEmpty()) {
+                    *m_logStream << "    " << lines[i] << QtCompat::endl;
+                }
+            }
+            
+            // Flush immediately for ERROR/WARNING, or every few messages for others
             if ((level & LOG_ERROR) || (level & LOG_WARNING)) {
                 m_logFile.flush();
             }
@@ -303,7 +349,23 @@ void ecvConsole::logMessage(const QString& message, int level) {
 
         // Queue for UI update
         if (m_textDisplay) {
-            m_queue.push_back(ConsoleItemType(formatedMessage, level));
+            if (lines.size() > 1) {
+                // Multi-line message: add first line with timestamp
+                QString firstLine = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + lines[0];
+                m_queue.push_back(ConsoleItemType(firstLine, level));
+                
+                // Add remaining lines with indentation (no timestamp)
+                for (int i = 1; i < lines.size(); ++i) {
+                    if (!lines[i].trimmed().isEmpty()) {
+                        QString indentedLine = QStringLiteral("    ") + lines[i];
+                        m_queue.push_back(ConsoleItemType(indentedLine, level));
+                    }
+                }
+            } else {
+                // Single line message: add with timestamp
+                QString formatedMessage = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + message;
+                m_queue.push_back(ConsoleItemType(formatedMessage, level));
+            }
         }
 
         m_mutex.unlock();

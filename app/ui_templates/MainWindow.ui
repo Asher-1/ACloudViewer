@@ -859,6 +859,21 @@ QTreeView::branch:open:has-children:has-siblings  {
          <height>80</height>
         </size>
        </property>
+       <property name="wordWrap">
+        <bool>false</bool>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="textElideMode">
+        <enum>Qt::ElideNone</enum>
+       </property>
+       <property name="uniformItemSizes">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
     </layout>
