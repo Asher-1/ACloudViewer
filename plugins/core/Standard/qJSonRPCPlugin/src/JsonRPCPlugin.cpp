@@ -197,7 +197,8 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
         case QVariant::String:
             return QStringLiteral("\"%1\"").arg(v.toString());
         case QVariant::List: {
-            if (depth > 5) return QStringLiteral("[...]");  // Increased from 3 to 5
+            if (depth > 5)
+                return QStringLiteral("[...]");  // Increased from 3 to 5
             const QVariantList list = v.toList();
             if (list.isEmpty()) return QStringLiteral("[]");
             if (list.size() > 100)  // Increased from 20 to 100
@@ -209,7 +210,8 @@ static QString variantToLogString(const QVariant& v, int depth = 0) {
             return QStringLiteral("[%1]").arg(items.join(", "));
         }
         case QVariant::Map: {
-            if (depth > 5) return QStringLiteral("{...}");  // Increased from 3 to 5
+            if (depth > 5)
+                return QStringLiteral("{...}");  // Increased from 3 to 5
             const QVariantMap map = v.toMap();
             if (map.isEmpty()) return QStringLiteral("{}");
             QStringList items;
@@ -301,11 +303,13 @@ static void prettyAppend(QStringList& out,
             const int ct = static_cast<int>(it.value().type());
             // Treat ALL Maps and Lists as nested, regardless of their content
             // This ensures objects like bbox are always beautifully formatted
-            const bool isMapOrList = (ct == QVariant::Map || ct == QVariant::List);
-            
+            const bool isMapOrList =
+                    (ct == QVariant::Map || ct == QVariant::List);
+
             if (isMapOrList && depth + 1 < maxDepth) {
                 // Multi-line format for Maps/Lists
-                out << prefix + it.key().leftJustified(maxKeyLen) + QStringLiteral(":");
+                out << prefix + it.key().leftJustified(maxKeyLen) +
+                                QStringLiteral(":");
                 prettyAppend(out, it.value(), child, depth + 1, maxDepth);
             } else {
                 // Simple values on same line
@@ -335,7 +339,7 @@ static void prettyAppend(QStringList& out,
         }
 
         const int show = qMin(list.size(), 50);  // Increased from 10 to 50
-        if (list.size() > 50)  // Increased from 10 to 50
+        if (list.size() > 50)                    // Increased from 10 to 50
             out << prefix + QStringLiteral("(%1 items, first 50)")
                                     .arg(list.size());
 
@@ -351,7 +355,8 @@ static void prettyAppend(QStringList& out,
                                 variantToLogString(list[i], depth + 1);
             }
         }
-        if (list.size() > 50) out << prefix + QStringLiteral("...");  // Increased from 10 to 50
+        if (list.size() > 50)
+            out << prefix + QStringLiteral("...");  // Increased from 10 to 50
     } else {
         out << prefix + variantToLogString(v, depth);
     }
@@ -364,10 +369,12 @@ static QString prettyFormatResult(const QVariant& v) {
         return variantToLogString(v, 0);
     }
 
-    // Always use multi-line format for Maps and Lists for beautiful JSON display
-    // This ensures structured data like bbox is displayed with proper indentation
+    // Always use multi-line format for Maps and Lists for beautiful JSON
+    // display This ensures structured data like bbox is displayed with proper
+    // indentation
     QStringList lines;
-    prettyAppend(lines, v, QStringLiteral("  |   "), 0, 6);  // Increased from 4 to 6
+    prettyAppend(lines, v, QStringLiteral("  |   "), 0,
+                 6);  // Increased from 4 to 6
     return lines.join(QChar('\n'));
 }
 
@@ -635,7 +642,8 @@ void JsonRPCPlugin::logRequest(const QString& method,
         } else {
             lines << QStringLiteral("  | %1 :  (%2)")
                              .arg(it.key().leftJustified(maxKeyLen), tag);
-            prettyAppend(lines, it.value(), QStringLiteral("  |   "), 0, 6);  // Increased from 3 to 6
+            prettyAppend(lines, it.value(), QStringLiteral("  |   "), 0,
+                         6);  // Increased from 3 to 6
         }
     }
     CVLog::Print(lines.join("\n"));
