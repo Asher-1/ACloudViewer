@@ -605,17 +605,18 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     binary_path = _resolve_exe(binary_path)
     env = os.environ.copy()
 
-    if "QT_QPA_PLATFORM" not in env:
-        # macOS: Use minimal to avoid GUI windows popping up during tests.
-        #        offscreen may not be available on all Qt builds.
-        # Windows: windeployqt doesn't ship qoffscreen; default to minimal.
-        # Linux: offscreen is always available.
-        if IS_MACOS:
-            env["QT_QPA_PLATFORM"] = "minimal"
-        elif IS_WINDOWS:
-            env["QT_QPA_PLATFORM"] = "minimal"
-        else:
-            env["QT_QPA_PLATFORM"] = "offscreen"
+    # Set or remove QT_QPA_PLATFORM based on platform:
+    # - macOS: Don't set it - .app bundles only have cocoa plugin, Qt auto-selects it
+    # - Windows: Use minimal (windeployqt doesn't ship qoffscreen)
+    # - Linux: Use offscreen (always available)
+    if IS_MACOS:
+        # macOS .app bundles only include cocoa Qt platform plugin.
+        # Remove QT_QPA_PLATFORM if set externally so Qt auto-selects cocoa.
+        env.pop("QT_QPA_PLATFORM", None)
+    elif IS_WINDOWS:
+        env["QT_QPA_PLATFORM"] = "minimal"
+    else:
+        env["QT_QPA_PLATFORM"] = "offscreen"
 
     bin_dir = str(Path(binary_path).parent)
     lib_dir = str(Path(bin_dir) / "lib")
@@ -642,8 +643,8 @@ class TestLevel3_HeadlessProcessing:
     directly via subprocess so they work with both installed binaries and
     build-directory binaries.
     
-    Note: On macOS, -SILENT mode now automatically uses the minimal platform
-    plugin for true headless operation without requiring a display server.
+    Note: On macOS, -SILENT mode uses the cocoa platform plugin (the only
+    plugin included in .app bundles) which works in headless mode.
     """
 
     @pytest.fixture
