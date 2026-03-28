@@ -551,6 +551,21 @@ class TestLevel2_CLIHarness:
         assert r.returncode == 0
         assert "viewer" in r.stdout.lower() or "tool" in r.stdout.lower(), \
             "SIBR group should reference viewer or tool functionality"
+    
+    def test_level2_sibr_viewer_help(self):
+        """Test sibr viewer subcommand help and viewer types."""
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "sibr", "viewer", "--help"],
+            capture_output=True, text=True, timeout=10)
+        # If implemented, should return 0; if not implemented yet, may return non-zero
+        if r.returncode == 0:
+            output = r.stdout.lower()
+            # Check for viewer types
+            for viewer in ["gaussian", "ulr", "remotegaussian"]:
+                assert viewer in output, f"Missing viewer type: {viewer}"
+            # Check for common options
+            for opt in ["--path", "--model-path", "--width", "--height"]:
+                assert opt in r.stdout, f"Missing option: {opt}"
 
     def test_level2_reconstruct_subcommands(self):
         r = subprocess.run(
@@ -628,17 +643,29 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
         env["QT_QPA_PLATFORM"] = "offscreen"
 
     bin_dir = str(Path(binary_path).parent)
-    lib_dir = str(Path(bin_dir) / "lib")
     sep = ";" if IS_WINDOWS else ":"
+    
     if IS_WINDOWS:
-        env["PATH"] = sep.join(filter(None, [bin_dir, lib_dir, env.get("PATH", "")]))
+        # On Windows, add multiple potential DLL locations to PATH
+        dll_dirs = [
+            bin_dir,                           # Binary directory
+            str(Path(bin_dir) / "lib"),       # lib subdirectory
+            str(Path(bin_dir) / "bin"),       # bin subdirectory (if different)
+            str(Path(bin_dir) / "plugins"),   # plugins directory
+            str(Path(bin_dir) / "platforms"), # Qt platforms plugin directory
+        ]
+        # Filter to only existing directories
+        dll_dirs = [d for d in dll_dirs if Path(d).exists()]
+        env["PATH"] = sep.join(dll_dirs + [env.get("PATH", "")])
     elif IS_MACOS:
+        lib_dir = str(Path(bin_dir) / "lib")
         env["DYLD_LIBRARY_PATH"] = sep.join(
             filter(None, [bin_dir, lib_dir, env.get("DYLD_LIBRARY_PATH", "")]))
         qt_plugin_path = Path(binary_path).parent.parent / "PlugIns"
         if qt_plugin_path.exists():
             env["QT_PLUGIN_PATH"] = str(qt_plugin_path)
     else:
+        lib_dir = str(Path(bin_dir) / "lib")
         env["LD_LIBRARY_PATH"] = sep.join(
             filter(None, [bin_dir, lib_dir, env.get("LD_LIBRARY_PATH", "")]))
     return env
@@ -671,6 +698,14 @@ class TestLevel3_HeadlessProcessing:
         r = subprocess.run(
             [BINARY_PATH, "-SILENT", "-O", sample_ply, "-SAVE_CLOUDS"],
             capture_output=True, text=True, timeout=60, env=acv_env)
+        if IS_WINDOWS and r.returncode == 3221225781:  # 0xC0000135 STATUS_DLL_NOT_FOUND
+            pytest.fail(
+                f"Binary crashed with STATUS_DLL_NOT_FOUND (0xC0000135).\n"
+                f"This indicates missing DLL dependencies.\n"
+                f"Binary path: {BINARY_PATH}\n"
+                f"PATH env: {acv_env.get('PATH', 'NOT SET')[:500]}\n"
+                f"stderr: {r.stderr[-500:]}"
+            )
         assert r.returncode == 0, f"Binary load failed:\n{r.stderr[-2000:]}"
 
     def test_level3_subsample(self, sample_ply, tmp_path, acv_env):
@@ -679,6 +714,12 @@ class TestLevel3_HeadlessProcessing:
              "-SS", "SPATIAL", "0.2", "-SAVE_CLOUDS"],
             capture_output=True, text=True, timeout=60,
             env=acv_env, cwd=str(tmp_path))
+        if IS_WINDOWS and r.returncode == 3221225781:
+            pytest.fail(
+                f"Binary crashed with STATUS_DLL_NOT_FOUND (0xC0000135).\n"
+                f"Binary path: {BINARY_PATH}\n"
+                f"PATH: {acv_env.get('PATH', 'NOT SET')[:500]}"
+            )
         combined = r.stdout + r.stderr
         assert "Result:" in combined or r.returncode == 0, \
             f"Subsample failed (rc={r.returncode}):\n{combined[-2000:]}"
@@ -688,6 +729,12 @@ class TestLevel3_HeadlessProcessing:
             [BINARY_PATH, "-SILENT", "-O", sample_ply, "-COMPUTE_NORMALS"],
             capture_output=True, text=True, timeout=60,
             env=acv_env, cwd=str(tmp_path))
+        if IS_WINDOWS and r.returncode == 3221225781:
+            pytest.fail(
+                f"Binary crashed with STATUS_DLL_NOT_FOUND (0xC0000135).\n"
+                f"Binary path: {BINARY_PATH}\n"
+                f"PATH: {acv_env.get('PATH', 'NOT SET')[:500]}"
+            )
         assert r.returncode == 0, f"Normals failed:\n{(r.stdout + r.stderr)[-2000:]}"
 
 

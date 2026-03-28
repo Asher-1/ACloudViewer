@@ -59,10 +59,10 @@ cli-anything-acloudviewer open /path/to/scene.ply
 cli-anything-acloudviewer --json scene list
 cli-anything-acloudviewer view screenshot ./screenshot.png
 
-# SIBR Viewers (GUI needed)
-ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
-ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
-ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
+# SIBR Viewers (requires SIBR plugin)
+cli-anything-acloudviewer sibr viewer gaussian --model-path ./output/ --path ./dataset/
+cli-anything-acloudviewer sibr viewer ulr --path ./dataset/
+cli-anything-acloudviewer sibr viewer remoteGaussian --ip 127.0.0.1 --port 6009
 
 # Force headless (no GUI needed)
 cli-anything-acloudviewer --mode headless process icp source.ply target.ply
@@ -211,7 +211,8 @@ agent-integration/
 │   └── openclaw-skill.json # OpenClaw skill manifest
 ├── docs/
 │   ├── JSON-RPC-API.md     # Full JSON-RPC method reference
-│   └── TESTING.md          # End-to-end testing guide
+│   ├── TESTING.md          # End-to-end testing guide
+│   └── SIBR-VIEWER-CLI.md  # SIBR viewer CLI implementation guide
 ├── tests/
 │   ├── test_integration.py # Pytest test suite (Levels 1-5)
 │   └── run_all_tests.sh    # Bash test runner
@@ -338,7 +339,7 @@ The MCP server exposes **95+ tools** for AI agent use:
 | **Advanced Processing** | `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding`, `extract_connected_components`, `approx_density`, `geometric_feature`, `moment`, `best_fit_plane`, `rasterize`, `stat_test` |
 | **Misc** | `remove_rgb`, `remove_scan_grids`, `match_centers`, `drop_global_shift`, `closest_point_set`, `merge_clouds` |
 | **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model`, `colmap_run` |
-| **SIBR** | `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
+| **SIBR** | `sibr_viewer`, `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
 | **Transform** | `transform_apply`, `transform_apply_file` |
 | **Info** | `get_info`, `list_rpc_methods` |
 
@@ -454,6 +455,40 @@ cli-anything-acloudviewer reconstruct mesh input.ply -o mesh.ply
 
 **Quality levels**: `low`, `medium`, `high`, `extreme`
 
+### SIBR Viewers
+
+Launch SIBR viewers for novel view synthesis visualization:
+
+```bash
+# Gaussian Splatting viewer
+cli-anything-acloudviewer sibr viewer gaussian --model-path ./output/ --path ./dataset/
+cli-anything-acloudviewer sibr viewer gaussian --model-path ./output/ --path ./dataset/ --iteration 30000
+
+# ULR (Unstructured Lumigraph Rendering)
+cli-anything-acloudviewer sibr viewer ulr --path ./dataset/
+cli-anything-acloudviewer sibr viewer ulrv2 --path ./dataset/ --width 1920 --height 1080
+
+# Textured mesh viewer
+cli-anything-acloudviewer sibr viewer texturedmesh --path ./dataset/ --mesh ./mesh.ply
+
+# Point-based rendering
+cli-anything-acloudviewer sibr viewer pointbased --path ./dataset/
+
+# Remote Gaussian viewer (connects to training process)
+cli-anything-acloudviewer sibr viewer remoteGaussian --ip 127.0.0.1 --port 6009
+```
+
+**Available viewer types**: `gaussian`, `ulr`, `ulrv2`, `texturedmesh`, `pointbased`, `remoteGaussian`
+
+**Common options**:
+- `--path` — dataset directory (required for most viewers)
+- `--model-path` — trained model directory (for gaussian viewer)
+- `--width`, `--height` — window dimensions
+- `--iteration` — specific iteration to load (gaussian viewer)
+- `--device` — CUDA device ID (default: 0)
+- `--no-interop` — disable CUDA-OpenGL interop
+- `--ip`, `--port` — remote connection (remoteGaussian viewer)
+
 ### SIBR Dataset Tools
 
 ```bash
@@ -468,14 +503,6 @@ cli-anything-acloudviewer sibr crop-from-center ./dataset/
 cli-anything-acloudviewer sibr clipping-planes ./dataset/
 cli-anything-acloudviewer sibr distord-crop ./dataset/
 cli-anything-acloudviewer sibr tool <tool-name> [tool-args...]
-```
-
-SIBR viewers are invoked directly via the ACloudViewer binary:
-
-```bash
-ACloudViewer -SIBR_VIEWER gaussian --model-path ./output/ --path ./dataset/
-ACloudViewer -SIBR_VIEWER ulr --path ./dataset/
-ACloudViewer -SIBR_VIEWER remoteGaussian --ip 127.0.0.1 --port 6009
 ```
 
 ### Session Management
