@@ -26,13 +26,13 @@ class ecvCustomQListWidget : public QListWidget {
 
 public:
     ecvCustomQListWidget(QWidget* parent = nullptr);
-    
+
     //! Update horizontal scrollbar range based on actual content width
     void updateHorizontalScrollRange();
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
-    
+
     // Override to provide correct size hint for proper horizontal scrolling
     int sizeHintForColumn(int column) const override;
 };

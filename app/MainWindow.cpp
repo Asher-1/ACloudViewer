@@ -1229,21 +1229,23 @@ void MainWindow::connectActions() {
                                      Qt::CustomContextMenu);
     // Enable multi-selection (Ctrl+Click and Shift+Click)
     m_ui->consoleWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    
-    // Configure console widget to show full log messages (including long JSON strings)
-    // Disable word wrap to prevent breaking JSON/long text
+
+    // Configure console widget to show full log messages (including long JSON
+    // strings) Disable word wrap to prevent breaking JSON/long text
     m_ui->consoleWidget->setWordWrap(false);
     // Always show horizontal scrollbar to access full content
     m_ui->consoleWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_ui->consoleWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     // Enable pixel-based horizontal scrolling for smooth scrolling
-    m_ui->consoleWidget->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-    m_ui->consoleWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_ui->consoleWidget->setHorizontalScrollMode(
+            QAbstractItemView::ScrollPerPixel);
+    m_ui->consoleWidget->setVerticalScrollMode(
+            QAbstractItemView::ScrollPerPixel);
     // Disable text eliding to show full content
     m_ui->consoleWidget->setTextElideMode(Qt::ElideNone);
     // Don't use uniform item sizes (items may have different widths)
     m_ui->consoleWidget->setUniformItemSizes(false);
-    
+
     connect(m_ui->consoleWidget,
             &ecvCustomQListWidget::customContextMenuRequested, this,
             &MainWindow::popMenuInConsole);
