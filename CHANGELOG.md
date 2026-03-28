@@ -25,18 +25,26 @@ v3.9.5-Beta (Asher) - 02/02/2026
       MCP: cli-anything-acloudviewer-mcp) under the standard cli_anything namespace
     - Colmap-based 3D reconstruction: automatic pipeline, individual SfM/MVS steps,
       meshing, model conversion (14 CLI commands, 8 MCP tools)
+    - Add SIBR viewer support for cli-anything-acloudviewer
+    - Expand integration tests for full CLI/RPC/MCP coverage
+    - Sync tests, simplify shell runner, expand format coverage
+    - Optimize RPC plugin logging format text
+    - Fix qSIBR command issues for agent-integration and reconstruction
     - Fix: CVLog::Print arg() crash with QMap parameter (use qDebug instead)
     - CLI harness: auto-install with progress bar, retry mechanism (3x exponential
       backoff), and platform-specific silent installation (Linux .run, macOS DMG, Windows .exe)
     - CLI harness: fix ASCII format conversion (use ASC keyword matching AsciiFilter default extension)
+    - CI: improve reliability, CLI usability, and packaging
     - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
+    - CI: fix Windows, macOS, and Ubuntu-focal test issues
 
 - CLI & packaging:
     - Add --version/-v flag to ACloudViewer binary for quick version queries
     - Add --help/-h flag with comprehensive categorized command reference
       (I/O, processing, filters, registration, mesh, scalar fields, plugins, Colmap)
+    - Enable headless texturing and macOS CLI for Colmap reconstruction
     - Fix .desktop file version not updated during packaging
       (add replace_version_in_file for deployed data files in PostInstall.cmake)
     - Fix CMake cached version variables not refreshing after version.txt updates
@@ -108,12 +116,15 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix Point Gaussian sub-properties not greyed out when disabled
         - Shader Preset, Gaussian Radius, and Emissive are now disabled when Point Gaussian is unchecked
         - Sub-properties dynamically enable/disable when checkbox state changes
+    - Fix Selection Editor tool issues
+        - Fix Create selection issues
     - Fix Selection Tools "Create Data" panel bugs
         - Fix double extractSelectionRequested signal emission causing duplicate handlers
         - Fix updateSelection using singleton instead of injected m_selectionManager
         - Fix button layout: Freeze/Extract/PlotOverTime buttons were duplicated in two layouts
         - Fix "containing" operator to use vtkCellLocator for accurate point-in-cell tests (was bounding box only)
         - Fix Find Data / Clear Selection not notifying selection manager
+    - Fix Eigen3 configuration file compatibility issues
     - Fix DB tree and properties panel default width too narrow
         - Increase minimum width from 180px to 240px for both panels
         - Increase default width range to 250-380px (18% of screen width)
@@ -160,7 +171,8 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Use QImageReader::setAutoTransform(true) in ccImage::load and ImageFileFilter::loadFile
         - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
     - Upgrade to pybind11 3.0 for python plugins
-    - Add CodeQL CI support
+    - Add CodeQL CI support for security scanning
+    - Update translations
     - Clean up OpenGL surface format initialization order in ecvApplicationBase
     - Rename PCLUtils to Visualization
     - Remove pcl data structure dependency to speedup loading data and rendering
