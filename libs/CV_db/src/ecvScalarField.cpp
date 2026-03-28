@@ -647,3 +647,14 @@ void ccScalarField::importParametersFrom(const ccScalarField* sf) {
     setSaturationStart(sf->saturationRange().start());
     setSaturationStop(sf->saturationRange().stop());
 }
+
+const ecvColor::Rgb* ccScalarField::getColor(ScalarType value) const {
+    assert(m_colorScale);
+    return m_colorScale->getColorByRelativePos(
+            normalize(value), m_colorRampSteps,
+            m_showNaNValuesInGrey ? &ecvColor::lightGrey : nullptr);
+}
+
+const ecvColor::Rgb* ccScalarField::getValueColor(unsigned index) const {
+    return getColor(getValue(index));
+}

@@ -136,17 +136,10 @@ public:
     //! display parameters)
     /** Warning: must no be called if the SF is not associated to a color scale!
      **/
-    inline const ecvColor::Rgb* getColor(ScalarType value) const {
-        assert(m_colorScale);
-        return m_colorScale->getColorByRelativePos(
-                normalize(value), m_colorRampSteps,
-                m_showNaNValuesInGrey ? &ecvColor::lightGrey : nullptr);
-    }
+    const ecvColor::Rgb* getColor(ScalarType value) const;
 
     //! Shortcut to getColor
-    inline const ecvColor::Rgb* getValueColor(unsigned index) const {
-        return getColor(getValue(index));
-    }
+    const ecvColor::Rgb* getValueColor(unsigned index) const;
 
     //! Sets whether NaN/out of displayed range values should be displayed in
     //! gray or hidden
