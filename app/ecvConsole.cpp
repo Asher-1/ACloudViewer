@@ -83,7 +83,7 @@ int ecvCustomQListWidget::sizeHintForColumn(int column) const {
     // Calculate the maximum width needed for all items
     int maxWidth = 0;
     QFontMetrics fm(font());
-    
+
     for (int i = 0; i < count(); ++i) {
         QListWidgetItem* listItem = item(i);
         if (listItem) {
@@ -96,7 +96,7 @@ int ecvCustomQListWidget::sizeHintForColumn(int column) const {
             maxWidth = qMax(maxWidth, textWidth);
         }
     }
-    
+
     // Add some padding for margins and scrollbar
     return maxWidth + 40;
 }
@@ -104,7 +104,7 @@ int ecvCustomQListWidget::sizeHintForColumn(int column) const {
 void ecvCustomQListWidget::updateHorizontalScrollRange() {
     // Force the widget to recalculate its content size
     updateGeometries();
-    
+
     // Schedule a layout update
     scheduleDelayedItemsLayout();
 }
@@ -259,7 +259,7 @@ void ecvConsole::refresh() {
     if (m_textDisplay && !m_queue.isEmpty()) {
         // Note: Message filtering based on verbosity level is now done in
         // CVLog::LogMessage(), so we just display all messages in the queue
-        
+
         for (QVector<ConsoleItemType>::const_iterator it = m_queue.constBegin();
              it != m_queue.constEnd(); ++it) {
             // it->second = message severity
@@ -325,23 +325,25 @@ void ecvConsole::logMessage(const QString& message, int level) {
 
         // Split multi-line messages for better display
         QStringList lines = message.split('\n');
-        
+
         // Write to log file immediately for crash safety (all messages)
         // UI update will still be handled by the timer for performance
         if (m_logStream) {
             // Write first line with timestamp
-            QString firstLine = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + 
-                              (lines.isEmpty() ? message : lines[0]);
+            QString firstLine = QStringLiteral("[") + DATETIME +
+                                QStringLiteral("] ") +
+                                (lines.isEmpty() ? message : lines[0]);
             *m_logStream << firstLine << QtCompat::endl;
-            
+
             // Write remaining lines with indentation (no timestamp)
             for (int i = 1; i < lines.size(); ++i) {
                 if (!lines[i].trimmed().isEmpty()) {
                     *m_logStream << "    " << lines[i] << QtCompat::endl;
                 }
             }
-            
-            // Flush immediately for ERROR/WARNING, or every few messages for others
+
+            // Flush immediately for ERROR/WARNING, or every few messages for
+            // others
             if ((level & LOG_ERROR) || (level & LOG_WARNING)) {
                 m_logFile.flush();
             }
@@ -351,19 +353,22 @@ void ecvConsole::logMessage(const QString& message, int level) {
         if (m_textDisplay) {
             if (lines.size() > 1) {
                 // Multi-line message: add first line with timestamp
-                QString firstLine = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + lines[0];
+                QString firstLine = QStringLiteral("[") + DATETIME +
+                                    QStringLiteral("] ") + lines[0];
                 m_queue.push_back(ConsoleItemType(firstLine, level));
-                
+
                 // Add remaining lines with indentation (no timestamp)
                 for (int i = 1; i < lines.size(); ++i) {
                     if (!lines[i].trimmed().isEmpty()) {
-                        QString indentedLine = QStringLiteral("    ") + lines[i];
+                        QString indentedLine =
+                                QStringLiteral("    ") + lines[i];
                         m_queue.push_back(ConsoleItemType(indentedLine, level));
                     }
                 }
             } else {
                 // Single line message: add with timestamp
-                QString formatedMessage = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + message;
+                QString formatedMessage = QStringLiteral("[") + DATETIME +
+                                          QStringLiteral("] ") + message;
                 m_queue.push_back(ConsoleItemType(formatedMessage, level));
             }
         }
