@@ -88,12 +88,13 @@ def _find_build_binary() -> str | None:
         candidates = ["bin/ACloudViewer.exe", "bin/Release/ACloudViewer.exe",
                        "bin/Debug/ACloudViewer.exe", "Release/ACloudViewer.exe"]
     elif IS_MACOS:
-        candidates = ["bin/ACloudViewer", "bin/ACloudViewer.app/Contents/MacOS/ACloudViewer"]
+        # Check .app bundle path first to avoid selecting the directory
+        candidates = ["bin/ACloudViewer.app/Contents/MacOS/ACloudViewer", "bin/ACloudViewer"]
     else:
         candidates = ["bin/ACloudViewer", "ACloudViewer"]
     for c in candidates:
         p = BUILD_DIR / c
-        if p.exists():
+        if p.exists() and p.is_file():
             return str(p)
     return None
 
@@ -604,12 +605,17 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     binary_path = _resolve_exe(binary_path)
     env = os.environ.copy()
 
-    if IS_MACOS:
-        env.pop("QT_QPA_PLATFORM", None)
-    elif "QT_QPA_PLATFORM" not in env:
+    if "QT_QPA_PLATFORM" not in env:
+        # macOS: Use minimal to avoid GUI windows popping up during tests.
+        #        offscreen may not be available on all Qt builds.
         # Windows: windeployqt doesn't ship qoffscreen; default to minimal.
         # Linux: offscreen is always available.
-        env["QT_QPA_PLATFORM"] = "minimal" if IS_WINDOWS else "offscreen"
+        if IS_MACOS:
+            env["QT_QPA_PLATFORM"] = "minimal"
+        elif IS_WINDOWS:
+            env["QT_QPA_PLATFORM"] = "minimal"
+        else:
+            env["QT_QPA_PLATFORM"] = "offscreen"
 
     bin_dir = str(Path(binary_path).parent)
     lib_dir = str(Path(bin_dir) / "lib")
@@ -1008,7 +1014,19 @@ class TestLevel3_CLIFormatConversion:
 # Level 4: GUI RPC Tests (requires running ACloudViewer with JSON-RPC)
 # ═══════════════════════════════════════════════════════════════════════════
 
+@pytest.fixture(scope="module")
+def level4_cleanup():
+    """Clean up the scene after all Level 4 tests complete."""
+    yield
+    if _rpc_available():
+        try:
+            _rpc_call("clear", timeout=5)
+        except Exception:
+            pass
+
+
 @pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+@pytest.mark.usefixtures("level4_cleanup")
 class TestLevel4_GUIRPC:
     """Basic JSON-RPC connectivity and view control (no entities needed)."""
 
@@ -1140,6 +1158,7 @@ class TestLevel4_GUIRPC:
 # ── Level 4b: RPC File I/O ────────────────────────────────────────────────
 
 @pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+@pytest.mark.usefixtures("level4_cleanup")
 class TestLevel4_RPCFileOps:
     """Test JSON-RPC file open, convert, export, and screenshot after load."""
 
@@ -1244,6 +1263,7 @@ class TestLevel4_RPCFileOps:
 # ── Level 4c: RPC Entity Operations ───────────────────────────────────────
 
 @pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+@pytest.mark.usefixtures("level4_cleanup")
 class TestLevel4_RPCEntityOps:
     """Test JSON-RPC entity manipulation: rename, color, visibility, remove."""
 
@@ -1257,10 +1277,12 @@ class TestLevel4_RPCEntityOps:
     def loaded(self, sample_ply):
         result = _rpc_call("open", {"filename": sample_ply, "silent": True})
         cloud_id = _find_cloud_id(result)
-        yield {"group_id": result["id"], "cloud_id": cloud_id or result["id"],
+        group_id = result["id"]
+        yield {"group_id": group_id, "cloud_id": cloud_id or group_id,
                "result": result}
         try:
-            _rpc_call("clear", timeout=5)
+            # Remove only the loaded group, not the entire scene
+            _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
         except Exception:
             pass
 
@@ -1311,6 +1333,7 @@ class TestLevel4_RPCEntityOps:
 # ── Level 4d: RPC Cloud Processing ────────────────────────────────────────
 
 @pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+@pytest.mark.usefixtures("level4_cleanup")
 class TestLevel4_RPCCloudProcessing:
     """Test JSON-RPC cloud processing: normals, subsample, crop, paint."""
 
@@ -1325,9 +1348,11 @@ class TestLevel4_RPCCloudProcessing:
         result = _rpc_call("open", {"filename": sample_ply, "silent": True})
         cid = _find_cloud_id(result)
         assert cid is not None, "Expected a point cloud after loading PLY"
+        group_id = result["id"]  # Store the parent group ID for cleanup
         yield cid
         try:
-            _rpc_call("clear", timeout=5)
+            # Remove only the loaded group, not the entire scene
+            _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
         except Exception:
             pass
 

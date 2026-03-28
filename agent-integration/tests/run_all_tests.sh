@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-PYTHON="${PYTHON:-python3}"
+PYTHON="${PYTHON:-python}"
 if ! command -v "$PYTHON" &>/dev/null; then
     PYTHON=python
 fi
@@ -80,7 +80,7 @@ if [[ -f "$BUILD_DIR/CMakeCache.txt" ]]; then
         PLUGIN_BUILT=true
 
         PLUGIN_LIB=""
-        for pattern in "libQJSON_RPC_PLUGIN.so" "QJSON_RPC_PLUGIN.dylib" "QJSON_RPC_PLUGIN.dll"; do
+        for pattern in "libQJSON_RPC_PLUGIN.so" "libQJSON_RPC_PLUGIN.dylib" "QJSON_RPC_PLUGIN.dll" "QJSON_RPC_PLUGIN.dylib"; do
             PLUGIN_LIB=$(find "$BUILD_DIR" -name "$pattern" 2>/dev/null | head -1)
             [[ -n "$PLUGIN_LIB" ]] && break
         done
@@ -175,7 +175,8 @@ fi
 
 # ─── Set platform-specific env ──────────────────────────────────────────────
 if [[ "$OS_TYPE" == "macos" ]]; then
-    unset QT_QPA_PLATFORM 2>/dev/null || true
+    # Use minimal to avoid GUI windows popping up during tests
+    export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-minimal}"
 elif [[ "$OS_TYPE" == "windows" ]]; then
     export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-minimal}"
 else
@@ -189,7 +190,9 @@ if [[ $MAX_LEVEL -lt 5 ]]; then
     for i in $(seq 1 "$MAX_LEVEL"); do
         parts+=("level$i")
     done
-    LEVEL_FILTER=$(IFS=" or "; echo "${parts[*]}")
+    # Join with " or " for pytest -k syntax
+    LEVEL_FILTER=$(printf " or %s" "${parts[@]}")
+    LEVEL_FILTER="${LEVEL_FILTER:4}"  # Remove leading " or "
 fi
 
 # ─── Run pytest ─────────────────────────────────────────────────────────────
