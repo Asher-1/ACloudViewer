@@ -175,8 +175,10 @@ fi
 
 # ─── Set platform-specific env ──────────────────────────────────────────────
 if [[ "$OS_TYPE" == "macos" ]]; then
-    # Use minimal to avoid GUI windows popping up during tests
-    export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-minimal}"
+    # macOS .app bundles only include cocoa Qt platform plugin.
+    # Don't set QT_QPA_PLATFORM - let Qt auto-select cocoa.
+    # (Remove if set externally to avoid "minimal not found" errors)
+    unset QT_QPA_PLATFORM
 elif [[ "$OS_TYPE" == "windows" ]]; then
     export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-minimal}"
 else
