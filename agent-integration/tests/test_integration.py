@@ -1840,7 +1840,7 @@ class TestLevel4_GUIRPC:
                          "cloud.paintUniform", "cloud.paintByHeight",
                          "cloud.setActiveSf", "cloud.removeSf",
                          "cloud.removeAllSfs", "cloud.renameSf",
-                         "cloud.filterSf", "cloud.coordToSf",
+                         "cloud.filterSf", "cloud.coordToSF",
                          "cloud.removeRgb", "cloud.removeNormals",
                          "cloud.invertNormals", "cloud.merge",
                          "mesh.simplify", "mesh.smooth", "mesh.samplePoints",
@@ -2197,13 +2197,13 @@ class TestLevel4_RPCCloudProcessing:
         assert result["type"] == "POINT_CLOUD"
 
     def test_level4_rpc_cloud_coord_to_sf(self, cloud_id):
-        result = _rpc_call("cloud.coordToSf",
+        result = _rpc_call("cloud.coordToSF",
                            {"entity_id": cloud_id, "dimension": "z"})
         assert result.get("entity_id") == cloud_id
         assert result.get("dimension") == "z"
 
     def test_level4_rpc_cloud_set_active_sf(self, cloud_id):
-        _rpc_call("cloud.coordToSf",
+        _rpc_call("cloud.coordToSF",
                   {"entity_id": cloud_id, "dimension": "z"})
         result = _rpc_call("cloud.setActiveSf",
                            {"entity_id": cloud_id, "field_index": 0})
@@ -2211,7 +2211,7 @@ class TestLevel4_RPCCloudProcessing:
         assert result.get("field_index") == 0 or result.get("active_sf_index") == 0
 
     def test_level4_rpc_cloud_rename_sf(self, cloud_id):
-        _rpc_call("cloud.coordToSf",
+        _rpc_call("cloud.coordToSF",
                   {"entity_id": cloud_id, "dimension": "z"})
         result = _rpc_call("cloud.renameSf",
                            {"entity_id": cloud_id,
@@ -2220,7 +2220,7 @@ class TestLevel4_RPCCloudProcessing:
         assert result.get("new_name") == "test_sf"
 
     def test_level4_rpc_cloud_remove_sf(self, cloud_id):
-        _rpc_call("cloud.coordToSf",
+        _rpc_call("cloud.coordToSF",
                   {"entity_id": cloud_id, "dimension": "z"})
         sfs_before = _rpc_call("cloud.getScalarFields",
                                {"entity_id": cloud_id})
@@ -2232,7 +2232,7 @@ class TestLevel4_RPCCloudProcessing:
         assert len(sfs_after) < len(sfs_before)
 
     def test_level4_rpc_cloud_remove_all_sfs(self, cloud_id):
-        _rpc_call("cloud.coordToSf",
+        _rpc_call("cloud.coordToSF",
                   {"entity_id": cloud_id, "dimension": "z"})
         result = _rpc_call("cloud.removeAllSfs",
                            {"entity_id": cloud_id})
@@ -2242,7 +2242,7 @@ class TestLevel4_RPCCloudProcessing:
         assert len(sfs) == 0
 
     def test_level4_rpc_cloud_filter_sf(self, cloud_id):
-        _rpc_call("cloud.coordToSf",
+        _rpc_call("cloud.coordToSF",
                   {"entity_id": cloud_id, "dimension": "z"})
         _rpc_call("cloud.setActiveSf",
                   {"entity_id": cloud_id, "field_index": 0})

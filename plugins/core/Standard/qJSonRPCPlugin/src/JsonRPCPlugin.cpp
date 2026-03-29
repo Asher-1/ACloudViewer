@@ -519,7 +519,7 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcCloudRenameSf(p); });
     reg("cloud.filterSf",    "Filter by scalar field range: {entity_id, field_index | field_name, min, max}",
         [this](auto& p){ return rpcCloudFilterSf(p); });
-    reg("cloud.coordToSf",   "Coordinate to scalar field: {entity_id, dimension: x|y|z}",
+    reg("cloud.coordToSF",   "Coordinate to scalar field: {entity_id, dimension: x|y|z}",
         [this](auto& p){ return rpcCloudCoordToSf(p); });
 
     // --- Cloud geometry (NEW) ---
@@ -559,7 +559,7 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcCloudSfArithmetic(p); });
     reg("cloud.sfOperation", "Scalar field with constant: {entity_id, sf_index, operation, value}",
         [this](auto& p){ return rpcCloudSfOperation(p); });
-    reg("cloud.sfGradient",  "Scalar field gradient: {entity_id, sf_index}",
+    reg("cloud.sfGradient",  "Scalar field gradient: {entity_id, sf_index?, radius?}",
         [this](auto& p){ return rpcCloudSfGradient(p); });
     reg("cloud.sfConvertToRGB","Convert SF to RGB: {entity_id, sf_index}",
         [this](auto& p){ return rpcCloudSfConvertToRGB(p); });
@@ -2387,13 +2387,18 @@ JsonRPCResult JsonRPCPlugin::rpcCloudSfGradient(
                   "sf_index", sfIndex));
     }
 
-    bool result = cloudViewer::ScalarFieldTools::computeScalarFieldGradient(
-            cloud, false, true, nullptr, nullptr);
+    cloud->setCurrentDisplayedScalarField(sfIndex);
+    cloud->showSF(true);
 
-    if (!result) {
+    PointCoordinateType radius = params.value("radius", 0.0).toDouble();
+    int result = cloudViewer::ScalarFieldTools::computeScalarFieldGradient(
+            cloud, radius, false, false, nullptr, nullptr);
+
+    if (result < 0) {
         return JsonRPCResult::error(
                 5, "Gradient computation failed",
-                D("entity_id", static_cast<qint64>(entityId)));
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
     }
 
     int newSfCount = static_cast<int>(cloud->getNumberOfScalarFields());
@@ -2653,67 +2658,53 @@ JsonRPCResult JsonRPCPlugin::rpcCloudColorBanding(
     QString axis = params.value("axis", "Z").toString().toUpper();
     double frequency = params.value("frequency", 10.0).toDouble();
 
-    if (!cloud->reserveTheRGBTable()) {
-        return JsonRPCResult::error(
-                5, "Failed to allocate color table",
-                D("entity_id", static_cast<qint64>(entityId)));
-    }
-
-    unsigned count = cloud->size();
+    // Use coordinate-to-SF + paintByScalarField instead of direct color manipulation
+    // This is more stable and uses existing tested code paths
     
-    // Get bounding box for normalization
-    ccBBox bbox = cloud->getOwnBB();
-    if (!bbox.isValid()) {
-        return JsonRPCResult::error(
-                5, "Invalid bounding box",
-                D("entity_id", static_cast<qint64>(entityId)));
-    }
+    // First, convert coordinate to scalar field
+    int dimension = 2;  // Z
+    if (axis == "X") dimension = 0;
+    else if (axis == "Y") dimension = 1;
     
-    double minCoord = 0, maxCoord = 1;
-    if (axis == "X") {
-        minCoord = bbox.minCorner().x;
-        maxCoord = bbox.maxCorner().x;
-    } else if (axis == "Y") {
-        minCoord = bbox.minCorner().y;
-        maxCoord = bbox.maxCorner().y;
-    } else {
-        minCoord = bbox.minCorner().z;
-        maxCoord = bbox.maxCorner().z;
-    }
-    
-    double range = maxCoord - minCoord;
-    if (range < 1e-6) {
-        range = 1.0;
-    }
-    
-    for (unsigned i = 0; i < count; ++i) {
-        const CCVector3* P = cloud->getPoint(i);
-        double coord = 0;
-        if (axis == "X") coord = P->x;
-        else if (axis == "Y") coord = P->y;
-        else coord = P->z;
-
-        // Normalize coordinate to [0, 1]
-        double normalized = (coord - minCoord) / range;
+    QString sfName = QString("Coord_%1").arg(axis);
+    int sfIdx = cloud->getScalarFieldIndexByName(qPrintable(sfName));
+    if (sfIdx < 0) {
+        sfIdx = cloud->addScalarField(qPrintable(sfName));
+        if (sfIdx < 0) {
+            return JsonRPCResult::error(
+                    5, "Failed to create scalar field",
+                    D("entity_id", static_cast<qint64>(entityId)));
+        }
         
-        // Apply banding with frequency
-        double phase = std::fmod(normalized * frequency, 1.0);
-        if (phase < 0) phase += 1.0;  // Ensure positive
+        ccScalarField* sf = static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
+        if (!sf || !sf->resizeSafe(cloud->size())) {
+            return JsonRPCResult::error(
+                    5, "Failed to allocate scalar field",
+                    D("entity_id", static_cast<qint64>(entityId)));
+        }
         
-        unsigned char r = static_cast<unsigned char>(phase * 255);
-        unsigned char g = static_cast<unsigned char>((1.0 - phase) * 255);
-        unsigned char b = 128;
-
-        cloud->setPointColor(i, ecvColor::Rgb(r, g, b));
+        for (unsigned i = 0; i < cloud->size(); ++i) {
+            const CCVector3* P = cloud->getPoint(i);
+            if (!P) continue;
+            
+            ScalarType val = 0;
+            if (dimension == 0) val = P->x;
+            else if (dimension == 1) val = P->y;
+            else val = P->z;
+            
+            sf->setValue(i, val);
+        }
+        sf->computeMinAndMax();
     }
-
-    cloud->showColors(true);
-    redraw();
-
-    QJsonObject response;
-    response["entity_id"] = static_cast<qint64>(entityId);
-    response["has_colors"] = cloud->hasColors();
-    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+    
+    // Now use paintByScalarField
+    cloud->setCurrentDisplayedScalarField(sfIdx);
+    
+    QMap<QString, QVariant> paintParams;
+    paintParams["entity_id"] = entityId;
+    paintParams["field_index"] = sfIdx;
+    
+    return rpcCloudPaintByScalarField(paintParams);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
