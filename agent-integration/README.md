@@ -59,7 +59,7 @@ cli-anything-acloudviewer open /path/to/scene.ply
 cli-anything-acloudviewer --json scene list
 cli-anything-acloudviewer view screenshot ./screenshot.png
 
-# SIBR Viewers (requires SIBR plugin)
+# SIBR Viewers (requires SIBR plugin and GUI)
 cli-anything-acloudviewer sibr viewer gaussian --model-path ./output/ --path ./dataset/
 cli-anything-acloudviewer sibr viewer ulr --path ./dataset/
 cli-anything-acloudviewer sibr viewer remoteGaussian --ip 127.0.0.1 --port 6009
@@ -210,15 +210,27 @@ agent-integration/
 │   ├── README.md           # OpenClaw integration guide
 │   └── openclaw-skill.json # OpenClaw skill manifest
 ├── docs/
-│   ├── JSON-RPC-API.md     # Full JSON-RPC method reference
-│   ├── TESTING.md          # End-to-end testing guide
-│   └── SIBR-VIEWER-CLI.md  # SIBR viewer CLI implementation guide
+│   ├── JSON-RPC-API.md        # Full JSON-RPC method reference
+│   ├── TESTING.md             # End-to-end testing guide
+│   ├── SIBR-VIEWER-CLI.md     # SIBR viewer CLI implementation guide
+│   ├── CLI-QUICK-REFERENCE.md # Comprehensive CLI command cheat sheet
+│   ├── COMMAND-MAPPING.md     # Command groups, aliases, and equivalences
 ├── tests/
 │   ├── test_integration.py # Pytest test suite (Levels 1-5)
 │   └── run_all_tests.sh    # Bash test runner
 └── examples/
-    ├── websocket_client.py # Minimal WebSocket client example
-    └── batch_process.py    # Headless batch processing example
+    ├── websocket_client.py                # Minimal WebSocket client example
+    ├── batch_process.py                   # Headless batch processing example
+    ├── demo_agent_integration.ipynb       # Jupyter notebook with all features
+    ├── advanced_processing_example.py     # Geometric features, density, curvature, roughness
+    ├── scalar_field_example.py            # Scalar field operations and arithmetic
+    ├── normals_processing_example.py      # Normal computation, orientation, inversion
+    ├── registration_example.py            # ICP registration and alignment workflow
+    ├── distance_analysis_example.py       # C2C, C2M distance computation and validation
+    ├── color_operations_example.py        # Color painting, banding, scalar field visualization
+    ├── mesh_processing_example.py         # Mesh creation, simplification, smoothing
+    ├── reconstruction_pipeline_example.py # Full 3D reconstruction workflow
+    └── format_converter_example.py        # Format conversion and batch operations
 ```
 
 ## JSON-RPC API Overview
@@ -345,6 +357,10 @@ The MCP server exposes **95+ tools** for AI agent use:
 
 ## CLI Command Reference
 
+> **Quick Reference**: See [docs/CLI-QUICK-REFERENCE.md](docs/CLI-QUICK-REFERENCE.md) for a comprehensive command cheat sheet and usage patterns.
+> 
+> **Command Groups**: See [docs/COMMAND-MAPPING.md](docs/COMMAND-MAPPING.md) for command group relationships and equivalences between `process`, `sf`, and `normals` commands.
+
 ### REPL Mode
 
 ```bash
@@ -397,19 +413,154 @@ cli-anything-acloudviewer view pointsize -           # decrease point size
 
 ### Processing (Headless)
 
+#### Basic Operations
+
 ```bash
 cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
 cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
-cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply
-cli-anything-acloudviewer process sor input.ply -o clean.ply --knn 6 --std 1.0
+cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply --iterations 100
+cli-anything-acloudviewer process sor input.ply -o clean.ply --knn 6 --sigma 1.0
+```
+
+#### Distance Computation
+
+```bash
 cli-anything-acloudviewer process c2c-dist compared.ply reference.ply -o dist.ply
 cli-anything-acloudviewer process c2m-dist cloud.ply mesh.obj -o dist.ply
+cli-anything-acloudviewer process c2c-dist compared.ply reference.ply -o dist.ply --max-distance 1.0
+```
+
+#### Geometric Features
+
+```bash
 cli-anything-acloudviewer process density input.ply -o density.ply --radius 0.05
-cli-anything-acloudviewer process curvature input.ply -o curv.ply
+cli-anything-acloudviewer process curvature input.ply -o curv.ply --type MEAN
+cli-anything-acloudviewer process curvature input.ply -o curv.ply --type GAUSS
 cli-anything-acloudviewer process roughness input.ply -o rough.ply --radius 0.1
-cli-anything-acloudviewer process delaunay input.ply -o mesh.ply
-cli-anything-acloudviewer process sample-mesh mesh.obj -o cloud.ply --density 100
-cli-anything-acloudviewer process color-banding input.ply -o colored.ply
+cli-anything-acloudviewer process approx-density input.ply -o approx_dens.ply
+cli-anything-acloudviewer process feature input.ply -o features.ply --type SURFACE_VARIATION --kernel-size 0.1
+```
+
+#### Advanced Processing
+
+```bash
+cli-anything-acloudviewer process extract-cc input.ply -o components.ply --min-points 100 --octree-level 8
+cli-anything-acloudviewer process moment input.ply -o moment.ply --kernel-size 0.1
+cli-anything-acloudviewer process best-fit-plane input.ply -o plane.ply
+cli-anything-acloudviewer process rasterize input.ply -o raster.tif --grid-step 1.0
+cli-anything-acloudviewer process stat-test input.ply -o result.ply --distribution GAUSS --p-value 0.0001
+cli-anything-acloudviewer process feature input.ply -o features.ply --type SURFACE_VARIATION --kernel-size 0.1
+cli-anything-acloudviewer process approx-density input.ply -o approx_dens.ply
+cli-anything-acloudviewer process cross-section input.ply -o section.ply --polyline path.poly
+```
+
+#### Mesh Processing (Headless)
+
+```bash
+cli-anything-acloudviewer process delaunay input.ply -o mesh.ply --max-edge-length 0.0
+cli-anything-acloudviewer process sample-mesh mesh.obj -o cloud.ply --points 100000
+cli-anything-acloudviewer process mesh-volume mesh.obj
+cli-anything-acloudviewer process extract-vertices mesh.obj -o vertices.ply
+cli-anything-acloudviewer process flip-triangles mesh.obj -o flipped.obj
+cli-anything-acloudviewer process merge-meshes mesh1.obj mesh2.obj mesh3.obj -o merged.obj
+```
+
+#### Mesh Processing (GUI Mode - requires entity_id)
+
+```bash
+# Load mesh first, then get entity_id from scene list
+cli-anything-acloudviewer mesh simplify <entity_id> --method quadric --target-triangles 10000
+cli-anything-acloudviewer mesh smooth <entity_id> --method laplacian --iterations 5
+cli-anything-acloudviewer mesh subdivide <entity_id> --method midpoint --iterations 1
+cli-anything-acloudviewer mesh sample-points <entity_id> --method uniform --count 100000
+```
+
+#### Color Operations
+
+```bash
+# Headless mode
+cli-anything-acloudviewer process color-banding input.ply -o colored.ply --axis Z --frequency 10.0
+cli-anything-acloudviewer process remove-rgb input.ply -o no_color.ply
+
+# GUI mode (requires entity_id from loaded scene)
+cli-anything-acloudviewer cloud paint-uniform <entity_id> 255 0 0    # Paint red
+cli-anything-acloudviewer cloud paint-by-height <entity_id> --axis z
+cli-anything-acloudviewer cloud paint-by-scalar-field <entity_id> --field "Density"
+```
+
+#### Utility Operations
+
+```bash
+cli-anything-acloudviewer process merge-clouds cloud1.ply cloud2.ply cloud3.ply -o merged.ply
+cli-anything-acloudviewer process match-centers source.ply target.ply -o centered.ply
+cli-anything-acloudviewer process drop-global-shift input.ply -o local.ply
+cli-anything-acloudviewer process closest-point-set input.ply reference.ply -o closest.ply
+cli-anything-acloudviewer process remove-scan-grids input.ply -o cleaned.ply
+```
+
+### Scalar Field Operations
+
+```bash
+# Create scalar field from coordinates
+cli-anything-acloudviewer sf coord-to-sf input.ply -o with_sf.ply --dimension Z
+
+# Scalar field unary operations (SQRT, ABS, INV, EXP, LOG, LOG10)
+cli-anything-acloudviewer sf arithmetic input.ply -o result.ply --sf-index 0 --operation SQRT
+cli-anything-acloudviewer sf arithmetic input.ply -o result.ply --sf-index "Density" --operation ABS
+
+# Scalar field binary operations with constant (ADD, SUB, MULTIPLY, DIVIDE)
+cli-anything-acloudviewer sf operation input.ply -o result.ply --sf-index 0 --operation MULTIPLY --value 2.0
+cli-anything-acloudviewer sf operation input.ply -o result.ply --sf-index "Height" --operation ADD --value 10.0
+
+# Compute gradient (requires active SF or --sf-index)
+cli-anything-acloudviewer sf gradient input.ply -o gradient.ply --euclidean
+
+# Filter by scalar field value (uses active SF)
+cli-anything-acloudviewer sf filter input.ply -o filtered.ply --min 0.0 --max 10.0
+
+# Apply color scale from file
+cli-anything-acloudviewer sf color-scale input.ply -o colored.ply --scale-file scale.xml
+
+# Convert active scalar field to RGB
+cli-anything-acloudviewer sf convert-to-rgb input.ply -o rgb.ply
+
+# Set active scalar field
+cli-anything-acloudviewer sf set-active input.ply -o output.ply --sf-index 0
+cli-anything-acloudviewer sf set-active input.ply -o output.ply --sf-index "Density"
+
+# Rename scalar field
+cli-anything-acloudviewer sf rename input.ply -o renamed.ply --old 0 --new "Elevation"
+cli-anything-acloudviewer sf rename input.ply -o renamed.ply --old "Height" --new "Elevation"
+
+# Remove scalar field
+cli-anything-acloudviewer sf remove input.ply -o removed.ply --sf-index 0
+cli-anything-acloudviewer sf remove-all input.ply -o clean.ply
+```
+
+### Normal Operations
+
+```bash
+# Compute normals (standard k-NN method)
+cli-anything-acloudviewer process normals input.ply -o with_normals.ply --radius 0.1
+
+# Compute normals with octree method
+cli-anything-acloudviewer normals octree input.ply -o with_normals.ply --radius AUTO
+cli-anything-acloudviewer normals octree input.ply -o with_normals.ply --radius 0.1 --model LS
+
+# Orient normals using MST (Minimum Spanning Tree)
+cli-anything-acloudviewer normals orient-mst input.ply -o oriented.ply --knn 6
+
+# Invert normals
+cli-anything-acloudviewer normals invert input.ply -o inverted.ply
+
+# Clear normals
+cli-anything-acloudviewer normals clear input.ply -o no_normals.ply
+
+# Convert normals to dip/dip direction (geology)
+cli-anything-acloudviewer normals to-dip input.ply -o dip.ply
+
+# Export normals to scalar fields (Nx, Ny, Nz)
+cli-anything-acloudviewer normals to-sfs input.ply -o normals_as_sf.ply
 ```
 
 ### 3D Reconstruction (Colmap)
@@ -576,6 +727,128 @@ All formats below are supported for `file.convert` RPC, `convert_format` MCP too
 | Point Cloud -> Mesh | Poisson surface reconstruction (auto) |
 | Mesh -> Point Cloud | Uniform surface sampling (100K points default) |
 | Any -> Any | Auto-detect and convert via ACloudViewer binary CLI |
+
+## Examples
+
+Complete runnable examples are provided in the `examples/` directory:
+
+### Basic Examples
+
+- **`websocket_client.py`** — Minimal WebSocket JSON-RPC client
+  ```bash
+  python examples/websocket_client.py /path/to/scene.ply
+  ```
+
+- **`batch_process.py`** — Headless batch processing with Python API
+  ```bash
+  python examples/batch_process.py source.ply target.ply output_dir/
+  ```
+
+### Advanced Examples
+
+- **`advanced_processing_example.py`** — Geometric feature extraction
+  - Statistical outlier removal
+  - Density, curvature, roughness computation
+  - Connected component extraction
+  - Color mapping by height
+  ```bash
+  python examples/advanced_processing_example.py input.ply output_dir/
+  ```
+
+- **`scalar_field_example.py`** — Scalar field operations
+  - Create SF from coordinates
+  - Arithmetic operations (add, multiply, etc.)
+  - Mathematical operations (sqrt, abs, etc.)
+  - Gradient computation
+  - Filtering and color mapping
+  ```bash
+  python examples/scalar_field_example.py input.ply output_dir/
+  ```
+
+- **`normals_processing_example.py`** — Normal vector operations
+  - Octree-based normal computation
+  - MST orientation (consistent facing)
+  - Normal inversion
+  - Dip/dip direction conversion (geology)
+  - Export normals as scalar fields
+  ```bash
+  python examples/normals_processing_example.py input.ply output_dir/
+  ```
+
+- **`registration_example.py`** — ICP registration and alignment
+  - Coarse-to-fine registration workflow
+  - Center matching for initial alignment
+  - ICP refinement with normals
+  - Cloud-to-cloud distance validation
+  - Visual verification with color overlay
+  ```bash
+  python examples/registration_example.py source.ply target.ply output_dir/
+  ```
+
+- **`distance_analysis_example.py`** — Distance computation and analysis
+  - Cloud-to-cloud (C2C) distance
+  - Cloud-to-mesh (C2M) distance
+  - Distance thresholding
+  - Closest point set identification
+  - Statistical comparison testing
+  - Visual quality assessment
+  ```bash
+  python examples/distance_analysis_example.py compared.ply reference.ply output_dir/
+  ```
+
+- **`color_operations_example.py`** — Color manipulation and visualization
+  - Uniform color painting
+  - Color banding by axis
+  - Height-based gradient coloring
+  - Scalar field to color mapping
+  - Color scale types (RAINBOW, BWR, GRAY)
+  - Multi-cloud color coding
+  ```bash
+  python examples/color_operations_example.py input.ply output_dir/
+  ```
+
+- **`mesh_processing_example.py`** — Complete mesh workflow
+  - Mesh creation (Delaunay, Poisson)
+  - Simplification and smoothing
+  - Surface sampling
+  - Volume computation
+  ```bash
+  python examples/mesh_processing_example.py input.ply output_dir/
+  ```
+
+- **`reconstruction_pipeline_example.py`** — Full 3D reconstruction
+  - Automatic pipeline (one command)
+  - Step-by-step pipeline (advanced control)
+  - Feature extraction → Matching → Sparse → Dense → Meshing → Texturing
+  ```bash
+  python examples/reconstruction_pipeline_example.py images_dir/ workspace_dir/
+  ```
+
+- **`format_converter_example.py`** — Format conversion
+  - Single file conversion
+  - Batch directory conversion
+  - Format filtering
+  - Cross-type conversion
+  ```bash
+  # Single file
+  python examples/format_converter_example.py scene.ply output.obj
+  
+  # Batch directory
+  python examples/format_converter_example.py ./scans/ ./converted/
+  ```
+
+### Interactive Examples
+
+- **`demo_agent_integration.ipynb`** — Jupyter notebook with all features
+  - Build info and CUDA detection
+  - Format conversion (50+ formats)
+  - Processing operations
+  - MCP tool calling
+  - Complete workflows
+
+  ```bash
+  jupyter notebook examples/demo_agent_integration.ipynb
+  ```
 
 ## License
 

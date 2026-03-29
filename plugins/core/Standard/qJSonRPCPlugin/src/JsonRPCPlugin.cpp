@@ -7,10 +7,18 @@
 
 #include "JsonRPCPlugin.h"
 
-#include <CVConst.h>
+#include <AutoSegmentationTools.h>
 #include <CloudSamplingTools.h>
+#include <CVConst.h>
+#include <Delaunay2dMesh.h>
+#include <DistanceComputationTools.h>
+#include <DgmOctree.h>
 #include <FileIOFilter.h>
+#include <GeometricalAnalysisTools.h>
+#include <Neighbourhood.h>
 #include <ReferenceCloud.h>
+#include <ScalarFieldTools.h>
+#include <ecvColorScalesManager.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMainAppInterface.h>
@@ -523,6 +531,50 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcCloudInvertNormals(p); });
     reg("cloud.merge",       "Merge multiple clouds: {entity_ids}",
         [this](auto& p){ return rpcCloudMerge(p); });
+
+    // --- Cloud geometric analysis (NEW) ---
+    reg("cloud.density",     "Compute local density: {entity_id, radius}",
+        [this](auto& p){ return rpcCloudDensity(p); });
+    reg("cloud.curvature",   "Compute surface curvature: {entity_id, type, radius}",
+        [this](auto& p){ return rpcCloudCurvature(p); });
+    reg("cloud.roughness",   "Compute surface roughness: {entity_id, radius}",
+        [this](auto& p){ return rpcCloudRoughness(p); });
+    reg("cloud.geometricFeature", "Compute geometric features: {entity_id, type, kernel_size}",
+        [this](auto& p){ return rpcCloudGeometricFeature(p); });
+    reg("cloud.approxDensity","Compute approximate density: {entity_id, density_type}",
+        [this](auto& p){ return rpcCloudApproxDensity(p); });
+    reg("cloud.colorBanding","Apply color banding: {entity_id, axis, frequency}",
+        [this](auto& p){ return rpcCloudColorBanding(p); });
+    reg("cloud.sorFilter",   "Statistical outlier removal: {entity_id, knn, sigma}",
+        [this](auto& p){ return rpcCloudSorFilter(p); });
+    reg("cloud.extractConnectedComponents", "Extract connected components: {entity_id, min_points, octree_level}",
+        [this](auto& p){ return rpcCloudExtractConnectedComponents(p); });
+    reg("cloud.bestFitPlane","Compute best fit plane: {entity_id, make_horiz}",
+        [this](auto& p){ return rpcCloudBestFitPlane(p); });
+    reg("cloud.delaunay",    "Delaunay 2.5D triangulation: {entity_id}",
+        [this](auto& p){ return rpcCloudDelaunay(p); });
+
+    // --- Cloud scalar field operations (NEW) ---
+    reg("cloud.sfArithmetic","Scalar field arithmetic: {entity_id, sf_index, operation}",
+        [this](auto& p){ return rpcCloudSfArithmetic(p); });
+    reg("cloud.sfOperation", "Scalar field with constant: {entity_id, sf_index, operation, value}",
+        [this](auto& p){ return rpcCloudSfOperation(p); });
+    reg("cloud.sfGradient",  "Scalar field gradient: {entity_id, sf_index}",
+        [this](auto& p){ return rpcCloudSfGradient(p); });
+    reg("cloud.sfConvertToRGB","Convert SF to RGB: {entity_id, sf_index}",
+        [this](auto& p){ return rpcCloudSfConvertToRGB(p); });
+
+    // --- Cloud normals advanced (NEW) ---
+    reg("cloud.octreeNormals","Compute normals with octree: {entity_id, radius}",
+        [this](auto& p){ return rpcCloudOctreeNormals(p); });
+    reg("cloud.orientNormalsMST","Orient normals with MST: {entity_id, knn}",
+        [this](auto& p){ return rpcCloudOrientNormalsMST(p); });
+    reg("cloud.clearNormals","Clear all normals: {entity_id}",
+        [this](auto& p){ return rpcCloudClearNormals(p); });
+    reg("cloud.normalsToSFs","Export normals to scalar fields: {entity_id}",
+        [this](auto& p){ return rpcCloudNormalsToSFs(p); });
+    reg("cloud.normalsToDip","Convert normals to dip/dip-direction: {entity_id}",
+        [this](auto& p){ return rpcCloudNormalsToDip(p); });
 
     // --- Mesh processing ---
     reg("mesh.simplify",     "Simplify mesh: {entity_id, method, ?target_triangles, ?voxel_size}",
@@ -1968,6 +2020,890 @@ JsonRPCResult JsonRPCPlugin::rpcCloudMerge(
     QJsonObject result = entityToJson(merged);
     result["merged_from"] = mergedIds;
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.density - Compute local density
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudDensity(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    double radius = params.value("radius", 0.1).toDouble();
+
+    int result = cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
+            cloudViewer::GeometricalAnalysisTools::LocalDensity,
+            cloudViewer::GeometricalAnalysisTools::DENSITY_3D,
+            cloud,
+            static_cast<PointCoordinateType>(radius),
+            nullptr,
+            nullptr,
+            nullptr);
+
+    if (result != cloudViewer::GeometricalAnalysisTools::NoError) {
+        return JsonRPCResult::error(
+                5, "Density computation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    if (sfCount > 0) {
+        cloud->setCurrentDisplayedScalarField(sfCount - 1);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.curvature - Compute surface curvature
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudCurvature(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    QString typeStr = params.value("type", "MEAN").toString().toUpper();
+    double radius = params.value("radius", 0.05).toDouble();
+
+    int curvatureType = cloudViewer::Neighbourhood::MEAN_CURV;
+    if (typeStr == "GAUSS" || typeStr == "GAUSSIAN") {
+        curvatureType = cloudViewer::Neighbourhood::GAUSSIAN_CURV;
+    }
+
+    int result = cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
+            cloudViewer::GeometricalAnalysisTools::Curvature,
+            curvatureType,
+            cloud,
+            static_cast<PointCoordinateType>(radius),
+            nullptr,
+            nullptr,
+            nullptr);
+
+    if (result != cloudViewer::GeometricalAnalysisTools::NoError) {
+        return JsonRPCResult::error(
+                5, "Curvature computation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    if (sfCount > 0) {
+        cloud->setCurrentDisplayedScalarField(sfCount - 1);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    response["type"] = typeStr;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.roughness - Compute surface roughness
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudRoughness(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    double radius = params.value("radius", 0.1).toDouble();
+
+    int result = cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
+            cloudViewer::GeometricalAnalysisTools::Roughness,
+            0,
+            cloud,
+            static_cast<PointCoordinateType>(radius),
+            nullptr,
+            nullptr,
+            nullptr);
+
+    if (result != cloudViewer::GeometricalAnalysisTools::NoError) {
+        return JsonRPCResult::error(
+                5, "Roughness computation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    if (sfCount > 0) {
+        cloud->setCurrentDisplayedScalarField(sfCount - 1);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.geometricFeature - Compute geometric features
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudGeometricFeature(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    QString typeStr = params.value("type", "SURFACE_VARIATION").toString().toUpper();
+    double kernelSize = params.value("kernel_size", 0.1).toDouble();
+
+    int featureType = cloudViewer::Neighbourhood::SurfaceVariation;
+    if (typeStr.contains("EIGEN")) {
+        int idx = typeStr.right(1).toInt();
+        if (idx >= 1 && idx <= 3) {
+            featureType = cloudViewer::Neighbourhood::EigenValue1 + (idx - 1);
+        }
+    }
+
+    int result = cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
+            cloudViewer::GeometricalAnalysisTools::Feature,
+            featureType,
+            cloud,
+            static_cast<PointCoordinateType>(kernelSize),
+            nullptr,
+            nullptr,
+            nullptr);
+
+    if (result != cloudViewer::GeometricalAnalysisTools::NoError) {
+        return JsonRPCResult::error(
+                5, "Geometric feature computation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    if (sfCount > 0) {
+        cloud->setCurrentDisplayedScalarField(sfCount - 1);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.approxDensity - Compute approximate density
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudApproxDensity(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    QString densityTypeStr = params.value("density_type", "PRECISE").toString().toUpper();
+    
+    cloudViewer::GeometricalAnalysisTools::Density densityType =
+            cloudViewer::GeometricalAnalysisTools::DENSITY_3D;
+    if (densityTypeStr == "2D") {
+        densityType = cloudViewer::GeometricalAnalysisTools::DENSITY_2D;
+    } else if (densityTypeStr == "KNN") {
+        densityType = cloudViewer::GeometricalAnalysisTools::DENSITY_KNN;
+    }
+
+    int result = cloudViewer::GeometricalAnalysisTools::ComputeLocalDensityApprox(
+            cloud, densityType, nullptr, nullptr);
+
+    if (result != cloudViewer::GeometricalAnalysisTools::NoError) {
+        return JsonRPCResult::error(
+                5, "Approximate density computation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error_code", result));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    if (sfCount > 0) {
+        cloud->setCurrentDisplayedScalarField(sfCount - 1);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.sfArithmetic - Scalar field arithmetic operations
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudSfArithmetic(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int sfIndex = params.value("sf_index", 0).toInt();
+    QString operation = params.value("operation", "SQRT").toString().toUpper();
+
+    ccScalarField* sf = static_cast<ccScalarField*>(
+            cloud->getScalarField(sfIndex));
+    if (!sf) {
+        return JsonRPCResult::error(
+                5, "Scalar field not found",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "sf_index", sfIndex));
+    }
+
+    unsigned count = sf->size();
+    for (unsigned i = 0; i < count; ++i) {
+        ScalarType val = sf->getValue(i);
+        ScalarType newVal = val;
+        
+        if (operation == "SQRT") {
+            newVal = std::sqrt(std::max(0.0, static_cast<double>(val)));
+        } else if (operation == "ABS") {
+            newVal = std::abs(val);
+        } else if (operation == "LOG" || operation == "LOG10") {
+            newVal = val > 0 ? std::log10(val) : 0;
+        } else if (operation == "LN") {
+            newVal = val > 0 ? std::log(val) : 0;
+        } else if (operation == "EXP") {
+            newVal = std::exp(val);
+        } else if (operation == "SQUARE") {
+            newVal = val * val;
+        }
+        
+        sf->setValue(i, newVal);
+    }
+
+    sf->computeMinAndMax();
+    cloud->setCurrentDisplayedScalarField(sfIndex);
+    cloud->showSF(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_index"] = sfIndex;
+    response["operation"] = operation;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.sfOperation - Scalar field operation with constant
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudSfOperation(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int sfIndex = params.value("sf_index", 0).toInt();
+    QString operation = params.value("operation", "MULTIPLY").toString().toUpper();
+    double value = params.value("value", 1.0).toDouble();
+
+    ccScalarField* sf = static_cast<ccScalarField*>(
+            cloud->getScalarField(sfIndex));
+    if (!sf) {
+        return JsonRPCResult::error(
+                5, "Scalar field not found",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "sf_index", sfIndex));
+    }
+
+    unsigned count = sf->size();
+    for (unsigned i = 0; i < count; ++i) {
+        ScalarType val = sf->getValue(i);
+        ScalarType newVal = val;
+        
+        if (operation == "ADD" || operation == "PLUS") {
+            newVal = val + value;
+        } else if (operation == "SUBTRACT" || operation == "MINUS") {
+            newVal = val - value;
+        } else if (operation == "MULTIPLY" || operation == "TIMES") {
+            newVal = val * value;
+        } else if (operation == "DIVIDE") {
+            newVal = (value != 0) ? (val / value) : 0;
+        }
+        
+        sf->setValue(i, newVal);
+    }
+
+    sf->computeMinAndMax();
+    cloud->setCurrentDisplayedScalarField(sfIndex);
+    cloud->showSF(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_index"] = sfIndex;
+    response["operation"] = operation;
+    response["value"] = value;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.sfGradient - Compute scalar field gradient
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudSfGradient(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int sfIndex = params.value("sf_index", -1).toInt();
+    if (sfIndex < 0) {
+        sfIndex = cloud->getCurrentDisplayedScalarFieldIndex();
+    }
+
+    ccScalarField* sf = static_cast<ccScalarField*>(
+            cloud->getScalarField(sfIndex));
+    if (!sf) {
+        return JsonRPCResult::error(
+                5, "Scalar field not found",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "sf_index", sfIndex));
+    }
+
+    bool result = cloudViewer::ScalarFieldTools::computeScalarFieldGradient(
+            cloud, false, true, nullptr, nullptr);
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "Gradient computation failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    int newSfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    cloud->setCurrentDisplayedScalarField(newSfCount - 1);
+    cloud->showSF(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = newSfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.sfConvertToRGB - Convert scalar field to RGB colors
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudSfConvertToRGB(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int sfIndex = params.value("sf_index", -1).toInt();
+    if (sfIndex < 0) {
+        sfIndex = cloud->getCurrentDisplayedScalarFieldIndex();
+    }
+
+    if (sfIndex < 0 || sfIndex >= static_cast<int>(cloud->getNumberOfScalarFields())) {
+        return JsonRPCResult::error(
+                5, "Invalid scalar field index",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "sf_index", sfIndex));
+    }
+
+    cloud->setCurrentDisplayedScalarField(sfIndex);
+    
+    // Get default color scale
+    ccColorScale::Shared colorScale = ccColorScalesManager::GetDefaultScale();
+    if (!colorScale) {
+        colorScale = ccColorScalesManager::GetUniqueInstance()->getDefaultScale(
+                ccColorScalesManager::BGYR);
+    }
+    
+    bool result = cloud->setRGBColorByHeight(2, colorScale);  // 2 = Z dimension
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "SF to RGB conversion failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    cloud->showColors(true);
+    cloud->showSF(false);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["has_colors"] = cloud->hasColors();
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.octreeNormals - Compute normals using octree
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudOctreeNormals(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    QString radiusStr = params.value("radius", "AUTO").toString().toUpper();
+    PointCoordinateType radius = 0.05;
+    
+    if (radiusStr != "AUTO") {
+        radius = radiusStr.toDouble();
+        if (radius <= 0) {
+            radius = 0.05;
+        }
+    }
+
+    bool result = cloud->computeNormalsWithOctree(
+            CV_LOCAL_MODEL_TYPES::LS,
+            ccNormalVectors::UNDEFINED,
+            radius);
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "Octree normals computation failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    cloud->showNormals(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["has_normals"] = cloud->hasNormals();
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.orientNormalsMST - Orient normals using MST
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudOrientNormalsMST(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    if (!cloud->hasNormals()) {
+        return JsonRPCResult::error(
+                5, "Cloud has no normals",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    int knn = params.value("knn", 6).toInt();
+
+    bool result = cloud->orientNormalsWithMST(knn, nullptr);
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "MST normal orientation failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    cloud->showNormals(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["has_normals"] = cloud->hasNormals();
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.clearNormals - Remove all normals
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudClearNormals(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    cloud->unallocateNorms();
+    cloud->showNormals(false);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["has_normals"] = cloud->hasNormals();
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.normalsToSFs - Export normals to scalar fields
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudNormalsToSFs(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    if (!cloud->hasNormals()) {
+        return JsonRPCResult::error(
+                5, "Cloud has no normals",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    bool exportDims[3] = {true, true, true};
+    bool result = cloud->exportNormalToSF(exportDims);
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "Normals to SF export failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.normalsToDip - Convert normals to dip/dip-direction
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudNormalsToDip(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    if (!cloud->hasNormals()) {
+        return JsonRPCResult::error(
+                5, "Cloud has no normals",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    // Create two new scalar fields for dip and dip direction
+    int dipIdx = cloud->addScalarField("Dip");
+    int dipDirIdx = cloud->addScalarField("DipDir");
+    
+    if (dipIdx < 0 || dipDirIdx < 0) {
+        return JsonRPCResult::error(
+                5, "Failed to create scalar fields",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    ccScalarField* dipSF = static_cast<ccScalarField*>(cloud->getScalarField(dipIdx));
+    ccScalarField* dipDirSF = static_cast<ccScalarField*>(cloud->getScalarField(dipDirIdx));
+
+    bool result = cloud->convertNormalToDipDirSFs(dipSF, dipDirSF);
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "Normals to dip conversion failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    int sfCount = static_cast<int>(cloud->getNumberOfScalarFields());
+    cloud->setCurrentDisplayedScalarField(dipIdx);
+    cloud->showSF(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = sfCount;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.colorBanding - Apply color banding
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudColorBanding(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    QString axis = params.value("axis", "Z").toString().toUpper();
+    double frequency = params.value("frequency", 10.0).toDouble();
+
+    if (!cloud->reserveTheRGBTable()) {
+        return JsonRPCResult::error(
+                5, "Failed to allocate color table",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    unsigned count = cloud->size();
+    
+    // Get bounding box for normalization
+    ccBBox bbox = cloud->getOwnBB();
+    if (!bbox.isValid()) {
+        return JsonRPCResult::error(
+                5, "Invalid bounding box",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+    
+    double minCoord = 0, maxCoord = 1;
+    if (axis == "X") {
+        minCoord = bbox.minCorner().x;
+        maxCoord = bbox.maxCorner().x;
+    } else if (axis == "Y") {
+        minCoord = bbox.minCorner().y;
+        maxCoord = bbox.maxCorner().y;
+    } else {
+        minCoord = bbox.minCorner().z;
+        maxCoord = bbox.maxCorner().z;
+    }
+    
+    double range = maxCoord - minCoord;
+    if (range < 1e-6) {
+        range = 1.0;
+    }
+    
+    for (unsigned i = 0; i < count; ++i) {
+        const CCVector3* P = cloud->getPoint(i);
+        double coord = 0;
+        if (axis == "X") coord = P->x;
+        else if (axis == "Y") coord = P->y;
+        else coord = P->z;
+
+        // Normalize coordinate to [0, 1]
+        double normalized = (coord - minCoord) / range;
+        
+        // Apply banding with frequency
+        double phase = std::fmod(normalized * frequency, 1.0);
+        if (phase < 0) phase += 1.0;  // Ensure positive
+        
+        unsigned char r = static_cast<unsigned char>(phase * 255);
+        unsigned char g = static_cast<unsigned char>((1.0 - phase) * 255);
+        unsigned char b = 128;
+
+        cloud->setPointColor(i, ecvColor::Rgb(r, g, b));
+    }
+
+    cloud->showColors(true);
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["has_colors"] = cloud->hasColors();
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.sorFilter - Statistical outlier removal
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudSorFilter(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int knn = params.value("knn", 6).toInt();
+    double sigma = params.value("sigma", 1.0).toDouble();
+
+    cloudViewer::ReferenceCloud* selection =
+            cloudViewer::CloudSamplingTools::sorFilter(
+                    cloud, knn, sigma, nullptr, nullptr);
+
+    if (!selection) {
+        return JsonRPCResult::error(
+                5, "SOR filter failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    ccPointCloud* filtered = cloud->partialClone(selection);
+    delete selection;
+
+    if (!filtered) {
+        return JsonRPCResult::error(
+                5, "Failed to create filtered cloud",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    filtered->setName(cloud->getName() + "_filtered");
+    m_app->addToDB(filtered);
+    redraw();
+
+    QJsonObject response = entityToJson(filtered);
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.extractConnectedComponents - Extract connected components
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudExtractConnectedComponents(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    int minPoints = params.value("min_points", 10).toInt();
+    int octreeLevel = params.value("octree_level", 6).toInt();
+
+    ccOctree::Shared octree = cloud->getOctree();
+    if (!octree) {
+        octree = cloud->computeOctree();
+    }
+
+    if (!octree) {
+        return JsonRPCResult::error(
+                5, "Failed to compute octree",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    cloudViewer::ReferenceCloudContainer components;
+    bool result = cloudViewer::AutoSegmentationTools::labelConnectedComponents(
+            cloud, static_cast<unsigned char>(octreeLevel),
+            false, nullptr, octree.data());
+
+    if (!result) {
+        return JsonRPCResult::error(
+                5, "Connected components extraction failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    int sfIndex = cloud->getCurrentDisplayedScalarFieldIndex();
+    if (sfIndex >= 0) {
+        cloud->setCurrentDisplayedScalarField(sfIndex);
+        cloud->showSF(true);
+    }
+    redraw();
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["sf_count"] = static_cast<int>(cloud->getNumberOfScalarFields());
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.bestFitPlane - Compute best fit plane
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudBestFitPlane(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    bool makeHoriz = params.value("make_horiz", false).toBool();
+
+    cloudViewer::Neighbourhood neighbourhood(cloud);
+    const PointCoordinateType* planeEquation = neighbourhood.getLSPlane();
+    
+    if (!planeEquation) {
+        return JsonRPCResult::error(
+                5, "Best fit plane computation failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    const CCVector3* gravityCenter = neighbourhood.getGravityCenter();
+    CCVector3 C = gravityCenter ? *gravityCenter : CCVector3(0, 0, 0);
+    CCVector3 N(planeEquation[0], planeEquation[1], planeEquation[2]);
+
+    // Compute RMS (simple approximation)
+    double rms = 0;
+    unsigned count = cloud->size();
+    for (unsigned i = 0; i < count; ++i) {
+        const CCVector3* P = cloud->getPoint(i);
+        CCVector3 AP = *P - C;
+        double dist = std::abs(AP.dot(N));
+        rms += dist * dist;
+    }
+    rms = std::sqrt(rms / count);
+
+    if (makeHoriz && N.z < 0) {
+        N = -N;
+    }
+
+    QJsonObject response;
+    response["entity_id"] = static_cast<qint64>(entityId);
+    response["center_x"] = C.x;
+    response["center_y"] = C.y;
+    response["center_z"] = C.z;
+    response["normal_x"] = N.x;
+    response["normal_y"] = N.y;
+    response["normal_z"] = N.z;
+    response["rms"] = rms;
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cloud.delaunay - Delaunay 2.5D triangulation
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcCloudDelaunay(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    JsonRPCResult err;
+    auto* cloud = findCloud(entityId, err);
+    if (!cloud) return err;
+
+    // Use Neighbourhood to perform Delaunay triangulation
+    cloudViewer::Neighbourhood neighbourhood(cloud);
+    std::string errorStr;
+    
+    cloudViewer::GenericIndexedMesh* genericMesh = neighbourhood.triangulateOnPlane(
+            cloudViewer::Neighbourhood::DO_NOT_DUPLICATE_VERTICES,
+            cloudViewer::Neighbourhood::IGNORE_MAX_EDGE_LENGTH,
+            errorStr);
+
+    if (!genericMesh) {
+        return JsonRPCResult::error(
+                5, "Delaunay triangulation failed",
+                D("entity_id", static_cast<qint64>(entityId),
+                  "error", QString::fromStdString(errorStr)));
+    }
+
+    // Convert to ccMesh
+    ccMesh* mesh = new ccMesh(genericMesh, cloud);
+    delete genericMesh;
+    
+    if (!mesh) {
+        return JsonRPCResult::error(
+                5, "Failed to create mesh",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    mesh->setName(cloud->getName() + "_mesh");
+    mesh->setAssociatedCloud(cloud);
+    mesh->addChild(cloud);
+    m_app->addToDB(mesh);
+    redraw();
+
+    QJsonObject response = entityToJson(mesh);
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

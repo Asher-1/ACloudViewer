@@ -15,6 +15,94 @@ Write-Host "Deploy Path: $OutputFolder"
 Write-Host "Search Paths: $($DependencySearchPaths -join ', ')"
 
 
+# Ensure dumpbin is available
+$global:DumpbinPath = $null
+
+# Strategy 1: Check if dumpbin is already in PATH
+try {
+    $global:DumpbinPath = (Get-Command dumpbin -ErrorAction SilentlyContinue).Source
+    if ($global:DumpbinPath) {
+        Write-Host "Found dumpbin in PATH: $global:DumpbinPath"
+    }
+} catch {}
+
+# Strategy 2: Check environment variables set by VS Developer Command Prompt
+if (-not $global:DumpbinPath) {
+    $vcToolsDir = $env:VCToolsInstallDir
+    if ($vcToolsDir) {
+        $testPath = Join-Path $vcToolsDir "bin\Hostx64\x64\dumpbin.exe"
+        if (Test-Path $testPath) {
+            $global:DumpbinPath = $testPath
+            Write-Host "Found dumpbin via VCToolsInstallDir: $global:DumpbinPath"
+        }
+    }
+}
+
+# Strategy 3: Try to locate via Visual Studio installation path
+if (-not $global:DumpbinPath) {
+    $vsPaths = @(
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise",
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Professional",
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Professional",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Community"
+    )
+    
+    foreach ($vsPath in $vsPaths) {
+        if (Test-Path $vsPath) {
+            Write-Host "Searching for dumpbin in: $vsPath"
+            # Find the latest MSVC version
+            $msvcPath = Join-Path $vsPath "VC\Tools\MSVC"
+            if (Test-Path $msvcPath) {
+                $latestMsvc = Get-ChildItem $msvcPath -Directory | Sort-Object Name -Descending | Select-Object -First 1
+                if ($latestMsvc) {
+                    $testPath = Join-Path $latestMsvc.FullName "bin\Hostx64\x64\dumpbin.exe"
+                    if (Test-Path $testPath) {
+                        $global:DumpbinPath = $testPath
+                        Write-Host "Found dumpbin at: $global:DumpbinPath"
+                        break
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Strategy 4: Use vswhere if available
+if (-not $global:DumpbinPath) {
+    $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vswherePath) {
+        Write-Host "Using vswhere to locate Visual Studio..."
+        $vsPath = & $vswherePath -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if ($vsPath) {
+            $msvcPath = Join-Path $vsPath "VC\Tools\MSVC"
+            if (Test-Path $msvcPath) {
+                $latestMsvc = Get-ChildItem $msvcPath -Directory | Sort-Object Name -Descending | Select-Object -First 1
+                if ($latestMsvc) {
+                    $testPath = Join-Path $latestMsvc.FullName "bin\Hostx64\x64\dumpbin.exe"
+                    if (Test-Path $testPath) {
+                        $global:DumpbinPath = $testPath
+                        Write-Host "Found dumpbin via vswhere: $global:DumpbinPath"
+                    }
+                }
+            }
+        }
+    }
+}
+
+if (-not $global:DumpbinPath) {
+    Write-Error "dumpbin.exe not found. Please ensure Visual Studio C++ tools are installed."
+    Write-Error "Tried locations:"
+    Write-Error "  - PATH environment variable"
+    Write-Error "  - VCToolsInstallDir environment variable"
+    Write-Error "  - Common Visual Studio installation paths"
+    Write-Error "  - vswhere tool"
+    exit 1
+}
+
+Write-Host "Using dumpbin: $global:DumpbinPath"
+
 # ensure output folder exists
 New-Item -ItemType Directory -Force -Path $OutputFolder | Out-Null
 
@@ -47,7 +135,7 @@ function Get-Dependencies {
         [string]$FilePath
     )
     $deps = @()
-    $output = dumpbin /dependents $FilePath 2>$null | Select-String "\.dll$"
+    $output = & $global:DumpbinPath /dependents $FilePath 2>$null | Select-String "\.dll$"
     foreach ($line in $output) {
         $dep = $line.ToString().Trim()
         if (-not (Should-Filter $dep)) {

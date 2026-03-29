@@ -1,14 +1,14 @@
 {
   "name": "acloudviewer",
   "display_name": "ACloudViewer",
-  "version": "2.0.0",
-  "description": "3D point cloud and mesh processing — load, convert, subsample, compute normals, measure distances, reconstruct meshes. Headless mode uses ACloudViewer binary CLI, GUI mode uses JSON-RPC.",
+  "version": "3.1.0",
+  "description": "Comprehensive 3D point cloud and mesh processing toolkit with 97 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
   "author": "ACloudViewer Contributors",
   "homepage": "https://asher-1.github.io/ACloudViewer",
-  "repository": "https://github.com/ACloudViewer/ACloudViewer",
+  "repository": "https://github.com/Asher-1/CLI-Anything",
   "license": "MIT",
   "category": "3d",
-  "tags": ["point-cloud", "mesh", "3d", "visualization", "icp", "distance", "reconstruction"],
+  "tags": ["point-cloud", "mesh", "3d", "visualization", "icp", "colmap", "reconstruction", "sfm", "mvs", "sibr"],
   "mcp": {
     "command": "cli-anything-acloudviewer-mcp",
     "args": ["--mode", "auto"],
@@ -18,17 +18,28 @@
     "pip": "cli-anything-acloudviewer"
   },
   "requires": {
-    "binary": "ACloudViewer desktop application (headless CLI or GUI mode)"
+    "binary": "ACloudViewer desktop application (headless CLI or GUI mode with JSON-RPC plugin)"
   },
-  "tools_count": 23,
+  "tools_count": 97,
   "tool_categories": {
-    "file_io": ["open_file", "convert_format", "batch_convert", "list_formats"],
-    "processing": ["subsample", "compute_normals", "sor_filter", "crop", "density", "curvature", "roughness", "color_banding"],
+    "file_io": ["open_file", "convert_format", "batch_convert", "list_formats", "export_entity"],
+    "processing": ["subsample", "compute_normals", "sor_filter", "crop", "density", "curvature", "roughness", "color_banding", "stat_test", "rasterize", "cross_section"],
+    "scalar_fields": ["set_active_sf", "remove_all_sfs", "remove_sf", "rename_sf", "sf_arithmetic", "sf_operation", "coord_to_sf", "sf_gradient", "filter_sf", "sf_color_scale", "sf_convert_to_rgb", "cloud_get_scalar_fields", "cloud_set_active_sf", "cloud_remove_sf", "cloud_remove_all_sfs", "cloud_rename_sf", "cloud_filter_sf", "cloud_coord_to_sf"],
+    "normals": ["octree_normals", "orient_normals_mst", "invert_normals", "clear_normals", "normals_to_dip", "normals_to_sfs", "cloud_remove_normals_gui", "cloud_invert_normals_gui"],
     "distance": ["c2c_distance", "c2m_distance"],
     "registration": ["icp_registration"],
-    "mesh": ["delaunay", "sample_mesh"],
-    "scene": ["scene_list", "scene_info"],
-    "view": ["screenshot", "get_camera"],
+    "geometry": ["extract_connected_components", "approx_density", "feature", "moment", "best_fit_plane", "closest_point_set"],
+    "mesh_reconstruction": ["delaunay", "sample_mesh"],
+    "mesh_operations": ["mesh_volume", "extract_vertices", "flip_triangles", "mesh_simplify", "mesh_smooth", "mesh_subdivide", "mesh_sample_points", "mesh_extract_vertices_gui", "mesh_flip_triangles_gui", "mesh_volume_gui"],
+    "merge": ["merge_clouds", "merge_meshes", "cloud_merge_gui", "mesh_merge_gui"],
+    "cleanup": ["remove_rgb", "remove_scan_grids", "match_centers", "drop_global_shift", "cloud_remove_rgb"],
+    "colmap_reconstruction": ["colmap_auto_reconstruct", "colmap_extract_features", "colmap_match_features", "colmap_sparse_reconstruct", "colmap_dense_stereo", "colmap_stereo_fusion", "colmap_poisson_mesh", "colmap_model_converter", "colmap_undistort", "colmap_delaunay_mesh", "colmap_image_texturer", "colmap_analyze_model", "colmap_run"],
+    "sibr_tools": ["sibr_viewer", "sibr_tool", "sibr_prepare_colmap", "sibr_texture_mesh", "sibr_unwrap_mesh", "sibr_tonemapper", "sibr_align_meshes", "sibr_camera_converter", "sibr_nvm_to_sibr", "sibr_crop_from_center", "sibr_clipping_planes", "sibr_distord_crop"],
+    "scene": ["scene_list", "scene_info", "scene_remove", "scene_set_visible", "scene_select", "scene_clear"],
+    "entity": ["entity_rename", "entity_set_color"],
+    "view": ["screenshot", "get_camera", "view_set_orientation", "view_zoom_fit", "view_refresh", "view_set_perspective", "view_set_point_size"],
+    "cloud_painting": ["cloud_paint_uniform", "cloud_paint_by_height", "cloud_paint_by_scalar_field"],
+    "transform": ["transform_apply", "transform_apply_file"],
     "utility": ["get_info", "list_rpc_methods"]
   }
 }
