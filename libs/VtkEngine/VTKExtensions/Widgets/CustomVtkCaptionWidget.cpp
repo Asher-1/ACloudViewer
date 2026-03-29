@@ -80,7 +80,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // Notify DB tree that the label is selected
     cc2DLabel* label = self->m_associatedLabel;
 
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 
@@ -104,7 +104,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // Use QTimer::singleShot to safely emit signal from VTK callback
     // This ensures the signal is emitted in the Qt event loop
     QTimer::singleShot(0, [label, tools]() {
-        if (!ecvDisplayTools::TheInstance()) {
+        if (!ecvDisplayTools::HasInstance()) {
             return;
         }
 

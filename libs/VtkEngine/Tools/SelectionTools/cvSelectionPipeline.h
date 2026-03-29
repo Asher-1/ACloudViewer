@@ -372,6 +372,20 @@ public:
     cvSelectionData selectPointsOnSurface(const int region[4]);
 
     /**
+     * @brief Select cells in frustum (through-selection, includes occluded)
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @return Selection data with all cell IDs inside the frustum
+     */
+    cvSelectionData selectCellsInFrustum(const int region[4]);
+
+    /**
+     * @brief Select points in frustum (through-selection, includes occluded)
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @return Selection data with all point IDs inside the frustum
+     */
+    cvSelectionData selectPointsInFrustum(const int region[4]);
+
+    /**
      * @brief Select cells in polygon region
      * @param polygon Polygon vertices (screen coordinates)
      * @return Selection data with selected cell IDs
@@ -384,6 +398,31 @@ public:
      * @return Selection data with selected point IDs
      */
     cvSelectionData selectPointsInPolygon(vtkIntArray* polygon);
+
+    /**
+     * @brief Select blocks (whole actors) on surface
+     *
+     * Performs surface cell selection, then expands the result to include
+     * ALL cells of any actor that was partially selected. This is the
+     * ParaView-style block selection: any actor touched by the selection
+     * rectangle is selected in its entirety.
+     *
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @return Selection data with all cell IDs of selected actors
+     */
+    cvSelectionData selectBlocksOnSurface(const int region[4]);
+
+    /**
+     * @brief Select blocks (whole actors) through frustum
+     *
+     * Performs frustum-based through-selection, then expands the result to
+     * include ALL cells of any actor that intersects the frustum. This is
+     * the ParaView-style "Select Blocks Through".
+     *
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @return Selection data with all cell IDs of selected actors
+     */
+    cvSelectionData selectBlocksInFrustum(const int region[4]);
     ///@}
 
     ///@{
@@ -464,6 +503,33 @@ private:
     cvSelectionData convertSelectionToData(vtkSelection* vtkSel,
                                            FieldAssociation fieldAssoc,
                                            const QString& errorContext);
+
+    /**
+     * @brief Perform frustum-based selection (ParaView-style through-selection)
+     *
+     * Converts the screen rectangle to a world-space frustum and tests all
+     * points/cells geometrically, including those behind visible surfaces.
+     * Reference: ParaView's vtkSMRenderViewProxy::SelectFrustumInternal()
+     *
+     * @param region Screen-space rectangle [x1, y1, x2, y2]
+     * @param fieldAssoc FIELD_ASSOCIATION_CELLS or FIELD_ASSOCIATION_POINTS
+     * @return cvSelectionData with all IDs inside the frustum
+     */
+    cvSelectionData performFrustumSelection(const int region[4],
+                                            FieldAssociation fieldAssoc);
+
+    /**
+     * @brief Expand a partial selection to whole-actor (block) selection
+     *
+     * Takes a selection that may contain only some cells/points of an actor
+     * and expands it to include ALL cells of every actor that was partially
+     * selected. This implements ParaView's block selection post-processing.
+     *
+     * @param partialSelection The input selection (from surface or frustum)
+     * @return cvSelectionData with all cells of touched actors
+     */
+    cvSelectionData expandToBlockSelection(
+            const cvSelectionData& partialSelection);
 
 private:
     Visualization::VtkVis* m_viewer;

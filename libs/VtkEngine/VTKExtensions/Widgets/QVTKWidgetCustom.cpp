@@ -35,6 +35,7 @@
 #include <vtkPNGReader.h>
 #include <vtkProperty2D.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
 #include <vtkScalarBarActor.h>
@@ -42,6 +43,8 @@
 #include <vtkScalarBarWidget.h>
 #include <vtkTransform.h>
 #include <vtkVertexGlyphFilter.h>
+
+#include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -1351,8 +1354,54 @@ void QVTKWidgetCustom::dropEvent(QDropEvent* event) {
     event->ignore();
 }
 
+static bool isVtkViewerShortcut(int key, Qt::KeyboardModifiers mods) {
+    bool ctrl = mods & Qt::ControlModifier;
+    bool alt = mods & Qt::AltModifier;
+    bool shift = mods & Qt::ShiftModifier;
+
+    if (ctrl && alt) {
+        switch (key) {
+            case Qt::Key_J:
+            case Qt::Key_C:
+            case Qt::Key_G:
+            case Qt::Key_K:
+            case Qt::Key_O:
+            case Qt::Key_F:
+            case Qt::Key_S:
+            case Qt::Key_Plus:
+            case Qt::Key_Minus:
+            case Qt::Key_Equal:
+                return true;
+        }
+    } else if (ctrl && shift && !alt) {
+        switch (key) {
+            case Qt::Key_P:
+            case Qt::Key_W:
+            case Qt::Key_S:
+            case Qt::Key_Plus:
+            case Qt::Key_Minus:
+                return true;
+        }
+    } else if (ctrl && !alt && !shift) {
+        switch (key) {
+            case Qt::Key_S:
+            case Qt::Key_R:
+                return true;
+        }
+    }
+    return false;
+}
+
 bool QVTKWidgetCustom::event(QEvent* evt) {
     switch (evt->type()) {
+        case QEvent::ShortcutOverride: {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
+            if (isVtkViewerShortcut(keyEvent->key(), keyEvent->modifiers())) {
+                evt->accept();
+                return true;
+            }
+        } break;
+
         // Gesture start/stop
         case QEvent::TouchBegin:
         case QEvent::TouchEnd: {
@@ -1414,28 +1463,53 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
         } break;
 
         case QEvent::KeyPress: {
-            // Handle ESC key before VTK interactor processes it
-            // This ensures ESC works to exit selection tools
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
+
             if (keyEvent->key() == Qt::Key_Escape) {
                 CVLog::Print(
                         "[QVTKWidgetCustom] ESC key pressed, forwarding to "
                         "MainWindow");
-
-                // Handle fullscreen toggle
                 emit m_tools->exclusiveFullScreenToggled(false);
-
-                // Forward ESC to MainWindow to handle selection tools
                 if (m_win) {
-                    // Use postEvent to ensure it goes through MainWindow's
-                    // event loop
                     QKeyEvent* newEvent =
                             new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
                                           keyEvent->modifiers());
                     QCoreApplication::postEvent(m_win, newEvent);
                 }
                 evt->accept();
-                return true;  // Event handled, don't pass to VTK
+                return true;
+            }
+
+            // Handle VTK viewer shortcuts at Qt level before VTK processes
+            // them. Uses the stored m_customStyle which persists even when
+            // selection tools replace the active interactor style. Passes the
+            // interactor explicitly so handleShortcut works in detached state.
+            if (m_customStyle && m_interactor) {
+                int qkey = keyEvent->key();
+                auto mods = keyEvent->modifiers();
+                bool ctrl = mods & Qt::ControlModifier;
+                bool alt = mods & Qt::AltModifier;
+                bool shift = mods & Qt::ShiftModifier;
+
+                if (ctrl || alt) {
+                    char key = 0;
+                    if (qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
+                        key = 'a' + static_cast<char>(qkey - Qt::Key_A);
+                    } else if (qkey == Qt::Key_Plus) {
+                        key = '+';
+                    } else if (qkey == Qt::Key_Minus) {
+                        key = '-';
+                    } else if (qkey == Qt::Key_Equal) {
+                        key = '=';
+                    }
+
+                    if (key &&
+                        m_customStyle->handleShortcut(key, ctrl, alt, shift,
+                                                      m_interactor.Get())) {
+                        evt->accept();
+                        return true;
+                    }
+                }
             }
         } break;
 

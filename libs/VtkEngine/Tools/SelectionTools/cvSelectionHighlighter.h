@@ -22,7 +22,9 @@
 // Qt
 #include <QColor>
 #include <QObject>
+#include <QPair>
 #include <QString>
+#include <QVector>
 
 // VTK
 #include <vtkActor.h>  // Full definition needed for vtkSmartPointer<vtkActor>
@@ -182,6 +184,27 @@ public:
                             HighlightMode mode = SELECTED);
 
     /**
+     * @brief Highlight multiple selections with per-selection colors
+     * (ParaView-style per-selection coloring)
+     *
+     * Each sub-selection is rendered with its own color using scalar coloring,
+     * matching ParaView's vtkSelectionColor approach where each selection node
+     * gets independent coloring via per-cell/point color arrays.
+     *
+     * @param polyData The mesh data
+     * @param selectionsWithColors Vector of (selection IDs, color) pairs
+     * @param fieldAssociation 0 for cells, 1 for points
+     * @param mode Highlight mode
+     * @return true on success
+     */
+    bool highlightMultiColorSelections(
+            vtkPolyData* polyData,
+            const QVector<QPair<vtkSmartPointer<vtkIdTypeArray>, QColor>>&
+                    selectionsWithColors,
+            int fieldAssociation,
+            HighlightMode mode = SELECTED);
+
+    /**
      * @brief Highlight a single element (for hover preview)
      * @param polyData The mesh data
      * @param elementId ID of the element to highlight
@@ -196,6 +219,12 @@ public:
      * @brief Clear all highlights
      */
     void clearHighlights();
+
+    /**
+     * @brief Clear highlight for a specific mode
+     * @param mode The highlight mode to clear
+     */
+    void clearHighlight(HighlightMode mode);
 
     /**
      * @brief Clear only hover highlight (keep selected/preselected)

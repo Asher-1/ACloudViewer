@@ -343,6 +343,17 @@ build_gui_app() {
     else
         echo "USE_QT6 is set to: $USE_QT6"
     fi
+    # qSIBR (SIBR viewers) is not built on macOS in CI: OpenGL-on-Metal is unsupported for that plugin.
+    # Override locally: export PLUGIN_STANDARD_QSIBR=ON before calling build_gui_app
+    if [[ -n "${PLUGIN_STANDARD_QSIBR:-}" ]]; then
+        echo "PLUGIN_STANDARD_QSIBR is set via environment: $PLUGIN_STANDARD_QSIBR"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        PLUGIN_STANDARD_QSIBR=OFF
+        echo "PLUGIN_STANDARD_QSIBR is OFF (macOS; set PLUGIN_STANDARD_QSIBR=ON to force)"
+    else
+        PLUGIN_STANDARD_QSIBR=ON
+        echo "PLUGIN_STANDARD_QSIBR is ON"
+    fi
     set -u
 
     echo
@@ -415,6 +426,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QTREEISO=$PLUGIN_STANDARD_QTREEISO"
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
                 "-DPLUGIN_STANDARD_G3POINT=ON"
+                "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

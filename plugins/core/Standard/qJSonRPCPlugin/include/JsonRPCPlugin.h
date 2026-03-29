@@ -7,61 +7,136 @@
 
 #pragma once
 
+#include <QElapsedTimer>
+#include <functional>
+
 #include "ecvStdPluginInterface.h"
-// #include <jcon/json_rpc_tcp_server.h>
 #include "jsonrpcserver.h"
 
-//! Example qCC plugin
-/** Replace 'ExamplePlugin' by your own plugin class name throughout and then
-        check 'ExamplePlugin.cpp' for more directions.
+struct RpcMethodEntry {
+    QString description;
+    std::function<JsonRPCResult(const QMap<QString, QVariant>&)> handler;
+};
 
-        Each plugin requires an info.json file to provide information about
-itself - the name, authors, maintainers, icon, etc..
-
-        The one method you are required to implement is 'getActions'. This
-should return all actions (QAction objects) for the plugin. ACloudViewer will
-        automatically add these with their icons in the plugin toolbar and to
-the plugin menu. If	your plugin returns	several actions, CC will create
-a dedicated toolbar and a	sub-menu for your plugin. You are responsible
-for connecting these actions to	methods in your plugin.
-
-        Use the ccStdPluginInterface::m_app variable for access to most of the
-CC components (database, 3D views, console, etc.) - see the ecvMainAppInterface
-        class in ecvMainAppInterface.h.
-**/
 class JsonRPCPlugin : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-
-    // Replace "Example" by your plugin name (IID should be unique - let's hope
-    // your plugin name is unique ;) The info.json file provides information
-    // about the plugin to the loading system and it is displayed in the plugin
-    // information dialog.
     Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.JsonRPC" FILE
                           "../info.json")
 
 public:
-    explicit JsonRPCPlugin(QObject *parent = nullptr);
+    explicit JsonRPCPlugin(QObject* parent = nullptr);
     ~JsonRPCPlugin() override = default;
 
-    // Inherited from ccStdPluginInterface
-    QList<QAction *> getActions() override;
+    QList<QAction*> getActions() override;
+
 public slots:
     void triggered(bool checked);
     JsonRPCResult execute(QString method, QMap<QString, QVariant> params);
 
 private:
-    //! Default action
-    /** You can add as many actions as you want in a plugin.
-            Each action will correspond to an icon in the dedicated
-            toolbar and an entry in the plugin menu.
-    **/
-    QAction *m_action{nullptr};
+    void registerMethods();
+    void reg(const QString& name,
+             const QString& desc,
+             std::function<JsonRPCResult(const QMap<QString, QVariant>&)> fn);
 
-protected:
-    // jcon::JsonRpcTcpServer rpc_server;
-    // QTcpServer rpc_server;
-    // QWebSocketServer wsrpc_server(QStringLiteral("ACloudViewer"),
-    // QWebSocketServer::NonSecureMode);
+    // --- helpers ---
+    ccHObject* findEntity(unsigned id);
+    ccPointCloud* findCloud(unsigned id, JsonRPCResult& err);
+    ccMesh* findMesh(unsigned id, JsonRPCResult& err);
+    void redraw();
+    void logRequest(const QString& method,
+                    const QMap<QString, QVariant>& params);
+    void logResponse(const QString& method,
+                     const JsonRPCResult& result,
+                     qint64 elapsedMs);
+
+    // --- File I/O ---
+    JsonRPCResult rpcOpen(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcExport(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcFileConvert(const QMap<QString, QVariant>& params);
+    // --- Scene tree ---
+    JsonRPCResult rpcSceneList(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSceneInfo(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSceneRemove(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSceneSetVisible(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSceneSelect(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcClear(const QMap<QString, QVariant>& params);
+    // --- View control ---
+    JsonRPCResult rpcViewSetOrientation(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewZoomFit(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewRefresh(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewSetPerspective(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewSetPointSize(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewScreenshot(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewGetCamera(const QMap<QString, QVariant>& params);
+    // --- Transform ---
+    JsonRPCResult rpcTransformApply(const QMap<QString, QVariant>& params);
+    // --- Entity properties ---
+    JsonRPCResult rpcEntityRename(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcEntitySetColor(const QMap<QString, QVariant>& params);
+    // --- Cloud colorization ---
+    JsonRPCResult rpcCloudPaintUniform(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudPaintByHeight(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudPaintByScalarField(
+            const QMap<QString, QVariant>& params);
+    // --- Cloud processing ---
+    JsonRPCResult rpcCloudComputeNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSubsample(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudCrop(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudGetScalarFields(
+            const QMap<QString, QVariant>& params);
+    // --- Cloud scalar-field management ---
+    JsonRPCResult rpcCloudSetActiveSf(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRemoveSf(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRemoveAllSfs(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRenameSf(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudFilterSf(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudCoordToSf(const QMap<QString, QVariant>& params);
+    // --- Cloud geometry ---
+    JsonRPCResult rpcCloudRemoveRgb(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRemoveNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudInvertNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudMerge(const QMap<QString, QVariant>& params);
+    // --- Cloud geometric analysis (NEW) ---
+    JsonRPCResult rpcCloudDensity(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudCurvature(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRoughness(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudGeometricFeature(
+            const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudApproxDensity(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudColorBanding(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSorFilter(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudExtractConnectedComponents(
+            const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudBestFitPlane(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudDelaunay(const QMap<QString, QVariant>& params);
+    // --- Cloud scalar field operations (NEW) ---
+    JsonRPCResult rpcCloudSfArithmetic(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfOperation(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfGradient(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfConvertToRGB(const QMap<QString, QVariant>& params);
+    // --- Cloud normals advanced (NEW) ---
+    JsonRPCResult rpcCloudOctreeNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudOrientNormalsMST(
+            const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudClearNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudNormalsToSFs(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudNormalsToDip(const QMap<QString, QVariant>& params);
+    // --- Mesh processing ---
+    JsonRPCResult rpcMeshSimplify(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshSmooth(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshSubdivide(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshSamplePoints(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshExtractVertices(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshFlipTriangles(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshVolume(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcMeshMerge(const QMap<QString, QVariant>& params);
+    // --- Reconstruction ---
+    JsonRPCResult rpcColmapReconstruct(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcColmapRun(const QMap<QString, QVariant>& params);
+
+    QAction* m_action{nullptr};
     JsonRPCServer rpc_server;
+    QMap<QString, RpcMethodEntry> m_methods;
 };

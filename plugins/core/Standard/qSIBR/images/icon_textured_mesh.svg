@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5f8ff"/>
+      <stop offset="100%" stop-color="#e0e8f5"/>
+    </linearGradient>
+    <linearGradient id="tex" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="5" fill="url(#bg)"/>
+  <!-- texture swatch -->
+  <rect x="4" y="4" width="6" height="6" rx="1" fill="url(#tex)" stroke="#c2410c" stroke-width="0.35"/>
+  <rect x="5.2" y="5.2" width="1.8" height="1.8" fill="#fff" opacity="0.35"/>
+  <!-- green triangle (back) -->
+  <polygon points="10,26 28,26 19,10" fill="#22c55e" fill-opacity="0.45" stroke="#15803d" stroke-width="0.6"/>
+  <!-- blue triangle (front) -->
+  <polygon points="8,26 24,26 14,12" fill="#3b82f6" fill-opacity="0.5" stroke="#1d4ed8" stroke-width="0.6"/>
+</svg>

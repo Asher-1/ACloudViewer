@@ -81,7 +81,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity,
     e_ply_storage_mode outputFormat = s_defaultOutputFormat;
 
     // ask for output format
-    if (parameters.alwaysDisplaySaveDialog) {
+    if (parameters.alwaysDisplaySaveDialog && FileIOFilter::IsGuiAvailable()) {
         QMessageBox msgBox(QMessageBox::Question, "Choose output format",
                            "Save in BINARY or ASCII format?");
         msgBox.addButton("BINARY", QMessageBox::AcceptRole);
@@ -177,17 +177,29 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity,
                                 "be saved.");
                     } else {
                         if (mesh->isA(CV_TYPES::MESH)) {
-                            if (QMessageBox::question(
-                                        nullptr,
-                                        "Multiple materials, one texture",
-                                        "This mesh has only one texture but "
-                                        "multiple materials. PLY files can "
-                                        "only handle one texture.\nShall we "
-                                        "drop the materials (yes) or convert "
-                                        "all materials and texture to "
-                                        "per-vertex RGB colors? (no)",
-                                        QMessageBox::Yes | QMessageBox::No,
-                                        QMessageBox::Yes) == QMessageBox::No) {
+                            bool dropMaterials = true;
+                            if (FileIOFilter::IsGuiAvailable()) {
+                                dropMaterials =
+                                        (QMessageBox::question(
+                                                 nullptr,
+                                                 "Multiple materials, one "
+                                                 "texture",
+                                                 "This mesh has only one "
+                                                 "texture but "
+                                                 "multiple materials. PLY "
+                                                 "files can "
+                                                 "only handle one "
+                                                 "texture.\nShall we "
+                                                 "drop the materials (yes) or "
+                                                 "convert "
+                                                 "all materials and texture to "
+                                                 "per-vertex RGB colors? (no)",
+                                                 QMessageBox::Yes |
+                                                         QMessageBox::No,
+                                                 QMessageBox::Yes) !=
+                                         QMessageBox::No);
+                            }
+                            if (!dropMaterials) {
                                 // we can forget the texture
                                 material = ccMaterial::CShared(nullptr);
                                 // try to convert materials to RGB
@@ -227,14 +239,22 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity,
                             "saved.");
                 } else {
                     if (mesh->isA(CV_TYPES::MESH)) {
-                        // we ask the user if he wants to convert them to RGB
-                        if (QMessageBox::question(
-                                    nullptr, "Multiple textures/materials",
-                                    "PLY files can't handle multiple "
-                                    "textures/materials!\nDo you want to "
-                                    "convert them to per-vertex RGB colors?",
-                                    QMessageBox::Yes | QMessageBox::No,
-                                    QMessageBox::No) == QMessageBox::Yes) {
+                        bool convertToRGB = false;
+                        if (FileIOFilter::IsGuiAvailable()) {
+                            convertToRGB =
+                                    (QMessageBox::question(
+                                             nullptr,
+                                             "Multiple textures/materials",
+                                             "PLY files can't handle multiple "
+                                             "textures/materials!\nDo you want "
+                                             "to "
+                                             "convert them to per-vertex RGB "
+                                             "colors?",
+                                             QMessageBox::Yes | QMessageBox::No,
+                                             QMessageBox::No) ==
+                                     QMessageBox::Yes);
+                        }
+                        if (convertToRGB) {
                             if (!static_cast<ccMesh*>(mesh)
                                          ->convertMaterialsToVertexColors()) {
                                 CVLog::Error(
@@ -1295,93 +1315,101 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                                                // the combo box ('none')
             || listPropsCount > assignedListProperties + 1 ||
             singlePropsCount > assignedSingleProperties + 1) {
-            PlyOpenDlg pod(parameters.parentWidget);
+            if (!FileIOFilter::IsGuiAvailable()) {
+                CVLog::Warning(
+                        "[PLY] Some properties could not be auto-detected. "
+                        "Using best-guess mapping in headless mode.");
+            } else {
+                PlyOpenDlg pod(parameters.parentWidget);
 
-            pod.plyTypeEdit->setText(e_ply_storage_mode_names[storage_mode]);
-            pod.elementsEdit->setText(QString::number(pointElements.size()));
-            pod.propertiesEdit->setText(QString::number(
-                    listProperties.size() + stdProperties.size() +
-                    singleProperties.size()));
-            pod.textureCountEdit->setText(
-                    QString::number(textureFileNames.size()));
+                pod.plyTypeEdit->setText(
+                        e_ply_storage_mode_names[storage_mode]);
+                pod.elementsEdit->setText(
+                        QString::number(pointElements.size()));
+                pod.propertiesEdit->setText(QString::number(
+                        listProperties.size() + stdProperties.size() +
+                        singleProperties.size()));
+                pod.textureCountEdit->setText(
+                        QString::number(textureFileNames.size()));
 
-            // we fill all combo-boxes with all items
-            pod.setDefaultComboItems(stdPropsText);
-            pod.setListComboItems(listPropsText);
-            pod.setSingleComboItems(singlePropsText);
+                // we fill all combo-boxes with all items
+                pod.setDefaultComboItems(stdPropsText);
+                pod.setListComboItems(listPropsText);
+                pod.setSingleComboItems(singlePropsText);
 
-            // try to restore previous context (if any)
-            bool hasAPreviousContext = false;
-            if (!pod.restorePreviousContext(hasAPreviousContext)) {
-                if (hasAPreviousContext) {
-                    CVLog::Warning(
-                            "[PLY] Too many differences with the previous "
-                            "file, we reset the dialog.");
+                // try to restore previous context (if any)
+                bool hasAPreviousContext = false;
+                if (!pod.restorePreviousContext(hasAPreviousContext)) {
+                    if (hasAPreviousContext) {
+                        CVLog::Warning(
+                                "[PLY] Too many differences with the previous "
+                                "file, we reset the dialog.");
+                    }
+
+                    // Set default/guessed element
+                    pod.xComboBox->setCurrentIndex(xIndex);
+                    pod.yComboBox->setCurrentIndex(yIndex);
+                    pod.zComboBox->setCurrentIndex(zIndex);
+
+                    pod.rComboBox->setCurrentIndex(rIndex);
+                    pod.gComboBox->setCurrentIndex(gIndex);
+                    pod.bComboBox->setCurrentIndex(bIndex);
+
+                    pod.iComboBox->setCurrentIndex(iIndex);
+
+                    for (size_t j = 0; j < sfPropIndexes.size(); ++j) {
+                        pod.addSFComboBox(sfPropIndexes[j]);
+                    }
+
+                    pod.nxComboBox->setCurrentIndex(nxIndex);
+                    pod.nyComboBox->setCurrentIndex(nyIndex);
+                    pod.nzComboBox->setCurrentIndex(nzIndex);
+
+                    pod.facesComboBox->setCurrentIndex(facesIndex);
+                    pod.textCoordsComboBox->setCurrentIndex(texCoordsIndex);
+                    pod.texIndexComboBox->setCurrentIndex(texNumberIndex);
                 }
 
-                // Set default/guessed element
-                pod.xComboBox->setCurrentIndex(xIndex);
-                pod.yComboBox->setCurrentIndex(yIndex);
-                pod.zComboBox->setCurrentIndex(zIndex);
-
-                pod.rComboBox->setCurrentIndex(rIndex);
-                pod.gComboBox->setCurrentIndex(gIndex);
-                pod.bComboBox->setCurrentIndex(bIndex);
-
-                pod.iComboBox->setCurrentIndex(iIndex);
-
-                for (size_t j = 0; j < sfPropIndexes.size(); ++j) {
-                    pod.addSFComboBox(sfPropIndexes[j]);
+                if (parameters.sessionStart) {
+                    // we do this AFTER calling restorePreviousContext because
+                    // it may still be good that the previous configuration is
+                    // restored even though the user needs to confirm it
+                    PlyOpenDlg::ResetApplyAll();
                 }
 
-                pod.nxComboBox->setCurrentIndex(nxIndex);
-                pod.nyComboBox->setCurrentIndex(nyIndex);
-                pod.nzComboBox->setCurrentIndex(nzIndex);
+                // We show the dialog (or we try to skip it ;)
+                if (parameters.alwaysDisplayLoadDialog && !pod.canBeSkipped() &&
+                    !pod.exec()) {
+                    ply_close(ply);
+                    return CC_FERR_CANCELED_BY_USER;
+                }
 
-                pod.facesComboBox->setCurrentIndex(facesIndex);
-                pod.textCoordsComboBox->setCurrentIndex(texCoordsIndex);
-                pod.texIndexComboBox->setCurrentIndex(texNumberIndex);
-            }
+                // Force events processing (to hide dialog)
+                QCoreApplication::processEvents();
 
-            if (parameters.sessionStart) {
-                // we do this AFTER calling restorePreviousContext because it
-                // may still be good that the previous configuration is restored
-                // even though the user needs to confirm it
-                PlyOpenDlg::ResetApplyAll();
-            }
+                xIndex = pod.xComboBox->currentIndex();
+                yIndex = pod.yComboBox->currentIndex();
+                zIndex = pod.zComboBox->currentIndex();
+                nxIndex = pod.nxComboBox->currentIndex();
+                nyIndex = pod.nyComboBox->currentIndex();
+                nzIndex = pod.nzComboBox->currentIndex();
+                rIndex = pod.rComboBox->currentIndex();
+                gIndex = pod.gComboBox->currentIndex();
+                bIndex = pod.bComboBox->currentIndex();
+                iIndex = pod.iComboBox->currentIndex();
+                facesIndex = pod.facesComboBox->currentIndex();
+                texCoordsIndex = pod.textCoordsComboBox->currentIndex();
+                texNumberIndex = pod.texIndexComboBox->currentIndex();
 
-            // We show the dialog (or we try to skip it ;)
-            if (parameters.alwaysDisplayLoadDialog && !pod.canBeSkipped() &&
-                !pod.exec()) {
-                ply_close(ply);
-                return CC_FERR_CANCELED_BY_USER;
-            }
-
-            // Force events processing (to hide dialog)
-            QCoreApplication::processEvents();
-
-            xIndex = pod.xComboBox->currentIndex();
-            yIndex = pod.yComboBox->currentIndex();
-            zIndex = pod.zComboBox->currentIndex();
-            nxIndex = pod.nxComboBox->currentIndex();
-            nyIndex = pod.nyComboBox->currentIndex();
-            nzIndex = pod.nzComboBox->currentIndex();
-            rIndex = pod.rComboBox->currentIndex();
-            gIndex = pod.gComboBox->currentIndex();
-            bIndex = pod.bComboBox->currentIndex();
-            iIndex = pod.iComboBox->currentIndex();
-            facesIndex = pod.facesComboBox->currentIndex();
-            texCoordsIndex = pod.textCoordsComboBox->currentIndex();
-            texNumberIndex = pod.texIndexComboBox->currentIndex();
-
-            // get (non null) SF properties
-            sfPropIndexes.clear();
-            {
-                for (size_t j = 0; j < pod.m_sfCombos.size(); ++j)
-                    if (pod.m_sfCombos[j]->currentIndex() > 0)
-                        sfPropIndexes.push_back(
-                                pod.m_sfCombos[j]->currentIndex());
-            }
+                // get (non null) SF properties
+                sfPropIndexes.clear();
+                {
+                    for (size_t j = 0; j < pod.m_sfCombos.size(); ++j)
+                        if (pod.m_sfCombos[j]->currentIndex() > 0)
+                            sfPropIndexes.push_back(
+                                    pod.m_sfCombos[j]->currentIndex());
+                }
+            }  // IsGuiAvailable
         }
     }
 

@@ -27,8 +27,14 @@ class ecvCustomQListWidget : public QListWidget {
 public:
     ecvCustomQListWidget(QWidget* parent = nullptr);
 
+    //! Update horizontal scrollbar range based on actual content width
+    void updateHorizontalScrollRange();
+
 protected:
     void keyPressEvent(QKeyEvent* event) override;
+
+    // Override to provide correct size hint for proper horizontal scrolling
+    int sizeHintForColumn(int column) const override;
 };
 
 //! Console
@@ -48,7 +54,7 @@ public:
     parentWidget parent widget (optional) \param parentWindow parent window (if
     any - optional)
     **/
-    static void Init(QListWidget* textDisplay = nullptr,
+    static void Init(ecvCustomQListWidget* textDisplay = nullptr,
                      QWidget* parentWidget = nullptr,
                      MainWindow* parentWindow = nullptr,
                      bool redirectToStdOut = false);
@@ -103,7 +109,7 @@ protected:
     void logMessage(const QString& message, int level) override;
 
     //! Associated text display widget
-    QListWidget* m_textDisplay;
+    ecvCustomQListWidget* m_textDisplay;
 
     //! Parent widget
     QWidget* m_parentWidget;

@@ -692,7 +692,7 @@
   <widget class="QDockWidget" name="DockableDBTree">
    <property name="minimumSize">
     <size>
-     <width>180</width>
+     <width>240</width>
      <height>175</height>
     </size>
    </property>
@@ -766,7 +766,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <widget class="QDockWidget" name="propertyDock">
    <property name="minimumSize">
     <size>
-     <width>180</width>
+     <width>240</width>
      <height>142</height>
     </size>
    </property>
@@ -858,6 +858,21 @@ QTreeView::branch:open:has-children:has-siblings  {
          <width>0</width>
          <height>80</height>
         </size>
+       </property>
+       <property name="wordWrap">
+        <bool>false</bool>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="textElideMode">
+        <enum>Qt::ElideNone</enum>
+       </property>
+       <property name="uniformItemSizes">
+        <bool>false</bool>
        </property>
       </widget>
      </item>

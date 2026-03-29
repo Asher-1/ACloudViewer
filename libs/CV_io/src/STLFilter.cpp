@@ -66,7 +66,7 @@ CC_FILE_ERROR STLFilter::saveToFile(ccHObject* entity,
 
     // ask for output format
     bool binaryMode = true;
-    if (parameters.alwaysDisplaySaveDialog) {
+    if (parameters.alwaysDisplaySaveDialog && FileIOFilter::IsGuiAvailable()) {
         QMessageBox msgBox(QMessageBox::Question, "Choose output format",
                            "Save in BINARY or ASCII format?");
         QPushButton* binaryButton =

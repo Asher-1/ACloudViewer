@@ -1,0 +1,27 @@
+{
+	"type" : "Standard",
+	"core" : true,
+	"name" : "SIBR Viewer",
+	"icon" : ":/CC/plugin/qSIBR/images/icon.svg",
+	"description": "Full SIBR integration plugin. Provides ULR viewer, ULR v2/v3, textured mesh, point-based, 3D Gaussian Splatting (CUDA), remote Gaussian training monitor, and dataset preprocessing tools. All rendering capabilities are directly embedded in the plugin.",
+	"authors" : [
+		{
+			"name" : "GRAPHDECO - Inria"
+		}
+	],
+	"maintainers" : [
+		{
+			"name" : "ACloudViewer Team"
+		}
+	],
+	"references": [
+		{
+			"text": "SIBR: A System for Image Based Rendering",
+			"url": "https://sibr.gitlabpages.inria.fr/"
+		},
+		{
+			"text": "3D Gaussian Splatting for Real-Time Radiance Field Rendering",
+			"url": "https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/"
+		}
+	]
+}

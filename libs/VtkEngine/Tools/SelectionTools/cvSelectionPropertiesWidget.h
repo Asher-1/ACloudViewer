@@ -176,6 +176,7 @@ private slots:
             const cvSelectionLabelPropertiesDialog::LabelProperties& props);
 
     // === Selection Editor slots ===
+    void clearInteractiveSelection();
     void onExpressionChanged(const QString& text);
     void onAddActiveSelectionClicked();
     void onRemoveSelectedSelectionClicked();
@@ -224,6 +225,7 @@ private slots:
                                          double z,
                                          double tolerance,
                                          bool isCell);
+    vtkPolyData* getPolyDataForDataProducer() const;
     void onSpreadsheetItemClicked(QTableWidgetItem* item);
 
     // Legacy slots (existing functionality)
@@ -239,8 +241,7 @@ private slots:
     void onExportToPointCloudClicked();
     void onSelectionTableItemClicked(QTableWidgetItem* item);
     void onAlgebraOperationTriggered();
-    // Filter methods removed - UI not implemented
-    // Bookmark methods removed - UI not implemented
+    void onFilterApplyClicked();
     void onAddAnnotationClicked();
     void onExtractBoundaryClicked();
 
@@ -264,6 +265,7 @@ private:
     void setupSelectionDisplaySection();
     void setupSelectionEditorSection();
     void setupSelectedDataSpreadsheet();
+    void setupFilterSelectionSection();
     void
     setupCompactStatisticsSection();  // Compact stats (replaces Statistics tab)
 
@@ -282,6 +284,7 @@ private:
     qint64 extractIdFromItemText(const QString& itemText);
     // updateBookmarkCombo removed - UI not implemented
     void updateSelectionEditorTable();
+    void updateElementTypeDisplay(bool isCellType);
     QString generateSelectionName();
     QColor generateSelectionColor() const;
 
@@ -454,8 +457,15 @@ private:
     QComboBox* m_algebraOpCombo;           // Algebra operations combo
     QPushButton* m_applyAlgebraButton;     // Apply algebra operation
     QPushButton* m_extractBoundaryButton;  // Extract boundary
-    // Filter UI removed - not implemented
-    // Bookmark UI removed - not implemented
+    // === Filter Selection Section ===
+    cvExpanderButton* m_filterSelectionExpander;
+    QWidget* m_filterSelectionContainer;
+    QComboBox* m_filterTypeCombo;
+    QComboBox* m_filterAttributeCombo;
+    QDoubleSpinBox* m_filterMinSpin;
+    QDoubleSpinBox* m_filterMaxSpin;
+    QPushButton* m_filterApplyButton;
+
     QPushButton* m_addAnnotationButton;  // Add annotation
 
     // Legacy color/opacity controls (may be nullptr in simplified UI)

@@ -82,6 +82,8 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
                                     getQVtkWidget()->GetRenderWindow());
     getQVtkWidget()->initVtk(m_visualizer3D->getRenderWindowInteractor(),
                              false);
+    getQVtkWidget()->setCustomInteractorStyle(
+            m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
 
     if (ecvDisplayTools::USE_2D) {
@@ -227,6 +229,12 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                     pointUniqueColor.r, pointUniqueColor.g, pointUniqueColor.b,
                     viewID, viewport);
         }
+
+        m_visualizer3D->setPointGaussianRendering(
+                ecvCloud->pointGaussianEnabled(),
+                ecvCloud->pointGaussianRadius(),
+                ecvCloud->pointGaussianShaderPreset(),
+                ecvCloud->pointGaussianEmissive(), viewID, viewport);
     }
 }
 
@@ -366,6 +374,12 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                     meshColor.r, meshColor.g, meshColor.b, viewID, viewport);
         }
         m_visualizer3D->setPointCloudOpacity(context.opacity, viewID, viewport);
+        m_visualizer3D->setMeshStippling(mesh->stipplingEnabled(), viewID,
+                                         viewport);
+        m_visualizer3D->setPointGaussianRendering(
+                mesh->pointGaussianEnabled(), mesh->pointGaussianRadius(),
+                mesh->pointGaussianShaderPreset(),
+                mesh->pointGaussianEmissive(), viewID, viewport);
     }
 }
 
@@ -725,6 +739,17 @@ void VtkDisplayTools::toggleOrientationMarker(bool state) {
 }
 
 void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
+    if (context.removeEntityType == ENTITY_TYPE::ECV_ALL) {
+        if (m_visualizer3D) {
+            m_visualizer3D->removeEntities(context);
+            m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        }
+        if (m_visualizer2D) {
+            m_visualizer2D->removeAllLayers();
+        }
+        return;
+    }
+
     if (context.removeEntityType == ENTITY_TYPE::ECV_IMAGE ||
         context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
         context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||

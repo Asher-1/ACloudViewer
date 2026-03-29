@@ -365,6 +365,7 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     m_propertiesTreeWidget->setModel(m_propertiesModel);
     m_propertiesTreeWidget->header()->setSectionResizeMode(
             QHeaderView::Interactive);
+    m_propertiesTreeWidget->header()->setStretchLastSection(true);
     m_propertiesTreeWidget->setEnabled(false);
 
     // Properties tree signals/slots connection
@@ -851,7 +852,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             // Check if Axes Grid is visible - if so, hide
                             // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::TheInstance()) {
+                            if (ecvDisplayTools::HasInstance()) {
                                 AxesGridProperties axesGridProps;
                                 ecvDisplayTools::TheInstance()
                                         ->getDataAxesGridProperties(
@@ -883,7 +884,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             // Check if Axes Grid is visible - if so, hide
                             // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::TheInstance()) {
+                            if (ecvDisplayTools::HasInstance()) {
                                 AxesGridProperties axesGridProps;
                                 ecvDisplayTools::TheInstance()
                                         ->getDataAxesGridProperties(

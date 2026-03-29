@@ -103,7 +103,7 @@ ccHObject::~ccHObject() {
 
 void ccHObject::notifyGeometryUpdate() {
     // the associated display bounding-box is (potentially) deprecated!!!
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 
@@ -1554,7 +1554,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
         // Check if Axes Grid is visible - if so, ALWAYS hide BoundingBox
         // (unconditionally, regardless of showBBOnSelected setting)
-        if (ecvDisplayTools::TheInstance()) {
+        if (ecvDisplayTools::HasInstance()) {
             AxesGridProperties axesGridProps;
             ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
                     context.viewID, axesGridProps);

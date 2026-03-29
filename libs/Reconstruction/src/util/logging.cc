@@ -37,6 +37,7 @@ void InitializeGlog(char** argv) {
 #ifndef _MSC_VER  // Broken in MSVC
   google::InstallFailureSignalHandler();
 #endif
+  FLAGS_logtostderr = true;
   google::InitGoogleLogging(argv[0]);
 }
 

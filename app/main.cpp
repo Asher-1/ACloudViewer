@@ -268,9 +268,252 @@ void InitEnvironment() {
     }
 }
 
+int HandleQuickFlags(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+            printf("ACloudViewer %s\n", CLOUDVIEWER_VERSION);
+            return 0;
+        }
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            printf("ACloudViewer %s - 3D Point Cloud & Mesh Processing\n"
+                   "\n"
+                   "Usage:\n"
+                   "  ACloudViewer [files...]                  Open files in "
+                   "GUI\n"
+                   "  ACloudViewer -SILENT [commands...]       Headless CLI "
+                   "mode\n"
+                   "  ACloudViewer --version | -v              Print version\n"
+                   "  ACloudViewer --help   | -h               Show this help\n"
+                   "\n"
+                   "I/O:\n"
+                   "  -O <file>                     Open/load a file\n"
+                   "    -SKIP <n>                     Skip first n lines "
+                   "(ASCII)\n"
+                   "    -GLOBAL_SHIFT AUTO|FIRST|<x> <y> <z>  Global shift on "
+                   "load\n"
+                   "  -SAVE_CLOUDS [FILE <path>]    Save point clouds\n"
+                   "  -SAVE_MESHES [FILE <path>]    Save meshes\n"
+                   "  -AUTO_SAVE ON|OFF             Toggle auto-save\n"
+                   "  -NO_TIMESTAMP                 Disable filename "
+                   "timestamps\n"
+                   "  -LOG_FILE <path>              Write log to file\n"
+                   "\n"
+                   "Export format:\n"
+                   "  -C_EXPORT_FMT <fmt>           Cloud format "
+                   "(PLY,PCD,LAS,E57,BIN,ASC,SBF,DRC,...)\n"
+                   "  -M_EXPORT_FMT <fmt>           Mesh format "
+                   "(OBJ,STL,OFF,PLY,FBX,DXF,VTK,...)\n"
+                   "  -H_EXPORT_FMT <fmt>           Hierarchy format\n"
+                   "  -EXT <ext>                    Override output file "
+                   "extension\n"
+                   "  -PLY_EXPORT_FMT ASCII|BINARY_LE|BINARY_BE\n"
+                   "  -PCD_OUTPUT_FORMAT <0|1>      PCD output format "
+                   "(0=ASCII, 1=binary)\n"
+                   "  -PREC <n>                     ASCII coord precision "
+                   "(default: 12)\n"
+                   "  -SEP <SPACE|SEMICOLON|COMMA|TAB>\n"
+                   "  -ADD_HEADER                   Add column names header\n"
+                   "  -ADD_PTS_COUNT                Add point count header\n"
+                   "\n"
+                   "Subsampling & filtering:\n"
+                   "  -SS RANDOM|SPATIAL|OCTREE <param>  Subsample\n"
+                   "  -EXTRACT_CC                   Extract connected "
+                   "components\n"
+                   "  -SOR <knn> <sigma>            Statistical Outlier "
+                   "Removal\n"
+                   "  -FILTER_SF <min> <max>        Filter by scalar field\n"
+                   "  -CROP <Xmin:Ymin:Zmin:Xmax:Ymax:Zmax>  Crop bounding "
+                   "box\n"
+                   "    -OUTSIDE                      Keep outside region\n"
+                   "  -CROP2D <ortho> <n> X1 Y1 ... Xn Yn  Crop by 2D polygon\n"
+                   "  -CROSS_SECTION <file>         Cross section from "
+                   "polyline file\n"
+                   "\n"
+                   "Normals:\n"
+                   "  -COMPUTE_NORMALS              Compute normals (gridded)\n"
+                   "  -OCTREE_NORMALS <radius>      Compute normals (octree)\n"
+                   "  -ORIENT_NORMS_MST <knn>       Orient normals (MST)\n"
+                   "  -INVERT_NORMALS               Invert normals\n"
+                   "  -CLEAR_NORMALS                Remove normals\n"
+                   "  -NORMALS_TO_DIP               Convert normals to "
+                   "dip/dip-dir\n"
+                   "  -NORMALS_TO_SFS               Convert normals to scalar "
+                   "fields\n"
+                   "\n"
+                   "Scalar fields:\n"
+                   "  -SET_ACTIVE_SF <idx>          Set active scalar field\n"
+                   "  -SF_ARITHMETIC <idx> <op>     SF arithmetic "
+                   "(ADD,SUB,MUL,...)\n"
+                   "  -SF_OP <idx> <op> <val>       SF operation\n"
+                   "  -RENAME_SF <old> <new>        Rename scalar field\n"
+                   "  -COORD_TO_SF <X|Y|Z>          Export coordinate to SF\n"
+                   "  -SF_COLOR_SCALE <file>        Apply color scale to SF\n"
+                   "  -SF_CONVERT_TO_RGB             Convert SF to RGB\n"
+                   "  -SF_GRAD [EUCLIDEAN]          SF gradient\n"
+                   "  -RGB_CONVERT_TO_SF             Convert RGB to scalar "
+                   "fields\n"
+                   "  -REMOVE_SF <name>             Remove scalar field\n"
+                   "  -REMOVE_ALL_SFS               Remove all scalar fields\n"
+                   "  -REMOVE_RGB                   Remove colors\n"
+                   "  -REMOVE_SCAN_GRIDS            Remove scan grids\n"
+                   "\n"
+                   "Geometry:\n"
+                   "  -CURV <MEAN|GAUSS> <radius>   Compute curvature\n"
+                   "  -DENSITY <radius>             Compute point density\n"
+                   "  -APPROX_DENSITY               Approximate density\n"
+                   "  -ROUGH <radius>               Compute roughness\n"
+                   "    -UP_DIR <x> <y> <z>           Roughness up direction\n"
+                   "  -MOMENT <order> <radius>      Compute moment\n"
+                   "  -FEATURE <type> <radius>      Compute geometric feature\n"
+                   "  -BEST_FIT_PLANE               Fit plane to cloud\n"
+                   "    -MAKE_HORIZ                   Make plane horizontal\n"
+                   "    -KEEP_LOADED                  Keep plane entity\n"
+                   "  -MESH_VOLUME                  Compute mesh volume\n"
+                   "    -TO_FILE <path>               Write volume to file\n"
+                   "  -CBANDING <dim> <freq>        Apply color banding\n"
+                   "\n"
+                   "Raster / 2.5D:\n"
+                   "  -RASTERIZE                    Rasterize to grid\n"
+                   "    -VERT_DIR <0|1|2>             Vertical direction "
+                   "(X/Y/Z)\n"
+                   "    -GRID_STEP <val>              Grid cell size\n"
+                   "    -OUTPUT_CLOUD                 Output as cloud\n"
+                   "    -OUTPUT_MESH                  Output as mesh\n"
+                   "    -OUTPUT_RASTER_Z <file>       Export raster (Z "
+                   "heights)\n"
+                   "    -OUTPUT_RASTER_RGB <file>     Export raster (RGB)\n"
+                   "    -PROJ <MIN|MAX|AVG>           Projection type\n"
+                   "    -EMPTY_FILL <method>          Empty cell filling\n"
+                   "    -RESAMPLE                     Resample cloud\n"
+                   "  -VOLUME                       2.5D volume calculation\n"
+                   "    -GROUND_IS_FIRST              First cloud is ground\n"
+                   "    -CONST_HEIGHT <val>           Use constant height\n"
+                   "\n"
+                   "Mesh:\n"
+                   "  -DELAUNAY [AA|BEST_FIT]       Delaunay triangulation\n"
+                   "    -MAX_EDGE_LENGTH <len>        Max edge constraint\n"
+                   "  -SAMPLE_MESH POINTS <n>       Sample points from mesh\n"
+                   "  -EXTRACT_VERTICES             Extract mesh vertices\n"
+                   "  -FLIP_TRI                     Flip triangle normals\n"
+                   "\n"
+                   "Registration & transform:\n"
+                   "  -ICP                          Iterative Closest Point\n"
+                   "    -REFERENCE_IS_FIRST           Reference is first "
+                   "cloud\n"
+                   "    -MIN_ERROR_DIFF <val>         Convergence threshold\n"
+                   "    -ITER <n>                     Max iterations\n"
+                   "    -OVERLAP <pct>                Expected overlap "
+                   "(0-100)\n"
+                   "    -ADJUST_SCALE                 Allow scale adjustment\n"
+                   "    -RANDOM_SAMPLING_LIMIT <n>    Random sampling limit\n"
+                   "    -FARTHEST_REMOVAL             Enable farthest point "
+                   "removal\n"
+                   "    -MODEL_SF_AS_WEIGHTS <idx>    Model SF weights\n"
+                   "    -DATA_SF_AS_WEIGHTS <idx>     Data SF weights\n"
+                   "    -ROT <XYZ|X|Y|Z|NONE>        Constrain rotation axis\n"
+                   "  -APPLY_TRANS <file>           Apply 4x4 transformation "
+                   "matrix\n"
+                   "  -DROP_GLOBAL_SHIFT            Remove global shift\n"
+                   "  -MATCH_CENTERS                Match bounding box "
+                   "centers\n"
+                   "\n"
+                   "Distance:\n"
+                   "  -C2C_DIST                     Cloud-to-cloud distance\n"
+                   "    -SPLIT_XYZ                    Split X/Y/Z components\n"
+                   "  -C2M_DIST                     Cloud-to-mesh distance\n"
+                   "    -FLIP_NORMS                   Flip normals\n"
+                   "    -MODEL <LS|TRI|HF>            Local model type\n"
+                   "  -M3C2                         M3C2 distance (plugin)\n"
+                   "  -MAX_DIST <val>               Max comparison distance\n"
+                   "  -OCTREE_LEVEL <n>             Octree level for "
+                   "comparison\n"
+                   "  -CLOSEST_POINT_SET            Extract closest point set\n"
+                   "  -STAT_TEST <distrib> <p> <n>  Chi2 statistical test\n"
+                   "\n"
+                   "Cloud management:\n"
+                   "  -MERGE_CLOUDS                 Merge all loaded clouds\n"
+                   "  -MERGE_MESHES                 Merge all loaded meshes\n"
+                   "  -CLEAR                        Clear all entities\n"
+                   "  -CLEAR_CLOUDS                 Clear all clouds\n"
+                   "  -CLEAR_MESHES                 Clear all meshes\n"
+                   "  -POP_CLOUDS                   Remove last cloud\n"
+                   "  -POP_MESHES                   Remove last mesh\n"
+                   "\n"
+                   "Plugins:\n"
+                   "  -RANSAC [options]             RANSAC shape detection\n"
+                   "  -CSF [options]                Cloth Simulation Filter "
+                   "(ground)\n"
+                   "  -CANUPO_CLASSIFY <file>       CANUPO classification\n"
+                   "  -3DMASC_CLASSIFY <file>       3DMASC classification\n"
+                   "  -TREEISO [options]            Tree isolation\n"
+                   "  -PCV [options]                ShadeVis / ambient "
+                   "occlusion\n"
+                   "  -PYTHON_SCRIPT <file>         Run Python script\n"
+                   "  -FBX [options]                FBX export options\n"
+                   "  -FWF_O <file>                 Load LAS with full "
+                   "waveform\n"
+                   "  -FWF_SAVE_CLOUDS              Save LAS with full "
+                   "waveform\n"
+                   "  -BUNDLER_IMPORT <file>        Import Bundler .out\n"
+                   "\n"
+                   "Colmap reconstruction (separate binary):\n"
+                   "  colmap automatic_reconstructor  Full SfM+MVS pipeline\n"
+                   "  colmap feature_extractor        Extract image features\n"
+                   "  colmap exhaustive_matcher        Feature matching\n"
+                   "  colmap mapper                    SfM sparse "
+                   "reconstruction\n"
+                   "  colmap patch_match_stereo        Dense stereo matching\n"
+                   "  colmap stereo_fusion             Fuse depth maps\n"
+                   "  colmap poisson_mesher            Poisson surface "
+                   "reconstruction\n"
+                   "  colmap delaunay_mesher           Delaunay meshing\n"
+                   "  colmap model_converter           Convert model format\n"
+                   "  colmap image_undistorter         Undistort images\n"
+                   "  (run 'colmap help' for full list of 40+ subcommands)\n"
+                   "\n"
+                   "System:\n"
+                   "  -SILENT                       Headless mode (required "
+                   "first arg)\n"
+                   "  -VERBOSE                      Enable verbose logging\n"
+                   "  -VERBOSITY <level>            Set verbosity (0-3)\n"
+                   "  -DEBUG                        Enable debug mode\n"
+                   "  -MAX_TCOUNT <n>               Max thread count\n"
+                   "  -HELP                         List all registered "
+                   "commands\n"
+                   "\n"
+                   "Examples:\n"
+                   "  ACloudViewer -SILENT -O in.ply -SS SPATIAL 0.05 "
+                   "-SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -O in.pcd -C_EXPORT_FMT PLY "
+                   "-SAVE_CLOUDS FILE out.ply\n"
+                   "  ACloudViewer -SILENT -O mesh.obj -SAMPLE_MESH POINTS "
+                   "50000 -SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -O a.ply -O b.ply -ICP -ITER 50 "
+                   "-SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -O cloud.ply -SOR 6 1.0 "
+                   "-SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -O cloud.ply -CSF -SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -O cloud.ply -RANSAC -SAVE_CLOUDS\n"
+                   "  ACloudViewer -SILENT -HELP    (full list including "
+                   "plugin commands)\n"
+                   "\n"
+                   "See: https://asher-1.github.io/ACloudViewer/\n",
+                   CLOUDVIEWER_VERSION);
+            return 0;
+        }
+    }
+    return -1;
+}
+
 int main(int argc, char* argv[]) {
-#ifdef _WIN32  // This will allow printf to function on windows when opened from
-               // command line
+#ifdef _WIN32
+    // Set UTF-8 code page for console output to properly display Chinese
+    // characters CP_UTF8 = 65001
+    SetConsoleOutputCP(65001);
+    SetConsoleCP(65001);
+
+    // This will allow printf to function on windows when opened from command
+    // line
     DWORD stdout_type = GetFileType(GetStdHandle(STD_OUTPUT_HANDLE));
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         if (stdout_type ==
@@ -282,6 +525,8 @@ int main(int argc, char* argv[]) {
         }
     }
 #endif
+
+    if (int rc = HandleQuickFlags(argc, argv); rc >= 0) return rc;
 
 #ifdef Q_OS_MAC
     // On macOS, when double-clicking the application, the Finder (sometimes!)
@@ -298,6 +543,34 @@ int main(int argc, char* argv[]) {
     }
 
     bool commandLine = (numRealArgs > 1) && (argv[1][0] == '-');
+
+    // macOS: for -SILENT (headless) mode, try offscreen platform if no
+    // QT_QPA_PLATFORM is set.  The "minimal" plugin is not shipped in the
+    // macOS bundle (only "cocoa" is), so we fall back gracefully:
+    //   offscreen > minimal > (leave unset → Qt picks cocoa, which works
+    //   on macOS runners because WindowServer is always available).
+    if (commandLine && numRealArgs > 1) {
+        QString firstArg = QString(argv[1]).toUpper();
+        if (firstArg == "-SILENT" &&
+            qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+            QStringList candidates = {"offscreen", "minimal"};
+            QString pluginDir = QCoreApplication::applicationDirPath() +
+                                "/../PlugIns/platforms";
+            if (!QDir(pluginDir).exists())
+                pluginDir =
+                        QCoreApplication::applicationDirPath() + "/platforms";
+            bool found = false;
+            for (const auto& name : candidates) {
+                QString pattern = QString("libq%1*").arg(name);
+                if (QDir(pluginDir).entryList({pattern}).size() > 0) {
+                    qputenv("QT_QPA_PLATFORM", name.toUtf8());
+                    found = true;
+                    break;
+                }
+            }
+            (void)found;
+        }
+    }
 #else
     bool commandLine = (argc > 1) && (argv[1][0] == '-');
 #endif
@@ -310,6 +583,12 @@ int main(int argc, char* argv[]) {
 #endif
 
     ecvApplication app(argc, argv, commandLine);
+
+    // Set UTF-8 encoding for QString conversion from/to std::string
+    // This ensures proper handling of Chinese and other Unicode characters
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+#endif
 
     // QApplication docs suggest resetting to "C" after the QApplication is
     // initialized.
@@ -364,6 +643,22 @@ int main(int argc, char* argv[]) {
         splash.reset(new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint));
         splash->show();
         QApplication::processEvents();
+    }
+
+    // In command-line mode, suppress verbose startup logs (plugin loading,
+    // global shift restore, color scale manager, etc.) unless the user
+    // explicitly passes -VERBOSE.
+    if (commandLine) {
+        bool hasVerboseFlag = false;
+        for (int i = 1; i < argc; ++i) {
+            if (QString(argv[i]).toUpper() == "-VERBOSE") {
+                hasVerboseFlag = true;
+                break;
+            }
+        }
+        if (!hasVerboseFlag) {
+            CVLog::SetVerbosityLevel(CVLog::LOG_WARNING);
+        }
     }
 
     // init environment

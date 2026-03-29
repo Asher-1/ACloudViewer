@@ -465,36 +465,41 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
     QList<QDockWidget*> dockWidgets =
             m_mainWindow->findChildren<QDockWidget*>();
 
-    // Find the DockableDBTree widget
     QDockWidget* dbTreeDock = nullptr;
+    QDockWidget* propertyDock = nullptr;
 
-    // Setup dock widgets based on their registered positions
     for (QDockWidget* dw : dockWidgets) {
         if (m_bottomDockWidgets.contains(dw)) {
             m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dw);
         } else if (m_rightSideDockWidgets.contains(dw)) {
-            // Right side dock widgets should be hidden by default in default
-            // layout
             m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dw);
-            dw->hide();  // Hide by default for cleaner initial layout
+            dw->hide();
         }
-        // Find DockableDBTree
         if (dw->objectName() == "DockableDBTree") {
             dbTreeDock = dw;
+        } else if (dw->objectName() == "propertyDock") {
+            propertyDock = dw;
         }
-        // Other dock widgets are handled by MainWindow
     }
 
-    // Set reasonable default width for DB Tree based on screen width
+    // 18% of screen width, clamped to [250, 380].  The wider range
+    // accommodates Slider+SpinBox combos (Point Gaussian, Opacity, etc.)
+    int defaultWidth = qBound(250, static_cast<int>(screenWidth * 0.18), 380);
+
+    QList<QDockWidget*> leftDocks;
+    QList<int> leftSizes;
     if (dbTreeDock) {
-        // Calculate default width as 15% of screen width, with min 200 and max
-        // 300
-        int defaultWidth =
-                qBound(200, static_cast<int>(screenWidth * 0.15), 300);
-        m_mainWindow->resizeDocks({dbTreeDock}, {defaultWidth}, Qt::Horizontal);
+        leftDocks << dbTreeDock;
+        leftSizes << defaultWidth;
+    }
+    if (propertyDock) {
+        leftDocks << propertyDock;
+        leftSizes << defaultWidth;
+    }
+    if (!leftDocks.isEmpty()) {
+        m_mainWindow->resizeDocks(leftDocks, leftSizes, Qt::Horizontal);
         CVLog::PrintDebug(
-                QString("[ecvLayoutManager] DB Tree default width set to %1 "
-                        "pixels")
+                QString("[ecvLayoutManager] Left dock default width: %1 px")
                         .arg(defaultWidth));
     }
 

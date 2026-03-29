@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "acloudviewer": {
+      "command": "cli-anything-acloudviewer-mcp",
+      "args": ["--mode", "auto"],
+      "env": {
+        "ACV_RPC_URL": "ws://localhost:6001"
+      }
+    },
+    "acloudviewer-headless": {
+      "command": "cli-anything-acloudviewer-mcp",
+      "args": ["--mode", "headless"]
+    },
+    "acloudviewer-gui": {
+      "command": "cli-anything-acloudviewer-mcp",
+      "args": ["--mode", "gui", "--rpc-url", "ws://localhost:6001"]
+    }
+  }
+}

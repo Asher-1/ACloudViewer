@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0f6ff"/>
+      <stop offset="1" stop-color="#dae5fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="5" fill="url(#bg)"/>
+  <!-- WiFi signal arcs -->
+  <g fill="none" stroke="#2563eb" stroke-linecap="round">
+    <path d="M 6 13 A 10 10 0 0 1 26 13" stroke-width="1.8" opacity=".45"/>
+    <path d="M 9 13 A 7 7 0 0 1 23 13"   stroke-width="1.6" opacity=".65"/>
+    <path d="M 12 13 A 4 4 0 0 1 20 13"   stroke-width="1.5" opacity=".85"/>
+  </g>
+  <!-- Center dot -->
+  <circle cx="16" cy="14.5" r="1.8" fill="#2563eb"/>
+  <!-- Anisotropic gaussian splats below -->
+  <ellipse cx="10" cy="24" rx="5.5" ry="3" fill="#fbbf24" opacity=".1" transform="rotate(20 10 24)"/>
+  <ellipse cx="10" cy="24" rx="3.5" ry="2" fill="#fbbf24" opacity=".22" transform="rotate(20 10 24)"/>
+  <ellipse cx="10" cy="24" rx="2"   ry="1" fill="#fcd34d" opacity=".48" transform="rotate(20 10 24)"/>
+  <ellipse cx="10" cy="24" rx="1"   ry=".5" fill="#fde68a" opacity=".7" transform="rotate(20 10 24)"/>
+  <ellipse cx="22" cy="24" rx="5" ry="3" fill="#22c55e" opacity=".1" transform="rotate(-25 22 24)"/>
+  <ellipse cx="22" cy="24" rx="3.5" ry="2" fill="#22c55e" opacity=".2" transform="rotate(-25 22 24)"/>
+  <ellipse cx="22" cy="24" rx="2"   ry="1" fill="#4ade80" opacity=".42" transform="rotate(-25 22 24)"/>
+  <ellipse cx="22" cy="24" rx="1"   ry=".5" fill="#86efac" opacity=".7" transform="rotate(-25 22 24)"/>
+  <ellipse cx="16" cy="23" rx="4.5" ry="2.5" fill="#ec4899" opacity=".1" transform="rotate(10 16 23)"/>
+  <ellipse cx="16" cy="23" rx="3" ry="1.5" fill="#ec4899" opacity=".2" transform="rotate(10 16 23)"/>
+  <ellipse cx="16" cy="23" rx="1.5" ry=".8" fill="#f472b6" opacity=".42" transform="rotate(10 16 23)"/>
+</svg>
