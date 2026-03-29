@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5f8ff"/>
+      <stop offset="1" stop-color="#e0e8f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="5" fill="url(#bg)"/>
+  <!-- Anisotropic gaussian splats (ellipses with rotation) -->
+  <ellipse cx="10" cy="9" rx="6" ry="3.5" fill="#4690E6" opacity=".55" transform="rotate(-25 10 9)"/>
+  <ellipse cx="22" cy="8" rx="5.5" ry="3" fill="#E65A46" opacity=".5" transform="rotate(20 22 8)"/>
+  <ellipse cx="16" cy="16" rx="7" ry="4" fill="#FFA830" opacity=".6" transform="rotate(-10 16 16)"/>
+  <ellipse cx="8" cy="22" rx="5" ry="3" fill="#B44CC8" opacity=".45" transform="rotate(35 8 22)"/>
+  <ellipse cx="24" cy="23" rx="5.5" ry="3" fill="#32BE6E" opacity=".5" transform="rotate(-20 24 23)"/>
+  <ellipse cx="13" cy="13" rx="4" ry="2" fill="#32C8E6" opacity=".45" transform="rotate(15 13 13)"/>
+  <ellipse cx="20" cy="14" rx="3.5" ry="2" fill="#FF7846" opacity=".45" transform="rotate(-30 20 14)"/>
+  <!-- Bright cores -->
+  <ellipse cx="10" cy="9" rx="2" ry="1.2" fill="#78B4FF" opacity=".85" transform="rotate(-25 10 9)"/>
+  <ellipse cx="22" cy="8" rx="1.8" ry="1" fill="#FF826E" opacity=".85" transform="rotate(20 22 8)"/>
+  <ellipse cx="16" cy="16" rx="2.5" ry="1.5" fill="#FFD264" opacity=".9" transform="rotate(-10 16 16)"/>
+  <ellipse cx="8" cy="22" rx="1.5" ry=".9" fill="#D282E6" opacity=".8" transform="rotate(35 8 22)"/>
+  <ellipse cx="24" cy="23" rx="1.5" ry=".9" fill="#64E6A0" opacity=".8" transform="rotate(-20 24 23)"/>
+</svg>

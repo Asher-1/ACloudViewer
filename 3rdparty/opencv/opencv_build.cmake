@@ -50,9 +50,9 @@ ExternalProject_Add(ext_opencv
             -DWITH_FFMPEG=OFF
             -DBUILD_JASPER=ON
             -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
-            -DBUILD_PNG=ON             #编译opencv 3rdparty自带的libpng
+            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            #macOS使用系统libpng避免SDK冲突，其他平台使用内置版本
             -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
-            -DBUILD_ZLIB=ON            #编译opencv 3rdparty自带的libzlib
+            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           #macOS使用系统zlib避免SDK冲突，其他平台使用内置版本
             -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
             -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
             # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf
@@ -62,8 +62,8 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_highgui=ON
             -DBUILD_opencv_imgcodecs=ON
             -DBUILD_opencv_imgproc=ON
-            -DBUILD_opencv_features2d=OFF
-            -DBUILD_opencv_flann=OFF
+            -DBUILD_opencv_features2d=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_flann=${PLUGIN_STANDARD_QSIBR}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
@@ -87,8 +87,9 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=OFF
-            -DBUILD_opencv_videoio=OFF
+            -DBUILD_opencv_video=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_videoio=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF
             -DWITH_GSTREAMER=OFF
             -DWITH_GTK=OFF

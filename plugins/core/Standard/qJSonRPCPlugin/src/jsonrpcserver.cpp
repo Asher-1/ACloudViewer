@@ -74,7 +74,6 @@ void JsonRPCServer::onClosed() { qDebug() << "JsonRPCServer::onClosed"; }
 
 void JsonRPCServer::processTextMessage(QString message) {
     QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-    qDebug() << "Message received:" << message;
     if (pClient == nullptr) {
         return;
     }
@@ -82,8 +81,6 @@ void JsonRPCServer::processTextMessage(QString message) {
     QJsonObject obj = doc.object();
     auto method = obj.value("method").toString();
     auto params = obj.value("params").toVariant().toMap();
-
-    qDebug() << "method: " << method << ", params: " << params;
     // check invalid JSON RPC
     JsonRPCResult result;
     if (!method.isEmpty() && !obj.value("jsonrpc").toString().isEmpty()) {
@@ -105,6 +102,9 @@ void JsonRPCServer::processTextMessage(QString message) {
         error["code"] = result.error_code;
         if (!result.error_message.isEmpty()) {
             error["message"] = result.error_message;
+        }
+        if (!result.error_data.isNull() && result.error_data.isValid()) {
+            error["data"] = QJsonValue::fromVariant(result.error_data);
         }
         response["error"] = error;
     } else {

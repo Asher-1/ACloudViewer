@@ -105,6 +105,7 @@
 #include <vtkPNMReader.h>
 #include <vtkPlanes.h>
 #include <vtkPointData.h>
+#include <vtkPointGaussianMapper.h>
 #include <vtkPointPicker.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -155,6 +156,27 @@ static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     ren->GetActiveCamera()->SetParallelProjection(0);
 }
 
+// ParaView BUG #13534: intercept ResetCameraClippingRangeEvent so we use
+// our own GeometryBounds (which include all representations) instead of
+// letting vtkRenderer::ComputeVisiblePropBounds decide.
+void VtkVis::installClippingRangeObserver(vtkSmartPointer<vtkRenderer> ren) {
+    // 1) Intercept ResetCameraClippingRangeEvent so we override VTK's
+    //    ComputeVisiblePropBounds-based clipping with our GeometryBounds.
+    auto clippingObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+    clippingObs->SetCallback(*this, &VtkVis::internalResetCameraClippingRange);
+    ren->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, clippingObs);
+
+    // 2) ParaView BUG #13534: reset clipping on every render.
+    //    Camera manipulators (vtkPVTrackballRotate/Zoom/Pan) call
+    //    rwi->Render() directly without going through the base-class
+    //    Rotate()/Dolly() that check AutoAdjustCameraClippingRange.
+    //    Hooking StartEvent on the render window ensures clipping is
+    //    always correct before the frame is drawn.
+    auto renderObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+    renderObs->SetCallback(*this, &VtkVis::internalResetCameraClippingRange);
+    win_->AddObserver(vtkCommand::StartEvent, renderObs);
+}
+
 VtkVis::VtkVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
                        interactor_style,
                const std::string& viewerName /* = ""*/,
@@ -184,6 +206,7 @@ VtkVis::VtkVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
     win_->SetWindowName(viewerName.c_str());
     win_->GlobalWarningDisplayOff();
 
+    installClippingRangeObserver(ren);
     configCenterAxes();
     configInteractorStyle(interactor_style);
 }
@@ -217,6 +240,7 @@ VtkVis::VtkVis(vtkSmartPointer<vtkRenderer> ren,
     win_->SetWindowName(viewerName.c_str());
     win_->GlobalWarningDisplayOff();
 
+    installClippingRangeObserver(ren);
     configCenterAxes();
     configInteractorStyle(interactor_style);
 }
@@ -664,24 +688,33 @@ void VtkVis::resetCamera(const ccBBox* bbox) {
 }
 
 void VtkVis::resetCameraClippingRange(int viewport) {
-    // set all renderer to this viewpoint
+    // Full recompute: synchronize geometry bounds from all visible props,
+    // then reset clipping.  Called when scene content changes (add/remove
+    // actors, visibility toggle, etc.).
     this->synchronizeGeometryBounds(viewport);
+    this->GeometryBoundsDirty = false;
     if (this->GeometryBounds.IsValid()) {
-        double originBounds[6];
-        this->GeometryBounds.GetBounds(originBounds);
-        this->GeometryBounds.ScaleAboutCenter(2, 2, 2);
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
         getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
-        this->GeometryBounds.SetBounds(originBounds);
     }
-    //        if (getVtkCamera()->GetParallelProjection())
-    //        {
-    //            double nearFar[2];
-    //            this->getReasonableClippingRange(nearFar, viewport);
-    //            this->setCameraClipDistances(nearFar[0] / 3, nearFar[1] * 3,
-    //            viewport);
-    //        }
+}
+
+void VtkVis::resetCameraClippingCached(int viewport) {
+    // Lightweight version used by the ResetCameraClippingRangeEvent
+    // observer (fires on every interaction).  Re-uses cached
+    // GeometryBounds to avoid expensive ComputeVisiblePropBounds()
+    // on every mouse move.  If bounds are dirty (scene changed),
+    // falls back to the full recompute.
+    if (this->GeometryBoundsDirty) {
+        this->resetCameraClippingRange(viewport);
+        return;
+    }
+    if (this->GeometryBounds.IsValid()) {
+        double bounds[6];
+        this->GeometryBounds.GetBounds(bounds);
+        getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
+    }
 }
 
 void VtkVis::resetCamera(double xMin,
@@ -2306,6 +2339,7 @@ bool VtkVis::addOrientedCube(const ecvOrientedBBox& obb,
     actor->GetProperty()->SetRepresentationToSurface();
     Eigen::Vector3d color = obb.GetColor();
     actor->GetProperty()->SetColor(color(0), color(1), color(2));
+    actor->PickableOff();
     addActorToRenderer(actor, viewport);
 
     // Save the pointer/ID pair to the global actor map
@@ -2346,6 +2380,7 @@ bool VtkVis::addCube(double xMin,
     VtkRendering::CreateActorFromVTKDataSet(data, actor, false);
     actor->GetProperty()->SetRepresentationToWireframe();
     actor->GetProperty()->SetColor(r, g, b);
+    actor->PickableOff();
     addActorToRenderer(actor, viewport);
 
     (*getShapeActorMap())[id] = actor;
@@ -2565,14 +2600,87 @@ void VtkVis::removeText2D(const std::string& viewId, int viewport) {
 }
 
 void VtkVis::removeALL(int viewport) {
-    // Remove all point clouds
+    // Remove all point clouds (also removes normals and data axes grids)
     std::vector<std::string> cloudIds;
     for (const auto& kv : *cloud_actor_map_) cloudIds.push_back(kv.first);
     for (const auto& id : cloudIds) removePointClouds(id, viewport);
-    // Remove all shapes
+
+    // Remove all shapes (also removes data axes grids)
     std::vector<std::string> shapeIds;
     for (const auto& kv : *shape_actor_map_) shapeIds.push_back(kv.first);
     for (const auto& id : shapeIds) removeShapes(id, viewport);
+
+    // Remove all coordinate systems
+    if (coordinate_actor_map_) {
+        std::vector<std::string> coordIds;
+        for (const auto& kv : *coordinate_actor_map_)
+            coordIds.push_back(kv.first);
+        for (const auto& id : coordIds) {
+            auto cit = coordinate_actor_map_->find(id);
+            if (cit != coordinate_actor_map_->end()) {
+                if (cit->second) removeActorFromRenderer(cit->second, viewport);
+                coordinate_actor_map_->erase(cit);
+            }
+        }
+    }
+
+    // Remove all widgets
+    if (m_widget_map) {
+        std::vector<std::string> widgetIds;
+        for (const auto& kv : *m_widget_map) widgetIds.push_back(kv.first);
+        for (const auto& id : widgetIds) removeWidgets(id, viewport);
+    }
+
+    // Remove all props
+    if (m_prop_map) {
+        for (auto& kv : *m_prop_map) {
+            if (kv.second) removeActorFromRenderer(kv.second, viewport);
+        }
+        m_prop_map->clear();
+    }
+
+    // Remove remaining data axes grids not already removed by cloud/shape
+    // cleanup
+    vtkRenderer* renderer = getCurrentRenderer(viewport);
+    if (renderer) {
+        for (auto& pair : m_dataAxesGridMap) {
+            if (pair.second) {
+                renderer->RemoveActor(pair.second);
+            }
+        }
+    }
+    m_dataAxesGridMap.clear();
+
+    // Clear transformation cache
+    transformation_map_.clear();
+
+    // Clear source object map (pointers to DB objects that may have been
+    // deleted)
+    m_sourceObjectMap.clear();
+
+    // Safety sweep: remove any stray actors from all renderers that aren't
+    // infrastructure (center axes).  This catches actors that slipped through
+    // the tracked maps above.
+    getRendererCollection()->InitTraversal();
+    vtkRenderer* ren = nullptr;
+    while ((ren = getRendererCollection()->GetNextItem()) != nullptr) {
+        vtkPropCollection* props = ren->GetViewProps();
+        if (!props) continue;
+
+        std::vector<vtkProp*> toRemove;
+        props->InitTraversal();
+        vtkProp* prop = nullptr;
+        while ((prop = props->GetNextProp()) != nullptr) {
+            if (prop == static_cast<vtkProp*>(m_centerAxes.GetPointer()))
+                continue;
+            toRemove.push_back(prop);
+        }
+        for (vtkProp* p : toRemove) {
+            ren->RemoveViewProp(p);
+        }
+    }
+
+    GeometryBoundsDirty = true;
 }
 /******************************** Entities Removement
  * *********************************/
@@ -3066,6 +3174,149 @@ void VtkVis::setMeshRenderingMode(MESH_RENDERING_MODE mode,
     actor->Modified();
 }
 
+void VtkVis::setMeshStippling(bool enabled,
+                              const std::string& viewID,
+                              int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+
+    // CloudCompare stippling = fake transparency via glPolygonStipple
+    // (checkerboard pattern). VTK's OpenGL2 backend doesn't support
+    // glPolygonStipple, so we approximate with reduced opacity + edge
+    // visibility for a see-through effect.
+    vtkProperty* prop = actor->GetProperty();
+    if (enabled) {
+        prop->SetOpacity(0.4);
+        prop->SetEdgeVisibility(true);
+        prop->SetEdgeColor(0.3, 0.3, 0.3);
+        prop->SetBackfaceCulling(false);
+    } else {
+        prop->SetOpacity(1.0);
+        prop->SetEdgeVisibility(false);
+    }
+    actor->Modified();
+}
+
+namespace {
+
+struct PGPreset {
+    const char* shaderCode;
+    float triangleScale;
+};
+
+static const PGPreset s_pgPresets[] = {
+        // PG_GAUSSIAN_BLUR (0) -- built-in gaussian, nullptr shader
+        {nullptr, 3.0f},
+        // PG_SPHERE (1)
+        {"//VTK::Color::Impl\n"
+         "float dist = dot(offsetVCVSOutput.xy,offsetVCVSOutput.xy);\n"
+         "if (dist > 1.0) { discard; }\n"
+         "else { float scale = (1.0 - dist);\n"
+         "  ambientColor *= scale; diffuseColor *= scale; }\n",
+         1.0f},
+        // PG_BLACK_EDGED_CIRCLE (2)
+        {"//VTK::Color::Impl\n"
+         "float dist = dot(offsetVCVSOutput.xy,offsetVCVSOutput.xy);\n"
+         "if (dist > 1.0) { discard; }\n"
+         "else if (dist > 0.8) {\n"
+         "  ambientColor = vec3(0.0,0.0,0.0);\n"
+         "  diffuseColor = vec3(0.0,0.0,0.0); }\n",
+         1.0f},
+        // PG_PLAIN_CIRCLE (3)
+        {"//VTK::Color::Impl\n"
+         "float dist = dot(offsetVCVSOutput.xy,offsetVCVSOutput.xy);\n"
+         "if (dist > 1.0) { discard; }\n",
+         1.0f},
+        // PG_TRIANGLE (4) -- default triangle geometry
+        {"//VTK::Color::Impl\n", 1.0f},
+        // PG_SQUARE_OUTLINE (5)
+        {"//VTK::Color::Impl\n"
+         "if (abs(offsetVCVSOutput.x) > 2.2 || "
+         "abs(offsetVCVSOutput.y) > 2.2) { discard; }\n"
+         "if (abs(offsetVCVSOutput.x) < 1.5 && "
+         "abs(offsetVCVSOutput.y) < 1.5) { discard; }\n",
+         3.0f},
+};
+
+}  // namespace
+
+void VtkVis::setPointGaussianRendering(bool enabled,
+                                       double gaussianRadius,
+                                       int shaderPreset,
+                                       bool emissive,
+                                       const std::string& viewID,
+                                       int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+
+    vtkMapper* currentMapper = actor->GetMapper();
+    if (!currentMapper) return;
+
+    vtkAlgorithmOutput* inputConn = currentMapper->GetInputConnection(0, 0);
+    vtkPolyData* polyInput =
+            vtkPolyData::SafeDownCast(currentMapper->GetInput());
+
+    if (enabled) {
+        int presetIdx = std::max(
+                0,
+                std::min(shaderPreset,
+                         static_cast<int>(ccDrawableObject::PG_PRESET_COUNT) -
+                                 1));
+        const PGPreset& preset = s_pgPresets[presetIdx];
+
+        auto* existingPG = vtkPointGaussianMapper::SafeDownCast(currentMapper);
+        if (existingPG) {
+            existingPG->SetScaleFactor(gaussianRadius);
+            existingPG->SetSplatShaderCode(preset.shaderCode);
+            existingPG->SetTriangleScale(preset.triangleScale);
+            if (emissive) {
+                existingPG->EmissiveOn();
+            } else {
+                existingPG->EmissiveOff();
+            }
+            existingPG->Modified();
+            return;
+        }
+        if (!polyInput && !inputConn) return;
+
+        auto pgMapper = vtkSmartPointer<vtkPointGaussianMapper>::New();
+        if (inputConn) {
+            pgMapper->SetInputConnection(inputConn);
+        } else {
+            pgMapper->SetInputData(polyInput);
+        }
+        pgMapper->SetScaleFactor(gaussianRadius);
+        pgMapper->SetSplatShaderCode(preset.shaderCode);
+        pgMapper->SetTriangleScale(preset.triangleScale);
+        if (emissive) {
+            pgMapper->EmissiveOn();
+        } else {
+            pgMapper->EmissiveOff();
+        }
+        if (currentMapper->GetLookupTable()) {
+            pgMapper->SetLookupTable(currentMapper->GetLookupTable());
+        }
+        pgMapper->SetScalarVisibility(currentMapper->GetScalarVisibility());
+        pgMapper->SetScalarMode(currentMapper->GetScalarMode());
+        actor->SetMapper(pgMapper);
+    } else {
+        if (!vtkPointGaussianMapper::SafeDownCast(currentMapper)) return;
+        auto stdMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+        if (inputConn) {
+            stdMapper->SetInputConnection(inputConn);
+        } else if (polyInput) {
+            stdMapper->SetInputData(polyInput);
+        }
+        if (currentMapper->GetLookupTable()) {
+            stdMapper->SetLookupTable(currentMapper->GetLookupTable());
+        }
+        stdMapper->SetScalarVisibility(currentMapper->GetScalarVisibility());
+        stdMapper->SetScalarMode(currentMapper->GetScalarMode());
+        actor->SetMapper(stdMapper);
+    }
+    actor->Modified();
+}
+
 void VtkVis::setLightMode(const std::string& viewID, int viewport) {
     vtkActor* actor = getActorById(viewID);
     if (actor) {
@@ -3478,26 +3729,25 @@ bool VtkVis::removeActorFromRenderer(const vtkSmartPointer<vtkProp>& actor,
         }
         ++i;
     }
+    this->GeometryBoundsDirty = true;
     if (viewport == 0) return (true);
     return (false);
 }
 
 void VtkVis::addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
                                 int viewport) {
-    // Add it to all renderers
     getRendererCollection()->InitTraversal();
     vtkRenderer* renderer = nullptr;
     int i = 0;
     while ((renderer = getRendererCollection()->GetNextItem()) != nullptr) {
-        // Should we add the actor to all renderers?
         if (viewport == 0) {
             renderer->AddActor(actor);
         } else if (viewport == i) {
-            // add the actor only to the specified viewport
             renderer->AddActor(actor);
         }
         ++i;
     }
+    this->GeometryBoundsDirty = true;
 }
 
 void VtkVis::UpdateScreen() {
@@ -3523,7 +3773,6 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
         iren->SetInteractorStyle(ThreeDInteractorStyle);
         ThreeDInteractorStyle->Initialize();
         ThreeDInteractorStyle->setRendererCollection(rens_);
-        ThreeDInteractorStyle->UseTimersOn();
     }
     iren->SetDesiredUpdateRate(30.0);
     iren->Initialize();
@@ -3696,7 +3945,9 @@ void VtkVis::OnAreaPicking(vtkObject* caller,
     props->InitTraversal();
     while (auto* prop = props->GetNextProp()) {
         auto* actor = vtkActor::SafeDownCast(prop);
-        if (!actor || !actor->GetVisibility() || !actor->GetMapper()) continue;
+        if (!actor || !actor->GetPickable() || !actor->GetVisibility() ||
+            !actor->GetMapper())
+            continue;
         auto* input = actor->GetMapper()->GetInput();
         if (!input) continue;
         auto* ds = vtkDataSet::SafeDownCast(input);

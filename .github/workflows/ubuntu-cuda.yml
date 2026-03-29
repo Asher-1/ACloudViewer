@@ -175,3 +175,79 @@ jobs:
           prerelease: false
           files: |
             ACloudViewer-*.run
+
+  agent-integration:
+    name: Agent Integration (${{ matrix.CI_CONFIG }})
+    runs-on: ubuntu-latest
+    needs: [build-and-run-docker]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - CI_CONFIG: cuda-focal
+            RUNNER: ubuntu-20.04
+          - CI_CONFIG: cuda-jammy
+            RUNNER: ubuntu-22.04
+          - CI_CONFIG: cuda-noble
+            RUNNER: ubuntu-24.04
+
+    steps:
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-dev libfontconfig1 libfreetype6 \
+            libxcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-shm0 \
+            libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
+            libxcb-xkb1 libxcb-xinput0 \
+            libxkbcommon0 libxkbcommon-x11-0 \
+            libx11-xcb1
+
+      - name: Download ACloudViewer installer
+        uses: actions/download-artifact@v4
+        with:
+          name: ACloudViewer-devel-linux-x86_64-${{ matrix.CI_CONFIG }}
+          path: /tmp/acv-installer/
+
+      - name: Install ACloudViewer (headless .run installer)
+        env:
+          QT_QPA_PLATFORM: minimal
+        run: |
+          INSTALLER=$(find /tmp/acv-installer/ -name "*.run" | head -1)
+          if [ -z "$INSTALLER" ]; then
+            echo "::error::No .run installer found"
+            exit 1
+          fi
+          chmod +x "$INSTALLER"
+          mkdir -p "$HOME/Desktop"
+          "$INSTALLER" --root "$HOME/ACloudViewer" \
+            --accept-licenses --accept-messages --confirm-command install
+          echo "$HOME/ACloudViewer" >> "$GITHUB_PATH"
+          echo "ACV_BINARY=$HOME/ACloudViewer/ACloudViewer.sh" >> "$GITHUB_ENV"
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+      - name: Level 3 — Headless processing tests
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"

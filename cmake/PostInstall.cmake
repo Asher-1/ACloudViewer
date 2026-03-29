@@ -89,6 +89,22 @@ if (UNIX AND NOT APPLE)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
     )
+
+    # deploy SIBR plugin runtime assets (shaders, resources, config)
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${MAIN_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
     
     if (${PLUGIN_PYTHON} STREQUAL "ON") 
         file(COPY 
@@ -148,6 +164,22 @@ elseif (WIN32)
         USE_SOURCE_PERMISSIONS
         )
 
+    # deploy SIBR plugin runtime assets (shaders, resources, config)
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${MAIN_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+
     if (${PLUGIN_PYTHON} STREQUAL "ON")
         file(COPY 
             "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins-python"
@@ -177,6 +209,25 @@ elseif (WIN32)
     )
 endif()
 
+## deploy SIBR plugin runtime assets for macOS (.app bundle)
+if (APPLE)
+    set(_sibr_macos_dest "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents/MacOS")
+    foreach(_sibr_asset shaders sibr_resources)
+        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
+        if(EXISTS "${_sibr_asset_path}")
+            file(COPY "${_sibr_asset_path}"
+                DESTINATION "${_sibr_macos_dest}"
+                USE_SOURCE_PERMISSIONS)
+        endif()
+    endforeach()
+    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
+    if(EXISTS "${_ibr_ini}")
+        file(COPY "${_ibr_ini}"
+            DESTINATION "${_sibr_macos_dest}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+endif()
+
 ## deploy CloudViewer
 if (${BUILD_GUI} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}"
@@ -204,6 +255,18 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
         else()
             message(WARNING "File ${LINK_GFLAGS_FILE_PATH} does not exist.")
         endif()
+    endif()
+endif()
+
+## 2.5. Patch version in deployed data files (.desktop, config, etc.)
+set(MAIN_DESKTOP "${DEPLOY_PACKAGES_PATH}/${MAIN_APP_NAME}/data/${MAIN_APP_NAME}.desktop")
+if (EXISTS "${MAIN_DESKTOP}")
+    replace_version_in_file("${MAIN_DESKTOP}")
+endif()
+if (${BUILD_GUI} STREQUAL "ON")
+    set(CV_DESKTOP "${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/data/${CLOUDVIEWER_APP_NAME}.desktop")
+    if (EXISTS "${CV_DESKTOP}")
+        replace_version_in_file("${CV_DESKTOP}")
     endif()
 endif()
 

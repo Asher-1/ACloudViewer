@@ -146,7 +146,7 @@ Component.prototype.createOperations = function()
             var desktop_path = "@HomeDir@/Desktop/" + desktop;
             component.addOperation("CreateDesktopEntry", desktop_path, comment);
             component.addOperation("Execute", "sleep", "2");
-            component.addOperation("Execute", "/usr/bin/gio", "set", desktop_path, "metadata::trusted", "true");
+            component.addOperation("Execute", "bash", "-c", "/usr/bin/gio set \"$0\" metadata::trusted true || true", desktop_path);
 
 		} else if (installer.value("os") === "win") {
             // register extensions support

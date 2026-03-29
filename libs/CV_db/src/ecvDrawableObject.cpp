@@ -24,6 +24,10 @@ ccDrawableObject::ccDrawableObject() {
     setTempColor(ecvColor::white, false);
     resetGLTransformation();
     showNameIn3D(false);
+    m_pointGaussianEnabled = false;
+    m_pointGaussianRadius = 0.01;
+    m_pointGaussianShaderPreset = PG_SPHERE;
+    m_pointGaussianEmissive = false;
 }
 
 ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
@@ -41,7 +45,11 @@ ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
       m_colorIsOverridden(object.m_colorIsOverridden),
       m_glTrans(object.m_glTrans),
       m_glTransEnabled(object.m_glTransEnabled),
-      m_showNameIn3D(object.m_showNameIn3D) {}
+      m_showNameIn3D(object.m_showNameIn3D),
+      m_pointGaussianEnabled(object.m_pointGaussianEnabled),
+      m_pointGaussianRadius(object.m_pointGaussianRadius),
+      m_pointGaussianShaderPreset(object.m_pointGaussianShaderPreset),
+      m_pointGaussianEmissive(object.m_pointGaussianEmissive) {}
 
 void ccDrawableObject::enableGLTransformation(bool state) {
     m_glTransEnabled = state;

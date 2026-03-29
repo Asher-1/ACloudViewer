@@ -165,6 +165,8 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_OCTREE_TYPE:
             case OBJECT_COLOR_RAMP_STEPS:
             case OBJECT_CLOUD_POINT_SIZE:
+            case OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS:
+            case OBJECT_CLOUD_POINT_GAUSSIAN_PRESET:
             case OBJECT_OPACITY:
                 return QSize(50, 24);
             case OBJECT_COLOR_SOURCE:
@@ -653,6 +655,19 @@ void ccPropertiesTreeDelegate::fillWithPointCloud(ccGenericPointCloud* _obj) {
     appendRow(ITEM(tr("Point size")),
               PERSISTENT_EDITOR(OBJECT_CLOUD_POINT_SIZE), true);
 
+    // Point Gaussian (splat) rendering
+    appendRow(ITEM(tr("Point Gaussian")),
+              CHECKABLE_ITEM(_obj->pointGaussianEnabled(),
+                             OBJECT_CLOUD_POINT_GAUSSIAN));
+    appendRow(ITEM(tr("  Shader Preset")),
+              PERSISTENT_EDITOR(OBJECT_CLOUD_POINT_GAUSSIAN_PRESET), true);
+    appendRow(ITEM(tr("  Gaussian Radius")),
+              PERSISTENT_EDITOR(OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS), true);
+    appendRow(ITEM(tr("  Emissive")),
+              CHECKABLE_ITEM(_obj->pointGaussianEmissive(),
+                             OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE));
+    setPointGaussianSubPropsEnabled(_obj->pointGaussianEnabled());
+
     // scalar field
     fillSFWithPointCloud(_obj);
 
@@ -866,6 +881,19 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
     appendRow(ITEM(tr("Stippling")),
               CHECKABLE_ITEM(static_cast<ccMesh*>(_obj)->stipplingEnabled(),
                              OBJECT_MESH_STIPPLING));
+
+    // Point Gaussian (splat) rendering
+    appendRow(ITEM(tr("Point Gaussian")),
+              CHECKABLE_ITEM(_obj->pointGaussianEnabled(),
+                             OBJECT_CLOUD_POINT_GAUSSIAN));
+    appendRow(ITEM(tr("  Shader Preset")),
+              PERSISTENT_EDITOR(OBJECT_CLOUD_POINT_GAUSSIAN_PRESET), true);
+    appendRow(ITEM(tr("  Gaussian Radius")),
+              PERSISTENT_EDITOR(OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS), true);
+    appendRow(ITEM(tr("  Emissive")),
+              CHECKABLE_ITEM(_obj->pointGaussianEmissive(),
+                             OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE));
+    setPointGaussianSubPropsEnabled(_obj->pointGaussianEnabled());
 
     // material/texture
     if (_obj->hasMaterials()) {
@@ -1766,6 +1794,69 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = comboBox;
         } break;
+        case OBJECT_CLOUD_POINT_GAUSSIAN_PRESET: {
+            QComboBox* comboBox = new QComboBox(parent);
+            comboBox->addItem(tr("Gaussian Blur"));
+            comboBox->addItem(tr("Sphere"));
+            comboBox->addItem(tr("Black-edged Circle"));
+            comboBox->addItem(tr("Plain Circle"));
+            comboBox->addItem(tr("Triangle"));
+            comboBox->addItem(tr("Square Outline"));
+
+            connect(comboBox,
+                    static_cast<void (QComboBox::*)(int)>(
+                            &QComboBox::currentIndexChanged),
+                    this,
+                    &ccPropertiesTreeDelegate::cloudPointGaussianPresetChanged);
+
+            outputWidget = comboBox;
+        } break;
+        case OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS: {
+            QWidget* container = new QWidget(parent);
+            QHBoxLayout* layout = new QHBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(4);
+
+            QSlider* slider = new QSlider(Qt::Horizontal, container);
+            slider->setRange(1, 10000);
+            slider->setSingleStep(5);
+            slider->setPageStep(100);
+            slider->setTickPosition(QSlider::NoTicks);
+
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(container);
+            spinBox->setRange(0.001, 10.0);
+            spinBox->setSingleStep(0.005);
+            spinBox->setDecimals(3);
+            spinBox->setMinimumWidth(60);
+
+            connect(slider, &QSlider::valueChanged, this, [spinBox](int value) {
+                spinBox->blockSignals(true);
+                spinBox->setValue(value / 1000.0);
+                spinBox->blockSignals(false);
+            });
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                    [slider](double value) {
+                        slider->blockSignals(true);
+                        slider->setValue(static_cast<int>(value * 1000.0));
+                        slider->blockSignals(false);
+                    });
+
+            ccPropertiesTreeDelegate* self =
+                    const_cast<ccPropertiesTreeDelegate*>(this);
+            connect(slider, &QAbstractSlider::valueChanged, self,
+                    [self](int value) {
+                        self->cloudPointGaussianRadiusChanged(value / 1000.0);
+                    });
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), self,
+                    &ccPropertiesTreeDelegate::cloudPointGaussianRadiusChanged);
+
+            layout->addWidget(slider, 1);
+            layout->addWidget(spinBox, 0);
+
+            outputWidget = container;
+        } break;
         case OBJECT_POLYLINE_WIDTH: {
             QComboBox* comboBox = new QComboBox(parent);
 
@@ -2340,7 +2431,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             disconnect(checkbox, nullptr, this, nullptr);
             connect(checkbox, &QCheckBox::toggled, this,
                     [this, viewID](bool checked) {
-                        if (!ecvDisplayTools::TheInstance()) return;
+                        if (!ecvDisplayTools::HasInstance()) return;
 
                         // Get current properties using struct-based interface
                         AxesGridProperties props;
@@ -2437,6 +2528,25 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             SetComboBoxIndex(editor, static_cast<int>(cloud->getPointSize()));
             break;
         }
+        case OBJECT_CLOUD_POINT_GAUSSIAN_PRESET: {
+            SetComboBoxIndex(editor,
+                             m_currentObject->pointGaussianShaderPreset());
+            break;
+        }
+        case OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS: {
+            QWidget* container = qobject_cast<QWidget*>(editor);
+            if (!container) break;
+            QSlider* slider = container->findChild<QSlider*>();
+            QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
+            double radius = m_currentObject->pointGaussianRadius();
+            if (slider) {
+                slider->setValue(static_cast<int>(radius * 1000.0));
+            }
+            if (spinBox) {
+                spinBox->setValue(radius);
+            }
+            break;
+        }
         case OBJECT_POLYLINE_WIDTH: {
             ccPolyline* poly = ccHObjectCaster::ToPolyline(m_currentObject);
             assert(poly);
@@ -2517,7 +2627,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                         // Check if Axes Grid is visible - if so, hide
                         // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::TheInstance()) {
+                        if (ecvDisplayTools::HasInstance()) {
                             AxesGridProperties axesGridProps;
                             ecvDisplayTools::TheInstance()
                                     ->getDataAxesGridProperties(context.viewID,
@@ -2551,7 +2661,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                         // Check if Axes Grid is visible - if so, hide
                         // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::TheInstance()) {
+                        if (ecvDisplayTools::HasInstance()) {
                             AxesGridProperties axesGridProps;
                             ecvDisplayTools::TheInstance()
                                     ->getDataAxesGridProperties(context.viewID,
@@ -2716,6 +2826,21 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->enableStippling(item->checkState() == Qt::Checked);
+            ecvDisplayTools::SetRedrawRecursive(false);
+        }
+            redraw = true;
+            break;
+        case OBJECT_CLOUD_POINT_GAUSSIAN: {
+            bool pgEnabled = item->checkState() == Qt::Checked;
+            m_currentObject->setPointGaussianEnabled(pgEnabled);
+            setPointGaussianSubPropsEnabled(pgEnabled);
+            ecvDisplayTools::SetRedrawRecursive(false);
+        }
+            redraw = true;
+            break;
+        case OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE: {
+            m_currentObject->setPointGaussianEmissive(item->checkState() ==
+                                                      Qt::Checked);
             ecvDisplayTools::SetRedrawRecursive(false);
         }
             redraw = true;
@@ -3528,6 +3653,61 @@ void ccPropertiesTreeDelegate::cloudPointSizeChanged(int size) {
     }
 }
 
+void ccPropertiesTreeDelegate::cloudPointGaussianRadiusChanged(double radius) {
+    if (!m_currentObject) return;
+
+    if (m_currentObject->pointGaussianRadius() != radius) {
+        m_currentObject->setPointGaussianRadius(radius);
+        updateCurrentEntity(false);
+    }
+}
+
+void ccPropertiesTreeDelegate::cloudPointGaussianPresetChanged(int preset) {
+    if (!m_currentObject) return;
+
+    if (m_currentObject->pointGaussianShaderPreset() != preset) {
+        m_currentObject->setPointGaussianShaderPreset(preset);
+        updateCurrentEntity(false);
+    }
+}
+
+void ccPropertiesTreeDelegate::setPointGaussianSubPropsEnabled(bool enabled) {
+    if (!m_model) return;
+    static const CC_PROPERTY_ROLE subRoles[] = {
+            OBJECT_CLOUD_POINT_GAUSSIAN_PRESET,
+            OBJECT_CLOUD_POINT_GAUSSIAN_RADIUS,
+            OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE,
+    };
+    for (int row = 0; row < m_model->rowCount(); ++row) {
+        QStandardItem* valItem = m_model->item(row, 1);
+        if (!valItem) continue;
+        QVariant roleVar = valItem->data();
+        if (!roleVar.isValid()) continue;
+        int role = roleVar.toInt();
+        for (auto sr : subRoles) {
+            if (role == sr) {
+                QStandardItem* labelItem = m_model->item(row, 0);
+                if (labelItem) {
+                    Qt::ItemFlags lf = labelItem->flags();
+                    lf = enabled ? (lf | Qt::ItemIsEnabled)
+                                 : (lf & ~Qt::ItemIsEnabled);
+                    labelItem->setFlags(lf);
+                }
+                Qt::ItemFlags vf = valItem->flags();
+                vf = enabled ? (vf | Qt::ItemIsEnabled)
+                             : (vf & ~Qt::ItemIsEnabled);
+                valItem->setFlags(vf);
+
+                QModelIndex editorIdx = m_model->index(row, 1);
+                QWidget* editor =
+                        qobject_cast<QWidget*>(m_view->indexWidget(editorIdx));
+                if (editor) editor->setEnabled(enabled);
+                break;
+            }
+        }
+    }
+}
+
 void ccPropertiesTreeDelegate::polyineWidthChanged(int size) {
     if (!m_currentObject) return;
 
@@ -3626,7 +3806,7 @@ void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
 // ParaView-style View Properties implementation
 
 void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 
@@ -3655,8 +3835,7 @@ void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
         return;
     }
 
-    // Check if we have a valid display tools instance
-    if (!ecvDisplayTools::TheInstance()) {
+    if (!ecvDisplayTools::HasInstance()) {
         return;
     }
 

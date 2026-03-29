@@ -136,6 +136,16 @@ public:
     static ecvDisplayTools* TheInstance();
 
     /**
+     * @brief Check whether the singleton has been initialized
+     *
+     * Unlike TheInstance(), this does not log a warning when the
+     * instance is null.  Use it in guard checks where running
+     * without a display context is expected (e.g. headless /
+     * command-line mode).
+     */
+    static bool HasInstance();
+
+    /**
      * @brief Release and destroy the singleton instance
      */
     static void ReleaseInstance();
@@ -993,7 +1003,7 @@ public:  // Main interface accessors
      * @return Current screen widget pointer
      */
     inline static QWidget* GetCurrentScreen() {
-        if (!TheInstance()) return nullptr;
+        if (!HasInstance()) return nullptr;
         return TheInstance()->m_currentScreen;
     }
 
@@ -1008,7 +1018,7 @@ public:  // Main interface accessors
      * @return Main screen widget pointer
      */
     inline static QWidget* GetMainScreen() {
-        if (!TheInstance()) return nullptr;
+        if (!HasInstance()) return nullptr;
         return TheInstance()->m_mainScreen;
     }
 

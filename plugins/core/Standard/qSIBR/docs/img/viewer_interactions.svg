@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="Segoe UI, Arial, sans-serif">
+
+  <text x="450" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#202124">SIBR Viewer -- ACloudViewer Interaction Matrix</text>
+
+  <!-- Column headers -->
+  <rect x="230" y="40" width="160" height="28" rx="5" fill="#e8f0fe"/>
+  <text x="310" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#1a73e8">Before Launch</text>
+  <rect x="400" y="40" width="160" height="28" rx="5" fill="#e6f4ea"/>
+  <text x="480" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#137333">During Viewing</text>
+  <rect x="570" y="40" width="160" height="28" rx="5" fill="#fce8e6"/>
+  <text x="650" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#c5221f">After Close</text>
+  <rect x="740" y="40" width="150" height="28" rx="5" fill="#f3e8fd"/>
+  <text x="815" y="58" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Data Exchange</text>
+
+  <!-- Row 1: 3DGS -->
+  <rect x="10" y="76" width="210" height="90" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="1.5"/>
+  <text x="115" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#e65100">3D Gaussian Splatting</text>
+  <text x="115" y="112" text-anchor="middle" font-size="9" fill="#5f6368">Real-time splat rendering</text>
+  <text x="115" y="126" text-anchor="middle" font-size="9" fill="#5f6368">CUDA accelerated</text>
+  <rect x="34" y="134" width="36" height="14" rx="3" fill="#e65100"/><text x="52" y="144" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">CUDA</text>
+  <rect x="76" y="134" width="40" height="14" rx="3" fill="#f9ab00"/><text x="96" y="144" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">OpenGL</text>
+  <rect x="122" y="134" width="50" height="14" rx="3" fill="#34a853"/><text x="147" y="144" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Interop</text>
+  <g font-size="9.5" fill="#333">
+    <text x="238" y="94">[OK] Auto-detect 3DGS dir</text>
+    <text x="238" y="110">[OK] Pre-fill model path</text>
+    <text x="238" y="126">[OK] Path persistence</text>
+    <text x="238" y="142">[OK] Select iteration</text>
+    <text x="238" y="158">[OK] CUDA device choice</text>
+    <text x="408" y="94">Gaussian count in log</text>
+    <text x="408" y="110">SH degree info</text>
+    <text x="408" y="126">Camera count logged</text>
+    <text x="408" y="142">ImGui debug controls</text>
+    <text x="578" y="94">[+] Import splat PLY</text>
+    <text x="578" y="110">[+] Import SfM cloud</text>
+    <text x="578" y="126">[*] Auto-zoom to entity</text>
+    <text x="578" y="142">[*] Select in DB tree</text>
+    <text x="748" y="94">ACV -&gt; model path</text>
+    <text x="748" y="110">ACV -&gt; dataset path</text>
+    <text x="748" y="126">SIBR -&gt; PLY model</text>
+    <text x="748" y="142">SIBR -&gt; SfM points</text>
+  </g>
+
+  <!-- Row 2: Remote Gaussian -->
+  <rect x="10" y="180" width="210" height="90" rx="8" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5"/>
+  <text x="115" y="200" text-anchor="middle" font-size="12" font-weight="700" fill="#00838f">Remote Gaussian</text>
+  <text x="115" y="216" text-anchor="middle" font-size="9" fill="#5f6368">Live training monitor</text>
+  <text x="115" y="230" text-anchor="middle" font-size="9" fill="#5f6368">TCP network streaming</text>
+  <rect x="46" y="238" width="50" height="14" rx="3" fill="#00838f"/><text x="71" y="248" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Network</text>
+  <rect x="102" y="238" width="40" height="14" rx="3" fill="#f9ab00"/><text x="122" y="248" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">OpenGL</text>
+  <g font-size="9.5" fill="#333">
+    <text x="238" y="198">[OK] Dataset path (optional)</text>
+    <text x="238" y="214">[OK] IP:port config</text>
+    <text x="238" y="230">[OK] Path persistence</text>
+    <text x="238" y="246">[OK] Pre-fill from selection</text>
+    <text x="408" y="198">Live training stream</text>
+    <text x="408" y="214">Scene name in console</text>
+    <text x="408" y="230">Dynamic scene reload</text>
+    <text x="408" y="246">Camera count logged</text>
+    <text x="578" y="198">[+] Import scene cloud</text>
+    <text x="578" y="214">[*] Auto-zoom to entity</text>
+    <text x="578" y="230">[*] Select in DB tree</text>
+    <text x="748" y="198">ACV -&gt; dataset path</text>
+    <text x="748" y="214">Server -&gt; live frames</text>
+    <text x="748" y="230">SIBR -&gt; point cloud</text>
+  </g>
+
+  <!-- Row 3: Point-Based -->
+  <rect x="10" y="284" width="210" height="90" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="115" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#1a73e8">Point-Based Viewer</text>
+  <text x="115" y="320" text-anchor="middle" font-size="9" fill="#5f6368">Fast point cloud rendering</text>
+  <text x="115" y="334" text-anchor="middle" font-size="9" fill="#5f6368">Scene debug overlay</text>
+  <rect x="46" y="342" width="40" height="14" rx="3" fill="#1a73e8"/><text x="66" y="352" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">OpenGL</text>
+  <rect x="92" y="342" width="46" height="14" rx="3" fill="#34a853"/><text x="115" y="352" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Embree</text>
+  <g font-size="9.5" fill="#333">
+    <text x="238" y="302">[OK] Pre-fill from selection</text>
+    <text x="238" y="318">[OK] Path persistence</text>
+    <text x="238" y="334">[OK] Quick View support</text>
+    <text x="238" y="350">[OK] Entity type detection</text>
+    <text x="408" y="302">Camera navigation</text>
+    <text x="408" y="318">Camera count logged</text>
+    <text x="408" y="334">Scene debug view</text>
+    <text x="578" y="302">[+] Import SfM cloud</text>
+    <text x="578" y="318">[*] Auto-zoom to entity</text>
+    <text x="578" y="334">[*] Select in DB tree</text>
+    <text x="748" y="302">ACV -&gt; dataset path</text>
+    <text x="748" y="318">SIBR -&gt; point cloud</text>
+  </g>
+
+  <!-- Row 4: Textured Mesh -->
+  <rect x="10" y="388" width="210" height="90" rx="8" fill="#fce8e6" stroke="#ea4335" stroke-width="1.5"/>
+  <text x="115" y="408" text-anchor="middle" font-size="12" font-weight="700" fill="#c5221f">Textured Mesh Viewer</text>
+  <text x="115" y="424" text-anchor="middle" font-size="9" fill="#5f6368">Mesh + texture rendering</text>
+  <text x="115" y="438" text-anchor="middle" font-size="9" fill="#5f6368">Scene debug overlay</text>
+  <rect x="46" y="446" width="40" height="14" rx="3" fill="#ea4335"/><text x="66" y="456" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">OpenGL</text>
+  <rect x="92" y="446" width="46" height="14" rx="3" fill="#34a853"/><text x="115" y="456" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Assimp</text>
+  <g font-size="9.5" fill="#333">
+    <text x="238" y="406">[OK] Pre-fill from selection</text>
+    <text x="238" y="422">[OK] Path persistence</text>
+    <text x="238" y="438">[OK] Quick View (mesh)</text>
+    <text x="238" y="454">[OK] Entity type detection</text>
+    <text x="408" y="406">Camera navigation</text>
+    <text x="408" y="422">Camera count logged</text>
+    <text x="408" y="438">Texture display</text>
+    <text x="408" y="454">Scene debug view</text>
+    <text x="578" y="406">[+] Import textured mesh</text>
+    <text x="578" y="422">[*] Auto-zoom to entity</text>
+    <text x="578" y="438">[*] Select in DB tree</text>
+    <text x="748" y="406">ACV -&gt; dataset path</text>
+    <text x="748" y="422">SIBR -&gt; mesh + texture</text>
+  </g>
+
+  <!-- Legend -->
+  <rect x="10" y="500" width="880" height="110" rx="8" fill="#f8f9fa" stroke="#dadce0"/>
+  <text x="450" y="522" text-anchor="middle" font-size="12" font-weight="700" fill="#202124">Interaction Legend</text>
+  <g font-size="10" fill="#333">
+    <text x="28" y="542" font-weight="600" fill="#1a73e8">ACV to SIBR (Input):</text>
+    <text x="28" y="558">* Selected entity path auto-fills viewer dialog</text>
+    <text x="28" y="574">* QSettings remembers last-used paths per viewer</text>
+    <text x="28" y="590">* Quick View detects best viewer for entity type</text>
+    <text x="320" y="542" font-weight="600" fill="#34a853">SIBR to ACV (Output):</text>
+    <text x="320" y="558">* viewerResultReady triggers import prompt</text>
+    <text x="320" y="574">* Auto-zoom + select after import</text>
+    <text x="320" y="590">* Console: gaussians, SH, camera info</text>
+    <text x="620" y="542" font-weight="600" fill="#7c3aed">Bidirectional:</text>
+    <text x="620" y="558">* viewerLog to ACloudViewer console</text>
+    <text x="620" y="574">* viewerError to error console</text>
+    <text x="620" y="590">* Path persistence across sessions</text>
+  </g>
+</svg>

@@ -25,6 +25,7 @@
 #include "ShpFilter.h"
 
 // Qt
+#include <QCoreApplication>
 #include <QFileInfo>
 
 #ifdef USE_VLD
@@ -48,6 +49,11 @@ static unsigned s_sessionCounter = 0;
 // In C++17, class-level "static constexpr" is implicitly inline, so these are
 // not required.
 constexpr float FileIOFilter::DEFAULT_PRIORITY;
+
+bool FileIOFilter::IsGuiAvailable() {
+    auto* app = QCoreApplication::instance();
+    return app && app->inherits("QApplication");
+}
 
 FileIOFilter::FileIOFilter(const FileIOFilter::FilterInfo& info)
     : m_filterInfo(info) {

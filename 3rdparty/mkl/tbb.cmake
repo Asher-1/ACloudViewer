@@ -32,8 +32,28 @@ if(WIN32)
     set(TBB_BUILD_BIND OFF CACHE BOOL "Enable tbbbind build (disabled on Windows)." FORCE)
     # Also disable hwloc detection to prevent tbbbind from being enabled
     set(TBB_FIND_HWLOC OFF CACHE BOOL "Find hwloc library (disabled on Windows)." FORCE)
+    # Additional options to prevent tbbbind from being built
+    set(TBB_NO_HWLOC ON CACHE BOOL "Disable hwloc support (enabled on Windows)." FORCE)
+    set(HWLOC_FOUND FALSE CACHE BOOL "Force HWLOC as not found on Windows" FORCE)
+    # Disable all tbbbind-related features
+    set(TBB_DISABLE_HWLOC_AUTOMATIC_SEARCH ON CACHE BOOL "Disable automatic hwloc search" FORCE)
 endif()
-FetchContent_MakeAvailable(ext_tbb)
+
+# On Windows, patch TBB to completely remove tbbbind before configuring
+if(WIN32)
+    FetchContent_GetProperties(ext_tbb)
+    if(NOT ext_tbb_POPULATED)
+        FetchContent_Populate(ext_tbb)
+        # Patch the TBB CMakeLists.txt to remove tbbbind subdirectory on Windows
+        file(READ "${ext_tbb_SOURCE_DIR}/CMakeLists.txt" TBB_CMAKE_CONTENT)
+        string(REPLACE "add_subdirectory(src/tbbbind)" "# add_subdirectory(src/tbbbind) # Disabled on Windows" TBB_CMAKE_CONTENT "${TBB_CMAKE_CONTENT}")
+        file(WRITE "${ext_tbb_SOURCE_DIR}/CMakeLists.txt" "${TBB_CMAKE_CONTENT}")
+        message(STATUS "Patched TBB CMakeLists.txt to disable tbbbind on Windows")
+        add_subdirectory(${ext_tbb_SOURCE_DIR} ${ext_tbb_BINARY_DIR})
+    endif()
+else()
+    FetchContent_MakeAvailable(ext_tbb)
+endif()
 
 set(BUILD_SHARED_LIBS ${_build_shared_libs})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})

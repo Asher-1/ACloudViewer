@@ -1485,7 +1485,8 @@ CC_FILE_ERROR ShpFilter::saveToFile(
     bool save3DPolyHeightInDBF = false;
     static unsigned char s_poly2DVertDim = 2;
     if (parameters.alwaysDisplaySaveDialog &&
-        inputShapeType == ESRI_SHAPE_TYPE::POLYLINE_Z) {
+        inputShapeType == ESRI_SHAPE_TYPE::POLYLINE_Z &&
+        FileIOFilter::IsGuiAvailable()) {
         // display SHP save dialog
         SaveSHPFileDialog ssfDlg(nullptr);
         ssfDlg.save3DPolyAs2DCheckBox->setChecked(m_save3DPolyAs2D);
@@ -1940,7 +1941,8 @@ CC_FILE_ERROR ShpFilter::loadFile(const QString &filename,
                     }
                 }
 
-                if (!candidateFields.empty()) {
+                if (!candidateFields.empty() &&
+                    FileIOFilter::IsGuiAvailable()) {
                     // create a list of available fields
                     ImportDBFFieldDialog lsfDlg(nullptr);
                     for (QList<FieldIndexAndName>::const_iterator it =

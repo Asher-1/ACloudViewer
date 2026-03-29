@@ -8,9 +8,12 @@ ExternalProject_Add(ext_jsoncpp
     URL_HASH SHA256=e34a628a8142643b976c7233ef381457efad79468c67cb1ae0b83a33d7493999
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/jsoncpp"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
-        ${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
+    # Skip apply when sources were already patched (e.g. reused build tree); plain git apply always fails then.
+    PATCH_COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=<SOURCE_DIR>
+        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
+        -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+        -P ${CMAKE_CURRENT_LIST_DIR}/apply_jsoncpp_patch.cmake
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

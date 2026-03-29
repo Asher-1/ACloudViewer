@@ -1614,11 +1614,11 @@ void MvsTexturing::GenerateTextureAtlases() {
     std::iota(patch_indices.begin(), patch_indices.end(), 0);
     std::sort(patch_indices.begin(), patch_indices.end(),
               [this](size_t a, size_t b) {
-                  int size_a = texture_patches_[a]->image->width() *
-                               texture_patches_[a]->image->height();
-                  int size_b = texture_patches_[b]->image->width() *
-                               texture_patches_[b]->image->height();
-                  return size_a > size_b;
+                    size_t size_a = texture_patches_[a]->image->width() *
+                                texture_patches_[a]->image->height();
+                    size_t size_b = texture_patches_[b]->image->width() *
+                                texture_patches_[b]->image->height();
+                    return size_a > size_b;
               });
 
     // Simple bin packing: try to pack patches into atlases

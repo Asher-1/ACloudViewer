@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1a73e8"/></marker>
+    <marker id="arG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#34a853"/></marker>
+    <marker id="arP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#7c3aed"/></marker>
+    <marker id="arO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#e65100"/></marker>
+    <marker id="arT" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#00838f"/></marker>
+  </defs>
+
+  <!-- ACloudViewer outer frame -->
+  <rect x="5" y="5" width="870" height="490" rx="14" fill="#e8f0fe" stroke="#4285f4" stroke-width="2"/>
+  <text x="440" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#1a73e8">ACloudViewer</text>
+
+  <!-- DB Tree / Selection panel -->
+  <rect x="20" y="50" width="190" height="190" rx="8" fill="#fff" stroke="#5f6368" stroke-width="1.5"/>
+  <text x="115" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#202124">DB Tree / Selection</text>
+  <line x1="28" y1="80" x2="202" y2="80" stroke="#dadce0"/>
+  <text x="38" y="98" font-size="10" fill="#5f6368">[+] Root</text>
+  <text x="52" y="114" font-size="10" fill="#5f6368">point_cloud.ply</text>
+  <text x="52" y="130" font-size="10" fill="#1a73e8" font-weight="600">&gt; Gaussian Model</text>
+  <text x="52" y="146" font-size="10" fill="#5f6368">mesh.obj</text>
+  <text x="38" y="166" font-size="10" fill="#5f6368">[+] Scene Data</text>
+  <text x="52" y="182" font-size="10" fill="#5f6368">cameras.json</text>
+  <text x="52" y="198" font-size="10" fill="#5f6368">images/...</text>
+  <text x="115" y="232" text-anchor="middle" font-size="9" fill="#1a73e8">Selection enables actions</text>
+
+  <!-- Console panel -->
+  <rect x="20" y="255" width="190" height="115" rx="8" fill="#1e1e1e" stroke="#5f6368" stroke-width="1.5"/>
+  <text x="115" y="276" text-anchor="middle" font-size="12" font-weight="600" fill="#4fc3f7">Console Output</text>
+  <text x="32" y="296" font-size="9" fill="#81c784">[SIBR] 3DGS Viewer started</text>
+  <text x="32" y="310" font-size="9" fill="#81c784">[SIBR] 860K gaussians, SH=3</text>
+  <text x="32" y="324" font-size="9" fill="#81c784">[SIBR] 200 cameras loaded</text>
+  <text x="32" y="338" font-size="9" fill="#4fc3f7">[SIBR] Imported: point_cloud.ply</text>
+  <text x="32" y="352" font-size="9" fill="#81c784">[SIBR] Zoom to imported entity</text>
+
+  <!-- Result Import panel -->
+  <rect x="20" y="385" width="190" height="100" rx="8" fill="#fff" stroke="#34a853" stroke-width="1.5"/>
+  <text x="115" y="406" text-anchor="middle" font-size="12" font-weight="600" fill="#34a853">Result Import</text>
+  <text x="32" y="424" font-size="10" fill="#5f6368">[OK] Auto-import PLY/mesh</text>
+  <text x="32" y="440" font-size="10" fill="#5f6368">[OK] Zoom-to-fit entity</text>
+  <text x="32" y="456" font-size="10" fill="#5f6368">[OK] Select in DB tree</text>
+  <text x="32" y="472" font-size="10" fill="#5f6368">[OK] Refresh all views</text>
+
+  <!-- Arrows: DB <-> Plugin -->
+  <path d="M210,140 L260,140" fill="none" stroke="#1a73e8" stroke-width="2" marker-end="url(#arB)"/>
+  <text x="235" y="133" text-anchor="middle" font-size="8" fill="#1a73e8">entity</text>
+  <!-- Plugin -> Console -->
+  <path d="M260,312 L210,312" fill="none" stroke="#34a853" stroke-width="2" marker-end="url(#arG)"/>
+  <text x="235" y="305" text-anchor="middle" font-size="8" fill="#34a853">logs</text>
+  <!-- Plugin -> Result -->
+  <path d="M260,435 L210,435" fill="none" stroke="#34a853" stroke-width="2" marker-end="url(#arG)"/>
+  <text x="235" y="428" text-anchor="middle" font-size="8" fill="#34a853">import</text>
+
+  <!-- qSIBR Plugin box -->
+  <rect x="265" y="50" width="240" height="435" rx="10" fill="#fce8e6" stroke="#ea4335" stroke-width="2"/>
+  <text x="385" y="72" text-anchor="middle" font-size="14" font-weight="700" fill="#c5221f">qSIBR Plugin (.so)</text>
+
+  <!-- Sub-boxes inside plugin -->
+  <rect x="278" y="84" width="214" height="48" rx="6" fill="#fff" stroke="#ea4335"/>
+  <text x="385" y="102" text-anchor="middle" font-size="11" font-weight="600" fill="#c5221f">SIBROptionsDialog</text>
+  <text x="385" y="118" text-anchor="middle" font-size="9" fill="#5f6368">QSettings + pre-fill from selection</text>
+
+  <rect x="278" y="140" width="214" height="48" rx="6" fill="#fff" stroke="#ea4335"/>
+  <text x="385" y="158" text-anchor="middle" font-size="11" font-weight="600" fill="#c5221f">SIBRViewerThread</text>
+  <text x="385" y="174" text-anchor="middle" font-size="9" fill="#5f6368">QThread + mutex + signals</text>
+
+  <rect x="278" y="196" width="214" height="30" rx="6" fill="#fff" stroke="#ea4335"/>
+  <text x="385" y="216" text-anchor="middle" font-size="11" font-weight="600" fill="#c5221f">Quick View / Export for SIBR</text>
+
+  <!-- SIBR Core Libraries -->
+  <rect x="278" y="238" width="214" height="88" rx="6" fill="#e6f4ea" stroke="#34a853" stroke-width="1.5"/>
+  <text x="385" y="256" text-anchor="middle" font-size="11" font-weight="600" fill="#137333">SIBR Core (static libs)</text>
+  <g font-size="9" fill="#137333">
+    <text x="290" y="272">system</text><text x="340" y="272">graphics</text><text x="400" y="272">assets</text><text x="448" y="272">scene</text>
+    <text x="290" y="288">raycaster</text><text x="352" y="288">view</text><text x="392" y="288">renderer</text><text x="452" y="288">video</text>
+    <text x="290" y="304">imgproc</text><text x="348" y="304">imgui</text><text x="392" y="304">xatlas</text><text x="436" y="304">mrf</text>
+  </g>
+
+  <!-- Viewer Modules -->
+  <rect x="278" y="336" width="214" height="140" rx="6" fill="#fef7e0" stroke="#f9ab00" stroke-width="1.5"/>
+  <text x="385" y="354" text-anchor="middle" font-size="11" font-weight="600" fill="#e37400">Viewer Modules</text>
+  <rect x="288" y="362" width="94" height="24" rx="4" fill="#fff" stroke="#f9ab00"/><text x="335" y="378" text-anchor="middle" font-size="9" fill="#e37400">ULR / ULRv2</text>
+  <rect x="390" y="362" width="94" height="24" rx="4" fill="#fff" stroke="#f9ab00"/><text x="437" y="378" text-anchor="middle" font-size="9" fill="#e37400">Textured Mesh</text>
+  <rect x="288" y="392" width="94" height="24" rx="4" fill="#fff" stroke="#f9ab00"/><text x="335" y="408" text-anchor="middle" font-size="9" fill="#e37400">Point-Based</text>
+  <rect x="390" y="392" width="94" height="24" rx="4" fill="#fff" stroke="#ea4335"/><text x="437" y="408" text-anchor="middle" font-size="9" fill="#c5221f">3DGS (CUDA)</text>
+  <rect x="288" y="422" width="196" height="24" rx="4" fill="#fff" stroke="#f9ab00"/><text x="386" y="438" text-anchor="middle" font-size="9" fill="#e37400">Remote Gaussian (network)</text>
+  <rect x="288" y="452" width="196" height="24" rx="4" fill="#fff" stroke="#5f6368"/><text x="386" y="468" text-anchor="middle" font-size="9" fill="#5f6368">Dataset Tools (10 utilities)</text>
+
+  <!-- SIBR GLFW Viewer Window -->
+  <rect x="540" y="50" width="320" height="170" rx="10" fill="#f3e8fd" stroke="#7c3aed" stroke-width="2"/>
+  <text x="700" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#7c3aed">SIBR GLFW Viewer Window</text>
+  <rect x="555" y="84" width="290" height="52" rx="6" fill="#fff" stroke="#7c3aed"/>
+  <text x="700" y="102" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">MultiViewManager</text>
+  <text x="700" y="116" text-anchor="middle" font-size="9" fill="#5f6368">IBR SubView + SceneDebugView + InteractiveCamera</text>
+  <rect x="555" y="144" width="140" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="625" y="161" text-anchor="middle" font-size="9" fill="#7c3aed">OpenGL 4.5 render</text>
+  <rect x="705" y="144" width="140" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="775" y="161" text-anchor="middle" font-size="9" fill="#7c3aed">ImGui controls</text>
+  <text x="700" y="206" text-anchor="middle" font-size="9" fill="#7c3aed">Mouse: LMB rotate | RMB pan | Scroll zoom | Y toggle mode</text>
+
+  <!-- CUDA / GPU -->
+  <rect x="540" y="240" width="320" height="68" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="700" y="262" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">CUDA / GPU</text>
+  <text x="700" y="280" text-anchor="middle" font-size="9" fill="#5f6368">CudaRasterizer | cudaGraphicsGLRegisterBuffer</text>
+  <text x="700" y="294" text-anchor="middle" font-size="9" fill="#5f6368">Gaussian splat rasterization (3DGS only)</text>
+
+  <!-- Training Server -->
+  <rect x="540" y="325" width="320" height="54" rx="10" fill="#e0f7fa" stroke="#00838f" stroke-width="2"/>
+  <text x="700" y="347" text-anchor="middle" font-size="13" font-weight="700" fill="#00838f">Training Server</text>
+  <text x="700" y="365" text-anchor="middle" font-size="9" fill="#5f6368">TCP socket | live Gaussian data (Remote only)</text>
+
+  <!-- Runtime Assets -->
+  <rect x="540" y="396" width="320" height="54" rx="10" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+  <text x="700" y="418" text-anchor="middle" font-size="11" font-weight="600" fill="#202124">Runtime Assets</text>
+  <text x="700" y="436" text-anchor="middle" font-size="9" fill="#5f6368">shaders/ | sibr_resources/ | ibr_resources.ini</text>
+
+  <!-- Arrows: Plugin -> external -->
+  <path d="M505,120 L540,120" fill="none" stroke="#7c3aed" stroke-width="2" marker-end="url(#arP)"/>
+  <path d="M505,274 L540,274" fill="none" stroke="#e65100" stroke-width="2" marker-end="url(#arO)"/>
+  <path d="M505,352 L540,352" fill="none" stroke="#00838f" stroke-width="2" marker-end="url(#arT)"/>
+</svg>

@@ -1,0 +1,48 @@
+---
+description: Rules for ACloudViewer plugin development (Qt, C++, CMake)
+globs:
+  - plugins/**/*.cpp
+  - plugins/**/*.h
+  - plugins/**/CMakeLists.txt
+alwaysApply: false
+---
+
+# ACloudViewer Plugin Development Rules
+
+## Plugin Architecture
+
+- Plugins live under `plugins/core/Standard/` (standard) or `plugins/core/IO/` (I/O filters)
+- Each plugin needs: `CMakeLists.txt`, `info.json`, a `.qrc` resource file
+- Use `AddPlugin(NAME ...)` from `plugins/cmake/Plugins.cmake`
+- Plugins link: `CVCoreLib`, `CVPluginAPI`, `CVPluginStub`
+
+## Key Interfaces
+
+- `ccStdPluginInterface` — base class for standard plugins
+- `ecvMainAppInterface` — access to app (DB, views, console, selection)
+- `ccCommandLineInterface` — register CLI commands via `registerCommand()`
+- `ecvDisplayTools` — static display operations (redraw, view matrix, etc.)
+
+## Common Patterns
+
+- Get app interface: `m_app` (set via `setMainAppInterface()`)
+- Access DB root: `m_app->dbRootObject()`
+- Cast entities: `ccHObjectCaster::ToPointCloud(obj)`, `ccHObjectCaster::ToMesh(obj)`
+- Force redraw: `ecvDisplayTools::RedrawDisplay()`
+- View orientations: `CC_TOP_VIEW`, `CC_FRONT_VIEW`, `CC_ISO_VIEW_1`, etc.
+
+## Build
+
+```bash
+cmake -DPLUGIN_STANDARD_QJSONRPC=ON -DPLUGIN_STANDARD_QSIBR=ON ..
+make -j$(nproc)
+```
+
+## Entity Types
+
+| Enum | Type |
+|------|------|
+| `CV_TYPES::POINT_CLOUD` | Point cloud |
+| `CV_TYPES::MESH` | Triangle mesh |
+| `CV_TYPES::POLY_LINE` | Polyline |
+| `CV_TYPES::HIERARCHY_OBJECT` | Group/container |

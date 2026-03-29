@@ -3,6 +3,72 @@ ACloudViewer Version History
 
 v3.9.5-Beta (Asher) - 02/02/2026
 --------------------------------
+- Agent integration:
+    - Add agent-integration module for AI agent frameworks (OpenClaw, Cursor, Claude Code)
+    - JSON-RPC plugin: expand from 12 to 32 RPC methods
+      - Cloud colorization: paintUniform, paintByHeight, paintByScalarField
+      - Scene management: scene.list, scene.info, scene.remove, scene.setVisible, scene.select
+      - View control: screenshot, getCamera, setPerspective, setPointSize
+      - Entity: rename, setColor
+      - Mesh processing: simplify, smooth, subdivide, samplePoints
+      - Transform, scalar fields, and more
+    - MCP (Model Context Protocol) server: 23 tools for AI agent interaction
+      - Headless mode: calls ACloudViewer binary via subprocess (-SILENT CLI)
+      - GUI mode: controls running ACloudViewer via JSON-RPC WebSocket
+      - No dependency on cloudViewer Python package or open3d
+    - CLI harness: 15 processing commands (subsample, normals, ICP, SOR, C2C/C2M distance, etc.)
+    - OpenClaw skill configuration (openclaw-skill.json)
+    - Cursor IDE MCP configuration (.cursor/mcp.json)
+    - Unified 5-level test suite (33 integration tests + 21 harness tests)
+    - GitHub Actions CI workflow for agent-integration tests (Level 1/2/5)
+    - Python package: cli-anything-acloudviewer (CLI: cli-anything-acloudviewer,
+      MCP: cli-anything-acloudviewer-mcp) under the standard cli_anything namespace
+    - Colmap-based 3D reconstruction: automatic pipeline, individual SfM/MVS steps,
+      meshing, model conversion (14 CLI commands, 8 MCP tools)
+    - Add SIBR viewer support for cli-anything-acloudviewer
+    - Expand integration tests for full CLI/RPC/MCP coverage
+    - Sync tests, simplify shell runner, expand format coverage
+    - Optimize RPC plugin logging format text
+    - Fix qSIBR command issues for agent-integration and reconstruction
+    - Fix: CVLog::Print arg() crash with QMap parameter (use qDebug instead)
+    - CLI harness: auto-install with progress bar, retry mechanism (3x exponential
+      backoff), and platform-specific silent installation (Linux .run, macOS DMG, Windows .exe)
+    - CLI harness: fix ASCII format conversion (use ASC keyword matching AsciiFilter default extension)
+    - CI: improve reliability, CLI usability, and packaging
+    - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
+    - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
+      (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
+    - CI: fix Windows, macOS, and Ubuntu-focal test issues
+
+- CLI & packaging:
+    - Add --version/-v flag to ACloudViewer binary for quick version queries
+    - Add --help/-h flag with comprehensive categorized command reference
+      (I/O, processing, filters, registration, mesh, scalar fields, plugins, Colmap)
+    - Enable headless texturing and macOS CLI for Colmap reconstruction
+    - Fix .desktop file version not updated during packaging
+      (add replace_version_in_file for deployed data files in PostInstall.cmake)
+    - Fix CMake cached version variables not refreshing after version.txt updates
+      (add FORCE to CLOUDVIEWER_VERSION_FULL and CLOUDVIEWER_ABI_VERSION)
+
+- New plugins:
+    - Add qSIBR plugin: Full SIBR (System for Image Based Rendering) integration
+      - Embedded SIBR core engine (system, graphics, assets, raycaster, scene, video, view, renderer, imgproc)
+      - ULR Viewer, ULR v2/v3 Viewer, Textured Mesh Viewer, Point-Based Viewer
+      - 3D Gaussian Splatting Viewer with CudaRasterizer (CUDA required)
+      - Remote Gaussian Viewer for live training monitoring
+      - 10 dataset preprocessing tools (prepareColmap4Sibr, alignMeshes, textureMesh, etc.)
+      - Parameter configuration dialog for viewer settings (resolution, model path, CUDA device)
+      - Multi-threaded viewer architecture with GLFW windows in separate QThreads
+      - Reuses ACloudViewer 3rdparty targets (OpenGL, OpenMP, Boost, OpenCV, GLEW, GLFW, Assimp, Embree, Eigen, zlib, tinyfiledialogs)
+  
+- New features:
+    - Add Point Gaussian rendering support for point clouds and meshes
+      - 6 shader presets: Gaussian Blur, Sphere, Black-edged Circle, Plain Circle, Triangle, Square Outline
+      - Configurable Gaussian Radius with Slider + SpinBox UI (like Light Intensity)
+      - Emissive mode toggle
+      - Properties available for both point clouds and meshes via ccDrawableObject base class
+    - Add mesh stippling rendering support
+      - Approximated via reduced opacity + edge visibility (VTK OpenGL2 backend)
 
 - Bug fixes:
     - Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid
@@ -33,6 +99,71 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - Fix image slice display orientation in 2D viewer
         - Reset camera ViewUp to (0,1,0) so image is always upright regardless of 3D scene rotation
         - Use ResetCameraClippingRange() instead of ResetCamera() to preserve configured camera parameters
+    - Fix bbox selection block issues
+    - Fix interactor style shortcuts conflicts issues 
+    - Fix interactor Usertimer issues with mouse
+    - Fix select points/cells through tools issues
+    - Fix select block through or on surface tools issues
+    - Fix camera clipping range for elongated 3D point clouds (ParaView BUG #13534 alignment)
+        - Add ResetCameraClippingRangeEvent observer on renderer to override VTK default clipping with GeometryBounds
+        - Add StartEvent observer on render window to reset clipping before every render frame
+        - Remove ScaleAboutCenter(2,2,2) hack, use VTK's built-in ExpandBounds + ClippingRangeExpansion
+        - Add cached bounds mechanism to avoid expensive ComputeVisiblePropBounds per frame
+        - GeometryBoundsDirty flag tracks when bounds need recomputation (on actor add/remove)
+    - Fix Freeze Selection behavior to align with ParaView
+        - Freeze now stores a snapshot of current selection IDs (was incorrectly creating new objects)
+        - Remove extraction logic from MainWindow freeze handler (Extract button handles object creation)
+    - Fix Point Gaussian sub-properties not greyed out when disabled
+        - Shader Preset, Gaussian Radius, and Emissive are now disabled when Point Gaussian is unchecked
+        - Sub-properties dynamically enable/disable when checkbox state changes
+    - Fix Selection Editor tool issues
+        - Fix Create selection issues
+    - Fix Selection Tools "Create Data" panel bugs
+        - Fix double extractSelectionRequested signal emission causing duplicate handlers
+        - Fix updateSelection using singleton instead of injected m_selectionManager
+        - Fix button layout: Freeze/Extract/PlotOverTime buttons were duplicated in two layouts
+        - Fix "containing" operator to use vtkCellLocator for accurate point-in-cell tests (was bounding box only)
+        - Fix Find Data / Clear Selection not notifying selection manager
+    - Fix Eigen3 configuration file compatibility issues
+    - Fix DB tree and properties panel default width too narrow
+        - Increase minimum width from 180px to 240px for both panels
+        - Increase default width range to 250-380px (18% of screen width)
+        - Properties tree value column now stretches to fill available space
+    - Fix Create Selection "is in range" operator using wrong comparison (ParaView alignment)
+        - Change from closed interval (>=, <=) to open interval (>, <) to match ParaView expression: ({term} > {value_min}) & ({term} < {value_max})
+        - Fix filterByAttributeRange to use same open interval semantics
+        - Fix mean value calculation to exclude NaN elements from denominator
+    - Fix Create Selection querying wrong dataset when Data Producer is selected
+        - Add getPolyDataForDataProducer() to resolve polyData from the selected Data Producer combo
+        - executeFindDataQuery and performFindData now prioritize Data Producer's polyData
+        - Fixes intensity-based selection returning more points than ParaView
+    - Fix Selection Pipeline extractSelectionIds only using first selection node
+        - Merge IDs from all matching selection nodes (ParaView vtkSelection::Union behavior)
+        - Properly filter nodes by field type (CELL vs POINT)
+    - Fix Create Selection not clearing selection when query is empty (ParaView alignment)
+    - Fix Selection Editor bugs to align with ParaView pqSelectionEditor behavior
+        - Fix removing selection not updating expression (renumber remaining names, clean dangling operators, handle negated !sN)
+        - Add element type compatibility check when adding selection (warn on Point vs Cell mismatch; on confirm, clear existing selections and replace with new type — matches ParaView CombineSelection behavior)
+        - Clear saved selections when data producer changes (prevents stale IDs from previous source)
+        - Add clearInteractiveSelection() matching ParaView's behavior (clear table selection + PRESELECTED 3D highlight)
+        - Call clearInteractiveSelection on Add, Remove, Remove All, and Activate Combined
+        - Add clearHighlight(HighlightMode) API to cvSelectionHighlighter for per-mode clearing
+        - Change table selection mode from ExtendedSelection to SingleSelection to match ParaView
+        - Fix Remove All not re-enabling Add button and not disabling Expression/ElementType
+        - Fix table columns not stretching (add QHeaderView::Stretch, remove resizeColumnsToContents)
+        - Add Element Type icon display (pqPointData.svg / pqCellData.svg) matching ParaView's setElementType
+        - Fix onTableSelectionChanged to hide PRESELECTED highlight when no row is selected (ParaView hideInteractiveSelection)
+        - Apply saved selection color to SELECTED highlight when Activate Combined is clicked
+    - Fix Selection Editor per-selection coloring not applied on Activate Combined (ParaView alignment)
+        - Each sub-selection now renders with its own Color column color via per-cell/point scalar coloring
+        - Previously only used the first saved selection's color for all highlights
+        - Add highlightMultiColorSelections() to cvSelectionHighlighter: extracts geometry per sub-selection, assigns vtkSelectionColor array, merges with vtkAppendFilter, renders with ScalarVisibilityOn + DirectScalars
+        - Activate Combined now intersects each saved selection's IDs with the expression result and passes per-selection colors
+    - Fix Selection Editor Add Selection element type mismatch not replacing properly
+        - Deep-copy m_selectionData before showing QMessageBox to prevent nested event loop race condition
+        - Fix dialog return value check: use != Ok instead of == Cancel to handle non-standard close
+        - Block expression edit signals during clear to prevent cascading state changes
+        - Always update element type display when adding selections
 
 - Enhancements:
     - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
@@ -40,17 +171,21 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Use QImageReader::setAutoTransform(true) in ccImage::load and ImageFileFilter::loadFile
         - Images taken with a rotated camera (e.g. portrait mode) are now displayed upright
     - Upgrade to pybind11 3.0 for python plugins
-    - Add CodeQL CI support
+    - Add CodeQL CI support for security scanning
+    - Update translations
     - Clean up OpenGL surface format initialization order in ecvApplicationBase
     - Rename PCLUtils to Visualization
     - Remove pcl data structure dependency to speedup loading data and rendering
     - Rename PCLEngine to VTKEngine and remove pcl dependency with VTKEngine
     - Set PLUGIN_STANDARD_QPCL=OFF as default
+    - Align Freeze/Extract Selection with ParaView behavior
+        - Freeze: converts dynamic selection to persistent index-based snapshot
+        - Extract: creates new ccHObject from selected elements and adds to scene
 
 ### Supported Platforms:
 - Windows `x86/64`
 - Linux `x86/64`
-- MacOS `X64 && arm64 (M1-4)`
+- MacOS `arm64 (M1-5)`
 
 
 v3.9.4 (Asher) - 02/01/2026
@@ -224,7 +359,7 @@ v3.9.4 (Asher) - 02/01/2026
 ### Supported Platforms:
 - Windows `x86/64`
 - Linux `x86/64`
-- MacOS `X64 && arm64 (M1-4)`
+- MacOS `arm64 (M1-4)`
 
 v3.9.3 (Asher) - 10/14/2025
 ----------------------

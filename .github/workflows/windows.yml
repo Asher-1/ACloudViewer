@@ -50,7 +50,7 @@ jobs:
     runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python_version: ['3.12']
         BUILD_SHARED_LIBS: [ON, OFF]
@@ -236,6 +236,201 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
+  agent-integration:
+    name: Agent Integration (Level 3) ${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'CUDA' || 'CPU' }}
+    runs-on: windows-2022
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    needs: [windows]
+
+    strategy:
+      fail-fast: true
+      matrix:
+        BUILD_CUDA_MODULE: [ON, OFF]
+        python_version: ['3.12']
+
+    env:
+      CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
+
+    steps:
+      - name: Install CUDA
+        uses: Jimver/cuda-toolkit@v0.2.23
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+        id: cuda-toolkit
+        with:
+          cuda: "${{ env.CUDA_VERSION }}"
+          sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust", "nvtx", "curand", "curand_dev", "nvrtc_dev"]'
+          method: 'network'
+          use-github-cache: 'false'
+          use-local-cache: 'false'
+
+      - name: Setup ENV
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+        run: |
+          $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
+          $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
+          $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
+          $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
+
+          # Add CUDA environment variables.
+          $CUDA_PATH = "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          echo "Testing with CUDA support: CUDA_PATH=$CUDA_PATH"
+
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Set up python version
+        run: |
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
+      - name: Set up Python environment (conda, same as build)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          architecture: 'x64'
+          activate-environment: cloudViewer
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Download ACloudViewer installer
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ACloudViewer-*-${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'cuda' || 'cpu' }}-*.exe
+          path: ${{ runner.temp }}/acv-installer/
+          merge-multiple: true
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+      - name: Test ACloudViewer installer
+        env:
+          QT_QPA_PLATFORM: minimal
+        run: |
+          $ErrorActionPreference = 'Continue'
+          
+          # Verify conda environment
+          Write-Host "=== Environment Check ==="
+          Write-Host "Python: $(python --version)"
+          Write-Host "Python path: $(Get-Command python | Select-Object -ExpandProperty Source)"
+          Write-Host "CONDA_PREFIX: $env:CONDA_PREFIX"
+          if ($env:CUDA_PATH) {
+            Write-Host "CUDA_PATH: $env:CUDA_PATH"
+          }
+          Write-Host ""
+          
+          $installer = Get-ChildItem "${{ runner.temp }}\acv-installer\" -Filter "*.exe" -Recurse | Select-Object -First 1
+          if (-not $installer) {
+            Write-Error "No .exe installer found for ${{ matrix.BUILD_CUDA_MODULE == 'ON' && 'CUDA' || 'CPU' }} variant"
+            exit 1
+          }
+
+          $installDir = Join-Path $env:USERPROFILE "ACloudViewer-Test"
+          Write-Host "Testing $($installer.Name)"
+          Write-Host "Install dir: $installDir"
+
+          & $installer.FullName --root $installDir `
+            --accept-licenses --accept-messages --confirm-command install
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Installation failed for $($installer.Name)"
+            exit 1
+          }
+
+          # Debug: List installation directory structure
+          Write-Host "=== Installation directory structure ==="
+          Get-ChildItem $installDir -Recurse -Include *.exe,*.dll | Select-Object FullName
+
+          # Set up comprehensive DLL search paths
+          # Include conda environment paths (same as build environment)
+          $dllPaths = @(
+            $installDir,
+            (Join-Path $installDir "lib"),
+            (Join-Path $installDir "bin"),
+            (Join-Path $installDir "plugins"),
+            (Join-Path $installDir "platforms")
+          ) | Where-Object { Test-Path $_ }
+          
+          # Add conda library paths if conda is active
+          if ($env:CONDA_PREFIX) {
+            $condaLibPath = Join-Path $env:CONDA_PREFIX "Library\bin"
+            if (Test-Path $condaLibPath) {
+              $dllPaths += $condaLibPath
+              Write-Host "Added conda library path: $condaLibPath"
+            }
+          }
+          
+          # Add CUDA paths if CUDA is installed (for CUDA builds)
+          if ($env:CUDA_PATH) {
+            $cudaBinPath = Join-Path $env:CUDA_PATH "bin"
+            if (Test-Path $cudaBinPath) {
+              $dllPaths += $cudaBinPath
+              Write-Host "Added CUDA binary path: $cudaBinPath"
+            }
+          }
+          
+          $env:PATH = ($dllPaths -join ";") + ";$env:PATH"
+          Write-Host "=== Updated PATH ==="
+          Write-Host $env:PATH
+
+          # Locate binary
+          $exeFile = Join-Path $installDir "ACloudViewer.exe"
+          $batFile = Join-Path $installDir "ACloudViewer.bat"
+          if (Test-Path $exeFile) {
+            $env:ACV_BINARY = $exeFile
+            Write-Host "Using binary: $exeFile"
+          } elseif (Test-Path $batFile) {
+            $env:ACV_BINARY = $batFile
+            Write-Host "Using binary: $batFile"
+          } else {
+            Write-Error "Neither ACloudViewer.exe nor .bat found in $installDir"
+            Get-ChildItem $installDir | Format-Table Name
+            exit 1
+          }
+
+          # Debug: Test if binary can run at all
+          Write-Host "=== Testing binary execution ==="
+          & $env:ACV_BINARY --version 2>&1 | Write-Host
+          $binaryTestResult = $LASTEXITCODE
+          Write-Host "Binary test exit code: $binaryTestResult (0x$($binaryTestResult.ToString('X8')))"
+          
+          if ($binaryTestResult -eq 3221225781) {
+            Write-Error "Binary failed with STATUS_DLL_NOT_FOUND (0xC0000135)"
+            Write-Host "This indicates missing DLL dependencies."
+            Write-Host "=== Checking for common DLLs in install directory ==="
+            $commonDlls = @("Qt5Core.dll", "Qt6Core.dll", "msvcp*.dll", "vcruntime*.dll")
+            foreach ($pattern in $commonDlls) {
+              $found = Get-ChildItem $installDir -Recurse -Filter $pattern -ErrorAction SilentlyContinue
+              if ($found) {
+                Write-Host "Found: $($found.FullName)"
+              } else {
+                Write-Host "NOT FOUND: $pattern"
+              }
+            }
+            exit 1
+          }
+
+          # Run integration tests
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # Cleanup
+          if (Test-Path (Join-Path $installDir "maintenancetool.exe")) {
+            & (Join-Path $installDir "maintenancetool.exe") purge `
+              --accept-licenses --accept-messages --confirm-command 2>&1 | Out-Null
+          } else {
+            Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
+          }
+
   build-wheel:
     name: Build wheel
     permissions:
@@ -244,7 +439,7 @@ jobs:
     runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
-      fail-fast: false
+      fail-fast: true
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         BUILD_CUDA_MODULE: [ON, OFF]

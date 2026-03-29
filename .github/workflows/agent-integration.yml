@@ -1,0 +1,85 @@
+name: Agent Integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'agent-integration/**'
+      - 'plugins/core/Standard/qJSonRPCPlugin/**'
+      - '.cursor/mcp.json'
+      - '.github/workflows/agent-integration.yml'
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'agent-integration/**'
+      - 'plugins/core/Standard/qJSonRPCPlugin/**'
+      - '.cursor/mcp.json'
+      - '.github/workflows/agent-integration.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACV_VERSION: "3.9.5"
+
+jobs:
+  test-basic:
+    name: Level 1+2+5 (no binary needed)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout ACloudViewer
+        uses: actions/checkout@v4
+
+      - name: Checkout CLI-Anything (agent harness)
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CLI-Anything
+          path: _cli-anything
+          sparse-checkout: |
+            acloudviewer/agent-harness
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install agent harness
+        run: |
+          pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+      - name: Verify CLI entry point
+        run: |
+          cli-anything-acloudviewer --help
+          cli-anything-acloudviewer-mcp --help || true
+
+      - name: Level 1 — C++ plugin source verification
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level1 and not builds"
+
+      - name: Level 2 — CLI harness tests
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level2"
+
+      - name: Level 5 — MCP server tests
+        run: |
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level5"
+
+      - name: Run harness internal tests
+        working-directory: _cli-anything/acloudviewer/agent-harness
+        run: |
+          python -m pytest cli_anything/acloudviewer/tests/ -v
+
+  # Level 3 (headless processing) tests are now embedded in each build CI:
+  #   - ubuntu.yml          (CPU .run installer)
+  #   - ubuntu-cuda.yml     (CUDA .run installer)
+  #   - windows.yml         (.exe installer)
+  #   - macos.yml           (.dmg installer)
+  # This avoids cross-workflow artifact download limitations and ensures
+  # tests run immediately after each platform's build completes.

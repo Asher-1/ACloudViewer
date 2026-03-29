@@ -89,6 +89,8 @@ public:
      */
     void hideShowActors(bool visibility, const std::string& viewID);
 
+    void removeAllLayers();
+
     /** @param layer_id Layer ID to remove
      */
     void removeLayer(const std::string& layer_id);

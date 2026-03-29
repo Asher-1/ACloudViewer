@@ -59,11 +59,13 @@
 #include <vtkActor.h>
 #include <vtkCell.h>
 #include <vtkCellData.h>
+#include <vtkCellLocator.h>
 #include <vtkDataArray.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
 #include <vtkIdTypeArray.h>
 #include <vtkMapper.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -774,7 +776,27 @@ void cvSelectionPropertiesWidget::setupUi() {
                 });
             });
 
-    // 5. Compact Statistics Section (ParaView-style: no tabs)
+    // 5. Filter Selection Section
+    m_filterSelectionExpander = new cvExpanderButton(m_scrollContent);
+    m_filterSelectionExpander->setText(tr("Filter Selection"));
+    m_filterSelectionExpander->setChecked(false);
+    scrollLayout->addWidget(m_filterSelectionExpander);
+
+    m_filterSelectionContainer = new QWidget(m_scrollContent);
+    m_filterSelectionContainer->setMinimumHeight(50);
+    m_filterSelectionContainer->setVisible(false);
+    setupFilterSelectionSection();
+    scrollLayout->addWidget(m_filterSelectionContainer);
+
+    connect(m_filterSelectionExpander, &cvExpanderButton::toggled,
+            m_filterSelectionContainer, &QWidget::setVisible);
+    connect(m_filterSelectionExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this,
+                                   [this]() { updateScrollContentWidth(); });
+            });
+
+    // 6. Compact Statistics Section (ParaView-style: no tabs)
     m_compactStatsExpander = new cvExpanderButton(m_scrollContent);
     m_compactStatsExpander->setText(tr("Selection Statistics"));
     m_compactStatsExpander->setChecked(false);  // Collapsed by default
@@ -859,8 +881,157 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     connect(m_extractButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onExtractClicked);
 
-    // Note: Plot Distribution button removed - feature not fully implemented
-    // Can be re-added when histogram plotting is available
+    // Plot Over Time button
+    m_plotOverTimeButton = new QPushButton(tr("Plot Over Time"));
+    m_plotOverTimeButton->setToolTip(tr("Plot selection over time"));
+    m_plotOverTimeButton->setFixedHeight(25);
+    m_plotOverTimeButton->setEnabled(false);
+    connect(m_plotOverTimeButton, &QPushButton::clicked, this,
+            &cvSelectionPropertiesWidget::onPlotOverTimeClicked);
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::setupFilterSelectionSection() {
+    QVBoxLayout* layout = new QVBoxLayout(m_filterSelectionContainer);
+    layout->setContentsMargins(8, 4, 8, 4);
+    layout->setSpacing(4);
+
+    QFormLayout* formLayout = new QFormLayout();
+    formLayout->setSpacing(4);
+
+    m_filterTypeCombo = new QComboBox();
+    m_filterTypeCombo->addItem(tr("Attribute Range"));
+    m_filterTypeCombo->addItem(tr("Bounding Box"));
+    m_filterTypeCombo->addItem(tr("Distance from Point"));
+    m_filterTypeCombo->addItem(tr("Normal Angle"));
+    m_filterTypeCombo->addItem(tr("Cell Area"));
+    m_filterTypeCombo->addItem(tr("Neighbor Count"));
+    formLayout->addRow(tr("Filter Type:"), m_filterTypeCombo);
+
+    m_filterAttributeCombo = new QComboBox();
+    formLayout->addRow(tr("Attribute:"), m_filterAttributeCombo);
+
+    m_filterMinSpin = new QDoubleSpinBox();
+    m_filterMinSpin->setRange(-1e12, 1e12);
+    m_filterMinSpin->setDecimals(6);
+    formLayout->addRow(tr("Min Value:"), m_filterMinSpin);
+
+    m_filterMaxSpin = new QDoubleSpinBox();
+    m_filterMaxSpin->setRange(-1e12, 1e12);
+    m_filterMaxSpin->setDecimals(6);
+    m_filterMaxSpin->setValue(1.0);
+    formLayout->addRow(tr("Max Value:"), m_filterMaxSpin);
+
+    layout->addLayout(formLayout);
+
+    m_filterApplyButton = new QPushButton(tr("Apply Filter"));
+    m_filterApplyButton->setToolTip(
+            tr("Filter current selection using the specified criteria"));
+    connect(m_filterApplyButton, &QPushButton::clicked, this,
+            &cvSelectionPropertiesWidget::onFilterApplyClicked);
+    layout->addWidget(m_filterApplyButton);
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::onFilterApplyClicked() {
+    if (m_selectionData.isEmpty()) {
+        CVLog::Warning("[Filter] No selection to filter");
+        return;
+    }
+
+    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    if (!polyData) {
+        CVLog::Warning("[Filter] Cannot access selection data for filtering");
+        return;
+    }
+
+    if (!m_selectionManager) {
+        CVLog::Warning("[Filter] No selection manager available");
+        return;
+    }
+
+    cvSelectionFilter* filter = m_selectionManager->getFilter();
+    if (!filter) {
+        CVLog::Warning("[Filter] No filter available");
+        return;
+    }
+
+    int filterType = m_filterTypeCombo->currentIndex();
+    double minVal = m_filterMinSpin->value();
+    double maxVal = m_filterMaxSpin->value();
+    QString attrName = m_filterAttributeCombo->currentText();
+
+    cvSelectionData filtered;
+    switch (filterType) {
+        case 0: {
+            filtered = filter->filterByAttributeRange(polyData, m_selectionData,
+                                                      attrName, minVal, maxVal);
+            break;
+        }
+        case 1: {
+            double bounds[6] = {minVal, maxVal, minVal, maxVal, minVal, maxVal};
+            filtered = filter->filterByBoundingBox(polyData, m_selectionData,
+                                                   bounds);
+            break;
+        }
+        case 2: {
+            filtered = filter->filterByDistanceFromPoint(
+                    polyData, m_selectionData, 0, 0, 0, minVal, maxVal);
+            break;
+        }
+        case 3: {
+            filtered = filter->filterByNormalAngle(polyData, m_selectionData, 0,
+                                                   0, 1, minVal, maxVal);
+            break;
+        }
+        case 4: {
+            filtered = filter->filterByArea(polyData, m_selectionData, minVal,
+                                            maxVal);
+            break;
+        }
+        case 5: {
+            filtered = filter->filterByNeighborCount(polyData, m_selectionData,
+                                                     static_cast<int>(minVal),
+                                                     static_cast<int>(maxVal));
+            break;
+        }
+        default:
+            return;
+    }
+
+    if (filtered.isEmpty()) {
+        CVLog::Warning("[Filter] Filter produced empty result");
+        return;
+    }
+
+    int oldCount = m_selectionData.count();
+
+    // Propagate actor info from original selection so highlighting works
+    vtkActor* primaryActor = m_selectionData.primaryActor();
+    if (primaryActor && primaryActor->GetMapper()) {
+        vtkPolyData* actorPoly = vtkPolyData::SafeDownCast(
+                primaryActor->GetMapper()->GetInput());
+        filtered.setActorInfo(primaryActor, actorPoly);
+    }
+    for (const auto& info : m_selectionData.actorInfos()) {
+        if (info.actor != primaryActor) {
+            filtered.addActorInfo(info);
+        }
+    }
+
+    // Update the manager's selection (triggers selectionChanged signal)
+    m_selectionManager->setCurrentSelection(filtered);
+
+    // Update the highlighter to reflect filtered selection
+    if (m_highlighter) {
+        m_highlighter->highlightSelection(filtered);
+    }
+
+    // Update our own UI (spreadsheet, statistics, etc.)
+    updateSelection(filtered, polyData);
+
+    CVLog::Print("[Filter] Applied filter: %d -> %d items", oldCount,
+                 filtered.count());
 }
 
 //-----------------------------------------------------------------------------
@@ -1164,12 +1335,6 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
             &cvSelectionPropertiesWidget::
                     onEditInteractiveLabelPropertiesClicked);
     displayLayout->addWidget(m_editInteractiveLabelPropertiesButton);
-
-    // Add vertical spacer at bottom (ParaView-style)
-    displayLayout->addStretch();
-
-    // Layout is already set on m_selectionDisplayContainer
-    // No need for setupCollapsibleGroupBox - handled by cvExpanderButton
 }
 
 //-----------------------------------------------------------------------------
@@ -1210,6 +1375,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_elementTypeLabel->setToolTip(
             tr("The element type of the saved selections"));
     m_elementTypeValue = new QLabel();
+    m_elementTypeValue->setTextFormat(Qt::RichText);
     m_elementTypeValue->setStyleSheet(
             "QLabel { background-color: snow; border: 1px inset grey; "
             "}");  // ParaView exact style
@@ -1251,8 +1417,10 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
             {tr("Name"), tr("Type"), tr("Color")});
     m_selectionEditorTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_selectionEditorTable->setSelectionMode(
-            QAbstractItemView::ExtendedSelection);
+            QAbstractItemView::SingleSelection);
     m_selectionEditorTable->setAlternatingRowColors(true);
+    m_selectionEditorTable->horizontalHeader()->setSectionResizeMode(
+            QHeaderView::Stretch);
     m_selectionEditorTable->horizontalHeader()->setStretchLastSection(true);
     m_selectionEditorTable->verticalHeader()->setVisible(false);
     m_selectionEditorTable->setMinimumHeight(120);
@@ -1454,27 +1622,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     dataLayout->addWidget(m_spreadsheetTable, 2, 0, 1,
                           5);  // Row 2, spanning all 5 columns
 
-    // Row 3: Action buttons (ParaView-style: Freeze | Extract | Plot Over Time)
-    // These buttons span all 5 columns
-    QHBoxLayout* actionLayout = new QHBoxLayout();
-    actionLayout->setSpacing(3);
-
-    // Freeze button (ParaView style)
-    actionLayout->addWidget(m_freezeButton);
-
-    // Extract button (ParaView style)
-    actionLayout->addWidget(m_extractButton);
-
-    // Plot Over Time button (ParaView style)
-    m_plotOverTimeButton = new QPushButton(tr("Plot Over Time"));
-    m_plotOverTimeButton->setToolTip(tr("Plot selection over time"));
-    m_plotOverTimeButton->setEnabled(false);  // Enabled when selection exists
-    connect(m_plotOverTimeButton, &QPushButton::clicked, this,
-            &cvSelectionPropertiesWidget::onPlotOverTimeClicked);
-    actionLayout->addWidget(m_plotOverTimeButton);
-
-    dataLayout->addLayout(actionLayout, 3, 0, 1,
-                          5);  // Row 3, spanning all 5 columns
+    // Buttons (Freeze, Extract, Plot Over Time) are placed in the
+    // buttonContainer created by the caller after setupSelectedDataHeader().
 
     // Layout is already set on m_selectedDataSpreadsheetContainer
     // No need for setupCollapsibleGroupBox - handled by cvExpanderButton
@@ -1593,17 +1742,16 @@ bool cvSelectionPropertiesWidget::updateSelection(
     // Update Selection Editor UI with current selection info (ParaView style)
     // Update element type value label
     if (m_elementTypeValue) {
-        QString elementTypeStr =
-                (m_selectionData.fieldAssociation() == cvSelectionData::CELLS)
-                        ? tr("Cell")
-                        : tr("Point");
-        m_elementTypeValue->setText(elementTypeStr);
+        updateElementTypeDisplay(m_selectionData.fieldAssociation() ==
+                                 cvSelectionData::CELLS);
     }
 
     // Update Data Producer from source object name (ParaView style)
-    cvViewSelectionManager* manager = cvViewSelectionManager::instance();
-    if (manager) {
-        ccHObject* sourceObj = manager->getSourceObject();
+    cvViewSelectionManager* mgr = m_selectionManager
+                                          ? m_selectionManager
+                                          : cvViewSelectionManager::instance();
+    if (mgr) {
+        ccHObject* sourceObj = mgr->getSourceObject();
         if (sourceObj) {
             QString sourceName = sourceObj->getName();
             setDataProducerName(sourceName);
@@ -1629,10 +1777,11 @@ bool cvSelectionPropertiesWidget::updateSelection(
 
     // Get polyData if not provided (using centralized ParaView-style method)
     if (!polyData) {
-        // First try from selection manager (most reliable source)
-        cvViewSelectionManager* manager = cvViewSelectionManager::instance();
-        if (manager) {
-            polyData = manager->getPolyData();
+        cvViewSelectionManager* mgr2 =
+                m_selectionManager ? m_selectionManager
+                                   : cvViewSelectionManager::instance();
+        if (mgr2) {
+            polyData = mgr2->getPolyData();
         }
 
         // Fallback to getPolyDataForSelection
@@ -1709,6 +1858,31 @@ bool cvSelectionPropertiesWidget::updateSelection(
     // (ParaView behavior: can only add selection when one exists)
     if (m_addSelectionButton) {
         m_addSelectionButton->setEnabled(m_selectionCount > 0);
+    }
+
+    // Update Filter Selection section
+    if (m_filterApplyButton) {
+        m_filterApplyButton->setEnabled(m_selectionCount > 0);
+    }
+    if (m_filterAttributeCombo && polyData) {
+        m_filterAttributeCombo->blockSignals(true);
+        m_filterAttributeCombo->clear();
+        bool isCellFilter =
+                (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
+        vtkDataSetAttributes* attrData =
+                isCellFilter ? static_cast<vtkDataSetAttributes*>(
+                                       polyData->GetCellData())
+                             : static_cast<vtkDataSetAttributes*>(
+                                       polyData->GetPointData());
+        if (attrData) {
+            for (int i = 0; i < attrData->GetNumberOfArrays(); ++i) {
+                QString name = QString::fromUtf8(attrData->GetArrayName(i));
+                if (!name.startsWith("vtk", Qt::CaseInsensitive)) {
+                    m_filterAttributeCombo->addItem(name);
+                }
+            }
+        }
+        m_filterAttributeCombo->blockSignals(false);
     }
 
     return true;
@@ -3266,6 +3440,17 @@ void cvSelectionPropertiesWidget::onInteractiveLabelPropertiesApplied(
 // ============================================================================
 
 //-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::clearInteractiveSelection() {
+    if (m_selectionEditorTable &&
+        m_selectionEditorTable->selectionModel()->hasSelection()) {
+        m_selectionEditorTable->selectionModel()->clearSelection();
+    }
+    if (m_highlighter) {
+        m_highlighter->clearHighlight(cvSelectionHighlighter::PRESELECTED);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onExpressionChanged(const QString& text) {
     emit expressionChanged(text);
 
@@ -3282,54 +3467,100 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
         return;
     }
 
-    // Create new saved selection
+    // Capture selection data BEFORE any modal dialog.
+    // QMessageBox::warning runs a nested event loop that may allow other
+    // callbacks to modify m_selectionData (ParaView avoids this by deep-copying
+    // the proxy before showing the dialog).
+    cvSelectionData capturedData = m_selectionData;
+
+    bool newIsCell =
+            (capturedData.fieldAssociation() == cvSelectionData::CELLS);
+    bool typeMismatch = false;
+
+    if (!m_savedSelections.isEmpty()) {
+        bool existingIsCell =
+                (m_savedSelections.first().data.fieldAssociation() ==
+                 cvSelectionData::CELLS);
+        if (existingIsCell != newIsCell) {
+            QMessageBox::StandardButton answer = QMessageBox::warning(
+                    this, tr("Different Element Type"),
+                    tr("The current active selection has a different "
+                       "element type compared to chosen element type.\n"
+                       "Are you sure you want to continue?"),
+                    QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
+            if (answer != QMessageBox::Ok) {
+                return;
+            }
+            typeMismatch = true;
+            CVLog::Print(QString("[cvSelectionPropertiesWidget] Element type "
+                                 "mismatch: replacing %1 with %2")
+                                 .arg(existingIsCell ? "Cell" : "Point")
+                                 .arg(newIsCell ? "Cell" : "Point"));
+        }
+    }
+
+    // ParaView: setElementType — update display for the new type
+    if (m_elementTypeValue) {
+        m_elementTypeValue->setEnabled(true);
+        updateElementTypeDisplay(newIsCell);
+    }
+
+    // ParaView behavior: CombineSelection returns false when types differ;
+    // the copy-back replaces all saved selections with just the new one.
+    if (typeMismatch) {
+        m_savedSelections.clear();
+        m_selectionNameCounter = 0;
+        m_expressionEdit->blockSignals(true);
+        m_expressionEdit->clear();
+        m_expressionEdit->blockSignals(false);
+    }
+
     SavedSelection saved;
     saved.name = generateSelectionName();
     saved.type = tr("ID Selection");
     saved.color = generateSelectionColor();
-    saved.data = m_selectionData;
+    saved.data = capturedData;
 
     m_savedSelections.append(saved);
     updateSelectionEditorTable();
 
-    // Update expression with new selection (ParaView-style)
-    // ParaView wraps existing expression in parentheses when there are multiple
-    // inputs Format: s0 -> s0|s1 -> (s0|s1)|s2 -> ((s0|s1)|s2)|s3 etc.
-    QString expr = m_expressionEdit->text();
-    if (!expr.isEmpty()) {
-        // Wrap existing expression in parentheses if we have more than one
-        // selection
-        if (m_savedSelections.size() > 2) {
-            expr = QString("(%1)").arg(expr);
-        }
-        expr += "|" + saved.name;
+    // ParaView CombineSelection ADDITION logic:
+    // existing expression | new_name
+    QString existingExpr = m_expressionEdit->text();
+    QString newExpr;
+
+    if (existingExpr.isEmpty()) {
+        newExpr = saved.name;
     } else {
-        expr = saved.name;
+        QString wrappedExisting = existingExpr;
+        if (m_savedSelections.size() > 2) {
+            wrappedExisting = QString("(%1)").arg(existingExpr);
+        }
+        newExpr = wrappedExisting + "|" + saved.name;
     }
-    m_expressionEdit->setText(expr);
+    m_expressionEdit->setText(newExpr);
 
-    // Enable buttons
     m_removeAllSelectionsButton->setEnabled(true);
-    m_activateCombinedSelectionsButton->setEnabled(
-            !m_expressionEdit->text().isEmpty());
+    m_activateCombinedSelectionsButton->setEnabled(true);
+    if (!m_expressionEdit->isEnabled()) {
+        m_expressionEdit->setEnabled(true);
+    }
 
-    // ParaView behavior: Disable the + button after adding a selection.
-    // The button is re-enabled when a NEW selection is made.
-    // This prevents adding the same selection multiple times.
     if (m_addSelectionButton) {
         m_addSelectionButton->setEnabled(false);
     }
 
-    // Clear the current selection data to indicate it has been "consumed"
-    // A new selection must be made to enable the + button again
+    clearInteractiveSelection();
     m_selectionData.clear();
-
     emit selectionAdded(saved.data);
 
-    CVLog::PrintVerbose(
-            QString("[cvSelectionPropertiesWidget] Added selection: %1 "
-                    "(+ button disabled until new selection)")
-                    .arg(saved.name));
+    CVLog::Print(
+            QString("[cvSelectionPropertiesWidget] Added selection: %1 (%2, "
+                    "%3 elements%4)")
+                    .arg(saved.name)
+                    .arg(newIsCell ? "Cell" : "Point")
+                    .arg(capturedData.count())
+                    .arg(typeMismatch ? ", replaced old type" : ""));
 }
 
 //-----------------------------------------------------------------------------
@@ -3340,34 +3571,113 @@ void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
         return;
     }
 
-    // Get unique rows
-    QSet<int> rows;
-    for (QTableWidgetItem* item : selectedItems) {
-        rows.insert(item->row());
+    // ParaView only allows single row selection for removal
+    int selectedRow = selectedItems.first()->row();
+    if (selectedRow < 0 || selectedRow >= m_savedSelections.size()) {
+        return;
     }
 
-    // Remove in reverse order to maintain valid indices
-    QList<int> sortedRows = rows.values();
-    std::sort(sortedRows.begin(), sortedRows.end(), std::greater<int>());
+    QString removedName = m_savedSelections[selectedRow].name;
+    m_savedSelections.removeAt(selectedRow);
+    emit selectionRemoved(selectedRow);
 
-    for (int row : sortedRows) {
-        if (row >= 0 && row < m_savedSelections.size()) {
-            QString name = m_savedSelections[row].name;
-            m_savedSelections.removeAt(row);
-            emit selectionRemoved(row);
-            CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Removed "
-                                        "selection: %1")
-                                        .arg(name));
+    // ParaView: clear interactive selection on remove
+    clearInteractiveSelection();
+
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Removed selection: %1")
+                    .arg(removedName));
+
+    if (m_savedSelections.isEmpty()) {
+        // ParaView: when all removed, call full reset (same as
+        // removeAllSelections)
+        m_selectionNameCounter = 0;
+        m_expressionEdit->clear();
+        m_expressionEdit->setEnabled(false);
+        updateSelectionEditorTable();
+        m_removeSelectionButton->setEnabled(false);
+        m_removeAllSelectionsButton->setEnabled(false);
+        m_activateCombinedSelectionsButton->setEnabled(false);
+        // ParaView: disable element type info
+        if (m_elementTypeValue) {
+            m_elementTypeValue->setEnabled(false);
         }
+        if (m_addSelectionButton && !m_selectionData.isEmpty()) {
+            m_addSelectionButton->setEnabled(true);
+        }
+        return;
     }
 
+    // ParaView behavior: renumber remaining selections and update expression
+    // After removing s1 from [s0, s1, s2], remaining become [s0, s1] (shifted)
+    QString oldExpression = m_expressionEdit->text();
+    QString newExpression = oldExpression;
+
+    // Build old-to-new name mapping for the shift
+    int newIdx = 0;
+    QMap<QString, QString> nameMap;
+    for (int i = 0; i < m_savedSelections.size(); ++i) {
+        QString oldName = m_savedSelections[i].name;
+        QString newName = QString("s%1").arg(newIdx);
+        if (oldName != newName) {
+            nameMap[oldName] = newName;
+        }
+        m_savedSelections[i].name = newName;
+        ++newIdx;
+    }
+    m_selectionNameCounter = newIdx;
+
+    // Remove the deleted selection name from expression
+    // Handle "!name" (negated) as a unit — remove both "!" and the name
+    QRegularExpression negatedNameRegex(
+            QString("!\\s*\\b%1\\b")
+                    .arg(QRegularExpression::escape(removedName)));
+    newExpression.replace(negatedNameRegex, "");
+    // Then remove any remaining standalone references
+    QRegularExpression removedNameRegex(
+            QString("\\b%1\\b").arg(QRegularExpression::escape(removedName)));
+    newExpression.remove(removedNameRegex);
+
+    // Clean up dangling operators and empty constructs
+    // Run multiple passes to handle nested cleanup
+    for (int pass = 0; pass < 3; ++pass) {
+        newExpression = newExpression.trimmed();
+        newExpression.replace(QRegularExpression(R"(\|\|+)"), "|");
+        newExpression.replace(QRegularExpression(R"(&&+)"), "&");
+        newExpression.replace(QRegularExpression(R"(\^\^+)"), "^");
+        newExpression.replace(QRegularExpression(R"(^\|)"), "");
+        newExpression.replace(QRegularExpression(R"(\|$)"), "");
+        newExpression.replace(QRegularExpression(R"(^&)"), "");
+        newExpression.replace(QRegularExpression(R"(&$)"), "");
+        newExpression.replace(QRegularExpression(R"(^\^)"), "");
+        newExpression.replace(QRegularExpression(R"(\^$)"), "");
+        newExpression.replace(QRegularExpression(R"(\(\s*\))"), "");
+        newExpression.replace(QRegularExpression(R"(!\s*([&|^]))"), "\\1");
+        newExpression.replace(QRegularExpression(R"(!\s*$)"), "");
+        newExpression.replace(QRegularExpression(R"(^\s*!)"), "");
+    }
+    newExpression = newExpression.trimmed();
+
+    // Apply name remapping (process in reverse order to avoid s1->s0 then
+    // s10->s00 issues)
+    QList<QString> oldNames = nameMap.keys();
+    std::sort(oldNames.begin(), oldNames.end(),
+              [](const QString& a, const QString& b) {
+                  return a.mid(1).toInt() > b.mid(1).toInt();
+              });
+    for (const QString& oldName : oldNames) {
+        QRegularExpression nameRegex(
+                QString("\\b%1\\b").arg(QRegularExpression::escape(oldName)));
+        newExpression.replace(nameRegex, nameMap[oldName]);
+    }
+
+    m_expressionEdit->setText(newExpression);
     updateSelectionEditorTable();
 
     // Update button states
     m_removeAllSelectionsButton->setEnabled(!m_savedSelections.isEmpty());
     m_activateCombinedSelectionsButton->setEnabled(
-            !m_expressionEdit->text().isEmpty() &&
-            !m_savedSelections.isEmpty());
+            !newExpression.isEmpty() && !m_savedSelections.isEmpty());
 }
 
 //-----------------------------------------------------------------------------
@@ -3383,15 +3693,27 @@ void cvSelectionPropertiesWidget::onRemoveAllSelectionsClicked() {
         return;
     }
 
+    clearInteractiveSelection();
+
     m_savedSelections.clear();
     m_selectionNameCounter = 0;
     m_expressionEdit->clear();
     updateSelectionEditorTable();
 
-    // Update button states
+    // ParaView: reset button states
     m_removeSelectionButton->setEnabled(false);
     m_removeAllSelectionsButton->setEnabled(false);
     m_activateCombinedSelectionsButton->setEnabled(false);
+    m_expressionEdit->setEnabled(false);
+    // ParaView: disable element type info
+    if (m_elementTypeValue) {
+        m_elementTypeValue->setEnabled(false);
+    }
+
+    // ParaView: re-enable Add button if there's an active selection
+    if (m_addSelectionButton && !m_selectionData.isEmpty()) {
+        m_addSelectionButton->setEnabled(true);
+    }
 
     emit allSelectionsRemoved();
 
@@ -3450,10 +3772,51 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
     if (m_selectionManager) {
         m_selectionManager->setCurrentSelection(result);
 
-        // Update our own display - get polyData safely
         vtkPolyData* polyData = getPolyDataForSelection(&result);
         if (polyData) {
             updateSelection(result, polyData);
+
+            // ParaView-style per-selection coloring:
+            // Build (selection, color) pairs and use multi-color highlight
+            // so each sub-selection renders with its own color from the
+            // Selection Editor's Color column.
+            if (m_highlighter && !m_savedSelections.isEmpty()) {
+                QSet<vtkIdType> resultIdSet;
+                if (result.vtkArray()) {
+                    for (vtkIdType i = 0;
+                         i < result.vtkArray()->GetNumberOfTuples(); ++i) {
+                        resultIdSet.insert(result.vtkArray()->GetValue(i));
+                    }
+                }
+
+                QVector<QPair<vtkSmartPointer<vtkIdTypeArray>, QColor>>
+                        selectionsWithColors;
+                for (const auto& saved : m_savedSelections) {
+                    if (saved.data.isEmpty() || !saved.data.vtkArray()) {
+                        continue;
+                    }
+                    vtkSmartPointer<vtkIdTypeArray> intersectedIds =
+                            vtkSmartPointer<vtkIdTypeArray>::New();
+                    for (vtkIdType i = 0;
+                         i < saved.data.vtkArray()->GetNumberOfTuples(); ++i) {
+                        vtkIdType id = saved.data.vtkArray()->GetValue(i);
+                        if (resultIdSet.contains(id)) {
+                            intersectedIds->InsertNextValue(id);
+                        }
+                    }
+                    if (intersectedIds->GetNumberOfTuples() > 0) {
+                        selectionsWithColors.append(
+                                qMakePair(intersectedIds, saved.color));
+                    }
+                }
+
+                if (!selectionsWithColors.isEmpty()) {
+                    m_highlighter->highlightMultiColorSelections(
+                            polyData, selectionsWithColors,
+                            result.fieldAssociation(),
+                            cvSelectionHighlighter::SELECTED);
+                }
+            }
 
             CVLog::Print(
                     QString("[cvSelectionPropertiesWidget] Activated combined "
@@ -3464,7 +3827,6 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
             CVLog::Warning(
                     "[cvSelectionPropertiesWidget] Could not get polyData "
                     "for combined selection");
-            // Still update the selection data without polyData
             m_selectionData = result;
             m_selectionCount = result.count();
             syncUIWithHighlighter();
@@ -3473,6 +3835,9 @@ void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
         CVLog::Warning(
                 "[cvSelectionPropertiesWidget] No selection manager available");
     }
+
+    // ParaView: clear interactive selection after activating
+    clearInteractiveSelection();
 
     emit activateCombinedSelectionsRequested();
 }
@@ -3602,8 +3967,14 @@ cvSelectionData cvSelectionPropertiesWidget::parseUnaryExpression(
         pos++;  // consume '!'
         cvSelectionData operand = parseUnaryExpression(tokens, pos);
 
-        // Complement needs polyData
-        vtkPolyData* polyData = getPolyDataForSelection(&operand);
+        // Complement needs polyData — try Data Producer first, then fallback
+        vtkPolyData* polyData = getPolyDataForDataProducer();
+        if (!polyData) {
+            polyData = getPolyDataForSelection(&operand);
+        }
+        if (!polyData) {
+            polyData = getPolyDataForSelection(&m_selectionData);
+        }
         if (polyData) {
             return cvSelectionAlgebra::complementOf(polyData, operand);
         } else {
@@ -3661,28 +4032,30 @@ cvSelectionData cvSelectionPropertiesWidget::parsePrimaryExpression(
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onSelectionEditorTableSelectionChanged() {
-    bool hasSelection = !m_selectionEditorTable->selectedItems().isEmpty();
-    m_removeSelectionButton->setEnabled(hasSelection);
-
-    // Highlight the corresponding selection when row is selected
     QList<QTableWidgetItem*> selectedItems =
             m_selectionEditorTable->selectedItems();
+
     if (!selectedItems.isEmpty()) {
+        // ParaView showInteractiveSelection: enable remove and show highlight
+        m_removeSelectionButton->setEnabled(true);
+
         int row = selectedItems.first()->row();
         if (row >= 0 && row < m_savedSelections.size()) {
             const SavedSelection& sel = m_savedSelections[row];
-
-            // Highlight this selection's data
             if (m_highlighter && !sel.data.isEmpty()) {
                 m_highlighter->highlightSelection(
                         sel.data, cvSelectionHighlighter::PRESELECTED);
-
-                // Update the viewer
                 Visualization::VtkVis* pclVis = getVtkVis();
                 if (pclVis) {
                     pclVis->UpdateScreen();
                 }
             }
+        }
+    } else {
+        // ParaView hideInteractiveSelection: disable remove and hide highlight
+        m_removeSelectionButton->setEnabled(false);
+        if (m_highlighter) {
+            m_highlighter->clearHighlight(cvSelectionHighlighter::PRESELECTED);
         }
     }
 }
@@ -3868,22 +4241,25 @@ void cvSelectionPropertiesWidget::onFreezeClicked() {
         return;
     }
 
-    // Freeze selection: Create a static copy that won't change with new
-    // selections In ParaView, this converts the selection to an
-    // "AppendSelection" filter For CloudViewer, we save current selection to
-    // bookmarks with "Frozen_" prefix
+    // ParaView "Freeze Selection": converts dynamic selection (frustum/query)
+    // to static index-based selection.  In CloudViewer, selections are already
+    // index-based, so "freeze" means: take a snapshot of the current IDs and
+    // keep them as the active selection.  This prevents the selection from
+    // being lost when the user starts a new selection action.
+    //
+    // The frozen copy is stored in the manager; subsequent selection actions
+    // will merge with (or replace) it depending on the selection modifier.
 
-    QString frozenName = QString("Frozen_%1")
-                                 .arg(QDateTime::currentDateTime().toString(
-                                         "yyyyMMdd_HHmmss"));
+    if (m_selectionManager) {
+        cvSelectionData frozen(m_selectionData);
+        m_selectionManager->setCurrentSelection(frozen, false);
+    }
 
-    // Bookmark functionality removed - UI not implemented
-    CVLog::Print(
-            QString("[cvSelectionPropertiesWidget] Selection frozen as: %1")
-                    .arg(frozenName));
-
-    QMessageBox::information(this, tr("Freeze Selection"),
-                             tr("Selection frozen as: %1").arg(frozenName));
+    int count = m_selectionData.count();
+    QString assoc = m_selectionData.fieldTypeString();
+    CVLog::Print(QString("[Selection] Frozen %1 %2 as index-based selection")
+                         .arg(count)
+                         .arg(assoc));
 
     emit freezeSelectionRequested();
 }
@@ -3928,13 +4304,8 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
         // Cell selection on mesh -> export as mesh
         onExportToMeshClicked();
     } else {
-        // Point selection OR cell selection on point cloud -> export as point
-        // cloud For cell selection on point cloud, the cell IDs ARE the point
-        // IDs (each vertex is a cell in VTK point cloud representation)
         onExportToPointCloudClicked();
     }
-
-    emit extractSelectionRequested();
 }
 
 //-----------------------------------------------------------------------------
@@ -4217,8 +4588,7 @@ void cvSelectionPropertiesWidget::onToggleFieldDataClicked(bool checked) {
             }
         }
 
-        // Limit rows
-        int rowCount = std::min(1000, static_cast<int>(maxTuples));
+        int rowCount = static_cast<int>(maxTuples);
         m_spreadsheetTable->setRowCount(rowCount);
 
         // Populate rows
@@ -4288,7 +4658,18 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     // Execute the query with support for multiple query rows
     // ParaView reference: pqFindDataWidget::pqInternals::findData()
     if (m_queryRows.isEmpty()) {
-        CVLog::Warning("[cvSelectionPropertiesWidget] No query rows available");
+        // ParaView: empty query clears the selection
+        CVLog::Print(
+                "[cvSelectionPropertiesWidget] No query rows - clearing "
+                "selection");
+        m_selectionData.clear();
+        if (m_selectionManager) {
+            m_selectionManager->setCurrentSelection(m_selectionData);
+        }
+        vtkPolyData* polyData = getPolyDataForSelection(nullptr);
+        if (polyData) {
+            updateSelection(m_selectionData, polyData);
+        }
         return;
     }
 
@@ -4505,10 +4886,14 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         savedSelections.append({attr, op});
     }
 
-    // Update selection
+    // Update selection and notify manager
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     m_selectionData = combinedResult;
     updateSelection(m_selectionData, polyData);
+
+    if (m_selectionManager) {
+        m_selectionManager->setCurrentSelection(m_selectionData);
+    }
 
     // Restore query row selections (they may have been reset by
     // updateAttributeCombo)
@@ -4651,7 +5036,11 @@ void cvSelectionPropertiesWidget::onClearClicked() {
         pclVis->UpdateScreen();
     }
 
-    // Emit signal to notify other components
+    // Notify selection manager
+    if (m_selectionManager) {
+        m_selectionManager->clearSelection();
+    }
+
     emit selectionCleared();
 
     CVLog::Print("[cvSelectionPropertiesWidget] Selection and query cleared.");
@@ -5515,6 +5904,52 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
 }
 
 //-----------------------------------------------------------------------------
+vtkPolyData* cvSelectionPropertiesWidget::getPolyDataForDataProducer() const {
+    if (!m_dataProducerCombo || m_dataProducerCombo->currentIndex() <= 0) {
+        return nullptr;
+    }
+
+    QString producerName = m_dataProducerCombo->currentText();
+    Visualization::VtkVis* pclVis =
+            const_cast<cvSelectionPropertiesWidget*>(this)->getVtkVis();
+    if (!pclVis) return nullptr;
+
+    vtkRendererCollection* renderers = pclVis->getRendererCollection();
+    if (!renderers) return nullptr;
+
+    renderers->InitTraversal();
+    vtkRenderer* renderer;
+    while ((renderer = renderers->GetNextItem()) != nullptr) {
+        vtkActorCollection* actors = renderer->GetActors();
+        if (!actors) continue;
+
+        actors->InitTraversal();
+        vtkActor* actor;
+        while ((actor = actors->GetNextActor()) != nullptr) {
+            if (!actor->GetVisibility()) continue;
+
+            vtkPolyData* actorPolyData = vtkPolyData::SafeDownCast(
+                    actor->GetMapper() ? actor->GetMapper()->GetInput()
+                                       : nullptr);
+            if (!actorPolyData) continue;
+
+            vtkFieldData* fieldData = actorPolyData->GetFieldData();
+            if (!fieldData) continue;
+
+            vtkStringArray* nameArray = vtkStringArray::SafeDownCast(
+                    fieldData->GetAbstractArray("DatasetName"));
+            if (nameArray && nameArray->GetNumberOfTuples() > 0) {
+                QString name = QString::fromStdString(nameArray->GetValue(0));
+                if (name == producerName) {
+                    return actorPolyData;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         const QString& attribute,
         const QString& op,
@@ -5534,7 +5969,11 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
     // - is mean: within tolerance of mean
     // - is NaN: check for NaN values
 
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    // ParaView queries the selected Data Producer's full dataset
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         CVLog::Warning("[executeFindDataQuery] No data available");
         return cvSelectionData();
@@ -5714,6 +6153,7 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         double sum = 0.0;
         minVal = std::numeric_limits<double>::max();
         maxVal = std::numeric_limits<double>::lowest();
+        vtkIdType validCount = 0;
 
         for (vtkIdType i = 0; i < numElements; ++i) {
             double val = getValue(i);
@@ -5721,9 +6161,10 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                 sum += val;
                 minVal = std::min(minVal, val);
                 maxVal = std::max(maxVal, val);
+                ++validCount;
             }
         }
-        meanVal = numElements > 0 ? sum / numElements : 0.0;
+        meanVal = validCount > 0 ? sum / validCount : 0.0;
     }
 
     // Find matching elements
@@ -5761,6 +6202,8 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
             // Match if within tolerance of mean
             matchResult = (std::abs(val - meanVal) <= queryValue);
         } else if (op == tr("is in range")) {
+            // ParaView uses strict inequality: ({term} > {value_min}) & ({term}
+            // < {value_max})
             matchResult = (val > queryValueMin && val < queryValueMax);
         } else if (op == tr("is one of")) {
             for (double v : queryValueList) {
@@ -5796,7 +6239,10 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
     // ParaView-style location-based query execution
     // Implements "nearest to" (Point) and "containing" (Cell) operators
 
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         CVLog::Warning(
                 "[executeFindDataQuery] No polyData available for "
@@ -5855,22 +6301,29 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                              .arg(z));
 
     } else if (op == tr("containing")) {
-        // Find cells that contain the target point
+        // Find cells that contain the target point using vtkCellLocator
         // ParaView: cellContainsPoint(inputs, [location])
-        // This requires a cell locator for accurate containment tests
         double targetPt[3] = {x, y, z};
 
-        // Simple bounding box test for now
-        // For more accurate results, would need vtkCellLocator
-        for (vtkIdType i = 0; i < polyData->GetNumberOfCells(); ++i) {
-            double bounds[6];
-            polyData->GetCellBounds(i, bounds);
+        vtkNew<vtkCellLocator> locator;
+        locator->SetDataSet(polyData);
+        locator->BuildLocator();
 
-            // Check if point is within cell bounds
-            if (targetPt[0] >= bounds[0] && targetPt[0] <= bounds[1] &&
-                targetPt[1] >= bounds[2] && targetPt[1] <= bounds[3] &&
-                targetPt[2] >= bounds[4] && targetPt[2] <= bounds[5]) {
-                matchingIds.append(static_cast<qint64>(i));
+        double closestPt[3], dist2;
+        vtkIdType cellId;
+        int subId;
+        locator->FindClosestPoint(targetPt, closestPt, cellId, subId, dist2);
+
+        if (cellId >= 0) {
+            vtkCell* cell = polyData->GetCell(cellId);
+            if (cell) {
+                double pcoords[3];
+                double weights[64];
+                int inside = cell->EvaluatePosition(targetPt, closestPt, subId,
+                                                    pcoords, dist2, weights);
+                if (inside == 1) {
+                    matchingIds.append(static_cast<qint64>(cellId));
+                }
             }
         }
 
@@ -5893,7 +6346,10 @@ void cvSelectionPropertiesWidget::performFindData(const QString& attribute,
                                                   const QString& value,
                                                   bool isCell) {
     // Perform the query and create selection
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) {
+        polyData = getPolyDataForSelection(&m_selectionData);
+    }
     if (!polyData) {
         QMessageBox::warning(this, tr("Find Data"),
                              tr("No data available to query."));
@@ -6181,6 +6637,27 @@ void cvSelectionPropertiesWidget::onSpreadsheetItemClicked(
 // ============================================================================
 
 //-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateElementTypeDisplay(bool isCellType) {
+    if (!m_elementTypeValue) return;
+
+    static const QString imageStyle = "width=\"16\" height=\"16\"";
+    QString iconPath;
+    QString typeName;
+
+    if (isCellType) {
+        iconPath = ":/Resources/images/svg/pqCellData.svg";
+        typeName = tr("Cell");
+    } else {
+        iconPath = ":/Resources/images/svg/pqPointData.svg";
+        typeName = tr("Point");
+    }
+
+    QString richText = QString("<img src=\"%1\" %2> %3")
+                               .arg(iconPath, imageStyle, typeName);
+    m_elementTypeValue->setText(richText);
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::updateSelectionEditorTable() {
     m_selectionEditorTable->setRowCount(m_savedSelections.size());
 
@@ -6202,8 +6679,6 @@ void cvSelectionPropertiesWidget::updateSelectionEditorTable() {
                                                              : Qt::white);
         m_selectionEditorTable->setItem(i, 2, colorItem);
     }
-
-    m_selectionEditorTable->resizeColumnsToContents();
 }
 
 //-----------------------------------------------------------------------------
@@ -6219,6 +6694,28 @@ QColor cvSelectionPropertiesWidget::generateSelectionColor() const {
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::setDataProducerName(const QString& name) {
+    // ParaView: when data producer changes, clear saved selections
+    // (IDs from a different source are invalid for the new source)
+    if (!m_dataProducerName.isEmpty() && !name.isEmpty() &&
+        m_dataProducerName != name && !m_savedSelections.isEmpty()) {
+        CVLog::Print(
+                QString("[cvSelectionPropertiesWidget] Data producer changed "
+                        "from '%1' to '%2' - clearing saved selections")
+                        .arg(m_dataProducerName, name));
+        m_savedSelections.clear();
+        m_selectionNameCounter = 0;
+        if (m_expressionEdit) {
+            m_expressionEdit->clear();
+            m_expressionEdit->setEnabled(false);
+        }
+        updateSelectionEditorTable();
+        if (m_removeSelectionButton) m_removeSelectionButton->setEnabled(false);
+        if (m_removeAllSelectionsButton)
+            m_removeAllSelectionsButton->setEnabled(false);
+        if (m_activateCombinedSelectionsButton)
+            m_activateCombinedSelectionsButton->setEnabled(false);
+    }
+
     m_dataProducerName = name;
     if (m_dataProducerValue) {
         m_dataProducerValue->setText(name.isEmpty() ? tr("(none)") : name);
@@ -6337,8 +6834,7 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(
             QHeaderView::ResizeToContents);
 
     // Populate rows
-    int rowCount =
-            std::min(1000, static_cast<int>(ids.size()));  // Limit to 1000 rows
+    int rowCount = static_cast<int>(ids.size());
     m_spreadsheetTable->setRowCount(rowCount);
 
     for (int row = 0; row < rowCount; ++row) {

@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qSIBR" >
+        <file>images/icon.svg</file>
+        <file>images/icon_ulr.svg</file>
+        <file>images/icon_ulrv2.svg</file>
+        <file>images/icon_textured_mesh.svg</file>
+        <file>images/icon_point_based.svg</file>
+        <file>images/icon_gaussian.svg</file>
+        <file>images/icon_remote.svg</file>
+        <file>images/icon_tools.svg</file>
+        <file>info.json</file>
+    </qresource>
+</RCC>

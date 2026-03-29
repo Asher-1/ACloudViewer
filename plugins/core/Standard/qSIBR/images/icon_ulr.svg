@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5f8ff"/>
+      <stop offset="100%" stop-color="#e0e8f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="5" fill="url(#bg)"/>
+  <!-- camera body -->
+  <rect x="6" y="11" width="13" height="10" rx="2.2" fill="#2b6cb0" stroke="#1e4e8c" stroke-width="0.4"/>
+  <rect x="19" y="13" width="3.5" height="6" rx="1" fill="#2b6cb0"/>
+  <!-- lens -->
+  <circle cx="12.5" cy="16" r="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.35"/>
+  <circle cx="12.5" cy="16" r="2.2" fill="#94a3b8" opacity="0.35"/>
+  <!-- light rays (amber) -->
+  <g stroke="#d97706" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.95">
+    <line x1="21" y1="14" x2="28" y2="10"/>
+    <line x1="21" y1="16" x2="29" y2="16"/>
+    <line x1="21" y1="18" x2="28" y2="22"/>
+    <line x1="20.5" y1="15" x2="27" y2="12.5"/>
+    <line x1="20.5" y1="17" x2="27" y2="19.5"/>
+  </g>
+</svg>

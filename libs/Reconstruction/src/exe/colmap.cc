@@ -39,6 +39,10 @@
 #include "exe/vocab_tree.h"
 #include "util/version.h"
 
+#include <memory>
+
+#include <QGuiApplication>
+
 namespace {
 
 typedef std::function<int(int, char**)> command_func_t;
@@ -146,15 +150,14 @@ int main(int argc, char** argv) {
     commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher);
     commands.emplace_back("vocab_tree_retriever", &RunVocabTreeRetriever);
 
-#ifdef Q_OS_MAC
-    // only support gui on MacOS
-    const std::string command = "gui";
-#else
     if (argc == 1) {
+#ifndef Q_OS_MAC
         return ShowHelp(commands);
-    }
-    const std::string command = argv[1];
 #endif
+    }
+    // On macOS with argc==1 (Finder double-click), default to "gui".
+    // On all platforms with argc>1, use the provided command.
+    const std::string command = (argc > 1) ? argv[1] : "gui";
     if (command == "help" || command == "-h" || command == "--help") {
         return ShowHelp(commands);
     } else {
@@ -177,6 +180,16 @@ int main(int argc, char** argv) {
             int command_argc = argc - 1;
             char** command_argv = &argv[1];
             command_argv[0] = argv[0];
+
+            // The "gui" command creates its own QApplication; for all other
+            // commands we need a lightweight QGuiApplication so that the
+            // texturing pipeline can use QImageReader / QPainter on QImage.
+            std::unique_ptr<QGuiApplication> headless_app;
+            if (command != "gui") {
+                qputenv("QT_QPA_PLATFORM", "offscreen");
+                headless_app.reset(new QGuiApplication(argc, argv));
+            }
+
             return matched_command_func(command_argc, command_argv);
         }
     }

@@ -41,7 +41,6 @@ static QString sPluginIID(QPluginLoader *loader) {
 
     if (metaObject.isEmpty()) {
         const QString fileName = QFileInfo(loader->fileName()).fileName();
-
         CVLog::Warning(
                 QStringLiteral(
                         "\t%1 does not supply meta data in the "
@@ -261,6 +260,10 @@ void ccPluginManager::loadFromPathsAndAddToList() {
         const QStringList fileNames = pluginsDir.entryList();
 
         for (const QString &fileName : fileNames) {
+            if (fileName.contains(QLatin1String(".cpython-"))) {
+                continue;
+            }
+
             const QString pluginPath = pluginsDir.absoluteFilePath(fileName);
 
             QPluginLoader *loader = new QPluginLoader(pluginPath);
