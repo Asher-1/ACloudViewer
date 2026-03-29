@@ -2386,8 +2386,8 @@ JsonRPCResult JsonRPCPlugin::rpcCloudSfGradient(
     if (result < 0) {
         return JsonRPCResult::error(
                 5, "Gradient computation failed",
-                D("entity_id", static_cast<qint64>(entityId),
-                  "error_code", result));
+                D("entity_id", static_cast<qint64>(entityId), "error_code",
+                  result));
     }
 
     int newSfCount = static_cast<int>(cloud->getNumberOfScalarFields());
@@ -2648,14 +2648,16 @@ JsonRPCResult JsonRPCPlugin::rpcCloudColorBanding(
     QString axis = params.value("axis", "Z").toString().toUpper();
     double frequency = params.value("frequency", 10.0).toDouble();
 
-    // Use coordinate-to-SF + paintByScalarField instead of direct color manipulation
-    // This is more stable and uses existing tested code paths
-    
+    // Use coordinate-to-SF + paintByScalarField instead of direct color
+    // manipulation This is more stable and uses existing tested code paths
+
     // First, convert coordinate to scalar field
     int dimension = 2;  // Z
-    if (axis == "X") dimension = 0;
-    else if (axis == "Y") dimension = 1;
-    
+    if (axis == "X")
+        dimension = 0;
+    else if (axis == "Y")
+        dimension = 1;
+
     QString sfName = QString("Coord_%1").arg(axis);
     int sfIdx = cloud->getScalarFieldIndexByName(qPrintable(sfName));
     if (sfIdx < 0) {
@@ -2665,35 +2667,39 @@ JsonRPCResult JsonRPCPlugin::rpcCloudColorBanding(
                     5, "Failed to create scalar field",
                     D("entity_id", static_cast<qint64>(entityId)));
         }
-        
-        ccScalarField* sf = static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
+
+        ccScalarField* sf =
+                static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
         if (!sf || !sf->resizeSafe(cloud->size())) {
             return JsonRPCResult::error(
                     5, "Failed to allocate scalar field",
                     D("entity_id", static_cast<qint64>(entityId)));
         }
-        
+
         for (unsigned i = 0; i < cloud->size(); ++i) {
             const CCVector3* P = cloud->getPoint(i);
             if (!P) continue;
-            
+
             ScalarType val = 0;
-            if (dimension == 0) val = P->x;
-            else if (dimension == 1) val = P->y;
-            else val = P->z;
-            
+            if (dimension == 0)
+                val = P->x;
+            else if (dimension == 1)
+                val = P->y;
+            else
+                val = P->z;
+
             sf->setValue(i, val);
         }
         sf->computeMinAndMax();
     }
-    
+
     // Now use paintByScalarField
     cloud->setCurrentDisplayedScalarField(sfIdx);
-    
+
     QMap<QString, QVariant> paintParams;
     paintParams["entity_id"] = entityId;
     paintParams["field_index"] = sfIdx;
-    
+
     return rpcCloudPaintByScalarField(paintParams);
 }
 
