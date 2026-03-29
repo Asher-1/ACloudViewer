@@ -98,6 +98,28 @@ private:
     JsonRPCResult rpcCloudRemoveNormals(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcCloudInvertNormals(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcCloudMerge(const QMap<QString, QVariant>& params);
+    // --- Cloud geometric analysis (NEW) ---
+    JsonRPCResult rpcCloudDensity(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudCurvature(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudRoughness(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudGeometricFeature(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudApproxDensity(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudColorBanding(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSorFilter(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudExtractConnectedComponents(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudBestFitPlane(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudDelaunay(const QMap<QString, QVariant>& params);
+    // --- Cloud scalar field operations (NEW) ---
+    JsonRPCResult rpcCloudSfArithmetic(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfOperation(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfGradient(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudSfConvertToRGB(const QMap<QString, QVariant>& params);
+    // --- Cloud normals advanced (NEW) ---
+    JsonRPCResult rpcCloudOctreeNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudOrientNormalsMST(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudClearNormals(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudNormalsToSFs(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcCloudNormalsToDip(const QMap<QString, QVariant>& params);
     // --- Mesh processing ---
     JsonRPCResult rpcMeshSimplify(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcMeshSmooth(const QMap<QString, QVariant>& params);

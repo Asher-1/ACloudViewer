@@ -261,3 +261,4 @@ docs-output/
 *.cc text eol=lf
 *.c text eol=lf
 *.cu text eol=lf
+agent-integration/examples/test_data
