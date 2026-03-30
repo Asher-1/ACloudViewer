@@ -173,6 +173,21 @@ cli-anything-acloudviewer process cork-boolean mesh1.ply mesh2.ply -o diff.ply -
 
 # VoxFall rockfall / change detection
 cli-anything-acloudviewer process voxfall ref_mesh.ply comp_mesh.ply -o changes.ply --voxel-size 0.05 --azimuth 45 --loss-gain
+
+# Compass — Export measurements
+cli-anything-acloudviewer process compass-export project.bin -o compass_data --format csv
+cli-anything-acloudviewer process compass-export project.bin -o compass_data.xml --format xml
+
+# Compass — Import foliations / lineations from scalar fields
+cli-anything-acloudviewer process compass-import-fol input.ply --dip-sf Dip --dipdir-sf DipDir --plane-size 2.0
+cli-anything-acloudviewer process compass-import-lin input.ply --trend-sf Trend --plunge-sf Plunge --length 2.0
+
+# Compass — Refit planes & P21 intensity
+cli-anything-acloudviewer process compass-refit project.bin
+cli-anything-acloudviewer process compass-p21 input.ply --radius 10.0 --subsample 25 -o p21_output.ply
+
+# SRA — Surface of revolution radial distance
+cli-anything-acloudviewer process sra input.ply -o output.ply --profile profile.txt --axis Z
 ```
 
 ---

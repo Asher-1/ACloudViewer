@@ -66,19 +66,16 @@ void ccThicknessTool::onNewSelection(
 }
 
 // called when a point in a point cloud gets picked while this tool is active
-void ccThicknessTool::pointPicked(ccHObject* insertPoint,
+bool ccThicknessTool::pointPicked(ccHObject* insertPoint,
                                   unsigned itemIdx,
                                   ccHObject* pickedObject,
                                   const CCVector3& P) {
-    if (pickedObject->isA(
-                CV_TYPES::PLANE))  // we want to be able to pick planes
-    {
-        // select the object
+    if (pickedObject->isA(CV_TYPES::PLANE)) {
         m_app->setSelectedInDB(pickedObject, true);
-
-        // call to update selection
         onNewSelection(m_app->getSelectedEntities());
+        return true;
     }
+    return false;
 }
 
 // called when a point in a point cloud gets picked while this tool is active

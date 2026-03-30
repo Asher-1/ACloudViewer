@@ -15,7 +15,13 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `batch-convert` | `batch_convert` | — **(H)** |
 | `process` (subsample, normals, crop, SOR, density, …) | `subsample`, `compute_normals`, `crop`, `sor_filter`, `density`, … | `cloud.subsample`, `cloud.computeNormals`, … **(G)** when routed via RPC; `process crop` is **(H)** |
 | `process delaunay` | `delaunay` | — **(H)** |
-| `process pcv` | `pcv` | — **(H)** |
+| `process pcv` | `pcv` | `process.pcv` **(B)** |
+| `process compass-export` | `compass_export` | — **(H)** |
+| `process compass-refit` | — | — **(H)** |
+| `process compass-p21` | — | — **(H)** |
+| `process compass-import-fol` | — | — **(H)** |
+| `process compass-import-lin` | — | — **(H)** |
+| `process sra` | `sra` | — **(H)** |
 | `process csf` | `csf` | — **(H)** |
 | `process ransac` | `ransac` | — **(H)** |
 | `process m3c2` | `m3c2` | — **(H)** |
@@ -39,6 +45,10 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `process photoscan-settings` | `photoscan_settings` | — **(H)** |
 | `process mesh-io-settings` | `mesh_io_settings` | — **(H)** |
 | `process core-io-settings` | `core_io_settings` | — **(H)** |
+| `process python-script` | `python_script` | — **(H)** |
+| `process mplane` | `mplane` | — **(H)** |
+| `process auto-seg` | `auto_seg` | — **(H)** |
+| `process manual-seg` | `manual_seg` | — **(H)** |
 | `sf` * | `coord_to_sf`, `set_active_sf`, `sf_gradient`, … | `cloud.coordToSf`, `cloud.setActiveSf`, … **(G)** |
 | `normals` * | `octree_normals`, `orient_normals_mst`, … | — **(H)**; GUI cloud ops overlap **(G)** |
 | `cloud` (paint, crop, …) | `cloud_paint_uniform`, `crop`, … | `cloud.paintUniform`, `cloud.crop`, … **(G)** |
@@ -64,6 +74,12 @@ These commands wrap ACloudViewer's native C++ plugin CLI interfaces. They requir
 | CLI Command | Native Flag | Plugin | Description |
 |-------------|-------------|--------|-------------|
 | `process pcv` | `-PCV` | qPCV | Ambient occlusion / sky visibility |
+| `process compass-export` | `-COMPASS_EXPORT` | qCompass | Export compass measurements (CSV/XML/SVG) |
+| `process compass-refit` | `-COMPASS_REFIT` | qCompass | Recalculate fit planes for traces |
+| `process compass-p21` | `-COMPASS_P21` | qCompass | Estimate P21 fracture intensity |
+| `process compass-import-fol` | `-COMPASS_IMPORT_FOL` | qCompass | Import foliations from scalar fields |
+| `process compass-import-lin` | `-COMPASS_IMPORT_LIN` | qCompass | Import lineations from scalar fields |
+| `process sra` | `-SRA` | qSRA | Surface of revolution radial distance |
 | `process csf` | `-CSF` | qCSF | Cloth Simulation ground filtering |
 | `process ransac` | `-RANSAC` | qRANSAC_SD | Shape detection (planes, spheres, etc.) |
 | `process m3c2` | `-M3C2` | qM3C2 | Multiscale cloud comparison |
@@ -87,6 +103,10 @@ These commands wrap ACloudViewer's native C++ plugin CLI interfaces. They requir
 | `process photoscan-settings` | `-PHOTOSCAN` | qPhotoscanIO | Photoscan import settings |
 | `process mesh-io-settings` | `-MESH_IO` | qMeshIO | Mesh IO settings (Assimp) |
 | `process core-io-settings` | `-CORE_IO` | qCoreIO | Core IO settings |
+| `process python-script` | `-PYTHON_SCRIPT` | qPythonRuntime | Run Python script in embedded runtime |
+| `process mplane` | `-MPLANE` | qMPlane | Plane-to-cloud distance computation |
+| `process auto-seg` | `-AUTO_SEG` | qMasonry/qAutoSeg | Automatic masonry segmentation |
+| `process manual-seg` | `-MANUAL_SEG` | qMasonry/qManualSeg | Manual masonry segmentation |
 
 ## Command Group Overview
 

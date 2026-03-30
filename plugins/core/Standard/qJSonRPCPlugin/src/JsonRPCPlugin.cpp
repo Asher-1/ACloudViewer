@@ -27,6 +27,11 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
+#ifdef HAS_PCV_PLUGIN
+#include <PCV.h>
+#include <ecvHObjectCaster.h>
+#endif
+
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -621,6 +626,12 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcMeshVolume(p); });
     reg("mesh.merge",        "Merge multiple meshes: {entity_ids}",
         [this](auto& p){ return rpcMeshMerge(p); });
+
+#ifdef HAS_PCV_PLUGIN
+    // --- Ambient Occlusion (PCV/ShadeVis) ---
+    reg("process.pcv",       "Compute ambient occlusion (PCV): {entity_id, ?ray_count, ?resolution, ?mode_360, ?mesh_closed}",
+        [this](auto& p){ return rpcProcessPcv(p); });
+#endif
 
     // --- Reconstruction ---
     reg("colmap.reconstruct","Run automatic_reconstructor: {image_path, workspace_path, ...}",
@@ -3417,6 +3428,108 @@ JsonRPCResult JsonRPCPlugin::rpcColmapRun(
     result["stderr"] = stdErr.left(2000);
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
+
+#ifdef HAS_PCV_PLUGIN
+// ═══════════════════════════════════════════════════════════════════════════
+// Ambient Occlusion (PCV / ShadeVis)
+// ═══════════════════════════════════════════════════════════════════════════
+
+static constexpr char PCV_SF_NAME[] = "Illuminance (PCV)";
+
+JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
+        const QMap<QString, QVariant>& params) {
+    unsigned entityId = params["entity_id"].toUInt();
+    if (entityId == 0) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameter: entity_id");
+    }
+
+    unsigned rayCount = params.value("ray_count", 256).toUInt();
+    unsigned resolution = params.value("resolution", 1024).toUInt();
+    bool mode360 = params.value("mode_360", true).toBool();
+    bool meshClosed = params.value("mesh_closed", false).toBool();
+
+    ccHObject* entity = findEntity(entityId);
+    if (!entity) {
+        return JsonRPCResult::error(
+                -32602,
+                "Entity not found: " + QString::number(entityId));
+    }
+
+    ccPointCloud* cloud = nullptr;
+    ccGenericMesh* mesh = nullptr;
+
+    if (entity->isA(CV_TYPES::POINT_CLOUD)) {
+        cloud = ccHObjectCaster::ToPointCloud(entity);
+    } else if (entity->isKindOf(CV_TYPES::MESH)) {
+        mesh = ccHObjectCaster::ToGenericMesh(entity);
+        if (mesh) {
+            cloud = ccHObjectCaster::ToPointCloud(
+                    mesh->getAssociatedCloud());
+        }
+    }
+
+    if (!cloud) {
+        return JsonRPCResult::error(
+                -32602,
+                "Entity is not a point cloud or mesh: " +
+                        QString::number(entityId));
+    }
+
+    std::vector<CCVector3d> rays;
+    if (!PCV::GenerateRays(rayCount, rays, mode360)) {
+        return JsonRPCResult::error(5, "Failed to generate ray set");
+    }
+
+    int sfIdx = cloud->getScalarFieldIndexByName(PCV_SF_NAME);
+    if (sfIdx < 0) {
+        sfIdx = cloud->addScalarField(PCV_SF_NAME);
+    }
+    if (sfIdx < 0) {
+        return JsonRPCResult::error(
+                5, "Failed to allocate PCV scalar field");
+    }
+    cloud->setCurrentScalarField(sfIdx);
+
+    bool success = PCV::Launch(rays, cloud, mesh, meshClosed, resolution,
+                               resolution, nullptr, cloud->getName());
+
+    if (!success) {
+        cloud->deleteScalarField(sfIdx);
+        return JsonRPCResult::error(
+                5, "PCV computation failed",
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
+
+    ccScalarField* sf =
+            static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
+    if (sf) {
+        sf->computeMinAndMax();
+        cloud->setCurrentDisplayedScalarField(sfIdx);
+        sf->setColorScale(ccColorScalesManager::GetDefaultScale(
+                ccColorScalesManager::GREY));
+        entity->showNormals(false);
+        entity->showSF(true);
+        if (entity != cloud) {
+            cloud->showSF(true);
+        }
+    }
+
+    redraw();
+
+    QJsonObject result;
+    result["entity_id"] = static_cast<qint64>(entityId);
+    result["ray_count"] = static_cast<qint64>(rays.size());
+    result["resolution"] = static_cast<qint64>(resolution);
+    result["mode_360"] = mode360;
+    result["point_count"] = static_cast<qint64>(cloud->size());
+    if (sf) {
+        result["sf_min"] = sf->getMin();
+        result["sf_max"] = sf->getMax();
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+#endif
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Internal helper

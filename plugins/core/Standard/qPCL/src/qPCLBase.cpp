@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "qPCLBase.h"
+#include "PclCommands.h"
 
 // CV_DB_LIB
 #include <ecvPointCloud.h>
@@ -153,6 +154,10 @@ int qPCL::addPclModule(BasePclModule *module, QList<QAction *> &actions) {
             &qPCL::handleErrorMessage);
 
     return 1;
+}
+
+void qPCL::registerCommands(ccCommandLineInterface* cmd) {
+    PclCommands::RegisterAll(cmd);
 }
 
 void qPCL::onNewSelection(const ccHObject::Container &selectedEntities) {

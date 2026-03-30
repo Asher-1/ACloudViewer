@@ -13,6 +13,8 @@ if (PLUGIN_STANDARD_MASONRY_QAUTO_SEG)
             PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/qAutoSeg.h
             ${CMAKE_CURRENT_LIST_DIR}/qAutoSeg.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/AutoSegCommands.h
+            ${CMAKE_CURRENT_LIST_DIR}/AutoSegCommands.cpp
             ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.h
             ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.cpp
             ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.ui

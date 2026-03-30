@@ -57,23 +57,25 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        // push name for picking
         bool entityPickingMode = MACRO_EntityPicking(context);
+        if (entityPickingMode) {
+            if (MACRO_FastEntityPicking(context)) {
+                return;
+            }
+        }
 
-        // check sphere exists
         if (!c_unitPointMarker) {
-            c_unitPointMarker = QSharedPointer<ccSphere>(
-                    new ccSphere(1.0f, 0, "PointMarker", 6));
-
+            c_unitPointMarker.reset(
+                    new ccSphere(1.0f, nullptr, "PointMarker", 6));
             c_unitPointMarker->showColors(true);
             c_unitPointMarker->setVisible(true);
             c_unitPointMarker->setEnabled(true);
+            c_unitPointMarker->showNormals(true);
         }
 
-        // check arrow parts exist
         if (!c_bodyMarker) {
-            c_bodyMarker = QSharedPointer<ccCylinder>(
-                    new ccCylinder(1.0f, 0.9f, 0, "UnitNormal", 12));
+            c_bodyMarker.reset(
+                    new ccCylinder(1.0f, 0.9f, nullptr, "UnitNormal", 12));
             c_bodyMarker->showColors(true);
             c_bodyMarker->setVisible(true);
             c_bodyMarker->setEnabled(true);
@@ -81,8 +83,8 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             c_bodyMarker->showNormals(false);
         }
         if (!c_headMarker) {
-            c_headMarker = QSharedPointer<ccCone>(new ccCone(
-                    2.5f, 0.0f, 0.1f, 0, 0, 0, "UnitNormalHead", 12));
+            c_headMarker.reset(new ccCone(
+                    2.5f, 0.0f, 0.1f, 0, 0, nullptr, "UnitNormalHead", 12));
             c_headMarker->showColors(true);
             c_headMarker->setVisible(true);
             c_headMarker->setEnabled(true);
@@ -90,63 +92,40 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             c_headMarker->showNormals(false);
         }
 
-        // not sure what this does, but it looks like fun
-        CC_DRAW_CONTEXT markerContext =
-                context;  // build-up point maker own 'context'
-        markerContext.drawingFlags &=
-                (~CC_ENTITY_PICKING);  // we must remove the 'push name flag'
-                                       // so that the sphere doesn't push its
-                                       // own!
+        CC_DRAW_CONTEXT markerContext = context;
+        markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-        // get camera info
         ccGLCameraParameters camera;
         ecvDisplayTools::GetGLCameraParameters(camera);
 
-        // set draw colour
-        c_unitPointMarker->setTempColor(getMeasurementColour());
+        ecvColor::Rgb color = entityPickingMode
+                                      ? ecvColor::Rgb(255, 255, 255)
+                                      : getMeasurementColour();
+        c_unitPointMarker->setTempColor(color);
 
-        // get point size for drawing
-        float pSize = markerContext.defaultPointSize;
+        float pSize = 1.0f;
 
-        // draw points
         const ecvViewportParameters& viewportParams =
                 ecvDisplayTools::GetViewportParameters();
         for (unsigned i = 0; i < size(); i++) {
             const CCVector3* P = getPoint(i);
-            // glFunc->glMatrixMode(GL_MODELVIEW);
-            // glFunc->glPushMatrix();
-            // ccGL::Translate(glFunc, P->x, P->y, P->z);
             markerContext.transformInfo.setTranslationStart(
                     CCVector3(P->x, P->y, P->z));
-            float scale = context.labelMarkerSize * m_relMarkerScale * 0.2 *
-                          fmin(pSize, 4);
+            float scale = context.labelMarkerSize * m_relMarkerScale * 0.2f *
+                          fmin(pSize, 4.0f);
             if (viewportParams.perspectiveView && viewportParams.zFar > 0) {
-                // in perspective view, the actual scale depends on the distance
-                // to the camera!
-                const double* M = camera.modelViewMat.data();
-                double d = (camera.modelViewMat * CCVector3d::fromArray(P->u))
-                                   .norm();
-                double unitD = viewportParams.zFar /
-                               2;  // we consider that the 'standard' scale is
-                                   // at half the depth
-                scale = static_cast<float>(
-                        scale *
-                        sqrt(d /
-                             unitD));  // sqrt = empirical (probably because the
-                                       // marker size is already partly
-                                       // compensated by
-                                       // ecvDisplayTools::computeActualPixelSize())
+                double d = (camera.modelViewMat * (*P)).norm();
+                double unitD = viewportParams.zFar / 2;
+                scale = static_cast<float>(scale * sqrt(d / unitD));
             }
-            // glFunc->glScalef(scale, scale, scale);
             markerContext.transformInfo.setScale(
                     CCVector3(scale, scale, scale));
+            c_unitPointMarker->showNormals(!entityPickingMode);
             c_unitPointMarker->draw(markerContext);
-            // glFunc->glPopMatrix();
         }
 
-        // draw arrow
-        c_bodyMarker->setTempColor(getMeasurementColour());
-        c_headMarker->setTempColor(getMeasurementColour());
+        c_bodyMarker->setTempColor(color);
+        c_headMarker->setTempColor(color);
         if (size() == 2)  // two points
         {
             const CCVector3 start = *getPoint(0);
@@ -172,14 +151,12 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             markerContext.transformInfo.setScale(
                     CCVector3(width, width, length));
 
-            // draw arrow body
             markerContext.transformInfo.setTranslationEnd(
                     CCVector3(0, 0, 0.45f));
             c_bodyMarker->draw(markerContext);
 
-            // draw arrow head
             markerContext.transformInfo.setTranslationEnd(
-                    CCVector3(0, 0, 0.45f));
+                    CCVector3(0, 0, 0.9f));
             c_headMarker->draw(markerContext);
         }
 

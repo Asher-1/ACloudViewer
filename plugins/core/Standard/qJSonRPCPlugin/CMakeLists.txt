@@ -22,4 +22,12 @@ if ( PLUGIN_STANDARD_QJSONRPC )
                                 ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
+    # Optional PCV (ShadeVis) integration: link against QPCV_PLUGIN if built
+    if ( TARGET QPCV_PLUGIN )
+        target_link_libraries( ${PROJECT_NAME} QPCV_PLUGIN )
+        target_include_directories( ${PROJECT_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/plugins/core/Standard/qPCV/include )
+        target_compile_definitions( ${PROJECT_NAME} PRIVATE HAS_PCV_PLUGIN )
+    endif()
+
 endif()

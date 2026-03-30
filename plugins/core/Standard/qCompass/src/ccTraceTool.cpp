@@ -41,10 +41,12 @@ void ccTraceTool::pointPicked(ccHObject* insertPoint,
     // no active trace -> make a new one
     if (!t) {
         t = new ccTrace(cloud);
-        // t->setDisplay(m_window);
+        if (cloud) {
+            cloud->addDependency(t,
+                                 ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
+        }
         t->setVisible(true);
         t->setName("Trace");
-        // t->prepareDisplayForRefresh_recursive();
         m_trace_id = t->getUniqueID();
         insertPoint->addChild(t);
         m_app->addToDB(t, false, false, false, false);
