@@ -49,7 +49,7 @@ All processing commands follow this pattern:
 cli-anything-acloudviewer process <operation> input.ply [input2.ply] -o output.ply [OPTIONS]
 ```
 
-Headless **`process`** exposes 38+ subcommands: core geometry and analysis operations, plus eight plugin-backed commands (`pcv`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough-normals`, `poisson-recon`). See [Plugin Processing Commands](#plugin-processing-commands) below.
+Headless **`process`** exposes 52+ subcommands: core geometry and analysis operations, plus plugin-backed commands (`pcv`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough-normals`, `poisson-recon`, `cork-boolean`, `voxfall`, `3dmasc`, etc.). See [Plugin Processing Commands](#plugin-processing-commands) below.
 
 ### Basic Operations
 
@@ -152,9 +152,11 @@ cli-anything-acloudviewer process ransac input.ply -o output.ply --primitives PL
 
 # M3C2 cloud comparison
 cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt
+cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt --core-points core.ply
 
 # CANUPO classification
 cli-anything-acloudviewer process canupo input.ply -o classified.ply --classifier model.prm
+cli-anything-acloudviewer process canupo input.ply -o classified.ply --classifier model.prm --use-confidence 0.5
 
 # Facet extraction
 cli-anything-acloudviewer process facets input.ply -o output.ply --algo KD_TREE --error-max 0.2 --classify
