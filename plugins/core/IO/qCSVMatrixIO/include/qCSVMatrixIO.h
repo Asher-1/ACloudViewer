@@ -23,4 +23,6 @@ public:
 
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
+
+    void registerCommands(ccCommandLineInterface* cmd) override;
 };

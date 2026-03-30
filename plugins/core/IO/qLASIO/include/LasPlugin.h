@@ -40,4 +40,6 @@ class LasPlugin : public QObject
 
 	// Inherited from ccIOPluginInterface
 	ccIOPluginInterface::FilterList getFilters() override;
+
+	void registerCommands(ccCommandLineInterface* cmd) override;
 };

@@ -9,6 +9,7 @@
 
 // local
 #include "PhotoScanFilter.h"
+#include "PhotoscanCommands.h"
 
 qPhotoscanIO::qPhotoscanIO(QObject* parent)
     : QObject(parent),
@@ -16,4 +17,10 @@ qPhotoscanIO::qPhotoscanIO(QObject* parent)
 
 ccIOPluginInterface::FilterList qPhotoscanIO::getFilters() {
     return {FileIOFilter::Shared(new PhotoScanFilter)};
+}
+
+void qPhotoscanIO::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) return;
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandPhotoscan));
 }
