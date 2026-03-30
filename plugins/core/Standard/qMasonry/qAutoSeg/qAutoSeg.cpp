@@ -9,6 +9,10 @@
 
 #include "qAutoSeg.h"
 
+#include <cassert>
+
+#include "AutoSegCommands.h"
+
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -2357,4 +2361,13 @@ void ccAutoSeg::doAction() {
         m_app->addToDB(mortarMaps, true, true, false, true);
 
     m_app->setView(CC_FRONT_VIEW);
+}
+
+void ccAutoSeg::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandAutoSeg));
 }

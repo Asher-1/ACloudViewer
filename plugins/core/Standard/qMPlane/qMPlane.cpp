@@ -7,6 +7,8 @@
 
 #include <QtGui>
 
+#include <cassert>
+
 // CV
 #include "DistanceComputationTools.h"
 #include "ecvHObject.h"
@@ -17,6 +19,7 @@
 
 // Local dependencies
 #include "qMPlane.h"
+#include "MPlaneCommands.h"
 
 qMPlane::qMPlane(QObject *parent)
     : QObject(parent),
@@ -60,4 +63,13 @@ void qMPlane::doAction() {
         m_controller = std::make_unique<ccMPlaneDlgController>(m_app);
     }
     m_controller->openDialog(m_selectedCloud);
+}
+
+void qMPlane::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandMPlane));
 }

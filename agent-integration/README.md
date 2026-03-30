@@ -235,7 +235,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **48+ methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **50+ methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 
@@ -319,6 +319,11 @@ for the live catalog.
 | `mesh.volume` | `{entity_id}` | Compute enclosed volume |
 | `mesh.merge` | `{entity_ids}` | Group multiple meshes |
 
+### Plugin Processing
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `process.pcv` | `{entity_id, ?ray_count, ?resolution, ?mode_360, ?mesh_closed}` | Ambient occlusion (PCV/ShadeVis) |
+
 ### Reconstruction
 | Method | Parameters | Description |
 |--------|-----------|-------------|
@@ -333,7 +338,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **119 tools** (integration tests cover the full set) for AI agent use:
+The MCP server exposes **122 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|
@@ -349,6 +354,7 @@ The MCP server exposes **119 tools** (integration tests cover the full set) for 
 | **Mesh Processing** | `mesh_simplify`, `mesh_smooth`, `mesh_subdivide`, `mesh_sample_points`, `mesh_volume`, `extract_vertices`, `flip_triangles`, `merge_meshes` |
 | **Mesh (GUI)** | `mesh_extract_vertices_gui`, `mesh_flip_triangles_gui`, `mesh_volume_gui`, `mesh_merge_gui` |
 | **Advanced Processing** | `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding`, `extract_connected_components`, `approx_density`, `geometric_feature`, `moment`, `best_fit_plane`, `rasterize`, `stat_test` |
+| **Plugin Processing** | `pcv`, `compass_export`, `sra` |
 | **Misc** | `remove_rgb`, `remove_scan_grids`, `match_centers`, `drop_global_shift`, `closest_point_set`, `merge_clouds` |
 | **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model`, `colmap_run` |
 | **SIBR** | `sibr_viewer`, `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
@@ -503,6 +509,29 @@ cli-anything-acloudviewer process match-centers source.ply target.ply -o centere
 cli-anything-acloudviewer process drop-global-shift input.ply -o local.ply
 cli-anything-acloudviewer process closest-point-set input.ply reference.ply -o closest.ply
 cli-anything-acloudviewer process remove-scan-grids input.ply -o cleaned.ply
+```
+
+#### Plugin Processing
+
+```bash
+# PCV ambient occlusion
+cli-anything-acloudviewer process pcv input.ply -o ao.ply --n-rays 256 --resolution 1024
+cli-anything-acloudviewer process pcv input.ply -o ao.ply --mode-180 --is-closed
+
+# Compass — export measurements
+cli-anything-acloudviewer process compass-export project.bin -o data --format csv
+cli-anything-acloudviewer process compass-export project.bin -o data.xml --format xml
+
+# Compass — import foliations / lineations from scalar fields
+cli-anything-acloudviewer process compass-import-fol input.ply --dip-sf Dip --dipdir-sf DipDir --plane-size 2.0
+cli-anything-acloudviewer process compass-import-lin input.ply --trend-sf Trend --plunge-sf Plunge --length 2.0
+
+# Compass — refit planes, P21 intensity
+cli-anything-acloudviewer process compass-refit project.bin
+cli-anything-acloudviewer process compass-p21 input.ply --radius 10.0 --subsample 25 -o p21.ply
+
+# SRA surface of revolution radial distance
+cli-anything-acloudviewer process sra input.ply -o output.ply --profile profile.txt --axis Z
 ```
 
 ### Scalar Field Operations

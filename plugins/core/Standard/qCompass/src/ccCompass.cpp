@@ -20,11 +20,14 @@
 // CV_DB_LIB
 #include <ecvBox.h>
 #include <ecvDisplayTools.h>
+#include <ecvExternalFactory.h>
+#include <ecvGenericPrimitive.h>
 #include <ecvProgressDialog.h>
 #include <qcombobox.h>
 
 // LOCAL
 #include "ccCompass.h"
+#include "ccCompassCommands.h"
 #include "ccCompassDlg.h"
 #include "ccCompassInfo.h"
 #include "ccFitPlaneTool.h"
@@ -46,6 +49,21 @@ bool ccCompass::fitPlanes = true;
 int ccCompass::costMode = ccTrace::DARK;
 bool ccCompass::mapMode = false;
 int ccCompass::mapTo = ccGeoObject::LOWER_BOUNDARY;
+
+class CompassFactory : public ccExternalFactory {
+public:
+    CompassFactory() : ccExternalFactory("Compass") {}
+
+    ccHObject* buildObject(const QString& metaName) override {
+        if (metaName == ccTrace::GetClassName()) {
+            return new ccTrace;
+        }
+
+        CVLog::Warning(
+                "[CompassFactory::buildObject] Unknown object: " + metaName);
+        return nullptr;
+    }
+};
 
 ccCompass::ccCompass(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qCompass/info.json") {
@@ -151,11 +169,11 @@ void ccCompass::onNewSelection(const ccHObject::Container& selectedEntities) {
 
 // Submit the action to launch ccCompass to CC
 QList<QAction*> ccCompass::getActions() {
-    // default action (if it has not been already created, it's the moment to do
-    // it)
-    if (!m_action)  // this is the action triggered by clicking the "Compass"
-                    // button in the plugin menu
-    {
+    ccExternalFactory::Container::Shared container =
+            ccExternalFactory::Container::GetUniqueInstance();
+    container->addFactory(new CompassFactory);
+
+    if (!m_action) {
         // here we use the default plugin name, description and icon,
         // but each action can have its own!
         m_action = new QAction(getName(), this);
@@ -169,6 +187,23 @@ QList<QAction*> ccCompass::getActions() {
     }
 
     return QList<QAction*>{m_action};
+}
+
+void ccCompass::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassExport));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassImportFoliations));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassImportLineations));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassRefit));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassP21));
 }
 
 // Called by CC when the plugin should be activated - sets up the plugin and
@@ -337,24 +372,46 @@ void ccCompass::tryLoading() {
         ccHObject* original = m_app->dbRootObject()->find(originals[i]);
         ccHObject* replacement = replacements[i];
 
+        if (!original)
+            continue;
+        if (!replacement)
+            continue;
+
         replacement->setVisible(original->isVisible());
         replacement->setEnabled(original->isEnabled());
 
-        if (!original)  // can't find for some reason?
-            continue;
-        if (!replacement)  // can't find for some reason?
-            continue;
-
-        // steal all the children
+        // steal children selectively (skip arrays and vertex clouds)
+        ccHObject::Container toDetach;
         for (unsigned c = 0; c < original->getChildrenNumber(); c++) {
-            replacement->addChild(original->getChild(c));
+            ccHObject* child = original->getChild(c);
+            if (child->isKindOf(CV_TYPES::ARRAY)) {
+                continue;
+            }
+            if (original->isKindOf(CV_TYPES::POLY_LINE)) {
+                if (dynamic_cast<ccHObject*>(
+                            static_cast<ccPolyline*>(original)
+                                    ->getAssociatedCloud()) == child) {
+                    continue;
+                }
+            } else if (original->isKindOf(CV_TYPES::PRIMITIVE)) {
+                if (static_cast<ccGenericPrimitive*>(original)
+                                ->getAssociatedCloud() == child) {
+                    continue;
+                }
+            }
+            replacement->addChild(child);
+            toDetach.push_back(child);
         }
 
-        // remove them from the orignal parent
-        original->detachAllChildren();
+        while (!toDetach.empty()) {
+            original->detachChild(toDetach.back());
+            toDetach.pop_back();
+        }
 
         // add new parent to scene graph
-        original->getParent()->addChild(replacement);
+        if (original->getParent()) {
+            original->getParent()->addChild(replacement);
+        }
 
         // delete originals
         m_app->removeFromDB(original);
@@ -432,9 +489,11 @@ void ccCompass::tryLoading(ccHObject* obj,
         // are we a trace?
         if (ccTrace::isTrace(obj)) {
             ccTrace* trace = new ccTrace(p);
+            ccHObject* cloud = dynamic_cast<ccHObject*>(p->getAssociatedCloud());
+            if (cloud) {
+                cloud->addDependency(trace, ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
+            }
             trace->setWidth(2);
-            // add to originals/duplicates list [these are used later to
-            // overwrite the originals]
             originals->push_back(obj->getUniqueID());
             replacements->push_back(trace);
             return;
@@ -698,23 +757,18 @@ void ccCompass::pointPicked(
     parentNode->setEnabled(true);
 
     // call generic "point-picked" function of active tool
-    m_activeTool->pointPicked(parentNode, itemIdx, entity, P);
+    if (!m_activeTool->pointPicked(parentNode, itemIdx, entity, P)) {
+        // have we picked a point cloud?
+        if (entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+            // get point cloud
+            ccPointCloud* cloud =
+                    static_cast<ccPointCloud*>(entity);
 
-    // have we picked a point cloud?
-    if (entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        // get point cloud
-        ccPointCloud* cloud =
-                static_cast<ccPointCloud*>(entity);  // cast to point cloud
-
-        if (!cloud) {
-            CVLog::Warning(
-                    tr("[Item picking] Shit's fubar (Picked point is not in "
-                       "pickable entities DB?)!"));
-            return;
+            // pass picked point, cloud & insert point to relevant tool
+            m_activeTool->pointPicked(parentNode, itemIdx, cloud, P);
+        } else {
+            CVLog::Error(tr("Invalid entity type"));
         }
-
-        // pass picked point, cloud & insert point to relevant tool
-        m_activeTool->pointPicked(parentNode, itemIdx, cloud, P);
     }
 
     // redraw
@@ -758,7 +812,7 @@ void ccCompass::onAccept() {
 // returns true if object was created by ccCompass
 bool ccCompass::madeByMe(ccHObject* object) {
     // return isFitPlane(object) | isTrace(object) | isLineation(object);
-    return object->hasMetaData(tr("ccCompassType"));
+    return object->hasMetaData("ccCompassType");
 }
 
 // undo last plane
@@ -2971,18 +3025,18 @@ void ccCompass::estimateStrain() {
                         ellipses->addChild(ellipse);
 
                         // store strain tensor on the graphic for reference
-                        QVariantMap* map = new QVariantMap();
-                        map->insert("Exx", U.getValue(0, 0) - 1.0);
-                        map->insert("Exy", U.getValue(0, 1));
-                        map->insert("Exz", U.getValue(0, 2));
-                        map->insert("Eyx", U.getValue(1, 0));
-                        map->insert("Eyy", U.getValue(1, 1) - 1.0);
-                        map->insert("Eyz", U.getValue(1, 2));
-                        map->insert("Ezx", U.getValue(2, 0));
-                        map->insert("Ezy", U.getValue(2, 1));
-                        map->insert("Ezz", U.getValue(2, 2) - 1.0);
-                        map->insert("J", J);
-                        ellipse->setMetaData(*map, true);
+                        QVariantMap map;
+                        map.insert("Exx", U.getValue(0, 0) - 1.0);
+                        map.insert("Exy", U.getValue(0, 1));
+                        map.insert("Exz", U.getValue(0, 2));
+                        map.insert("Eyx", U.getValue(1, 0));
+                        map.insert("Eyy", U.getValue(1, 1) - 1.0);
+                        map.insert("Eyz", U.getValue(1, 2));
+                        map.insert("Ezx", U.getValue(2, 0));
+                        map.insert("Ezy", U.getValue(2, 1));
+                        map.insert("Ezz", U.getValue(2, 2) - 1.0);
+                        map.insert("J", J);
+                        ellipse->setMetaData(map, true);
 
                         // create cubes to highlight gridding
                         ccGLMatrix T;

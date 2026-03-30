@@ -34,7 +34,7 @@ public:
 
     // called when a point in a point cloud gets picked while this tool is
     // active
-    virtual void pointPicked(ccHObject* insertPoint,
+    virtual bool pointPicked(ccHObject* insertPoint,
                              unsigned itemIdx,
                              ccHObject* pickedObject,
                              const CCVector3& P) override;

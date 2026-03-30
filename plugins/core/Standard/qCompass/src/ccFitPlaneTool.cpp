@@ -44,46 +44,47 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
                                  unsigned itemIdx,
                                  ccPointCloud* cloud,
                                  const CCVector3& P) {
-    // get or generate octree
     ccOctree::Shared oct = cloud->getOctree();
     if (!oct) {
-        oct = cloud->computeOctree();  // if the user clicked "no" when asked to
-                                       // compute the octree then tough....
+        oct = cloud->computeOctree();
+        if (!oct) {
+            m_app->dispToConsole(
+                    "[ccFitPlaneTool] Failed to compute the cloud octree",
+                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+            return;
+        }
     }
 
-    // nearest neighbour search
-    float r = m_mouseCircle->getRadiusWorld();
+    PointCoordinateType r =
+            static_cast<PointCoordinateType>(m_mouseCircle->getRadiusWorld());
     unsigned char level =
             oct->findBestLevelForAGivenNeighbourhoodSizeExtraction(r);
     cloudViewer::DgmOctree::NeighboursSet set;
-    int n = oct->getPointsInSphericalNeighbourhood(P, PointCoordinateType(r),
-                                                   set, level);
-    // Put data in a point cloud class and encapsulate as a "neighbourhood"
+    int n = oct->getPointsInSphericalNeighbourhood(P, r, set, level);
     cloudViewer::DgmOctreeReferenceCloud nCloud(&set, n);
-    cloudViewer::Neighbourhood Z(&nCloud);
 
-    // Fit plane!
-    double rms = 0.0;  // output for rms
+    double rms = 0.0;
     ccFitPlane* pPlane = ccFitPlane::Fit(&nCloud, &rms);
 
-    if (pPlane)  // valid fit
-    {
-        pPlane->updateAttributes(rms, m_mouseCircle->getRadiusWorld());
+    if (pPlane) {
+        pPlane->copyGlobalShiftAndScale(*cloud);
 
-        // make plane to add to display
+        const ecvViewportParameters& viewportParams =
+                ecvDisplayTools::GetViewportParameters();
+        CCVector3d viewDir = viewportParams.getViewDir();
+        if (pPlane->getNormal().toDouble().dot(viewDir) > 0) {
+            pPlane->flip();
+        }
+
+        pPlane->updateAttributes(rms, r);
+
         pPlane->setVisible(true);
         pPlane->setSelectionBehavior(ccHObject::SELECTION_IGNORED);
 
-        // add plane to scene graph
         insertPoint->addChild(pPlane);
-        // pPlane->setDisplay(m_app->getActiveWindow());
-        // pPlane->prepareDisplayForRefresh_recursive(); //not sure what this
-        // does, but it looks like fun
 
-        // add plane to TOC
         m_app->addToDB(pPlane, false, false, false, false);
 
-        // report orientation to console for convenience
         m_app->dispToConsole(
                 QString("[ccCompass] Surface orientation estimate = " +
                         pPlane->getName()),

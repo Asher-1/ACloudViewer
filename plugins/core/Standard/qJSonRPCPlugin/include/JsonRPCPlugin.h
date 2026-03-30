@@ -135,6 +135,10 @@ private:
     // --- Reconstruction ---
     JsonRPCResult rpcColmapReconstruct(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcColmapRun(const QMap<QString, QVariant>& params);
+#ifdef HAS_PCV_PLUGIN
+    // --- Ambient Occlusion (PCV/ShadeVis) ---
+    JsonRPCResult rpcProcessPcv(const QMap<QString, QVariant>& params);
+#endif
 
     QAction* m_action{nullptr};
     JsonRPCServer rpc_server;

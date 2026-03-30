@@ -23,12 +23,21 @@ if (PLUGIN_STANDARD_QPCL)
     
     #PCL bridge library
     add_subdirectory(PclAlgorithms)
+
+    if (TARGET 3rdparty_pcl)
+        target_link_libraries( ${PROJECT_NAME} 3rdparty_pcl)
+    endif()
+    if (NOT PCL_INCLUDE_DIRS AND TARGET pcl_common)
+        get_target_property(PCL_INCLUDE_DIRS pcl_common INTERFACE_INCLUDE_DIRECTORIES)
+    endif()
     
     include_directories( ${PCL_INCLUDE_DIRS} )
     include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_SOURCE_DIR} )
     include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_BINARY_DIR} )
     
-    target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
+    if (TARGET QPCL_PLUGIN_ALGORIGHM_LIB)
+        target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
+    endif()
 
     # PCL NURBS support (moved from VtkEngine)
     option(WITH_PCL_NURBS "Use PCL on_nurbs module or not" OFF)

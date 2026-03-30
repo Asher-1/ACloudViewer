@@ -11,6 +11,7 @@
 #include "distanceMapGenerationDlg.h"
 #include "profileImportDlg.h"
 #include "profileLoader.h"
+#include "qSRACommands.h"
 
 // Qt
 #include <QFile>
@@ -43,6 +44,15 @@ qSRA::qSRA(QObject* parent /*=0*/)
       m_doLoadProfile(0),
       m_doCompareCloudToProfile(0),
       m_doProjectCloudDists(0) {}
+
+void qSRA::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandSRARadialDist));
+}
 
 QList<QAction*> qSRA::getActions() {
     // actions

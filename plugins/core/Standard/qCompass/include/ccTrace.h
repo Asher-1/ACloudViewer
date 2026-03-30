@@ -56,12 +56,12 @@ drawn as bubbles.
 */
 class ccTrace : public ccPolyline, public ccMeasurement {
 public:
-    ccTrace(ccPointCloud* associatedCloud);
-    ccTrace(ccPolyline* obj);  // used for constructing from polylines with the
-                               // correct metadata
+    ccTrace(ccPointCloud* associatedCloud = nullptr);
+    ccTrace(ccPolyline* obj);
     virtual ~ccTrace() {}
 
-    // inherited from ccHObject
+    static QString GetClassName() { return "CompassTrace"; }
+
     inline virtual CV_CLASS_ENUM getClassID() const override {
         return CV_TYPES::POLY_LINE;
     }
