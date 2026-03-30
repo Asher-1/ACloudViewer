@@ -157,9 +157,9 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 |-------|-------|-------------|
 | 1 | C++ plugin source, build, dispatch table, SIBR commands | cmake (optional) |
 | 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
-| 3 | Format conversion, subsample, normals, batch, PLY→ASC/BIN/VTK | `ACloudViewer binary` |
+| 3 | Format conversion (incl. LAZ, SHP, PTX load, DXF export), round-trip checks, `process crop`, subsample, normals, batch, CLI surface | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
-| 5 | MCP tools (processing, Colmap, SIBR), entry point | `mcp` Python package |
+| 5 | MCP tools (119 tools, names, Colmap, SIBR), entry point | `mcp` Python package |
 
 ## Architecture
 
@@ -267,7 +267,7 @@ for the live catalog.
 |--------|-----------|-------------|
 | `cloud.computeNormals` | `{entity_id, ?radius}` | Estimate normals |
 | `cloud.subsample` | `{entity_id, method, ?step, ?count}` | Subsample |
-| `cloud.crop` | `{entity_id, min_x..max_z}` | Crop by bbox |
+| `cloud.crop` | `{entity_id, min_x, min_y, min_z, max_x, max_y, max_z}` | Crop by axis-aligned bbox |
 | `cloud.getScalarFields` | `{entity_id}` | List scalar fields |
 | `cloud.paintUniform` | `{entity_id, r, g, b}` | Paint uniform color |
 | `cloud.paintByHeight` | `{entity_id, ?axis}` | Colorize by height |
@@ -333,7 +333,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **95+ tools** for AI agent use:
+The MCP server exposes **119 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|
@@ -357,9 +357,11 @@ The MCP server exposes **95+ tools** for AI agent use:
 
 ## CLI Command Reference
 
+In `cli-anything-acloudviewer --help`, each command group is tagged **`[GUI]`** (needs a running app and JSON-RPC) or **`[Headless]`** (file-based / binary), matching how the CLI labels groups.
+
 > **Quick Reference**: See [docs/CLI-QUICK-REFERENCE.md](docs/CLI-QUICK-REFERENCE.md) for a comprehensive command cheat sheet and usage patterns.
 > 
-> **Command Groups**: See [docs/COMMAND-MAPPING.md](docs/COMMAND-MAPPING.md) for command group relationships and equivalences between `process`, `sf`, and `normals` commands.
+> **Command Groups**: See [docs/COMMAND-MAPPING.md](docs/COMMAND-MAPPING.md) for command group relationships and equivalences between `process`, `sf`, and `normals` commands (`sf` and `normals` are alias groups for the corresponding `process` subcommands).
 
 ### REPL Mode
 
@@ -392,8 +394,10 @@ cli-anything-acloudviewer scene remove 42           # remove entity
 cli-anything-acloudviewer scene show 42             # make visible
 cli-anything-acloudviewer scene hide 42             # make hidden
 cli-anything-acloudviewer scene select 42 43 44     # select entities
-cli-anything-acloudviewer clear                     # clear all
+cli-anything-acloudviewer scene clear               # remove all entities from the scene
 ```
+
+The top-level `clear` command is deprecated; use `scene clear` instead.
 
 ### View Control (GUI mode)
 
@@ -411,6 +415,8 @@ cli-anything-acloudviewer view pointsize +           # increase point size
 cli-anything-acloudviewer view pointsize -           # decrease point size
 ```
 
+The dockable **Console** widget uses a monospace font for log and command output.
+
 ### Processing (Headless)
 
 #### Basic Operations
@@ -418,6 +424,7 @@ cli-anything-acloudviewer view pointsize -           # decrease point size
 ```bash
 cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
 cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
+cli-anything-acloudviewer process crop input.ply -o cropped.ply --min-x -1 --min-y -1 --min-z -1 --max-x 1 --max-y 1 --max-z 1
 cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply --iterations 100
 cli-anything-acloudviewer process sor input.ply -o clean.ply --knn 6 --sigma 1.0
 ```

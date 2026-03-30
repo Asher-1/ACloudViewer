@@ -10,6 +10,10 @@
 // dialog
 #include "ui_poissonReconParamDlg.h"
 
+#include "qPoissonReconCommands.h"
+
+#include <ecvCommandLineInterface.h>
+
 // Qt
 #include <QDialog>
 #include <QInputDialog>
@@ -473,4 +477,13 @@ void qPoissonRecon::doAction() {
     m_app->updateUI();
     // currently selected entities appearance may have changed!
     m_app->refreshAll();
+}
+
+void qPoissonRecon::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandPoissonRecon));
 }

@@ -12,6 +12,8 @@
 // qCC_db
 #include <ecvHObject.h>
 
+class ccCommandLineInterface;
+
 class qVoxFall : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
@@ -25,6 +27,7 @@ public:
     // Inherited from ccStdPluginInterface
     void onNewSelection(const ccHObject::Container &selectedEntities) override;
     QList<QAction *> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface *cmd) override;
 
 private:
     void doAction();

@@ -7,6 +7,12 @@
 
 #include "qVoxFall.h"
 
+#include "qVoxFallCommands.h"
+
+#include <ecvCommandLineInterface.h>
+
+#include <cassert>
+
 // Qt
 #include <QMainWindow>
 
@@ -95,4 +101,13 @@ void qVoxFall::doAction() {
 
     //'Compute' may change some parameters of the dialog
     dlg.saveParamsToPersistentSettings();
+}
+
+void qVoxFall::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandVoxFall));
 }

@@ -58,6 +58,84 @@ together to enable full end to end pipelines:
 
 For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/documentation/).
 
+---
+
+## AI Agent Integration
+
+ACloudViewer can be controlled by AI agents — [OpenClaw](https://github.com/openclaw),
+[Cursor](https://cursor.sh), [Claude Code](https://docs.anthropic.com/en/docs/claude-code),
+or any MCP-compatible tool — through a unified integration layer with three interfaces:
+
+| Interface | Protocol | Typical Use |
+|-----------|----------|-------------|
+| **JSON-RPC Plugin** | WebSocket `ws://localhost:6001` | Real-time GUI control — load files, run algorithms, capture screenshots from agent code |
+| **MCP Server** | Model Context Protocol (stdio) | Native integration with Cursor IDE, Claude Code, OpenClaw |
+| **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing, CI pipelines |
+
+### Quick start
+
+```bash
+# 1. Install the CLI harness (headless or GUI control)
+pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
+
+# 2. Convert point cloud formats (headless — no GUI needed)
+cli-anything-acloudviewer --mode headless convert input.ply output.pcd
+
+# 3. Subsample with spatial voxel grid
+cli-anything-acloudviewer --mode headless process subsample input.ply -o sub.ply --voxel-size 0.05
+
+# 4. Compute normals
+cli-anything-acloudviewer --mode headless process normals input.ply -o normals.ply
+
+# 5. Start MCP server (auto-detects running GUI or falls back to headless)
+cli-anything-acloudviewer-mcp --mode auto
+```
+
+### What's included
+
+| Component | Scope |
+|-----------|-------|
+| **121 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, Colmap reconstruction, view control, scene management |
+| **67 JSON-RPC methods** | Full GUI automation — load, transform, filter, screenshot, export |
+| **35+ CLI commands** | `convert`, `process` (subsample, normals, density, curvature, SOR, ICP, Delaunay, …), `view`, `scene`, `colmap` |
+| **40+ file formats** | PLY, PCD, LAS/LAZ, E57, FBX, OBJ, STL, DRC, SBF, VTK, ASC, XYZ, CSV, PTS, … |
+
+Headless mode invokes the ACloudViewer binary directly (no Python bindings needed),
+supporting all plugin-provided formats (LAS/LAZ, E57, FBX, PCD, Draco).
+
+Enable the JSON-RPC plugin at build time: `-DPLUGIN_STANDARD_QJSONRPC=ON`
+
+Browse all available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/).
+See [`agent-integration/`](agent-integration/) for full documentation, MCP tool reference,
+and the [unified test suite](agent-integration/tests/) (267 tests across 5 levels).
+
+---
+
+## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
+
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SIBR_viewer.png">
+</p>
+
+ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
+enabling real-time **3D Gaussian Splatting** rendering and novel view synthesis directly within the application.
+
+| Viewer | Description |
+|--------|-------------|
+| **3D Gaussian Splatting** | Real-time CUDA-accelerated rendering of trained 3DGS models (`.ply` splat files) |
+| **Remote Gaussian** | Live connection to a running 3DGS training process for real-time monitoring |
+| **ULR / ULR v2** | Unstructured Lumigraph Rendering for novel view synthesis |
+| **Textured Mesh & Point-Based** | IBR dataset visualization with scene debug overlays |
+
+Key features:
+* **Bidirectional interaction** — Select entities in ACloudViewer, auto-detect best viewer, import results back with auto-zoom
+* **No separate install** — The SIBR viewers are built as an ACloudViewer plugin, launchable from the GUI toolbar
+* **Multi-format ingest** — Load Colmap reconstructions, SIBR datasets, or raw 3DGS `.ply` files
+
+Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
+See [qSIBR plugin documentation](plugins/core/Standard/qSIBR/README.md) for details.
+
+---
 
 ## Python quick start
 
@@ -138,59 +216,6 @@ Please stay tuned for MacOS. Download ACloudViewer from the [release page](https
 </tr>
 </table>
 
-
-## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SIBR_viewer.png">
-</p>
-
-ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
-enabling real-time **3D Gaussian Splatting** rendering and novel view synthesis directly within the application.
-
-Key capabilities:
-* **3D Gaussian Splatting Viewer** — Real-time CUDA-accelerated rendering of trained 3DGS models
-* **Remote Gaussian Viewer** — Live connection to a running 3DGS training process for monitoring
-* **ULR / ULR v2 Viewer** — Unstructured Lumigraph Rendering for novel view synthesis
-* **Textured Mesh & Point-Based Viewers** — View IBR datasets with scene debug overlays
-* **Bidirectional interaction** — Select entities in ACloudViewer, auto-detect best viewer, import results back with auto-zoom
-
-Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
-See [qSIBR plugin documentation](plugins/core/Standard/qSIBR/README.md) for details.
-
-## AI Agent Integration
-
-ACloudViewer can be controlled by AI agents (OpenClaw, Cursor, Claude Code) through
-a unified integration layer providing three interfaces:
-
-| Interface | Protocol | Use Case |
-|-----------|----------|----------|
-| **JSON-RPC Plugin** | WebSocket (port 6001) | Real-time GUI control from agents |
-| **MCP Server** | Model Context Protocol (stdio) | OpenClaw, Cursor IDE, Claude Code |
-| **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing |
-
-```bash
-# Install the CLI harness (headless or GUI control)
-pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
-
-# Convert point cloud formats
-cli-anything-acloudviewer --mode headless convert input.ply output.pcd
-
-# Subsample with voxel grid
-cli-anything-acloudviewer --mode headless process subsample input.ply -o sub.ply --voxel-size 0.05
-
-# Start MCP server for AI agent frameworks
-cli-anything-acloudviewer-mcp --mode auto
-```
-
-The headless mode invokes the ACloudViewer binary directly (no Python bindings needed),
-supporting all 40+ file formats including plugin-provided ones (LAS/LAZ, E57, FBX, PCD, Draco).
-
-Enable the JSON-RPC plugin with `-DPLUGIN_STANDARD_QJSONRPC=ON` at build time.
-
-Browse available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/).
-See [agent-integration/](agent-integration/) for full documentation, MCP tool reference,
-and the unified test suite.
 
 ## CloudViewer App & CloudViewer-ML
 

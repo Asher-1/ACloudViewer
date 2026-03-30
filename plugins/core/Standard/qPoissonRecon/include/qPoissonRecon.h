@@ -9,6 +9,8 @@
 
 #include "ecvStdPluginInterface.h"
 
+class ccCommandLineInterface;
+
 //! Wrapper to the "Poisson Surface Reconstruction (Version 9)" algorithm
 /** "Poisson Surface Reconstruction", M. Kazhdan, M. Bolitho, and H. Hoppe
         Symposium on Geometry Processing (June 2006), pages 61--70
@@ -31,6 +33,7 @@ public:
     virtual void onNewSelection(
             const ccHObject::Container& selectedEntities) override;
     virtual QList<QAction*> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected:
     //! Slot called when associated ation is triggered

@@ -18,16 +18,19 @@
 
 // cloudViewer
 #include <AutoSegmentationTools.h>
+#include <DistanceComputationTools.h>
 #include <ReferenceCloud.h>
 
 // System
 #include <unordered_set>
 
 class QAction;
+class ccCommandLineInterface;
 class ccHObject;
 class ccPointCloud;
 class ccPolyline;
 class ccFacet;
+class ecvProgressDialog;
 
 //! Facet detection plugin (BRGM)
 /** BRGM: BUREAU DE RECHERCHES GEOLOGIQUES ET MINIERES - http://www.brgm.fr/
@@ -49,6 +52,69 @@ public:
     virtual void onNewSelection(
             const ccHObject::Container& selectedEntities) override;
     virtual QList<QAction*> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
+
+    //! Set of facets (pointers)
+    typedef std::unordered_set<ccFacet*> FacetSet;
+
+    //! Parameters for headless (CLI) facet extraction
+    struct FacetsParams {
+        bool extractFacets = false;
+        CellsFusionDlg::Algorithm algo = CellsFusionDlg::ALGO_KD_TREE;
+        double kdTreeFusionMaxAngleDeg = 20.0;
+        double kdTreeFusionMaxRelativeDistance = 1.0;
+        unsigned octreeLevel = 8;
+        bool useRetroProjectionError = false;
+        double errorMaxPerFacet = 0.2;
+        unsigned minPointsPerFacet = 10;
+        double maxEdgeLength = 1.0;
+        cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure =
+                cloudViewer::DistanceComputationTools::MAX_DIST_99_PERCENT;
+        bool classifyFacetsByAngle = false;
+        double classifAngleStep = 30.0;
+        double classifMaxDist = 1.0;
+        bool exportFacets = false;
+        QString shapeFilename = "facets.shp";
+        bool useNativeOrientation = true;
+        bool useGlobalOrientation = false;
+        bool useCustomOrientation = false;
+        double nX = 0, nY = 0, nZ = 1;
+        bool exportFacetsInfo = false;
+        QString csvFilename = "facets.csv";
+        bool coordsInCsv = false;
+    };
+
+    //! Headless facet extraction (used by CLI command)
+    static ccHObject* ExecuteFacetExtraction(
+            ccPointCloud* cloud,
+            const FacetsParams& params,
+            bool& error,
+            ecvProgressDialog* progressDlg = nullptr);
+
+    //! Headless facet export to shapefile
+    static bool ExecuteExportFacets(
+            const FacetSet& facets,
+            const QString& filename,
+            bool useNativeOrientation,
+            bool useGlobalOrientation,
+            bool useCustomOrientation,
+            double nX,
+            double nY,
+            double nZ,
+            bool silentMode);
+
+    //! Headless facet info export to CSV
+    static bool ExecuteExportFacetsInfo(
+            const FacetSet& facets,
+            const QString& filename,
+            bool coordsInCsv,
+            bool useNativeOrientation,
+            bool useGlobalOrientation,
+            bool useCustomOrientation,
+            double nX,
+            double nY,
+            double nZ,
+            bool silentMode);
 
 protected slots:
 
@@ -81,9 +147,6 @@ protected:
                             double maxEdgeLength,
                             bool randomColors,
                             bool& error);
-
-    //! Set of facets (pointers)
-    typedef std::unordered_set<ccFacet*> FacetSet;
 
     //! Returns all the facets in the current selection
     void getFacetsInCurrentSelection(FacetSet& facets) const;
