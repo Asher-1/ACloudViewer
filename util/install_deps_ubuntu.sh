@@ -34,6 +34,7 @@ deps=(
     # RealSense
     apt-transport-https
     libudev-dev
+    libusb-1.0-0-dev
     autoconf
     libtool
 )

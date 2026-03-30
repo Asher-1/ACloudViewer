@@ -25,8 +25,10 @@ function(cloudViewer_make_cuda_architectures cuda_archs)
             # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
             # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
             find_package(CUDAToolkit REQUIRED)
-            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.0")
                 set(${cuda_archs} 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+                set(${cuda_archs} 75-real 80-real 86-real)               # Turing, Ampere (SM 89/90 need CUDA 12+)
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
                 set(${cuda_archs} 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
