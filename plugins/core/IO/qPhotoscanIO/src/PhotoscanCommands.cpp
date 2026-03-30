@@ -14,7 +14,7 @@ static const char COMMAND_PS_LOAD_KEYPOINTS[] = "LOAD_KEYPOINTS";
 static const char COMMAND_PS_LOAD_CAMERAS[] = "LOAD_CAMERAS";
 
 CommandPhotoscan::CommandPhotoscan()
-        : ccCommandLineInterface::Command("Photoscan", COMMAND_PHOTOSCAN) {}
+    : ccCommandLineInterface::Command("Photoscan", COMMAND_PHOTOSCAN) {}
 
 bool CommandPhotoscan::process(ccCommandLineInterface& cmd) {
     cmd.print("[PHOTOSCAN]");
@@ -24,8 +24,7 @@ bool CommandPhotoscan::process(ccCommandLineInterface& cmd) {
 
     while (!cmd.arguments().empty()) {
         const QString& arg = cmd.arguments().front();
-        if (ccCommandLineInterface::IsCommand(arg,
-                                              COMMAND_PS_LOAD_KEYPOINTS)) {
+        if (ccCommandLineInterface::IsCommand(arg, COMMAND_PS_LOAD_KEYPOINTS)) {
             cmd.arguments().pop_front();
             loadKeypoints = true;
             cmd.print("[PHOTOSCAN] Load keypoints enabled");

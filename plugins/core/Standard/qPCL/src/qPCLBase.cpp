@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "qPCLBase.h"
+
 #include "PclCommands.h"
 
 // CV_DB_LIB
@@ -156,7 +157,7 @@ int qPCL::addPclModule(BasePclModule *module, QList<QAction *> &actions) {
     return 1;
 }
 
-void qPCL::registerCommands(ccCommandLineInterface* cmd) {
+void qPCL::registerCommands(ccCommandLineInterface *cmd) {
     PclCommands::RegisterAll(cmd);
 }
 

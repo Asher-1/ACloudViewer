@@ -19,7 +19,7 @@ ccIOPluginInterface::FilterList qPhotoscanIO::getFilters() {
     return {FileIOFilter::Shared(new PhotoScanFilter)};
 }
 
-void qPhotoscanIO::registerCommands(ccCommandLineInterface *cmd) {
+void qPhotoscanIO::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) return;
     cmd->registerCommand(
             ccCommandLineInterface::Command::Shared(new CommandPhotoscan));

@@ -379,8 +379,7 @@ int PCVContext::glAccumPixel(std::vector<int>& visibilityCount,
 
     functions->glColor3ub(255, 255, 0);
 
-    GLboolean drawColor =
-            m_meshIsClosed ? GL_FALSE : GL_TRUE;
+    GLboolean drawColor = m_meshIsClosed ? GL_FALSE : GL_TRUE;
     functions->glColorMask(drawColor, drawColor, drawColor, drawColor);
 
     int viewPort[4]{0, 0, static_cast<int>(m_width),

@@ -7,28 +7,27 @@
 
 #include "qCorkCommands.h"
 
-#include "ccCorkDlg.h"
-#include "qCorkInternal.h"
-
 #include <ecvHObjectCaster.h>
 
 #include <QObject>
-
 #include <algorithm>
+
+#include "ccCorkDlg.h"
+#include "qCorkInternal.h"
 
 static const char COMMAND_CORK[] = "CORK";
 static const char COMMAND_CORK_OPERATION[] = "OPERATION";
 static const char COMMAND_CORK_SWAP[] = "SWAP";
 
 CommandCork::CommandCork()
-        : ccCommandLineInterface::Command("Cork Boolean", COMMAND_CORK) {}
+    : ccCommandLineInterface::Command("Cork Boolean", COMMAND_CORK) {}
 
 bool CommandCork::process(ccCommandLineInterface& cmd) {
     cmd.print("[CORK]");
 
     if (cmd.meshes().size() < 2) {
-        return cmd.error(QObject::tr(
-                "At least two meshes are required (use \"-O\" before \"-%1\")")
+        return cmd.error(QObject::tr("At least two meshes are required (use "
+                                     "\"-O\" before \"-%1\")")
                                  .arg(COMMAND_CORK));
     }
 
@@ -53,9 +52,9 @@ bool CommandCork::process(ccCommandLineInterface& cmd) {
             } else if (v == "SYM_DIFF") {
                 operation = ccCorkDlg::SYM_DIFF;
             } else {
-                return cmd.error(QObject::tr(
-                        "Invalid \"-%1\": use UNION, INTERSECT, DIFF, or "
-                        "SYM_DIFF")
+                return cmd.error(QObject::tr("Invalid \"-%1\": use UNION, "
+                                             "INTERSECT, DIFF, or "
+                                             "SYM_DIFF")
                                          .arg(COMMAND_CORK_OPERATION));
             }
         } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_CORK_SWAP)) {
@@ -66,10 +65,8 @@ bool CommandCork::process(ccCommandLineInterface& cmd) {
         }
     }
 
-    ccMesh* meshA =
-            ccHObjectCaster::ToMesh(cmd.meshes()[0].mesh);
-    ccMesh* meshB =
-            ccHObjectCaster::ToMesh(cmd.meshes()[1].mesh);
+    ccMesh* meshA = ccHObjectCaster::ToMesh(cmd.meshes()[0].mesh);
+    ccMesh* meshB = ccHObjectCaster::ToMesh(cmd.meshes()[1].mesh);
     if (!meshA || !meshB) {
         return cmd.error(QObject::tr("Invalid mesh entity"));
     }
@@ -127,8 +124,8 @@ bool CommandCork::process(ccCommandLineInterface& cmd) {
         hasNormals = result->computePerVertexNormals();
     meshA->showNormals(hasNormals && meshA->normalsShown());
 
-    const QString baseName = cmd.meshes()[0].basename + QString("_CORK_%1")
-                                     .arg(opName);
+    const QString baseName =
+            cmd.meshes()[0].basename + QString("_CORK_%1").arg(opName);
     CLMeshDesc meshDesc(result, baseName, cmd.meshes()[0].path);
     cmd.meshes().push_back(meshDesc);
 

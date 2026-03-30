@@ -7,11 +7,11 @@
 
 #include "qVoxFall.h"
 
-#include "qVoxFallCommands.h"
-
 #include <ecvCommandLineInterface.h>
 
 #include <cassert>
+
+#include "qVoxFallCommands.h"
 
 // Qt
 #include <QMainWindow>

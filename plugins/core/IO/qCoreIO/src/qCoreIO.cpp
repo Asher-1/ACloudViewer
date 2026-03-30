@@ -7,12 +7,12 @@
 
 #include "qCoreIO.h"
 
+#include "CoreIOCommands.h"
 #include "HeightProfileFilter.h"
 #include "MAFilter.h"
 #include "MascaretFilter.h"
 #include "PDMSFilter.h"
 #include "SimpleBinFilter.h"
-#include "CoreIOCommands.h"
 
 qCoreIO::qCoreIO(QObject *parent)
     : QObject(parent), ccIOPluginInterface(":/CC/plugin/CoreIO/info.json") {}

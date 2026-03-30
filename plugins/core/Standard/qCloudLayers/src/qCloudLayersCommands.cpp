@@ -18,15 +18,14 @@ static const char COMMAND_CL_APPLY[] = "APPLY";
 static const char COMMAND_CL_CONFIG[] = "CONFIG";
 
 CommandCloudLayers::CommandCloudLayers()
-        : ccCommandLineInterface::Command("Cloud Layers",
-                                          COMMAND_CLOUD_LAYERS) {}
+    : ccCommandLineInterface::Command("Cloud Layers", COMMAND_CLOUD_LAYERS) {}
 
 bool CommandCloudLayers::process(ccCommandLineInterface& cmd) {
     cmd.print("[CLOUD_LAYERS]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_CLOUD_LAYERS));
     }
 

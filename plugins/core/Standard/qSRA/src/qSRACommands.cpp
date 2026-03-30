@@ -7,9 +7,6 @@
 
 #include "qSRACommands.h"
 
-#include "distanceMapGenerationTool.h"
-#include "profileLoader.h"
-
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
@@ -17,20 +14,22 @@
 
 #include <QObject>
 
+#include "distanceMapGenerationTool.h"
+#include "profileLoader.h"
+
 static const char COMMAND_SRA[] = "SRA";
 static const char COMMAND_SRA_PROFILE[] = "PROFILE";
 static const char COMMAND_SRA_AXIS[] = "AXIS";
 
 CommandSRARadialDist::CommandSRARadialDist()
-        : ccCommandLineInterface::Command("SRA Radial Distance", COMMAND_SRA) {
-}
+    : ccCommandLineInterface::Command("SRA Radial Distance", COMMAND_SRA) {}
 
 bool CommandSRARadialDist::process(ccCommandLineInterface& cmd) {
     cmd.print("[SRA]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_SRA));
     }
 
@@ -75,9 +74,8 @@ bool CommandSRARadialDist::process(ccCommandLineInterface& cmd) {
     CCVector3 origin(0, 0, 0);
     ccPolyline* profile = ProfileLoader::Load(profileFile, origin, nullptr);
     if (!profile) {
-        return cmd.error(
-                QObject::tr("Failed to load profile from '%1'")
-                        .arg(profileFile));
+        return cmd.error(QObject::tr("Failed to load profile from '%1'")
+                                 .arg(profileFile));
     }
 
     DistanceMapGenerationTool::SetPoylineOrigin(profile, origin);
@@ -104,8 +102,8 @@ bool CommandSRARadialDist::process(ccCommandLineInterface& cmd) {
 
         int sfIdx = cloud->getScalarFieldIndexByName(RADIAL_DIST_SF_NAME);
         if (sfIdx >= 0) {
-            ccScalarField* sf = static_cast<ccScalarField*>(
-                    cloud->getScalarField(sfIdx));
+            ccScalarField* sf =
+                    static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
             if (sf) {
                 sf->computeMinAndMax();
                 cloud->setCurrentDisplayedScalarField(sfIdx);
@@ -126,8 +124,8 @@ bool CommandSRARadialDist::process(ccCommandLineInterface& cmd) {
     delete profile;
 
     if (errorCount > 0) {
-        return cmd.error(QObject::tr("[SRA] %1 error(s) occurred")
-                                 .arg(errorCount));
+        return cmd.error(
+                QObject::tr("[SRA] %1 error(s) occurred").arg(errorCount));
     }
 
     return true;

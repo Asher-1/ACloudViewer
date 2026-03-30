@@ -985,9 +985,8 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
             glParams.showColors = false;
         }
 
-        ecvColor::Rgb color = entityPickingMode
-                                      ? ecvColor::Rgb(255, 255, 255)
-                                      : getMeasurementColour();
+        ecvColor::Rgb color = entityPickingMode ? ecvColor::Rgb(255, 255, 255)
+                                                : getMeasurementColour();
         c_unitPointMarker->setTempColor(color);
 
         float pSize = 1.0f;
@@ -999,8 +998,7 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                         CCVector3(P->x, P->y, P->z));
                 float scale = context.labelMarkerSize * m_relMarkerScale *
                               0.3f * fmin(pSize, 4.0f);
-                if (viewportParams.perspectiveView &&
-                    viewportParams.zFar > 0) {
+                if (viewportParams.perspectiveView && viewportParams.zFar > 0) {
                     double d = (camera.modelViewMat * (*P)).norm();
                     double unitD = viewportParams.zFar / 2;
                     scale = static_cast<float>(scale * sqrt(d / unitD));
@@ -1017,15 +1015,14 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                     segCloud.addPoint(*m_cloud->getPoint(p));
                 }
                 ccPolyline segment(&segCloud);
-                for (unsigned idx = 0;
-                     idx < static_cast<unsigned>(seg.size()); ++idx) {
+                for (unsigned idx = 0; idx < static_cast<unsigned>(seg.size());
+                     ++idx) {
                     segment.addPointIndex(idx);
                 }
                 segment.setVisible(true);
                 segment.setTempColor(color);
                 if (m_width != 0) {
-                    segment.setWidth(
-                            static_cast<PointCoordinateType>(m_width));
+                    segment.setWidth(static_cast<PointCoordinateType>(m_width));
                 }
                 segment.draw(context);
             }

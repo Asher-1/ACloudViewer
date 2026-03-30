@@ -18,14 +18,14 @@ static const char COMMAND_G3P_N_NEIGHBORS[] = "N_NEIGHBORS";
 static const char COMMAND_G3P_EXPORT_ELLIPSOIDS[] = "EXPORT_ELLIPSOIDS";
 
 CommandG3Point::CommandG3Point()
-        : ccCommandLineInterface::Command("G3Point", COMMAND_G3POINT) {}
+    : ccCommandLineInterface::Command("G3Point", COMMAND_G3POINT) {}
 
 bool CommandG3Point::process(ccCommandLineInterface& cmd) {
     cmd.print("[G3POINT]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_G3POINT));
     }
 

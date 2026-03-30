@@ -42,8 +42,7 @@ void ccTraceTool::pointPicked(ccHObject* insertPoint,
     if (!t) {
         t = new ccTrace(cloud);
         if (cloud) {
-            cloud->addDependency(t,
-                                 ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
+            cloud->addDependency(t, ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
         }
         t->setVisible(true);
         t->setName("Trace");

@@ -22,15 +22,15 @@ static const char COMMAND_CS_B_MIN[] = "B_MIN";
 static const char COMMAND_CS_B_MAX[] = "B_MAX";
 
 CommandColorimetricSegRGB::CommandColorimetricSegRGB()
-        : ccCommandLineInterface::Command("Colorimetric Seg RGB",
-                                          COMMAND_COLOR_SEG_RGB) {}
+    : ccCommandLineInterface::Command("Colorimetric Seg RGB",
+                                      COMMAND_COLOR_SEG_RGB) {}
 
 bool CommandColorimetricSegRGB::process(ccCommandLineInterface& cmd) {
     cmd.print("[COLOR_SEG_RGB]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COLOR_SEG_RGB));
     }
 
@@ -75,24 +75,28 @@ bool CommandColorimetricSegRGB::process(ccCommandLineInterface& cmd) {
         cmd.print(QObject::tr("[COLOR_SEG_RGB] Filtering cloud '%1' with "
                               "R[%2,%3] G[%4,%5] B[%6,%7]")
                           .arg(pc->getName())
-                          .arg(rMin).arg(rMax)
-                          .arg(gMin).arg(gMax)
-                          .arg(bMin).arg(bMax));
+                          .arg(rMin)
+                          .arg(rMax)
+                          .arg(gMin)
+                          .arg(gMax)
+                          .arg(bMin)
+                          .arg(bMax));
 
         unsigned count = pc->size();
         unsigned filtered = 0;
         for (unsigned i = 0; i < count; ++i) {
             const ecvColor::Rgb& color = pc->getPointColor(i);
-            if (color.r >= rMin && color.r <= rMax &&
-                color.g >= gMin && color.g <= gMax &&
-                color.b >= bMin && color.b <= bMax) {
+            if (color.r >= rMin && color.r <= rMax && color.g >= gMin &&
+                color.g <= gMax && color.b >= bMin && color.b <= bMax) {
                 ++filtered;
             }
         }
 
         cmd.print(QObject::tr("[COLOR_SEG_RGB] %1 of %2 points match filter "
                               "in cloud '%3'")
-                          .arg(filtered).arg(count).arg(pc->getName()));
+                          .arg(filtered)
+                          .arg(count)
+                          .arg(pc->getName()));
 
         if (cmd.autoSaveMode()) {
             desc.basename += QString("_COLOR_SEG_RGB");
@@ -115,15 +119,15 @@ static const char COMMAND_CS_V_MIN[] = "V_MIN";
 static const char COMMAND_CS_V_MAX[] = "V_MAX";
 
 CommandColorimetricSegHSV::CommandColorimetricSegHSV()
-        : ccCommandLineInterface::Command("Colorimetric Seg HSV",
-                                          COMMAND_COLOR_SEG_HSV) {}
+    : ccCommandLineInterface::Command("Colorimetric Seg HSV",
+                                      COMMAND_COLOR_SEG_HSV) {}
 
 bool CommandColorimetricSegHSV::process(ccCommandLineInterface& cmd) {
     cmd.print("[COLOR_SEG_HSV]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COLOR_SEG_HSV));
     }
 
@@ -168,9 +172,12 @@ bool CommandColorimetricSegHSV::process(ccCommandLineInterface& cmd) {
         cmd.print(QObject::tr("[COLOR_SEG_HSV] Filtering cloud '%1' with "
                               "H[%2,%3] S[%4,%5] V[%6,%7]")
                           .arg(pc->getName())
-                          .arg(hMin).arg(hMax)
-                          .arg(sMin).arg(sMax)
-                          .arg(vMin).arg(vMax));
+                          .arg(hMin)
+                          .arg(hMax)
+                          .arg(sMin)
+                          .arg(sMax)
+                          .arg(vMin)
+                          .arg(vMax));
 
         if (cmd.autoSaveMode()) {
             desc.basename += QString("_COLOR_SEG_HSV");
@@ -189,15 +196,15 @@ static const char COMMAND_CS_SCALAR_MIN[] = "SCALAR_MIN";
 static const char COMMAND_CS_SCALAR_MAX[] = "SCALAR_MAX";
 
 CommandColorimetricSegScalar::CommandColorimetricSegScalar()
-        : ccCommandLineInterface::Command("Colorimetric Seg Scalar",
-                                          COMMAND_COLOR_SEG_SCALAR) {}
+    : ccCommandLineInterface::Command("Colorimetric Seg Scalar",
+                                      COMMAND_COLOR_SEG_SCALAR) {}
 
 bool CommandColorimetricSegScalar::process(ccCommandLineInterface& cmd) {
     cmd.print("[COLOR_SEG_SCALAR]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COLOR_SEG_SCALAR));
     }
 

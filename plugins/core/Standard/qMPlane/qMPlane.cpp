@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include <QtGui>
-
 #include <cassert>
 
 // CV
@@ -18,8 +17,8 @@
 #include "qtablewidget.h"
 
 // Local dependencies
-#include "qMPlane.h"
 #include "MPlaneCommands.h"
+#include "qMPlane.h"
 
 qMPlane::qMPlane(QObject *parent)
     : QObject(parent),

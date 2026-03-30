@@ -9,7 +9,8 @@
 
 #include "ecvCommandLineInterface.h"
 
-struct CommandLAS : public ccCommandLineInterface::Command {
-    CommandLAS();
-    bool process(ccCommandLineInterface& cmd) override;
+struct CommandLAS : public ccCommandLineInterface::Command
+{
+	CommandLAS();
+	bool process(ccCommandLineInterface& cmd) override;
 };

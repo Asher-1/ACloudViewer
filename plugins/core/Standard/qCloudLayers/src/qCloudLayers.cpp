@@ -89,7 +89,7 @@ void qCloudLayers::doAction() {
     }
 }
 
-void qCloudLayers::registerCommands(ccCommandLineInterface *cmd) {
+void qCloudLayers::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) {
         assert(false);
         return;

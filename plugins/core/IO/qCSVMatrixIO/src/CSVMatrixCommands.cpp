@@ -15,7 +15,7 @@ static const char COMMAND_CM_SKIP_HEADER[] = "SKIP_HEADER";
 static const char COMMAND_CM_INVERT_ROWS[] = "INVERT_ROWS";
 
 CommandCSVMatrix::CommandCSVMatrix()
-        : ccCommandLineInterface::Command("CSV Matrix", COMMAND_CSV_MATRIX) {}
+    : ccCommandLineInterface::Command("CSV Matrix", COMMAND_CSV_MATRIX) {}
 
 bool CommandCSVMatrix::process(ccCommandLineInterface& cmd) {
     cmd.print("[CSV_MATRIX]");
@@ -33,8 +33,8 @@ bool CommandCSVMatrix::process(ccCommandLineInterface& cmd) {
                                          .arg(COMMAND_CM_SEPARATOR));
             QString sep = cmd.arguments().takeFirst();
             if (!sep.isEmpty()) separator = sep.at(0);
-            cmd.print(QObject::tr("[CSV_MATRIX] Separator: '%1'")
-                              .arg(separator));
+            cmd.print(
+                    QObject::tr("[CSV_MATRIX] Separator: '%1'").arg(separator));
         } else if (ccCommandLineInterface::IsCommand(arg,
                                                      COMMAND_CM_SKIP_HEADER)) {
             cmd.arguments().pop_front();

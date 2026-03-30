@@ -25,9 +25,7 @@ ccSNECloud::ccSNECloud(ccPointCloud* obj) : ccPointCloud() {
     updateMetadata();
 }
 
-void ccSNECloud::updateMetadata() {
-    setMetaData("ccCompassType", "SNECloud");
-}
+void ccSNECloud::updateMetadata() { setMetaData("ccCompassType", "SNECloud"); }
 
 bool ccSNECloud::isSNECloud(ccHObject* object) {
     if (object->hasMetaData("ccCompassType")) {
@@ -124,4 +122,3 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         }
     }
 }
-

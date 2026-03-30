@@ -7,15 +7,15 @@
 
 #include "qVoxFallCommands.h"
 
-#include "qVoxFallDialog.h"
-#include "qVoxFallProcess.h"
-
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 
 #include <QObject>
 #include <QSettings>
+
+#include "qVoxFallDialog.h"
+#include "qVoxFallProcess.h"
 
 static const char COMMAND_VOXFALL[] = "VOXFALL";
 static const char COMMAND_VF_VOXEL_SIZE[] = "VOXEL_SIZE";
@@ -24,14 +24,14 @@ static const char COMMAND_VF_EXPORT_MESHES[] = "EXPORT_MESHES";
 static const char COMMAND_VF_LOSS_GAIN[] = "LOSS_GAIN";
 
 CommandVoxFall::CommandVoxFall()
-        : ccCommandLineInterface::Command("VoxFall", COMMAND_VOXFALL) {}
+    : ccCommandLineInterface::Command("VoxFall", COMMAND_VOXFALL) {}
 
 bool CommandVoxFall::process(ccCommandLineInterface& cmd) {
     cmd.print("[VOXFALL]");
 
     if (cmd.meshes().size() < 2) {
-        return cmd.error(QObject::tr(
-                "At least two meshes are required (use \"-O\" before \"-%1\")")
+        return cmd.error(QObject::tr("At least two meshes are required (use "
+                                     "\"-O\" before \"-%1\")")
                                  .arg(COMMAND_VOXFALL));
     }
 
@@ -66,11 +66,12 @@ bool CommandVoxFall::process(ccCommandLineInterface& cmd) {
                 return cmd.error(QObject::tr("Invalid value for \"-%1\"")
                                          .arg(COMMAND_VF_AZIMUTH));
             }
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_VF_EXPORT_MESHES)) {
+        } else if (ccCommandLineInterface::IsCommand(
+                           arg, COMMAND_VF_EXPORT_MESHES)) {
             cmd.arguments().pop_front();
             exportMeshes = true;
-        } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_VF_LOSS_GAIN)) {
+        } else if (ccCommandLineInterface::IsCommand(arg,
+                                                     COMMAND_VF_LOSS_GAIN)) {
             cmd.arguments().pop_front();
             lossGain = true;
         } else {
@@ -100,7 +101,7 @@ bool CommandVoxFall::process(ccCommandLineInterface& cmd) {
     ccHObject** pClusters = exportMeshes ? &outClusters : nullptr;
 
     if (!qVoxFallProcess::Compute(dlg, errorMessage, false, cmd.widgetParent(),
-                                nullptr, pGrid, pClusters)) {
+                                  nullptr, pGrid, pClusters)) {
         return cmd.error(errorMessage.isEmpty()
                                  ? QObject::tr("VoxFall computation failed")
                                  : errorMessage);

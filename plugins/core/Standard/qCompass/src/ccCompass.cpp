@@ -59,8 +59,8 @@ public:
             return new ccTrace;
         }
 
-        CVLog::Warning(
-                "[CompassFactory::buildObject] Unknown object: " + metaName);
+        CVLog::Warning("[CompassFactory::buildObject] Unknown object: " +
+                       metaName);
         return nullptr;
     }
 };
@@ -194,16 +194,16 @@ void ccCompass::registerCommands(ccCommandLineInterface* cmd) {
         assert(false);
         return;
     }
-    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
-            new CommandCompassExport));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassExport));
     cmd->registerCommand(ccCommandLineInterface::Command::Shared(
             new CommandCompassImportFoliations));
     cmd->registerCommand(ccCommandLineInterface::Command::Shared(
             new CommandCompassImportLineations));
-    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
-            new CommandCompassRefit));
-    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
-            new CommandCompassP21));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassRefit));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassP21));
 }
 
 // Called by CC when the plugin should be activated - sets up the plugin and
@@ -372,10 +372,8 @@ void ccCompass::tryLoading() {
         ccHObject* original = m_app->dbRootObject()->find(originals[i]);
         ccHObject* replacement = replacements[i];
 
-        if (!original)
-            continue;
-        if (!replacement)
-            continue;
+        if (!original) continue;
+        if (!replacement) continue;
 
         replacement->setVisible(original->isVisible());
         replacement->setEnabled(original->isEnabled());
@@ -388,14 +386,14 @@ void ccCompass::tryLoading() {
                 continue;
             }
             if (original->isKindOf(CV_TYPES::POLY_LINE)) {
-                if (dynamic_cast<ccHObject*>(
-                            static_cast<ccPolyline*>(original)
-                                    ->getAssociatedCloud()) == child) {
+                if (dynamic_cast<ccHObject*>(static_cast<ccPolyline*>(original)
+                                                     ->getAssociatedCloud()) ==
+                    child) {
                     continue;
                 }
             } else if (original->isKindOf(CV_TYPES::PRIMITIVE)) {
                 if (static_cast<ccGenericPrimitive*>(original)
-                                ->getAssociatedCloud() == child) {
+                            ->getAssociatedCloud() == child) {
                     continue;
                 }
             }
@@ -489,9 +487,11 @@ void ccCompass::tryLoading(ccHObject* obj,
         // are we a trace?
         if (ccTrace::isTrace(obj)) {
             ccTrace* trace = new ccTrace(p);
-            ccHObject* cloud = dynamic_cast<ccHObject*>(p->getAssociatedCloud());
+            ccHObject* cloud =
+                    dynamic_cast<ccHObject*>(p->getAssociatedCloud());
             if (cloud) {
-                cloud->addDependency(trace, ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
+                cloud->addDependency(trace,
+                                     ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
             }
             trace->setWidth(2);
             originals->push_back(obj->getUniqueID());
@@ -761,8 +761,7 @@ void ccCompass::pointPicked(
         // have we picked a point cloud?
         if (entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
             // get point cloud
-            ccPointCloud* cloud =
-                    static_cast<ccPointCloud*>(entity);
+            ccPointCloud* cloud = static_cast<ccPointCloud*>(entity);
 
             // pass picked point, cloud & insert point to relevant tool
             m_activeTool->pointPicked(parentNode, itemIdx, cloud, P);
