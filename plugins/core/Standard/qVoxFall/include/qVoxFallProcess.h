@@ -13,7 +13,9 @@
 // DB
 #include <ecvPointCloud.h>
 
+class ccHObject;
 class ecvMainAppInterface;
+class QWidget;
 
 //! VoxFall process
 /** See "VoxFall: Non-Parametric Volumetric Change Detection for Rockfalls",
@@ -26,5 +28,7 @@ public:
                         QString& errorMessage,
                         bool allowDialogs,
                         QWidget* parentWidget = nullptr,
-                        ecvMainAppInterface* app = nullptr);
+                        ecvMainAppInterface* app = nullptr,
+                        ccPointCloud** outVoxelGrid = nullptr,
+                        ccHObject** outClusterGroup = nullptr);
 };

@@ -348,8 +348,16 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
                               QString& errorMessage,
                               bool allowDialogs,
                               QWidget* parentWidget /*=nullptr*/,
-                              ecvMainAppInterface* app /*=nullptr*/) {
+                              ecvMainAppInterface* app /*=nullptr*/,
+                              ccPointCloud** outVoxelGrid /*=nullptr*/,
+                              ccHObject** outClusterGroup /*=nullptr*/) {
     errorMessage.clear();
+    if (outVoxelGrid) {
+        *outVoxelGrid = nullptr;
+    }
+    if (outClusterGroup) {
+        *outClusterGroup = nullptr;
+    }
 
     // get the input meshes in the right order
     ccMesh* mesh1 = dlg.getMesh1();
@@ -512,9 +520,11 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
         app->dispToConsole(QString("[VoxFall] Block detection: %1 s")
                                    .arg(detectTime_ms / 1000.0, 0, 'f', 3),
                            ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-    app->dispToConsole(QString("[VoxFall] Blocks found: %1")
-                               .arg(s_VoxFallParams.clusterLabel - 1),
-                       ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+    if (app) {
+        app->dispToConsole(QString("[VoxFall] Blocks found: %1")
+                                   .arg(s_VoxFallParams.clusterLabel - 1),
+                           ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+    }
 
     // 	   COMPUTE VOLUMES
     //=======================================================================================================================
@@ -669,7 +679,14 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
         }
         ccGroup->applyGLTransformation_recursive(&transform.inverse);
         ccGroup->setVisible(true);
-        app->addToDB(ccGroup);
+        if (app) {
+            app->addToDB(ccGroup);
+        } else if (outClusterGroup) {
+            *outClusterGroup = ccGroup;
+        } else {
+            delete ccGroup;
+            ccGroup = nullptr;
+        }
 
         qint64 meshTime_ms = meshTimer.elapsed();
         // we display block as mesh export timing only if no error occurred!
@@ -725,7 +742,15 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
     if (s_VoxFallParams.exportBlocksAsMeshes) {
         s_VoxFallParams.voxfall->setEnabled(false);
     }
-    app->addToDB(s_VoxFallParams.voxfall);
+    if (app) {
+        app->addToDB(s_VoxFallParams.voxfall);
+    } else if (outVoxelGrid) {
+        *outVoxelGrid = s_VoxFallParams.voxfall;
+        s_VoxFallParams.voxfall = nullptr;
+    } else {
+        delete s_VoxFallParams.voxfall;
+        s_VoxFallParams.voxfall = nullptr;
+    }
 
     if (app) app->refreshAll();
 

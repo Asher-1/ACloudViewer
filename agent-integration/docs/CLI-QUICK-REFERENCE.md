@@ -2,6 +2,8 @@
 
 Fast lookup for all `cli-anything-acloudviewer` commands.
 
+Command groups in `cli-anything-acloudviewer --help` are labeled **`[GUI]`** or **`[Headless]`** so you can see which backend each group expects.
+
 ## Global Options
 
 ```bash
@@ -47,15 +49,18 @@ All processing commands follow this pattern:
 cli-anything-acloudviewer process <operation> input.ply [input2.ply] -o output.ply [OPTIONS]
 ```
 
+Headless **`process`** exposes 38+ subcommands: core geometry and analysis operations, plus eight plugin-backed commands (`pcv`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough-normals`, `poisson-recon`). See [Plugin Processing Commands](#plugin-processing-commands) below.
+
 ### Basic Operations
 
 | Command | Description | Key Options |
 |---------|-------------|-------------|
 | `subsample` | Downsample point cloud | `--method` SPATIAL\|RANDOM\|OCTREE, `--voxel-size` (float) |
 | `normals` | Compute normals (k-NN) | `--radius` (float, 0=auto) |
+| `crop` | Axis-aligned bbox crop (headless) | `--min-x` … `--max-z` (six values; see below) |
 | `sor` | Statistical outlier removal | `--knn` (int), `--sigma` (float) |
 
-**Note**: Crop requires GUI mode - use `cloud crop <entity_id> --min-x ... --max-z ...`
+**Crop**: Use **`process crop`** in headless mode with **`--min-x/--min-y/--min-z` and `--max-x/--max-y/--max-z`** (six separate bounds). In GUI mode, **`cloud crop <entity_id>`** takes the same min/max semantics (not the old erroneous `min_x:max_x:min_y:max_y` ordering).
 
 ### Distance Computation
 
@@ -128,6 +133,43 @@ cli-anything-acloudviewer process <operation> input.ply [input2.ply] -o output.p
 | `drop-global-shift` | Remove coordinate offset | `-o` |
 | `remove-scan-grids` | Clean scan artifacts | `-o` |
 | `remove-rgb` | Remove colors | `-o` |
+
+### Plugin Processing Commands
+
+These invoke ACloudViewer C++ plugins via the headless binary (`-SILENT` and native flags such as `-PCV`, `-FACETS`, `-HOUGH_NORMALS`, `-POISSON_RECON`).
+
+```bash
+# PCV (ambient occlusion)
+cli-anything-acloudviewer process pcv input.ply -o output.ply --n-rays 256 --resolution 1024
+
+# CSF ground filtering
+cli-anything-acloudviewer process csf input.ply -o output.ply --scenes 1 --cloth-resolution 0.5
+
+# RANSAC shape detection
+cli-anything-acloudviewer process ransac input.ply -o output.ply --epsilon 0.005 --support-points 500
+
+# M3C2 cloud comparison
+cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt
+
+# CANUPO classification
+cli-anything-acloudviewer process canupo input.ply -o classified.ply --classifier model.prm
+
+# Facet extraction
+cli-anything-acloudviewer process facets input.ply -o output.ply --algo KD_TREE --error-max 0.2 --classify
+
+# Hough-based normals
+cli-anything-acloudviewer process hough-normals input.ply -o output.ply --k 100 --t 1000
+
+# Poisson reconstruction
+cli-anything-acloudviewer process poisson-recon input.ply -o output.ply --depth 8 --boundary NEUMANN
+
+# Cork mesh boolean (union, intersect, diff, sym_diff)
+cli-anything-acloudviewer process cork-boolean mesh1.ply mesh2.ply -o result.ply --operation UNION
+cli-anything-acloudviewer process cork-boolean mesh1.ply mesh2.ply -o diff.ply --operation DIFF --swap
+
+# VoxFall rockfall / change detection
+cli-anything-acloudviewer process voxfall ref_mesh.ply comp_mesh.ply -o changes.ply --voxel-size 0.05 --azimuth 45 --loss-gain
+```
 
 ---
 
@@ -637,6 +679,7 @@ cli-anything-acloudviewer sf --help
 # Common operations
 cli-anything-acloudviewer convert input.ply output.pcd
 cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
+cli-anything-acloudviewer process crop input.ply -o cropped.ply --min-x -1 --min-y -1 --min-z -1 --max-x 1 --max-y 1 --max-z 1
 cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
 cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply --iterations 100
 cli-anything-acloudviewer sf coord-to-sf input.ply -o height.ply --dimension Z

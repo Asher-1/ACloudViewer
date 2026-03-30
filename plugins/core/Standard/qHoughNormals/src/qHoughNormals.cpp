@@ -7,7 +7,10 @@
 
 #include "qHoughNormals.h"
 
+#include "qHoughNormalsCommands.h"
 #include "qHoughNormalsDialog.h"
+
+#include <ecvCommandLineInterface.h>
 
 // Hough Normals library
 #include "Normals.h"
@@ -149,4 +152,13 @@ void qHoughNormals::doAction() {
     // currently selected entities appearance may have changed!
     // m_app->refreshAll();
     m_app->refreshSelected();
+}
+
+void qHoughNormals::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandHoughNormals));
 }

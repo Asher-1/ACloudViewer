@@ -109,9 +109,9 @@ python -m pytest test_integration.py -v -k "level5"   # MCP tools
 |-------|-------|-------------|
 | 1 | Plugin C++ source, method registry (40+ reg entries), header declarations, build | cmake (optional) |
 | 2 | CLI help, subcommands, JSON output, session, SIBR, reconstruct | `cli-anything-acloudviewer` |
-| 3 | Format conversion (PLY/PCD/DRC/ASC/BIN/VTK/STL), subsample, normals, batch | ACloudViewer binary |
-| 4 | RPC ping, scene CRUD, cloud SF ops, normals, merge, crop, mesh, camera, view, workflow | Running ACloudViewer |
-| 5 | MCP tool count (95+), tool names, Colmap tools (13), SIBR tools, entry point | `mcp` Python package |
+| 3 | Headless binary ops (SOR, CROP, C2C_DIST, DENSITY, CURV, ROUGH, MERGE, EXTRACT_CC, FILTER_SF, SAMPLE_MESH, BEST_FIT_PLANE, HELP), format conversion (incl. LAZ, SHP, PTX, DXF), PLY↔ASC/VTK and mesh round-trips, subsample, `process crop`, normals, batch, broad CLI coverage | ACloudViewer binary |
+| 4 | RPC ping, scene CRUD (incl. scene.select), cloud SF ops, paint-by-scalar-field, normals, merge, crop, mesh (simplify/smooth/subdivide/sample/volume/flip/merge), colmap RPC, camera, view, workflow | Running ACloudViewer |
+| 5 | MCP tool count (121 tools), tool names, Colmap tools (13), SIBR tools, entry point | `mcp` Python package |
 
 ## Test 6: CLI-Anything Harness Tests
 
