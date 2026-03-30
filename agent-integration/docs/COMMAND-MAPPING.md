@@ -25,6 +25,20 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `process poisson-recon` | `poisson_recon` | — **(H)** |
 | `process cork-boolean` | `cork_boolean` | — **(H)** |
 | `process voxfall` | `voxfall` | — **(H)** |
+| `process 3dmasc` | `classify_3dmasc` | — **(H)** |
+| `process animation` | `animation` | — **(H)** |
+| `process cloud-layers` | `cloud_layers` | — **(H)** |
+| `process color-seg-rgb` | `color_seg_rgb` | — **(H)** |
+| `process color-seg-hsv` | `color_seg_hsv` | — **(H)** |
+| `process color-seg-scalar` | `color_seg_scalar` | — **(H)** |
+| `process g3point` | `g3point` | — **(H)** |
+| `process draco-settings` | `draco_settings` | — **(H)** |
+| `process e57-settings` | `e57_settings` | — **(H)** |
+| `process las-settings` | `las_settings` | — **(H)** |
+| `process csv-matrix-settings` | `csv_matrix_settings` | — **(H)** |
+| `process photoscan-settings` | `photoscan_settings` | — **(H)** |
+| `process mesh-io-settings` | `mesh_io_settings` | — **(H)** |
+| `process core-io-settings` | `core_io_settings` | — **(H)** |
 | `sf` * | `coord_to_sf`, `set_active_sf`, `sf_gradient`, … | `cloud.coordToSf`, `cloud.setActiveSf`, … **(G)** |
 | `normals` * | `octree_normals`, `orient_normals_mst`, … | — **(H)**; GUI cloud ops overlap **(G)** |
 | `cloud` (paint, crop, …) | `cloud_paint_uniform`, `crop`, … | `cloud.paintUniform`, `cloud.crop`, … **(G)** |
@@ -53,12 +67,26 @@ These commands wrap ACloudViewer's native C++ plugin CLI interfaces. They requir
 | `process csf` | `-CSF` | qCSF | Cloth Simulation ground filtering |
 | `process ransac` | `-RANSAC` | qRANSAC_SD | Shape detection (planes, spheres, etc.) |
 | `process m3c2` | `-M3C2` | qM3C2 | Multiscale cloud comparison |
-| `process canupo` | `-CANUPO_CLASSIF` | qCanupo | Point cloud classification |
+| `process canupo` | `-CANUPO_CLASSIFY` | qCanupo | Point cloud classification |
 | `process facets` | `-FACETS` | qFacets | Planar facet extraction |
 | `process hough-normals` | `-HOUGH_NORMALS` | qHoughNormals | Hough-based normal estimation |
 | `process poisson-recon` | `-POISSON_RECON` | qPoissonRecon | Poisson surface reconstruction |
 | `process cork-boolean` | `-CORK` | qCork | Mesh boolean ops (union/intersect/diff/sym_diff) |
 | `process voxfall` | `-VOXFALL` | qVoxFall | Voxel-based rockfall/change detection |
+| `process 3dmasc` | `-3DMASC_CLASSIFY` | q3DMASC | 3DMASC point cloud classification |
+| `process animation` | `-ANIMATION` | qAnimation | Animation export settings |
+| `process cloud-layers` | `-CLOUD_LAYERS` | qCloudLayers | ASPRS cloud layer classification |
+| `process color-seg-rgb` | `-COLOR_SEG_RGB` | qColorimetricSegmenter | RGB color range filter |
+| `process color-seg-hsv` | `-COLOR_SEG_HSV` | qColorimetricSegmenter | HSV color range filter |
+| `process color-seg-scalar` | `-COLOR_SEG_SCALAR` | qColorimetricSegmenter | Scalar field range filter |
+| `process g3point` | `-G3POINT` | qG3Point | Grain analysis |
+| `process draco-settings` | `-DRACO` | qDracoIO | Draco encoding settings |
+| `process e57-settings` | `-E57` | qE57IO | E57 import settings |
+| `process las-settings` | `-LAS` | qLASIO | LAS/LAZ settings |
+| `process csv-matrix-settings` | `-CSV_MATRIX` | qCSVMatrixIO | CSV matrix import settings |
+| `process photoscan-settings` | `-PHOTOSCAN` | qPhotoscanIO | Photoscan import settings |
+| `process mesh-io-settings` | `-MESH_IO` | qMeshIO | Mesh IO settings (Assimp) |
+| `process core-io-settings` | `-CORE_IO` | qCoreIO | Core IO settings |
 
 ## Command Group Overview
 
@@ -145,7 +173,7 @@ cv.io.write_point_cloud("output.ply", pcd)
 ```
 headless mode:
   ├── convert, batch-convert
-  ├── process (38+ commands, incl. crop and 8 plugin processors: pcv, csf, ransac, m3c2, canupo, facets, hough-normals, poisson-recon)
+  ├── process (52+ commands, incl. crop, 10 plugin processors, 7 IO settings, and 7 standard plugin commands)
   ├── sf (11 commands)
   ├── normals (6 commands)
   ├── reconstruct (12+ Colmap commands)
