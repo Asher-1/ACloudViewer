@@ -13,6 +13,7 @@
 #include "AssimpCommonFilter.h"
 #include "AssimpGltf.h"
 #include "AssimpIfc.h"
+#include "MeshIOCommands.h"
 #include "assimp/version.h"
 
 qMeshIO::qMeshIO(QObject *parent)
@@ -28,7 +29,9 @@ qMeshIO::qMeshIO(QObject *parent)
 }
 
 void qMeshIO::registerCommands(ccCommandLineInterface *inCmdLine) {
-    Q_UNUSED(inCmdLine);
+    if (!inCmdLine) return;
+    inCmdLine->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandMeshIO));
 }
 
 ccIOPluginInterface::FilterList qMeshIO::getFilters() {

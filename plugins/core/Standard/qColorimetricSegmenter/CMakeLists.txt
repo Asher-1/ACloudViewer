@@ -15,6 +15,8 @@ if ( PLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER )
 			${CMAKE_CURRENT_SOURCE_DIR}/qColorimetricSegmenter.cpp
 			${CMAKE_CURRENT_SOURCE_DIR}/qColorimetricSegmenter.h
 			${CMAKE_CURRENT_SOURCE_DIR}/qColorimetricSegmenter.qrc
+			${CMAKE_CURRENT_SOURCE_DIR}/ColorimetricSegmenterCommands.h
+			${CMAKE_CURRENT_SOURCE_DIR}/ColorimetricSegmenterCommands.cpp
 			${CMAKE_CURRENT_SOURCE_DIR}/HSV.h
 			${CMAKE_CURRENT_SOURCE_DIR}/HSVDialog.cpp
 			${CMAKE_CURRENT_SOURCE_DIR}/HSVDialog.h

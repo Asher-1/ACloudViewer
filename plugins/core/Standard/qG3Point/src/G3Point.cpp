@@ -28,6 +28,7 @@
 #include <QtGui>
 
 #include "G3PointAction.h"
+#include "G3PointCommands.h"
 
 ccHObject* G3PointFactory::buildObject(const QString& metaName) {
     if (metaName == "GrainsAsEllipsoids") {
@@ -101,4 +102,13 @@ QList<QAction*> G3PointPlugin::getActions() {
     }
 
     return {m_action};
+}
+
+void G3PointPlugin::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandG3Point));
 }

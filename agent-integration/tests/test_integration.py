@@ -3517,3 +3517,360 @@ class TestLevel5_MCPServer:
             capture_output=True, text=True, timeout=10)
         if r.returncode != 0:
             pytest.skip("MCP server module not runnable")
+
+    def test_level5_mcp_plugin_standard_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            plugin_tools = [
+                "classify_3dmasc", "animation", "cloud_layers",
+                "color_seg_rgb", "color_seg_hsv", "color_seg_scalar",
+                "g3point",
+            ]
+            missing = [t for t in plugin_tools if t not in names]
+            assert not missing, (
+                f"Missing Standard plugin MCP tools: {missing}\n"
+                f"Available tools: {sorted(names)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_plugin_io_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            io_tools = [
+                "draco_settings", "e57_settings", "las_settings",
+                "csv_matrix_settings", "photoscan_settings",
+                "mesh_io_settings", "core_io_settings",
+            ]
+            missing = [t for t in io_tools if t not in names]
+            assert not missing, (
+                f"Missing IO plugin MCP tools: {missing}\n"
+                f"Available tools: {sorted(names)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 1: Plugin Command Source Verification
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestLevel1_PluginCommands:
+    """Verify new plugin command source structure without building."""
+
+    def test_level1_animation_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qAnimation/include/qAnimationCommands.h"
+        if not h.exists():
+            pytest.skip("qAnimationCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandAnimation" in src
+        assert "ANIMATION" in _read_repo_text(
+            REPO_ROOT / "plugins/core/Standard/qAnimation/src/qAnimationCommands.cpp")
+
+    def test_level1_cloud_layers_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qCloudLayers/include/qCloudLayersCommands.h"
+        if not h.exists():
+            pytest.skip("qCloudLayersCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandCloudLayers" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qCloudLayers/src/qCloudLayersCommands.cpp"
+        assert "CLOUD_LAYERS" in _read_repo_text(cpp)
+
+    def test_level1_colorimetric_seg_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qColorimetricSegmenter/ColorimetricSegmenterCommands.h"
+        if not h.exists():
+            pytest.skip("ColorimetricSegmenterCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandColorimetricSegRGB" in src
+        assert "CommandColorimetricSegHSV" in src
+        assert "CommandColorimetricSegScalar" in src
+
+    def test_level1_colorimetric_seg_command_impl(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qColorimetricSegmenter/ColorimetricSegmenterCommands.cpp"
+        if not cpp.exists():
+            pytest.skip("ColorimetricSegmenterCommands.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "COLOR_SEG_RGB" in src
+        assert "COLOR_SEG_HSV" in src
+        assert "COLOR_SEG_SCALAR" in src
+
+    def test_level1_g3point_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qG3Point/include/G3PointCommands.h"
+        if not h.exists():
+            pytest.skip("G3PointCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandG3Point" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qG3Point/src/G3PointCommands.cpp"
+        assert "G3POINT" in _read_repo_text(cpp)
+
+    def test_level1_3dmasc_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/q3DMASC/q3DMASCCommands.h"
+        if not h.exists():
+            pytest.skip("q3DMASCCommands.h not found")
+        src = _read_repo_text(h)
+        assert "Command3DMASCClassif" in src
+        assert "3DMASC_CLASSIFY" in src
+
+    def test_level1_pcv_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qPCV/include/PCVCommand.h"
+        if not h.exists():
+            pytest.skip("PCVCommand.h not found")
+        src = _read_repo_text(h)
+        assert "PCVCommand" in src
+
+    def test_level1_io_coreio_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qCoreIO/include/CoreIOCommands.h"
+        if not h.exists():
+            pytest.skip("CoreIOCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandCoreIO" in src
+        cpp = REPO_ROOT / "plugins/core/IO/qCoreIO/src/CoreIOCommands.cpp"
+        assert "CORE_IO" in _read_repo_text(cpp)
+
+    def test_level1_io_csvmatrix_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qCSVMatrixIO/include/CSVMatrixCommands.h"
+        if not h.exists():
+            pytest.skip("CSVMatrixCommands.h not found")
+        assert "CommandCSVMatrix" in _read_repo_text(h)
+
+    def test_level1_io_photoscan_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qPhotoscanIO/include/PhotoscanCommands.h"
+        if not h.exists():
+            pytest.skip("PhotoscanCommands.h not found")
+        assert "CommandPhotoscan" in _read_repo_text(h)
+
+    def test_level1_io_e57_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qE57IO/include/E57Commands.h"
+        if not h.exists():
+            pytest.skip("E57Commands.h not found")
+        assert "CommandE57" in _read_repo_text(h)
+
+    def test_level1_io_draco_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qDracoIO/include/DracoCommands.h"
+        if not h.exists():
+            pytest.skip("DracoCommands.h not found")
+        assert "CommandDraco" in _read_repo_text(h)
+
+    def test_level1_io_las_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qLASIO/include/LasCommands.h"
+        if not h.exists():
+            pytest.skip("LasCommands.h not found")
+        assert "CommandLAS" in _read_repo_text(h)
+
+    def test_level1_io_meshio_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qMeshIO/include/MeshIOCommands.h"
+        if not h.exists():
+            pytest.skip("MeshIOCommands.h not found")
+        assert "CommandMeshIO" in _read_repo_text(h)
+
+    def test_level1_plugin_commands_registered(self):
+        """Verify registerCommands is implemented in all new plugins."""
+        plugins = [
+            ("qAnimation", "plugins/core/Standard/qAnimation/src/qAnimation.cpp", "CommandAnimation"),
+            ("qCloudLayers", "plugins/core/Standard/qCloudLayers/src/qCloudLayers.cpp", "CommandCloudLayers"),
+            ("qColorimetricSegmenter", "plugins/core/Standard/qColorimetricSegmenter/qColorimetricSegmenter.cpp",
+             "CommandColorimetricSeg"),
+            ("qG3Point", "plugins/core/Standard/qG3Point/src/G3Point.cpp", "CommandG3Point"),
+            ("qCoreIO", "plugins/core/IO/qCoreIO/src/qCoreIO.cpp", "CommandCoreIO"),
+            ("qCSVMatrixIO", "plugins/core/IO/qCSVMatrixIO/src/qCSVMatrixIO.cpp", "CommandCSVMatrix"),
+            ("qPhotoscanIO", "plugins/core/IO/qPhotoscanIO/src/qPhotoscanIO.cpp", "CommandPhotoscan"),
+            ("qE57IO", "plugins/core/IO/qE57IO/src/qE57IO.cpp", "CommandE57"),
+            ("qDracoIO", "plugins/core/IO/qDracoIO/src/qDracoIO.cpp", "CommandDraco"),
+            ("qLASIO", "plugins/core/IO/qLASIO/src/LasPlugin.cpp", "CommandLAS"),
+            ("qMeshIO", "plugins/core/IO/qMeshIO/src/qMeshIO.cpp", "CommandMeshIO"),
+        ]
+        for name, rel_path, cmd_class in plugins:
+            path = REPO_ROOT / rel_path
+            if not path.exists():
+                continue
+            src = _read_repo_text(path)
+            assert "registerCommands" in src, f"{name} missing registerCommands"
+            assert "registerCommand" in src, f"{name} not calling registerCommand"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 2: CLI Plugin Command Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
+class TestLevel2_PluginCLICommands:
+    """Verify CLI plugin commands work (help output)."""
+
+    @pytest.mark.parametrize("subcmd", [
+        "3dmasc", "animation", "cloud-layers",
+        "color-seg-rgb", "color-seg-hsv", "color-seg-scalar",
+        "g3point", "draco-settings", "e57-settings",
+        "las-settings", "csv-matrix-settings", "photoscan-settings",
+        "mesh-io-settings", "core-io-settings",
+    ])
+    def test_level2_plugin_command_help(self, subcmd):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "process", subcmd, "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, f"process {subcmd} --help failed: {r.stderr}"
+        assert "--help" in r.stdout or "Usage" in r.stdout
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 3: Headless Plugin Processing Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+class TestLevel3_PluginHeadlessProcessing:
+    """Verify headless plugin processing via binary CLI."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    @pytest.fixture
+    def acv_env(self):
+        return _build_env_for_binary(BINARY_PATH)
+
+    def test_level3_pcv_headless(self, sample_ply, tmp_path):
+        out = tmp_path / "pcv_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCV", "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        if "Unknown or misplaced command" in r.stdout:
+            pytest.skip("qPCV plugin not loaded in this build")
+        assert r.returncode == 0 or out.exists()
+
+    def test_level3_animation_headless(self, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-ANIMATION",
+                "-FPS", "24", "-TOTAL_FRAMES", "10"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        assert r.returncode == 0
+
+    def test_level3_draco_settings_headless(self, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-DRACO",
+                "-QUANTIZATION", "14", "-SPEED", "3"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        assert r.returncode == 0
+
+    def test_level3_e57_settings_headless(self, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-E57", "-IGNORE_COLOR"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        assert r.returncode == 0
+
+    def test_level3_las_settings_headless(self, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-LAS", "-EXTRA_FIELDS", "-SAVE_LAZ"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        assert r.returncode == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 4: GUI RPC Plugin Command Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_PluginRPC:
+    """Test plugin commands via JSON-RPC (requires running GUI app)."""
+
+    def _rpc_call(self, method, params=None):
+        ws = ws_connect(RPC_URL, open_timeout=5)
+        try:
+            ws.send(json.dumps({
+                "jsonrpc": "2.0", "id": 1,
+                "method": method,
+                "params": params or {},
+            }))
+            resp = json.loads(ws.recv(timeout=30))
+            if "error" in resp:
+                raise RuntimeError(f"RPC error: {resp['error']}")
+            return resp.get("result")
+        finally:
+            ws.close()
+
+    def test_level4_rpc_ping(self):
+        assert self._rpc_call("ping") == "pong"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 5: MCP Plugin Tool Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestLevel5_PluginMCPTools:
+    """Verify MCP tools for new plugin commands."""
+
+    def test_level5_mcp_tool_count_increased(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            assert len(tools) >= 135, (
+                f"Expected ≥135 MCP tools (with new plugins), got {len(tools)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_3dmasc_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "classify_3dmasc"), None)
+            assert tool is not None, "classify_3dmasc tool not found"
+            schema = tool.inputSchema
+            assert "classifier_file" in schema.get("properties", {})
+            assert "cloud_roles" in schema.get("properties", {})
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_color_seg_rgb_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "color_seg_rgb"), None)
+            assert tool is not None, "color_seg_rgb tool not found"
+            props = tool.inputSchema.get("properties", {})
+            for key in ["r_min", "r_max", "g_min", "g_max", "b_min", "b_max"]:
+                assert key in props, f"Missing property: {key}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_g3point_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "g3point"), None)
+            assert tool is not None, "g3point tool not found"
+            props = tool.inputSchema.get("properties", {})
+            for key in ["n_neighbors", "max_radius", "min_radius"]:
+                assert key in props, f"Missing property: {key}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_draco_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "draco_settings"), None)
+            assert tool is not None, "draco_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "quantization" in props
+            assert "compression_level" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_las_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "las_settings"), None)
+            assert tool is not None, "las_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "extra_fields" in props
+            assert "save_laz" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")

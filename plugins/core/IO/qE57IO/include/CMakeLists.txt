@@ -4,6 +4,7 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/E57Header.h
         ${CMAKE_CURRENT_LIST_DIR}/E57Filter.h
         ${CMAKE_CURRENT_LIST_DIR}/qE57IO.h
+        ${CMAKE_CURRENT_LIST_DIR}/E57Commands.h
 )
 
 target_include_directories( ${PROJECT_NAME}

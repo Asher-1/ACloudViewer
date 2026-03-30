@@ -7,6 +7,7 @@
 
 #include "qColorimetricSegmenter.h"
 
+#include "ColorimetricSegmenterCommands.h"
 #include "HSV.h"
 #include "HSVDialog.h"
 #include "KmeansDlg.h"
@@ -1348,4 +1349,17 @@ void ColorimetricSegmenter::KmeansClustering() {
     }
 
     ShowDurationNow(startTime);
+}
+
+void ColorimetricSegmenter::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandColorimetricSegRGB));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandColorimetricSegHSV));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandColorimetricSegScalar));
 }

@@ -3,6 +3,7 @@ target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/G3PointAction.h
 		${CMAKE_CURRENT_LIST_DIR}/G3Point.h
+		${CMAKE_CURRENT_LIST_DIR}/G3PointCommands.h
 		${CMAKE_CURRENT_LIST_DIR}/G3PointDialog.h
 		${CMAKE_CURRENT_LIST_DIR}/GrainsAsEllipsoids.h
 		${CMAKE_CURRENT_LIST_DIR}/G3PointDisclaimer.h

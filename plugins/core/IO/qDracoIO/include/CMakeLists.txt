@@ -3,6 +3,7 @@ target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/DRCFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/qDracoIO.h
+		${CMAKE_CURRENT_LIST_DIR}/DracoCommands.h
 		${CMAKE_CURRENT_LIST_DIR}/SaveDracoFileDlg.h
 )
 

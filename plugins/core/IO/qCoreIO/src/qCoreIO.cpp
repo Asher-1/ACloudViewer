@@ -12,12 +12,15 @@
 #include "MascaretFilter.h"
 #include "PDMSFilter.h"
 #include "SimpleBinFilter.h"
+#include "CoreIOCommands.h"
 
 qCoreIO::qCoreIO(QObject *parent)
     : QObject(parent), ccIOPluginInterface(":/CC/plugin/CoreIO/info.json") {}
 
 void qCoreIO::registerCommands(ccCommandLineInterface *inCmdLine) {
-    Q_UNUSED(inCmdLine);
+    if (!inCmdLine) return;
+    inCmdLine->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCoreIO));
 }
 
 ccIOPluginInterface::FilterList qCoreIO::getFilters() {

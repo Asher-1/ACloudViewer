@@ -4,6 +4,7 @@
 target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/qMeshIO.h
+		${CMAKE_CURRENT_LIST_DIR}/MeshIOCommands.h
 		${CMAKE_CURRENT_LIST_DIR}/IoUtils.h
 		${CMAKE_CURRENT_LIST_DIR}/AssimpIfc.h
 		${CMAKE_CURRENT_LIST_DIR}/AssimpGltf.h

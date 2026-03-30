@@ -8,6 +8,7 @@
 #include "qAnimation.h"
 
 // Local
+#include "qAnimationCommands.h"
 #include "qAnimationDlg.h"
 
 // CORE_LIB
@@ -193,4 +194,13 @@ void qAnimation::doAction() {
             getMainAppInterface()->addToDB(trajectory);
         }
     }
+}
+
+void qAnimation::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandAnimation));
 }
