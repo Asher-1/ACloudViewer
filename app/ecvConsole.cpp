@@ -28,6 +28,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -61,7 +62,11 @@ bool ecvConsole::s_showQtMessagesInConsole = false;
 
 // ecvCustomQListWidget
 ecvCustomQListWidget::ecvCustomQListWidget(QWidget* parent)
-    : QListWidget(parent) {}
+    : QListWidget(parent) {
+    QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    mono.setPointSize(qMax(font().pointSize(), 9));
+    setFont(mono);
+}
 
 void ecvCustomQListWidget::keyPressEvent(QKeyEvent* event) {
     if (event->matches(QKeySequence::Copy)) {
