@@ -608,6 +608,22 @@ if (BUILD_CUDA_MODULE)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388")
     endif()
 
+    # Ensure CMake picks up the correct nvcc when multiple CUDA toolkits are
+    # installed (e.g. /usr/bin/nvcc from apt vs /usr/local/cuda/bin/nvcc).
+    # Without this, enable_language(CUDA) may find an older system nvcc first.
+    if(NOT DEFINED CMAKE_CUDA_COMPILER)
+        foreach(_cuda_search_path
+                "$ENV{CUDA_PATH}/bin"
+                "$ENV{CUDA_HOME}/bin"
+                "/usr/local/cuda/bin")
+            if(EXISTS "${_cuda_search_path}/nvcc")
+                set(CMAKE_CUDA_COMPILER "${_cuda_search_path}/nvcc")
+                message(STATUS "Using CUDA compiler: ${CMAKE_CUDA_COMPILER}")
+                break()
+            endif()
+        endforeach()
+    endif()
+
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
