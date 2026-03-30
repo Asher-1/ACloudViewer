@@ -214,7 +214,7 @@ export BUILD_PYTORCH_OPS=ON
 install_python_dependencies with-cuda with-jupyter with-unit-test
 
 # (Optional) Deploy Node.js + Yarn for Jupyter extension
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - \
+curl -fsSL https://deb.nodesource.com/setup_25.x | sudo bash - \
     && sudo apt-get install -y nodejs \
     && sudo npm install -g yarn
 

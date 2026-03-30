@@ -656,6 +656,22 @@ _SAMPLE_PLY_HEADER = (
 )
 _SAMPLE_PLY_BODY = "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) + "\n"
 
+def _make_mesh_ply_content():
+    """Generate a 10x10 grid of points on the XY plane — guaranteed triangulable."""
+    pts = []
+    for row in range(10):
+        for col in range(10):
+            pts.append(f"{col * 0.1:.4f} {row * 0.1:.4f} {((row + col) % 3) * 0.05:.4f}")
+    header = (
+        "ply\nformat ascii 1.0\n"
+        f"element vertex {len(pts)}\n"
+        "property float x\nproperty float y\nproperty float z\n"
+        "end_header\n"
+    )
+    return header + "\n".join(pts) + "\n"
+
+_MESH_PLY_CONTENT = _make_mesh_ply_content()
+
 
 def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     """Lightweight env setup for invoking the binary directly (no harness)."""
@@ -1554,6 +1570,13 @@ class TestLevel3_FormatConversion:
         ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(ply_path)
 
+    @pytest.fixture(scope="class")
+    def mesh_ply(self, shared_dir):
+        """A 10x10 grid PLY that Delaunay can triangulate (non-collinear)."""
+        ply_path = shared_dir / "mesh_test.ply"
+        ply_path.write_text(_MESH_PLY_CONTENT)
+        return str(ply_path)
+
     def _convert_file(self, input_path, output_path, fmt, acv_env):
         r = subprocess.run(
             [BINARY_PATH, "-SILENT", "-O", input_path,
@@ -1629,7 +1652,7 @@ class TestLevel3_FormatConversion:
             f"DRC->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
         assert Path(out).exists(), "DRC->PCD output file not found"
 
-    @pytest.mark.parametrize("fmt", ["PLY", "ASC", "BIN", "VTK", "STL"])
+    @pytest.mark.parametrize("fmt", ["PLY", "ASC", "BIN", "VTK"])
     def test_level3_basic_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
         out = str(tmp_path / f"test.{fmt.lower()}")
         r = self._convert_file(sample_ply, out, fmt, acv_env)
@@ -1638,84 +1661,108 @@ class TestLevel3_FormatConversion:
                 f"PLY->{fmt} crashed (rc=0x{r.returncode:08X}):\n"
                 f"{(r.stdout + r.stderr)[-2000:]}"
             )
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->{fmt} failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->{fmt} failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"{fmt} output file missing or empty: {out}"
 
-    @pytest.mark.parametrize("fmt", ["OBJ", "OFF"])
-    def test_level3_mesh_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
+    @pytest.mark.parametrize("fmt", ["OBJ", "OFF", "STL"])
+    def test_level3_mesh_format_conversion(self, mesh_ply, acv_env, tmp_path, fmt):
         """Cloud->Mesh format via Delaunay + mesh export."""
         out = str(tmp_path / f"mesh.{fmt.lower()}")
         r = subprocess.run(
-            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
              "-DELAUNAY", "-M_EXPORT_FMT", fmt,
              "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
              "-SAVE_MESHES", "FILE", out],
             capture_output=True, text=True, timeout=120,
             env=acv_env)
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->{fmt} (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->{fmt} (mesh) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"{fmt} mesh output file missing or empty: {out}"
 
     @pytest.mark.parametrize("ext", [".xyz", ".txt", ".csv", ".pts"])
     def test_level3_ascii_variants(self, sample_ply, acv_env, tmp_path, ext):
         """All ASCII variant extensions export as ASC format."""
         out = str(tmp_path / f"test{ext}")
         r = self._convert_file(sample_ply, out, "ASC", acv_env)
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->ASC({ext}) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->ASC({ext}) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"ASC({ext}) output file missing or empty: {out}"
 
     def test_level3_las_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> LAS (requires qLASIO or qPDALIO plugin)."""
         out = str(tmp_path / "test.las")
         r = self._convert_file(sample_ply, out, "LAS", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("LAS IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->LAS failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("LAS IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->LAS failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"LAS output file missing or empty: {out}"
 
     def test_level3_e57_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> E57 (requires qE57IO plugin)."""
         out = str(tmp_path / "test.e57")
         r = self._convert_file(sample_ply, out, "E57", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()
-                                   or "no filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format",
+                              "no filter"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("E57 IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->E57 failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("E57 IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->E57 failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"E57 output file missing or empty: {out}"
 
-    def test_level3_fbx_conversion(self, sample_ply, acv_env, tmp_path):
+    def test_level3_fbx_conversion(self, mesh_ply, acv_env, tmp_path):
         """PLY -> FBX (requires qFBXIO plugin, mesh-based)."""
         out = str(tmp_path / "test.fbx")
         r = subprocess.run(
-            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
              "-DELAUNAY", "-M_EXPORT_FMT", "FBX",
              "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
              "-SAVE_MESHES", "FILE", out],
             capture_output=True, text=True, timeout=120,
             env=acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
-            pytest.skip("FBX IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->FBX (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        combined = (r.stdout + r.stderr).lower()
+        skip_keywords = ("plugin", "filter", "unsupported", "unknown format",
+                         "unhandled", "empty mesh", "nothing to save")
+        plugin_missing = any(kw in combined for kw in skip_keywords)
+        if not Path(out).exists() and plugin_missing:
+            pytest.skip("FBX IO plugin not available or Delaunay produced empty mesh")
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("FBX IO plugin not available or Delaunay produced empty mesh")
+        assert r.returncode == 0, \
+            f"PLY->FBX (mesh) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"FBX output file missing or empty: {out}"
 
     def test_level3_sbf_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> SBF (SimpleBin, qCoreIO plugin)."""
         out = str(tmp_path / "test.sbf")
         r = self._convert_file(sample_ply, out, "SBF", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("SBF IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->SBF failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("SBF IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->SBF failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"SBF output file missing or empty: {out}"
 
 
 @pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")

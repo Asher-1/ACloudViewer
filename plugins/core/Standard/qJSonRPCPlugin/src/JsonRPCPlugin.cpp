@@ -285,11 +285,48 @@ static QString variantTypeTag(const QVariant& v) {
     }
 }
 
+static constexpr const char* kLogPrefix = "      | ";
+static constexpr const char* kLogIndent = "      |   ";
+
+static int measureMaxCol(const QVariant& v,
+                         int prefixLen,
+                         int depth,
+                         int maxDepth) {
+    if (v.isNull() || !v.isValid() || depth >= maxDepth) return 0;
+    const int vtype = static_cast<int>(v.type());
+    int best = 0;
+
+    if (vtype == QVariant::Map) {
+        const QVariantMap map = v.toMap();
+        for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+            int col = prefixLen + it.key().length() + 1;
+            best = qMax(best, col);
+            const int ct = static_cast<int>(it.value().type());
+            if (ct == QVariant::Map || ct == QVariant::List) {
+                best = qMax(best, measureMaxCol(it.value(), prefixLen + 2,
+                                                depth + 1, maxDepth));
+            }
+        }
+    } else if (vtype == QVariant::List || vtype == QVariant::StringList) {
+        const QVariantList list = v.toList();
+        const int show = qMin(list.size(), 50);
+        for (int i = 0; i < show; ++i) {
+            const int ct = static_cast<int>(list[i].type());
+            if (ct == QVariant::Map || ct == QVariant::List) {
+                best = qMax(best, measureMaxCol(list[i], prefixLen + 2,
+                                                depth + 1, maxDepth));
+            }
+        }
+    }
+    return best;
+}
+
 static void prettyAppend(QStringList& out,
                          const QVariant& v,
                          const QString& prefix,
                          int depth,
-                         int maxDepth) {
+                         int maxDepth,
+                         int globalValCol) {
     if (v.isNull() || !v.isValid()) return;
     if (depth >= maxDepth) {
         out << prefix + variantToLogString(v, depth);
@@ -302,27 +339,22 @@ static void prettyAppend(QStringList& out,
         const QVariantMap map = v.toMap();
         if (map.isEmpty()) return;
 
-        int maxKeyLen = 0;
-        for (auto it = map.constBegin(); it != map.constEnd(); ++it)
-            maxKeyLen = qMax(maxKeyLen, it.key().length());
-
+        const int localPadTo = qMax(0, globalValCol - prefix.length());
         const QString child = prefix + QStringLiteral("  ");
         for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
             const int ct = static_cast<int>(it.value().type());
-            // Treat ALL Maps and Lists as nested, regardless of their content
-            // This ensures objects like bbox are always beautifully formatted
             const bool isMapOrList =
                     (ct == QVariant::Map || ct == QVariant::List);
 
             if (isMapOrList && depth + 1 < maxDepth) {
-                // Multi-line format for Maps/Lists
-                out << prefix + it.key().leftJustified(maxKeyLen) +
-                                QStringLiteral(":");
-                prettyAppend(out, it.value(), child, depth + 1, maxDepth);
+                out << prefix + it.key() + QStringLiteral(":");
+                prettyAppend(out, it.value(), child, depth + 1, maxDepth,
+                             globalValCol);
             } else {
-                // Simple values on same line
-                out << prefix + it.key().leftJustified(maxKeyLen) +
-                                QStringLiteral(" : ") +
+                QString keyColon =
+                        QString(it.key() + QStringLiteral(":"))
+                                .leftJustified(localPadTo);
+                out << prefix + keyColon + QStringLiteral(" ") +
                                 variantToLogString(it.value(), depth + 1);
             }
         }
@@ -340,14 +372,14 @@ static void prettyAppend(QStringList& out,
         }
         if (allSimple) {
             QString compact = variantToLogString(v, depth);
-            if (compact.length() <= 200) {  // Increased from 120 to 200
+            if (compact.length() <= 200) {
                 out << prefix + compact;
                 return;
             }
         }
 
-        const int show = qMin(list.size(), 50);  // Increased from 10 to 50
-        if (list.size() > 50)                    // Increased from 10 to 50
+        const int show = qMin(list.size(), 50);
+        if (list.size() > 50)
             out << prefix + QStringLiteral("(%1 items, first 50)")
                                     .arg(list.size());
 
@@ -357,33 +389,29 @@ static void prettyAppend(QStringList& out,
             const bool nested = (ct == QVariant::Map || ct == QVariant::List);
             if (nested && depth + 1 < maxDepth) {
                 out << prefix + QStringLiteral("[%1]:").arg(i);
-                prettyAppend(out, list[i], child, depth + 1, maxDepth);
+                prettyAppend(out, list[i], child, depth + 1, maxDepth,
+                             globalValCol);
             } else {
                 out << prefix + QStringLiteral("[%1]: ").arg(i) +
                                 variantToLogString(list[i], depth + 1);
             }
         }
         if (list.size() > 50)
-            out << prefix + QStringLiteral("...");  // Increased from 10 to 50
+            out << prefix + QStringLiteral("...");
     } else {
         out << prefix + variantToLogString(v, depth);
     }
 }
 
-static QString prettyFormatResult(const QVariant& v) {
+static void prettyFormatLines(QStringList& out, const QVariant& v) {
     const int vtype = static_cast<int>(v.type());
     if (vtype != QVariant::Map && vtype != QVariant::List &&
         vtype != QVariant::StringList) {
-        return variantToLogString(v, 0);
+        return;
     }
-
-    // Always use multi-line format for Maps and Lists for beautiful JSON
-    // display This ensures structured data like bbox is displayed with proper
-    // indentation
-    QStringList lines;
-    prettyAppend(lines, v, QStringLiteral("  |   "), 0,
-                 6);  // Increased from 4 to 6
-    return lines.join(QChar('\n'));
+    const int baseLen = static_cast<int>(qstrlen(kLogIndent));
+    int valCol = measureMaxCol(v, baseLen, 0, 6) + 1;
+    prettyAppend(out, v, QLatin1String(kLogIndent), 0, 6, valCol);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -681,21 +709,27 @@ void JsonRPCPlugin::logRequest(const QString& method,
     for (auto it = params.constBegin(); it != params.constEnd(); ++it)
         maxKeyLen = qMax(maxKeyLen, it.key().length());
 
+    const int colonCol = maxKeyLen + 1;
     QStringList lines;
     lines << QStringLiteral("[JsonRPC] >> %1").arg(method);
     for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
         QString valStr = variantToLogString(it.value());
         QString tag = variantTypeTag(it.value());
+        QString keyColon =
+                QString(it.key() + QStringLiteral(":"))
+                        .leftJustified(colonCol);
 
-        if (valStr.length() <= 150) {  // Increased from 80 to 150
-            lines << QStringLiteral("  | %1 : %2  (%3)")
-                             .arg(it.key().leftJustified(maxKeyLen), valStr,
+        if (valStr.length() <= 150) {
+            lines << QStringLiteral("%1%2 %3  (%4)")
+                             .arg(QLatin1String(kLogPrefix), keyColon, valStr,
                                   tag);
         } else {
-            lines << QStringLiteral("  | %1 :  (%2)")
-                             .arg(it.key().leftJustified(maxKeyLen), tag);
-            prettyAppend(lines, it.value(), QStringLiteral("  |   "), 0,
-                         6);  // Increased from 3 to 6
+            lines << QStringLiteral("%1%2  (%3)")
+                             .arg(QLatin1String(kLogPrefix), keyColon, tag);
+            const int baseLen = static_cast<int>(qstrlen(kLogIndent));
+            int vc = measureMaxCol(it.value(), baseLen, 0, 6) + 1;
+            prettyAppend(lines, it.value(), QLatin1String(kLogIndent), 0, 6,
+                         vc);
         }
     }
     CVLog::Print(lines.join("\n"));
@@ -709,6 +743,24 @@ void JsonRPCPlugin::logResponse(const QString& method,
         return;
     }
 
+    auto appendResultBlock = [](QStringList& lines, const QString& label,
+                                const QVariant& v) {
+        const int vt = static_cast<int>(v.type());
+        const bool isComplex =
+                (vt == QVariant::Map || vt == QVariant::List ||
+                 vt == QVariant::StringList);
+
+        if (isComplex) {
+            lines << QStringLiteral("%1%2:")
+                             .arg(QLatin1String(kLogPrefix), label);
+            prettyFormatLines(lines, v);
+        } else {
+            lines << QStringLiteral("%1%2: %3")
+                             .arg(QLatin1String(kLogPrefix), label,
+                                  variantToLogString(v, 0));
+        }
+    };
+
     if (result.isError) {
         QStringList lines;
         lines << QStringLiteral("[JsonRPC] << %1 FAILED [%2] (%3ms): %4")
@@ -717,27 +769,16 @@ void JsonRPCPlugin::logResponse(const QString& method,
                          .arg(elapsedMs)
                          .arg(result.error_message);
         if (!result.error_data.isNull() && result.error_data.isValid()) {
-            QString pretty = prettyFormatResult(result.error_data);
-            if (pretty.contains('\n')) {
-                lines << QStringLiteral("  | data:");
-                lines << pretty;
-            } else {
-                lines << QStringLiteral("  | data: %1").arg(pretty);
-            }
+            appendResultBlock(lines, QStringLiteral("data"),
+                              result.error_data);
         }
         CVLog::Warning(lines.join(QChar('\n')));
     } else {
-        QString pretty = prettyFormatResult(result.result);
         QStringList lines;
         lines << QStringLiteral("[JsonRPC] << %1 OK (%2ms)")
                          .arg(method)
                          .arg(elapsedMs);
-        if (pretty.contains('\n')) {
-            lines << QStringLiteral("  | result:");
-            lines << pretty;
-        } else {
-            lines << QStringLiteral("  | result: %1").arg(pretty);
-        }
+        appendResultBlock(lines, QStringLiteral("result"), result.result);
         CVLog::Print(lines.join(QChar('\n')));
     }
 }
