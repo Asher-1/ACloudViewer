@@ -143,10 +143,12 @@ These invoke ACloudViewer C++ plugins via the headless binary (`-SILENT` and nat
 cli-anything-acloudviewer process pcv input.ply -o output.ply --n-rays 256 --resolution 1024
 
 # CSF ground filtering
-cli-anything-acloudviewer process csf input.ply -o output.ply --scenes 1 --cloth-resolution 0.5
+cli-anything-acloudviewer process csf input.ply -o output.ply --scenes RELIEF --cloth-resolution 2.0
+cli-anything-acloudviewer process csf input.ply -o output.ply --scenes SLOPE --proc-slope --export-ground
 
 # RANSAC shape detection
 cli-anything-acloudviewer process ransac input.ply -o output.ply --epsilon 0.005 --support-points 500
+cli-anything-acloudviewer process ransac input.ply -o output.ply --primitives PLANE --primitives SPHERE --primitives CYLINDER
 
 # M3C2 cloud comparison
 cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt
