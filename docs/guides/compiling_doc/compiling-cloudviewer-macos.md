@@ -1,161 +1,225 @@
-Build from source on MacOS
-=====================
+# Building ACloudViewer from Source on macOS
 
-## MACOS: [BUILD_SHELL](../../../scripts/build_macos.sh)
+> **Automated build script:** [`scripts/build_macos.sh`](../../../scripts/build_macos.sh)
+>
+> ```bash
+> ./scripts/build_macos.sh 2>&1 | tee build.log
+> ```
 
-```
-(VPN required)[fix librealsense downloading issues]
-export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890
-Remove build_realsense when call build_mac_wheel at scripts/build_macos_whl.sh
+---
 
-./scripts/build_macos.sh 2>&1 | tee build.log
-```
+## Table of Contents
 
-## Debug wheel (MacOS)
+- [Building ACloudViewer from Source on macOS](#building-acloudviewer-from-source-on-macos)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Install System Dependencies](#install-system-dependencies)
+  - [Set Up Python (Conda)](#set-up-python-conda)
+  - [Building the APP (GUI + CLI)](#building-the-app-gui--cli)
+  - [Building the Python Wheel](#building-the-python-wheel)
+    - [1. Create the wheel Conda environment](#1-create-the-wheel-conda-environment)
+    - [2. Install Python dependencies](#2-install-python-dependencies)
+    - [3. Configure and build](#3-configure-and-build)
+  - [Testing](#testing)
+    - [Debug a wheel (LLDB)](#debug-a-wheel-lldb)
+    - [Unit tests from CMake](#unit-tests-from-cmake)
+    - [Python unit tests](#python-unit-tests)
+  - [Installation](#installation)
+    - [C++ library](#c-library)
+    - [Python library](#python-library)
+  - [Compilation Options Reference](#compilation-options-reference)
+    - [OpenMP on macOS](#openmp-on-macos)
+    - [ML Module (PyTorch)](#ml-module-pytorch)
+    - [CUDA / GPU](#cuda--gpu)
+  - [Troubleshooting](#troubleshooting)
 
-```
-1. lldb python
+---
 
-2. run -c "import cloudViewer"
+## Prerequisites
 
-3. bt
-```
+| Item             | Requirement                                       |
+| ---------------- | ------------------------------------------------- |
+| **OS**           | macOS 13+ (Intel or Apple Silicon)                |
+| **Xcode CLI**    | `xcode-select --install`                          |
+| **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
+| **Python**       | 3.10 – 3.12 (via Conda)                           |
+| **Conda**        | Miniconda or Anaconda                              |
+| **Homebrew**     | https://brew.sh                                    |
 
-## Install dependencies
+---
 
-```
+## Install System Dependencies
+
+```bash
 brew install gcc --without-multilib
 ```
 
-## python env setup
-```
+> **VPN note:** If you are behind a firewall, librealsense downloads may fail.
+> Set proxy environment variables before building:
+>
+> ```bash
+> export https_proxy=http://127.0.0.1:7890
+> export http_proxy=http://127.0.0.1:7890
+> export all_proxy=socks5://127.0.0.1:7890
+> ```
+
+---
+
+## Set Up Python (Conda)
+
+```bash
+PYTHON_VERSION=3.12
+
 cp .ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-sed -i "" "s/3.8/3.12/g" /tmp/conda_macos_cloudViewer.yml
+sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
+
 conda env create -f /tmp/conda_macos_cloudViewer.yml
 conda activate cloudViewer
 ```
 
-## Building APP
+Export Conda paths so CMake can find Qt, VTK, and other libraries:
 
-**qSIBR (SIBR / ULR viewers):** GitHub Actions macOS workflow uses `util/ci_utils.sh` `build_gui_app`, which sets `PLUGIN_STANDARD_QSIBR=OFF` on Darwin. The example below matches that. To experiment locally, use `-DPLUGIN_STANDARD_QSIBR=ON` or `export PLUGIN_STANDARD_QSIBR=ON` before `build_gui_app`.
-
-```
-PS: no opencv support due to some issues on local macos machine
-
+```bash
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
+```
 
+---
+
+## Building the APP (GUI + CLI)
+
+> **qSIBR note:** The CI workflow sets `PLUGIN_STANDARD_QSIBR=OFF` on macOS.
+> The example below matches that default. To experiment locally, add
+> `-DPLUGIN_STANDARD_QSIBR=ON`.
+
+```bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
-# you can use PackageManager to install 3DFin==0.4.1 as python plugin (with qt5 support not latest version)
-python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
+# (Optional) Install Python plugin requirements
+python -m pip install -r \
+    "${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt"
 
 cd ACloudViewer
-mkdir build_app
-cd build_app
-cmake   -DDEVELOPER_BUILD=OFF \
-        -DBUILD_UNIT_TESTS=ON \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
-        -DBUILD_LIBREALSENSE=OFF \
-        -DBUILD_AZURE_KINECT=OFF \
-        -DBUILD_BENCHMARKS=OFF \
-        -DWITH_OPENMP=ON \
-        -DWITH_IPP=ON \
-        -DWITH_SIMD=ON \
-        -DUSE_SIMD=ON \
-        -DUSE_QT6=OFF \
-        -DPACKAGE=ON \
-        -DUSE_VTK_BACKEND=ON \
-        -DBUILD_WEBRTC=OFF \
-        -DBUILD_OPENCV=ON \
-        -DUSE_SYSTEM_OPENCV=OFF \
-        -DBUILD_RECONSTRUCTION=ON \
-        -DBUILD_CUDA_MODULE=OFF \
-        -DBUILD_COMMON_CUDA_ARCHS=ON \
-        -DBUILD_PYTORCH_OPS=OFF \
-        -DBUILD_TENSORFLOW_OPS=OFF \
-        -DBUNDLE_CLOUDVIEWER_ML=OFF \
-        -DCVCORELIB_USE_CGAL=ON \
-        -DCVCORELIB_SHARED=ON \
-        -DCVCORELIB_USE_QT_CONCURRENT=ON \
-        -DOPTION_USE_GDAL=OFF \
-        -DOPTION_USE_DXF_LIB=ON \
-        -DOPTION_USE_RANSAC_LIB=ON \
-        -DOPTION_USE_SHAPE_LIB=ON \
-        -DPLUGIN_IO_QDRACO=ON \
-        -DPLUGIN_IO_QLAS=ON \
-        -DPLUGIN_IO_QADDITIONAL=ON \
-        -DPLUGIN_IO_QCORE=ON \
-        -DPLUGIN_IO_QCSV_MATRIX=ON \
-        -DPLUGIN_IO_QE57=ON \
-        -DPLUGIN_IO_QMESH=ON \
-        -DPLUGIN_IO_QPDAL=OFF \
-        -DPLUGIN_IO_QPHOTOSCAN=ON \
-        -DPLUGIN_IO_QRDB=OFF \
-        -DPLUGIN_IO_QFBX=OFF \
-        -DPLUGIN_IO_QSTEP=OFF \
-        -DPLUGIN_STANDARD_QCORK=ON \
-        -DPLUGIN_STANDARD_QJSONRPC=ON \
-        -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
-        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
-        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
-        -DPLUGIN_STANDARD_QANIMATION=ON \
-        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
-        -DPLUGIN_STANDARD_QCANUPO=ON \
-        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
-        -DPLUGIN_STANDARD_QCOMPASS=ON \
-        -DPLUGIN_STANDARD_QCSF=ON \
-        -DPLUGIN_STANDARD_QFACETS=ON \
-        -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
-        -DPLUGIN_STANDARD_QM3C2=ON \
-        -DPLUGIN_STANDARD_QMPLANE=ON \
-        -DPLUGIN_STANDARD_QPCL=ON \
-        -DPLUGIN_STANDARD_QPOISSON_RECON=OFF \
-        -DPOISSON_RECON_WITH_OPEN_MP=ON \
-        -DPLUGIN_STANDARD_QRANSAC_SD=ON \
-        -DPLUGIN_STANDARD_QSRA=ON \
-        -DPLUGIN_STANDARD_3DMASC=OFF \
-        -DPLUGIN_STANDARD_QTREEISO=OFF \
-        -DPLUGIN_STANDARD_QVOXFALL=ON \
-        -DPLUGIN_STANDARD_G3POINT=ON \
-        -DPLUGIN_STANDARD_QSIBR=OFF \
-        -DPLUGIN_PYTHON=ON \
-        -DBUILD_PYTHON_MODULE=ON \
-        -DBUILD_WITH_CONDA=ON \
-        -DCONDA_PREFIX=$CONDA_PREFIX \
-        -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
-        -DCMAKE_INSTALL_PREFIX=~/cloudViewer_install \
-        -DCLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML \
-        ..
+mkdir -p build_app && cd build_app
 
-Build: 
-        make -j24
-        make install -j24
+cmake \
+    -DDEVELOPER_BUILD=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=~/ACloudViewer/install \
+    -DBUILD_WITH_CONDA=ON \
+    -DCONDA_PREFIX=$CONDA_PREFIX \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DBUILD_UNIT_TESTS=ON \
+    -DBUILD_BENCHMARKS=OFF \
+    -DWITH_OPENMP=ON \
+    -DWITH_IPP=ON \
+    -DWITH_SIMD=ON \
+    -DUSE_SIMD=ON \
+    -DUSE_QT6=OFF \
+    -DPACKAGE=ON \
+    -DUSE_VTK_BACKEND=ON \
+    -DBUILD_WEBRTC=OFF \
+    -DBUILD_OPENCV=ON \
+    -DUSE_SYSTEM_OPENCV=OFF \
+    -DBUILD_RECONSTRUCTION=ON \
+    -DBUILD_CUDA_MODULE=OFF \
+    -DBUILD_JUPYTER_EXTENSION=OFF \
+    -DBUILD_LIBREALSENSE=OFF \
+    -DBUILD_AZURE_KINECT=OFF \
+    -DBUILD_PYTORCH_OPS=OFF \
+    -DBUILD_TENSORFLOW_OPS=OFF \
+    -DBUNDLE_CLOUDVIEWER_ML=OFF \
+    -DCVCORELIB_USE_CGAL=ON \
+    -DCVCORELIB_SHARED=ON \
+    -DCVCORELIB_USE_QT_CONCURRENT=ON \
+    -DOPTION_USE_GDAL=OFF \
+    -DOPTION_USE_DXF_LIB=ON \
+    -DOPTION_USE_RANSAC_LIB=ON \
+    -DOPTION_USE_SHAPE_LIB=ON \
+    -DPLUGIN_IO_QDRACO=ON \
+    -DPLUGIN_IO_QLAS=ON \
+    -DPLUGIN_IO_QADDITIONAL=ON \
+    -DPLUGIN_IO_QCORE=ON \
+    -DPLUGIN_IO_QCSV_MATRIX=ON \
+    -DPLUGIN_IO_QE57=ON \
+    -DPLUGIN_IO_QMESH=ON \
+    -DPLUGIN_IO_QPDAL=OFF \
+    -DPLUGIN_IO_QPHOTOSCAN=ON \
+    -DPLUGIN_IO_QRDB=OFF \
+    -DPLUGIN_IO_QFBX=OFF \
+    -DPLUGIN_IO_QSTEP=OFF \
+    -DPLUGIN_STANDARD_QCORK=ON \
+    -DPLUGIN_STANDARD_QJSONRPC=ON \
+    -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
+    -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
+    -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
+    -DPLUGIN_STANDARD_QANIMATION=ON \
+    -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
+    -DPLUGIN_STANDARD_QCANUPO=ON \
+    -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
+    -DPLUGIN_STANDARD_QCOMPASS=ON \
+    -DPLUGIN_STANDARD_QCSF=ON \
+    -DPLUGIN_STANDARD_QFACETS=ON \
+    -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
+    -DPLUGIN_STANDARD_QM3C2=ON \
+    -DPLUGIN_STANDARD_QMPLANE=ON \
+    -DPLUGIN_STANDARD_QPCL=ON \
+    -DPLUGIN_STANDARD_QPOISSON_RECON=OFF \
+    -DPOISSON_RECON_WITH_OPEN_MP=ON \
+    -DPLUGIN_STANDARD_QRANSAC_SD=ON \
+    -DPLUGIN_STANDARD_QSRA=ON \
+    -DPLUGIN_STANDARD_3DMASC=OFF \
+    -DPLUGIN_STANDARD_QTREEISO=OFF \
+    -DPLUGIN_STANDARD_QVOXFALL=ON \
+    -DPLUGIN_STANDARD_G3POINT=ON \
+    -DPLUGIN_STANDARD_QSIBR=OFF \
+    -DPLUGIN_PYTHON=ON \
+    -DBUILD_PYTHON_MODULE=ON \
+    ..
+
+make -j"$(sysctl -n hw.logicalcpu)"
+make install -j"$(sysctl -n hw.logicalcpu)"
 ```
 
-## Building wheel
+---
 
-```
+## Building the Python Wheel
+
+### 1. Create the wheel Conda environment
+
+```bash
+PYTHON_VERSION=3.12
+
 cp .ci/conda_macos.yml /tmp/conda_macos.yml
-sed -i "" "s/3.8/3.12/g" /tmp/conda_macos.yml
-conda env create -f /tmp/conda_macos.yml
-conda activate python3.12
+sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
 
-bash
+conda env create -f /tmp/conda_macos.yml
+conda activate python${PYTHON_VERSION}
+```
+
+### 2. Install Python dependencies
+
+```bash
+export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 export BUILD_PYTORCH_OPS=ON
-source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+
+source "${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh"
 install_python_dependencies with-unit-test purge-cache
-
-# fix zsh shell
-bash -l -c "source util/ci_utils.sh && install_python_dependencies with-unit-test purge-cache"
-
 ```
 
-```
+> **zsh users:** If `source` fails in zsh, wrap it:
+>
+> ```bash
+> bash -l -c "source util/ci_utils.sh && install_python_dependencies with-unit-test purge-cache"
+> ```
+
+### 3. Configure and build
+
+```bash
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
-export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=OFF
@@ -163,221 +227,167 @@ export BUILD_PYTORCH_OPS=ON
 export BUILD_TENSORFLOW_OPS=OFF
 
 cd ACloudViewer
-mkdir build
-cd build
+mkdir -p build && cd build
 
-cmake -DDEVELOPER_BUILD=OFF \
-      -DBUILD_SHARED_LIBS=OFF \
-      -DBUILD_UNIT_TESTS=ON \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_LIBREALSENSE=ON \
-      -DBUILD_AZURE_KINECT=OFF \
-      -DBUILD_BENCHMARKS=OFF \
-      -DBUILD_OPENCV=OFF \
-      -DWITH_OPENMP=ON \
-      -DWITH_IPP=OFF \
-      -DWITH_SIMD=ON \
-      -DUSE_SIMD=ON \
-      -DUSE_QT6=OFF \
-      -DCVCORELIB_SHARED=ON \
-      -DCVCORELIB_USE_CGAL=ON \
-      -DCVCORELIB_USE_QT_CONCURRENT=ON \
-      -DUSE_VTK_BACKEND=OFF \
-      -DBUILD_FILAMENT_FROM_SOURCE=OFF \
-      -DBUILD_WEBRTC=OFF \
-      -DBUILD_JUPYTER_EXTENSION=OFF \
-      -DBUILD_RECONSTRUCTION=ON \
-      -DBUILD_CUDA_MODULE=OFF \
-      -DBUILD_COMMON_CUDA_ARCHS=ON \
-      -DBUILD_PYTORCH_OPS=ON \
-      -DBUILD_TENSORFLOW_OPS=OFF \
-      -DBUNDLE_CLOUDVIEWER_ML=ON \
-      -DBUILD_WITH_CONDA=ON \
-      -DCONDA_PREFIX=$CONDA_PREFIX \
-      -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
-      -DCMAKE_INSTALL_PREFIX=~/cloudViewer_install \
-      -DCLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML \
-      ..
+cmake \
+    -DDEVELOPER_BUILD=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=~/ACloudViewer/install \
+    -DBUILD_WITH_CONDA=ON \
+    -DCONDA_PREFIX=$CONDA_PREFIX \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_UNIT_TESTS=ON \
+    -DBUILD_LIBREALSENSE=ON \
+    -DBUILD_AZURE_KINECT=OFF \
+    -DBUILD_BENCHMARKS=OFF \
+    -DBUILD_OPENCV=OFF \
+    -DWITH_OPENMP=ON \
+    -DWITH_IPP=OFF \
+    -DWITH_SIMD=ON \
+    -DUSE_SIMD=ON \
+    -DUSE_QT6=OFF \
+    -DCVCORELIB_SHARED=ON \
+    -DCVCORELIB_USE_CGAL=ON \
+    -DCVCORELIB_USE_QT_CONCURRENT=ON \
+    -DUSE_VTK_BACKEND=OFF \
+    -DBUILD_FILAMENT_FROM_SOURCE=OFF \
+    -DBUILD_WEBRTC=OFF \
+    -DBUILD_JUPYTER_EXTENSION=OFF \
+    -DBUILD_RECONSTRUCTION=ON \
+    -DBUILD_CUDA_MODULE=OFF \
+    -DBUILD_PYTORCH_OPS=ON \
+    -DBUILD_TENSORFLOW_OPS=OFF \
+    -DBUNDLE_CLOUDVIEWER_ML=ON \
+    -DCLOUDVIEWER_ML_ROOT="${CLOUDVIEWER_ML_ROOT}" \
+    ..
 
-make "-j$(nproc)" python-package
-make "-j$(nproc)" pip-package
-make "-j$(nproc)" install-pip-package
+make -j"$(sysctl -n hw.logicalcpu)" python-package
+make -j"$(sysctl -n hw.logicalcpu)" pip-package
+make -j"$(sysctl -n hw.logicalcpu)" install-pip-package
+
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 ```
 
-## Test
-```
-cd ${CLOUDVIEWER_SOURCE_ROOT}
+---
+
+## Testing
+
+```bash
+cd "${CLOUDVIEWER_SOURCE_ROOT}"
+source util/ci_utils.sh
+
 export BUILD_PYTORCH_OPS=ON
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_TENSORFLOW_OPS=OFF
-export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
-source util/ci_utils.sh
 
-test_wheel build/lib/python_package/pip_package/cloudviewer*
-
-# test c++ and python
+# Run all tests (C++ + Python)
 run_all_tests
 
-# test c++
-run_cpp_unit_tests
+# Or run them separately:
+run_cpp_unit_tests     # C++ unit tests only
+run_python_tests       # Python unit tests only
 
-# test python
-run_python_tests
+# Test a built wheel
+test_wheel build/lib/python_package/pip_package/cloudviewer*
 ```
 
-## Install
+### Debug a wheel (LLDB)
 
-To install CloudViewer C++ library:
+```bash
+lldb python3
+# (lldb) run -c "import cloudViewer"
+# (lldb) bt
+```
 
-    	make install
+### Unit tests from CMake
 
-To link a C++ project against the CloudViewer C++ library, please refer to
-:ref:`create_cplusplus_project`.
+```bash
+cd build
+cmake -DBUILD_UNIT_TESTS=ON ..
+make -j"$(sysctl -n hw.logicalcpu)"
+./bin/tests
+```
 
+### Python unit tests
 
-To install CloudViewer Python library, build one of the following options:
+```bash
+pip install pytest
+make install-pip-package
+pytest ../python/test
+```
 
-    # Activate the virtualenv first
-    # Install pip package in the current python environment
-    make install-pip-package
+---
 
-    # Create Python package in build/lib
-    make python-package
+## Installation
 
-    # Create pip wheel in build/lib
-    # This creates a .whl file that you can install manually.
-    make pip-package
+### C++ library
 
-    # Create conda package in build/lib
-    # This creates a .tar.bz2 file that you can install manually.
-    make conda-package
+```bash
+cd build
+make install
+```
 
-Finally, verify the python installation with:
+To link against the installed C++ library, see the [C++ project guide](../../create_cplusplus_project.rst).
 
-	python -c "import cloudViewer"
+### Python library
 
-    :: Activate the virtualenv first
-    :: Install pip package in the current python environment
-    cmake --build . --config Release --target install-pip-package
+```bash
+# Install directly into current environment
+make install-pip-package
 
-    :: Create Python package in build/lib
-    cmake --build . --config Release --target python-package
+# — or build artifacts for distribution —
+make python-package    # → build/lib/
+make pip-package       # → .whl in build/lib/
+make conda-package     # → .tar.bz2 in build/lib/
 
-    :: Create pip package in build/lib
-    :: This creates a .whl file that you can install manually.
-    cmake --build . --config Release --target pip-package
+# Verify
+python -c "import cloudViewer; print(cloudViewer.__version__)"
+```
 
-    :: Create conda package in build/lib
-    :: This creates a .tar.bz2 file that you can install manually.
-    cmake --build . --config Release --target conda-package
+---
 
-Finally, verify the Python installation with:
+## Compilation Options Reference
 
-    python -c "import cloudViewer; print(cloudViewer)"
+### OpenMP on macOS
 
+The default Apple Clang does **not** support OpenMP. Workaround:
 
-## Compilation options
--------------------
+```bash
+brew install gcc --without-multilib
+cmake -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DWITH_OPENMP=ON ..
+make -j"$(sysctl -n hw.logicalcpu)"
+```
 
-OpenMP
+> **Note:** This workaround may have compatibility issues with the GLFW source
+> bundled in `3rdparty/`. Make sure CloudViewer links against system GLFW if
+> you encounter errors.
 
-We automatically detect if the C++ compiler supports OpenMP and compile CloudViewer
-with it if the compilation option ``WITH_OPENMP`` is ``ON``.
-OpenMP can greatly accelerate computation on a multi-core CPU.
+### ML Module (PyTorch)
 
-The default LLVM compiler on OS X does not support OpenMP.
-A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
-then use it to compile CloudViewer. For example, starting from a clean build
-directory, run
+```bash
+cmake -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=OFF \
+      -DBUNDLE_CLOUDVIEWER_ML=ON \
+      -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
+      ..
+make -j"$(sysctl -n hw.logicalcpu)" install-pip-package
+```
 
-    brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
-    make -j
+### CUDA / GPU
 
-note:: This workaround has some compatibility issues with the source code of
-    GLFW included in ``3rdparty``.
-    Make sure CloudViewer is linked against GLFW installed on the OS.
+macOS does **not** support CUDA since macOS 10.14+. Set `-DBUILD_CUDA_MODULE=OFF`.
 
-ML Module
+---
 
-Warning: Due to incompatibilities in the cxx11_abi on Linux between PyTorch and TensorFlow, 
-official Python wheels on Linux only support PyTorch, not TensorFlow.
-The ML module consists of primitives like operators and layers as well as high
-level code for models and pipelines. To build the operators and layers, set
-``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
-enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
-pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
-``CLOUDVIEWER_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
-CloudViewer-ML from GitHub during the build with
-``CLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
+## Troubleshooting
 
-The following example shows the command for building the ops with GPU support
-for all supported ML frameworks and bundling the high level CloudViewer-ML code.
-
-    # In the build directory
-    cmake -DBUILD_CUDA_MODULE=ON \
-          -DBUILD_PYTORCH_OPS=ON \
-          -DBUILD_TENSORFLOW_OPS=OFF \
-          -DBUNDLE_CLOUDVIEWER_ML=ON \
-          -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
-          ..
-    # Install the python wheel with pip
-    make -j install-pip-package
-
-note::
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
-	When releasing CloudViewer as a Python package, we set
-    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
-    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
-	If you build PyTorch or TensorFlow from source or if you run into ABI
-    compatibility issues with them, please:
-
-1. Check PyTorch and TensorFlow ABI with
-	
-		python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
-		python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
-
-2. Configure CloudViewer to compile all dependencies from source
-   with the corresponding ABI version obtained from step 1.
-
-After installation of the Python package, you can check CloudViewer ABI version
-with:
-
-        python -c "import cloudViewer; print(cloudViewer.pybind._GLIBCXX_USE_CXX11_ABI)"
-
-To build CloudViewer with CUDA support, configure with:
-
-        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
-
-Please note that CUDA support is work in progress and experimental. For building CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
-
-code-block:: bash
-
-        nvidia-smi      # Prints CUDA-enabled GPU information
-        nvcc -V         # Prints compiler version
-
-If you see an output similar to ``command not found``, you can install CUDA toolkit by following the `official documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
-
-
-## Unit test
----------
-
-To build and run C++ unit tests:
-
-    cmake -DBUILD_UNIT_TESTS=ON ..
-    make -j
-    ./bin/tests
-
-
-To run Python unit tests:
-
-    # Activate virtualenv first
-    pip install pytest
-    make install-pip-package
-    pytest ../python/test
-
+| Symptom | Fix |
+| ------- | --- |
+| `librealsense` download fails | Set `https_proxy` / `http_proxy` (see [Install System Dependencies](#install-system-dependencies)), or disable with `-DBUILD_LIBREALSENSE=OFF` |
+| OpenMP not found | Install GCC via Homebrew and set `CMAKE_C_COMPILER` / `CMAKE_CXX_COMPILER` |
+| `source` fails in zsh | Use `bash -l -c "source util/ci_utils.sh && ..."` |
+| Conda environment not activated | Verify with `echo $CONDA_PREFIX` before running cmake |
+| `make -j$(nproc)` fails | macOS uses `sysctl -n hw.logicalcpu` instead of `nproc` |
+| Qt not found | Ensure Conda env is activated and `$CONDA_PREFIX/lib` is in `CMAKE_PREFIX_PATH` |
