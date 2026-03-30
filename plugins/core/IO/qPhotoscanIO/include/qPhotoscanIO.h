@@ -35,7 +35,7 @@ class qPhotoscanIO : public QObject, public ccIOPluginInterface {
                           "../info.json")
 
 public:
-    explicit qPhotoscanIO(QObject *parent = nullptr);
+    explicit qPhotoscanIO(QObject* parent = nullptr);
 
     ~qPhotoscanIO() override = default;
 

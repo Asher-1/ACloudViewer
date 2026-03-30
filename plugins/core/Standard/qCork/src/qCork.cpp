@@ -7,10 +7,10 @@
 
 #include "qCork.h"
 
+#include <ecvCommandLineInterface.h>
+
 #include "qCorkCommands.h"
 #include "qCorkInternal.h"
-
-#include <ecvCommandLineInterface.h>
 
 // CV_DB_LIB
 #include <ecvMesh.h>

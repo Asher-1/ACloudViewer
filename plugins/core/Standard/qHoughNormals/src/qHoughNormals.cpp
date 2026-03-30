@@ -7,10 +7,10 @@
 
 #include "qHoughNormals.h"
 
+#include <ecvCommandLineInterface.h>
+
 #include "qHoughNormalsCommands.h"
 #include "qHoughNormalsDialog.h"
-
-#include <ecvCommandLineInterface.h>
 
 // Hough Normals library
 #include "Normals.h"

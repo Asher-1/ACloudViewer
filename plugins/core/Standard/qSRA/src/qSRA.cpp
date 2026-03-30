@@ -50,8 +50,8 @@ void qSRA::registerCommands(ccCommandLineInterface* cmd) {
         assert(false);
         return;
     }
-    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
-            new CommandSRARadialDist));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandSRARadialDist));
 }
 
 QList<QAction*> qSRA::getActions() {

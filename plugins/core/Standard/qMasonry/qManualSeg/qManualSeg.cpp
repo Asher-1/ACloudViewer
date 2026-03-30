@@ -7,12 +7,12 @@
 
 #include "qManualSeg.h"
 
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/point_cloud.h>
+
 #include <cassert>
 
 #include "ManualSegCommands.h"
-
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/point_cloud.h>
 
 // Local
 #include "profileImportDlg.h"
@@ -1559,7 +1559,7 @@ void ccManualSeg::doAction() {
     }
 }
 
-void ccManualSeg::registerCommands(ccCommandLineInterface *cmd) {
+void ccManualSeg::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) {
         assert(false);
         return;

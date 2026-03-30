@@ -9,16 +9,15 @@
 
 #include "qAutoSeg.h"
 
-#include <cassert>
-
-#include "AutoSegCommands.h"
-
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 
+#include <cassert>
 #include <random>
+
+#include "AutoSegCommands.h"
 
 // Local
 #include "profileImportDlg.h"
@@ -2363,7 +2362,7 @@ void ccAutoSeg::doAction() {
     m_app->setView(CC_FRONT_VIEW);
 }
 
-void ccAutoSeg::registerCommands(ccCommandLineInterface *cmd) {
+void ccAutoSeg::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) {
         assert(false);
         return;

@@ -63,9 +63,10 @@ static bool SampleSphere(unsigned N, std::vector<CCVector3d>& dirs) {
             mbar[0] = 1.0;
             double theta = gamma / (L - 2);
             for (int i = 1; i < L - 1; ++i) {
-                mbar[i] = N * (cos(theta * (i - 1) + beta) -
-                               cos(theta * i + beta)) /
-                          2;
+                mbar[i] =
+                        N *
+                        (cos(theta * (i - 1) + beta) - cos(theta * i + beta)) /
+                        2;
             }
             mbar[L - 1] = 1.0;
         }
@@ -94,13 +95,12 @@ static bool SampleSphere(unsigned N, std::vector<CCVector3d>& dirs) {
             unsigned int rayIndex = 1;
             for (int i = 1; i < L - 1; ++i) {
                 if (m[i - 1] != 0 && m[i] != 0) {
-                    offset[i] =
-                            offset[i - 1] +
-                            static_cast<double>(gcd(m[i], m[i - 1])) /
-                                    (2 * m[i] * m[i - 1]) +
-                            std::min<double>(c_twist,
-                                             floor(m[i - 1] / c_twist)) /
-                                    m[i - 1];
+                    offset[i] = offset[i - 1] +
+                                static_cast<double>(gcd(m[i], m[i - 1])) /
+                                        (2 * m[i] * m[i - 1]) +
+                                std::min<double>(c_twist,
+                                                 floor(m[i - 1] / c_twist)) /
+                                        m[i - 1];
                 } else {
                     offset[i] = 0.0;
                 }
@@ -110,9 +110,8 @@ static bool SampleSphere(unsigned N, std::vector<CCVector3d>& dirs) {
                 double r = sqrt(1.0 - h * h);
 
                 for (int j = 0; j < m[i]; ++j) {
-                    double theta =
-                            2.0 * M_PI *
-                            (offset[i] + static_cast<double>(j) / m[i]);
+                    double theta = 2.0 * M_PI *
+                                   (offset[i] + static_cast<double>(j) / m[i]);
                     dirs[rayIndex++] =
                             CCVector3d(r * cos(theta), r * sin(theta), h);
                 }
@@ -215,8 +214,7 @@ bool PCV::Launch(const std::vector<CCVector3d>& rays,
             if (mesh) {
                 infoStr.append(QString("\nFaces: %1").arg(mesh->size()));
             } else {
-                infoStr.append(
-                        QString("\nVertices: %1").arg(numberOfPoints));
+                infoStr.append(QString("\nVertices: %1").arg(numberOfPoints));
             }
             progressCb->setInfo(qPrintable(infoStr));
         }

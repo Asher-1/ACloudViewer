@@ -1351,7 +1351,7 @@ void ColorimetricSegmenter::KmeansClustering() {
     ShowDurationNow(startTime);
 }
 
-void ColorimetricSegmenter::registerCommands(ccCommandLineInterface *cmd) {
+void ColorimetricSegmenter::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) {
         assert(false);
         return;

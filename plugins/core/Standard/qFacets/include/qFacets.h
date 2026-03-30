@@ -92,29 +92,27 @@ public:
             ecvProgressDialog* progressDlg = nullptr);
 
     //! Headless facet export to shapefile
-    static bool ExecuteExportFacets(
-            const FacetSet& facets,
-            const QString& filename,
-            bool useNativeOrientation,
-            bool useGlobalOrientation,
-            bool useCustomOrientation,
-            double nX,
-            double nY,
-            double nZ,
-            bool silentMode);
+    static bool ExecuteExportFacets(const FacetSet& facets,
+                                    const QString& filename,
+                                    bool useNativeOrientation,
+                                    bool useGlobalOrientation,
+                                    bool useCustomOrientation,
+                                    double nX,
+                                    double nY,
+                                    double nZ,
+                                    bool silentMode);
 
     //! Headless facet info export to CSV
-    static bool ExecuteExportFacetsInfo(
-            const FacetSet& facets,
-            const QString& filename,
-            bool coordsInCsv,
-            bool useNativeOrientation,
-            bool useGlobalOrientation,
-            bool useCustomOrientation,
-            double nX,
-            double nY,
-            double nZ,
-            bool silentMode);
+    static bool ExecuteExportFacetsInfo(const FacetSet& facets,
+                                        const QString& filename,
+                                        bool coordsInCsv,
+                                        bool useNativeOrientation,
+                                        bool useGlobalOrientation,
+                                        bool useCustomOrientation,
+                                        double nX,
+                                        double nY,
+                                        double nZ,
+                                        bool silentMode);
 
 protected slots:
 

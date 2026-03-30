@@ -356,9 +356,8 @@ static void prettyAppend(QStringList& out,
                 prettyAppend(out, it.value(), child, depth + 1, maxDepth,
                              globalValCol);
             } else {
-                QString keyColon =
-                        QString(it.key() + QStringLiteral(":"))
-                                .leftJustified(localPadTo);
+                QString keyColon = QString(it.key() + QStringLiteral(":"))
+                                           .leftJustified(localPadTo);
                 out << prefix + keyColon + QStringLiteral(" ") +
                                 variantToLogString(it.value(), depth + 1);
             }
@@ -401,8 +400,7 @@ static void prettyAppend(QStringList& out,
                                 variantToLogString(list[i], depth + 1);
             }
         }
-        if (list.size() > 50)
-            out << prefix + QStringLiteral("...");
+        if (list.size() > 50) out << prefix + QStringLiteral("...");
     } else {
         out << prefix + variantToLogString(v, depth);
     }
@@ -727,8 +725,7 @@ void JsonRPCPlugin::logRequest(const QString& method,
         QString valStr = variantToLogString(it.value());
         QString tag = variantTypeTag(it.value());
         QString keyColon =
-                QString(it.key() + QStringLiteral(":"))
-                        .leftJustified(colonCol);
+                QString(it.key() + QStringLiteral(":")).leftJustified(colonCol);
 
         if (valStr.length() <= 150) {
             lines << QStringLiteral("%1%2 %3  (%4)")
@@ -757,13 +754,12 @@ void JsonRPCPlugin::logResponse(const QString& method,
     auto appendResultBlock = [](QStringList& lines, const QString& label,
                                 const QVariant& v) {
         const int vt = static_cast<int>(v.type());
-        const bool isComplex =
-                (vt == QVariant::Map || vt == QVariant::List ||
-                 vt == QVariant::StringList);
+        const bool isComplex = (vt == QVariant::Map || vt == QVariant::List ||
+                                vt == QVariant::StringList);
 
         if (isComplex) {
-            lines << QStringLiteral("%1%2:")
-                             .arg(QLatin1String(kLogPrefix), label);
+            lines << QStringLiteral("%1%2:").arg(QLatin1String(kLogPrefix),
+                                                 label);
             prettyFormatLines(lines, v);
         } else {
             lines << QStringLiteral("%1%2: %3")
@@ -780,8 +776,7 @@ void JsonRPCPlugin::logResponse(const QString& method,
                          .arg(elapsedMs)
                          .arg(result.error_message);
         if (!result.error_data.isNull() && result.error_data.isValid()) {
-            appendResultBlock(lines, QStringLiteral("data"),
-                              result.error_data);
+            appendResultBlock(lines, QStringLiteral("data"), result.error_data);
         }
         CVLog::Warning(lines.join(QChar('\n')));
     } else {
@@ -3440,8 +3435,8 @@ JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
         const QMap<QString, QVariant>& params) {
     unsigned entityId = params["entity_id"].toUInt();
     if (entityId == 0) {
-        return JsonRPCResult::error(
-                -32602, "Missing required parameter: entity_id");
+        return JsonRPCResult::error(-32602,
+                                    "Missing required parameter: entity_id");
     }
 
     unsigned rayCount = params.value("ray_count", 256).toUInt();
@@ -3452,8 +3447,7 @@ JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
     ccHObject* entity = findEntity(entityId);
     if (!entity) {
         return JsonRPCResult::error(
-                -32602,
-                "Entity not found: " + QString::number(entityId));
+                -32602, "Entity not found: " + QString::number(entityId));
     }
 
     ccPointCloud* cloud = nullptr;
@@ -3464,16 +3458,14 @@ JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
     } else if (entity->isKindOf(CV_TYPES::MESH)) {
         mesh = ccHObjectCaster::ToGenericMesh(entity);
         if (mesh) {
-            cloud = ccHObjectCaster::ToPointCloud(
-                    mesh->getAssociatedCloud());
+            cloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
         }
     }
 
     if (!cloud) {
-        return JsonRPCResult::error(
-                -32602,
-                "Entity is not a point cloud or mesh: " +
-                        QString::number(entityId));
+        return JsonRPCResult::error(-32602,
+                                    "Entity is not a point cloud or mesh: " +
+                                            QString::number(entityId));
     }
 
     std::vector<CCVector3d> rays;
@@ -3486,8 +3478,7 @@ JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
         sfIdx = cloud->addScalarField(PCV_SF_NAME);
     }
     if (sfIdx < 0) {
-        return JsonRPCResult::error(
-                5, "Failed to allocate PCV scalar field");
+        return JsonRPCResult::error(5, "Failed to allocate PCV scalar field");
     }
     cloud->setCurrentScalarField(sfIdx);
 

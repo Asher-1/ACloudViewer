@@ -7,13 +7,7 @@
 
 #include "ccCompassCommands.h"
 
-#include "ccFitPlane.h"
-#include "ccGeoObject.h"
-#include "ccLineation.h"
-#include "ccSNECloud.h"
-#include "ccThickness.h"
-#include "ccTrace.h"
-
+#include <DgmOctree.h>
 #include <ecvNormalVectors.h>
 #include <ecvOctree.h>
 #include <ecvPlane.h>
@@ -21,13 +15,18 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 
-#include <DgmOctree.h>
-
 #include <QFile>
 #include <QFileInfo>
 #include <QObject>
 #include <QTextStream>
 #include <QXmlStreamWriter>
+
+#include "ccFitPlane.h"
+#include "ccGeoObject.h"
+#include "ccLineation.h"
+#include "ccSNECloud.h"
+#include "ccThickness.h"
+#include "ccTrace.h"
 
 static const char COMMAND_COMPASS_EXPORT[] = "COMPASS_EXPORT";
 static const char COMMAND_CE_FORMAT[] = "FORMAT";
@@ -35,7 +34,8 @@ static const char COMMAND_CE_OUTPUT[] = "OUTPUT";
 
 namespace {
 
-int writePlanes(ccHObject* object, QTextStream* out,
+int writePlanes(ccHObject* object,
+                QTextStream* out,
                 const QString& parentName = QString()) {
     QString name = parentName.isEmpty()
                            ? object->getName()
@@ -43,8 +43,7 @@ int writePlanes(ccHObject* object, QTextStream* out,
                                                          object->getName());
     int n = 0;
     if (ccFitPlane::isFitPlane(object)) {
-        *out << name << ","
-             << object->getMetaData("Strike").toString() << ","
+        *out << name << "," << object->getMetaData("Strike").toString() << ","
              << object->getMetaData("Dip").toString() << ","
              << object->getMetaData("DipDir").toString() << ","
              << object->getMetaData("Cx").toString() << ","
@@ -61,7 +60,8 @@ int writePlanes(ccHObject* object, QTextStream* out,
     return n;
 }
 
-int writeLineations(ccHObject* object, QTextStream* out,
+int writeLineations(ccHObject* object,
+                    QTextStream* out,
                     const QString& parentName = QString()) {
     QString name = parentName.isEmpty()
                            ? object->getName()
@@ -69,8 +69,7 @@ int writeLineations(ccHObject* object, QTextStream* out,
                                                          object->getName());
     int n = 0;
     if (ccLineation::isLineation(object)) {
-        *out << name << ","
-             << object->getMetaData("Trend").toString() << ","
+        *out << name << "," << object->getMetaData("Trend").toString() << ","
              << object->getMetaData("Plunge").toString() << ","
              << object->getMetaData("Cx").toString() << ","
              << object->getMetaData("Cy").toString() << ","
@@ -83,7 +82,8 @@ int writeLineations(ccHObject* object, QTextStream* out,
     return n;
 }
 
-int writeTraces(ccHObject* object, QTextStream* out,
+int writeTraces(ccHObject* object,
+                QTextStream* out,
                 const QString& parentName = QString()) {
     QString name = parentName.isEmpty()
                            ? object->getName()
@@ -96,8 +96,8 @@ int writeTraces(ccHObject* object, QTextStream* out,
             auto* cloud = poly->getAssociatedCloud();
             for (unsigned p = 0; p < cloud->size(); ++p) {
                 const CCVector3* pt = cloud->getPoint(p);
-                *out << name << "," << pt->x << "," << pt->y << ","
-                     << pt->z << "\n";
+                *out << name << "," << pt->x << "," << pt->y << "," << pt->z
+                     << "\n";
             }
             ++n;
         }
@@ -111,8 +111,8 @@ int writeTraces(ccHObject* object, QTextStream* out,
 }  // namespace
 
 CommandCompassExport::CommandCompassExport()
-        : ccCommandLineInterface::Command("Compass Export",
-                                          COMMAND_COMPASS_EXPORT) {}
+    : ccCommandLineInterface::Command("Compass Export",
+                                      COMMAND_COMPASS_EXPORT) {}
 
 bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
     cmd.print("[COMPASS_EXPORT]");
@@ -140,9 +140,8 @@ bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
     }
 
     if (outputFile.isEmpty()) {
-        return cmd.error(
-                QObject::tr("Missing output file (use \"-%1 <path>\")")
-                        .arg(COMMAND_CE_OUTPUT));
+        return cmd.error(QObject::tr("Missing output file (use \"-%1 <path>\")")
+                                 .arg(COMMAND_CE_OUTPUT));
     }
 
     if (cmd.clouds().empty() && cmd.meshes().empty()) {
@@ -158,8 +157,7 @@ bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
         auto writeFile = [&](const QString& suffix, const QString& header,
                              auto writeFn) -> int {
             QFile file(basePath + suffix);
-            if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-                return 0;
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return 0;
             QTextStream stream(&file);
             stream << header << "\n";
             int count = 0;
@@ -170,13 +168,12 @@ bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
             return count;
         };
 
-        int planes = writeFile(
-                "_planes.csv",
-                "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz",
-                writePlanes);
-        int lineations = writeFile(
-                "_lineations.csv", "Name,Trend,Plunge,Cx,Cy,Cz",
-                writeLineations);
+        int planes = writeFile("_planes.csv",
+                               "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz",
+                               writePlanes);
+        int lineations =
+                writeFile("_lineations.csv", "Name,Trend,Plunge,Cx,Cy,Cz",
+                          writeLineations);
         int traces = writeFile("_traces.csv", "Name,X,Y,Z", writeTraces);
 
         cmd.print(QObject::tr("[COMPASS_EXPORT] Exported %1 planes, %2 "
@@ -188,9 +185,8 @@ bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
     } else if (format == "xml") {
         QFile file(outputFile);
         if (!file.open(QIODevice::WriteOnly)) {
-            return cmd.error(
-                    QObject::tr("Cannot open file '%1' for writing")
-                            .arg(outputFile));
+            return cmd.error(QObject::tr("Cannot open file '%1' for writing")
+                                     .arg(outputFile));
         }
         QXmlStreamWriter xml(&file);
         xml.setAutoFormatting(true);
@@ -206,8 +202,8 @@ bool CommandCompassExport::process(ccCommandLineInterface& cmd) {
         cmd.print(QObject::tr("[COMPASS_EXPORT] Exported XML to '%1'")
                           .arg(outputFile));
     } else {
-        return cmd.error(
-                QObject::tr("Unknown format '%1'. Use csv or xml.").arg(format));
+        return cmd.error(QObject::tr("Unknown format '%1'. Use csv or xml.")
+                                 .arg(format));
     }
 
     return true;
@@ -223,15 +219,15 @@ static const char COMMAND_CIF_DIPDIR[] = "DIPDIR_SF";
 static const char COMMAND_CIF_SIZE[] = "PLANE_SIZE";
 
 CommandCompassImportFoliations::CommandCompassImportFoliations()
-        : ccCommandLineInterface::Command("Compass Import Foliations",
-                                          COMMAND_COMPASS_IMPORT_FOL) {}
+    : ccCommandLineInterface::Command("Compass Import Foliations",
+                                      COMMAND_COMPASS_IMPORT_FOL) {}
 
 bool CommandCompassImportFoliations::process(ccCommandLineInterface& cmd) {
     cmd.print("[COMPASS_IMPORT_FOL]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COMPASS_IMPORT_FOL));
     }
 
@@ -268,10 +264,9 @@ bool CommandCompassImportFoliations::process(ccCommandLineInterface& cmd) {
         ccPointCloud* cloud = desc.pc;
         if (!cloud) continue;
 
-        int dipIdx = cloud->getScalarFieldIndexByName(
-                qPrintable(dipSfName));
-        int dipDirIdx = cloud->getScalarFieldIndexByName(
-                qPrintable(dipDirSfName));
+        int dipIdx = cloud->getScalarFieldIndexByName(qPrintable(dipSfName));
+        int dipDirIdx =
+                cloud->getScalarFieldIndexByName(qPrintable(dipDirSfName));
 
         if (dipIdx < 0 || dipDirIdx < 0) {
             cmd.warning(
@@ -297,8 +292,7 @@ bool CommandCompassImportFoliations::process(ccCommandLineInterface& cmd) {
             ccGLMatrix trans;
             trans.toIdentity();
             CCVector3 Z(0, 0, 1);
-            ccGLMatrix rotation =
-                    ccGLMatrix::FromToRotation(Z, N);
+            ccGLMatrix rotation = ccGLMatrix::FromToRotation(Z, N);
             trans = rotation;
             trans.setTranslation(*Cd);
             plane->applyGLTransformation_recursive(&trans);
@@ -332,15 +326,15 @@ static const char COMMAND_CIL_PLUNGE[] = "PLUNGE_SF";
 static const char COMMAND_CIL_LENGTH[] = "LENGTH";
 
 CommandCompassImportLineations::CommandCompassImportLineations()
-        : ccCommandLineInterface::Command("Compass Import Lineations",
-                                          COMMAND_COMPASS_IMPORT_LIN) {}
+    : ccCommandLineInterface::Command("Compass Import Lineations",
+                                      COMMAND_COMPASS_IMPORT_LIN) {}
 
 bool CommandCompassImportLineations::process(ccCommandLineInterface& cmd) {
     cmd.print("[COMPASS_IMPORT_LIN]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COMPASS_IMPORT_LIN));
     }
 
@@ -377,17 +371,16 @@ bool CommandCompassImportLineations::process(ccCommandLineInterface& cmd) {
         ccPointCloud* cloud = desc.pc;
         if (!cloud) continue;
 
-        int trendIdx = cloud->getScalarFieldIndexByName(
-                qPrintable(trendSfName));
-        int plungeIdx = cloud->getScalarFieldIndexByName(
-                qPrintable(plungeSfName));
+        int trendIdx =
+                cloud->getScalarFieldIndexByName(qPrintable(trendSfName));
+        int plungeIdx =
+                cloud->getScalarFieldIndexByName(qPrintable(plungeSfName));
 
         if (trendIdx < 0 || plungeIdx < 0) {
             cmd.warning(
                     QObject::tr("[COMPASS_IMPORT_LIN] Cloud '%1': missing "
                                 "scalar field '%2' or '%3', skipping")
-                            .arg(cloud->getName(), trendSfName,
-                                 plungeSfName));
+                            .arg(cloud->getName(), trendSfName, plungeSfName));
             continue;
         }
 
@@ -398,11 +391,9 @@ bool CommandCompassImportLineations::process(ccCommandLineInterface& cmd) {
             const CCVector3* Cd = cloud->getPoint(p);
 
             float trendRad = static_cast<float>(
-                    cloudViewer::DegreesToRadians(
-                            static_cast<double>(trend)));
+                    cloudViewer::DegreesToRadians(static_cast<double>(trend)));
             float plungeRad = static_cast<float>(
-                    cloudViewer::DegreesToRadians(
-                            static_cast<double>(plunge)));
+                    cloudViewer::DegreesToRadians(static_cast<double>(plunge)));
 
             CCVector3 dir(std::sin(trendRad) * std::cos(plungeRad),
                           std::cos(trendRad) * std::cos(plungeRad),
@@ -446,8 +437,8 @@ bool CommandCompassImportLineations::process(ccCommandLineInterface& cmd) {
 static const char COMMAND_COMPASS_REFIT[] = "COMPASS_REFIT";
 
 CommandCompassRefit::CommandCompassRefit()
-        : ccCommandLineInterface::Command("Compass Refit Planes",
-                                          COMMAND_COMPASS_REFIT) {}
+    : ccCommandLineInterface::Command("Compass Refit Planes",
+                                      COMMAND_COMPASS_REFIT) {}
 
 namespace {
 
@@ -491,7 +482,8 @@ bool CommandCompassRefit::process(ccCommandLineInterface& cmd) {
         total += refitPlanesRecursive(desc.mesh);
     }
 
-    cmd.print(QObject::tr("[COMPASS_REFIT] Recalculated %1 fit planes").arg(total));
+    cmd.print(QObject::tr("[COMPASS_REFIT] Recalculated %1 fit planes")
+                      .arg(total));
 
     for (CLCloudDesc& desc : cmd.clouds()) {
         if (cmd.autoSaveMode()) {
@@ -514,15 +506,15 @@ static const char COMMAND_CP21_SUBSAMPLE[] = "SUBSAMPLE";
 static const char COMMAND_CP21_OUTPUT[] = "OUTPUT";
 
 CommandCompassP21::CommandCompassP21()
-        : ccCommandLineInterface::Command("Compass Estimate P21",
-                                          COMMAND_COMPASS_P21) {}
+    : ccCommandLineInterface::Command("Compass Estimate P21",
+                                      COMMAND_COMPASS_P21) {}
 
 bool CommandCompassP21::process(ccCommandLineInterface& cmd) {
     cmd.print("[COMPASS_P21]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_COMPASS_P21));
     }
 
@@ -538,14 +530,16 @@ bool CommandCompassP21::process(ccCommandLineInterface& cmd) {
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
                                          .arg(COMMAND_CP21_RADIUS));
             searchRadius = cmd.arguments().takeFirst().toDouble();
-        } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_CP21_SUBSAMPLE)) {
+        } else if (ccCommandLineInterface::IsCommand(arg,
+                                                     COMMAND_CP21_SUBSAMPLE)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
                                          .arg(COMMAND_CP21_SUBSAMPLE));
             subsampleRate = cmd.arguments().takeFirst().toUInt();
             if (subsampleRate < 1) subsampleRate = 1;
-        } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_CP21_OUTPUT)) {
+        } else if (ccCommandLineInterface::IsCommand(arg,
+                                                     COMMAND_CP21_OUTPUT)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
@@ -579,9 +573,10 @@ bool CommandCompassP21::process(ccCommandLineInterface& cmd) {
         }
 
         if (lines.empty()) {
-            cmd.warning(QObject::tr("[COMPASS_P21] Cloud '%1': no traces found, "
-                                    "skipping")
-                                .arg(cloud->getName()));
+            cmd.warning(
+                    QObject::tr("[COMPASS_P21] Cloud '%1': no traces found, "
+                                "skipping")
+                            .arg(cloud->getName()));
             delete traceCloud;
             continue;
         }
@@ -637,10 +632,9 @@ bool CommandCompassP21::process(ccCommandLineInterface& cmd) {
             float sum = P21->getValue(p);
             if (sum > 0) {
                 region.clear();
-                int nOutcrop =
-                        outcropOct->getPointsInSphericalNeighbourhood(
-                                *outputCloud->getPoint(p), searchRadius,
-                                region, traceLevel);
+                int nOutcrop = outcropOct->getPointsInSphericalNeighbourhood(
+                        *outputCloud->getPoint(p), searchRadius, region,
+                        traceLevel);
                 if (nOutcrop > 0) {
                     P21->setValue(p, sum / (nOutcrop * subsampleRate));
                 }
@@ -653,11 +647,12 @@ bool CommandCompassP21::process(ccCommandLineInterface& cmd) {
 
         cloud->addChild(outputCloud);
 
-        cmd.print(QObject::tr("[COMPASS_P21] Cloud '%1': P21 computed (%2 output "
-                              "points, %3 traces)")
-                          .arg(cloud->getName())
-                          .arg(outputCloud->size())
-                          .arg(lines.size()));
+        cmd.print(
+                QObject::tr("[COMPASS_P21] Cloud '%1': P21 computed (%2 output "
+                            "points, %3 traces)")
+                        .arg(cloud->getName())
+                        .arg(outputCloud->size())
+                        .arg(lines.size()));
 
         delete traceCloud;
 

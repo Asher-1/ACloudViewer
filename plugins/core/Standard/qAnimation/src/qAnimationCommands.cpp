@@ -16,7 +16,7 @@ static const char COMMAND_ANIM_SUPER_RES[] = "SUPER_RESOLUTION";
 static const char COMMAND_ANIM_OUTPUT[] = "OUTPUT";
 
 CommandAnimation::CommandAnimation()
-        : ccCommandLineInterface::Command("Animation", COMMAND_ANIMATION) {}
+    : ccCommandLineInterface::Command("Animation", COMMAND_ANIMATION) {}
 
 bool CommandAnimation::process(ccCommandLineInterface& cmd) {
     cmd.print("[ANIMATION]");
@@ -35,10 +35,9 @@ bool CommandAnimation::process(ccCommandLineInterface& cmd) {
                                          .arg(COMMAND_ANIM_FPS));
             bool ok;
             fps = cmd.arguments().takeFirst().toInt(&ok);
-            if (!ok || fps < 1)
-                return cmd.error("Invalid value for -FPS");
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_ANIM_TOTAL_FRAMES)) {
+            if (!ok || fps < 1) return cmd.error("Invalid value for -FPS");
+        } else if (ccCommandLineInterface::IsCommand(
+                           arg, COMMAND_ANIM_TOTAL_FRAMES)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
@@ -79,8 +78,9 @@ bool CommandAnimation::process(ccCommandLineInterface& cmd) {
         cmd.print(QObject::tr("[ANIMATION] Output file: %1").arg(outputFile));
     }
 
-    cmd.print(QObject::tr("[ANIMATION] Animation parameters configured "
-                          "successfully. Use with GUI mode for rendering."));
+    cmd.print(
+            QObject::tr("[ANIMATION] Animation parameters configured "
+                        "successfully. Use with GUI mode for rendering."));
 
     return true;
 }

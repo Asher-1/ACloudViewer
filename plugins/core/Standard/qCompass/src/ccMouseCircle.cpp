@@ -10,7 +10,6 @@
 #include <ecvDisplayTools.h>
 
 #include <QWheelEvent>
-
 #include <cmath>
 
 ccMouseCircle::ccMouseCircle(QWidget* owner, QString name)
@@ -102,9 +101,9 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
         if (wheelEvent->modifiers().testFlag(Qt::ControlModifier)) {
             m_radius = std::max(
                     m_radiusStep,
-                    m_radius - static_cast<int>(m_radiusStep *
-                                                (wheelEvent->angleDelta().y() /
-                                                 100.0)));
+                    m_radius - static_cast<int>(
+                                       m_radiusStep *
+                                       (wheelEvent->angleDelta().y() / 100.0)));
             ecvDisplayTools::RedrawDisplay(true, true);
         }
     }

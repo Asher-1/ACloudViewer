@@ -7,11 +7,11 @@
 
 #include "qHoughNormalsCommands.h"
 
-#include "Normals.h"
-
 #include <ecvPointCloud.h>
 
 #include <QObject>
+
+#include "Normals.h"
 
 static const char COMMAND_HOUGH_NORMALS[] = "HOUGH_NORMALS";
 static const char COMMAND_HN_K[] = "K";
@@ -23,15 +23,14 @@ static const char COMMAND_HN_K_DENSITY[] = "K_DENSITY";
 static const char COMMAND_HN_USE_DENSITY[] = "USE_DENSITY";
 
 CommandHoughNormals::CommandHoughNormals()
-        : ccCommandLineInterface::Command("Hough Normals", COMMAND_HOUGH_NORMALS) {
-}
+    : ccCommandLineInterface::Command("Hough Normals", COMMAND_HOUGH_NORMALS) {}
 
 bool CommandHoughNormals::process(ccCommandLineInterface& cmd) {
     cmd.print("[HOUGH_NORMALS]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_HOUGH_NORMALS));
     }
 
@@ -78,7 +77,7 @@ bool CommandHoughNormals::process(ccCommandLineInterface& cmd) {
             n_rot = cmd.arguments().takeFirst().toInt(&ok);
             if (!ok) return cmd.error("Invalid value for -N_ROT");
         } else if (ccCommandLineInterface::IsCommand(arg,
-                                                       COMMAND_HN_TOL_ANGLE)) {
+                                                     COMMAND_HN_TOL_ANGLE)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
@@ -96,7 +95,7 @@ bool CommandHoughNormals::process(ccCommandLineInterface& cmd) {
             k_density = cmd.arguments().takeFirst().toInt(&ok);
             if (!ok) return cmd.error("Invalid value for -K_DENSITY");
         } else if (ccCommandLineInterface::IsCommand(arg,
-                                                       COMMAND_HN_USE_DENSITY)) {
+                                                     COMMAND_HN_USE_DENSITY)) {
             cmd.arguments().pop_front();
             use_density = true;
         } else {
@@ -108,9 +107,10 @@ bool CommandHoughNormals::process(ccCommandLineInterface& cmd) {
         ccPointCloud* cloud = desc.pc;
         if (!cloud) continue;
 
-        cmd.print(QObject::tr("[HOUGH_NORMALS] Processing cloud '%1' (%2 points)")
-                          .arg(cloud->getName())
-                          .arg(cloud->size()));
+        cmd.print(
+                QObject::tr("[HOUGH_NORMALS] Processing cloud '%1' (%2 points)")
+                        .arg(cloud->getName())
+                        .arg(cloud->size()));
 
         size_t pointCount = cloud->size();
         Eigen::MatrixX3d pc;

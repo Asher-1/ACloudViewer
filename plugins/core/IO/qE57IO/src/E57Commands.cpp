@@ -15,7 +15,7 @@ static const char COMMAND_E57_IGNORE_INTENSITY[] = "IGNORE_INTENSITY";
 static const char COMMAND_E57_IGNORE_COLOR[] = "IGNORE_COLOR";
 
 CommandE57::CommandE57()
-        : ccCommandLineInterface::Command("E57", COMMAND_E57) {}
+    : ccCommandLineInterface::Command("E57", COMMAND_E57) {}
 
 bool CommandE57::process(ccCommandLineInterface& cmd) {
     cmd.print("[E57]");
@@ -25,8 +25,7 @@ bool CommandE57::process(ccCommandLineInterface& cmd) {
 
     while (!cmd.arguments().empty()) {
         const QString& arg = cmd.arguments().front();
-        if (ccCommandLineInterface::IsCommand(arg,
-                                              COMMAND_E57_GLOBAL_SHIFT)) {
+        if (ccCommandLineInterface::IsCommand(arg, COMMAND_E57_GLOBAL_SHIFT)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
@@ -38,8 +37,8 @@ bool CommandE57::process(ccCommandLineInterface& cmd) {
             cmd.arguments().pop_front();
             ignoreIntensity = true;
             cmd.print("[E57] Ignore intensity enabled");
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_E57_IGNORE_COLOR)) {
+        } else if (ccCommandLineInterface::IsCommand(
+                           arg, COMMAND_E57_IGNORE_COLOR)) {
             cmd.arguments().pop_front();
             ignoreColor = true;
             cmd.print("[E57] Ignore color enabled");

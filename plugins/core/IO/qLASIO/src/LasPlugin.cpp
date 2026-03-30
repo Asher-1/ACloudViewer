@@ -30,9 +30,10 @@ ccIOPluginInterface::FilterList LasPlugin::getFilters()
 	};
 }
 
-void LasPlugin::registerCommands(ccCommandLineInterface *cmd)
+void LasPlugin::registerCommands(ccCommandLineInterface* cmd)
 {
-	if (!cmd) return;
+	if (!cmd)
+		return;
 	cmd->registerCommand(
-	        ccCommandLineInterface::Command::Shared(new CommandLAS));
+	    ccCommandLineInterface::Command::Shared(new CommandLAS));
 }

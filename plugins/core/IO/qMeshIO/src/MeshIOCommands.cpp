@@ -15,7 +15,7 @@ static const char COMMAND_MIO_UP_AXIS[] = "UP_AXIS";
 static const char COMMAND_MIO_MERGE_NODES[] = "MERGE_NODES";
 
 CommandMeshIO::CommandMeshIO()
-        : ccCommandLineInterface::Command("Mesh IO", COMMAND_MESH_IO) {}
+    : ccCommandLineInterface::Command("Mesh IO", COMMAND_MESH_IO) {}
 
 bool CommandMeshIO::process(ccCommandLineInterface& cmd) {
     cmd.print("[MESH_IO]");
@@ -33,8 +33,7 @@ bool CommandMeshIO::process(ccCommandLineInterface& cmd) {
                                          .arg(COMMAND_MIO_SCALE));
             bool ok;
             scale = cmd.arguments().takeFirst().toFloat(&ok);
-            if (!ok || scale <= 0)
-                return cmd.error("Invalid value for -SCALE");
+            if (!ok || scale <= 0) return cmd.error("Invalid value for -SCALE");
             cmd.print(QObject::tr("[MESH_IO] Scale: %1").arg(scale));
         } else if (ccCommandLineInterface::IsCommand(arg,
                                                      COMMAND_MIO_UP_AXIS)) {

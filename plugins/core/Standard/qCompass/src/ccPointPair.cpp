@@ -83,8 +83,8 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             c_bodyMarker->showNormals(false);
         }
         if (!c_headMarker) {
-            c_headMarker.reset(new ccCone(
-                    2.5f, 0.0f, 0.1f, 0, 0, nullptr, "UnitNormalHead", 12));
+            c_headMarker.reset(new ccCone(2.5f, 0.0f, 0.1f, 0, 0, nullptr,
+                                          "UnitNormalHead", 12));
             c_headMarker->showColors(true);
             c_headMarker->setVisible(true);
             c_headMarker->setEnabled(true);
@@ -98,9 +98,8 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
         ccGLCameraParameters camera;
         ecvDisplayTools::GetGLCameraParameters(camera);
 
-        ecvColor::Rgb color = entityPickingMode
-                                      ? ecvColor::Rgb(255, 255, 255)
-                                      : getMeasurementColour();
+        ecvColor::Rgb color = entityPickingMode ? ecvColor::Rgb(255, 255, 255)
+                                                : getMeasurementColour();
         c_unitPointMarker->setTempColor(color);
 
         float pSize = 1.0f;

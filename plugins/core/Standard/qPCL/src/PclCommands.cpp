@@ -7,43 +7,39 @@
 
 #include "PclCommands.h"
 
+#include <Filters/FastGlobalRegistration.h>
+#include <PclUtils/PCLModules.h>
+#include <PclUtils/cc2sm.h>
+#include <PclUtils/sm2cc.h>
+#include <ReferenceCloud.h>
 #include <ecvCommandLineInterface.h>
 #include <ecvGLMatrix.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-
-#include <ReferenceCloud.h>
-
-#include <PclUtils/PCLModules.h>
-#include <PclUtils/cc2sm.h>
-#include <PclUtils/sm2cc.h>
-
-#include <Filters/FastGlobalRegistration.h>
-
-#include <Eigen/Core>
 #include <pcl/common/io.h>
 #include <pcl/features/fpfh_omp.h>
 
+#include <Eigen/Core>
 #include <cmath>
 #include <cstring>
 #include <string>
 
-static const char CMD_PCL_SOR[]            = "PCL_SOR";
-static const char CMD_PCL_NORMAL_EST[]     = "PCL_NORMAL_ESTIMATION";
-static const char CMD_PCL_MLS[]            = "PCL_MLS";
-static const char CMD_PCL_EUCLIDEAN[]      = "PCL_EUCLIDEAN_CLUSTER";
-static const char CMD_PCL_SAC_SEG[]        = "PCL_SAC_SEGMENTATION";
+static const char CMD_PCL_SOR[] = "PCL_SOR";
+static const char CMD_PCL_NORMAL_EST[] = "PCL_NORMAL_ESTIMATION";
+static const char CMD_PCL_MLS[] = "PCL_MLS";
+static const char CMD_PCL_EUCLIDEAN[] = "PCL_EUCLIDEAN_CLUSTER";
+static const char CMD_PCL_SAC_SEG[] = "PCL_SAC_SEGMENTATION";
 static const char CMD_PCL_REGION_GROWING[] = "PCL_REGION_GROWING";
 static const char CMD_PCL_MARCHING_CUBES[] = "PCL_MARCHING_CUBES";
-static const char CMD_PCL_GREEDY_TRI[]     = "PCL_GREEDY_TRIANGULATION";
-static const char CMD_PCL_POISSON[]        = "PCL_POISSON_RECON";
-static const char CMD_PCL_CONVEX_HULL[]    = "PCL_CONVEX_HULL";
-static const char CMD_PCL_DON[]            = "PCL_DON_SEGMENTATION";
-static const char CMD_PCL_MINCUT[]         = "PCL_MINCUT_SEGMENTATION";
-static const char CMD_PCL_FGR[]            = "PCL_FAST_GLOBAL_REGISTRATION";
-static const char CMD_PCL_SIFT[]           = "PCL_EXTRACT_SIFT";
-static const char CMD_PCL_PROJ[]           = "PCL_PROJECTION_FILTER";
-static const char CMD_PCL_GENFILT[]        = "PCL_GENERAL_FILTERS";
+static const char CMD_PCL_GREEDY_TRI[] = "PCL_GREEDY_TRIANGULATION";
+static const char CMD_PCL_POISSON[] = "PCL_POISSON_RECON";
+static const char CMD_PCL_CONVEX_HULL[] = "PCL_CONVEX_HULL";
+static const char CMD_PCL_DON[] = "PCL_DON_SEGMENTATION";
+static const char CMD_PCL_MINCUT[] = "PCL_MINCUT_SEGMENTATION";
+static const char CMD_PCL_FGR[] = "PCL_FAST_GLOBAL_REGISTRATION";
+static const char CMD_PCL_SIFT[] = "PCL_EXTRACT_SIFT";
+static const char CMD_PCL_PROJ[] = "PCL_PROJECTION_FILTER";
+static const char CMD_PCL_GENFILT[] = "PCL_GENERAL_FILTERS";
 
 static bool NextFloat(ccCommandLineInterface& cmd, const char* n, float& v) {
     if (cmd.arguments().empty())
@@ -70,7 +66,9 @@ static bool NeedClouds(ccCommandLineInterface& cmd, const char* t) {
 
 namespace {
 
-bool FgrComputeFeatures(ccPointCloud* cloud, fgr::Features& features, double radius) {
+bool FgrComputeFeatures(ccPointCloud* cloud,
+                        fgr::Features& features,
+                        double radius) {
     if (!cloud || cloud->size() == 0) return false;
     pcl::PointCloud<pcl::PointNormal>::Ptr tmp_cloud =
             cc2smReader(cloud).getAsPointNormal();
@@ -92,7 +90,8 @@ bool FgrComputeFeatures(ccPointCloud* cloud, fgr::Features& features, double rad
         features.resize(pointCount, Eigen::VectorXf(33));
         for (unsigned i = 0; i < pointCount; ++i) {
             const pcl::FPFHSignature33& feature = objectFeatures.points[i];
-            std::memcpy(features[i].data(), feature.histogram, sizeof(float) * 33);
+            std::memcpy(features[i].data(), feature.histogram,
+                        sizeof(float) * 33);
         }
     } catch (const std::bad_alloc&) {
         return false;
@@ -116,14 +115,10 @@ bool FgrCloudToPoints(const ccPointCloud& cloud, fgr::Points& points) {
 }
 
 static float DonFieldValue(const PointNT& p, const std::string& field) {
-    if (field == "curvature")
-        return p.curvature;
-    if (field == "normal_x")
-        return p.normal_x;
-    if (field == "normal_y")
-        return p.normal_y;
-    if (field == "normal_z")
-        return p.normal_z;
+    if (field == "curvature") return p.curvature;
+    if (field == "normal_x") return p.normal_x;
+    if (field == "normal_y") return p.normal_y;
+    if (field == "normal_z") return p.normal_z;
     float nx = p.normal_x, ny = p.normal_y, nz = p.normal_z;
     return std::sqrt(nx * nx + ny * ny + nz * nz);
 }
@@ -150,19 +145,29 @@ struct CmdSOR : public ccCommandLineInterface::Command {
         float std_t = 1.0f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-K") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "K", k)) return false; }
-            else if (a == "-STD") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "STD", std_t)) return false; }
-            else break;
+            if (a == "-K") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "K", k)) return false;
+            } else if (a == "-STD") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "STD", std_t)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
-            cmd.print(QObject::tr("[PCL_SOR] '%1' k=%2 std=%3").arg(pc->getName()).arg(k).arg(std_t));
+            cmd.print(QObject::tr("[PCL_SOR] '%1' k=%2 std=%3")
+                              .arg(pc->getName())
+                              .arg(k)
+                              .arg(std_t));
             PCLCloud::Ptr in = cc2smReader(pc).getAsSM();
             if (!in) continue;
             PCLCloud::Ptr out(new PCLCloud);
-            if (PCLModules::RemoveOutliersStatistical<PCLCloud>(in, out, k, std_t) < 0) {
-                cmd.warning(QObject::tr("[PCL_SOR] Failed for '%1'").arg(pc->getName()));
+            if (PCLModules::RemoveOutliersStatistical<PCLCloud>(in, out, k,
+                                                                std_t) < 0) {
+                cmd.warning(QObject::tr("[PCL_SOR] Failed for '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccPointCloud* r = pcl2cc::Convert(*out);
@@ -192,11 +197,22 @@ struct CmdNormalEst : public ccCommandLineInterface::Command {
         bool curvature = true;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-KNN") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "KNN", knnR)) return false; useKnn = true; }
-            else if (a == "-RADIUS") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "RADIUS", radius)) return false; useKnn = false; }
-            else if (a == "-CURVATURE") { cmd.arguments().takeFirst(); curvature = true; }
-            else if (a == "-NO_CURVATURE") { cmd.arguments().takeFirst(); curvature = false; }
-            else break;
+            if (a == "-KNN") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "KNN", knnR)) return false;
+                useKnn = true;
+            } else if (a == "-RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "RADIUS", radius)) return false;
+                useKnn = false;
+            } else if (a == "-CURVATURE") {
+                cmd.arguments().takeFirst();
+                curvature = true;
+            } else if (a == "-NO_CURVATURE") {
+                cmd.arguments().takeFirst();
+                curvature = false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
@@ -211,15 +227,18 @@ struct CmdNormalEst : public ccCommandLineInterface::Command {
             if (!xyz) continue;
             PointCloudNormal::Ptr norms(new PointCloudNormal);
             float p = useKnn ? knnR : radius;
-            if (PCLModules::ComputeNormals<PointT, pcl::PointNormal>(xyz, norms, p, useKnn) < 0) {
-                cmd.warning(QObject::tr("[PCL_NORMAL_EST] Failed for '%1'").arg(pc->getName()));
+            if (PCLModules::ComputeNormals<PointT, pcl::PointNormal>(
+                        xyz, norms, p, useKnn) < 0) {
+                cmd.warning(QObject::tr("[PCL_NORMAL_EST] Failed for '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLCloud::Ptr smN(new PCLCloud);
             TO_PCL_CLOUD(*norms, *smN);
             pcl2cc::CopyNormals(*smN, *pc);
             pcl2cc::CopyScalarField(*smN, "curvature", *pc, curvature);
-            cmd.print(QObject::tr("[PCL_NORMAL_EST] Done '%1'").arg(pc->getName()));
+            cmd.print(QObject::tr("[PCL_NORMAL_EST] Done '%1'")
+                              .arg(pc->getName()));
         }
         return true;
     }
@@ -241,12 +260,24 @@ struct CmdMLS : public ccCommandLineInterface::Command {
         prm.upsample_method_ = PCLModules::MLSParameters::NONE;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            float fv; int iv;
-            if (a == "-SEARCH_RADIUS") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "SEARCH_RADIUS", fv)) return false; prm.search_radius_ = fv; }
-            else if (a == "-ORDER") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "ORDER", iv)) return false; prm.order_ = iv; }
-            else if (a == "-COMPUTE_NORMALS") { cmd.arguments().takeFirst(); prm.compute_normals_ = true; }
-            else if (a == "-POLYNOMIAL_FIT") { cmd.arguments().takeFirst(); prm.polynomial_fit_ = true; }
-            else break;
+            float fv;
+            int iv;
+            if (a == "-SEARCH_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SEARCH_RADIUS", fv)) return false;
+                prm.search_radius_ = fv;
+            } else if (a == "-ORDER") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "ORDER", iv)) return false;
+                prm.order_ = iv;
+            } else if (a == "-COMPUTE_NORMALS") {
+                cmd.arguments().takeFirst();
+                prm.compute_normals_ = true;
+            } else if (a == "-POLYNOMIAL_FIT") {
+                cmd.arguments().takeFirst();
+                prm.polynomial_fit_ = true;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
@@ -257,11 +288,14 @@ struct CmdMLS : public ccCommandLineInterface::Command {
             PointCloudNormal::Ptr out(new PointCloudNormal);
 #ifdef LP_PCL_PATCH_ENABLED
             pcl::PointIndicesPtr mapping;
-            if (PCLModules::SmoothMls<PointT, pcl::PointNormal>(xyz, prm, out, mapping) < 0) {
+            if (PCLModules::SmoothMls<PointT, pcl::PointNormal>(xyz, prm, out,
+                                                                mapping) < 0) {
 #else
-            if (PCLModules::SmoothMls<PointT, pcl::PointNormal>(xyz, prm, out) < 0) {
+            if (PCLModules::SmoothMls<PointT, pcl::PointNormal>(xyz, prm, out) <
+                0) {
 #endif
-                cmd.warning(QObject::tr("[PCL_MLS] Failed for '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_MLS] Failed for '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLCloud::Ptr smOut(new PCLCloud);
@@ -286,13 +320,21 @@ struct CmdEuclidean : public ccCommandLineInterface::Command {
     CmdEuclidean() : Command("PCL Euclidean Cluster", CMD_PCL_EUCLIDEAN) {}
     bool process(ccCommandLineInterface& cmd) override {
         if (!NeedClouds(cmd, CMD_PCL_EUCLIDEAN)) return false;
-        float tol = 0.02f; int minS = 100, maxS = 250000;
+        float tol = 0.02f;
+        int minS = 100, maxS = 250000;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-TOLERANCE") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "TOLERANCE", tol)) return false; }
-            else if (a == "-MIN_SIZE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MIN_SIZE", minS)) return false; }
-            else if (a == "-MAX_SIZE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_SIZE", maxS)) return false; }
-            else break;
+            if (a == "-TOLERANCE") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "TOLERANCE", tol)) return false;
+            } else if (a == "-MIN_SIZE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MIN_SIZE", minS)) return false;
+            } else if (a == "-MAX_SIZE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_SIZE", maxS)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
@@ -305,13 +347,15 @@ struct CmdEuclidean : public ccCommandLineInterface::Command {
             cmd.print(QObject::tr("[PCL_EC] %1 clusters").arg(ci.size()));
             for (size_t i = 0; i < ci.size(); ++i) {
                 cloudViewer::ReferenceCloud sub(pc);
-                for (int idx : ci[i].indices) sub.addPointIndex(static_cast<unsigned>(idx));
+                for (int idx : ci[i].indices)
+                    sub.addPointIndex(static_cast<unsigned>(idx));
                 ccPointCloud* c = pc->partialClone(&sub);
                 if (!c) continue;
                 c->setName(QString("%1_cl%2").arg(pc->getName()).arg(i));
                 c->setGlobalScale(pc->getGlobalScale());
                 c->setGlobalShift(pc->getGlobalShift());
-                cmd.clouds().push_back(CLCloudDesc(c, d.basename + QString("_cl%1").arg(i), d.path));
+                cmd.clouds().push_back(CLCloudDesc(
+                        c, d.basename + QString("_cl%1").arg(i), d.path));
             }
         }
         return true;
@@ -332,38 +376,64 @@ struct CmdSAC : public ccCommandLineInterface::Command {
         float minR = -10000.0f, maxR = 10000.0f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-MODEL") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MODEL", model)) return false; }
-            else if (a == "-METHOD") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "METHOD", method)) return false; }
-            else if (a == "-DIST_THRESH") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "DIST_THRESH", dist)) return false; }
-            else if (a == "-MAX_ITER") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_ITER", maxIter)) return false; }
-            else if (a == "-PROBABILITY") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "PROBABILITY", prob)) return false; }
-            else if (a == "-NORMAL_DIST_WEIGHT") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "NORMAL_DIST_WEIGHT", ndw)) return false; }
-            else if (a == "-MIN_RADIUS") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "MIN_RADIUS", minR)) return false; }
-            else if (a == "-MAX_RADIUS") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "MAX_RADIUS", maxR)) return false; }
-            else break;
+            if (a == "-MODEL") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MODEL", model)) return false;
+            } else if (a == "-METHOD") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "METHOD", method)) return false;
+            } else if (a == "-DIST_THRESH") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "DIST_THRESH", dist)) return false;
+            } else if (a == "-MAX_ITER") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_ITER", maxIter)) return false;
+            } else if (a == "-PROBABILITY") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "PROBABILITY", prob)) return false;
+            } else if (a == "-NORMAL_DIST_WEIGHT") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "NORMAL_DIST_WEIGHT", ndw)) return false;
+            } else if (a == "-MIN_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "MIN_RADIUS", minR)) return false;
+            } else if (a == "-MAX_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "MAX_RADIUS", maxR)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
-            cmd.print(QObject::tr("[PCL_SAC] '%1' model=%2").arg(pc->getName()).arg(model));
+            cmd.print(QObject::tr("[PCL_SAC] '%1' model=%2")
+                              .arg(pc->getName())
+                              .arg(model));
             PointCloudT::Ptr xyz = cc2smReader(pc).getXYZ2();
             if (!xyz) continue;
             pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
             pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
-            int r = PCLModules::GetSACSegmentation(xyz, inliers, coeffs, method, model, dist, prob, maxIter, minR, maxR, ndw);
+            int r = PCLModules::GetSACSegmentation(xyz, inliers, coeffs, method,
+                                                   model, dist, prob, maxIter,
+                                                   minR, maxR, ndw);
             if (r < 0 || inliers->indices.empty()) {
-                cmd.warning(QObject::tr("[PCL_SAC] No model in '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_SAC] No model in '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             cloudViewer::ReferenceCloud sub(pc);
-            for (int idx : inliers->indices) sub.addPointIndex(static_cast<unsigned>(idx));
+            for (int idx : inliers->indices)
+                sub.addPointIndex(static_cast<unsigned>(idx));
             ccPointCloud* seg = pc->partialClone(&sub);
             if (!seg) continue;
             seg->setName(pc->getName() + "_inliers");
             seg->setGlobalScale(pc->getGlobalScale());
             seg->setGlobalShift(pc->getGlobalShift());
-            cmd.clouds().push_back(CLCloudDesc(seg, d.basename + "_inliers", d.path));
-            cmd.print(QObject::tr("[PCL_SAC] %1/%2 inliers").arg(inliers->indices.size()).arg(pc->size()));
+            cmd.clouds().push_back(
+                    CLCloudDesc(seg, d.basename + "_inliers", d.path));
+            cmd.print(QObject::tr("[PCL_SAC] %1/%2 inliers")
+                              .arg(inliers->indices.size())
+                              .arg(pc->size()));
         }
         return true;
     }
@@ -382,12 +452,23 @@ struct CmdRegionGrow : public ccCommandLineInterface::Command {
         float smooth = 3.0f, curv = 1.0f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-SMOOTHNESS") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "SMOOTHNESS", smooth)) return false; }
-            else if (a == "-CURVATURE") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "CURVATURE", curv)) return false; }
-            else if (a == "-MIN_SIZE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MIN_SIZE", minS)) return false; }
-            else if (a == "-MAX_SIZE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_SIZE", maxS)) return false; }
-            else if (a == "-NEIGHBORS") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "NEIGHBORS", nbrs)) return false; }
-            else break;
+            if (a == "-SMOOTHNESS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SMOOTHNESS", smooth)) return false;
+            } else if (a == "-CURVATURE") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "CURVATURE", curv)) return false;
+            } else if (a == "-MIN_SIZE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MIN_SIZE", minS)) return false;
+            } else if (a == "-MAX_SIZE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_SIZE", maxS)) return false;
+            } else if (a == "-NEIGHBORS") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "NEIGHBORS", nbrs)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
@@ -397,21 +478,26 @@ struct CmdRegionGrow : public ccCommandLineInterface::Command {
             if (!xyz) continue;
             PointCloudRGB::Ptr colored(new PointCloudRGB);
             std::vector<pcl::PointIndices> clusters;
-            int r = PCLModules::GetRegionGrowing(xyz, clusters, colored, kSearch, minS, maxS, nbrs, smooth, curv);
+            int r = PCLModules::GetRegionGrowing(xyz, clusters, colored,
+                                                 kSearch, minS, maxS, nbrs,
+                                                 smooth, curv);
             if (r < 0 || clusters.empty()) {
-                cmd.warning(QObject::tr("[PCL_RG] Failed '%1'").arg(pc->getName()));
+                cmd.warning(
+                        QObject::tr("[PCL_RG] Failed '%1'").arg(pc->getName()));
                 continue;
             }
             cmd.print(QObject::tr("[PCL_RG] %1 regions").arg(clusters.size()));
             for (size_t i = 0; i < clusters.size(); ++i) {
                 cloudViewer::ReferenceCloud sub(pc);
-                for (int idx : clusters[i].indices) sub.addPointIndex(static_cast<unsigned>(idx));
+                for (int idx : clusters[i].indices)
+                    sub.addPointIndex(static_cast<unsigned>(idx));
                 ccPointCloud* c = pc->partialClone(&sub);
                 if (!c) continue;
                 c->setName(QString("%1_rg%2").arg(pc->getName()).arg(i));
                 c->setGlobalScale(pc->getGlobalScale());
                 c->setGlobalShift(pc->getGlobalShift());
-                cmd.clouds().push_back(CLCloudDesc(c, d.basename + QString("_rg%1").arg(i), d.path));
+                cmd.clouds().push_back(CLCloudDesc(
+                        c, d.basename + QString("_rg%1").arg(i), d.path));
             }
         }
         return true;
@@ -431,32 +517,50 @@ struct CmdGreedyTri : public ccCommandLineInterface::Command {
         float wf = 2.5f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-SEARCH_RADIUS") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "SEARCH_RADIUS", sR)) return false; }
-            else if (a == "-MAX_NEIGHBORS") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_NEIGHBORS", maxN)) return false; }
-            else if (a == "-MAX_SURFACE_ANGLE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_SURFACE_ANGLE", maxSA)) return false; }
-            else if (a == "-MIN_ANGLE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MIN_ANGLE", minA)) return false; }
-            else if (a == "-MAX_ANGLE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "MAX_ANGLE", maxA)) return false; }
-            else if (a == "-WEIGHTING") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "WEIGHTING", wf)) return false; }
-            else break;
+            if (a == "-SEARCH_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "SEARCH_RADIUS", sR)) return false;
+            } else if (a == "-MAX_NEIGHBORS") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_NEIGHBORS", maxN)) return false;
+            } else if (a == "-MAX_SURFACE_ANGLE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_SURFACE_ANGLE", maxSA)) return false;
+            } else if (a == "-MIN_ANGLE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MIN_ANGLE", minA)) return false;
+            } else if (a == "-MAX_ANGLE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_ANGLE", maxA)) return false;
+            } else if (a == "-WEIGHTING") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "WEIGHTING", wf)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
             cmd.print(QObject::tr("[PCL_GT] '%1'").arg(pc->getName()));
-            pcl::PointCloud<pcl::PointNormal>::Ptr pn = cc2smReader(pc).getAsPointNormal();
+            pcl::PointCloud<pcl::PointNormal>::Ptr pn =
+                    cc2smReader(pc).getAsPointNormal();
             if (!pn || pn->empty()) {
-                cmd.warning(QObject::tr("[PCL_GT] '%1' needs normals").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_GT] '%1' needs normals")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLMesh mesh;
-            if (PCLModules::GetGreedyTriangulation(pn, mesh, sR, wf, maxN, maxSA, minA, maxA) < 0) {
-                cmd.warning(QObject::tr("[PCL_GT] Failed '%1'").arg(pc->getName()));
+            if (PCLModules::GetGreedyTriangulation(pn, mesh, sR, wf, maxN,
+                                                   maxSA, minA, maxA) < 0) {
+                cmd.warning(
+                        QObject::tr("[PCL_GT] Failed '%1'").arg(pc->getName()));
                 continue;
             }
             ccMesh* m = pcl2cc::Convert(mesh.cloud, mesh.polygons);
             if (m) {
                 m->setName(pc->getName() + "_GT");
-                cmd.meshes().push_back(CLMeshDesc(m, d.basename + "_GT", d.path));
+                cmd.meshes().push_back(
+                        CLMeshDesc(m, d.basename + "_GT", d.path));
             }
         }
         return true;
@@ -475,32 +579,51 @@ struct CmdPoisson : public ccCommandLineInterface::Command {
         float scale = 1.25f, spn = 3.0f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-DEPTH") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "DEPTH", depth)) return false; }
-            else if (a == "-SCALE") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "SCALE", scale)) return false; }
-            else if (a == "-SAMPLES_PER_NODE") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "SAMPLES_PER_NODE", spn)) return false; }
-            else if (a == "-DEGREE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "DEGREE", degree)) return false; }
-            else if (a == "-ISO_DIVIDE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "ISO_DIVIDE", isoDiv)) return false; }
-            else if (a == "-SOLVER_DIVIDE") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "SOLVER_DIVIDE", solDiv)) return false; }
-            else break;
+            if (a == "-DEPTH") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "DEPTH", depth)) return false;
+            } else if (a == "-SCALE") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SCALE", scale)) return false;
+            } else if (a == "-SAMPLES_PER_NODE") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SAMPLES_PER_NODE", spn)) return false;
+            } else if (a == "-DEGREE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "DEGREE", degree)) return false;
+            } else if (a == "-ISO_DIVIDE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "ISO_DIVIDE", isoDiv)) return false;
+            } else if (a == "-SOLVER_DIVIDE") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "SOLVER_DIVIDE", solDiv)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
             cmd.print(QObject::tr("[PCL_POISSON] '%1'").arg(pc->getName()));
-            pcl::PointCloud<pcl::PointNormal>::Ptr pn = cc2smReader(pc).getAsPointNormal();
+            pcl::PointCloud<pcl::PointNormal>::Ptr pn =
+                    cc2smReader(pc).getAsPointNormal();
             if (!pn || pn->empty()) {
-                cmd.warning(QObject::tr("[PCL_POISSON] '%1' needs normals").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_POISSON] '%1' needs normals")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLMesh mesh;
-            if (PCLModules::GetPoissonReconstruction(pn, mesh, degree, depth, isoDiv, solDiv, scale, spn, true, true, false) < 0) {
-                cmd.warning(QObject::tr("[PCL_POISSON] Failed '%1'").arg(pc->getName()));
+            if (PCLModules::GetPoissonReconstruction(pn, mesh, degree, depth,
+                                                     isoDiv, solDiv, scale, spn,
+                                                     true, true, false) < 0) {
+                cmd.warning(QObject::tr("[PCL_POISSON] Failed '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccMesh* m = pcl2cc::Convert(mesh.cloud, mesh.polygons);
             if (m) {
                 m->setName(pc->getName() + "_Poisson");
-                cmd.meshes().push_back(CLMeshDesc(m, d.basename + "_Poisson", d.path));
+                cmd.meshes().push_back(
+                        CLMeshDesc(m, d.basename + "_Poisson", d.path));
             }
         }
         return true;
@@ -519,31 +642,46 @@ struct CmdMC : public ccCommandLineInterface::Command {
         float iso = 0.0f, eps = 0.01f, pct = 0.0f;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-METHOD") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "METHOD", method)) return false; }
-            else if (a == "-GRID_RES") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "GRID_RES", gridRes)) return false; }
-            else if (a == "-ISO_LEVEL") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "ISO_LEVEL", iso)) return false; }
-            else if (a == "-EPSILON") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "EPSILON", eps)) return false; }
-            else break;
+            if (a == "-METHOD") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "METHOD", method)) return false;
+            } else if (a == "-GRID_RES") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "GRID_RES", gridRes)) return false;
+            } else if (a == "-ISO_LEVEL") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "ISO_LEVEL", iso)) return false;
+            } else if (a == "-EPSILON") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "EPSILON", eps)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
             cmd.print(QObject::tr("[PCL_MC] '%1'").arg(pc->getName()));
-            pcl::PointCloud<pcl::PointNormal>::Ptr pn = cc2smReader(pc).getAsPointNormal();
+            pcl::PointCloud<pcl::PointNormal>::Ptr pn =
+                    cc2smReader(pc).getAsPointNormal();
             if (!pn || pn->empty()) {
-                cmd.warning(QObject::tr("[PCL_MC] '%1' needs normals").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_MC] '%1' needs normals")
+                                    .arg(pc->getName()));
                 continue;
             }
             auto mm = static_cast<PCLModules::MarchingMethod>(method);
             PCLMesh mesh;
-            if (PCLModules::GetMarchingCubes<pcl::PointNormal>(pn, mm, mesh, eps, iso, static_cast<float>(gridRes), pct) < 0) {
-                cmd.warning(QObject::tr("[PCL_MC] Failed '%1'").arg(pc->getName()));
+            if (PCLModules::GetMarchingCubes<pcl::PointNormal>(
+                        pn, mm, mesh, eps, iso, static_cast<float>(gridRes),
+                        pct) < 0) {
+                cmd.warning(
+                        QObject::tr("[PCL_MC] Failed '%1'").arg(pc->getName()));
                 continue;
             }
             ccMesh* m = pcl2cc::Convert(mesh.cloud, mesh.polygons);
             if (m) {
                 m->setName(pc->getName() + "_MC");
-                cmd.meshes().push_back(CLMeshDesc(m, d.basename + "_MC", d.path));
+                cmd.meshes().push_back(
+                        CLMeshDesc(m, d.basename + "_MC", d.path));
             }
         }
         return true;
@@ -558,33 +696,45 @@ struct CmdHull : public ccCommandLineInterface::Command {
     CmdHull() : Command("PCL Convex/Concave Hull", CMD_PCL_CONVEX_HULL) {}
     bool process(ccCommandLineInterface& cmd) override {
         if (!NeedClouds(cmd, CMD_PCL_CONVEX_HULL)) return false;
-        float alpha = 0.0f; int dim = 3;
+        float alpha = 0.0f;
+        int dim = 3;
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
-            if (a == "-ALPHA") { cmd.arguments().takeFirst(); if (!NextFloat(cmd, "ALPHA", alpha)) return false; }
-            else if (a == "-DIMENSION") { cmd.arguments().takeFirst(); if (!NextInt(cmd, "DIMENSION", dim)) return false; }
-            else break;
+            if (a == "-ALPHA") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "ALPHA", alpha)) return false;
+            } else if (a == "-DIMENSION") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "DIMENSION", dim)) return false;
+            } else
+                break;
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
-            cmd.print(QObject::tr("[PCL_HULL] '%1' alpha=%2").arg(pc->getName()).arg(alpha));
+            cmd.print(QObject::tr("[PCL_HULL] '%1' alpha=%2")
+                              .arg(pc->getName())
+                              .arg(alpha));
             PointCloudT::Ptr xyz = cc2smReader(pc).getXYZ2();
             if (!xyz) continue;
             PCLMesh mesh;
             int r;
             if (alpha > 0.0f)
-                r = PCLModules::GetConcaveHullReconstruction<PointT>(xyz, mesh, dim, alpha);
+                r = PCLModules::GetConcaveHullReconstruction<PointT>(
+                        xyz, mesh, dim, alpha);
             else
-                r = PCLModules::GetConvexHullReconstruction<PointT>(xyz, mesh, dim);
+                r = PCLModules::GetConvexHullReconstruction<PointT>(xyz, mesh,
+                                                                    dim);
             if (r < 0) {
-                cmd.warning(QObject::tr("[PCL_HULL] Failed '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_HULL] Failed '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccMesh* m = pcl2cc::Convert(mesh.cloud, mesh.polygons);
             if (m) {
                 m->setName(pc->getName() + "_hull");
-                cmd.meshes().push_back(CLMeshDesc(m, d.basename + "_hull", d.path));
+                cmd.meshes().push_back(
+                        CLMeshDesc(m, d.basename + "_hull", d.path));
             }
         }
         return true;
@@ -645,35 +795,42 @@ struct CmdDON : public ccCommandLineInterface::Command {
             cmd.print(QObject::tr("[PCL_DON] '%1'").arg(pc->getName()));
             PointCloudT::Ptr xyzCloud = cc2smReader(pc).getXYZ2();
             if (!xyzCloud) continue;
-            double cloudResolution = PCLModules::ComputeCloudResolution<PointT>(xyzCloud);
+            double cloudResolution =
+                    PCLModules::ComputeCloudResolution<PointT>(xyzCloud);
             if (cloudResolution <= 0.0) {
-                cmd.warning(QObject::tr("[PCL_DON] Bad resolution for '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_DON] Bad resolution for '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             float smallR = static_cast<float>(smallM * cloudResolution);
             float largeR = static_cast<float>(largeM * cloudResolution);
-            float clusterTol = static_cast<float>(clusterTolM * cloudResolution);
+            float clusterTol =
+                    static_cast<float>(clusterTolM * cloudResolution);
             PointCloudNormal::Ptr normals_small(new PointCloudNormal);
             PointCloudNormal::Ptr normals_large(new PointCloudNormal);
             if (PCLModules::ComputeNormals<PointT, PointNT>(
                         xyzCloud, normals_small, smallR, false, true) < 0 ||
                 PCLModules::ComputeNormals<PointT, PointNT>(
                         xyzCloud, normals_large, largeR, false, true) < 0) {
-                cmd.warning(QObject::tr("[PCL_DON] Normal estimation failed '%1'").arg(pc->getName()));
+                cmd.warning(
+                        QObject::tr("[PCL_DON] Normal estimation failed '%1'")
+                                .arg(pc->getName()));
                 continue;
             }
             PointCloudNormal::Ptr doncloud(new PointCloudNormal);
             pcl::copyPointCloud<PointT, PointNT>(*xyzCloud, *doncloud);
             if (PCLModules::DONEstimation<PointT, PointNT, PointNT>(
                         xyzCloud, normals_small, normals_large, doncloud) < 0) {
-                cmd.warning(QObject::tr("[PCL_DON] DoN failed '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_DON] DoN failed '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             PointCloudNormal::Ptr don_kept(new PointCloudNormal);
             std::vector<unsigned> orig_idx;
             orig_idx.reserve(doncloud->size());
             for (size_t i = 0; i < doncloud->size(); ++i) {
-                if (DonPassesRange(doncloud->points[i], field, minDon, maxDon)) {
+                if (DonPassesRange(doncloud->points[i], field, minDon,
+                                   maxDon)) {
                     orig_idx.push_back(static_cast<unsigned>(i));
                     don_kept->push_back(doncloud->points[i]);
                 }
@@ -681,21 +838,27 @@ struct CmdDON : public ccCommandLineInterface::Command {
             don_kept->width = static_cast<uint32_t>(don_kept->size());
             don_kept->height = 1;
             if (don_kept->empty()) {
-                cmd.warning(QObject::tr("[PCL_DON] No points after magnitude filter '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_DON] No points after magnitude "
+                                        "filter '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             std::vector<pcl::PointIndices> cluster_indices;
-            PCLModules::EuclideanCluster<PointNT>(
-                    don_kept, cluster_indices, clusterTol, minS, maxS);
+            PCLModules::EuclideanCluster<PointNT>(don_kept, cluster_indices,
+                                                  clusterTol, minS, maxS);
             if (cluster_indices.empty() || cluster_indices.size() > 300) {
-                cmd.warning(QObject::tr("[PCL_DON] Clustering failed or too many clusters '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_DON] Clustering failed or too "
+                                        "many clusters '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
-            cmd.print(QObject::tr("[PCL_DON] %1 clusters").arg(cluster_indices.size()));
+            cmd.print(QObject::tr("[PCL_DON] %1 clusters")
+                              .arg(cluster_indices.size()));
             for (size_t ci = 0; ci < cluster_indices.size(); ++ci) {
                 cloudViewer::ReferenceCloud sub(pc);
                 for (int li : cluster_indices[ci].indices) {
-                    if (li < 0 || static_cast<size_t>(li) >= orig_idx.size()) continue;
+                    if (li < 0 || static_cast<size_t>(li) >= orig_idx.size())
+                        continue;
                     sub.addPointIndex(orig_idx[static_cast<size_t>(li)]);
                 }
                 ccPointCloud* c = pc->partialClone(&sub);
@@ -703,7 +866,8 @@ struct CmdDON : public ccCommandLineInterface::Command {
                 c->setName(QString("%1_don%2").arg(pc->getName()).arg(ci));
                 c->setGlobalScale(pc->getGlobalScale());
                 c->setGlobalShift(pc->getGlobalShift());
-                cmd.clouds().push_back(CLCloudDesc(c, d.basename + QString("_don%1").arg(ci), d.path));
+                cmd.clouds().push_back(CLCloudDesc(
+                        c, d.basename + QString("_don%1").arg(ci), d.path));
             }
         }
         return true;
@@ -754,7 +918,8 @@ struct CmdMinCut : public ccCommandLineInterface::Command {
         }
         if (!haveF) {
             return cmd.error(
-                    QObject::tr("PCL_MINCUT_SEGMENTATION requires -FX, -FY, -FZ (foreground seed)"));
+                    QObject::tr("PCL_MINCUT_SEGMENTATION requires -FX, -FY, "
+                                "-FZ (foreground seed)"));
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
@@ -773,24 +938,26 @@ struct CmdMinCut : public ccCommandLineInterface::Command {
                 fg.y = fy;
                 fg.z = fz;
                 result = PCLModules::GetMinCutSegmentation<PointRGB>(
-                        rgbCloud, clusters, cloudSegmented, fg, neighbours, sigma,
-                        backR, foreW);
+                        rgbCloud, clusters, cloudSegmented, fg, neighbours,
+                        sigma, backR, foreW);
             } else {
                 PointCloudT::Ptr xyzCloud(new PointCloudT);
                 FROM_PCL_CLOUD(*sm_cloud, *xyzCloud);
                 PointT fg(fx, fy, fz);
                 result = PCLModules::GetMinCutSegmentation<PointT>(
-                        xyzCloud, clusters, cloudSegmented, fg, neighbours, sigma,
-                        backR, foreW);
+                        xyzCloud, clusters, cloudSegmented, fg, neighbours,
+                        sigma, backR, foreW);
             }
             if (result < 0) {
-                cmd.warning(QObject::tr("[PCL_MINCUT] Failed '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_MINCUT] Failed '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLCloud out_sm;
             TO_PCL_CLOUD(*cloudSegmented, out_sm);
             if (out_sm.height * out_sm.width == 0) {
-                cmd.warning(QObject::tr("[PCL_MINCUT] Empty result '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_MINCUT] Empty result '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccPointCloud* r = pcl2cc::Convert(out_sm);
@@ -813,7 +980,9 @@ struct CmdFGR : public ccCommandLineInterface::Command {
     CmdFGR() : Command("PCL Fast Global Registration", CMD_PCL_FGR) {}
     bool process(ccCommandLineInterface& cmd) override {
         if (cmd.clouds().size() < 2) {
-            return cmd.error(QObject::tr("PCL_FAST_GLOBAL_REGISTRATION needs at least two loaded clouds (-O)"));
+            return cmd.error(
+                    QObject::tr("PCL_FAST_GLOBAL_REGISTRATION needs at least "
+                                "two loaded clouds (-O)"));
         }
         float featR = 0.f;
         int refIdx = 0;
@@ -831,7 +1000,9 @@ struct CmdFGR : public ccCommandLineInterface::Command {
                 break;
         }
         if (!haveR || featR <= 0.f) {
-            return cmd.error(QObject::tr("PCL_FAST_GLOBAL_REGISTRATION requires -FEATURE_RADIUS > 0"));
+            return cmd.error(
+                    QObject::tr("PCL_FAST_GLOBAL_REGISTRATION requires "
+                                "-FEATURE_RADIUS > 0"));
         }
         if (refIdx < 0 || static_cast<size_t>(refIdx) >= cmd.clouds().size()) {
             return cmd.error(QObject::tr("Invalid -REF_INDEX"));
@@ -842,18 +1013,21 @@ struct CmdFGR : public ccCommandLineInterface::Command {
         }
         fgr::Features referenceFeatures;
         if (!FgrComputeFeatures(refPc, referenceFeatures, featR)) {
-            return cmd.error(QObject::tr("FPFH feature computation failed for reference cloud"));
+            return cmd.error(QObject::tr(
+                    "FPFH feature computation failed for reference cloud"));
         }
         fgr::Points referencePoints;
         if (!FgrCloudToPoints(*refPc, referencePoints)) {
-            return cmd.error(QObject::tr("Failed to read reference cloud points"));
+            return cmd.error(
+                    QObject::tr("Failed to read reference cloud points"));
         }
         for (size_t i = 0; i < cmd.clouds().size(); ++i) {
             if (static_cast<int>(i) == refIdx) continue;
             ccPointCloud* aligned = cmd.clouds()[i].pc;
             if (!aligned) continue;
             if (!aligned->hasNormals()) {
-                cmd.warning(QObject::tr("[PCL_FGR] Skip '%1' (no normals)").arg(aligned->getName()));
+                cmd.warning(QObject::tr("[PCL_FGR] Skip '%1' (no normals)")
+                                    .arg(aligned->getName()));
                 continue;
             }
             cmd.print(QObject::tr("[PCL_FGR] Aligning '%1' to reference '%2'")
@@ -861,7 +1035,8 @@ struct CmdFGR : public ccCommandLineInterface::Command {
                               .arg(refPc->getName()));
             fgr::Features alignedFeatures;
             if (!FgrComputeFeatures(aligned, alignedFeatures, featR)) {
-                cmd.warning(QObject::tr("[PCL_FGR] FPFH failed for '%1'").arg(aligned->getName()));
+                cmd.warning(QObject::tr("[PCL_FGR] FPFH failed for '%1'")
+                                    .arg(aligned->getName()));
                 continue;
             }
             fgr::Points alignedPoints;
@@ -874,17 +1049,23 @@ struct CmdFGR : public ccCommandLineInterface::Command {
                 fgrProcess.NormalizePoints();
                 fgrProcess.AdvancedMatching();
                 if (!fgrProcess.OptimizePairwise(true)) {
-                    cmd.warning(QObject::tr("[PCL_FGR] Optimization failed for '%1'").arg(aligned->getName()));
+                    cmd.warning(
+                            QObject::tr(
+                                    "[PCL_FGR] Optimization failed for '%1'")
+                                    .arg(aligned->getName()));
                     continue;
                 }
                 Eigen::Matrix4f trans = fgrProcess.GetOutputTrans();
-                for (int k = 0; k < 16; ++k) ccTrans.data()[k] = trans.data()[k];
+                for (int k = 0; k < 16; ++k)
+                    ccTrans.data()[k] = trans.data()[k];
             } catch (...) {
-                cmd.warning(QObject::tr("[PCL_FGR] Exception for '%1'").arg(aligned->getName()));
+                cmd.warning(QObject::tr("[PCL_FGR] Exception for '%1'")
+                                    .arg(aligned->getName()));
                 continue;
             }
             aligned->setGLTransformation(ccTrans);
-            cmd.print(QObject::tr("[PCL_FGR] Transformation applied to '%1'").arg(aligned->getName()));
+            cmd.print(QObject::tr("[PCL_FGR] Transformation applied to '%1'")
+                              .arg(aligned->getName()));
         }
         return true;
     }
@@ -934,25 +1115,32 @@ struct CmdSIFT : public ccCommandLineInterface::Command {
         }
         if (!modeStr.size() || oct <= 0 || minScale <= 0.f || sPerOct <= 0) {
             return cmd.error(
-                    QObject::tr("PCL_EXTRACT_SIFT requires -MODE RGB|SF, -OCTAVES, -MIN_SCALE, -SCALES_PER_OCTAVE (all positive where applicable)"));
+                    QObject::tr("PCL_EXTRACT_SIFT requires -MODE RGB|SF, "
+                                "-OCTAVES, -MIN_SCALE, -SCALES_PER_OCTAVE (all "
+                                "positive where applicable)"));
         }
         if (useMinContrast && minContrast <= 0.f) {
-            return cmd.error(QObject::tr("When using -MIN_CONTRAST, value must be > 0"));
+            return cmd.error(
+                    QObject::tr("When using -MIN_CONTRAST, value must be > 0"));
         }
-        const bool useRgb = modeStr.compare(QStringLiteral("RGB"), Qt::CaseInsensitive) == 0;
-        const bool useSf = modeStr.compare(QStringLiteral("SF"), Qt::CaseInsensitive) == 0;
+        const bool useRgb = modeStr.compare(QStringLiteral("RGB"),
+                                            Qt::CaseInsensitive) == 0;
+        const bool useSf =
+                modeStr.compare(QStringLiteral("SF"), Qt::CaseInsensitive) == 0;
         if (!useRgb && !useSf) {
             return cmd.error(QObject::tr("-MODE must be RGB or SF"));
         }
         if (useSf && fieldName.isEmpty()) {
-            return cmd.error(QObject::tr("-MODE SF requires -FIELD (scalar field name)"));
+            return cmd.error(QObject::tr(
+                    "-MODE SF requires -FIELD (scalar field name)"));
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
             cmd.print(QObject::tr("[PCL_SIFT] '%1'").arg(pc->getName()));
             if (useRgb && !pc->hasColors()) {
-                cmd.warning(QObject::tr("[PCL_SIFT] '%1' has no RGB").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_SIFT] '%1' has no RGB")
+                                    .arg(pc->getName()));
                 continue;
             }
             std::list<std::string> req_fields;
@@ -963,7 +1151,10 @@ struct CmdSIFT : public ccCommandLineInterface::Command {
                 req_fields.push_back(qPrintable(fieldName));
             PCLCloud::Ptr sm_cloud = cc2smReader(pc).getAsSM(req_fields);
             if (!sm_cloud) {
-                cmd.warning(QObject::tr("[PCL_SIFT] Cannot build PCL cloud for '%1'").arg(pc->getName()));
+                cmd.warning(
+                        QObject::tr(
+                                "[PCL_SIFT] Cannot build PCL cloud for '%1'")
+                                .arg(pc->getName()));
                 continue;
             }
             QString fn_ns = fieldName;
@@ -972,20 +1163,27 @@ struct CmdSIFT : public ccCommandLineInterface::Command {
             if (useSf) {
                 int field_index = pcl::getFieldIndex(*sm_cloud, field_std);
                 if (field_index < 0) {
-                    cmd.warning(QObject::tr("[PCL_SIFT] Scalar field not found on '%1'").arg(pc->getName()));
+                    cmd.warning(
+                            QObject::tr(
+                                    "[PCL_SIFT] Scalar field not found on '%1'")
+                                    .arg(pc->getName()));
                     continue;
                 }
-                sm_cloud->fields[static_cast<size_t>(field_index)].name = "intensity";
+                sm_cloud->fields[static_cast<size_t>(field_index)].name =
+                        "intensity";
             }
-            pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud(
+                    new pcl::PointCloud<pcl::PointXYZ>);
             float mc = (useMinContrast ? minContrast : 0.f);
             if (useSf) {
-                pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_i(new pcl::PointCloud<pcl::PointXYZI>);
+                pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_i(
+                        new pcl::PointCloud<pcl::PointXYZI>);
                 FROM_PCL_CLOUD(*sm_cloud, *cloud_i);
                 PCLModules::EstimateSIFT<pcl::PointXYZI, pcl::PointXYZ>(
                         cloud_i, out_cloud, oct, minScale, sPerOct, mc);
             } else {
-                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(
+                        new pcl::PointCloud<pcl::PointXYZRGB>);
                 FROM_PCL_CLOUD(*sm_cloud, *cloud_rgb);
                 PCLModules::EstimateSIFT<pcl::PointXYZRGB, pcl::PointXYZ>(
                         cloud_rgb, out_cloud, oct, minScale, sPerOct, mc);
@@ -993,7 +1191,8 @@ struct CmdSIFT : public ccCommandLineInterface::Command {
             PCLCloud out_sm;
             TO_PCL_CLOUD(*out_cloud, out_sm);
             if (out_sm.height * out_sm.width == 0) {
-                cmd.warning(QObject::tr("[PCL_SIFT] Empty keypoints for '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_SIFT] Empty keypoints for '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccPointCloud* r = pcl2cc::Convert(out_sm);
@@ -1042,14 +1241,17 @@ struct CmdProj : public ccCommandLineInterface::Command {
             PointCloudT::Ptr xyzCloud = cc2smReader(pc).getXYZ2();
             if (!xyzCloud) continue;
             PointCloudT::Ptr outXyz(new PointCloudT);
-            pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
+            pcl::ModelCoefficients::Ptr coefficients(
+                    new pcl::ModelCoefficients());
             coefficients->values.resize(4);
             coefficients->values[0] = A;
             coefficients->values[1] = B;
             coefficients->values[2] = C;
             coefficients->values[3] = D;
-            if (PCLModules::GetProjection(xyzCloud, outXyz, coefficients, 0) < 0) {
-                cmd.warning(QObject::tr("[PCL_PROJ] Failed '%1'").arg(pc->getName()));
+            if (PCLModules::GetProjection(xyzCloud, outXyz, coefficients, 0) <
+                0) {
+                cmd.warning(QObject::tr("[PCL_PROJ] Failed '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             PCLCloud::Ptr out_sm(new PCLCloud);
@@ -1114,17 +1316,22 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
                 break;
         }
         if (!mode.size()) {
-            return cmd.error(QObject::tr("PCL_GENERAL_FILTERS requires -MODE PASS or VOXEL"));
+            return cmd.error(QObject::tr(
+                    "PCL_GENERAL_FILTERS requires -MODE PASS or VOXEL"));
         }
-        const bool pass = mode.compare(QStringLiteral("PASS"), Qt::CaseInsensitive) == 0;
-        const bool voxel = mode.compare(QStringLiteral("VOXEL"), Qt::CaseInsensitive) == 0;
+        const bool pass =
+                mode.compare(QStringLiteral("PASS"), Qt::CaseInsensitive) == 0;
+        const bool voxel =
+                mode.compare(QStringLiteral("VOXEL"), Qt::CaseInsensitive) == 0;
         if (!pass && !voxel) {
             return cmd.error(QObject::tr("-MODE must be PASS or VOXEL"));
         }
         for (CLCloudDesc& d : cmd.clouds()) {
             ccPointCloud* pc = d.pc;
             if (!pc) continue;
-            cmd.print(QObject::tr("[PCL_GEN] '%1' mode=%2").arg(pc->getName()).arg(mode));
+            cmd.print(QObject::tr("[PCL_GEN] '%1' mode=%2")
+                              .arg(pc->getName())
+                              .arg(mode));
             PCLCloud::Ptr sm_cloud = cc2smReader(pc).getAsSM();
             if (!sm_cloud) continue;
             PCLCloud::Ptr out_sm(new PCLCloud);
@@ -1136,7 +1343,9 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
                     FROM_PCL_CLOUD(*sm_cloud, *rgbIn);
                     if (PCLModules::PassThroughFilter<PointRGB>(
                                 rgbIn, rgbOut, ptField, ptMin, ptMax) < 0) {
-                        cmd.warning(QObject::tr("[PCL_GEN] PassThrough failed '%1'").arg(pc->getName()));
+                        cmd.warning(
+                                QObject::tr("[PCL_GEN] PassThrough failed '%1'")
+                                        .arg(pc->getName()));
                         continue;
                     }
                     TO_PCL_CLOUD(*rgbOut, *out_sm);
@@ -1146,7 +1355,9 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
                     FROM_PCL_CLOUD(*sm_cloud, *xyzIn);
                     if (PCLModules::PassThroughFilter<PointT>(
                                 xyzIn, xyzOut, ptField, ptMin, ptMax) < 0) {
-                        cmd.warning(QObject::tr("[PCL_GEN] PassThrough failed '%1'").arg(pc->getName()));
+                        cmd.warning(
+                                QObject::tr("[PCL_GEN] PassThrough failed '%1'")
+                                        .arg(pc->getName()));
                         continue;
                     }
                     TO_PCL_CLOUD(*xyzOut, *out_sm);
@@ -1161,13 +1372,16 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
                     PointCloudRGB::Ptr rgbIn(new PointCloudRGB);
                     PointCloudRGB::Ptr rgbOut(new PointCloudRGB);
                     FROM_PCL_CLOUD(*sm_cloud, *rgbIn);
-                    if (PCLModules::VoxelGridFilter<PointRGB>(
-                                rgbIn, rgbOut, lx, ly, lz) < 0) {
-                        cmd.warning(QObject::tr("[PCL_GEN] Voxel failed '%1'").arg(pc->getName()));
+                    if (PCLModules::VoxelGridFilter<PointRGB>(rgbIn, rgbOut, lx,
+                                                              ly, lz) < 0) {
+                        cmd.warning(QObject::tr("[PCL_GEN] Voxel failed '%1'")
+                                            .arg(pc->getName()));
                         continue;
                     }
                     if (rgbOut->size() == rgbIn->size()) {
-                        cmd.warning(QObject::tr("[PCL_GEN] Voxel had no effect (leaf too small?) '%1'").arg(pc->getName()));
+                        cmd.warning(QObject::tr("[PCL_GEN] Voxel had no effect "
+                                                "(leaf too small?) '%1'")
+                                            .arg(pc->getName()));
                         continue;
                     }
                     TO_PCL_CLOUD(*rgbOut, *out_sm);
@@ -1175,25 +1389,30 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
                     PointCloudT::Ptr xyzIn(new PointCloudT);
                     PointCloudT::Ptr xyzOut(new PointCloudT);
                     FROM_PCL_CLOUD(*sm_cloud, *xyzIn);
-                    if (PCLModules::VoxelGridFilter<PointT>(xyzIn, xyzOut, lx, ly, lz) < 0) {
-                        cmd.warning(QObject::tr("[PCL_GEN] Voxel failed '%1'").arg(pc->getName()));
+                    if (PCLModules::VoxelGridFilter<PointT>(xyzIn, xyzOut, lx,
+                                                            ly, lz) < 0) {
+                        cmd.warning(QObject::tr("[PCL_GEN] Voxel failed '%1'")
+                                            .arg(pc->getName()));
                         continue;
                     }
                     if (xyzOut->size() == xyzIn->size()) {
-                        cmd.warning(QObject::tr("[PCL_GEN] Voxel had no effect (leaf too small?) '%1'").arg(pc->getName()));
+                        cmd.warning(QObject::tr("[PCL_GEN] Voxel had no effect "
+                                                "(leaf too small?) '%1'")
+                                            .arg(pc->getName()));
                         continue;
                     }
                     TO_PCL_CLOUD(*xyzOut, *out_sm);
                 }
             }
             if (out_sm->width * out_sm->height == 0) {
-                cmd.warning(QObject::tr("[PCL_GEN] Empty result '%1'").arg(pc->getName()));
+                cmd.warning(QObject::tr("[PCL_GEN] Empty result '%1'")
+                                    .arg(pc->getName()));
                 continue;
             }
             ccPointCloud* r = pcl2cc::Convert(*out_sm);
             if (!r) continue;
             r->setName(pass ? QString(pc->getName() + "-passThrough")
-                           : QString(pc->getName() + "-voxelGrid"));
+                            : QString(pc->getName() + "-voxelGrid"));
             r->setGlobalScale(pc->getGlobalScale());
             r->setGlobalShift(pc->getGlobalShift());
             d.pc = r;

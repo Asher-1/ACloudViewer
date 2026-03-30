@@ -94,7 +94,8 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
         bool wasVisible = obj->isVisible();
         obj->setEnabled(true);
         obj->setVisible(true);
-        bool success = PCV::Launch(rays, cloud, mesh, meshIsClosed, resolution,
+        bool success =
+                PCV::Launch(rays, cloud, mesh, meshIsClosed, resolution,
                             resolution, progressDlg, objNameForPorgressDialog);
         obj->setEnabled(wasEnabled);
         obj->setVisible(wasVisible);

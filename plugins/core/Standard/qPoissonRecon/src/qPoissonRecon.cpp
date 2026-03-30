@@ -8,11 +8,10 @@
 #include "qPoissonRecon.h"
 
 // dialog
-#include "ui_poissonReconParamDlg.h"
+#include <ecvCommandLineInterface.h>
 
 #include "qPoissonReconCommands.h"
-
-#include <ecvCommandLineInterface.h>
+#include "ui_poissonReconParamDlg.h"
 
 // Qt
 #include <QDialog>

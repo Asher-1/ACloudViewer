@@ -8,13 +8,11 @@
 #include "qPoissonReconCommands.h"
 
 #include <PoissonReconLib.h>
-
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
 #include <QObject>
-
 #include <algorithm>
 #include <cassert>
 
@@ -177,15 +175,14 @@ protected:
 };
 
 CommandPoissonRecon::CommandPoissonRecon()
-        : ccCommandLineInterface::Command("Poisson Recon", COMMAND_POISSON_RECON) {
-}
+    : ccCommandLineInterface::Command("Poisson Recon", COMMAND_POISSON_RECON) {}
 
 bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
     cmd.print("[POISSON_RECON]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_POISSON_RECON));
     }
 
@@ -207,10 +204,9 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
                                          .arg(COMMAND_PR_DEPTH));
             bool ok;
             depth = cmd.arguments().takeFirst().toInt(&ok);
-            if (!ok || depth < 1)
-                return cmd.error("Invalid value for -DEPTH");
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_PR_SAMPLES_PER_NODE)) {
+            if (!ok || depth < 1) return cmd.error("Invalid value for -DEPTH");
+        } else if (ccCommandLineInterface::IsCommand(
+                           arg, COMMAND_PR_SAMPLES_PER_NODE)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")
@@ -244,7 +240,7 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
                 return cmd.error(
                         "Invalid -BOUNDARY (use FREE, DIRICHLET, or NEUMANN)");
         } else if (ccCommandLineInterface::IsCommand(arg,
-                                                   COMMAND_PR_LINEAR_FIT)) {
+                                                     COMMAND_PR_LINEAR_FIT)) {
             cmd.arguments().pop_front();
             linearFit = true;
         } else if (ccCommandLineInterface::IsCommand(arg,
@@ -264,9 +260,9 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
         if (!pc) continue;
 
         if (!pc->hasNormals()) {
-            return cmd.error(QObject::tr(
-                    "[POISSON_RECON] Cloud '%1' has no normals (compute normals "
-                    "on the cloud first)")
+            return cmd.error(QObject::tr("[POISSON_RECON] Cloud '%1' has no "
+                                         "normals (compute normals "
+                                         "on the cloud first)")
                                      .arg(pc->getName()));
         }
 
@@ -280,9 +276,10 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
         params.withColors = withColors && pc->hasColors();
         params.density = useDensity;
 
-        cmd.print(QObject::tr("[POISSON_RECON] Processing cloud '%1' (%2 points)")
-                          .arg(pc->getName())
-                          .arg(pc->size()));
+        cmd.print(
+                QObject::tr("[POISSON_RECON] Processing cloud '%1' (%2 points)")
+                        .arg(pc->getName())
+                        .arg(pc->size()));
 
         ccScalarField* densitySF = nullptr;
         ccPointCloud* newPC = new ccPointCloud("vertices");
@@ -293,7 +290,8 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
             densitySF = new ccScalarField("Density");
         }
 
-        MeshWrapper<PointCoordinateType> meshWrapper(*newMesh, *newPC, densitySF);
+        MeshWrapper<PointCoordinateType> meshWrapper(*newMesh, *newPC,
+                                                     densitySF);
         PointCloudWrapper<PointCoordinateType> cloudWrapper(*pc);
 
         if (!PoissonReconLib::Reconstruct(params, cloudWrapper, meshWrapper) ||
@@ -302,9 +300,10 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
                 densitySF->release();
             }
             delete newMesh;
-            return cmd.error(QObject::tr("[POISSON_RECON] Reconstruction failed "
-                                         "for cloud '%1'")
-                                     .arg(pc->getName()));
+            return cmd.error(
+                    QObject::tr("[POISSON_RECON] Reconstruction failed "
+                                "for cloud '%1'")
+                            .arg(pc->getName()));
         }
 
         const bool cloudHasColors = pc->hasColors();
@@ -333,7 +332,8 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
         newPC->setGlobalShift(pc->getGlobalShift());
         newPC->setGlobalScale(pc->getGlobalScale());
 
-        CLMeshDesc meshDesc(newMesh, desc.basename + "_POISSON_RECON", desc.path);
+        CLMeshDesc meshDesc(newMesh, desc.basename + "_POISSON_RECON",
+                            desc.path);
         cmd.meshes().push_back(meshDesc);
 
         if (cmd.autoSaveMode()) {

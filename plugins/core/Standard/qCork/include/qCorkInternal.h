@@ -7,21 +7,19 @@
 
 #pragma once
 
-#include "ccCorkDlg.h"
-
+#include <ecvMesh.h>
 #include <mesh/corkMesh.h>
 
-#include <ecvMesh.h>
-
 #include <QString>
+
+#include "ccCorkDlg.h"
 
 class ecvMainAppInterface;
 
 bool ToCorkMesh(const ccMesh* in,
                 CorkMesh& out,
                 ecvMainAppInterface* app = nullptr);
-ccMesh* FromCorkMesh(const CorkMesh& in,
-                      ecvMainAppInterface* app = nullptr);
+ccMesh* FromCorkMesh(const CorkMesh& in, ecvMainAppInterface* app = nullptr);
 bool qCorkPerformBooleanOp(ccCorkDlg::CSG_OPERATION operation,
                            CorkMesh& corkA,
                            CorkMesh& corkB,

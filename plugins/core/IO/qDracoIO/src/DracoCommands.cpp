@@ -15,7 +15,7 @@ static const char COMMAND_DRC_COMPRESSION[] = "COMPRESSION_LEVEL";
 static const char COMMAND_DRC_SPEED[] = "SPEED";
 
 CommandDraco::CommandDraco()
-        : ccCommandLineInterface::Command("Draco", COMMAND_DRACO) {}
+    : ccCommandLineInterface::Command("Draco", COMMAND_DRACO) {}
 
 bool CommandDraco::process(ccCommandLineInterface& cmd) {
     cmd.print("[DRACO]");
@@ -46,12 +46,10 @@ bool CommandDraco::process(ccCommandLineInterface& cmd) {
             bool ok;
             compressionLevel = cmd.arguments().takeFirst().toInt(&ok);
             if (!ok || compressionLevel < 0 || compressionLevel > 10)
-                return cmd.error(
-                        "Invalid value for -COMPRESSION_LEVEL (0-10)");
+                return cmd.error("Invalid value for -COMPRESSION_LEVEL (0-10)");
             cmd.print(QObject::tr("[DRACO] Compression level: %1")
                               .arg(compressionLevel));
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_DRC_SPEED)) {
+        } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_DRC_SPEED)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")

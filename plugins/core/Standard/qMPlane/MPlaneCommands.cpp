@@ -18,14 +18,14 @@ static const char COMMAND_MP_NZ[] = "NZ";
 static const char COMMAND_MP_D[] = "D";
 
 CommandMPlane::CommandMPlane()
-        : ccCommandLineInterface::Command("MPlane", COMMAND_MPLANE) {}
+    : ccCommandLineInterface::Command("MPlane", COMMAND_MPLANE) {}
 
 bool CommandMPlane::process(ccCommandLineInterface& cmd) {
     cmd.print("[MPLANE]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_MPLANE));
     }
 
@@ -69,7 +69,10 @@ bool CommandMPlane::process(ccCommandLineInterface& cmd) {
                           .arg(pc->getName())
                           .arg(pc->size()));
         cmd.print(QObject::tr("[MPLANE] Plane normal: (%1, %2, %3), d: %4")
-                          .arg(nx).arg(ny).arg(nz).arg(d));
+                          .arg(nx)
+                          .arg(ny)
+                          .arg(nz)
+                          .arg(d));
 
         int sfIdx = pc->getScalarFieldIndexByName("Plane Distance");
         if (sfIdx < 0) {

@@ -60,7 +60,7 @@ void ccGeoObject::init(bool singleSurface) {
     QVariantMap map;
     if (singleSurface) {
         map.insert("ccCompassType", "GeoObjectSS");  // single-surface
-                                                      // GeoObject
+                                                     // GeoObject
     } else {
         map.insert("ccCompassType", "GeoObject");
     }

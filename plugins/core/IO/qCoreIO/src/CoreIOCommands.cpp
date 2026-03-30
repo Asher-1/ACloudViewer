@@ -14,7 +14,7 @@ static const char COMMAND_CIO_FORMAT[] = "FORMAT";
 static const char COMMAND_CIO_PRECISION[] = "PRECISION";
 
 CommandCoreIO::CommandCoreIO()
-        : ccCommandLineInterface::Command("Core IO", COMMAND_CORE_IO) {}
+    : ccCommandLineInterface::Command("Core IO", COMMAND_CORE_IO) {}
 
 bool CommandCoreIO::process(ccCommandLineInterface& cmd) {
     cmd.print("[CORE_IO]");

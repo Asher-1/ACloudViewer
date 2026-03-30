@@ -17,14 +17,14 @@ static const char COMMAND_MS_CONTOURS[] = "CONTOURS";
 static const char COMMAND_MS_PROFILE[] = "PROFILE";
 
 CommandManualSeg::CommandManualSeg()
-        : ccCommandLineInterface::Command("ManualSeg", COMMAND_MANUAL_SEG) {}
+    : ccCommandLineInterface::Command("ManualSeg", COMMAND_MANUAL_SEG) {}
 
 bool CommandManualSeg::process(ccCommandLineInterface& cmd) {
     cmd.print("[MANUAL_SEG]");
 
     if (cmd.clouds().empty()) {
-        return cmd.error(QObject::tr(
-                "No point cloud loaded (use \"-O [filename]\" before \"-%1\")")
+        return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
+                                     "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_MANUAL_SEG));
     }
 
@@ -43,8 +43,7 @@ bool CommandManualSeg::process(ccCommandLineInterface& cmd) {
             cmd.arguments().pop_front();
             contours = true;
             cmd.print("[MANUAL_SEG] Contour extraction enabled");
-        } else if (ccCommandLineInterface::IsCommand(arg,
-                                                     COMMAND_MS_PROFILE)) {
+        } else if (ccCommandLineInterface::IsCommand(arg, COMMAND_MS_PROFILE)) {
             cmd.arguments().pop_front();
             if (cmd.arguments().empty())
                 return cmd.error(QObject::tr("Missing value after \"-%1\"")

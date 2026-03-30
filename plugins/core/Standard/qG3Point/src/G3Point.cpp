@@ -104,7 +104,7 @@ QList<QAction*> G3PointPlugin::getActions() {
     return {m_action};
 }
 
-void G3PointPlugin::registerCommands(ccCommandLineInterface *cmd) {
+void G3PointPlugin::registerCommands(ccCommandLineInterface* cmd) {
     if (!cmd) {
         assert(false);
         return;
