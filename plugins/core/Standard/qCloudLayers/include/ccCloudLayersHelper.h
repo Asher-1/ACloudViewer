@@ -51,7 +51,7 @@ public:
     QStringList getScalarFields();
     void setScalarFieldIndex(int index);
 
-    // set colors alpha to MAX
+    // Toggle per-point alpha (opaque vs transparent), same idea as CloudCompare
     void setVisible(bool value);
 
     // apply visibility and colors
@@ -117,13 +117,13 @@ private:  // variables
     public:
         CloudState() {}
 
-        void update(ScalarType code, ecvColor::Rgb color) {
+        void update(ScalarType code, ecvColor::Rgba color) {
             this->code = code;
             this->color = color;
         }
 
         ScalarType code;
-        ecvColor::Rgb color;
+        ecvColor::Rgba color;
     };
 
     std::vector<CloudState> m_cloudState;

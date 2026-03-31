@@ -631,6 +631,16 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcProcessPcv(p); });
 #endif
 
+    // --- CLI Processing ---
+    reg("process.run_cli",   "Run any CLI processing command: {input_path, output_path, args[], ?timeout_ms}",
+        [this](auto& p){ return rpcProcessRunCli(p); });
+    reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
+        [this](auto& p){ return rpcProcessCsf(p); });
+    reg("process.m3c2",      "M3C2 distance computation: {cloud1_path, cloud2_path, params_file, output_path}",
+        [this](auto& p){ return rpcProcessM3c2(p); });
+    reg("process.ransac",    "RANSAC shape detection: {input_path, output_path, ?epsilon, ?bitmap_epsilon, ?support_points, ?max_normal_dev, ?probability, ?primitives[]}",
+        [this](auto& p){ return rpcProcessRansac(p); });
+
     // --- Reconstruction ---
     reg("colmap.reconstruct","Run automatic_reconstructor: {image_path, workspace_path, ...}",
         [this](auto& p){ return rpcColmapReconstruct(p); });
@@ -3521,6 +3531,179 @@ JsonRPCResult JsonRPCPlugin::rpcProcessPcv(
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
 #endif
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Generic CLI Processing (process.run_cli)
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcProcessRunCli(
+        const QMap<QString, QVariant>& params) {
+    QString inputPath = params.value("input_path").toString();
+    QString outputPath = params.value("output_path").toString();
+    if (inputPath.isEmpty() || outputPath.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameters: input_path, output_path");
+    }
+
+    QVariantList cmdArgs = params.value("args", QVariant()).toList();
+    if (cmdArgs.isEmpty()) {
+        return JsonRPCResult::error(-32602,
+                                    "Missing required parameter: args (list)");
+    }
+
+    int timeoutMs = params.value("timeout_ms", 120000).toInt();
+
+    QString binary = QCoreApplication::applicationFilePath();
+    QStringList argList;
+    argList << "-SILENT" << "-O" << inputPath << "-AUTO_SAVE" << "OFF"
+            << "-NO_TIMESTAMP";
+    for (const auto& a : cmdArgs) {
+        argList << a.toString();
+    }
+    argList << "-SAVE_CLOUDS" << "FILE" << outputPath;
+
+    QProcess process;
+    process.setProgram(binary);
+    process.setArguments(argList);
+    process.setEnvironment(
+            QProcess::systemEnvironment() << "QT_QPA_PLATFORM=offscreen");
+    process.start();
+
+    if (!process.waitForFinished(timeoutMs)) {
+        process.kill();
+        return JsonRPCResult::error(
+                3, "CLI processing timed out",
+                D("timeout_ms", timeoutMs));
+    }
+
+    QJsonObject result;
+    result["exit_code"] = process.exitCode();
+    result["stdout"] =
+            QString::fromUtf8(process.readAllStandardOutput()).left(5000);
+    result["stderr"] =
+            QString::fromUtf8(process.readAllStandardError()).left(2000);
+    result["output_path"] = outputPath;
+
+    if (process.exitCode() != 0) {
+        return JsonRPCResult::error(
+                3, "CLI processing failed",
+                D("exit_code", process.exitCode(), "stderr",
+                  result["stderr"].toString()));
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcProcessCsf(
+        const QMap<QString, QVariant>& params) {
+    QString input = params.value("input_path").toString();
+    QString output = params.value("output_path").toString();
+    if (input.isEmpty() || output.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required: input_path, output_path");
+    }
+    QVariantList args;
+    args << "-CSF";
+    QString scene = params.value("scene", "").toString().toUpper();
+    if (!scene.isEmpty()) args << "-SCENES" << scene;
+    if (params.contains("cloth_resolution"))
+        args << "-CLOTH_RESOLUTION"
+             << QString::number(params["cloth_resolution"].toDouble());
+    if (params.contains("max_iterations"))
+        args << "-MAX_ITERATION"
+             << QString::number(params["max_iterations"].toInt());
+    if (params.contains("class_threshold"))
+        args << "-CLASS_THRESHOLD"
+             << QString::number(params["class_threshold"].toDouble());
+    if (params.value("export_ground", false).toBool())
+        args << "-EXPORT_GROUND";
+    if (params.value("export_offground", false).toBool())
+        args << "-EXPORT_OFFGROUND";
+    QMap<QString, QVariant> p;
+    p["input_path"] = input;
+    p["output_path"] = output;
+    p["args"] = args;
+    p["timeout_ms"] = params.value("timeout_ms", 120000);
+    return rpcProcessRunCli(p);
+}
+
+JsonRPCResult JsonRPCPlugin::rpcProcessM3c2(
+        const QMap<QString, QVariant>& params) {
+    QString cloud1 = params.value("cloud1_path").toString();
+    QString cloud2 = params.value("cloud2_path").toString();
+    QString paramsFile = params.value("params_file").toString();
+    QString output = params.value("output_path").toString();
+    if (cloud1.isEmpty() || cloud2.isEmpty() || paramsFile.isEmpty() ||
+        output.isEmpty()) {
+        return JsonRPCResult::error(-32602,
+                                    "Missing required: cloud1_path, "
+                                    "cloud2_path, params_file, output_path");
+    }
+    int timeoutMs = params.value("timeout_ms", 120000).toInt();
+    QString binary = QCoreApplication::applicationFilePath();
+    QStringList argList;
+    argList << "-SILENT" << "-O" << cloud1 << "-O" << cloud2 << "-AUTO_SAVE"
+            << "OFF" << "-NO_TIMESTAMP" << "-M3C2" << paramsFile
+            << "-SAVE_CLOUDS" << "FILE" << output;
+    QProcess process;
+    process.setProgram(binary);
+    process.setArguments(argList);
+    process.setEnvironment(
+            QProcess::systemEnvironment() << "QT_QPA_PLATFORM=offscreen");
+    process.start();
+    if (!process.waitForFinished(timeoutMs)) {
+        process.kill();
+        return JsonRPCResult::error(3, "M3C2 processing timed out");
+    }
+    QJsonObject result;
+    result["exit_code"] = process.exitCode();
+    result["stdout"] =
+            QString::fromUtf8(process.readAllStandardOutput()).left(5000);
+    result["stderr"] =
+            QString::fromUtf8(process.readAllStandardError()).left(2000);
+    result["output_path"] = output;
+    if (process.exitCode() != 0) {
+        return JsonRPCResult::error(3, "M3C2 processing failed",
+                                    D("exit_code", process.exitCode()));
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcProcessRansac(
+        const QMap<QString, QVariant>& params) {
+    QString input = params.value("input_path").toString();
+    QString output = params.value("output_path").toString();
+    if (input.isEmpty() || output.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required: input_path, output_path");
+    }
+    QVariantList args;
+    args << "-RANSAC";
+    if (params.contains("epsilon"))
+        args << "-EPSILON_ABSOLUTE"
+             << QString::number(params["epsilon"].toDouble());
+    if (params.contains("bitmap_epsilon"))
+        args << "-BITMAP_EPSILON_ABSOLUTE"
+             << QString::number(params["bitmap_epsilon"].toDouble());
+    if (params.contains("support_points"))
+        args << "-SUPPORT_POINTS"
+             << QString::number(params["support_points"].toInt());
+    if (params.contains("max_normal_dev"))
+        args << "-MAX_NORMAL_DEV"
+             << QString::number(params["max_normal_dev"].toDouble());
+    if (params.contains("probability"))
+        args << "-PROBABILITY"
+             << QString::number(params["probability"].toDouble());
+    QVariantList prims = params.value("primitives").toList();
+    for (const auto& p : prims) {
+        args << "-ENABLE_PRIMITIVE" << p.toString().toUpper();
+    }
+    QMap<QString, QVariant> p;
+    p["input_path"] = input;
+    p["output_path"] = output;
+    p["args"] = args;
+    p["timeout_ms"] = params.value("timeout_ms", 120000);
+    return rpcProcessRunCli(p);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Internal helper

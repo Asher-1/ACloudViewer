@@ -127,7 +127,7 @@ Mesh-oriented cases use the **`mesh_ply`** / **`_MESH_PLY_CONTENT`** fixture: a 
 
 ### Level 5 — MCP Server
 - MCP SDK importable
-- Tool listing returns ≥ 121 tools (including `volume_25d`, `crop_2d`)
+- Tool listing returns ≥ 127 tools (including `volume_25d`, `crop_2d`)
 - Core tool names present (open_file, convert_format, subsample, etc.)
 - GUI-mode cloud/mesh tools present (cloud_set_active_sf, cloud_remove_sf, cloud_merge_gui, mesh_extract_vertices_gui, mesh_volume_gui, etc.)
 - All 13 Colmap MCP tools present (colmap_auto_reconstruct, colmap_extract_features, colmap_match_features, colmap_sparse_reconstruct, colmap_undistort, colmap_dense_stereo, colmap_stereo_fusion, colmap_poisson_mesh, colmap_delaunay_mesh, colmap_image_texturer, colmap_model_converter, colmap_analyze_model, colmap_run)
