@@ -75,7 +75,7 @@
            <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>255.000000000000000</double>
+           <double>100.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -184,7 +184,7 @@
            <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>255.000000000000000</double>
+           <double>359.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -253,7 +253,7 @@
            <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>255.000000000000000</double>
+           <double>100.000000000000000</double>
           </property>
          </widget>
         </item>

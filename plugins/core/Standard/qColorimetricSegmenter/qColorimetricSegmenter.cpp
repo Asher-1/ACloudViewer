@@ -812,7 +812,7 @@ void ColorimetricSegmenter::filterRgbWithSegmentation() {
                             cloud->getParent()->addChild(newCloud);
                         }
 
-                        m_app->addToDB(newCloud, false, true, false, true);
+                        m_app->addToDB(newCloud, false, true, false, false);
 
                         m_app->dispToConsole(
                                 "[ColorimetricSegmenter] Cloud successfully "
@@ -827,6 +827,11 @@ void ColorimetricSegmenter::filterRgbWithSegmentation() {
                 }
             }
         }
+    }
+
+    if (m_app) {
+        m_app->refreshAll();
+        m_app->updateUI();
     }
 
     ShowDurationNow(startTime);
@@ -1017,7 +1022,11 @@ void ColorimetricSegmenter::createCloud(
         cloud->getParent()->addChild(newCloud);
     }
 
-    m_app->addToDB(newCloud, false, true, false, true);
+    m_app->addToDB(newCloud, false, true, false, false);
+    if (m_app) {
+        m_app->refreshAll();
+        m_app->updateUI();
+    }
 }
 
 /**
@@ -1174,12 +1183,17 @@ void ColorimetricSegmenter::HistogramClustering() {
                 cloud->getParent()->addChild(histCloud);
             }
 
-            m_app->addToDB(histCloud, false, true, false, true);
+            m_app->addToDB(histCloud, false, true, false, false);
 
             m_app->dispToConsole(
                     "[ColorimetricSegmenter] Cloud successfully clustered!",
                     ecvMainAppInterface::STD_CONSOLE_MESSAGE);
         }
+    }
+
+    if (m_app) {
+        m_app->refreshAll();
+        m_app->updateUI();
     }
 
     ShowDurationNow(startTime);
@@ -1342,10 +1356,15 @@ void ColorimetricSegmenter::KmeansClustering() {
             cloud->getParent()->addChild(kcloud);
         }
 
-        m_app->addToDB(kcloud, false, true, false, true);
+        m_app->addToDB(kcloud, false, true, false, false);
         m_app->dispToConsole(
                 "[ColorimetricSegmenter] Cloud successfully clustered!",
                 ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+    }
+
+    if (m_app) {
+        m_app->refreshAll();
+        m_app->updateUI();
     }
 
     ShowDurationNow(startTime);

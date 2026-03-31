@@ -198,11 +198,15 @@ bool G3PointAction::sfConvertToRandomRGB(
 
                     pc->showColors(true);
                     pc->showSF(false);  // just in case
+                    pc->setRedrawFlagRecursive(true);
                 }
             }
-
-            m_cloud->redrawDisplay();
         }
+    }
+
+    if (m_app) {
+        m_app->refreshAll();
+        m_app->updateUI();
     }
 
     return true;
@@ -326,6 +330,7 @@ int G3PointAction::segmentLabels(bool useParallelStrategy) {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
+    m_cloud->setRedrawFlagRecursive(true);
     if (m_app) {
         m_app->refreshAll();
         m_app->updateUI();
@@ -549,9 +554,7 @@ bool G3PointAction::updateLabelsAndColors() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    m_cloud->redrawDisplay();
-    // m_cloud->prepareDisplayForRefresh();
-
+    m_cloud->setRedrawFlagRecursive(true);
     if (m_app) {
         m_app->refreshAll();
         m_app->updateUI();
@@ -1583,9 +1586,7 @@ int G3PointAction::segmentLabelsBraunWillett() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    m_cloud->redrawDisplay();
-    // m_cloud->prepareDisplayForRefresh();
-
+    m_cloud->setRedrawFlagRecursive(true);
     if (m_app) {
         m_app->refreshAll();
         m_app->updateUI();

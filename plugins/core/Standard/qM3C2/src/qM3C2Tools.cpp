@@ -700,7 +700,7 @@ bool qM3C2Tools::GuessBestParams(ccPointCloud* cloud1,
                             app->dispToConsole(
                                     QString("[M3C2::auto] \tThis scale seems "
                                             "ok for projection!"));
-                        params.projScale = scale;
+                        params.projScale = scale * 2;
                         hasBestProjLevel = true;
                     }
                 }
@@ -763,8 +763,8 @@ bool qM3C2Tools::GuessBestParams(ccPointCloud* cloud1,
             if (level == 6 && (!hasBestNormLevel || !hasBestProjLevel)) {
                 // if we have reach a big radius already and we don't have
                 // good scales, we stop anyway!
-                if (bestMeanRoughness < 0) params.normScale = scale;
-                if (!hasBestProjLevel) params.projScale = scale;
+                if (bestMeanRoughness < 0) params.normScale = scale * 2;
+                if (!hasBestProjLevel) params.projScale = scale * 2;
                 hasBestProjLevel = true;
                 hasBestNormLevel = true;
                 if (app)

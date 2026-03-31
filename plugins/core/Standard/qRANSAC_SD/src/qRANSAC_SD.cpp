@@ -108,8 +108,8 @@ static unsigned s_supportPoints =
         500;  // this is the minimal numer of points required for a primitive
 static double s_maxNormalDev_deg =
         25.0;  // maximal normal deviation from ideal shape (in degrees)
-static double s_proba = 0.75;  // default : 0.01, probability that no better
-                               // candidate was overlooked during sampling
+static double s_proba = 0.01;  // probability that no better candidate was
+                               // overlooked during sampling
 static bool s_primEnabled[5] = {true, true, true, false, false};
 
 static float s_minRadius =
@@ -780,8 +780,9 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC,
             if (prim) {
                 prim->applyGLTransformation_recursive();
                 pcShape->addChild(prim);
-                // prim->setDisplay(pcShape->getDisplay());
-                prim->setColor(col);
+                if (params.randomColor) {
+                    prim->setColor(col);
+                }
                 prim->showColors(true);
                 prim->setVisible(true);
             }

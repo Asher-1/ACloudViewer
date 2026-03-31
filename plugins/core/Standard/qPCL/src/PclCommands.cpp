@@ -17,7 +17,10 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <pcl/common/io.h>
+#include <pcl/common/transforms.h>
 #include <pcl/features/fpfh_omp.h>
+#include <pcl/features/shot_omp.h>
+#include <pcl/search/kdtree.h>
 
 #include <Eigen/Core>
 #include <cmath>
@@ -40,6 +43,8 @@ static const char CMD_PCL_FGR[] = "PCL_FAST_GLOBAL_REGISTRATION";
 static const char CMD_PCL_SIFT[] = "PCL_EXTRACT_SIFT";
 static const char CMD_PCL_PROJ[] = "PCL_PROJECTION_FILTER";
 static const char CMD_PCL_GENFILT[] = "PCL_GENERAL_FILTERS";
+static const char CMD_PCL_TEMPLATE_ALIGN[] = "PCL_TEMPLATE_ALIGNMENT";
+static const char CMD_PCL_CORR_MATCH[] = "PCL_CORRESPONDENCE_MATCHING";
 
 static bool NextFloat(ccCommandLineInterface& cmd, const char* n, float& v) {
     if (cmd.arguments().empty())
@@ -1423,6 +1428,307 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
 };
 
 // ============================================================================
+// Template Alignment (SAC-IA with FPFH)
+// -PCL_TEMPLATE_ALIGNMENT -NORMAL_RADIUS r -FEATURE_RADIUS r
+//   [-MAX_ITERATIONS 500] [-MIN_SAMPLE_DIST 0.05] [-MAX_CORR_DIST 0.01]
+//   [-VOXEL_LEAF 0.005] [-REF_INDEX 0]
+// Requires at least 2 loaded clouds.
+// ============================================================================
+struct CmdTemplateAlign : public ccCommandLineInterface::Command {
+    CmdTemplateAlign()
+        : Command("PCL Template Alignment", CMD_PCL_TEMPLATE_ALIGN) {}
+    bool process(ccCommandLineInterface& cmd) override {
+        if (cmd.clouds().size() < 2) {
+            return cmd.error(QObject::tr(
+                    "PCL_TEMPLATE_ALIGNMENT needs >=2 clouds (templates + "
+                    "target). Last cloud = target."));
+        }
+        float normalR = 0.02f, featureR = 0.02f;
+        int maxIter = 500;
+        float minSampleDist = 0.05f, maxCorrDist = 0.01f;
+        float voxelLeaf = -1.f;
+        int refIdx = -1;
+        while (!cmd.arguments().empty()) {
+            QString a = cmd.arguments().front().toUpper();
+            if (a == "-NORMAL_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "NORMAL_RADIUS", normalR)) return false;
+            } else if (a == "-FEATURE_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "FEATURE_RADIUS", featureR)) return false;
+            } else if (a == "-MAX_ITERATIONS") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "MAX_ITERATIONS", maxIter)) return false;
+            } else if (a == "-MIN_SAMPLE_DIST") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "MIN_SAMPLE_DIST", minSampleDist))
+                    return false;
+            } else if (a == "-MAX_CORR_DIST") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "MAX_CORR_DIST", maxCorrDist)) return false;
+            } else if (a == "-VOXEL_LEAF") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "VOXEL_LEAF", voxelLeaf)) return false;
+            } else if (a == "-REF_INDEX") {
+                cmd.arguments().takeFirst();
+                if (!NextInt(cmd, "REF_INDEX", refIdx)) return false;
+            } else
+                break;
+        }
+        size_t targetIdx = (refIdx >= 0)
+                                   ? static_cast<size_t>(refIdx)
+                                   : cmd.clouds().size() - 1;
+        if (targetIdx >= cmd.clouds().size()) {
+            return cmd.error(QObject::tr("Invalid -REF_INDEX"));
+        }
+        ccPointCloud* targetPc = cmd.clouds()[targetIdx].pc;
+        if (!targetPc)
+            return cmd.error(QObject::tr("Target cloud is null"));
+        cmd.print(QObject::tr("[PCL_TMPL] Target: '%1'")
+                          .arg(targetPc->getName()));
+        PointCloudT::Ptr targetXyz = cc2smReader(targetPc).getXYZ2();
+        if (!targetXyz)
+            return cmd.error(QObject::tr("Cannot convert target cloud"));
+        if (voxelLeaf > 0.f) {
+            PointCloudT::Ptr downsampled(new PointCloudT);
+            PCLModules::VoxelGridFilter<PointT>(targetXyz, downsampled,
+                                                voxelLeaf);
+            targetXyz = downsampled;
+        }
+        PCLModules::FeatureCloud targetFC;
+        targetFC.setNormalRadius(normalR);
+        targetFC.setFeatureRadius(featureR);
+        targetFC.setInputCloud(targetXyz);
+        PCLModules::TemplateMatching matcher;
+        matcher.setmaxIterations(maxIter);
+        matcher.setminSampleDis(minSampleDist);
+        matcher.setmaxCorrespondenceDis(maxCorrDist * maxCorrDist);
+        matcher.setTargetCloud(targetFC);
+        for (size_t i = 0; i < cmd.clouds().size(); ++i) {
+            if (i == targetIdx) continue;
+            ccPointCloud* tmplPc = cmd.clouds()[i].pc;
+            if (!tmplPc) continue;
+            PointCloudT::Ptr tmplXyz = cc2smReader(tmplPc).getXYZ2();
+            if (!tmplXyz) continue;
+            PCLModules::FeatureCloud tmplFC;
+            tmplFC.setNormalRadius(normalR);
+            tmplFC.setFeatureRadius(featureR);
+            tmplFC.setInputCloud(tmplXyz);
+            matcher.addTemplateCloud(tmplFC);
+        }
+        PCLModules::TemplateMatching::Result best;
+        int bestIdx = matcher.findBestAlignment(best);
+        if (bestIdx < 0) {
+            return cmd.error(QObject::tr("[PCL_TMPL] Alignment failed"));
+        }
+        cmd.print(QObject::tr("[PCL_TMPL] Best template index=%1 score=%2")
+                          .arg(bestIdx)
+                          .arg(best.fitness_score));
+        size_t srcI = 0;
+        for (size_t i = 0; i < cmd.clouds().size(); ++i) {
+            if (i == targetIdx) continue;
+            if (static_cast<int>(srcI) == bestIdx) {
+                ccGLMatrix ccTrans;
+                for (int k = 0; k < 16; ++k)
+                    ccTrans.data()[k] = best.final_transformation.data()[k];
+                cmd.clouds()[i].pc->setGLTransformation(ccTrans);
+                cmd.print(QObject::tr("[PCL_TMPL] Applied to '%1'")
+                                  .arg(cmd.clouds()[i].pc->getName()));
+                break;
+            }
+            ++srcI;
+        }
+        return true;
+    }
+};
+
+// ============================================================================
+// Correspondence Matching (GC or Hough3D grouping)
+// -PCL_CORRESPONDENCE_MATCHING -MODEL_RADIUS r -SCENE_RADIUS r
+//   [-SHOT_RADIUS 0.03] [-NORMAL_K 10] [-GC] [-HOUGH]
+//   [-GC_RESOLUTION 0.01] [-GC_MIN_CLUSTER 20] [-HOUGH_BIN 0.01]
+//   [-HOUGH_THRESHOLD 5] [-HOUGH_LRF 0.015] [-VOXEL_LEAF 0.005]
+// Requires 2+ loaded clouds. Last cloud = scene, others = models.
+// ============================================================================
+struct CmdCorrMatch : public ccCommandLineInterface::Command {
+    CmdCorrMatch()
+        : Command("PCL Correspondence Matching", CMD_PCL_CORR_MATCH) {}
+    bool process(ccCommandLineInterface& cmd) override {
+        if (cmd.clouds().size() < 2) {
+            return cmd.error(QObject::tr(
+                    "PCL_CORRESPONDENCE_MATCHING needs >=2 clouds (model(s) "
+                    "+ scene). Last cloud = scene."));
+        }
+        float modelR = 0.02f, sceneR = 0.03f, shotR = 0.03f;
+        float normalK = 10.f;
+        bool gcMode = true;
+        float gcRes = 0.01f, gcMinCluster = 20.f;
+        float lrfR = 0.015f, houghBin = 0.01f, houghThresh = 5.f;
+        float voxelLeaf = -1.f;
+        while (!cmd.arguments().empty()) {
+            QString a = cmd.arguments().front().toUpper();
+            if (a == "-MODEL_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "MODEL_RADIUS", modelR)) return false;
+            } else if (a == "-SCENE_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SCENE_RADIUS", sceneR)) return false;
+            } else if (a == "-SHOT_RADIUS") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "SHOT_RADIUS", shotR)) return false;
+            } else if (a == "-NORMAL_K") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "NORMAL_K", normalK)) return false;
+            } else if (a == "-GC") {
+                cmd.arguments().takeFirst();
+                gcMode = true;
+            } else if (a == "-HOUGH") {
+                cmd.arguments().takeFirst();
+                gcMode = false;
+            } else if (a == "-GC_RESOLUTION") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "GC_RESOLUTION", gcRes)) return false;
+            } else if (a == "-GC_MIN_CLUSTER") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "GC_MIN_CLUSTER", gcMinCluster))
+                    return false;
+            } else if (a == "-HOUGH_BIN") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "HOUGH_BIN", houghBin)) return false;
+            } else if (a == "-HOUGH_THRESHOLD") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "HOUGH_THRESHOLD", houghThresh))
+                    return false;
+            } else if (a == "-HOUGH_LRF") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "HOUGH_LRF", lrfR)) return false;
+            } else if (a == "-VOXEL_LEAF") {
+                cmd.arguments().takeFirst();
+                if (!NextFloat(cmd, "VOXEL_LEAF", voxelLeaf)) return false;
+            } else
+                break;
+        }
+        size_t sceneIdx = cmd.clouds().size() - 1;
+        ccPointCloud* scenePc = cmd.clouds()[sceneIdx].pc;
+        if (!scenePc)
+            return cmd.error(QObject::tr("Scene cloud is null"));
+        PCLCloud::Ptr sceneSm = cc2smReader(scenePc).getAsSM();
+        if (!sceneSm)
+            return cmd.error(QObject::tr("Cannot convert scene cloud"));
+        PointCloudT::Ptr sceneXyz(new PointCloudT);
+        FROM_PCL_CLOUD(*sceneSm, *sceneXyz);
+        if (voxelLeaf > 0.f) {
+            PointCloudT::Ptr ds(new PointCloudT);
+            PCLModules::VoxelGridFilter<PointT>(sceneXyz, ds, voxelLeaf);
+            sceneXyz = ds;
+        }
+        PointCloudNormal::Ptr sceneNormals(new PointCloudNormal);
+        PCLModules::ComputeNormals<PointT, PointNT>(
+                sceneXyz, sceneNormals, 0.f, false, false,
+                static_cast<int>(normalK));
+        PointCloudT::Ptr sceneKeypoints(new PointCloudT);
+        PCLModules::GetUniformSampling<PointT>(sceneXyz, sceneKeypoints,
+                                               sceneR);
+        pcl::PointCloud<pcl::SHOT352>::Ptr sceneDescriptors(
+                new pcl::PointCloud<pcl::SHOT352>);
+        PCLModules::EstimateShot<PointT, PointNT, pcl::SHOT352>(
+                sceneXyz, sceneKeypoints, sceneNormals, sceneDescriptors,
+                shotR);
+        for (size_t mi = 0; mi < sceneIdx; ++mi) {
+            ccPointCloud* modelPc = cmd.clouds()[mi].pc;
+            if (!modelPc) continue;
+            cmd.print(QObject::tr("[PCL_CORR] Model '%1' → Scene '%2'")
+                              .arg(modelPc->getName())
+                              .arg(scenePc->getName()));
+            PCLCloud::Ptr modelSm = cc2smReader(modelPc).getAsSM();
+            if (!modelSm) continue;
+            PointCloudT::Ptr modelXyz(new PointCloudT);
+            FROM_PCL_CLOUD(*modelSm, *modelXyz);
+            PointCloudNormal::Ptr modelNormals(new PointCloudNormal);
+            PCLModules::ComputeNormals<PointT, PointNT>(
+                    modelXyz, modelNormals, 0.f, false, false,
+                    static_cast<int>(normalK));
+            PointCloudT::Ptr modelKeypoints(new PointCloudT);
+            PCLModules::GetUniformSampling<PointT>(modelXyz, modelKeypoints,
+                                                   modelR);
+            pcl::PointCloud<pcl::SHOT352>::Ptr modelDescriptors(
+                    new pcl::PointCloud<pcl::SHOT352>);
+            PCLModules::EstimateShot<PointT, PointNT, pcl::SHOT352>(
+                    modelXyz, modelKeypoints, modelNormals, modelDescriptors,
+                    shotR);
+            pcl::CorrespondencesPtr corrs(new pcl::Correspondences());
+            pcl::KdTreeFLANN<pcl::SHOT352> matchSearch;
+            matchSearch.setInputCloud(modelDescriptors);
+            for (size_t si = 0; si < sceneDescriptors->size(); ++si) {
+                std::vector<int> nn_indices(1);
+                std::vector<float> nn_sqr_dists(1);
+                if (!std::isfinite(sceneDescriptors->at(si).descriptor[0]))
+                    continue;
+                int found = matchSearch.nearestKSearch(sceneDescriptors->at(si),
+                                                      1, nn_indices,
+                                                      nn_sqr_dists);
+                if (found == 1 && nn_sqr_dists[0] < 0.25f) {
+                    pcl::Correspondence c(nn_indices[0],
+                                          static_cast<int>(si),
+                                          nn_sqr_dists[0]);
+                    corrs->push_back(c);
+                }
+            }
+            cmd.print(QObject::tr("[PCL_CORR] %1 correspondences")
+                              .arg(corrs->size()));
+            std::vector<Eigen::Matrix4f,
+                        Eigen::aligned_allocator<Eigen::Matrix4f>>
+                    rotoTranslations;
+            std::vector<pcl::Correspondences> clusteredCorrs;
+            if (gcMode) {
+                PCLModules::EstimateGeometricConsistencyGrouping<PointT,
+                                                                 PointT>(
+                        modelKeypoints, sceneKeypoints, corrs,
+                        rotoTranslations, clusteredCorrs, gcRes,
+                        static_cast<int>(gcMinCluster));
+            } else {
+                pcl::PointCloud<pcl::ReferenceFrame>::Ptr modelRF(
+                        new pcl::PointCloud<pcl::ReferenceFrame>);
+                pcl::PointCloud<pcl::ReferenceFrame>::Ptr sceneRF(
+                        new pcl::PointCloud<pcl::ReferenceFrame>);
+                PCLModules::EstimateLocalReferenceFrame<PointT, PointNT>(
+                        modelXyz, modelKeypoints, modelNormals, modelRF,
+                        lrfR);
+                PCLModules::EstimateLocalReferenceFrame<PointT, PointNT>(
+                        sceneXyz, sceneKeypoints, sceneNormals, sceneRF,
+                        lrfR);
+                PCLModules::EstimateHough3DGrouping<PointT, PointT>(
+                        modelKeypoints, sceneKeypoints, modelRF, sceneRF,
+                        corrs, rotoTranslations, clusteredCorrs, houghBin,
+                        houghThresh);
+            }
+            cmd.print(QObject::tr("[PCL_CORR] %1 instances found")
+                              .arg(rotoTranslations.size()));
+            for (size_t ii = 0; ii < rotoTranslations.size(); ++ii) {
+                PointCloudT::Ptr transformed(new PointCloudT);
+                pcl::transformPointCloud(*modelXyz, *transformed,
+                                        rotoTranslations[ii]);
+                PCLCloud out_sm;
+                TO_PCL_CLOUD(*transformed, out_sm);
+                ccPointCloud* r = pcl2cc::Convert(out_sm);
+                if (!r) continue;
+                r->setName(QString("%1_instance%2")
+                                   .arg(modelPc->getName())
+                                   .arg(ii));
+                r->setGlobalScale(modelPc->getGlobalScale());
+                r->setGlobalShift(modelPc->getGlobalShift());
+                cmd.clouds().push_back(CLCloudDesc(
+                        r,
+                        cmd.clouds()[mi].basename +
+                                QString("_inst%1").arg(ii),
+                        cmd.clouds()[mi].path));
+            }
+        }
+        return true;
+    }
+};
+
+// ============================================================================
 void PclCommands::RegisterAll(ccCommandLineInterface* cmd) {
     if (!cmd) return;
     using S = ccCommandLineInterface::Command::Shared;
@@ -1442,4 +1748,6 @@ void PclCommands::RegisterAll(ccCommandLineInterface* cmd) {
     cmd->registerCommand(S(new CmdSIFT));
     cmd->registerCommand(S(new CmdProj));
     cmd->registerCommand(S(new CmdGenFilt));
+    cmd->registerCommand(S(new CmdTemplateAlign));
+    cmd->registerCommand(S(new CmdCorrMatch));
 }

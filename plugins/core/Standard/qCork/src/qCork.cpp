@@ -393,9 +393,12 @@ void qCork::doAction() {
 
     if (result) {
         meshA->setEnabled(false);
-        meshB->setEnabled(false);
-        // if (meshB->getDisplay() == meshA->getDisplay())
-        //	meshB->setEnabled(false);
+        // CloudCompare disables meshB only when it shares the same GL window as
+        // meshA; ACloudViewer does not attach ccGLWindow to entities, so we use
+        // the same parent as a practical proxy (typical for two selected meshes).
+        if (meshA->getParent() == meshB->getParent()) {
+            meshB->setEnabled(false);
+        }
 
         // set name
         QString opName;
@@ -429,13 +432,10 @@ void qCork::doAction() {
             hasNormals = result->computePerVertexNormals();
         meshA->showNormals(hasNormals && meshA->normalsShown());
 
-        // result->setDisplay(meshA->getDisplay());
         m_app->addToDB(result);
-        // result->redrawDisplay();
+        result->setRedrawFlagRecursive(true);
+        m_app->refreshAll();
     }
-
-    // currently selected entities appearance may have changed!
-    // m_app->refreshAll();
 }
 
 void qCork::registerCommands(ccCommandLineInterface* cmd) {

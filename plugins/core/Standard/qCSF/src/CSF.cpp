@@ -27,15 +27,7 @@
 #include <iostream>
 #include <sstream>
 
-CSF::CSF(wl::PointCloud& cloud) : point_cloud(cloud) {
-    params.k_nearest_points = 1;
-    params.bSloopSmooth = true;
-    params.time_step = 0.65;
-    params.class_threshold = 0.5;
-    params.cloth_resolution = 1.5;
-    params.rigidness = 3;
-    params.iterations = 500;
-}
+CSF::CSF(wl::PointCloud& cloud) : point_cloud(cloud) {}
 
 CSF::~CSF() {}
 
@@ -76,12 +68,6 @@ bool CSF::do_filtering(std::vector<int>& groundIndexes,
                        ccMesh*& clothMesh,
                        ecvMainAppInterface* app /*=0*/,
                        QWidget* parent /*=0*/) {
-    // constants
-    static const double cloth_y_height = 0.05;  // origin cloth height
-    static const int clothbuffer = 2;  // set the cloth buffer (grid margin
-                                       // size)
-    static const double gravity = 0.2;
-
     try {
         QElapsedTimer timer;
         timer.start();
@@ -91,16 +77,17 @@ bool CSF::do_filtering(std::vector<int>& groundIndexes,
         point_cloud.computeBoundingBox(bbMin, bbMax);
 
         // computing the number of cloth node
-        Vec3 origin_pos(bbMin.x - clothbuffer * params.cloth_resolution,
-                        bbMax.y + cloth_y_height,
-                        bbMin.z - clothbuffer * params.cloth_resolution);
+        Vec3 origin_pos(
+                bbMin.x - Parameters::clothBuffer * params.cloth_resolution,
+                bbMax.y + Parameters::clothYHeight,
+                bbMin.z - Parameters::clothBuffer * params.cloth_resolution);
 
         int width_num = static_cast<int>(floor((bbMax.x - bbMin.x) /
                                                params.cloth_resolution)) +
-                        2 * clothbuffer;
+                        2 * Parameters::clothBuffer;
         int height_num = static_cast<int>(floor((bbMax.z - bbMin.z) /
                                                 params.cloth_resolution)) +
-                         2 * clothbuffer;
+                         2 * Parameters::clothBuffer;
 
         // Cloth object
         Cloth cloth(origin_pos, width_num, height_num, params.cloth_resolution,
@@ -137,11 +124,8 @@ bool CSF::do_filtering(std::vector<int>& groundIndexes,
         QCoreApplication::processEvents();
 
         bool wasCancelled = false;
-        cloth.addForce(Vec3(0, -gravity, 0) * time_step2);
+        cloth.addForce(Vec3(0, -Parameters::gravity, 0) * time_step2);
         for (int i = 0; i < params.iterations; i++) {
-            // 滤波主过程
-            //  cloth.addForce(Vec3(0, -gravity, 0) * time_step2); //move this
-            //  outside the main loop
             double maxDiff = cloth.timeStep();
             cloth.terrainCollision();
 

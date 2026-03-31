@@ -150,30 +150,18 @@ double Cloth::timeStep() {
     for (int i = 0; i < particleCount; i++) {
         particles[i].timeStep();
     }
-    /*
-    Instead of interating over all the constraints several times, we
-    compute the overall displacement of a particle accroding to the rigidness
-    */
 
-#pragma omp parallel for
+    // Instead of interating over all the constraints several times, we
+    // compute the overall displacement of a particle accroding to the rigidness
+    // #pragma omp parallel for //DGM: satisfyConstraintSelf is not thread safe
+    // at all!
     for (int j = 0; j < particleCount; j++) {
         particles[j].satisfyConstraintSelf(constraint_iterations);
     }
 
-    //	for (int i = 0; i<constraint_iterations; i++) // iterate over all
-    // constraints several times
-    //	{
-    // #pragma omp parallel for
-    //		for (int j = 0; j < constraints.size(); j++)
-    //		{
-    //			constraints[j].satisfyConstraint();
-    //		}
-    //	}
-
     double maxDiff = 0;
-    // #pragma omp parallel for //see https://github.com/CLOUDVIEWER
-    // /CLOUDVIEWER
-    /// issues/909
+    // #pragma omp parallel for //see
+    // https://github.com/CloudCompare/CloudCompare/issues/909
     for (int i = 0; i < particleCount; i++) {
         if (particles[i].isMovable()) {
             double diff = std::abs(particles[i].old_pos.y - particles[i].pos.y);
