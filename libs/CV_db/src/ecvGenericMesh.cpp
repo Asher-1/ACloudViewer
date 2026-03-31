@@ -28,6 +28,7 @@
 // system
 #include <QFileInfo>
 #include <cassert>
+#include <limits>
 
 ccGenericMesh::ccGenericMesh(QString name /*=QString()*/)
     : GenericIndexedMesh(),
@@ -608,7 +609,13 @@ bool ccGenericMesh::trianglePicking(
     }
 
 #if defined(_OPENMP) && !defined(_DEBUG)
-#pragma omp parallel for
+#pragma omp parallel
+    {
+        int localBestTri = -1;
+        double localBestDist = std::numeric_limits<double>::max();
+        CCVector3d localBestPoint(0, 0, 0);
+        CCVector3d localBestBC(0, 0, 0);
+#pragma omp for schedule(static)
 #endif
     for (int i = 0; i < static_cast<int>(size()); ++i) {
         CCVector3d P;
@@ -618,13 +625,35 @@ bool ccGenericMesh::trianglePicking(
             continue;
 
         double squareDist = (X - P).norm2d();
+#if defined(_OPENMP) && !defined(_DEBUG)
+        if (localBestTri < 0 || squareDist < localBestDist) {
+            localBestDist = squareDist;
+            localBestTri = i;
+            localBestPoint = P;
+            if (barycentricCoords) localBestBC = BC;
+        }
+#else
         if (nearestTriIndex < 0 || squareDist < nearestSquareDist) {
             nearestSquareDist = squareDist;
             nearestTriIndex = static_cast<int>(i);
             nearestPoint = P;
             if (barycentricCoords) *barycentricCoords = BC;
         }
+#endif
     }
+#if defined(_OPENMP) && !defined(_DEBUG)
+#pragma omp critical
+        {
+            if (localBestTri >= 0 &&
+                (nearestTriIndex < 0 || localBestDist < nearestSquareDist)) {
+                nearestSquareDist = localBestDist;
+                nearestTriIndex = localBestTri;
+                nearestPoint = localBestPoint;
+                if (barycentricCoords) *barycentricCoords = localBestBC;
+            }
+        }
+    }  // omp parallel
+#endif
 
     return (nearestTriIndex >= 0);
 }

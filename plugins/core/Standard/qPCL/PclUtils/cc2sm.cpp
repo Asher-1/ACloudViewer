@@ -92,7 +92,7 @@ PCLCloud::Ptr cc2smReader::getGenericField(std::string field_name) const {
     } else if (field_name == "y") {
         sm_cloud = getOneOf(COORD_Y);
     } else if (field_name == "z") {
-        sm_cloud = getOneOf(COORD_Y);
+        sm_cloud = getOneOf(COORD_Z);
     } else if (field_name == "normal_x") {
         sm_cloud = getOneOf(NORM_X);
     } else if (field_name == "normal_y") {

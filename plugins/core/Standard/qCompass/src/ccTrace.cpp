@@ -7,10 +7,13 @@
 
 #include "ccTrace.h"
 
+#include <CVLog.h>
 #include <ecvDisplayTools.h>
 
 #include <bitset>
 #include <queue>
+
+static QSharedPointer<ccSphere> c_unitPointMarker(nullptr);
 
 ccTrace::ccTrace(ccPointCloud* associatedCloud) : ccPolyline(associatedCloud) {
     init(associatedCloud);
@@ -24,17 +27,9 @@ ccTrace::ccTrace(ccPolyline* obj) : ccPolyline(obj->getAssociatedCloud()) {
     // load waypoints from metadata
     if (obj->hasMetaData("waypoints")) {
         QString waypoints = obj->getMetaData("waypoints").toString();
-        for (QString str : waypoints.split(",")) {
-            if (str != "") {
-                int pID = str.toInt();
-                m_waypoints.push_back(pID);  // add waypoint
-            }
+        if (loadWaypointsFrom(waypoints)) {
+            setMetaData("waypoints", waypoints);
         }
-
-        // store waypoints metadata
-        QVariantMap map;
-        map.insert("waypoints", waypoints);
-        setMetaData(map, true);
     }
 
     // load cost function from metadata
@@ -68,14 +63,42 @@ ccTrace::ccTrace(ccPolyline* obj) : ccPolyline(obj->getAssociatedCloud()) {
 }
 
 void ccTrace::init(ccPointCloud* associatedCloud) {
-    setAssociatedCloud(associatedCloud);  // the ccPolyline c'tor should do
-                                          // this, but just to be sure...
+    ccPolyline::setAssociatedCloud(associatedCloud);
     m_cloud = associatedCloud;            // store pointer ourselves also
     m_search_r = calculateOptimumSearchRadius();  // estimate the search radius
                                                   // we want to use
 
     // store these info as object attributes
     updateMetadata();
+}
+
+ccTrace::~ccTrace() {
+    removeSegmentActors();
+    removeMarkerActors();
+}
+
+void ccTrace::removeSegmentActors() {
+    for (const QString& viewId : m_segmentViewIds) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+        ecvDisplayTools::RemoveEntities(ctx);
+    }
+    m_segmentViewIds.clear();
+}
+
+void ccTrace::removeMarkerActors() {
+    auto removeList = [](QStringList& ids, ENTITY_TYPE type) {
+        for (const QString& viewId : ids) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.removeViewID = viewId;
+            ctx.removeEntityType = type;
+            ecvDisplayTools::RemoveEntities(ctx);
+        }
+        ids.clear();
+    };
+    removeList(m_waypointViewIds, ENTITY_TYPE::ECV_MESH);
+    removeList(m_tracePointViewIds, ENTITY_TYPE::ECV_MESH);
 }
 
 void ccTrace::updateMetadata() {
@@ -92,40 +115,37 @@ int ccTrace::insertWaypoint(int pointId) {
     }
 
     if (m_waypoints.size() >= 2) {
-        // get location of point to add
-        // const CCVector3* Q = m_cloud->getPoint(pointId);
         CCVector3 Q = *m_cloud->getPoint(pointId);
         CCVector3 start, end;
-        // check if point is "inside" any segments
-        for (int i = 1; i < m_waypoints.size(); i++) {
-            // get start and end points
+        for (size_t i = 1; i < m_waypoints.size(); i++) {
             m_cloud->getPoint(m_waypoints[i - 1], start);
             m_cloud->getPoint(m_waypoints[i], end);
 
-            // are we are "inside" this segment
             if (inCircle(&start, &end, &Q)) {
-                // insert waypoint
                 m_waypoints.insert(m_waypoints.begin() + i, pointId);
-                m_previous.push_back(i);
-                return i;
+                m_previous.push_back(static_cast<int>(i));
+                invalidateBoundingBox();
+                notifyGeometryUpdate();
+                return static_cast<int>(i);
             }
         }
 
-        // check if the point is closer to the start than the end -> i.e. the
-        // point should be 'pre-pended'
         CCVector3 sp = Q - start;
         CCVector3 ep = Q - end;
         if (sp.norm2() < ep.norm2()) {
             m_waypoints.insert(m_waypoints.begin(), pointId);
             m_previous.push_back(0);
+            invalidateBoundingBox();
+            notifyGeometryUpdate();
             return 0;
         }
     }
 
-    // add point to end of the trace
     m_waypoints.push_back(pointId);
     int id = static_cast<int>(m_waypoints.size()) - 1;
-    m_previous.push_back(id);  // store for undo options
+    m_previous.push_back(id);
+    invalidateBoundingBox();
+    notifyGeometryUpdate();
     return id;
 }
 
@@ -236,18 +256,16 @@ bool ccTrace::optimizePath(int maxIterations) {
 }
 
 void ccTrace::finalizePath() {
-    // clear existing points in background "polyline"
     clear();
 
-    // push trace buffer to said polyline (for save/export etc.)
     for (std::deque<int> seg : m_trace) {
         for (int p : seg) {
             addPointIndex(p);
         }
     }
 
-    // invalidate bb
     invalidateBoundingBox();
+    notifyGeometryUpdate();
 }
 
 void ccTrace::recalculatePath() {
@@ -444,11 +462,17 @@ std::deque<int> ccTrace::optimizeSegment(int start, int end, int offset) {
         }
     }
 
-    assert(false);
-    return std::deque<int>();  // shouldn't come here?
+    for (Node* n : nodes) {
+        delete[] n;
+    }
+
+    return std::deque<int>();
 }
 
 int ccTrace::getSegmentCost(int p1, int p2) {
+    if (!m_cloud) {
+        return 0;
+    }
     int cost = 1;  // n.b. default value is 1 so that if no cost functions are
                    // used, the function doesn't crash (and returns the
                    // unweighted shortest path)
@@ -903,6 +927,9 @@ void ccTrace::bakePathToScalarField() {
 }
 
 float ccTrace::calculateOptimumSearchRadius() {
+    if (!m_cloud) {
+        return 0.0f;
+    }
     cloudViewer::DgmOctree::NeighboursSet neighbours;
 
     // setup octree & values for nearest neighbour searches
@@ -937,6 +964,8 @@ float ccTrace::calculateOptimumSearchRadius() {
         }
     }
 
+    delete nCloud;
+
     // average nearest-neighbour distances
     double d = dsum / 30;
 
@@ -944,7 +973,25 @@ float ccTrace::calculateOptimumSearchRadius() {
     return d * 1.5;
 }
 
-static QSharedPointer<ccSphere> c_unitPointMarker(nullptr);
+ccBBox ccTrace::getOwnBB(bool withGLFeatures) {
+    ccBBox box = ccPolyline::getOwnBB(withGLFeatures);
+    if (m_cloud && !m_waypoints.empty()) {
+        for (int wpIdx : m_waypoints) {
+            if (wpIdx >= 0 &&
+                static_cast<unsigned>(wpIdx) < m_cloud->size()) {
+                const CCVector3* P = m_cloud->getPoint(wpIdx);
+                if (box.isValid()) {
+                    box.add(*P);
+                } else {
+                    box.add(*P);
+                    box.setValidity(true);
+                }
+            }
+        }
+    }
+    return box;
+}
+
 void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!m_cloud) {
         return;
@@ -971,6 +1018,7 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
             c_unitPointMarker->setVisible(true);
             c_unitPointMarker->setEnabled(true);
             c_unitPointMarker->showNormals(false);
+            c_unitPointMarker->setFixedId(true);
         }
 
         glDrawParams glParams;
@@ -999,9 +1047,14 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         float pSize = 1.0f;
 
+        QString baseViewId = getViewId();
+        removeMarkerActors();
         if (m_isActive) {
             for (size_t i = 0; i < m_waypoints.size(); i++) {
                 const CCVector3* P = m_cloud->getPoint(m_waypoints[i]);
+                QString wpId = baseViewId + "-wp" + QString::number(i);
+                markerContext.viewID = wpId;
+                m_waypointViewIds.append(wpId);
                 markerContext.transformInfo.setTranslationStart(
                         CCVector3(P->x, P->y, P->z));
                 float scale = context.labelMarkerSize * m_relMarkerScale *
@@ -1013,9 +1066,11 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 }
                 markerContext.transformInfo.setScale(
                         CCVector3(scale, scale, scale));
+                c_unitPointMarker->setRedraw(true);
                 c_unitPointMarker->draw(markerContext);
             }
         } else {
+            removeSegmentActors();
             for (const std::deque<int>& seg : m_trace) {
                 ccPointCloud segCloud;
                 segCloud.reserve(static_cast<unsigned>(seg.size()));
@@ -1033,13 +1088,19 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                     segment.setWidth(static_cast<PointCoordinateType>(m_width));
                 }
                 segment.draw(context);
+                m_segmentViewIds.append(segment.getViewId());
             }
         }
 
         if (m_isActive || pSize > 8) {
+            int ptIdx = 0;
             for (const std::deque<int>& seg : m_trace) {
                 for (int p : seg) {
                     const CCVector3* P = m_cloud->getPoint(p);
+                    QString tpId =
+                            baseViewId + "-tp" + QString::number(ptIdx++);
+                    markerContext.viewID = tpId;
+                    m_tracePointViewIds.append(tpId);
                     markerContext.transformInfo.setTranslationStart(
                             CCVector3(P->x, P->y, P->z));
                     float scale =
@@ -1053,6 +1114,7 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                     }
                     markerContext.transformInfo.setScale(
                             CCVector3(scale, scale, scale));
+                    c_unitPointMarker->setRedraw(true);
                     c_unitPointMarker->draw(markerContext);
                 }
             }
@@ -1070,4 +1132,74 @@ bool ccTrace::isTrace(
                 .contains("Trace");
     }
     return false;
+}
+
+bool ccTrace::loadWaypointsFrom(const QString& waypoints) {
+    m_waypoints.clear();
+
+    try {
+        for (const QString& str : waypoints.split(",")) {
+            if (!str.isEmpty()) {
+                bool ok = false;
+                int pID = str.toInt(&ok);
+                if (ok) {
+                    m_waypoints.push_back(pID);
+                } else {
+                    CVLog::Warning(
+                            "[ccTrace::loadWaypointsFrom] Invalid waypoint "
+                            "description:" +
+                            str);
+                }
+            }
+        }
+    } catch (const std::bad_alloc&) {
+        CVLog::Warning("[ccTrace::loadWaypointsFrom] Not enough memory");
+        return false;
+    }
+
+    return true;
+}
+
+void ccTrace::onDeletionOf(const ccHObject* obj) {
+    if (m_cloud == obj) {
+        m_cloud = nullptr;
+    }
+
+    ccPolyline::onDeletionOf(obj);
+}
+
+void ccTrace::setAssociatedCloud(GenericIndexedCloudPersist* cloud) {
+    ccPolyline::setAssociatedCloud(cloud);
+
+    ccPointCloud* cld = dynamic_cast<ccPointCloud*>(cloud);
+    init(cld);
+}
+
+bool ccTrace::fromFile_MeOnly(QFile& in,
+                               short dataVersion,
+                               int flags,
+                               LoadedIDMap& oldToNewIDMap) {
+    if (!ccPolyline::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap)) {
+        return false;
+    }
+
+    if (hasMetaData("waypoints")) {
+        QString waypoints = getMetaData("waypoints").toString();
+        loadWaypointsFrom(waypoints);
+    }
+
+    if (hasMetaData("cost_function")) {
+        COST_MODE = getMetaData("cost_function").toInt();
+    }
+
+    {
+        std::deque<int> seg;
+        for (unsigned i = 0; i < size(); i++) {
+            unsigned pId = getPointGlobalIndex(i);
+            seg.push_back(static_cast<int>(pId));
+        }
+        m_trace.push_back(seg);
+    }
+
+    return true;
 }

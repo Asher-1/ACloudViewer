@@ -72,6 +72,8 @@ or any MCP-compatible tool — through a unified integration layer with three in
 | **MCP Server** | Model Context Protocol (stdio) | Native integration with Cursor IDE, Claude Code, OpenClaw |
 | **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing, CI pipelines |
 
+Browse all available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/).
+
 ### Quick start
 
 ```bash
@@ -95,8 +97,8 @@ cli-anything-acloudviewer-mcp --mode auto
 
 | Component | Scope |
 |-----------|-------|
-| **122 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, PCV, Compass, SRA, Colmap reconstruction, view control, scene management |
-| **67+ JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
+| **178 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, PCV, Compass, SRA, Colmap reconstruction, view control, scene management |
+| **72 JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
 | **40+ CLI commands** | `convert`, `process` (subsample, normals, PCV, Compass export/refit/P21, SRA, density, curvature, SOR, ICP, …), `view`, `scene`, `colmap` |
 | **40+ file formats** | PLY, PCD, LAS/LAZ, E57, FBX, OBJ, STL, DRC, SBF, VTK, ASC, XYZ, CSV, PTS, … |
 
@@ -106,8 +108,8 @@ supporting all plugin-provided formats (LAS/LAZ, E57, FBX, PCD, Draco).
 Enable the JSON-RPC plugin at build time: `-DPLUGIN_STANDARD_QJSONRPC=ON`
 
 Browse all available tools on the [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/).
-See [`agent-integration/`](agent-integration/) for full documentation, MCP tool reference,
-and the [unified test suite](agent-integration/tests/) (267 tests across 5 levels).
+See [`agent-integration/`](https://github.com/Asher-1/ACloudViewer/tree/main/agent-integration) for full documentation, MCP tool reference,
+and the [unified test suite](https://github.com/Asher-1/ACloudViewer/tree/main/agent-integration/tests) (267 tests across 5 levels).
 
 ---
 
@@ -133,7 +135,7 @@ Key features:
 * **Multi-format ingest** — Load Colmap reconstructions, SIBR datasets, or raw 3DGS `.ply` files
 
 Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
-See [qSIBR plugin documentation](plugins/core/Standard/qSIBR/README.md) for details.
+See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSIBR/README.md) for details.
 
 ---
 
@@ -174,7 +176,7 @@ Please stay tuned for MacOS. Download ACloudViewer from the [release page](https
 
 ---
 
-#### Semantic Annotation
+### Semantic Annotation
 
 <table>
 <tr>
@@ -191,7 +193,7 @@ Please stay tuned for MacOS. Download ACloudViewer from the [release page](https
 
 ---
 
-#### Reconstruction & Measurement
+### Reconstruction & Measurement
 
 <table>
 <tr>
@@ -246,7 +248,7 @@ Compilation
 
 Supported OS: Windows, Linux, and Mac OS X
 
-Refer to the [BUILD.md file](BUILD.md) for detailed build instructions.
+Refer to the [BUILD.md file](https://github.com/Asher-1/ACloudViewer/blob/main/BUILD.md) for detailed build instructions.
 
 Online compilation guides:
 - [Build from Source Guide](https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html)
@@ -263,7 +265,7 @@ Contributing to ACloudViewer
 ----------------------------
 
 If you want to help us improve ACloudViewer or create a new plugin you can start by reading
-this [guide](CONTRIBUTING.md)
+this [guide](https://github.com/Asher-1/ACloudViewer/blob/main/CONTRIBUTING.md)
 
 Supporting the project
 ----------------------

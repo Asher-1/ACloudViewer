@@ -12,6 +12,9 @@ if( PLUGIN_STANDARD_QPCV )
 
 	AddPlugin( NAME ${PROJECT_NAME} )
 
+	# Export all symbols so that QJSON_RPC_PLUGIN can link PCV::Launch/GenerateRays
+	set_property(TARGET ${PROJECT_NAME} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 	add_subdirectory( include )
 	add_subdirectory( src )
 	add_subdirectory( ui )

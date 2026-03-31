@@ -18,6 +18,8 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 
+#include <QMutex>
+
 // qPDALIO
 #include "../../../core/IO/qPDALIO/include/LASFields.h"
 
@@ -204,61 +206,62 @@ bool Classifier::classify(const Feature::Source::Set& featureSources,
     bool success = true;
     int numberOfTrees = static_cast<int>(m_rtrees->getRoots().size());
     bool cancelled = false;
+    QMutex mutex;
 
 #ifndef _DEBUG
 #if defined(_OPENMP)
-#pragma omp parallel for num_threads(omp_get_max_threads() - 2)
+#pragma omp parallel for num_threads(std::max(1, omp_get_max_threads() - 2))
 #endif
 #endif
     for (int i = 0; i < static_cast<int>(cloud->size()); ++i) {
+        if (cancelled) continue;
         {
-            // allocate the data matrix
             cv::Mat test_data;
             try {
                 test_data.create(1, attributesPerSample, CV_32FC1);
             } catch (const cv::Exception& cvex) {
+                mutex.lock();
                 errorMessage = cvex.msg.c_str();
                 success = false;
                 cancelled = true;
+                mutex.unlock();
+                continue;
             }
 
-            if (!cancelled) {
-                for (int fIndex = 0; fIndex < attributesPerSample; ++fIndex) {
-                    double value = wrappers[fIndex]->pointValue(i);
-                    test_data.at<float>(0, fIndex) = static_cast<float>(value);
+            for (int fIndex = 0; fIndex < attributesPerSample; ++fIndex) {
+                double value = wrappers[fIndex]->pointValue(i);
+                test_data.at<float>(0, fIndex) = static_cast<float>(value);
+            }
+
+            float predictedClass =
+                    m_rtrees->predict(test_data.row(0), cv::noArray(),
+                                      cv::ml::DTrees::PREDICT_MAX_VOTE);
+            classificationSF->setValue(i, static_cast<int>(predictedClass));
+            cv::Mat result;
+            m_rtrees->getVotes(test_data, result,
+                               cv::ml::DTrees::PREDICT_MAX_VOTE);
+            int classIndex = -1;
+            for (int col = 0; col < result.cols; col++)
+                if (predictedClass == result.at<int>(0, col)) {
+                    classIndex = col;
+                    break;
                 }
+            if (classIndex != -1) {
+                float nbVotes = result.at<int>(1, classIndex);
+                cvConfidenceSF->setValue(
+                        i,
+                        static_cast<ScalarType>(
+                                nbVotes / numberOfTrees));
+            } else
+                cvConfidenceSF->setValue(i, NAN_VALUE);
 
-                float predictedClass =
-                        m_rtrees->predict(test_data.row(0), cv::noArray(),
-                                          cv::ml::DTrees::PREDICT_MAX_VOTE);
-                classificationSF->setValue(i, static_cast<int>(predictedClass));
-                // compute the confidence
-                cv::Mat result;
-                m_rtrees->getVotes(test_data, result,
-                                   cv::ml::DTrees::PREDICT_MAX_VOTE);
-                int classIndex = -1;
-                for (int col = 0; col < result.cols;
-                     col++)  // look for the index of the predicted class
-                    if (predictedClass == result.at<int>(0, col)) {
-                        classIndex = col;
-                        break;
-                    }
-                if (classIndex != -1) {
-                    float nbVotes = result.at<int>(
-                            1, classIndex);  // get the number of votes
-                    cvConfidenceSF->setValue(
-                            i,
-                            static_cast<ScalarType>(
-                                    nbVotes /
-                                    numberOfTrees));  // compute the confidence
-                } else
-                    cvConfidenceSF->setValue(i, NAN_VALUE);
-
-                if (pDlg && !nProgress.oneStep()) {
-                    // process cancelled by the user
+            if (pDlg) {
+                mutex.lock();
+                if (!nProgress.oneStep()) {
                     success = false;
                     cancelled = true;
                 }
+                mutex.unlock();
             }
         }
     }

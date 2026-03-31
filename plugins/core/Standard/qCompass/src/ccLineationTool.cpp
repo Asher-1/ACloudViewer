@@ -30,11 +30,8 @@ void ccLineationTool::pointPicked(ccHObject* insertPoint,
         l = new ccLineation(cloud);
         m_lineation_id = l->getUniqueID();
 
-        // set drawing properties
-        // l->setDisplay(m_window);
         l->setVisible(true);
         l->setName("Lineation");
-        // l->prepareDisplayForRefresh_recursive();
 
         // add to DB Tree
         insertPoint->addChild(l);
@@ -49,6 +46,15 @@ void ccLineationTool::pointPicked(ccHObject* insertPoint,
         l->updateMetadata();  // calculate orientation & store. Also changes the
                               // name.
         l->showNameIn3D(ccCompass::drawName);
+
+        l->invalidateBoundingBox();
+        l->notifyGeometryUpdate();
+
+        // Propagate bbox invalidation up the hierarchy so the parent group's
+        // cached bbox VTK actor is removed and redrawn to include this lineation
+        for (ccHObject* p = l->getParent(); p; p = p->getParent()) {
+            p->notifyGeometryUpdate();
+        }
 
         // report orientation to console for convenience
         m_app->dispToConsole(QString("[ccCompass] Lineation = " + l->getName()),

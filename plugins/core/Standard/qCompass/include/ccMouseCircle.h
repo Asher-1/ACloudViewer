@@ -35,6 +35,8 @@ protected:
     void draw(CC_DRAW_CONTEXT& context) override;
 
 private:
+    float computeOrthoPixelSize(int viewportHeight);
+
     QWidget* m_owner;
     float m_pixelSize;
     int m_radius;

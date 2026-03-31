@@ -2035,6 +2035,7 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
             break;
         case CV_TYPES::POLY_LINE:
         case CV_TYPES::LINESET:
+        case (CV_TYPES::CUSTOM_H_OBJECT | CV_TYPES::POLY_LINE):
             entityType = ENTITY_TYPE::ECV_SHAPE;
             break;
         case CV_TYPES::LABEL_2D:

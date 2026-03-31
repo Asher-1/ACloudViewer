@@ -220,9 +220,13 @@ Paint all points in a cloud with a uniform color.
 
 ### cloud.paintByHeight
 
-Colorize a point cloud by height (Z-axis gradient).
+Colorize a point cloud by height gradient.
 
-**Params:** `{entity_id: int}`
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Cloud entity ID |
+| `axis` | string | `"Z"` | Height axis (`"X"`, `"Y"`, or `"Z"`) |
 
 ---
 
@@ -230,7 +234,12 @@ Colorize a point cloud by height (Z-axis gradient).
 
 Colorize a point cloud by a scalar field.
 
-**Params:** `{entity_id: int, field_index: int}`
+**Params:**
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `entity_id` | int | required | Cloud entity ID |
+| `field_name` | string | — | SF name (alternative to `field_index`) |
+| `field_index` | int | — | SF index (0-based, alternative to `field_name`) |
 
 ---
 
@@ -492,7 +501,7 @@ Filter (keep) points where the active scalar field is within a value range.
 
 ---
 
-### cloud.coordToSf
+### cloud.coordToSF
 
 Create a scalar field from point coordinate components (X, Y, or Z).
 
@@ -655,6 +664,144 @@ subcommands (e.g. `feature_extractor`, `exhaustive_matcher`, `mapper`,
 ```
 
 ---
+
+### cloud.density
+
+Compute local density for a point cloud.
+
+**Params:** `{entity_id, radius}`
+
+### cloud.curvature
+
+Compute surface curvature (Gaussian, mean, or normal-change).
+
+**Params:** `{entity_id, type, radius}`
+
+### cloud.roughness
+
+Compute surface roughness (distance to local best-fit plane).
+
+**Params:** `{entity_id, radius}`
+
+### cloud.geometricFeature
+
+Compute geometric features (linearity, planarity, sphericity, etc.).
+
+**Params:** `{entity_id, type, kernel_size}`
+
+### cloud.approxDensity
+
+Compute approximate density (number of neighbors, surface, volume).
+
+**Params:** `{entity_id, density_type}`
+
+### cloud.colorBanding
+
+Apply color banding along a coordinate axis.
+
+**Params:** `{entity_id, axis, frequency}`
+
+### cloud.sorFilter
+
+Statistical outlier removal.
+
+**Params:** `{entity_id, knn, sigma}`
+
+### cloud.extractConnectedComponents
+
+Extract connected components from a point cloud.
+
+**Params:** `{entity_id, min_points, octree_level}`
+
+### cloud.bestFitPlane
+
+Compute best-fit plane and optionally make it horizontal.
+
+**Params:** `{entity_id, make_horiz}`
+
+### cloud.delaunay
+
+Delaunay 2.5D triangulation (creates a mesh from a cloud).
+
+**Params:** `{entity_id}`
+
+### cloud.sfArithmetic
+
+Scalar field unary arithmetic (SQRT, ABS, LOG, EXP, etc.).
+
+**Params:** `{entity_id, sf_index, operation}`
+
+### cloud.sfOperation
+
+Binary scalar field operation with a constant value.
+
+**Params:** `{entity_id, sf_index, operation, value}`
+
+### cloud.sfGradient
+
+Compute scalar field gradient magnitude.
+
+**Params:** `{entity_id, ?sf_index, ?radius}`
+
+### cloud.sfConvertToRGB
+
+Convert the active scalar field to RGB colors.
+
+**Params:** `{entity_id, sf_index}`
+
+### cloud.octreeNormals
+
+Compute normals using octree-based local surface estimation.
+
+**Params:** `{entity_id, radius}`
+
+### cloud.orientNormalsMST
+
+Orient normals consistently using Minimum Spanning Tree.
+
+**Params:** `{entity_id, knn}`
+
+### cloud.clearNormals
+
+Remove all normal data from a point cloud.
+
+**Params:** `{entity_id}`
+
+### cloud.normalsToSFs
+
+Export normal components (Nx, Ny, Nz) to scalar fields.
+
+**Params:** `{entity_id}`
+
+### cloud.normalsToDip
+
+Convert normals to dip/dip-direction scalar fields.
+
+**Params:** `{entity_id}`
+
+### process.run_cli
+
+Run any CLI processing command via the binary subprocess.
+
+**Params:** `{input_path, output_path, args[], ?timeout_ms}`
+
+### process.csf
+
+Cloth Simulation Filter for ground/non-ground classification.
+
+**Params:** `{input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}`
+
+### process.m3c2
+
+M3C2 multiscale cloud-to-cloud distance computation.
+
+**Params:** `{cloud1_path, cloud2_path, params_file, output_path}`
+
+### process.ransac
+
+RANSAC shape detection (planes, spheres, cylinders, etc.).
+
+**Params:** `{input_path, output_path, ?epsilon, ?bitmap_epsilon, ?support_points, ?max_normal_dev, ?probability, ?primitives[]}`
 
 ### methods.list
 

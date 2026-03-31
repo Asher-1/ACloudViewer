@@ -49,7 +49,7 @@ You may use the provided APIs to extract surface points.
 .. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate.py
    :language: python
    :lineno-start: 105
-   :lines: 8, 106-110
+   :lines: 8, 105-109
 
 Note ``extract_triangle_mesh`` applies marching cubes and generates mesh. ``extract_point_cloud`` uses a similar algorithm, but skips the triangle face generation step.
 

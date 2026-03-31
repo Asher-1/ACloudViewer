@@ -1916,7 +1916,7 @@ JsonRPCResult JsonRPCPlugin::rpcCloudFilterSf(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// cloud.coordToSf (NEW) — create scalar field from X/Y/Z coordinate
+// cloud.coordToSF — create scalar field from X/Y/Z coordinate
 // ═══════════════════════════════════════════════════════════════════════════
 
 JsonRPCResult JsonRPCPlugin::rpcCloudCoordToSf(

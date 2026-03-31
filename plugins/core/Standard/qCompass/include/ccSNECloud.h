@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QStringList>
 #include <ccMeasurement.h>
 #include <ecvPointCloud.h>
 
@@ -15,18 +16,18 @@ Class for representing/drawing lineations measured with qCompass.
 */
 class ccSNECloud : public ccPointCloud, public ccMeasurement {
 public:
-    // ctors
     ccSNECloud();
     ccSNECloud(ccPointCloud* obj);
+    virtual ~ccSNECloud();
 
-    // write metadata specific to this object
     void updateMetadata();
 
-    // returns true if the given ccHObject is/was a ccLineation (as defined by
-    // the objects metadata)
     static bool isSNECloud(ccHObject* obj);
 
 protected:
-    // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+
+private:
+    void removeNormalActors();
+    QStringList m_normalViewIds;
 };

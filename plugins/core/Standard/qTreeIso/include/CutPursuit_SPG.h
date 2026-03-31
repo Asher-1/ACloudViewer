@@ -173,11 +173,10 @@ struct CutPursuit_SPG : public CutPursuit<T> {
                                     this->components[ind_com][first_kernel])
                                     .observation[i_dim];
                 }
-                best_energy = 0;  // now compute the square distance of each
-                                  // vertex to this kernel
+                best_energy = 0;
 #ifdef OPENMP
 #pragma omp parallel for if (nb_comp < omp_get_num_threads()) \
-        shared(best_energy) schedule(static)
+        schedule(static) reduction(+:best_energy)
 #endif
                 for (uint32_t i_ver = 0; i_ver < comp_size; i_ver++) {
                     energy_array[i_ver] = 0;
@@ -248,10 +247,6 @@ struct CutPursuit_SPG : public CutPursuit<T> {
                         kernels[0][i_dim] = 0;
                         kernels[1][i_dim] = 0;
                     }
-#ifdef OPENMP
-#pragma omp parallel for if (nb_comp < omp_get_num_threads()) \
-        shared(potential_label) schedule(static)
-#endif
                     for (uint32_t i_ver = 0; i_ver < comp_size; i_ver++) {
                         if (vertex_attribute_map(
                                     this->components[ind_com][i_ver])
@@ -307,7 +302,7 @@ struct CutPursuit_SPG : public CutPursuit<T> {
                 current_energy = 0;
 #ifdef OPENMP
 #pragma omp parallel for if (nb_comp < omp_get_num_threads()) \
-        shared(potential_label) schedule(static)
+        schedule(static) reduction(+:current_energy)
 #endif
                 for (uint32_t i_ver = 0; i_ver < comp_size; i_ver++) {
                     for (uint32_t i_dim = 0; i_dim < dim_spat; i_dim++) {

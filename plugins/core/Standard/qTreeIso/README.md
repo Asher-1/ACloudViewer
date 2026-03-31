@@ -1,63 +1,49 @@
-TreeIso (plugin)
-============
+# Treeiso (plugin)
 
-Individual-tree isolation (treeiso) from terrestrial laser scanning
------------------------------------------------------------------
+TreeIso is a plugin for CloudCompare to segment trees out of a TLS point cloud.
 
-Zhouxin Xi, Chris Hopkinson (Department of Geography & Environment, University of Lethbridge, Canada)
+![TreeIso](images/treeiso.png)
 
-TreeIso can be utilized to separate individual trees from terrestrial laser scanning point clouds, assigning tree IDs as supplementary scalar fields.
+## Documentation
 
-Please cite the following paper if you find this tool helpful:
+Refer to the original Matlab project on [GitHub](https://github.com/truebelief/artemis_treeiso).
 
-Xi, Z.; Hopkinson, C. 3D Graph-Based Individual-Tree Isolation (Treeiso) from Terrestrial Laser Scanning Point Clouds. Remote Sens. 2022, 14, 6116. https://doi.org/10.3390/rs14236116
+## Copyright
 
-This tool relies on the cut-pursuit algorithm, please also consider citing:
-Landrieu, L.; Obozinski, G. Cut Pursuit: Fast Algorithms to Learn Piecewise Constant Functions on General Weighted Graphs. SIAM J. Imaging Sci. 2017, 10, 1724–1766. hal link
-Raguet, H.; Landrieu, L. Cut-pursuit algorithm for regularizing nonsmooth functionals with graph total variation. In Proceedings of the International Conference on Machine Learning, Stockholm, Sweden, 10–15 July 2018; Volume 80, pp. 4247–4256.
+The University of Lethbridge — Department of Geography & Environment — Artemis Lab
 
-The cut-pursuit files are licensed under the **MIT** license - see the [LICENSE-MIT](LICENSE-MIT.txt) file for details.
+## ACloudViewer CLI
 
-A Matlab version shared via:
-https://github.com/truebelief/artemis_treeiso
+```bash
+ACloudViewer -SILENT -O forest_scan.las -TREEISO [OPTIONS] -SAVE_CLOUDS
+```
 
-The development of the treeiso plugin was inspired by the CSF plugin originating from: 
-Zhang W, Qi J, Wan P, Wang H, Xie D, Wang X, Yan G. An Easy-to-Use Airborne LiDAR Data Filtering Method Based on Cloth Simulation. Remote Sensing. 2016; 8(6):501
+| Token | Type | Description |
+|-------|------|-------------|
+| `-TREEISO` | command | Run individual tree isolation |
+| `-LAMBDA1` | float | Regularization weight for initial segmentation |
+| `-K1` | int | Number of neighbors for initial segmentation |
+| `-DECIMATE_RESOLUTION1` | float | Decimation resolution for initial step |
+| `-LAMBDA2` | float | Regularization weight for refinement |
+| `-K2` | int | Number of neighbors for refinement |
+| `-MAX_GAP` | float | Maximum gap distance between tree segments |
+| `-DECIMATE_RESOLUTION2` | float | Decimation resolution for refinement step |
+| `-RHO` | float | Penalty parameter |
+| `-VERTICAL_OVERLAP_WEIGHT` | float | Weight for vertical overlap criterion |
 
+### Example
 
-Command line mode
------------------
-Command line is supported. The plugin consists of three stages of segmentation. In the command line mode, please configure the segmentation parameters for each stage to activate the corresponding stage. If no parameters are provided for a specific stage, the segmentation for that stage will not be executed.
+```bash
+ACloudViewer -SILENT -O forest.las -TREEISO -LAMBDA1 1.0 -K1 20 -MAX_GAP 1.5 -SAVE_CLOUDS
+```
 
-Available options
------------------
-<table>
-	<tr>
-		<th>Command</th>
-		<th>Description</th>
-	</tr>
-	<tr>
-		<td><code>-TREEISO</code></td>
-		<td>
-			<i>Runs the TREEISO plugin</i>
-			<p>Optional settings are:</p>
-			<ul>
-				<li> -LAMBDA1 [value]: Regularization strength for initial segmentation (default: 1.0)</li>
-				<li> -K1 [value]: Nearest neighbors to search for initial segmentation(default: 5)</li>
-				<li> -DECIMATE_RESOLUTION1 [value]: Decimated point resolution (in m) for initial segmentation (default: 0.05)</li>
-				<li> -LAMBDA2 [value]: Regularization strength for intermediate segmentation (default: 20)</li>
-				<li> -K2 [value]: Nearest neighbors to search for intermediate segmentation (default: 20)</li>
-				<li> -MAX_GAP [value]: Maximum point gap (in m) for intermediate segmentation (default: 2.0)</li>
-				<li> -DECIMATE_RESOLUTION2 [value]: Decimated point resolution (in m) for intermediate segmentation (default: 0.1)</li>
-				<li> -RHO [value]: Relative height to length ratio (used to detect non-stems for final segmentation) (default: 0.5)</li>
-				<li> -VERTICAL_OVERLAP_WEIGHT [value]: Vertical overlapping ratio weight for final segmentation (default: 0.5)</li>
-			</ul>
-		</td>
-	</tr>
-</table>
+## Build
 
-![treeiso_demo](https://user-images.githubusercontent.com/8785889/236364374-5d9f69e0-0877-43b3-9927-f923d65262c1.gif)
+```cmake
+-DPLUGIN_STANDARD_QTREEISO=ON
+```
 
+## References
 
-
-
+- Original Matlab project: [truebelief/artemis_treeiso](https://github.com/truebelief/artemis_treeiso)
+- CloudCompare wiki: [Treeiso (plugin)](https://www.cloudcompare.org/doc/wiki/index.php/Treeiso_(plugin))

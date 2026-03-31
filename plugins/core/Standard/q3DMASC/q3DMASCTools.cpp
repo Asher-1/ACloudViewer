@@ -1458,38 +1458,52 @@ bool Tools::PrepareFeatures(
                     }
 
                     if (!localSuccess) {
-                        cancelled = true;
-                        success = false;
 #if defined(_OPENMP)
-                        errorStr = "Feature computation failed for point " +
-                                   QString::number(i) + " (using OpenMP with " +
-                                   QString::number(omp_get_num_threads()) +
-                                   " threads)";
-#else
-                        errorStr = "Feature computation failed for point " +
-                                   QString::number(i);
+#pragma omp critical(q3DMASCToolsProgress)
 #endif
-                        CVLog::Error(localErrorStr);
+                        {
+                            cancelled = true;
+                            success = false;
+#if defined(_OPENMP)
+                            errorStr =
+                                    "Feature computation failed for point " +
+                                    QString::number(i) +
+                                    " (using OpenMP with " +
+                                    QString::number(omp_get_num_threads()) +
+                                    " threads)";
+#else
+                            errorStr =
+                                    "Feature computation failed for point " +
+                                    QString::number(i);
+#endif
+                            CVLog::Error(localErrorStr);
+                        }
                     }
 
                     if (progressCb) {
-                        if (!cancelled) {
-                            cancelled = !nProgress.oneStep();
-                            if (cancelled) {
-                                // process cancelled by the user
 #if defined(_OPENMP)
-                                errorStr =
-                                        "Process cancelled at point " +
-                                        QString::number(i) +
-                                        " (using OpenMP with " +
-                                        QString::number(omp_get_num_threads()) +
-                                        " threads)";
-#else
-                                errorStr = "Process cancelled at point " +
-                                           QString::number(i);
+#pragma omp critical(q3DMASCToolsProgress)
 #endif
-                                CVLog::Warning(errorStr);
-                                success = false;
+                        {
+                            if (!cancelled) {
+                                cancelled = !nProgress.oneStep();
+                                if (cancelled) {
+#if defined(_OPENMP)
+                                    errorStr =
+                                            "Process cancelled at point " +
+                                            QString::number(i) +
+                                            " (using OpenMP with " +
+                                            QString::number(
+                                                    omp_get_num_threads()) +
+                                            " threads)";
+#else
+                                    errorStr =
+                                            "Process cancelled at point " +
+                                            QString::number(i);
+#endif
+                                    CVLog::Warning(errorStr);
+                                    success = false;
+                                }
                             }
                         }
                     }

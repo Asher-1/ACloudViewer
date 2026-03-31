@@ -48,10 +48,8 @@ ccGeoObject::ccGeoObject(ccHObject* obj, ecvMainAppInterface* app)
 }
 
 void ccGeoObject::assignGID() {
-    // get uniquely descriptive hash
     _gID = static_cast<unsigned int>(std::hash<std::string>{}(
-            QString::asprintf("%s%d", getName().toLatin1().data(),
-                              getUniqueID())
+            QString(getName() + QString::number(getUniqueID()))
                     .toStdString()));
 }
 
@@ -396,8 +394,8 @@ int ccGeoObject::getGeoObjectRegion(ccHObject* object) {
     // recurse up until we find a georegion
     ccHObject* parent = object->getParent();
     while (parent != nullptr &&
-           !(isGeoObjectUpper(parent) | isGeoObjectLower(parent) |
-             isGeoObjectInterior(parent) | isSingleSurfaceGeoObject(parent))) {
+           !(isGeoObjectUpper(parent) || isGeoObjectLower(parent) ||
+             isGeoObjectInterior(parent) || isSingleSurfaceGeoObject(parent))) {
         parent = parent->getParent();
     }
 
