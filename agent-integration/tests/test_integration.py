@@ -4271,8 +4271,8 @@ class TestLevel5_PluginMCPTools:
             from cli_anything.acloudviewer.mcp_server import list_tools
             import asyncio
             tools = asyncio.run(list_tools())
-            assert len(tools) >= 155, (
-                f"Expected ≥155 MCP tools (with new plugins), got {len(tools)}")
+            assert len(tools) >= 165, (
+                f"Expected ≥165 MCP tools (with new plugins), got {len(tools)}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
 
@@ -4527,5 +4527,133 @@ class TestLevel5_PluginMCPTools:
             props = tool.inputSchema.get("properties", {})
             assert "mode" in props
             assert "field" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_import_fol_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_import_fol"), None)
+            assert tool is not None, "compass_import_fol tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "dip_sf" in props
+            assert "dipdir_sf" in props
+            assert "plane_size" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_import_lin_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_import_lin"), None)
+            assert tool is not None, "compass_import_lin tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "trend_sf" in props
+            assert "plunge_sf" in props
+            assert "length" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_refit_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_refit"), None)
+            assert tool is not None, "compass_refit tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_p21_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_p21"), None)
+            assert tool is not None, "compass_p21 tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "radius" in props
+            assert "subsample" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_treeiso_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "treeiso"), None)
+            assert tool is not None, "treeiso tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "lambda1" in props
+            assert "k1" in props
+            assert "rho" in props
+            assert "vertical_weight" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_fbx_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "fbx_settings"), None)
+            assert tool is not None, "fbx_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "export_format" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_lasfwf_load_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "lasfwf_load"), None)
+            assert tool is not None, "lasfwf_load tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+            assert "global_shift" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_lasfwf_save_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "lasfwf_save"), None)
+            assert tool is not None, "lasfwf_save tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "compressed" in props
+            assert "all_at_once" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_bundler_import_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "bundler_import"), None)
+            assert tool is not None, "bundler_import tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "bundler_file" in props
+            assert "output_path" in props
+            assert "scale_factor" in props
+            assert "undistort" in props
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
