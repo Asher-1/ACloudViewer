@@ -7,8 +7,8 @@
 
 #include "ccFitPlaneTool.h"
 
-// CV_DB_LIB
-// #include <ecvPointCloud.h>
+#include <CVLog.h>
+#include <ecvColorTypes.h>
 
 ccFitPlaneTool::ccFitPlaneTool() : ccTool() {}
 
@@ -79,11 +79,17 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
         const ecvViewportParameters& viewportParams =
                 ecvDisplayTools::GetViewportParameters();
         CCVector3d viewDir = viewportParams.getViewDir();
-        if (pPlane->getNormal().toDouble().dot(viewDir) > 0) {
+        CCVector3d planeN = pPlane->getNormal().toDouble();
+        double dotProduct = planeN.dot(viewDir);
+        if (dotProduct > 0) {
             pPlane->flip();
         }
 
         pPlane->updateAttributes(rms, r);
+
+        static const ecvColor::Rgb defaultPlaneColor(0, 230, 69);
+        pPlane->setColor(defaultPlaneColor);
+        pPlane->showColors(true);
 
         pPlane->setVisible(true);
         pPlane->setSelectionBehavior(ccHObject::SELECTION_IGNORED);
@@ -91,6 +97,13 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
         insertPoint->addChild(pPlane);
 
         m_app->addToDB(pPlane, false, false, false, false);
+
+        // Propagate bbox update so the parent group includes the new plane
+        pPlane->notifyGeometryUpdate();
+        for (ccHObject* p = pPlane->getParent(); p; p = p->getParent()) {
+            p->notifyGeometryUpdate();
+        }
+        ecvDisplayTools::RedrawDisplay();
 
         m_app->dispToConsole(
                 QString("[ccCompass] Surface orientation estimate = " +

@@ -7,6 +7,8 @@
 
 #include "ccThicknessTool.h"
 
+#include <CVLog.h>
+
 #include "ccCompass.h"
 #include "ccGeoObject.h"
 
@@ -41,7 +43,7 @@ void ccThicknessTool::onNewSelection(
             // make all point clouds visible again
             for (int i : m_hiddenObjects) {
                 ccHObject* cld = m_app->dbRootObject()->find(i);
-                cld->setVisible(true);
+                if (cld) cld->setVisible(true);
             }
             m_hiddenObjects.clear();
 
@@ -85,10 +87,8 @@ void ccThicknessTool::pointPicked(ccHObject* insertPoint,
                                   const CCVector3& P) {
     // no plane, no deal
     if (!m_referencePlane) {
-        m_app->dispToConsole(
-                "[ccCompass] Please select a fit-plane to constrain "
-                "true-thickness calculations.",
-                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        CVLog::Error("[Compass] Please select a fit-plane to constrain "
+                     "true-thickness calculations");
         return;
     }
 
@@ -227,12 +227,11 @@ void ccThicknessTool::toolDisactivated() {
     // make all point clouds visible again
     for (int i : m_hiddenObjects) {
         ccHObject* cld = m_app->dbRootObject()->find(i);
-        cld->setVisible(true);
+        if (cld) cld->setVisible(true);
     }
     m_hiddenObjects.clear();
 
     // redraw
-    // m_app->getActiveWindow()->refresh();
     ecvDisplayTools::RedrawDisplay(false, false);
 }
 

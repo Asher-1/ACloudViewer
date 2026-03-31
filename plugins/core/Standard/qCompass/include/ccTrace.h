@@ -58,13 +58,23 @@ class ccTrace : public ccPolyline, public ccMeasurement {
 public:
     ccTrace(ccPointCloud* associatedCloud = nullptr);
     ccTrace(ccPolyline* obj);
-    virtual ~ccTrace() {}
+    virtual ~ccTrace();
+
+    void removeSegmentActors();
+    void removeMarkerActors();
 
     static QString GetClassName() { return "CompassTrace"; }
 
     inline virtual CV_CLASS_ENUM getClassID() const override {
         return CV_TYPES::POLY_LINE;
     }
+
+    void onDeletionOf(const ccHObject* obj) override;
+    void setAssociatedCloud(GenericIndexedCloudPersist* cloud) override;
+    bool fromFile_MeOnly(QFile& in,
+                         short dataVersion,
+                         int flags,
+                         LoadedIDMap& oldToNewIDMap) override;
 
     /*
     Adds waypoint to the end of this trace.
@@ -202,9 +212,12 @@ public:
 
     static int COST_MODE;
 
+    ccBBox getOwnBB(bool withGLFeatures = false) override;
+
 protected:
-    // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+
+    bool loadWaypointsFrom(const QString& waypoints);
 
     /*
     Gets the closest waypoint to the point described by pID.
@@ -284,6 +297,10 @@ private:
     cloudViewer::DgmOctree::PointDescriptor m_p;
     float m_search_r;
     float m_maxIterations;
+
+    QStringList m_segmentViewIds;
+    QStringList m_waypointViewIds;
+    QStringList m_tracePointViewIds;
 
     /*
     Test if a point falls within a circle who's diameter equals the line from

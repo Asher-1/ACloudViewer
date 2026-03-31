@@ -70,7 +70,7 @@ struct VoxFallParams {
     std::vector<std::vector<int>> nbs;
     std::vector<bool> isEmpty;
     std::vector<bool> isEmptyBefore;
-    std::vector<bool> nonEmptyVoxelsVisited;
+    std::vector<uint8_t> nonEmptyVoxelsVisited;
     std::vector<int> clusters;
     int emptyVoxelCount = 0;
     CCVector3 centroid;
@@ -264,7 +264,11 @@ bool ComputeClusterVolume(int maxThreads,
     if (s_VoxFallParams.processCanceled) return error;
 
 #if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(maxThreads)
+#pragma omp parallel num_threads(maxThreads)
+    {
+        CCVector3 localMin = s_VoxFallParams.maxBound;
+        CCVector3 localMax = s_VoxFallParams.minBound;
+#pragma omp for schedule(static)
 #endif
     for (int i = 0; i < clusterCount; i++) {
         int index = s_VoxFallParams.clusterIndices[i];
@@ -280,40 +284,52 @@ bool ComputeClusterVolume(int maxThreads,
             unsigned nb = *nbs_next.begin();
             nbs_next.erase(nbs_next.begin());
 
-            // Check non empty neighbor.
             if (s_VoxFallParams.isEmpty[nb]) {
                 continue;
             }
-            if (s_VoxFallParams.nonEmptyVoxelsVisited[nb] == false) {
+            uint8_t was_visited;
+#if defined(_OPENMP)
+#pragma omp atomic capture
+#endif
+            {
+                was_visited = s_VoxFallParams.nonEmptyVoxelsVisited[nb];
+                s_VoxFallParams.nonEmptyVoxelsVisited[nb] = 1;
+            }
+            if (!was_visited) {
+#if defined(_OPENMP)
+#pragma omp atomic
+#endif
                 s_VoxFallParams.clusterOutterVoxelCount++;
-                s_VoxFallParams.nonEmptyVoxelsVisited[nb] = true;
 
                 if (s_VoxFallParams.exportLossGain) {
                     Tuple3i V = qVoxFallTools::Index2Grid(
                             nb, s_VoxFallParams.steps);
-                    CCVector3 voxel(static_cast<PointCoordinateType>(
-                                            V.x * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.x),
-                                    static_cast<PointCoordinateType>(
-                                            V.y * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.y),
-                                    static_cast<PointCoordinateType>(
-                                            V.z * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.z));
+                    CCVector3 voxel(
+                            static_cast<PointCoordinateType>(
+                                    V.x * s_VoxFallParams.voxelSize +
+                                    s_VoxFallParams.minBound.x),
+                            static_cast<PointCoordinateType>(
+                                    V.y * s_VoxFallParams.voxelSize +
+                                    s_VoxFallParams.minBound.y),
+                            static_cast<PointCoordinateType>(
+                                    V.z * s_VoxFallParams.voxelSize +
+                                    s_VoxFallParams.minBound.z));
 
-                    if (voxel.x > maxBound.x)
-                        maxBound.x = static_cast<PointCoordinateType>(voxel.x);
-                    if (voxel.y > maxBound.y)
-                        maxBound.y = static_cast<PointCoordinateType>(voxel.y);
-                    if (voxel.z > maxBound.z)
-                        maxBound.z = static_cast<PointCoordinateType>(voxel.z);
-
-                    if (voxel.x < minBound.x)
-                        minBound.x = static_cast<PointCoordinateType>(voxel.x);
-                    if (voxel.y < minBound.y)
-                        minBound.y = static_cast<PointCoordinateType>(voxel.y);
-                    if (voxel.z < minBound.z)
-                        minBound.z = static_cast<PointCoordinateType>(voxel.z);
+#if defined(_OPENMP)
+                    if (voxel.x > localMax.x) localMax.x = voxel.x;
+                    if (voxel.y > localMax.y) localMax.y = voxel.y;
+                    if (voxel.z > localMax.z) localMax.z = voxel.z;
+                    if (voxel.x < localMin.x) localMin.x = voxel.x;
+                    if (voxel.y < localMin.y) localMin.y = voxel.y;
+                    if (voxel.z < localMin.z) localMin.z = voxel.z;
+#else
+                    if (voxel.x > maxBound.x) maxBound.x = voxel.x;
+                    if (voxel.y > maxBound.y) maxBound.y = voxel.y;
+                    if (voxel.z > maxBound.z) maxBound.z = voxel.z;
+                    if (voxel.x < minBound.x) minBound.x = voxel.x;
+                    if (voxel.y < minBound.y) minBound.y = voxel.y;
+                    if (voxel.z < minBound.z) minBound.z = voxel.z;
+#endif
                 }
             }
             if (s_VoxFallParams.exportBlocksAsMeshes) {
@@ -326,6 +342,18 @@ bool ComputeClusterVolume(int maxThreads,
             error = true;
         }
     }
+#if defined(_OPENMP)
+#pragma omp critical(ComputeClusterVolumeMergeBounds)
+        {
+            if (localMax.x > maxBound.x) maxBound.x = localMax.x;
+            if (localMax.y > maxBound.y) maxBound.y = localMax.y;
+            if (localMax.z > maxBound.z) maxBound.z = localMax.z;
+            if (localMin.x < minBound.x) minBound.x = localMin.x;
+            if (localMin.y < minBound.y) minBound.y = localMin.y;
+            if (localMin.z < minBound.z) minBound.z = localMin.z;
+        }
+    }  // omp parallel
+#endif
 
     if (s_VoxFallParams.exportLossGain) {
         float ymin = minBound.y;
@@ -547,7 +575,7 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
 
     s_VoxFallParams.volumes.reserve(s_VoxFallParams.clusterLabel);
     s_VoxFallParams.nonEmptyVoxelsVisited.resize(voxelGrid.innerCellCount(),
-                                                 false);
+                                                 0);
     for (int label = 1; label < s_VoxFallParams.clusterLabel; ++label) {
         for (unsigned i = 0;
              i < static_cast<unsigned>(s_VoxFallParams.clusterSF->size());

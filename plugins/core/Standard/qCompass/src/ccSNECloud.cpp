@@ -25,6 +25,18 @@ ccSNECloud::ccSNECloud(ccPointCloud* obj) : ccPointCloud() {
     updateMetadata();
 }
 
+ccSNECloud::~ccSNECloud() { removeNormalActors(); }
+
+void ccSNECloud::removeNormalActors() {
+    for (const QString& viewId : m_normalViewIds) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = ENTITY_TYPE::ECV_LINES_3D;
+        ecvDisplayTools::RemoveEntities(ctx);
+    }
+    m_normalViewIds.clear();
+}
+
 void ccSNECloud::updateMetadata() { setMetaData("ccCompassType", "SNECloud"); }
 
 bool ccSNECloud::isSNECloud(ccHObject* object) {
@@ -53,17 +65,28 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
+        removeNormalActors();
+
         int thickID = getScalarFieldIndexByName("Thickness");
         if (thickID == -1) {
             thickID = getScalarFieldIndexByName("Spacing");
         }
 
-        float lineWidth = static_cast<float>(context.defaultPointSize);
+        float lineWidth = 1.0f;
+        QString baseViewId = getViewId();
 
         ccPointCloud lineCloud;
         lineCloud.reserve(size() * 2);
         lineCloud.reserveTheRGBTable();
 
+        struct SegmentInfo {
+            unsigned startIdx;
+            unsigned endIdx;
+        };
+        std::vector<SegmentInfo> segments;
+        segments.reserve(size());
+
+        unsigned lineIdx = 0;
         for (unsigned p = 0; p < size(); p++) {
             if (m_currentDisplayedScalarField != nullptr) {
                 if (!m_currentDisplayedScalarField->areNaNValuesShownInGrey()) {
@@ -100,25 +123,36 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 }
             }
 
+            unsigned si = lineCloud.size();
             lineCloud.addPoint(start);
             lineCloud.addRGBColor(lineColor);
             lineCloud.addPoint(end);
             lineCloud.addRGBColor(lineColor);
+            segments.push_back({si, si + 1});
+            lineIdx++;
         }
 
-        unsigned nPts = lineCloud.size();
-        if (nPts < 2) {
+        if (segments.empty()) {
             return;
         }
 
-        for (unsigned i = 0; i < nPts; i += 2) {
+        CC_DRAW_CONTEXT lineContext = context;
+        lineContext.opacity = 0.78;
+
+        for (size_t i = 0; i < segments.size(); i++) {
             ccPolyline segment(&lineCloud);
-            segment.addPointIndex(i);
-            segment.addPointIndex(i + 1);
+            segment.addPointIndex(segments[i].startIdx);
+            segment.addPointIndex(segments[i].endIdx);
             segment.setVisible(true);
             segment.showColors(true);
             segment.setWidth(static_cast<PointCoordinateType>(lineWidth));
-            segment.draw(context);
+            segment.setFixedId(true);
+
+            QString viewId =
+                    baseViewId + "-sne" + QString::number(i);
+            lineContext.viewID = viewId;
+            segment.draw(lineContext);
+            m_normalViewIds.append(viewId);
         }
     }
 }

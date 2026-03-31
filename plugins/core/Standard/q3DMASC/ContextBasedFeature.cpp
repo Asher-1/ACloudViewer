@@ -217,6 +217,10 @@ bool ContextBasedFeature::prepare(
                         }
                     }
 
+                    sf->setValue(i, s);
+
+                    mutex.lock();
+                    meanNeighborhoodSize += neighborhoodSize;
                     if (i && (i % tenth) == 0) {
                         double density = meanNeighborhoodSize / tenth;
                         if (density < 1.1) {
@@ -235,22 +239,15 @@ bool ContextBasedFeature::prepare(
                                              .arg(meanNeighborhoodSize / tenth)
                                              .arg(octreeLevel));
                         meanNeighborhoodSize = 0;
-                    } else {
-                        meanNeighborhoodSize += neighborhoodSize;
                     }
-
-                    sf->setValue(i, s);
-
                     if (progressCb) {
-                        mutex.lock();
                         cancelled = !nProgress.oneStep();
-                        mutex.unlock();
                         if (cancelled) {
-                            // process cancelled by the user
                             errorMessage =
                                     "[ContextBasedFeature] Process cancelled";
                         }
                     }
+                    mutex.unlock();
                 }
             }
 

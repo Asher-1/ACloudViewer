@@ -33,7 +33,7 @@ ccTopologyRelation::ccTopologyRelation(ccPolyline* obj) : ccPointPair(obj) {
     }
 
     if (obj->hasMetaData("Younger_ID")) {
-        m_older_id = obj->getMetaData("Younger_ID").toInt();
+        m_younger_id = obj->getMetaData("Younger_ID").toInt();
     }
 
     // update

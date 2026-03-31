@@ -49,7 +49,7 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `process mplane` | `mplane` | — **(H)** |
 | `process auto-seg` | `auto_seg` | — **(H)** |
 | `process manual-seg` | `manual_seg` | — **(H)** |
-| `sf` * | `coord_to_sf`, `set_active_sf`, `sf_gradient`, … | `cloud.coordToSf`, `cloud.setActiveSf`, … **(G)** |
+| `sf` * | `coord_to_sf`, `set_active_sf`, `sf_gradient`, … | `cloud.coordToSF`, `cloud.setActiveSf`, … **(G)** |
 | `normals` * | `octree_normals`, `orient_normals_mst`, … | — **(H)**; GUI cloud ops overlap **(G)** |
 | `cloud` (paint, crop, …) | `cloud_paint_uniform`, `crop`, … | `cloud.paintUniform`, `cloud.crop`, … **(G)** |
 | `mesh` simplify / smooth / subdivide / sample-points | `mesh_simplify`, `mesh_smooth`, `mesh_subdivide`, `mesh_sample_points` | `mesh.simplify`, `mesh.smooth`, `mesh.subdivide`, `mesh.samplePoints` **(G)** |
@@ -104,9 +104,38 @@ These commands wrap ACloudViewer's native C++ plugin CLI interfaces. They requir
 | `process mesh-io-settings` | `-MESH_IO` | qMeshIO | Mesh IO settings (Assimp) |
 | `process core-io-settings` | `-CORE_IO` | qCoreIO | Core IO settings |
 | `process python-script` | `-PYTHON_SCRIPT` | qPythonRuntime | Run Python script in embedded runtime |
+| `process treeiso` | `-TREEISO` | qTreeIso | Individual tree isolation from point clouds |
 | `process mplane` | `-MPLANE` | qMPlane | Plane-to-cloud distance computation |
 | `process auto-seg` | `-AUTO_SEG` | qMasonry/qAutoSeg | Automatic masonry segmentation |
 | `process manual-seg` | `-MANUAL_SEG` | qMasonry/qManualSeg | Manual masonry segmentation |
+| `process fbx-settings` | `-FBX` | qFBXIO | FBX import settings |
+| `process bundler-import` | `-BUNDLER_IMPORT` | qAdditionalIO | Bundler/SfM import |
+| `process fwf-open` | `-FWF_O` | qLASFWFIO | Full waveform LAS open settings |
+| `process fwf-save` | `-FWF_SAVE_CLOUDS` | qLASFWFIO | Full waveform LAS save |
+| `process pcd-output-format` | `-PCD_OUTPUT_FORMAT` | qPCL/IO | PCD output format (ASCII/BIN/BIN_COMPRESSED) |
+
+### PCL Processing Commands
+
+| CLI Command | Native Flag | Plugin | Description |
+|-------------|-------------|--------|-------------|
+| `process pcl-sor` | `-PCL_SOR` | qPCL | PCL statistical outlier removal |
+| `process pcl-normal-estimation` | `-PCL_NORMAL_ESTIMATION` | qPCL | PCL normal estimation |
+| `process pcl-mls` | `-PCL_MLS` | qPCL | Moving least squares smoothing |
+| `process pcl-euclidean-cluster` | `-PCL_EUCLIDEAN_CLUSTER` | qPCL | Euclidean cluster extraction |
+| `process pcl-sac-segmentation` | `-PCL_SAC_SEGMENTATION` | qPCL | SAC model segmentation |
+| `process pcl-region-growing` | `-PCL_REGION_GROWING` | qPCL | Region growing segmentation |
+| `process pcl-marching-cubes` | `-PCL_MARCHING_CUBES` | qPCL | Marching cubes reconstruction |
+| `process pcl-greedy-triangulation` | `-PCL_GREEDY_TRIANGULATION` | qPCL | Greedy projection triangulation |
+| `process pcl-poisson-recon` | `-PCL_POISSON_RECON` | qPCL | PCL Poisson reconstruction |
+| `process pcl-convex-hull` | `-PCL_CONVEX_HULL` | qPCL | Convex hull extraction |
+| `process pcl-don-segmentation` | `-PCL_DON_SEGMENTATION` | qPCL | Difference of normals segmentation |
+| `process pcl-mincut-segmentation` | `-PCL_MINCUT_SEGMENTATION` | qPCL | Min-cut segmentation |
+| `process pcl-fast-global-registration` | `-PCL_FAST_GLOBAL_REGISTRATION` | qPCL | Fast global registration |
+| `process pcl-extract-sift` | `-PCL_EXTRACT_SIFT` | qPCL | SIFT keypoint extraction |
+| `process pcl-projection-filter` | `-PCL_PROJECTION_FILTER` | qPCL | Projection filter |
+| `process pcl-general-filters` | `-PCL_GENERAL_FILTERS` | qPCL | General pass/voxel filters |
+| `process pcl-template-alignment` | `-PCL_TEMPLATE_ALIGNMENT` | qPCL | Template alignment |
+| `process pcl-correspondence-matching` | `-PCL_CORRESPONDENCE_MATCHING` | qPCL | Correspondence matching |
 
 ## Command Group Overview
 
@@ -193,7 +222,7 @@ cv.io.write_point_cloud("output.ply", pcd)
 ```
 headless mode:
   ├── convert, batch-convert
-  ├── process (52+ commands, incl. crop, 10 plugin processors, 7 IO settings, and 7 standard plugin commands)
+  ├── process (55+ commands, incl. crop, 24 plugin processors, 8 IO settings, 3 colorimetric filters, 18 PCL tools)
   ├── sf (11 commands)
   ├── normals (6 commands)
   ├── reconstruct (12+ Colmap commands)

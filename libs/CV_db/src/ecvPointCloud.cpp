@@ -690,10 +690,13 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud,
 
             // we import colors (if necessary)
             if (hasColors() && m_rgbColors->currentSize() == pointCountBefore) {
+                bool srcHasAlpha = !addedCloud->m_pointColorAlphas.empty();
                 for (unsigned i = 0; i < addedPoints; i++) {
                     addRGBColor(addedCloud->m_rgbColors->getValue(i));
-                    m_pointColorAlphas[pointCountBefore + i] =
-                            addedCloud->getPointColorAlpha(i);
+                    if (srcHasAlpha && !m_pointColorAlphas.empty()) {
+                        m_pointColorAlphas[pointCountBefore + i] =
+                                addedCloud->getPointColorAlpha(i);
+                    }
                 }
             }
         }
@@ -1248,14 +1251,14 @@ bool ccPointCloud::resizeTheRGBTable(bool fillWithWhite /*=false*/) {
         CVLog::Error("[ccPointCloud::resizeTheRGBTable] Not enough memory!");
     }
 
-    try {
-        m_pointColorAlphas.resize(m_points.size(), ecvColor::MAX);
-    } catch (const std::bad_alloc&) {
-        m_pointColorAlphas.clear();
-        CVLog::Error("[ccPointCloud::resizeTheRGBTable] Not enough memory!");
-        m_rgbColors->release();
-        m_rgbColors = nullptr;
-        return false;
+    // Lazy alpha: keep existing array in sync if already allocated,
+    // but don't allocate a new one just because colors were resized.
+    if (!m_pointColorAlphas.empty()) {
+        try {
+            m_pointColorAlphas.resize(m_points.size(), ecvColor::MAX);
+        } catch (const std::bad_alloc&) {
+            m_pointColorAlphas.clear();
+        }
     }
 
     // We must update the VBOs
@@ -1685,10 +1688,9 @@ void ccPointCloud::setPointColor(size_t pointIndex, const ecvColor::Rgb& col) {
 
     m_rgbColors->setValue(pointIndex, col);
 
-    if (m_pointColorAlphas.size() < m_rgbColors->currentSize()) {
-        m_pointColorAlphas.resize(m_rgbColors->currentSize(), ecvColor::MAX);
+    if (!m_pointColorAlphas.empty()) {
+        m_pointColorAlphas[pointIndex] = ecvColor::MAX;
     }
-    m_pointColorAlphas[pointIndex] = ecvColor::MAX;
 
     // We must update the VBOs
     colorsHaveChanged();
@@ -1698,10 +1700,13 @@ void ccPointCloud::setPointColor(size_t pointIndex, const ecvColor::Rgba& col) {
     assert(m_rgbColors && pointIndex < m_rgbColors->currentSize());
 
     m_rgbColors->setValue(pointIndex, ecvColor::Rgb(col.r, col.g, col.b));
-    if (m_pointColorAlphas.size() < m_rgbColors->currentSize()) {
-        m_pointColorAlphas.resize(m_rgbColors->currentSize(), ecvColor::MAX);
+
+    if (col.a != ecvColor::MAX || !m_pointColorAlphas.empty()) {
+        if (m_pointColorAlphas.empty()) {
+            m_pointColorAlphas.resize(m_rgbColors->currentSize(), ecvColor::MAX);
+        }
+        m_pointColorAlphas[pointIndex] = col.a;
     }
-    m_pointColorAlphas[pointIndex] = col.a;
 
     colorsHaveChanged();
 }
@@ -1757,11 +1762,12 @@ void ccPointCloud::invalidateBoundingBox() {
 }
 
 void ccPointCloud::addRGBColor(const ecvColor::Rgb& C) {
-    // allocate colors if necessary
     if (!hasColors())
         if (!reserveTheRGBTable()) return;
     m_rgbColors->emplace_back(C);
-    m_pointColorAlphas.push_back(ecvColor::MAX);
+    if (!m_pointColorAlphas.empty()) {
+        m_pointColorAlphas.push_back(ecvColor::MAX);
+    }
     // We must update the VBOs
     colorsHaveChanged();
 }

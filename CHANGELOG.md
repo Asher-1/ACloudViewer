@@ -39,6 +39,95 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
     - CI: fix Windows, macOS, and Ubuntu-focal test issues
+    - Expand agent-integration docs: CLI-QUICK-REFERENCE with full command catalog,
+      COMMAND-MAPPING with CLI↔MCP↔RPC cross-reference tables (including PCV, Compass,
+      VoxFall, 3DMASC, SRA, TreeIso, IO settings), JSON-RPC-API with error semantics
+      and structured error.data diagnostics
+
+- Plugin CLI/MCP support:
+    - Add CLI command registration (`registerCommands`) for 24 plugins via new
+      `*Commands.h`/`*Commands.cpp` files:
+      - Standard: qCSF (`-CSF`), qCork (`-CORK`), qPCV (`-PCV`), qM3C2 (`-M3C2`),
+        qRANSAC_SD (`-RANSAC`), qCanupo (`-CANUPO`), qFacets (`-FACETS`),
+        qHoughNormals (`-HOUGH_NORMALS`), qPoissonRecon (`-POISSON_RECON`),
+        qAnimation (`-ANIMATION`), qCloudLayers (`-CLOUD_LAYERS`),
+        qColorimetricSegmenter (`-COLOR_SEG_*`), qMPlane (`-MPLANE`),
+        qMasonry (`-AUTO_SEG`, `-MANUAL_SEG`), qCompass (`-COMPASS_EXPORT`,
+        `-COMPASS_IMPORT_FOL`, `-COMPASS_REFIT`, `-COMPASS_P21`),
+        qSRA (`-SRA`), qVoxFall (`-VOXFALL`), qG3Point (`-G3POINT`),
+        qTreeIso (`-TREEISO`), q3DMASC (`-3DMASC_CLASSIFY`)
+      - IO: qLASIO, qE57IO, qDracoIO, qMeshIO, qCSVMatrixIO, qPhotoscanIO,
+        qCoreIO, qLASFWFIO
+    - qPCL: register all 18 PCL CLI commands via PclCommands::RegisterAll
+      (SOR, normal estimation, MLS, Euclidean cluster, SAC segmentation,
+      region growing, greedy triangulation, Poisson, marching cubes, hull,
+      DON, min-cut, FGR, SIFT, projection, generic filter, template align,
+      correspondence matching); add PCL_NO_PRECOMPILE + explicit OMP template
+      instantiation includes (fpfh_omp, normal_3d_omp, shot_omp)
+
+- Plugin fixes (VTK adaptation):
+    - qCompass: fix plane fitting failure "Not enough points in input cloud"
+      - Add octree existence check and auto-computation before neighbourhood search
+      - Add radius/viewport validation (reject r≤0 with diagnostic message)
+      - Add camera-consistent plane normal orientation (flip toward viewer)
+      - Adapt all rendering from OpenGL to VTK: ccTrace (polyline rendering,
+        cost-path waypoint visualization), ccSNECloud (SNE attribute display),
+        ccPointPair (marker scale 5.0f→1.5f for VTK visual parity),
+        ccMouseCircle (overlay circle rendering), ccFitPlaneTool, ccLineationTool,
+        ccPinchNodeTool, ccThicknessTool
+      - Fix memory management and thread safety across measurement tools
+      - Export/import code uses QtCompat for cross-platform line endings
+    - qPCV: export Windows symbols (WINDOWS_EXPORT_ALL_SYMBOLS) so JSON-RPC
+      plugin can link PCV::Launch/GenerateRays; register PCVCommand for CLI
+    - qJSonRPCPlugin: add optional PCV integration (HAS_PCV_PLUGIN compile flag)
+      for ambient occlusion RPC methods when qPCV is available
+    - q3DMASC: fix ContextBasedFeature, PointFeature, q3DMASCClassifier, and
+      q3DMASCTools for VTK-based rendering and updated API signatures
+    - qVoxFall: fix VoxFallProcess cluster labeling and parallel pipeline
+      for VTK compatibility (bool→int type fixes for OMP reduction)
+    - qTreeIso: fix CutPursuit_L2/CutPursuit_SPG Boost graph template
+      compilation issues
+    - qHoughNormals: fix Normals.h header compatibility (atomic, Eigen,
+      nanoflann includes, USE_OPENMP_FOR_NORMEST guards)
+
+- Core library fixes (CV_db):
+    - Fix OpenMP multi-threading crash in point/triangle picking:
+      - ecvGenericPointCloud: per-thread local best candidate + omp critical
+        reduction (fixes race condition on shared nearestPointIndex)
+      - ecvGenericMesh: per-thread local best triangle + omp critical reduction
+        (fixes race condition on shared nearestTriIndex/nearestPoint)
+    - Fix OpenMP data race in FPFH feature computation (ecvFeature):
+      - Replace vector<bool> mask with vector<uint8_t> + omp atomic write
+        (vector<bool> is not thread-safe for concurrent writes)
+    - Fix ISS keypoint detector OMP crash (ISSKeypoint):
+      - Replace shared vector push_back with per-element boolean flag array
+        + sequential collection (fixes concurrent emplace_back race)
+    - Fix ecvPointCloud lazy alpha channel allocation:
+      - Only allocate/resize m_pointColorAlphas when alpha is actually used
+      - Fix out-of-bounds access when appending clouds without alpha
+    - Fix PointCloudFactory and ecvDisplayTools for VTK backend compatibility
+
+- Documentation:
+    - Comprehensive plugin documentation overhaul: rewrite 37 plugin READMEs
+      (24 Standard + 13 IO) with self-contained content, CLI usage, parameters,
+      build instructions, and references — faithfully aligned with CloudCompare wiki
+    - Download and embed 58 wiki images across plugin READMEs for offline reference
+    - Add Sphinx auto-sync hooks in conf.py (builder-inited / build-finished) to
+      integrate plugin READMEs into the documentation website without symlinks;
+      add docs/source/plugins/ to .gitignore (pure build artifact)
+    - Fix Sphinx C++ API sidebar hierarchy: Overview, Quick Start, and Plugin System
+      are now siblings of C++ Documentation under the C++ API section
+    - Achieve zero-warning Sphinx build:
+      - Fix RST title underlines (overview.rst, headless_rendering.rst)
+      - Fix malformed hyperlink target (tutorial/core/index.rst)
+      - Fix literalinclude line range out of bounds (integration.rst)
+      - Fix non-consecutive header levels in README.md
+      - Convert repo-relative links to GitHub URLs in README.md
+      - Add 3 notebooks to visualization toctree
+      - Suppress unreferenced citations, auto-generated python_api refs,
+        and MyST heading warnings
+    - Expand plugins.rst Plugin System page with categorized plugin toctrees
+    - Add CLI-Anything Hub link to README AI Agent Integration section
 
 - CLI & packaging:
     - Add --version/-v flag to ACloudViewer binary for quick version queries

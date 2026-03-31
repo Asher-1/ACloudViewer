@@ -22,8 +22,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -31,6 +33,57 @@ from datetime import datetime
 
 # Get current file directory first
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
+
+
+def _sync_plugin_docs(app):
+    """Sphinx ``builder-inited`` hook: copy each plugin's README.md and images/
+    into ``docs/source/plugins/<name>/`` so Sphinx can include them via toctree.
+
+    Why copy instead of symlinks?
+      - Symlinks are not portable (Windows git clone drops them by default).
+      - Sphinx only processes files inside its *srcdir*.
+
+    The generated ``plugins/`` directory is listed in ``.gitignore`` — it is a
+    pure **build artifact**, never committed.  It is cleaned up automatically
+    by the companion ``build-finished`` hook (see ``_cleanup_plugin_docs``).
+    """
+    srcdir = app.srcdir if app else current_file_dir
+    repo_root = os.path.abspath(os.path.join(srcdir, "..", ".."))
+    dest_root = os.path.join(srcdir, "plugins")
+    plugin_dirs = (
+        glob.glob(os.path.join(repo_root, "plugins", "core", "Standard", "*"))
+        + glob.glob(os.path.join(repo_root, "plugins", "core", "IO", "*"))
+    )
+
+    os.makedirs(dest_root, exist_ok=True)
+    copied = 0
+    for pdir in sorted(plugin_dirs):
+        readme = os.path.join(pdir, "README.md")
+        if not os.path.isfile(readme):
+            continue
+        name = os.path.basename(pdir)
+        dst = os.path.join(dest_root, name)
+        os.makedirs(dst, exist_ok=True)
+        shutil.copy2(readme, os.path.join(dst, "README.md"))
+
+        img_src = os.path.join(pdir, "images")
+        img_dst = os.path.join(dst, "images")
+        if os.path.isdir(img_src):
+            if os.path.isdir(img_dst):
+                shutil.rmtree(img_dst)
+            shutil.copytree(img_src, img_dst)
+        copied += 1
+
+    print(f"[conf.py] Synced {copied} plugin READMEs → {dest_root}")
+
+
+def _cleanup_plugin_docs(app, exception):
+    """Sphinx ``build-finished`` hook: remove the generated plugins/ directory."""
+    srcdir = app.srcdir if app else current_file_dir
+    dest_root = os.path.join(srcdir, "plugins")
+    if os.path.isdir(dest_root):
+        shutil.rmtree(dest_root)
+        print(f"[conf.py] Cleaned up {dest_root}")
 
 
 def get_git_short_hash():
@@ -371,6 +424,10 @@ suppress_warnings = [
     'toc.not_readable',  # Suppress document not in toctree warnings
     'ref.python',  # Suppress Python reference warnings
     'ref.ref',  # Suppress general reference warnings
+    'ref.citation',  # Suppress unreferenced citation warnings (reference.rst bibliography)
+    'ref.doc',  # Suppress unknown document warnings (python_api/ generated only with Python bindings)
+    'myst.xref_missing',  # Suppress MyST cross-reference target not found (repo-relative links)
+    'myst.header',  # Suppress MyST heading level warnings (e.g. tensorboard.md)
     'autosummary',  # Suppress autosummary warnings (e.g., inline markup in external libs)
 ]
 
@@ -441,7 +498,9 @@ def process_docstring(app, what, name, obj, options, lines):
 
 
 def setup(app):
-    """Sphinx setup function to connect autodoc events."""
+    """Sphinx setup function to connect autodoc events and plugin doc sync."""
+    app.connect("builder-inited", _sync_plugin_docs)
+    app.connect("build-finished", _cleanup_plugin_docs)
     app.connect("autodoc-skip-member", skip)
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

@@ -222,11 +222,6 @@ protected:
                     false);  // if thickness is true this will write "thickness
                              // lineations" rather than orientation lineations
 
-    int writeTracesSVG(ccHObject* object,
-                       QTextStream* out,
-                       int height,
-                       float zoom);
-
     int writeToXML(const QString& filename);  // exports Compass interpretation
                                               // tree to xml
     int writeObjectXML(

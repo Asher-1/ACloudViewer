@@ -25,7 +25,7 @@ void ccLineation::updateMetadata() {
         dir.normalize();
         float trend, plunge;
 
-        if (dir.x + dir.y + dir.z == 0)  // special case: null direction
+        if (dir.norm2() < 1e-12f)  // special case: null direction
         {
             trend = 0;
             plunge = 0;

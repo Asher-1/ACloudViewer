@@ -145,6 +145,9 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :caption: C++ API
 
    cpp_api
+   cpp_api/overview
+   cpp_api/quickstart
+   cpp_api/plugins
 
 .. toctree::
    :maxdepth: 1

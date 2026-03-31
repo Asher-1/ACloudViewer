@@ -11,6 +11,10 @@
  * recognition).
  */
 
+// Force full template compilation for PCL features (SHOT OMP, BOARD, etc.)
+// whose OMP variants may not be pre-instantiated in the PCL shared library.
+#define PCL_NO_PRECOMPILE
+
 #include <PclUtils/PCLModules.h>
 
 // CV_CORE_LIB

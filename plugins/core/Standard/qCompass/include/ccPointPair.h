@@ -26,7 +26,7 @@ public:
     ccPointPair(ccPolyline* obj);  // used to construct from a polyline with the
                                    // correct data
 
-    virtual ~ccPointPair() {}
+    virtual ~ccPointPair();
 
     virtual void updateMetadata() {};
 
@@ -34,8 +34,9 @@ public:
     CCVector3 getDirection();
 
 protected:
-    // size that the point-markers are drawn
-    float m_relMarkerScale = 5.0f;
+    // VTK renders ccSphere actors significantly larger than OpenGL's glScalef.
+    // CloudCompare uses 5.0f with OpenGL; reduced here for visual parity in VTK.
+    float m_relMarkerScale = 1.5f;
 
     // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;

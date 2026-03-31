@@ -8,6 +8,7 @@
 #include <Logging.h>
 #include <Parallel.h>
 
+#include <algorithm>
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 #include <limits>
@@ -882,7 +883,6 @@ ccPointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     kdtree.SetGeometry(*this);
     std::vector<double> avg_distances = std::vector<double>(size());
     std::vector<size_t> indices;
-    size_t valid_distances = 0;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -894,13 +894,15 @@ ccPointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                 int(nb_neighbors), tmp_indices, dist);
         double mean = -1.0;
         if (dist.size() > 0u) {
-            valid_distances++;
             std::for_each(dist.begin(), dist.end(),
                           [](double &d) { d = std::sqrt(d); });
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
     }
+    size_t valid_distances = static_cast<size_t>(std::count_if(
+            avg_distances.begin(), avg_distances.end(),
+            [](double d) { return d >= 0.0; }));
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
                                std::vector<size_t>());

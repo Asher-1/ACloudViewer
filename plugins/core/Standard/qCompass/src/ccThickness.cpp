@@ -26,7 +26,7 @@ void ccThickness::updateMetadata() {
         float trend = 0.0f;
         float plunge = 0.0f;
 
-        if (dir.x + dir.y + dir.z == 0) {
+        if (dir.norm2() < 1e-12f) {
             trend = 0;
             plunge = 0;
         } else if (dir.z > 0.9999999f || dir.z < -0.9999999f) {

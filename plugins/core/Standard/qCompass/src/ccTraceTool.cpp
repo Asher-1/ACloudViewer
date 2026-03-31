@@ -116,6 +116,14 @@ void ccTraceTool::pointPicked(ccHObject* insertPoint,
             }
         }
     }
+
+    // Propagate bbox invalidation up so the parent group's bbox includes
+    // newly added trace geometry
+    if (t) {
+        for (ccHObject* p = t->getParent(); p; p = p->getParent()) {
+            p->notifyGeometryUpdate();
+        }
+    }
 }
 
 // called when "Return" or "Space" is pressed, or the "Accept Button" is clicked

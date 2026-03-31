@@ -41,21 +41,29 @@ ccMouseCircle::~ccMouseCircle() {
     }
 }
 
+float ccMouseCircle::computeOrthoPixelSize(int viewportHeight) {
+    double parallelScale = ecvDisplayTools::GetParallelScale(0);
+    if (parallelScale <= 0 || viewportHeight <= 0) {
+        return 0.0f;
+    }
+    return static_cast<float>(2.0 * parallelScale / viewportHeight);
+}
+
 float ccMouseCircle::getRadiusWorld() {
     if (m_pixelSize == 0) {
         const ecvViewportParameters& params =
                 ecvDisplayTools::GetViewportParameters();
         QWidget* screen = ecvDisplayTools::GetCurrentScreen();
         if (screen) {
-            m_pixelSize = static_cast<float>(
-                    std::abs(params.computePixelSize(screen->width())));
+            if (params.perspectiveView) {
+                m_pixelSize = static_cast<float>(
+                        std::abs(params.computePixelSize(screen->width())));
+            } else {
+                m_pixelSize = computeOrthoPixelSize(screen->height());
+            }
         }
     }
     float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
-    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
-                         .arg(r)
-                         .arg(getRadiusPx())
-                         .arg(m_pixelSize));
     return r;
 }
 
@@ -79,8 +87,12 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
 
     const ecvViewportParameters& params =
             ecvDisplayTools::GetViewportParameters();
-    m_pixelSize =
-            static_cast<float>(std::abs(params.computePixelSize(context.glW)));
+    if (params.perspectiveView) {
+        m_pixelSize = static_cast<float>(
+                std::abs(params.computePixelSize(context.glW)));
+    } else {
+        m_pixelSize = computeOrthoPixelSize(context.glH);
+    }
 
     {
         WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,

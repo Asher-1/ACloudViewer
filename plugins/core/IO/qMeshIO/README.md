@@ -1,44 +1,51 @@
+# qMeshIO — Assimp-based mesh import
 
-[![CloudCompare Plugin](https://img.shields.io/badge/plugin-CloudCompare-brightgreen.svg)](https://github.com/CloudCompare/CloudCompare)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+## Introduction
 
-# <img src="https://github.com/asmaloney/MeshIO/blob/master/images/icon.png"/> MeshIO
+**qMeshIO** imports **3D mesh** data via the **Open Asset Import Library (Assimp)**. This tree enables a focused set of Assimp importers (see **Supported formats**); geometry is translated into ACloudViewer mesh entities. Problems in specific files may originate in Assimp or in the translation layer—report minimal reproducers upstream when isolated.
 
-This is a plugin for [CloudCompare](https://github.com/CloudCompare/CloudCompare) for reading 3D model files (meshes). It uses the [Open Asset Import Library](https://github.com/assimp/assimp) (Assimp).
+## Supported formats
 
-Currently MeshIO supports reading the following formats:
-* [COLLADA](https://en.wikipedia.org/wiki/COLLADA) (\*.dae)
-* [glTF](https://en.wikipedia.org/wiki/GlTF) (\*.gltf \*.glb)
-* [IFC-SPF](https://en.wikipedia.org/wiki/ISO_10303-21) a.k.a STEP (\*.ifc \*.stp \*.step)
+The CMake configuration for this plugin turns on these Assimp importers:
 
-## Building
+| Format | Typical extensions |
+|--------|---------------------|
+| **COLLADA** | `.dae` |
+| **glTF** | `.gltf`, `.glb` |
+| **IFC (IFC-SPF)** | `.ifc` (often described with STEP-related exchange; importer is IFC-specific here) |
 
-- clone this repository in the `ACloudViewer/plugins/private` directory
-- make sure the submodule `extern/assmip` is up-to-date by `git pull`ing it
-- re-run ACloudViewer's cmake
-- turn on `PLUGIN_IO_QMESH` in your cmake options
-- build ACloudViewer
+Other mesh types (e.g. generic OBJ/STL via Assimp) are **not** enabled in the current `CMakeLists.txt`; extend importer flags only if you add and test them.
 
-Note: If you are building for CloudCompare 2.11.x, use the tagged version at `cloudcompare-2.11.x`
+## Usage
 
-## Caveat
+Open supported mesh files through **File → Import**. Mesh names or hierarchy may be simplified on import. IFC coverage is not complete for all vendor exports—see Assimp issue trackers for edge cases.
 
-This plugin is using another library to read these file formats. There will be problems with some files (e.g. IFC-SPF is not 100% implemented). It also means that some mesh names might be lost when importing some formats.
+## ACloudViewer CLI
 
-Because this plugin is basically translating the Assimp data into something CloudCompare understands, it can be tricky to figure out where the problem lies.
+```bash
+ACloudViewer -SILENT -MESH_IO [-SCALE <factor>] [-UP_AXIS X|Y|Z] [-MERGE_NODES] ...
+```
 
-If you find files that do not work as expected, please add an [issue here](https://github.com/asmaloney/MeshIO/issues) and attach the smallest example you have that isn't working. I will try to assess where the problem lies and either report it to the [Assimp](https://github.com/assimp/assimp) project or [CloudCompare](https://github.com/CloudCompare/CloudCompare) project as necessary.
+| Flag | Description |
+|------|-------------|
+| `-MESH_IO` | Activate Mesh IO command-line options for the following arguments. |
+| `-SCALE <factor>` | Positive scale factor applied to imported mesh coordinates. |
+| `-UP_AXIS` | `X`, `Y`, or `Z` — up axis hint for loaders that use it. |
+| `-MERGE_NODES` | Enable vertex merge where the pipeline supports it. |
 
-## Icon
+## Build
 
-The icon is by [qubodup](https://openclipart.org/detail/168258/3d-cube-icon) (Public Domain).
+```bash
+-DPLUGIN_IO_QMESH=ON
+```
 
-## License
-This project is licensed under the BSD 3-Clause license - see [LICENSE](https://github.com/asmaloney/MeshIO/blob/master/LICENSE) file for details.
+Provide **Assimp** include and library directories (`ASSIMP_INCLUDE_DIR`, `ASSIMP_LIB_DIR`, `ASSIMP_LIBRARIES`) as required by your layout.
 
-Individual source files contain the following tag instead of the full license text:
+## Dependencies
 
-	SPDX-License-Identifier: BSD-3-Clause
+- **[Assimp](https://github.com/assimp/assimp)** — Open Asset Import Library (importers selected in this plugin’s `CMakeLists.txt`).
 
-This enables machine processing of license information based on [SPDX
-License Identifiers](https://spdx.org/ids).
+## References
+
+- Assimp: [https://github.com/assimp/assimp](https://github.com/assimp/assimp)
+- Upstream MeshIO lineage: Andy Maloney’s MeshIO plugin for CloudCompare (BSD-3-Clause).

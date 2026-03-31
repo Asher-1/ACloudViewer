@@ -31,7 +31,7 @@ Launch ACloudViewer, then activate the JSON-RPC server from the plugin menu
 ### 2. Install the CLI Harness
 
 ```bash
-pip install git+https://github.com/HKUDS/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
+pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
 ```
 
 Or for local development:
@@ -159,7 +159,7 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 | 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
 | 3 | Format conversion (incl. LAZ, SHP, PTX load, DXF export), round-trip checks, `process crop`, subsample, normals, batch, CLI surface | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
-| 5 | MCP tools (119 tools, names, Colmap, SIBR), entry point | `mcp` Python package |
+| 5 | MCP tools (178 tools, names, Colmap, SIBR, PCL, plugins), entry point | `mcp` Python package |
 
 ## Architecture
 
@@ -235,7 +235,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **50+ methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **72 methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 
@@ -281,7 +281,7 @@ for the live catalog.
 | `cloud.removeAllSfs` | `{entity_id}` | Remove all scalar fields |
 | `cloud.renameSf` | `{entity_id, new_name, ?field_index}` | Rename a scalar field |
 | `cloud.filterSf` | `{entity_id, min, max}` | Filter points by SF range |
-| `cloud.coordToSf` | `{entity_id, ?dimension}` | Create SF from coordinates |
+| `cloud.coordToSF` | `{entity_id, ?dimension}` | Create SF from coordinates |
 
 ### Point Cloud Geometry
 | Method | Parameters | Description |
@@ -338,7 +338,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **122 tools** (integration tests cover the full set) for AI agent use:
+The MCP server exposes **178 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|
@@ -354,7 +354,7 @@ The MCP server exposes **122 tools** (integration tests cover the full set) for 
 | **Mesh Processing** | `mesh_simplify`, `mesh_smooth`, `mesh_subdivide`, `mesh_sample_points`, `mesh_volume`, `extract_vertices`, `flip_triangles`, `merge_meshes` |
 | **Mesh (GUI)** | `mesh_extract_vertices_gui`, `mesh_flip_triangles_gui`, `mesh_volume_gui`, `mesh_merge_gui` |
 | **Advanced Processing** | `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding`, `extract_connected_components`, `approx_density`, `geometric_feature`, `moment`, `best_fit_plane`, `rasterize`, `stat_test` |
-| **Plugin Processing** | `pcv`, `compass_export`, `sra` |
+| **Plugin Processing** | `pcv`, `compass_export`, `sra`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough_normals`, `poisson_recon`, `cork_boolean`, `voxfall`, `classify_3dmasc`, `treeiso`, `cloud_layers`, `animation`, `mplane`, `auto_seg`, `manual_seg`, `color_seg_rgb`, `color_seg_hsv`, `color_seg_scalar`, `g3point`, `python_script` |
 | **Misc** | `remove_rgb`, `remove_scan_grids`, `match_centers`, `drop_global_shift`, `closest_point_set`, `merge_clouds` |
 | **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model`, `colmap_run` |
 | **SIBR** | `sibr_viewer`, `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
