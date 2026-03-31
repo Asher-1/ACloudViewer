@@ -433,9 +433,6 @@ void qFacets::extractFacets(CellsFusionDlg::Algorithm algo) {
         pc->showSF(true);
 #endif
     }
-
-    // currently selected entities appearance may have changed!
-    // m_app->refreshAll();
 }
 
 namespace {
@@ -1038,8 +1035,6 @@ void qFacets::classifyFacetsByAngle(ccHObject* group,
             return;
         }
     }
-
-    // m_app->refreshAll();
 }
 
 void qFacets::exportFacetsInfo() {

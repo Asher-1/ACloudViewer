@@ -7,6 +7,7 @@
 
 #include "ccMouseCircle.h"
 
+#include <CVLog.h>
 #include <ecvDisplayTools.h>
 
 #include <QWheelEvent>
@@ -41,7 +42,21 @@ ccMouseCircle::~ccMouseCircle() {
 }
 
 float ccMouseCircle::getRadiusWorld() {
-    return static_cast<float>(getRadiusPx()) * m_pixelSize;
+    if (m_pixelSize <= 0) {
+        const ecvViewportParameters& params =
+                ecvDisplayTools::GetViewportParameters();
+        QWidget* screen = ecvDisplayTools::GetCurrentScreen();
+        if (screen) {
+            m_pixelSize =
+                    static_cast<float>(params.computePixelSize(screen->width()));
+        }
+    }
+    float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
+    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
+                         .arg(r)
+                         .arg(getRadiusPx())
+                         .arg(m_pixelSize));
+    return r;
 }
 
 void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
