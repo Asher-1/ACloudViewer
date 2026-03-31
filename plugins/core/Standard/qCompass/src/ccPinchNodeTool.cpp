@@ -29,8 +29,9 @@ void ccPinchNodeTool::pointPicked(ccHObject* insertPoint,
         }
         insertPoint = region;
     } else {
-        CVLog::Error("[Compass] PinchNodes can only be added to GeoObjects. "
-                     "Please select one!");
+        CVLog::Error(
+                "[Compass] PinchNodes can only be added to GeoObjects. "
+                "Please select one!");
         return;
     }
 

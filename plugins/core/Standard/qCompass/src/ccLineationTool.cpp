@@ -51,7 +51,8 @@ void ccLineationTool::pointPicked(ccHObject* insertPoint,
         l->notifyGeometryUpdate();
 
         // Propagate bbox invalidation up the hierarchy so the parent group's
-        // cached bbox VTK actor is removed and redrawn to include this lineation
+        // cached bbox VTK actor is removed and redrawn to include this
+        // lineation
         for (ccHObject* p = l->getParent(); p; p = p->getParent()) {
             p->notifyGeometryUpdate();
         }

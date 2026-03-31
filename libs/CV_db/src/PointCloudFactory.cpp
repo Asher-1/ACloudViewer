@@ -8,9 +8,9 @@
 #include <Logging.h>
 #include <Parallel.h>
 
-#include <algorithm>
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
+#include <algorithm>
 #include <limits>
 #include <queue>
 #include <tuple>
@@ -900,9 +900,9 @@ ccPointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         }
         avg_distances[i] = mean;
     }
-    size_t valid_distances = static_cast<size_t>(std::count_if(
-            avg_distances.begin(), avg_distances.end(),
-            [](double d) { return d >= 0.0; }));
+    size_t valid_distances = static_cast<size_t>(
+            std::count_if(avg_distances.begin(), avg_distances.end(),
+                          [](double d) { return d >= 0.0; }));
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
                                std::vector<size_t>());

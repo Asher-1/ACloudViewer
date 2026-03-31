@@ -148,8 +148,7 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
             segment.setWidth(static_cast<PointCoordinateType>(lineWidth));
             segment.setFixedId(true);
 
-            QString viewId =
-                    baseViewId + "-sne" + QString::number(i);
+            QString viewId = baseViewId + "-sne" + QString::number(i);
             lineContext.viewID = viewId;
             segment.draw(lineContext);
             m_normalViewIds.append(viewId);

@@ -35,7 +35,8 @@ public:
 
 protected:
     // VTK renders ccSphere actors significantly larger than OpenGL's glScalef.
-    // CloudCompare uses 5.0f with OpenGL; reduced here for visual parity in VTK.
+    // CloudCompare uses 5.0f with OpenGL; reduced here for visual parity in
+    // VTK.
     float m_relMarkerScale = 1.5f;
 
     // overidden from ccHObject

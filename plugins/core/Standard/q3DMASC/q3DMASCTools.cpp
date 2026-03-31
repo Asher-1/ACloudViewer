@@ -1465,16 +1465,14 @@ bool Tools::PrepareFeatures(
                             cancelled = true;
                             success = false;
 #if defined(_OPENMP)
-                            errorStr =
-                                    "Feature computation failed for point " +
-                                    QString::number(i) +
-                                    " (using OpenMP with " +
-                                    QString::number(omp_get_num_threads()) +
-                                    " threads)";
+                            errorStr = "Feature computation failed for point " +
+                                       QString::number(i) +
+                                       " (using OpenMP with " +
+                                       QString::number(omp_get_num_threads()) +
+                                       " threads)";
 #else
-                            errorStr =
-                                    "Feature computation failed for point " +
-                                    QString::number(i);
+                            errorStr = "Feature computation failed for point " +
+                                       QString::number(i);
 #endif
                             CVLog::Error(localErrorStr);
                         }
@@ -1489,17 +1487,15 @@ bool Tools::PrepareFeatures(
                                 cancelled = !nProgress.oneStep();
                                 if (cancelled) {
 #if defined(_OPENMP)
-                                    errorStr =
-                                            "Process cancelled at point " +
-                                            QString::number(i) +
-                                            " (using OpenMP with " +
-                                            QString::number(
-                                                    omp_get_num_threads()) +
-                                            " threads)";
+                                    errorStr = "Process cancelled at point " +
+                                               QString::number(i) +
+                                               " (using OpenMP with " +
+                                               QString::number(
+                                                       omp_get_num_threads()) +
+                                               " threads)";
 #else
-                                    errorStr =
-                                            "Process cancelled at point " +
-                                            QString::number(i);
+                                    errorStr = "Process cancelled at point " +
+                                               QString::number(i);
 #endif
                                     CVLog::Warning(errorStr);
                                     success = false;

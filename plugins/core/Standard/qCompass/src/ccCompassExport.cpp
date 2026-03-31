@@ -221,8 +221,7 @@ int _writeLineations(ccHObject* object,
     // is object a lineation made by ccCompass?
     int n = 0;
     if ((!thicknesses && ccLineation::isLineation(object)) ||
-        (thicknesses && ccThickness::isThickness(object)))
-    {
+        (thicknesses && ccThickness::isThickness(object))) {
         // Write object as Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge
         *out << name << ",";
         *out << object->getMetaData("Sx").toString() << ","

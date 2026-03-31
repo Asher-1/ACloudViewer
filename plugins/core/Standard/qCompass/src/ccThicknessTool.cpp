@@ -87,8 +87,9 @@ void ccThicknessTool::pointPicked(ccHObject* insertPoint,
                                   const CCVector3& P) {
     // no plane, no deal
     if (!m_referencePlane) {
-        CVLog::Error("[Compass] Please select a fit-plane to constrain "
-                     "true-thickness calculations");
+        CVLog::Error(
+                "[Compass] Please select a fit-plane to constrain "
+                "true-thickness calculations");
         return;
     }
 

@@ -168,8 +168,8 @@ struct CutPursuit_L2 : public CutPursuit<T> {
                 }
                 best_energy = 0;
 #ifdef OPENMP
-#pragma omp parallel for if (nb_comp < omp_get_num_threads()) \
-        schedule(static) reduction(+:best_energy)
+#pragma omp parallel for if (nb_comp < omp_get_num_threads()) schedule(static) \
+        reduction(+ : best_energy)
 #endif
                 for (uint32_t i_ver = 0; i_ver < comp_size; i_ver++) {
                     energy_array[i_ver] = 0;
@@ -295,8 +295,8 @@ struct CutPursuit_L2 : public CutPursuit<T> {
                 //----compute the associated energy ------
                 current_energy = 0;
 #ifdef OPENMP
-#pragma omp parallel for if (nb_comp < omp_get_num_threads()) \
-        schedule(static) reduction(+:current_energy)
+#pragma omp parallel for if (nb_comp < omp_get_num_threads()) schedule(static) \
+        reduction(+ : current_energy)
 #endif
                 for (uint32_t i_ver = 0; i_ver < comp_size; i_ver++) {
                     for (uint32_t i_dim = 0; i_dim < this->dim; i_dim++) {

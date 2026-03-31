@@ -617,21 +617,21 @@ bool ccGenericMesh::trianglePicking(
         CCVector3d localBestBC(0, 0, 0);
 #pragma omp for schedule(static)
 #endif
-    for (int i = 0; i < static_cast<int>(size()); ++i) {
-        CCVector3d P;
-        CCVector3d BC;
-        if (!trianglePicking(i, clickPos, trans, noGLTrans, *vertices, camera,
-                             P, barycentricCoords ? &BC : nullptr))
-            continue;
+        for (int i = 0; i < static_cast<int>(size()); ++i) {
+            CCVector3d P;
+            CCVector3d BC;
+            if (!trianglePicking(i, clickPos, trans, noGLTrans, *vertices,
+                                 camera, P, barycentricCoords ? &BC : nullptr))
+                continue;
 
-        double squareDist = (X - P).norm2d();
+            double squareDist = (X - P).norm2d();
 #if defined(_OPENMP) && !defined(_DEBUG)
-        if (localBestTri < 0 || squareDist < localBestDist) {
-            localBestDist = squareDist;
-            localBestTri = i;
-            localBestPoint = P;
-            if (barycentricCoords) localBestBC = BC;
-        }
+            if (localBestTri < 0 || squareDist < localBestDist) {
+                localBestDist = squareDist;
+                localBestTri = i;
+                localBestPoint = P;
+                if (barycentricCoords) localBestBC = BC;
+            }
 #else
         if (nearestTriIndex < 0 || squareDist < nearestSquareDist) {
             nearestSquareDist = squareDist;
@@ -640,7 +640,7 @@ bool ccGenericMesh::trianglePicking(
             if (barycentricCoords) *barycentricCoords = BC;
         }
 #endif
-    }
+        }
 #if defined(_OPENMP) && !defined(_DEBUG)
 #pragma omp critical
         {

@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <QStringList>
 #include <ccMeasurement.h>
 #include <ecvPointCloud.h>
+
+#include <QStringList>
 
 /*
 Class for representing/drawing lineations measured with qCompass.

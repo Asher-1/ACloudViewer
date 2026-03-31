@@ -270,58 +270,58 @@ bool ComputeClusterVolume(int maxThreads,
         CCVector3 localMax = s_VoxFallParams.minBound;
 #pragma omp for schedule(static)
 #endif
-    for (int i = 0; i < clusterCount; i++) {
-        int index = s_VoxFallParams.clusterIndices[i];
+        for (int i = 0; i < clusterCount; i++) {
+            int index = s_VoxFallParams.clusterIndices[i];
 
-        if (error) {
-            continue;
-        }
-
-        std::unordered_set<unsigned int> nbs_next(
-                s_VoxFallParams.nbs[index].begin(),
-                s_VoxFallParams.nbs[index].end());
-        while (!nbs_next.empty()) {
-            unsigned nb = *nbs_next.begin();
-            nbs_next.erase(nbs_next.begin());
-
-            if (s_VoxFallParams.isEmpty[nb]) {
+            if (error) {
                 continue;
             }
-            uint8_t was_visited;
+
+            std::unordered_set<unsigned int> nbs_next(
+                    s_VoxFallParams.nbs[index].begin(),
+                    s_VoxFallParams.nbs[index].end());
+            while (!nbs_next.empty()) {
+                unsigned nb = *nbs_next.begin();
+                nbs_next.erase(nbs_next.begin());
+
+                if (s_VoxFallParams.isEmpty[nb]) {
+                    continue;
+                }
+                uint8_t was_visited;
 #if defined(_OPENMP)
 #pragma omp atomic capture
 #endif
-            {
-                was_visited = s_VoxFallParams.nonEmptyVoxelsVisited[nb];
-                s_VoxFallParams.nonEmptyVoxelsVisited[nb] = 1;
-            }
-            if (!was_visited) {
+                {
+                    was_visited = s_VoxFallParams.nonEmptyVoxelsVisited[nb];
+                    s_VoxFallParams.nonEmptyVoxelsVisited[nb] = 1;
+                }
+                if (!was_visited) {
 #if defined(_OPENMP)
 #pragma omp atomic
 #endif
-                s_VoxFallParams.clusterOutterVoxelCount++;
+                    s_VoxFallParams.clusterOutterVoxelCount++;
 
-                if (s_VoxFallParams.exportLossGain) {
-                    Tuple3i V = qVoxFallTools::Index2Grid(
-                            nb, s_VoxFallParams.steps);
-                    CCVector3 voxel(
-                            static_cast<PointCoordinateType>(
-                                    V.x * s_VoxFallParams.voxelSize +
-                                    s_VoxFallParams.minBound.x),
-                            static_cast<PointCoordinateType>(
-                                    V.y * s_VoxFallParams.voxelSize +
-                                    s_VoxFallParams.minBound.y),
-                            static_cast<PointCoordinateType>(
-                                    V.z * s_VoxFallParams.voxelSize +
-                                    s_VoxFallParams.minBound.z));
+                    if (s_VoxFallParams.exportLossGain) {
+                        Tuple3i V = qVoxFallTools::Index2Grid(
+                                nb, s_VoxFallParams.steps);
+                        CCVector3 voxel(
+                                static_cast<PointCoordinateType>(
+                                        V.x * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.x),
+                                static_cast<PointCoordinateType>(
+                                        V.y * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.y),
+                                static_cast<PointCoordinateType>(
+                                        V.z * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.z));
 
 #if defined(_OPENMP)
-                    if (voxel.x > localMax.x) localMax.x = voxel.x;
-                    if (voxel.y > localMax.y) localMax.y = voxel.y;
-                    if (voxel.z > localMax.z) localMax.z = voxel.z;
-                    if (voxel.x < localMin.x) localMin.x = voxel.x;
-                    if (voxel.y < localMin.y) localMin.y = voxel.y;
-                    if (voxel.z < localMin.z) localMin.z = voxel.z;
+                        if (voxel.x > localMax.x) localMax.x = voxel.x;
+                        if (voxel.y > localMax.y) localMax.y = voxel.y;
+                        if (voxel.z > localMax.z) localMax.z = voxel.z;
+                        if (voxel.x < localMin.x) localMin.x = voxel.x;
+                        if (voxel.y < localMin.y) localMin.y = voxel.y;
+                        if (voxel.z < localMin.z) localMin.z = voxel.z;
 #else
                     if (voxel.x > maxBound.x) maxBound.x = voxel.x;
                     if (voxel.y > maxBound.y) maxBound.y = voxel.y;
@@ -330,18 +330,18 @@ bool ComputeClusterVolume(int maxThreads,
                     if (voxel.y < minBound.y) minBound.y = voxel.y;
                     if (voxel.z < minBound.z) minBound.z = voxel.z;
 #endif
+                    }
+                }
+                if (s_VoxFallParams.exportBlocksAsMeshes) {
+                    s_VoxFallParams.clusters[nb] = s_VoxFallParams.currentLabel;
                 }
             }
-            if (s_VoxFallParams.exportBlocksAsMeshes) {
-                s_VoxFallParams.clusters[nb] = s_VoxFallParams.currentLabel;
+
+            // progress bar
+            if (!s_VoxFallParams.nProgress->oneStep()) {
+                error = true;
             }
         }
-
-        // progress bar
-        if (!s_VoxFallParams.nProgress->oneStep()) {
-            error = true;
-        }
-    }
 #if defined(_OPENMP)
 #pragma omp critical(ComputeClusterVolumeMergeBounds)
         {
@@ -574,8 +574,7 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
     s_VoxFallParams.nProgress = &nProgress;
 
     s_VoxFallParams.volumes.reserve(s_VoxFallParams.clusterLabel);
-    s_VoxFallParams.nonEmptyVoxelsVisited.resize(voxelGrid.innerCellCount(),
-                                                 0);
+    s_VoxFallParams.nonEmptyVoxelsVisited.resize(voxelGrid.innerCellCount(), 0);
     for (int label = 1; label < s_VoxFallParams.clusterLabel; ++label) {
         for (unsigned i = 0;
              i < static_cast<unsigned>(s_VoxFallParams.clusterSF->size());
