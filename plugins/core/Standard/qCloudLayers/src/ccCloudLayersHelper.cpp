@@ -165,7 +165,7 @@ int ccCloudLayersHelper::moveItem(const ccAsprsModel::AsprsItem& from,
                                          : static_cast<ScalarType>(0);
     const ecvColor::Rgba color =
             to != nullptr ? ecvColor::Rgba(ecvColor::FromQColor(to->color),
-                                            to->visible ? ecvColor::MAX : 0)
+                                           to->visible ? ecvColor::MAX : 0)
                           : ecvColor::Rgba(ecvColor::black, ecvColor::MAX);
 
     int affected = 0;
