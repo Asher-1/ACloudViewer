@@ -249,9 +249,7 @@ bool Classifier::classify(const Feature::Source::Set& featureSources,
             if (classIndex != -1) {
                 float nbVotes = result.at<int>(1, classIndex);
                 cvConfidenceSF->setValue(
-                        i,
-                        static_cast<ScalarType>(
-                                nbVotes / numberOfTrees));
+                        i, static_cast<ScalarType>(nbVotes / numberOfTrees));
             } else
                 cvConfidenceSF->setValue(i, NAN_VALUE);
 

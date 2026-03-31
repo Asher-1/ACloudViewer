@@ -49,8 +49,7 @@ ccGeoObject::ccGeoObject(ccHObject* obj, ecvMainAppInterface* app)
 
 void ccGeoObject::assignGID() {
     _gID = static_cast<unsigned int>(std::hash<std::string>{}(
-            QString(getName() + QString::number(getUniqueID()))
-                    .toStdString()));
+            QString(getName() + QString::number(getUniqueID())).toStdString()));
 }
 
 void ccGeoObject::init(bool singleSurface) {

@@ -64,7 +64,7 @@ ccTrace::ccTrace(ccPolyline* obj) : ccPolyline(obj->getAssociatedCloud()) {
 
 void ccTrace::init(ccPointCloud* associatedCloud) {
     ccPolyline::setAssociatedCloud(associatedCloud);
-    m_cloud = associatedCloud;            // store pointer ourselves also
+    m_cloud = associatedCloud;  // store pointer ourselves also
     m_search_r = calculateOptimumSearchRadius();  // estimate the search radius
                                                   // we want to use
 
@@ -977,8 +977,7 @@ ccBBox ccTrace::getOwnBB(bool withGLFeatures) {
     ccBBox box = ccPolyline::getOwnBB(withGLFeatures);
     if (m_cloud && !m_waypoints.empty()) {
         for (int wpIdx : m_waypoints) {
-            if (wpIdx >= 0 &&
-                static_cast<unsigned>(wpIdx) < m_cloud->size()) {
+            if (wpIdx >= 0 && static_cast<unsigned>(wpIdx) < m_cloud->size()) {
                 const CCVector3* P = m_cloud->getPoint(wpIdx);
                 if (box.isValid()) {
                     box.add(*P);
@@ -1176,9 +1175,9 @@ void ccTrace::setAssociatedCloud(GenericIndexedCloudPersist* cloud) {
 }
 
 bool ccTrace::fromFile_MeOnly(QFile& in,
-                               short dataVersion,
-                               int flags,
-                               LoadedIDMap& oldToNewIDMap) {
+                              short dataVersion,
+                              int flags,
+                              LoadedIDMap& oldToNewIDMap) {
     if (!ccPolyline::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap)) {
         return false;
     }

@@ -1384,8 +1384,9 @@ int GetMinCutSegmentation(
 
     auto colored = seg.getColoredCloud();
     if (!colored || colored->empty()) {
-        CVLog::Warning("[GetMinCutSegmentation] getColoredCloud returned "
-                       "empty result");
+        CVLog::Warning(
+                "[GetMinCutSegmentation] getColoredCloud returned "
+                "empty result");
         return -1;
     }
     pcl::copyPointCloud(*colored, *cloud_segmented);

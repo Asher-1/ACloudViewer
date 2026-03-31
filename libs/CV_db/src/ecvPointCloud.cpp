@@ -1703,7 +1703,8 @@ void ccPointCloud::setPointColor(size_t pointIndex, const ecvColor::Rgba& col) {
 
     if (col.a != ecvColor::MAX || !m_pointColorAlphas.empty()) {
         if (m_pointColorAlphas.empty()) {
-            m_pointColorAlphas.resize(m_rgbColors->currentSize(), ecvColor::MAX);
+            m_pointColorAlphas.resize(m_rgbColors->currentSize(),
+                                      ecvColor::MAX);
         }
         m_pointColorAlphas[pointIndex] = col.a;
     }

@@ -24,7 +24,7 @@ ccPointPair::~ccPointPair() {
     };
     for (unsigned i = 0; i < size(); i++) {
         removeActor(baseViewId + "-pt" + QString::number(i),
-                     ENTITY_TYPE::ECV_MESH);
+                    ENTITY_TYPE::ECV_MESH);
     }
     removeActor(baseViewId + "-body", ENTITY_TYPE::ECV_MESH);
     removeActor(baseViewId + "-head", ENTITY_TYPE::ECV_MESH);
@@ -166,8 +166,8 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             // setTranslationEnd = offset along world direction
             markerContext.transformInfo.setTranslationStart(start);
 
-            ccGLMatrix mat = ccGLMatrix::FromToRotation(
-                    CCVector3(0, 0, PC_ONE), dir);
+            ccGLMatrix mat =
+                    ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), dir);
             markerContext.transformInfo.setTransformation(
                     ccGLMatrixd(mat.data()), false, false);
             markerContext.transformInfo.setScale(

@@ -28,8 +28,8 @@
 // LOCAL
 #include "ccCompass.h"
 #include "ccCompassCommands.h"
-#include "ccCompassExport.h"
 #include "ccCompassDlg.h"
+#include "ccCompassExport.h"
 #include "ccCompassInfo.h"
 #include "ccFitPlaneTool.h"
 #include "ccGeoObject.h"
@@ -3159,7 +3159,8 @@ void ccCompass::estimateP21() {
                 p);  // get the region of any associated geo-object this
                      // polyline relates too.
         double w = 1.0;
-        if (sID == ccGeoObject::UPPER_BOUNDARY || sID == ccGeoObject::LOWER_BOUNDARY) {
+        if (sID == ccGeoObject::UPPER_BOUNDARY ||
+            sID == ccGeoObject::LOWER_BOUNDARY) {
             w = 0.5;  // upper/lower boundaries only count for 0.5 as they
                       // should be represented/counted twice.
         }
@@ -4235,8 +4236,7 @@ int ccCompass::writeLineations(ccHObject* object,
     // is object a lineation made by ccCompass?
     int n = 0;
     if ((!thicknesses && ccLineation::isLineation(object)) ||
-        (thicknesses && ccThickness::isThickness(object)))
-    {
+        (thicknesses && ccThickness::isThickness(object))) {
         // Write object as Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge
         *out << name << ",";
         *out << object->getMetaData("Sx").toString() << ","

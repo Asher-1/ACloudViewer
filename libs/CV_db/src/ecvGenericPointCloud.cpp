@@ -360,7 +360,7 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
             double localBestDist = std::numeric_limits<double>::max();
 #pragma omp for schedule(static)
 #endif
-        for (int i = 0; i < static_cast<int>(size()); ++i)
+            for (int i = 0; i < static_cast<int>(size()); ++i)
 #endif
                 {
                     // we shouldn't test points that are actually hidden!
@@ -391,11 +391,11 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                                 localBestIndex = i;
                             }
 #else
-                            if (nearestPointIndex < 0 ||
-                                squareDist < nearestSquareDist) {
-                                nearestSquareDist = squareDist;
-                                nearestPointIndex = i;
-                            }
+                        if (nearestPointIndex < 0 ||
+                            squareDist < nearestSquareDist) {
+                            nearestSquareDist = squareDist;
+                            nearestPointIndex = i;
+                        }
 #endif
                         }
                     }
