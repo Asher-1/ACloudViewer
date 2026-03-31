@@ -2526,8 +2526,8 @@ class TestLevel4_GUIRPC:
 
     def test_level4_methods_list(self):
         methods = _rpc_call("methods.list")
-        assert len(methods) >= 40, (
-            f"Expected >=40 RPC methods, got {len(methods)}")
+        assert len(methods) >= 44, (
+            f"Expected >=44 RPC methods, got {len(methods)}")
         names = {m["method"] for m in methods}
         for expected in ["open", "export", "file.convert", "scene.list",
                          "scene.info", "scene.remove", "scene.setVisible",
@@ -3247,6 +3247,34 @@ class TestLevel4_RPCCloudProcessing:
         result = _rpc_call("view.screenshot", {"filename": path})
         assert result["width"] > 0
         assert Path(path).exists()
+
+    def test_level4_rpc_process_run_cli(self):
+        """process.run_cli is registered (full CLI run not tested here)."""
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.run_cli" in names, "process.run_cli should be in methods list"
+
+    def test_level4_rpc_process_csf_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.csf" in names, "process.csf should be in methods list"
+
+    def test_level4_rpc_process_m3c2_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.m3c2" in names, "process.m3c2 should be in methods list"
+
+    def test_level4_rpc_process_ransac_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.ransac" in names, "process.ransac should be in methods list"
+
+    def test_level4_rpc_method_count_increased(self):
+        methods = _rpc_call("methods.list")
+        previous_minimum = 40
+        assert len(methods) >= previous_minimum + 4, (
+            f"Expected >={previous_minimum + 4} RPC methods "
+            f"({previous_minimum} baseline + 4 new process.*), got {len(methods)}")
 
 
 # ── Level 4e: RPC mesh operations ─────────────────────────────────────────

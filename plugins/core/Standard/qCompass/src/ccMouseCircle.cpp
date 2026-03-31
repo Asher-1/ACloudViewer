@@ -42,13 +42,13 @@ ccMouseCircle::~ccMouseCircle() {
 }
 
 float ccMouseCircle::getRadiusWorld() {
-    if (m_pixelSize <= 0) {
+    if (m_pixelSize == 0) {
         const ecvViewportParameters& params =
                 ecvDisplayTools::GetViewportParameters();
         QWidget* screen = ecvDisplayTools::GetCurrentScreen();
         if (screen) {
-            m_pixelSize =
-                    static_cast<float>(params.computePixelSize(screen->width()));
+            m_pixelSize = static_cast<float>(
+                    std::abs(params.computePixelSize(screen->width())));
         }
     }
     float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
@@ -79,7 +79,8 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
 
     const ecvViewportParameters& params =
             ecvDisplayTools::GetViewportParameters();
-    m_pixelSize = params.computePixelSize(context.glW);
+    m_pixelSize =
+            static_cast<float>(std::abs(params.computePixelSize(context.glW)));
 
     {
         WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,
