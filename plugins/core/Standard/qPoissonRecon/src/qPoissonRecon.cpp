@@ -463,9 +463,9 @@ void qPoissonRecon::doAction() {
         newMesh->showSF(true);
     }
 
-    // copy Global Shift & Scale information
-    newPC->setGlobalShift(pc->getGlobalShift());
-    newPC->setGlobalScale(pc->getGlobalScale());
+    // copy Global Shift & Scale information (matches CloudCompare)
+    newMesh->copyGlobalShiftAndScale(*pc);
+    newPC->copyGlobalShiftAndScale(*pc);
 
     // output mesh
     m_app->addToDB(newMesh);

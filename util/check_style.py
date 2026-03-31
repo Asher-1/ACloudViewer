@@ -717,7 +717,7 @@ def main():
     python_style_config = str(pwd.parent / ".style.yapf")
 
     cpp_ignored_files = [
-        'cpp/open3d/visualization/shader/Shader.h',
+        'libs/cloudViewer/visualization/shader/Shader.h',
         # Third-party libraries in libs/Reconstruction/lib/
         'libs/Reconstruction/lib/PoissonRecon/',
         'libs/Reconstruction/lib/SiftGPU/',

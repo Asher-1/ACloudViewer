@@ -57,6 +57,13 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
 
     PointCoordinateType r =
             static_cast<PointCoordinateType>(m_mouseCircle->getRadiusWorld());
+    if (r <= 0) {
+        m_app->dispToConsole(
+                "[ccFitPlaneTool] Invalid search radius (pixel size may not "
+                "be initialized). Please try moving the mouse first.",
+                ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
+        return;
+    }
     unsigned char level =
             oct->findBestLevelForAGivenNeighbourhoodSizeExtraction(r);
     cloudViewer::DgmOctree::NeighboursSet set;

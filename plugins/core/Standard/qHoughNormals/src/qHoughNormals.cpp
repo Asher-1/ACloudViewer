@@ -141,7 +141,7 @@ void qHoughNormals::doAction() {
             }
 
             cloud->showNormals(true);
-            // cloud->prepareDisplayForRefresh_recursive();
+            cloud->setRedrawFlagRecursive(true);
         }
     } catch (const std::bad_alloc&) {
         CVLog::Error("Not enough memory");
@@ -150,7 +150,6 @@ void qHoughNormals::doAction() {
     // currently selected entities parameters may have changed!
     m_app->updateUI();
     // currently selected entities appearance may have changed!
-    // m_app->refreshAll();
     m_app->refreshSelected();
 }
 

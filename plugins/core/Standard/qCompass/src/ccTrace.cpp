@@ -805,18 +805,26 @@ void ccTrace::buildCurvatureCost(QWidget* parent) {
 }
 
 bool ccTrace::isGradientPrecomputed() {
-    int idx = m_cloud->getScalarFieldIndexByName(
-            "Gradient");  // look for pre-existing gradient SF
-    return idx != -1;     // was something found?
+    if (!m_cloud) {
+        return false;
+    }
+    int idx = m_cloud->getScalarFieldIndexByName("Gradient");
+    return idx != -1;
 }
 bool ccTrace::isCurvaturePrecomputed() {
-    int idx = m_cloud->getScalarFieldIndexByName(
-            "Curvature");  // look for pre-existing gradient SF
-    return idx != -1;      // was something found?
+    if (!m_cloud) {
+        return false;
+    }
+    int idx = m_cloud->getScalarFieldIndexByName("Curvature");
+    return idx != -1;
 }
 
 ccFitPlane* ccTrace::fitPlane(int surface_effect_tolerance,
                               float min_planarity) {
+    if (!m_cloud) {
+        return nullptr;
+    }
+
     // put all "trace" points into the cloud
     finalizePath();
 

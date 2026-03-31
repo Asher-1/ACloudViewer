@@ -20,9 +20,8 @@ DgmOctreeReferenceCloud::DgmOctreeReferenceCloud(
 }
 
 void DgmOctreeReferenceCloud::computeBB() {
-    // empty cloud?!
     unsigned count = size();
-    if (count) {
+    if (count == 0) {
         m_bbMin = m_bbMax = CCVector3(0, 0, 0);
         return;
     }
