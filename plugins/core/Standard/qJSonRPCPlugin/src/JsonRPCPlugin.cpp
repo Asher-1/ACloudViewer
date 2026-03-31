@@ -3565,15 +3565,14 @@ JsonRPCResult JsonRPCPlugin::rpcProcessRunCli(
     QProcess process;
     process.setProgram(binary);
     process.setArguments(argList);
-    process.setEnvironment(
-            QProcess::systemEnvironment() << "QT_QPA_PLATFORM=offscreen");
+    process.setEnvironment(QProcess::systemEnvironment()
+                           << "QT_QPA_PLATFORM=offscreen");
     process.start();
 
     if (!process.waitForFinished(timeoutMs)) {
         process.kill();
-        return JsonRPCResult::error(
-                3, "CLI processing timed out",
-                D("timeout_ms", timeoutMs));
+        return JsonRPCResult::error(3, "CLI processing timed out",
+                                    D("timeout_ms", timeoutMs));
     }
 
     QJsonObject result;
@@ -3585,10 +3584,9 @@ JsonRPCResult JsonRPCPlugin::rpcProcessRunCli(
     result["output_path"] = outputPath;
 
     if (process.exitCode() != 0) {
-        return JsonRPCResult::error(
-                3, "CLI processing failed",
-                D("exit_code", process.exitCode(), "stderr",
-                  result["stderr"].toString()));
+        return JsonRPCResult::error(3, "CLI processing failed",
+                                    D("exit_code", process.exitCode(), "stderr",
+                                      result["stderr"].toString()));
     }
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
@@ -3614,8 +3612,7 @@ JsonRPCResult JsonRPCPlugin::rpcProcessCsf(
     if (params.contains("class_threshold"))
         args << "-CLASS_THRESHOLD"
              << QString::number(params["class_threshold"].toDouble());
-    if (params.value("export_ground", false).toBool())
-        args << "-EXPORT_GROUND";
+    if (params.value("export_ground", false).toBool()) args << "-EXPORT_GROUND";
     if (params.value("export_offground", false).toBool())
         args << "-EXPORT_OFFGROUND";
     QMap<QString, QVariant> p;
@@ -3647,8 +3644,8 @@ JsonRPCResult JsonRPCPlugin::rpcProcessM3c2(
     QProcess process;
     process.setProgram(binary);
     process.setArguments(argList);
-    process.setEnvironment(
-            QProcess::systemEnvironment() << "QT_QPA_PLATFORM=offscreen");
+    process.setEnvironment(QProcess::systemEnvironment()
+                           << "QT_QPA_PLATFORM=offscreen");
     process.start();
     if (!process.waitForFinished(timeoutMs)) {
         process.kill();

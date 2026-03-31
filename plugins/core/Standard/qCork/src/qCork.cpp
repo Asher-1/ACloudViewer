@@ -395,7 +395,8 @@ void qCork::doAction() {
         meshA->setEnabled(false);
         // CloudCompare disables meshB only when it shares the same GL window as
         // meshA; ACloudViewer does not attach ccGLWindow to entities, so we use
-        // the same parent as a practical proxy (typical for two selected meshes).
+        // the same parent as a practical proxy (typical for two selected
+        // meshes).
         if (meshA->getParent() == meshB->getParent()) {
             meshB->setEnabled(false);
         }

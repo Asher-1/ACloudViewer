@@ -1475,15 +1475,13 @@ struct CmdTemplateAlign : public ccCommandLineInterface::Command {
             } else
                 break;
         }
-        size_t targetIdx = (refIdx >= 0)
-                                   ? static_cast<size_t>(refIdx)
-                                   : cmd.clouds().size() - 1;
+        size_t targetIdx = (refIdx >= 0) ? static_cast<size_t>(refIdx)
+                                         : cmd.clouds().size() - 1;
         if (targetIdx >= cmd.clouds().size()) {
             return cmd.error(QObject::tr("Invalid -REF_INDEX"));
         }
         ccPointCloud* targetPc = cmd.clouds()[targetIdx].pc;
-        if (!targetPc)
-            return cmd.error(QObject::tr("Target cloud is null"));
+        if (!targetPc) return cmd.error(QObject::tr("Target cloud is null"));
         cmd.print(QObject::tr("[PCL_TMPL] Target: '%1'")
                           .arg(targetPc->getName()));
         PointCloudT::Ptr targetXyz = cc2smReader(targetPc).getXYZ2();
@@ -1610,8 +1608,7 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
         }
         size_t sceneIdx = cmd.clouds().size() - 1;
         ccPointCloud* scenePc = cmd.clouds()[sceneIdx].pc;
-        if (!scenePc)
-            return cmd.error(QObject::tr("Scene cloud is null"));
+        if (!scenePc) return cmd.error(QObject::tr("Scene cloud is null"));
         PCLCloud::Ptr sceneSm = cc2smReader(scenePc).getAsSM();
         if (!sceneSm)
             return cmd.error(QObject::tr("Cannot convert scene cloud"));
@@ -1623,9 +1620,9 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
             sceneXyz = ds;
         }
         PointCloudNormal::Ptr sceneNormals(new PointCloudNormal);
-        PCLModules::ComputeNormals<PointT, PointNT>(
-                sceneXyz, sceneNormals, 0.f, false, false,
-                static_cast<int>(normalK));
+        PCLModules::ComputeNormals<PointT, PointNT>(sceneXyz, sceneNormals, 0.f,
+                                                    false, false,
+                                                    static_cast<int>(normalK));
         PointCloudT::Ptr sceneKeypoints(new PointCloudT);
         PCLModules::GetUniformSampling<PointT>(sceneXyz, sceneKeypoints,
                                                sceneR);
@@ -1664,12 +1661,10 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
                 std::vector<float> nn_sqr_dists(1);
                 if (!std::isfinite(sceneDescriptors->at(si).descriptor[0]))
                     continue;
-                int found = matchSearch.nearestKSearch(sceneDescriptors->at(si),
-                                                      1, nn_indices,
-                                                      nn_sqr_dists);
+                int found = matchSearch.nearestKSearch(
+                        sceneDescriptors->at(si), 1, nn_indices, nn_sqr_dists);
                 if (found == 1 && nn_sqr_dists[0] < 0.25f) {
-                    pcl::Correspondence c(nn_indices[0],
-                                          static_cast<int>(si),
+                    pcl::Correspondence c(nn_indices[0], static_cast<int>(si),
                                           nn_sqr_dists[0]);
                     corrs->push_back(c);
                 }
@@ -1683,23 +1678,20 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
             if (gcMode) {
                 PCLModules::EstimateGeometricConsistencyGrouping<PointT,
                                                                  PointT>(
-                        modelKeypoints, sceneKeypoints, corrs,
-                        rotoTranslations, clusteredCorrs, gcRes,
-                        static_cast<int>(gcMinCluster));
+                        modelKeypoints, sceneKeypoints, corrs, rotoTranslations,
+                        clusteredCorrs, gcRes, static_cast<int>(gcMinCluster));
             } else {
                 pcl::PointCloud<pcl::ReferenceFrame>::Ptr modelRF(
                         new pcl::PointCloud<pcl::ReferenceFrame>);
                 pcl::PointCloud<pcl::ReferenceFrame>::Ptr sceneRF(
                         new pcl::PointCloud<pcl::ReferenceFrame>);
                 PCLModules::EstimateLocalReferenceFrame<PointT, PointNT>(
-                        modelXyz, modelKeypoints, modelNormals, modelRF,
-                        lrfR);
+                        modelXyz, modelKeypoints, modelNormals, modelRF, lrfR);
                 PCLModules::EstimateLocalReferenceFrame<PointT, PointNT>(
-                        sceneXyz, sceneKeypoints, sceneNormals, sceneRF,
-                        lrfR);
+                        sceneXyz, sceneKeypoints, sceneNormals, sceneRF, lrfR);
                 PCLModules::EstimateHough3DGrouping<PointT, PointT>(
-                        modelKeypoints, sceneKeypoints, modelRF, sceneRF,
-                        corrs, rotoTranslations, clusteredCorrs, houghBin,
+                        modelKeypoints, sceneKeypoints, modelRF, sceneRF, corrs,
+                        rotoTranslations, clusteredCorrs, houghBin,
                         houghThresh);
             }
             cmd.print(QObject::tr("[PCL_CORR] %1 instances found")
@@ -1707,7 +1699,7 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
             for (size_t ii = 0; ii < rotoTranslations.size(); ++ii) {
                 PointCloudT::Ptr transformed(new PointCloudT);
                 pcl::transformPointCloud(*modelXyz, *transformed,
-                                        rotoTranslations[ii]);
+                                         rotoTranslations[ii]);
                 PCLCloud out_sm;
                 TO_PCL_CLOUD(*transformed, out_sm);
                 ccPointCloud* r = pcl2cc::Convert(out_sm);
@@ -1719,8 +1711,7 @@ struct CmdCorrMatch : public ccCommandLineInterface::Command {
                 r->setGlobalShift(modelPc->getGlobalShift());
                 cmd.clouds().push_back(CLCloudDesc(
                         r,
-                        cmd.clouds()[mi].basename +
-                                QString("_inst%1").arg(ii),
+                        cmd.clouds()[mi].basename + QString("_inst%1").arg(ii),
                         cmd.clouds()[mi].path));
             }
         }
