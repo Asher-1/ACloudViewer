@@ -618,9 +618,10 @@ CC_FILE_ERROR FBXFilter::saveToFile(ccHObject* entity,
                                         pSdkManager->GetIOPluginRegistry()
                                                 ->GetWriterFormatDescription(
                                                         lFormatIndex);
-                                CVLog::Print(QString("[FBX] Auto-selected output "
-                                                     "format: %1")
-                                                     .arg(lDesc.Buffer()));
+                                CVLog::Print(
+                                        QString("[FBX] Auto-selected output "
+                                                "format: %1")
+                                                .arg(lDesc.Buffer()));
                                 break;
                             }
                         }
