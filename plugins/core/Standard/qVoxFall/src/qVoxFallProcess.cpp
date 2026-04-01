@@ -10,6 +10,9 @@
 // system
 #include <atomic>
 #include <unordered_set>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 // local
 #include "qVoxFallDialog.h"
@@ -288,16 +291,19 @@ bool ComputeClusterVolume(int maxThreads,
                     continue;
                 }
                 uint8_t was_visited;
-                {
-                    uint8_t* ptr = &s_VoxFallParams.nonEmptyVoxelsVisited[nb];
-#if defined(_OPENMP)
-#pragma omp atomic capture
+#if defined(_OPENMP) && defined(_MSC_VER)
+                was_visited = static_cast<uint8_t>(
+                    _InterlockedCompareExchange8(
+                        reinterpret_cast<volatile char*>(
+                            &s_VoxFallParams.nonEmptyVoxelsVisited[nb]),
+                        1, 0));
+#elif defined(_OPENMP)
+                was_visited = __sync_val_compare_and_swap(
+                    &s_VoxFallParams.nonEmptyVoxelsVisited[nb], 0, 1);
+#else
+                was_visited = s_VoxFallParams.nonEmptyVoxelsVisited[nb];
+                s_VoxFallParams.nonEmptyVoxelsVisited[nb] = 1;
 #endif
-                    {
-                        was_visited = *ptr;
-                        *ptr = 1;
-                    }
-                }
                 if (!was_visited) {
 #if defined(_OPENMP)
 #pragma omp atomic
