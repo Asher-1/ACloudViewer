@@ -111,7 +111,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         }
     }
 
-    std::vector<bool> is_keypoint(points.size(), false);
+    std::vector<uint8_t> is_keypoint(points.size(), 0);
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
@@ -122,7 +122,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-                is_keypoint[i] = true;
+                is_keypoint[i] = 1;
             }
         }
     }

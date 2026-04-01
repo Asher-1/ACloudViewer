@@ -10,7 +10,7 @@ Compass is a structural geology toolbox for the interpretation and analysis of v
 
 ### Compass mode: Extracting structural measurements
 
-The compass mode, activated by clicking the "compass" icon in the main dialog, contains three tools for measuring orientations: the **Plane Tool**, **Trace Tool** and **Lineation Tool**. A self-explanatory **Picking Tool** is also included for convenience.
+The compass mode, activated by clicking the ![](images/icon.png) icon in the main dialog, contains three tools for measuring orientations: the **Plane Tool**, **Trace Tool** and **Lineation Tool**. A self-explanatory **Picking Tool** is also included for convenience.
 
 #### Plane tool: Measure surface orientations
 
@@ -47,7 +47,7 @@ This tool measures the **trend** and **plunge** of a (straight) line between two
 
 ### Map mode
 
-Map Mode provides functionality for storing and organising interpretations in larger projects, where many different geological features need to be recorded. On entering Map Mode (map icon), a second dialog contains functionality for creating and managing **GeoObjects**. GeoObjects are a data structure for organising and describing geological features in a flexible way, and are comprised of an **Interior**, **Upper Boundary** and **Lower Boundary**. Hence, measurements from a dyke for example, can be assigned such that they are representative of either contact (somewhat arbitrarily called upper and lower) or the interior. The GeoObject dialog contains functionality for creating GeoObjects and defining their active part (upper, lower or interior), to which any new measurements get assigned.
+Map Mode provides functionality for storing and organising interpretations in larger projects, where many different geological features need to be recorded. On entering Map Mode (![](images/mapIcon.png)), a second dialog contains functionality for creating and managing **GeoObjects**. GeoObjects are a data structure for organising and describing geological features in a flexible way, and are comprised of an **Interior**, **Upper Boundary** and **Lower Boundary**. Hence, measurements from a dyke for example, can be assigned such that they are representative of either contact (somewhat arbitrarily called upper and lower) or the interior. The GeoObject dialog contains functionality for creating GeoObjects and defining their active part (upper, lower or interior), to which any new measurements get assigned.
 
 When Map Mode is active, the Compass functionality described above remains with a few subtle differences. New measurements are stored in the active GeoObject rather than in a Measurements folder. Furthermore, traces defined using the Trace tool are also kept visible in this mode (rather than converted to planes), so the Trace tool can be used to digitise contacts.
 
