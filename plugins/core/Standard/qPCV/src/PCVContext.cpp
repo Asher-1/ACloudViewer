@@ -224,7 +224,8 @@ bool PCVContext::init(unsigned W,
         return false;
     }
 
-    m_pixBuffer->allocate(static_cast<int>(static_cast<size_t>(W) * H * sizeof(float)));
+    m_pixBuffer->allocate(
+            static_cast<int>(static_cast<size_t>(W) * H * sizeof(float)));
     m_pixBuffer->release();
 
     return true;
@@ -319,7 +320,8 @@ void PCVContext::drawEntity() {
     }
 }
 
-//! Renders the entity from \a viewDir into the offscreen buffer and increments per-vertex visibility using depth/occlusion tests.
+//! Renders the entity from \a viewDir into the offscreen buffer and increments
+//! per-vertex visibility using depth/occlusion tests.
 int PCVContext::glAccumPixel(std::vector<int>& visibilityCount,
                              const CCVector3d& viewDir) {
     if (!m_pixBuffer || !m_pixBuffer->isCreated()) return -1;
@@ -413,7 +415,8 @@ int PCVContext::glAccumPixel(std::vector<int>& visibilityCount,
                                 viewPort[3], GL_DEPTH_COMPONENT, GL_FLOAT,
                                 nullptr);
         m_pixBuffer->read(0, m_snapZ.data(),
-                          static_cast<int>(static_cast<size_t>(m_width) * m_height * sizeof(float)));
+                          static_cast<int>(static_cast<size_t>(m_width) *
+                                           m_height * sizeof(float)));
         m_pixBuffer->release();
     }
 

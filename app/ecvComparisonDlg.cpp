@@ -22,11 +22,11 @@
 #include <CVLog.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericMesh.h>
-#include <ecvRedrawScope.h>
 #include <ecvHObject.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 // Local
 #include "MainWindow.h"

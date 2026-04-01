@@ -135,10 +135,9 @@ unsigned ccPointListPickingDlg::getPickedPoints(
 
 void ccPointListPickingDlg::linkWithEntity(ccHObject* entity) {
     if (!entity && m_associatedEntity) {
-        ccDBRoot* dbRoot =
-                MainWindow::TheInstance()
-                        ? MainWindow::TheInstance()->db()
-                        : nullptr;
+        ccDBRoot* dbRoot = MainWindow::TheInstance()
+                                   ? MainWindow::TheInstance()->db()
+                                   : nullptr;
         if (dbRoot) {
             std::vector<removeInfo> rmInfos;
             if (m_orderedLabelsContainer) {
@@ -153,8 +152,8 @@ void ccPointListPickingDlg::linkWithEntity(ccHObject* entity) {
                     m_toBeDeleted[j]->setEnabled(true);
                 }
                 if (m_orderedLabelsContainer->getChildrenNumber() == 0) {
-                    m_orderedLabelsContainer->getTypeID_recursive(
-                            rmInfos, true);
+                    m_orderedLabelsContainer->getTypeID_recursive(rmInfos,
+                                                                  true);
                     dbRoot->removeElement(m_orderedLabelsContainer);
                 }
             }
@@ -176,7 +175,7 @@ void ccPointListPickingDlg::linkWithEntity(ccHObject* entity) {
         m_orderedLabelsContainer = nullptr;
         ccHObject::Container groups;
         m_associatedEntity->filterChildren(groups, true,
-                                          CV_TYPES::HIERARCHY_OBJECT);
+                                           CV_TYPES::HIERARCHY_OBJECT);
 
         for (ccHObject::Container::const_iterator it = groups.begin();
              it != groups.end(); ++it) {
@@ -196,7 +195,8 @@ void ccPointListPickingDlg::linkWithEntity(ccHObject* entity) {
     }
 
     ccShiftedObject* shifted = ccHObjectCaster::ToShifted(entity);
-    showGlobalCoordsCheckBox->setEnabled(shifted ? shifted->isShifted() : false);
+    showGlobalCoordsCheckBox->setEnabled(shifted ? shifted->isShifted()
+                                                 : false);
     updateList();
 }
 
@@ -534,12 +534,11 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
                 static_cast<ccGenericPointCloud*>(picked.entity),
                 picked.itemIndex, picked.entityCenter);
     } else if (picked.entity->isKindOf(CV_TYPES::MESH)) {
-        ccGenericMesh* mesh =
-                ccHObjectCaster::ToGenericMesh(picked.entity);
+        ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(picked.entity);
         if (mesh && picked.itemIndex < mesh->size()) {
             CCVector2d uv(picked.uvw.x, picked.uvw.y);
-            addOk = newLabel->addPickedPoint(mesh, picked.itemIndex,
-                                             uv, picked.entityCenter);
+            addOk = newLabel->addPickedPoint(mesh, picked.itemIndex, uv,
+                                             picked.entityCenter);
         }
     }
     if (!addOk) {

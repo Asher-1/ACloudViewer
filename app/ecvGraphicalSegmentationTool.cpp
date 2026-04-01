@@ -21,12 +21,12 @@
 #include <CVLog.h>
 #include <ecv2DViewportObject.h>
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 
 // for the helper (apply)
 #include <ecv2DLabel.h>

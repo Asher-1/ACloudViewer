@@ -243,12 +243,11 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
                 ccHObjectCaster::ToGenericPointCloud(picked.entity),
                 picked.itemIndex, picked.entityCenter);
     } else if (picked.entity->isKindOf(CV_TYPES::MESH)) {
-        ccGenericMesh* mesh =
-                ccHObjectCaster::ToGenericMesh(picked.entity);
+        ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(picked.entity);
         if (mesh && picked.itemIndex < mesh->size()) {
             CCVector2d uv(picked.uvw.x, picked.uvw.y);
-            addOk = m_label->addPickedPoint(mesh, picked.itemIndex,
-                                            uv, picked.entityCenter);
+            addOk = m_label->addPickedPoint(mesh, picked.itemIndex, uv,
+                                            picked.entityCenter);
         }
     }
     if (!addOk) {
@@ -260,11 +259,10 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
             m_label->size() ==
             3);  // we need to display 'A', 'B' and 'C' for 3-points labels
     if (m_label->size() == 1 && ecvDisplayTools::GetCurrentScreen()) {
-        m_label->setPosition(
-                static_cast<float>(picked.clickPoint.x() + 20) /
-                        ecvDisplayTools::GlWidth(),
-                static_cast<float>(picked.clickPoint.y() + 20) /
-                        ecvDisplayTools::GlWidth());
+        m_label->setPosition(static_cast<float>(picked.clickPoint.x() + 20) /
+                                     ecvDisplayTools::GlWidth(),
+                             static_cast<float>(picked.clickPoint.y() + 20) /
+                                     ecvDisplayTools::GlWidth());
     }
 
     // output info to Console

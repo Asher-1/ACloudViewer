@@ -19,11 +19,11 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvHObject.h>
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <QApplication>

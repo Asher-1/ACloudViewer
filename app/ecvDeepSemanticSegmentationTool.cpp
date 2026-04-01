@@ -16,8 +16,8 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
-#include <ecvRedrawScope.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <qtconcurrentrun.h>

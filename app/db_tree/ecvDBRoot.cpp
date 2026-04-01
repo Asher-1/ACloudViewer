@@ -815,8 +815,7 @@ static void hideShowEntityRecursive(ccHObject* obj, bool visible) {
     }
 }
 
-static void propagateHierarchyState(ccHObject* parent,
-                                    bool ancestorActive) {
+static void propagateHierarchyState(ccHObject* parent, bool ancestorActive) {
     for (unsigned i = 0; i < parent->getChildrenNumber(); ++i) {
         ccHObject* child = parent->getChild(i);
         bool childActive =
@@ -879,8 +878,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
 
                 if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
                     propagateHierarchyState(
-                            item,
-                            item->isEnabled() && item->isVisible());
+                            item, item->isEnabled() && item->isVisible());
                 }
 
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
@@ -945,7 +943,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     } else {
                         facet->hideBB(context);
                     }
-                    for (unsigned ci = 0; ci < facet->getChildrenNumber(); ++ci) {
+                    for (unsigned ci = 0; ci < facet->getChildrenNumber();
+                         ++ci) {
                         hideShowEntityRecursive(facet->getChild(ci), vis);
                     }
                     ecvDisplayTools::UpdateScreen();
@@ -957,8 +956,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         context.visible = prim->isEnabled();
                         prim->hideShowDrawings(context);
                         if (item->isKindOf(CV_TYPES::PLANE)) {
-                            ccPlane* plane =
-                                    static_cast<ccPlane*>(item);
+                            ccPlane* plane = static_cast<ccPlane*>(item);
                             if (context.visible)
                                 plane->showNormalArrowActors(context);
                             else
@@ -2130,16 +2128,14 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->setEnabled(!item->isEnabled());
                 if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
                     propagateHierarchyState(
-                            item,
-                            item->isEnabled() && item->isVisible());
+                            item, item->isEnabled() && item->isVisible());
                 }
                 break;
             case TG_VISIBLE:  // visibility
                 item->toggleVisibility();
                 if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
                     propagateHierarchyState(
-                            item,
-                            item->isEnabled() && item->isVisible());
+                            item, item->isEnabled() && item->isVisible());
                 }
                 item->setForceRedrawRecursive(true);
                 break;

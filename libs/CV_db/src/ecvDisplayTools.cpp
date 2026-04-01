@@ -21,15 +21,15 @@
 #include "ecvCameraSensor.h"
 #include "ecvClipBox.h"
 #include "ecvDisplayTools.h"
-#include "ecvRedrawScope.h"
+#include "ecvGenericMesh.h"
 #include "ecvGenericVisualizer.h"
 #include "ecvGenericVisualizer2D.h"
 #include "ecvGenericVisualizer3D.h"
-#include "ecvGenericMesh.h"
 #include "ecvHObjectCaster.h"
 #include "ecvInteractor.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
+#include "ecvRedrawScope.h"
 #include "ecvRenderingTools.h"
 #include "ecvSingleton.h"
 #include "ecvSphere.h"
@@ -835,8 +835,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
                 ent = pickedEntity;
             } else if (pickedEntity->isKindOf(CV_TYPES::MESH) &&
                        !pickedEntity->isA(CV_TYPES::MESH_GROUP)) {
-                pickedMesh =
-                        ccHObjectCaster::ToGenericMesh(pickedEntity);
+                pickedMesh = ccHObjectCaster::ToGenericMesh(pickedEntity);
                 ent = pickedMesh->getAssociatedCloud();
                 isMesh = true;
             } else {
@@ -850,33 +849,27 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
             if (isMesh && pickedMesh) {
                 unsigned triCount = pickedMesh->size();
                 int triIdx = pickedIndex / 3;
-                if (triIdx >= 0 &&
-                    static_cast<unsigned>(triIdx) < triCount) {
+                if (triIdx >= 0 && static_cast<unsigned>(triIdx) < triCount) {
                     nearestElementIndex = triIdx;
-                    nearestPoint =
-                            s_tools.instance->m_last_picked_point;
+                    nearestPoint = s_tools.instance->m_last_picked_point;
                 } else {
                     nearestElementIndex = -1;
                 }
             } else {
                 nearestElementIndex = pickedIndex;
                 if (pickedIndex >= pNum) {
-                    nearestPoint =
-                            s_tools.instance->m_last_picked_point;
-                    CVLog::Warning(
-                            QString("[ecvDisplayTools::"
-                                    "StartCPUBasedPointPicking] "
-                                    "Picking Error, %1 is more than "
-                                    "picked entity size %2")
-                                    .arg(pickedIndex)
-                                    .arg(tempEntity->size()));
+                    nearestPoint = s_tools.instance->m_last_picked_point;
+                    CVLog::Warning(QString("[ecvDisplayTools::"
+                                           "StartCPUBasedPointPicking] "
+                                           "Picking Error, %1 is more than "
+                                           "picked entity size %2")
+                                           .arg(pickedIndex)
+                                           .arg(tempEntity->size()));
                     nearestElementIndex = pNum - 1;
                 } else {
-                    nearestPoint =
-                            *(tempEntity->getPoint(pickedIndex));
-                    CCVector3 temp =
-                            nearestPoint -
-                            s_tools.instance->m_last_picked_point;
+                    nearestPoint = *(tempEntity->getPoint(pickedIndex));
+                    CCVector3 temp = nearestPoint -
+                                     s_tools.instance->m_last_picked_point;
                     if (temp.norm() > 1) {
                         ProcessPickingResult(params, nullptr, -1);
                         return;

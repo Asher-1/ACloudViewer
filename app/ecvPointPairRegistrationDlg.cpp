@@ -21,10 +21,10 @@
 // CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvSphere.h>
 
 // CV_IO_LIB
@@ -1337,9 +1337,7 @@ void ccPointPairRegistrationDlg::align() {
 
     // reset title
     resetTitle();
-    {
-        ecvRedrawScope scope(true, false);
-    }
+    { ecvRedrawScope scope(true, false); }
 
     if (callHornRegistration(trans, rms, true)) {
         if (rms >= 0) {
@@ -1372,8 +1370,8 @@ void ccPointPairRegistrationDlg::align() {
 
         if (ecvDisplayTools::GetCurrentScreen()) {
             ecvRedrawScope scope;
-            for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
-                 ++it) {
+            for (auto it = m_alignedEntities.begin();
+                 it != m_alignedEntities.end(); ++it) {
                 scope.markDirty(it.key());
             }
             for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
@@ -1384,8 +1382,8 @@ void ccPointPairRegistrationDlg::align() {
             }
             // force clouds visibility
             {
-                // we don't want the window zoom to change or the window to be be
-                // redrawn
+                // we don't want the window zoom to change or the window to be
+                // be redrawn
                 if (!showAlignedCheckBox->isChecked())
                     showAlignedCheckBox->setChecked(true);
                 if (!showReferenceCheckBox->isChecked())
