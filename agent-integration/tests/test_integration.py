@@ -4226,39 +4226,6 @@ class TestLevel4_PluginRPC:
     def test_level4_rpc_ping(self):
         assert self._rpc_call("ping") == "pong"
 
-    def test_level4_rpc_process_pcv_in_methods(self):
-        methods = self._rpc_call("methods.list")
-        names = [m["method"] for m in methods]
-        assert "process.pcv" in names, "process.pcv should be in methods list"
-
-    def test_level4_rpc_process_pcv(self, sample_ply):
-        r = self._rpc_call("open", {"filename": str(sample_ply), "silent": True})
-        children = r.get("children", [])
-        cloud_id = None
-        for c in children:
-            if c.get("type") == "POINT_CLOUD":
-                cloud_id = c["id"]
-                break
-        assert cloud_id is not None, "Expected a POINT_CLOUD child"
-
-        result = self._rpc_call("process.pcv", {
-            "entity_id": cloud_id,
-            "ray_count": 64,
-            "resolution": 256,
-            "mode_360": True,
-        })
-        assert "entity_id" in result
-        assert result["entity_id"] == cloud_id
-        assert result["ray_count"] == 64
-        assert result["resolution"] == 256
-
-        sfs = self._rpc_call("cloud.getScalarFields", {"entity_id": cloud_id})
-        sf_names = [s["name"] for s in sfs]
-        assert "Illuminance (PCV)" in sf_names
-
-        self._rpc_call("scene.remove", {"entity_id": cloud_id})
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # Level 5: MCP Plugin Tool Tests
 # ═══════════════════════════════════════════════════════════════════════════

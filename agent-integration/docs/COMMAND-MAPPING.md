@@ -15,7 +15,6 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `batch-convert` | `batch_convert` | — **(H)** |
 | `process` (subsample, normals, crop, SOR, density, …) | `subsample`, `compute_normals`, `crop`, `sor_filter`, `density`, … | `cloud.subsample`, `cloud.computeNormals`, … **(G)** when routed via RPC; `process crop` is **(H)** |
 | `process delaunay` | `delaunay` | — **(H)** |
-| `process pcv` | `pcv` | `process.pcv` **(B)** |
 | `process compass-export` | `compass_export` | — **(H)** |
 | `process compass-refit` | — | — **(H)** |
 | `process compass-p21` | — | — **(H)** |

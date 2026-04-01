@@ -319,11 +319,6 @@ for the live catalog.
 | `mesh.volume` | `{entity_id}` | Compute enclosed volume |
 | `mesh.merge` | `{entity_ids}` | Group multiple meshes |
 
-### Plugin Processing
-| Method | Parameters | Description |
-|--------|-----------|-------------|
-| `process.pcv` | `{entity_id, ?ray_count, ?resolution, ?mode_360, ?mesh_closed}` | Ambient occlusion (PCV/ShadeVis) |
-
 ### Reconstruction
 | Method | Parameters | Description |
 |--------|-----------|-------------|

@@ -810,6 +810,14 @@ if (WITH_OPENMP)
             list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_openmp)
+        
+        # On MSVC, use LLVM-based OpenMP to support modern OpenMP features like atomic write
+        if (MSVC)
+            # Add -openmp:llvm flag to use LLVM OpenMP runtime instead of default MSVC OpenMP
+            # This is required for features like '#pragma omp atomic write'
+            target_compile_options(3rdparty_openmp INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/openmp:llvm>)
+            message(STATUS "Using LLVM-based OpenMP on MSVC")
+        endif()
     else()
         set(WITH_OPENMP OFF)
     endif ()
