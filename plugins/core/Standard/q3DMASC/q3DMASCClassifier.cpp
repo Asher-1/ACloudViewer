@@ -276,9 +276,7 @@ bool Classifier::classify(const Feature::Source::Set& featureSources,
     }
 
     if (parentWidget) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        cloud->setRedrawFlagRecursive(true);
-        ecvDisplayTools::RedrawDisplay(false, true);
+        ecvDisplayTools::RedrawObject(cloud, false, true);
         QCoreApplication::processEvents();
     }
 
@@ -498,9 +496,7 @@ bool Classifier::evaluate(const Feature::Source::Set& featureSources,
     }
 
     if (parentWidget) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        testCloud->setRedraw(true);
-        ecvDisplayTools::RedrawDisplay(false, true);
+        ecvDisplayTools::RedrawObject(testCloud, false, true);
         QCoreApplication::processEvents();
     }
 

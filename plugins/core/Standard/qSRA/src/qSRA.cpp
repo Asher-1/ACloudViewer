@@ -401,9 +401,7 @@ bool qSRA::doComputeRadialDists(ccPointCloud* cloud,
         // cloud->prepareDisplayForRefresh();
         if (m_app) {
             m_app->updateUI();
-            ecvDisplayTools::SetRedrawRecursive(false);
-            cloud->setRedraw(true);
-            m_app->refreshAll();
+            ecvDisplayTools::RedrawObject(cloud);
         }
         return true;
     } else {

@@ -21,6 +21,7 @@
 // CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvDisplayTools.h>
+#include <ecvRedrawScope.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
@@ -142,8 +143,7 @@ void ccPointPairRegistrationDlg::EntityContext::restore() {
     entity->setEnabled(wasEnabled);
     entity->setSelected(wasSelected);
     if (ecvDisplayTools::GetMainScreen()) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        ecvDisplayTools::RedrawDisplay(false, false);
+        ecvRedrawScope scope(false, false);
     }
 }
 
@@ -407,12 +407,15 @@ bool ccPointPairRegistrationDlg::init(
                     .arg(MIN_PAIRS_COUNT),
             ecvDisplayTools::LOWER_LEFT_MESSAGE, true, 3600);
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    if (hasOriginViewportParams) {
-        ecvDisplayTools::SetViewportParameters(originViewportParams);
-        ecvDisplayTools::RedrawDisplay(true);
-    } else {
-        ecvDisplayTools::ZoomGlobal();
+    {
+        ecvRedrawScope scope;
+        scope.dismiss();
+        if (hasOriginViewportParams) {
+            ecvDisplayTools::SetViewportParameters(originViewportParams);
+            ecvDisplayTools::RedrawDisplay(true);
+        } else {
+            ecvDisplayTools::ZoomGlobal();
+        }
     }
 
     onPointCountChanged();
@@ -1153,12 +1156,14 @@ void ccPointPairRegistrationDlg::showAlignedEntities(bool state) {
         }
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-
-    if (autoZoomCheckBox->isChecked()) {
-        ecvDisplayTools::ZoomGlobal();
-    } else {
-        ecvDisplayTools::RedrawDisplay();
+    {
+        ecvRedrawScope scope;
+        scope.dismiss();
+        if (autoZoomCheckBox->isChecked()) {
+            ecvDisplayTools::ZoomGlobal();
+        } else {
+            ecvDisplayTools::RedrawDisplay();
+        }
     }
 }
 
@@ -1181,12 +1186,14 @@ void ccPointPairRegistrationDlg::showReferenceEntities(bool state) {
         }
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-
-    if (autoZoomCheckBox->isChecked()) {
-        ecvDisplayTools::ZoomGlobal();
-    } else {
-        ecvDisplayTools::RedrawDisplay();
+    {
+        ecvRedrawScope scope;
+        scope.dismiss();
+        if (autoZoomCheckBox->isChecked()) {
+            ecvDisplayTools::ZoomGlobal();
+        } else {
+            ecvDisplayTools::RedrawDisplay();
+        }
     }
 }
 
@@ -1320,8 +1327,7 @@ void ccPointPairRegistrationDlg::updateAlignInfo() {
     }
 
     if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        ecvDisplayTools::RedrawDisplay(true);
+        ecvRedrawScope scope(true);
     }
 }
 
@@ -1331,8 +1337,9 @@ void ccPointPairRegistrationDlg::align() {
 
     // reset title
     resetTitle();
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    {
+        ecvRedrawScope scope(true, false);
+    }
 
     if (callHornRegistration(trans, rms, true)) {
         if (rms >= 0) {
@@ -1363,36 +1370,44 @@ void ccPointPairRegistrationDlg::align() {
         m_transMatHistory = transMat;
         transformAlignedEntity(transMat, true);
 
-        ecvDisplayTools::SetRedrawRecursive(false);
-        for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
-             ++it)
-            it.key()->setRedrawFlagRecursive(true);
-
-        // update aligned sphere markers
-        for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
-            ccHObject* child = m_alignedLabels.getChild(i);
-            if (child && !child->isKindOf(CV_TYPES::LABEL_2D)) {
-                child->setRedrawFlagRecursive(true);
-            }
-        }
-
-        // force clouds visibility
-        {
-            // we don't want the window zoom to change or the window to be be
-            // redrawn
-            if (!showAlignedCheckBox->isChecked())
-                showAlignedCheckBox->setChecked(true);
-            if (!showReferenceCheckBox->isChecked())
-                showReferenceCheckBox->setChecked(true);
-            // restore window ref
-        }
-
-        if (autoZoomCheckBox->isChecked()) {
-            zoomGlobalOnRegistrationEntities();
-        }
-
         if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::RedrawDisplay();
+            ecvRedrawScope scope;
+            for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
+                 ++it) {
+                scope.markDirty(it.key());
+            }
+            for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
+                ccHObject* child = m_alignedLabels.getChild(i);
+                if (child && !child->isKindOf(CV_TYPES::LABEL_2D)) {
+                    scope.markDirty(child);
+                }
+            }
+            // force clouds visibility
+            {
+                // we don't want the window zoom to change or the window to be be
+                // redrawn
+                if (!showAlignedCheckBox->isChecked())
+                    showAlignedCheckBox->setChecked(true);
+                if (!showReferenceCheckBox->isChecked())
+                    showReferenceCheckBox->setChecked(true);
+                // restore window ref
+            }
+
+            if (autoZoomCheckBox->isChecked()) {
+                zoomGlobalOnRegistrationEntities();
+            }
+        } else {
+            // force clouds visibility
+            {
+                if (!showAlignedCheckBox->isChecked())
+                    showAlignedCheckBox->setChecked(true);
+                if (!showReferenceCheckBox->isChecked())
+                    showReferenceCheckBox->setChecked(true);
+            }
+
+            if (autoZoomCheckBox->isChecked()) {
+                zoomGlobalOnRegistrationEntities();
+            }
         }
 
         updateAllMarkers(1.0f / static_cast<float>(trans.s));
@@ -1469,16 +1484,15 @@ void ccPointPairRegistrationDlg::reset() {
     }
 
     if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::SetRedrawRecursive(false);
+        ecvRedrawScope scope;
         for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
              ++it) {
-            it.key()->setRedrawFlagRecursive(true);
+            scope.markDirty(it.key());
         }
 
         if (autoZoomCheckBox->isChecked()) {
             zoomGlobalOnRegistrationEntities();
         }
-        ecvDisplayTools::RedrawDisplay();
     }
 
     updateAllMarkers(1.0);
@@ -1635,11 +1649,12 @@ void ccPointPairRegistrationDlg::cancel() {
         it.key()->enableGLTransformation(false);
 
     transformAlignedEntity(m_transMatHistory.inverse(), true);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
-         ++it)
-        it.key()->setRedrawFlagRecursive(true);
-
-    ecvDisplayTools::RedrawDisplay();
+    {
+        ecvRedrawScope scope;
+        for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
+             ++it) {
+            scope.markDirty(it.key());
+        }
+    }
     stop(false);
 }

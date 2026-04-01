@@ -10,6 +10,8 @@
 // app
 #include <ecvPickingHub.h>
 
+#include <ecvRedrawScope.h>
+
 // Qt
 #include <QtCompat.h>
 
@@ -102,9 +104,7 @@ void ccMPlaneDlgController::onFittingPointDelete(int index) {
 void ccMPlaneDlgController::onNormalCheckBoxClicked(bool checked) {
     m_showNormal = checked;
     m_data->getPlane()->showNormalVector(checked);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    m_data->getPlane()->setRedrawFlagRecursive(true);
-    m_data->getPlane()->redrawDisplay();
+    ecvDisplayTools::RedrawObject(m_data->getPlane());
 
     // m_selectedCloud->prepareDisplayForRefresh();
     // m_selectedCloud->refreshDisplay();

@@ -205,7 +205,6 @@ void qPCV::doAction() {
     pcvProgressCb.close();
 
     m_app->updateUI();
-    m_app->refreshAll();
 }
 
 void qPCV::registerCommands(ccCommandLineInterface* cmd) {

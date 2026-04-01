@@ -48,6 +48,7 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
+#include <ecvRedrawScope.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
@@ -588,8 +589,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
         float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
         ecvDisplayTools::SetPointSize(
                 m_tools->m_viewportParams.defaultPointSize + sizeModifier);
-        ecvDisplayTools::SetRedrawRecursive(false);
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope redrawScope; }
         doRedraw = true;
     } else if (keyboardModifiers & Qt::ControlModifier) {
         event->accept();
@@ -605,8 +605,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
                 double newCoef = ecvViewportParameters::IncrementToZNearCoef(
                         newIncrement, MAX_INCREMENT + 1);
                 ecvDisplayTools::SetZNearCoef(newCoef);
-                ecvDisplayTools::SetRedrawRecursive(false);
-                ecvDisplayTools::RedrawDisplay();
+                { ecvRedrawScope redrawScope; }
                 doRedraw = true;
             }
         }
@@ -619,8 +618,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
             newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
             if (newFOV != m_tools->m_viewportParams.fov_deg) {
                 ecvDisplayTools::SetFov(newFOV);
-                ecvDisplayTools::SetRedrawRecursive(false);
-                ecvDisplayTools::RedrawDisplay();
+                { ecvRedrawScope redrawScope; }
                 doRedraw = true;
             }
         }

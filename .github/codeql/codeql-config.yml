@@ -1,0 +1,12 @@
+# CodeQL configuration: exclude vendored third-party libraries from analysis.
+# For C/C++ manual builds, paths-ignore alone is insufficient -- the workflow
+# also uses advanced-security/filter-sarif to post-filter SARIF results.
+
+paths-ignore:
+  - '3rdparty'
+  - '3rdparty_downloads'
+  - '**/extern'
+  - '**/external'
+  - '**/3rdparty'
+  - '**/third_party'
+  - '**/thirdparty'

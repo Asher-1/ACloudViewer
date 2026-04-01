@@ -101,6 +101,53 @@ void ccTrace::removeMarkerActors() {
     removeList(m_tracePointViewIds, ENTITY_TYPE::ECV_MESH);
 }
 
+void ccTrace::hideShowTraceActors(bool visible) {
+    auto hideShowList = [visible](const QStringList& ids, ENTITY_TYPE type) {
+        for (const QString& viewId : ids) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.visible = visible;
+            ctx.viewID = viewId;
+            ctx.hideShowEntityType = type;
+            ecvDisplayTools::HideShowEntities(ctx);
+        }
+    };
+    hideShowList(m_segmentViewIds, ENTITY_TYPE::ECV_SHAPE);
+    hideShowList(m_waypointViewIds, ENTITY_TYPE::ECV_MESH);
+    hideShowList(m_tracePointViewIds, ENTITY_TYPE::ECV_MESH);
+}
+
+void ccTrace::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideShowTraceActors(false);
+        }
+    }
+    ccHObject::draw(context);
+}
+
+void ccTrace::getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                                  bool relative) {
+    ccPolyline::getTypeID_recursive(hdInfos, relative);
+    for (const QString& viewId : m_segmentViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_SHAPE;
+        hdInfos.push_back(hdinfo);
+    }
+    for (const QString& viewId : m_waypointViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+    for (const QString& viewId : m_tracePointViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+}
+
 void ccTrace::updateMetadata() {
     setMetaData("ccCompassType", "Trace");
     setMetaData("class_name", GetClassName());

@@ -12,6 +12,7 @@
 
 // qCC_db
 #include <ecvDisplayTools.h>
+#include <ecvRedrawScope.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
 
@@ -63,13 +64,12 @@ FastGlobalRegistrationDialog::FastGlobalRegistrationDialog(
 }
 
 FastGlobalRegistrationDialog::~FastGlobalRegistrationDialog() {
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     for (ccPointCloud* cloud : clouds) {
         cloud->enableTempColor(false);
         cloud->setForceRedraw(true);
+        scope.markDirty(cloud);
     }
-
-    ecvDisplayTools::RedrawDisplay();
 }
 
 void FastGlobalRegistrationDialog::saveParameters() const {
@@ -100,7 +100,6 @@ void FastGlobalRegistrationDialog::updateGUI() {
     // aligned cloud(s)
     ccPointCloud* alignedCloud = nullptr;  // only one of them
     int referenceCloudIndex = -1;
-    ecvDisplayTools::SetRedrawRecursive(false);
     for (size_t i = 0; i < clouds.size(); ++i) {
         ccPointCloud* cloud = clouds[i];
         if (cloud->getUniqueID() != referencesCloudUinqueID) {
@@ -125,7 +124,12 @@ void FastGlobalRegistrationDialog::updateGUI() {
     referenceComboBox->setCurrentIndex(referenceCloudIndex);
     referenceComboBox->blockSignals(false);
 
-    ecvDisplayTools::RedrawDisplay();
+    {
+        ecvRedrawScope scope;
+        for (ccPointCloud* cloud : clouds) {
+            scope.markDirty(cloud);
+        }
+    }
 }
 
 void FastGlobalRegistrationDialog::referenceEntityChanged(int index) {

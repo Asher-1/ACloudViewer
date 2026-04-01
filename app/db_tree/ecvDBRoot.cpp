@@ -46,6 +46,7 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 
 // common
@@ -683,8 +684,7 @@ void ccDBRoot::deleteSelectedEntities() {
 
     if (!toBeDeletedInfos.empty()) {
         ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
-        ecvDisplayTools::SetRedrawRecursive(false);
-        MainWindow::TheInstance()->refreshAll(false);
+        ecvRedrawScope scope;
     }
 }
 
@@ -775,6 +775,60 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
     return QVariant();
 }
 
+static void hideShowEntityDirect(ccHObject* obj, bool visible) {
+    ecvDisplayTools::HideShowEntities(obj, visible);
+    if (obj->isKindOf(CV_TYPES::FACET)) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.visible = visible;
+        if (visible)
+            static_cast<ccFacet*>(obj)->showNormalArrowActors(ctx);
+        else
+            static_cast<ccFacet*>(obj)->hideNormalArrowActors(ctx);
+    } else if (obj->isKindOf(CV_TYPES::PLANE)) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.visible = visible;
+        if (visible)
+            static_cast<ccPlane*>(obj)->showNormalArrowActors(ctx);
+        else
+            static_cast<ccPlane*>(obj)->hideNormalArrowActors(ctx);
+    } else if (obj->isKindOf(CV_TYPES::PRIMITIVE)) {
+        ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
+        if (prim) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.visible = visible;
+            prim->hideShowDrawings(ctx);
+        }
+    } else if (obj->isKindOf(CV_TYPES::SENSOR)) {
+        ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
+        if (sensor) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.visible = visible;
+            sensor->hideShowDrawings(ctx);
+        }
+    }
+}
+
+static void hideShowEntityRecursive(ccHObject* obj, bool visible) {
+    hideShowEntityDirect(obj, visible);
+    for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
+        hideShowEntityRecursive(obj->getChild(i), visible);
+    }
+}
+
+static void propagateHierarchyState(ccHObject* parent,
+                                    bool ancestorActive) {
+    for (unsigned i = 0; i < parent->getChildrenNumber(); ++i) {
+        ccHObject* child = parent->getChild(i);
+        bool childActive =
+                ancestorActive && child->isEnabled() && child->isVisible();
+        if (childActive) {
+            child->setRedraw(true);
+        }
+        hideShowEntityDirect(child, childActive);
+        propagateHierarchyState(child, childActive);
+    }
+}
+
 bool ccDBRoot::setData(const QModelIndex& index,
                        const QVariant& value,
                        int role) {
@@ -823,12 +877,16 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 else
                     item->setEnabled(false);
 
+                if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+                    propagateHierarchyState(
+                            item,
+                            item->isEnabled() && item->isVisible());
+                }
+
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
                     item->isKindOf(CV_TYPES::POINT_KDTREE)) {
                     // rendering this item only
-                    ecvDisplayTools::SetRedrawRecursive(false);
-                    item->setRedrawFlagRecursive(true);
-                    redrawCCObjectAndChildren(item, true);
+                    ecvDisplayTools::RedrawObject(item);
                 } else if (item->isA(CV_TYPES::LABEL_2D)) {
                     cc2DLabel* label = ccHObjectCaster::To2DLabel(item);
                     if (label) {
@@ -871,6 +929,26 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         }
                         ecvDisplayTools::UpdateScreen();
                     }
+                } else if (item->isKindOf(CV_TYPES::FACET)) {
+                    ccFacet* facet = static_cast<ccFacet*>(item);
+                    bool vis = facet->isEnabled();
+                    ecvDisplayTools::HideShowEntities(facet, vis);
+                    CC_DRAW_CONTEXT context;
+                    context.visible = vis;
+                    if (vis)
+                        facet->showNormalArrowActors(context);
+                    else
+                        facet->hideNormalArrowActors(context);
+                    context.viewID = facet->getViewId();
+                    if (facet->isSelected() && vis) {
+                        facet->showBB(context);
+                    } else {
+                        facet->hideBB(context);
+                    }
+                    for (unsigned ci = 0; ci < facet->getChildrenNumber(); ++ci) {
+                        hideShowEntityRecursive(facet->getChild(ci), vis);
+                    }
+                    ecvDisplayTools::UpdateScreen();
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
                             ccHObjectCaster::ToPrimitive(item);
@@ -878,6 +956,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         CC_DRAW_CONTEXT context;
                         context.visible = prim->isEnabled();
                         prim->hideShowDrawings(context);
+                        if (item->isKindOf(CV_TYPES::PLANE)) {
+                            ccPlane* plane =
+                                    static_cast<ccPlane*>(item);
+                            if (context.visible)
+                                plane->showNormalArrowActors(context);
+                            else
+                                plane->hideNormalArrowActors(context);
+                        }
                         // for bbox
                         context.viewID = prim->getViewId();
                         if (prim->isSelected() && context.visible) {
@@ -907,8 +993,11 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     // considering this item object may has not been added to
                     // rendering window
                     item->setForceRedrawRecursive(true);
-                    ecvDisplayTools::SetRedrawRecursive(false);
-                    redrawCCObjectAndChildren(item, false);
+                    {
+                        ecvRedrawScope scope;
+                        scope.dismiss();
+                    }
+                    ecvDisplayTools::RedrawDisplay(false, false);
                 }
             }
 
@@ -1027,8 +1116,7 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
 
     updatePropertiesView();
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    MainWindow::TheInstance()->refreshAll(false, true);
+    { ecvRedrawScope scope; }
 
     emit selectionChanged();
 }
@@ -2040,9 +2128,19 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
         switch (prop) {
             case TG_ENABLE:  // enable state
                 item->setEnabled(!item->isEnabled());
+                if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+                    propagateHierarchyState(
+                            item,
+                            item->isEnabled() && item->isVisible());
+                }
                 break;
             case TG_VISIBLE:  // visibility
                 item->toggleVisibility();
+                if (item->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+                    propagateHierarchyState(
+                            item,
+                            item->isEnabled() && item->isVisible());
+                }
                 item->setForceRedrawRecursive(true);
                 break;
             case TG_COLOR:  // color
@@ -2063,7 +2161,6 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
     // we restablish properties view
     updatePropertiesView();
 
-    // MainWindow::RefreshAllGLWindow(false);
     if (TG_ENABLE == prop || TG_VISIBLE == prop || TG_3D_NAME == prop) {
         // draw 3D and no need to forceredraw
         MainWindow::TheInstance()->refreshAll(true, false);

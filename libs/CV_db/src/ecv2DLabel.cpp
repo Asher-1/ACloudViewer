@@ -1087,17 +1087,11 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
 
                     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius =
-                            scale * m_relMarkerScale;  // Use relative scale for
-                                                       // consistent sphere size
-                    m_pickedPoints[i].markerScale = scale * m_relMarkerScale;
+                    param.radius = scale;
+                    m_pickedPoints[i].markerScale = scale;
                     param.center = CCVector3(P->x, P->y, P->z);
                     param.color = ecvColor::FromRgba(ecvColor::ored);
                     ecvDisplayTools::DrawWidgets(param, false);
-                    // markerContext.transformInfo.setScale(CCVector3(scale,
-                    // scale, scale)); markerContext.viewID = QString::number(i)
-                    // + m_sphereIdfix; c_unitPointMarker->setRedraw(true);
-                    // c_unitPointMarker->draw(markerContext);
                 }
             }
         }

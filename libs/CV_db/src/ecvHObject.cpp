@@ -1722,8 +1722,15 @@ void ccHObject::hideObject_recursive(bool recursive) {
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {
                 prim->hideShowDrawings(context);
-                continue;
             }
+            if (obj) {
+                if (obj->isKindOf(CV_TYPES::FACET)) {
+                    static_cast<ccFacet*>(obj)->hideNormalArrowActors(context);
+                } else if (obj->isKindOf(CV_TYPES::PLANE)) {
+                    static_cast<ccPlane*>(obj)->hideNormalArrowActors(context);
+                }
+            }
+            if (prim) continue;
         }
 
         context.viewID = hdInfo.hideId;

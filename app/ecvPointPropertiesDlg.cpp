@@ -16,6 +16,8 @@
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecvDisplayTools.h>
+#include <ecvGenericMesh.h>
+#include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 
 // cloudViewer
@@ -213,17 +215,12 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
 
     if (ecvDisplayTools::GetCurrentScreen()) {
         ecvDisplayTools::AddToOwnDB(newLabelObject);
-        ecvDisplayTools::SetRedrawRecursive(false);
-        newLabelObject->setRedraw(true);
-        ecvDisplayTools::RedrawDisplay(true);
+        ecvDisplayTools::RedrawObject(newLabelObject, true, true);
     }
 }
 
-void ccPointPropertiesDlg::processPickedPoint(ccPointCloud* cloud,
-                                              unsigned pointIndex,
-                                              int x,
-                                              int y) {
-    assert(cloud);
+void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
+    if (!picked.entity) return;
     assert(m_label);
 
     switch (m_pickingMode) {
@@ -240,15 +237,34 @@ void ccPointPropertiesDlg::processPickedPoint(ccPointCloud* cloud,
             return;  // we don't use this slot for 2D mode
     }
 
-    m_label->addPickedPoint(cloud, pointIndex);
+    bool addOk = false;
+    if (picked.entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        addOk = m_label->addPickedPoint(
+                ccHObjectCaster::ToGenericPointCloud(picked.entity),
+                picked.itemIndex, picked.entityCenter);
+    } else if (picked.entity->isKindOf(CV_TYPES::MESH)) {
+        ccGenericMesh* mesh =
+                ccHObjectCaster::ToGenericMesh(picked.entity);
+        if (mesh && picked.itemIndex < mesh->size()) {
+            CCVector2d uv(picked.uvw.x, picked.uvw.y);
+            addOk = m_label->addPickedPoint(mesh, picked.itemIndex,
+                                            uv, picked.entityCenter);
+        }
+    }
+    if (!addOk) {
+        return;
+    }
+
     m_label->setVisible(true);
     m_label->displayPointLegend(
             m_label->size() ==
             3);  // we need to display 'A', 'B' and 'C' for 3-points labels
     if (m_label->size() == 1 && ecvDisplayTools::GetCurrentScreen()) {
         m_label->setPosition(
-                static_cast<float>(x + 20) / ecvDisplayTools::GlWidth(),
-                static_cast<float>(y + 20) / ecvDisplayTools::GlWidth());
+                static_cast<float>(picked.clickPoint.x() + 20) /
+                        ecvDisplayTools::GlWidth(),
+                static_cast<float>(picked.clickPoint.y() + 20) /
+                        ecvDisplayTools::GlWidth());
     }
 
     // output info to Console

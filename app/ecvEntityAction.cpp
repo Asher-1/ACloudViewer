@@ -27,6 +27,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPointCloudInterpolator.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 #include <ecvSensor.h>
 
 // common
@@ -156,9 +157,7 @@ bool setColor(ccHObject::Container selectedEntities,
             ent->showColors(true);
             ent->showSF(false);  // just in case
             if (!poly->isClosed()) {
-                ecvDisplayTools::SetRedrawRecursive(false);
-                poly->setRedrawFlagRecursive(true);
-                ecvDisplayTools::RedrawDisplay();
+                ecvDisplayTools::RedrawObject(poly);
 
             } else {
                 PROPERTY_PARAM params(ent, poly->getColor());
@@ -169,9 +168,7 @@ bool setColor(ccHObject::Container selectedEntities,
             facet->setColor(ecvColor::FromQColor(colour));
             ent->showColors(true);
             ent->showSF(false);  // just in case
-            ecvDisplayTools::SetRedrawRecursive(false);
-            facet->setRedrawFlagRecursive(true);
-            ecvDisplayTools::RedrawDisplay();
+            ecvDisplayTools::RedrawObject(facet);
         } else {
             CVLog::Warning(
                     QString("[SetColor] Can't change color of entity '%1'")
@@ -183,6 +180,7 @@ bool setColor(ccHObject::Container selectedEntities,
 }
 
 bool rgbToGreyScale(const ccHObject::Container& selectedEntities) {
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         bool lockedVertices = false;
         ccGenericPointCloud* cloud =
@@ -199,7 +197,7 @@ bool rgbToGreyScale(const ccHObject::Container& selectedEntities) {
                 pc->convertRGBToGreyScale();
                 pc->showColors(true);
                 pc->showSF(false);  // just in case
-                pc->setRedrawFlagRecursive(true);
+                scope.markDirty(pc);
             }
         }
     }
@@ -230,6 +228,7 @@ bool setColorGradient(const ccHObject::Container& selectedEntities,
 
     const double frequency = dlg.getBandingFrequency();
 
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         bool lockedVertices = false;
         ccGenericPointCloud* cloud =
@@ -253,7 +252,7 @@ bool setColorGradient(const ccHObject::Container& selectedEntities,
             if (success) {
                 ent->showColors(true);
                 ent->showSF(false);  // just in case
-                ent->setRedrawFlagRecursive(true);
+                scope.markDirty(ent);
             }
         }
     }
@@ -340,7 +339,7 @@ bool interpolateColors(const ccHObject::Container& selectedEntities,
                                                                 &pDlg)) {
         ent2->showColors(true);
         ent2->showSF(false);  // just in case
-        ent2->setRedrawFlagRecursive(true);
+        ecvDisplayTools::RedrawObject(ent2);
     } else {
         ecvConsole::Error("An error occurred! (see console)");
     }
@@ -457,7 +456,7 @@ bool interpolateSFs(const ccHObject::Container& selectedEntities,
                                           dest->getNumberOfScalarFields())) -
                 1);
         dest->showSF(true);
-        dest->setRedrawFlagRecursive(true);
+        ecvDisplayTools::RedrawObject(dest);
     } else {
         ecvConsole::Error("An error occurred! (see console)");
     }
@@ -534,6 +533,7 @@ bool enhanceRGBWithIntensities(const ccHObject::Container& selectedEntities,
         useCustomIntensityRange = true;
     }
 
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         bool lockedVertices = false;
         ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
@@ -596,7 +596,7 @@ bool enhanceRGBWithIntensities(const ccHObject::Container& selectedEntities,
                                           s_minI, s_maxI)) {
             ent->showColors(true);
             ent->showSF(false);
-            ent->setRedrawFlagRecursive(true);
+            scope.markDirty(ent);
         } else {
             CVLog::Warning(QString("[enhanceRGBWithIntensities] Failed to "
                                    "apply the process on entity '%1'!")
@@ -1032,6 +1032,7 @@ bool sfConvertToRGB(const ccHObject::Container& selectedEntities,
     else if (answer == QMessageBox::Cancel)
         return false;
 
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         ccGenericPointCloud* cloud = nullptr;
 
@@ -1051,7 +1052,7 @@ bool sfConvertToRGB(const ccHObject::Container& selectedEntities,
                             mixWithExistingColors)) {
                     ent->showColors(true);
                     ent->showSF(false);  // just in case
-                    ent->setRedrawFlagRecursive(true);
+                    scope.markDirty(ent);
                 }
             }
         }
@@ -1087,6 +1088,7 @@ bool sfConvertToRandomRGB(const ccHObject::Container& selectedEntities,
     }
 
     // apply random colors
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         ccGenericPointCloud* cloud = nullptr;
 
@@ -1128,7 +1130,7 @@ bool sfConvertToRandomRGB(const ccHObject::Container& selectedEntities,
                 }
             }
 
-            cloud->setRedrawFlagRecursive(true);
+            scope.markDirty(ent);
         }
     }
 
@@ -1365,6 +1367,7 @@ bool exportNormalToSF(const ccHObject::Container& selectedEntities,
         return false;
     }
 
+    ecvRedrawScope scope;
     // for each selected cloud (or vertices set)
     for (ccHObject* entity : selectedEntities) {
         ccPointCloud* pc = ccHObjectCaster::ToPointCloud(entity);
@@ -1387,7 +1390,7 @@ bool exportNormalToSF(const ccHObject::Container& selectedEntities,
         if (entity != pc) {
             entity->showSF(true);  // for meshes
         }
-        entity->setRedrawFlagRecursive(true);
+        scope.markDirty(entity);
     }
 
     return true;
@@ -2074,7 +2077,10 @@ bool computeOctree(const ccHObject::Container& selectedEntities,
     ccBBox bbox;
     std::unordered_set<ccGenericPointCloud*> clouds;
     PointCoordinateType maxBoxSize = -1;
-    ecvDisplayTools::SetRedrawRecursive(false);
+    {
+        ecvRedrawScope scope;
+        scope.dismiss();
+    }
     for (ccHObject* ent : selectedEntities) {
         // specific test for locked vertices
         bool lockedVertices = false;
@@ -2200,6 +2206,7 @@ bool computeOctree(const ccHObject::Container& selectedEntities,
 bool clearProperty(ccHObject::Container selectedEntities,
                    CLEAR_PROPERTY property,
                    QWidget* parent) {
+    ecvRedrawScope scope;
     for (ccHObject* ent : selectedEntities) {
         // specific case: clear normals on a mesh
         if (property == CLEAR_PROPERTY::NORMALS &&
@@ -2267,14 +2274,14 @@ bool clearProperty(ccHObject::Container selectedEntities,
                 case CLEAR_PROPERTY::COLORS:
                     if (cloud->hasColors()) {
                         pointCloud->unallocateColors();
-                        ent->setRedrawFlagRecursive(true);
+                        scope.markDirty(ent);
                     }
                     break;
 
                 case CLEAR_PROPERTY::NORMALS:
                     if (cloud->hasNormals()) {
                         pointCloud->unallocateNorms();
-                        ent->setRedrawFlagRecursive(true);
+                        scope.markDirty(ent);
                     }
                     break;
 
@@ -2283,14 +2290,14 @@ bool clearProperty(ccHObject::Container selectedEntities,
                         pointCloud->deleteScalarField(
                                 pointCloud
                                         ->getCurrentDisplayedScalarFieldIndex());
-                        ent->setRedrawFlagRecursive(true);
+                        scope.markDirty(ent);
                     }
                     break;
 
                 case CLEAR_PROPERTY::ALL_SCALAR_FIELDS:
                     if (cloud->hasScalarFields()) {
                         pointCloud->deleteAllScalarFields();
-                        ent->setRedrawFlagRecursive(true);
+                        scope.markDirty(ent);
                     }
                     break;
             }

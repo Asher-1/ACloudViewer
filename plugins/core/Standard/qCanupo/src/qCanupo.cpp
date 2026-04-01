@@ -238,9 +238,7 @@ void qCanupoPlugin::doClassifyAction() {
                                  corePointsDescriptors, realCorePoints, m_app,
                                  m_app->getActiveWindow())) {
         // cloud->prepareDisplayForRefresh();
-        ecvDisplayTools::SetRedrawRecursive(false);
-        cloud->setRedraw(true);
-        m_app->refreshAll();
+        ecvDisplayTools::RedrawObject(cloud);
         m_app->updateUI();
     }
 
