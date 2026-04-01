@@ -607,28 +607,47 @@ CC_FILE_ERROR FBXFilter::saveToFile(ccHObject* entity,
 
             if (lFormatCount > 0) {
                 if (s_defaultOutputFormat.isEmpty()) {
-                    try {
-                        QMessageBox msgBox(QMessageBox::Question, "FBX format",
-                                           "Choose output format:");
-                        QMap<QAbstractButton*, int> buttons;
+                    if (!parameters.alwaysDisplaySaveDialog) {
+                        // Headless / CLI mode: pick the first FBX binary format
                         for (int lFormatIndex = 0; lFormatIndex < lFormatCount;
                              lFormatIndex++) {
                             if (pSdkManager->GetIOPluginRegistry()->WriterIsFBX(
                                         lFormatIndex)) {
+                                fileFormat = lFormatIndex;
                                 FbxString lDesc =
                                         pSdkManager->GetIOPluginRegistry()
                                                 ->GetWriterFormatDescription(
                                                         lFormatIndex);
-                                QPushButton* button = msgBox.addButton(
-                                        lDesc.Buffer(),
-                                        QMessageBox::AcceptRole);
-                                buttons[button] = lFormatIndex;
+                                CVLog::Print(QString("[FBX] Auto-selected output "
+                                                     "format: %1")
+                                                     .arg(lDesc.Buffer()));
+                                break;
                             }
                         }
-                        msgBox.exec();
-                        // get the right format
-                        fileFormat = buttons[msgBox.clickedButton()];
-                    } catch (...) {
+                    } else {
+                        try {
+                            QMessageBox msgBox(QMessageBox::Question,
+                                               "FBX format",
+                                               "Choose output format:");
+                            QMap<QAbstractButton*, int> buttons;
+                            for (int lFormatIndex = 0;
+                                 lFormatIndex < lFormatCount; lFormatIndex++) {
+                                if (pSdkManager->GetIOPluginRegistry()
+                                            ->WriterIsFBX(lFormatIndex)) {
+                                    FbxString lDesc =
+                                            pSdkManager->GetIOPluginRegistry()
+                                                    ->GetWriterFormatDescription(
+                                                            lFormatIndex);
+                                    QPushButton* button = msgBox.addButton(
+                                            lDesc.Buffer(),
+                                            QMessageBox::AcceptRole);
+                                    buttons[button] = lFormatIndex;
+                                }
+                            }
+                            msgBox.exec();
+                            fileFormat = buttons[msgBox.clickedButton()];
+                        } catch (...) {
+                        }
                     }
                 } else {
                     // try to find the default output format as set by the user
