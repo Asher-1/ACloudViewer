@@ -192,10 +192,9 @@ void LogWidget::Update(const char* text,
                        std::streamsize count,
                        void* log_widget_ptr) {
     std::string text_str;
+    text_str.reserve(static_cast<size_t>(count));
     for (std::streamsize i = 0; i < count; ++i) {
-        if (text[i] == '\n') {
-            text_str += "\n";
-        } else {
+        if (text[i] != '\r') {
             text_str += text[i];
         }
     }
