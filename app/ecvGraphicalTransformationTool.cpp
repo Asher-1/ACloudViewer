@@ -12,11 +12,11 @@
 // CV_DB_LIB
 #include <CVLog.h>
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvFacet.h>
 #include <ecvGenericTransformTool.h>
 #include <ecvMesh.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 
 ccGraphicalTransformationTool::ccGraphicalTransformationTool(QWidget* parent)
     : ccOverlayDialog(parent),
@@ -452,10 +452,11 @@ void ccGraphicalTransformationTool::apply() {
             ccHObject* toTransform = m_toTransform.getChild(i);
             toTransform->setGLTransformation(correctedFinalTrans);
 
-            // DGM: warning, applyGLTransformation may delete the associated octree!
+            // DGM: warning, applyGLTransformation may delete the associated
+            // octree!
             MainWindow::ccHObjectContext objContext =
-                    MainWindow::TheInstance()->removeObjectTemporarilyFromDBTree(
-                            toTransform);
+                    MainWindow::TheInstance()
+                            ->removeObjectTemporarilyFromDBTree(toTransform);
 
             toTransform->applyGLTransformation_recursive();
             // toTransform->prepareDisplayForRefresh_recursive();
@@ -464,13 +465,14 @@ void ccGraphicalTransformationTool::apply() {
 
             scope.markDirty(toTransform);
 
-            // special case: if the object is a mesh vertices set, we may have to
-            // update the mesh normals!
+            // special case: if the object is a mesh vertices set, we may have
+            // to update the mesh normals!
             if (toTransform->isA(CV_TYPES::POINT_CLOUD) &&
                 toTransform->getParent() &&
                 toTransform->getParent()->isKindOf(CV_TYPES::MESH)) {
                 ccMesh* mesh = static_cast<ccMesh*>(toTransform->getParent());
-                if (mesh->hasTriNormals() && !m_toTransform.isAncestorOf(mesh)) {
+                if (mesh->hasTriNormals() &&
+                    !m_toTransform.isAncestorOf(mesh)) {
                     mesh->transformTriNormals(correctedFinalTrans);
                 }
             }

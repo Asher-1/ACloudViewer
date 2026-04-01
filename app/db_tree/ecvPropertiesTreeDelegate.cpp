@@ -37,7 +37,6 @@
 #include <ecvCoordinateSystem.h>
 #include <ecvDisc.h>
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvDrawContext.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
@@ -55,6 +54,7 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
 #include <ecvSphere.h>

@@ -12,9 +12,9 @@
 
 // qCC_db
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // system
 #include <assert.h>

@@ -48,10 +48,10 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 
 // QT
 #include <QApplication>

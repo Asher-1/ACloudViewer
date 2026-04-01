@@ -107,8 +107,7 @@ void ccPlane::drawMeOnly(CC_DRAW_CONTEXT& context) {
     ccGenericPrimitive::drawMeOnly(context);
 
     if (MACRO_Draw3D(context)) {
-        PointCoordinateType scale =
-                sqrt(m_xWidth * m_yWidth) / 2;
+        PointCoordinateType scale = sqrt(m_xWidth * m_yWidth) / 2;
         glDrawNormal(context, m_transformation.getTranslationAsVec3D(), scale);
     }
 }

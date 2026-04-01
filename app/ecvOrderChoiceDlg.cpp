@@ -60,7 +60,9 @@ ccOrderChoiceDlg::~ccOrderChoiceDlg() {
     }
 
     if (m_app) {
-        { ecvRedrawScope scope; }
+        {
+            ecvRedrawScope scope;
+        }
     }
 
     if (m_gui) {
@@ -101,7 +103,9 @@ void ccOrderChoiceDlg::setColorsAndLabels() {
     }
 
     if (m_app) {
-        { ecvRedrawScope scope; }
+        {
+            ecvRedrawScope scope;
+        }
     }
 }
 

@@ -9,7 +9,6 @@
 
 // app
 #include <ecvPickingHub.h>
-
 #include <ecvRedrawScope.h>
 
 // Qt

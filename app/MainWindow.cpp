@@ -72,7 +72,6 @@
 #include <ecvCylinder.h>
 #include <ecvDisc.h>
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvFacet.h>
 #include <ecvFileUtils.h>
 #include <ecvGBLSensor.h>
@@ -84,6 +83,7 @@
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
 #include <ecvQuadric.h>
+#include <ecvRedrawScope.h>
 #include <ecvRenderingTools.h>
 #include <ecvScalarField.h>
 #include <ecvSphere.h>
@@ -7076,10 +7076,9 @@ void MainWindow::doActionFlagMeshVertices() {
                     } else {
                         vertices->deleteScalarField(sfIdx);
                         sfIdx = -1;
-                        ecvConsole::Warning(
-                                tr("Not enough memory to flag the "
-                                   "vertices of mesh '%1'!")
-                                        .arg(mesh->getName()));
+                        ecvConsole::Warning(tr("Not enough memory to flag the "
+                                               "vertices of mesh '%1'!")
+                                                    .arg(mesh->getName()));
                         errors = true;
                     }
                 } else {
@@ -8888,8 +8887,7 @@ void MainWindow::doSphericalNeighbourhoodExtractionTest() {
                             sphereRadius);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<unsigned> dist(0,
-                                                         cloud->size() - 1);
+            std::uniform_int_distribution<unsigned> dist(0, cloud->size() - 1);
 
             const unsigned samples = 1000;
             for (unsigned j = 0; j < samples; ++j) {

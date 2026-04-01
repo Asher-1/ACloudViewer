@@ -13,8 +13,8 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvOctree.h>
-#include <ecvRedrawScope.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 
 // Local

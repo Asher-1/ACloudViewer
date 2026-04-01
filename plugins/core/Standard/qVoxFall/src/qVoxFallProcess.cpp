@@ -289,8 +289,7 @@ bool ComputeClusterVolume(int maxThreads,
                 }
                 uint8_t was_visited;
                 {
-                    uint8_t* ptr =
-                            &s_VoxFallParams.nonEmptyVoxelsVisited[nb];
+                    uint8_t* ptr = &s_VoxFallParams.nonEmptyVoxelsVisited[nb];
 #if defined(_OPENMP)
 #pragma omp atomic capture
 #endif

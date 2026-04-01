@@ -12,9 +12,9 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
-#include <ecvRedrawScope.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // app
 #include <ecvMainAppInterface.h>
@@ -118,7 +118,8 @@ int BasePclModule::performAction() {
         ecvRedrawScope scope;
         for (ccHObject* entity : m_selected) {
             // clouds only
-            if (entity->isA(CV_TYPES::POINT_CLOUD) && entity->isGLTransEnabled()) {
+            if (entity->isA(CV_TYPES::POINT_CLOUD) &&
+                entity->isGLTransEnabled()) {
                 ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
                 if (cloud) {
                     // we temporarily detach entity, as it may undergo
