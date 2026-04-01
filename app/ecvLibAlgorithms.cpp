@@ -13,6 +13,7 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvOctree.h>
+#include <ecvRedrawScope.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
@@ -764,15 +765,16 @@ bool ApplyScaleMatchingAlgorithm(ScaleMatchingAlgorithm algo,
         }
 
         // only refresh rescaled
-        ecvDisplayTools::SetRedrawRecursive(false);
-        for (unsigned i = 0; i < toBeRescaleEntities.size(); ++i) {
-            ccHObject* obj = toBeRescaleEntities[i];
-            if (obj) {
-                ecvDisplayTools::RemoveBB(obj->getViewId());
-                obj->setRedraw(true);
+        {
+            ecvRedrawScope scope;
+            for (unsigned i = 0; i < toBeRescaleEntities.size(); ++i) {
+                ccHObject* obj = toBeRescaleEntities[i];
+                if (obj) {
+                    ecvDisplayTools::RemoveBB(obj->getViewId());
+                    obj->setRedraw(true);
+                }
             }
         }
-        ecvDisplayTools::RedrawDisplay();
 
         if (!nProgress.oneStep()) {
             // process cancelled by user

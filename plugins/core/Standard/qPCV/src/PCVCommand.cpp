@@ -16,6 +16,7 @@
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 
 // Qt
@@ -39,6 +40,8 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
                          ecvMainAppInterface* app /*=nullptr*/) {
     size_t count = 0;
     size_t errorCount = 0;
+
+    ccHObject::Container redrawObjects;
 
     for (ccHObject* obj : candidates) {
         ccPointCloud* cloud = nullptr;
@@ -129,7 +132,7 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
                 if (obj != cloud) {
                     cloud->showSF(true);
                 }
-                obj->setRedrawFlagRecursive(true);
+                redrawObjects.push_back(obj);
             } else {
                 assert(false);
             }
@@ -142,6 +145,13 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
                         ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
             ++errorCount;
             break;
+        }
+    }
+
+    if (!redrawObjects.empty()) {
+        ecvRedrawScope scope;
+        for (ccHObject* o : redrawObjects) {
+            scope.markDirty(o);
         }
     }
 

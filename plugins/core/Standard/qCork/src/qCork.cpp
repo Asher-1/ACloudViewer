@@ -13,6 +13,7 @@
 #include "qCorkInternal.h"
 
 // CV_DB_LIB
+#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
@@ -434,8 +435,7 @@ void qCork::doAction() {
         meshA->showNormals(hasNormals && meshA->normalsShown());
 
         m_app->addToDB(result);
-        result->setRedrawFlagRecursive(true);
-        m_app->refreshAll();
+        ecvDisplayTools::RedrawObject(result);
     }
 }
 

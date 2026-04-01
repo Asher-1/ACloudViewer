@@ -8,6 +8,7 @@
 #include "ecvPlane.h"
 
 // ECV_CORE_LIB
+#include "ecvDisplayTools.h"
 #include "ecvMaterialSet.h"
 #include "ecvPointCloud.h"
 
@@ -67,14 +68,47 @@ ccGenericPrimitive* ccPlane::clone() const {
             new ccPlane(m_xWidth, m_yWidth, &m_transformation, getName()));
 }
 
+void ccPlane::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideNormalArrowActors(context);
+        } else {
+            showNormalArrowActors(context);
+        }
+    }
+    ccGenericPrimitive::draw(context);
+}
+
+void ccPlane::hideNormalArrowActors(CC_DRAW_CONTEXT& context) {
+    if (!m_bodyId.isEmpty()) {
+        CC_DRAW_CONTEXT hideCtx = context;
+        hideCtx.visible = false;
+        hideCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+        hideCtx.viewID = m_bodyId;
+        ecvDisplayTools::HideShowEntities(hideCtx);
+        hideCtx.viewID = m_headId;
+        ecvDisplayTools::HideShowEntities(hideCtx);
+    }
+}
+
+void ccPlane::showNormalArrowActors(CC_DRAW_CONTEXT& context) {
+    if (!m_bodyId.isEmpty() && normalVectorIsShown()) {
+        CC_DRAW_CONTEXT showCtx = context;
+        showCtx.visible = true;
+        showCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+        showCtx.viewID = m_bodyId;
+        ecvDisplayTools::HideShowEntities(showCtx);
+        showCtx.viewID = m_headId;
+        ecvDisplayTools::HideShowEntities(showCtx);
+    }
+}
+
 void ccPlane::drawMeOnly(CC_DRAW_CONTEXT& context) {
-    // call parent method
     ccGenericPrimitive::drawMeOnly(context);
 
-    // show normal vector
     if (MACRO_Draw3D(context)) {
         PointCoordinateType scale =
-                sqrt(m_xWidth * m_yWidth) / 2;  // DGM: highly empirical ;)
+                sqrt(m_xWidth * m_yWidth) / 2;
         glDrawNormal(context, m_transformation.getTranslationAsVec3D(), scale);
     }
 }

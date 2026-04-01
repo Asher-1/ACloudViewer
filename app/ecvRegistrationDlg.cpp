@@ -22,6 +22,7 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvHObject.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <QThread>
@@ -109,8 +110,7 @@ ccRegistrationDlg::~ccRegistrationDlg() {
         dataEntity->enableTempColor(false);
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void ccRegistrationDlg::saveParameters() const {
@@ -269,8 +269,7 @@ void ccRegistrationDlg::updateGUI() {
                     ->hasNormals());  // only supported if both the aligned and
                                       // the reference entities have normals
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void ccRegistrationDlg::swapModelAndData() {

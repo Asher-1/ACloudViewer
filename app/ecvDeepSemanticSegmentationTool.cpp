@@ -16,6 +16,7 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
+#include <ecvRedrawScope.h>
 #include <ecvPointCloud.h>
 
 // Qt
@@ -135,11 +136,10 @@ void ecvDeepSemanticSegmentationTool::detect() {
 }
 
 void ecvDeepSemanticSegmentationTool::refreshSelectedClouds() {
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     for (unsigned i = 0; i < m_selectedEntity.getChildrenNumber(); ++i) {
-        m_selectedEntity.getChild(i)->setRedrawFlagRecursive(true);
+        scope.markDirty(m_selectedEntity.getChild(i));
     }
-    ecvDisplayTools::RedrawDisplay();
 }
 
 void ecvDeepSemanticSegmentationTool::cancel() {

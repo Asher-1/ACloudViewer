@@ -24,6 +24,7 @@
 #include <QTimer>
 
 // System
+#include <initializer_list>
 #include <list>
 #include <unordered_set>
 #include <vector>
@@ -1126,6 +1127,26 @@ public:  // Main interface accessors
      * @param redraw Redraw flag state (default: false)
      */
     static void SetRedrawRecursive(ccHObject* obj, bool redraw = false);
+
+    /**
+     * @brief Selectively redraw a single object (resets all flags first)
+     * @param obj Object to redraw
+     * @param only2D Redraw only 2D elements (default: false)
+     * @param forceRedraw Force complete redraw (default: true)
+     */
+    static void RedrawObject(ccHObject* obj,
+                             bool only2D = false,
+                             bool forceRedraw = true);
+
+    /**
+     * @brief Selectively redraw multiple objects (resets all flags first)
+     * @param objects Objects to redraw
+     * @param only2D Redraw only 2D elements (default: false)
+     * @param forceRedraw Force complete redraw (default: true)
+     */
+    static void RedrawObjects(std::initializer_list<ccHObject*> objects,
+                              bool only2D = false,
+                              bool forceRedraw = true);
 
     /**
      * @brief Get bounding box of all visible objects

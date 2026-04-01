@@ -58,6 +58,52 @@ CCVector3 ccPointPair::getDirection() {
     }
 }
 
+void ccPointPair::getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                                      bool relative) {
+    ccPolyline::getTypeID_recursive(hdInfos, relative);
+    QString baseViewId = getViewId();
+    for (unsigned i = 0; i < size(); i++) {
+        hideInfo hdinfo;
+        hdinfo.hideId = baseViewId + "-pt" + QString::number(i);
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+    hideInfo bodyInfo;
+    bodyInfo.hideId = baseViewId + "-body";
+    bodyInfo.hideType = ENTITY_TYPE::ECV_MESH;
+    hdInfos.push_back(bodyInfo);
+    hideInfo headInfo;
+    headInfo.hideId = baseViewId + "-head";
+    headInfo.hideType = ENTITY_TYPE::ECV_MESH;
+    hdInfos.push_back(headInfo);
+}
+
+void ccPointPair::hideShowSubActors(bool visible) {
+    QString baseViewId = getViewId();
+    CC_DRAW_CONTEXT ctx;
+    ctx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+    ctx.visible = visible;
+    for (unsigned i = 0; i < size(); i++) {
+        ctx.viewID = baseViewId + "-pt" + QString::number(i);
+        ecvDisplayTools::HideShowEntities(ctx);
+    }
+    ctx.viewID = baseViewId + "-body";
+    ecvDisplayTools::HideShowEntities(ctx);
+    ctx.viewID = baseViewId + "-head";
+    ecvDisplayTools::HideShowEntities(ctx);
+}
+
+void ccPointPair::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideShowSubActors(false);
+        } else {
+            hideShowSubActors(true);
+        }
+    }
+    ccHObject::draw(context);
+}
+
 // overidden from ccHObject
 void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!MACRO_Foreground(context))  // 2D foreground only

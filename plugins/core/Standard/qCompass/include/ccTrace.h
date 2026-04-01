@@ -214,7 +214,12 @@ public:
 
     ccBBox getOwnBB(bool withGLFeatures = false) override;
 
+    void draw(CC_DRAW_CONTEXT& context) override;
+    void getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                             bool relative) override;
+
 protected:
+    void hideShowTraceActors(bool visible);
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
     bool loadWaypointsFrom(const QString& waypoints);

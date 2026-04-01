@@ -368,7 +368,8 @@ public:  // children management
     void detachAllChildren();
 
     void getTypeID_recursive(std::vector<removeInfo>& rmInfos, bool relative);
-    void getTypeID_recursive(std::vector<hideInfo>& hdInfos, bool relative);
+    virtual void getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                                     bool relative);
 
     void removeChild(ccHObject* child);
     //! Removes a specific child given its index
