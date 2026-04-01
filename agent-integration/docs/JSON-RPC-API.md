@@ -595,32 +595,6 @@ Group multiple meshes together.
 
 ---
 
-### process.pcv
-
-Compute PCV (Portion de Ciel Visible) ambient occlusion / ShadeVis illumination
-for a point cloud or mesh. Requires `PLUGIN_STANDARD_QPCV=ON` and `USE_VTK_BACKEND=ON`.
-
-**Params:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `entity_id` | int | *required* | Target entity (cloud or mesh) |
-| `ray_count` | int | 256 | Number of sampling rays |
-| `resolution` | int | 1024 | Off-screen render resolution |
-| `mode_360` | bool | true | Full sphere (true) or upper hemisphere only (false) |
-| `mesh_closed` | bool | false | Treat mesh as closed (enables backface culling) |
-
-**Example:**
-```json
-{
-  "jsonrpc": "2.0", "id": 1,
-  "method": "process.pcv",
-  "params": {"entity_id": 42, "ray_count": 256, "resolution": 1024, "mode_360": true}
-}
-```
-
-**Returns:** `{entity_id, sf_name, sf_min, sf_max}` — the computed scalar field info.
-
 **Notes:**
 - Creates/updates an "Illuminance (PCV)" scalar field on the target entity
 - Uses VTK off-screen rendering with parallel projection for depth sampling
