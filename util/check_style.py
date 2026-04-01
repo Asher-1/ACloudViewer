@@ -13,7 +13,6 @@ from pathlib import Path
 import multiprocessing
 from functools import partial
 import time
-import sys
 
 PYTHON_FORMAT_DIRS = [
     "examples",
@@ -218,7 +217,7 @@ class CppFormatter:
                 if os.path.exists(backup_path):
                     shutil.copy2(backup_path, file_path)
                     os.remove(backup_path)
-            except:
+            except Exception:  # best-effort backup restore
                 pass
 
     def run(self, apply, no_parallel, verbose):
@@ -323,13 +322,12 @@ class PythonFormatter:
             else:
                 lines = content.split('\n')
                 header_start = -1
-                header_end = -1
 
                 # Look for existing CloudViewer header pattern
                 for i, line in enumerate(lines):
                     stripped = line.strip()
-                    if ('CloudViewer:' in stripped and 'www.cloudViewer.org' in stripped) or \
-                       ('Copyright (c)' in stripped and 'www.cloudViewer.org' in stripped):
+                    if re.search(r'CloudViewer:\s+www\.cloudViewer\.org\b', stripped) or \
+                       re.search(r'Copyright\s+\(c\).*\bwww\.cloudViewer\.org\b', stripped):
                         # Found CloudViewer header, find the start of this comment block
                         header_start = i
                         # Look backwards to find the start of the comment block
@@ -378,26 +376,15 @@ class PythonFormatter:
                     elif lines[0].strip().startswith('#!'):
                         # Keep shebang line, then check for old headers after it
                         content_start = 1  # Start after shebang
-                        in_potential_header = True
 
                         for i in range(1, len(lines)):
                             stripped = lines[i].strip()
-                            if not stripped:  # Empty line
+                            if not stripped:
                                 continue
-                            elif stripped.startswith(
-                                    '#') and in_potential_header:
-                                # This might be part of an old header, continue looking
+                            elif stripped.startswith('#'):
                                 continue
-                            elif stripped.startswith(
-                                    '"""') or stripped.startswith("'''"):
-                                # Docstring - this is actual content
+                            else:
                                 content_start = i
-                                in_potential_header = False
-                                break
-                            elif not stripped.startswith('#'):
-                                # Non-comment line - this is actual content
-                                content_start = i
-                                in_potential_header = False
                                 break
 
                         header_lines = PythonFormatter.standard_header.rstrip(
@@ -407,28 +394,16 @@ class PythonFormatter:
                         ] + lines[content_start:]
                         new_content = '\n'.join(new_lines)
                     else:
-                        # Check if there are any existing comment blocks at the top that might be old headers
                         content_start = 0
-                        in_potential_header = True
 
                         for i, line in enumerate(lines):
                             stripped = line.strip()
-                            if not stripped:  # Empty line
+                            if not stripped:
                                 continue
-                            elif stripped.startswith(
-                                    '#') and in_potential_header:
-                                # This might be part of an old header, continue looking
+                            elif stripped.startswith('#'):
                                 continue
-                            elif stripped.startswith(
-                                    '"""') or stripped.startswith("'''"):
-                                # Docstring - this is actual content
+                            else:
                                 content_start = i
-                                in_potential_header = False
-                                break
-                            elif not stripped.startswith('#'):
-                                # Non-comment line - this is actual content
-                                content_start = i
-                                in_potential_header = False
                                 break
 
                         # Add standard header before the actual content
@@ -467,7 +442,7 @@ class PythonFormatter:
                 if os.path.exists(backup_path):
                     shutil.copy2(backup_path, file_path)
                     os.remove(backup_path)
-            except:
+            except Exception:  # best-effort backup restore
                 pass
 
     def run(self, apply, no_parallel, verbose):

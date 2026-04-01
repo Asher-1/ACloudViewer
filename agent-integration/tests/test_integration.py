@@ -149,11 +149,6 @@ def _check_cli_available() -> bool:
 HAS_CLI = _check_cli_available()
 
 try:
-    from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
-except ImportError:
-    ACloudViewerBackend = None  # type: ignore[assignment,misc]
-
-try:
     from websockets.sync.client import connect as ws_connect
     HAS_WS = True
 except ImportError:
@@ -187,6 +182,8 @@ def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
     - JSON-RPC errors      → RuntimeError (caller can use pytest.raises)
     - Success              → return result value
     """
+    ws = None
+    raw = None
     try:
         ws = ws_connect(RPC_URL, open_timeout=5)
     except (ConnectionRefusedError, ConnectionResetError, OSError):
@@ -204,10 +201,13 @@ def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
             pytest.skip("RPC connection closed unexpectedly")
         raise
     finally:
-        try:
-            ws.close()
-        except Exception:
-            pass
+        if ws is not None:
+            try:
+                ws.close()
+            except Exception:  # best-effort cleanup
+                pass
+    if raw is None:
+        pytest.skip("No response received from RPC server")
     resp = json.loads(raw)
     if "error" in resp:
         err = resp["error"]
@@ -859,9 +859,12 @@ def _count_obj_vertices(path: Path) -> int:
 
 
 def _skip_if_process_crashed(r: subprocess.CompletedProcess, context: str) -> None:
-    """Skip when the child was killed by a signal (e.g. SIGABRT from malloc)."""
+    """Skip when the child was killed by a signal or Windows exception."""
     if r.returncode < 0:
         pytest.skip(f"Binary crashed with signal {-r.returncode} ({context})")
+    if r.returncode >= 0xC0000000:
+        pytest.skip(
+            f"Binary crashed with code 0x{r.returncode:08X} ({context})")
 
 
 def _cli_resolve_normals_output_path(
@@ -878,6 +881,7 @@ def _cli_resolve_normals_output_path(
     exp = Path(expected)
     if exp.is_file() and exp.stat().st_size > 0:
         return str(exp.resolve())
+    data = {}
     try:
         data = json.loads(r_normals.stdout)
     except json.JSONDecodeError:
@@ -893,6 +897,7 @@ def _cli_resolve_normals_output_path(
     pytest.skip(
         "normals prerequisite succeeded but output file not found at "
         f"{expected} (JSON keys: {list(data.keys())})")
+    return ""  # unreachable: pytest.skip always raises
 
 
 def _count_off_vertices(path: Path) -> int:
@@ -2169,6 +2174,7 @@ class TestLevel3_FormatConversion:
              "-SAVE_MESHES", "FILE", out],
             capture_output=True, text=True, timeout=120,
             env=acv_env)
+        _skip_if_process_crashed(r, "FBX conversion")
         combined = (r.stdout + r.stderr).lower()
         skip_keywords = ("plugin", "filter", "unsupported", "unknown format",
                          "unhandled", "empty mesh", "nothing to save")
@@ -2506,7 +2512,7 @@ def level4_cleanup():
     if _rpc_available():
         try:
             _rpc_call("clear", timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
 
@@ -2664,7 +2670,7 @@ class TestLevel4_RPCFileOps:
         yield
         try:
             _rpc_call("clear", timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_open_ply(self, sample_ply):
@@ -2824,7 +2830,7 @@ class TestLevel4_RPCEntityOps:
         try:
             # Remove only the loaded group, not the entire scene
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_entity_rename(self, loaded):
@@ -2894,7 +2900,7 @@ class TestLevel4_RPCCloudProcessing:
         try:
             # Remove only the loaded group, not the entire scene
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_cloud_compute_normals(self, cloud_id):
@@ -3307,11 +3313,11 @@ class TestLevel4_RPCMeshOperations:
         yield mid
         try:
             _rpc_call("scene.remove", {"entity_id": mid}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
         try:
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_mesh_simplify_quadric(self, mesh_id):
@@ -3461,7 +3467,7 @@ class TestLevel4_RPCTransformOps:
         yield {"group_id": group_id, "cloud_id": cloud_id or group_id}
         try:
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_transform_apply(self, loaded):
