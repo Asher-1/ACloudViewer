@@ -91,13 +91,14 @@ void CVLog::RegisterInstance(CVLog* logInstance) {
 
 // Conversion from '...' parameters to QString so as to call CVLog::logMessage
 //(we get the "..." parameters as "printf" would do)
-#define LOG_ARGS(flags)                                      \
-    if (s_instance || s_backupEnabled) {                     \
-        va_list args;                                        \
-        va_start(args, format);                              \
-        _vsnprintf(s_buffer, s_bufferMaxSize, format, args); \
-        va_end(args);                                        \
-        LogMessage(QString(s_buffer), flags);                \
+#define LOG_ARGS(flags)                                              \
+    if (s_instance || s_backupEnabled) {                             \
+        va_list args;                                                \
+        va_start(args, format);                                      \
+        _vsnprintf(s_buffer, s_bufferMaxSize, format, args);        \
+        s_buffer[s_bufferMaxSize - 1] = '\0';                       \
+        va_end(args);                                                \
+        LogMessage(QString(s_buffer), flags);                        \
     }
 
 bool CVLog::PrintVerbose(const char* format, ...) {
