@@ -213,8 +213,9 @@ QString cc2DLabel::getName() const {
                 processedName.replace(POINT_INDEX_2,
                                       QString::number(m_pickedPoints[2].index));
                 if (m_pickedPoints[2].entity())
-                    processedName.replace(ENTITY_INDEX_2,
-                                          m_pickedPoints[2].entity()->getViewId());
+                    processedName.replace(
+                            ENTITY_INDEX_2,
+                            m_pickedPoints[2].entity()->getViewId());
             }
         }
     }
@@ -247,8 +248,7 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
         // remove all dependencies first!
         while (!m_pickedPoints.empty()) {
             PickedPoint& pp = m_pickedPoints.back();
-            if (pp.entity())
-                pp.entity()->removeDependencyWith(this);
+            if (pp.entity()) pp.entity()->removeDependencyWith(this);
             m_pickedPoints.pop_back();
         }
     }
@@ -340,7 +340,8 @@ void cc2DLabel::update2DLabelView(CC_DRAW_CONTEXT& context,
 void cc2DLabel::onDeletionOf(const ccHObject* obj) {
     ccHObject::onDeletionOf(obj);  // remove dependencies, etc.
 
-    // check that associated entities (clouds or meshes) are not about to be deleted
+    // check that associated entities (clouds or meshes) are not about to be
+    // deleted
     size_t pointsToRemove = 0;
     {
         for (size_t i = 0; i < m_pickedPoints.size(); ++i)
@@ -1385,7 +1386,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                         LabelInfo1 info;
                         getLabelInfo1(info);
 
-                        ccGenericPointCloud* cloud = m_pickedPoints[0].cloudOrVertices();
+                        ccGenericPointCloud* cloud =
+                                m_pickedPoints[0].cloudOrVertices();
                         if (cloud) {
                             bool isShifted = cloud->isShifted();
                             CCVector3 Pt = m_pickedPoints[0].getPointPosition();
@@ -1397,14 +1399,14 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                                     suffix = 'l';  //'l' for local
                                 }
                                 tab.colContent[c] << QString("X") + suffix;
-                                tab.colContent[c + 1]
-                                        << QString::number(Pt.x, 'f', precision);
+                                tab.colContent[c + 1] << QString::number(
+                                        Pt.x, 'f', precision);
                                 tab.colContent[c] << QString("Y") + suffix;
-                                tab.colContent[c + 1]
-                                        << QString::number(Pt.y, 'f', precision);
+                                tab.colContent[c + 1] << QString::number(
+                                        Pt.y, 'f', precision);
                                 tab.colContent[c] << QString("Z") + suffix;
-                                tab.colContent[c + 1]
-                                        << QString::number(Pt.z, 'f', precision);
+                                tab.colContent[c + 1] << QString::number(
+                                        Pt.z, 'f', precision);
                             }
                             // next block:  X, Y, Z (global)
                             if (isShifted) {
