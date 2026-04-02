@@ -7,8 +7,12 @@
 
 # Other problematic third-party code
 */3rdparty/*
+*/3rdparty_downloads/*
 */external/*
+*/extern/*
 */third_party/*
+*/thirdparty/*
+*/Reconstruction/lib/*
 
 # Build directories
 */build/*

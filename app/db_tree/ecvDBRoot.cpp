@@ -823,7 +823,28 @@ static void propagateHierarchyState(ccHObject* parent, bool ancestorActive) {
         if (childActive) {
             child->setRedraw(true);
         }
-        hideShowEntityDirect(child, childActive);
+        if (child->isA(CV_TYPES::LABEL_2D)) {
+            cc2DLabel* label = ccHObjectCaster::To2DLabel(child);
+            if (label) {
+                if (childActive) {
+                    label->updateLabel();
+                } else {
+                    label->clearLabel(false);
+                }
+            }
+        } else if (child->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
+            cc2DViewportLabel* viewLabel =
+                    ccHObjectCaster::To2DViewportLabel(child);
+            if (viewLabel) {
+                if (childActive) {
+                    viewLabel->updateLabel();
+                } else {
+                    viewLabel->clear2Dviews();
+                }
+            }
+        } else {
+            hideShowEntityDirect(child, childActive);
+        }
         propagateHierarchyState(child, childActive);
     }
 }
@@ -1173,7 +1194,7 @@ void ccDBRoot::selectEntity(ccHObject* obj,
                 }
                 selectionModel->select(selectedIndex,
                                        QItemSelectionModel::Toggle);
-                obj->setSelected(true);
+                obj->setSelected(selectionModel->isSelected(selectedIndex));
             } else {
                 if (selectionModel->isSelected(selectedIndex))  // nothing to do
                     return;

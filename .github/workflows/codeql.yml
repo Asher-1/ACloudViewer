@@ -67,9 +67,11 @@ jobs:
           patterns: |
             -3rdparty/**
             -3rdparty_downloads/**
+            -libs/Reconstruction/lib/**
             -**/extern/**
             -**/external/**
             -**/3rdparty/**
+            -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
           input: sarif-results/python.sarif
@@ -266,16 +268,18 @@ jobs:
           patterns: |
             -3rdparty/**
             -3rdparty_downloads/**
+            -libs/Reconstruction/lib/**
             -**/extern/**
             -**/external/**
             -**/3rdparty/**
+            -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
-          input: sarif-results/c-cpp.sarif
-          output: sarif-results/c-cpp.sarif
+          input: sarif-results/cpp.sarif
+          output: sarif-results/cpp.sarif
 
       - name: Upload filtered SARIF
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: sarif-results/c-cpp.sarif
+          sarif_file: sarif-results/cpp.sarif
           category: "/language:c-cpp"

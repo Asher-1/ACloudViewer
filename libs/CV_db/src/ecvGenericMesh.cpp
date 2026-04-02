@@ -514,10 +514,6 @@ bool ccGenericMesh::trianglePicking(
     CCVector3d C2D;
     bool inFrustum = true;
     if (noGLTrans) {
-        // if none of its points fall into the frustrum the triangle is not
-        // visible...
-        // DGM: we need to project ALL the points in case at least one is
-        // visible
         bool insideA = camera.project(A3D, A2D, &inFrustum);
         bool insideB = camera.project(B3D, B2D, &inFrustum);
         bool insideC = camera.project(C3D, C2D, &inFrustum);
@@ -528,10 +524,6 @@ bool ccGenericMesh::trianglePicking(
         CCVector3 A3Dp = trans * A3D;
         CCVector3 B3Dp = trans * B3D;
         CCVector3 C3Dp = trans * C3D;
-        // if none of its points fall into the frustrum the triangle is not
-        // visible...
-        // DGM: we need to project ALL the points in case at least one is
-        // visible
         bool insideA = camera.project(A3Dp, A2D, &inFrustum);
         bool insideB = camera.project(B3Dp, B2D, &inFrustum);
         bool insideC = camera.project(C3Dp, C2D, &inFrustum);
@@ -608,52 +600,21 @@ bool ccGenericMesh::trianglePicking(
         return false;
     }
 
-#if defined(_OPENMP) && !defined(_DEBUG)
-#pragma omp parallel
-    {
-        int localBestTri = -1;
-        double localBestDist = std::numeric_limits<double>::max();
-        CCVector3d localBestPoint(0, 0, 0);
-        CCVector3d localBestBC(0, 0, 0);
-#pragma omp for schedule(static)
-#endif
-        for (int i = 0; i < static_cast<int>(size()); ++i) {
-            CCVector3d P;
-            CCVector3d BC;
-            if (!trianglePicking(i, clickPos, trans, noGLTrans, *vertices,
-                                 camera, P, barycentricCoords ? &BC : nullptr))
-                continue;
+    for (int i = 0; i < static_cast<int>(size()); ++i) {
+        CCVector3d P;
+        CCVector3d BC;
+        if (!trianglePicking(i, clickPos, trans, noGLTrans, *vertices, camera,
+                             P, barycentricCoords ? &BC : nullptr))
+            continue;
 
-            double squareDist = (X - P).norm2d();
-#if defined(_OPENMP) && !defined(_DEBUG)
-            if (localBestTri < 0 || squareDist < localBestDist) {
-                localBestDist = squareDist;
-                localBestTri = i;
-                localBestPoint = P;
-                if (barycentricCoords) localBestBC = BC;
-            }
-#else
+        double squareDist = (X - P).norm2d();
         if (nearestTriIndex < 0 || squareDist < nearestSquareDist) {
             nearestSquareDist = squareDist;
             nearestTriIndex = static_cast<int>(i);
             nearestPoint = P;
             if (barycentricCoords) *barycentricCoords = BC;
         }
-#endif
-        }
-#if defined(_OPENMP) && !defined(_DEBUG)
-#pragma omp critical
-        {
-            if (localBestTri >= 0 &&
-                (nearestTriIndex < 0 || localBestDist < nearestSquareDist)) {
-                nearestSquareDist = localBestDist;
-                nearestTriIndex = localBestTri;
-                nearestPoint = localBestPoint;
-                if (barycentricCoords) *barycentricCoords = localBestBC;
-            }
-        }
-    }  // omp parallel
-#endif
+    }
 
     return (nearestTriIndex >= 0);
 }
