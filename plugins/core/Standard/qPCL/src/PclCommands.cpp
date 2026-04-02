@@ -1087,13 +1087,50 @@ struct CmdFGR : public ccCommandLineInterface::Command {
 // ============================================================================
 struct CmdSIFT : public ccCommandLineInterface::Command {
     CmdSIFT() : Command("PCL Extract SIFT", CMD_PCL_SIFT) {}
+    /**
+     * @brief Parses and executes the PCL_EXTRACT_SIFT command.
+     *
+     * This command extracts SIFT keypoints from the currently loaded input
+     * cloud(s) using the PCL SIFT implementation. It expects at least one
+     * input cloud to be available in the command-line interface context.
+     *
+     * Supported arguments:
+     *  - -MODE RGB|SF
+     *      Selects the source information used to compute the SIFT keypoints.
+     *      Typically "RGB" uses color information, while "SF" uses scalar
+     *      field values associated with the points.
+     *  - -OCTAVES <n>
+     *      Number of octaves in the SIFT scale space (must be > 0).
+     *  - -MIN_SCALE <s>
+     *      Minimum scale (in the same units as the cloud coordinates) used
+     *      to initialize the SIFT scale space (must be > 0.0).
+     *  - -SCALES_PER_OCTAVE <m>
+     *      Number of scales per octave (must be > 0).
+     *  - -FIELD <name> (optional)
+     *      Name of the scalar field used when running in scalar-field mode.
+     *      If omitted, the default or active scalar field is used.
+     *  - -MIN_CONTRAST <c> (optional)
+     *      Minimum contrast threshold used to filter out weak keypoints.
+     *      If provided, the value must be strictly greater than 0.0.
+     *
+     * The function validates that all required parameters are provided and
+     * strictly positive where applicable. On error, a descriptive message is
+     * reported via the ccCommandLineInterface and the function returns false.
+     *
+     * @param cmd Command-line interface providing arguments and logging.
+     * @return true on successful configuration and execution, false otherwise.
+     */
     bool process(ccCommandLineInterface& cmd) override {
+        // Ensure that at least one input cloud is already available.
         if (!NeedClouds(cmd, CMD_PCL_SIFT)) return false;
+        // SIFT configuration parameters (initialized to invalid defaults).
         int oct = 0, sPerOct = 0;
         float minScale = 0.f, minContrast = 0.f;
         QString modeStr;
         QString fieldName;
         bool useMinContrast = false;
+        // Parse known arguments until we hit an unrecognized token, which
+        // is left in the argument list for subsequent commands.
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
             if (a == "-MODE") {
@@ -1122,12 +1159,15 @@ struct CmdSIFT : public ccCommandLineInterface::Command {
             } else
                 break;
         }
+        // Basic validation: all required parameters must be provided and
+        // strictly positive where applicable.
         if (!modeStr.size() || oct <= 0 || minScale <= 0.f || sPerOct <= 0) {
             return cmd.error(
                     QObject::tr("PCL_EXTRACT_SIFT requires -MODE RGB|SF, "
                                 "-OCTAVES, -MIN_SCALE, -SCALES_PER_OCTAVE (all "
                                 "positive where applicable)"));
         }
+        // Optional minimum contrast must be strictly positive when enabled.
         if (useMinContrast && minContrast <= 0.f) {
             return cmd.error(
                     QObject::tr("When using -MIN_CONTRAST, value must be > 0"));
@@ -1441,17 +1481,27 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
 struct CmdTemplateAlign : public ccCommandLineInterface::Command {
     CmdTemplateAlign()
         : Command("PCL Template Alignment", CMD_PCL_TEMPLATE_ALIGN) {}
+    //! Executes the PCL_TEMPLATE_ALIGNMENT command.
+    /** Parses command-line arguments, selects the reference/target clouds,
+        and runs SAC-IA template alignment using FPFH features. The last
+        loaded cloud (or the one specified by -REF_INDEX) is used as target. */
     bool process(ccCommandLineInterface& cmd) override {
+        // At least two clouds are required: one or more templates and one
+        // target.
         if (cmd.clouds().size() < 2) {
             return cmd.error(QObject::tr(
                     "PCL_TEMPLATE_ALIGNMENT needs >=2 clouds (templates + "
                     "target). Last cloud = target."));
         }
+        // Default parameters for normal estimation, feature computation and
+        // SAC-IA.
         float normalR = 0.02f, featureR = 0.02f;
         int maxIter = 500;
         float minSampleDist = 0.05f, maxCorrDist = 0.01f;
         float voxelLeaf = -1.f;
         int refIdx = -1;
+        // Parse optional command-line arguments overriding the default
+        // parameters.
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
             if (a == "-NORMAL_RADIUS") {
@@ -1479,6 +1529,8 @@ struct CmdTemplateAlign : public ccCommandLineInterface::Command {
             } else
                 break;
         }
+        // If no explicit reference index is provided, use the last cloud as
+        // target.
         size_t targetIdx = (refIdx >= 0) ? static_cast<size_t>(refIdx)
                                          : cmd.clouds().size() - 1;
         if (targetIdx >= cmd.clouds().size()) {

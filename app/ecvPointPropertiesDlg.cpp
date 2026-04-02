@@ -260,8 +260,8 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
                 uv.x = (d11 * d20 - d01 * d21) / denom;
                 uv.y = (d00 * d21 - d01 * d20) / denom;
             }
-            addOk = m_label->addPickedPoint(mesh, picked.itemIndex,
-                                            uv, picked.entityCenter);
+            addOk = m_label->addPickedPoint(mesh, picked.itemIndex, uv,
+                                            picked.entityCenter);
         }
     }
     if (!addOk) {
