@@ -7,6 +7,7 @@
 
 #include "qCoreIO.h"
 
+#include "CoreIOCommands.h"
 #include "HeightProfileFilter.h"
 #include "MAFilter.h"
 #include "MascaretFilter.h"
@@ -17,7 +18,9 @@ qCoreIO::qCoreIO(QObject *parent)
     : QObject(parent), ccIOPluginInterface(":/CC/plugin/CoreIO/info.json") {}
 
 void qCoreIO::registerCommands(ccCommandLineInterface *inCmdLine) {
-    Q_UNUSED(inCmdLine);
+    if (!inCmdLine) return;
+    inCmdLine->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCoreIO));
 }
 
 ccIOPluginInterface::FilterList qCoreIO::getFilters() {

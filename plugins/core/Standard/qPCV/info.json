@@ -2,7 +2,7 @@
   "type": "Standard",
   "core" : true,
   "name": "PCV / ShadeVis",
-  "icon": ":/CC/plugin/qPCV/cc_ShadeVisIcon.png",
+  "icon": ":/CC/plugin/qPCV/images/PCVIcon.png",
   "description": "Ambient Occlusion for mesh or point cloud.",
   "authors": [
     {
@@ -19,7 +19,7 @@
   "references": [
     {
       "text": "Documentation",
-      "url": "http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=ShadeVis_(plugin)"
+      "url": "http://www.cloudcompare.org/doc/wiki/index.php?title=ShadeVis_(plugin)"
     }
   ]
 }

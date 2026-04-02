@@ -7,6 +7,8 @@
 
 #include "ccPinchNodeTool.h"
 
+#include <CVLog.h>
+
 ccPinchNodeTool::ccPinchNodeTool() : ccTool() {}
 
 ccPinchNodeTool::~ccPinchNodeTool() {}
@@ -20,15 +22,16 @@ void ccPinchNodeTool::pointPicked(ccHObject* insertPoint,
     ccGeoObject* geoObj = ccGeoObject::getGeoObjectParent(insertPoint);
     if (geoObj)  // there is an active GeoObject
     {
-        insertPoint = geoObj->getRegion(
-                ccGeoObject::INTERIOR);  // add pinch-points to GeoObject
-                                         // interior
+        ccHObject* region = geoObj->getRegion(ccGeoObject::INTERIOR);
+        if (!region) {
+            CVLog::Error("[Compass] Internal error: no interior region");
+            return;
+        }
+        insertPoint = region;
     } else {
-        // throw error
-        m_app->dispToConsole(
-                "[Compass] PinchNodes can only be added to GeoObjects. Please "
-                "select one!",
-                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        CVLog::Error(
+                "[Compass] PinchNodes can only be added to GeoObjects. "
+                "Please select one!");
         return;
     }
 

@@ -20,12 +20,16 @@
 // CV_DB_LIB
 #include <ecvBox.h>
 #include <ecvDisplayTools.h>
+#include <ecvExternalFactory.h>
+#include <ecvGenericPrimitive.h>
 #include <ecvProgressDialog.h>
 #include <qcombobox.h>
 
 // LOCAL
 #include "ccCompass.h"
+#include "ccCompassCommands.h"
 #include "ccCompassDlg.h"
+#include "ccCompassExport.h"
 #include "ccCompassInfo.h"
 #include "ccFitPlaneTool.h"
 #include "ccGeoObject.h"
@@ -46,6 +50,21 @@ bool ccCompass::fitPlanes = true;
 int ccCompass::costMode = ccTrace::DARK;
 bool ccCompass::mapMode = false;
 int ccCompass::mapTo = ccGeoObject::LOWER_BOUNDARY;
+
+class CompassFactory : public ccExternalFactory {
+public:
+    CompassFactory() : ccExternalFactory("Compass") {}
+
+    ccHObject* buildObject(const QString& metaName) override {
+        if (metaName == ccTrace::GetClassName()) {
+            return new ccTrace;
+        }
+
+        CVLog::Warning("[CompassFactory::buildObject] Unknown object: " +
+                       metaName);
+        return nullptr;
+    }
+};
 
 ccCompass::ccCompass(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qCompass/info.json") {
@@ -76,7 +95,7 @@ void ccCompass::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_action->setEnabled(m_app && m_app->dbRootObject() &&
                          m_app->dbRootObject()->getChildrenNumber() != 0);
 
-    if (!m_dlg | !m_mapDlg) {
+    if (!m_dlg || !m_mapDlg) {
         return;  // not initialized yet - ignore callback
     }
 
@@ -96,7 +115,7 @@ void ccCompass::onNewSelection(const ccHObject::Container& selectedEntities) {
         m_mapDlg->setUpperButton->setEnabled(false);
         m_mapDlg->setInteriorButton->setEnabled(false);
         m_mapDlg->selectionLabel->setEnabled(false);
-        m_mapDlg->selectionLabel->setText(tr("No Selection"));
+        m_mapDlg->selectionLabel->setText("No Selection");
     }
     // has a GeoObject (or a child of one?) been selected?
     for (ccHObject* obj : selectedEntities) {
@@ -151,11 +170,11 @@ void ccCompass::onNewSelection(const ccHObject::Container& selectedEntities) {
 
 // Submit the action to launch ccCompass to CC
 QList<QAction*> ccCompass::getActions() {
-    // default action (if it has not been already created, it's the moment to do
-    // it)
-    if (!m_action)  // this is the action triggered by clicking the "Compass"
-                    // button in the plugin menu
-    {
+    ccExternalFactory::Container::Shared container =
+            ccExternalFactory::Container::GetUniqueInstance();
+    container->addFactory(new CompassFactory);
+
+    if (!m_action) {
         // here we use the default plugin name, description and icon,
         // but each action can have its own!
         m_action = new QAction(getName(), this);
@@ -169,6 +188,23 @@ QList<QAction*> ccCompass::getActions() {
     }
 
     return QList<QAction*>{m_action};
+}
+
+void ccCompass::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassExport));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassImportFoliations));
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandCompassImportLineations));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassRefit));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCompassP21));
 }
 
 // Called by CC when the plugin should be activated - sets up the plugin and
@@ -337,24 +373,44 @@ void ccCompass::tryLoading() {
         ccHObject* original = m_app->dbRootObject()->find(originals[i]);
         ccHObject* replacement = replacements[i];
 
+        if (!original) continue;
+        if (!replacement) continue;
+
         replacement->setVisible(original->isVisible());
         replacement->setEnabled(original->isEnabled());
 
-        if (!original)  // can't find for some reason?
-            continue;
-        if (!replacement)  // can't find for some reason?
-            continue;
-
-        // steal all the children
+        // steal children selectively (skip arrays and vertex clouds)
+        ccHObject::Container toDetach;
         for (unsigned c = 0; c < original->getChildrenNumber(); c++) {
-            replacement->addChild(original->getChild(c));
+            ccHObject* child = original->getChild(c);
+            if (child->isKindOf(CV_TYPES::ARRAY)) {
+                continue;
+            }
+            if (original->isKindOf(CV_TYPES::POLY_LINE)) {
+                if (dynamic_cast<ccHObject*>(static_cast<ccPolyline*>(original)
+                                                     ->getAssociatedCloud()) ==
+                    child) {
+                    continue;
+                }
+            } else if (original->isKindOf(CV_TYPES::PRIMITIVE)) {
+                if (static_cast<ccGenericPrimitive*>(original)
+                            ->getAssociatedCloud() == child) {
+                    continue;
+                }
+            }
+            replacement->addChild(child);
+            toDetach.push_back(child);
         }
 
-        // remove them from the orignal parent
-        original->detachAllChildren();
+        while (!toDetach.empty()) {
+            original->detachChild(toDetach.back());
+            toDetach.pop_back();
+        }
 
         // add new parent to scene graph
-        original->getParent()->addChild(replacement);
+        if (original->getParent()) {
+            original->getParent()->addChild(replacement);
+        }
 
         // delete originals
         m_app->removeFromDB(original);
@@ -432,9 +488,13 @@ void ccCompass::tryLoading(ccHObject* obj,
         // are we a trace?
         if (ccTrace::isTrace(obj)) {
             ccTrace* trace = new ccTrace(p);
+            ccHObject* cloud =
+                    dynamic_cast<ccHObject*>(p->getAssociatedCloud());
+            if (cloud) {
+                cloud->addDependency(trace,
+                                     ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
+            }
             trace->setWidth(2);
-            // add to originals/duplicates list [these are used later to
-            // overwrite the originals]
             originals->push_back(obj->getUniqueID());
             replacements->push_back(trace);
             return;
@@ -509,6 +569,9 @@ bool ccCompass::startMeasuring() {
 
 // Exits measuring
 bool ccCompass::stopMeasuring(bool finalStop /*=false*/) {
+    if (m_app == nullptr) {
+        return true;
+    }
     // remove click listener
     if (m_app->getActiveWindow()) {
         m_app->getActiveWindow()->removeEventFilter(this);
@@ -595,6 +658,7 @@ ccHObject* ccCompass::getInsertPoint() {
             m_app->dispToConsole(tr("[ccCompass] Error: Please select a "
                                     "GeoObject to digitize to."),
                                  ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+            return nullptr;
         }
 
         // check it actually exists/hasn't been deleted
@@ -627,7 +691,7 @@ ccHObject* ccCompass::getInsertPoint() {
         for (unsigned i = 0; i < m_app->dbRootObject()->getChildrenNumber();
              i++) {
             if (m_app->dbRootObject()->getChild(i)->getName() ==
-                tr("measurements")) {
+                QString("measurements")) {
                 measurement_group = m_app->dbRootObject()->getChild(i);
             } else {
                 // also search first-level children of root node (when files are
@@ -639,7 +703,7 @@ ccHObject* ccCompass::getInsertPoint() {
                     if (m_app->dbRootObject()
                                 ->getChild(i)
                                 ->getChild(c)
-                                ->getName() == tr("measurements")) {
+                                ->getName() == QString("measurements")) {
                         measurement_group =
                                 m_app->dbRootObject()->getChild(i)->getChild(c);
                         break;
@@ -655,7 +719,7 @@ ccHObject* ccCompass::getInsertPoint() {
 
         // didn't find it - create a new one!
         if (!measurement_group) {
-            measurement_group = new ccHObject(tr("measurements"));
+            measurement_group = new ccHObject("measurements");
             m_app->dbRootObject()->addChild(measurement_group);
             m_app->addToDB(measurement_group, false, true, false, false);
         }
@@ -698,23 +762,17 @@ void ccCompass::pointPicked(
     parentNode->setEnabled(true);
 
     // call generic "point-picked" function of active tool
-    m_activeTool->pointPicked(parentNode, itemIdx, entity, P);
+    if (!m_activeTool->pointPicked(parentNode, itemIdx, entity, P)) {
+        // have we picked a point cloud?
+        if (entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+            // get point cloud
+            ccPointCloud* cloud = static_cast<ccPointCloud*>(entity);
 
-    // have we picked a point cloud?
-    if (entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        // get point cloud
-        ccPointCloud* cloud =
-                static_cast<ccPointCloud*>(entity);  // cast to point cloud
-
-        if (!cloud) {
-            CVLog::Warning(
-                    tr("[Item picking] Shit's fubar (Picked point is not in "
-                       "pickable entities DB?)!"));
-            return;
+            // pass picked point, cloud & insert point to relevant tool
+            m_activeTool->pointPicked(parentNode, itemIdx, cloud, P);
+        } else {
+            CVLog::Error(tr("Invalid entity type"));
         }
-
-        // pass picked point, cloud & insert point to relevant tool
-        m_activeTool->pointPicked(parentNode, itemIdx, cloud, P);
     }
 
     // redraw
@@ -758,7 +816,7 @@ void ccCompass::onAccept() {
 // returns true if object was created by ccCompass
 bool ccCompass::madeByMe(ccHObject* object) {
     // return isFitPlane(object) | isTrace(object) | isLineation(object);
-    return object->hasMetaData(tr("ccCompassType"));
+    return object->hasMetaData("ccCompassType");
 }
 
 // undo last plane
@@ -1140,8 +1198,9 @@ void ccCompass::recalculateFitPlanes() {
 
         if (ccTrace::isTrace(parent))  // add to recalculate list
         {
+            ccTrace* t = dynamic_cast<ccTrace*>(parent);
+            if (!t) continue;
             // recalculate the fit plane
-            ccTrace* t = static_cast<ccTrace*>(parent);
             ccFitPlane* p = t->fitPlane();
             if (p) {
                 t->addChild(p);  // add the new fit-plane
@@ -1160,8 +1219,8 @@ void ccCompass::recalculateFitPlanes() {
             ccHObject* child = (*it)->getChild(c);
             if (ccTrace::isTrace(child))  // add to recalculate list
             {
-                // recalculate the fit plane
-                ccTrace* t = static_cast<ccTrace*>(child);
+                ccTrace* t = dynamic_cast<ccTrace*>(child);
+                if (!t) continue;
                 ccFitPlane* p = t->fitPlane();
 
                 if (p) {
@@ -2469,12 +2528,12 @@ void ccCompass::estimateStrain() {
     }
 
     // calculate bounding box of all traces
-    float minx = std::numeric_limits<float>::max(),
-          maxx = std::numeric_limits<float>::lowest();
-    float miny = std::numeric_limits<float>::max(),
-          maxy = std::numeric_limits<float>::lowest();
-    float minz = std::numeric_limits<float>::max(),
-          maxz = std::numeric_limits<float>::lowest();
+    double minx = std::numeric_limits<double>::max(),
+           maxx = std::numeric_limits<double>::lowest();
+    double miny = std::numeric_limits<double>::max(),
+           maxy = std::numeric_limits<double>::lowest();
+    double minz = std::numeric_limits<double>::max(),
+           maxz = std::numeric_limits<double>::lowest();
 
     if (lines.empty()) {
         m_app->dispToConsole(tr("[ccCompass] Error - no traces or SNEs found "
@@ -2489,12 +2548,12 @@ void ccCompass::estimateStrain() {
         if (poly->size() > 0)  // avoid (0,0,0),(0,0,0) bounding boxes...
         {
             poly->getBoundingBox(bbMin, bbMax);
-            minx = std::min(bbMin.x, minx);
-            maxx = std::max(bbMax.x, maxx);
-            miny = std::min(bbMin.y, miny);
-            maxy = std::max(bbMax.y, maxy);
-            minz = std::min(bbMin.z, minz);
-            maxz = std::max(bbMax.z, maxz);
+            minx = std::min(static_cast<double>(bbMin.x), minx);
+            maxx = std::max(static_cast<double>(bbMax.x), maxx);
+            miny = std::min(static_cast<double>(bbMin.y), miny);
+            maxy = std::max(static_cast<double>(bbMax.y), maxy);
+            minz = std::min(static_cast<double>(bbMin.z), minz);
+            maxz = std::max(static_cast<double>(bbMax.z), maxz);
         }
     }
 
@@ -2971,18 +3030,18 @@ void ccCompass::estimateStrain() {
                         ellipses->addChild(ellipse);
 
                         // store strain tensor on the graphic for reference
-                        QVariantMap* map = new QVariantMap();
-                        map->insert("Exx", U.getValue(0, 0) - 1.0);
-                        map->insert("Exy", U.getValue(0, 1));
-                        map->insert("Exz", U.getValue(0, 2));
-                        map->insert("Eyx", U.getValue(1, 0));
-                        map->insert("Eyy", U.getValue(1, 1) - 1.0);
-                        map->insert("Eyz", U.getValue(1, 2));
-                        map->insert("Ezx", U.getValue(2, 0));
-                        map->insert("Ezy", U.getValue(2, 1));
-                        map->insert("Ezz", U.getValue(2, 2) - 1.0);
-                        map->insert("J", J);
-                        ellipse->setMetaData(*map, true);
+                        QVariantMap map;
+                        map.insert("Exx", U.getValue(0, 0) - 1.0);
+                        map.insert("Exy", U.getValue(0, 1));
+                        map.insert("Exz", U.getValue(0, 2));
+                        map.insert("Eyx", U.getValue(1, 0));
+                        map.insert("Eyy", U.getValue(1, 1) - 1.0);
+                        map.insert("Eyz", U.getValue(1, 2));
+                        map.insert("Ezx", U.getValue(2, 0));
+                        map.insert("Ezy", U.getValue(2, 1));
+                        map.insert("Ezz", U.getValue(2, 2) - 1.0);
+                        map.insert("J", J);
+                        ellipse->setMetaData(map, true);
 
                         // create cubes to highlight gridding
                         ccGLMatrix T;
@@ -3100,7 +3159,8 @@ void ccCompass::estimateP21() {
                 p);  // get the region of any associated geo-object this
                      // polyline relates too.
         double w = 1.0;
-        if (sID == ccGeoObject::UPPER_BOUNDARY || ccGeoObject::LOWER_BOUNDARY) {
+        if (sID == ccGeoObject::UPPER_BOUNDARY ||
+            sID == ccGeoObject::LOWER_BOUNDARY) {
             w = 0.5;  // upper/lower boundaries only count for 0.5 as they
                       // should be represented/counted twice.
         }
@@ -3530,7 +3590,7 @@ void ccCompass::toggleLabels(bool checked) {
 
 void ccCompass::recurseLabels(ccHObject* object, bool checked) {
     // check this object
-    if (ccFitPlane::isFitPlane(object) | ccPointPair::isPointPair(object)) {
+    if (ccFitPlane::isFitPlane(object) || ccPointPair::isPointPair(object)) {
         object->showNameIn3D(checked);
     }
 
@@ -3737,14 +3797,10 @@ void ccCompass::importFoliations() {
     planeSize.setValidator(
             new QDoubleValidator(0.01, std::numeric_limits<double>::max(), 6));
 
-    // fill combo boxes with field names
-    // std::vector<QString> fields;
-    // std::vector<int> idx;
+    // fill combo boxes with field names (store index as item data)
     for (unsigned i = 0; i < cld->getNumberOfScalarFields(); i++) {
-        dipDirCombo.addItem(cld->getScalarFieldName(i));
-        dipCombo.addItem(cld->getScalarFieldName(i));
-        // fields.push_back(cld->getScalarFieldName(i));
-        // idx.push_back(i);
+        dipDirCombo.addItem(cld->getScalarFieldName(i), i);
+        dipCombo.addItem(cld->getScalarFieldName(i), i);
     }
 
     QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -3755,9 +3811,9 @@ void ccCompass::importFoliations() {
     vbox->addWidget(&dipCombo);
     vbox->addWidget(&dipDirLabel);
     vbox->addWidget(&dipDirCombo);
-    vbox->addWidget(&buttonBox);
     vbox->addWidget(&sizeLabel);
     vbox->addWidget(&planeSize);
+    vbox->addWidget(&buttonBox);
     dlg.setLayout(vbox);
 
     // execute dialog and get results
@@ -3766,11 +3822,9 @@ void ccCompass::importFoliations() {
         return;  // bail!
     }
 
-    // get values
-    int dipSF = cld->getScalarFieldIndexByName(
-            dipCombo.currentText().toStdString().c_str());
-    int dipDirSF = cld->getScalarFieldIndexByName(
-            dipDirCombo.currentText().toStdString().c_str());
+    // get values (resolved by stored index, not by name)
+    int dipSF = dipCombo.currentData().toInt();
+    int dipDirSF = dipDirCombo.currentData().toInt();
     double size = planeSize.text().toDouble();
     if (dipSF == dipDirSF) {
         m_app->dispToConsole(tr("Error: Dip and Dip-Direction scalar fields "
@@ -3790,6 +3844,7 @@ void ccCompass::importFoliations() {
                 QString("%1/%2")
                         .arg(static_cast<int>(dip), 2, 10, QChar('0'))
                         .arg(static_cast<int>(dipdir), 3, 10, QChar('0')));
+        plane->copyGlobalShiftAndScale(*cld);
         plane->showNameIn3D(true);
         cld->addChild(plane);
         m_app->addToDB(plane, false, true, false, false);
@@ -3837,9 +3892,6 @@ void ccCompass::importFoliations() {
         }
         if (needToApplyRot || needToApplyTrans) {
             plane->applyGLTransformation_recursive(&trans);
-
-            // CVLog::Print("[Plane edit] Applied transformation matrix:");
-            // CVLog::Print(trans.toString(12, ' ')); //full precision
         }
         plane->setXWidth(size, false);
         plane->setYWidth(size, true);
@@ -3882,10 +3934,10 @@ void ccCompass::importLineations() {
     planeSize.setValidator(
             new QDoubleValidator(0.01, std::numeric_limits<double>::max(), 6));
 
-    // fill combo boxes with field names
+    // fill combo boxes with field names (store index as item data)
     for (unsigned i = 0; i < cld->getNumberOfScalarFields(); i++) {
-        dipDirCombo.addItem(cld->getScalarFieldName(i));
-        dipCombo.addItem(cld->getScalarFieldName(i));
+        dipDirCombo.addItem(cld->getScalarFieldName(i), i);
+        dipCombo.addItem(cld->getScalarFieldName(i), i);
     }
 
     QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -3896,9 +3948,9 @@ void ccCompass::importLineations() {
     vbox->addWidget(&dipCombo);
     vbox->addWidget(&dipDirLabel);
     vbox->addWidget(&dipDirCombo);
-    vbox->addWidget(&buttonBox);
     vbox->addWidget(&sizeLabel);
     vbox->addWidget(&planeSize);
+    vbox->addWidget(&buttonBox);
     dlg.setLayout(vbox);
 
     // execute dialog and get results
@@ -3907,11 +3959,9 @@ void ccCompass::importLineations() {
         return;  // bail!
     }
 
-    // get values
-    int dipSF = cld->getScalarFieldIndexByName(
-            dipCombo.currentText().toStdString().c_str());
-    int dipDirSF = cld->getScalarFieldIndexByName(
-            dipDirCombo.currentText().toStdString().c_str());
+    // get values (resolved by stored index, not by name)
+    int dipSF = dipCombo.currentData().toInt();
+    int dipDirSF = dipDirCombo.currentData().toInt();
     double size = planeSize.text().toDouble();
     if (dipSF == dipDirSF) {
         m_app->dispToConsole(
@@ -3935,10 +3985,7 @@ void ccCompass::importLineations() {
 
         // create new point cloud to associate with lineation graphic
         ccPointCloud* points = new ccPointCloud();
-        points->setGlobalScale(
-                cld->getGlobalScale());  // copy global shift & scale onto new
-                                         // point cloud
-        points->setGlobalShift(cld->getGlobalShift());
+        points->copyGlobalShiftAndScale(*cld);
         points->reserve(2);
         points->addPoint(Cd);
         points->addPoint(Cd + l * size);
@@ -3946,6 +3993,7 @@ void ccCompass::importLineations() {
 
         // create lineation graphic
         ccLineation* lineation = new ccLineation(points);
+        lineation->copyGlobalShiftAndScale(*cld);
         lineation->addChild(points);
         lineation->addPointIndex(0);
         lineation->addPointIndex(1);
@@ -3960,13 +4008,12 @@ void ccCompass::importLineations() {
 
 // save the current view to an SVG file
 void ccCompass::exportToSVG() {
-    float zoom = 2.0f;  // TODO: create popup box
+    constexpr float zoom = 2.0f;  // TODO: create popup box
 
     // get filename for the svg file
     QString filename = QFileDialog::getSaveFileName(
             m_dlg, tr("SVG Output file"), "", tr("SVG files (*.svg)"));
     if (filename.isEmpty()) {
-        // process cancelled by the user
         return;
     }
 
@@ -3974,144 +4021,7 @@ void ccCompass::exportToSVG() {
         filename += ".svg";
     }
 
-    // set all objects except the point clouds invisible
-    std::vector<ccHObject*>
-            hidden;  // store objects we hide so we can turn them back on after!
-    ccHObject::Container objects;
-    m_app->dbRootObject()->filterChildren(objects, true, CV_TYPES::OBJECT,
-                                          false);  // get list of all children!
-    for (ccHObject* o : objects) {
-        if (!o->isA(CV_TYPES::POINT_CLOUD)) {
-            if (o->isVisible()) {
-                hidden.push_back(o);
-                o->setVisible(false);
-            }
-        }
-    }
-
-    // render the scene
-    // QImage img = m_app->getActiveWindow()->renderToImage(zoom);
-
-    // restore visibility
-    for (ccHObject* o : hidden) {
-        o->setVisible(true);
-    }
-
-    // convert image to base64 (png format) to write in svg file
-    QByteArray ba;
-    QBuffer bu(&ba);
-    bu.open(QIODevice::WriteOnly);
-    // img.save(&bu, "PNG");
-    bu.close();
-
-    // create .svg file
-    QFile svg_file(filename);
-    // open file & create text stream
-    if (svg_file.open(QIODevice::WriteOnly)) {
-        QTextStream svg_stream(&svg_file);
-
-        int width = std::abs(static_cast<int>(
-                ecvDisplayTools::GlWidth() *
-                zoom));  // glWidth and glHeight are negative on some machines??
-        int height =
-                std::abs(static_cast<int>(ecvDisplayTools::GlHeight() * zoom));
-
-        // write svg header
-        svg_stream << QString::asprintf("<svg width=\"%d\" height=\"%d\">",
-                                        width, height)
-                   << QtCompat::endl;
-
-        // write the image
-        svg_stream << QString::asprintf(
-                              "<image height = \"%d\" width = \"%d\" "
-                              "xlink:href = \"data:image/png;base64,",
-                              height, width)
-                   << ba.toBase64() << "\"/>" << QtCompat::endl;
-
-        // recursively write traces
-        int count = writeTracesSVG(m_app->dbRootObject(), &svg_stream, height,
-                                   zoom);
-
-        // TODO: write scale bar
-
-        // write end tag for svg file
-        svg_stream << "</svg>" << QtCompat::endl;
-
-        // close file
-        svg_stream.flush();
-        svg_file.close();
-
-        if (count > 0) {
-            m_app->dispToConsole(tr("[ccCompass] Successfully saved %1 "
-                                    "polylines to .svg file.")
-                                         .arg(count));
-        } else {
-            // remove file
-            svg_file.remove();
-            m_app->dispToConsole(tr("[ccCompass] Could not write polylines to "
-                                    ".svg - no polylines found!"),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-        }
-    }
-}
-
-int ccCompass::writeTracesSVG(ccHObject* object,
-                              QTextStream* out,
-                              int height,
-                              float zoom) {
-    int n = 0;
-
-    // is this a drawable polyline?
-    if (object->isA(CV_TYPES::POLY_LINE) || ccTrace::isTrace(object)) {
-        // get polyline object
-        ccPolyline* line = static_cast<ccPolyline*>(object);
-
-        if (!line->isVisible()) {
-            return 0;  // as soon as something is not visible we bail
-        }
-
-        // write polyline header
-        *out << "<polyline fill=\"none\" stroke=\"black\" points=\"";
-
-        // get projection params
-        ccGLCameraParameters params;
-        ecvDisplayTools::GetGLCameraParameters(params);
-        if (params.perspective) {
-            ecvDisplayTools::SetPerspectiveState(false, true);
-            // m_app->getActiveWindow()->redraw(false, false); //not sure if
-            // this is needed or not?
-            ecvDisplayTools::GetGLCameraParameters(
-                    params);  // get updated params
-        }
-
-        // write point string
-        for (unsigned i = 0; i < line->size(); i++) {
-            // get point in world coordinates
-            CCVector3 P = *line->getPoint(i);
-
-            // project 3D point into 2D
-            CCVector3d coords2D;
-            params.project(P, coords2D);
-
-            // write point
-            *out << QString::asprintf(
-                    "%.3f,%.3f ", coords2D.x * zoom,
-                    height - (coords2D.y *
-                              zoom));  // n.b. we need to flip y-axis
-        }
-
-        // end polyline
-        *out << "\"/>" << QtCompat::endl;
-
-        n++;  // a polyline has been written
-    }
-
-    // recurse on children
-    for (unsigned i = 0; i < object->getChildrenNumber(); i++) {
-        n += writeTracesSVG(object->getChild(i), out, height, zoom);
-    }
-
-    return n;
+    ccCompassExport::saveSVG(m_app, filename, zoom);
 }
 
 // export interpretations to csv or xml
@@ -4119,138 +4029,18 @@ void ccCompass::onSave() {
     // get output file path
     QString filename = QFileDialog::getSaveFileName(
             m_dlg, tr("Output file"), "",
-            tr("CSV files (*.csv *.txt);XML (*.xml)"));
+            tr("CSV files (*.csv *.txt);;XML (*.xml)"));
     if (filename.isEmpty()) {
-        // process cancelled by the user
         return;
     }
 
-    // is this an xml file?
     QFileInfo fi(filename);
     if (fi.suffix() == "xml") {
-        writeToXML(filename);  // write xml file
+        ccCompassExport::saveXML(m_app, filename);
         return;
     }
 
-    // otherwise write a whole bunch of .csv files
-
-    int planes = 0;  // keep track of how many objects are being written (used
-                     // to delete empty files)
-    int traces = 0;
-    int lineations = 0;
-    int thicknesses = 0;
-
-    /*
-    QString filename = QFileDialog::getSaveFileName(m_dlg, tr("Output file"),
-    "", tr("XML files (*.xml *.txt)"));
-    */
-    // build filenames
-
-    QString baseName = fi.absolutePath() + "/" + fi.completeBaseName();
-    QString ext = fi.suffix();
-    if (!ext.isEmpty()) {
-        ext.prepend('.');
-    }
-    QString plane_fn = baseName + "_planes" + ext;
-    QString trace_fn = baseName + "_traces" + ext;
-    QString lineation_fn = baseName + "_lineations" + ext;
-    QString thickness_fn = baseName + "_thickness" + ext;
-
-    // create files
-    QFile plane_file(plane_fn);
-    QFile trace_file(trace_fn);
-    QFile lineation_file(lineation_fn);
-    QFile thickness_file(thickness_fn);
-
-    // open files
-    if (plane_file.open(QIODevice::WriteOnly) &&
-        trace_file.open(QIODevice::WriteOnly) &&
-        lineation_file.open(QIODevice::WriteOnly) &&
-        thickness_file.open(QIODevice::WriteOnly)) {
-        // create text streams for each file
-        QTextStream plane_stream(&plane_file);
-        QTextStream trace_stream(&trace_file);
-        QTextStream lineation_stream(&lineation_file);
-        QTextStream thickness_stream(&thickness_file);
-
-        // write headers
-        plane_stream << "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Sample_"
-                        "Radius,RMS,Gx,Gy,Gz,Length"
-                     << QtCompat::endl;
-        trace_stream << "Name,Trace_id,Point_id,Start_x,Start_y,Start_z,End_x,"
-                        "End_y,End_z,Cost,Cost_Mode"
-                     << QtCompat::endl;
-        lineation_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Length"
-                         << QtCompat::endl;
-        thickness_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Thickness"
-                         << QtCompat::endl;
-
-        // write data for all objects in the db tree (n.b. we loop through the
-        // dbRoots children rathern than just passing db_root so the naming is
-        // correct)
-        for (unsigned i = 0; i < m_app->dbRootObject()->getChildrenNumber();
-             i++) {
-            ccHObject* o = m_app->dbRootObject()->getChild(i);
-            planes += writePlanes(o, &plane_stream);
-            traces += writeTraces(o, &trace_stream);
-            lineations +=
-                    writeLineations(o, &lineation_stream, QString(), false);
-            thicknesses +=
-                    writeLineations(o, &thickness_stream, QString(), true);
-        }
-
-        // cleanup
-        plane_stream.flush();
-        plane_file.close();
-        trace_stream.flush();
-        trace_file.close();
-        lineation_stream.flush();
-        lineation_file.close();
-        thickness_stream.flush();
-        thickness_file.close();
-
-        // ensure data has been written (and if not, delete the file)
-        if (planes) {
-            m_app->dispToConsole(
-                    tr("[ccCompass] Successfully exported plane data."),
-                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-        } else {
-            m_app->dispToConsole(tr("[ccCompass] No plane data found."),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-            plane_file.remove();
-        }
-        if (traces) {
-            m_app->dispToConsole(
-                    tr("[ccCompass] Successfully exported trace data."),
-                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-        } else {
-            m_app->dispToConsole(tr("[ccCompass] No trace data found."),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-            trace_file.remove();
-        }
-        if (lineations) {
-            m_app->dispToConsole(
-                    tr("[ccCompass] Successfully exported lineation data."),
-                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-        } else {
-            m_app->dispToConsole(tr("[ccCompass] No lineation data found."),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-            lineation_file.remove();
-        }
-        if (thicknesses) {
-            m_app->dispToConsole(
-                    tr("[ccCompass] Successfully exported thickness data."),
-                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-        } else {
-            m_app->dispToConsole(tr("[ccCompass] No thickness data found."),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-            thickness_file.remove();
-        }
-    } else {
-        m_app->dispToConsole(tr("[ccCompass] Could not open output files... "
-                                "ensure CC has write access to this location."),
-                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-    }
+    ccCompassExport::saveCSV(m_app, filename);
 }
 
 // write plane data
@@ -4273,7 +4063,7 @@ int ccCompass::writePlanes(ccHObject* object,
     // 99% of the time the biggest point cloud in the project will be the model
     // being interpreted)
     ccPointCloud* ss = nullptr;
-    if (object->isKindOf(CV_TYPES::PLANE) | ccFitPlane::isFitPlane(object)) {
+    if (object->isKindOf(CV_TYPES::PLANE) || ccFitPlane::isFitPlane(object)) {
         std::vector<ccHObject*> clouds;
         m_app->dbRootObject()->filterChildren(clouds, true,
                                               CV_TYPES::POINT_CLOUD, false);
@@ -4332,7 +4122,7 @@ int ccCompass::writePlanes(ccHObject* object,
         if (N.z < 0.0) N *= -1.0;
 
         // calculate strike/dip/dip direction
-        float strike, dip, dipdir;
+        float strike = 0.0f, dip = 0.0f, dipdir = 0.0f;
         ccNormalVectors::ConvertNormalToDipAndDipDir(N, dip, dipdir);
         ccNormalVectors::ConvertNormalToStrikeAndDip(N, strike, dip);
 
@@ -4445,11 +4235,8 @@ int ccCompass::writeLineations(ccHObject* object,
 
     // is object a lineation made by ccCompass?
     int n = 0;
-    if (((thicknesses == false) &&
-         ccLineation::isLineation(object)) |  // lineation measurement
-        ((thicknesses == true) &&
-         ccThickness::isThickness(object)))  // or thickness measurement
-    {
+    if ((!thicknesses && ccLineation::isLineation(object)) ||
+        (thicknesses && ccThickness::isThickness(object))) {
         // Write object as Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge
         *out << name << ",";
         *out << object->getMetaData("Sx").toString() << ","

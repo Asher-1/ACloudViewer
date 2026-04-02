@@ -26,6 +26,7 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 
 // for the helper (apply)
 #include <ecv2DLabel.h>
@@ -286,8 +287,7 @@ void ccGraphicalSegmentationTool::stop(bool accepted) {
         ecvDisplayTools::GetCurrentScreen()->setMouseTracking(false);
         ecvDisplayTools::SetPickingMode(ecvDisplayTools::DEFAULT_PICKING);
         resetSegmentation();
-        ecvDisplayTools::SetRedrawRecursive(false);
-        ecvDisplayTools::RedrawDisplay(true, false);
+        { ecvRedrawScope scope(true, false); }
     }
     ccOverlayDialog::stop(accepted);
 }
@@ -308,9 +308,14 @@ void ccGraphicalSegmentationTool::reset() {
 
         if (ecvDisplayTools::GetCurrentScreen()) {
             resetSegmentation();
-            ecvDisplayTools::SetRedrawRecursive(false);
-            setDrawFlag(true);
-            ecvDisplayTools::RedrawDisplay(false);
+            {
+                ecvRedrawScope scope;
+                for (QSet<ccHObject*>::const_iterator p =
+                             m_toSegment.constBegin();
+                     p != m_toSegment.constEnd(); ++p) {
+                    scope.markDirty(*p);
+                }
+            }
         }
 
         m_somethingHasChanged = false;
@@ -717,9 +722,13 @@ void ccGraphicalSegmentationTool::segment(bool keepPointsInside) {
     validButton->setEnabled(true);
     validAndDeleteButton->setEnabled(true);
     razButton->setEnabled(true);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    setDrawFlag(true);
-    ecvDisplayTools::RedrawDisplay();
+    {
+        ecvRedrawScope scope;
+        for (QSet<ccHObject*>::const_iterator p = m_toSegment.constBegin();
+             p != m_toSegment.constEnd(); ++p) {
+            scope.markDirty(*p);
+        }
+    }
     pauseSegmentationMode(true, false);
 }
 
@@ -777,8 +786,7 @@ void ccGraphicalSegmentationTool::pauseSegmentationMode(
     pauseButton->blockSignals(false);
 
     resetSegmentation();
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(only2D, state);
+    { ecvRedrawScope scope(only2D, state); }
 }
 
 void ccGraphicalSegmentationTool::doSetPolylineSelection() {
@@ -803,8 +811,7 @@ void ccGraphicalSegmentationTool::doSetPolylineSelection() {
             "Left click: add contour points / Right click: close",
             ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600,
             ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(true, false); }
 }
 
 void ccGraphicalSegmentationTool::doSetRectangularSelection() {
@@ -829,8 +836,7 @@ void ccGraphicalSegmentationTool::doSetRectangularSelection() {
             "Right click: set opposite corners",
             ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600,
             ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(true, false); }
 }
 
 void ccGraphicalSegmentationTool::doActionUseExistingPolyline() {
@@ -869,8 +875,7 @@ void ccGraphicalSegmentationTool::doActionUseExistingPolyline() {
                     ecvDisplayTools::SetViewportParameters(
                             static_cast<cc2DViewportObject*>(viewports.front())
                                     ->getParameters());
-                    ecvDisplayTools::SetRedrawRecursive(false);
-                    ecvDisplayTools::RedrawDisplay(false);
+                    { ecvRedrawScope scope; }
                     // m_associatedWin->redraw(false);
                 }
             }

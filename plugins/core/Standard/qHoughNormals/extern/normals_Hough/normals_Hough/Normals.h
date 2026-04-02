@@ -39,6 +39,7 @@
 
 #include <math.h>
 
+#include <atomic>
 #include <Eigen/Dense>
 #include <ctime>
 #include <iostream>
@@ -155,8 +156,7 @@ public:
         int d1 = 2 * n_phi;
         int d2 = n_phi + 1;
 
-        // progress
-        int progress = 0;
+        std::atomic<int> progress(0);
 
         /*******************************
          * ESTIMATION
@@ -226,9 +226,13 @@ public:
                                    &pointIdxSearch[0],
                                    &pointSquaredDistance[0]);
 
-            if (use_density)
-                list_of_triplets(trip, rotations * n_planes, pointIdxSearch,
-                                 vecInt);
+            Eigen::MatrixX3i local_trip;
+            if (use_density) {
+                list_of_triplets(local_trip, rotations * n_planes,
+                                 pointIdxSearch, vecInt);
+            } else {
+                local_trip = trip;
+            }
 
             // get the points
             size_t points_size = pointIdxSearch.size();
@@ -242,7 +246,7 @@ public:
 
             for (int i = 0; i < rotations; i++) {
                 Eigen::MatrixX3i triplets =
-                        trip.block(i * n_planes, 0, n_planes, 3);
+                        local_trip.block(i * n_planes, 0, n_planes, 3);
 
                 for (size_t pt = 0; pt < points_size; pt++) {
                     points.row(pt) = rotMat[(n + i) % rotMat.size()] *

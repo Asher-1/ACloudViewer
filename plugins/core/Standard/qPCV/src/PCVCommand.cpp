@@ -16,7 +16,11 @@
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+
+// Qt
+#include <QScopedPointer>
 
 constexpr char CC_PCV_FIELD_LABEL_NAME[] = "Illuminance (PCV)";
 
@@ -29,13 +33,15 @@ constexpr char COMMAND_PCV_RESOLUTION[] = "RESOLUTION";
 PCVCommand::PCVCommand() : Command("PCV", COMMAND_PCV) {}
 
 bool PCVCommand::Process(const ccHObject::Container& candidates,
-                         const std::vector<CCVector3>& rays,
+                         const std::vector<CCVector3d>& rays,
                          bool meshIsClosed,
                          unsigned resolution,
                          ecvProgressDialog* progressDlg /*=nullptr*/,
                          ecvMainAppInterface* app /*=nullptr*/) {
     size_t count = 0;
     size_t errorCount = 0;
+
+    ccHObject::Container redrawObjects;
 
     for (ccHObject* obj : candidates) {
         ccPointCloud* cloud = nullptr;
@@ -126,7 +132,7 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
                 if (obj != cloud) {
                     cloud->showSF(true);
                 }
-                obj->prepareDisplayForRefresh_recursive();
+                redrawObjects.push_back(obj);
             } else {
                 assert(false);
             }
@@ -139,6 +145,13 @@ bool PCVCommand::Process(const ccHObject::Container& candidates,
                         ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
             ++errorCount;
             break;
+        }
+    }
+
+    if (!redrawObjects.empty()) {
+        ecvRedrawScope scope;
+        for (ccHObject* o : redrawObjects) {
+            scope.markDirty(o);
         }
     }
 
@@ -196,13 +209,16 @@ bool PCVCommand::process(ccCommandLineInterface& cmd) {
     }
 
     // generates light directions
-    std::vector<CCVector3> rays;
+    std::vector<CCVector3d> rays;
     if (!PCV::GenerateRays(rayCount, rays, mode360)) {
         return cmd.error(QObject::tr("Failed to generate the set of rays"));
     }
 
-    ecvProgressDialog pcvProgressCb(true);
-    pcvProgressCb.setAutoClose(false);
+    QScopedPointer<ecvProgressDialog> pcvProgressCb;
+    if (!cmd.silentMode()) {
+        pcvProgressCb.reset(new ecvProgressDialog(true));
+        pcvProgressCb->setAutoClose(false);
+    }
 
     ccHObject::Container candidates;
     try {
@@ -214,8 +230,8 @@ bool PCVCommand::process(ccCommandLineInterface& cmd) {
     for (CLCloudDesc& desc : cmd.clouds()) candidates.push_back(desc.pc);
     for (CLMeshDesc& desc : cmd.meshes()) candidates.push_back(desc.mesh);
 
-    if (!Process(candidates, rays, meshIsClosed, resolution, &pcvProgressCb,
-                 nullptr)) {
+    if (!Process(candidates, rays, meshIsClosed, resolution,
+                 pcvProgressCb.data(), nullptr)) {
         return cmd.error(QObject::tr("Process failed"));
     }
 

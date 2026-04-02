@@ -21,6 +21,9 @@
 #include "ecvNormalVectors.h"
 #include "ecvWaveform.h"
 
+// std
+#include <vector>
+
 // Qt
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QOpenGLBuffer>
@@ -632,6 +635,9 @@ public:  // other methods
     ScalarType getPointDisplayedDistance(unsigned pointIndex) const override;
 
     const ecvColor::Rgb& getPointColor(unsigned pointIndex) const override;
+    //! RGBA including per-point alpha (alpha defaults to MAX when unset)
+    ecvColor::Rgba getPointColorRgba(unsigned pointIndex) const;
+    ColorCompType getPointColorAlpha(unsigned pointIndex) const;
     const ColorsTableType& getPointColors() const { return *rgbColors(); }
     ecvColor::Rgb& getPointColorPtr(size_t pointIndex);
     Eigen::Vector3d getEigenColor(size_t index) const;
@@ -1394,6 +1400,8 @@ protected:
 
     //! Colors
     ColorsTableType* m_rgbColors;
+    //! Per-point alpha paired with m_rgbColors (opaque when empty / unset)
+    std::vector<ColorCompType> m_pointColorAlphas;
 
     //! Normals (compressed)
     NormsIndexesTableType* m_normals;

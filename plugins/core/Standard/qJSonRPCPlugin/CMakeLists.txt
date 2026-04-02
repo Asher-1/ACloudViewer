@@ -21,5 +21,4 @@ if ( PLUGIN_STANDARD_QJSONRPC )
                                 PRIVATE
                                 ${CMAKE_CURRENT_SOURCE_DIR}
     )
-
 endif()

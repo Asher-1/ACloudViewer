@@ -83,6 +83,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvQhull.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvQuadric.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRasterGrid.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvRedrawScope.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderingTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvScalarField.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvSensor.h

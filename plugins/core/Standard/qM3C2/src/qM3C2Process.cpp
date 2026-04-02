@@ -7,6 +7,9 @@
 
 #include "qM3C2Process.h"
 
+// system
+#include <cmath>
+
 // local
 #include "qM3C2Dialog.h"
 #include "qM3C2DisclaimerDialog.h"
@@ -931,14 +934,15 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg,
         // get best levels for neighbourhood extraction on both octrees
         assert(s_M3C2Params.cloud1Octree && s_M3C2Params.cloud2Octree);
 
+        PointCoordinateType equivalentRadius = static_cast<PointCoordinateType>(
+                std::pow(static_cast<double>(s_M3C2Params.projectionDepth) *
+                                 s_M3C2Params.projectionDepth *
+                                 s_M3C2Params.projectionRadius,
+                         1.0 / 3.0));
         s_M3C2Params.level1 =
                 s_M3C2Params.cloud1Octree
                         ->findBestLevelForAGivenNeighbourhoodSizeExtraction(
-                                static_cast<PointCoordinateType>(
-                                        2.5 *
-                                        s_M3C2Params
-                                                .projectionRadius));  // 2.5 =
-                                                                      // empirical!
+                                equivalentRadius);
         if (app)
             app->dispToConsole(
                     QString("[M3C2] Working subdivision level (cloud #1): %1")
@@ -948,11 +952,7 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg,
         s_M3C2Params.level2 =
                 s_M3C2Params.cloud2Octree
                         ->findBestLevelForAGivenNeighbourhoodSizeExtraction(
-                                static_cast<PointCoordinateType>(
-                                        2.5 *
-                                        s_M3C2Params
-                                                .projectionRadius));  // 2.5 =
-                                                                      // empirical!
+                                equivalentRadius);
         if (app)
             app->dispToConsole(
                     QString("[M3C2] Working subdivision level (cloud #2): %1")

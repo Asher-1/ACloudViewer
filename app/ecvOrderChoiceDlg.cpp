@@ -16,6 +16,7 @@
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvHObject.h>
+#include <ecvRedrawScope.h>
 
 // QT
 #include <QMainWindow>
@@ -59,8 +60,9 @@ ccOrderChoiceDlg::~ccOrderChoiceDlg() {
     }
 
     if (m_app) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        m_app->refreshAll();
+        {
+            ecvRedrawScope scope;
+        }
     }
 
     if (m_gui) {
@@ -101,8 +103,9 @@ void ccOrderChoiceDlg::setColorsAndLabels() {
     }
 
     if (m_app) {
-        ecvDisplayTools::SetRedrawRecursive(false);
-        m_app->refreshAll();
+        {
+            ecvRedrawScope scope;
+        }
     }
 }
 

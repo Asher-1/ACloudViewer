@@ -7,10 +7,13 @@
 
 #include "ccTrace.h"
 
+#include <CVLog.h>
 #include <ecvDisplayTools.h>
 
 #include <bitset>
 #include <queue>
+
+static QSharedPointer<ccSphere> c_unitPointMarker(nullptr);
 
 ccTrace::ccTrace(ccPointCloud* associatedCloud) : ccPolyline(associatedCloud) {
     init(associatedCloud);
@@ -24,17 +27,9 @@ ccTrace::ccTrace(ccPolyline* obj) : ccPolyline(obj->getAssociatedCloud()) {
     // load waypoints from metadata
     if (obj->hasMetaData("waypoints")) {
         QString waypoints = obj->getMetaData("waypoints").toString();
-        for (QString str : waypoints.split(",")) {
-            if (str != "") {
-                int pID = str.toInt();
-                m_waypoints.push_back(pID);  // add waypoint
-            }
+        if (loadWaypointsFrom(waypoints)) {
+            setMetaData("waypoints", waypoints);
         }
-
-        // store waypoints metadata
-        QVariantMap* map = new QVariantMap();
-        map->insert("waypoints", waypoints);
-        setMetaData(*map, true);
     }
 
     // load cost function from metadata
@@ -68,9 +63,8 @@ ccTrace::ccTrace(ccPolyline* obj) : ccPolyline(obj->getAssociatedCloud()) {
 }
 
 void ccTrace::init(ccPointCloud* associatedCloud) {
-    setAssociatedCloud(associatedCloud);  // the ccPolyline c'tor should do
-                                          // this, but just to be sure...
-    m_cloud = associatedCloud;            // store pointer ourselves also
+    ccPolyline::setAssociatedCloud(associatedCloud);
+    m_cloud = associatedCloud;  // store pointer ourselves also
     m_search_r = calculateOptimumSearchRadius();  // estimate the search radius
                                                   // we want to use
 
@@ -78,53 +72,127 @@ void ccTrace::init(ccPointCloud* associatedCloud) {
     updateMetadata();
 }
 
+ccTrace::~ccTrace() {
+    removeSegmentActors();
+    removeMarkerActors();
+}
+
+void ccTrace::removeSegmentActors() {
+    for (const QString& viewId : m_segmentViewIds) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+        ecvDisplayTools::RemoveEntities(ctx);
+    }
+    m_segmentViewIds.clear();
+}
+
+void ccTrace::removeMarkerActors() {
+    auto removeList = [](QStringList& ids, ENTITY_TYPE type) {
+        for (const QString& viewId : ids) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.removeViewID = viewId;
+            ctx.removeEntityType = type;
+            ecvDisplayTools::RemoveEntities(ctx);
+        }
+        ids.clear();
+    };
+    removeList(m_waypointViewIds, ENTITY_TYPE::ECV_MESH);
+    removeList(m_tracePointViewIds, ENTITY_TYPE::ECV_MESH);
+}
+
+void ccTrace::hideShowTraceActors(bool visible) {
+    auto hideShowList = [visible](const QStringList& ids, ENTITY_TYPE type) {
+        for (const QString& viewId : ids) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.visible = visible;
+            ctx.viewID = viewId;
+            ctx.hideShowEntityType = type;
+            ecvDisplayTools::HideShowEntities(ctx);
+        }
+    };
+    hideShowList(m_segmentViewIds, ENTITY_TYPE::ECV_SHAPE);
+    hideShowList(m_waypointViewIds, ENTITY_TYPE::ECV_MESH);
+    hideShowList(m_tracePointViewIds, ENTITY_TYPE::ECV_MESH);
+}
+
+void ccTrace::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideShowTraceActors(false);
+        }
+    }
+    ccHObject::draw(context);
+}
+
+void ccTrace::getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                                  bool relative) {
+    ccPolyline::getTypeID_recursive(hdInfos, relative);
+    for (const QString& viewId : m_segmentViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_SHAPE;
+        hdInfos.push_back(hdinfo);
+    }
+    for (const QString& viewId : m_waypointViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+    for (const QString& viewId : m_tracePointViewIds) {
+        hideInfo hdinfo;
+        hdinfo.hideId = viewId;
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+}
+
 void ccTrace::updateMetadata() {
-    QVariantMap* map = new QVariantMap();
-    map->insert("ccCompassType", "Trace");
-    map->insert("search_r", m_search_r);
-    map->insert("cost_function", ccTrace::COST_MODE);
-
-    // TODO - write metadata for structure normal estimates
-
-    setMetaData(*map, true);
+    setMetaData("ccCompassType", "Trace");
+    setMetaData("class_name", GetClassName());
+    setMetaData("plugin_name", "qCompass");
+    setMetaData("search_r", m_search_r);
+    setMetaData("cost_function", ccTrace::COST_MODE);
 }
 
 int ccTrace::insertWaypoint(int pointId) {
+    if (!m_cloud) {
+        return 0;
+    }
+
     if (m_waypoints.size() >= 2) {
-        // get location of point to add
-        // const CCVector3* Q = m_cloud->getPoint(pointId);
         CCVector3 Q = *m_cloud->getPoint(pointId);
         CCVector3 start, end;
-        // check if point is "inside" any segments
-        for (int i = 1; i < m_waypoints.size(); i++) {
-            // get start and end points
+        for (size_t i = 1; i < m_waypoints.size(); i++) {
             m_cloud->getPoint(m_waypoints[i - 1], start);
             m_cloud->getPoint(m_waypoints[i], end);
 
-            // are we are "inside" this segment
             if (inCircle(&start, &end, &Q)) {
-                // insert waypoint
                 m_waypoints.insert(m_waypoints.begin() + i, pointId);
-                m_previous.push_back(i);
-                return i;
+                m_previous.push_back(static_cast<int>(i));
+                invalidateBoundingBox();
+                notifyGeometryUpdate();
+                return static_cast<int>(i);
             }
         }
 
-        // check if the point is closer to the start than the end -> i.e. the
-        // point should be 'pre-pended'
         CCVector3 sp = Q - start;
         CCVector3 ep = Q - end;
         if (sp.norm2() < ep.norm2()) {
             m_waypoints.insert(m_waypoints.begin(), pointId);
             m_previous.push_back(0);
+            invalidateBoundingBox();
+            notifyGeometryUpdate();
             return 0;
         }
     }
 
-    // add point to end of the trace
     m_waypoints.push_back(pointId);
     int id = static_cast<int>(m_waypoints.size()) - 1;
-    m_previous.push_back(id);  // store for undo options
+    m_previous.push_back(id);
+    invalidateBoundingBox();
+    notifyGeometryUpdate();
     return id;
 }
 
@@ -218,15 +286,15 @@ bool ccTrace::optimizePath(int maxIterations) {
 #endif
 
     // write control points to property (for reloading)
-    QVariantMap* map = new QVariantMap();
+    QVariantMap map;
     QString waypoints = "";
 
     for (unsigned i = 0; i < m_waypoints.size(); i++) {
         waypoints += QString::number(m_waypoints[i]) + ",";
     }
 
-    map->insert("waypoints", waypoints);
-    setMetaData(*map, true);
+    map.insert("waypoints", waypoints);
+    setMetaData(map, true);
 
     // push points onto underlying polyline object (for picking & save/load)
     finalizePath();
@@ -235,18 +303,16 @@ bool ccTrace::optimizePath(int maxIterations) {
 }
 
 void ccTrace::finalizePath() {
-    // clear existing points in background "polyline"
     clear();
 
-    // push trace buffer to said polyline (for save/export etc.)
     for (std::deque<int> seg : m_trace) {
         for (int p : seg) {
             addPointIndex(p);
         }
     }
 
-    // invalidate bb
     invalidateBoundingBox();
+    notifyGeometryUpdate();
 }
 
 void ccTrace::recalculatePath() {
@@ -443,11 +509,17 @@ std::deque<int> ccTrace::optimizeSegment(int start, int end, int offset) {
         }
     }
 
-    assert(false);
-    return std::deque<int>();  // shouldn't come here?
+    for (Node* n : nodes) {
+        delete[] n;
+    }
+
+    return std::deque<int>();
 }
 
 int ccTrace::getSegmentCost(int p1, int p2) {
+    if (!m_cloud) {
+        return 0;
+    }
     int cost = 1;  // n.b. default value is 1 so that if no cost functions are
                    // used, the function doesn't crash (and returns the
                    // unweighted shortest path)
@@ -804,18 +876,26 @@ void ccTrace::buildCurvatureCost(QWidget* parent) {
 }
 
 bool ccTrace::isGradientPrecomputed() {
-    int idx = m_cloud->getScalarFieldIndexByName(
-            "Gradient");  // look for pre-existing gradient SF
-    return idx != -1;     // was something found?
+    if (!m_cloud) {
+        return false;
+    }
+    int idx = m_cloud->getScalarFieldIndexByName("Gradient");
+    return idx != -1;
 }
 bool ccTrace::isCurvaturePrecomputed() {
-    int idx = m_cloud->getScalarFieldIndexByName(
-            "Curvature");  // look for pre-existing gradient SF
-    return idx != -1;      // was something found?
+    if (!m_cloud) {
+        return false;
+    }
+    int idx = m_cloud->getScalarFieldIndexByName("Curvature");
+    return idx != -1;
 }
 
 ccFitPlane* ccTrace::fitPlane(int surface_effect_tolerance,
                               float min_planarity) {
+    if (!m_cloud) {
+        return nullptr;
+    }
+
     // put all "trace" points into the cloud
     finalizePath();
 
@@ -894,6 +974,9 @@ void ccTrace::bakePathToScalarField() {
 }
 
 float ccTrace::calculateOptimumSearchRadius() {
+    if (!m_cloud) {
+        return 0.0f;
+    }
     cloudViewer::DgmOctree::NeighboursSet neighbours;
 
     // setup octree & values for nearest neighbour searches
@@ -928,6 +1011,8 @@ float ccTrace::calculateOptimumSearchRadius() {
         }
     }
 
+    delete nCloud;
+
     // average nearest-neighbour distances
     double d = dsum / 30;
 
@@ -935,164 +1020,148 @@ float ccTrace::calculateOptimumSearchRadius() {
     return d * 1.5;
 }
 
-static QSharedPointer<ccSphere> c_unitPointMarker(0);
+ccBBox ccTrace::getOwnBB(bool withGLFeatures) {
+    ccBBox box = ccPolyline::getOwnBB(withGLFeatures);
+    if (m_cloud && !m_waypoints.empty()) {
+        for (int wpIdx : m_waypoints) {
+            if (wpIdx >= 0 && static_cast<unsigned>(wpIdx) < m_cloud->size()) {
+                const CCVector3* P = m_cloud->getPoint(wpIdx);
+                if (box.isValid()) {
+                    box.add(*P);
+                } else {
+                    box.add(*P);
+                    box.setValidity(true);
+                }
+            }
+        }
+    }
+    return box;
+}
+
 void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
-    if (!MACRO_Foreground(context))  // 2D foreground only
-        return;                      // do nothing
+    if (!m_cloud) {
+        return;
+    }
+
+    if (!MACRO_Foreground(context)) {
+        return;
+    }
 
     if (MACRO_Draw3D(context)) {
-        if (m_waypoints.empty())  // no points -> bail!
+        if (m_waypoints.empty()) {
             return;
+        }
 
-        // get the set of OpenGL functions (version 2.1)
         if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
             assert(false);
             return;
         }
 
-        // check sphere exists
         if (!c_unitPointMarker) {
-            c_unitPointMarker = QSharedPointer<ccSphere>(
-                    new ccSphere(1.0f, 0, "PointMarker", 6));
-
+            c_unitPointMarker.reset(
+                    new ccSphere(1.0f, nullptr, "PointMarker", 6));
             c_unitPointMarker->showColors(true);
             c_unitPointMarker->setVisible(true);
             c_unitPointMarker->setEnabled(true);
             c_unitPointMarker->showNormals(false);
+            c_unitPointMarker->setFixedId(true);
         }
 
         glDrawParams glParams;
         getDrawingParameters(glParams);
 
-        // not sure what this does, but it looks like fun
-        CC_DRAW_CONTEXT markerContext =
-                context;  // build-up point maker own 'context'
-        // markerContext.display = 0;
-        markerContext.drawingFlags &=
-                (~CC_ENTITY_PICKING);  // we must remove the 'push name flag'
-                                       // so that the sphere doesn't push its
-                                       // own!
+        CC_DRAW_CONTEXT markerContext = context;
+        markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-        // get camera info
         ccGLCameraParameters camera;
         ecvDisplayTools::GetGLCameraParameters(camera);
         const ecvViewportParameters& viewportParams =
                 ecvDisplayTools::GetViewportParameters();
 
-        // push name for picking
         bool entityPickingMode = MACRO_EntityPicking(context);
         if (entityPickingMode) {
-            // glFunc->glPushName(getUniqueIDForDisplay());
-            // minimal display for picking mode!
+            if (MACRO_FastEntityPicking(context)) {
+                return;
+            }
             glParams.showNorms = false;
             glParams.showColors = false;
         }
 
-        // set draw colour
-        ecvColor::Rgb color = getMeasurementColour();
+        ecvColor::Rgb color = entityPickingMode ? ecvColor::Rgb(255, 255, 255)
+                                                : getMeasurementColour();
         c_unitPointMarker->setTempColor(color);
 
-        // get point size for drawing
-        float pSize = markerContext.defaultPointSize;
-        // glFunc->glGetFloatv(GL_POINT_SIZE, &pSize);
+        float pSize = 1.0f;
 
-        // draw key-points and structure normals (if assigned)
+        QString baseViewId = getViewId();
+        removeMarkerActors();
         if (m_isActive) {
             for (size_t i = 0; i < m_waypoints.size(); i++) {
-                // glFunc->glMatrixMode(GL_MODELVIEW);
-                // glFunc->glPushMatrix();
-
                 const CCVector3* P = m_cloud->getPoint(m_waypoints[i]);
-                // ccGL::Translate(glFunc, P->x, P->y, P->z);
+                QString wpId = baseViewId + "-wp" + QString::number(i);
+                markerContext.viewID = wpId;
+                m_waypointViewIds.append(wpId);
                 markerContext.transformInfo.setTranslationStart(
                         CCVector3(P->x, P->y, P->z));
-                float scale = context.labelMarkerSize * m_relMarkerScale * 0.3 *
-                              fmin(pSize, 4);
+                float scale = context.labelMarkerSize * m_relMarkerScale *
+                              0.3f * fmin(pSize, 4.0f);
                 if (viewportParams.perspectiveView && viewportParams.zFar > 0) {
-                    // in perspective view, the actual scale depends on the
-                    // distance to the camera!
-                    double d =
-                            (camera.modelViewMat * CCVector3d::fromArray(P->u))
-                                    .norm();
-                    double unitD = viewportParams.zFar /
-                                   2;  // we consider that the 'standard' scale
-                                       // is at half the depth
-                    scale = static_cast<float>(
-                            scale *
-                            sqrt(d /
-                                 unitD));  // sqrt = empirical (probably because
-                                           // the marker size is already partly
-                                           // compensated by
-                                           // ecvDisplayTools::computeActualPixelSize())
+                    double d = (camera.modelViewMat * (*P)).norm();
+                    double unitD = viewportParams.zFar / 2;
+                    scale = static_cast<float>(scale * sqrt(d / unitD));
                 }
-                // glFunc->glScalef(scale, scale, scale);
                 markerContext.transformInfo.setScale(
                         CCVector3(scale, scale, scale));
+                c_unitPointMarker->setRedraw(true);
                 c_unitPointMarker->draw(markerContext);
-                // glFunc->glPopMatrix();
             }
-        } else  // just draw lines
-        {
-            // draw lines
+        } else {
+            removeSegmentActors();
             for (const std::deque<int>& seg : m_trace) {
-                if (m_width != 0) {
-                    // glFunc->glPushAttrib(GL_LINE_BIT);
-                    // glFunc->glLineWidth(static_cast<GLfloat>(m_width));
-                    markerContext.defaultLineWidth = m_width;
+                ccPointCloud segCloud;
+                segCloud.reserve(static_cast<unsigned>(seg.size()));
+                for (int p : seg) {
+                    segCloud.addPoint(*m_cloud->getPoint(p));
                 }
-                // glFunc->glBegin(GL_LINE_STRIP);
-                // glFunc->glColor3f(color.r, color.g, color.b);
-                // for (int p : seg)
-                //{
-                //	ccGL::Vertex3v(glFunc, m_cloud->getPoint(p)->u);
-                // }
-                // glFunc->glEnd();
-                // if (m_width != 0)
-                //{
-                //	glFunc->glPopAttrib();
-                // }
+                ccPolyline segment(&segCloud);
+                for (unsigned idx = 0; idx < static_cast<unsigned>(seg.size());
+                     ++idx) {
+                    segment.addPointIndex(idx);
+                }
+                segment.setVisible(true);
+                segment.setTempColor(color);
+                if (m_width != 0) {
+                    segment.setWidth(static_cast<PointCoordinateType>(m_width));
+                }
+                segment.draw(context);
+                m_segmentViewIds.append(segment.getViewId());
             }
         }
 
-        // draw trace points if trace is active OR point size is large
-        // (otherwise line gets hidden)
         if (m_isActive || pSize > 8) {
+            int ptIdx = 0;
             for (const std::deque<int>& seg : m_trace) {
                 for (int p : seg) {
-                    // glFunc->glMatrixMode(GL_MODELVIEW);
-                    // glFunc->glPushMatrix();
-
                     const CCVector3* P = m_cloud->getPoint(p);
-                    // ccGL::Translate(glFunc, P->x, P->y, P->z);
+                    QString tpId =
+                            baseViewId + "-tp" + QString::number(ptIdx++);
+                    markerContext.viewID = tpId;
+                    m_tracePointViewIds.append(tpId);
                     markerContext.transformInfo.setTranslationStart(
                             CCVector3(P->x, P->y, P->z));
-                    float scale = context.labelMarkerSize * m_relMarkerScale *
-                                  fmin(pSize, 4) * 0.2;
+                    float scale =
+                            context.labelMarkerSize *
+                            (m_relMarkerScale * (fmin(pSize, 4.0f) * 0.2f));
                     if (viewportParams.perspectiveView &&
                         viewportParams.zFar > 0) {
-                        // in perspective view, the actual scale depends on the
-                        // distance to the camera!
-                        const double* M = camera.modelViewMat.data();
-                        double d = (camera.modelViewMat *
-                                    CCVector3d::fromArray(P->u))
-                                           .norm();
-                        double unitD = viewportParams.zFar /
-                                       2;  // we consider that the 'standard'
-                                           // scale is at half the depth
-                        scale = static_cast<float>(
-                                scale *
-                                sqrt(d /
-                                     unitD));  // sqrt = empirical (probably
-                                               // because the marker size is
-                                               // already partly compensated by
-                                               // ecvDisplayTools::computeActualPixelSize())
+                        double d = (camera.modelViewMat * (*P)).norm();
+                        double unitD = viewportParams.zFar / 2;
+                        scale = static_cast<float>(scale * sqrt(d / unitD));
                     }
-
-                    // glFunc->glScalef(scale, scale, scale);
                     markerContext.transformInfo.setScale(
                             CCVector3(scale, scale, scale));
+                    c_unitPointMarker->setRedraw(true);
                     c_unitPointMarker->draw(markerContext);
-                    // glFunc->glPopMatrix();
                 }
             }
         }
@@ -1109,4 +1178,74 @@ bool ccTrace::isTrace(
                 .contains("Trace");
     }
     return false;
+}
+
+bool ccTrace::loadWaypointsFrom(const QString& waypoints) {
+    m_waypoints.clear();
+
+    try {
+        for (const QString& str : waypoints.split(",")) {
+            if (!str.isEmpty()) {
+                bool ok = false;
+                int pID = str.toInt(&ok);
+                if (ok) {
+                    m_waypoints.push_back(pID);
+                } else {
+                    CVLog::Warning(
+                            "[ccTrace::loadWaypointsFrom] Invalid waypoint "
+                            "description:" +
+                            str);
+                }
+            }
+        }
+    } catch (const std::bad_alloc&) {
+        CVLog::Warning("[ccTrace::loadWaypointsFrom] Not enough memory");
+        return false;
+    }
+
+    return true;
+}
+
+void ccTrace::onDeletionOf(const ccHObject* obj) {
+    if (m_cloud == obj) {
+        m_cloud = nullptr;
+    }
+
+    ccPolyline::onDeletionOf(obj);
+}
+
+void ccTrace::setAssociatedCloud(GenericIndexedCloudPersist* cloud) {
+    ccPolyline::setAssociatedCloud(cloud);
+
+    ccPointCloud* cld = dynamic_cast<ccPointCloud*>(cloud);
+    init(cld);
+}
+
+bool ccTrace::fromFile_MeOnly(QFile& in,
+                              short dataVersion,
+                              int flags,
+                              LoadedIDMap& oldToNewIDMap) {
+    if (!ccPolyline::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap)) {
+        return false;
+    }
+
+    if (hasMetaData("waypoints")) {
+        QString waypoints = getMetaData("waypoints").toString();
+        loadWaypointsFrom(waypoints);
+    }
+
+    if (hasMetaData("cost_function")) {
+        COST_MODE = getMetaData("cost_function").toInt();
+    }
+
+    {
+        std::deque<int> seg;
+        for (unsigned i = 0; i < size(); i++) {
+            unsigned pId = getPointGlobalIndex(i);
+            seg.push_back(static_cast<int>(pId));
+        }
+        m_trace.push_back(seg);
+    }
+
+    return true;
 }

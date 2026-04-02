@@ -14,6 +14,22 @@ static QSharedPointer<ccSphere> c_unitPointMarker(nullptr);
 static QSharedPointer<ccCylinder> c_bodyMarker(nullptr);
 static QSharedPointer<ccCone> c_headMarker(nullptr);
 
+ccPointPair::~ccPointPair() {
+    QString baseViewId = getViewId();
+    auto removeActor = [](const QString& viewId, ENTITY_TYPE type) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = type;
+        ecvDisplayTools::RemoveEntities(ctx);
+    };
+    for (unsigned i = 0; i < size(); i++) {
+        removeActor(baseViewId + "-pt" + QString::number(i),
+                    ENTITY_TYPE::ECV_MESH);
+    }
+    removeActor(baseViewId + "-body", ENTITY_TYPE::ECV_MESH);
+    removeActor(baseViewId + "-head", ENTITY_TYPE::ECV_MESH);
+}
+
 // ctor
 ccPointPair::ccPointPair(ccPointCloud* associatedCloud)
     : ccPolyline(associatedCloud) {
@@ -42,6 +58,52 @@ CCVector3 ccPointPair::getDirection() {
     }
 }
 
+void ccPointPair::getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                                      bool relative) {
+    ccPolyline::getTypeID_recursive(hdInfos, relative);
+    QString baseViewId = getViewId();
+    for (unsigned i = 0; i < size(); i++) {
+        hideInfo hdinfo;
+        hdinfo.hideId = baseViewId + "-pt" + QString::number(i);
+        hdinfo.hideType = ENTITY_TYPE::ECV_MESH;
+        hdInfos.push_back(hdinfo);
+    }
+    hideInfo bodyInfo;
+    bodyInfo.hideId = baseViewId + "-body";
+    bodyInfo.hideType = ENTITY_TYPE::ECV_MESH;
+    hdInfos.push_back(bodyInfo);
+    hideInfo headInfo;
+    headInfo.hideId = baseViewId + "-head";
+    headInfo.hideType = ENTITY_TYPE::ECV_MESH;
+    hdInfos.push_back(headInfo);
+}
+
+void ccPointPair::hideShowSubActors(bool visible) {
+    QString baseViewId = getViewId();
+    CC_DRAW_CONTEXT ctx;
+    ctx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+    ctx.visible = visible;
+    for (unsigned i = 0; i < size(); i++) {
+        ctx.viewID = baseViewId + "-pt" + QString::number(i);
+        ecvDisplayTools::HideShowEntities(ctx);
+    }
+    ctx.viewID = baseViewId + "-body";
+    ecvDisplayTools::HideShowEntities(ctx);
+    ctx.viewID = baseViewId + "-head";
+    ecvDisplayTools::HideShowEntities(ctx);
+}
+
+void ccPointPair::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideShowSubActors(false);
+        } else {
+            hideShowSubActors(true);
+        }
+    }
+    ccHObject::draw(context);
+}
+
 // overidden from ccHObject
 void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!MACRO_Foreground(context))  // 2D foreground only
@@ -57,96 +119,81 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        // push name for picking
         bool entityPickingMode = MACRO_EntityPicking(context);
+        if (entityPickingMode) {
+            if (MACRO_FastEntityPicking(context)) {
+                return;
+            }
+        }
 
-        // check sphere exists
         if (!c_unitPointMarker) {
-            c_unitPointMarker = QSharedPointer<ccSphere>(
-                    new ccSphere(1.0f, 0, "PointMarker", 6));
-
+            c_unitPointMarker.reset(
+                    new ccSphere(1.0f, nullptr, "PointMarker", 6));
             c_unitPointMarker->showColors(true);
             c_unitPointMarker->setVisible(true);
             c_unitPointMarker->setEnabled(true);
+            c_unitPointMarker->showNormals(true);
+            c_unitPointMarker->setFixedId(true);
         }
 
-        // check arrow parts exist
         if (!c_bodyMarker) {
-            c_bodyMarker = QSharedPointer<ccCylinder>(
-                    new ccCylinder(1.0f, 0.9f, 0, "UnitNormal", 12));
+            c_bodyMarker.reset(
+                    new ccCylinder(1.0f, 0.9f, nullptr, "UnitNormal", 12));
             c_bodyMarker->showColors(true);
             c_bodyMarker->setVisible(true);
             c_bodyMarker->setEnabled(true);
             c_bodyMarker->setTempColor(ecvColor::green);
             c_bodyMarker->showNormals(false);
+            c_bodyMarker->setFixedId(true);
         }
         if (!c_headMarker) {
-            c_headMarker = QSharedPointer<ccCone>(new ccCone(
-                    2.5f, 0.0f, 0.1f, 0, 0, 0, "UnitNormalHead", 12));
+            c_headMarker.reset(new ccCone(2.5f, 0.0f, 0.1f, 0, 0, nullptr,
+                                          "UnitNormalHead", 12));
             c_headMarker->showColors(true);
             c_headMarker->setVisible(true);
             c_headMarker->setEnabled(true);
             c_headMarker->setTempColor(ecvColor::green);
             c_headMarker->showNormals(false);
+            c_headMarker->setFixedId(true);
         }
 
-        // not sure what this does, but it looks like fun
-        CC_DRAW_CONTEXT markerContext =
-                context;  // build-up point maker own 'context'
-        markerContext.drawingFlags &=
-                (~CC_ENTITY_PICKING);  // we must remove the 'push name flag'
-                                       // so that the sphere doesn't push its
-                                       // own!
+        CC_DRAW_CONTEXT markerContext = context;
+        markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-        // get camera info
         ccGLCameraParameters camera;
         ecvDisplayTools::GetGLCameraParameters(camera);
 
-        // set draw colour
-        c_unitPointMarker->setTempColor(getMeasurementColour());
+        ecvColor::Rgb color = entityPickingMode ? ecvColor::Rgb(255, 255, 255)
+                                                : getMeasurementColour();
+        c_unitPointMarker->setTempColor(color);
 
-        // get point size for drawing
-        float pSize = markerContext.defaultPointSize;
+        // Match CloudCompare's GL_POINT_SIZE default (typically 1.0)
+        float pSize = 1.0f;
 
-        // draw points
         const ecvViewportParameters& viewportParams =
                 ecvDisplayTools::GetViewportParameters();
+        QString baseViewId = getViewId();
         for (unsigned i = 0; i < size(); i++) {
             const CCVector3* P = getPoint(i);
-            // glFunc->glMatrixMode(GL_MODELVIEW);
-            // glFunc->glPushMatrix();
-            // ccGL::Translate(glFunc, P->x, P->y, P->z);
+            markerContext.viewID = baseViewId + "-pt" + QString::number(i);
             markerContext.transformInfo.setTranslationStart(
                     CCVector3(P->x, P->y, P->z));
-            float scale = context.labelMarkerSize * m_relMarkerScale * 0.2 *
-                          fmin(pSize, 4);
+            float scale = context.labelMarkerSize * m_relMarkerScale * 0.2f *
+                          fmin(pSize, 4.0f);
             if (viewportParams.perspectiveView && viewportParams.zFar > 0) {
-                // in perspective view, the actual scale depends on the distance
-                // to the camera!
-                const double* M = camera.modelViewMat.data();
-                double d = (camera.modelViewMat * CCVector3d::fromArray(P->u))
-                                   .norm();
-                double unitD = viewportParams.zFar /
-                               2;  // we consider that the 'standard' scale is
-                                   // at half the depth
-                scale = static_cast<float>(
-                        scale *
-                        sqrt(d /
-                             unitD));  // sqrt = empirical (probably because the
-                                       // marker size is already partly
-                                       // compensated by
-                                       // ecvDisplayTools::computeActualPixelSize())
+                double d = (camera.modelViewMat * (*P)).norm();
+                double unitD = viewportParams.zFar / 2;
+                scale = static_cast<float>(scale * sqrt(d / unitD));
             }
-            // glFunc->glScalef(scale, scale, scale);
             markerContext.transformInfo.setScale(
                     CCVector3(scale, scale, scale));
+            c_unitPointMarker->setRedraw(true);
+            c_unitPointMarker->showNormals(!entityPickingMode);
             c_unitPointMarker->draw(markerContext);
-            // glFunc->glPopMatrix();
         }
 
-        // draw arrow
-        c_bodyMarker->setTempColor(getMeasurementColour());
-        c_headMarker->setTempColor(getMeasurementColour());
+        c_bodyMarker->setTempColor(color);
+        c_headMarker->setTempColor(color);
         if (size() == 2)  // two points
         {
             const CCVector3 start = *getPoint(0);
@@ -154,32 +201,34 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
             CCVector3 disp = end - start;
             float length = disp.norm();
-            float width = context.labelMarkerSize * m_relMarkerScale * 0.05 *
-                          std::fmin(pSize, 5);
+            float width = context.labelMarkerSize * m_relMarkerScale * 0.05f *
+                          std::fmin(pSize, 5.0f);
             CCVector3 dir = disp / length;
 
-            // transform into coord space with origin at start and arrow head at
-            // 0,0,1 (unashamedly pilfered from
-            // ccPlanarEntityInterface::glDrawNormal(...)
-            // glFunc->glMatrixMode(GL_MODELVIEW);
-            markerContext.transformInfo.setTranslationStart(
-                    CCVector3(start.x, start.y, start.z));
+            // Follow ecvPlanarEntityInterface pattern:
+            // setTranslationStart = base position
+            // setTransformation = rotation
+            // setScale = scale
+            // setTranslationEnd = offset along world direction
+            markerContext.transformInfo.setTranslationStart(start);
 
-            ccGLMatrix mat = ccGLMatrix::FromToRotation(
-                    CCVector3(0, 0, PC_ONE),
-                    CCVector3(dir.x, dir.y, dir.z));  // end = 0,0,1
-            markerContext.transformInfo.setTransformation(mat, false);
+            ccGLMatrix mat =
+                    ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), dir);
+            markerContext.transformInfo.setTransformation(
+                    ccGLMatrixd(mat.data()), false, false);
             markerContext.transformInfo.setScale(
                     CCVector3(width, width, length));
 
-            // draw arrow body
-            markerContext.transformInfo.setTranslationEnd(
-                    CCVector3(0, 0, 0.45f));
+            CCVector3 direction = dir * length;
+
+            c_bodyMarker->setRedraw(true);
+            markerContext.transformInfo.setTranslationEnd(0.45f * direction);
+            markerContext.viewID = baseViewId + "-body";
             c_bodyMarker->draw(markerContext);
 
-            // draw arrow head
-            markerContext.transformInfo.setTranslationEnd(
-                    CCVector3(0, 0, 0.45f));
+            c_headMarker->setRedraw(true);
+            markerContext.transformInfo.setTranslationEnd(0.9f * direction);
+            markerContext.viewID = baseViewId + "-head";
             c_headMarker->draw(markerContext);
         }
 

@@ -521,6 +521,74 @@ Debug output will show:
 - Plugin initialization
 - Action registration
 
+Plugin Documentation
+--------------------
+
+Detailed documentation for each plugin, including CLI usage, parameters, and references.
+Each plugin's README is maintained alongside its source code.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Processing & Analysis
+
+   ../plugins/qPCV/README
+   ../plugins/qCSF/README
+   ../plugins/qM3C2/README
+   ../plugins/qRANSAC_SD/README
+   ../plugins/qCanupo/README
+   ../plugins/qFacets/README
+   ../plugins/qHoughNormals/README
+   ../plugins/qPoissonRecon/README
+   ../plugins/qCork/README
+   ../plugins/qVoxFall/README
+   ../plugins/q3DMASC/README
+   ../plugins/qTreeIso/README
+   ../plugins/qG3Point/README
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Structural Geology
+
+   ../plugins/qCompass/README
+   ../plugins/qSRA/README
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Segmentation & Classification
+
+   ../plugins/qCloudLayers/README
+   ../plugins/qColorimetricSegmenter/README
+   ../plugins/qMasonry/README
+   ../plugins/qMPlane/README
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Visualization & Integration
+
+   ../plugins/qAnimation/README
+   ../plugins/qSIBR/README
+   ../plugins/qPCL/README
+   ../plugins/qPythonRuntime/README
+   ../plugins/qJSonRPCPlugin/README
+
+.. toctree::
+   :maxdepth: 1
+   :caption: I/O Plugins
+
+   ../plugins/qLASIO/README
+   ../plugins/qE57IO/README
+   ../plugins/qDracoIO/README
+   ../plugins/qFBXIO/README
+   ../plugins/qMeshIO/README
+   ../plugins/qLASFWFIO/README
+   ../plugins/qCSVMatrixIO/README
+   ../plugins/qPhotoscanIO/README
+   ../plugins/qCoreIO/README
+   ../plugins/qAdditionalIO/README
+   ../plugins/qPDALIO/README
+   ../plugins/qRDBIO/README
+   ../plugins/qStepCADImport/README
+
 Further Reading
 ---------------
 

@@ -7,6 +7,7 @@
 
 #include "LasPlugin.h"
 
+#include "LasCommands.h"
 #include "LasIOFilter.h"
 #include "LasVlr.h"
 
@@ -27,4 +28,12 @@ ccIOPluginInterface::FilterList LasPlugin::getFilters()
 	return {
 	    FileIOFilter::Shared(new LasIOFilter),
 	};
+}
+
+void LasPlugin::registerCommands(ccCommandLineInterface* cmd)
+{
+	if (!cmd)
+		return;
+	cmd->registerCommand(
+	    ccCommandLineInterface::Command::Shared(new CommandLAS));
 }

@@ -198,9 +198,8 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
             std::vector<double> p_distance2;
             kdtree.Search(point, search_param, p_indices, p_distance2);
             for (size_t k = 0; k < p_indices.size(); k++) {
-                if (!mask_spfh[p_indices[k]]) {
-                    mask_spfh[p_indices[k]] = 1;
-                }
+#pragma omp atomic write
+                mask_spfh[p_indices[k]] = static_cast<uint8_t>(1);
             }
             map_fpfh_idx_to_indices[i] = std::move(p_indices);
             map_fpfh_idx_to_distance2[i] = std::move(p_distance2);

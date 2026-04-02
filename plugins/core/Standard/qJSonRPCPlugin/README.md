@@ -1,106 +1,49 @@
-JSON RPC plugin for CloudCompare
-================================
+# qJSonRPCPlugin — JSON-RPC automation (WebSocket)
 
-This plugin executes commands/actions via RPC from a different proccess/computer
-The plugin opens a TCP-server port when activated.
-The RPC communication is done via Websocket http JSON transfers.
+## Introduction
 
-Currently implemented commands:
-- open: opens a file from filesystem
-- clear: clears all clouds
+**qJSonRPCPlugin** exposes ACloudViewer to **remote automation**: a **WebSocket** server (default port **6001**) speaks **JSON-RPC 2.0** so external tools can open files, drive the database tree, run processing, capture views, and more. Typical use includes AI agent integration, scripted QA, and custom operator panels.
 
+**Headless note:** There are **no** extra `-SILENT` flags for this plugin; control is **JSON-RPC** while the application process is running with the plugin loaded.
 
-howto build
------------
+## Usage
 
-1. clone CloudCompare
+1. Build and enable the plugin, then start ACloudViewer.
+2. Connect a WebSocket client to `ws://127.0.0.1:6001` (or your configured host/port).
+3. Send JSON-RPC 2.0 requests with methods such as `app.getVersion`, scene queries, and processing calls—see the API reference below.
 
-```
-mkdir cc
-cd cc
-git clone --recursive https://github.com/CloudCompare/CloudCompare.git
-```
+Minimal Python example:
 
-2. add this plugin as submodule in plugins
+```python
+import asyncio, websockets, json
 
-```
-cd CloudCompare/plugins/core/Standard
-git submodule add git@gitlab.com:theadib/JsonRPCPlugin.git
-```
-3. patch CMakeLists.txt
+async def main():
+    async with websockets.connect("ws://127.0.0.1:6001") as ws:
+        await ws.send(json.dumps({"jsonrpc": "2.0", "method": "app.getVersion", "id": 1}))
+        print(await ws.recv())
 
-```
-nano CMakeLists.txt
-```
-then add the plugin as indicated below
-
-```
- set( submod_plugins
-                ${CMAKE_CURRENT_SOURCE_DIR}/qColorimetricSegmenter
-                ${CMAKE_CURRENT_SOURCE_DIR}/qMasonry
-                ${CMAKE_CURRENT_SOURCE_DIR}/qMPlane
-+               ${CMAKE_CURRENT_SOURCE_DIR}/JsonRPCPlugin
- )
-
+asyncio.run(main())
 ```
 
-3. build CloudCompare
+Agent integration (MCP, harness) reuses the same API; see `agent-integration/README.md` at the repository root.
 
-```
-cd cc/CloudCompare
-mkdir build
-cd build
-cmake-gui ..
-make -j
-sudo make install
-```
+## ACloudViewer CLI
 
-howto use
----------
+**None** — automation is exclusively via **JSON-RPC over WebSocket** while the app is running.
 
-Below a python script to open a file from filesystem:
+## Build
 
-```
-#!/usr/bin/env python3
-
-import asyncio
-import websockets
-
-async def hello():
-    uri = "ws://localhost:6001"
-    async with websockets.connect(uri) as websocket:
-        await websocket.send('{"jsonrpc": "2.0", "method": "open", \
-                "params": { \
-                    "filename": "/home/adib/Dokumente/teapot.ply", \
-                    "filter":"PLY mesh (*.ply)", \
-                    "silent":true, \
-                    "transformation": [-0.5732937009507673, 0.8193193174792813, 0.007084582014166903, -161.35002666963268, \
-                        -0.8193308300123949, -0.5733179603522832, 0.001873784980341508, 320.67951255557966, \
-                        0.005596946702519333, -0.004730387192182964, 0.9999731500865392, -230.60935194531334, \
-                        0.0, 0.0, 0.0, 1.0]}, \
-                "id": 4}')
-        result = await websocket.recv()
-        print("result: ", result)
-
-asyncio.get_event_loop().run_until_complete(hello())
+```bash
+-DPLUGIN_STANDARD_QJSONRPC=ON
 ```
 
-interface
----------
+Requires **Qt WebSockets** (and Qt network stack) in your Qt build.
 
-```
-- open - opens a file from filesystem
-  filename: string, filename on the filesystem
-  filter: string, optional, filter identificator, if not given then CloudCompare identifies fileformat based on extension
-  silent: bool, optional, if true, then filterdialog is suppressed
-  transformation: list of float (16values), optional, after import this transformation matrix is applied to the object,
-- clear - clear all objects
-```
+## Dependencies
 
+- **Qt** (including **Qt WebSockets**).
 
-contact
--------
+## References
 
-Remarks, wishes, etc. are welcome
-thAdib theAdib@gmail.com
-
+- Method catalog and parameters: **[JSON-RPC-API.md](../../../../agent-integration/docs/JSON-RPC-API.md)** (`agent-integration/docs/JSON-RPC-API.md`).
+- Agent integration overview: `agent-integration/README.md`.

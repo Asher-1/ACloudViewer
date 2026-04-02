@@ -26,6 +26,7 @@
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 // Local
 #include "MainWindow.h"
@@ -265,20 +266,21 @@ void ccComparisonDlg::releaseOctrees() {
 
 void ccComparisonDlg::updateDisplay(bool showSF, bool showRef) {
     if (m_noDisplay) return;
-    ecvDisplayTools::SetRedrawRecursive(false);
-    if (m_compEnt) {
-        m_compEnt->setVisible(true);
-        m_compEnt->setEnabled(true);
-        m_compEnt->showSF(showSF);
-        m_compEnt->setRedrawFlagRecursive(showSF);
-    }
+    {
+        ecvRedrawScope scope;
+        if (m_compEnt) {
+            m_compEnt->setVisible(true);
+            m_compEnt->setEnabled(true);
+            m_compEnt->showSF(showSF);
+            m_compEnt->setRedrawFlagRecursive(showSF);
+        }
 
-    if (m_refEnt) {
-        m_refEnt->setVisible(showRef);
-    }
+        if (m_refEnt) {
+            m_refEnt->setVisible(showRef);
+        }
 
-    MainWindow::UpdateUI();
-    ecvDisplayTools::RedrawDisplay();
+        MainWindow::UpdateUI();
+    }
 }
 
 bool ccComparisonDlg::isValid() {

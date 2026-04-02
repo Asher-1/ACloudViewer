@@ -44,20 +44,19 @@ private:
 
 public:
     struct Parameters {
-        // parameters
-        int k_nearest_points;
+        int k_nearest_points = 1;
+        bool bSloopSmooth = true;
+        double time_step = 0.65;
+        double class_threshold = 0.5;
+        double cloth_resolution = 1.0;
+        int rigidness = 3;
+        int iterations = 500;
 
-        bool bSloopSmooth;
-
-        double time_step;
-
-        double class_threshold;
-
-        double cloth_resolution;
-
-        int rigidness;
-
-        int iterations;
+        // constants (matching CloudCompare)
+        static constexpr double clothYHeight = 0.05;  // origin cloth height
+        static constexpr int clothBuffer =
+                2;  // cloth buffer (grid margin size)
+        static constexpr double gravity = 0.2;
     };
 
     Parameters params;

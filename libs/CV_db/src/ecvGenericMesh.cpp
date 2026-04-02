@@ -28,6 +28,7 @@
 // system
 #include <QFileInfo>
 #include <cassert>
+#include <limits>
 
 ccGenericMesh::ccGenericMesh(QString name /*=QString()*/)
     : GenericIndexedMesh(),
@@ -513,10 +514,6 @@ bool ccGenericMesh::trianglePicking(
     CCVector3d C2D;
     bool inFrustum = true;
     if (noGLTrans) {
-        // if none of its points fall into the frustrum the triangle is not
-        // visible...
-        // DGM: we need to project ALL the points in case at least one is
-        // visible
         bool insideA = camera.project(A3D, A2D, &inFrustum);
         bool insideB = camera.project(B3D, B2D, &inFrustum);
         bool insideC = camera.project(C3D, C2D, &inFrustum);
@@ -527,10 +524,6 @@ bool ccGenericMesh::trianglePicking(
         CCVector3 A3Dp = trans * A3D;
         CCVector3 B3Dp = trans * B3D;
         CCVector3 C3Dp = trans * C3D;
-        // if none of its points fall into the frustrum the triangle is not
-        // visible...
-        // DGM: we need to project ALL the points in case at least one is
-        // visible
         bool insideA = camera.project(A3Dp, A2D, &inFrustum);
         bool insideB = camera.project(B3Dp, B2D, &inFrustum);
         bool insideC = camera.project(C3Dp, C2D, &inFrustum);
@@ -607,9 +600,6 @@ bool ccGenericMesh::trianglePicking(
         return false;
     }
 
-#if defined(_OPENMP) && !defined(_DEBUG)
-#pragma omp parallel for
-#endif
     for (int i = 0; i < static_cast<int>(size()); ++i) {
         CCVector3d P;
         CCVector3d BC;

@@ -28,6 +28,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -61,7 +62,11 @@ bool ecvConsole::s_showQtMessagesInConsole = false;
 
 // ecvCustomQListWidget
 ecvCustomQListWidget::ecvCustomQListWidget(QWidget* parent)
-    : QListWidget(parent) {}
+    : QListWidget(parent) {
+    QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    mono.setPointSize(qMax(font().pointSize(), 9));
+    setFont(mono);
+}
 
 void ecvCustomQListWidget::keyPressEvent(QKeyEvent* event) {
     if (event->matches(QKeySequence::Copy)) {
@@ -323,8 +328,13 @@ void ecvConsole::logMessage(const QString& message, int level) {
     if (m_textDisplay || m_logStream) {
         m_mutex.lock();
 
+        // Strip carriage returns (from CRLF on Windows) before splitting,
+        // otherwise trailing \r renders as □ in QListWidget.
+        QString cleaned = message;
+        cleaned.remove(QChar('\r'));
+
         // Split multi-line messages for better display
-        QStringList lines = message.split('\n');
+        QStringList lines = cleaned.split('\n');
 
         // Write to log file immediately for crash safety (all messages)
         // UI update will still be handled by the timer for performance

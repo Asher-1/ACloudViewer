@@ -150,6 +150,7 @@ void importFoliations(ecvMainAppInterface* app) {
                 QString("%1/%2")
                         .arg(static_cast<int>(dip), 2, 10, QChar('0'))
                         .arg(static_cast<int>(dipdir), 3, 10, QChar('0')));
+        plane->copyGlobalShiftAndScale(*cld);
         plane->showNameIn3D(true);
         cld->addChild(plane);
         app->addToDB(plane, false, true, false, false);
@@ -268,10 +269,7 @@ void importLineations(ecvMainAppInterface* app) {
 
         // create new point cloud to associate with lineation graphic
         ccPointCloud* points = new ccPointCloud();
-        points->setGlobalScale(
-                cld->getGlobalScale());  // copy global shift & scale onto new
-                                         // point cloud
-        points->setGlobalShift(cld->getGlobalShift());
+        points->copyGlobalShiftAndScale(*cld);
         points->reserve(2);
         points->addPoint(Cd);
         points->addPoint(Cd + l * size);
@@ -279,6 +277,7 @@ void importLineations(ecvMainAppInterface* app) {
 
         // create lineation graphic
         ccLineation* lineation = new ccLineation(points);
+        lineation->copyGlobalShiftAndScale(*cld);
         lineation->addChild(points);
         lineation->addPointIndex(0);
         lineation->addPointIndex(1);

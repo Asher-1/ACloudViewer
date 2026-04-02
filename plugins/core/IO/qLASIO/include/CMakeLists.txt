@@ -2,6 +2,7 @@
 target_sources(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/LasPlugin.h
+        ${CMAKE_CURRENT_LIST_DIR}/LasCommands.h
         ${CMAKE_CURRENT_LIST_DIR}/LasIOFilter.h
         ${CMAKE_CURRENT_LIST_DIR}/LasDetails.h
         ${CMAKE_CURRENT_LIST_DIR}/LasOpenDialog.h

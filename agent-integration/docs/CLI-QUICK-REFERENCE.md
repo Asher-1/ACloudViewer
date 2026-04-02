@@ -2,6 +2,8 @@
 
 Fast lookup for all `cli-anything-acloudviewer` commands.
 
+Command groups in `cli-anything-acloudviewer --help` are labeled **`[GUI]`** or **`[Headless]`** so you can see which backend each group expects.
+
 ## Global Options
 
 ```bash
@@ -47,15 +49,18 @@ All processing commands follow this pattern:
 cli-anything-acloudviewer process <operation> input.ply [input2.ply] -o output.ply [OPTIONS]
 ```
 
+Headless **`process`** exposes 55+ subcommands: core geometry and analysis operations, plus plugin-backed commands (`pcv`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough-normals`, `poisson-recon`, `cork-boolean`, `voxfall`, `3dmasc`, `treeiso`, `compass-*`, `sra`, etc.). See [Plugin Processing Commands](#plugin-processing-commands) below.
+
 ### Basic Operations
 
 | Command | Description | Key Options |
 |---------|-------------|-------------|
 | `subsample` | Downsample point cloud | `--method` SPATIAL\|RANDOM\|OCTREE, `--voxel-size` (float) |
 | `normals` | Compute normals (k-NN) | `--radius` (float, 0=auto) |
+| `crop` | Axis-aligned bbox crop (headless) | `--min-x` … `--max-z` (six values; see below) |
 | `sor` | Statistical outlier removal | `--knn` (int), `--sigma` (float) |
 
-**Note**: Crop requires GUI mode - use `cloud crop <entity_id> --min-x ... --max-z ...`
+**Crop**: Use **`process crop`** in headless mode with **`--min-x/--min-y/--min-z` and `--max-x/--max-y/--max-z`** (six separate bounds). In GUI mode, **`cloud crop <entity_id>`** takes the same min/max semantics (not the old erroneous `min_x:max_x:min_y:max_y` ordering).
 
 ### Distance Computation
 
@@ -128,6 +133,132 @@ cli-anything-acloudviewer process <operation> input.ply [input2.ply] -o output.p
 | `drop-global-shift` | Remove coordinate offset | `-o` |
 | `remove-scan-grids` | Clean scan artifacts | `-o` |
 | `remove-rgb` | Remove colors | `-o` |
+
+### Plugin Processing Commands
+
+These invoke ACloudViewer C++ plugins via the headless binary (`-SILENT` and native flags such as `-PCV`, `-FACETS`, `-HOUGH_NORMALS`, `-POISSON_RECON`).
+
+```bash
+# PCV (ambient occlusion)
+cli-anything-acloudviewer process pcv input.ply -o output.ply --n-rays 256 --resolution 1024
+
+# CSF ground filtering
+cli-anything-acloudviewer process csf input.ply -o output.ply --scenes RELIEF --cloth-resolution 2.0
+cli-anything-acloudviewer process csf input.ply -o output.ply --scenes SLOPE --proc-slope --export-ground
+
+# RANSAC shape detection
+cli-anything-acloudviewer process ransac input.ply -o output.ply --epsilon 0.005 --support-points 500
+cli-anything-acloudviewer process ransac input.ply -o output.ply --primitives PLANE --primitives SPHERE --primitives CYLINDER
+
+# M3C2 cloud comparison
+cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt
+cli-anything-acloudviewer process m3c2 cloud1.ply cloud2.ply -o dist.ply --params-file m3c2_params.txt --core-points core.ply
+
+# CANUPO classification
+cli-anything-acloudviewer process canupo input.ply -o classified.ply --classifier model.prm
+cli-anything-acloudviewer process canupo input.ply -o classified.ply --classifier model.prm --use-confidence 0.5
+
+# Facet extraction
+cli-anything-acloudviewer process facets input.ply -o output.ply --algo KD_TREE --error-max 0.2 --classify
+
+# Hough-based normals
+cli-anything-acloudviewer process hough-normals input.ply -o output.ply --k 100 --t 1000
+
+# Poisson reconstruction
+cli-anything-acloudviewer process poisson-recon input.ply -o output.ply --depth 8 --boundary NEUMANN
+
+# Cork mesh boolean (union, intersect, diff, sym_diff)
+cli-anything-acloudviewer process cork-boolean mesh1.ply mesh2.ply -o result.ply --operation UNION
+cli-anything-acloudviewer process cork-boolean mesh1.ply mesh2.ply -o diff.ply --operation DIFF --swap
+
+# VoxFall rockfall / change detection
+cli-anything-acloudviewer process voxfall ref_mesh.ply comp_mesh.ply -o changes.ply --voxel-size 0.05 --azimuth 45 --loss-gain
+
+# Compass — Export measurements
+cli-anything-acloudviewer process compass-export project.bin -o compass_data --format csv
+cli-anything-acloudviewer process compass-export project.bin -o compass_data.xml --format xml
+
+# Compass — Import foliations / lineations from scalar fields
+cli-anything-acloudviewer process compass-import-fol input.ply --dip-sf Dip --dipdir-sf DipDir --plane-size 2.0
+cli-anything-acloudviewer process compass-import-lin input.ply --trend-sf Trend --plunge-sf Plunge --length 2.0
+
+# Compass — Refit planes & P21 intensity
+cli-anything-acloudviewer process compass-refit project.bin
+cli-anything-acloudviewer process compass-p21 input.ply --radius 10.0 --subsample 25 -o p21_output.ply
+
+# SRA — Surface of revolution radial distance
+cli-anything-acloudviewer process sra input.ply -o output.ply --profile profile.txt --axis Z
+
+# TreeIso — Individual tree isolation
+cli-anything-acloudviewer process treeiso input.ply -o output.ply
+
+# FBX settings
+cli-anything-acloudviewer process fbx-settings
+
+# Bundler / SfM import
+cli-anything-acloudviewer process bundler-import reconstruction.out --image-dir ./images/
+```
+
+### PCL Processing Commands
+
+These require the qPCL plugin (`PLUGIN_STANDARD_QPCL=ON`).
+
+```bash
+# PCL statistical outlier removal
+cli-anything-acloudviewer process pcl-sor input.ply -o filtered.ply --mean-k 50 --std-dev 1.0
+
+# PCL normal estimation
+cli-anything-acloudviewer process pcl-normal-estimation input.ply -o normals.ply --radius 0.1
+
+# MLS surface smoothing
+cli-anything-acloudviewer process pcl-mls input.ply -o smoothed.ply --search-radius 0.05
+
+# Euclidean cluster extraction
+cli-anything-acloudviewer process pcl-euclidean-cluster input.ply -o clusters.ply --tolerance 0.02 --min-size 100
+
+# SAC segmentation (fit planes, spheres, etc.)
+cli-anything-acloudviewer process pcl-sac-segmentation input.ply -o segmented.ply --model PLANE --threshold 0.01
+
+# Region growing segmentation
+cli-anything-acloudviewer process pcl-region-growing input.ply -o regions.ply --min-cluster 50 --num-neighbors 30
+
+# Marching cubes reconstruction
+cli-anything-acloudviewer process pcl-marching-cubes input.ply -o mesh.ply
+
+# Greedy projection triangulation
+cli-anything-acloudviewer process pcl-greedy-triangulation input.ply -o mesh.ply --search-radius 0.1
+
+# PCL Poisson reconstruction
+cli-anything-acloudviewer process pcl-poisson-recon input.ply -o mesh.ply --depth 8
+
+# Convex hull
+cli-anything-acloudviewer process pcl-convex-hull input.ply -o hull.ply
+
+# Difference of normals (DoN) segmentation
+cli-anything-acloudviewer process pcl-don-segmentation input.ply -o segments.ply --small-scale 0.5 --large-scale 2.0
+
+# Min-cut segmentation
+cli-anything-acloudviewer process pcl-mincut-segmentation input.ply -o segments.ply
+
+# Fast global registration
+cli-anything-acloudviewer process pcl-fast-global-registration source.ply target.ply -o aligned.ply
+
+# SIFT keypoint extraction
+cli-anything-acloudviewer process pcl-extract-sift input.ply -o keypoints.ply
+
+# Projection filter (project onto model)
+cli-anything-acloudviewer process pcl-projection-filter input.ply -o projected.ply --model PLANE
+
+# General filters (passthrough, voxel grid)
+cli-anything-acloudviewer process pcl-general-filters input.ply -o filtered.ply --filter PASS --field z --min 0 --max 10
+cli-anything-acloudviewer process pcl-general-filters input.ply -o voxel.ply --filter VOXEL --leaf-size 0.05
+
+# Template alignment
+cli-anything-acloudviewer process pcl-template-alignment source.ply target.ply -o aligned.ply
+
+# Correspondence matching
+cli-anything-acloudviewer process pcl-correspondence-matching source.ply target.ply -o matched.ply
+```
 
 ---
 
@@ -251,10 +382,10 @@ cli-anything-acloudviewer session save output.ccx     # Save session (GUI mode)
 ```bash
 cli-anything-acloudviewer scene list                  # List all entities
 cli-anything-acloudviewer scene info <entity-id>      # Get entity details
-cli-anything-acloudviewer scene add file.ply          # Load file to scene
 cli-anything-acloudviewer scene remove <entity-id>    # Remove entity
 cli-anything-acloudviewer scene show <entity-id>      # Show entity
 cli-anything-acloudviewer scene hide <entity-id>      # Hide entity
+cli-anything-acloudviewer scene select <entity-id>    # Select entity
 cli-anything-acloudviewer scene clear                 # Remove all entities
 ```
 
@@ -263,9 +394,8 @@ cli-anything-acloudviewer scene clear                 # Remove all entities
 ## Entity Commands (GUI Mode)
 
 ```bash
-cli-anything-acloudviewer entity rename <id> --name "New Name"
-cli-anything-acloudviewer entity setColor <id> --r 255 --g 0 --b 0
-cli-anything-acloudviewer entity setVisible <id> --visible true
+cli-anything-acloudviewer entity rename <entity-id> "New Name"
+cli-anything-acloudviewer entity set-color <entity-id> --r 255 --g 0 --b 0
 ```
 
 ---
@@ -274,10 +404,13 @@ cli-anything-acloudviewer entity setVisible <id> --visible true
 
 ```bash
 cli-anything-acloudviewer view screenshot output.png
-cli-anything-acloudviewer view screenshot output.png --width 1920 --height 1080
 cli-anything-acloudviewer view orient front|back|top|bottom|left|right
-cli-anything-acloudviewer view zoom <factor>
-cli-anything-acloudviewer view reset
+cli-anything-acloudviewer view zoom                                   # Zoom to fit
+cli-anything-acloudviewer view zoom --entity <entity-id>              # Zoom to entity
+cli-anything-acloudviewer view pointsize increase|decrease
+cli-anything-acloudviewer view camera                                 # Get camera params
+cli-anything-acloudviewer view perspective object|viewer               # Set perspective mode
+cli-anything-acloudviewer view refresh                                 # Force redraw
 ```
 
 ---
@@ -637,6 +770,7 @@ cli-anything-acloudviewer sf --help
 # Common operations
 cli-anything-acloudviewer convert input.ply output.pcd
 cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
+cli-anything-acloudviewer process crop input.ply -o cropped.ply --min-x -1 --min-y -1 --min-z -1 --max-x 1 --max-y 1 --max-z 1
 cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
 cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply --iterations 100
 cli-anything-acloudviewer sf coord-to-sf input.ply -o height.ply --dimension Z

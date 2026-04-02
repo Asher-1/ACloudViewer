@@ -108,11 +108,13 @@ EXCLUDE_PATTERNS       = */test/* \
                          */build/* \
                          */build_*/* \
                          */3rdparty/* \
+                         */3rdparty_downloads/* \
                          */external/* \
+                         */extern/* \
                          */third_party/* \
+                         */thirdparty/* \
+                         */Reconstruction/lib/* \
                          */VLFeat/* \
-                         */lib/VLFeat/* \
-                         */Reconstruction/lib/VLFeat/* \
                          */.git/* \
                          */CMakeFiles/* \
                          *_autogen/* \

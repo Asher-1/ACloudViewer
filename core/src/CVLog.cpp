@@ -96,6 +96,7 @@ void CVLog::RegisterInstance(CVLog* logInstance) {
         va_list args;                                        \
         va_start(args, format);                              \
         _vsnprintf(s_buffer, s_bufferMaxSize, format, args); \
+        s_buffer[s_bufferMaxSize - 1] = '\0';                \
         va_end(args);                                        \
         LogMessage(QString(s_buffer), flags);                \
     }

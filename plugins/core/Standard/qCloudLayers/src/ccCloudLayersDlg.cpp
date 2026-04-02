@@ -95,6 +95,10 @@ void ccCloudLayersDlg::reject() {
         }
     }
 
+    if (m_helper) {
+        m_helper->restoreState();
+    }
+
     stop(false);
 }
 
@@ -112,6 +116,10 @@ bool ccCloudLayersDlg::start() {
 
     connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved, this,
             &ccCloudLayersDlg::mouseMoved);
+
+    if (m_helper) {
+        m_helper->saveState();
+    }
 
     return ccOverlayDialog::start();
 }

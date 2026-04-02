@@ -7,6 +7,8 @@
 
 #include "ccThicknessTool.h"
 
+#include <CVLog.h>
+
 #include "ccCompass.h"
 #include "ccGeoObject.h"
 
@@ -41,7 +43,7 @@ void ccThicknessTool::onNewSelection(
             // make all point clouds visible again
             for (int i : m_hiddenObjects) {
                 ccHObject* cld = m_app->dbRootObject()->find(i);
-                cld->setVisible(true);
+                if (cld) cld->setVisible(true);
             }
             m_hiddenObjects.clear();
 
@@ -66,19 +68,16 @@ void ccThicknessTool::onNewSelection(
 }
 
 // called when a point in a point cloud gets picked while this tool is active
-void ccThicknessTool::pointPicked(ccHObject* insertPoint,
+bool ccThicknessTool::pointPicked(ccHObject* insertPoint,
                                   unsigned itemIdx,
                                   ccHObject* pickedObject,
                                   const CCVector3& P) {
-    if (pickedObject->isA(
-                CV_TYPES::PLANE))  // we want to be able to pick planes
-    {
-        // select the object
+    if (pickedObject->isA(CV_TYPES::PLANE)) {
         m_app->setSelectedInDB(pickedObject, true);
-
-        // call to update selection
         onNewSelection(m_app->getSelectedEntities());
+        return true;
     }
+    return false;
 }
 
 // called when a point in a point cloud gets picked while this tool is active
@@ -88,10 +87,9 @@ void ccThicknessTool::pointPicked(ccHObject* insertPoint,
                                   const CCVector3& P) {
     // no plane, no deal
     if (!m_referencePlane) {
-        m_app->dispToConsole(
-                "[ccCompass] Please select a fit-plane to constrain "
-                "true-thickness calculations.",
-                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        CVLog::Error(
+                "[Compass] Please select a fit-plane to constrain "
+                "true-thickness calculations");
         return;
     }
 
@@ -230,12 +228,11 @@ void ccThicknessTool::toolDisactivated() {
     // make all point clouds visible again
     for (int i : m_hiddenObjects) {
         ccHObject* cld = m_app->dbRootObject()->find(i);
-        cld->setVisible(true);
+        if (cld) cld->setVisible(true);
     }
     m_hiddenObjects.clear();
 
     // redraw
-    // m_app->getActiveWindow()->refresh();
     ecvDisplayTools::RedrawDisplay(false, false);
 }
 

@@ -18,6 +18,8 @@
 #include <ReferenceCloud.h>
 
 // Local
+#include <limits>
+
 #include "ecvDisplayTools.h"
 #include "ecvOctreeProxy.h"
 #include "ecvPointCloud.h"
@@ -352,9 +354,13 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                 [&](int i)
 #else
 #if defined(_OPENMP)
-#pragma omp parallel for
+#pragma omp parallel
+        {
+            int localBestIndex = -1;
+            double localBestDist = std::numeric_limits<double>::max();
+#pragma omp for schedule(static)
 #endif
-        for (int i = 0; i < static_cast<int>(size()); ++i)
+            for (int i = 0; i < static_cast<int>(size()); ++i)
 #endif
                 {
                     // we shouldn't test points that are actually hidden!
@@ -378,16 +384,35 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                                     CCVector3d(X.x - P->x, X.y - P->y,
                                                X.z - P->z)
                                             .norm2d();
-                            if (nearestPointIndex < 0 ||
-                                squareDist < nearestSquareDist) {
-                                nearestSquareDist = squareDist;
-                                nearestPointIndex = i;
+#if defined(_OPENMP) && !defined(USE_TBB)
+                            if (localBestIndex < 0 ||
+                                squareDist < localBestDist) {
+                                localBestDist = squareDist;
+                                localBestIndex = i;
                             }
+#else
+                        if (nearestPointIndex < 0 ||
+                            squareDist < nearestSquareDist) {
+                            nearestSquareDist = squareDist;
+                            nearestPointIndex = i;
+                        }
+#endif
                         }
                     }
                 }
 #ifdef USE_TBB
         );
+#elif defined(_OPENMP)
+#pragma omp critical
+            {
+                if (localBestIndex >= 0 &&
+                    (nearestPointIndex < 0 ||
+                     localBestDist < nearestSquareDist)) {
+                    nearestSquareDist = localBestDist;
+                    nearestPointIndex = localBestIndex;
+                }
+            }
+        }  // omp parallel
 #endif
     }
 

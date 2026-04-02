@@ -31,7 +31,7 @@ Launch ACloudViewer, then activate the JSON-RPC server from the plugin menu
 ### 2. Install the CLI Harness
 
 ```bash
-pip install git+https://github.com/HKUDS/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
+pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness
 ```
 
 Or for local development:
@@ -157,9 +157,9 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 |-------|-------|-------------|
 | 1 | C++ plugin source, build, dispatch table, SIBR commands | cmake (optional) |
 | 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
-| 3 | Format conversion, subsample, normals, batch, PLY→ASC/BIN/VTK | `ACloudViewer binary` |
+| 3 | Format conversion (incl. LAZ, SHP, PTX load, DXF export), round-trip checks, `process crop`, subsample, normals, batch, CLI surface | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
-| 5 | MCP tools (processing, Colmap, SIBR), entry point | `mcp` Python package |
+| 5 | MCP tools (178 tools, names, Colmap, SIBR, PCL, plugins), entry point | `mcp` Python package |
 
 ## Architecture
 
@@ -235,7 +235,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **48+ methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **72 methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 
@@ -267,7 +267,7 @@ for the live catalog.
 |--------|-----------|-------------|
 | `cloud.computeNormals` | `{entity_id, ?radius}` | Estimate normals |
 | `cloud.subsample` | `{entity_id, method, ?step, ?count}` | Subsample |
-| `cloud.crop` | `{entity_id, min_x..max_z}` | Crop by bbox |
+| `cloud.crop` | `{entity_id, min_x, min_y, min_z, max_x, max_y, max_z}` | Crop by axis-aligned bbox |
 | `cloud.getScalarFields` | `{entity_id}` | List scalar fields |
 | `cloud.paintUniform` | `{entity_id, r, g, b}` | Paint uniform color |
 | `cloud.paintByHeight` | `{entity_id, ?axis}` | Colorize by height |
@@ -281,7 +281,7 @@ for the live catalog.
 | `cloud.removeAllSfs` | `{entity_id}` | Remove all scalar fields |
 | `cloud.renameSf` | `{entity_id, new_name, ?field_index}` | Rename a scalar field |
 | `cloud.filterSf` | `{entity_id, min, max}` | Filter points by SF range |
-| `cloud.coordToSf` | `{entity_id, ?dimension}` | Create SF from coordinates |
+| `cloud.coordToSF` | `{entity_id, ?dimension}` | Create SF from coordinates |
 
 ### Point Cloud Geometry
 | Method | Parameters | Description |
@@ -333,7 +333,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **95+ tools** for AI agent use:
+The MCP server exposes **178 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|
@@ -349,6 +349,7 @@ The MCP server exposes **95+ tools** for AI agent use:
 | **Mesh Processing** | `mesh_simplify`, `mesh_smooth`, `mesh_subdivide`, `mesh_sample_points`, `mesh_volume`, `extract_vertices`, `flip_triangles`, `merge_meshes` |
 | **Mesh (GUI)** | `mesh_extract_vertices_gui`, `mesh_flip_triangles_gui`, `mesh_volume_gui`, `mesh_merge_gui` |
 | **Advanced Processing** | `icp_registration`, `sor_filter`, `c2c_distance`, `c2m_distance`, `density`, `curvature`, `roughness`, `delaunay`, `sample_mesh`, `color_banding`, `extract_connected_components`, `approx_density`, `geometric_feature`, `moment`, `best_fit_plane`, `rasterize`, `stat_test` |
+| **Plugin Processing** | `pcv`, `compass_export`, `sra`, `csf`, `ransac`, `m3c2`, `canupo`, `facets`, `hough_normals`, `poisson_recon`, `cork_boolean`, `voxfall`, `classify_3dmasc`, `treeiso`, `cloud_layers`, `animation`, `mplane`, `auto_seg`, `manual_seg`, `color_seg_rgb`, `color_seg_hsv`, `color_seg_scalar`, `g3point`, `python_script` |
 | **Misc** | `remove_rgb`, `remove_scan_grids`, `match_centers`, `drop_global_shift`, `closest_point_set`, `merge_clouds` |
 | **Reconstruction** | `colmap_auto_reconstruct`, `colmap_extract_features`, `colmap_match_features`, `colmap_sparse_reconstruct`, `colmap_undistort`, `colmap_dense_stereo`, `colmap_stereo_fusion`, `colmap_poisson_mesh`, `colmap_delaunay_mesh`, `colmap_image_texturer`, `colmap_model_converter`, `colmap_analyze_model`, `colmap_run` |
 | **SIBR** | `sibr_viewer`, `sibr_tool`, `sibr_prepare_colmap`, `sibr_texture_mesh`, `sibr_unwrap_mesh`, `sibr_tonemapper`, `sibr_align_meshes`, `sibr_camera_converter`, `sibr_nvm_to_sibr`, `sibr_crop_from_center`, `sibr_clipping_planes`, `sibr_distord_crop` |
@@ -357,9 +358,11 @@ The MCP server exposes **95+ tools** for AI agent use:
 
 ## CLI Command Reference
 
+In `cli-anything-acloudviewer --help`, each command group is tagged **`[GUI]`** (needs a running app and JSON-RPC) or **`[Headless]`** (file-based / binary), matching how the CLI labels groups.
+
 > **Quick Reference**: See [docs/CLI-QUICK-REFERENCE.md](docs/CLI-QUICK-REFERENCE.md) for a comprehensive command cheat sheet and usage patterns.
 > 
-> **Command Groups**: See [docs/COMMAND-MAPPING.md](docs/COMMAND-MAPPING.md) for command group relationships and equivalences between `process`, `sf`, and `normals` commands.
+> **Command Groups**: See [docs/COMMAND-MAPPING.md](docs/COMMAND-MAPPING.md) for command group relationships and equivalences between `process`, `sf`, and `normals` commands (`sf` and `normals` are alias groups for the corresponding `process` subcommands).
 
 ### REPL Mode
 
@@ -392,8 +395,10 @@ cli-anything-acloudviewer scene remove 42           # remove entity
 cli-anything-acloudviewer scene show 42             # make visible
 cli-anything-acloudviewer scene hide 42             # make hidden
 cli-anything-acloudviewer scene select 42 43 44     # select entities
-cli-anything-acloudviewer clear                     # clear all
+cli-anything-acloudviewer scene clear               # remove all entities from the scene
 ```
+
+The top-level `clear` command is deprecated; use `scene clear` instead.
 
 ### View Control (GUI mode)
 
@@ -411,6 +416,8 @@ cli-anything-acloudviewer view pointsize +           # increase point size
 cli-anything-acloudviewer view pointsize -           # decrease point size
 ```
 
+The dockable **Console** widget uses a monospace font for log and command output.
+
 ### Processing (Headless)
 
 #### Basic Operations
@@ -418,6 +425,7 @@ cli-anything-acloudviewer view pointsize -           # decrease point size
 ```bash
 cli-anything-acloudviewer process subsample input.ply -o out.ply --voxel-size 0.05
 cli-anything-acloudviewer process normals input.ply -o out.ply --radius 0.1
+cli-anything-acloudviewer process crop input.ply -o cropped.ply --min-x -1 --min-y -1 --min-z -1 --max-x 1 --max-y 1 --max-z 1
 cli-anything-acloudviewer process icp source.ply target.ply -o aligned.ply --iterations 100
 cli-anything-acloudviewer process sor input.ply -o clean.ply --knn 6 --sigma 1.0
 ```
@@ -496,6 +504,29 @@ cli-anything-acloudviewer process match-centers source.ply target.ply -o centere
 cli-anything-acloudviewer process drop-global-shift input.ply -o local.ply
 cli-anything-acloudviewer process closest-point-set input.ply reference.ply -o closest.ply
 cli-anything-acloudviewer process remove-scan-grids input.ply -o cleaned.ply
+```
+
+#### Plugin Processing
+
+```bash
+# PCV ambient occlusion
+cli-anything-acloudviewer process pcv input.ply -o ao.ply --n-rays 256 --resolution 1024
+cli-anything-acloudviewer process pcv input.ply -o ao.ply --mode-180 --is-closed
+
+# Compass — export measurements
+cli-anything-acloudviewer process compass-export project.bin -o data --format csv
+cli-anything-acloudviewer process compass-export project.bin -o data.xml --format xml
+
+# Compass — import foliations / lineations from scalar fields
+cli-anything-acloudviewer process compass-import-fol input.ply --dip-sf Dip --dipdir-sf DipDir --plane-size 2.0
+cli-anything-acloudviewer process compass-import-lin input.ply --trend-sf Trend --plunge-sf Plunge --length 2.0
+
+# Compass — refit planes, P21 intensity
+cli-anything-acloudviewer process compass-refit project.bin
+cli-anything-acloudviewer process compass-p21 input.ply --radius 10.0 --subsample 25 -o p21.ply
+
+# SRA surface of revolution radial distance
+cli-anything-acloudviewer process sra input.ply -o output.ply --profile profile.txt --axis Z
 ```
 
 ### Scalar Field Operations

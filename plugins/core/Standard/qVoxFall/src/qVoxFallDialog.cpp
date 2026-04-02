@@ -109,12 +109,9 @@ void qVoxFallDialog::setMeshes(ccMesh* mesh1, ccMesh* mesh2) {
 void qVoxFallDialog::setMesh1Visibility(bool state) {
     if (m_mesh1) {
         m_mesh1->setVisible(state);
-        // m_mesh1->prepareDisplayForRefresh();
-        ecvDisplayTools::SetRedrawRecursive(false);
-        m_mesh1->setRedraw(true);
+        ecvDisplayTools::RedrawObject(m_mesh1);
     }
     if (m_app) {
-        m_app->refreshAll();
         m_app->updateUI();
     }
 }
@@ -123,11 +120,9 @@ void qVoxFallDialog::setMesh2Visibility(bool state) {
     if (m_mesh2) {
         m_mesh2->setVisible(state);
         // m_mesh2->prepareDisplayForRefresh();
-        ecvDisplayTools::SetRedrawRecursive(false);
-        m_mesh2->setRedraw(true);
+        ecvDisplayTools::RedrawObject(m_mesh2);
     }
     if (m_app) {
-        m_app->refreshAll();
         m_app->updateUI();
     }
 }

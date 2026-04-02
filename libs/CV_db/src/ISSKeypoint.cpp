@@ -111,9 +111,8 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         }
     }
 
-    std::vector<size_t> kp_indices;
-    kp_indices.reserve(points.size());
-#pragma omp parallel for schedule(static) shared(kp_indices)
+    std::vector<uint8_t> is_keypoint(points.size(), 0);
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
             std::vector<int> nn_indices;
@@ -123,8 +122,15 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-                kp_indices.emplace_back(i);
+                is_keypoint[i] = 1;
             }
+        }
+    }
+    std::vector<size_t> kp_indices;
+    kp_indices.reserve(points.size());
+    for (size_t i = 0; i < points.size(); i++) {
+        if (is_keypoint[i]) {
+            kp_indices.push_back(i);
         }
     }
 

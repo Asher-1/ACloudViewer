@@ -7,6 +7,7 @@
 
 #include "ecvFacet.h"
 
+#include "ecvDisplayTools.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
@@ -453,6 +454,41 @@ std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update) {
     }
 
     return m_arrow;
+}
+
+void ccFacet::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            hideNormalArrowActors(context);
+        } else {
+            showNormalArrowActors(context);
+        }
+    }
+    ccHObject::draw(context);
+}
+
+void ccFacet::hideNormalArrowActors(CC_DRAW_CONTEXT& context) {
+    if (!m_bodyId.isEmpty()) {
+        CC_DRAW_CONTEXT hideCtx = context;
+        hideCtx.visible = false;
+        hideCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+        hideCtx.viewID = m_bodyId;
+        ecvDisplayTools::HideShowEntities(hideCtx);
+        hideCtx.viewID = m_headId;
+        ecvDisplayTools::HideShowEntities(hideCtx);
+    }
+}
+
+void ccFacet::showNormalArrowActors(CC_DRAW_CONTEXT& context) {
+    if (!m_bodyId.isEmpty() && normalVectorIsShown()) {
+        CC_DRAW_CONTEXT showCtx = context;
+        showCtx.visible = true;
+        showCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+        showCtx.viewID = m_bodyId;
+        ecvDisplayTools::HideShowEntities(showCtx);
+        showCtx.viewID = m_headId;
+        ecvDisplayTools::HideShowEntities(showCtx);
+    }
 }
 
 void ccFacet::drawMeOnly(CC_DRAW_CONTEXT& context) {
