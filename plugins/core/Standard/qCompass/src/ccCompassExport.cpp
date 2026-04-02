@@ -46,7 +46,7 @@ int _writePlanes(ccHObject* rootObject,
     // 99% of the time the biggest point cloud in the project will be the model
     // being interpreted)
     ccPointCloud* ss = nullptr;
-    if (object->isKindOf(CV_TYPES::PLANE) | ccFitPlane::isFitPlane(object)) {
+    if (object->isKindOf(CV_TYPES::PLANE) || ccFitPlane::isFitPlane(object)) {
         std::vector<ccHObject*> clouds;
         rootObject->filterChildren(clouds, true, CV_TYPES::POINT_CLOUD, false);
         unsigned int npoints = 0;
@@ -220,11 +220,8 @@ int _writeLineations(ccHObject* object,
 
     // is object a lineation made by ccCompass?
     int n = 0;
-    if (((thicknesses == false) &&
-         ccLineation::isLineation(object)) |  // lineation measurement
-        ((thicknesses == true) &&
-         ccThickness::isThickness(object)))  // or thickness measurement
-    {
+    if ((!thicknesses && ccLineation::isLineation(object)) ||
+        (thicknesses && ccThickness::isThickness(object))) {
         // Write object as Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge
         *out << name << ",";
         *out << object->getMetaData("Sx").toString() << ","
@@ -656,6 +653,15 @@ void saveCSV(ecvMainAppInterface* app, const QString& filename) {
         QTextStream lineation_stream(&lineation_file);
         QTextStream thickness_stream(&thickness_file);
 
+        plane_stream.setRealNumberNotation(QTextStream::FixedNotation);
+        plane_stream.setRealNumberPrecision(12);
+        trace_stream.setRealNumberNotation(QTextStream::FixedNotation);
+        trace_stream.setRealNumberPrecision(12);
+        lineation_stream.setRealNumberNotation(QTextStream::FixedNotation);
+        lineation_stream.setRealNumberPrecision(12);
+        thickness_stream.setRealNumberNotation(QTextStream::FixedNotation);
+        thickness_stream.setRealNumberPrecision(12);
+
         // write headers
         plane_stream << "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Sample_"
                         "Radius,RMS,Gx,Gy,Gz,Length"
@@ -785,6 +791,8 @@ void saveSVG(ecvMainAppInterface* app, const QString& filename, float zoom) {
     // open file & create text stream
     if (svg_file.open(QIODevice::WriteOnly)) {
         QTextStream svg_stream(&svg_file);
+        svg_stream.setRealNumberNotation(QTextStream::FixedNotation);
+        svg_stream.setRealNumberPrecision(12);
 
         // GlWidth and GlHeight are negative on some machines??
         int width =
@@ -841,6 +849,18 @@ void saveSVG(ecvMainAppInterface* app, const QString& filename, float zoom) {
 }
 
 void saveXML(ecvMainAppInterface* app, const QString& filename) {
+    // find root node (before opening file, matching CloudCompare)
+    ccHObject* rootObject = app->dbRootObject();
+    if (rootObject && rootObject->getChildrenNumber() == 1) {
+        rootObject = rootObject->getChild(0);
+    }
+    if (!rootObject) {
+        app->dispToConsole(
+                "[ccCompass] Internal error: failed to find the root object",
+                ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
+        return;
+    }
+
     // open output stream
     QFile file(filename);
 
@@ -850,18 +870,6 @@ void saveXML(ecvMainAppInterface* app, const QString& filename) {
 
         xmlWriter.setAutoFormatting(true);
         xmlWriter.writeStartDocument();
-
-        // find root node
-        ccHObject* rootObject = app->dbRootObject();
-        if (rootObject->getChildrenNumber() == 1) {
-            rootObject = rootObject->getChild(
-                    0);  // HACK - often the root only has one child (a .bin
-                         // file); if so, move down a level
-        }
-
-        /*ccHObject::Container pointClouds;
-        rootObject->filterChildren(&pointClouds, true, CV_TYPES::POINT_CLOUD,
-        true);*/
 
         // write data tree
         _writeObjectXML(rootObject, &xmlWriter);

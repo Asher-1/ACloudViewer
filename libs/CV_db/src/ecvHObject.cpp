@@ -1701,15 +1701,17 @@ void ccHObject::hideObject_recursive(bool recursive) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE) {
             assert(obj && obj->isA(CV_TYPES::LABEL_2D));
             cc2DLabel* label2d = ccHObjectCaster::To2DLabel(obj);
-            label2d->setEnabled(false);
-            label2d->updateLabel();
+            if (label2d) {
+                label2d->clearLabel(false);
+            }
             continue;
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
             assert(obj && obj->isA(CV_TYPES::VIEWPORT_2D_LABEL));
             cc2DViewportLabel* label2d =
                     ccHObjectCaster::To2DViewportLabel(obj);
-            label2d->setEnabled(false);
-            label2d->update2DLabelView(context, true);
+            if (label2d) {
+                label2d->clear2Dviews();
+            }
             continue;
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
@@ -1722,8 +1724,15 @@ void ccHObject::hideObject_recursive(bool recursive) {
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {
                 prim->hideShowDrawings(context);
-                continue;
             }
+            if (obj) {
+                if (obj->isKindOf(CV_TYPES::FACET)) {
+                    static_cast<ccFacet*>(obj)->hideNormalArrowActors(context);
+                } else if (obj->isKindOf(CV_TYPES::PLANE)) {
+                    static_cast<ccPlane*>(obj)->hideNormalArrowActors(context);
+                }
+            }
+            if (prim) continue;
         }
 
         context.viewID = hdInfo.hideId;

@@ -31,10 +31,3 @@ Getting Started
 - **C++ examples**: Located in ``examples/Cpp/`` directory
 - **GitHub repository**: https://github.com/Asher-1/ACloudViewer
 
-.. toctree::
-   :maxdepth: 2
-   :caption: C++ API Documentation
-
-   cpp_api/overview
-   cpp_api/quickstart
-   cpp_api/plugins

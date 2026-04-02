@@ -8,6 +8,7 @@
 #include "../include/qCloudLayers.h"
 
 #include "../include/ccCloudLayersDlg.h"
+#include "../include/qCloudLayersCommands.h"
 
 // Qt
 #include <QMainWindow>
@@ -86,4 +87,13 @@ void qCloudLayers::doAction() {
     if (m_cloudLayersDlg->start()) {
         m_app->updateOverlayDialogsPlacement();
     }
+}
+
+void qCloudLayers::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCloudLayers));
 }

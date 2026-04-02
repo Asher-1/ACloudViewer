@@ -346,10 +346,6 @@ jobs:
             exit 1
           }
 
-          # Debug: List installation directory structure
-          Write-Host "=== Installation directory structure ==="
-          Get-ChildItem $installDir -Recurse -Include *.exe,*.dll | Select-Object FullName
-
           # Set up comprehensive DLL search paths
           # Include conda environment paths (same as build environment)
           $dllPaths = @(

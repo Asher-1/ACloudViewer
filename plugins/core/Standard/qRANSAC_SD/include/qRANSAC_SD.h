@@ -46,7 +46,7 @@ public:
         float maxRadius;
         RansacParams()
             : epsilon(0.005f),
-              bitmapEpsilon(0.01f),
+              bitmapEpsilon(0.001f),
               supportPoints(500),
               maxNormalDev_deg(25.0f),
               probability(0.01f),
@@ -62,7 +62,7 @@ public:
 
         RansacParams(float scale)
             : epsilon(0.005f * scale),
-              bitmapEpsilon(0.01f * scale),
+              bitmapEpsilon(0.001f),
               supportPoints(500),
               maxNormalDev_deg(25.0f),
               probability(0.01f),

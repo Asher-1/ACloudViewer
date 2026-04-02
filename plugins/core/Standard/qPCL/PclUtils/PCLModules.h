@@ -746,12 +746,6 @@ int EstimateShot(const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 template <typename PointInT>
 double ComputeCloudResolution(
         const typename pcl::PointCloud<PointInT>::ConstPtr inCloud) {
-    int nres;
-    double res = 0.0;
-    std::vector<int> indices(2);
-    std::vector<float> sqr_distances(2);
-
-    // Create a search tree, use KDTreee for non-organized data.
     typename pcl::search::Search<PointInT>::Ptr tree;
     if (inCloud->isOrganized()) {
         tree.reset(new pcl::search::OrganizedNeighbor<PointInT>());
@@ -761,8 +755,9 @@ double ComputeCloudResolution(
     tree->setInputCloud(inCloud);
 
     int size_cloud = static_cast<int>(inCloud->size());
+    if (size_cloud == 0) return 0.0;
 
-    std::vector<float> nn_dis(size_cloud);
+    std::vector<float> nn_dis(size_cloud, 0.0f);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -771,29 +766,17 @@ double ComputeCloudResolution(
         if (!std::isfinite((*inCloud)[i].x)) {
             continue;
         }
-
-        // Considering the second neighbor since the first is the point itself.
-        nres = tree->nearestKSearch(i, 2, indices, sqr_distances);
+        // Thread-local buffers — must not be shared across iterations.
+        std::vector<int> indices(2);
+        std::vector<float> sqr_distances(2);
+        int nres = tree->nearestKSearch(i, 2, indices, sqr_distances);
         if (nres == 2) {
             nn_dis[i] = std::sqrt(sqr_distances[1]);
-            // res += sqr_distances[1];
-            //++n_points;
-        } else {
-            CVLog::WarningDebug(
-                    "[ComputeCloudResolution] Found a point without "
-                    "neighbors.");
-            nn_dis[i] = 0.0f;
         }
     }
 
-    // if (n_points != 0)
-    //{
-    //	//res /= n_points;
-    //	res = sqrt(res / n_points);
-    // }
-
-    res = std::accumulate(std::begin(nn_dis), std::end(nn_dis), 0.0f) /
-          size_cloud;
+    double res = std::accumulate(std::begin(nn_dis), std::end(nn_dis), 0.0) /
+                 size_cloud;
     return res;
 }
 
@@ -1398,7 +1381,15 @@ int GetMinCutSegmentation(
     seg.setNumberOfNeighbours(neighboursNumber);
     seg.setSourceWeight(foreWeight);
     seg.extract(outClusters);
-    pcl::copyPointCloud(*seg.getColoredCloud(), *cloud_segmented);
+
+    auto colored = seg.getColoredCloud();
+    if (!colored || colored->empty()) {
+        CVLog::Warning(
+                "[GetMinCutSegmentation] getColoredCloud returned "
+                "empty result");
+        return -1;
+    }
+    pcl::copyPointCloud(*colored, *cloud_segmented);
 
     return 1;
 }

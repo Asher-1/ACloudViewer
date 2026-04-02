@@ -8,6 +8,7 @@
 #include "qCSVMatrixIO.h"
 
 // local
+#include "CSVMatrixCommands.h"
 #include "CSVMatrixFilter.h"
 
 qCSVMatrixIO::qCSVMatrixIO(QObject *parent)
@@ -16,4 +17,10 @@ qCSVMatrixIO::qCSVMatrixIO(QObject *parent)
 
 ccIOPluginInterface::FilterList qCSVMatrixIO::getFilters() {
     return {FileIOFilter::Shared(new CSVMatrixFilter)};
+}
+
+void qCSVMatrixIO::registerCommands(ccCommandLineInterface *cmd) {
+    if (!cmd) return;
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCSVMatrix));
 }

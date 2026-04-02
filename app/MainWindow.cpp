@@ -83,6 +83,7 @@
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
 #include <ecvQuadric.h>
+#include <ecvRedrawScope.h>
 #include <ecvRenderingTools.h>
 #include <ecvScalarField.h>
 #include <ecvSphere.h>
@@ -2308,10 +2309,11 @@ void MainWindow::addToDB(ccHObject* obj,
             updateZoom = true;
         }
 
-        // avoid rendering other object this time
-        ecvDisplayTools::SetRedrawRecursive(false);
-        // redraw new added obj
-        ecvDisplayTools::SetRedrawRecursive(obj, true);
+        {
+            ecvRedrawScope scope;
+            scope.markDirty(obj);
+            scope.dismiss();
+        }
 
         ccHObject::Container childs;
         obj->filterChildren(childs, true, CV_TYPES::IMAGE);
@@ -2432,8 +2434,7 @@ void MainWindow::toggleLockRotationAxis() {
                     QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
                     ecvDisplayTools::ROTAION_LOCK_MESSAGE);
         }
-        ecvDisplayTools::SetRedrawRecursive(false);
-        ecvDisplayTools::RedrawDisplay(true, false);
+        { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
     }
 }
 
@@ -3226,18 +3227,16 @@ void MainWindow::doActionApplyScale() {
     if (!keepInPlace) zoomOnSelectedEntities();
 
     resetSelectedBBox();
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (auto& candidate : candidates) {
-        ccHObject* ent = candidate.first;
-        if (ent && ent->isKindOf(CV_TYPES::MESH)) {
-            ent->setRedrawFlagRecursive(true);
-        }
-        ccGenericPointCloud* cloud = candidate.second;
-        if (cloud) {
-            cloud->setRedrawFlagRecursive(true);
+    {
+        ecvRedrawScope scope;
+        for (auto& candidate : candidates) {
+            if (auto* ent = candidate.first;
+                ent && ent->isKindOf(CV_TYPES::MESH)) {
+                scope.markDirty(ent);
+            }
+            scope.markDirty(candidate.second);
         }
     }
-    refreshAll();
     updateUI();
 }
 
@@ -3959,8 +3958,7 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
         m_currentFullWidget->setFocus();
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
 }
 
 void MainWindow::toggle3DView(bool state) {
@@ -3992,20 +3990,20 @@ void MainWindow::handleNewLabel(ccHObject* entity) {
 }
 
 void MainWindow::activatePointListPickingMode() {
-    // there should be only one point cloud in current selection!
     if (!haveOneSelection()) {
         ecvConsole::Error(tr("Select one and only one entity!"));
         return;
     }
 
-    ccPointCloud* pc = ccHObjectCaster::ToPointCloud(m_selectedEntities[0]);
-    if (!pc) {
-        ecvConsole::Error(tr("Wrong type of entity"));
+    ccHObject* entity = m_selectedEntities[0];
+    if (!entity->isKindOf(CV_TYPES::POINT_CLOUD) &&
+        !entity->isKindOf(CV_TYPES::MESH)) {
+        ecvConsole::Error(tr("Select a point cloud or a mesh!"));
         return;
     }
 
-    if (!pc->isVisible() || !pc->isEnabled()) {
-        ecvConsole::Error(tr("Points must be visible!"));
+    if (!entity->isVisible() || !entity->isEnabled()) {
+        ecvConsole::Error(tr("Entity must be visible!"));
         return;
     }
 
@@ -4017,13 +4015,11 @@ void MainWindow::activatePointListPickingMode() {
         registerOverlayDialog(m_plpDlg, Qt::TopRightCorner);
     }
 
-    // DGM: we must update marker size spin box value (as it may have changed by
-    // the user with the "display dialog")
     m_plpDlg->markerSizeSpinBox->setValue(
             ecvDisplayTools::GetDisplayParameters().labelMarkerSize);
 
     m_plpDlg->linkWith(ecvDisplayTools::GetCurrentScreen());
-    m_plpDlg->linkWithCloud(pc);
+    m_plpDlg->linkWithEntity(entity);
 
     freezeUI(true);
 
@@ -4036,7 +4032,7 @@ void MainWindow::activatePointListPickingMode() {
 void MainWindow::deactivatePointListPickingMode(bool state) {
     Q_UNUSED(state);
     if (m_plpDlg) {
-        m_plpDlg->linkWithCloud(nullptr);
+        m_plpDlg->linkWithEntity(nullptr);
     }
 
     freezeUI(false);
@@ -4418,35 +4414,23 @@ void MainWindow::refreshAll(bool only2D /* = false*/,
 
 void MainWindow::refreshSelected(bool only2D /* = false*/,
                                  bool forceRedraw /* = true*/) {
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope(only2D, forceRedraw);
     for (ccHObject* entity : getSelectedEntities()) {
-        if (entity) {
-            entity->setRedrawFlagRecursive(true);
-        }
+        scope.markDirty(entity);
     }
-    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
 }
 
 void MainWindow::refreshObject(ccHObject* obj, bool only2D, bool forceRedraw) {
-    if (!obj) {
-        return;
-    }
-
-    ecvDisplayTools::SetRedrawRecursive(false);
-    obj->setRedrawFlagRecursive(true);
-    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+    ecvDisplayTools::RedrawObject(obj, only2D, forceRedraw);
 }
 
 void MainWindow::refreshObjects(ccHObject::Container objs,
                                 bool only2D,
                                 bool forceRedraw) {
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope(only2D, forceRedraw);
     for (ccHObject* entity : objs) {
-        if (entity) {
-            entity->setRedrawFlagRecursive(true);
-        }
+        scope.markDirty(entity);
     }
-    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
 }
 
 void MainWindow::resetSelectedBBox() {
@@ -4689,7 +4673,8 @@ void MainWindow::zoomOnEntities(ccHObject* obj) {
 
 void MainWindow::setGlobalZoom() {
     if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::SetRedrawRecursive(false);
+        ecvRedrawScope scope;
+        scope.dismiss();
         ecvDisplayTools::ZoomGlobal();
     }
 }
@@ -5058,8 +5043,7 @@ void MainWindow::cancelPreviousPickingOperation(bool aborted) {
         ecvDisplayTools::DisplayNewMessage("Picking operation aborted",
                                            ecvDisplayTools::LOWER_LEFT_MESSAGE);
     }
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
 
     // specific case: we allow the 'point-pair based alignment' tool to process
     // the picked point!
@@ -6979,22 +6963,19 @@ void MainWindow::doActionSubdivideMesh() {
 
 void MainWindow::doActionFlipMeshTriangles() {
     bool warningIssued = false;
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     for (ccHObject* entity : getSelectedEntities()) {
         if (entity->isKindOf(CV_TYPES::MESH)) {
-            // single mesh?
             if (entity->isA(CV_TYPES::MESH)) {
                 ccMesh* mesh = static_cast<ccMesh*>(entity);
                 mesh->flipTriangles();
-                mesh->setRedrawFlagRecursive(true);
+                scope.markDirty(mesh);
             } else if (!warningIssued) {
                 CVLog::Warning("[Flip triangles] Works only on real meshes!");
                 warningIssued = true;
             }
         }
     }
-
-    refreshAll();
 }
 
 void MainWindow::doActionSmoothMeshLaplacian() {
@@ -7014,28 +6995,26 @@ void MainWindow::doActionSmoothMeshLaplacian() {
     ecvProgressDialog pDlg(true, this);
     pDlg.setAutoClose(false);
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (ccHObject* entity : getSelectedEntities()) {
-        if (entity->isA(CV_TYPES::MESH) ||
-            entity->isA(CV_TYPES::PRIMITIVE))  // FIXME: can we really do this
-                                               // with primitives?
-        {
-            ccMesh* mesh = ccHObjectCaster::ToMesh(entity);
-
-            if (mesh->laplacianSmooth(s_laplacianSmooth_nbIter,
-                                      static_cast<PointCoordinateType>(
-                                              s_laplacianSmooth_factor),
-                                      &pDlg)) {
-                mesh->setRedrawFlagRecursive(true);
-            } else {
-                ecvConsole::Warning(
-                        tr("Failed to apply Laplacian smoothing to mesh '%1'")
-                                .arg(mesh->getName()));
+    {
+        ecvRedrawScope scope;
+        for (ccHObject* entity : getSelectedEntities()) {
+            if (entity->isA(CV_TYPES::MESH) ||
+                entity->isA(CV_TYPES::PRIMITIVE)) {
+                ccMesh* mesh = ccHObjectCaster::ToMesh(entity);
+                if (mesh->laplacianSmooth(s_laplacianSmooth_nbIter,
+                                          static_cast<PointCoordinateType>(
+                                                  s_laplacianSmooth_factor),
+                                          &pDlg)) {
+                    scope.markDirty(mesh);
+                } else {
+                    ecvConsole::Warning(
+                            tr("Failed to apply Laplacian smoothing to mesh "
+                               "'%1'")
+                                    .arg(mesh->getName()));
+                }
             }
         }
     }
-
-    refreshAll();
     updateUI();
 }
 
@@ -7043,70 +7022,71 @@ void MainWindow::doActionFlagMeshVertices() {
     bool errors = false;
     bool success = false;
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (ccHObject* entity : getSelectedEntities()) {
-        if (entity->isKindOf(CV_TYPES::MESH)) {
-            ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(entity);
-            ccPointCloud* vertices = ccHObjectCaster::ToPointCloud(
-                    mesh ? mesh->getAssociatedCloud() : 0);
-            if (mesh && vertices) {
-                // prepare a new scalar field
-                int sfIdx = vertices->getScalarFieldIndexByName(
-                        CC_DEFAULT_MESH_VERT_FLAGS_SF_NAME);
-                if (sfIdx < 0) {
-                    sfIdx = vertices->addScalarField(
+    {
+        ecvRedrawScope scope;
+        for (ccHObject* entity : getSelectedEntities()) {
+            if (entity->isKindOf(CV_TYPES::MESH)) {
+                ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(entity);
+                ccPointCloud* vertices = ccHObjectCaster::ToPointCloud(
+                        mesh ? mesh->getAssociatedCloud() : 0);
+                if (mesh && vertices) {
+                    int sfIdx = vertices->getScalarFieldIndexByName(
                             CC_DEFAULT_MESH_VERT_FLAGS_SF_NAME);
                     if (sfIdx < 0) {
+                        sfIdx = vertices->addScalarField(
+                                CC_DEFAULT_MESH_VERT_FLAGS_SF_NAME);
+                        if (sfIdx < 0) {
+                            ecvConsole::Warning(
+                                    tr("Not enough memory to flag the "
+                                       "vertices of mesh '%1'!")
+                                            .arg(mesh->getName()));
+                            errors = true;
+                            continue;
+                        }
+                    }
+                    cloudViewer::ScalarField* flags =
+                            vertices->getScalarField(sfIdx);
+
+                    cloudViewer::MeshSamplingTools::EdgeConnectivityStats stats;
+                    if (cloudViewer::MeshSamplingTools::flagMeshVerticesByType(
+                                mesh, flags, &stats)) {
+                        vertices->setCurrentDisplayedScalarField(sfIdx);
+                        ccScalarField* sf =
+                                vertices->getCurrentDisplayedScalarField();
+                        if (sf) {
+                            sf->setColorScale(
+                                    ccColorScalesManager::GetDefaultScale(
+                                            ccColorScalesManager::
+                                                    VERTEX_QUALITY));
+                        }
+                        vertices->showSF(true);
+                        mesh->showSF(true);
+                        scope.markDirty(mesh);
+                        success = true;
+
+                        ecvConsole::Print(
+                                tr("[Mesh Quality] Mesh '%1' edges: %2 "
+                                   "total (normal: %3 / on hole borders: "
+                                   "%4 / non-manifold: %5)")
+                                        .arg(entity->getName())
+                                        .arg(stats.edgesCount)
+                                        .arg(stats.edgesSharedByTwo)
+                                        .arg(stats.edgesNotShared)
+                                        .arg(stats.edgesSharedByMore));
+                    } else {
+                        vertices->deleteScalarField(sfIdx);
+                        sfIdx = -1;
                         ecvConsole::Warning(tr("Not enough memory to flag the "
                                                "vertices of mesh '%1'!")
                                                     .arg(mesh->getName()));
                         errors = true;
-                        continue;
                     }
-                }
-                cloudViewer::ScalarField* flags =
-                        vertices->getScalarField(sfIdx);
-
-                cloudViewer::MeshSamplingTools::EdgeConnectivityStats stats;
-                if (cloudViewer::MeshSamplingTools::flagMeshVerticesByType(
-                            mesh, flags, &stats)) {
-                    vertices->setCurrentDisplayedScalarField(sfIdx);
-                    ccScalarField* sf =
-                            vertices->getCurrentDisplayedScalarField();
-                    if (sf) {
-                        sf->setColorScale(ccColorScalesManager::GetDefaultScale(
-                                ccColorScalesManager::VERTEX_QUALITY));
-                        // sf->setColorRampSteps(3); //ugly :(
-                    }
-                    vertices->showSF(true);
-                    mesh->showSF(true);
-                    mesh->setRedrawFlagRecursive(true);
-                    success = true;
-
-                    // display stats in the Console as well
-                    ecvConsole::Print(tr("[Mesh Quality] Mesh '%1' edges: %2 "
-                                         "total (normal: %3 / on hole borders: "
-                                         "%4 / non-manifold: %5)")
-                                              .arg(entity->getName())
-                                              .arg(stats.edgesCount)
-                                              .arg(stats.edgesSharedByTwo)
-                                              .arg(stats.edgesNotShared)
-                                              .arg(stats.edgesSharedByMore));
                 } else {
-                    vertices->deleteScalarField(sfIdx);
-                    sfIdx = -1;
-                    ecvConsole::Warning(tr("Not enough memory to flag the "
-                                           "vertices of mesh '%1'!")
-                                                .arg(mesh->getName()));
-                    errors = true;
+                    assert(false);
                 }
-            } else {
-                assert(false);
             }
         }
     }
-
-    refreshAll();
     updateUI();
 
     if (success) {
@@ -7220,16 +7200,16 @@ void MainWindow::doActionFlipPlane() {
         return;
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (ccHObject* entity : m_selectedEntities) {
-        ccPlane* plane = ccHObjectCaster::ToPlane(entity);
-        if (plane) {
-            plane->flip();
-            plane->setRedrawFlagRecursive(true);
+    {
+        ecvRedrawScope scope;
+        for (ccHObject* entity : m_selectedEntities) {
+            ccPlane* plane = ccHObjectCaster::ToPlane(entity);
+            if (plane) {
+                plane->flip();
+                scope.markDirty(plane);
+            }
         }
     }
-
-    refreshAll();
     updatePropertiesView();
 }
 
@@ -7452,12 +7432,14 @@ void MainWindow::toggleSelectedEntitiesProperty(
 
 void MainWindow::clearSelectedEntitiesProperty(
         ccEntityAction::CLEAR_PROPERTY property) {
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     if (!ccEntityAction::clearProperty(m_selectedEntities, property, this)) {
+        scope.dismiss();
         return;
     }
-
-    refreshSelected();
+    for (ccHObject* entity : getSelectedEntities()) {
+        scope.markDirty(entity);
+    }
     updateUI();
 }
 
@@ -7523,9 +7505,14 @@ void MainWindow::doActionColorize() { doActionSetColor(true); }
 void MainWindow::doActionSetUniqueColor() { doActionSetColor(false); }
 
 void MainWindow::doActionSetColor(bool colorize) {
-    ecvDisplayTools::SetRedrawRecursive(false);
-    if (!ccEntityAction::setColor(m_selectedEntities, colorize, this)) return;
-
+    ecvRedrawScope scope;
+    if (!ccEntityAction::setColor(m_selectedEntities, colorize, this)) {
+        scope.dismiss();
+        return;
+    }
+    for (ccHObject* entity : getSelectedEntities()) {
+        scope.markDirty(entity);
+    }
     updateUI();
 }
 
@@ -8010,20 +7997,13 @@ void MainWindow::doComputeBestFitBB() {
         return;
     }
 
-    // avoid rendering obj that not been selected again
-    ecvDisplayTools::SetRedrawRecursive(false);
-
-    // backup selected entities as removeObjectTemporarilyFromDBTree can modify
-    // them
     ccHObject::Container selectedEntities = getSelectedEntities();
-    for (ccHObject* entity : selectedEntities)  // warning, getSelectedEntites
-                                                // may change during this loop!
-    {
+    ecvRedrawScope scope;
+    for (ccHObject* entity : selectedEntities) {
         ccGenericPointCloud* cloud =
                 ccHObjectCaster::ToGenericPointCloud(entity);
 
-        if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD))  // TODO
-        {
+        if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD)) {
             cloudViewer::Neighbourhood Yk(cloud);
 
             cloudViewer::SquareMatrixd covMat = Yk.computeCovarianceMatrix();
@@ -8056,15 +8036,12 @@ void MainWindow::doComputeBestFitBB() {
                     cloud->setGLTransformation(trans);
                     trans.invert();
 
-                    // we temporarily detach entity, as it may undergo
-                    //"severe" modifications (octree deletion, etc.) --> see
-                    // ccPointCloud::applyRigidTransformation
                     ccHObjectContext objContext =
                             removeObjectTemporarilyFromDBTree(cloud);
                     static_cast<ccPointCloud*>(cloud)->applyRigidTransformation(
                             trans);
                     putObjectBackIntoDBTree(cloud, objContext);
-                    entity->setRedrawFlagRecursive(true);
+                    scope.markDirty(entity);
                     CC_DRAW_CONTEXT context;
                     context.removeViewID =
                             QString::number(entity->getUniqueID());
@@ -8073,8 +8050,6 @@ void MainWindow::doComputeBestFitBB() {
             }
         }
     }
-
-    refreshAll();
 }
 
 void MainWindow::doActionComputeDistanceMap() {
@@ -8715,9 +8690,12 @@ void MainWindow::doActionRegister() {
             }
 
             data->setName(data->getName() + tr(".registered"));
-            // avoid rendering other object this time
-            ecvDisplayTools::SetRedrawRecursive(false);
-            zoomOn(data);
+            {
+                ecvRedrawScope scope;
+                scope.markDirty(data);
+                scope.dismiss();
+                zoomOn(data);
+            }
         }
 
         // pop-up summary
@@ -8821,9 +8799,9 @@ void MainWindow::activateRegisterPointPairTool() {
             m_ccRoot->selectEntities(refEntities);
         }
         if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::SetRedrawRecursive(false);
+            ecvRedrawScope scope;
+            scope.dismiss();
             zoomOnSelectedEntities();
-            ecvDisplayTools::RedrawDisplay();
         }
         deactivateRegisterPointPairTool(false);
     } else
@@ -8864,79 +8842,82 @@ void MainWindow::doSphericalNeighbourhoodExtractionTest() {
 
     ecvProgressDialog pDlg(true, this);
     pDlg.setAutoClose(false);
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (size_t i = 0; i < selNum; ++i) {
-        // we only process clouds
-        if (!m_selectedEntities[i]->isA(CV_TYPES::POINT_CLOUD)) {
-            continue;
-        }
-        ccPointCloud* cloud =
-                ccHObjectCaster::ToPointCloud(m_selectedEntities[i]);
+    {
+        ecvRedrawScope scope;
+        for (size_t i = 0; i < selNum; ++i) {
+            if (!m_selectedEntities[i]->isA(CV_TYPES::POINT_CLOUD)) {
+                continue;
+            }
+            ccPointCloud* cloud =
+                    ccHObjectCaster::ToPointCloud(m_selectedEntities[i]);
 
-        int sfIdx = cloud->getScalarFieldIndexByName(qPrintable(sfName));
-        if (sfIdx < 0) sfIdx = cloud->addScalarField(qPrintable(sfName));
-        if (sfIdx < 0) {
-            ecvConsole::Error(tr("Failed to create scalar field on cloud '%1' "
-                                 "(not enough memory?)")
-                                      .arg(cloud->getName()));
-            return;
-        }
-
-        ccOctree::Shared octree = cloud->getOctree();
-        if (!octree) {
-            pDlg.reset();
-            pDlg.show();
-            octree = cloud->computeOctree(&pDlg);
-            if (!octree) {
-                ecvConsole::Error(tr("Couldn't compute octree for cloud '%1'!")
-                                          .arg(cloud->getName()));
+            int sfIdx = cloud->getScalarFieldIndexByName(qPrintable(sfName));
+            if (sfIdx < 0) sfIdx = cloud->addScalarField(qPrintable(sfName));
+            if (sfIdx < 0) {
+                ecvConsole::Error(
+                        tr("Failed to create scalar field on cloud '%1' "
+                           "(not enough memory?)")
+                                .arg(cloud->getName()));
                 return;
             }
+
+            ccOctree::Shared octree = cloud->getOctree();
+            if (!octree) {
+                pDlg.reset();
+                pDlg.show();
+                octree = cloud->computeOctree(&pDlg);
+                if (!octree) {
+                    ecvConsole::Error(
+                            tr("Couldn't compute octree for cloud '%1'!")
+                                    .arg(cloud->getName()));
+                    return;
+                }
+            }
+
+            cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
+            sf->fill(NAN_VALUE);
+            cloud->setCurrentScalarField(sfIdx);
+
+            QElapsedTimer eTimer;
+            eTimer.start();
+
+            size_t extractedPoints = 0;
+            unsigned char level =
+                    octree->findBestLevelForAGivenNeighbourhoodSizeExtraction(
+                            sphereRadius);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<unsigned> dist(0, cloud->size() - 1);
+
+            const unsigned samples = 1000;
+            for (unsigned j = 0; j < samples; ++j) {
+                unsigned randIndex = dist(gen);
+                cloudViewer::DgmOctree::NeighboursSet neighbours;
+                octree->getPointsInSphericalNeighbourhood(
+                        *cloud->getPoint(randIndex), sphereRadius, neighbours,
+                        level);
+                size_t neihgboursCount = neighbours.size();
+                extractedPoints += neihgboursCount;
+                for (size_t k = 0; k < neihgboursCount; ++k)
+                    cloud->setPointScalarValue(
+                            neighbours[k].pointIndex,
+                            static_cast<ScalarType>(
+                                    sqrt(neighbours[k].squareDistd)));
+            }
+            ecvConsole::Print(
+                    tr("[SNE_TEST] Mean extraction time = %1 ms (radius = %2, "
+                       "mean(neighbours) = %3)")
+                            .arg(eTimer.elapsed())
+                            .arg(sphereRadius)
+                            .arg(extractedPoints /
+                                 static_cast<double>(samples)));
+
+            sf->computeMinAndMax();
+            cloud->setCurrentDisplayedScalarField(sfIdx);
+            cloud->showSF(true);
+            scope.markDirty(cloud);
         }
-
-        cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
-        sf->fill(NAN_VALUE);
-        cloud->setCurrentScalarField(sfIdx);
-
-        QElapsedTimer eTimer;
-        eTimer.start();
-
-        size_t extractedPoints = 0;
-        unsigned char level =
-                octree->findBestLevelForAGivenNeighbourhoodSizeExtraction(
-                        sphereRadius);
-        std::random_device rd;   // non-deterministic generator
-        std::mt19937 gen(rd());  // to seed mersenne twister.
-        std::uniform_int_distribution<unsigned> dist(0, cloud->size() - 1);
-
-        const unsigned samples = 1000;
-        for (unsigned j = 0; j < samples; ++j) {
-            unsigned randIndex = dist(gen);
-            cloudViewer::DgmOctree::NeighboursSet neighbours;
-            octree->getPointsInSphericalNeighbourhood(
-                    *cloud->getPoint(randIndex), sphereRadius, neighbours,
-                    level);
-            size_t neihgboursCount = neighbours.size();
-            extractedPoints += neihgboursCount;
-            for (size_t k = 0; k < neihgboursCount; ++k)
-                cloud->setPointScalarValue(neighbours[k].pointIndex,
-                                           static_cast<ScalarType>(sqrt(
-                                                   neighbours[k].squareDistd)));
-        }
-        ecvConsole::Print(
-                tr("[SNE_TEST] Mean extraction time = %1 ms (radius = %2, "
-                   "mean(neighbours) = %3)")
-                        .arg(eTimer.elapsed())
-                        .arg(sphereRadius)
-                        .arg(extractedPoints / static_cast<double>(samples)));
-
-        sf->computeMinAndMax();
-        cloud->setCurrentDisplayedScalarField(sfIdx);
-        cloud->showSF(true);
-        cloud->setRedrawFlagRecursive(true);
     }
-
-    refreshAll();
     updateUI();
 }
 
@@ -9844,11 +9825,11 @@ void MainWindow::doActionAddConstantSF() {
     cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
     assert(sf);
     if (sf) {
-        ecvDisplayTools::SetRedrawRecursive(false);
         sf->fill(sfValue);
         sf->computeMinAndMax();
         cloud->setCurrentDisplayedScalarField(sfIdx);
         cloud->showSF(true);
+        ecvDisplayTools::RedrawObject(cloud);
         updateUI();
     }
 
@@ -11079,10 +11060,12 @@ void MainWindow::deactivateSegmentationMode(bool state) {
         ecvDisplayTools::DisplayNewMessage(
                 QString(),
                 ecvDisplayTools::UPPER_CENTER_MESSAGE);  // clear the area
-        ecvDisplayTools::SetRedrawRecursive(false);
-        m_gsTool->removeAllEntities();
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            refreshAll();
+        {
+            ecvRedrawScope scope;
+            m_gsTool->removeAllEntities();
+            if (!ecvDisplayTools::GetCurrentScreen()) {
+                scope.dismiss();
+            }
         }
         ecvDisplayTools::SetInteractionMode(
                 ecvDisplayTools::TRANSFORM_CAMERA());
@@ -11694,10 +11677,9 @@ void MainWindow::doActionCloudPrimitiveDist() {
             }
             compEnt->setCurrentDisplayedScalarField(sfIdx);
             compEnt->showSF(sfIdx >= 0);
-            compEnt->setRedrawFlagRecursive(true);
+            ecvDisplayTools::RedrawObject(compEnt);
         }
 
-        refreshAll();
         MainWindow::UpdateUI();
     }
 }
@@ -12060,7 +12042,7 @@ void MainWindow::doActionFitCircle() {
     ecvProgressDialog pDlg(true, this);
     pDlg.setAutoClose(false);
 
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     for (ccHObject* entity : getSelectedEntities()) {
         ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
         if (!cloud) continue;
@@ -12092,7 +12074,6 @@ void MainWindow::doActionFitCircle() {
                              .arg(normal.y)
                              .arg(normal.z));
 
-        // create the circle representation as a polyline
         ccCircle* circle = new ccCircle(radius, 128);
         if (circle) {
             circle->setName(QObject::tr("Circle r=%1").arg(radius));
@@ -12104,13 +12085,11 @@ void MainWindow::doActionFitCircle() {
                     ccGLMatrix::FromToRotation(CCVector3(0, 0, 1), normal);
             trans.setTranslation(center);
             circle->applyGLTransformation_recursive(&trans);
-            circle->setRedrawFlagRecursive(true);
+            scope.markDirty(circle);
 
             addToDB(circle, false, false, false);
         }
     }
-
-    refreshAll();
 }
 
 void MainWindow::doActionFitPlane() { doComputePlaneOrientation(false); }

@@ -2,6 +2,7 @@
 target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/ccCompass.h
+		${CMAKE_CURRENT_LIST_DIR}/ccCompassCommands.h
 		${CMAKE_CURRENT_LIST_DIR}/ccCompassDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ccCompassExport.h
 		${CMAKE_CURRENT_LIST_DIR}/ccCompassImport.h

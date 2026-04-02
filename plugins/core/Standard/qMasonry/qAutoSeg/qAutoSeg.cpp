@@ -14,7 +14,10 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 
+#include <cassert>
 #include <random>
+
+#include "AutoSegCommands.h"
 
 // Local
 #include "profileImportDlg.h"
@@ -2357,4 +2360,13 @@ void ccAutoSeg::doAction() {
         m_app->addToDB(mortarMaps, true, true, false, true);
 
     m_app->setView(CC_FRONT_VIEW);
+}
+
+void ccAutoSeg::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandAutoSeg));
 }

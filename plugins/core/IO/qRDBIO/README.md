@@ -1,35 +1,35 @@
-# RDB IO Plugin
+# qRDBIO — RIEGL RDB 2
 
-This plugin adds support to load Riegl DataBase 2 files.
+## Introduction
 
-To compile this plugin the RDB library is needed. To get the library go to the
-[Riegl Members Area](http://www.riegl.com/members-area/) and create an account.
-The account will be validated by an administrator. After validation download
-the RDB library for your platform and extract it.
+**qRDBIO** loads **RIEGL DataBase 2 (RDB 2)** point cloud data produced by RIEGL sensors and workflows. Access to the **RDB SDK** is subject to RIEGL’s member download terms.
 
+## Supported formats
 
-## Build the Plugin
-To build and install the plugin enable the plugin with the `PLUGIN_IO_QRDB` flag
-and pass the location of the RDB library with `rdb_DIR` (the path to the
-`rdb-config.cmake` file located in `interface/cpp`)
+| Format | Notes |
+|--------|--------|
+| **RDB 2** | RIEGL’s database format for point cloud storage and attributes. |
 
-### Build on Linux and Unix like
-In the ACloudViewer root folder execute the following commands to configure,
-build and install
+## Usage
 
+Open RDB files through **File → Open** when the plugin and SDK are installed. Attribute and schema details follow RIEGL’s RDB specification for your SDK version.
+
+## ACloudViewer CLI
+
+**None** — use the GUI or higher-level automation that loads files by filter; there are no dedicated `-SILENT` tokens for RDB in the standard command set.
+
+## Build
+
+```bash
+-DPLUGIN_IO_QRDB=ON -Drdb_DIR=/path/to/rdblib-.../interface/cpp
 ```
-cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${PWD}/_install" -DPLUGIN_IO_QRDB=ON -Drdb_DIR=/path/to/rdblib-2.2.1/interface/cpp
-cmake --build _build -- -j
-cmake --build _build --target install
-```
 
-### Build on Windows with MSVC
-To build on Windows with Visual Studio 2017 additionally the generator needs to
-be specified. The following command assumes installed build tools as well as Qt5
-system wide installation
+`rdb_DIR` must point to the directory containing **`rdb-config.cmake`**. Optional: `PLUGIN_IO_QRDB_FETCH_DEPENDENCY` to download the SDK during configure (see plugin `CMakeLists.txt`).
 
-```
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
-cmake -H. -B_build -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%cd%/_install -DPLUGIN_IO_QRDB=ON -Drdb_DIR=C:\Users\username\Downloads\rdblib-2.2.1-x86_64-windows\interface\cpp 
-cmake --build _build --config Release --target install
-```
+## Dependencies
+
+- **RIEGL RDB SDK** — Obtain from the [RIEGL Members Area](https://www.riegl.com/) after registration.
+
+## References
+
+- RIEGL RDB documentation and SDK (vendor portal).

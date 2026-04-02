@@ -2,6 +2,7 @@
 target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/qHoughNormals.h
+		${CMAKE_CURRENT_LIST_DIR}/qHoughNormalsCommands.h
 		${CMAKE_CURRENT_LIST_DIR}/qHoughNormalsDialog.h
 )
 

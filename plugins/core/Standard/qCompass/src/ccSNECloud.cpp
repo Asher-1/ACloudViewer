@@ -8,31 +8,37 @@
 #include "ccSNECloud.h"
 
 #include <ecvDisplayTools.h>
+#include <ecvPolyline.h>
 #include <ecvScalarField.h>
 
-// #include <ccColorRampShader.h>
-//  pass ctors straight to ccPointCloud
 ccSNECloud::ccSNECloud() : ccPointCloud() { updateMetadata(); }
 
 ccSNECloud::ccSNECloud(ccPointCloud* obj) : ccPointCloud() {
-    // copy points, normals and scalar fields from obj.
-    *this += obj;
+    if (obj) {
+        *this += obj;
+        copyGlobalShiftAndScale(*obj);
+        setName(obj->getName());
+    } else {
+        assert(false);
+    }
 
-    // set name
-    setName(obj->getName());
-
-    // update metadata
     updateMetadata();
 }
 
-void ccSNECloud::updateMetadata() {
-    // add metadata tag defining the ccCompass class type
-    QVariantMap* map = new QVariantMap();
-    map->insert("ccCompassType", "SNECloud");
-    setMetaData(*map, true);
+ccSNECloud::~ccSNECloud() { removeNormalActors(); }
+
+void ccSNECloud::removeNormalActors() {
+    for (const QString& viewId : m_normalViewIds) {
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = ENTITY_TYPE::ECV_LINES_3D;
+        ecvDisplayTools::RemoveEntities(ctx);
+    }
+    m_normalViewIds.clear();
 }
 
-// returns true if object is a lineation
+void ccSNECloud::updateMetadata() { setMetaData("ccCompassType", "SNECloud"); }
+
 bool ccSNECloud::isSNECloud(ccHObject* object) {
     if (object->hasMetaData("ccCompassType")) {
         return object->getMetaData("ccCompassType")
@@ -43,55 +49,45 @@ bool ccSNECloud::isSNECloud(ccHObject* object) {
 }
 
 void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
-    if (!MACRO_Foreground(context))  // 2D foreground only
-        return;                      // do nothing
+    if (!MACRO_Foreground(context)) {
+        return;
+    }
 
-    // draw point cloud
     ccPointCloud::drawMeOnly(context);
 
-    // draw normal vectors
     if (MACRO_Draw3D(context)) {
-        if (size() == 0)  // no points -> bail!
+        if (size() == 0) {
             return;
+        }
 
-        // get the set of OpenGL functions (version 2.1)
         if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
             assert(false);
             return;
         }
 
-        // get camera info
-        ccGLCameraParameters camera;
-        ecvDisplayTools::GetGLCameraParameters(camera);
-        const ecvViewportParameters& viewportParams =
-                ecvDisplayTools::GetViewportParameters();
+        removeNormalActors();
 
-        // get point size for drawing
-        float pSize = context.defaultPointSize;
-        /*glFunc->glGetFloatv(GL_POINT_SIZE, &pSize);*/
-
-        // setup
-        if (pSize != 0) {
-            // glFunc->glPushAttrib(GL_LINE_BIT);
-            // glFunc->glLineWidth(static_cast<GLfloat>(pSize));
-            context.defaultLineWidth = pSize;
-        }
-
-        // glFunc->glMatrixMode(GL_MODELVIEW);
-        // glFunc->glPushMatrix();
-        // glFunc->glEnable(GL_BLEND);
-
-        // get normal vector properties
         int thickID = getScalarFieldIndexByName("Thickness");
-        if (thickID == -1)  // if no thickness defined, try for "spacing"
-        {
+        if (thickID == -1) {
             thickID = getScalarFieldIndexByName("Spacing");
         }
 
-        // draw normals
-        // glFunc->glBegin(GL_LINES);
+        float lineWidth = 1.0f;
+        QString baseViewId = getViewId();
+
+        ccPointCloud lineCloud;
+        lineCloud.reserve(size() * 2);
+        lineCloud.reserveTheRGBTable();
+
+        struct SegmentInfo {
+            unsigned startIdx;
+            unsigned endIdx;
+        };
+        std::vector<SegmentInfo> segments;
+        segments.reserve(size());
+
+        unsigned lineIdx = 0;
         for (unsigned p = 0; p < size(); p++) {
-            // skip out-of-range points
             if (m_currentDisplayedScalarField != nullptr) {
                 if (!m_currentDisplayedScalarField->areNaNValuesShownInGrey()) {
                     if (!m_currentDisplayedScalarField->displayRange()
@@ -102,46 +98,60 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 }
             }
 
-            // skip hidden points
             if (isVisibilityTableInstantiated()) {
-                if (m_pointsVisibility[p] != POINT_VISIBLE &&
-                    !m_pointsVisibility.empty()) {
-                    continue;  // skip this point
+                if (!m_pointsVisibility.empty() &&
+                    m_pointsVisibility[p] != POINT_VISIBLE) {
+                    continue;
                 }
             }
 
-            // push color
-            if (m_currentDisplayedScalarField != nullptr) {
-                const ecvColor::Rgb* col =
-                        m_currentDisplayedScalarField->getColor(
-                                m_currentDisplayedScalarField->getValue(p));
-                const ecvColor::Rgba col4(col->r, col->g, col->b, 200);
-                // glFunc->glColor4ubv(col4.rgba);
-            } else {
-                const ecvColor::Rgba col4(200, 200, 200, 200);
-                // glFunc->glColor4ubv(col4.rgba);
-            }
-
-            // get length from thickness (if defined)
-            float length = 1.0;
+            float length = 1.0f;
             if (thickID != -1) {
                 length = getScalarField(thickID)->getValue(p);
             }
 
-            // calculate start and end points of normal vector
             const CCVector3 start = *getPoint(p);
             CCVector3 end = start + (getPointNormal(p) * length);
 
-            // push line to opengl
-            // ccGL::Vertex3v(glFunc, start.u);
-            // ccGL::Vertex3v(glFunc, end.u);
-        }
-        // glFunc->glEnd();
+            ecvColor::Rgb lineColor(200, 200, 200);
+            if (m_currentDisplayedScalarField != nullptr) {
+                const ecvColor::Rgb* col =
+                        m_currentDisplayedScalarField->getColor(
+                                m_currentDisplayedScalarField->getValue(p));
+                if (col) {
+                    lineColor = *col;
+                }
+            }
 
-        // cleanup
-        // if (pSize != 0) {
-        //	glFunc->glPopAttrib();
-        // }
-        // glFunc->glPopMatrix();
+            unsigned si = lineCloud.size();
+            lineCloud.addPoint(start);
+            lineCloud.addRGBColor(lineColor);
+            lineCloud.addPoint(end);
+            lineCloud.addRGBColor(lineColor);
+            segments.push_back({si, si + 1});
+            lineIdx++;
+        }
+
+        if (segments.empty()) {
+            return;
+        }
+
+        CC_DRAW_CONTEXT lineContext = context;
+        lineContext.opacity = 0.78;
+
+        for (size_t i = 0; i < segments.size(); i++) {
+            ccPolyline segment(&lineCloud);
+            segment.addPointIndex(segments[i].startIdx);
+            segment.addPointIndex(segments[i].endIdx);
+            segment.setVisible(true);
+            segment.showColors(true);
+            segment.setWidth(static_cast<PointCoordinateType>(lineWidth));
+            segment.setFixedId(true);
+
+            QString viewId = baseViewId + "-sne" + QString::number(i);
+            lineContext.viewID = viewId;
+            segment.draw(lineContext);
+            m_normalViewIds.append(viewId);
+        }
     }
 }

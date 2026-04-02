@@ -24,6 +24,7 @@
 #include <ecvScalarField.h>
 
 // Qt
+#include <QElapsedTimer>
 #include <QMainWindow>
 #include <QProgressBar>
 
@@ -155,7 +156,7 @@ void qPCV::doAction() {
     bool mode360 = !dlg.mode180CheckBox->isChecked();
 
     // PCV type ShadeVis
-    std::vector<CCVector3> rays;
+    std::vector<CCVector3d> rays;
     if (!cloudsWithNormals.empty() && dlg.useCloudRadioButton->isChecked()) {
         // Version with cloud normals as light rays
         assert(dlg.cloudsComboBox->currentIndex() <
@@ -165,14 +166,15 @@ void qPCV::doAction() {
         unsigned count = pc->size();
         try {
             rays.resize(count);
-        } catch (std::bad_alloc) {
+        } catch (const std::bad_alloc&) {
             m_app->dispToConsole(
                     "Not enough memory to generate the set of rays",
                     ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
             return;
         }
         for (unsigned i = 0; i < count; ++i) {
-            rays[i] = CCVector3(pc->getPointNormal(i));
+            CCVector3 n = pc->getPointNormal(i);
+            rays[i] = CCVector3d(n.x, n.y, n.z);
         }
     } else {
         // generates light directions
@@ -193,99 +195,16 @@ void qPCV::doAction() {
     ecvProgressDialog pcvProgressCb(true, m_app->getMainWindow());
     pcvProgressCb.setAutoClose(false);
 
-    size_t count = 0;
-    for (ccHObject* obj : candidates) {
-        ccPointCloud* cloud = nullptr;
-        ccGenericMesh* mesh = nullptr;
-        QString objName = "unknown";
-
-        assert(obj);
-        if (obj->isA(CV_TYPES::POINT_CLOUD)) {
-            // we need a real point cloud
-            cloud = ccHObjectCaster::ToPointCloud(obj);
-            objName = cloud->getName();
-        } else if (obj->isKindOf(CV_TYPES::MESH)) {
-            mesh = ccHObjectCaster::ToGenericMesh(obj);
-            cloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
-            objName = mesh->getName();
-        }
-        assert(cloud);
-
-        // we get the PCV field if it already exists
-        int sfIdx = cloud->getScalarFieldIndexByName(CC_PCV_FIELD_LABEL_NAME);
-        // otherwise we create it
-        if (sfIdx < 0) {
-            sfIdx = cloud->addScalarField(CC_PCV_FIELD_LABEL_NAME);
-        }
-        if (sfIdx < 0) {
-            m_app->dispToConsole(
-                    "Couldn't allocate a new scalar field for computing PCV "
-                    "field ! Try to free some memory ...",
-                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-            return;
-        }
-        cloud->setCurrentScalarField(sfIdx);
-
-        QString objNameForPorgressDialog = objName;
-        if (candidates.size() > 1) {
-            objNameForPorgressDialog +=
-                    QString("(%1/%2)").arg(++count).arg(candidates.size());
-        }
-
-        bool wasEnabled = obj->isEnabled();
-        bool wasVisible = obj->isVisible();
-        obj->setEnabled(true);
-        obj->setVisible(true);
-        bool success = PCV::Launch(rays, cloud, mesh, meshIsClosed, resolution,
-                                   resolution, &pcvProgressCb,
-                                   objNameForPorgressDialog);
-        obj->setEnabled(wasEnabled);
-        obj->setVisible(wasVisible);
-
-        if (!success) {
-            cloud->deleteScalarField(sfIdx);
-            m_app->dispToConsole(
-                    tr("An error occurred during entity '%1' illumination!")
-                            .arg(objName),
-                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-        } else {
-            ccScalarField* sf =
-                    static_cast<ccScalarField*>(cloud->getScalarField(sfIdx));
-            if (sf) {
-                sf->computeMinAndMax();
-                cloud->setCurrentDisplayedScalarField(sfIdx);
-                sf->setColorScale(ccColorScalesManager::GetDefaultScale(
-                        ccColorScalesManager::GREY));
-                if (obj->hasNormals() && obj->normalsShown()) {
-                    m_app->dispToConsole(
-                            tr("Entity '%1' normals have been automatically "
-                               "disabled")
-                                    .arg(objName),
-                            ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-                }
-                obj->showNormals(false);
-                obj->showSF(true);
-                if (obj != cloud) {
-                    cloud->showSF(true);
-                }
-            } else {
-                assert(false);
-            }
-        }
-
-        if (pcvProgressCb.wasCanceled()) {
-            m_app->dispToConsole(tr("Process has been cancelled by the user"),
-                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
-            break;
-        }
-    }
+    QElapsedTimer timer;
+    timer.start();
+    PCVCommand::Process(candidates, rays, meshIsClosed, resolution,
+                        &pcvProgressCb, m_app);
+    m_app->dispToConsole(
+            QString("[PCV] Timing: %1 sec").arg(timer.elapsed() / 1000.0));
 
     pcvProgressCb.close();
 
-    // currently selected entities parameters may have changed!
     m_app->updateUI();
-    // currently selected entities appearance may have changed!
-    m_app->refreshSelected();
 }
 
 void qPCV::registerCommands(ccCommandLineInterface* cmd) {

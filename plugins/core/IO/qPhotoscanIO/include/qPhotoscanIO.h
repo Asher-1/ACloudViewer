@@ -35,10 +35,12 @@ class qPhotoscanIO : public QObject, public ccIOPluginInterface {
                           "../info.json")
 
 public:
-    explicit qPhotoscanIO(QObject *parent = nullptr);
+    explicit qPhotoscanIO(QObject* parent = nullptr);
 
     ~qPhotoscanIO() override = default;
 
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
+
+    void registerCommands(ccCommandLineInterface* cmd) override;
 };

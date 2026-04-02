@@ -7,7 +7,13 @@
 
 #include "qCork.h"
 
+#include <ecvCommandLineInterface.h>
+
+#include "qCorkCommands.h"
+#include "qCorkInternal.h"
+
 // CV_DB_LIB
+#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
@@ -59,7 +65,7 @@ void qCork::onNewSelection(const ccHObject::Container& selectedEntities) {
     }
 }
 
-bool ToCorkMesh(const ccMesh* in, CorkMesh& out, ecvMainAppInterface* app = 0) {
+bool ToCorkMesh(const ccMesh* in, CorkMesh& out, ecvMainAppInterface* app) {
     if (!in || !in->getAssociatedCloud()) {
         if (app)
             app->dispToConsole("[Cork] Invalid input mesh!",
@@ -124,7 +130,7 @@ bool ToCorkMesh(const ccMesh* in, CorkMesh& out, ecvMainAppInterface* app = 0) {
     return true;
 }
 
-ccMesh* FromCorkMesh(const CorkMesh& in, ecvMainAppInterface* app = 0) {
+ccMesh* FromCorkMesh(const CorkMesh& in, ecvMainAppInterface* app) {
     const std::vector<CorkMesh::Tri>& inTris = in.getTris();
     const std::vector<CorkVertex>& inVerts = in.getVerts();
 
@@ -286,6 +292,25 @@ bool doPerformBooleanOp() {
     return true;
 }
 
+bool qCorkPerformBooleanOp(ccCorkDlg::CSG_OPERATION operation,
+                           CorkMesh& corkA,
+                           CorkMesh& corkB,
+                           const QString& nameA,
+                           const QString& nameB,
+                           ecvMainAppInterface* app) {
+    s_params.app = app;
+    s_params.corkA = &corkA;
+    s_params.corkB = &corkB;
+    s_params.nameA = nameA;
+    s_params.nameB = nameB;
+    s_params.operation = operation;
+    bool ok = doPerformBooleanOp();
+    s_params.app = nullptr;
+    s_params.corkA = nullptr;
+    s_params.corkB = nullptr;
+    return ok;
+}
+
 void qCork::doAction() {
     assert(m_app);
     if (!m_app) return;
@@ -369,9 +394,13 @@ void qCork::doAction() {
 
     if (result) {
         meshA->setEnabled(false);
-        meshB->setEnabled(false);
-        // if (meshB->getDisplay() == meshA->getDisplay())
-        //	meshB->setEnabled(false);
+        // CloudCompare disables meshB only when it shares the same GL window as
+        // meshA; ACloudViewer does not attach ccGLWindow to entities, so we use
+        // the same parent as a practical proxy (typical for two selected
+        // meshes).
+        if (meshA->getParent() == meshB->getParent()) {
+            meshB->setEnabled(false);
+        }
 
         // set name
         QString opName;
@@ -405,11 +434,16 @@ void qCork::doAction() {
             hasNormals = result->computePerVertexNormals();
         meshA->showNormals(hasNormals && meshA->normalsShown());
 
-        // result->setDisplay(meshA->getDisplay());
         m_app->addToDB(result);
-        // result->redrawDisplay();
+        ecvDisplayTools::RedrawObject(result);
     }
+}
 
-    // currently selected entities appearance may have changed!
-    // m_app->refreshAll();
+void qCork::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandCork));
 }

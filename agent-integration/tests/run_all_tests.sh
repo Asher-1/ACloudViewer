@@ -236,13 +236,8 @@ if [[ $MAX_LEVEL -ge 2 && "$CLI_INSTALLED" == "true" ]]; then
     if [[ -n "$CLI_HARNESS" ]]; then
         header "Running CLI-Anything Harness Tests"
         TEST_DIR="$CLI_HARNESS/cli_anything/acloudviewer/tests"
-        PYTEST_FILES=""
-        [[ -f "$TEST_DIR/test_core.py" ]] && PYTEST_FILES="$PYTEST_FILES $TEST_DIR/test_core.py"
-        [[ -f "$TEST_DIR/test_cli.py" ]] && PYTEST_FILES="$PYTEST_FILES $TEST_DIR/test_cli.py"
-        [[ -f "$TEST_DIR/test_utils.py" ]] && PYTEST_FILES="$PYTEST_FILES $TEST_DIR/test_utils.py"
-
-        if [[ -n "$PYTEST_FILES" ]]; then
-            $PYTHON -m pytest $PYTEST_FILES $PYTEST_EXTRA_ARGS --tb=short 2>&1
+        if [[ -d "$TEST_DIR" ]]; then
+            $PYTHON -m pytest "$TEST_DIR" $PYTEST_EXTRA_ARGS --tb=short 2>&1
             CLI_HARNESS_EXIT=$?
         fi
     fi

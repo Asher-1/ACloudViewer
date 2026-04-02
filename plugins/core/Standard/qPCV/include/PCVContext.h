@@ -12,83 +12,56 @@
 #include <GenericMesh.h>
 
 // system
+#include <cstdint>
 #include <vector>
 
-class QGLPixelBuffer;
+class QSurface;
+class QOpenGLBuffer;
+class QOpenGLContext;
+class QOpenGLFramebufferObject;
 
-//! PCV (Portion de Ciel Visible / Ambiant Illumination) OpenGL context
-/** Similar to Cignoni's ShadeVis
- **/
+//! PCV (Portion de Ciel Visible / Ambient occlusion) OpenGL context
+/** Similar to Cignoni's ShadeVis.
+    Uses Qt OpenGL off-screen rendering for depth-based visibility testing.
+**/
 class PCVContext {
 public:
-    //! Default constructor
     PCVContext();
-
-    //! Destructor
     virtual ~PCVContext();
 
-    //! Initialization
-    /** \param W OpenGL render context width (pixels)
-            \param H OpenGL render context height (pixels)
-            \param cloud associated cloud (or mesh vertices)
-            \param mesh associated mesh (if any)
-            \param closedMesh whether mesh is closed (faster) or not (need more
-    memory) \return initialization success
-    **/
     bool init(unsigned W,
               unsigned H,
               cloudViewer::GenericCloud* cloud,
-              cloudViewer::GenericMesh* mesh = 0,
+              cloudViewer::GenericMesh* mesh = nullptr,
               bool closedMesh = true);
 
-    //! Set the viewing directions
-    void setViewDirection(const CCVector3& V);
+    int glAccumPixel(std::vector<int>& visibilityCount,
+                     const CCVector3d& viewDir);
 
-    //! Increments the visibility counter for points viewed in the current pass
-    //! (see setViewDirection)
-    /** \param visibilityCount per-vertex visibility count (same size as the
-    number of vertices) \return number of vertices seen during this pass
-    **/
-    int GLAccumPixel(std::vector<int>& visibilityCount);
+    bool makeCurrent();
 
 protected:
-    void glInit();
+    bool glInit();
     void drawEntity();
     void associateToEntity(cloudViewer::GenericCloud* cloud,
-                           cloudViewer::GenericMesh* mesh = 0);
+                           cloudViewer::GenericMesh* mesh = nullptr);
 
-    //! Displayed entity (cloud or mesh vertices)
     cloudViewer::GenericCloud* m_vertices;
-
-    //! Displayed entity (mesh - optional)
     cloudViewer::GenericMesh* m_mesh;
 
-    // zoom courant
-    PointCoordinateType m_zoom;
-    // translation vers le centre de l'entitee a afficher
-    CCVector3 m_viewCenter;
+    PointCoordinateType m_entityDiagonal;
+    CCVector3 m_entityCenter;
 
-    // associated pixel buffer
-    QGLPixelBuffer* m_pixBuffer;
+    QSurface* m_glSurface;
+    QOpenGLContext* m_glContext;
+    QOpenGLBuffer* m_pixBuffer;
+    QOpenGLFramebufferObject* m_fbo;
 
-    //! Pixel buffer width (pixels)
     unsigned m_width;
-    //! Pixel buffer height (pixels)
     unsigned m_height;
 
-    //! Model view matrix size (OpenGL)
-    /** \warning Never pass a 'constant initializer' by reference
-     **/
-    static const unsigned OPENGL_MATRIX_SIZE = 16;
+    std::vector<float> m_snapZ;
+    std::vector<uint8_t> m_snapC;
 
-    //! Current model view matrix
-    float m_viewMat[OPENGL_MATRIX_SIZE];
-
-    //! Depth buffer
-    float* m_snapZ;
-    //! Color buffer
-    unsigned char* m_snapC;
-
-    //! Whether displayed mesh is closed or not
     bool m_meshIsClosed;
 };

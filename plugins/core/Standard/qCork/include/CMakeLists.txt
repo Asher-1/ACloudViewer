@@ -3,6 +3,8 @@ target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/ccCorkDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/qCork.h
+		${CMAKE_CURRENT_LIST_DIR}/qCorkCommands.h
+		${CMAKE_CURRENT_LIST_DIR}/qCorkInternal.h
 )
 
 target_include_directories( ${PROJECT_NAME}

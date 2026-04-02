@@ -1,19 +1,45 @@
-# G3Point
-
-Granulometry from 3D Point clouds
-> Based on Steer, Guerit et al. (2022)
-
-![ForGitHub](https://user-images.githubusercontent.com/17555304/159018713-7272a95e-6400-4490-83f5-868248cffbcb.gif)
+# G3Point (plugin) — Grain Size Analysis
 
 ## Introduction
 
-**G3Point** is a tool which aims at automatically measuring the size, shape, and orientation of a large 
-number of individual grains as detected from any type of 3D point clouds describing the topography of surfaces covered by sediments.
+**G3Point** performs **3D grain size measurement** on point clouds representing **gravel / cobble surfaces**: it segments grains, merges and cleans regions, then fits simple geometric models (e.g. ellipsoids) for size and shape analysis.
 
-The tool has been developped initially in *Matlab* https://github.com/philippesteer/G3Point
-This repository aims at making a plugin for CloudCompare from the original Matlab tool, also including  later developments of the tool, either in *Matlab* (https://github.com/philippesteer/G3Point_dev) or in *Python* (https://github.com/p-leroy/g3point_python).
+Official project page: [G3Point — Université de Rennes](https://lidar.univ-rennes.fr/en/g3point).
 
-This algorithm relies on 3 main phases:
-1. Grain **segmentation** using a waterhsed algorithm
-2. Grain **merging and cleaning**
-3. Grain **fitting by geometrical models** including ellipsoids and cuboids
+## Usage/Algorithm
+
+The pipeline follows the published G3Point approach: local neighbourhood analysis, watershed-style segmentation, post-processing, and optional export of fitted ellipsoids for granulometry and orientation statistics.
+
+## Parameters
+
+| Option | Role |
+|--------|------|
+| `-MAX_RADIUS` | Upper search radius |
+| `-MIN_RADIUS` | Lower search radius |
+| `-N_NEIGHBORS` | Number of neighbours |
+| `-EXPORT_ELLIPSOIDS` | Export fitted ellipsoids when supported in batch mode |
+
+## Screenshots
+
+![G3Point demo](images/g3point_demo.gif)
+
+## ACloudViewer CLI
+
+```bash
+ACloudViewer -SILENT -O grains.las -G3POINT -MAX_RADIUS 2 -MIN_RADIUS 0 -N_NEIGHBORS 30 -EXPORT_ELLIPSOIDS -AUTO_SAVE ON -SAVE_CLOUDS
+```
+
+## Build
+
+```bash
+-DPLUGIN_STANDARD_G3POINT=ON
+```
+
+## Dependencies
+
+- **Eigen3**, **nanoflann**, **QCustomPlot** (as required by the plugin).
+
+## References
+
+- [G3Point — Université de Rennes](https://lidar.univ-rennes.fr/en/g3point)
+- Method lineage: Steer, Guerit et al.; see project page and publications linked there.

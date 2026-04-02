@@ -97,6 +97,13 @@ function( AddPlugin )
 		CVPluginStub
 	)
 
+	# Propagate OpenMP support to all plugins so that #if defined(_OPENMP)
+	# code paths are active.  Core libraries link 3rdparty_openmp PRIVATELY,
+	# so plugins must link it explicitly.
+	if( TARGET 3rdparty_openmp )
+		target_link_libraries( ${PLUGIN_TARGET} 3rdparty_openmp )
+	endif()
+
 	# On macOS, copy the plugin to the plugins directory at the top level
 	# post build so we can find it without installing everything.
 	if( APPLE )

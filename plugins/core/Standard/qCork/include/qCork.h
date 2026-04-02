@@ -13,6 +13,7 @@
 #include "ecvStdPluginInterface.h"
 
 class QAction;
+class ccCommandLineInterface;
 
 //! Mes Boolean Operations (CSG) plugin
 /** This plugin is based on Cork: https://github.com/gilbo/cork
@@ -32,6 +33,7 @@ public:
     // inherited from ccStdPluginInterface
     virtual void onNewSelection(const ccHObject::Container& selectedEntities);
     virtual QList<QAction*> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected slots:
 

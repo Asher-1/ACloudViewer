@@ -41,6 +41,7 @@ public:
     // Inherited from ccStdPluginInterface
     void onNewSelection(const ccHObject::Container& selectedEntities) override;
     QList<QAction*> getActions() override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected:
     //! Slot called when associated action is triggered

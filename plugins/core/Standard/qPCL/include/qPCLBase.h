@@ -34,6 +34,7 @@ public:
     virtual QVector<QString> getModuleNames() override;
 
     virtual void stop() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
 
 public slots:
     //! Handles new entity

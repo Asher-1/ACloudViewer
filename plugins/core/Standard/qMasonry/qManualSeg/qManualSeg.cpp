@@ -10,6 +10,10 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 
+#include <cassert>
+
+#include "ManualSegCommands.h"
+
 // Local
 #include "profileImportDlg.h"
 
@@ -1553,4 +1557,13 @@ void ccManualSeg::doAction() {
 
         m_app->setView(CC_FRONT_VIEW);
     }
+}
+
+void ccManualSeg::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandManualSeg));
 }

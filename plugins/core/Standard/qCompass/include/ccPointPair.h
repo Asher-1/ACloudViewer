@@ -10,6 +10,7 @@
 #include <GenericIndexedCloudPersist.h>
 #include <ecvCone.h>
 #include <ecvCylinder.h>
+#include <ecvDrawContext.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvSphere.h>
@@ -26,19 +27,27 @@ public:
     ccPointPair(ccPolyline* obj);  // used to construct from a polyline with the
                                    // correct data
 
-    virtual ~ccPointPair() {}
+    virtual ~ccPointPair();
 
     virtual void updateMetadata() {};
 
     // get the direction of this pair (not normalized)
     CCVector3 getDirection();
 
+    void draw(CC_DRAW_CONTEXT& context) override;
+    void getTypeID_recursive(std::vector<hideInfo>& hdInfos,
+                             bool relative) override;
+
 protected:
-    // size that the point-markers are drawn
-    float m_relMarkerScale = 5.0f;
+    // VTK renders ccSphere actors significantly larger than OpenGL's glScalef.
+    // CloudCompare uses 5.0f with OpenGL; reduced here for visual parity in
+    // VTK.
+    float m_relMarkerScale = 1.5f;
 
     // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+
+    void hideShowSubActors(bool visible);
 
     // static functions
 public:

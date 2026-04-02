@@ -132,6 +132,11 @@ private:
     JsonRPCResult rpcMeshFlipTriangles(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcMeshVolume(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcMeshMerge(const QMap<QString, QVariant>& params);
+    // --- CLI Processing ---
+    JsonRPCResult rpcProcessRunCli(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcProcessCsf(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcProcessM3c2(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcProcessRansac(const QMap<QString, QVariant>& params);
     // --- Reconstruction ---
     JsonRPCResult rpcColmapReconstruct(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcColmapRun(const QMap<QString, QVariant>& params);

@@ -10,6 +10,9 @@
 // system
 #include <atomic>
 #include <unordered_set>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 // local
 #include "qVoxFallDialog.h"
@@ -70,7 +73,7 @@ struct VoxFallParams {
     std::vector<std::vector<int>> nbs;
     std::vector<bool> isEmpty;
     std::vector<bool> isEmptyBefore;
-    std::vector<bool> nonEmptyVoxelsVisited;
+    std::vector<uint8_t> nonEmptyVoxelsVisited;
     std::vector<int> clusters;
     int emptyVoxelCount = 0;
     CCVector3 centroid;
@@ -264,68 +267,101 @@ bool ComputeClusterVolume(int maxThreads,
     if (s_VoxFallParams.processCanceled) return error;
 
 #if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(maxThreads)
+#pragma omp parallel num_threads(maxThreads)
+    {
+        CCVector3 localMin = s_VoxFallParams.maxBound;
+        CCVector3 localMax = s_VoxFallParams.minBound;
+#pragma omp for schedule(static)
 #endif
-    for (int i = 0; i < clusterCount; i++) {
-        int index = s_VoxFallParams.clusterIndices[i];
+        for (int i = 0; i < clusterCount; i++) {
+            int index = s_VoxFallParams.clusterIndices[i];
 
-        if (error) {
-            continue;
-        }
-
-        std::unordered_set<unsigned int> nbs_next(
-                s_VoxFallParams.nbs[index].begin(),
-                s_VoxFallParams.nbs[index].end());
-        while (!nbs_next.empty()) {
-            unsigned nb = *nbs_next.begin();
-            nbs_next.erase(nbs_next.begin());
-
-            // Check non empty neighbor.
-            if (s_VoxFallParams.isEmpty[nb]) {
+            if (error) {
                 continue;
             }
-            if (s_VoxFallParams.nonEmptyVoxelsVisited[nb] == false) {
-                s_VoxFallParams.clusterOutterVoxelCount++;
-                s_VoxFallParams.nonEmptyVoxelsVisited[nb] = true;
 
-                if (s_VoxFallParams.exportLossGain) {
-                    Tuple3i V = qVoxFallTools::Index2Grid(
-                            nb, s_VoxFallParams.steps);
-                    CCVector3 voxel(static_cast<PointCoordinateType>(
-                                            V.x * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.x),
-                                    static_cast<PointCoordinateType>(
-                                            V.y * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.y),
-                                    static_cast<PointCoordinateType>(
-                                            V.z * s_VoxFallParams.voxelSize +
-                                            s_VoxFallParams.minBound.z));
+            std::unordered_set<unsigned int> nbs_next(
+                    s_VoxFallParams.nbs[index].begin(),
+                    s_VoxFallParams.nbs[index].end());
+            while (!nbs_next.empty()) {
+                unsigned nb = *nbs_next.begin();
+                nbs_next.erase(nbs_next.begin());
 
-                    if (voxel.x > maxBound.x)
-                        maxBound.x = static_cast<PointCoordinateType>(voxel.x);
-                    if (voxel.y > maxBound.y)
-                        maxBound.y = static_cast<PointCoordinateType>(voxel.y);
-                    if (voxel.z > maxBound.z)
-                        maxBound.z = static_cast<PointCoordinateType>(voxel.z);
+                if (s_VoxFallParams.isEmpty[nb]) {
+                    continue;
+                }
+                uint8_t was_visited;
+#if defined(_OPENMP) && defined(_MSC_VER)
+                was_visited = static_cast<uint8_t>(_InterlockedCompareExchange8(
+                        reinterpret_cast<volatile char*>(
+                                &s_VoxFallParams.nonEmptyVoxelsVisited[nb]),
+                        1, 0));
+#elif defined(_OPENMP)
+            was_visited = __sync_val_compare_and_swap(
+                    &s_VoxFallParams.nonEmptyVoxelsVisited[nb], 0, 1);
+#else
+            was_visited = s_VoxFallParams.nonEmptyVoxelsVisited[nb];
+            s_VoxFallParams.nonEmptyVoxelsVisited[nb] = 1;
+#endif
+                if (!was_visited) {
+#if defined(_OPENMP)
+#pragma omp atomic
+#endif
+                    s_VoxFallParams.clusterOutterVoxelCount++;
 
-                    if (voxel.x < minBound.x)
-                        minBound.x = static_cast<PointCoordinateType>(voxel.x);
-                    if (voxel.y < minBound.y)
-                        minBound.y = static_cast<PointCoordinateType>(voxel.y);
-                    if (voxel.z < minBound.z)
-                        minBound.z = static_cast<PointCoordinateType>(voxel.z);
+                    if (s_VoxFallParams.exportLossGain) {
+                        Tuple3i V = qVoxFallTools::Index2Grid(
+                                nb, s_VoxFallParams.steps);
+                        CCVector3 voxel(
+                                static_cast<PointCoordinateType>(
+                                        V.x * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.x),
+                                static_cast<PointCoordinateType>(
+                                        V.y * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.y),
+                                static_cast<PointCoordinateType>(
+                                        V.z * s_VoxFallParams.voxelSize +
+                                        s_VoxFallParams.minBound.z));
+
+#if defined(_OPENMP)
+                        if (voxel.x > localMax.x) localMax.x = voxel.x;
+                        if (voxel.y > localMax.y) localMax.y = voxel.y;
+                        if (voxel.z > localMax.z) localMax.z = voxel.z;
+                        if (voxel.x < localMin.x) localMin.x = voxel.x;
+                        if (voxel.y < localMin.y) localMin.y = voxel.y;
+                        if (voxel.z < localMin.z) localMin.z = voxel.z;
+#else
+                    if (voxel.x > maxBound.x) maxBound.x = voxel.x;
+                    if (voxel.y > maxBound.y) maxBound.y = voxel.y;
+                    if (voxel.z > maxBound.z) maxBound.z = voxel.z;
+                    if (voxel.x < minBound.x) minBound.x = voxel.x;
+                    if (voxel.y < minBound.y) minBound.y = voxel.y;
+                    if (voxel.z < minBound.z) minBound.z = voxel.z;
+#endif
+                    }
+                }
+                if (s_VoxFallParams.exportBlocksAsMeshes) {
+                    s_VoxFallParams.clusters[nb] = s_VoxFallParams.currentLabel;
                 }
             }
-            if (s_VoxFallParams.exportBlocksAsMeshes) {
-                s_VoxFallParams.clusters[nb] = s_VoxFallParams.currentLabel;
+
+            // progress bar
+            if (!s_VoxFallParams.nProgress->oneStep()) {
+                error = true;
             }
         }
-
-        // progress bar
-        if (!s_VoxFallParams.nProgress->oneStep()) {
-            error = true;
+#if defined(_OPENMP)
+#pragma omp critical(ComputeClusterVolumeMergeBounds)
+        {
+            if (localMax.x > maxBound.x) maxBound.x = localMax.x;
+            if (localMax.y > maxBound.y) maxBound.y = localMax.y;
+            if (localMax.z > maxBound.z) maxBound.z = localMax.z;
+            if (localMin.x < minBound.x) minBound.x = localMin.x;
+            if (localMin.y < minBound.y) minBound.y = localMin.y;
+            if (localMin.z < minBound.z) minBound.z = localMin.z;
         }
-    }
+    }  // omp parallel
+#endif
 
     if (s_VoxFallParams.exportLossGain) {
         float ymin = minBound.y;
@@ -348,8 +384,16 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
                               QString& errorMessage,
                               bool allowDialogs,
                               QWidget* parentWidget /*=nullptr*/,
-                              ecvMainAppInterface* app /*=nullptr*/) {
+                              ecvMainAppInterface* app /*=nullptr*/,
+                              ccPointCloud** outVoxelGrid /*=nullptr*/,
+                              ccHObject** outClusterGroup /*=nullptr*/) {
     errorMessage.clear();
+    if (outVoxelGrid) {
+        *outVoxelGrid = nullptr;
+    }
+    if (outClusterGroup) {
+        *outClusterGroup = nullptr;
+    }
 
     // get the input meshes in the right order
     ccMesh* mesh1 = dlg.getMesh1();
@@ -512,9 +556,11 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
         app->dispToConsole(QString("[VoxFall] Block detection: %1 s")
                                    .arg(detectTime_ms / 1000.0, 0, 'f', 3),
                            ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-    app->dispToConsole(QString("[VoxFall] Blocks found: %1")
-                               .arg(s_VoxFallParams.clusterLabel - 1),
-                       ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+    if (app) {
+        app->dispToConsole(QString("[VoxFall] Blocks found: %1")
+                                   .arg(s_VoxFallParams.clusterLabel - 1),
+                           ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+    }
 
     // 	   COMPUTE VOLUMES
     //=======================================================================================================================
@@ -536,8 +582,7 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
     s_VoxFallParams.nProgress = &nProgress;
 
     s_VoxFallParams.volumes.reserve(s_VoxFallParams.clusterLabel);
-    s_VoxFallParams.nonEmptyVoxelsVisited.resize(voxelGrid.innerCellCount(),
-                                                 false);
+    s_VoxFallParams.nonEmptyVoxelsVisited.resize(voxelGrid.innerCellCount(), 0);
     for (int label = 1; label < s_VoxFallParams.clusterLabel; ++label) {
         for (unsigned i = 0;
              i < static_cast<unsigned>(s_VoxFallParams.clusterSF->size());
@@ -669,7 +714,14 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
         }
         ccGroup->applyGLTransformation_recursive(&transform.inverse);
         ccGroup->setVisible(true);
-        app->addToDB(ccGroup);
+        if (app) {
+            app->addToDB(ccGroup);
+        } else if (outClusterGroup) {
+            *outClusterGroup = ccGroup;
+        } else {
+            delete ccGroup;
+            ccGroup = nullptr;
+        }
 
         qint64 meshTime_ms = meshTimer.elapsed();
         // we display block as mesh export timing only if no error occurred!
@@ -725,7 +777,15 @@ bool qVoxFallProcess::Compute(const qVoxFallDialog& dlg,
     if (s_VoxFallParams.exportBlocksAsMeshes) {
         s_VoxFallParams.voxfall->setEnabled(false);
     }
-    app->addToDB(s_VoxFallParams.voxfall);
+    if (app) {
+        app->addToDB(s_VoxFallParams.voxfall);
+    } else if (outVoxelGrid) {
+        *outVoxelGrid = s_VoxFallParams.voxfall;
+        s_VoxFallParams.voxfall = nullptr;
+    } else {
+        delete s_VoxFallParams.voxfall;
+        s_VoxFallParams.voxfall = nullptr;
+    }
 
     if (app) app->refreshAll();
 

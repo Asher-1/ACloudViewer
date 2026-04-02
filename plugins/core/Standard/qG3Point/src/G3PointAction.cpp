@@ -23,6 +23,7 @@
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <QApplication>
@@ -159,50 +160,57 @@ bool G3PointAction::sfConvertToRandomRGB(
     }
 
     // apply random colors
-    for (ccHObject* ent : selectedEntities) {
-        ccGenericPointCloud* cloud = nullptr;
+    {
+        ecvRedrawScope scope;
+        for (ccHObject* ent : selectedEntities) {
+            ccGenericPointCloud* cloud = nullptr;
 
-        bool lockedVertices = false;
-        cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
-        if (lockedVertices) {
-            CVLog::Warning(
-                    "[G3Point::sfConvertToRandomRGB] "
-                    "DisplayLockedVerticesWarning");
-            continue;
-        }
-        if (cloud != nullptr)  // TODO
-        {
-            ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
-            ccScalarField* sf = pc->getCurrentDisplayedScalarField();
-            // if there is no displayed SF --> nothing to do!
-            if (sf && sf->currentSize() >= pc->size()) {
-                if (!pc->resizeTheRGBTable(false)) {
-                    CVLog::Error(QObject::tr("Not enough memory!"));
-                    break;
-                } else {
-                    ScalarType minSF = sf->getMin();
-                    ScalarType maxSF = sf->getMax();
+            bool lockedVertices = false;
+            cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+            if (lockedVertices) {
+                CVLog::Warning(
+                        "[G3Point::sfConvertToRandomRGB] "
+                        "DisplayLockedVerticesWarning");
+                continue;
+            }
+            if (cloud != nullptr)  // TODO
+            {
+                ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
+                ccScalarField* sf = pc->getCurrentDisplayedScalarField();
+                // if there is no displayed SF --> nothing to do!
+                if (sf && sf->currentSize() >= pc->size()) {
+                    if (!pc->resizeTheRGBTable(false)) {
+                        CVLog::Error(QObject::tr("Not enough memory!"));
+                        break;
+                    } else {
+                        ScalarType minSF = sf->getMin();
+                        ScalarType maxSF = sf->getMax();
 
-                    ScalarType step =
-                            (maxSF - minSF) / (s_randomColorsNumber - 1);
-                    if (step == 0) step = static_cast<ScalarType>(1.0);
+                        ScalarType step =
+                                (maxSF - minSF) / (s_randomColorsNumber - 1);
+                        if (step == 0) step = static_cast<ScalarType>(1.0);
 
-                    for (unsigned i = 0; i < pc->size(); ++i) {
-                        ScalarType val = sf->getValue(i);
-                        unsigned colIndex =
-                                static_cast<unsigned>((val - minSF) / step);
-                        if (colIndex == s_randomColorsNumber) --colIndex;
+                        for (unsigned i = 0; i < pc->size(); ++i) {
+                            ScalarType val = sf->getValue(i);
+                            unsigned colIndex =
+                                    static_cast<unsigned>((val - minSF) / step);
+                            if (colIndex == s_randomColorsNumber) --colIndex;
 
-                        pc->setPointColor(i, randomColors->getValue(colIndex));
+                            pc->setPointColor(i,
+                                              randomColors->getValue(colIndex));
+                        }
+
+                        pc->showColors(true);
+                        pc->showSF(false);  // just in case
+                        scope.markDirty(pc);
                     }
-
-                    pc->showColors(true);
-                    pc->showSF(false);  // just in case
                 }
             }
-
-            m_cloud->redrawDisplay();
         }
+    }
+
+    if (m_app) {
+        m_app->updateUI();
     }
 
     return true;
@@ -326,8 +334,8 @@ int G3PointAction::segmentLabels(bool useParallelStrategy) {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
+    ecvDisplayTools::RedrawObject(m_cloud);
     if (m_app) {
-        m_app->refreshAll();
         m_app->updateUI();
     }
 
@@ -549,11 +557,8 @@ bool G3PointAction::updateLabelsAndColors() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    m_cloud->redrawDisplay();
-    // m_cloud->prepareDisplayForRefresh();
-
+    ecvDisplayTools::RedrawObject(m_cloud);
     if (m_app) {
-        m_app->refreshAll();
         m_app->updateUI();
     }
 
@@ -1583,11 +1588,8 @@ int G3PointAction::segmentLabelsBraunWillett() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    m_cloud->redrawDisplay();
-    // m_cloud->prepareDisplayForRefresh();
-
+    ecvDisplayTools::RedrawObject(m_cloud);
     if (m_app) {
-        m_app->refreshAll();
         m_app->updateUI();
     }
 

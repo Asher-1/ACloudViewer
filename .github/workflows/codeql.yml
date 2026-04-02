@@ -52,10 +52,35 @@ jobs:
         with:
           languages: python
           queries: security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
+          category: "/language:python"
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter third-party alerts
+        uses: advanced-security/filter-sarif@v1.1
+        with:
+          patterns: |
+            -3rdparty/**
+            -3rdparty_downloads/**
+            -libs/Reconstruction/lib/**
+            -**/extern/**
+            -**/external/**
+            -**/3rdparty/**
+            -**/3rdparty_downloads/**
+            -**/third_party/**
+            -**/thirdparty/**
+          input: sarif-results/python.sarif
+          output: sarif-results/python.sarif
+
+      - name: Upload filtered SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: sarif-results/python.sarif
           category: "/language:python"
 
   # C++ analysis - uses project's dependency installation script
@@ -195,6 +220,7 @@ jobs:
             -DPLUGIN_STANDARD_QCSF=ON \
             -DPLUGIN_STANDARD_QM3C2=ON \
             -DPLUGIN_STANDARD_QPCL=ON \
+            -DPLUGIN_STANDARD_QPCV=ON \
             -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
             -DPOISSON_RECON_WITH_OPEN_MP=ON \
             -DPLUGIN_STANDARD_QRANSAC_SD=ON \
@@ -222,6 +248,7 @@ jobs:
         with:
           languages: c-cpp
           queries: security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build
         run: |
@@ -231,4 +258,28 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
+          category: "/language:c-cpp"
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter third-party alerts
+        uses: advanced-security/filter-sarif@v1.1
+        with:
+          patterns: |
+            -3rdparty/**
+            -3rdparty_downloads/**
+            -libs/Reconstruction/lib/**
+            -**/extern/**
+            -**/external/**
+            -**/3rdparty/**
+            -**/3rdparty_downloads/**
+            -**/third_party/**
+            -**/thirdparty/**
+          input: sarif-results/cpp.sarif
+          output: sarif-results/cpp.sarif
+
+      - name: Upload filtered SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: sarif-results/cpp.sarif
           category: "/language:c-cpp"

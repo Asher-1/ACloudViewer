@@ -5,6 +5,7 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/MAFilter.cpp
         ${CMAKE_CURRENT_LIST_DIR}/MascaretFilter.cpp
         ${CMAKE_CURRENT_LIST_DIR}/qCoreIO.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/CoreIOCommands.cpp
         ${CMAKE_CURRENT_LIST_DIR}/SimpleBinFilter.cpp
         
         ${CMAKE_CURRENT_LIST_DIR}/PDMS/PDMSFilter.cpp

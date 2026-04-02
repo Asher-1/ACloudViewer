@@ -213,7 +213,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvGear128.png</normaloff>:/Resources/images/ecvGear128.png</iconset>
+       <normaloff>:/Resources/images/ecvGear.png</normaloff>:/Resources/images/ecvGear.png</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>

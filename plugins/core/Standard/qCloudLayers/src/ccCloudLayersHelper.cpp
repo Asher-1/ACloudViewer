@@ -99,10 +99,10 @@ void ccCloudLayersHelper::keepCurrentSFVisible() {
 void ccCloudLayersHelper::setVisible(bool value) {
     unsigned pointCount = m_cloud->size();
     for (unsigned i = 0; i < pointCount; ++i) {
-        ecvColor::Rgb color = m_cloud->getPointColor(i);
+        ecvColor::Rgba color = m_cloud->getPointColorRgba(i);
+        color.a = value ? ecvColor::MAX : 0;
         m_cloud->setPointColor(i, color);
     }
-    m_cloud->setVisible(value);
     m_cloud->redrawDisplay();
 }
 
@@ -163,8 +163,10 @@ int ccCloudLayersHelper::moveItem(const ccAsprsModel::AsprsItem& from,
     ScalarType code = static_cast<ScalarType>(from.code);
     ScalarType emptyCode = to != nullptr ? static_cast<ScalarType>(to->code)
                                          : static_cast<ScalarType>(0);
-    const ecvColor::Rgb color =
-            to != nullptr ? ecvColor::FromQColor(to->color) : ecvColor::black;
+    const ecvColor::Rgba color =
+            to != nullptr ? ecvColor::Rgba(ecvColor::FromQColor(to->color),
+                                           to->visible ? ecvColor::MAX : 0)
+                          : ecvColor::Rgba(ecvColor::black, ecvColor::MAX);
 
     int affected = 0;
     int counter = 0;
@@ -188,7 +190,7 @@ void ccCloudLayersHelper::saveState() {
     unsigned cloudSize = m_cloud->size();
     m_cloudState.resize(cloudSize);
     for (unsigned i = 0; i < cloudSize; ++i) {
-        m_cloudState[i].update(sf->getValue(i), m_cloud->getPointColor(i));
+        m_cloudState[i].update(sf->getValue(i), m_cloud->getPointColorRgba(i));
     }
 }
 
@@ -263,10 +265,10 @@ void ccCloudLayersHelper::mouseMove(const CCVector2& center,
         // skip camera outside point
         if (!m_pointInFrustum[i]) continue;
 
-        const auto& color = m_cloud->getPointColor(i);
-
-        // skip invisible points
-        if (m_parameters.visiblePoints && !m_cloud->isVisible()) continue;
+        // skip invisible points (per-point alpha, same as CloudCompare)
+        if (m_parameters.visiblePoints) {
+            if (m_cloud->getPointColorAlpha(i) != ecvColor::MAX) continue;
+        }
 
         ScalarType code = sf->getValue(i);
 

@@ -8,6 +8,9 @@
 #include "qPoissonRecon.h"
 
 // dialog
+#include <ecvCommandLineInterface.h>
+
+#include "qPoissonReconCommands.h"
 #include "ui_poissonReconParamDlg.h"
 
 // Qt
@@ -460,9 +463,9 @@ void qPoissonRecon::doAction() {
         newMesh->showSF(true);
     }
 
-    // copy Global Shift & Scale information
-    newPC->setGlobalShift(pc->getGlobalShift());
-    newPC->setGlobalScale(pc->getGlobalScale());
+    // copy Global Shift & Scale information (matches CloudCompare)
+    newMesh->copyGlobalShiftAndScale(*pc);
+    newPC->copyGlobalShiftAndScale(*pc);
 
     // output mesh
     m_app->addToDB(newMesh);
@@ -473,4 +476,13 @@ void qPoissonRecon::doAction() {
     m_app->updateUI();
     // currently selected entities appearance may have changed!
     m_app->refreshAll();
+}
+
+void qPoissonRecon::registerCommands(ccCommandLineInterface* cmd) {
+    if (!cmd) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandPoissonRecon));
 }

@@ -424,6 +424,7 @@ static bool ComputeMathOpWithNearestNeighbor(
     int tenth = pointCount / 10;
     error.clear();
     bool cancelled = false;
+    QMutex mutex;
 #ifndef _DEBUG
 #if defined(_OPENMP)
 #pragma omp parallel for num_threads(std::max(1, omp_get_max_threads() - 2))
@@ -448,6 +449,8 @@ static bool ComputeMathOpWithNearestNeighbor(
 
             outSF->setValue(i, s);
 
+            mutex.lock();
+            meanNeighborhoodSize += neighborhoodSize;
             if (i && (i % tenth) == 0) {
                 double density = meanNeighborhoodSize / tenth;
                 if (density < 1.1) {
@@ -465,17 +468,14 @@ static bool ComputeMathOpWithNearestNeighbor(
                                      .arg(meanNeighborhoodSize / tenth)
                                      .arg(octreeLevel));
                 meanNeighborhoodSize = 0;
-            } else {
-                meanNeighborhoodSize += neighborhoodSize;
             }
-
             if (progressCb) {
                 cancelled = !nProgress.oneStep();
                 if (cancelled) {
-                    // process cancelled by the user
                     error = "[Point feature] Process cancelled";
                 }
             }
+            mutex.unlock();
         }
     }
 

@@ -49,6 +49,7 @@ public:
     // inherited from ccStdPluginInterface
     void onNewSelection(const ccHObject::Container& selectedEntities) override;
     QList<QAction*> getActions() override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 private:
     std::vector<ccPointCloud*> getSelectedPointClouds();

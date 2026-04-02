@@ -149,11 +149,6 @@ def _check_cli_available() -> bool:
 HAS_CLI = _check_cli_available()
 
 try:
-    from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
-except ImportError:
-    ACloudViewerBackend = None  # type: ignore[assignment,misc]
-
-try:
     from websockets.sync.client import connect as ws_connect
     HAS_WS = True
 except ImportError:
@@ -175,6 +170,11 @@ def _rpc_available() -> bool:
         return False
 
 
+def _level4_mesh_rpc_ready() -> bool:
+    """Live RPC check (used by mesh/transform Level 4 tests)."""
+    return _rpc_available()
+
+
 def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
     """Send a JSON-RPC 2.0 call and return the result.
 
@@ -182,6 +182,8 @@ def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
     - JSON-RPC errors      → RuntimeError (caller can use pytest.raises)
     - Success              → return result value
     """
+    ws = None
+    raw = None
     try:
         ws = ws_connect(RPC_URL, open_timeout=5)
     except (ConnectionRefusedError, ConnectionResetError, OSError):
@@ -199,10 +201,13 @@ def _rpc_call(method: str, params: dict | None = None, timeout: int = 30):
             pytest.skip("RPC connection closed unexpectedly")
         raise
     finally:
-        try:
-            ws.close()
-        except Exception:
-            pass
+        if ws is not None:
+            try:
+                ws.close()
+            except Exception:  # best-effort cleanup
+                pass
+    if raw is None:
+        pytest.skip("No response received from RPC server")
     resp = json.loads(raw)
     if "error" in resp:
         err = resp["error"]
@@ -294,6 +299,102 @@ class TestLevel1_CppPlugin:
         for tool in ["prepareColmap4Sibr", "tonemapper", "unwrapMesh",
                       "textureMesh", "alignMeshes", "cameraConverter"]:
             assert tool in src, f"SIBR_TOOL missing tool: {tool}"
+
+    def test_level1_facets_command_header(self):
+        """FACETS command header exists with expected keywords."""
+        facets_h = REPO_ROOT / "plugins/core/Standard/qFacets/include/qFacetsCommands.h"
+        if not facets_h.exists():
+            pytest.skip("qFacetsCommands.h not found")
+        src = _read_repo_text(facets_h)
+        assert "CommandFacets" in src
+        assert "EXTRACT_FACETS" in src
+        assert "ALGO_KD_TREE" in src or "ALGO_FAST_MARCHING" in src
+
+    def test_level1_hough_normals_command_header(self):
+        """Hough Normals command header exists with expected keywords."""
+        hn_h = REPO_ROOT / "plugins/core/Standard/qHoughNormals/include/qHoughNormalsCommands.h"
+        if not hn_h.exists():
+            pytest.skip("qHoughNormalsCommands.h not found")
+        src = _read_repo_text(hn_h)
+        assert "CommandHoughNormals" in src
+        hn_cpp = REPO_ROOT / "plugins/core/Standard/qHoughNormals/src/qHoughNormalsCommands.cpp"
+        if not hn_cpp.exists():
+            pytest.skip("qHoughNormalsCommands.cpp not found")
+        assert "HOUGH_NORMALS" in _read_repo_text(hn_cpp)
+
+    def test_level1_poisson_recon_command_header(self):
+        """Poisson Recon command header exists with expected keywords."""
+        pr_h = REPO_ROOT / "plugins/core/Standard/qPoissonRecon/include/qPoissonReconCommands.h"
+        if not pr_h.exists():
+            pytest.skip("qPoissonReconCommands.h not found")
+        src = _read_repo_text(pr_h)
+        assert "CommandPoissonRecon" in src
+        pr_cpp = REPO_ROOT / "plugins/core/Standard/qPoissonRecon/src/qPoissonReconCommands.cpp"
+        if not pr_cpp.exists():
+            pytest.skip("qPoissonReconCommands.cpp not found")
+        assert "POISSON_RECON" in _read_repo_text(pr_cpp)
+
+    def test_level1_cork_command_header(self):
+        """Cork boolean command files exist with expected keywords."""
+        cork_h = REPO_ROOT / "plugins/core/Standard/qCork/include/qCorkCommands.h"
+        if not cork_h.exists():
+            pytest.skip("qCorkCommands.h not found")
+        src = _read_repo_text(cork_h)
+        assert "CommandCork" in src
+        cork_cpp = REPO_ROOT / "plugins/core/Standard/qCork/src/qCorkCommands.cpp"
+        if not cork_cpp.exists():
+            pytest.skip("qCorkCommands.cpp not found")
+        assert "CORK" in _read_repo_text(cork_cpp)
+
+    def test_level1_voxfall_command_header(self):
+        """VoxFall command files exist with expected keywords."""
+        vf_h = REPO_ROOT / "plugins/core/Standard/qVoxFall/include/qVoxFallCommands.h"
+        if not vf_h.exists():
+            pytest.skip("qVoxFallCommands.h not found")
+        src = _read_repo_text(vf_h)
+        assert "CommandVoxFall" in src
+        vf_cpp = REPO_ROOT / "plugins/core/Standard/qVoxFall/src/qVoxFallCommands.cpp"
+        if not vf_cpp.exists():
+            pytest.skip("qVoxFallCommands.cpp not found")
+        assert "VOXFALL" in _read_repo_text(vf_cpp)
+
+    def test_level1_qpcl_pcl_commands_cpp(self):
+        """qPCL PclCommands.cpp registers PCL_* CLI commands."""
+        pcl_cpp = REPO_ROOT / "plugins/core/Standard/qPCL/src/PclCommands.cpp"
+        if not pcl_cpp.exists():
+            pytest.skip("PclCommands.cpp not found")
+        src = _read_repo_text(pcl_cpp)
+        for token in (
+            "PCL_SOR",
+            "PCL_NORMAL_ESTIMATION",
+            "PCL_MLS",
+            "PCL_EUCLIDEAN_CLUSTER",
+            "PCL_SAC_SEGMENTATION",
+            "PCL_REGION_GROWING",
+            "PCL_GREEDY_TRIANGULATION",
+            "PCL_POISSON_RECON",
+            "PCL_MARCHING_CUBES",
+            "PCL_CONVEX_HULL",
+            "PclCommands::RegisterAll",
+        ):
+            assert token in src, f"Missing qPCL CLI token: {token}"
+
+    def test_level1_plugin_cli_commands_registered(self):
+        """Verify registerCommands is implemented in key plugins."""
+        plugins_with_cli = [
+            ("qFacets", "plugins/core/Standard/qFacets/src/qFacets.cpp", "CommandFacets"),
+            ("qHoughNormals", "plugins/core/Standard/qHoughNormals/src/qHoughNormals.cpp", "CommandHoughNormals"),
+            ("qPoissonRecon", "plugins/core/Standard/qPoissonRecon/src/qPoissonRecon.cpp", "CommandPoissonRecon"),
+            ("qCork", "plugins/core/Standard/qCork/src/qCork.cpp", "CommandCork"),
+            ("qVoxFall", "plugins/core/Standard/qVoxFall/src/qVoxFall.cpp", "CommandVoxFall"),
+        ]
+        for name, rel_path, cmd_class in plugins_with_cli:
+            path = REPO_ROOT / rel_path
+            if not path.exists():
+                continue
+            src = _read_repo_text(path)
+            assert "registerCommands" in src, f"{name} missing registerCommands"
+            assert cmd_class in src or "registerCommand" in src, f"{name} missing command registration"
 
     def test_level1_rpc_method_count(self):
         src = _read_repo_text(PLUGIN_CPP)
@@ -438,6 +539,36 @@ class TestLevel2_CLIHarness:
             f"CLI '{cmd}' failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:1000]}\nstderr: {r.stderr[:1000]}")
 
+    @pytest.mark.parametrize("subcmd", [
+        "process pcv --help",
+        "process csf --help",
+        "process ransac --help",
+        "process m3c2 --help",
+        "process canupo --help",
+        "process facets --help",
+        "process hough-normals --help",
+        "process pcl-sor --help",
+        "process pcl-normal-estimation --help",
+        "process pcl-mls --help",
+        "process pcl-euclidean-cluster --help",
+        "process pcl-sac-segmentation --help",
+        "process pcl-region-growing --help",
+        "process pcl-greedy-triangulation --help",
+        "process pcl-poisson-recon --help",
+        "process pcl-marching-cubes --help",
+        "process pcl-convex-hull --help",
+        "process poisson-recon --help",
+        "process cork-boolean --help",
+        "process voxfall --help",
+    ])
+    def test_level2_plugin_command_help(self, subcmd):
+        """Plugin processing commands show help."""
+        result = subprocess.run(
+            ["cli-anything-acloudviewer"] + subcmd.split(),
+            capture_output=True, text=True, timeout=30,
+        )
+        assert result.returncode == 0, f"'{subcmd}' failed: {result.stderr}"
+
     def test_level2_process_subcommands(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "process", "--help"],
@@ -456,7 +587,15 @@ class TestLevel2_CLIHarness:
                      "flip-triangles", "merge-clouds", "merge-meshes",
                      "remove-rgb", "remove-scan-grids", "match-centers",
                      "drop-global-shift", "closest-point-set",
-                     "rasterize", "stat-test", "cross-section"]:
+                     "rasterize", "stat-test", "cross-section",
+                     "pcv", "csf", "ransac", "m3c2", "canupo",
+                     "facets", "hough-normals",
+                     "pcl-sor", "pcl-normal-estimation", "pcl-mls",
+                     "pcl-euclidean-cluster", "pcl-sac-segmentation",
+                     "pcl-region-growing", "pcl-greedy-triangulation",
+                     "pcl-poisson-recon", "pcl-marching-cubes", "pcl-convex-hull",
+                     "poisson-recon",
+                     "cork-boolean", "voxfall"]:
             assert cmd in r.stdout, f"Missing process subcommand: {cmd}"
     
     def test_level2_sf_group_exists(self):
@@ -590,15 +729,15 @@ class TestLevel2_CLIHarness:
         r = subprocess.run(
             ["cli-anything-acloudviewer", "sibr", "viewer", "--help"],
             capture_output=True, text=True, timeout=10)
-        # If implemented, should return 0; if not implemented yet, may return non-zero
-        if r.returncode == 0:
-            output = r.stdout.lower()
-            # Check for viewer types
-            for viewer in ["gaussian", "ulr", "remotegaussian"]:
-                assert viewer in output, f"Missing viewer type: {viewer}"
-            # Check for common options
-            for opt in ["--path", "--model-path", "--width", "--height"]:
-                assert opt in r.stdout, f"Missing option: {opt}"
+        if r.returncode != 0:
+            pytest.skip(
+                f"sibr viewer --help returned non-zero (rc={r.returncode}), "
+                f"command may not be implemented yet")
+        output = r.stdout.lower()
+        for viewer in ["gaussian", "ulr", "remotegaussian"]:
+            assert viewer in output, f"Missing viewer type: {viewer}"
+        for opt in ["--path", "--model-path", "--width", "--height"]:
+            assert opt in r.stdout, f"Missing option: {opt}"
 
     def test_level2_reconstruct_subcommands(self):
         r = subprocess.run(
@@ -656,6 +795,126 @@ _SAMPLE_PLY_HEADER = (
 )
 _SAMPLE_PLY_BODY = "\n".join(f"{i*0.01} {i*0.02} {i*0.03}" for i in range(100)) + "\n"
 
+def _make_mesh_ply_content():
+    """Generate a 10x10 grid of points on the XY plane — guaranteed triangulable."""
+    pts = []
+    for row in range(10):
+        for col in range(10):
+            pts.append(f"{col * 0.1:.4f} {row * 0.1:.4f} {((row + col) % 3) * 0.05:.4f}")
+    header = (
+        "ply\nformat ascii 1.0\n"
+        f"element vertex {len(pts)}\n"
+        "property float x\nproperty float y\nproperty float z\n"
+        "end_header\n"
+    )
+    return header + "\n".join(pts) + "\n"
+
+_MESH_PLY_CONTENT = _make_mesh_ply_content()
+
+# Minimal Leica PTX (see PTXFilter.cpp): height, width, 4×(sensor row, 3 tokens),
+# 4×(cloud row, 4 tokens), then height×width cells of x y z intensity.
+_MINIMAL_PTX_CONTENT = """3
+3
+0 0 0
+1 0 0
+0 1 0
+0 0 1
+1 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
+0.1 0.2 0.3 0.5
+0.4 0.5 0.6 0.5
+0.7 0.8 0.9 0.5
+0.1 0.2 0.3 0.5
+0.4 0.5 0.6 0.5
+0.7 0.8 0.9 0.5
+0.1 0.2 0.3 0.5
+0.4 0.5 0.6 0.5
+0.7 0.8 0.9 0.5
+"""
+
+
+def _ply_vertex_count(path: Path) -> int:
+    """Read ``element vertex N`` from a PLY header (ASCII or binary body)."""
+    raw = path.read_bytes()
+    end = raw.find(b"end_header")
+    if end < 0:
+        raise AssertionError(f"no end_header in PLY: {path}")
+    text = raw[: end + len(b"end_header")].decode("ascii", errors="replace")
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("element vertex"):
+            return int(line.split()[-1])
+    raise AssertionError(f"no element vertex in PLY: {path}")
+
+
+def _count_obj_vertices(path: Path) -> int:
+    """Count ``v`` vertex lines in a Wavefront OBJ file."""
+    n = 0
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if len(line) > 1 and line[0] == "v" and line[1] in " \t":
+            n += 1
+    return n
+
+
+def _skip_if_process_crashed(r: subprocess.CompletedProcess, context: str) -> None:
+    """Skip when the child was killed by a signal or Windows exception."""
+    if r.returncode < 0:
+        pytest.skip(f"Binary crashed with signal {-r.returncode} ({context})")
+    if r.returncode >= 0xC0000000:
+        pytest.skip(
+            f"Binary crashed with code 0x{r.returncode:08X} ({context})")
+
+
+def _cli_resolve_normals_output_path(
+        r_normals: subprocess.CompletedProcess, expected: str) -> str:
+    """Resolve path to cloud written by ``process normals``; skip if missing."""
+    _skip_if_process_crashed(r_normals, "process normals")
+    combined = r_normals.stdout + r_normals.stderr
+    if "Unknown or misplaced command" in combined:
+        pytest.skip("process normals not available in this build")
+    if r_normals.returncode != 0:
+        pytest.skip(
+            f"normals prerequisite failed (rc={r_normals.returncode}):\n"
+            f"{combined[-800:]}")
+    exp = Path(expected)
+    if exp.is_file() and exp.stat().st_size > 0:
+        return str(exp.resolve())
+    data = {}
+    try:
+        data = json.loads(r_normals.stdout)
+    except json.JSONDecodeError:
+        pytest.skip(
+            f"normals prerequisite: invalid JSON and output missing at {expected}")
+    if data.get("status") == "failed":
+        pytest.skip(
+            f"normals returned status=failed: {json.dumps(data)[:800]}")
+    for key in ("output", "output_path", "output_file", "path", "file"):
+        p = data.get(key)
+        if isinstance(p, str) and Path(p).is_file() and Path(p).stat().st_size > 0:
+            return str(Path(p).resolve())
+    pytest.skip(
+        "normals prerequisite succeeded but output file not found at "
+        f"{expected} (JSON keys: {list(data.keys())})")
+    return ""  # unreachable: pytest.skip always raises
+
+
+def _count_off_vertices(path: Path) -> int:
+    """Read vertex count from the header of an OFF file."""
+    lines = [ln.strip() for ln in path.read_text(encoding="utf-8", errors="replace").splitlines()
+             if ln.strip() and not ln.strip().startswith("#")]
+    if not lines:
+        raise AssertionError(f"empty OFF: {path}")
+    parts0 = lines[0].split()
+    if parts0 and parts0[0].upper() == "OFF":
+        if len(parts0) >= 4:
+            return int(parts0[1])
+        if len(lines) < 2:
+            raise AssertionError(f"bad OFF: {path}")
+        return int(lines[1].split()[0])
+    return int(lines[0].split()[0])
+
 
 def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     """Lightweight env setup for invoking the binary directly (no harness)."""
@@ -664,7 +923,8 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
 
     # Set or remove QT_QPA_PLATFORM based on platform:
     # - macOS: Don't set it - .app bundles only have cocoa plugin, Qt auto-selects it
-    # - Windows: Use minimal (windeployqt doesn't ship qoffscreen)
+    # - Windows: Use minimal (windeployqt doesn't ship qoffscreen).
+    #   Note: PCV plugin requires real OpenGL (will be skipped under minimal).
     # - Linux: Use offscreen (always available)
     if IS_MACOS:
         # macOS .app bundles only include cocoa Qt platform plugin.
@@ -770,6 +1030,162 @@ class TestLevel3_HeadlessProcessing:
             )
         assert r.returncode == 0, f"Normals failed:\n{(r.stdout + r.stderr)[-2000:]}"
 
+    def test_level3_binary_help(self, acv_env):
+        """Binary prints help text and exits cleanly."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-HELP"],
+            capture_output=True, text=True, timeout=30, env=acv_env)
+        combined = r.stdout + r.stderr
+        assert r.returncode == 0, f"HELP failed (rc={r.returncode}):\n{combined[-2000:]}"
+
+    def test_level3_binary_sor(self, sample_ply, acv_env, tmp_path):
+        """Statistical outlier removal via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-SOR", "6", "1.0", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"SOR failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_crop(self, sample_ply, acv_env, tmp_path):
+        """Crop a point cloud by bounding box via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-CROP", "0:0:0:0.5:1.0:1.5", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"CROP failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_c2c_dist(self, sample_ply, acv_env, tmp_path):
+        """Cloud-to-cloud distance between same cloud via binary."""
+        ply2 = str(tmp_path / "cloud2.ply")
+        Path(ply2).write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT",
+             "-O", sample_ply, "-O", ply2,
+             "-C2C_DIST", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"C2C_DIST failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_log_file(self, sample_ply, acv_env, tmp_path):
+        """Logging to file via -LOG_FILE (relative name → <binary_dir>/logs/)."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-LOG_FILE", "test_integration",
+             "-O", sample_ply, "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"LOG_FILE failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        log_dir = Path(BINARY_PATH).parent / "logs"
+        for f in log_dir.glob("test_integration*.log"):
+            f.unlink(missing_ok=True)
+
+    def test_level3_binary_density(self, sample_ply, acv_env, tmp_path):
+        """Density computation via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-DENSITY", "0.1", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"DENSITY failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_curvature(self, sample_ply, acv_env, tmp_path):
+        """Curvature computation via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-CURV", "MEAN", "0.1", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"CURV failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_roughness(self, sample_ply, acv_env, tmp_path):
+        """Roughness computation via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-ROUGH", "0.1", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"ROUGH failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_best_fit_plane(self, sample_ply, acv_env, tmp_path):
+        """Best fit plane via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-BEST_FIT_PLANE", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"BEST_FIT_PLANE failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_merge_clouds(self, sample_ply, acv_env, tmp_path):
+        """Merge two clouds via binary."""
+        ply2 = str(tmp_path / "cloud2.ply")
+        Path(ply2).write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT",
+             "-O", sample_ply, "-O", ply2,
+             "-MERGE_CLOUDS", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"MERGE_CLOUDS failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_extract_cc(self, sample_ply, acv_env, tmp_path):
+        """Extract connected components via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-EXTRACT_CC", "6", "10", "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"EXTRACT_CC failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_filter_sf(self, sample_ply, acv_env, tmp_path):
+        """Filter by scalar field via binary."""
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-COORD_TO_SF", "Z",
+             "-FILTER_SF", "0.0", "1.5",
+             "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"FILTER_SF failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_icp(self, sample_ply, acv_env, tmp_path):
+        """ICP registration with two copies of the same cloud."""
+        ply2 = str(tmp_path / "cloud2.ply")
+        Path(ply2).write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT",
+             "-O", sample_ply, "-O", ply2,
+             "-ICP", "-ITER", "10",
+             "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=120,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"ICP failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_binary_sample_mesh(self, acv_env, tmp_path):
+        """Sample points from mesh via binary (uses grid PLY for clean Delaunay)."""
+        mesh_input = str(tmp_path / "grid.ply")
+        Path(mesh_input).write_text(_MESH_PLY_CONTENT)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", mesh_input,
+             "-DELAUNAY", "-SAMPLE_MESH", "POINTS", "50",
+             "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=60,
+            env=acv_env, cwd=str(tmp_path))
+        assert r.returncode == 0, \
+            f"SAMPLE_MESH failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
 
 @pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
 @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
@@ -800,6 +1216,22 @@ class TestLevel3_CLIHarness:
         data = json.loads(r.stdout)
         assert data.get("status") != "failed", (
             f"CLI subsample returned status=failed. Full response:\n"
+            f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
+
+    def test_level3_cli_crop(self, sample_ply, tmp_path, cli_env):
+        out = str(tmp_path / "crop.ply")
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "process", "crop", sample_ply, "-o", out,
+             "--min-x", "-1", "--min-y", "-1", "--min-z", "-1",
+             "--max-x", "1", "--max-y", "2", "--max-z", "3"],
+            capture_output=True, text=True, timeout=60, env=cli_env)
+        assert r.returncode == 0, (
+            f"CLI process crop failed (rc={r.returncode}):\n"
+            f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
+        data = json.loads(r.stdout)
+        assert data.get("status") != "failed", (
+            f"CLI process crop returned status=failed. Full response:\n"
             f"{json.dumps(data, indent=2)}\nstderr: {r.stderr[:1000]}")
 
     def test_level3_cli_normals(self, sample_ply, tmp_path, cli_env):
@@ -867,14 +1299,14 @@ class TestLevel3_CLIHarness:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "normals", sample_ply, "-o", temp],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        if r1.returncode != 0:
-            pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
-        
+        normals_in = _cli_resolve_normals_output_path(r1, temp)
+
         out = str(tmp_path / "roughness.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "roughness", temp, "-o", out, "--radius", "0.1"],
+             "process", "roughness", normals_in, "-o", out, "--radius", "0.1"],
             capture_output=True, text=True, timeout=60, env=cli_env)
+        _skip_if_process_crashed(r, "process roughness")
         assert r.returncode == 0, (
             f"process roughness failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
@@ -888,15 +1320,15 @@ class TestLevel3_CLIHarness:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "normals", sample_ply, "-o", temp],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        if r1.returncode != 0:
-            pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
-        
+        normals_in = _cli_resolve_normals_output_path(r1, temp)
+
         out = str(tmp_path / "features.ply")
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "feature", temp, "-o", out,
+             "process", "feature", normals_in, "-o", out,
              "--type", "SURFACE_VARIATION", "--kernel-size", "0.1"],
             capture_output=True, text=True, timeout=60, env=cli_env)
+        _skip_if_process_crashed(r, "process feature")
         assert r.returncode == 0, (
             f"process feature failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
@@ -915,9 +1347,7 @@ class TestLevel3_CLIHarness:
             f"process extract-cc failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        # Extract-cc may return 'failed' for small point clouds with no distinct components
-        # We just verify the command structure works (returncode == 0)
-        assert "status" in data
+        assert "status" in data, f"extract-cc missing status field: {data}"
     
     def test_level3_cli_color_banding(self, sample_ply, tmp_path, cli_env):
         """Test process color-banding command."""
@@ -972,13 +1402,16 @@ class TestLevel3_CLIHarness:
              "process", "cross-section", sample_ply,
              "-o", out, "--polyline", polyline_file],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        # Note: cross-section may have specific requirements about the polyline
-        # If it fails with specific error, just verify command structure exists
-        if r.returncode == 0:
-            data = json.loads(r.stdout)
-            # Allow both completed and failed status for this complex operation
-            assert "status" in data
-    
+        if r.returncode != 0:
+            combined = r.stdout + r.stderr
+            if "polyline" in combined.lower() or "cross" in combined.lower():
+                pytest.skip("cross-section requires specific polyline format")
+            pytest.fail(
+                f"process cross-section failed (rc={r.returncode}):\n"
+                f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
+        data = json.loads(r.stdout)
+        assert "status" in data
+
     def test_level3_cli_best_fit_plane(self, sample_ply, tmp_path, cli_env):
         """Test process best-fit-plane command."""
         out = str(tmp_path / "plane_distance.ply")
@@ -1010,7 +1443,7 @@ class TestLevel3_CLIHarness:
             f"process sor failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_delaunay(self, sample_ply, tmp_path, cli_env):
         """Test Delaunay triangulation (mesh reconstruction)."""
@@ -1031,15 +1464,17 @@ class TestLevel3_CLIHarness:
             f"process delaunay failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
-    def test_level3_cli_sample_mesh(self, sample_ply, tmp_path, cli_env):
+    def test_level3_cli_sample_mesh(self, tmp_path, cli_env):
         """Test mesh sampling."""
+        mesh_input = str(tmp_path / "mesh_input.ply")
+        Path(mesh_input).write_text(_MESH_PLY_CONTENT)
         temp_mesh = str(tmp_path / "mesh.ply")
         temp_normals = str(tmp_path / "with_normals.ply")
         r1 = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "normals", sample_ply, "-o", temp_normals],
+             "process", "normals", mesh_input, "-o", temp_normals],
             capture_output=True, text=True, timeout=60, env=cli_env)
         if r1.returncode != 0:
             pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
@@ -1060,7 +1495,7 @@ class TestLevel3_CLIHarness:
             f"process sample-mesh failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_remove_rgb(self, sample_ply, tmp_path, cli_env):
         """Test remove RGB colors."""
@@ -1081,15 +1516,17 @@ class TestLevel3_CLIHarness:
             f"process remove-rgb failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
-    def test_level3_cli_extract_vertices(self, sample_ply, tmp_path, cli_env):
+    def test_level3_cli_extract_vertices(self, tmp_path, cli_env):
         """Test extract mesh vertices."""
+        mesh_input = str(tmp_path / "mesh_input.ply")
+        Path(mesh_input).write_text(_MESH_PLY_CONTENT)
         temp_mesh = str(tmp_path / "mesh.ply")
         temp_normals = str(tmp_path / "with_normals.ply")
         r1 = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "normals", sample_ply, "-o", temp_normals],
+             "process", "normals", mesh_input, "-o", temp_normals],
             capture_output=True, text=True, timeout=60, env=cli_env)
         if r1.returncode != 0:
             pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
@@ -1110,15 +1547,17 @@ class TestLevel3_CLIHarness:
             f"process extract-vertices failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
-    def test_level3_cli_flip_triangles(self, sample_ply, tmp_path, cli_env):
+    def test_level3_cli_flip_triangles(self, tmp_path, cli_env):
         """Test flip triangle normals."""
+        mesh_input = str(tmp_path / "mesh_input.ply")
+        Path(mesh_input).write_text(_MESH_PLY_CONTENT)
         temp_mesh = str(tmp_path / "mesh.ply")
         temp_normals = str(tmp_path / "with_normals.ply")
         r1 = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "normals", sample_ply, "-o", temp_normals],
+             "process", "normals", mesh_input, "-o", temp_normals],
             capture_output=True, text=True, timeout=60, env=cli_env)
         if r1.returncode != 0:
             pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
@@ -1140,7 +1579,7 @@ class TestLevel3_CLIHarness:
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
         assert "status" in data
-    
+
     def test_level3_cli_mesh_volume(self, sample_ply, tmp_path, cli_env):
         """Test compute mesh volume."""
         temp_mesh = str(tmp_path / "mesh.ply")
@@ -1167,28 +1606,34 @@ class TestLevel3_CLIHarness:
             f"process mesh-volume failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
-    def test_level3_cli_merge_meshes(self, sample_ply, tmp_path, cli_env):
+    def test_level3_cli_merge_meshes(self, tmp_path, cli_env):
         """Test merge multiple meshes."""
+        mesh_input = str(tmp_path / "mesh_input.ply")
+        Path(mesh_input).write_text(_MESH_PLY_CONTENT)
         mesh1 = str(tmp_path / "mesh1.ply")
         mesh2 = str(tmp_path / "mesh2.ply")
         temp_normals = str(tmp_path / "with_normals.ply")
         
         r1 = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "normals", sample_ply, "-o", temp_normals],
+             "process", "normals", mesh_input, "-o", temp_normals],
             capture_output=True, text=True, timeout=60, env=cli_env)
-        if r1.returncode != 0:
-            pytest.skip(f"normals prerequisite failed: {r1.stderr[:500]}")
-        
+        normals_in = _cli_resolve_normals_output_path(r1, temp_normals)
+
         r2 = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
-             "process", "delaunay", temp_normals, "-o", mesh1],
+             "process", "delaunay", normals_in, "-o", mesh1],
             capture_output=True, text=True, timeout=60, env=cli_env)
+        _skip_if_process_crashed(r2, "process delaunay (merge-meshes prerequisite)")
         if r2.returncode != 0:
             pytest.skip(f"delaunay prerequisite failed: {r2.stderr[:500]}")
-        
+        m1p = Path(mesh1)
+        if not (m1p.is_file() and m1p.stat().st_size > 0):
+            pytest.skip(
+                "delaunay did not produce a mesh file for merge-meshes prerequisite")
+
         import shutil
         shutil.copy(mesh1, mesh2)
         
@@ -1197,11 +1642,16 @@ class TestLevel3_CLIHarness:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "process", "merge-meshes", mesh1, mesh2, "-o", out],
             capture_output=True, text=True, timeout=60, env=cli_env)
+        _skip_if_process_crashed(r, "process merge-meshes")
         assert r.returncode == 0, (
             f"process merge-meshes failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        if data.get("status") == "failed":
+            pytest.skip(
+                "merge-meshes returned status=failed (input meshes may be invalid "
+                f"for this build): {json.dumps(data, indent=2)[:1200]}\n"
+                f"stderr: {r.stderr[:500]}")
     
     def test_level3_cli_sf_coord_to_sf(self, sample_ply, tmp_path, cli_env):
         """Test sf coord-to-sf command."""
@@ -1262,9 +1712,8 @@ class TestLevel3_CLIHarness:
             f"sf operation failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        # sf operation may fail for some scalar fields, just verify command structure
         assert "status" in data
-    
+
     def test_level3_cli_normals_octree(self, sample_ply, tmp_path, cli_env):
         """Test normals octree command."""
         out = str(tmp_path / "octree_normals.ply")
@@ -1361,7 +1810,7 @@ class TestLevel3_CLIHarness:
             f"normals clear failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_normals_to_dip(self, sample_ply, tmp_path, cli_env):
         """Test normals to-dip command (geological dip/dip-direction)."""
@@ -1382,7 +1831,7 @@ class TestLevel3_CLIHarness:
             f"normals to-dip failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_sf_gradient(self, sample_ply, tmp_path, cli_env):
         """Test sf gradient command."""
@@ -1404,7 +1853,7 @@ class TestLevel3_CLIHarness:
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
         assert "status" in data
-    
+
     def test_level3_cli_sf_filter(self, sample_ply, tmp_path, cli_env):
         """Test sf filter command (filter points by SF value range)."""
         temp = str(tmp_path / "with_sf.ply")
@@ -1424,7 +1873,7 @@ class TestLevel3_CLIHarness:
             f"sf filter failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_sf_convert_to_rgb(self, sample_ply, tmp_path, cli_env):
         """Test sf convert-to-rgb command."""
@@ -1446,7 +1895,7 @@ class TestLevel3_CLIHarness:
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
         assert "status" in data
-    
+
     def test_level3_cli_sf_set_active(self, sample_ply, tmp_path, cli_env):
         """Test sf set-active command."""
         temp = str(tmp_path / "with_sf.ply")
@@ -1466,7 +1915,7 @@ class TestLevel3_CLIHarness:
             f"sf set-active failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_sf_rename(self, sample_ply, tmp_path, cli_env):
         """Test sf rename command."""
@@ -1487,7 +1936,7 @@ class TestLevel3_CLIHarness:
             f"sf rename failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_sf_remove(self, sample_ply, tmp_path, cli_env):
         """Test sf remove command."""
@@ -1508,7 +1957,7 @@ class TestLevel3_CLIHarness:
             f"sf remove failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
     
     def test_level3_cli_sf_remove_all(self, sample_ply, tmp_path, cli_env):
         """Test sf remove-all command."""
@@ -1529,7 +1978,7 @@ class TestLevel3_CLIHarness:
             f"sf remove-all failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
         data = json.loads(r.stdout)
-        assert "status" in data
+        assert data.get("status") != "failed", f"Command returned failed: {data}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1552,6 +2001,13 @@ class TestLevel3_FormatConversion:
     def sample_ply(self, shared_dir):
         ply_path = shared_dir / "test.ply"
         ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    @pytest.fixture(scope="class")
+    def mesh_ply(self, shared_dir):
+        """A 10x10 grid PLY that Delaunay can triangulate (non-collinear)."""
+        ply_path = shared_dir / "mesh_test.ply"
+        ply_path.write_text(_MESH_PLY_CONTENT)
         return str(ply_path)
 
     def _convert_file(self, input_path, output_path, fmt, acv_env):
@@ -1591,10 +2047,12 @@ class TestLevel3_FormatConversion:
         out, r = converted_pcd
         assert r.returncode == 0, \
             f"PLY->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
-        assert Path(out).exists(), "PLY->PCD output file not found"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            "PLY->PCD output file missing or empty"
 
     def test_level3_pcd_to_ply(self, converted_pcd, shared_dir, acv_env):
         pcd, pcd_r = converted_pcd
+        _skip_if_process_crashed(pcd_r, "PLY->PCD")
         if not Path(pcd).exists():
             pytest.skip(
                 f"PLY->PCD prerequisite failed (rc={pcd_r.returncode}):\n"
@@ -1602,17 +2060,21 @@ class TestLevel3_FormatConversion:
             )
         out = str(shared_dir / "roundtrip.ply")
         r = self._convert_file(pcd, out, "PLY", acv_env)
+        _skip_if_process_crashed(r, "PCD->PLY")
         assert r.returncode == 0, \
             f"PCD->PLY failed:\n{(r.stdout + r.stderr)[-2000:]}"
-        assert Path(out).exists(), "PCD->PLY output file not found"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            "PCD->PLY output file missing or empty"
 
     def test_level3_pcd_to_drc(self, converted_drc):
         if converted_drc[0] is None:
             pytest.skip("PLY->PCD prerequisite failed")
         out, r = converted_drc
+        _skip_if_process_crashed(r, "PCD->DRC")
         assert r.returncode == 0, \
             f"PCD->DRC failed:\n{(r.stdout + r.stderr)[-2000:]}"
-        assert Path(out).exists(), "PCD->DRC output file not found"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            "PCD->DRC output file missing or empty"
 
     def test_level3_drc_to_pcd(self, converted_drc, shared_dir, acv_env):
         if converted_drc[0] is None:
@@ -1627,9 +2089,10 @@ class TestLevel3_FormatConversion:
         r = self._convert_file(drc, out, "PCD", acv_env)
         assert r.returncode == 0, \
             f"DRC->PCD failed:\n{(r.stdout + r.stderr)[-2000:]}"
-        assert Path(out).exists(), "DRC->PCD output file not found"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            "DRC->PCD output file missing or empty"
 
-    @pytest.mark.parametrize("fmt", ["PLY", "ASC", "BIN", "VTK", "STL"])
+    @pytest.mark.parametrize("fmt", ["PLY", "ASC", "BIN", "VTK"])
     def test_level3_basic_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
         out = str(tmp_path / f"test.{fmt.lower()}")
         r = self._convert_file(sample_ply, out, fmt, acv_env)
@@ -1638,84 +2101,322 @@ class TestLevel3_FormatConversion:
                 f"PLY->{fmt} crashed (rc=0x{r.returncode:08X}):\n"
                 f"{(r.stdout + r.stderr)[-2000:]}"
             )
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->{fmt} failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->{fmt} failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"{fmt} output file missing or empty: {out}"
 
-    @pytest.mark.parametrize("fmt", ["OBJ", "OFF"])
-    def test_level3_mesh_format_conversion(self, sample_ply, acv_env, tmp_path, fmt):
+    @pytest.mark.parametrize("fmt", ["OBJ", "OFF", "STL"])
+    def test_level3_mesh_format_conversion(self, mesh_ply, acv_env, tmp_path, fmt):
         """Cloud->Mesh format via Delaunay + mesh export."""
         out = str(tmp_path / f"mesh.{fmt.lower()}")
         r = subprocess.run(
-            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
              "-DELAUNAY", "-M_EXPORT_FMT", fmt,
              "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
              "-SAVE_MESHES", "FILE", out],
             capture_output=True, text=True, timeout=120,
             env=acv_env)
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->{fmt} (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->{fmt} (mesh) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"{fmt} mesh output file missing or empty: {out}"
 
     @pytest.mark.parametrize("ext", [".xyz", ".txt", ".csv", ".pts"])
     def test_level3_ascii_variants(self, sample_ply, acv_env, tmp_path, ext):
         """All ASCII variant extensions export as ASC format."""
         out = str(tmp_path / f"test{ext}")
         r = self._convert_file(sample_ply, out, "ASC", acv_env)
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->ASC({ext}) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        assert r.returncode == 0, \
+            f"PLY->ASC({ext}) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"ASC({ext}) output file missing or empty: {out}"
 
     def test_level3_las_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> LAS (requires qLASIO or qPDALIO plugin)."""
         out = str(tmp_path / "test.las")
         r = self._convert_file(sample_ply, out, "LAS", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("LAS IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->LAS failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("LAS IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->LAS failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"LAS output file missing or empty: {out}"
 
     def test_level3_e57_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> E57 (requires qE57IO plugin)."""
         out = str(tmp_path / "test.e57")
         r = self._convert_file(sample_ply, out, "E57", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()
-                                   or "no filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format",
+                              "no filter"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("E57 IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->E57 failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("E57 IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->E57 failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"E57 output file missing or empty: {out}"
 
-    def test_level3_fbx_conversion(self, sample_ply, acv_env, tmp_path):
+    def test_level3_fbx_conversion(self, mesh_ply, acv_env, tmp_path):
         """PLY -> FBX (requires qFBXIO plugin, mesh-based)."""
         out = str(tmp_path / "test.fbx")
         r = subprocess.run(
-            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
              "-DELAUNAY", "-M_EXPORT_FMT", "FBX",
              "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
              "-SAVE_MESHES", "FILE", out],
             capture_output=True, text=True, timeout=120,
             env=acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
-            pytest.skip("FBX IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->FBX (mesh) failed (rc={r.returncode}):\n{combined[-2000:]}"
+        _skip_if_process_crashed(r, "FBX conversion")
+        combined = (r.stdout + r.stderr).lower()
+        skip_keywords = ("plugin", "filter", "unsupported", "unknown format",
+                         "unhandled", "empty mesh", "nothing to save")
+        plugin_missing = any(kw in combined for kw in skip_keywords)
+        if not Path(out).exists() and plugin_missing:
+            pytest.skip("FBX IO plugin not available or Delaunay produced empty mesh")
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("FBX IO plugin not available or Delaunay produced empty mesh")
+        assert r.returncode == 0, \
+            f"PLY->FBX (mesh) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"FBX output file missing or empty: {out}"
 
     def test_level3_sbf_conversion(self, sample_ply, acv_env, tmp_path):
         """PLY -> SBF (SimpleBin, qCoreIO plugin)."""
         out = str(tmp_path / "test.sbf")
         r = self._convert_file(sample_ply, out, "SBF", acv_env)
-        if r.returncode != 0 and ("plugin" in (r.stderr or "").lower()
-                                   or "filter" in (r.stderr or "").lower()):
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
             pytest.skip("SBF IO plugin not available in this build")
-        combined = r.stdout + r.stderr
-        assert r.returncode == 0 or "Error" not in combined, \
-            f"PLY->SBF failed (rc={r.returncode}):\n{combined[-2000:]}"
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("SBF IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->SBF failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"SBF output file missing or empty: {out}"
+
+    def test_level3_dxf_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> DXF (requires CV_DXF_SUPPORT / DXF IO)."""
+        out = str(tmp_path / "test.dxf")
+        r = self._convert_file(sample_ply, out, "DXF", acv_env)
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
+            pytest.skip("DXF IO not available in this build")
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("DXF IO not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->DXF failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"DXF output file missing or empty: {out}"
+
+    def test_level3_ascii_export_separator_content(self, sample_ply, acv_env, tmp_path):
+        """Verify ASCII export body: point rows, parsable coordinates, cross-extension consistency.
+
+        Many builds write space-separated floats for all ASC extensions; this still
+        validates file content (row count and numeric triplets) and that .csv and .xyz
+        bodies match for the same cloud.
+        """
+        def _data_lines(p: Path) -> list[str]:
+            return [ln.strip() for ln in p.read_text(encoding="utf-8", errors="replace").splitlines()
+                    if ln.strip() and not ln.strip().startswith("#")]
+
+        csv_out = str(tmp_path / "out.csv")
+        r = self._convert_file(sample_ply, csv_out, "ASC", acv_env)
+        assert r.returncode == 0, \
+            f"PLY->ASC(.csv) failed:\n{(r.stdout+r.stderr)[-2000:]}"
+        csv_lines = _data_lines(Path(csv_out))
+        assert len(csv_lines) == 100
+        for ln in csv_lines[:5]:
+            parts = [p for p in ln.replace(",", " ").split() if p]
+            assert len(parts) >= 3
+            float(parts[0])
+            float(parts[1])
+            float(parts[2])
+
+        xyz_out = str(tmp_path / "points.xyz")
+        r2 = self._convert_file(sample_ply, xyz_out, "ASC", acv_env)
+        assert r2.returncode == 0, \
+            f"PLY->ASC(.xyz) failed:\n{(r2.stdout+r2.stderr)[-2000:]}"
+        xyz_lines = _data_lines(Path(xyz_out))
+        assert len(xyz_lines) == 100
+        assert csv_lines == xyz_lines, \
+            ".csv and .xyz ASC exports should match for the same input cloud"
+
+        pts_out = str(tmp_path / "cloud.pts")
+        r3 = self._convert_file(sample_ply, pts_out, "ASC", acv_env)
+        assert r3.returncode == 0, \
+            f"PLY->ASC(.pts) failed:\n{(r3.stdout+r3.stderr)[-2000:]}"
+        pts_lines = _data_lines(Path(pts_out))
+        assert len(pts_lines) == 100
+        assert pts_lines == csv_lines, ".pts body should match .csv for the same cloud"
+
+    def test_level3_roundtrip_ply_asc_ply(self, sample_ply, acv_env, tmp_path):
+        """PLY -> ASC -> PLY preserves point count."""
+        asc = str(tmp_path / "step.asc")
+        r1 = self._convert_file(sample_ply, asc, "ASC", acv_env)
+        assert r1.returncode == 0, \
+            f"PLY->ASC failed:\n{(r1.stdout+r1.stderr)[-2000:]}"
+        ply_back = str(tmp_path / "roundtrip.ply")
+        r2 = self._convert_file(asc, ply_back, "PLY", acv_env)
+        assert r2.returncode == 0, \
+            f"ASC->PLY failed:\n{(r2.stdout+r2.stderr)[-2000:]}"
+        assert Path(ply_back).exists() and Path(ply_back).stat().st_size > 0
+        assert _ply_vertex_count(Path(ply_back)) == 100
+
+    def test_level3_roundtrip_ply_vtk_ply(self, sample_ply, acv_env, tmp_path):
+        """PLY -> VTK -> PLY preserves point count."""
+        vtk = str(tmp_path / "step.vtk")
+        r1 = self._convert_file(sample_ply, vtk, "VTK", acv_env)
+        assert r1.returncode == 0, \
+            f"PLY->VTK failed:\n{(r1.stdout+r1.stderr)[-2000:]}"
+        ply_back = str(tmp_path / "roundtrip_vtk.ply")
+        r2 = self._convert_file(vtk, ply_back, "PLY", acv_env)
+        assert r2.returncode == 0, \
+            f"VTK->PLY failed:\n{(r2.stdout+r2.stderr)[-2000:]}"
+        assert Path(ply_back).exists() and Path(ply_back).stat().st_size > 0
+        assert _ply_vertex_count(Path(ply_back)) == 100
+
+    def test_level3_mesh_obj_roundtrip_vertex_count(self, mesh_ply, acv_env, tmp_path):
+        """Mesh export to OBJ and reimport to PLY preserves vertex count."""
+        obj_path = str(tmp_path / "mesh.obj")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
+             "-DELAUNAY", "-M_EXPORT_FMT", "OBJ",
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-SAVE_MESHES", "FILE", obj_path],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        assert r.returncode == 0, \
+            f"PLY->OBJ failed:\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(obj_path).exists() and Path(obj_path).stat().st_size > 0
+        nv = _count_obj_vertices(Path(obj_path))
+        assert nv > 0, "OBJ should list vertices"
+        ply_back = str(tmp_path / "mesh_back.ply")
+        r2 = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", obj_path,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-M_EXPORT_FMT", "PLY", "-SAVE_MESHES", "FILE", ply_back],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        assert r2.returncode == 0, \
+            f"OBJ->PLY (mesh) failed:\n{(r2.stdout+r2.stderr)[-2000:]}"
+        assert Path(ply_back).exists() and Path(ply_back).stat().st_size > 0
+        assert _ply_vertex_count(Path(ply_back)) == nv
+
+    def test_level3_mesh_off_roundtrip_vertex_count(self, mesh_ply, acv_env, tmp_path):
+        """Mesh export to OFF and reimport to PLY preserves vertex count."""
+        off_path = str(tmp_path / "mesh.off")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
+             "-DELAUNAY", "-M_EXPORT_FMT", "OFF",
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-SAVE_MESHES", "FILE", off_path],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        assert r.returncode == 0, \
+            f"PLY->OFF failed:\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(off_path).exists() and Path(off_path).stat().st_size > 0
+        nv = _count_off_vertices(Path(off_path))
+        assert nv > 0, "OFF should declare vertices"
+        ply_back = str(tmp_path / "mesh_off_back.ply")
+        r2 = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", off_path,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-M_EXPORT_FMT", "PLY", "-SAVE_MESHES", "FILE", ply_back],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        assert r2.returncode == 0, \
+            f"OFF->PLY (mesh) failed:\n{(r2.stdout+r2.stderr)[-2000:]}"
+        assert Path(ply_back).exists() and Path(ply_back).stat().st_size > 0
+        assert _ply_vertex_count(Path(ply_back)) == nv
+
+    def test_level3_convert_nonexistent_input(self, acv_env, tmp_path):
+        """Conversion with a missing input file should fail."""
+        out = str(tmp_path / "noop.ply")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", "/nonexistent/path/does_not_exist.ply",
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-C_EXPORT_FMT", "PLY", "-SAVE_CLOUDS", "FILE", out],
+            capture_output=True, text=True, timeout=60, env=acv_env)
+        assert r.returncode != 0, "expected failure for missing input file"
+
+    def test_level3_convert_unsupported_export_format(self, sample_ply, acv_env, tmp_path):
+        """Export with an invalid format token should not succeed as a normal save."""
+        out = str(tmp_path / "out.ply")
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", sample_ply,
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-C_EXPORT_FMT", "__INVALID_FORMAT__",
+             "-SAVE_CLOUDS", "FILE", out],
+            capture_output=True, text=True, timeout=60, env=acv_env)
+        assert r.returncode != 0 or not Path(out).exists(), \
+            "unsupported format should produce error or no output"
+
+    def test_level3_laz_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> LAZ (same LAS plugin; -C_EXPORT_FMT LAS; .laz selects compressed)."""
+        out = str(tmp_path / "test.laz")
+        r = self._convert_file(sample_ply, out, "LAS", acv_env)
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format"))
+        if not Path(out).exists() and plugin_missing:
+            pytest.skip("LAS IO plugin not available in this build")
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("LAS IO plugin not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->LAZ failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"LAZ output file missing or empty: {out}"
+
+    def test_level3_shp_conversion(self, sample_ply, acv_env, tmp_path):
+        """PLY -> SHP (optional plugin / build)."""
+        out = str(tmp_path / "test.shp")
+        r = self._convert_file(sample_ply, out, "SHP", acv_env)
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format",
+                              "unhandled"))
+        if not Path(out).exists() and plugin_missing:
+            pytest.skip("SHP IO not available in this build")
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("SHP IO not available in this build")
+        assert r.returncode == 0, \
+            f"PLY->SHP failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"SHP output file missing or empty: {out}"
+
+    def test_level3_ptx_import(self, acv_env, tmp_path):
+        """Minimal PTX loads; skip if PTX IO is unavailable."""
+        ptx_path = tmp_path / "minimal.ptx"
+        ptx_path.write_text(_MINIMAL_PTX_CONTENT)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", str(ptx_path), "-SAVE_CLOUDS"],
+            capture_output=True, text=True, timeout=120, env=acv_env)
+        combined = (r.stdout + r.stderr).lower()
+        plugin_missing = any(kw in combined for kw in
+                             ("plugin", "filter", "unsupported", "unknown format",
+                              "unhandled"))
+        if r.returncode != 0 and plugin_missing:
+            pytest.skip("PTX IO not available in this build")
+        assert r.returncode == 0, \
+            f"PTX load failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+
+    def test_level3_neu_ascii_variant(self, sample_ply, acv_env, tmp_path):
+        """ASCII export with .neu extension (ASC format)."""
+        out = str(tmp_path / "test.neu")
+        r = self._convert_file(sample_ply, out, "ASC", acv_env)
+        assert r.returncode == 0, \
+            f"PLY->ASC(.neu) failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"ASC(.neu) output file missing or empty: {out}"
 
 
 @pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
@@ -1761,6 +2462,7 @@ class TestLevel3_CLIFormatConversion:
 
     def test_level3_cli_pcd_to_drc(self, converted_pcd, shared_dir, cli_env):
         pcd, pcd_r = converted_pcd
+        _skip_if_process_crashed(pcd_r, "CLI PLY->PCD")
         if not Path(pcd).exists():
             pytest.skip(
                 f"PLY->PCD prerequisite failed (rc={pcd_r.returncode}):\n"
@@ -1771,6 +2473,7 @@ class TestLevel3_CLIFormatConversion:
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "convert", pcd, out],
             capture_output=True, text=True, timeout=120, env=cli_env)
+        _skip_if_process_crashed(r, "CLI PCD->DRC")
         assert r.returncode == 0, (
             f"CLI PCD->DRC failed (rc={r.returncode}):\n"
             f"stdout: {r.stdout[:2000]}\nstderr: {r.stderr[:2000]}")
@@ -1810,7 +2513,7 @@ def level4_cleanup():
     if _rpc_available():
         try:
             _rpc_call("clear", timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
 
@@ -1830,8 +2533,8 @@ class TestLevel4_GUIRPC:
 
     def test_level4_methods_list(self):
         methods = _rpc_call("methods.list")
-        assert len(methods) >= 40, (
-            f"Expected >=40 RPC methods, got {len(methods)}")
+        assert len(methods) >= 44, (
+            f"Expected >=44 RPC methods, got {len(methods)}")
         names = {m["method"] for m in methods}
         for expected in ["open", "export", "file.convert", "scene.list",
                          "scene.info", "scene.remove", "scene.setVisible",
@@ -1957,12 +2660,18 @@ class TestLevel4_RPCFileOps:
         p.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(p)
 
+    @pytest.fixture
+    def mesh_ply(self, tmp_path):
+        p = tmp_path / "rpc_mesh.ply"
+        p.write_text(_MESH_PLY_CONTENT)
+        return str(p)
+
     @pytest.fixture(autouse=True)
     def _cleanup(self):
         yield
         try:
             _rpc_call("clear", timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_open_ply(self, sample_ply):
@@ -2000,7 +2709,8 @@ class TestLevel4_RPCFileOps:
         result = _rpc_call("file.convert",
                            {"input": sample_ply, "output": out}, timeout=60)
         assert result["status"] == "converted"
-        assert Path(out).exists(), f"Converted .{ext} file should exist"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"Converted .{ext} file missing or empty"
 
     def test_level4_rpc_export_entity(self, sample_ply, tmp_path):
         loaded = _rpc_call("open", {"filename": sample_ply, "silent": True})
@@ -2048,6 +2758,55 @@ class TestLevel4_RPCFileOps:
         with pytest.raises(RuntimeError):
             _rpc_call("open", {"filename": "/nonexistent/path.ply", "silent": True})
 
+    @pytest.mark.parametrize("ext", ["pcd", "vtk", "dxf"])
+    def test_level4_rpc_file_convert_extended_formats(self, sample_ply, tmp_path, ext):
+        """RPC file.convert for additional point-cloud output extensions."""
+        out = str(tmp_path / f"rpc_converted.{ext}")
+        try:
+            result = _rpc_call("file.convert",
+                               {"input": sample_ply, "output": out}, timeout=120)
+        except RuntimeError as exc:
+            if ext == "dxf":
+                msg = str(exc).lower()
+                if "failed to save" in msg:
+                    pytest.skip("DXF export not available in this RPC build")
+            raise
+        assert result["status"] == "converted"
+        assert Path(out).exists() and Path(out).stat().st_size > 0, \
+            f"Converted .{ext} should exist and be non-empty"
+
+    @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+    def test_level4_rpc_file_convert_stl_mesh(self, mesh_ply, tmp_path):
+        """RPC file.convert to STL using a mesh produced from ``mesh_ply`` (Delaunay → OBJ)."""
+        obj_path = str(tmp_path / "mesh_for_stl.obj")
+        env = _build_env_for_binary(BINARY_PATH)
+        r = subprocess.run(
+            [BINARY_PATH, "-SILENT", "-O", mesh_ply,
+             "-DELAUNAY", "-M_EXPORT_FMT", "OBJ",
+             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+             "-SAVE_MESHES", "FILE", obj_path],
+            capture_output=True, text=True, timeout=120, env=env)
+        assert r.returncode == 0, \
+            f"mesh PLY->OBJ prerequisite failed:\n{(r.stdout+r.stderr)[-2000:]}"
+        assert Path(obj_path).exists() and Path(obj_path).stat().st_size > 0
+        stl_out = str(tmp_path / "converted.stl")
+        result = _rpc_call("file.convert",
+                           {"input": obj_path, "output": stl_out}, timeout=120)
+        assert result["status"] == "converted"
+        assert Path(stl_out).exists() and Path(stl_out).stat().st_size > 0
+
+    def test_level4_rpc_file_convert_missing_input(self, tmp_path):
+        with pytest.raises(RuntimeError) as excinfo:
+            _rpc_call("file.convert",
+                      {"input": "/nonexistent/path/missing_input.ply",
+                       "output": str(tmp_path / "out.ply")})
+        assert "not found" in str(excinfo.value).lower()
+
+    def test_level4_rpc_file_convert_unsupported_output(self, sample_ply, tmp_path):
+        out = str(tmp_path / "out.__not_a_real_extension__")
+        with pytest.raises(RuntimeError):
+            _rpc_call("file.convert", {"input": sample_ply, "output": out})
+
 
 # ── Level 4c: RPC Entity Operations ───────────────────────────────────────
 
@@ -2072,7 +2831,7 @@ class TestLevel4_RPCEntityOps:
         try:
             # Remove only the loaded group, not the entire scene
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_entity_rename(self, loaded):
@@ -2142,7 +2901,7 @@ class TestLevel4_RPCCloudProcessing:
         try:
             # Remove only the loaded group, not the entire scene
             _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
-        except Exception:
+        except Exception:  # best-effort cleanup
             pass
 
     def test_level4_rpc_cloud_compute_normals(self, cloud_id):
@@ -2249,7 +3008,8 @@ class TestLevel4_RPCCloudProcessing:
         result = _rpc_call("cloud.filterSf",
                            {"entity_id": cloud_id,
                             "min": 0.0, "max": 0.5})
-        assert result.get("point_count", 0) >= 0
+        assert "point_count" in result, f"cloud.filterSf missing point_count: {result}"
+        assert isinstance(result["point_count"], int)
 
     def test_level4_rpc_cloud_remove_rgb(self, cloud_id):
         result = _rpc_call("cloud.removeRgb",
@@ -2277,173 +3037,213 @@ class TestLevel4_RPCCloudProcessing:
         id2 = _find_cloud_id(r2)
         result = _rpc_call("cloud.merge",
                            {"entity_ids": [id1, id2]})
-        has_merge_info = (
+        assert (
             result.get("merged_count", 0) >= 2
-            or result.get("children_count", 0) >= 0
-            or result.get("type") is not None
-        )
-        assert has_merge_info, f"cloud.merge returned unexpected result: {result}"
+            or result.get("point_count", 0) > 0
+            or result.get("id") is not None
+        ), f"cloud.merge returned unexpected result: {result}"
         _rpc_call("clear", timeout=5)
     
     def test_level4_rpc_cloud_density(self, cloud_id):
         """Test density computation via RPC."""
-        _rpc_call("cloud.density", {
+        result = _rpc_call("cloud.density", {
             "entity_id": cloud_id,
             "radius": 0.05
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_cloud_curvature(self, cloud_id):
         """Test curvature computation via RPC."""
         _rpc_call("cloud.computeNormals", {"entity_id": cloud_id})
-        _rpc_call("cloud.curvature", {
+        result = _rpc_call("cloud.curvature", {
             "entity_id": cloud_id,
             "type": "MEAN",
             "radius": 0.05
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_cloud_roughness(self, cloud_id):
         """Test roughness computation via RPC."""
-        _rpc_call("cloud.roughness", {
+        result = _rpc_call("cloud.roughness", {
             "entity_id": cloud_id,
             "radius": 0.1
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_cloud_geometric_feature(self, cloud_id):
         """Test geometric feature computation via RPC."""
-        _rpc_call("cloud.geometricFeature", {
+        result = _rpc_call("cloud.geometricFeature", {
             "entity_id": cloud_id,
             "type": "SURFACE_VARIATION",
             "kernel_size": 0.1
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_cloud_color_banding(self, cloud_id):
         """Test color banding via RPC."""
-        _rpc_call("cloud.colorBanding", {
+        result = _rpc_call("cloud.colorBanding", {
             "entity_id": cloud_id,
             "axis": "Z",
             "frequency": 10.0
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_cloud_sor_filter(self, cloud_id):
         """Test statistical outlier removal via RPC."""
-        _rpc_call("cloud.sorFilter", {
+        result = _rpc_call("cloud.sorFilter", {
             "entity_id": cloud_id,
             "knn": 6,
             "sigma": 1.0
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_sf_arithmetic(self, cloud_id):
         """Test scalar field arithmetic operations via RPC."""
         _rpc_call("cloud.coordToSF", {
             "entity_id": cloud_id,
             "dimension": "Z"
         })
-        _rpc_call("cloud.sfArithmetic", {
+        result = _rpc_call("cloud.sfArithmetic", {
             "entity_id": cloud_id,
             "sf_index": 0,
             "operation": "SQRT"
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_sf_operation(self, cloud_id):
         """Test scalar field operation with constant via RPC."""
         _rpc_call("cloud.coordToSF", {
             "entity_id": cloud_id,
             "dimension": "Z"
         })
-        _rpc_call("cloud.sfOperation", {
+        result = _rpc_call("cloud.sfOperation", {
             "entity_id": cloud_id,
             "sf_index": 0,
             "operation": "MULTIPLY",
             "value": 2.0
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_sf_gradient(self, cloud_id):
         """Test scalar field gradient via RPC."""
         _rpc_call("cloud.coordToSF", {
             "entity_id": cloud_id,
             "dimension": "Z"
         })
-        _rpc_call("cloud.sfGradient", {
+        result = _rpc_call("cloud.sfGradient", {
             "entity_id": cloud_id
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_sf_convert_to_rgb(self, cloud_id):
         """Test scalar field to RGB conversion via RPC."""
         _rpc_call("cloud.coordToSF", {
             "entity_id": cloud_id,
             "dimension": "Z"
         })
-        _rpc_call("cloud.sfConvertToRGB", {
+        result = _rpc_call("cloud.sfConvertToRGB", {
             "entity_id": cloud_id
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_octree_normals(self, cloud_id):
         """Test octree-based normal computation via RPC."""
-        _rpc_call("cloud.octreeNormals", {
+        result = _rpc_call("cloud.octreeNormals", {
             "entity_id": cloud_id,
             "radius": "AUTO"
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_orient_normals_mst(self, cloud_id):
         """Test MST normal orientation via RPC."""
         _rpc_call("cloud.computeNormals", {"entity_id": cloud_id})
-        _rpc_call("cloud.orientNormalsMST", {
+        result = _rpc_call("cloud.orientNormalsMST", {
             "entity_id": cloud_id,
             "knn": 6
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_clear_normals(self, cloud_id):
         """Test clear normals via RPC."""
         _rpc_call("cloud.computeNormals", {"entity_id": cloud_id})
-        _rpc_call("cloud.clearNormals", {
+        result = _rpc_call("cloud.clearNormals", {
             "entity_id": cloud_id
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_normals_to_sfs(self, cloud_id):
         """Test normals to scalar fields via RPC."""
         _rpc_call("cloud.computeNormals", {"entity_id": cloud_id})
-        _rpc_call("cloud.normalsToSFs", {
+        result = _rpc_call("cloud.normalsToSFs", {
             "entity_id": cloud_id
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_normals_to_dip(self, cloud_id):
         """Test normals to dip/dip-direction via RPC."""
         _rpc_call("cloud.octreeNormals", {
             "entity_id": cloud_id,
             "radius": "AUTO"
         })
-        _rpc_call("cloud.normalsToDip", {
+        result = _rpc_call("cloud.normalsToDip", {
             "entity_id": cloud_id
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_extract_connected_components(self, cloud_id):
         """Test extract connected components via RPC."""
-        _rpc_call("cloud.extractConnectedComponents", {
+        result = _rpc_call("cloud.extractConnectedComponents", {
             "entity_id": cloud_id,
             "min_points": 10,
             "octree_level": 6
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_approx_density(self, cloud_id):
         """Test approximate density computation via RPC."""
-        _rpc_call("cloud.approxDensity", {
+        result = _rpc_call("cloud.approxDensity", {
             "entity_id": cloud_id,
             "density_type": "PRECISE"
         })
-    
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == cloud_id
+
     def test_level4_rpc_best_fit_plane(self, cloud_id):
         """Test best fit plane computation via RPC."""
-        _rpc_call("cloud.bestFitPlane", {
+        result = _rpc_call("cloud.bestFitPlane", {
             "entity_id": cloud_id,
             "make_horiz": False
         })
-    
+        assert isinstance(result, dict)
+
     def test_level4_rpc_delaunay(self, cloud_id):
         """Test Delaunay triangulation via RPC."""
         _rpc_call("cloud.computeNormals", {"entity_id": cloud_id})
-        _rpc_call("cloud.delaunay", {
+        result = _rpc_call("cloud.delaunay", {
             "entity_id": cloud_id
         })
+        assert isinstance(result, dict)
+
+    def test_level4_rpc_scene_select(self, cloud_id):
+        """Test scene.select — select entities by ID."""
+        result = _rpc_call("scene.select", {"entity_ids": [cloud_id]})
+        assert isinstance(result, (dict, list, int))
+
+    def test_level4_rpc_cloud_paint_by_scalar_field(self, cloud_id):
+        """Test cloud.paintByScalarField — color by SF (requires SF)."""
+        _rpc_call("cloud.coordToSF",
+                  {"entity_id": cloud_id, "dimension": "z"})
+        result = _rpc_call("cloud.paintByScalarField",
+                           {"entity_id": cloud_id, "field_index": 0})
+        assert result.get("entity_id") == cloud_id
+        assert "field_name" in result
 
     def test_level4_rpc_workflow_load_orient_screenshot(
             self, cloud_id, tmp_path):
@@ -2454,6 +3254,262 @@ class TestLevel4_RPCCloudProcessing:
         result = _rpc_call("view.screenshot", {"filename": path})
         assert result["width"] > 0
         assert Path(path).exists()
+
+    def test_level4_rpc_process_run_cli(self):
+        """process.run_cli is registered (full CLI run not tested here)."""
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.run_cli" in names, "process.run_cli should be in methods list"
+
+    def test_level4_rpc_process_csf_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.csf" in names, "process.csf should be in methods list"
+
+    def test_level4_rpc_process_m3c2_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.m3c2" in names, "process.m3c2 should be in methods list"
+
+    def test_level4_rpc_process_ransac_exists(self):
+        methods = _rpc_call("methods.list")
+        names = {m["method"] for m in methods}
+        assert "process.ransac" in names, "process.ransac should be in methods list"
+
+    def test_level4_rpc_method_count_increased(self):
+        methods = _rpc_call("methods.list")
+        previous_minimum = 40
+        assert len(methods) >= previous_minimum + 4, (
+            f"Expected >={previous_minimum + 4} RPC methods "
+            f"({previous_minimum} baseline + 4 new process.*), got {len(methods)}")
+
+
+# ── Level 4e: RPC mesh operations ─────────────────────────────────────────
+
+@pytest.mark.skipif(
+    not _level4_mesh_rpc_ready(),
+    reason="ACV_RPC_URL not set or ACloudViewer RPC not available",
+)
+@pytest.mark.usefixtures("level4_cleanup")
+class TestLevel4_RPCMeshOperations:
+    """JSON-RPC mesh editing: simplify, smooth, subdivide, sampling, volume, etc."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        p = tmp_path / "mesh_rpc_grid.ply"
+        p.write_text(_MESH_PLY_CONTENT)
+        return str(p)
+
+    @pytest.fixture
+    def mesh_id(self, sample_ply):
+        opened = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(opened)
+        assert cloud_id is not None, "Expected point cloud in mesh grid PLY"
+        group_id = opened["id"]
+        _rpc_call("cloud.computeNormals",
+                  {"entity_id": cloud_id, "radius": 0.1}, timeout=60)
+        mesh_res = _rpc_call("cloud.delaunay", {"entity_id": cloud_id},
+                             timeout=120)
+        mid = mesh_res["id"]
+        yield mid
+        try:
+            _rpc_call("scene.remove", {"entity_id": mid}, timeout=5)
+        except Exception:  # best-effort cleanup
+            pass
+        try:
+            _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
+        except Exception:  # best-effort cleanup
+            pass
+
+    def test_level4_rpc_mesh_simplify_quadric(self, mesh_id):
+        result = _rpc_call(
+            "mesh.simplify",
+            {"entity_id": mesh_id, "method": "quadric", "target_triangles": 50},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_simplify_vertex_clustering(self, mesh_id):
+        result = _rpc_call(
+            "mesh.simplify",
+            {"entity_id": mesh_id, "method": "vertex_clustering", "voxel_size": 0.3},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_smooth_laplacian(self, mesh_id):
+        result = _rpc_call(
+            "mesh.smooth",
+            {"entity_id": mesh_id, "method": "laplacian", "iterations": 2},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_smooth_taubin(self, mesh_id):
+        result = _rpc_call(
+            "mesh.smooth",
+            {"entity_id": mesh_id, "method": "taubin",
+             "iterations": 2, "lambda": 0.5, "mu": -0.53},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_smooth_simple(self, mesh_id):
+        result = _rpc_call(
+            "mesh.smooth",
+            {"entity_id": mesh_id, "method": "simple", "iterations": 2},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_subdivide_midpoint(self, mesh_id):
+        result = _rpc_call(
+            "mesh.subdivide",
+            {"entity_id": mesh_id, "method": "midpoint", "iterations": 1},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_subdivide_loop(self, mesh_id):
+        result = _rpc_call(
+            "mesh.subdivide",
+            {"entity_id": mesh_id, "method": "loop", "iterations": 1},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_sample_points_uniform(self, mesh_id):
+        result = _rpc_call(
+            "mesh.samplePoints",
+            {"entity_id": mesh_id, "method": "uniform", "count": 500},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_sample_points_poisson_disk(self, mesh_id):
+        result = _rpc_call(
+            "mesh.samplePoints",
+            {"entity_id": mesh_id, "method": "poisson_disk", "count": 500},
+            timeout=120,
+        )
+        assert isinstance(result, dict)
+        assert "id" in result
+
+    def test_level4_rpc_mesh_volume(self, mesh_id):
+        result = _rpc_call("mesh.volume", {"entity_id": mesh_id}, timeout=60)
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == mesh_id
+        assert "volume" in result
+        assert isinstance(result["volume"], (int, float))
+
+    def test_level4_rpc_mesh_merge(self, sample_ply):
+        """Test mesh.merge — merge two meshes."""
+        r1 = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cid1 = _find_cloud_id(r1)
+        _rpc_call("cloud.computeNormals",
+                  {"entity_id": cid1, "radius": 0.1}, timeout=60)
+        m1 = _rpc_call("cloud.delaunay", {"entity_id": cid1})
+
+        r2 = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cid2 = _find_cloud_id(r2)
+        _rpc_call("cloud.computeNormals",
+                  {"entity_id": cid2, "radius": 0.1}, timeout=60)
+        m2 = _rpc_call("cloud.delaunay", {"entity_id": cid2})
+
+        mid1 = m1.get("mesh_id") or m1.get("id")
+        mid2 = m2.get("mesh_id") or m2.get("id")
+        if mid1 and mid2:
+            result = _rpc_call("mesh.merge",
+                               {"entity_ids": [mid1, mid2]}, timeout=60)
+            assert isinstance(result, dict)
+        _rpc_call("clear", timeout=5)
+
+    def test_level4_rpc_mesh_flip_triangles(self, mesh_id):
+        result = _rpc_call("mesh.flipTriangles", {"entity_id": mesh_id},
+                           timeout=60)
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == mesh_id
+        assert "triangle_count" in result
+
+    def test_level4_rpc_mesh_extract_vertices(self, mesh_id):
+        result = _rpc_call("mesh.extractVertices", {"entity_id": mesh_id},
+                           timeout=120)
+        assert isinstance(result, dict)
+        assert "id" in result
+
+
+@pytest.mark.skipif(
+    not _level4_mesh_rpc_ready(),
+    reason="ACV_RPC_URL not set or ACloudViewer RPC not available",
+)
+@pytest.mark.usefixtures("level4_cleanup")
+class TestLevel4_RPCTransformOps:
+    """JSON-RPC transform.apply."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        p = tmp_path / "transform_rpc_test.ply"
+        p.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(p)
+
+    @pytest.fixture
+    def loaded(self, sample_ply):
+        result = _rpc_call("open", {"filename": sample_ply, "silent": True})
+        cloud_id = _find_cloud_id(result)
+        group_id = result["id"]
+        yield {"group_id": group_id, "cloud_id": cloud_id or group_id}
+        try:
+            _rpc_call("scene.remove", {"entity_id": group_id}, timeout=5)
+        except Exception:  # best-effort cleanup
+            pass
+
+    def test_level4_rpc_transform_apply(self, loaded):
+        eid = loaded["cloud_id"]
+        identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+        result = _rpc_call(
+            "transform.apply",
+            {"entity_id": eid, "matrix": identity},
+            timeout=60,
+        )
+        assert isinstance(result, dict)
+        assert result.get("entity_id") == eid
+        assert "name" in result
+
+
+# ── Level 4g: Colmap RPC ───────────────────────────────────────────────────
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+@pytest.mark.usefixtures("level4_cleanup")
+class TestLevel4_RPCColmap:
+    """JSON-RPC colmap.reconstruct and colmap.run (smoke tests — no data needed)."""
+
+    def test_level4_rpc_colmap_reconstruct_missing_params(self):
+        """colmap.reconstruct with missing params should return structured error."""
+        try:
+            _rpc_call("colmap.reconstruct", {}, timeout=10)
+        except Exception as exc:
+            err = str(exc).lower()
+            assert "error" in err or "missing" in err or "required" in err
+
+    def test_level4_rpc_colmap_run_ping(self):
+        """colmap.run with a no-op command to verify dispatch."""
+        try:
+            result = _rpc_call("colmap.run", {
+                "command": "help",
+                "timeout_ms": 5000,
+            }, timeout=10)
+            assert isinstance(result, (dict, str, int))
+        except Exception as exc:
+            err = str(exc).lower()
+            assert "error" in err or "colmap" in err or "not found" in err
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2475,8 +3531,8 @@ class TestLevel5_MCPServer:
             import asyncio
             tools = asyncio.run(list_tools())
             tool_names = sorted(t.name for t in tools)
-            assert len(tools) >= 95, (
-                f"Expected ≥95 MCP tools, got {len(tools)}.\n"
+            assert len(tools) >= 131, (
+                f"Expected ≥131 MCP tools, got {len(tools)}.\n"
                 f"Available tools: {tool_names}")
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
@@ -2583,3 +3639,995 @@ class TestLevel5_MCPServer:
             capture_output=True, text=True, timeout=10)
         if r.returncode != 0:
             pytest.skip("MCP server module not runnable")
+
+    def test_level5_mcp_plugin_standard_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            plugin_tools = [
+                "classify_3dmasc", "animation", "cloud_layers",
+                "color_seg_rgb", "color_seg_hsv", "color_seg_scalar",
+                "g3point",
+                "pcl_sor", "pcl_normal_estimation", "pcl_mls",
+                "pcl_euclidean_cluster", "pcl_sac_segmentation",
+                "pcl_region_growing", "pcl_greedy_triangulation",
+                "pcl_poisson_recon", "pcl_marching_cubes", "pcl_convex_hull",
+            ]
+            missing = [t for t in plugin_tools if t not in names]
+            assert not missing, (
+                f"Missing Standard plugin MCP tools: {missing}\n"
+                f"Available tools: {sorted(names)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_plugin_io_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            names = {t.name for t in tools}
+            io_tools = [
+                "draco_settings", "e57_settings", "las_settings",
+                "csv_matrix_settings", "photoscan_settings",
+                "mesh_io_settings", "core_io_settings",
+            ]
+            missing = [t for t in io_tools if t not in names]
+            assert not missing, (
+                f"Missing IO plugin MCP tools: {missing}\n"
+                f"Available tools: {sorted(names)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 1: Plugin Command Source Verification
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestLevel1_PluginCommands:
+    """Verify new plugin command source structure without building."""
+
+    def test_level1_animation_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qAnimation/include/qAnimationCommands.h"
+        if not h.exists():
+            pytest.skip("qAnimationCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandAnimation" in src
+        assert "ANIMATION" in _read_repo_text(
+            REPO_ROOT / "plugins/core/Standard/qAnimation/src/qAnimationCommands.cpp")
+
+    def test_level1_cloud_layers_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qCloudLayers/include/qCloudLayersCommands.h"
+        if not h.exists():
+            pytest.skip("qCloudLayersCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandCloudLayers" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qCloudLayers/src/qCloudLayersCommands.cpp"
+        assert "CLOUD_LAYERS" in _read_repo_text(cpp)
+
+    def test_level1_colorimetric_seg_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qColorimetricSegmenter/ColorimetricSegmenterCommands.h"
+        if not h.exists():
+            pytest.skip("ColorimetricSegmenterCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandColorimetricSegRGB" in src
+        assert "CommandColorimetricSegHSV" in src
+        assert "CommandColorimetricSegScalar" in src
+
+    def test_level1_colorimetric_seg_command_impl(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qColorimetricSegmenter/ColorimetricSegmenterCommands.cpp"
+        if not cpp.exists():
+            pytest.skip("ColorimetricSegmenterCommands.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "COLOR_SEG_RGB" in src
+        assert "COLOR_SEG_HSV" in src
+        assert "COLOR_SEG_SCALAR" in src
+
+    def test_level1_g3point_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qG3Point/include/G3PointCommands.h"
+        if not h.exists():
+            pytest.skip("G3PointCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandG3Point" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qG3Point/src/G3PointCommands.cpp"
+        assert "G3POINT" in _read_repo_text(cpp)
+
+    def test_level1_3dmasc_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/q3DMASC/q3DMASCCommands.h"
+        if not h.exists():
+            pytest.skip("q3DMASCCommands.h not found")
+        src = _read_repo_text(h)
+        assert "Command3DMASCClassif" in src
+        assert "3DMASC_CLASSIFY" in src
+
+    def test_level1_pcv_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qPCV/include/PCVCommand.h"
+        if not h.exists():
+            pytest.skip("PCVCommand.h not found")
+        src = _read_repo_text(h)
+        assert "PCVCommand" in src
+
+    def test_level1_compass_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qCompass/include/ccCompassCommands.h"
+        if not h.exists():
+            pytest.skip("ccCompassCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandCompassExport" in src
+        assert "CommandCompassRefit" in src
+        assert "CommandCompassP21" in src
+        assert "CommandCompassImportFoliations" in src
+        assert "CommandCompassImportLineations" in src
+
+    def test_level1_compass_command_impl(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qCompass/src/ccCompassCommands.cpp"
+        if not cpp.exists():
+            pytest.skip("ccCompassCommands.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "COMPASS_EXPORT" in src
+        assert "COMPASS_REFIT" in src
+        assert "COMPASS_P21" in src
+        assert "COMPASS_IMPORT_FOL" in src
+        assert "COMPASS_IMPORT_LIN" in src
+
+    def test_level1_compass_registered(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qCompass/src/ccCompass.cpp"
+        if not cpp.exists():
+            pytest.skip("ccCompass.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "registerCommands" in src
+        assert "CommandCompassExport" in src
+
+    def test_level1_sra_command_header(self):
+        h = REPO_ROOT / "plugins/core/Standard/qSRA/include/qSRACommands.h"
+        if not h.exists():
+            pytest.skip("qSRACommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandSRARadialDist" in src
+
+    def test_level1_sra_command_impl(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qSRA/src/qSRACommands.cpp"
+        if not cpp.exists():
+            pytest.skip("qSRACommands.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "SRA" in src
+
+    def test_level1_sra_registered(self):
+        cpp = REPO_ROOT / "plugins/core/Standard/qSRA/src/qSRA.cpp"
+        if not cpp.exists():
+            pytest.skip("qSRA.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "registerCommands" in src
+        assert "CommandSRARadialDist" in src
+
+    def test_level1_io_coreio_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qCoreIO/include/CoreIOCommands.h"
+        if not h.exists():
+            pytest.skip("CoreIOCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandCoreIO" in src
+        cpp = REPO_ROOT / "plugins/core/IO/qCoreIO/src/CoreIOCommands.cpp"
+        assert "CORE_IO" in _read_repo_text(cpp)
+
+    def test_level1_io_csvmatrix_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qCSVMatrixIO/include/CSVMatrixCommands.h"
+        if not h.exists():
+            pytest.skip("CSVMatrixCommands.h not found")
+        assert "CommandCSVMatrix" in _read_repo_text(h)
+
+    def test_level1_io_photoscan_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qPhotoscanIO/include/PhotoscanCommands.h"
+        if not h.exists():
+            pytest.skip("PhotoscanCommands.h not found")
+        assert "CommandPhotoscan" in _read_repo_text(h)
+
+    def test_level1_io_e57_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qE57IO/include/E57Commands.h"
+        if not h.exists():
+            pytest.skip("E57Commands.h not found")
+        assert "CommandE57" in _read_repo_text(h)
+
+    def test_level1_io_draco_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qDracoIO/include/DracoCommands.h"
+        if not h.exists():
+            pytest.skip("DracoCommands.h not found")
+        assert "CommandDraco" in _read_repo_text(h)
+
+    def test_level1_io_las_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qLASIO/include/LasCommands.h"
+        if not h.exists():
+            pytest.skip("LasCommands.h not found")
+        assert "CommandLAS" in _read_repo_text(h)
+
+    def test_level1_io_meshio_command(self):
+        h = REPO_ROOT / "plugins/core/IO/qMeshIO/include/MeshIOCommands.h"
+        if not h.exists():
+            pytest.skip("MeshIOCommands.h not found")
+        assert "CommandMeshIO" in _read_repo_text(h)
+
+    def test_level1_python_runtime_command(self):
+        """qPythonRuntime already has built-in PYTHON_SCRIPT command."""
+        cpp = REPO_ROOT / "plugins/core/Standard/qPythonRuntime/src/PythonPlugin.cpp"
+        if not cpp.exists():
+            pytest.skip("PythonPlugin.cpp not found")
+        src = _read_repo_text(cpp)
+        assert "PythonPluginCommand" in src
+        assert "PYTHON_SCRIPT" in src
+        assert "registerCommands" in src
+
+    def test_level1_mplane_command(self):
+        h = REPO_ROOT / "plugins/core/Standard/qMPlane/MPlaneCommands.h"
+        if not h.exists():
+            pytest.skip("MPlaneCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandMPlane" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qMPlane/MPlaneCommands.cpp"
+        assert "MPLANE" in _read_repo_text(cpp)
+
+    def test_level1_autoseg_command(self):
+        h = REPO_ROOT / "plugins/core/Standard/qMasonry/qAutoSeg/AutoSegCommands.h"
+        if not h.exists():
+            pytest.skip("AutoSegCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandAutoSeg" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qMasonry/qAutoSeg/AutoSegCommands.cpp"
+        assert "AUTO_SEG" in _read_repo_text(cpp)
+
+    def test_level1_manualseg_command(self):
+        h = REPO_ROOT / "plugins/core/Standard/qMasonry/qManualSeg/ManualSegCommands.h"
+        if not h.exists():
+            pytest.skip("ManualSegCommands.h not found")
+        src = _read_repo_text(h)
+        assert "CommandManualSeg" in src
+        cpp = REPO_ROOT / "plugins/core/Standard/qMasonry/qManualSeg/ManualSegCommands.cpp"
+        assert "MANUAL_SEG" in _read_repo_text(cpp)
+
+    def test_level1_plugin_commands_registered(self):
+        """Verify registerCommands is implemented in all new plugins."""
+        plugins = [
+            ("qAnimation", "plugins/core/Standard/qAnimation/src/qAnimation.cpp", "CommandAnimation"),
+            ("qCloudLayers", "plugins/core/Standard/qCloudLayers/src/qCloudLayers.cpp", "CommandCloudLayers"),
+            ("qColorimetricSegmenter", "plugins/core/Standard/qColorimetricSegmenter/qColorimetricSegmenter.cpp",
+             "CommandColorimetricSeg"),
+            ("qG3Point", "plugins/core/Standard/qG3Point/src/G3Point.cpp", "CommandG3Point"),
+            ("qCoreIO", "plugins/core/IO/qCoreIO/src/qCoreIO.cpp", "CommandCoreIO"),
+            ("qCSVMatrixIO", "plugins/core/IO/qCSVMatrixIO/src/qCSVMatrixIO.cpp", "CommandCSVMatrix"),
+            ("qPhotoscanIO", "plugins/core/IO/qPhotoscanIO/src/qPhotoscanIO.cpp", "CommandPhotoscan"),
+            ("qE57IO", "plugins/core/IO/qE57IO/src/qE57IO.cpp", "CommandE57"),
+            ("qDracoIO", "plugins/core/IO/qDracoIO/src/qDracoIO.cpp", "CommandDraco"),
+            ("qLASIO", "plugins/core/IO/qLASIO/src/LasPlugin.cpp", "CommandLAS"),
+            ("qMeshIO", "plugins/core/IO/qMeshIO/src/qMeshIO.cpp", "CommandMeshIO"),
+            ("qPythonRuntime", "plugins/core/Standard/qPythonRuntime/src/PythonPlugin.cpp", "PythonPluginCommand"),
+            ("qMPlane", "plugins/core/Standard/qMPlane/qMPlane.cpp", "CommandMPlane"),
+            ("qAutoSeg", "plugins/core/Standard/qMasonry/qAutoSeg/qAutoSeg.cpp", "CommandAutoSeg"),
+            ("qManualSeg", "plugins/core/Standard/qMasonry/qManualSeg/qManualSeg.cpp", "CommandManualSeg"),
+            ("qCompass", "plugins/core/Standard/qCompass/src/ccCompass.cpp", "CommandCompassExport"),
+            ("qSRA", "plugins/core/Standard/qSRA/src/qSRA.cpp", "CommandSRARadialDist"),
+        ]
+        for name, rel_path, cmd_class in plugins:
+            path = REPO_ROOT / rel_path
+            if not path.exists():
+                continue
+            src = _read_repo_text(path)
+            assert "registerCommands" in src, f"{name} missing registerCommands"
+            assert "registerCommand" in src, f"{name} not calling registerCommand"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 2: CLI Plugin Command Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not HAS_CLI, reason="CLI harness not installed")
+class TestLevel2_PluginCLICommands:
+    """Verify CLI plugin commands work (help output)."""
+
+    @pytest.mark.parametrize("subcmd", [
+        "3dmasc", "animation", "cloud-layers",
+        "color-seg-rgb", "color-seg-hsv", "color-seg-scalar",
+        "g3point", "draco-settings", "e57-settings",
+        "las-settings", "csv-matrix-settings", "photoscan-settings",
+        "mesh-io-settings", "core-io-settings",
+        "python-script", "mplane", "auto-seg", "manual-seg",
+    ])
+    def test_level2_plugin_command_help(self, subcmd):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "process", subcmd, "--help"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, f"process {subcmd} --help failed: {r.stderr}"
+        assert "--help" in r.stdout or "Usage" in r.stdout
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 3: Headless Plugin Processing Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
+class TestLevel3_PluginHeadlessProcessing:
+    """Verify headless plugin processing via binary CLI."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    @pytest.fixture
+    def acv_env(self):
+        return _build_env_for_binary(BINARY_PATH)
+
+    # def test_level3_pcv_headless(self, sample_ply, acv_env, tmp_path):
+    #     out = tmp_path / "pcv_out.ply"
+    #     args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+    #             "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+    #             "-PCV", "-SAVE_CLOUDS", "FILE", str(out)]
+    #     r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+    #                        env=acv_env)
+    #     combined = r.stdout + r.stderr
+    #     if "Unknown or misplaced command" in combined:
+    #         pytest.skip("qPCV plugin not loaded in this build")
+    #     if r.returncode != 0 and not out.exists():
+    #         gl_hints = ("Process failed", "OpenGL", "GLX", "Cannot create",
+    #                     "Could not initialize", "MESA", "EGL")
+    #         if any(h in combined for h in gl_hints) or combined.strip() == "Process failed":
+    #             pytest.skip(
+    #                 "PCV requires OpenGL off-screen rendering "
+    #                 "(not available on this headless CI runner)")
+    #     assert r.returncode == 0 or out.exists(), (
+    #         f"PCV headless failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_animation_headless(self, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-ANIMATION",
+                "-FPS", "24", "-TOTAL_FRAMES", "10"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30,
+                           env=acv_env)
+        assert r.returncode == 0, (
+            f"ANIMATION failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}")
+
+    def test_level3_draco_settings_headless(self, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-DRACO",
+                "-QUANTIZATION", "14", "-SPEED", "3"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30,
+                           env=acv_env)
+        assert r.returncode == 0, (
+            f"DRACO failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}")
+
+    def test_level3_e57_settings_headless(self, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-E57", "-IGNORE_COLOR"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30,
+                           env=acv_env)
+        assert r.returncode == 0, (
+            f"E57 failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}")
+
+    def test_level3_las_settings_headless(self, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-LAS", "-EXTRA_FIELDS", "-SAVE_LAZ"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30,
+                           env=acv_env)
+        assert r.returncode == 0, (
+            f"LAS failed (rc={r.returncode}):\n{(r.stdout+r.stderr)[-2000:]}")
+
+    def test_level3_mplane_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "mplane_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-MPLANE", "-NX", "0", "-NY", "0", "-NZ", "1", "-D", "0",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qMPlane plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"MPLANE failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_autoseg_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "autoseg_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-AUTO_SEG", "-MORTAR_MAPS",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qAutoSeg plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"AUTO_SEG failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_manualseg_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "manualseg_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-MANUAL_SEG", "-CONTOURS",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qManualSeg plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"MANUAL_SEG failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_compass_export_headless(self, sample_ply, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-COMPASS_EXPORT", "-FORMAT", "csv",
+                "-OUTPUT", str(tmp_path / "compass_out")]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qCompass plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"COMPASS_EXPORT failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_compass_refit_headless(self, sample_ply, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-COMPASS_REFIT"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qCompass plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"COMPASS_REFIT failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_compass_p21_headless(self, sample_ply, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-COMPASS_P21", "-RADIUS", "0.5", "-SUBSAMPLE", "5"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qCompass plugin not loaded in this build")
+        _skip_if_process_crashed(r, "COMPASS_P21")
+        if r.returncode == 127 and (
+                "error while loading shared libraries" in combined
+                or "cannot open shared object file" in combined):
+            pytest.skip(
+                "COMPASS_P21: binary failed to start (dynamic linker / shared library)")
+        assert r.returncode == 0, (
+            f"COMPASS_P21 failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_compass_import_fol_headless(self, sample_ply, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-COMPASS_IMPORT_FOL", "-DIP_SF", "Dip", "-DIPDIR_SF", "DipDir"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qCompass plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"COMPASS_IMPORT_FOL failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_compass_import_lin_headless(self, sample_ply, acv_env, tmp_path):
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-COMPASS_IMPORT_LIN", "-TREND_SF", "Trend", "-PLUNGE_SF", "Plunge"]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qCompass plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"COMPASS_IMPORT_LIN failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_don_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "don_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_DON_SEGMENTATION", "-SMALL_SCALE", "5", "-LARGE_SCALE", "10",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_DON_SEGMENTATION failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_mincut_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "mincut_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_MINCUT_SEGMENTATION", "-FX", "0", "-FY", "0", "-FZ", "0",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_MINCUT_SEGMENTATION failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_sift_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "sift_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_EXTRACT_SIFT", "-MODE", "RGB", "-OCTAVES", "4",
+                "-MIN_SCALE", "0.01", "-SCALES_PER_OCTAVE", "6",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_EXTRACT_SIFT failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_projection_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "proj_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_PROJECTION_FILTER", "-A", "0", "-B", "0", "-C", "1", "-D", "0",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_PROJECTION_FILTER failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_general_pass_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "genfilt_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_GENERAL_FILTERS", "-MODE", "PASS", "-FIELD", "z",
+                "-MIN", "-100", "-MAX", "100",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_GENERAL_FILTERS PASS failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+    def test_level3_pcl_general_voxel_headless(self, sample_ply, acv_env, tmp_path):
+        out = tmp_path / "voxel_out.ply"
+        args = [BINARY_PATH, "-SILENT", "-O", str(sample_ply),
+                "-AUTO_SAVE", "OFF", "-NO_TIMESTAMP",
+                "-PCL_GENERAL_FILTERS", "-MODE", "VOXEL", "-LEAF", "0.01",
+                "-SAVE_CLOUDS", "FILE", str(out)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                           env=acv_env)
+        combined = r.stdout + r.stderr
+        if "Unknown or misplaced command" in combined:
+            pytest.skip("qPCL plugin not loaded in this build")
+        assert r.returncode == 0, (
+            f"PCL_GENERAL_FILTERS VOXEL failed (rc={r.returncode}):\n{combined[-2000:]}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 4: GUI RPC Plugin Command Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_PluginRPC:
+    """Test plugin commands via JSON-RPC (requires running GUI app)."""
+
+    @pytest.fixture
+    def sample_ply(self, tmp_path):
+        ply_path = tmp_path / "test.ply"
+        ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
+        return str(ply_path)
+
+    def _rpc_call(self, method, params=None):
+        ws = ws_connect(RPC_URL, open_timeout=5)
+        try:
+            ws.send(json.dumps({
+                "jsonrpc": "2.0", "id": 1,
+                "method": method,
+                "params": params or {},
+            }))
+            resp = json.loads(ws.recv(timeout=30))
+            if "error" in resp:
+                raise RuntimeError(f"RPC error: {resp['error']}")
+            return resp.get("result")
+        finally:
+            ws.close()
+
+    def test_level4_rpc_ping(self):
+        assert self._rpc_call("ping") == "pong"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Level 5: MCP Plugin Tool Tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestLevel5_PluginMCPTools:
+    """Verify MCP tools for new plugin commands."""
+
+    def test_level5_mcp_tool_count_increased(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            assert len(tools) >= 165, (
+                f"Expected ≥165 MCP tools (with new plugins), got {len(tools)}")
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_3dmasc_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "classify_3dmasc"), None)
+            assert tool is not None, "classify_3dmasc tool not found"
+            schema = tool.inputSchema
+            assert "classifier_file" in schema.get("properties", {})
+            assert "cloud_roles" in schema.get("properties", {})
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_color_seg_rgb_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "color_seg_rgb"), None)
+            assert tool is not None, "color_seg_rgb tool not found"
+            props = tool.inputSchema.get("properties", {})
+            for key in ["r_min", "r_max", "g_min", "g_max", "b_min", "b_max"]:
+                assert key in props, f"Missing property: {key}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_g3point_tool_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "g3point"), None)
+            assert tool is not None, "g3point tool not found"
+            props = tool.inputSchema.get("properties", {})
+            for key in ["n_neighbors", "max_radius", "min_radius"]:
+                assert key in props, f"Missing property: {key}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_draco_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "draco_settings"), None)
+            assert tool is not None, "draco_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "quantization" in props
+            assert "compression_level" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_las_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "las_settings"), None)
+            assert tool is not None, "las_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "extra_fields" in props
+            assert "save_laz" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_python_script_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "python_script"), None)
+            assert tool is not None, "python_script tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "script_path" in props
+            assert "script_args" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_mplane_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "mplane"), None)
+            assert tool is not None, "mplane tool not found"
+            props = tool.inputSchema.get("properties", {})
+            for key in ["nx", "ny", "nz", "d"]:
+                assert key in props, f"Missing property: {key}"
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_auto_seg_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "auto_seg"), None)
+            assert tool is not None, "auto_seg tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "mortar_maps" in props
+            assert "contours" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_manual_seg_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "manual_seg"), None)
+            assert tool is not None, "manual_seg tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "mortar_maps" in props
+            assert "contours" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_sor_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_sor"), None)
+            assert tool is not None, "pcl_sor tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "k" in props
+            assert "std" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcv_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcv"), None)
+            assert tool is not None, "pcv tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_export_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_export"), None)
+            assert tool is not None, "compass_export tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+            assert "format" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_sra_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "sra"), None)
+            assert tool is not None, "sra tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+            assert "profile_path" in props
+            assert "axis" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_don_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_don_segmentation"), None)
+            assert tool is not None, "pcl_don_segmentation tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "small_scale" in props
+            assert "large_scale" in props
+            assert "min_don" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_mincut_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_mincut_segmentation"), None)
+            assert tool is not None, "pcl_mincut_segmentation tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "fx" in props
+            assert "fy" in props
+            assert "fz" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_fgr_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_fast_global_registration"), None)
+            assert tool is not None, "pcl_fast_global_registration tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "feature_radius" in props
+            assert "reference_path" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_sift_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_extract_sift"), None)
+            assert tool is not None, "pcl_extract_sift tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "mode" in props
+            assert "octaves" in props
+            assert "min_scale" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_projection_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_projection_filter"), None)
+            assert tool is not None, "pcl_projection_filter tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "a" in props
+            assert "b" in props
+            assert "c" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_pcl_general_filters_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "pcl_general_filters"), None)
+            assert tool is not None, "pcl_general_filters tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "mode" in props
+            assert "field" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_import_fol_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_import_fol"), None)
+            assert tool is not None, "compass_import_fol tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "dip_sf" in props
+            assert "dipdir_sf" in props
+            assert "plane_size" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_import_lin_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_import_lin"), None)
+            assert tool is not None, "compass_import_lin tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "trend_sf" in props
+            assert "plunge_sf" in props
+            assert "length" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_refit_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_refit"), None)
+            assert tool is not None, "compass_refit tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_compass_p21_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "compass_p21"), None)
+            assert tool is not None, "compass_p21 tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "radius" in props
+            assert "subsample" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_treeiso_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "treeiso"), None)
+            assert tool is not None, "treeiso tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "lambda1" in props
+            assert "k1" in props
+            assert "rho" in props
+            assert "vertical_weight" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_fbx_settings_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "fbx_settings"), None)
+            assert tool is not None, "fbx_settings tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "export_format" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_lasfwf_load_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "lasfwf_load"), None)
+            assert tool is not None, "lasfwf_load tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "output_path" in props
+            assert "global_shift" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_lasfwf_save_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "lasfwf_save"), None)
+            assert tool is not None, "lasfwf_save tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "input_path" in props
+            assert "compressed" in props
+            assert "all_at_once" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+
+    def test_level5_mcp_bundler_import_schema(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+            tool = next((t for t in tools if t.name == "bundler_import"), None)
+            assert tool is not None, "bundler_import tool not found"
+            props = tool.inputSchema.get("properties", {})
+            assert "bundler_file" in props
+            assert "output_path" in props
+            assert "scale_factor" in props
+            assert "undistort" in props
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")

@@ -7,136 +7,133 @@
 
 #include "ccMouseCircle.h"
 
+#include <CVLog.h>
 #include <ecvDisplayTools.h>
 
+#include <QWheelEvent>
 #include <cmath>
 
 ccMouseCircle::ccMouseCircle(QWidget* owner, QString name)
-    : cc2DViewportObject(name.isEmpty() ? "label" : name) {
+    : cc2DViewportObject(name.isEmpty() ? "label" : name),
+      m_owner(nullptr),
+      m_pixelSize(0.0f),
+      m_radius(50),
+      m_radiusStep(4) {
     setVisible(true);
     setEnabled(false);
 
-    // setup unit circle
-    for (int n = 0; n < ccMouseCircle::RESOLUTION; n++) {
-        float heading =
-                n * (2 * M_PI /
-                     (float)ccMouseCircle::RESOLUTION);  // heading in radians
-        ccMouseCircle::UNIT_CIRCLE[n][0] = std::cos(heading);
-        ccMouseCircle::UNIT_CIRCLE[n][1] = std::sin(heading);
-    }
-
-    // attach to owner
-    assert(owner);  // check valid pointer
-    ccMouseCircle::m_owner = owner;
+    assert(owner);
+    m_owner = owner;
     m_owner->installEventFilter(this);
     ecvDisplayTools::AddToOwnDB(this, true);
 }
 
 ccMouseCircle::~ccMouseCircle() {
-    // cleanup event listner
     if (m_owner) {
         m_owner->removeEventFilter(this);
+
+        // Remove the circle overlay widget
+        WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,
+                                      getViewId());
+        ecvDisplayTools::RemoveWidgets(removeParam);
+
         ecvDisplayTools::RemoveFromOwnDB(this);
     }
 }
 
-// get the circle radius in px
-int ccMouseCircle::getRadiusPx() { return ccMouseCircle::RADIUS; }
-
-// get the circle radius in world coordinates
-float ccMouseCircle::getRadiusWorld() { return getRadiusPx() / m_winTotalZoom; }
-
-// override draw function
-void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
-    // only draw when visible
-    if (!ccMouseCircle::isVisible()) return;
-
-    // only draw in 2D foreground mode
-    if (!MACRO_Foreground(context) || !MACRO_Draw2D(context)) return;
-
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
-
-    // test viewport parameters
-    const ecvViewportParameters& params =
-            ecvDisplayTools::GetViewportParameters();
-    // glFunc->glPushAttrib(GL_LINE_BIT);
-
-    float dx = 0.0f;
-    float dy = 0.0f;
-    if (!m_params.perspectiveView)  // ortho mode
-    {
-        // Screen pan & pivot compensation
-        m_winTotalZoom = params.zoom / params.pixelSize;
-
-        // CCVector3d dC = m_params.cameraCenter - params.cameraCenter;
-        CCVector3d P = m_params.getPivotPoint() - params.getPivotPoint();
-        m_params.viewMat.apply(P);
-
-        dx *= m_winTotalZoom;
-        dy *= m_winTotalZoom;
+float ccMouseCircle::computeOrthoPixelSize(int viewportHeight) {
+    double parallelScale = ecvDisplayTools::GetParallelScale(0);
+    if (parallelScale <= 0 || viewportHeight <= 0) {
+        return 0.0f;
     }
-
-    // thick dotted line
-    // glFunc->glLineWidth(2);
-    // glFunc->glLineStipple(1, 0xAAAA);
-    // glFunc->glEnable(GL_LINE_STIPPLE);
-
-    // glFunc->glColor3ubv(ecvColor::red.rgb);
-
-    // get height & width
-    int halfW = static_cast<int>(context.glW / 2.0f);
-    int halfH = static_cast<int>(context.glH / 2.0f);
-
-    // get mouse position
-    QPoint p = m_owner->mapFromGlobal(QCursor::pos());
-    int mx = p.x();              // mouse x-coord
-    int my = 2 * halfH - p.y();  // mouse y-coord in OpenGL coordinates (origin
-                                 // at bottom left, not top left)
-
-    // calculate circle location
-    int cx = dx + mx - halfW;
-    int cy = dy + my - halfH;
-
-    // draw circle
-    // glFunc->glBegin(GL_LINE_LOOP);
-    // for (int n = 0; n < ccMouseCircle::RESOLUTION; n++)
-    //{
-    //	glFunc->glVertex2f(ccMouseCircle::UNIT_CIRCLE[n][0] *
-    // ccMouseCircle::RADIUS + cx, ccMouseCircle::UNIT_CIRCLE[n][1] *
-    // ccMouseCircle::RADIUS + cy);
-    // }
-    // glFunc->glEnd();
-    // glFunc->glPopAttrib();
+    return static_cast<float>(2.0 * parallelScale / viewportHeight);
 }
 
-// get mouse move events
+float ccMouseCircle::getRadiusWorld() {
+    if (m_pixelSize == 0) {
+        const ecvViewportParameters& params =
+                ecvDisplayTools::GetViewportParameters();
+        QWidget* screen = ecvDisplayTools::GetCurrentScreen();
+        if (screen) {
+            if (params.perspectiveView) {
+                m_pixelSize = static_cast<float>(
+                        std::abs(params.computePixelSize(screen->width())));
+            } else {
+                m_pixelSize = computeOrthoPixelSize(screen->height());
+            }
+        }
+    }
+    float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
+    return r;
+}
+
+void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
+    if (!m_owner) {
+        assert(false);
+        return;
+    }
+
+    if (!ccMouseCircle::isVisible()) {
+        return;
+    }
+
+    if (!MACRO_Foreground(context) || !MACRO_Draw2D(context)) {
+        return;
+    }
+
+    if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
+        return;
+    }
+
+    const ecvViewportParameters& params =
+            ecvDisplayTools::GetViewportParameters();
+    if (params.perspectiveView) {
+        m_pixelSize = static_cast<float>(
+                std::abs(params.computePixelSize(context.glW)));
+    } else {
+        m_pixelSize = computeOrthoPixelSize(context.glH);
+    }
+
+    {
+        WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,
+                                      getViewId());
+        ecvDisplayTools::RemoveWidgets(removeParam);
+    }
+
+    QPoint p =
+            m_owner->mapFromGlobal(QCursor::pos()) * context.devicePixelRatio;
+    int mx = p.x();
+    int my = context.glH - 1 - p.y();
+
+    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CIRCLE_2D, getViewId());
+    param.rect = QRect(mx, my, 0, 0);
+    param.radius = static_cast<float>(m_radius);
+    param.color = ecvColor::Rgbaf(1.0f, 0.0f, 0.0f, 0.8f);
+    ecvDisplayTools::DrawWidgets(param, false);
+}
+
 bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
-    // only process events when visible
-    if (!ccMouseCircle::isVisible()) return false;
+    if (!ccMouseCircle::isVisible()) {
+        return false;
+    }
 
     if (event->type() == QEvent::MouseMove) {
         if (m_owner) {
-            ecvDisplayTools::RedrawDisplay(true, true);  // redraw 2D graphics
+            ecvDisplayTools::RedrawDisplay(true, true);
         }
     }
 
     if (event->type() == QEvent::Wheel) {
         QWheelEvent* wheelEvent = static_cast<QWheelEvent*>(event);
 
-        // is control down
         if (wheelEvent->modifiers().testFlag(Qt::ControlModifier)) {
-            // adjust radius
-            double delta = qtCompatWheelEventDelta(wheelEvent);
-            ccMouseCircle::RADIUS -=
-                    ccMouseCircle::RADIUS_STEP * (delta / 100.0);
-
-            // avoid really small radius
-            if (ccMouseCircle::RADIUS < ccMouseCircle::RADIUS_STEP) {
-                ccMouseCircle::RADIUS = ccMouseCircle::RADIUS_STEP;
-            }
-            // repaint
+            m_radius = std::max(
+                    m_radiusStep,
+                    m_radius - static_cast<int>(
+                                       m_radiusStep *
+                                       (wheelEvent->angleDelta().y() / 100.0)));
             ecvDisplayTools::RedrawDisplay(true, true);
         }
     }
-    return false;  // pass event to other listeners
+    return false;
 }

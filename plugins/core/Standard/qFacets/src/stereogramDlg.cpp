@@ -26,6 +26,7 @@
 #include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 //! Density grid
 class FacetDensityGrid {
@@ -769,12 +770,15 @@ void StereogramDialog::updateFacetsFilter(bool enable) {
             static_cast<PointCoordinateType>(dipDirSpanDoubleSpinBox->value()) /
             2;
 
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvRedrawScope scope;
     // a set of facets?
     if (entity->isA(CV_TYPES::HIERARCHY_OBJECT)) {
         ccHObject::Container facets;
         entity->filterChildren(facets, true, CV_TYPES::FACET);
-        if (facets.empty()) return;
+        if (facets.empty()) {
+            scope.dismiss();
+            return;
+        }
 
         for (size_t i = 0; i < facets.size(); ++i) {
             ccFacet* facet = static_cast<ccFacet*>(facets[i]);
@@ -795,7 +799,7 @@ void StereogramDialog::updateFacetsFilter(bool enable) {
             }
 
             if (visible) {
-                ecvDisplayTools::SetRedrawRecursive(facet, true);
+                scope.markDirty(facet);
             }
             // facet->setEnabled(visible);
             ccMesh* polygon = facet->getPolygon();
@@ -813,13 +817,20 @@ void StereogramDialog::updateFacetsFilter(bool enable) {
     // or a cloud?
     else if (entity->isA(CV_TYPES::POINT_CLOUD)) {
         ccPointCloud* cloud = static_cast<ccPointCloud*>(entity);
-        if (!cloud->hasNormals()) return;
+        if (!cloud->hasNormals()) {
+            scope.dismiss();
+            return;
+        }
 
         if (enable) {
             unsigned count = cloud->size();
-            if (count == 0) return;
+            if (count == 0) {
+                scope.dismiss();
+                return;
+            }
             if (!cloud->resetVisibilityArray()) {
                 m_app->dispToConsole("Not enough memory!");
+                scope.dismiss();
                 return;
             }
             ccPointCloud::VisibilityTableType& visTable =
@@ -844,10 +855,8 @@ void StereogramDialog::updateFacetsFilter(bool enable) {
         } else {
             cloud->unallocateVisibilityArray();
         }
-        cloud->setRedraw(true);
+        scope.markDirty(cloud);
     }
-
-    if (m_app) m_app->refreshAll();
 }
 
 void StereogramDialog::exportCurrentSelection() {

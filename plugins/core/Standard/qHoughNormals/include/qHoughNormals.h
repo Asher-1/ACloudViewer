@@ -9,6 +9,8 @@
 
 #include "ecvStdPluginInterface.h"
 
+class ccCommandLineInterface;
+
 //! Wrapper to the 'normals_Hough' library
 //! (https://github.com/aboulch/normals_Hough)
 /** "Deep Learning for Robust Normal Estimation in Unstructured Point Clouds"
@@ -32,6 +34,7 @@ public:
     virtual void onNewSelection(
             const ccHObject::Container& selectedEntities) override;
     virtual QList<QAction*> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected:
     //! Slot called when associated action is triggered

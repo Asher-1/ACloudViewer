@@ -14,6 +14,7 @@
 #include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // app
 #include <ecvMainAppInterface.h>
@@ -113,25 +114,27 @@ int BasePclModule::performAction() {
                                    // wants to ac
     }
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (ccHObject* entity : m_selected) {
-        // clouds only
-        if (entity->isA(CV_TYPES::POINT_CLOUD) && entity->isGLTransEnabled()) {
-            ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
-            if (cloud) {
-                // we temporarily detach entity, as it may undergo
-                //"severe" modifications (octree deletion, etc.) --> see
-                // ccHObject::applyRigidTransformation
-                ecvMainAppInterface::ccHObjectContext objContext =
-                        m_app->removeObjectTemporarilyFromDBTree(cloud);
-                cloud->applyGLTransformation_recursive();
-                m_app->putObjectBackIntoDBTree(cloud, objContext);
-                cloud->setRedrawFlagRecursive(true);
-                ecvDisplayTools::RemoveBB(cloud->getViewId());
+    {
+        ecvRedrawScope scope;
+        for (ccHObject* entity : m_selected) {
+            // clouds only
+            if (entity->isA(CV_TYPES::POINT_CLOUD) &&
+                entity->isGLTransEnabled()) {
+                ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
+                if (cloud) {
+                    // we temporarily detach entity, as it may undergo
+                    //"severe" modifications (octree deletion, etc.) --> see
+                    // ccHObject::applyRigidTransformation
+                    ecvMainAppInterface::ccHObjectContext objContext =
+                            m_app->removeObjectTemporarilyFromDBTree(cloud);
+                    cloud->applyGLTransformation_recursive();
+                    m_app->putObjectBackIntoDBTree(cloud, objContext);
+                    scope.markDirty(cloud);
+                    ecvDisplayTools::RemoveBB(cloud->getViewId());
+                }
             }
         }
     }
-    ecvDisplayTools::RedrawDisplay(false, true);
 
     return 1;
 }

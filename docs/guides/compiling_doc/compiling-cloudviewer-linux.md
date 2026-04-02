@@ -180,6 +180,7 @@ cmake \
     -DPLUGIN_STANDARD_QM3C2=ON \
     -DPLUGIN_STANDARD_QMPLANE=ON \
     -DPLUGIN_STANDARD_QPCL=ON \
+    -DPLUGIN_STANDARD_QPCV=ON \
     -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
     -DPOISSON_RECON_WITH_OPEN_MP=ON \
     -DPLUGIN_STANDARD_QRANSAC_SD=ON \
@@ -214,7 +215,7 @@ export BUILD_PYTORCH_OPS=ON
 install_python_dependencies with-cuda with-jupyter with-unit-test
 
 # (Optional) Deploy Node.js + Yarn for Jupyter extension
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - \
+curl -fsSL https://deb.nodesource.com/setup_25.x | sudo bash - \
     && sudo apt-get install -y nodejs \
     && sudo npm install -g yarn
 
@@ -371,6 +372,7 @@ cmake \
     -DPLUGIN_STANDARD_QM3C2=ON \
     -DPLUGIN_STANDARD_QMPLANE=ON \
     -DPLUGIN_STANDARD_QPCL=ON \
+    -DPLUGIN_STANDARD_QPCV=ON \
     -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
     -DPOISSON_RECON_WITH_OPEN_MP=ON \
     -DPLUGIN_STANDARD_QRANSAC_SD=ON \

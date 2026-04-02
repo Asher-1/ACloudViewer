@@ -16,6 +16,7 @@
 #include <ecvGenericTransformTool.h>
 #include <ecvMesh.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 
 ccGraphicalTransformationTool::ccGraphicalTransformationTool(QWidget* parent)
     : ccOverlayDialog(parent),
@@ -193,8 +194,7 @@ void ccGraphicalTransformationTool::pause(bool state) {
     pauseButton->setChecked(state);
     pauseButton->blockSignals(false);
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(true, false); }
 }
 
 void ccGraphicalTransformationTool::clear() {
@@ -446,40 +446,42 @@ void ccGraphicalTransformationTool::apply() {
     // update GL transformation for all entities
     ccGLMatrix correctedFinalTrans(finalTransCorrected.data());
 
-    ecvDisplayTools::SetRedrawRecursive(false);
-    for (unsigned i = 0; i < m_toTransform.getChildrenNumber(); ++i) {
-        ccHObject* toTransform = m_toTransform.getChild(i);
-        toTransform->setGLTransformation(correctedFinalTrans);
+    {
+        ecvRedrawScope scope;
+        for (unsigned i = 0; i < m_toTransform.getChildrenNumber(); ++i) {
+            ccHObject* toTransform = m_toTransform.getChild(i);
+            toTransform->setGLTransformation(correctedFinalTrans);
 
-        // DGM: warning, applyGLTransformation may delete the associated octree!
-        MainWindow::ccHObjectContext objContext =
-                MainWindow::TheInstance()->removeObjectTemporarilyFromDBTree(
-                        toTransform);
+            // DGM: warning, applyGLTransformation may delete the associated
+            // octree!
+            MainWindow::ccHObjectContext objContext =
+                    MainWindow::TheInstance()
+                            ->removeObjectTemporarilyFromDBTree(toTransform);
 
-        toTransform->applyGLTransformation_recursive();
-        // toTransform->prepareDisplayForRefresh_recursive();
-        MainWindow::TheInstance()->putObjectBackIntoDBTree(toTransform,
-                                                           objContext);
+            toTransform->applyGLTransformation_recursive();
+            // toTransform->prepareDisplayForRefresh_recursive();
+            MainWindow::TheInstance()->putObjectBackIntoDBTree(toTransform,
+                                                               objContext);
 
-        toTransform->setRedrawFlagRecursive(true);
+            scope.markDirty(toTransform);
 
-        // special case: if the object is a mesh vertices set, we may have to
-        // update the mesh normals!
-        if (toTransform->isA(CV_TYPES::POINT_CLOUD) &&
-            toTransform->getParent() &&
-            toTransform->getParent()->isKindOf(CV_TYPES::MESH)) {
-            ccMesh* mesh = static_cast<ccMesh*>(toTransform->getParent());
-            if (mesh->hasTriNormals() && !m_toTransform.isAncestorOf(mesh)) {
-                mesh->transformTriNormals(correctedFinalTrans);
+            // special case: if the object is a mesh vertices set, we may have
+            // to update the mesh normals!
+            if (toTransform->isA(CV_TYPES::POINT_CLOUD) &&
+                toTransform->getParent() &&
+                toTransform->getParent()->isKindOf(CV_TYPES::MESH)) {
+                ccMesh* mesh = static_cast<ccMesh*>(toTransform->getParent());
+                if (mesh->hasTriNormals() &&
+                    !m_toTransform.isAncestorOf(mesh)) {
+                    mesh->transformTriNormals(correctedFinalTrans);
+                }
             }
         }
+
+        stop(true);
+
+        clear();
     }
-
-    stop(true);
-
-    clear();
-
-    ecvDisplayTools::RedrawDisplay();
 
     // output resulting transformation matrix
     CVLog::Print("[GraphicalTransformationTool] Applied transformation:");

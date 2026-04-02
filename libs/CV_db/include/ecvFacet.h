@@ -150,6 +150,10 @@ public:
         return (*this);
     }
 
+    void draw(CC_DRAW_CONTEXT& context) override;
+    void hideNormalArrowActors(CC_DRAW_CONTEXT& context);
+    void showNormalArrowActors(CC_DRAW_CONTEXT& context);
+
 protected:
     // inherited from ccDrawable
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
