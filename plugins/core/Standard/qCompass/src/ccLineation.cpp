@@ -95,6 +95,10 @@ void ccLineation::updateMetadata() {
 
 // returns true if object is a lineation
 bool ccLineation::isLineation(ccHObject* object) {
+    if (!object) {
+        CVLog::Warning("ccLineation: object is null");
+        return false;
+    }
     if (object->hasMetaData("ccCompassType")) {
         return object->getMetaData("ccCompassType")
                 .toString()

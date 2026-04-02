@@ -781,7 +781,15 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
 bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
     std::string viewId = CVTools::FromQString(context.viewID);
 
-    if (context.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
+    if (context.hideShowEntityType == ENTITY_TYPE::ECV_2DLABLE ||
+        context.hideShowEntityType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
+        m_visualizer3D->hideShowActorsBySubstring(context.visible, viewId,
+                                                   context.defaultViewPort);
+        if (m_visualizer2D) {
+            m_visualizer2D->hideShowActorsBySubstring(context.visible, viewId);
+        }
+        return true;
+    } else if (context.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
         context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
         context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
         context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
@@ -797,19 +805,21 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
                                             context.defaultViewPort);
         }
     } else {
+        bool found = false;
+
         if (context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
             context.removeEntityType == ENTITY_TYPE::ECV_POLYLINE_2D) {
             if (m_visualizer2D && m_visualizer2D->contains(viewId)) {
                 m_visualizer2D->hideShowActors(context.visible, viewId);
+                found = true;
             }
         }
 
-        if (!m_visualizer3D->contains(viewId)) {
-            return false;
+        if (m_visualizer3D->contains(viewId)) {
+            m_visualizer3D->hideShowActors(context.visible, viewId,
+                                           context.defaultViewPort);
+            found = true;
         }
-
-        m_visualizer3D->hideShowActors(context.visible, viewId,
-                                       context.defaultViewPort);
 
         // for normals case
         std::string normalViewId =
@@ -817,9 +827,14 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         if (m_visualizer3D->contains(normalViewId)) {
             m_visualizer3D->hideShowActors(context.visible, normalViewId,
                                            context.defaultViewPort);
+            found = true;
         }
 
-        m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        if (found) {
+            m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        }
+
+        return found;
     }
 
     return true;

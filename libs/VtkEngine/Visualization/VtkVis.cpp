@@ -2476,6 +2476,37 @@ void VtkVis::hideShowActors(bool visibility,
     }
 }
 
+void VtkVis::hideShowActorsBySubstring(bool visibility,
+                                       const std::string& substring,
+                                       int viewport) {
+    int vis = visibility ? 1 : 0;
+    for (auto& pair : *shape_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            vtkActor* actor = vtkActor::SafeDownCast(pair.second);
+            if (actor) {
+                actor->SetVisibility(vis);
+                actor->Modified();
+            }
+        }
+    }
+    for (auto& pair : *cloud_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            if (pair.second.actor) {
+                pair.second.actor->SetVisibility(vis);
+                pair.second.actor->Modified();
+            }
+        }
+    }
+    for (auto& pair : *getWidgetActorMap()) {
+        if (pair.first.find(substring) != std::string::npos) {
+            if (pair.second.widget) {
+                visibility ? pair.second.widget->On()
+                           : pair.second.widget->Off();
+            }
+        }
+    }
+}
+
 void VtkVis::hideShowWidgets(bool visibility,
                              const std::string& viewID,
                              int viewport) {
