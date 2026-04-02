@@ -201,6 +201,10 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
             CCVector3 disp = end - start;
             float length = disp.norm();
+            if (length < 1e-12f) {
+                CVLog::Error("ccPointPair: length is too small");
+                return;
+            }
             float width = context.labelMarkerSize * m_relMarkerScale * 0.05f *
                           std::fmin(pSize, 5.0f);
             CCVector3 dir = disp / length;

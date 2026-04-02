@@ -1172,6 +1172,7 @@ bool ccTrace::isTrace(
         ccHObject* object)  // return true if object is a valid trace
                             // [regardless of it's class type]
 {
+    if (!object) return false;
     if (object->hasMetaData("ccCompassType")) {
         return object->getMetaData("ccCompassType")
                 .toString()

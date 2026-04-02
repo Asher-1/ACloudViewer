@@ -88,6 +88,8 @@ public:
      *  @param viewID Layer/view ID
      */
     void hideShowActors(bool visibility, const std::string& viewID);
+    void hideShowActorsBySubstring(bool visibility,
+                                   const std::string& substring);
 
     void removeAllLayers();
 

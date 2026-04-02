@@ -438,6 +438,9 @@ public:
     void hideShowWidgets(bool visibility,
                          const std::string& viewID,
                          int viewport = 0);
+    void hideShowActorsBySubstring(bool visibility,
+                                   const std::string& substring,
+                                   int viewport = 0);
 
     /** @param context Draw context
      *  @return true on success
