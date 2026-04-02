@@ -1441,17 +1441,24 @@ struct CmdGenFilt : public ccCommandLineInterface::Command {
 struct CmdTemplateAlign : public ccCommandLineInterface::Command {
     CmdTemplateAlign()
         : Command("PCL Template Alignment", CMD_PCL_TEMPLATE_ALIGN) {}
+    //! Executes the PCL_TEMPLATE_ALIGNMENT command.
+    /** Parses command-line arguments, selects the reference/target clouds,
+        and runs SAC-IA template alignment using FPFH features. The last
+        loaded cloud (or the one specified by -REF_INDEX) is used as target. */
     bool process(ccCommandLineInterface& cmd) override {
+        // At least two clouds are required: one or more templates and one target.
         if (cmd.clouds().size() < 2) {
             return cmd.error(QObject::tr(
                     "PCL_TEMPLATE_ALIGNMENT needs >=2 clouds (templates + "
                     "target). Last cloud = target."));
         }
+        // Default parameters for normal estimation, feature computation and SAC-IA.
         float normalR = 0.02f, featureR = 0.02f;
         int maxIter = 500;
         float minSampleDist = 0.05f, maxCorrDist = 0.01f;
         float voxelLeaf = -1.f;
         int refIdx = -1;
+        // Parse optional command-line arguments overriding the default parameters.
         while (!cmd.arguments().empty()) {
             QString a = cmd.arguments().front().toUpper();
             if (a == "-NORMAL_RADIUS") {
@@ -1479,6 +1486,7 @@ struct CmdTemplateAlign : public ccCommandLineInterface::Command {
             } else
                 break;
         }
+        // If no explicit reference index is provided, use the last cloud as target.
         size_t targetIdx = (refIdx >= 0) ? static_cast<size_t>(refIdx)
                                          : cmd.clouds().size() - 1;
         if (targetIdx >= cmd.clouds().size()) {
