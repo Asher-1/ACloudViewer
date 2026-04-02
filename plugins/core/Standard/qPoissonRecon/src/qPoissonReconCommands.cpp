@@ -177,15 +177,35 @@ protected:
 CommandPoissonRecon::CommandPoissonRecon()
     : ccCommandLineInterface::Command("Poisson Recon", COMMAND_POISSON_RECON) {}
 
+/**
+ * @brief Processes the Poisson surface reconstruction command.
+ *
+ * This method reads the currently loaded point clouds from the command-line
+ * interface, parses optional parameters (e.g., octree depth, samples per node,
+ * point weight, boundary conditions, linear fit, color interpolation, and
+ * density output), and then invokes the Poisson reconstruction library to
+ * generate an output mesh (and optionally a density scalar field).
+ *
+ * The function reports any parsing or processing errors through @p cmd and
+ * returns @c true on success and @c false if an error occurred.
+ *
+ * @param cmd Command-line interface providing input clouds, arguments and
+ *            helper routines for reporting messages and errors.
+ */
 bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
+    // Print command header in the console to delimit this operation.
     cmd.print("[POISSON_RECON]");
 
+    // Ensure that at least one point cloud is available before running
+    // the reconstruction.
     if (cmd.clouds().empty()) {
         return cmd.error(QObject::tr("No point cloud loaded (use \"-O "
                                      "[filename]\" before \"-%1\")")
                                  .arg(COMMAND_POISSON_RECON));
     }
 
+    // Default Poisson reconstruction parameters (can be overridden by
+    // command-line options parsed below).
     int depth = 8;
     float samplesPerNode = 1.5f;
     float pointWeight = 2.0f;
@@ -195,6 +215,8 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
     bool withColors = false;
     bool useDensity = false;
 
+    // Parse remaining command-line arguments and update reconstruction
+    // parameters accordingly (e.g., -DEPTH, -SAMPLES_PER_NODE, ...).
     while (!cmd.arguments().empty()) {
         const QString& arg = cmd.arguments().front();
         if (ccCommandLineInterface::IsCommand(arg, COMMAND_PR_DEPTH)) {
