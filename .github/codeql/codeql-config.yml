@@ -5,8 +5,10 @@
 paths-ignore:
   - '3rdparty'
   - '3rdparty_downloads'
+  - 'libs/Reconstruction/lib'
   - '**/extern'
   - '**/external'
   - '**/3rdparty'
+  - '**/3rdparty_downloads'
   - '**/third_party'
   - '**/thirdparty'

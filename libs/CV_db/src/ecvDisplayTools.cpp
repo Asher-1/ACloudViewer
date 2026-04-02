@@ -1998,11 +1998,13 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
 }
 
 void ecvDisplayTools::SetRedrawRecursive(bool redraw /* = false*/) {
+    if (!HasInstance()) return;
     GetSceneDB()->setRedrawFlagRecursive(redraw);
     GetOwnDB()->setRedrawFlagRecursive(redraw);
 }
 
 void ecvDisplayTools::UpdateNamePoseRecursive() {
+    if (!HasInstance()) return;
     GetSceneDB()->updateNameIn3DRecursive();
     GetOwnDB()->updateNameIn3DRecursive();
 }
@@ -2016,7 +2018,7 @@ void ecvDisplayTools::SetRedrawRecursive(ccHObject* obj,
 void ecvDisplayTools::RedrawObject(ccHObject* obj,
                                    bool only2D /* = false*/,
                                    bool forceRedraw /* = true*/) {
-    if (!obj) return;
+    if (!obj || !HasInstance()) return;
     SetRedrawRecursive(false);
     obj->setRedrawFlagRecursive(true);
     RedrawDisplay(only2D, forceRedraw);
@@ -2025,6 +2027,7 @@ void ecvDisplayTools::RedrawObject(ccHObject* obj,
 void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
                                     bool only2D /* = false*/,
                                     bool forceRedraw /* = true*/) {
+    if (!HasInstance()) return;
     SetRedrawRecursive(false);
     for (auto* obj : objects) {
         if (obj) obj->setRedrawFlagRecursive(true);
@@ -2910,6 +2913,8 @@ void ecvDisplayTools::RefreshDisplay(bool only2D /*=false*/,
 
 void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
                                     bool forceRedraw /* = true*/) {
+    if (!HasInstance()) return;
+
     // visual traces
     if (s_tools.instance->m_showDebugTraces) {
         // clear history

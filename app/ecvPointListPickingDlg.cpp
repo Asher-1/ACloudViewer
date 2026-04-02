@@ -536,9 +536,19 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     } else if (picked.entity->isKindOf(CV_TYPES::MESH)) {
         ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(picked.entity);
         if (mesh && picked.itemIndex < mesh->size()) {
-            CCVector2d uv(picked.uvw.x, picked.uvw.y);
-            addOk = newLabel->addPickedPoint(mesh, picked.itemIndex, uv,
-                                             picked.entityCenter);
+            CCVector3 A, B, C;
+            mesh->getTriangleVertices(picked.itemIndex, A, B, C);
+            CCVector3 v0 = A - C, v1 = B - C, v2 = picked.P3D - C;
+            double d00 = v0.dot(v0), d01 = v0.dot(v1), d11 = v1.dot(v1);
+            double d20 = v2.dot(v0), d21 = v2.dot(v1);
+            double denom = d00 * d11 - d01 * d01;
+            CCVector2d uv(0, 0);
+            if (std::abs(denom) > 1.0e-12) {
+                uv.x = (d11 * d20 - d01 * d21) / denom;
+                uv.y = (d00 * d21 - d01 * d20) / denom;
+            }
+            addOk = newLabel->addPickedPoint(mesh, picked.itemIndex,
+                                             uv, picked.entityCenter);
         }
     }
     if (!addOk) {

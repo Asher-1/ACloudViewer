@@ -348,6 +348,106 @@ public:  // GLU equivalent methods
         return matrix;
     }
 
+    //! Thread-safe projection using pure matrix math (no VTK calls).
+    //! Safe to call from any thread including OpenMP parallel regions.
+    template <typename iType, typename oType>
+    static bool ProjectMatrix(const Vector3Tpl<iType>& input3D,
+                              const oType* modelview,
+                              const oType* projection,
+                              const int* viewport,
+                              Vector3Tpl<oType>& output2D,
+                              bool* inFrustum = nullptr) {
+        // Modelview transform
+        Tuple4Tpl<oType> Pm;
+        {
+            Pm.x = static_cast<oType>(modelview[0] * input3D.x +
+                                      modelview[4] * input3D.y +
+                                      modelview[8] * input3D.z + modelview[12]);
+            Pm.y = static_cast<oType>(modelview[1] * input3D.x +
+                                      modelview[5] * input3D.y +
+                                      modelview[9] * input3D.z + modelview[13]);
+            Pm.z = static_cast<oType>(
+                    modelview[2] * input3D.x + modelview[6] * input3D.y +
+                    modelview[10] * input3D.z + modelview[14]);
+            Pm.w = static_cast<oType>(
+                    modelview[3] * input3D.x + modelview[7] * input3D.y +
+                    modelview[11] * input3D.z + modelview[15]);
+        };
+
+        // Projection transform
+        Tuple4Tpl<oType> Pp;
+        {
+            Pp.x = static_cast<oType>(
+                    projection[0] * Pm.x + projection[4] * Pm.y +
+                    projection[8] * Pm.z + projection[12] * Pm.w);
+            Pp.y = static_cast<oType>(
+                    projection[1] * Pm.x + projection[5] * Pm.y +
+                    projection[9] * Pm.z + projection[13] * Pm.w);
+            Pp.z = static_cast<oType>(
+                    projection[2] * Pm.x + projection[6] * Pm.y +
+                    projection[10] * Pm.z + projection[14] * Pm.w);
+            Pp.w = static_cast<oType>(
+                    projection[3] * Pm.x + projection[7] * Pm.y +
+                    projection[11] * Pm.z + projection[15] * Pm.w);
+        };
+
+        if (Pp.w == 0.0) {
+            return false;
+        }
+
+        if (inFrustum) {
+            *inFrustum = (std::abs(Pp.x) <= Pp.w && std::abs(Pp.y) <= Pp.w &&
+                          std::abs(Pp.z) <= Pp.w);
+        }
+
+        Pp.x /= Pp.w;
+        Pp.y /= Pp.w;
+        Pp.z /= Pp.w;
+
+        output2D.x = (1.0 + Pp.x) / 2 * viewport[2] + viewport[0];
+        output2D.y = (1.0 + Pp.y) / 2 * viewport[3] + viewport[1];
+        output2D.z = (1.0 + Pp.z) / 2;
+
+        return true;
+    }
+
+    //! Thread-safe unprojection using pure matrix math (no VTK calls).
+    template <typename iType, typename oType>
+    static bool UnprojectMatrix(const Vector3Tpl<iType>& input2D,
+                                const oType* modelview,
+                                const oType* projection,
+                                const int* viewport,
+                                Vector3Tpl<oType>& output3D) {
+        ccGLMatrixTpl<oType> A = ccGLMatrixTpl<oType>(projection) *
+                                 ccGLMatrixTpl<oType>(modelview);
+        ccGLMatrixTpl<oType> m;
+
+        if (!InvertMatrix(A.data(), m.data())) {
+            return false;
+        }
+
+        Tuple4Tpl<oType> in;
+        in.x = static_cast<oType>(
+                (input2D.x - static_cast<iType>(viewport[0])) / viewport[2] *
+                        2 -
+                1);
+        in.y = static_cast<oType>(
+                (input2D.y - static_cast<iType>(viewport[1])) / viewport[3] *
+                        2 -
+                1);
+        in.z = static_cast<oType>(2 * input2D.z - 1);
+        in.w = 1;
+
+        Tuple4Tpl<oType> out = m * in;
+        if (out.w == 0) {
+            return false;
+        }
+
+        output3D = Vector3Tpl<oType>(out.u) / out.w;
+
+        return true;
+    }
+
     template <typename iType, typename oType>
     static bool Project(const Vector3Tpl<iType>& input3D,
                         const oType* modelview,
@@ -692,6 +792,32 @@ struct CV_DB_LIB_API ccGLCameraParameters {
     inline bool unproject(const CCVector3& input2D,
                           CCVector3d& output3D) const {
         return ecvGenericDisplayTools::Unproject<PointCoordinateType, double>(
+                input2D, modelViewMat.data(), projectionMat.data(), viewport,
+                output3D);
+    }
+
+    //! Thread-safe projection using pure matrix math (no VTK calls).
+    //! Use this in OpenMP parallel regions or any multi-threaded context.
+    inline bool projectSafe(const CCVector3d& input3D,
+                            CCVector3d& output2D,
+                            bool* inFrustum = nullptr) const {
+        return ecvGenericDisplayTools::ProjectMatrix<double, double>(
+                input3D, modelViewMat.data(), projectionMat.data(), viewport,
+                output2D, inFrustum);
+    }
+    inline bool projectSafe(const CCVector3& input3D,
+                            CCVector3d& output2D,
+                            bool* inFrustum = nullptr) const {
+        return ecvGenericDisplayTools::ProjectMatrix<PointCoordinateType,
+                                                     double>(
+                input3D, modelViewMat.data(), projectionMat.data(), viewport,
+                output2D, inFrustum);
+    }
+
+    //! Thread-safe unprojection using pure matrix math (no VTK calls).
+    inline bool unprojectSafe(const CCVector3d& input2D,
+                              CCVector3d& output3D) const {
+        return ecvGenericDisplayTools::UnprojectMatrix<double, double>(
                 input2D, modelViewMat.data(), projectionMat.data(), viewport,
                 output3D);
     }
