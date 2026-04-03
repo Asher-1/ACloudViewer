@@ -909,6 +909,9 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
     ccGenericPointCloud* vertices = _obj->getAssociatedCloud();
     if (vertices && (!vertices->isLocked() || _obj->isAncestorOf(vertices)))
         fillSFWithPointCloud(vertices);
+
+    // global shift & scale
+    fillWithShifted(_obj);
 }
 
 void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
