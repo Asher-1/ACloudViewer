@@ -2849,11 +2849,10 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
     // work here.
     unsigned cloudSize = cloud->size();
     if (static_cast<vtkIdType>(cloudSize) != numPoints) {
-        CVLog::PrintDebug(
-                QString("[VtkVis::addScalarFieldToVTK] Skipping: "
-                        "ccCloud=%1 vs VTK=%2 (SF hiding active)")
-                        .arg(cloudSize)
-                        .arg(numPoints));
+        CVLog::PrintDebug(QString("[VtkVis::addScalarFieldToVTK] Skipping: "
+                                  "ccCloud=%1 vs VTK=%2 (SF hiding active)")
+                                  .arg(cloudSize)
+                                  .arg(numPoints));
         return;
     }
 

@@ -28,6 +28,7 @@
 // VTK
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
+#include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkMatrix4x4.h>
@@ -76,16 +77,14 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
     // Uses displayRange.isInRange() directly so that hiding is independent
     // of the "NaN in grey" checkbox — matches CloudCompare visual behavior.
     const ccScalarField* active_cc_sf =
-            use_sf_colors
-                    ? static_cast<const ccScalarField*>(active_sf)
-                    : nullptr;
+            use_sf_colors ? static_cast<const ccScalarField*>(active_sf)
+                          : nullptr;
     const ccScalarField::Range* sf_disp_range = nullptr;
     bool sf_hides_points = false;
     if (active_cc_sf) {
         sf_disp_range = &active_cc_sf->displayRange();
-        sf_hides_points =
-                (sf_disp_range->start() > sf_disp_range->min() ||
-                 sf_disp_range->stop() < sf_disp_range->max());
+        sf_hides_points = (sf_disp_range->start() > sf_disp_range->min() ||
+                           sf_disp_range->stop() < sf_disp_range->max());
     }
 
     unsigned visible_count = point_count;
@@ -156,8 +155,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         const ecvColor::Rgb* sf_rgb = nullptr;
         if (use_sf_colors) {
             ScalarType val = active_sf->getValue(i);
-            if (sf_hides_points && !sf_disp_range->isInRange(val))
-                continue;
+            if (sf_hides_points && !sf_disp_range->isInRange(val)) continue;
             sf_rgb = cloud->getScalarValueColor(val);
         }
 
@@ -219,6 +217,18 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         polydata->GetFieldData()->AddArray(flag);
     }
 
+    // Cache the SF display range used to build this polydata.
+    // The trigger check in VtkDisplayTools::drawPointCloud uses this for O(1)
+    // change detection instead of an O(n) visible-point counting loop.
+    if (sf_hides_points && sf_disp_range) {
+        auto rc = vtkSmartPointer<vtkDoubleArray>::New();
+        rc->SetName("_SFDispRange");
+        rc->SetNumberOfTuples(2);
+        rc->SetValue(0, sf_disp_range->start());
+        rc->SetValue(1, sf_disp_range->stop());
+        polydata->GetFieldData()->AddArray(rc);
+    }
+
     // Skip tooltip/selection-only arrays in lightweight mode (slider drag).
     // They are rebuilt on the next full draw cycle after the drag ends.
     if (!lightweight) {
@@ -272,8 +282,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
                 vtk_sf->SetNumberOfTuples(nr);
                 vtkIdType sf_idx = 0;
                 for (unsigned j = 0; j < point_count; ++j) {
-                    if (partial_visibility &&
-                        visibility.at(j) != POINT_VISIBLE)
+                    if (partial_visibility && visibility.at(j) != POINT_VISIBLE)
                         continue;
                     if (sf_hides_points &&
                         !sf_disp_range->isInRange(active_sf->getValue(j)))
@@ -472,9 +481,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             if (colors) {
                 const ecvColor::Rgb* rgb = nullptr;
                 if (show_sf) {
-                    rgb = displayed_sf
-                                  ? displayed_sf->getValueColor(vert_idx)
-                                  : nullptr;
+                    rgb = displayed_sf ? displayed_sf->getValueColor(vert_idx)
+                                       : nullptr;
                 } else {
                     rgb = &vertex_cloud->rgbColors()->at(vert_idx);
                 }
@@ -566,8 +574,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             for (unsigned n = 0; n < tri_count; ++n) {
                 const cloudViewer::VerticesIndexes* tsi =
                         mesh->getTriangleVertIndexes(n);
-                auto base = static_cast<vtkIdType>(n) *
-                            static_cast<vtkIdType>(dim);
+                auto base =
+                        static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
                 for (std::size_t vi = 0; vi < dim; ++vi) {
                     vtk_sf->SetValue(
                             base + static_cast<vtkIdType>(vi),
@@ -591,8 +599,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             TexCoords2D* tx2 = nullptr;
             TexCoords2D* tx3 = nullptr;
             mesh->getTriangleTexCoordinates(n, tx1, tx2, tx3);
-            auto base = static_cast<vtkIdType>(n) *
-                        static_cast<vtkIdType>(dim);
+            auto base = static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
             TexCoords2D* txs[] = {tx1, tx2, tx3};
             for (std::size_t vi = 0; vi < dim; ++vi) {
                 if (txs[vi]) {

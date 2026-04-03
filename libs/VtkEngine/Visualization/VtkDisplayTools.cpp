@@ -41,6 +41,7 @@
 #include <VtkRendering/Core/ActorMap.h>
 
 // VTK
+#include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkPolyData.h>
@@ -127,44 +128,36 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                 firstShow || checkEntityNeedUpdate(viewID, ecvCloud);
         bool sfTriggered = false;
 
-        // SF hiding: compare VTK point count with SF-visible count.
-        // checkEntityNeedUpdate uses cloud->size() which ignores SF hiding,
-        // so we must detect SF range changes separately.
+        // SF hiding: O(1) check using the cached display range stored in the
+        // polydata's field data ("_SFDispRange"). Avoids an O(n) visible-point
+        // counting loop on every draw call.
         if (!needFullRebuild && localContext.drawParam.showSF) {
-            ccScalarField* sf =
-                    ecvCloud->getCurrentDisplayedScalarField();
+            ccScalarField* sf = ecvCloud->getCurrentDisplayedScalarField();
             if (sf) {
                 const auto& disp = sf->displayRange();
-                bool narrowed = (disp.start() > disp.min() ||
-                                 disp.stop() < disp.max());
+                bool narrowed =
+                        (disp.start() > disp.min() || disp.stop() < disp.max());
                 vtkActor* actor = m_visualizer3D->getActorById(viewID);
-                // CreateActorFromVTKDataSet uses vtkDataSetMapper, not
-                // vtkPolyDataMapper; get input via vtkAlgorithm API.
                 vtkPolyData* pd = nullptr;
                 if (actor && actor->GetMapper()) {
                     pd = vtkPolyData::SafeDownCast(
                             actor->GetMapper()->GetInputDataObject(0, 0));
                 }
                 if (pd) {
-                    unsigned vtkPts = static_cast<unsigned>(
-                            pd->GetNumberOfPoints());
+                    auto* cached = vtkDoubleArray::SafeDownCast(
+                            pd->GetFieldData()->GetAbstractArray(
+                                    "_SFDispRange"));
                     if (narrowed) {
-                        unsigned sfVisible = 0;
-                        const bool useVis =
-                                ecvCloud->isVisibilityTableInstantiated();
-                        for (unsigned i = 0; i < ecvCloud->size(); ++i) {
-                            if (useVis &&
-                                ecvCloud->getTheVisibilityArray().at(i) !=
-                                        POINT_VISIBLE)
-                                continue;
-                            if (disp.isInRange(sf->getValue(i)))
-                                ++sfVisible;
-                        }
-                        if (vtkPts != sfVisible) {
+                        // Range is narrowed; rebuild if the range changed
+                        // since the last build (or no cache exists).
+                        if (!cached || cached->GetValue(0) != disp.start() ||
+                            cached->GetValue(1) != disp.stop()) {
                             needFullRebuild = true;
                             sfTriggered = true;
                         }
-                    } else if (vtkPts != ecvCloud->size()) {
+                    } else if (cached) {
+                        // Range restored to full but polydata was built with a
+                        // narrowed range — need to rebuild with all points.
                         needFullRebuild = true;
                         sfTriggered = true;
                     }
@@ -173,8 +166,7 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
         }
 
         if (needFullRebuild) {
-            m_visualizer3D->drawPointCloud(localContext, ecvCloud,
-                                           sfTriggered);
+            m_visualizer3D->drawPointCloud(localContext, ecvCloud, sfTriggered);
             m_visualizer3D->updateNormals(localContext, ecvCloud);
             hasRedrawn = true;
         } else {
@@ -188,8 +180,7 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                     m_visualizer3D->updateNormals(localContext, ecvCloud);
                 } else {
                     m_visualizer3D->updateNormals(
-                            localContext,
-                            static_cast<ccPointCloud*>(nullptr));
+                            localContext, static_cast<ccPointCloud*>(nullptr));
                 }
             }
         }
@@ -590,8 +581,8 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
         ccScalarField* sf = cloud->getCurrentDisplayedScalarField();
         if (sf) {
             const auto& disp = sf->displayRange();
-            bool narrowed = (disp.start() > disp.min() ||
-                             disp.stop() < disp.max());
+            bool narrowed =
+                    (disp.start() > disp.min() || disp.stop() < disp.max());
             if (narrowed) {
                 unsigned sf_visible = 0;
                 const bool use_vis = cloud->isVisibilityTableInstantiated();
