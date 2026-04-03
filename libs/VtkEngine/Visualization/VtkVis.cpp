@@ -1390,10 +1390,11 @@ static bool UpdatePointCloudPolyData(vtkSmartPointer<vtkPolyData> polydata,
                                      VtkRendering::CloudActorMapPtr cloud_map) {
     auto it = cloud_map->find(id);
     if (it == cloud_map->end()) return false;
-    auto* mapper =
-            vtkPolyDataMapper::SafeDownCast(it->second.actor->GetMapper());
+    // CreateActorFromVTKDataSet uses vtkDataSetMapper, not vtkPolyDataMapper.
+    // Use the vtkAlgorithm API (SetInputDataObject) which works for both.
+    vtkMapper* mapper = it->second.actor->GetMapper();
     if (!mapper) return false;
-    mapper->SetInputData(polydata);
+    mapper->SetInputDataObject(polydata);
     if (polydata->GetPointData()->GetScalars()) {
         double minmax[2];
         polydata->GetPointData()->GetScalars()->GetRange(minmax);
@@ -1422,7 +1423,8 @@ static bool AddPolygonMeshPolyData(vtkSmartPointer<vtkPolyData> polydata,
 
 /********************************Draw Entities*********************************/
 void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
-                            ccPointCloud* cloud) {
+                            ccPointCloud* cloud,
+                            bool lightweight) {
     if (!cloud || cloud->size() == 0) return;
 
     const std::string viewID = CVTools::FromQString(context.viewID);
@@ -1434,20 +1436,20 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
 
     CVLog::PrintDebug(
             "[VtkVis::drawPointCloud] id=%s showSF=%d showColors=%d "
-            "sfShown=%d hasDisplayedSF=%d sfIdx=%d hasColors=%d",
+            "sfShown=%d hasDisplayedSF=%d sfIdx=%d hasColors=%d lw=%d",
             viewID.c_str(), context.drawParam.showSF,
             context.drawParam.showColors, cloud->sfShown() ? 1 : 0,
             cloud->hasDisplayedScalarField() ? 1 : 0,
             cloud->getCurrentDisplayedScalarFieldIndex(),
-            cloud->hasColors() ? 1 : 0);
+            cloud->hasColors() ? 1 : 0, lightweight ? 1 : 0);
 
     vtkSmartPointer<vtkPolyData> polydata;
     if (show_colors) {
         polydata = Converters::Cc2Vtk::PointCloudToPolyData(
-                cloud, true, cloud->hasNormals(), show_sf, true);
+                cloud, true, cloud->hasNormals(), show_sf, true, lightweight);
     } else {
         polydata = Converters::Cc2Vtk::PointCloudToPolyData(
-                cloud, false, cloud->hasNormals(), false, true);
+                cloud, false, cloud->hasNormals(), false, true, lightweight);
         if (polydata) {
             // Apply default color as scalars
             auto nc = polydata->GetNumberOfPoints();
@@ -2841,13 +2843,17 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
     scalarArray->SetNumberOfComponents(1);
     scalarArray->SetNumberOfTuples(numPoints);
 
-    // Copy scalar values from ccPointCloud
+    // When SF hiding is active, VTK polydata has fewer points than the cloud.
+    // Cc2Vtk::PointCloudToPolyData already built SF arrays with correct
+    // indexing for the visible subset — skip redundant (and index-mismatched)
+    // work here.
     unsigned cloudSize = cloud->size();
     if (static_cast<vtkIdType>(cloudSize) != numPoints) {
-        CVLog::Warning(QString("[VtkVis::addScalarFieldToVTK] Size mismatch: "
-                               "ccCloud=%1, VTK=%2")
-                               .arg(cloudSize)
-                               .arg(numPoints));
+        CVLog::PrintDebug(
+                QString("[VtkVis::addScalarFieldToVTK] Skipping: "
+                        "ccCloud=%1 vs VTK=%2 (SF hiding active)")
+                        .arg(cloudSize)
+                        .arg(numPoints));
         return;
     }
 
