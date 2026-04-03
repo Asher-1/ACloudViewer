@@ -50,7 +50,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         bool include_colors,
         bool include_normals,
         bool include_sf,
-        bool show_mode) {
+        bool show_mode,
+        bool lightweight) {
     if (!cloud || cloud->size() == 0) {
         return nullptr;
     }
@@ -78,12 +79,14 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
             use_sf_colors
                     ? static_cast<const ccScalarField*>(active_sf)
                     : nullptr;
-    const bool sf_hides_points =
-            active_cc_sf != nullptr &&
-            (active_cc_sf->displayRange().start() >
-                     active_cc_sf->displayRange().min() ||
-             active_cc_sf->displayRange().stop() <
-                     active_cc_sf->displayRange().max());
+    const ccScalarField::Range* sf_disp_range = nullptr;
+    bool sf_hides_points = false;
+    if (active_cc_sf) {
+        sf_disp_range = &active_cc_sf->displayRange();
+        sf_hides_points =
+                (sf_disp_range->start() > sf_disp_range->min() ||
+                 sf_disp_range->stop() < sf_disp_range->max());
+    }
 
     unsigned visible_count = point_count;
     if (partial_visibility || sf_hides_points) {
@@ -92,14 +95,17 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
             if (partial_visibility && visibility.at(i) != POINT_VISIBLE)
                 continue;
             if (sf_hides_points &&
-                !active_cc_sf->displayRange().isInRange(
-                        active_sf->getValue(i)))
+                !sf_disp_range->isInRange(active_sf->getValue(i)))
                 continue;
             ++visible_count;
         }
     }
 
-    if (visible_count == 0) return nullptr;
+    if (visible_count == 0) {
+        // Return an empty (but valid) polydata so the caller can update the
+        // actor — returning nullptr would leave the old actor's data intact.
+        return vtkSmartPointer<vtkPolyData>::New();
+    }
 
     auto nr = static_cast<vtkIdType>(visible_count);
 
@@ -150,7 +156,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         const ecvColor::Rgb* sf_rgb = nullptr;
         if (use_sf_colors) {
             ScalarType val = active_sf->getValue(i);
-            if (sf_hides_points && !active_cc_sf->displayRange().isInRange(val))
+            if (sf_hides_points && !sf_disp_range->isInRange(val))
                 continue;
             sf_rgb = cloud->getScalarValueColor(val);
         }
@@ -213,67 +219,71 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         polydata->GetFieldData()->AddArray(flag);
     }
 
-    // DatasetName for ParaView-style tooltip
-    QString name = cloud->getName();
-    if (!name.isEmpty()) {
-        auto ds = vtkSmartPointer<vtkStringArray>::New();
-        ds->SetName("DatasetName");
-        ds->SetNumberOfTuples(1);
-        ds->SetValue(0, name.toStdString());
-        polydata->GetFieldData()->AddArray(ds);
-    }
-
-    // SourceRGB: original per-point colors when SF rendering is active,
-    // so the tooltip shows real RGB instead of SF-mapped colors.
-    if (use_sf_colors && cloud->hasColors()) {
-        auto source_rgb = vtkSmartPointer<vtkUnsignedCharArray>::New();
-        source_rgb->SetName("SourceRGB");
-        source_rgb->SetNumberOfComponents(3);
-        source_rgb->SetNumberOfTuples(nr);
-        vtkIdType src_idx = 0;
-        for (unsigned i = 0; i < point_count; ++i) {
-            if (partial_visibility && visibility.at(i) != POINT_VISIBLE)
-                continue;
-            if (sf_hides_points &&
-                !active_cc_sf->displayRange().isInRange(
-                        active_sf->getValue(i)))
-                continue;
-            const ecvColor::Rgb& rgb = cloud->getPointColor(i);
-            unsigned char* c = source_rgb->GetPointer(src_idx * 3);
-            c[0] = rgb.r;
-            c[1] = rgb.g;
-            c[2] = rgb.b;
-            ++src_idx;
+    // Skip tooltip/selection-only arrays in lightweight mode (slider drag).
+    // They are rebuilt on the next full draw cycle after the drag ends.
+    if (!lightweight) {
+        // DatasetName for ParaView-style tooltip
+        QString name = cloud->getName();
+        if (!name.isEmpty()) {
+            auto ds = vtkSmartPointer<vtkStringArray>::New();
+            ds->SetName("DatasetName");
+            ds->SetNumberOfTuples(1);
+            ds->SetValue(0, name.toStdString());
+            polydata->GetFieldData()->AddArray(ds);
         }
-        polydata->GetPointData()->AddArray(source_rgb);
-    }
 
-    // All scalar fields as separate arrays for tooltip/selection.
-    // Uses AddArray (not SetScalars) so the active scalar is untouched.
-    {
-        unsigned sf_count = cloud->getNumberOfScalarFields();
-        for (unsigned sf_i = 0; sf_i < sf_count; ++sf_i) {
-            const auto* sf = cloud->getScalarField(sf_i);
-            if (!sf) continue;
-            std::string sf_name = GetSimplifiedSFName(sf->getName());
-            if (polydata->GetPointData()->GetArray(sf_name.c_str())) continue;
-            auto vtk_sf = vtkSmartPointer<vtkFloatArray>::New();
-            vtk_sf->SetName(sf_name.c_str());
-            vtk_sf->SetNumberOfComponents(1);
-            vtk_sf->SetNumberOfTuples(nr);
-            vtkIdType sf_idx = 0;
-            for (unsigned j = 0; j < point_count; ++j) {
-                if (partial_visibility && visibility.at(j) != POINT_VISIBLE)
+        // SourceRGB: original per-point colors when SF rendering is active,
+        // so the tooltip shows real RGB instead of SF-mapped colors.
+        if (use_sf_colors && cloud->hasColors()) {
+            auto source_rgb = vtkSmartPointer<vtkUnsignedCharArray>::New();
+            source_rgb->SetName("SourceRGB");
+            source_rgb->SetNumberOfComponents(3);
+            source_rgb->SetNumberOfTuples(nr);
+            vtkIdType src_idx = 0;
+            for (unsigned i = 0; i < point_count; ++i) {
+                if (partial_visibility && visibility.at(i) != POINT_VISIBLE)
                     continue;
                 if (sf_hides_points &&
-                    !active_cc_sf->displayRange().isInRange(
-                            active_sf->getValue(j)))
+                    !sf_disp_range->isInRange(active_sf->getValue(i)))
                     continue;
-                vtk_sf->SetValue(sf_idx,
-                                 static_cast<float>(sf->getValue(j)));
-                ++sf_idx;
+                const ecvColor::Rgb& rgb = cloud->getPointColor(i);
+                unsigned char* c = source_rgb->GetPointer(src_idx * 3);
+                c[0] = rgb.r;
+                c[1] = rgb.g;
+                c[2] = rgb.b;
+                ++src_idx;
             }
-            polydata->GetPointData()->AddArray(vtk_sf);
+            polydata->GetPointData()->AddArray(source_rgb);
+        }
+
+        // All scalar fields as separate arrays for tooltip/selection.
+        // Uses AddArray (not SetScalars) so the active scalar is untouched.
+        {
+            unsigned sf_count = cloud->getNumberOfScalarFields();
+            for (unsigned sf_i = 0; sf_i < sf_count; ++sf_i) {
+                const auto* sf = cloud->getScalarField(sf_i);
+                if (!sf) continue;
+                std::string sf_name = GetSimplifiedSFName(sf->getName());
+                if (polydata->GetPointData()->GetArray(sf_name.c_str()))
+                    continue;
+                auto vtk_sf = vtkSmartPointer<vtkFloatArray>::New();
+                vtk_sf->SetName(sf_name.c_str());
+                vtk_sf->SetNumberOfComponents(1);
+                vtk_sf->SetNumberOfTuples(nr);
+                vtkIdType sf_idx = 0;
+                for (unsigned j = 0; j < point_count; ++j) {
+                    if (partial_visibility &&
+                        visibility.at(j) != POINT_VISIBLE)
+                        continue;
+                    if (sf_hides_points &&
+                        !sf_disp_range->isInRange(active_sf->getValue(j)))
+                        continue;
+                    vtk_sf->SetValue(sf_idx,
+                                     static_cast<float>(sf->getValue(j)));
+                    ++sf_idx;
+                }
+                polydata->GetPointData()->AddArray(vtk_sf);
+            }
         }
     }
 
@@ -362,12 +372,13 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
     // works regardless of the "NaN in grey" checkbox.
     const ccScalarField* displayed_sf =
             show_sf ? vertex_cloud->getCurrentDisplayedScalarField() : nullptr;
-    const bool sf_hides_faces =
-            displayed_sf != nullptr &&
-            (displayed_sf->displayRange().start() >
-                     displayed_sf->displayRange().min() ||
-             displayed_sf->displayRange().stop() <
-                     displayed_sf->displayRange().max());
+    const ccScalarField::Range* mesh_sf_disp = nullptr;
+    bool sf_hides_faces = false;
+    if (displayed_sf) {
+        mesh_sf_disp = &displayed_sf->displayRange();
+        sf_hides_faces = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
+                          mesh_sf_disp->stop() < mesh_sf_disp->max());
+    }
 
     const std::size_t total_pts = static_cast<std::size_t>(tri_count) * dim;
     const auto total_vtk = static_cast<vtkIdType>(total_pts);
@@ -412,10 +423,10 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         }
 
         if (sf_hides_faces) {
-            const auto& disp = displayed_sf->displayRange();
             bool hidden = false;
             for (std::size_t vi = 0; vi < dim; ++vi) {
-                if (!disp.isInRange(displayed_sf->getValue(tsi->i[vi]))) {
+                if (!mesh_sf_disp->isInRange(
+                            displayed_sf->getValue(tsi->i[vi]))) {
                     hidden = true;
                     break;
                 }

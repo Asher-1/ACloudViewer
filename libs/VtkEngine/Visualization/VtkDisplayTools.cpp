@@ -123,8 +123,58 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     }
 
     if (ecvCloud->isRedraw() || firstShow) {
-        if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
-            m_visualizer3D->drawPointCloud(localContext, ecvCloud);
+        bool needFullRebuild =
+                firstShow || checkEntityNeedUpdate(viewID, ecvCloud);
+        bool sfTriggered = false;
+
+        // SF hiding: compare VTK point count with SF-visible count.
+        // checkEntityNeedUpdate uses cloud->size() which ignores SF hiding,
+        // so we must detect SF range changes separately.
+        if (!needFullRebuild && localContext.drawParam.showSF) {
+            ccScalarField* sf =
+                    ecvCloud->getCurrentDisplayedScalarField();
+            if (sf) {
+                const auto& disp = sf->displayRange();
+                bool narrowed = (disp.start() > disp.min() ||
+                                 disp.stop() < disp.max());
+                vtkActor* actor = m_visualizer3D->getActorById(viewID);
+                // CreateActorFromVTKDataSet uses vtkDataSetMapper, not
+                // vtkPolyDataMapper; get input via vtkAlgorithm API.
+                vtkPolyData* pd = nullptr;
+                if (actor && actor->GetMapper()) {
+                    pd = vtkPolyData::SafeDownCast(
+                            actor->GetMapper()->GetInputDataObject(0, 0));
+                }
+                if (pd) {
+                    unsigned vtkPts = static_cast<unsigned>(
+                            pd->GetNumberOfPoints());
+                    if (narrowed) {
+                        unsigned sfVisible = 0;
+                        const bool useVis =
+                                ecvCloud->isVisibilityTableInstantiated();
+                        for (unsigned i = 0; i < ecvCloud->size(); ++i) {
+                            if (useVis &&
+                                ecvCloud->getTheVisibilityArray().at(i) !=
+                                        POINT_VISIBLE)
+                                continue;
+                            if (disp.isInRange(sf->getValue(i)))
+                                ++sfVisible;
+                        }
+                        if (vtkPts != sfVisible) {
+                            needFullRebuild = true;
+                            sfTriggered = true;
+                        }
+                    } else if (vtkPts != ecvCloud->size()) {
+                        needFullRebuild = true;
+                        sfTriggered = true;
+                    }
+                }
+            }
+        }
+
+        if (needFullRebuild) {
+            m_visualizer3D->drawPointCloud(localContext, ecvCloud,
+                                           sfTriggered);
             m_visualizer3D->updateNormals(localContext, ecvCloud);
             hasRedrawn = true;
         } else {
@@ -138,7 +188,8 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                     m_visualizer3D->updateNormals(localContext, ecvCloud);
                 } else {
                     m_visualizer3D->updateNormals(
-                            localContext, static_cast<ccPointCloud*>(nullptr));
+                            localContext,
+                            static_cast<ccPointCloud*>(nullptr));
                 }
             }
         }
@@ -513,11 +564,13 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
         return false;
     }
 
-    // Get the current poly data
+    // Get the current poly data (mapper may be vtkDataSetMapper or
+    // vtkPolyDataMapper; use vtkAlgorithm API for safety).
+    vtkMapper* mapper = modelActor->GetMapper();
+    if (!mapper) return false;
     vtkSmartPointer<vtkPolyData> polydata =
-            reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                    ->GetInput();
-    if (!polydata) return (false);
+            vtkPolyData::SafeDownCast(mapper->GetInputDataObject(0, 0));
+    if (!polydata) return false;
 
     unsigned old_points_num =
             static_cast<unsigned>(polydata->GetNumberOfPoints());
@@ -572,9 +625,8 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
     }
 
     if (has_colors) {
-        modelActor->GetMapper()->SetScalarRange(minmax);
-        reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                ->SetInputData(polydata);
+        mapper->SetScalarRange(minmax);
+        mapper->SetInputDataObject(polydata);
     }
 
     CVLog::PrintDebug(QString("updateEntityColor: finish cost %1 s")
@@ -652,10 +704,12 @@ bool VtkDisplayTools::checkEntityNeedUpdate(std::string& viewID,
         return true;
     }
 
-    // Get the current poly data
+    // Get the current poly data (mapper may be vtkDataSetMapper or
+    // vtkPolyDataMapper; use vtkAlgorithm API for safety).
+    vtkMapper* mapper = modelActor->GetMapper();
+    if (!mapper) return true;
     vtkSmartPointer<vtkPolyData> polydata =
-            reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                    ->GetInput();
+            vtkPolyData::SafeDownCast(mapper->GetInputDataObject(0, 0));
     if (!polydata) {
         return true;
     }
