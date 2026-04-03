@@ -154,6 +154,7 @@ namespace Visualization {
 static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     ren->SetBackground(0.0, 0.0, 0.0);
     ren->GetActiveCamera()->SetParallelProjection(0);
+    ren->SetTwoSidedLighting(true);
 }
 
 // ParaView BUG #13534: intercept ResetCameraClippingRangeEvent so we use
@@ -1726,66 +1727,75 @@ void VtkVis::updateShadingMode(const CC_DRAW_CONTEXT& context,
     auto actor = getActorById(viewID);
     if (!actor) return;
     auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
-    if (!polydata) return;
+    if (!polydata || !cloud) return;
+
+    const bool isMeshPolyData = static_cast<vtkIdType>(cloud->size()) !=
+                                polydata->GetNumberOfPoints();
 
     bool has_normal = false;
-    if (cloud && cloud->hasNormals()) {
+    if (cloud->hasNormals()) {
         has_normal = true;
-        vtkDataArray* existingNormals = polydata->GetPointData()->GetNormals();
-        bool needUpdate = context.forceRedraw || !existingNormals ||
-                          existingNormals->GetNumberOfTuples() !=
-                                  polydata->GetNumberOfPoints();
-        if (needUpdate) {
-            auto normals = vtkSmartPointer<vtkFloatArray>::New();
-            normals->SetNumberOfComponents(3);
-            normals->SetName("Normals");
-            normals->SetNumberOfTuples(polydata->GetNumberOfPoints());
-            for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
-                                  static_cast<unsigned>(i) < cloud->size();
-                 ++i) {
-                const CCVector3& n =
-                        cloud->getPointNormal(static_cast<unsigned>(i));
-                float nf[3] = {static_cast<float>(n.x), static_cast<float>(n.y),
-                               static_cast<float>(n.z)};
-                normals->SetTypedTuple(i, nf);
+        if (!isMeshPolyData) {
+            vtkDataArray* existingNormals =
+                    polydata->GetPointData()->GetNormals();
+            bool needUpdate = context.forceRedraw || !existingNormals ||
+                              existingNormals->GetNumberOfTuples() !=
+                                      polydata->GetNumberOfPoints();
+            if (needUpdate) {
+                auto normals = vtkSmartPointer<vtkFloatArray>::New();
+                normals->SetNumberOfComponents(3);
+                normals->SetName("Normals");
+                normals->SetNumberOfTuples(polydata->GetNumberOfPoints());
+                for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
+                                      static_cast<unsigned>(i) < cloud->size();
+                     ++i) {
+                    const CCVector3& n =
+                            cloud->getPointNormal(static_cast<unsigned>(i));
+                    float nf[3] = {static_cast<float>(n.x),
+                                   static_cast<float>(n.y),
+                                   static_cast<float>(n.z)};
+                    normals->SetTypedTuple(i, nf);
+                }
+                polydata->GetPointData()->SetNormals(normals);
             }
-            polydata->GetPointData()->SetNormals(normals);
         }
     }
 
     bool has_color = false;
-    if (cloud && cloud->hasColors()) {
+    if (cloud->hasColors()) {
         has_color = true;
-        vtkDataArray* existingSourceRGB =
-                polydata->GetPointData()->GetArray("SourceRGB");
-        bool needSync = context.forceRedraw || !existingSourceRGB ||
-                        existingSourceRGB->GetNumberOfTuples() !=
-                                polydata->GetNumberOfPoints();
-        if (needSync) {
-            auto colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-            colors->SetName("SourceRGB");
-            colors->SetNumberOfComponents(3);
-            colors->SetNumberOfTuples(polydata->GetNumberOfPoints());
-            for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
-                                  static_cast<unsigned>(i) < cloud->size();
-                 ++i) {
-                const ecvColor::Rgb& rgb =
-                        cloud->getPointColor(static_cast<unsigned>(i));
-                unsigned char c[3] = {rgb.r, rgb.g, rgb.b};
-                colors->SetTypedTuple(i, c);
-            }
-            polydata->GetPointData()->AddArray(colors);
+        if (!isMeshPolyData) {
+            vtkDataArray* existingSourceRGB =
+                    polydata->GetPointData()->GetArray("SourceRGB");
+            bool needSync = context.forceRedraw || !existingSourceRGB ||
+                            existingSourceRGB->GetNumberOfTuples() !=
+                                    polydata->GetNumberOfPoints();
+            if (needSync) {
+                auto colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
+                colors->SetName("SourceRGB");
+                colors->SetNumberOfComponents(3);
+                colors->SetNumberOfTuples(polydata->GetNumberOfPoints());
+                for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
+                                      static_cast<unsigned>(i) < cloud->size();
+                     ++i) {
+                    const ecvColor::Rgb& rgb =
+                            cloud->getPointColor(static_cast<unsigned>(i));
+                    unsigned char c[3] = {rgb.r, rgb.g, rgb.b};
+                    colors->SetTypedTuple(i, c);
+                }
+                polydata->GetPointData()->AddArray(colors);
 
-            auto hasRGB = vtkSmartPointer<vtkIntArray>::New();
-            hasRGB->SetName("HasSourceRGB");
-            hasRGB->SetNumberOfTuples(1);
-            hasRGB->SetValue(0, 1);
-            polydata->GetFieldData()->AddArray(hasRGB);
+                auto hasRGB = vtkSmartPointer<vtkIntArray>::New();
+                hasRGB->SetName("HasSourceRGB");
+                hasRGB->SetNumberOfTuples(1);
+                hasRGB->SetValue(0, 1);
+                polydata->GetFieldData()->AddArray(hasRGB);
+            }
         }
     }
 
     if (context.drawParam.showNorms && has_normal) {
-        setMeshShadingMode(SHADING_MODE::ECV_SHADING_PHONG, viewID, viewport);
+        setMeshShadingMode(SHADING_MODE::ECV_SHADING_GOURAUD, viewID, viewport);
     } else {
         setMeshShadingMode(SHADING_MODE::ECV_SHADING_FLAT, viewID, viewport);
     }
