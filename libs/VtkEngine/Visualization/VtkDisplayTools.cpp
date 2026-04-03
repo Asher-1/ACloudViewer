@@ -529,6 +529,30 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
                 ++new_points_num;
         }
     }
+
+    // SF display range can hide points when narrowed.  The color-only fast
+    // path cannot change the point set, so force a full polydata rebuild
+    // whenever the visible count differs.
+    if (context.drawParam.showSF) {
+        ccScalarField* sf = cloud->getCurrentDisplayedScalarField();
+        if (sf) {
+            const auto& disp = sf->displayRange();
+            bool narrowed = (disp.start() > disp.min() ||
+                             disp.stop() < disp.max());
+            if (narrowed) {
+                unsigned sf_visible = 0;
+                const bool use_vis = cloud->isVisibilityTableInstantiated();
+                for (unsigned i = 0; i < cloud->size(); ++i) {
+                    if (use_vis &&
+                        cloud->getTheVisibilityArray().at(i) != POINT_VISIBLE)
+                        continue;
+                    if (disp.isInRange(sf->getValue(i))) ++sf_visible;
+                }
+                new_points_num = sf_visible;
+            }
+        }
+    }
+
     if (old_points_num != new_points_num) {
         return false;
     }
