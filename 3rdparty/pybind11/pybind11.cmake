@@ -9,3 +9,12 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(ext_pybind11)
+
+# Fix MSVC UTF-8 encoding issue with pybind11 source files
+# pybind11 v3.0.0 uses Unicode characters (e.g., scissors "✄" in stl_bind.h line 713)
+# MSVC requires /utf-8 flag to properly handle UTF-8 source files
+# Apply only to C/CXX compilation, not CUDA (CUDA will handle it via CMAKE_CUDA_FLAGS)
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/utf-8>)
+endif()
