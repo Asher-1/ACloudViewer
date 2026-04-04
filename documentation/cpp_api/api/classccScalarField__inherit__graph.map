@@ -1,0 +1,7 @@
+<map id="ccScalarField" name="ccScalarField">
+<area shape="rect" id="node1" title="A scalar field associated to display&#45;related parameters." alt="" coords="229,155,335,181"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="95,80,277,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,196,32"/>
+<area shape="rect" id="node4" href="$classCCShareable.html" title=" " alt="" coords="220,5,325,32"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="301,80,455,107"/>
+</map>

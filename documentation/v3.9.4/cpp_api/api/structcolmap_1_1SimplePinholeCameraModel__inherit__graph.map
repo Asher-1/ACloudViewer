@@ -1,0 +1,5 @@
+<map id="colmap::SimplePinholeCameraModel" name="colmap::SimplePinholeCameraModel">
+<area shape="rect" id="node1" title=" " alt="" coords="12,200,235,241"/>
+<area shape="rect" id="node2" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="5,109,241,151"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="23,5,224,47"/>
+</map>

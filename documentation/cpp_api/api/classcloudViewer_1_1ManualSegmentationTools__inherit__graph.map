@@ -1,0 +1,4 @@
+<map id="cloudViewer::ManualSegmentationTools" name="cloudViewer::ManualSegmentationTools">
+<area shape="rect" id="node1" title="Manual segmentation algorithms (inside/outside a polyline, etc.)" alt="" coords="5,80,255,121"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="41,5,219,32"/>
+</map>

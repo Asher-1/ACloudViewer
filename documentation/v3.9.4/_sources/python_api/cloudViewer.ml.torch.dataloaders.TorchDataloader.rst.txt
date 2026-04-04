@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.dataloaders.TorchDataloader
+------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.dataloaders
+
+.. autoclass:: TorchDataloader
+    :members:
+    :undoc-members:

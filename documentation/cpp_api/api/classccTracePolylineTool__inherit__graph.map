@@ -1,0 +1,7 @@
+<map id="ccTracePolylineTool" name="ccTracePolylineTool">
+<area shape="rect" id="node1" title="Graphical Polyline Tracing tool." alt="" coords="152,155,300,181"/>
+<area shape="rect" id="node2" href="$classccOverlayDialog.html" title="Generic overlay dialog interface." alt="" coords="5,80,135,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="33,5,107,32"/>
+<area shape="rect" id="node4" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="159,80,293,107"/>
+<area shape="rect" id="node5" title=" " alt="" coords="318,80,473,107"/>
+</map>

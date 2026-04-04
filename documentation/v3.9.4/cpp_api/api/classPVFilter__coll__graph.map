@@ -1,0 +1,4 @@
+<map id="PVFilter" name="PVFilter">
+<area shape="rect" id="node1" title="Point+Scalar value binary point cloud file I/O filter." alt="" coords="15,80,87,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

@@ -1,0 +1,17 @@
+<map id="CCShareable" name="CCShareable">
+<area shape="rect" id="node1" title=" " alt="" coords="5,290,111,316"/>
+<area shape="rect" id="node2" href="$classccArray.html" title=" " alt="" coords="640,21,877,62"/>
+<area shape="rect" id="node4" href="$classccArray.html" title=" " alt="" coords="671,90,846,132"/>
+<area shape="rect" id="node6" href="$classccArray.html" title=" " alt="" coords="661,280,857,321"/>
+<area shape="rect" id="node8" href="$classccArray.html" title=" " alt="" coords="663,378,854,420"/>
+<area shape="rect" id="node10" href="$classccArray.html" title=" " alt="" coords="665,198,853,240"/>
+<area shape="rect" id="node12" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="160,228,377,269"/>
+<area shape="rect" id="node13" href="$classccMaterialSet.html" title="Mesh (triangle) material." alt="" coords="213,464,324,491"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="178,515,359,542"/>
+<area shape="rect" id="node3" href="$classNormsIndexesTableType.html" title="Array of compressed 3D normals (single index)" alt="" coords="927,28,1105,55"/>
+<area shape="rect" id="node5" href="$classTextureCoordsContainer.html" title="Array of 2D texture coordinates." alt="" coords="927,98,1105,124"/>
+<area shape="rect" id="node7" href="$classRGBAColorsTableType.html" title="Array of RGBA colors for each point." alt="" coords="934,287,1098,314"/>
+<area shape="rect" id="node9" href="$classNormsTableType.html" title="Array of (uncompressed) 3D normals (Nx,Ny,Nz)" alt="" coords="951,386,1081,412"/>
+<area shape="rect" id="node11" href="$classColorsTableType.html" title="Array of RGB colors for each point." alt="" coords="953,206,1079,232"/>
+<area shape="rect" id="node15" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="705,515,812,542"/>
+</map>

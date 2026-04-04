@@ -1,0 +1,28 @@
+var classPdmsTools_1_1PdmsObjects_1_1GenericItem =
+[
+    [ "GenericItem", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a487b6e178904822ea0c06845dc80ffa7", null ],
+    [ "~GenericItem", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#ae8b15bc778a59e82a3202ccec72baef1", null ],
+    [ "completeOrientation", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a627f8eb0bf8a90583277bdc17b422812", null ],
+    [ "convertCoordinateSystem", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9f12b730cb05b51e6103c49e56b2da30", null ],
+    [ "getRoot", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a0247a38ae013cfe03c3220eda3ce43f6", null ],
+    [ "getType", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#aef6f09f7a38e8090c64bd66ab622ec0a", null ],
+    [ "isDesignElement", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a00d4db641d3d01832239c8a370f129c1", null ],
+    [ "isGroupElement", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#ad8e5dd047b86091248aa7b0921198b44", null ],
+    [ "isOrientationValid", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a8e1f0b7b20f9f6deb2fae4374ca34264", null ],
+    [ "push", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a7b3c22ac74230c22facb4a768a0e50f3", null ],
+    [ "remove", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a43426fa59e0c38ca66bff620fd845210", null ],
+    [ "scan", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9dcd767155272746c0ba1a7b03c4028d", null ],
+    [ "scan", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#aa6d432c694179f98e7a5f8eb4e129fd7", null ],
+    [ "setOrientation", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a728190103f4a8297f951ed931c5b3435", null ],
+    [ "setPosition", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9a4d5bd40f3ab57099c9055b1bf68914", null ],
+    [ "setValue", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a329d517b8c908002383c9ea6b38de2ac", null ],
+    [ "write", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a6f337e737b2a2d40f062cdf21754fcff", null ],
+    [ "creator", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9291738b6c114ab461128b4fd0ba9b81", null ],
+    [ "isCoordinateSystemUpToDate", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#ae03fe5547b552c81d73d4f82bdc77b4c", null ],
+    [ "name", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a55854859e90ef8bb8b4aba129a433aa7", null ],
+    [ "orientation", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#aa8eb73ad43dd462d47eb9817fe0d3dee", null ],
+    [ "orientationReferences", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a133ed2af609ce9ff37e1988a017ba40c", null ],
+    [ "owner", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a5b821b6e0f613ba4bd6090b6b4d6c695", null ],
+    [ "position", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#ac86e09e6787ba28e0afa3ddc905e0fe6", null ],
+    [ "positionReference", "classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a28e09ba9dece0bdf3a77c3946641bb1f", null ]
+];

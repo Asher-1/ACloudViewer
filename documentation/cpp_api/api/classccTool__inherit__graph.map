@@ -1,0 +1,10 @@
+<map id="ccTool" name="ccTool">
+<area shape="rect" id="node1" title=" " alt="" coords="5,157,68,184"/>
+<area shape="rect" id="node2" href="$classccFitPlaneTool.html" title=" " alt="" coords="124,5,239,32"/>
+<area shape="rect" id="node3" href="$classccLineationTool.html" title=" " alt="" coords="120,56,243,83"/>
+<area shape="rect" id="node4" href="$classccNoteTool.html" title=" " alt="" coords="135,107,228,133"/>
+<area shape="rect" id="node5" href="$classccPinchNodeTool.html" title=" " alt="" coords="116,157,247,184"/>
+<area shape="rect" id="node6" href="$classccThicknessTool.html" title=" " alt="" coords="118,208,245,235"/>
+<area shape="rect" id="node7" href="$classccTopologyTool.html" title=" " alt="" coords="121,259,241,285"/>
+<area shape="rect" id="node8" href="$classccTraceTool.html" title=" " alt="" coords="133,309,229,336"/>
+</map>

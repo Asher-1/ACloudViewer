@@ -1,0 +1,456 @@
+# ----------------------------------------------------------------------------
+# -                        ACloudViewer Documentation                         -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 ACloudViewer Team
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
+# -*- coding: utf-8 -*-
+#
+# ACloudViewer documentation build configuration file
+#
+# This file is execfile()d with the current directory set to its
+# containing dir.
+#
+# Note that not all possible configuration values are present in this
+# file.
+#
+# All configuration values have a default; values that are commented out
+# serve to show the default.
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime
+
+
+# Get current file directory first
+current_file_dir = os.path.dirname(os.path.realpath(__file__))
+
+
+def get_git_short_hash():
+    """Get the short git hash for version information."""
+    try:
+        rc = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+        rc = rc.decode("utf-8").strip()
+        return rc
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
+def get_cloudviewer_version():
+    """Read ACloudViewer version from version.txt file."""
+    # Path from docs/source/conf.py to libs/cloudViewer/version.txt
+    version_file = os.path.join(current_file_dir, "..", "..", "libs", "cloudViewer", "version.txt")
+    version_file = os.path.abspath(version_file)
+    print(f"[conf.py] Reading version from: {version_file}")
+
+    try:
+        with open(version_file, 'r') as f:
+            lines = f.readlines()
+        version_dict = {}
+        for line in lines:
+            match = re.match(r'CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH)\s+(\d+)', line.strip())
+            if match:
+                version_dict[match.group(1).lower()] = match.group(2)
+
+        if 'major' in version_dict and 'minor' in version_dict and 'patch' in version_dict:
+            version_str = f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
+            print(f"[conf.py] Version read successfully: {version_str}")
+            return version_str
+    except (FileNotFoundError, IOError) as e:
+        print(f"[conf.py] Warning: Could not read version file: {e}")
+
+    fallback_version = "3.9.4"
+    print(f"[conf.py] Using fallback version: {fallback_version}")
+    return fallback_version
+
+
+# Import cloudViewer raw python package with the highest priority
+# This is a trick to show cloudViewer.pybind as cloudViewer in the docs
+# Only tested to work on Unix
+sys.path.insert(
+    0,
+    os.path.join(current_file_dir, "..", "..", "build", "lib", "python_package",
+                 "cloudViewer"),
+)
+
+# -- General configuration ------------------------------------------------
+
+# If your documentation needs a minimal Sphinx version, state it here.
+#
+# needs_sphinx = '1.0'
+
+# Add any Sphinx extension module names here, as strings. They can be
+# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
+# ones.
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',  # For API summary tables
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.githubpages',
+    'sphinx_tabs.tabs',
+    'sphinx_copybutton',
+    "nbsphinx",
+    "myst_parser",  # Markdown support
+    'breathe',  # For C++ API documentation
+]
+
+if os.environ.get("skip_notebooks", "false") == "true":
+    print("Skipping Jupyter notebooks")
+    extensions = [e for e in extensions if e != "nbsphinx"]
+
+# -- Options for nbsphinx (Jupyter notebooks) --------------------------------
+# Allow for more time for notebook cell evaluation
+nbsphinx_timeout = 6000
+# We pre-execute notebooks in make_docs.py before Sphinx build.
+# Use 'never' to only use pre-executed outputs, do not execute during Sphinx build.
+# This ensures notebooks with outputs are displayed correctly in HTML.
+nbsphinx_execute = 'never'  # Use pre-executed outputs only, do not execute during Sphinx build
+# nbsphinx_allow_errors = True  # Allow errors in notebooks (some may fail in headless mode)
+
+# Add any paths that contain templates here, relative to this directory.
+templates_path = ['_templates']
+
+# The suffix(es) of source filenames.
+# You can specify multiple suffix as a list of string:
+source_suffix = ['.rst', '.md']
+
+# The primary toctree document.
+primary_doc = "index"
+master_doc = primary_doc  # For backward compatibility
+
+# General information about the project.
+project = u"ACloudViewer"
+copyright = f"2018 - {datetime.now().year}, ACloudViewer Team"
+author = u"ACloudViewer Team"
+
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+#
+# This value can be overwritten in make_docs.py when sphinx-build is called.
+# Usually, the `version` value is set to the current git commit hash.
+# At ACloudViewer releases, the `version` value is set to ACloudViewer version number.
+current_hash = get_git_short_hash()
+cloudviewer_version = get_cloudviewer_version()
+# Default values - can be overridden by -D version=... and -D release=... flags
+version = cloudviewer_version  # Use version from version.txt
+release = version  # Default: same as version
+print(f"[conf.py] Configuration: version={version}, release={release}")
+
+# The language for content autogenerated by Sphinx. Refer to documentation
+# for a list of supported languages.
+#
+# This is also used if you do content translation via gettext catalogs.
+# Usually you set "language" from the command line for these cases.
+language = "en"
+
+# rst_prolog: Define substitutions that can be used in all RST files
+# This allows us to avoid hardcoding version numbers in documentation
+# For URLs in code blocks, we define the full file names to avoid link parsing issues
+rst_prolog = f"""
+.. |cv_version| replace:: {version}
+.. |cv_python_min| replace:: 3.10
+.. |cv_python_max| replace:: 3.13
+.. |cv_cuda_version| replace:: 12.x
+"""
+print(f"[conf.py] rst_prolog configured:")
+print(f"  |cv_version| = {version}")
+print(f"  |cv_python_min| = 3.10")
+print(f"  |cv_python_max| = 3.13")
+print(f"  |cv_cuda_version| = 12.x")
+
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
+# python_api_in contains custom RST files used to override auto-generated docs
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
+# This patterns also effect to html_static_path and html_extra_path
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "**.ipynb_checkpoints",
+    "**/*.in.rst",  # Exclude all template files (processed by make_docs.py)
+    "jupyter/*/*.ipynb",
+    "python_api_in/*.rst",
+]
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
+pygments_dark_style = "monokai"
+
+# -- Autosummary configuration -----------------------------------------------
+autosummary_generate = True  # Turn on autosummary
+autosummary_imported_members = True
+
+# Version 0: Added by Jaesik to list Python members using the source order
+# Version 1: Changed to 'groupwise': __init__ first, then methods, then
+#            properties. Within each, sorted alphabetically.
+autodoc_member_order = "groupwise"
+
+# -- Options for HTML output -------------------------------------------------
+html_theme = 'furo'  # Modern, beautiful theme like Open3D
+
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#2196F3",
+        "color-brand-content": "#2196F3",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#42A5F5",
+        "color-brand-content": "#42A5F5",
+    },
+    "sidebar_hide_name": False,
+    "navigation_with_keys": True,
+    "top_of_page_button": None,  # Hide "back to top" button (we have our own)
+}
+
+# Configure sidebar to use custom brand template with version selector
+# Furo theme automatically uses templates in _templates/sidebar/ directory
+# The brand.html template will be automatically picked up by Furo
+# No need to explicitly configure html_sidebars unless we want custom order
+
+# The name for this set of Sphinx documents.  If None, it defaults to
+# "<project> v<release> documentation".
+html_title = f"ACloudViewer {release} documentation"
+# A shorter title for the navigation bar.  Default is the same as html_title.
+# html_short_title = None
+html_logo = "../images/ACloudViewer_logo_horizontal.png"
+html_favicon = "../images/ACloudViewer.svg"
+
+# Hide "View page source" link (following Open3D's approach)
+html_show_sourcelink = False
+
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+# Custom CSS (following Open3D's naming convention)
+html_css_files = [
+    'css/furo_overrides.css',  # Primary CSS file
+    'custom.css',  # Additional customizations
+]
+
+# -- Options for LaTeX output ------------------------------------------------
+latex_elements = {
+    'papersize': 'letterpaper',
+    'pointsize': '10pt',
+}
+
+latex_documents = [
+    (master_doc, 'ACloudViewer.tex', 'ACloudViewer Documentation',
+     'ACloudViewer Team', 'manual'),
+]
+
+# -- Options for manual page output ------------------------------------------
+man_pages = [
+    (master_doc, 'acloudviewer', 'ACloudViewer Documentation',
+     [author], 1)
+]
+
+# -- Options for Texinfo output ----------------------------------------------
+texinfo_documents = [
+    (master_doc, 'ACloudViewer', 'ACloudViewer Documentation',
+     author, 'ACloudViewer', 'Point cloud and 3D data processing library.',
+     'Miscellaneous'),
+]
+
+# -- Extension configuration -------------------------------------------------
+
+# -- Options for intersphinx extension ---------------------------------------
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+}
+
+# -- Options for todo extension ----------------------------------------------
+todo_include_todos = True
+
+# -- Options for napoleon extension ------------------------------------------
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+
+# -- Options for Breathe extension (C++ API) ---------------------------------
+# Path is relative to docs/source/ when Sphinx runs
+# Try multiple possible locations for Doxygen XML output
+import os
+_possible_doxygen_paths = [
+    '../../build/docs/doxygen/xml',  # CMake build in build_app/
+    '../../build/docs/doxygen/xml',       # CMake build in build/
+    '../doxygen/xml',                     # Standalone make_docs.py
+]
+_doxygen_xml_path = '../doxygen/xml'  # Default fallback
+for path in _possible_doxygen_paths:
+    abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), path))
+    if os.path.exists(abs_path):
+        _doxygen_xml_path = path
+        break
+
+breathe_projects = {
+    "ACloudViewer": _doxygen_xml_path
+}
+breathe_default_project = "ACloudViewer"
+breathe_default_members = ('members', 'undoc-members')
+
+# Suppress Breathe warnings and errors for malformed XML
+breathe_debug_trace_directives = False
+breathe_debug_trace_doxygen_ids = False
+breathe_debug_trace_qualification = False
+
+# Configure Breathe to be more lenient with XML parsing errors
+import logging
+logging.getLogger('breathe').setLevel(logging.ERROR)
+
+# Map 'ipython3' to 'python3' to suppress Pygments lexer warnings
+# This fixes "WARNING: Pygments lexer name 'ipython3' is not known"
+# nbsphinx_codecell_lexer = 'python3'
+
+# Prolog for all notebooks
+nbsphinx_prolog = """
+.. note::
+   This tutorial is generated from a Jupyter notebook that can be downloaded and run interactively.
+   
+   📓 `Download notebook <https://github.com/Asher-1/ACloudViewer/tree/main/docs/jupyter>`_
+"""
+
+# -- Options for copybutton --------------------------------------------------
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+
+# -- Custom configuration ----------------------------------------------------
+
+# GitHub repository
+html_context = {
+    "display_github": True,
+    "github_user": "Asher-1",
+    "github_repo": "ACloudViewer",
+    "github_version": "main",
+    "conf_py_path": "/docs/source/",
+    "display_all_docs_versions": True,  # Display selection of all documentation versions
+}
+
+# Version switching (for future multi-version support)
+html_js_files = [
+    'version_switch.js',
+]
+
+# Suppress warnings (following Open3D's approach)
+suppress_warnings = [
+    'autodoc',
+    'autodoc.import_object',
+    'nbsphinx',
+    'nbsphinx.localfile',
+    'nbsphinx.gallery',
+    'nbsphinx.thumbnail',
+    'misc.highlighting_failure',  # Suppress Pygments lexer warnings
+    'ref.duplicate',  # Suppress duplicate object description warnings
+    'toc.not_readable',  # Suppress document not in toctree warnings
+    'ref.python',  # Suppress Python reference warnings
+    'ref.ref',  # Suppress general reference warnings
+    'autosummary',  # Suppress autosummary warnings (e.g., inline markup in external libs)
+]
+
+# Configure Sphinx to be less verbose about warnings
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='nbsphinx')
+warnings.filterwarnings('ignore', category=FutureWarning)
+
+
+def is_enum_class(func, func_name):
+
+    def import_from_str(class_name):
+        components = class_name.split(".")
+        mod = __import__(components[0])
+        for comp in components[1:]:
+            mod = getattr(mod, comp)
+        return mod
+
+    is_enum = False
+    try:
+        if func_name == "name" and "self: handle" in func.__doc__:
+            is_enum = True
+        else:
+            pattern = re.escape(func_name) + r"\(self: ([a-zA-Z0-9_\.]*).*\)"
+            m = re.match(pattern, func.__doc__)
+            if m:
+                c_name = m.groups()[0]
+                c = import_from_str(c_name)
+                if hasattr(c, "__entries"):
+                    is_enum = True
+    except:
+        pass
+    return is_enum
+
+
+# Keep the __init__ function doc
+def skip(app, what, name, obj, would_skip, options):
+    if name in {"__init__", "name"}:
+        if is_enum_class(obj, name):
+            return True
+        else:
+            return False
+    return would_skip
+
+
+# Namespace fixing functions (similar to Open3D)
+# Fixes namespace in strings by removing .[cpu|cuda].pybind.
+def fix_namespace(text):
+    """Fixes namespace in a string by removing .[cpu|cuda].pybind."""
+    if text is None:
+        return None
+    return (text.replace("cloudViewer.cpu.pybind.", "cloudViewer.")
+                 .replace("cloudViewer.cuda.pybind.", "cloudViewer."))
+
+
+def process_signature(app, what, name, obj, options, signature, return_annotation):
+    """Fixes namespace in signature by removing .[cpu|cuda].pybind."""
+    return (
+        fix_namespace(signature),
+        fix_namespace(return_annotation),
+    )
+
+
+def process_docstring(app, what, name, obj, options, lines):
+    """Fixes namespace in docstring by removing .[cpu|cuda].pybind."""
+    for i, line in enumerate(lines):
+        lines[i] = fix_namespace(line)
+
+
+def setup(app):
+    """Sphinx setup function to connect autodoc events."""
+    app.connect("autodoc-skip-member", skip)
+    app.connect("autodoc-process-signature", process_signature)
+    app.connect("autodoc-process-docstring", process_docstring)
+    # Add Google analytics
+    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3",
+                    **{'async': 'async'})
+    app.add_js_file(None,
+                    body="""
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-3TQPKGV6Z3');""")

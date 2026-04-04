@@ -1,0 +1,25 @@
+var SlabMacros_8h =
+[
+    [ "MEMCPY_AS_INTS", "SlabMacros_8h.html#aad2b6e55dcbc5e5864e69b7abf5356f7", null ],
+    [ "kBitmapsPerSuperBlock", "SlabMacros_8h.html#ae3ced9e41d919d51bfb19232dd991c63", null ],
+    [ "kBlockMaskBits", "SlabMacros_8h.html#a88deb3ae53d6a2075332b194e3b6483d", null ],
+    [ "kBlocksPerSuperBlock", "SlabMacros_8h.html#a04722ec98c95eb6b7b14c390264f293a", null ],
+    [ "kBlocksPerSuperBlockInBits", "SlabMacros_8h.html#afa2f33c04a361faca4aaf38a116f6802", null ],
+    [ "kEmptyNodeAddr", "SlabMacros_8h.html#a248b8dc4b44bca1ded7a3cb9c033209d", null ],
+    [ "kEmptySlabAddr", "SlabMacros_8h.html#aa042b4c98ce5992f4481b9bfdd23c114", null ],
+    [ "kHeadSlabAddr", "SlabMacros_8h.html#a1c056dab92da8a24d3fde5acf00e9cee", null ],
+    [ "kMaxKeyByteSize", "SlabMacros_8h.html#ab3954f348351f51e58544e3a87f79403", null ],
+    [ "kNextSlabPtrLaneId", "SlabMacros_8h.html#a1a9c15a61b612dea95d9523f34a81a19", null ],
+    [ "kNodePtrLanesMask", "SlabMacros_8h.html#aa14d02e5ba89acc0c1e59c46de27f7b6", null ],
+    [ "kNotFoundFlag", "SlabMacros_8h.html#ac552a1fa0b37a7944da37f5bef9da396", null ],
+    [ "kNullAddr", "SlabMacros_8h.html#a17fd0a9d09d43b6ff4e23e10a1bb8e03", null ],
+    [ "kSlabMaskBits", "SlabMacros_8h.html#aa83a2a6fa022be4b72591a848eb75aae", null ],
+    [ "kSlabsPerBlock", "SlabMacros_8h.html#a7de03fa6b89cc0d564debf391732bb35", null ],
+    [ "kSuperBlockMaskBits", "SlabMacros_8h.html#ac60740f6d77df85ee5716a5d855f7a76", null ],
+    [ "kSuperBlocks", "SlabMacros_8h.html#ac3cf7da864c1b4e3a2feb8774bdce327", null ],
+    [ "kSyncLanesMask", "SlabMacros_8h.html#a6ed4d826fa1943a50cb1490d8d23b9c6", null ],
+    [ "kThreadsPerBlock", "SlabMacros_8h.html#af0810aa182f7cd1ad4eef434dc32c824", null ],
+    [ "kUIntsPerBlock", "SlabMacros_8h.html#a6bfcf5f876508fe25110bf1ba563c52e", null ],
+    [ "kUIntsPerSuperBlock", "SlabMacros_8h.html#a4ecac357a2229f7ca8853ea74d3cfd84", null ],
+    [ "kWarpSize", "SlabMacros_8h.html#a842cf6c64e959f0b9aad256643d3adc5", null ]
+];

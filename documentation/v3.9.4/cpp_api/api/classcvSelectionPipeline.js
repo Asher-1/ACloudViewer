@@ -1,0 +1,57 @@
+var classcvSelectionPipeline =
+[
+    [ "PixelSelectionInfo", "structcvSelectionPipeline_1_1PixelSelectionInfo.html", "structcvSelectionPipeline_1_1PixelSelectionInfo" ],
+    [ "CombineOperation", "classcvSelectionPipeline.html#af78cf9ba167f00acfb5f4dd09949fb8c", [
+      [ "OPERATION_DEFAULT", "classcvSelectionPipeline.html#af78cf9ba167f00acfb5f4dd09949fb8ca7bfc5933a686b1fad249e30f3e1c4331", null ],
+      [ "OPERATION_ADDITION", "classcvSelectionPipeline.html#af78cf9ba167f00acfb5f4dd09949fb8ca1f72597ffe75741e6e57bf0adeac2f97", null ],
+      [ "OPERATION_SUBTRACTION", "classcvSelectionPipeline.html#af78cf9ba167f00acfb5f4dd09949fb8ca9de2a8c85388d1dffc0c8e02994db7f7", null ],
+      [ "OPERATION_TOGGLE", "classcvSelectionPipeline.html#af78cf9ba167f00acfb5f4dd09949fb8ca18094189589ccd3817a9b9da0b55b9fd", null ]
+    ] ],
+    [ "FieldAssociation", "classcvSelectionPipeline.html#a8e7828b1506ffa72955fe5cc5d3c6746", [
+      [ "FIELD_ASSOCIATION_CELLS", "classcvSelectionPipeline.html#a8e7828b1506ffa72955fe5cc5d3c6746a0bb66ba57823e9860dd0c4737e1c3e84", null ],
+      [ "FIELD_ASSOCIATION_POINTS", "classcvSelectionPipeline.html#a8e7828b1506ffa72955fe5cc5d3c6746a42ac786f87fe45b5f637a3cae27f127f", null ]
+    ] ],
+    [ "SelectionType", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801d", [
+      [ "SURFACE_CELLS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801dab1a6e9bf5cca9030ccdcce07d960dfd4", null ],
+      [ "SURFACE_POINTS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801dad4a58f100b815c5f2f092ebc76cd42d5", null ],
+      [ "FRUSTUM_CELLS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801da9dc958ed141e2459ffdc34e4b45644c2", null ],
+      [ "FRUSTUM_POINTS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801da53780d232180037447c1012b0b7fd044", null ],
+      [ "POLYGON_CELLS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801daeeb2237ae2a764c96f4cda83c81fdd53", null ],
+      [ "POLYGON_POINTS", "classcvSelectionPipeline.html#adf7759609b2e686576f9192c7576801da31eed073c1451b42edd698b0b1ff0e4b", null ]
+    ] ],
+    [ "cvSelectionPipeline", "classcvSelectionPipeline.html#a2e561e70ca6c3a9cc571f7de678a8c61", null ],
+    [ "~cvSelectionPipeline", "classcvSelectionPipeline.html#abdd052d4a1cc0305b279a7e4534e56e5", null ],
+    [ "captureBuffersForFastPreSelection", "classcvSelectionPipeline.html#a129dcdcc263763ba6a001f866eb27009", null ],
+    [ "clearCache", "classcvSelectionPipeline.html#a8fa1badd9c0d7f6bc6f5e8e1cb680bf7", null ],
+    [ "combineSelections", "classcvSelectionPipeline.html#a9c48a3008bf0f8253056a979a2426e02", null ],
+    [ "convertToCvSelectionData", "classcvSelectionPipeline.html#a2186c42208f25ae53e7ec95106ba759c", null ],
+    [ "enterSelectionMode", "classcvSelectionPipeline.html#aff4137275a1f8552dff9997f0ad57d1a", null ],
+    [ "errorOccurred", "classcvSelectionPipeline.html#a013c0b2b1045369a10080d509b28923b", null ],
+    [ "executePolygonSelection", "classcvSelectionPipeline.html#a8a3656d5eedd7c7e35ca47cf5a5b6777", null ],
+    [ "executeRectangleSelection", "classcvSelectionPipeline.html#a5ffcb94eecab32fcf71516f4fae89d83", null ],
+    [ "exitSelectionMode", "classcvSelectionPipeline.html#ab264aaa32c15274917be011003fc4b06", null ],
+    [ "extractDataFromSelection", "classcvSelectionPipeline.html#a9c8923b28e99b823406378d7bbceab36", null ],
+    [ "extractSelectionIds", "classcvSelectionPipeline.html#ab08a17c27a3e854a11cb2897897462e6", null ],
+    [ "fastPreSelectAt", "classcvSelectionPipeline.html#a1a5cf64fe5fc70872eab07589af69714", null ],
+    [ "getCacheHits", "classcvSelectionPipeline.html#a33d14305f275c4124ed1c5a03645a67a", null ],
+    [ "getCacheMisses", "classcvSelectionPipeline.html#ad28cde05c47411020d72ab1e27dea5be", null ],
+    [ "getCacheSize", "classcvSelectionPipeline.html#af45c86352cd7ac178bbad8fb8a1fbd42", null ],
+    [ "getLastSelection", "classcvSelectionPipeline.html#ac83e4f8b4c5cc17c9186ce86fbd6a8f5", null ],
+    [ "getPixelSelectionInfo", "classcvSelectionPipeline.html#a33dd23c67738a52c889ff1a1924a507c", null ],
+    [ "getPointPickingRadius", "classcvSelectionPipeline.html#aea5707be18dbcd9d423e7433f345cc53", null ],
+    [ "getPrimaryDataFromSelection", "classcvSelectionPipeline.html#aa34139a01ac0064fcc7827c294f1769f", null ],
+    [ "hasCachedBuffers", "classcvSelectionPipeline.html#a1f55a4e162836e811b1645991ceb7fdc", null ],
+    [ "invalidateCachedSelection", "classcvSelectionPipeline.html#a0811332989268b0a2ddda1e906f172b4", null ],
+    [ "isInSelectionMode", "classcvSelectionPipeline.html#a6aa07137c831173ee64e8e473f620ef0", null ],
+    [ "pointInPolygon", "classcvSelectionPipeline.html#a0eaef44205964a232c41c9052a9c1ad5", null ],
+    [ "promptUser", "classcvSelectionPipeline.html#aa874e2d94bfe5d45945de36582019d97", null ],
+    [ "refinePolygonSelection", "classcvSelectionPipeline.html#a1776c158316e9b1e91442473cf89f0cd", null ],
+    [ "selectCellsInPolygon", "classcvSelectionPipeline.html#a9fa300f90164bdd7b5bcb6cc36b38f67", null ],
+    [ "selectCellsOnSurface", "classcvSelectionPipeline.html#a34ab30a2057ce756b209b242d6ada2dc", null ],
+    [ "selectionCompleted", "classcvSelectionPipeline.html#a2c2af7772eb06efe14057eae1ec07f0a", null ],
+    [ "selectPointsInPolygon", "classcvSelectionPipeline.html#a3c98107c0aa66336122a8650d0e8552e", null ],
+    [ "selectPointsOnSurface", "classcvSelectionPipeline.html#aa5d4bfadb15780f410b7ac3be39d4942", null ],
+    [ "setEnableCaching", "classcvSelectionPipeline.html#ae0e7c887f3e39d52d989b14950dbced6", null ],
+    [ "setPointPickingRadius", "classcvSelectionPipeline.html#a0262eb4c28a3ab58d905841b3ce05d4e", null ],
+    [ "setVisualizer", "classcvSelectionPipeline.html#a67eb56e8de4557538944b92b8c195b5d", null ]
+];

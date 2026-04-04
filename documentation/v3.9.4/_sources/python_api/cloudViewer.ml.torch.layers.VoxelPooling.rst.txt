@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.layers.VoxelPooling
+----------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.layers
+
+.. autoclass:: VoxelPooling
+    :members:
+    :undoc-members:

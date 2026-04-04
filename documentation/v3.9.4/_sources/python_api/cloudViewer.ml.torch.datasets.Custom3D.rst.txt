@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Custom3D
+--------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Custom3D
+    :members:
+    :undoc-members:

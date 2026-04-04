@@ -1,0 +1,6 @@
+<map id="ccPclPluginInterface" name="ccPclPluginInterface">
+<area shape="rect" id="node1" title="Pcl ECV plugin interface." alt="" coords="117,171,271,197"/>
+<area shape="rect" id="node2" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="5,81,188,108"/>
+<area shape="rect" id="node3" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="29,5,164,32"/>
+<area shape="rect" id="node4" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="213,81,373,108"/>
+</map>

@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.voxel_pooling
+--------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: voxel_pooling

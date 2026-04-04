@@ -1,0 +1,8 @@
+<map id="QCustomPlot" name="QCustomPlot">
+<area shape="rect" id="node1" title="The central class of the library. This is the QWidget which displays the plot and interacts with the ..." alt="" coords="281,80,388,107"/>
+<area shape="rect" id="node3" href="$classAnglesCustomPlot.html" title=" " alt="" coords="5,155,147,181"/>
+<area shape="rect" id="node4" href="$classWolmanCustomPlot.html" title=" " alt="" coords="171,155,322,181"/>
+<area shape="rect" id="node5" href="$classccHistogramWindow.html" title="Histogram widget." alt="" coords="346,155,502,181"/>
+<area shape="rect" id="node6" href="$classccWaveWidget.html" title="Waveform widget." alt="" coords="526,155,645,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="295,5,374,32"/>
+</map>

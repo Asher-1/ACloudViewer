@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.KPFCNN
+----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: KPFCNN
+    :members:
+    :undoc-members:

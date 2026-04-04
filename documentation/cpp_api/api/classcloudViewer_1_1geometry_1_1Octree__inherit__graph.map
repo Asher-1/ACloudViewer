@@ -1,0 +1,8 @@
+<map id="cloudViewer::geometry::Octree" name="cloudViewer::geometry::Octree">
+<area shape="rect" id="node1" title="Octree datastructure." alt="" coords="133,244,307,285"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="105,162,193,189"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="218,155,366,196"/>
+</map>

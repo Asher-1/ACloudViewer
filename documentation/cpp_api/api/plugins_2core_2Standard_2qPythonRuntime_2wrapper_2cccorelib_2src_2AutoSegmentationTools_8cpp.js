@@ -1,0 +1,4 @@
+var plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2AutoSegmentationTools_8cpp =
+[
+    [ "define_AutoSegmentationTools", "plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2AutoSegmentationTools_8cpp.html#a91b739a95b50df7f36da51e9e0d6c45e", null ]
+];

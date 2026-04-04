@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.S3DIS
+-----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: S3DIS
+    :members:
+    :undoc-members:

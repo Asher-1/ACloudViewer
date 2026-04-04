@@ -1,0 +1,4 @@
+<map id="cloudViewer::geometry::TSDFVoxel" name="cloudViewer::geometry::TSDFVoxel">
+<area shape="rect" id="node1" title=" " alt="" coords="5,95,179,136"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1geometry_1_1Voxel.html" title="Base Voxel class, containing grid id and color." alt="" coords="5,5,179,47"/>
+</map>

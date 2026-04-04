@@ -1,0 +1,25 @@
+var classcolmap_1_1retrieval_1_1InvertedIndex =
+[
+    [ "DescType", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a6ce46721c7385efa91965a22345fcd81", null ],
+    [ "EntryType", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a3828cc0a5dfd184975ce1b6271dd5f00", null ],
+    [ "GeomType", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a0aff81bf47929807efeca45e2a8a41a6", null ],
+    [ "ProjDescType", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a04e38c533d23e3ca632349f29e80e2b6", null ],
+    [ "ProjMatrixType", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a035410a4b959500d75249598aa435242", null ],
+    [ "InvertedIndex", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ac6d4e197f9969d5e99552aaa95f2b9f2", null ],
+    [ "AddEntry", "classcolmap_1_1retrieval_1_1InvertedIndex.html#abdaa8a53a1dcaaf400fed97ff1027359", null ],
+    [ "ClearEntries", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ac5cf42efae8f0cddf46c0003ba430a15", null ],
+    [ "ComputeHammingEmbedding", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a01b8a3bcc8b5d68cf2315bce6f925bd3", null ],
+    [ "ComputeSelfSimilarity", "classcolmap_1_1retrieval_1_1InvertedIndex.html#aba4a7af9ff794eff0e8aae455f0ee558", null ],
+    [ "ConvertToBinaryDescriptor", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a1579fa73be338dfe301a846a46d1f8fa", null ],
+    [ "Finalize", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ad9d633b9550c17c50c1b48ed57485da6", null ],
+    [ "FindMatches", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ae336aedcae46640221dadd202d3d2dc9", null ],
+    [ "GenerateHammingEmbeddingProjection", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ada22dfbedea0cfc115b0a243144b6d70", null ],
+    [ "GetIDFWeight", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a938f2ac972d94f2b2aa64d0c6216ec9b", null ],
+    [ "GetImageIds", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a15215cbcdb4656c97dc60e1edd99547a", null ],
+    [ "Initialize", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a24b297898b03bfe367c45d46950f1e41", null ],
+    [ "NumVisualWords", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ab1af8e07180317c065a1183034f2e1e1", null ],
+    [ "Query", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a819e5d220a0872f7bd2d063864ecac20", null ],
+    [ "Read", "classcolmap_1_1retrieval_1_1InvertedIndex.html#ac4c77d7a7b2254a61c12a23b26b87210", null ],
+    [ "Write", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a5aa57d91ae459d6c035da0ff496363d2", null ],
+    [ "kInvalidWordId", "classcolmap_1_1retrieval_1_1InvertedIndex.html#a953ab5256c2f8bf4fb8a0b107002b456", null ]
+];

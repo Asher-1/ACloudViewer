@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.modules.losses.filter_valid_label
+------------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+.. autofunction:: filter_valid_label

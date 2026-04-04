@@ -1,0 +1,11 @@
+<map id="/root/ACloudViewer/libs/cloudViewer/io/rpc/MessageProcessorBase.h" name="/root/ACloudViewer/libs/cloudViewer/io/rpc/MessageProcessorBase.h">
+<area shape="rect" id="node1" title=" " alt="" coords="383,5,598,61"/>
+<area shape="rect" id="node2" href="$DummyMessageProcessor_8h.html" title=" " alt="" coords="5,109,240,165"/>
+<area shape="rect" id="node4" href="$MessageProcessorBase_8cpp.html" title=" " alt="" coords="265,109,495,165"/>
+<area shape="rect" id="node5" href="$ZMQReceiver_8cpp.html" title=" " alt="" coords="519,109,683,165"/>
+<area shape="rect" id="node6" href="$MessageProcessor_8h.html" title=" " alt="" coords="707,109,933,165"/>
+<area shape="rect" id="node3" href="$DummyReceiver_8cpp.html" title=" " alt="" coords="30,213,215,269"/>
+<area shape="rect" id="node7" href="$GuiVisualizer_8cpp.html" title=" " alt="" coords="455,213,675,269"/>
+<area shape="rect" id="node8" href="$MessageProcessor_8cpp.html" title=" " alt="" coords="700,213,940,269"/>
+<area shape="rect" id="node9" href="$O3DVisualizer_8cpp.html" title=" " alt="" coords="965,213,1185,269"/>
+</map>

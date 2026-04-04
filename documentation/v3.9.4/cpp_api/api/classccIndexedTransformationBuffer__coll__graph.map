@@ -1,0 +1,18 @@
+<map id="ccIndexedTransformationBuffer" name="ccIndexedTransformationBuffer">
+<area shape="rect" id="node1" title="Indexed Transformation buffer." alt="" coords="141,645,365,672"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="135,480,223,507"/>
+<area shape="rect" id="node13" href="$classccBBox.html" title="Bounding box structure." alt="" coords="217,556,288,583"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" id="node10" href="$classccGLMatrixTpl.html" title=" " alt="" coords="96,183,271,209"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="248,383,388,410"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title=" " alt="" coords="269,272,434,299"/>
+<area shape="rect" id="node15" href="$classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="412,376,608,417"/>
+<area shape="rect" id="node7" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="358,81,502,108"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="355,183,505,209"/>
+<area shape="rect" id="node16" href="$classVector3Tpl.html" title=" " alt="" coords="473,272,603,299"/>
+<area shape="rect" id="node9" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="136,272,231,299"/>
+<area shape="rect" id="node12" title=" " alt="" coords="312,556,596,583"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="375,480,571,507"/>
+</map>

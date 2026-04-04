@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.PointPillars
+----------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: PointPillars
+    :members:
+    :undoc-members:

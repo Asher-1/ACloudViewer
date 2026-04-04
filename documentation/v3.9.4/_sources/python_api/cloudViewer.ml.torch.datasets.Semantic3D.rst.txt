@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Semantic3D
+----------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Semantic3D
+    :members:
+    :undoc-members:

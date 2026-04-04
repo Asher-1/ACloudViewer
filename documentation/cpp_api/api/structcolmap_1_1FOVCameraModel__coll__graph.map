@@ -1,0 +1,5 @@
+<map id="colmap::FOVCameraModel" name="colmap::FOVCameraModel">
+<area shape="rect" id="node1" title=" " alt="" coords="8,200,204,227"/>
+<area shape="rect" id="node2" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="5,109,207,151"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="5,5,207,47"/>
+</map>

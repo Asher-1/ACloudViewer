@@ -1,0 +1,10 @@
+<map id="cloudViewer::PointCloudTpl&lt; T &gt;" name="cloudViewer::PointCloudTpl&lt; T &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="5,483,244,509"/>
+<area shape="rect" id="node2" title=" " alt="" coords="84,386,123,413"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="147,379,353,420"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="152,275,348,316"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title=" " alt="" coords="82,171,247,197"/>
+<area shape="rect" id="node6" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="179,5,323,32"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="176,81,327,108"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title=" " alt="" coords="272,171,401,197"/>
+</map>

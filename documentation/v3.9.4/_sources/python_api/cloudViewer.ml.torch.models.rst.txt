@@ -1,0 +1,28 @@
+cloudViewer.ml.torch.models
+===========================
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+**Classes**
+
+.. autosummary::
+
+    KPFCNN
+    PVCNN
+    PointPillars
+    PointRCNN
+    PointTransformer
+    RandLANet
+    SparseConvUnet
+
+
+.. toctree::
+    :hidden:
+
+    KPFCNN <cloudViewer.ml.torch.models.KPFCNN>
+    PVCNN <cloudViewer.ml.torch.models.PVCNN>
+    PointPillars <cloudViewer.ml.torch.models.PointPillars>
+    PointRCNN <cloudViewer.ml.torch.models.PointRCNN>
+    PointTransformer <cloudViewer.ml.torch.models.PointTransformer>
+    RandLANet <cloudViewer.ml.torch.models.RandLANet>
+    SparseConvUnet <cloudViewer.ml.torch.models.SparseConvUnet>

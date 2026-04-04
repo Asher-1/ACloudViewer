@@ -1,0 +1,8 @@
+<map id="ecvOrientedBBox" name="ecvOrientedBBox">
+<area shape="rect" id="node1" title=" " alt="" coords="161,229,296,256"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1OrientedBoundingBox.html" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="5,155,257,181"/>
+<area shape="rect" id="node3" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="282,155,370,181"/>
+<area shape="rect" id="node4" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="220,80,299,107"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="182,5,337,32"/>
+<area shape="rect" id="node6" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="323,80,463,107"/>
+</map>

@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.dataloaders.DefaultBatcher
+-----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.dataloaders
+
+.. autoclass:: DefaultBatcher
+    :members:
+    :undoc-members:

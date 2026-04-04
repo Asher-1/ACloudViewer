@@ -1,0 +1,163 @@
+Triangle Mesh
+-------------
+
+triangle_mesh.py
+````````````````
+
+.. literalinclude:: triangle_mesh.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_collision.py
+``````````````````````````
+
+.. literalinclude:: triangle_mesh_collision.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_connected_components.py
+`````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_connected_components.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_cropping.py
+`````````````````````````
+
+.. literalinclude:: triangle_mesh_cropping.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_deformation.py
+````````````````````````````
+
+.. literalinclude:: triangle_mesh_deformation.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_filtering_average.py
+``````````````````````````````````
+
+.. literalinclude:: triangle_mesh_filtering_average.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_from_point_cloud_alpha_shapes.py
+``````````````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_from_point_cloud_alpha_shapes.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_from_point_cloud_ball_pivoting.py
+```````````````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_from_point_cloud_ball_pivoting.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_from_point_cloud_poisson.py
+`````````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_from_point_cloud_poisson.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_half_edge.py
+``````````````````````````
+
+.. literalinclude:: triangle_mesh_half_edge.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_hidden_point_removal.py
+`````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_hidden_point_removal.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_project_to_albedo.py
+``````````````````````````````````
+
+.. literalinclude:: triangle_mesh_project_to_albedo.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_properties.py
+```````````````````````````
+
+.. literalinclude:: triangle_mesh_properties.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_sampling.py
+`````````````````````````
+
+.. literalinclude:: triangle_mesh_sampling.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_simplification_decimation.py
+``````````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_simplification_decimation.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_simplification_vertex_clustering.py
+`````````````````````````````````````````````````
+
+.. literalinclude:: triangle_mesh_simplification_vertex_clustering.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_subdivision.py
+````````````````````````````
+
+.. literalinclude:: triangle_mesh_subdivision.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_transformation.py
+```````````````````````````````
+
+.. literalinclude:: triangle_mesh_transformation.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_voxelization.py
+`````````````````````````````
+
+.. literalinclude:: triangle_mesh_voxelization.py
+   :language: python
+   :linenos:
+
+
+triangle_mesh_with_numpy.py
+```````````````````````````
+
+.. literalinclude:: triangle_mesh_with_numpy.py
+   :language: python
+   :linenos:
+
+

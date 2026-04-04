@@ -1,0 +1,4 @@
+<map id="E57Filter" name="E57Filter">
+<area shape="rect" id="node1" title="E57 filter (relies on E57format lib)" alt="" coords="12,80,91,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

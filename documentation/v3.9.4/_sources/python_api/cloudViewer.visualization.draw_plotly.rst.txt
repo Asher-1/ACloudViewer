@@ -1,0 +1,6 @@
+cloudViewer.visualization.draw_plotly
+-------------------------------------
+
+.. currentmodule:: cloudViewer.visualization
+
+.. autofunction:: draw_plotly

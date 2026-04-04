@@ -1,0 +1,4 @@
+<map id="PovFilter" name="PovFilter">
+<area shape="rect" id="node1" title="P.O.V. meta&#45;file I/O filter." alt="" coords="12,80,91,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

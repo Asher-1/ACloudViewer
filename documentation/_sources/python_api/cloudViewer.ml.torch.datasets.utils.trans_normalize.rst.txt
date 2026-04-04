@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.datasets.utils.trans_normalize
+---------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autofunction:: trans_normalize

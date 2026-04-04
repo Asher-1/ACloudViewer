@@ -1,0 +1,9 @@
+<map id="colmap::LORANSAC&lt; Estimator, LocalEstimator, SupportMeasurer, Sampler &gt;" name="colmap::LORANSAC&lt; Estimator, LocalEstimator, SupportMeasurer, Sampler &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="1300,88,1547,144"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1RANSAC.html" title=" " alt="" coords="1036,88,1251,144"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1RANSACOptions.html" title=" " alt="" coords="207,21,389,48"/>
+<area shape="rect" id="node7" href="$classcolmap_1_1RANSAC.html" title=" " alt="" coords="580,65,795,106"/>
+<area shape="rect" id="node4" href="$structcolmap_1_1InlierSupportMeasurer.html" title=" " alt="" coords="187,117,409,144"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1RandomSampler.html" title=" " alt="" coords="205,181,391,208"/>
+<area shape="rect" id="node6" href="$classcolmap_1_1Sampler.html" title=" " alt="" coords="5,181,137,208"/>
+</map>

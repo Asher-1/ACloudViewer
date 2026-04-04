@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.modules.metrics.SemSegMetric
+-------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.metrics
+
+.. autoclass:: SemSegMetric
+    :members:
+    :undoc-members:

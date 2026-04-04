@@ -1,0 +1,5 @@
+<map id="cloudViewer::core::MemoryManagerDevice" name="cloudViewer::core::MemoryManagerDevice">
+<area shape="rect" id="node1" title="Interface for all concrete memory manager classes." alt="" coords="93,5,272,47"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1core_1_1MemoryManagerCPU.html" title=" " alt="" coords="5,95,165,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1core_1_1MemoryManagerCached.html" title=" " alt="" coords="189,95,371,136"/>
+</map>

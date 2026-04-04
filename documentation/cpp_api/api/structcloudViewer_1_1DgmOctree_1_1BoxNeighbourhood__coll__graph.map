@@ -1,0 +1,6 @@
+<map id="cloudViewer::DgmOctree::BoxNeighbourhood" name="cloudViewer::DgmOctree::BoxNeighbourhood">
+<area shape="rect" id="node1" title="Input/output parameters structure for getPointsInBoxNeighbourhood." alt="" coords="5,289,189,331"/>
+<area shape="rect" id="node2" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="45,81,195,108"/>
+<area shape="rect" id="node4" href="$classVector3Tpl.html" title=" " alt="" coords="135,171,345,212"/>
+<area shape="rect" id="node3" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="143,5,287,32"/>
+</map>

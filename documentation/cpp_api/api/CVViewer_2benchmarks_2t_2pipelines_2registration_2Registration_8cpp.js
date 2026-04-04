@@ -1,0 +1,25 @@
+var CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp =
+[
+    [ "ENUM_ICP_METHOD_DEVICE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ad99dcdc9baebe9e43772ccda996ba176", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a357ee8819eb240439647a6ddc7dd950c", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a2eab1fe4731b2a200056e156440ff613", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#aac35c8486565b55c3ccb9f2b9a372c79", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a0e29cd5f726cab5df28b8942e033b8d3", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a47edafb0ab235a304402a8455c733791", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a1976a0081676ef7ed980114bff0b674b", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a1669cf8e455f3f0faab40d696e60b0b6", null ],
+    [ "BENCHMARK_CAPTURE", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ad9f13bce27b2a3cb46c156509dfb53c7", null ],
+    [ "BenchmarkDopplerICP", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a8cf43881fea81cdbdc1db161a18fbdbf", null ],
+    [ "BenchmarkICP", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a0b8ba012eb7581a3787f06b8a433f338", null ],
+    [ "ComputeDirectionVectors", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a7fc7aebc525783533b7413115dde6552", null ],
+    [ "LoadTensorDopplerPointCloudFromFile", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a1a504b0f95758991521a0d7efbc6b071", null ],
+    [ "LoadTensorPointCloudFromFile", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#aadcd8b3920e873ed0722627cebc18ec1", null ],
+    [ "initial_transform_flat", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a18eba4e4d476dfefb6b9ce7d42ee5afd", null ],
+    [ "max_correspondence_distance", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a132094e362ca6cc1a6880f1a419d1828", null ],
+    [ "max_iterations", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ab4fce6b6a40127d9574a89fbdb45a484", null ],
+    [ "normals_max_neighbors", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a3f6da18e6f700aea9c62c82c027ca68d", null ],
+    [ "normals_search_radius", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ab220feec1770671a93c70b9bdb4ad2fc", null ],
+    [ "relative_fitness", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#a03db7d0d45b050f249d0c29686611bdd", null ],
+    [ "relative_rmse", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ac8f8360bb14ea86a72b9a279ba4735e2", null ],
+    [ "voxel_downsampling_factor", "CVViewer_2benchmarks_2t_2pipelines_2registration_2Registration_8cpp.html#ad975ce81598ec736f3c71a22498072ac", null ]
+];

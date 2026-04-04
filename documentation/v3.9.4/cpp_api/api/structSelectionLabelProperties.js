@@ -1,0 +1,28 @@
+var structSelectionLabelProperties =
+[
+    [ "cellLabelBold", "structSelectionLabelProperties.html#a030ba4ba1e02ccdc4e28e887b710ea7d", null ],
+    [ "cellLabelColor", "structSelectionLabelProperties.html#a02061019881087260c20f3273119d4d3", null ],
+    [ "cellLabelFontFamily", "structSelectionLabelProperties.html#aebe1b7dffc04153f6a73a9e2af932fc4", null ],
+    [ "cellLabelFontSize", "structSelectionLabelProperties.html#a67e4ec8df107f3d199ce3df6fb3bb271", null ],
+    [ "cellLabelFormat", "structSelectionLabelProperties.html#aae45b9000c91f6014bf1c8d96e1ac61b", null ],
+    [ "cellLabelHorizontalJustification", "structSelectionLabelProperties.html#a066ddb9c0370a148a8d40b3ec4a0caf9", null ],
+    [ "cellLabelItalic", "structSelectionLabelProperties.html#a74ec8a043d63ecaf793abe08d81bb2ba", null ],
+    [ "cellLabelOpacity", "structSelectionLabelProperties.html#af538f5aafe1b0e24aa9fb81ecac0838d", null ],
+    [ "cellLabelShadow", "structSelectionLabelProperties.html#a1027b4b182b394805c5dfffbd8a995c5", null ],
+    [ "cellLabelVerticalJustification", "structSelectionLabelProperties.html#ac94284e28df325712ae782a69e4ad502", null ],
+    [ "lineWidth", "structSelectionLabelProperties.html#a67ceba91e1b90624198b8e523f17eba3", null ],
+    [ "maxTooltipAttributes", "structSelectionLabelProperties.html#a85071381866f2986b25fc249122d3319", null ],
+    [ "opacity", "structSelectionLabelProperties.html#a6dcba5cc87531b3a64b67e1514f3588a", null ],
+    [ "pointLabelBold", "structSelectionLabelProperties.html#ac54602d0a1170c7f622028994aff7237", null ],
+    [ "pointLabelColor", "structSelectionLabelProperties.html#a5112392e84cc67fb2cd07f5cd87bb82a", null ],
+    [ "pointLabelFontFamily", "structSelectionLabelProperties.html#a06de7f4f00ee24cbb1943aa41500cc12", null ],
+    [ "pointLabelFontSize", "structSelectionLabelProperties.html#a4ae6a8c8d5fb21c77296e631af7016b0", null ],
+    [ "pointLabelFormat", "structSelectionLabelProperties.html#a00eefc7d448402fc35f12141a21c6f07", null ],
+    [ "pointLabelHorizontalJustification", "structSelectionLabelProperties.html#a6413a081c2de3ff55ba85712dd15da59", null ],
+    [ "pointLabelItalic", "structSelectionLabelProperties.html#a76d87a71341f204c313ae9443f51bf72", null ],
+    [ "pointLabelOpacity", "structSelectionLabelProperties.html#a9ac629d5b0de1466458126e72be20132", null ],
+    [ "pointLabelShadow", "structSelectionLabelProperties.html#a2d0c2f12f8cc7e592e9e4670cdd66d47", null ],
+    [ "pointLabelVerticalJustification", "structSelectionLabelProperties.html#ad67e02f277315cc711fd86445bb5a948", null ],
+    [ "pointSize", "structSelectionLabelProperties.html#ab075595588d80a2d3d436268ab3aa540", null ],
+    [ "showTooltips", "structSelectionLabelProperties.html#ae5393c88e2ff7bcc4e47f99cadfba53c", null ]
+];

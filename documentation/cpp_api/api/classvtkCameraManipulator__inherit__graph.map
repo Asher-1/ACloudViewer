@@ -1,0 +1,15 @@
+<map id="vtkCameraManipulator" name="vtkCameraManipulator">
+<area shape="rect" id="node1" title=" " alt="" coords="139,208,311,235"/>
+<area shape="rect" id="node3" href="$classvtkPVJoystickFly.html" title=" " alt="" coords="391,31,521,57"/>
+<area shape="rect" id="node6" href="$classvtkPVTrackballMoveActor.html" title=" " alt="" coords="362,81,550,108"/>
+<area shape="rect" id="node7" href="$classvtkPVTrackballMultiRotate.html" title=" " alt="" coords="359,132,553,159"/>
+<area shape="rect" id="node8" href="$classvtkPVTrackballPan.html" title=" " alt="" coords="385,183,527,209"/>
+<area shape="rect" id="node9" href="$classvtkPVTrackballRoll.html" title=" " alt="" coords="385,233,527,260"/>
+<area shape="rect" id="node10" href="$classvtkPVTrackballRotate.html" title=" " alt="" coords="375,284,537,311"/>
+<area shape="rect" id="node11" href="$classvtkPVTrackballZoom.html" title=" " alt="" coords="378,335,534,361"/>
+<area shape="rect" id="node13" href="$classvtkTrackballPan.html" title=" " alt="" coords="394,385,518,412"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,208,91,235"/>
+<area shape="rect" id="node4" href="$classvtkPVJoystickFlyIn.html" title=" " alt="" coords="637,5,779,32"/>
+<area shape="rect" id="node5" href="$classvtkPVJoystickFlyOut.html" title=" " alt="" coords="631,56,785,83"/>
+<area shape="rect" id="node12" href="$classvtkPVTrackballZoomToMouse.html" title=" " alt="" coords="601,335,815,361"/>
+</map>

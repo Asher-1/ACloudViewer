@@ -1,0 +1,9 @@
+cloudViewer.core.DLDeviceType
+-----------------------------
+
+.. currentmodule:: cloudViewer.core
+
+.. autoclass:: DLDeviceType
+    :members:
+    :undoc-members:
+    :inherited-members:

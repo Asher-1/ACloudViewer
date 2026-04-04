@@ -1,0 +1,28 @@
+var classVector2Tpl =
+[
+    [ "Vector2Tpl", "classVector2Tpl.html#ad72ea44667895985cda7ea0179890378", null ],
+    [ "Vector2Tpl", "classVector2Tpl.html#a1ab4727fdb339eeb9a6c88a08167aa48", null ],
+    [ "cross", "classVector2Tpl.html#a96b209497c58a754b72165136a6aa0c2", null ],
+    [ "data", "classVector2Tpl.html#aab9f5a6af86924cc760ebc4126f513e7", null ],
+    [ "data", "classVector2Tpl.html#a37a4942a9a9de0596c79a78bb26bc822", null ],
+    [ "dimensions", "classVector2Tpl.html#a5ba8fd71e20b50a77dffdc119eabeec5", null ],
+    [ "dot", "classVector2Tpl.html#a282cd08b70ad98b293bd7c26cd3cdcf6", null ],
+    [ "norm", "classVector2Tpl.html#a85928ccb1de2f99afa9f3f29188871f6", null ],
+    [ "norm2", "classVector2Tpl.html#ae621abab4a14ccc042df758fe10ec893", null ],
+    [ "normalize", "classVector2Tpl.html#a98435c07a6d52f83f320dffa7c358177", null ],
+    [ "operator*", "classVector2Tpl.html#a6538df4ff833ab9df91a5efb85d07652", null ],
+    [ "operator*=", "classVector2Tpl.html#a3c14f1f5928fb7ed447b778038173a3d", null ],
+    [ "operator+", "classVector2Tpl.html#a81c96d1bdfc414650f51de2b4468907b", null ],
+    [ "operator+=", "classVector2Tpl.html#a2f1781db046d42ac2a6586511a25d153", null ],
+    [ "operator-", "classVector2Tpl.html#a066126d794283ffe27d3fe49b0ce861b", null ],
+    [ "operator-", "classVector2Tpl.html#aa7550fb2c249c9a0f2eb2fdde35947ab", null ],
+    [ "operator-=", "classVector2Tpl.html#a560c7d8e488ebd5fddd49a7396db93b8", null ],
+    [ "operator/", "classVector2Tpl.html#a8f81a56aacb206a287cac3ac352dfad1", null ],
+    [ "operator/=", "classVector2Tpl.html#ad6a9be00d86d27a5f75405f22b8c7785", null ],
+    [ "operator[]", "classVector2Tpl.html#a590d32737a82ca0eef6bbe13d5a0b507", null ],
+    [ "operator[]", "classVector2Tpl.html#aa04aee5c4597e24b00227f0aa3ed370c", null ],
+    [ "rows", "classVector2Tpl.html#aad4d297eb02c22cea7fbff53a9751095", null ],
+    [ "u", "classVector2Tpl.html#afcde09772afcd63780b31b565da5a19d", null ],
+    [ "x", "classVector2Tpl.html#a81616567b348e66d8393967c334efdf2", null ],
+    [ "y", "classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47", null ]
+];

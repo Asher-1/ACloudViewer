@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.SemanticKITTI
+-------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: SemanticKITTI
+    :members:
+    :undoc-members:

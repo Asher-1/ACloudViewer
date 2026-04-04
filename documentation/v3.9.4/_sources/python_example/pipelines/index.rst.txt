@@ -1,0 +1,83 @@
+Pipelines
+---------
+
+colored_icp_registration.py
+```````````````````````````
+
+.. literalinclude:: colored_icp_registration.py
+   :language: python
+   :linenos:
+
+
+doppler_icp_registration.py
+```````````````````````````
+
+.. literalinclude:: doppler_icp_registration.py
+   :language: python
+   :linenos:
+
+
+icp_registration.py
+```````````````````
+
+.. literalinclude:: icp_registration.py
+   :language: python
+   :linenos:
+
+
+multiway_registration.py
+````````````````````````
+
+.. literalinclude:: multiway_registration.py
+   :language: python
+   :linenos:
+
+
+pose_graph_optimization.py
+``````````````````````````
+
+.. literalinclude:: pose_graph_optimization.py
+   :language: python
+   :linenos:
+
+
+registration_fgr.py
+```````````````````
+
+.. literalinclude:: registration_fgr.py
+   :language: python
+   :linenos:
+
+
+registration_ransac.py
+``````````````````````
+
+.. literalinclude:: registration_ransac.py
+   :language: python
+   :linenos:
+
+
+rgbd_integration_uniform.py
+```````````````````````````
+
+.. literalinclude:: rgbd_integration_uniform.py
+   :language: python
+   :linenos:
+
+
+rgbd_odometry.py
+````````````````
+
+.. literalinclude:: rgbd_odometry.py
+   :language: python
+   :linenos:
+
+
+robust_icp.py
+`````````````
+
+.. literalinclude:: robust_icp.py
+   :language: python
+   :linenos:
+
+

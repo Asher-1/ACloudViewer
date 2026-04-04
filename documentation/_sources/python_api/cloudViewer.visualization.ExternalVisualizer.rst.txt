@@ -1,0 +1,9 @@
+cloudViewer.visualization.ExternalVisualizer
+--------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization
+
+.. autoclass:: ExternalVisualizer
+    :members:
+    :undoc-members:
+    :inherited-members:

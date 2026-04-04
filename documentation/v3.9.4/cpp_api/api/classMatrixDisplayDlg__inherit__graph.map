@@ -1,0 +1,5 @@
+<map id="MatrixDisplayDlg" name="MatrixDisplayDlg">
+<area shape="rect" id="node1" title="Simple widget to display a 4x4 matrix in various formats." alt="" coords="48,80,183,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,84,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="109,5,266,32"/>
+</map>

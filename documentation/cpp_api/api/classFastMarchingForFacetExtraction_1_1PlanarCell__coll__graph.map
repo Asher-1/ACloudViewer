@@ -1,0 +1,7 @@
+<map id="FastMarchingForFacetExtraction::PlanarCell" name="FastMarchingForFacetExtraction::PlanarCell">
+<area shape="rect" id="node1" title="A Fast Marching grid cell for planar facets extraction." alt="" coords="11,289,239,331"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1FastMarching_1_1Cell.html" title="A generic Fast Marching grid cell." alt="" coords="5,171,201,212"/>
+<area shape="rect" id="node3" href="$classVector3Tpl.html" title=" " alt="" coords="226,171,437,212"/>
+<area shape="rect" id="node4" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="235,5,379,32"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="329,81,480,108"/>
+</map>

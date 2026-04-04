@@ -1,0 +1,58 @@
+var structmasc_1_1Feature =
+[
+    [ "Source", "structmasc_1_1Feature_1_1Source.html", "structmasc_1_1Feature_1_1Source" ],
+    [ "Set", "structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611", null ],
+    [ "Shared", "structmasc_1_1Feature.html#a76af3db810cacb9c637496880f444041", null ],
+    [ "Operation", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304", [
+      [ "NO_OPERATION", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304a85a5a4397ac09f3db7ce89a58e3abbe8", null ],
+      [ "MINUS", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304aa04ea5db79647aad618801705fed13a9", null ],
+      [ "PLUS", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304a7ea54e99a37329f00d25712e278d42c4", null ],
+      [ "DIVIDE", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304af15e69c41a180d62a442627f0ed4f934", null ],
+      [ "MULTIPLY", "structmasc_1_1Feature.html#ad3dcf9b8418bacea0e7cc1d89e548304af79c0862e6a1f438147c2b6898119f48", null ]
+    ] ],
+    [ "Stat", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2", [
+      [ "NO_STAT", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2ab0e4b7d27021a72c497de5c4a72010bc", null ],
+      [ "MEAN", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2ac3061d5cb0353c1c5d8d05bbddf4c38e", null ],
+      [ "MODE", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2a9a3f1f06fb808f5eada9ec241c0ff0bf", null ],
+      [ "MEDIAN", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2a94af31399b71fa180f7fbad444b58123", null ],
+      [ "STD", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2a4b30ad945824386e5eddccd5b97b7269", null ],
+      [ "RANGE", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2ac2ff93b6b406dbe1aeba46d6209f89d4", null ],
+      [ "SKEW", "structmasc_1_1Feature.html#a84c42be9ca136791c73e711b336d19a2a9cfdf19a48984627fa8170334fad5a5c", null ]
+    ] ],
+    [ "Type", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809", [
+      [ "PointFeature", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809af96c5679d012802c3513b821b9729a62", null ],
+      [ "NeighborhoodFeature", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809a6f1fefef2e218f9da7e969c27f6009ee", null ],
+      [ "ContextBasedFeature", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809afb50148a4613ab014ac191b99e40766b", null ],
+      [ "DualCloudFeature", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809afc31dfbe0ec7849afa9e135521a19e5c", null ],
+      [ "Invalid", "structmasc_1_1Feature.html#a89e6162e0ff7108f66f41ed5d12d6809a4bbb8f967da6d1a610596d7257179c2b", null ]
+    ] ],
+    [ "Feature", "structmasc_1_1Feature.html#ab2a18e431f40b53a1df3c1ce3a6b3874", null ],
+    [ "~Feature", "structmasc_1_1Feature.html#a0168fad69935dc4ab1b2d2660d6b364e", null ],
+    [ "CheckSFExistence", "structmasc_1_1Feature.html#a0d61a1de4f653bbbf1c342f3e49f9db9", null ],
+    [ "checkValidity", "structmasc_1_1Feature.html#a48007c20dbf5d5ae23f0709f5a28e387", null ],
+    [ "clone", "structmasc_1_1Feature.html#a513d75d7e50e2180c075c1124f87f417", null ],
+    [ "ExtractSources", "structmasc_1_1Feature.html#a1fa5e84527da0ceb84d5d626d97ecf15", null ],
+    [ "finish", "structmasc_1_1Feature.html#a618fae9e2f1d0aab0858c3c4ad5fe9f5", null ],
+    [ "getType", "structmasc_1_1Feature.html#a77be7a6a6458c56998e4c942712ec73f", null ],
+    [ "LoadSources", "structmasc_1_1Feature.html#a64f12fe324305890fe972faeae8b1328", null ],
+    [ "OpToString", "structmasc_1_1Feature.html#ab547d53a6cd6fc28c658e5edd16fa7a5", null ],
+    [ "PerformMathOp", "structmasc_1_1Feature.html#af54f1947bdb1172551bb594a8af3d8a2", null ],
+    [ "PerformMathOp", "structmasc_1_1Feature.html#afe65955663fd5342d21cbbb47a0cf36a", null ],
+    [ "PerformMathOp", "structmasc_1_1Feature.html#a9525ec298f7a008fe9f0ce0be74223c1", null ],
+    [ "prepare", "structmasc_1_1Feature.html#a67349e745bdc5cfe4f1f5d5be4e432e8", null ],
+    [ "PrepareSF", "structmasc_1_1Feature.html#ac5ef7e466a887186c5a4c61148860272", null ],
+    [ "SaveSources", "structmasc_1_1Feature.html#a4d885ea621e76622e5763c9f7a006de4", null ],
+    [ "scaled", "structmasc_1_1Feature.html#a77d4e5fe251f67a67a10ed45b4d651f7", null ],
+    [ "StatToString", "structmasc_1_1Feature.html#a7e73eb1ba0c9d2c9952bd67263a9ebba", null ],
+    [ "toString", "structmasc_1_1Feature.html#a8201a6f245623d1aef4bbdb23d9dadad", null ],
+    [ "cloud1", "structmasc_1_1Feature.html#a70577b577c79cf36c43816e36506ea3d", null ],
+    [ "cloud1Label", "structmasc_1_1Feature.html#aa1d34dde3b55ef940e34c6cff820b14a", null ],
+    [ "cloud2", "structmasc_1_1Feature.html#a8ce389e7361daf7fa506cb0d04a95c0d", null ],
+    [ "cloud2Label", "structmasc_1_1Feature.html#aed6735f9eabe8417bfcb8287685f9172", null ],
+    [ "op", "structmasc_1_1Feature.html#a9586adcbc82497b9baaf93eaf8b16fd1", null ],
+    [ "scale", "structmasc_1_1Feature.html#ac2f99d0cad1a8ded4db0fb4ad0559d84", null ],
+    [ "sf1WasAlreadyExisting", "structmasc_1_1Feature.html#acb923ba4332b2d60143f01532cddcf90", null ],
+    [ "sf2WasAlreadyExisting", "structmasc_1_1Feature.html#a8c0696e296bc55c4c574e10216201574", null ],
+    [ "source", "structmasc_1_1Feature.html#a7e09cb3bf4c4a0092ebe1c37e50fb344", null ],
+    [ "stat", "structmasc_1_1Feature.html#aa5288f60e64a732466b68d1f13436b7c", null ]
+];

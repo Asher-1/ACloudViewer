@@ -1,0 +1,27 @@
+var qRANSAC__SD__Commands_8h =
+[
+    [ "CommandRANSAC", "structCommandRANSAC.html", "structCommandRANSAC" ],
+    [ "BITMAP_EPSILON_ABSOLUTE", "qRANSAC__SD__Commands_8h.html#ad9df752e5695431d7b239b4e552194b9", null ],
+    [ "BITMAP_EPSILON_PERCENTAGE_OF_SCALE", "qRANSAC__SD__Commands_8h.html#a0a3cf7a123b3a099f847f0a95d3326bf", null ],
+    [ "COMMAND_RANSAC", "qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b", null ],
+    [ "ENABLE_PRIMITIVE", "qRANSAC__SD__Commands_8h.html#a701e11ad9c741b23583cdbdf929973bc", null ],
+    [ "EPSILON_ABSOLUTE", "qRANSAC__SD__Commands_8h.html#aca54fa8f8c30ad57969e765ea7a35c2f", null ],
+    [ "EPSILON_PERCENTAGE_OF_SCALE", "qRANSAC__SD__Commands_8h.html#a880c8c8fec897d1ac65c0b844e336912", null ],
+    [ "MAX_NORMAL_DEV", "qRANSAC__SD__Commands_8h.html#afe6e79d3b51af749601637e7ced75326", null ],
+    [ "OUT_CLOUD_DIR", "qRANSAC__SD__Commands_8h.html#acf7cc932a7728c9a4f73b243c3cb4fc8", null ],
+    [ "OUT_GROUP_DIR", "qRANSAC__SD__Commands_8h.html#a31436ee4cabd909c035630805ee6f178", null ],
+    [ "OUT_MESH_DIR", "qRANSAC__SD__Commands_8h.html#af7dce9a9a8bf4124f7dc7804df4a70f3", null ],
+    [ "OUT_PAIR_DIR", "qRANSAC__SD__Commands_8h.html#a6ba88c970a3bd0f48973fc9b717c7411", null ],
+    [ "OUT_RANDOM_COLOR", "qRANSAC__SD__Commands_8h.html#a3057ceb2e1bc7a8f41c154c70e7a8c1e", null ],
+    [ "OUTPUT_GROUPED", "qRANSAC__SD__Commands_8h.html#a73d974e966498d283b0f02bd57be0ec4", null ],
+    [ "OUTPUT_INDIVIDUAL_PAIRED_CLOUD_PRIMITIVE", "qRANSAC__SD__Commands_8h.html#ad945ae6a121b10a37e20465ee0845a4d", null ],
+    [ "OUTPUT_INDIVIDUAL_PRIMITIVES", "qRANSAC__SD__Commands_8h.html#a61b80fb5a2500fa89dcd9d71106f69ca", null ],
+    [ "OUTPUT_INDIVIDUAL_SUBCLOUDS", "qRANSAC__SD__Commands_8h.html#addc014785d388f44ec25c91fe8c38f82", null ],
+    [ "PRIM_CONE", "qRANSAC__SD__Commands_8h.html#a9fc57325587c3db81289b357fcf767f7", null ],
+    [ "PRIM_CYLINDER", "qRANSAC__SD__Commands_8h.html#a35eb6cbb92e597dcacb8d5eac179a56a", null ],
+    [ "PRIM_PLANE", "qRANSAC__SD__Commands_8h.html#a52381fac3056cf034afd0b2cf0f46a31", null ],
+    [ "PRIM_SPHERE", "qRANSAC__SD__Commands_8h.html#a902c9576a969e8b87305ceff1f7a7eec", null ],
+    [ "PRIM_TORUS", "qRANSAC__SD__Commands_8h.html#a5f548f67ddac42319f677a319b2015ea", null ],
+    [ "PROBABILITY", "qRANSAC__SD__Commands_8h.html#ad94aac794cab7867bd3ea1f1d0c4bb23", null ],
+    [ "SUPPORT_POINTS", "qRANSAC__SD__Commands_8h.html#acbf358e53e0243e30e8ed7adfefda064", null ]
+];

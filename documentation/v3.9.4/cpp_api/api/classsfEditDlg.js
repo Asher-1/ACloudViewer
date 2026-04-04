@@ -1,0 +1,26 @@
+var classsfEditDlg =
+[
+    [ "sfEditDlg", "classsfEditDlg.html#a455f687a06002ed45e678c4c2ac8b1c6", null ],
+    [ "~sfEditDlg", "classsfEditDlg.html#a08f20f42dface22864f15f51e2f5f706", null ],
+    [ "alwaysShow0Changed", "classsfEditDlg.html#a616fae0beb19287fa53f3b3063c9bda6", null ],
+    [ "dispSlider2spin", "classsfEditDlg.html#a01e3a6fc8461930a94142da999cb71dd", null ],
+    [ "dispSpin2slider", "classsfEditDlg.html#a21fddc193bebdbce654cc491f0993567", null ],
+    [ "entitySFHasChanged", "classsfEditDlg.html#aaec8f86e4fe912865144b81120715780", null ],
+    [ "fillDialogWith", "classsfEditDlg.html#ae15818f56d314ad277ee73d4dbd35036", null ],
+    [ "logScaleChanged", "classsfEditDlg.html#a8674a7419d15129cb0c9708b496b611b", null ],
+    [ "maxSatHistoChanged", "classsfEditDlg.html#add0e8ab597c897472ff307636daf4f2e", null ],
+    [ "maxSatSBChanged", "classsfEditDlg.html#ac45b449f8c9f8a76680fb341999266cb", null ],
+    [ "maxValHistoChanged", "classsfEditDlg.html#a5da94a2ee7501e214d9473daa43cdf74", null ],
+    [ "maxValSBChanged", "classsfEditDlg.html#aaed2bc00ee7599658a7ae354365a9bb0", null ],
+    [ "minSatHistoChanged", "classsfEditDlg.html#a355768d437892d50417d43076e7b75c6", null ],
+    [ "minSatSBChanged", "classsfEditDlg.html#aad3a8e93f0ae9f47867bb45636ed519f", null ],
+    [ "minValHistoChanged", "classsfEditDlg.html#ac5070e2d05cf7fc42a9c4d4437a68c49", null ],
+    [ "minValSBChanged", "classsfEditDlg.html#a42de7398cf52a31d23e7e526cd8a1d95", null ],
+    [ "nanInGrayChanged", "classsfEditDlg.html#ae2b94817f1c79b7f240d0dcc95eb67ec", null ],
+    [ "satSlider2spin", "classsfEditDlg.html#afa6060ac1e6d84498ed4b5e5316a46ca", null ],
+    [ "satSpin2slider", "classsfEditDlg.html#ab7aa284e48735d575109aaae65c42714", null ],
+    [ "symmetricalScaleChanged", "classsfEditDlg.html#ae1e1f6f3ba03e70f140926e1beb7153a", null ],
+    [ "m_associatedSF", "classsfEditDlg.html#a24ef7e71733cc03cc5dc3e6e5ef7c3b5", null ],
+    [ "m_associatedSFHisto", "classsfEditDlg.html#a64dab36e1f89c0489f6fa80eee4cd05e", null ],
+    [ "m_ui", "classsfEditDlg.html#a59bf004cf0bd5e2840c09a312587190c", null ]
+];

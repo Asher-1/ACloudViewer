@@ -1,0 +1,14 @@
+<map id="cvGenericFilter" name="cvGenericFilter">
+<area shape="rect" id="node1" title=" " alt="" coords="132,183,252,209"/>
+<area shape="rect" id="node3" href="$classcvCutFilter.html" title=" " alt="" coords="325,31,417,57"/>
+<area shape="rect" id="node6" href="$classcvDecimateFilter.html" title=" " alt="" coords="304,81,437,108"/>
+<area shape="rect" id="node7" href="$classcvGlyphFilter.html" title=" " alt="" coords="317,132,425,159"/>
+<area shape="rect" id="node8" href="$classcvIsoSurfaceFilter.html" title=" " alt="" coords="301,183,440,209"/>
+<area shape="rect" id="node10" href="$classcvProbeFilter.html" title=" " alt="" coords="317,233,424,260"/>
+<area shape="rect" id="node11" href="$classcvSmoothFilter.html" title=" " alt="" coords="311,284,431,311"/>
+<area shape="rect" id="node12" href="$classcvStreamlineFilter.html" title=" " alt="" coords="300,335,441,361"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,183,84,209"/>
+<area shape="rect" id="node4" href="$classcvClipFilter.html" title=" " alt="" coords="509,5,604,32"/>
+<area shape="rect" id="node5" href="$classcvSliceFilter.html" title=" " alt="" coords="506,56,607,83"/>
+<area shape="rect" id="node9" href="$classcvThresholdFilter.html" title=" " alt="" coords="489,183,624,209"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="ccPointCloudLOD::Node" name="ccPointCloudLOD::Node">
+<area shape="rect" id="node1" title="Octree &#39;tree&#39; node." alt="" coords="125,289,299,316"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,171,80,197"/>
+<area shape="rect" id="node3" title=" " alt="" coords="179,171,245,197"/>
+<area shape="rect" id="node4" href="$classVector3Tpl.html" title=" " alt="" coords="270,171,421,197"/>
+<area shape="rect" id="node5" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="249,5,393,32"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="343,81,494,108"/>
+</map>

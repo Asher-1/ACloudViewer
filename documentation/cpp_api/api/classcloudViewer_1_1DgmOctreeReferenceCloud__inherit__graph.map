@@ -1,0 +1,6 @@
+<map id="cloudViewer::DgmOctreeReferenceCloud" name="cloudViewer::DgmOctreeReferenceCloud">
+<area shape="rect" id="node1" title="A kind of ReferenceCloud based on the DgmOctree::NeighboursSet structure." alt="" coords="5,259,256,300"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="25,169,236,211"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="25,80,236,121"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="32,5,229,32"/>
+</map>

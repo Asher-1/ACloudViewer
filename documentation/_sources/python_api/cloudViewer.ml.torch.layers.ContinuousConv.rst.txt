@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.layers.ContinuousConv
+------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.layers
+
+.. autoclass:: ContinuousConv
+    :members:
+    :undoc-members:

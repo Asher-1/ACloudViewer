@@ -1,0 +1,36 @@
+cloudViewer.ml.torch.datasets.utils
+===================================
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+**Classes**
+
+.. autosummary::
+
+    BEVBox3D
+    DataProcessing
+    ObjdetAugmentation
+
+
+**Functions**
+
+.. autosummary::
+
+    create_3D_rotations
+    get_min_bbox
+    trans_augment
+    trans_crop_pc
+    trans_normalize
+
+
+.. toctree::
+    :hidden:
+
+    BEVBox3D <cloudViewer.ml.torch.datasets.utils.BEVBox3D>
+    DataProcessing <cloudViewer.ml.torch.datasets.utils.DataProcessing>
+    ObjdetAugmentation <cloudViewer.ml.torch.datasets.utils.ObjdetAugmentation>
+    create_3D_rotations <cloudViewer.ml.torch.datasets.utils.create_3D_rotations>
+    get_min_bbox <cloudViewer.ml.torch.datasets.utils.get_min_bbox>
+    trans_augment <cloudViewer.ml.torch.datasets.utils.trans_augment>
+    trans_crop_pc <cloudViewer.ml.torch.datasets.utils.trans_crop_pc>
+    trans_normalize <cloudViewer.ml.torch.datasets.utils.trans_normalize>

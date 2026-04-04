@@ -1,0 +1,4 @@
+<map id="cloudViewer::geometry::KDTreeSearchParamRadius" name="cloudViewer::geometry::KDTreeSearchParamRadius">
+<area shape="rect" id="node1" title="KDTree search parameters for pure radius search." alt="" coords="5,95,211,136"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1geometry_1_1KDTreeSearchParam.html" title="Base class for KDTree search parameters." alt="" coords="21,5,195,47"/>
+</map>

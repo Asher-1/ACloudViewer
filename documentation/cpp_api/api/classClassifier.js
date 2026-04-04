@@ -1,0 +1,25 @@
+var classClassifier =
+[
+    [ "FileHeader", "structClassifier_1_1FileHeader.html", "structClassifier_1_1FileHeader" ],
+    [ "Point2D", "classClassifier.html#a6932c49e25fde5b1ab3bd1ae8215a902", null ],
+    [ "Classifier", "classClassifier.html#ae6132b100c96a4f3d8ad3885b5acb28e", null ],
+    [ "checkRefPoints", "classClassifier.html#aaf86ad7ab607015deeba16f008c9bc8a", null ],
+    [ "classify", "classClassifier.html#aa9406b80927d58d58ac98fc47a4e8207", null ],
+    [ "classify2D", "classClassifier.html#a29c143d1ce23408ebe43cf2bb1ec4706", null ],
+    [ "classify2D_checkcondnum", "classClassifier.html#a3e9e573b09cd1340b2a313706fde5ccb", null ],
+    [ "Load", "classClassifier.html#a232a1c0c195fc118a36af26221ed9fea", null ],
+    [ "project", "classClassifier.html#a651bf6c2c090c3b5b5d18cbf1560eb66", null ],
+    [ "save", "classClassifier.html#a4734a40ae6c3703ae1d64298c7154c41", null ],
+    [ "absMaxXY", "classClassifier.html#a123e5edb42c95373553ad5e730cdcf3a", null ],
+    [ "axisScaleRatio", "classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9", null ],
+    [ "class1", "classClassifier.html#a6303e80279563a9e820d575e42522ea4", null ],
+    [ "class2", "classClassifier.html#adb863da3f31af3ea48eb4d1ff654fca1", null ],
+    [ "descriptorID", "classClassifier.html#a65907b67a6a8908933c017c33c50ba7a", null ],
+    [ "dimPerScale", "classClassifier.html#a52d2cda42b37b562ab0f1df626317671", null ],
+    [ "path", "classClassifier.html#a8f32ddad2eb8e08f151efa31471efe20", null ],
+    [ "refPointNeg", "classClassifier.html#af6ece47d5bcaa3b1514a35af53567956", null ],
+    [ "refPointPos", "classClassifier.html#acb72cca2f4362ea09fb6b8dbcd8bafc5", null ],
+    [ "scales", "classClassifier.html#aa1cde6a80d1f3f7161cac5d20cb6b8f8", null ],
+    [ "weightsAxis1", "classClassifier.html#a6a6cedb286eb91950b92f53f24f3fbff", null ],
+    [ "weightsAxis2", "classClassifier.html#a15de939bcdcaeae3f269d5593663d571", null ]
+];

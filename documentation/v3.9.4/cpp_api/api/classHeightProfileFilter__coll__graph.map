@@ -1,0 +1,4 @@
+<map id="HeightProfileFilter" name="HeightProfileFilter">
+<area shape="rect" id="node1" title="Polyline height profile I/O filter." alt="" coords="5,80,144,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="29,5,121,32"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="CLEntityDesc" name="CLEntityDesc">
+<area shape="rect" id="node1" title="Loaded entity description." alt="" coords="137,5,245,32"/>
+<area shape="rect" id="node2" href="$structCLCloudDesc.html" title="Loaded cloud description." alt="" coords="5,80,112,107"/>
+<area shape="rect" id="node3" href="$structCLGroupDesc.html" title="Loaded group description." alt="" coords="136,80,245,107"/>
+<area shape="rect" id="node4" href="$structCLMeshDesc.html" title="Loaded mesh description." alt="" coords="270,80,375,107"/>
+</map>

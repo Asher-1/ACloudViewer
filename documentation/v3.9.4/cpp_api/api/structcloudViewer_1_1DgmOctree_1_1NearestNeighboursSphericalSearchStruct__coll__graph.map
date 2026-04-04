@@ -1,0 +1,8 @@
+<map id="cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct" name="cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct">
+<area shape="rect" id="node1" title=" " alt="" coords="17,405,231,461"/>
+<area shape="rect" id="node2" href="$structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html" title="Container of in/out parameters for nearest neighbour(s) search." alt="" coords="5,315,243,356"/>
+<area shape="rect" id="node3" href="$classTuple3Tpl.html" title=" " alt="" coords="37,145,168,172"/>
+<area shape="rect" id="node4" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="116,5,260,32"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title=" " alt="" coords="177,196,388,237"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="226,95,377,121"/>
+</map>

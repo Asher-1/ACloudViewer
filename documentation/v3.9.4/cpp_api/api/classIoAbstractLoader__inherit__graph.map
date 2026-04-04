@@ -1,0 +1,10 @@
+<map id="IoAbstractLoader" name="IoAbstractLoader">
+<area shape="rect" id="node1" title=" " alt="" coords="367,80,499,107"/>
+<area shape="rect" id="node3" href="$classAssimp3DMax.html" title=" " alt="" coords="5,155,121,181"/>
+<area shape="rect" id="node4" href="$classAssimpBlender.html" title=" " alt="" coords="146,155,266,181"/>
+<area shape="rect" id="node5" href="$classAssimpCollada.html" title=" " alt="" coords="291,155,409,181"/>
+<area shape="rect" id="node6" href="$classAssimpCommonFilter.html" title=" " alt="" coords="434,155,597,181"/>
+<area shape="rect" id="node7" href="$classAssimpGltf.html" title=" " alt="" coords="621,155,716,181"/>
+<area shape="rect" id="node8" href="$classAssimpIfc.html" title=" " alt="" coords="740,155,827,181"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="387,5,479,32"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="cloudViewer::MovieGrabberWidget::ViewData" name="cloudViewer::MovieGrabberWidget::ViewData">
+<area shape="rect" id="node1" title=" " alt="" coords="179,483,381,524"/>
+<area shape="rect" id="node2" href="$classecvViewportParameters.html" title="Standard parameters for GL displays/viewports." alt="" coords="87,393,265,420"/>
+<area shape="rect" id="node3" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="172,5,327,32"/>
+<area shape="rect" id="node8" href="$classccGLMatrixTpl.html" title=" " alt="" coords="269,171,459,197"/>
+<area shape="rect" id="node9" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="287,81,441,108"/>
+<area shape="rect" id="node4" href="$classVector3Tpl.html" title=" " alt="" coords="57,260,223,287"/>
+<area shape="rect" id="node5" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="56,81,200,108"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="94,171,245,197"/>
+<area shape="rect" id="node7" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="298,260,401,287"/>
+</map>

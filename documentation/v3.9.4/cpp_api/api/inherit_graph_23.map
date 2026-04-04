@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classCameraRepresentation.html" title="Interface for E57 camera representation." alt="" coords="5,31,177,57"/>
+<area shape="rect" id="node2" href="$classVisualReferenceRepresentation.html" title=" " alt="" coords="225,31,452,57"/>
+<area shape="rect" id="node3" href="$classSphericalRepresentation.html" title=" " alt="" coords="500,31,681,57"/>
+<area shape="rect" id="node4" href="$classCylindricalRepresentation.html" title=" " alt="" coords="729,5,920,32"/>
+<area shape="rect" id="node5" href="$classPinholeRepresentation.html" title=" " alt="" coords="740,56,909,83"/>
+</map>

@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.modules.losses.CrossEntropyLoss
+----------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+.. autoclass:: CrossEntropyLoss
+    :members:
+    :undoc-members:

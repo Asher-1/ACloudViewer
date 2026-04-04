@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Electricity3D
+-------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Electricity3D
+    :members:
+    :undoc-members:

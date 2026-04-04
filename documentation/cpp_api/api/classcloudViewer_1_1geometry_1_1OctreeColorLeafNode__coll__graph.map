@@ -1,0 +1,6 @@
+<map id="cloudViewer::geometry::OctreeColorLeafNode" name="cloudViewer::geometry::OctreeColorLeafNode">
+<area shape="rect" id="node1" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="5,273,179,315"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class." alt="" coords="5,184,179,225"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="5,95,179,136"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="18,5,166,47"/>
+</map>

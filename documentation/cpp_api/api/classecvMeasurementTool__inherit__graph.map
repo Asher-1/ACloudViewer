@@ -1,0 +1,7 @@
+<map id="ecvMeasurementTool" name="ecvMeasurementTool">
+<area shape="rect" id="node1" title="Dialog for managing measurement tools (Distance, Contour, Protractor)" alt="" coords="169,155,331,181"/>
+<area shape="rect" id="node2" href="$classccOverlayDialog.html" title="Generic overlay dialog interface." alt="" coords="5,80,135,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="33,5,107,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="159,80,341,107"/>
+<area shape="rect" id="node5" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="365,80,500,107"/>
+</map>

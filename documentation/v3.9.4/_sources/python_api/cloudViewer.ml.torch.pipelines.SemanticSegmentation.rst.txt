@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.pipelines.SemanticSegmentation
+---------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.pipelines
+
+.. autoclass:: SemanticSegmentation
+    :members:
+    :undoc-members:

@@ -1,0 +1,49 @@
+.. _customized_integration:
+
+Customized Integration
+-------------------------------------
+You can prototype a new RGB-D volumetric reconstruction algorithm with additional properties (e.g. semantic labels) while maintaining a reasonable performance. An example can be found at ``examples/Python/t_reconstruction_system/integrate_custom.py``.
+
+Activation
+``````````
+The frustum **block** selection remains the same, but then we manually activate these blocks and obtain their buffer indices in the :ref:`/tutorial/core/hashmap.ipynb`:
+
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
+   :language: python
+   :lineno-start: 60
+   :lines: 8,61-68
+
+Voxel Indices
+``````````````
+We can then unroll **voxel** indices in these **blocks** into a flattened array, along with their corresponding voxel coordinates.
+
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
+   :language: python
+   :lineno-start: 72
+   :lines: 8,73-74
+
+Up to now we have finished preparation. Then we can perform customized geometry transformation in the Tensor interface, with the same fashion as we conduct in numpy or pytorch.
+
+Geometry transformation
+````````````````````````
+We first transform the voxel coordinates to the frame's coordinate system, project them to the image space, and filter out-of-bound correspondences:
+
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
+   :language: python
+   :lineno-start: 80
+   :lines: 8,81-98
+
+Customized integration
+````````````````````````
+With the data association, we are able to conduct integration. In this example, we show the conventional TSDF integration written in vectorized Python code:
+
+- Read the associated RGB-D properties from the color/depth images at the associated ``u, v`` indices;
+- Read the voxels from the voxel buffer arrays (``vbg.attribute``) at masked ``voxel_indices``;
+- Perform in-place modification
+
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
+   :language: python
+   :lineno-start: 98
+   :lines: 8,99-108,113-132
+
+You may follow the example and adapt it to your customized properties. CloudViewer supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.

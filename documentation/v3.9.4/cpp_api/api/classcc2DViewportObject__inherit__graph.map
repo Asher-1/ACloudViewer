@@ -1,0 +1,9 @@
+<map id="cc2DViewportObject" name="cc2DViewportObject">
+<area shape="rect" id="node1" title="2D viewport object" alt="" coords="157,229,312,256"/>
+<area shape="rect" id="node6" href="$classcc2DViewportLabel.html" title="2D viewport label" alt="" coords="5,304,152,331"/>
+<area shape="rect" id="node7" href="$classccMouseCircle.html" title=" " alt="" coords="177,304,293,331"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="191,155,279,181"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="129,80,207,107"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="91,5,245,32"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="231,80,371,107"/>
+</map>

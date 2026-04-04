@@ -1,0 +1,24 @@
+<map id="pcl::visualization::PCLContextItem" name="pcl::visualization::PCLContextItem">
+<area shape="rect" id="node1" title=" " alt="" coords="177,365,312,407"/>
+<area shape="rect" id="node3" href="$structPclUtils_1_1context__items_1_1Circle.html" title=" " alt="" coords="372,5,544,47"/>
+<area shape="rect" id="node5" href="$structPclUtils_1_1context__items_1_1Line.html" title=" " alt="" coords="372,71,544,112"/>
+<area shape="rect" id="node6" href="$structPclUtils_1_1context__items_1_1Point.html" title=" " alt="" coords="372,136,544,177"/>
+<area shape="rect" id="node7" href="$structPclUtils_1_1context__items_1_1Points.html" title=" " alt="" coords="372,201,544,243"/>
+<area shape="rect" id="node10" href="$structPclUtils_1_1context__items_1_1Rectangle.html" title=" " alt="" coords="372,267,544,308"/>
+<area shape="rect" id="node12" href="$structPclUtils_1_1context__items_1_1Text.html" title=" " alt="" coords="372,332,544,373"/>
+<area shape="rect" id="node13" href="$structpcl_1_1visualization_1_1context__items_1_1Circle.html" title=" " alt="" coords="374,397,542,439"/>
+<area shape="rect" id="node15" href="$structpcl_1_1visualization_1_1context__items_1_1Line.html" title=" " alt="" coords="379,463,537,504"/>
+<area shape="rect" id="node16" href="$structpcl_1_1visualization_1_1context__items_1_1Point.html" title=" " alt="" coords="376,528,540,569"/>
+<area shape="rect" id="node17" href="$structpcl_1_1visualization_1_1context__items_1_1Points.html" title=" " alt="" coords="373,593,543,635"/>
+<area shape="rect" id="node20" href="$structpcl_1_1visualization_1_1context__items_1_1Rectangle.html" title=" " alt="" coords="360,659,556,700"/>
+<area shape="rect" id="node22" href="$structpcl_1_1visualization_1_1context__items_1_1Text.html" title=" " alt="" coords="379,724,537,765"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,373,129,399"/>
+<area shape="rect" id="node4" href="$structPclUtils_1_1context__items_1_1Disk.html" title=" " alt="" coords="633,5,805,47"/>
+<area shape="rect" id="node8" href="$structPclUtils_1_1context__items_1_1Markers.html" title=" " alt="" coords="633,136,805,177"/>
+<area shape="rect" id="node9" href="$structPclUtils_1_1context__items_1_1Polygon.html" title=" " alt="" coords="633,201,805,243"/>
+<area shape="rect" id="node11" href="$structPclUtils_1_1context__items_1_1FilledRectangle.html" title=" " alt="" coords="633,267,805,308"/>
+<area shape="rect" id="node14" href="$structpcl_1_1visualization_1_1context__items_1_1Disk.html" title=" " alt="" coords="639,397,799,439"/>
+<area shape="rect" id="node18" href="$structpcl_1_1visualization_1_1context__items_1_1Markers.html" title=" " alt="" coords="628,528,811,569"/>
+<area shape="rect" id="node19" href="$structpcl_1_1visualization_1_1context__items_1_1Polygon.html" title=" " alt="" coords="628,593,811,635"/>
+<area shape="rect" id="node21" href="$structpcl_1_1visualization_1_1context__items_1_1FilledRectangle.html" title=" " alt="" coords="604,659,835,700"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="ccPointCloud::UnrollBaseParams" name="ccPointCloud::UnrollBaseParams">
+<area shape="rect" id="node1" title=" " alt="" coords="117,5,302,47"/>
+<area shape="rect" id="node2" href="$structccPointCloud_1_1UnrollConeParams.html" title=" " alt="" coords="5,95,192,136"/>
+<area shape="rect" id="node3" href="$structccPointCloud_1_1UnrollCylinderParams.html" title=" " alt="" coords="217,95,423,136"/>
+</map>

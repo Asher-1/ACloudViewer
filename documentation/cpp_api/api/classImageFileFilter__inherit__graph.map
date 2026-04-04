@@ -1,0 +1,4 @@
+<map id="ImageFileFilter" name="ImageFileFilter">
+<area shape="rect" id="node1" title="Filter to load or save an image (all types supported by Qt)" alt="" coords="5,80,124,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="19,5,111,32"/>
+</map>

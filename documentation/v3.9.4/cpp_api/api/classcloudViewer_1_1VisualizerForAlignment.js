@@ -1,0 +1,25 @@
+var classcloudViewer_1_1VisualizerForAlignment =
+[
+    [ "VisualizerForAlignment", "classcloudViewer_1_1VisualizerForAlignment.html#a70312fc1990d0fd5b88311f2c93d4af1", null ],
+    [ "~VisualizerForAlignment", "classcloudViewer_1_1VisualizerForAlignment.html#ac7dd03a1e59a2cbac3e42499562e4199", null ],
+    [ "AddSourceAndTarget", "classcloudViewer_1_1VisualizerForAlignment.html#aa997d270d69e117c565b8eda9fbfcbd8", null ],
+    [ "AlignWithManualAnnotation", "classcloudViewer_1_1VisualizerForAlignment.html#a74b0cd79c1cac43a56c1ff44cda2f6fe", null ],
+    [ "EvaluateAlignmentAndSave", "classcloudViewer_1_1VisualizerForAlignment.html#ae55e3fe339b062f102394e7c401134e2", null ],
+    [ "KeyPressCallback", "classcloudViewer_1_1VisualizerForAlignment.html#ae094f78824ccf56a461aa6c5dbd02031", null ],
+    [ "LoadSessionFromFile", "classcloudViewer_1_1VisualizerForAlignment.html#a24dc917cacb06763e29797cbab26418c", null ],
+    [ "PrintTransformation", "classcloudViewer_1_1VisualizerForAlignment.html#af7e6889c2d578b9fb08d88da148672e9", null ],
+    [ "PrintVisualizerHelp", "classcloudViewer_1_1VisualizerForAlignment.html#ae83806d6e8a83f8fc1ae72dc2409bcd0", null ],
+    [ "SaveSessionToFile", "classcloudViewer_1_1VisualizerForAlignment.html#af7b056077d37f0152c7a8a0b07254aaf", null ],
+    [ "alignment_session_", "classcloudViewer_1_1VisualizerForAlignment.html#a6b1b6ba853d5c4db0199bcf605c0624d", null ],
+    [ "default_directory_", "classcloudViewer_1_1VisualizerForAlignment.html#af9e3ffc39a98729ce6d304aed5e5efb1", null ],
+    [ "max_correspondence_distance_", "classcloudViewer_1_1VisualizerForAlignment.html#a42f01867fb2bc1f7e4af6b375f9cadc0", null ],
+    [ "polygon_filename_", "classcloudViewer_1_1VisualizerForAlignment.html#ab52e9052a449f1f7997a4e7f45809880", null ],
+    [ "source_copy_ptr_", "classcloudViewer_1_1VisualizerForAlignment.html#adb7bc16011c57c8f1add4b07af99ba33", null ],
+    [ "source_visualizer_", "classcloudViewer_1_1VisualizerForAlignment.html#a7972ffc1af505e196dae898243449351", null ],
+    [ "target_copy_ptr_", "classcloudViewer_1_1VisualizerForAlignment.html#a23d6ba2ac90e09172a3216f7c9237c49", null ],
+    [ "target_visualizer_", "classcloudViewer_1_1VisualizerForAlignment.html#a2cffb9781623ac925ad26df61e9c35aa", null ],
+    [ "transformation_", "classcloudViewer_1_1VisualizerForAlignment.html#ad370f993c544fbe4d83adc107211705b", null ],
+    [ "use_dialog_", "classcloudViewer_1_1VisualizerForAlignment.html#a24db6edbe491bca37bdda2967b91de9f", null ],
+    [ "voxel_size_", "classcloudViewer_1_1VisualizerForAlignment.html#a408e5edd1fa7eec307e86bf0eeebaf1e", null ],
+    [ "with_scaling_", "classcloudViewer_1_1VisualizerForAlignment.html#ad642b9485601bb3b3f1b7fde951c24c9", null ]
+];

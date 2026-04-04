@@ -1,0 +1,10 @@
+<map id="cloudViewer::ChamferDistanceTransform" name="cloudViewer::ChamferDistanceTransform">
+<area shape="rect" id="node1" title="Class to compute a Chamfer distance field on a 3D grid." alt="" coords="271,455,494,496"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="211,364,365,405"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,102,80,129"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1Grid3D.html" title="Simple 3D grid structure." alt="" coords="161,251,316,293"/>
+<area shape="rect" id="node4" href="$classTuple3Tpl.html" title=" " alt="" coords="381,95,539,136"/>
+<area shape="rect" id="node5" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="388,5,532,32"/>
+<area shape="rect" id="node6" title=" " alt="" coords="249,102,316,129"/>
+<area shape="rect" id="node8" href="$classcloudViewer_1_1MathTools.html" title="Empty class &#45; for classification purpose only." alt="" coords="389,371,565,398"/>
+</map>

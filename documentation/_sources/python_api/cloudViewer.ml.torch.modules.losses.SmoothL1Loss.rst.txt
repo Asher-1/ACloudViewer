@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.modules.losses.SmoothL1Loss
+------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+.. autoclass:: SmoothL1Loss
+    :members:
+    :undoc-members:

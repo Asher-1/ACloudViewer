@@ -1,0 +1,5 @@
+<map id="cloudViewer::TrueKdTree::BaseNode" name="cloudViewer::TrueKdTree::BaseNode">
+<area shape="rect" id="node1" title="Tree base node." alt="" coords="108,5,289,47"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1TrueKdTree_1_1Leaf.html" title="Tree leaf." alt="" coords="5,95,187,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1TrueKdTree_1_1Node.html" title="Tree node." alt="" coords="211,95,392,136"/>
+</map>

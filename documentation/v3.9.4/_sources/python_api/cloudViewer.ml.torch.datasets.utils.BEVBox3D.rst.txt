@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.utils.BEVBox3D
+--------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autoclass:: BEVBox3D
+    :members:
+    :undoc-members:

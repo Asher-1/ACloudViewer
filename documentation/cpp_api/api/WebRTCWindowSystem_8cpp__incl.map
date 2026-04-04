@@ -1,0 +1,52 @@
+<map id="/root/ACloudViewer/libs/cloudViewer/visualization/webrtc_server/WebRTCWindowSystem.cpp" name="/root/ACloudViewer/libs/cloudViewer/visualization/webrtc_server/WebRTCWindowSystem.cpp">
+<area shape="rect" id="node1" title=" " alt="" coords="3510,5,3812,61"/>
+<area shape="rect" id="node2" href="$WebRTCWindowSystem_8h.html" title=" " alt="" coords="2459,199,2698,240"/>
+<area shape="rect" id="node10" title=" " alt="" coords="3800,117,3876,143"/>
+<area shape="rect" id="node11" href="$IJsonConvertible_8h.html" title=" " alt="" coords="3750,295,3890,322"/>
+<area shape="rect" id="node16" title=" " alt="" coords="3703,467,3827,493"/>
+<area shape="rect" id="node17" title=" " alt="" coords="256,467,341,493"/>
+<area shape="rect" id="node18" title=" " alt="" coords="3900,109,4070,151"/>
+<area shape="rect" id="node19" title=" " alt="" coords="4094,117,4266,143"/>
+<area shape="rect" id="node20" title=" " alt="" coords="4290,117,4461,143"/>
+<area shape="rect" id="node21" title=" " alt="" coords="4486,117,4652,143"/>
+<area shape="rect" id="node22" title=" " alt="" coords="4676,117,4811,143"/>
+<area shape="rect" id="node23" title=" " alt="" coords="4836,117,4902,143"/>
+<area shape="rect" id="node24" title=" " alt="" coords="3346,295,3421,322"/>
+<area shape="rect" id="node25" title=" " alt="" coords="1704,206,1768,233"/>
+<area shape="rect" id="node26" href="$Tensor_8h.html" title=" " alt="" coords="1170,206,1277,233"/>
+<area shape="rect" id="node41" href="$Application_8h.html" title=" " alt="" coords="2178,295,2397,322"/>
+<area shape="rect" id="node44" href="$Events_8h.html" title=" " alt="" coords="2722,206,2912,233"/>
+<area shape="rect" id="node45" href="$libs_2cloudViewer_2visualization_2gui_2Window_8h.html" title=" " alt="" coords="3386,117,3582,143"/>
+<area shape="rect" id="node48" href="$HttpServerRequestHandler_8h.html" title=" " alt="" coords="1842,199,2101,240"/>
+<area shape="rect" id="node50" href="$PeerConnectionManager_8h.html" title=" " alt="" coords="2095,109,2339,151"/>
+<area shape="rect" id="node3" title=" " alt="" coords="2603,385,2690,411"/>
+<area shape="rect" id="node4" title=" " alt="" coords="2878,467,2956,493"/>
+<area shape="rect" id="node5" title=" " alt="" coords="1708,467,1766,493"/>
+<area shape="rect" id="node6" title=" " alt="" coords="2382,467,2444,493"/>
+<area shape="rect" id="node7" href="$BitmapWindowSystem_8h.html" title=" " alt="" coords="2920,288,3100,329"/>
+<area shape="rect" id="node8" href="$WindowSystem_8h.html" title=" " alt="" coords="3351,377,3536,419"/>
+<area shape="rect" id="node9" href="$Gui_8h.html" title=" " alt="" coords="3254,467,3420,493"/>
+<area shape="rect" id="node12" title=" " alt="" coords="3560,385,3666,411"/>
+<area shape="rect" id="node13" title=" " alt="" coords="3851,467,3943,493"/>
+<area shape="rect" id="node14" href="$CVCoreLib_8h.html" title=" " alt="" coords="3968,467,4069,493"/>
+<area shape="rect" id="node15" href="$Eigen_8h.html" title=" " alt="" coords="3792,385,3863,411"/>
+<area shape="rect" id="node27" title=" " alt="" coords="1429,295,1514,322"/>
+<area shape="rect" id="node28" title=" " alt="" coords="1092,467,1163,493"/>
+<area shape="rect" id="node29" title=" " alt="" coords="1312,295,1404,322"/>
+<area shape="rect" id="node30" href="$Blob_8h.html" title=" " alt="" coords="1538,295,1717,322"/>
+<area shape="rect" id="node31" href="$Device_8h.html" title=" " alt="" coords="1573,385,1768,411"/>
+<area shape="rect" id="node32" href="$DLPack_8h.html" title=" " alt="" coords="3125,295,3322,322"/>
+<area shape="rect" id="node33" href="$Dtype_8h.html" title=" " alt="" coords="504,385,693,411"/>
+<area shape="rect" id="node34" href="$Scalar_8h.html" title=" " alt="" coords="504,295,693,322"/>
+<area shape="rect" id="node36" href="$ShapeUtil_8h.html" title=" " alt="" coords="216,295,429,322"/>
+<area shape="rect" id="node37" href="$SizeVector_8h.html" title=" " alt="" coords="1019,385,1236,411"/>
+<area shape="rect" id="node38" href="$TensorCheck_8h.html" title=" " alt="" coords="954,295,1186,322"/>
+<area shape="rect" id="node39" href="$TensorInit_8h.html" title=" " alt="" coords="717,295,930,322"/>
+<area shape="rect" id="node40" href="$TensorKey_8h.html" title=" " alt="" coords="46,385,260,411"/>
+<area shape="rect" id="node35" title=" " alt="" coords="2081,467,2148,493"/>
+<area shape="rect" id="node42" href="$Font_8h.html" title=" " alt="" coords="2202,385,2376,411"/>
+<area shape="rect" id="node43" href="$Menu_8h.html" title=" " alt="" coords="2826,385,3008,411"/>
+<area shape="rect" id="node46" href="$Widget_8h.html" title=" " alt="" coords="3136,385,3327,411"/>
+<area shape="rect" id="node47" href="$Renderer_8h.html" title=" " alt="" coords="2725,288,2896,329"/>
+<area shape="rect" id="node49" title=" " alt="" coords="1842,295,1952,322"/>
+</map>

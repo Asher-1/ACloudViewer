@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.SemSegSpatiallyRegularSampler
+-----------------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: SemSegSpatiallyRegularSampler
+    :members:
+    :undoc-members:

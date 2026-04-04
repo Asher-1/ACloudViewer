@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.NuScenes
+--------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: NuScenes
+    :members:
+    :undoc-members:

@@ -1,0 +1,14 @@
+<map id="cvSelectionHighlighter" name="cvSelectionHighlighter">
+<area shape="rect" id="node1" title="Helper class for highlighting selected elements in the visualizer." alt="" coords="1461,32,1630,59"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,43,80,69"/>
+<area shape="rect" id="node6" href="$classecvGenericVisualizer.html" title="Generic visualizer interface." alt="" coords="129,43,288,69"/>
+<area shape="rect" id="node11" href="$classcvViewSelectionManager.html" title="Central manager for all selection operations in the view." alt="" coords="1452,196,1639,223"/>
+<area shape="rect" id="node3" href="$classcvGenericSelectionTool.html" title="Base class for selection tools with picking capabilities." alt="" coords="1148,152,1321,179"/>
+<area shape="rect" id="node4" href="$classcvSelectionBase.html" title="Lightweight base class for all selection&#45;related components." alt="" coords="783,43,913,69"/>
+<area shape="rect" id="node5" href="$classecvGenericVisualizer3D.html" title="Generic visualizer 3D interface." alt="" coords="337,43,515,69"/>
+<area shape="rect" id="node7" href="$classvtkSmartPointer.html" title=" " alt="" coords="749,210,947,251"/>
+<area shape="rect" id="node8" href="$classvtkSmartPointer.html" title=" " alt="" coords="343,217,509,244"/>
+<area shape="rect" id="node9" href="$classvtkSmartPointer.html" title=" " alt="" coords="735,275,961,317"/>
+<area shape="rect" id="node12" href="$classvtkSmartPointer.html" title=" " alt="" coords="753,145,943,186"/>
+<area shape="rect" id="node10" href="$classcvSelectionData.html" title="Encapsulates selection data without exposing VTK types." alt="" coords="784,93,912,120"/>
+</map>

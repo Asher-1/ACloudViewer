@@ -1,0 +1,6 @@
+<map id="cloudViewer::visualization::gui::MenuBase" name="cloudViewer::visualization::gui::MenuBase">
+<area shape="rect" id="node1" title=" " alt="" coords="5,71,199,112"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1gui_1_1Menu.html" title=" " alt="" coords="247,5,440,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1gui_1_1MenuImgui.html" title=" " alt="" coords="247,71,440,112"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1gui_1_1MenuMacOS.html" title=" " alt="" coords="247,136,440,177"/>
+</map>

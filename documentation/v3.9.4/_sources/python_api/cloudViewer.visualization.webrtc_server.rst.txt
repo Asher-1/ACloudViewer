@@ -1,0 +1,22 @@
+cloudViewer.visualization.webrtc_server
+=======================================
+
+.. currentmodule:: cloudViewer.visualization.webrtc_server
+
+**Functions**
+
+.. autosummary::
+
+    call_http_api
+    disable_http_handshake
+    enable_webrtc
+    register_data_channel_message_callback
+
+
+.. toctree::
+    :hidden:
+
+    call_http_api <cloudViewer.visualization.webrtc_server.call_http_api>
+    disable_http_handshake <cloudViewer.visualization.webrtc_server.disable_http_handshake>
+    enable_webrtc <cloudViewer.visualization.webrtc_server.enable_webrtc>
+    register_data_channel_message_callback <cloudViewer.visualization.webrtc_server.register_data_channel_message_callback>

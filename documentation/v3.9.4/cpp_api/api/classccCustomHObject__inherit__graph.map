@@ -1,0 +1,9 @@
+<map id="ccCustomHObject" name="ccCustomHObject">
+<area shape="rect" id="node1" title="Custom hierarchy object." alt="" coords="94,229,233,256"/>
+<area shape="rect" id="node6" href="$classGrainsAsEllipsoids.html" title=" " alt="" coords="5,304,148,331"/>
+<area shape="rect" id="node7" href="$classccCustomLeafObject.html" title="Custom leaf object." alt="" coords="172,304,328,331"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="119,155,207,181"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="57,80,136,107"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="19,5,174,32"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="160,80,300,107"/>
+</map>

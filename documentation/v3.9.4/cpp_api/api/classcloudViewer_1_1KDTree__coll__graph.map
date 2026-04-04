@@ -1,0 +1,9 @@
+<map id="cloudViewer::KDTree" name="cloudViewer::KDTree">
+<area shape="rect" id="node1" title=" " alt="" coords="139,425,295,452"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="8,320,219,361"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="5,178,203,205"/>
+<area shape="rect" id="node4" href="$structcloudViewer_1_1KDTree_1_1KdCell.html" title="A KDTre cell struct." alt="" coords="249,320,405,361"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title=" " alt="" coords="227,171,437,212"/>
+<area shape="rect" id="node6" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="236,5,380,32"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="330,81,481,108"/>
+</map>

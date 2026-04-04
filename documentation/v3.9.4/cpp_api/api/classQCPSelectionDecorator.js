@@ -1,0 +1,25 @@
+var classQCPSelectionDecorator =
+[
+    [ "QCPSelectionDecorator", "classQCPSelectionDecorator.html#aa145480d9a062cd176fe30900bb7bca8", null ],
+    [ "~QCPSelectionDecorator", "classQCPSelectionDecorator.html#ab211eb11379854dcbe23b1642be0d19e", null ],
+    [ "applyBrush", "classQCPSelectionDecorator.html#a225544527d51b49546b70d0e6d655a34", null ],
+    [ "applyPen", "classQCPSelectionDecorator.html#a75098893f7d08660ea449206810679d7", null ],
+    [ "brush", "classQCPSelectionDecorator.html#a783b643aa52120a25308fc501b9998b1", null ],
+    [ "copyFrom", "classQCPSelectionDecorator.html#a467a8d5cfcab27e862a17c797ac27b8a", null ],
+    [ "drawDecoration", "classQCPSelectionDecorator.html#a4f8eb49e277063845391e803ae23054a", null ],
+    [ "getFinalScatterStyle", "classQCPSelectionDecorator.html#a1277b373248896bc70e8cc1de96da9fa", null ],
+    [ "pen", "classQCPSelectionDecorator.html#a9307a60c9759223367909aed2d05ad91", null ],
+    [ "registerWithPlottable", "classQCPSelectionDecorator.html#af66cb39e308da0285ae5d533e1e85027", null ],
+    [ "scatterStyle", "classQCPSelectionDecorator.html#aa6558f6f270a188bb633386aba0d1ae4", null ],
+    [ "setBrush", "classQCPSelectionDecorator.html#aa74b626be518ea17055f918d423c8c2d", null ],
+    [ "setPen", "classQCPSelectionDecorator.html#ac2c8192e1e294aa3a4a7f32a859e3d76", null ],
+    [ "setScatterStyle", "classQCPSelectionDecorator.html#ab403a613289714ff4fd4a0c0371ab116", null ],
+    [ "setUsedScatterProperties", "classQCPSelectionDecorator.html#a808c1607cd4e83869c04986e332455c0", null ],
+    [ "usedScatterProperties", "classQCPSelectionDecorator.html#ab2019bf31dde39f1ec028e3810dfc08b", null ],
+    [ "QCPAbstractPlottable", "classQCPSelectionDecorator.html#a53cf0e76aca814550c796fed79e345d6", null ],
+    [ "mBrush", "classQCPSelectionDecorator.html#a4e3a3a01fdec5b018c0c59a0b6ae9f70", null ],
+    [ "mPen", "classQCPSelectionDecorator.html#a684a691c146a5bac927c0146bd28d557", null ],
+    [ "mPlottable", "classQCPSelectionDecorator.html#a25250a1d29b0723c4fa59a97e62f5758", null ],
+    [ "mScatterStyle", "classQCPSelectionDecorator.html#a5b822197a1bf802c5cf8c3dc43ca549a", null ],
+    [ "mUsedScatterProperties", "classQCPSelectionDecorator.html#acb4f6af085283c9ce7d5c168fb53e855", null ]
+];

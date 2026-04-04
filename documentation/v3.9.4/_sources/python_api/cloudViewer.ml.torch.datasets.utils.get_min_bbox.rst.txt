@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.datasets.utils.get_min_bbox
+------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autofunction:: get_min_bbox

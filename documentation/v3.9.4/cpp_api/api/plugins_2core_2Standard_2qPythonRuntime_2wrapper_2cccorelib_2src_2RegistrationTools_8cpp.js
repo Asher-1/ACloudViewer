@@ -1,0 +1,4 @@
+var plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp =
+[
+    [ "define_RegistrationTools", "plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp.html#ab34f8099e08a88ca8832260798f666ab", null ]
+];

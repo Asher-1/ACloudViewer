@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Lyft
+----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Lyft
+    :members:
+    :undoc-members:

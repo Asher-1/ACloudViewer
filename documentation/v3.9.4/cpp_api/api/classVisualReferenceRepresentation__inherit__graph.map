@@ -1,0 +1,7 @@
+<map id="VisualReferenceRepresentation" name="VisualReferenceRepresentation">
+<area shape="rect" id="node1" title=" " alt="" coords="89,80,315,107"/>
+<area shape="rect" id="node3" href="$classSphericalRepresentation.html" title=" " alt="" coords="111,155,293,181"/>
+<area shape="rect" id="node2" href="$classCameraRepresentation.html" title="Interface for E57 camera representation." alt="" coords="116,5,288,32"/>
+<area shape="rect" id="node4" href="$classCylindricalRepresentation.html" title=" " alt="" coords="5,229,196,256"/>
+<area shape="rect" id="node5" href="$classPinholeRepresentation.html" title=" " alt="" coords="220,229,389,256"/>
+</map>

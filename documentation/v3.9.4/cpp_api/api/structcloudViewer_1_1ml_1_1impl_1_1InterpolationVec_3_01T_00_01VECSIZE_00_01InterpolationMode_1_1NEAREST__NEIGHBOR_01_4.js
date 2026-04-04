@@ -1,0 +1,7 @@
+var structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1NEAREST__NEIGHBOR_01_4 =
+[
+    [ "Idx_t", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1NEAREST__NEIGHBOR_01_4.html#ad813fbc889da4946d4db36c049b7a5dc", null ],
+    [ "Weight_t", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1NEAREST__NEIGHBOR_01_4.html#ab3a7b9ef2cb16cccf4a5293b10f4ae53", null ],
+    [ "Interpolate", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1NEAREST__NEIGHBOR_01_4.html#a5e7c9de70292e91d5b2d00052bd65574", null ],
+    [ "Size", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1NEAREST__NEIGHBOR_01_4.html#a48c18f365c46c300d778b5e7de23cbad", null ]
+];

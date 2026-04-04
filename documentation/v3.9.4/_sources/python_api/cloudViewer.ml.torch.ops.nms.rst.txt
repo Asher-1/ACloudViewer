@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.nms
+----------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: nms

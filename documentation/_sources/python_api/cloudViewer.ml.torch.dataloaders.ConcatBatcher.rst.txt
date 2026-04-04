@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.dataloaders.ConcatBatcher
+----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.dataloaders
+
+.. autoclass:: ConcatBatcher
+    :members:
+    :undoc-members:

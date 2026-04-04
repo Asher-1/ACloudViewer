@@ -1,0 +1,6 @@
+cloudViewer.visualization.tensorboard_plugin.summary.add_3d
+-----------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.tensorboard_plugin.summary
+
+.. autofunction:: add_3d

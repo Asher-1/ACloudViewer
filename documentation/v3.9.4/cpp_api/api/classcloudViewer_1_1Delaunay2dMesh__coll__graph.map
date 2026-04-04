@@ -1,0 +1,13 @@
+<map id="cloudViewer::Delaunay2dMesh" name="cloudViewer::Delaunay2dMesh">
+<area shape="rect" id="node1" title="A class to compute and handle a Delaunay 2D mesh on a subset of points." alt="" coords="1296,135,1519,161"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1GenericIndexedMesh.html" title="A generic mesh with index&#45;based vertex access." alt="" coords="839,21,1085,48"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericMesh.html" title=" " alt="" coords="575,5,769,32"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1SimpleTriangle.html" title="A simple triangle class." alt="" coords="859,101,1065,128"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericTriangle.html" title="A generic triangle interface." alt="" coords="567,56,777,83"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title=" " alt="" coords="567,110,777,151"/>
+<area shape="rect" id="node7" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="5,121,149,148"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="199,147,349,173"/>
+<area shape="rect" id="node9" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="857,153,1067,194"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="573,176,771,203"/>
+<area shape="rect" id="node11" href="$structcloudViewer_1_1VerticesIndexes.html" title="Triangle described by the indexes of its 3 vertices." alt="" coords="856,219,1068,245"/>
+</map>

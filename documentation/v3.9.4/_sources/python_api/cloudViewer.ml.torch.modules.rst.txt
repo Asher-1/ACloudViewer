@@ -1,0 +1,18 @@
+cloudViewer.ml.torch.modules
+============================
+
+.. currentmodule:: cloudViewer.ml.torch.modules
+
+**Modules**
+
+.. autosummary::
+
+    losses
+    metrics
+
+
+.. toctree::
+    :hidden:
+
+    losses <cloudViewer.ml.torch.modules.losses>
+    metrics <cloudViewer.ml.torch.modules.metrics>

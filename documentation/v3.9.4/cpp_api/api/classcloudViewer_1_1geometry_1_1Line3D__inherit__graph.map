@@ -1,0 +1,6 @@
+<map id="cloudViewer::geometry::Line3D" name="cloudViewer::geometry::Line3D">
+<area shape="rect" id="node1" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman..." alt="" coords="104,95,277,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and..." alt="" coords="5,184,179,225"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint..." alt="" coords="203,184,376,225"/>
+<area shape="rect" id="node2" title=" " alt="" coords="101,5,280,47"/>
+</map>

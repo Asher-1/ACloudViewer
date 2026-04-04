@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.layers.KNNSearch
+-------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.layers
+
+.. autoclass:: KNNSearch
+    :members:
+    :undoc-members:

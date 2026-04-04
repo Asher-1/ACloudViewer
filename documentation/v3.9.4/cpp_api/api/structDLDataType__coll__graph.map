@@ -1,0 +1,5 @@
+<map id="DLDataType" name="DLDataType">
+<area shape="rect" id="node1" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="39,109,139,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="104,5,171,32"/>
+</map>

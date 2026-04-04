@@ -1,0 +1,9 @@
+<map id="cloudViewer::PointCloud" name="cloudViewer::PointCloud">
+<area shape="rect" id="node1" title=" " alt="" coords="145,367,325,393"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="117,276,352,317"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="5,172,216,213"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="5,81,216,123"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="12,5,209,32"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="241,179,479,206"/>
+<area shape="rect" id="node7" title=" " alt="" coords="341,89,379,115"/>
+</map>

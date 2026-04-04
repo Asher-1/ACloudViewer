@@ -1,0 +1,6 @@
+cloudViewer.visualization.get_plotly_fig
+----------------------------------------
+
+.. currentmodule:: cloudViewer.visualization
+
+.. autofunction:: get_plotly_fig

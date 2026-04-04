@@ -1,0 +1,44 @@
+/* Custom CSS for ACloudViewer documentation */
+
+/* Add any custom styling here */
+
+/* Improve code block appearance */
+.highlight {
+    border-radius: 4px;
+}
+
+/* Better spacing for sections */
+.section {
+    margin-bottom: 2em;
+}
+
+/* Style for inline code */
+code.literal {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+
+/* Improve table appearance */
+table.docutils {
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+table.docutils th {
+    background-color: rgba(0, 0, 0, 0.05);
+    font-weight: bold;
+}
+
+/* Better admonition styling */
+.admonition {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+}
+
+/* Improve navigation */
+.toctree-wrapper {
+    margin: 1em 0;
+}
+

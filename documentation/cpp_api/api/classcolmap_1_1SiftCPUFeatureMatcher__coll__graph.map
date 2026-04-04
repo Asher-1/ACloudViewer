@@ -1,0 +1,10 @@
+<map id="colmap::SiftCPUFeatureMatcher" name="colmap::SiftCPUFeatureMatcher">
+<area shape="rect" id="node1" title=" " alt="" coords="991,112,1219,139"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1FeatureMatcherThread.html" title=" " alt="" coords="615,81,840,108"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1Thread.html" title=" " alt="" coords="233,5,355,32"/>
+<area shape="rect" id="node4" href="$structcolmap_1_1SiftMatchingOptions.html" title=" " alt="" coords="189,56,399,83"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,56,64,83"/>
+<area shape="rect" id="node6" href="$classcolmap_1_1FeatureMatcherCache.html" title=" " alt="" coords="184,107,404,133"/>
+<area shape="rect" id="node7" href="$classcolmap_1_1JobQueue.html" title=" " alt="" coords="609,133,845,174"/>
+<area shape="rect" id="node8" href="$classcolmap_1_1JobQueue.html" title=" " alt="" coords="205,165,383,192"/>
+</map>

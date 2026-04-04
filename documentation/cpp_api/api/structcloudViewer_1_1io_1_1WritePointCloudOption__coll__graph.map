@@ -1,0 +1,4 @@
+<map id="cloudViewer::io::WritePointCloudOption" name="cloudViewer::io::WritePointCloudOption">
+<area shape="rect" id="node1" title="Optional parameters to WritePointCloud." alt="" coords="5,95,204,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="75,5,134,32"/>
+</map>

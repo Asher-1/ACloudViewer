@@ -1,0 +1,6 @@
+<map id="cloudViewer::visualization::VisualizerWithEditing" name="cloudViewer::visualization::VisualizerWithEditing">
+<area shape="rect" id="node1" title="Visualizer with editing capabilities." alt="" coords="5,200,199,241"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1Visualizer.html" title="The main Visualizer class." alt="" coords="180,109,373,151"/>
+<area shape="rect" id="node3" title=" " alt="" coords="50,13,109,39"/>
+<area shape="rect" id="node4" href="$structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html" title=" " alt="" coords="180,5,373,47"/>
+</map>
