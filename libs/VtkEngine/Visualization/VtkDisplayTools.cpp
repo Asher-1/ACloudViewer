@@ -41,6 +41,7 @@
 #include <VtkRendering/Core/ActorMap.h>
 
 // VTK
+#include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkPolyData.h>
@@ -123,8 +124,49 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     }
 
     if (ecvCloud->isRedraw() || firstShow) {
-        if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
-            m_visualizer3D->drawPointCloud(localContext, ecvCloud);
+        bool needFullRebuild =
+                firstShow || checkEntityNeedUpdate(viewID, ecvCloud);
+        bool sfTriggered = false;
+
+        // SF hiding: O(1) check using the cached display range stored in the
+        // polydata's field data ("_SFDispRange"). Avoids an O(n) visible-point
+        // counting loop on every draw call.
+        if (!needFullRebuild && localContext.drawParam.showSF) {
+            ccScalarField* sf = ecvCloud->getCurrentDisplayedScalarField();
+            if (sf) {
+                const auto& disp = sf->displayRange();
+                bool narrowed =
+                        (disp.start() > disp.min() || disp.stop() < disp.max());
+                vtkActor* actor = m_visualizer3D->getActorById(viewID);
+                vtkPolyData* pd = nullptr;
+                if (actor && actor->GetMapper()) {
+                    pd = vtkPolyData::SafeDownCast(
+                            actor->GetMapper()->GetInputDataObject(0, 0));
+                }
+                if (pd) {
+                    auto* cached = vtkDoubleArray::SafeDownCast(
+                            pd->GetFieldData()->GetAbstractArray(
+                                    "_SFDispRange"));
+                    if (narrowed) {
+                        // Range is narrowed; rebuild if the range changed
+                        // since the last build (or no cache exists).
+                        if (!cached || cached->GetValue(0) != disp.start() ||
+                            cached->GetValue(1) != disp.stop()) {
+                            needFullRebuild = true;
+                            sfTriggered = true;
+                        }
+                    } else if (cached) {
+                        // Range restored to full but polydata was built with a
+                        // narrowed range — need to rebuild with all points.
+                        needFullRebuild = true;
+                        sfTriggered = true;
+                    }
+                }
+            }
+        }
+
+        if (needFullRebuild) {
+            m_visualizer3D->drawPointCloud(localContext, ecvCloud, sfTriggered);
             m_visualizer3D->updateNormals(localContext, ecvCloud);
             hasRedrawn = true;
         } else {
@@ -513,11 +555,13 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
         return false;
     }
 
-    // Get the current poly data
+    // Get the current poly data (mapper may be vtkDataSetMapper or
+    // vtkPolyDataMapper; use vtkAlgorithm API for safety).
+    vtkMapper* mapper = modelActor->GetMapper();
+    if (!mapper) return false;
     vtkSmartPointer<vtkPolyData> polydata =
-            reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                    ->GetInput();
-    if (!polydata) return (false);
+            vtkPolyData::SafeDownCast(mapper->GetInputDataObject(0, 0));
+    if (!polydata) return false;
 
     unsigned old_points_num =
             static_cast<unsigned>(polydata->GetNumberOfPoints());
@@ -529,6 +573,30 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
                 ++new_points_num;
         }
     }
+
+    // SF display range can hide points when narrowed.  The color-only fast
+    // path cannot change the point set, so force a full polydata rebuild
+    // whenever the visible count differs.
+    if (context.drawParam.showSF) {
+        ccScalarField* sf = cloud->getCurrentDisplayedScalarField();
+        if (sf) {
+            const auto& disp = sf->displayRange();
+            bool narrowed =
+                    (disp.start() > disp.min() || disp.stop() < disp.max());
+            if (narrowed) {
+                unsigned sf_visible = 0;
+                const bool use_vis = cloud->isVisibilityTableInstantiated();
+                for (unsigned i = 0; i < cloud->size(); ++i) {
+                    if (use_vis &&
+                        cloud->getTheVisibilityArray().at(i) != POINT_VISIBLE)
+                        continue;
+                    if (disp.isInRange(sf->getValue(i))) ++sf_visible;
+                }
+                new_points_num = sf_visible;
+            }
+        }
+    }
+
     if (old_points_num != new_points_num) {
         return false;
     }
@@ -548,9 +616,8 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
     }
 
     if (has_colors) {
-        modelActor->GetMapper()->SetScalarRange(minmax);
-        reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                ->SetInputData(polydata);
+        mapper->SetScalarRange(minmax);
+        mapper->SetInputDataObject(polydata);
     }
 
     CVLog::PrintDebug(QString("updateEntityColor: finish cost %1 s")
@@ -628,10 +695,12 @@ bool VtkDisplayTools::checkEntityNeedUpdate(std::string& viewID,
         return true;
     }
 
-    // Get the current poly data
+    // Get the current poly data (mapper may be vtkDataSetMapper or
+    // vtkPolyDataMapper; use vtkAlgorithm API for safety).
+    vtkMapper* mapper = modelActor->GetMapper();
+    if (!mapper) return true;
     vtkSmartPointer<vtkPolyData> polydata =
-            reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())
-                    ->GetInput();
+            vtkPolyData::SafeDownCast(mapper->GetInputDataObject(0, 0));
     if (!polydata) {
         return true;
     }
@@ -781,12 +850,20 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
 bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
     std::string viewId = CVTools::FromQString(context.viewID);
 
-    if (context.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
-        context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
+    if (context.hideShowEntityType == ENTITY_TYPE::ECV_2DLABLE ||
+        context.hideShowEntityType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
+        m_visualizer3D->hideShowActorsBySubstring(context.visible, viewId,
+                                                  context.defaultViewPort);
+        if (m_visualizer2D) {
+            m_visualizer2D->hideShowActorsBySubstring(context.visible, viewId);
+        }
+        return true;
+    } else if (context.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
+               context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
         if (!m_visualizer2D || !m_visualizer2D->contains(viewId)) return false;
 
         m_visualizer2D->hideShowActors(context.visible, viewId);
@@ -797,19 +874,21 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
                                             context.defaultViewPort);
         }
     } else {
+        bool found = false;
+
         if (context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
             context.removeEntityType == ENTITY_TYPE::ECV_POLYLINE_2D) {
             if (m_visualizer2D && m_visualizer2D->contains(viewId)) {
                 m_visualizer2D->hideShowActors(context.visible, viewId);
+                found = true;
             }
         }
 
-        if (!m_visualizer3D->contains(viewId)) {
-            return false;
+        if (m_visualizer3D->contains(viewId)) {
+            m_visualizer3D->hideShowActors(context.visible, viewId,
+                                           context.defaultViewPort);
+            found = true;
         }
-
-        m_visualizer3D->hideShowActors(context.visible, viewId,
-                                       context.defaultViewPort);
 
         // for normals case
         std::string normalViewId =
@@ -817,9 +896,14 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         if (m_visualizer3D->contains(normalViewId)) {
             m_visualizer3D->hideShowActors(context.visible, normalViewId,
                                            context.defaultViewPort);
+            found = true;
         }
 
-        m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        if (found) {
+            m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        }
+
+        return found;
     }
 
     return true;

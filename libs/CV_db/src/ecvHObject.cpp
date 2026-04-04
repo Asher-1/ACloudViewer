@@ -1698,20 +1698,10 @@ void ccHObject::hideObject_recursive(bool recursive) {
 
         ccHObject* obj = find(hdInfo.hideId.toUInt());
 
-        if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE) {
-            assert(obj && obj->isA(CV_TYPES::LABEL_2D));
-            cc2DLabel* label2d = ccHObjectCaster::To2DLabel(obj);
-            if (label2d) {
-                label2d->clearLabel(false);
-            }
-            continue;
-        } else if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
-            assert(obj && obj->isA(CV_TYPES::VIEWPORT_2D_LABEL));
-            cc2DViewportLabel* label2d =
-                    ccHObjectCaster::To2DViewportLabel(obj);
-            if (label2d) {
-                label2d->clear2Dviews();
-            }
+        if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE ||
+            hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
+            context.viewID = hdInfo.hideId;
+            ecvDisplayTools::HideShowEntities(context);
             continue;
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
@@ -1737,6 +1727,41 @@ void ccHObject::hideObject_recursive(bool recursive) {
 
         context.viewID = hdInfo.hideId;
         ecvDisplayTools::HideShowEntities(context);
+    }
+}
+
+void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
+    std::vector<hideInfo> hdInfos;
+    CC_DRAW_CONTEXT context;
+    getTypeID_recursive(hdInfos, recursive);
+    context.visible = visible;
+    for (const hideInfo& hdInfo : hdInfos) {
+        if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
+        context.hideShowEntityType = hdInfo.hideType;
+        context.viewID = hdInfo.hideId;
+        ecvDisplayTools::HideShowEntities(context);
+
+        if (!visible) {
+            hideBB(context);
+            context.viewID = hdInfo.hideId;
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            if (obj) {
+                if (obj->isKindOf(CV_TYPES::FACET)) {
+                    static_cast<ccFacet*>(obj)->hideNormalArrowActors(context);
+                } else if (obj->isKindOf(CV_TYPES::PLANE)) {
+                    static_cast<ccPlane*>(obj)->hideNormalArrowActors(context);
+                }
+            }
+        } else {
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            if (obj) {
+                if (obj->isKindOf(CV_TYPES::FACET)) {
+                    static_cast<ccFacet*>(obj)->showNormalArrowActors(context);
+                } else if (obj->isKindOf(CV_TYPES::PLANE)) {
+                    static_cast<ccPlane*>(obj)->showNormalArrowActors(context);
+                }
+            }
+        }
     }
 }
 

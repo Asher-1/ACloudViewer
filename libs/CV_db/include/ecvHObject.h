@@ -409,6 +409,7 @@ public:  // children management
 
 public:  // bounding-box
     void hideObject_recursive(bool recursive);
+    void toggleVisibility_recursive(bool visible, bool recursive = true);
     void hideBB(CC_DRAW_CONTEXT context);
     void showBB(CC_DRAW_CONTEXT context);
 

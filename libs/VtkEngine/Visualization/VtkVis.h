@@ -413,7 +413,11 @@ public:
     void setCameraViewAngle(double viewAngle, int viewport = 0);
 
     /// Draw a point cloud (direct CV_db to VTK, no PCL intermediate).
-    void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud);
+    /// @param lightweight  Skip SourceRGB/extra-SF arrays for faster rebuilds
+    ///                     (e.g. during SF range slider drag).
+    void drawPointCloud(const CC_DRAW_CONTEXT& context,
+                        ccPointCloud* cloud,
+                        bool lightweight = false);
     /// Draw a mesh (direct CV_db to VTK, no PCL intermediate).
     void drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);
     /// Draw a polyline (direct CV_db to VTK, no PCL intermediate).
@@ -438,6 +442,9 @@ public:
     void hideShowWidgets(bool visibility,
                          const std::string& viewID,
                          int viewport = 0);
+    void hideShowActorsBySubstring(bool visibility,
+                                   const std::string& substring,
+                                   int viewport = 0);
 
     /** @param context Draw context
      *  @return true on success
