@@ -252,6 +252,18 @@ void ImageVis::hideShowActors(bool visibility, const std::string& viewID) {
     }
 }
 
+void ImageVis::hideShowActorsBySubstring(bool visibility,
+                                         const std::string& substring) {
+    double opacity = visibility ? 1.0 : 0.0;
+    for (auto& layer : layer_map_) {
+        if (layer.layer_name.find(substring) != std::string::npos &&
+            layer.actor) {
+            layer.actor->SetVisibility(opacity);
+            layer.actor->Modified();
+        }
+    }
+}
+
 void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
     auto it = m_imageInfoMap.find(viewID);
     if (it != m_imageInfoMap.end() && it->second.imageSlice) {

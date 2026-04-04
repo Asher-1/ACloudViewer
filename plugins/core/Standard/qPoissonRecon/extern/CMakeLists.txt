@@ -27,6 +27,8 @@ target_include_directories( ${PROJECT_NAME}
 		${POISSON_INCLUDE_DIRS}/Src
 )
 
+add_dependencies( ${PROJECT_NAME} ext_poisson )
+
 target_compile_definitions( ${PROJECT_NAME}
 	PRIVATE
 		_CRT_SECURE_NO_DEPRECATE
@@ -39,12 +41,8 @@ if (MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
 endif ()
 
-option( POISSON_RECON_WITH_OPEN_MP "Compile PoissonRecon plugin with OpenMP support" OFF )
-if( POISSON_RECON_WITH_OPEN_MP )
-	find_package( OpenMP )
-	
-	if( OpenMP_CXX_FOUND ) 
-		target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX )
-		target_compile_definitions( ${PROJECT_NAME} PRIVATE WITH_OPENMP )
-	endif()
-endif ()
+if( WITH_OPENMP AND TARGET 3rdparty_openmp )
+	message(STATUS "Enabling OpenMP support for PoissonRecon plugin")
+	target_link_libraries( ${PROJECT_NAME} PUBLIC 3rdparty_openmp )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE WITH_OPENMP )
+endif()

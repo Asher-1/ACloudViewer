@@ -53,12 +53,16 @@ public:
     ///                       from the active scalar field are used instead of
     ///                       RGB.
     /// @param show_mode      If true, respects visibility filtering.
+    /// @param lightweight    If true, skips SourceRGB, extra-SF arrays, and
+    ///                       DatasetName for faster rebuilds (e.g. during
+    ///                       slider drag).
     static vtkSmartPointer<vtkPolyData> PointCloudToPolyData(
             const ccPointCloud* cloud,
             bool include_colors = true,
             bool include_normals = true,
             bool include_sf = false,
-            bool show_mode = true);
+            bool show_mode = true,
+            bool lightweight = false);
 
     /// Obtain color data as a vtkDataArray (3-component unsigned char RGB).
     /// Uses scalar-field-derived colors when @p sf_colors is true,

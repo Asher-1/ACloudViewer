@@ -61,6 +61,9 @@ void ccLineationTool::pointPicked(ccHObject* insertPoint,
         m_app->dispToConsole(QString("[ccCompass] Lineation = " + l->getName()),
                              ecvMainAppInterface::STD_CONSOLE_MESSAGE);
 
+        m_app->refreshAll(false);
+        m_app->updateUI();
+
         // start new lineation
         m_lineation_id = -1;
     }

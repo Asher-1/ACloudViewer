@@ -154,6 +154,7 @@ namespace Visualization {
 static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     ren->SetBackground(0.0, 0.0, 0.0);
     ren->GetActiveCamera()->SetParallelProjection(0);
+    ren->SetTwoSidedLighting(true);
 }
 
 // ParaView BUG #13534: intercept ResetCameraClippingRangeEvent so we use
@@ -1389,10 +1390,11 @@ static bool UpdatePointCloudPolyData(vtkSmartPointer<vtkPolyData> polydata,
                                      VtkRendering::CloudActorMapPtr cloud_map) {
     auto it = cloud_map->find(id);
     if (it == cloud_map->end()) return false;
-    auto* mapper =
-            vtkPolyDataMapper::SafeDownCast(it->second.actor->GetMapper());
+    // CreateActorFromVTKDataSet uses vtkDataSetMapper, not vtkPolyDataMapper.
+    // Use the vtkAlgorithm API (SetInputDataObject) which works for both.
+    vtkMapper* mapper = it->second.actor->GetMapper();
     if (!mapper) return false;
-    mapper->SetInputData(polydata);
+    mapper->SetInputDataObject(polydata);
     if (polydata->GetPointData()->GetScalars()) {
         double minmax[2];
         polydata->GetPointData()->GetScalars()->GetRange(minmax);
@@ -1421,7 +1423,8 @@ static bool AddPolygonMeshPolyData(vtkSmartPointer<vtkPolyData> polydata,
 
 /********************************Draw Entities*********************************/
 void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
-                            ccPointCloud* cloud) {
+                            ccPointCloud* cloud,
+                            bool lightweight) {
     if (!cloud || cloud->size() == 0) return;
 
     const std::string viewID = CVTools::FromQString(context.viewID);
@@ -1433,20 +1436,20 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
 
     CVLog::PrintDebug(
             "[VtkVis::drawPointCloud] id=%s showSF=%d showColors=%d "
-            "sfShown=%d hasDisplayedSF=%d sfIdx=%d hasColors=%d",
+            "sfShown=%d hasDisplayedSF=%d sfIdx=%d hasColors=%d lw=%d",
             viewID.c_str(), context.drawParam.showSF,
             context.drawParam.showColors, cloud->sfShown() ? 1 : 0,
             cloud->hasDisplayedScalarField() ? 1 : 0,
             cloud->getCurrentDisplayedScalarFieldIndex(),
-            cloud->hasColors() ? 1 : 0);
+            cloud->hasColors() ? 1 : 0, lightweight ? 1 : 0);
 
     vtkSmartPointer<vtkPolyData> polydata;
     if (show_colors) {
         polydata = Converters::Cc2Vtk::PointCloudToPolyData(
-                cloud, true, cloud->hasNormals(), show_sf, true);
+                cloud, true, cloud->hasNormals(), show_sf, true, lightweight);
     } else {
         polydata = Converters::Cc2Vtk::PointCloudToPolyData(
-                cloud, false, cloud->hasNormals(), false, true);
+                cloud, false, cloud->hasNormals(), false, true, lightweight);
         if (polydata) {
             // Apply default color as scalars
             auto nc = polydata->GetNumberOfPoints();
@@ -1726,66 +1729,75 @@ void VtkVis::updateShadingMode(const CC_DRAW_CONTEXT& context,
     auto actor = getActorById(viewID);
     if (!actor) return;
     auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
-    if (!polydata) return;
+    if (!polydata || !cloud) return;
+
+    const bool isMeshPolyData = static_cast<vtkIdType>(cloud->size()) !=
+                                polydata->GetNumberOfPoints();
 
     bool has_normal = false;
-    if (cloud && cloud->hasNormals()) {
+    if (cloud->hasNormals()) {
         has_normal = true;
-        vtkDataArray* existingNormals = polydata->GetPointData()->GetNormals();
-        bool needUpdate = context.forceRedraw || !existingNormals ||
-                          existingNormals->GetNumberOfTuples() !=
-                                  polydata->GetNumberOfPoints();
-        if (needUpdate) {
-            auto normals = vtkSmartPointer<vtkFloatArray>::New();
-            normals->SetNumberOfComponents(3);
-            normals->SetName("Normals");
-            normals->SetNumberOfTuples(polydata->GetNumberOfPoints());
-            for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
-                                  static_cast<unsigned>(i) < cloud->size();
-                 ++i) {
-                const CCVector3& n =
-                        cloud->getPointNormal(static_cast<unsigned>(i));
-                float nf[3] = {static_cast<float>(n.x), static_cast<float>(n.y),
-                               static_cast<float>(n.z)};
-                normals->SetTypedTuple(i, nf);
+        if (!isMeshPolyData) {
+            vtkDataArray* existingNormals =
+                    polydata->GetPointData()->GetNormals();
+            bool needUpdate = context.forceRedraw || !existingNormals ||
+                              existingNormals->GetNumberOfTuples() !=
+                                      polydata->GetNumberOfPoints();
+            if (needUpdate) {
+                auto normals = vtkSmartPointer<vtkFloatArray>::New();
+                normals->SetNumberOfComponents(3);
+                normals->SetName("Normals");
+                normals->SetNumberOfTuples(polydata->GetNumberOfPoints());
+                for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
+                                      static_cast<unsigned>(i) < cloud->size();
+                     ++i) {
+                    const CCVector3& n =
+                            cloud->getPointNormal(static_cast<unsigned>(i));
+                    float nf[3] = {static_cast<float>(n.x),
+                                   static_cast<float>(n.y),
+                                   static_cast<float>(n.z)};
+                    normals->SetTypedTuple(i, nf);
+                }
+                polydata->GetPointData()->SetNormals(normals);
             }
-            polydata->GetPointData()->SetNormals(normals);
         }
     }
 
     bool has_color = false;
-    if (cloud && cloud->hasColors()) {
+    if (cloud->hasColors()) {
         has_color = true;
-        vtkDataArray* existingSourceRGB =
-                polydata->GetPointData()->GetArray("SourceRGB");
-        bool needSync = context.forceRedraw || !existingSourceRGB ||
-                        existingSourceRGB->GetNumberOfTuples() !=
-                                polydata->GetNumberOfPoints();
-        if (needSync) {
-            auto colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-            colors->SetName("SourceRGB");
-            colors->SetNumberOfComponents(3);
-            colors->SetNumberOfTuples(polydata->GetNumberOfPoints());
-            for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
-                                  static_cast<unsigned>(i) < cloud->size();
-                 ++i) {
-                const ecvColor::Rgb& rgb =
-                        cloud->getPointColor(static_cast<unsigned>(i));
-                unsigned char c[3] = {rgb.r, rgb.g, rgb.b};
-                colors->SetTypedTuple(i, c);
-            }
-            polydata->GetPointData()->AddArray(colors);
+        if (!isMeshPolyData) {
+            vtkDataArray* existingSourceRGB =
+                    polydata->GetPointData()->GetArray("SourceRGB");
+            bool needSync = context.forceRedraw || !existingSourceRGB ||
+                            existingSourceRGB->GetNumberOfTuples() !=
+                                    polydata->GetNumberOfPoints();
+            if (needSync) {
+                auto colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
+                colors->SetName("SourceRGB");
+                colors->SetNumberOfComponents(3);
+                colors->SetNumberOfTuples(polydata->GetNumberOfPoints());
+                for (vtkIdType i = 0; i < polydata->GetNumberOfPoints() &&
+                                      static_cast<unsigned>(i) < cloud->size();
+                     ++i) {
+                    const ecvColor::Rgb& rgb =
+                            cloud->getPointColor(static_cast<unsigned>(i));
+                    unsigned char c[3] = {rgb.r, rgb.g, rgb.b};
+                    colors->SetTypedTuple(i, c);
+                }
+                polydata->GetPointData()->AddArray(colors);
 
-            auto hasRGB = vtkSmartPointer<vtkIntArray>::New();
-            hasRGB->SetName("HasSourceRGB");
-            hasRGB->SetNumberOfTuples(1);
-            hasRGB->SetValue(0, 1);
-            polydata->GetFieldData()->AddArray(hasRGB);
+                auto hasRGB = vtkSmartPointer<vtkIntArray>::New();
+                hasRGB->SetName("HasSourceRGB");
+                hasRGB->SetNumberOfTuples(1);
+                hasRGB->SetValue(0, 1);
+                polydata->GetFieldData()->AddArray(hasRGB);
+            }
         }
     }
 
     if (context.drawParam.showNorms && has_normal) {
-        setMeshShadingMode(SHADING_MODE::ECV_SHADING_PHONG, viewID, viewport);
+        setMeshShadingMode(SHADING_MODE::ECV_SHADING_GOURAUD, viewID, viewport);
     } else {
         setMeshShadingMode(SHADING_MODE::ECV_SHADING_FLAT, viewID, viewport);
     }
@@ -2476,6 +2488,37 @@ void VtkVis::hideShowActors(bool visibility,
     }
 }
 
+void VtkVis::hideShowActorsBySubstring(bool visibility,
+                                       const std::string& substring,
+                                       int viewport) {
+    int vis = visibility ? 1 : 0;
+    for (auto& pair : *shape_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            vtkActor* actor = vtkActor::SafeDownCast(pair.second);
+            if (actor) {
+                actor->SetVisibility(vis);
+                actor->Modified();
+            }
+        }
+    }
+    for (auto& pair : *cloud_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            if (pair.second.actor) {
+                pair.second.actor->SetVisibility(vis);
+                pair.second.actor->Modified();
+            }
+        }
+    }
+    for (auto& pair : *getWidgetActorMap()) {
+        if (pair.first.find(substring) != std::string::npos) {
+            if (pair.second.widget) {
+                visibility ? pair.second.widget->On()
+                           : pair.second.widget->Off();
+            }
+        }
+    }
+}
+
 void VtkVis::hideShowWidgets(bool visibility,
                              const std::string& viewID,
                              int viewport) {
@@ -2800,13 +2843,16 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
     scalarArray->SetNumberOfComponents(1);
     scalarArray->SetNumberOfTuples(numPoints);
 
-    // Copy scalar values from ccPointCloud
+    // When SF hiding is active, VTK polydata has fewer points than the cloud.
+    // Cc2Vtk::PointCloudToPolyData already built SF arrays with correct
+    // indexing for the visible subset — skip redundant (and index-mismatched)
+    // work here.
     unsigned cloudSize = cloud->size();
     if (static_cast<vtkIdType>(cloudSize) != numPoints) {
-        CVLog::Warning(QString("[VtkVis::addScalarFieldToVTK] Size mismatch: "
-                               "ccCloud=%1, VTK=%2")
-                               .arg(cloudSize)
-                               .arg(numPoints));
+        CVLog::PrintDebug(QString("[VtkVis::addScalarFieldToVTK] Skipping: "
+                                  "ccCloud=%1 vs VTK=%2 (SF hiding active)")
+                                  .arg(cloudSize)
+                                  .arg(numPoints));
         return;
     }
 
