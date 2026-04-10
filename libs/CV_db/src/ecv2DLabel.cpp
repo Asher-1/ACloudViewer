@@ -933,38 +933,53 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                             QSharedPointer<ccFacet>(ccFacet::Create(cloud));
 
                     if (c_unitTriMarker) {
-                        c_unitTriMarker->getPolygon()->setOpacity(0.5);
-                        c_unitTriMarker->getPolygon()->setTempColor(
-                                ecvColor::yellow);
-                        c_unitTriMarker->getPolygon()->setVisible(true);
-                        c_unitTriMarker->getContour()->setColor(ecvColor::red);
-                        c_unitTriMarker->getContour()->showColors(true);
-                        c_unitTriMarker->getContour()->setVisible(true);
+                        if (c_unitTriMarker->getPolygon()) {
+                            c_unitTriMarker->getPolygon()->setOpacity(0.5);
+                            c_unitTriMarker->getPolygon()->setTempColor(
+                                    ecvColor::yellow);
+                            c_unitTriMarker->getPolygon()->setVisible(true);
+                        }
+                        if (c_unitTriMarker->getContour()) {
+                            c_unitTriMarker->getContour()->setColor(
+                                    ecvColor::red);
+                            c_unitTriMarker->getContour()->showColors(true);
+                            c_unitTriMarker->getContour()->setVisible(true);
+                        }
                         c_unitTriMarker->setTempColor(ecvColor::darkGrey);
                         c_unitTriMarker->showColors(true);
                         c_unitTriMarker->setVisible(true);
                         c_unitTriMarker->setEnabled(true);
-                        m_surfaceIdfix =
-                                this->getViewId() + SEPARATOR +
-                                c_unitTriMarker->getPolygon()->getViewId();
-                        m_contourIdfix =
-                                this->getViewId() + SEPARATOR +
-                                c_unitTriMarker->getContour()->getViewId();
+                        if (c_unitTriMarker->getPolygon()) {
+                            m_surfaceIdfix =
+                                    this->getViewId() + SEPARATOR +
+                                    c_unitTriMarker->getPolygon()->getViewId();
+                            c_unitTriMarker->getPolygon()->setFixedId(true);
+                        }
+                        if (c_unitTriMarker->getContour()) {
+                            m_contourIdfix =
+                                    this->getViewId() + SEPARATOR +
+                                    c_unitTriMarker->getContour()->getViewId();
+                            c_unitTriMarker->getContour()->setFixedId(true);
+                        }
                         c_unitTriMarker->setFixedId(true);
-                        c_unitTriMarker->getContour()->setFixedId(true);
-                        c_unitTriMarker->getPolygon()->setFixedId(true);
                     }
 
-                    if (m_surfaceIdfix == "") {
+                    if (m_surfaceIdfix == "" && c_unitTriMarker &&
+                        c_unitTriMarker->getPolygon()) {
                         m_surfaceIdfix =
                                 this->getViewId() + SEPARATOR +
                                 c_unitTriMarker->getPolygon()->getViewId();
                     }
-                    if (m_contourIdfix == "") {
+                    if (m_contourIdfix == "" && c_unitTriMarker &&
+                        c_unitTriMarker->getContour()) {
                         m_contourIdfix =
                                 this->getViewId() + SEPARATOR +
                                 c_unitTriMarker->getContour()->getViewId();
                     }
+                }
+
+                if (!c_unitTriMarker || !c_unitTriMarker->getContourVertices()) {
+                    break;
                 }
 
                 CCVector3* A = const_cast<CCVector3*>(
@@ -988,13 +1003,17 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
                 // draw triangle contour
-                markerContext.viewID = m_contourIdfix;
-                c_unitTriMarker->getContour()->setRedraw(true);
-                c_unitTriMarker->getContour()->draw(markerContext);
+                if (c_unitTriMarker->getContour()) {
+                    markerContext.viewID = m_contourIdfix;
+                    c_unitTriMarker->getContour()->setRedraw(true);
+                    c_unitTriMarker->getContour()->draw(markerContext);
+                }
                 // draw triangle mesh surface
-                markerContext.viewID = m_surfaceIdfix;
-                c_unitTriMarker->getPolygon()->setRedraw(true);
-                c_unitTriMarker->getPolygon()->draw(markerContext);
+                if (c_unitTriMarker->getPolygon()) {
+                    markerContext.viewID = m_surfaceIdfix;
+                    c_unitTriMarker->getPolygon()->setRedraw(true);
+                    c_unitTriMarker->getPolygon()->draw(markerContext);
+                }
             }
         }
 

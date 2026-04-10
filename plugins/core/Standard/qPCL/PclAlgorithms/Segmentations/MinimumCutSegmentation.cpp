@@ -61,7 +61,7 @@ int MinimumCutSegmentation::openInputDialog() {
 
     m_dialog->refreshLabelComboBox();
     ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
-    if (cloud->hasColors() || cloud->hasScalarFields()) {
+    if (cloud && (cloud->hasColors() || cloud->hasScalarFields())) {
         m_colored = true;
     } else {
         m_colored = false;
