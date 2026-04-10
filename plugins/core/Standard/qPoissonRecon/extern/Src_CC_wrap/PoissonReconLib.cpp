@@ -7,6 +7,39 @@
 
 #include "PoissonReconLib.h"
 
+// Override ERROR_OUT before any PoissonRecon headers.
+//
+// PoissonRecon v12 has a known race condition in IsoSurfaceExtractor that can
+// trigger "Edge not set" / "Failed to close loop" errors under multi-threading
+// (upstream GitHub issue #136, fixed in v18.73 by replacing exit() with throw).
+// The upstream CloudCompare disables OpenMP for this plugin entirely.
+//
+// The default ERROR_OUT macro calls exit(0), which is fatal in a Qt/VTK app:
+// process exit -> __cxa_finalize -> cvSelectionHighlighter dtor ->
+// QOpenGLContext::makeCurrent on destroyed surface -> SIGABRT.
+//
+// Fix: redefine ERROR_OUT to throw std::runtime_error (same approach as
+// upstream v18.73), and catch at the Reconstruct() boundary. On macOS, OpenMP
+// is also disabled for this plugin (see CMakeLists.txt) so the race condition
+// is avoided entirely; the throw-based ERROR_OUT serves as a safety net.
+#include <stdexcept>
+#include <string>
+#include <sstream>
+namespace PoissonReconErrorHelper {
+    template<typename... Args>
+    [[noreturn]] inline void ThrowError(const char* file, int line,
+                                        const char* func, const char* fmt,
+                                        Args... args) {
+        std::ostringstream oss;
+        oss << "[PoissonRecon ERROR] " << file << ":" << line
+            << " (" << func << "): " << fmt;
+        int dummy[] = {0, ((void)(oss << " " << args), 0)...};
+        (void)dummy;
+        throw std::runtime_error(oss.str());
+    }
+}
+#define ERROR_OUT(...) PoissonReconErrorHelper::ThrowError(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+
 //PoissonRecon
 #include "FEMTree.h"
 
@@ -702,13 +735,52 @@ static bool Execute(PointStream<Real>& pointStream,
 }
 
 
+namespace {
+
+template <class Real>
+bool ExecuteWithBoundary(PointStream<Real>& pointStream,
+                         PoissonReconLib::IMesh<Real>& outMesh,
+                         const PoissonReconLib::Parameters& params)
+{
+	switch (params.boundary)
+	{
+	case PoissonReconLib::Parameters::FREE:
+	{
+		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_FREE>::Signature> Sigs;
+		return Execute<Real>(pointStream, outMesh, params, Sigs());
+	}
+	case PoissonReconLib::Parameters::DIRICHLET:
+	{
+		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_DIRICHLET>::Signature> Sigs;
+		return Execute<Real>(pointStream, outMesh, params, Sigs());
+	}
+	case PoissonReconLib::Parameters::NEUMANN:
+	{
+		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_NEUMANN>::Signature> Sigs;
+		return Execute<Real>(pointStream, outMesh, params, Sigs());
+	}
+	default:
+		assert(false);
+		return false;
+	}
+}
+
+} // anonymous namespace
+
+// PoissonRecon v12 has a known race condition in IsoSurfaceExtractor that
+// can trigger ERROR_OUT ("Edge not set", "Failed to close loop", etc.) when
+// multiple threads modify shared octree data structures concurrently.
+// The upstream fix (v18.73) replaced exit() with throw, and the author
+// recommends --threads 1 as a workaround.
+// Our ERROR_OUT override (defined above) converts exit(0) into a catchable
+// std::runtime_error so the application survives the error.
+
 bool PoissonReconLib::Reconstruct(	const Parameters& params,
 									const ICloud<float>& inCloud,
 									IMesh<float>& outMesh )
 {
 	if (!inCloud.hasNormals())
 	{
-		//we need normals
 		return false;
 	}
 
@@ -721,24 +793,19 @@ bool PoissonReconLib::Reconstruct(	const Parameters& params,
 	PointStream<float> pointStream(inCloud);
 
 	bool success = false;
-
-	switch (params.boundary)
+	try
 	{
-	case Parameters::FREE:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_FREE>::Signature> FEMSigsFree;
-		success = Execute<float>(pointStream, outMesh, params, FEMSigsFree());
-		break;
-	case Parameters::DIRICHLET:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_DIRICHLET>::Signature> FEMSigsDirichlet;
-		success = Execute<float>(pointStream, outMesh, params, FEMSigsDirichlet());
-		break;
-	case Parameters::NEUMANN:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_NEUMANN>::Signature> FEMSigsNeumann;
-		success = Execute<float>(pointStream, outMesh, params, FEMSigsNeumann());
-		break;
-	default:
-		assert(false);
-		break;
+		success = ExecuteWithBoundary<float>(pointStream, outMesh, params);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "[PoissonRecon] Reconstruction failed: " << e.what() << std::endl;
+		success = false;
+	}
+	catch (...)
+	{
+		std::cerr << "[PoissonRecon] Reconstruction failed with unknown error" << std::endl;
+		success = false;
 	}
 
 	ThreadPool::Terminate();
@@ -752,37 +819,31 @@ bool PoissonReconLib::Reconstruct(	const Parameters& params,
 {
 	if (!inCloud.hasNormals())
 	{
-		//we need normals
 		return false;
 	}
 
 #ifdef WITH_OPENMP
-	ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP, std::thread::hardware_concurrency());
+	ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP, params.threads);
 #else
-	ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL, std::thread::hardware_concurrency());
+	ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL, params.threads);
 #endif
 
 	PointStream<double> pointStream(inCloud);
 
 	bool success = false;
-
-	switch (params.boundary)
+	try
 	{
-	case Parameters::FREE:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_FREE>::Signature> FEMSigsFree;
-		success = Execute<double>(pointStream, outMesh, params, FEMSigsFree());
-		break;
-	case Parameters::DIRICHLET:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_DIRICHLET>::Signature> FEMSigsDirichlet;
-		success = Execute<double>(pointStream, outMesh, params, FEMSigsDirichlet());
-		break;
-	case Parameters::NEUMANN:
-		typedef IsotropicUIntPack<DIMENSION, FEMDegreeAndBType<DEFAULT_FEM_DEGREE, BOUNDARY_NEUMANN>::Signature> FEMSigsNeumann;
-		success = Execute<double>(pointStream, outMesh, params, FEMSigsNeumann());
-		break;
-	default:
-		assert(false);
-		break;
+		success = ExecuteWithBoundary<double>(pointStream, outMesh, params);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "[PoissonRecon] Reconstruction failed: " << e.what() << std::endl;
+		success = false;
+	}
+	catch (...)
+	{
+		std::cerr << "[PoissonRecon] Reconstruction failed with unknown error" << std::endl;
+		success = false;
 	}
 
 	ThreadPool::Terminate();
