@@ -248,17 +248,18 @@ bool doReconstruct() {
                                                  s_densitySF);
     PointCloudWrapper<PointCoordinateType> cloudWrapper(*s_cloud);
 
-    bool success = PoissonReconLib::Reconstruct(s_params, cloudWrapper,
-                                                meshWrapper) &&
-                   !meshWrapper.isInErrorState();
+    bool success =
+            PoissonReconLib::Reconstruct(s_params, cloudWrapper, meshWrapper) &&
+            !meshWrapper.isInErrorState();
 
     // PoissonRecon v12 has a known race condition in IsoSurfaceExtractor that
     // can fail under multi-threading (upstream fix: v18.73, author workaround:
     // --threads 1). If the first attempt fails and used multiple threads, retry
     // with a single thread after resetting the output mesh.
     if (!success && s_params.threads > 1) {
-        CVLog::Warning("[PoissonRecon] Multi-threaded attempt failed, retrying "
-                       "with single thread...");
+        CVLog::Warning(
+                "[PoissonRecon] Multi-threaded attempt failed, retrying "
+                "with single thread...");
 
         s_meshVertices->clear();
         s_mesh->clear();

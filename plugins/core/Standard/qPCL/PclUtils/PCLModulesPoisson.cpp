@@ -13,7 +13,6 @@
 // template code paths entirely.
 
 #include <PclUtils/PCLModules.h>
-
 #include <pcl/search/kdtree.h>
 #include <pcl/surface/poisson.h>
 
