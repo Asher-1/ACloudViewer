@@ -978,7 +978,8 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                     }
                 }
 
-                if (!c_unitTriMarker || !c_unitTriMarker->getContourVertices()) {
+                if (!c_unitTriMarker ||
+                    !c_unitTriMarker->getContourVertices()) {
                     break;
                 }
 
