@@ -6,7 +6,11 @@ add_library( ${PROJECT_NAME} STATIC )
 
 # To remove very annoying "NO ARGUMENTS THAT DEPEND ON A TEMPLATE PARAMETER" errors with G++!
 if( UNIX OR MINGW )
-	target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fpermissive -w> )
+	if( CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
+		target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-w -Wno-missing-template-arg-list-after-template-kw> )
+	else()
+		target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fpermissive -w> )
+	endif()
 elseif( MSVC )
 	target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/bigobj> )
 endif()
