@@ -237,7 +237,6 @@ static ccPointCloud* s_meshVertices = nullptr;
 static cloudViewer::ScalarField* s_densitySF = nullptr;
 
 bool doReconstruct() {
-    // invalid parameters
     if (!s_cloud || !s_mesh || !s_meshVertices) {
         return false;
     }
@@ -249,16 +248,42 @@ bool doReconstruct() {
                                                  s_densitySF);
     PointCloudWrapper<PointCoordinateType> cloudWrapper(*s_cloud);
 
-    if (!PoissonReconLib::Reconstruct(s_params, cloudWrapper, meshWrapper) ||
-        meshWrapper.isInErrorState()) {
-        return false;
+    bool success =
+            PoissonReconLib::Reconstruct(s_params, cloudWrapper, meshWrapper) &&
+            !meshWrapper.isInErrorState();
+
+    // PoissonRecon v12 has a known race condition in IsoSurfaceExtractor that
+    // can fail under multi-threading (upstream fix: v18.73, author workaround:
+    // --threads 1). If the first attempt fails and used multiple threads, retry
+    // with a single thread after resetting the output mesh.
+    if (!success && s_params.threads > 1) {
+        CVLog::Warning(
+                "[PoissonRecon] Multi-threaded attempt failed, retrying "
+                "with single thread...");
+
+        s_meshVertices->clear();
+        s_mesh->clear();
+        if (s_densitySF) {
+            s_densitySF->clear();
+        }
+
+        MeshWrapper<PointCoordinateType> retryWrapper(*s_mesh, *s_meshVertices,
+                                                      s_densitySF);
+        PoissonReconLib::Parameters retryParams = s_params;
+        retryParams.threads = 1;
+
+        success = PoissonReconLib::Reconstruct(retryParams, cloudWrapper,
+                                               retryWrapper) &&
+                  !retryWrapper.isInErrorState();
     }
 
-    qint64 elpased_msec = timer.elapsed();
-    CVLog::Print(QString("[PoissonRecon] Duration: %1 s")
-                         .arg(elpased_msec / 1000.0, 0, 'f', 1));
+    if (success) {
+        qint64 elpased_msec = timer.elapsed();
+        CVLog::Print(QString("[PoissonRecon] Duration: %1 s")
+                             .arg(elpased_msec / 1000.0, 0, 'f', 1));
+    }
 
-    return true;
+    return success;
 }
 
 void qPoissonRecon::doAction() {

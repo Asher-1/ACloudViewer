@@ -319,13 +319,6 @@ build_gui_app() {
         # Keep default behavior based on OS if option not specified
         echo "PLUGIN_IO_QRDB uses default: $BUILD_RIEGL (based on OS)"
     fi
-    if [[ "plugin_treeiso" =~ ^($options)$ ]]; then
-        PLUGIN_STANDARD_QTREEISO=ON
-        echo "PLUGIN_STANDARD_QTREEISO is on"
-    else
-        PLUGIN_STANDARD_QTREEISO=OFF
-        echo "PLUGIN_STANDARD_QTREEISO is off"
-    fi
 
     if [[ "with_conda" =~ ^($options)$ ]]; then
         BUILD_WITH_CONDA=ON
@@ -423,7 +416,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QRANSAC_SD=ON"
                 "-DPLUGIN_STANDARD_QSRA=ON"
                 "-DPLUGIN_STANDARD_3DMASC=ON"
-                "-DPLUGIN_STANDARD_QTREEISO=$PLUGIN_STANDARD_QTREEISO"
+                "-DPLUGIN_STANDARD_QTREEISO=ON"
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
                 "-DPLUGIN_STANDARD_G3POINT=ON"
                 "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"

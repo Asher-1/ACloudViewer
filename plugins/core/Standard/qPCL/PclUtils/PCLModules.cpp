@@ -46,7 +46,10 @@
 // PCL SURFACE
 #include <pcl/surface/gp3.h>
 #include <pcl/surface/grid_projection.h>
-#include <pcl/surface/poisson.h>
+// NOTE: <pcl/surface/poisson.h> is intentionally excluded here.
+// PCL 1.14's bundled poisson4 3rd-party headers have bugs that break under
+// PCL_NO_PRECOMPILE with modern Clang.  The Poisson implementation lives in
+// PCLModulesPoisson.cpp which compiles without PCL_NO_PRECOMPILE.
 
 // normal function
 namespace PCLModules {
@@ -244,38 +247,8 @@ int GridProjection(const PointCloudNormal::ConstPtr &cloudWithNormals,
     return 1;
 }
 
-int GetPoissonReconstruction(const PointCloudNormal::ConstPtr &cloudWithNormals,
-                             PCLMesh &outMesh,
-                             int degree,
-                             int treeDepth,
-                             int isoDivideDepth,
-                             int solverDivideDepth,
-                             float scale,
-                             float samplesPerNode,
-                             bool useConfidence,
-                             bool useManifold,
-                             bool outputPolygons) {
-    // another kd-tree for reconstruction
-    pcl::search::KdTree<PointNT>::Ptr kdtree(new pcl::search::KdTree<PointNT>);
-    kdtree->setInputCloud(cloudWithNormals);
-    pcl::Poisson<PointNT> pn;
-    pn.setConfidence(useConfidence);  // normalize normals[false]
-    pn.setDegree(degree);    // degree[1,5], the bigger the more time needed
-    pn.setDepth(treeDepth);  // tree maximum depth, calculate 2^d x 2 ^d x 2^d
-    pn.setIsoDivide(isoDivideDepth);        // extract ISO depth
-    pn.setManifold(useManifold);            // add triangle gravity
-    pn.setOutputPolygons(outputPolygons);   // output polygon mesh
-    pn.setSamplesPerNode(samplesPerNode);   // minimum sample points number no
-                                            // noise[1.0-5.0], noise[15.-20.]
-    pn.setScale(scale);                     // rate
-    pn.setSolverDivide(solverDivideDepth);  // Gauss-Seidel depth
-                                            // pn.setIndices();
-    pn.setSearchMethod(kdtree);
-    pn.setInputCloud(cloudWithNormals);
-    pn.performReconstruction(outMesh);
-
-    return 1;
-}
+// GetPoissonReconstruction is defined in PCLModulesPoisson.cpp to avoid
+// pulling in the broken poisson4 headers under PCL_NO_PRECOMPILE.
 
 int GetGreedyTriangulation(const PointCloudNormal::ConstPtr &cloudWithNormals,
                            PCLMesh &outMesh,

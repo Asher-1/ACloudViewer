@@ -367,10 +367,12 @@ int BasePclModule::isFirstSelectedCcPointCloud() {
 
 int BasePclModule::hasSelectedRGB() {
     if (isFirstSelectedCcPointCloud() != 1) return -1;
-    // get the cloud
 
-    ccPointCloud* cloud;
-    cloud = getSelectedEntityAsCCPointCloud();
+    ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
+    if (!cloud) {
+        CVLog::Print("No cloud selected");
+        return -1;
+    }
 
     return cloud->hasColors();
 }

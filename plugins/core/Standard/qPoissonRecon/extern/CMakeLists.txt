@@ -6,7 +6,11 @@ add_library( ${PROJECT_NAME} STATIC )
 
 # To remove very annoying "NO ARGUMENTS THAT DEPEND ON A TEMPLATE PARAMETER" errors with G++!
 if( UNIX OR MINGW )
-	target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fpermissive -w> )
+	if( CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
+		target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-w -Wno-missing-template-arg-list-after-template-kw> )
+	else()
+		target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fpermissive -w> )
+	endif()
 elseif( MSVC )
 	target_compile_options( ${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/bigobj> )
 endif()
@@ -41,8 +45,16 @@ if (MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
 endif ()
 
-if( WITH_OPENMP AND TARGET 3rdparty_openmp )
+# PoissonRecon v12 has a known race condition in IsoSurfaceExtractor when
+# running with OpenMP (upstream GitHub issue #136). The upstream CloudCompare
+# disables OpenMP for this plugin by default. On macOS (Apple Clang + ARM64),
+# the race manifests as "Edge not set" / "Failed to close loop" errors inside
+# ThreadPool::Parallel_for, causing SIGABRT via exit(0).
+# Use std::thread pool (THREAD_POOL) instead of OpenMP for this plugin.
+if( WITH_OPENMP AND TARGET 3rdparty_openmp AND NOT APPLE )
 	message(STATUS "Enabling OpenMP support for PoissonRecon plugin")
 	target_link_libraries( ${PROJECT_NAME} PUBLIC 3rdparty_openmp )
 	target_compile_definitions( ${PROJECT_NAME} PRIVATE WITH_OPENMP )
+elseif( APPLE AND WITH_OPENMP )
+	message(STATUS "PoissonRecon: using std::thread pool instead of OpenMP on macOS (race condition workaround)")
 endif()

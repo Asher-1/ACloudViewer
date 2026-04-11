@@ -316,8 +316,34 @@ bool CommandPoissonRecon::process(ccCommandLineInterface& cmd) {
                                                      densitySF);
         PointCloudWrapper<PointCoordinateType> cloudWrapper(*pc);
 
-        if (!PoissonReconLib::Reconstruct(params, cloudWrapper, meshWrapper) ||
-            meshWrapper.isInErrorState()) {
+        bool reconstructed = PoissonReconLib::Reconstruct(params, cloudWrapper,
+                                                          meshWrapper) &&
+                             !meshWrapper.isInErrorState();
+
+        // Retry with single thread if multi-threaded attempt failed (known
+        // race condition in PoissonRecon v12 IsoSurfaceExtractor).
+        if (!reconstructed && params.threads > 1) {
+            cmd.warning(
+                    "[POISSON_RECON] Multi-threaded attempt failed, "
+                    "retrying with single thread...");
+
+            newPC->clear();
+            newMesh->clear();
+            if (densitySF) {
+                densitySF->clear();
+            }
+
+            MeshWrapper<PointCoordinateType> retryWrapper(*newMesh, *newPC,
+                                                          densitySF);
+            PoissonReconLib::Parameters retryParams = params;
+            retryParams.threads = 1;
+
+            reconstructed = PoissonReconLib::Reconstruct(
+                                    retryParams, cloudWrapper, retryWrapper) &&
+                            !retryWrapper.isInErrorState();
+        }
+
+        if (!reconstructed) {
             if (densitySF) {
                 densitySF->release();
             }

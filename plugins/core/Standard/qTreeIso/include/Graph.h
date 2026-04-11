@@ -92,12 +92,7 @@ using VertexAttributeMap =
                                                 boost::vertex_bundle_t>;
 template <typename T>
 using EdgeAttributeMap =
-        boost::adj_list_edge_property_map<boost::directed_tag,
-                                          EdgeAttribute<T>,
-                                          EdgeAttribute<T>&,
-                                          uint64_t,
-                                          CP::EdgeAttribute<T>,
-                                          boost::edge_bundle_t>;
+        typename boost::property_map<Graph<T>, boost::edge_bundle_t>::type;
 template <typename T>
 using VertexIndexMap =
         typename boost::property_map<Graph<T>, boost::vertex_index_t>::type;
