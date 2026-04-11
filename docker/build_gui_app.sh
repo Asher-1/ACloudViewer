@@ -76,7 +76,7 @@ source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 # Build options - separate common options for clarity
-BUILD_OPTIONS="with_pcl_nurbs package_installer plugin_treeiso"
+BUILD_OPTIONS="with_pcl_nurbs package_installer"
 
 # Add with_rdb option based on WITH_RDB environment variable
 # Default: OFF (for Dockerfile_build), ON (for Dockerfile.ci and Dockerfile.ci.qt6)
