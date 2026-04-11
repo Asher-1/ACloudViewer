@@ -1422,7 +1422,7 @@ T min_col(std::vector<T>& arr) {
 template <typename T>
 T mean_col(std::vector<T>& arr) {
     if (arr.empty()) {
-        return std::numeric_limits<T>::quite_NaN();
+        return std::numeric_limits<T>::quiet_NaN();
     }
 
     double sum = 0.0;
