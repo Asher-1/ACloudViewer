@@ -68,7 +68,7 @@ int RegionGrowingSegmentation::openInputDialog() {
                 m_app ? m_app->getActiveWindow() : 0);
 
     ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
-    if (cloud->hasColors() || cloud->hasScalarFields()) {
+    if (cloud && (cloud->hasColors() || cloud->hasScalarFields())) {
         m_dialog->rgRGBTab->setEnabled(true);
         m_basedRgb = true;
     } else {

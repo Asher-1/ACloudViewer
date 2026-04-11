@@ -94,13 +94,13 @@ if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_conda package_installer plugin_treeiso
+    build_gui_app with_conda package_installer
     echo
 else
     echo "Start to build GUI package with only CPU..."
     echo
     export BUILD_CUDA_MODULE=OFF
-    build_gui_app with_conda package_installer plugin_treeiso
+    build_gui_app with_conda package_installer
     echo
 
     # Building with cuda if cuda available
@@ -108,7 +108,7 @@ else
         echo "Start to build GUI package with CUDA..."
         echo
         export BUILD_CUDA_MODULE=ON
-        build_gui_app with_conda package_installer plugin_treeiso
+        build_gui_app with_conda package_installer
         echo
     fi
 fi

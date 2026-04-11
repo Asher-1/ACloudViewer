@@ -38,8 +38,9 @@ struct GenericParameter {
         std::string baseName =
                 inName.substr(0, inName.size() - extension.size() - 1);
         this->base_name = baseName;
-        sprintf(buffer, "%s_out_%1.0f_%.0f.%s", baseName.c_str(), fidelity,
-                reg_strength * 1000, extension.c_str());
+        snprintf(buffer, inName.size() + 10, "%s_out_%1.0f_%.0f.%s",
+                 baseName.c_str(), fidelity, reg_strength * 1000,
+                 extension.c_str());
         this->out_name = std::string(buffer);
         this->natureOfData = 0;
         this->fidelity = L2;
