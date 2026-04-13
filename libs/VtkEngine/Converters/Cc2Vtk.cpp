@@ -28,7 +28,6 @@
 // VTK
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
-#include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkMatrix4x4.h>
@@ -217,18 +216,6 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         polydata->GetFieldData()->AddArray(flag);
     }
 
-    // Cache the SF display range used to build this polydata.
-    // The trigger check in VtkDisplayTools::drawPointCloud uses this for O(1)
-    // change detection instead of an O(n) visible-point counting loop.
-    if (sf_hides_points && sf_disp_range) {
-        auto rc = vtkSmartPointer<vtkDoubleArray>::New();
-        rc->SetName("_SFDispRange");
-        rc->SetNumberOfTuples(2);
-        rc->SetValue(0, sf_disp_range->start());
-        rc->SetValue(1, sf_disp_range->stop());
-        polydata->GetFieldData()->AddArray(rc);
-    }
-
     // Skip tooltip/selection-only arrays in lightweight mode (slider drag).
     // They are rebuilt on the next full draw cycle after the drag ends.
     if (!lightweight) {
@@ -389,17 +376,19 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
                           mesh_sf_disp->stop() < mesh_sf_disp->max());
     }
 
-    const std::size_t total_pts = static_cast<std::size_t>(tri_count) * dim;
-    const auto total_vtk = static_cast<vtkIdType>(total_pts);
+    const bool may_skip = vis_filter || sf_hides_faces;
+
+    const std::size_t max_pts = static_cast<std::size_t>(tri_count) * dim;
+    const auto max_vtk = static_cast<vtkIdType>(max_pts);
 
     auto poly_points = vtkSmartPointer<vtkPoints>::New();
-    poly_points->SetNumberOfPoints(total_vtk);
+    poly_points->SetNumberOfPoints(max_vtk);
 
     vtkSmartPointer<vtkUnsignedCharArray> colors;
     if (show_colors) {
         colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
         colors->SetNumberOfComponents(3);
-        colors->SetNumberOfTuples(total_vtk);
+        colors->SetNumberOfTuples(max_vtk);
         colors->SetName("RGB");
     }
 
@@ -407,7 +396,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
     if (has_normals_export) {
         normals = vtkSmartPointer<vtkFloatArray>::New();
         normals->SetNumberOfComponents(3);
-        normals->SetNumberOfTuples(total_vtk);
+        normals->SetNumberOfTuples(max_vtk);
         normals->SetName("Normals");
     }
 
@@ -421,6 +410,16 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         norms_table = vertex_cloud->normals();
         compressed_norms = ccNormalVectors::GetUniqueInstance();
     }
+
+    // Track which source triangles survived filtering so that auxiliary
+    // arrays (SourceRGB, per-SF, TCoords) below can be built with the
+    // same compact indexing.
+    std::vector<unsigned> kept_tri_indices;
+    if (may_skip) {
+        kept_tri_indices.reserve(tri_count);
+    }
+
+    vtkIdType vtk_pt_idx = 0;
 
     for (unsigned n = 0; n < tri_count; ++n) {
         const cloudViewer::VerticesIndexes* tsi =
@@ -443,7 +442,11 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             if (hidden) continue;
         }
 
-        auto base = static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
+        if (may_skip) {
+            kept_tri_indices.push_back(n);
+        }
+
+        auto base = vtk_pt_idx;
 
         const PointCoordinateType* N1 = nullptr;
         const PointCoordinateType* N2 = nullptr;
@@ -512,6 +515,23 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         polys->InsertCellPoint(base + 0);
         polys->InsertCellPoint(base + 1);
         polys->InsertCellPoint(base + 2);
+
+        vtk_pt_idx += static_cast<vtkIdType>(dim);
+    }
+
+    const auto actual_pts = vtk_pt_idx;
+
+    if (may_skip && actual_pts < max_vtk) {
+        poly_points->GetData()->Resize(actual_pts);
+        poly_points->SetNumberOfPoints(actual_pts);
+        if (colors) {
+            colors->Resize(actual_pts);
+            colors->SetNumberOfTuples(actual_pts);
+        }
+        if (normals) {
+            normals->Resize(actual_pts);
+            normals->SetNumberOfTuples(actual_pts);
+        }
     }
 
     auto polydata = vtkSmartPointer<vtkPolyData>::New();
@@ -534,17 +554,35 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         polydata->GetFieldData()->AddArray(ds);
     }
 
+    // Helper: iterate over the kept triangles (compact indexing).  When no
+    // triangles were skipped, `kept_tri_indices` is empty and we fall back
+    // to the full [0, tri_count) range — same cost as the original code.
+    const auto iterate_kept = [&](auto&& per_tri_fn) {
+        if (may_skip) {
+            vtkIdType base = 0;
+            for (unsigned src_n : kept_tri_indices) {
+                per_tri_fn(src_n, base);
+                base += static_cast<vtkIdType>(dim);
+            }
+        } else {
+            for (unsigned n = 0; n < tri_count; ++n) {
+                auto base =
+                        static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
+                per_tri_fn(n, base);
+            }
+        }
+    };
+
     // SourceRGB: original per-vertex colors when SF rendering is active,
     // so the tooltip shows real RGB instead of SF-mapped colors.
     if (show_sf && vertex_cloud->hasColors()) {
         auto source_rgb = vtkSmartPointer<vtkUnsignedCharArray>::New();
         source_rgb->SetName("SourceRGB");
         source_rgb->SetNumberOfComponents(3);
-        source_rgb->SetNumberOfTuples(total_vtk);
-        for (unsigned n = 0; n < tri_count; ++n) {
+        source_rgb->SetNumberOfTuples(actual_pts);
+        iterate_kept([&](unsigned src_n, vtkIdType base) {
             const cloudViewer::VerticesIndexes* tsi =
-                    mesh->getTriangleVertIndexes(n);
-            auto base = static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
+                    mesh->getTriangleVertIndexes(src_n);
             for (std::size_t vi = 0; vi < dim; ++vi) {
                 const ecvColor::Rgb& rgb =
                         vertex_cloud->getPointColor(tsi->i[vi]);
@@ -554,7 +592,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
                 c[1] = rgb.g;
                 c[2] = rgb.b;
             }
-        }
+        });
         polydata->GetPointData()->AddArray(source_rgb);
     }
 
@@ -570,18 +608,16 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             auto vtk_sf = vtkSmartPointer<vtkFloatArray>::New();
             vtk_sf->SetName(sf_name.c_str());
             vtk_sf->SetNumberOfComponents(1);
-            vtk_sf->SetNumberOfTuples(total_vtk);
-            for (unsigned n = 0; n < tri_count; ++n) {
+            vtk_sf->SetNumberOfTuples(actual_pts);
+            iterate_kept([&](unsigned src_n, vtkIdType base) {
                 const cloudViewer::VerticesIndexes* tsi =
-                        mesh->getTriangleVertIndexes(n);
-                auto base =
-                        static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
+                        mesh->getTriangleVertIndexes(src_n);
                 for (std::size_t vi = 0; vi < dim; ++vi) {
                     vtk_sf->SetValue(
                             base + static_cast<vtkIdType>(vi),
                             static_cast<float>(sf->getValue(tsi->i[vi])));
                 }
-            }
+            });
             polydata->GetPointData()->AddArray(vtk_sf);
         }
     }
@@ -591,15 +627,14 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         auto tcoords = vtkSmartPointer<vtkFloatArray>::New();
         tcoords->SetName("TCoords");
         tcoords->SetNumberOfComponents(2);
-        tcoords->SetNumberOfTuples(total_vtk);
+        tcoords->SetNumberOfTuples(actual_pts);
         tcoords->FillComponent(0, 0.0);
         tcoords->FillComponent(1, 0.0);
-        for (unsigned n = 0; n < tri_count; ++n) {
+        iterate_kept([&](unsigned src_n, vtkIdType base) {
             TexCoords2D* tx1 = nullptr;
             TexCoords2D* tx2 = nullptr;
             TexCoords2D* tx3 = nullptr;
-            mesh->getTriangleTexCoordinates(n, tx1, tx2, tx3);
-            auto base = static_cast<vtkIdType>(n) * static_cast<vtkIdType>(dim);
+            mesh->getTriangleTexCoordinates(src_n, tx1, tx2, tx3);
             TexCoords2D* txs[] = {tx1, tx2, tx3};
             for (std::size_t vi = 0; vi < dim; ++vi) {
                 if (txs[vi]) {
@@ -608,7 +643,7 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
                     tcoords->SetComponent(idx, 1, txs[vi]->ty);
                 }
             }
-        }
+        });
         polydata->GetPointData()->SetTCoords(tcoords);
     }
 
@@ -639,12 +674,25 @@ bool Cc2Vtk::TextureMeshToPolyData(
     const auto& vis = mesh->getAssociatedCloud()->getTheVisibilityArray();
     const bool vis_filter = (vis.size() >= mesh->getAssociatedCloud()->size());
 
+    const bool show_sf = mesh->hasDisplayedScalarField() && mesh->sfShown();
+    const ccScalarField* displayed_sf =
+            show_sf ? vertex_cloud->getCurrentDisplayedScalarField() : nullptr;
+    const ccScalarField::Range* mesh_sf_disp = nullptr;
+    bool sf_hides_faces = false;
+    if (displayed_sf) {
+        mesh_sf_disp = &displayed_sf->displayRange();
+        sf_hides_faces = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
+                          mesh_sf_disp->stop() < mesh_sf_disp->max());
+    }
+
     const ccMaterialSet* materials = mesh->getMaterialSet();
     assert(materials);
 
     std::vector<std::vector<Eigen::Vector2f>> mat_tex_coords;
-    std::vector<int> tri_to_mat;
-    tri_to_mat.reserve(tri_count);
+    // Compact mapping: kept_tri_mat[k] = material group index for the k-th
+    // triangle that survived filtering (same order as MeshToPolyData).
+    std::vector<int> kept_tri_mat;
+    kept_tri_mat.reserve(tri_count);
 
     int last_mat = -1;
     int current_mat = -1;
@@ -658,6 +706,18 @@ bool Cc2Vtk::TextureMeshToPolyData(
                 continue;
         }
 
+        if (sf_hides_faces) {
+            bool hidden = false;
+            for (std::size_t vi = 0; vi < dim; ++vi) {
+                if (!mesh_sf_disp->isInRange(
+                            displayed_sf->getValue(tsi->i[vi]))) {
+                    hidden = true;
+                    break;
+                }
+            }
+            if (hidden) continue;
+        }
+
         int new_mat = mesh->getTriangleMtlIndex(n);
         if (last_mat != new_mat) {
             current_mat = static_cast<int>(mat_tex_coords.size());
@@ -665,8 +725,7 @@ bool Cc2Vtk::TextureMeshToPolyData(
             last_mat = new_mat;
         }
 
-        if (n >= tri_to_mat.size()) tri_to_mat.resize(n + 1, -1);
-        tri_to_mat[n] = current_mat;
+        kept_tri_mat.push_back(current_mat);
 
         if (show_textures && current_mat >= 0) {
             TexCoords2D* tx1 = nullptr;
@@ -694,9 +753,9 @@ bool Cc2Vtk::TextureMeshToPolyData(
     std::vector<size_t> mat_coord_idx(mat_tex_coords.size(), 0);
 
     for (vtkIdType pt = 0; pt < num_pts; ++pt) {
-        int tri_idx = static_cast<int>(pt) / static_cast<int>(dim);
-        int mat_idx = (tri_idx < static_cast<int>(tri_to_mat.size()))
-                              ? tri_to_mat[tri_idx]
+        int compact_tri = static_cast<int>(pt) / static_cast<int>(dim);
+        int mat_idx = (compact_tri < static_cast<int>(kept_tri_mat.size()))
+                              ? kept_tri_mat[compact_tri]
                               : -1;
 
         for (size_t m = 0; m < mat_tex_coords.size(); ++m) {
