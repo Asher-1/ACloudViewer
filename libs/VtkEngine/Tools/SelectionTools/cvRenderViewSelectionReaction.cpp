@@ -177,6 +177,10 @@ cvRenderViewSelectionReaction::cvRenderViewSelectionReaction(
 
 //-----------------------------------------------------------------------------
 cvRenderViewSelectionReaction::~cvRenderViewSelectionReaction() {
+    // Prevent dangling ActiveReaction pointer
+    if (ActiveReaction == this) {
+        ActiveReaction = nullptr;
+    }
     // Clean up observers before destruction
     // Reference: pqRenderViewSelectionReaction.cxx line 124-127
     cleanupObservers();
@@ -198,25 +202,35 @@ void cvRenderViewSelectionReaction::setVisualizer(
         return;
     }
 
-    // End any active selection before changing visualizer
-    if (isActive()) {
-        endSelection();
+    bool wasActive = isActive();
+
+    if (wasActive) {
+        // Tear down observers/style on the OLD interactor without
+        // fully deactivating (keep ActiveReaction == this).
+        cleanupObservers();
+        restoreStyle();
     }
 
     m_viewer = viewer;
     m_interactor = nullptr;
     m_renderer = nullptr;
 
-    // Get VTK objects from visualizer
     Visualization::VtkVis* pclVis = getVtkVis();
     if (pclVis) {
         m_interactor = pclVis->getRenderWindowInteractor();
         m_renderer = pclVis->getCurrentRenderer();
     }
 
-    // Update enable state with new visualizer
-    // This ensures polygon selection actions are enabled when viewer is set
-    updateEnableState();
+    if (wasActive && m_interactor) {
+        // Re-apply interactor style + observers on the NEW window so the
+        // active selection tool keeps working across multi-window switches.
+        setupInteractorStyle();
+        setupObservers();
+        // Do NOT call updateEnableState() here — it calls endSelection()
+        // which would undo the interactor rebind we just performed.
+    } else {
+        updateEnableState();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -603,13 +617,12 @@ void cvRenderViewSelectionReaction::endSelection() {
         }
     });
 
-    // Uncheck the action immediately (safe to do)
-    // Reference: line 516
+    // Uncheck the action immediately. Do NOT blockSignals so that
+    // per-view mirror buttons receive the toggled(false) and can uncheck.
+    // The reaction connects to triggered(), not toggled(), so no re-entrancy.
     if (m_parentAction && m_parentAction->isCheckable() &&
         m_parentAction->isChecked()) {
-        m_parentAction->blockSignals(true);
         m_parentAction->setChecked(false);
-        m_parentAction->blockSignals(false);
     }
 
     CVLog::PrintVerbose(

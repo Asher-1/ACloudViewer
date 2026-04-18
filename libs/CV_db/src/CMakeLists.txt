@@ -30,6 +30,10 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericAnnotationTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericGLDisplay.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewManager.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewRepresentation.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvRepresentationManager.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.cpp

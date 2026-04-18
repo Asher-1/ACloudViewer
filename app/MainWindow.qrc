@@ -192,7 +192,6 @@
         <file>Resources/images/octree.png</file>
         <file>Resources/images/svg/pqCalculator.png</file>
         <file>Resources/images/svg/pqCamera.png</file>
-        <file>Resources/images/svg/pqCaptureScreenshot.png</file>
         <file>Resources/images/svg/pqExitApp.png</file>
         <file>Resources/images/svg/pqFullscreen.png</file>
         <file>Resources/images/svg/pqGlyph.png</file>
@@ -210,6 +209,11 @@
         <file>Resources/images/svg/pqRuler.svg</file>
         <file>Resources/images/svg/pqSettings.svg</file>
         <file>Resources/images/svg/pqSplitHorizontal.svg</file>
+        <file>Resources/images/svg/pqSplitVertical.svg</file>
+        <file>Resources/images/svg/pqCaptureScreenshot.svg</file>
+        <file>Resources/images/svg/pqEditCamera.svg</file>
+        <file>Resources/images/svg/pqDelete.svg</file>
+        <file>Resources/images/svg/pqCloseView.svg</file>
         <file>Resources/images/svg/slice.png</file>
         <file>Resources/images/svg/pqElemMapData.png</file>
         <file>Resources/images/svg/pqFaceSetData.png</file>
@@ -254,7 +258,6 @@
         <file>Resources/images/svg/pqMinus.svg</file>
         <file>Resources/images/svg/pqClearSort.svg</file>
         <file>Resources/images/pqShowCenterAxes@2x.png</file>
-        <file>Resources/images/svg/pqEditCamera.png</file>
         <file>Resources/images/others/pqXMinus.png</file>
         <file>Resources/images/others/pqXPlus.png</file>
         <file>Resources/images/others/pqYMinus.png</file>

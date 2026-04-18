@@ -40,6 +40,7 @@
 #include <ecvDrawContext.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvGuiParameters.h>
 #include <ecvHObject.h>
@@ -54,11 +55,11 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <QAbstractItemView>
@@ -1348,14 +1349,16 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
     switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
-
-            comboBox->addItem(s_noneString);
-
+            const auto& views = ecvViewManager::instance().getAllViews();
+            for (auto* view : views) {
+                if (view) {
+                    comboBox->addItem(view->getTitle());
+                }
+            }
             connect(comboBox,
                     static_cast<void (QComboBox::*)(const QString&)>(
                             &QComboBox::currentTextChanged),
                     this, &ccPropertiesTreeDelegate::objectDisplayChanged);
-
             outputWidget = comboBox;
         } break;
         case OBJECT_CURRENT_SCALAR_FIELD: {
@@ -2078,10 +2081,13 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 assert(false);
                 return;
             }
-
-            int pos = comboBox->findText(Settings::APP_TITLE);
-
-            comboBox->setCurrentIndex(std::max(pos, 0));  // 0 = "NONE"
+            auto* display = m_currentObject->getDisplay();
+            int pos = 0;
+            if (display) {
+                pos = comboBox->findText(display->getTitle());
+                if (pos < 0) pos = 0;
+            }
+            comboBox->setCurrentIndex(pos);
             break;
         }
         case OBJECT_CURRENT_SCALAR_FIELD: {
@@ -2434,7 +2440,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             // avoid duplicates)
             disconnect(checkbox, nullptr, this, nullptr);
             connect(checkbox, &QCheckBox::toggled, this,
-                    [this, viewID](bool checked) {
+                    [this, viewID, obj = m_currentObject](bool checked) {
                         if (!ecvDisplayTools::HasInstance()) return;
 
                         // Get current properties using struct-based interface
@@ -2484,7 +2490,11 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             }
                         }
 
-                        ecvDisplayTools::UpdateScreen();
+                        if (obj) {
+                            ecvDisplayTools::RedrawObject(obj);
+                        } else {
+                            ecvDisplayTools::UpdateScreen();
+                        }
                     });
             break;
         }
@@ -2646,7 +2656,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     } else {
                         sensor->hideBB(context);
                     }
-                    ecvDisplayTools::UpdateScreen();
+                    ecvDisplayTools::RedrawObject(sensor);
                     break;
                 }
             } else if (m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
@@ -2660,8 +2670,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     // for bbox
                     context.viewID = prim->getViewId();
                     if (prim->isSelected() && prim->isEnabled()) {
-                        // Check if Axes Grid is visible - if so, hide
-                        // BoundingBox
                         bool shouldShowBB = true;
                         if (ecvDisplayTools::HasInstance()) {
                             AxesGridProperties axesGridProps;
@@ -2680,7 +2688,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     } else {
                         prim->hideBB(context);
                     }
-                    ecvDisplayTools::UpdateScreen();
+                    ecvDisplayTools::RedrawObject(prim);
                     break;
                 }
             } else {
@@ -2700,11 +2708,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
         } break;
         case OBJECT_NORMALS_SHOWN: {
             m_currentObject->showNormals(item->checkState() == Qt::Checked);
-            if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(m_currentObject);
-            }
+            m_currentObject->setForceRedrawRecursive(true);
         }
             redraw = true;
             break;
@@ -2713,9 +2717,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showMaterials(item->checkState() == Qt::Checked);
-            ecvRedrawScope scope;
-            scope.dismiss();
-            scope.markDirty(mesh);
+            mesh->setForceRedrawRecursive(true);
         }
             redraw = true;
             break;
@@ -2736,7 +2738,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 CC_DRAW_CONTEXT context;
                 context.visible = cs->isVisible();
                 cs->hideShowDrawings(context);
-                ecvDisplayTools::UpdateScreen();
+                ecvDisplayTools::RedrawObject(cs);
             }
         }
             redraw = false;
@@ -2746,9 +2748,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToCoordinateSystem(m_currentObject);
             if (cs) {
                 cs->ShowAxisPlanes(item->checkState() == Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(cs);
+                cs->setForceRedrawRecursive(true);
             }
         }
             redraw = true;
@@ -2759,8 +2759,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             if (facet && facet->getContour()) {
                 facet->getContour()->setVisible(item->checkState() ==
                                                 Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
             }
         }
             redraw = true;
@@ -2771,8 +2769,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             if (facet && facet->getPolygon()) {
                 facet->getPolygon()->setVisible(item->checkState() ==
                                                 Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
             }
         }
             redraw = true;
@@ -2783,9 +2779,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(plane);
             if (plane) {
                 plane->showNormalVector(item->checkState() == Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(m_currentObject);
+                m_currentObject->setForceRedrawRecursive(true);
             }
         }
             redraw = true;
@@ -2795,10 +2789,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showWired(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
 
             // unchecked points frame mode
             if (mesh->isShownAsWire()) {
@@ -2817,10 +2807,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showPoints(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
 
             // unchecked wired frame mode
             if (mesh->isShownAsPoints()) {
@@ -2838,10 +2824,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->enableStippling(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
@@ -2849,20 +2831,12 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             bool pgEnabled = item->checkState() == Qt::Checked;
             m_currentObject->setPointGaussianEnabled(pgEnabled);
             setPointGaussianSubPropsEnabled(pgEnabled);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
         case OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE: {
             m_currentObject->setPointGaussianEmissive(item->checkState() ==
                                                       Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
@@ -2888,10 +2862,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             break;
         case OBJECT_NAME_IN_3D: {
             m_currentObject->showNameIn3D(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
+            m_currentObject->setForceRedrawRecursive(true);
         }
             redraw = true;
             break;
@@ -3168,7 +3139,7 @@ void ccPropertiesTreeDelegate::textureFileChanged(int pos) {
                     "Update Textures failed, please toggle shown material "
                     "first!");
         } else {
-            ecvDisplayTools::UpdateScreen();
+            ecvDisplayTools::RedrawObject(m_currentObject);
         }
 
         updateModel();
@@ -3235,10 +3206,8 @@ void ccPropertiesTreeDelegate::octreeDisplayModeChanged(int pos) {
 
         ccOctreeProxy* octreeProxy =
                 ccHObjectCaster::ToOctreeProxy(m_currentObject);
-        {
-            ecvRedrawScope scope;
-            scope.dismiss();
-            scope.markDirty(octreeProxy);
+        if (octreeProxy) {
+            octreeProxy->setForceRedrawRecursive(true);
         }
 
         updateDisplay();
@@ -3763,32 +3732,29 @@ void ccPropertiesTreeDelegate::objectDisplayChanged(
         const QString& newDisplayTitle) {
     if (!m_currentObject) return;
 
-    QString actualDisplayTitle = Settings::APP_TITLE;
-
-    if (actualDisplayTitle != newDisplayTitle) {
-        // we first mark the "old displays" before removal,
-        // to be sure that they will also be redrawn!
-        // m_currentObject->prepareDisplayForRefresh_recursive();
-
-        // ccGLWindow* win = MainWindow::GetGLWindow(newDisplayTitle);
-        // m_currentObject->setDisplay_recursive(win);
-        // if (win)
-        //{
-        //	m_currentObject->prepareDisplayForRefresh_recursive();
-        //	win->zoomGlobal();
-        // }
-
-        // MainWindow::TheInstance()->refreshAll();
+    ecvGenericGLDisplay* targetDisplay = nullptr;
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        if (view && view->getTitle() == newDisplayTitle) {
+            targetDisplay = view;
+            break;
+        }
     }
+    if (!targetDisplay) {
+        targetDisplay = ecvViewManager::instance().getActiveView();
+    }
+
+    auto* oldDisplay = m_currentObject->getDisplay();
+    if (oldDisplay == targetDisplay) return;
+
+    m_currentObject->setDisplay_recursive(targetDisplay);
+    ecvViewManager::instance().redrawAll();
 }
 
 void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
     if (!m_currentObject) return;
 
     bool appearanceChanged = false;
-
-    ecvRedrawScope scope;
-    scope.dismiss();
 
     if (source == s_noneString) {
         appearanceChanged =
@@ -3802,7 +3768,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showSF(false);
         if (m_currentObject->hasColors() &&
             !m_currentObject->isColorOverridden()) {
-            scope.markDirty(m_currentObject);
+            m_currentObject->setForceRedrawRecursive(true);
         }
     } else if (source == s_sfColor) {
         appearanceChanged =
@@ -3810,20 +3776,18 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showColors(false);
         m_currentObject->showSF(true);
     } else {
-        // assert(false);
         CVLog::Warning(QString("unsupported source type [%1]").arg(source));
     }
 
     if (appearanceChanged) {
         updateDisplay();
     } else {
-        ecvDisplayTools::SetRedrawRecursive(true);
+        m_currentObject->setForceRedrawRecursive(true);
+        m_currentObject->redrawDisplay();
     }
 }
 
 void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
-    ecvRedrawScope scope;
-    scope.dismiss();
     m_currentObject->setRedrawFlagRecursive(redraw);
     updateDisplay();
 }

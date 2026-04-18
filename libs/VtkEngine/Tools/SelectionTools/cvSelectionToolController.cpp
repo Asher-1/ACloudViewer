@@ -465,6 +465,119 @@ bool cvSelectionToolController::isPCLBackendAvailable() {
 }
 
 //-----------------------------------------------------------------------------
+cvSelectionToolController::SelectionActions
+cvSelectionToolController::createActions(QWidget* parent) {
+    auto make = [parent](const QString& name, const QString& icon,
+                         const QString& text, const QString& tip,
+                         bool checkable) -> QAction* {
+        auto* a = new QAction(QIcon(icon), text, parent);
+        a->setObjectName(name);
+        a->setToolTip(tip);
+        a->setCheckable(checkable);
+        return a;
+    };
+
+    SelectionActions a;
+    a.selectSurfaceCells =
+            make("actionSelectSurfaceCells",
+                 ":/Resources/images/svg/pqSurfaceSelectionCell.svg",
+                 QObject::tr("Select Cells On"),
+                 QObject::tr("Select cells on surface (Alt+C)"), true);
+    a.selectSurfacePoints =
+            make("actionSelectSurfacePoints",
+                 ":/Resources/images/svg/pqSurfaceSelectionPoint.svg",
+                 QObject::tr("Select Points On"),
+                 QObject::tr("Select points on surface (Alt+D)"), true);
+    a.selectFrustumCells = make(
+            "actionSelectFrustumCells",
+            ":/Resources/images/svg/pqFrustumSelectionCell.svg",
+            QObject::tr("Select Cells Through"),
+            QObject::tr("Select cells through (in frustum) (Alt+F)"), true);
+    a.selectFrustumPoints = make(
+            "actionSelectFrustumPoints",
+            ":/Resources/images/svg/pqFrustumSelectionPoint.svg",
+            QObject::tr("Select Points Through"),
+            QObject::tr("Select points through (in frustum) (Alt+G)"), true);
+    a.selectPolygonCells =
+            make("actionSelectPolygonCells",
+                 ":/Resources/images/svg/pqPolygonSelectSurfaceCell.svg",
+                 QObject::tr("Select Cells With Polygon"),
+                 QObject::tr("Select cells with polygon (Ctrl+Alt+P)"), true);
+    a.selectPolygonPoints =
+            make("actionSelectPolygonPoints",
+                 ":/Resources/images/svg/pqPolygonSelectSurfacePoint.svg",
+                 QObject::tr("Select Points With Polygon"),
+                 QObject::tr("Select points with polygon (Alt+P)"), true);
+    a.selectBlocks = make("actionSelectBlocks",
+                          ":/Resources/images/svg/pqSelectBlock.svg",
+                          QObject::tr("Select Block"),
+                          QObject::tr("Select block on surface (Alt+B)"), true);
+    a.selectFrustumBlocks = make(
+            "actionSelectFrustumBlocks",
+            ":/Resources/images/svg/pqFrustumSelectionBlock.svg",
+            QObject::tr("Select Blocks Through"),
+            QObject::tr("Select blocks through (in frustum) (Alt+N)"), true);
+    a.interactiveSelectCells =
+            make("actionInteractiveSelectCells",
+                 ":/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg",
+                 QObject::tr("Interactive Select Cells On"),
+                 QObject::tr("Interactive select cells on surface(Ctrl+Alt+I)"),
+                 true);
+    a.interactiveSelectPoints = make(
+            "actionInteractiveSelectPoints",
+            ":/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg",
+            QObject::tr("Interactive Select Points On"),
+            QObject::tr("Interactive select points on surface(Alt+I)"), true);
+    a.hoverCells =
+            make("actionHoverCells",
+                 ":/Resources/images/svg/pqSurfaceHoveringCell.svg",
+                 QObject::tr("Hover Cells On"),
+                 QObject::tr("Hover Cells On - Show cell information on mouse "
+                             "hover."),
+                 true);
+    a.hoverPoints = make(
+            "actionHoverPoints",
+            ":/Resources/images/svg/pqSurfaceHoveringPoint.svg",
+            QObject::tr("Hover Points On"),
+            QObject::tr("Hover Points On - Show point information on mouse "
+                        "hover."),
+            true);
+
+    a.addSelection = make("actionAddSelection",
+                          ":/Resources/images/svg/pqSelectPlus.svg",
+                          QObject::tr("Add Selection"),
+                          QObject::tr("Add selection (Ctrl)"), true);
+    a.subtractSelection = make("actionSubtractSelection",
+                               ":/Resources/images/svg/pqSelectMinus.svg",
+                               QObject::tr("Subtract Selection"),
+                               QObject::tr("Subtract selection (Shift)"), true);
+    a.toggleSelection =
+            make("actionToggleSelection",
+                 ":/Resources/images/svg/pqSelectToggle.svg",
+                 QObject::tr("Toggle Selection"),
+                 QObject::tr("Toggle selection (Ctrl+Shift)"), true);
+
+    a.growSelection =
+            make("actionGrowSelection", ":/Resources/images/svg/pqPlus.svg",
+                 QObject::tr("Grow Selection"),
+                 QObject::tr("Grow selection (+)"), false);
+    a.shrinkSelection =
+            make("actionShrinkSelection", ":/Resources/images/svg/pqMinus.svg",
+                 QObject::tr("Shrink Selection"),
+                 QObject::tr("Shrink selection (-)"), false);
+    a.clearSelection = make("actionClearSelection",
+                            ":/Resources/images/svg/pqClearSort.svg",
+                            QObject::tr("Clear Selection"),
+                            QObject::tr("Clear selection (Esc)"), false);
+
+    a.zoomToBox = make("actionZoomToBox",
+                       ":/Resources/images/svg/pqZoomToSelection.svg",
+                       QObject::tr("Zoom to Box"),
+                       QObject::tr("Zoom to selection"), false);
+    return a;
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionToolController::setupActions(const SelectionActions& actions) {
     m_actions = actions;
 

@@ -36,9 +36,11 @@
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
 #include "ecvQuadric.h"
+#include "ecvRepresentationManager.h"
 #include "ecvSphere.h"
 #include "ecvSubMesh.h"
 #include "ecvTorus.h"
+#include "ecvViewRepresentation.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -1456,7 +1458,18 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     // the entity must be either visible or selected, and of course it should be
     // displayed in this context
-    bool drawInThisContext = ((m_visible || m_selected));
+    bool drawInThisContext =
+            ((m_visible || m_selected) && isDisplayedIn(context.display));
+
+    // Per-view visibility override from Representation layer
+    if (drawInThisContext && context.display) {
+        auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                const_cast<ccHObject*>(this), context.display);
+        if (rep && rep->hasVisibilityOverride()) {
+            drawInThisContext = rep->isVisible();
+        }
+    }
+
     context.visible = m_visible;
     context.opacity = getOpacity();
 
@@ -1513,12 +1526,12 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     }
 
     // draw name - container objects are not visible but can still show a name
-    if (m_showNameIn3D && !MACRO_EntityPicking(context)) {
+    // Guard with isDisplayedIn() to prevent accessing the wrong VTK pipeline
+    // when the object belongs to a secondary view but the primary redraws.
+    if (m_showNameIn3D && !MACRO_EntityPicking(context) &&
+        isDisplayedIn(context.display)) {
         if (MACRO_Draw3D(context)) {
-            // we have to comute the 2D position during the 3D pass!
-            ccBBox bBox = getBB_recursive(
-                    true);  // DGM: take the OpenGL features into account (as
-                            // some entities are purely 'GL'!)
+            ccBBox bBox = getBB_recursive(true);
             if (bBox.isValid()) {
                 ccGLCameraParameters camera;
                 ecvDisplayTools::GetGLCameraParameters(camera);
@@ -1527,11 +1540,9 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
                 camera.project(C, m_nameIn3DPos);
             }
         } else if (MACRO_Draw2D(context) && MACRO_Foreground(context)) {
-            // then we can display the name during the 2D pass
             drawNameIn3D();
         }
-    } else {
-        // label2d name have been managed by itself
+    } else if (!m_showNameIn3D && isDisplayedIn(context.display)) {
         if (!isKindOf(CV_TYPES::LABEL_2D)) {
             ecvDisplayTools::RemoveWidgets(
                     WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
@@ -1767,6 +1778,14 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
 
 void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
+    if (m_currentDisplay &&
+        m_currentDisplay != ecvDisplayTools::TheInstance()) {
+        // Entity lives in a secondary view — redraw that view directly
+        // so property changes take effect in the correct VtkVis.
+        m_currentDisplay->redraw(only2D, forceRedraw);
+    }
+    // Always update the primary singleton path as well (drives the
+    // primary render window and keeps the FBO/overlay state in sync).
     ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
 }
 
@@ -1803,4 +1822,23 @@ void ccHObject::popDisplayState(bool apply /*=true*/) {
         }
         m_displayStateStack.pop_back();
     }
+}
+
+void ccHObject::removeFromDisplay_recursive(
+        const ecvGenericGLDisplay* display) {
+    removeFromDisplay(display);
+    for (auto child : m_children) {
+        child->removeFromDisplay_recursive(display);
+    }
+}
+
+bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
+    if (display == nullptr) return true;
+
+    if (m_currentDisplay == nullptr) {
+        // Unbound entity: only visible in the primary singleton view.
+        // This prevents objects from "leaking" into every secondary window.
+        return (display == ecvDisplayTools::TheInstance());
+    }
+    return (m_currentDisplay == display);
 }

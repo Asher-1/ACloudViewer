@@ -95,30 +95,6 @@ void ImageVis::setupInteractor(
     getRenderWindow()->Render();
 }
 
-void ImageVis::enable2Dviewer(bool state) {
-#ifdef CV_LINUX
-    CVLog::Warning(
-            "[ImageVis::enable2Dviewer] Do not support 2D viewer on Linux or "
-            "Mac platform now!");
-    return;
-#endif
-    if (state) {
-        m_mainInteractor = getRenderWindowInteractor();
-        setRenderWindowInteractor(
-                vtkSmartPointer<vtkRenderWindowInteractor>::Take(
-                        vtkRenderWindowInteractorFixNew()));
-        getRenderWindow()->SetInteractor(getRenderWindowInteractor());
-        getRenderWindowInteractor()->SetRenderWindow(getRenderWindow());
-        m_mouseConnection =
-                registerMouseCallback(&ImageVis::mouseEventProcess, *this);
-    } else {
-        setupInteractor(m_mainInteractor, getRenderWindow());
-        getRenderWindow()->SetInteractor(getRenderWindowInteractor());
-        getRenderWindowInteractor()->SetRenderWindow(getRenderWindow());
-        m_mouseConnection.disconnect();
-    }
-}
-
 void ImageVis::mouseEventProcess(const VtkRendering::MouseEvent& event,
                                  void* /*args*/) {
     if (event.getButton() == VtkRendering::MouseEvent::RightButton &&

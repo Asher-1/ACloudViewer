@@ -17,6 +17,7 @@
 
 // Qt
 #include <QObject>
+#include <QPointer>
 
 // system
 #include <set>
@@ -130,10 +131,19 @@ public:
 public slots:
 
     /**
-     * @brief Handle active window change
-     * @param window Newly active window
+     * @brief Handle active window change (MDI level)
+     * @param window Newly active MDI subwindow
      */
     void onActiveWindowChanged(QMdiSubWindow* window);
+
+    /**
+     * @brief Handle active view change (split-view aware)
+     *
+     * Called when the active ecvGLView changes, including inside
+     * QSplitter split layouts within the same MDI subwindow.
+     * @param viewWidget The activated view's QWidget
+     */
+    void onActiveViewWidgetChanged(QWidget* viewWidget);
 
     /**
      * @brief Handle active window deletion
@@ -160,7 +170,7 @@ protected:
 
     ecvMainAppInterface* m_app;  ///< Main application interface
 
-    QWidget* m_activeWindow;  ///< Currently active display window
+    QPointer<QWidget> m_activeWindow;  ///< Currently active display window
 
     ecvDisplayTools::PICKING_MODE m_pickingMode;  ///< Current picking mode
 

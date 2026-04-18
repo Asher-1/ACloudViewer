@@ -858,7 +858,23 @@ public:
         return ThreeDInteractorStyle;
     }
 
+    enum InteractionMode {
+        INTERACTION_MODE_3D = 0,
+        INTERACTION_MODE_2D = 1,
+    };
+
+    /** Switch between 3D and 2D interaction modes (ParaView-style).
+     *  Swaps the interactor style and sets parallel projection for 2D.
+     */
+    void setInteractionMode(int mode);
+
+    /** @return Current interaction mode (INTERACTION_MODE_3D or _2D). */
+    int getInteractionMode() const { return m_interactionMode; }
+
 protected:
+    int m_interactionMode = INTERACTION_MODE_3D;
+    int m_savedParallelProjection = 0;
+
     /** \brief Internal list with actor pointers and name IDs for widgets. */
     WidgetActorMapPtr m_widget_map;
 
@@ -1222,8 +1238,18 @@ public:
     /// Set lookup table ID.
     void setLookUpTableID(const std::string& id);
 
-    /// Set background color.
+    /// Set background color (solid).
     void setBackgroundColor(double r, double g, double b, int viewport = 0);
+
+    /// Set background color with gradient support.
+    void setBackgroundColor(double r1,
+                            double g1,
+                            double b1,
+                            double r2,
+                            double g2,
+                            double b2,
+                            bool gradient,
+                            int viewport = 0);
 
     /// Rendering property constants (replaces pcl::visualization:: enums)
     enum RenderingProperties {

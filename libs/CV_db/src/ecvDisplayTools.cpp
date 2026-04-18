@@ -34,6 +34,7 @@
 #include "ecvSingleton.h"
 #include "ecvSphere.h"
 #include "ecvSubMesh.h"
+#include "ecvViewManager.h"
 
 // STD
 #include <limits>
@@ -237,6 +238,10 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools,
             s_tools.instance, &ecvDisplayTools::checkScheduledRedraw);
     connect(&s_tools.instance->m_deferredPickingTimer, &QTimer::timeout,
             s_tools.instance, &ecvDisplayTools::doPicking);
+
+    // Register with the global view manager as the primary view
+    ecvViewManager::instance().registerView(s_tools.instance);
+    ecvViewManager::instance().setActiveView(s_tools.instance);
 }
 
 ecvDisplayTools* ecvDisplayTools::TheInstance() {
@@ -251,6 +256,7 @@ bool ecvDisplayTools::HasInstance() { return s_tools.instance != nullptr; }
 
 void ecvDisplayTools::ReleaseInstance() {
     if (s_tools.instance) {
+        ecvViewManager::instance().unregisterView(s_tools.instance);
         s_tools.release();
     }
 }
@@ -265,10 +271,11 @@ ecvDisplayTools::~ecvDisplayTools() {
         delete m_rectPickingPoly;
         m_rectPickingPoly = nullptr;
     }
-    if (m_hotZone) {
+    if (m_hotZone && m_hotZoneOwnedBySingleton) {
         delete m_hotZone;
-        m_hotZone = nullptr;
     }
+    m_hotZone = nullptr;
+    m_hotZoneOwnedBySingleton = false;
 }
 
 void ecvDisplayTools::checkScheduledRedraw() {
@@ -1292,6 +1299,20 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
     emit fastPickingFinished();
 }
 
+void ecvDisplayTools::UpdateScreen() {
+    GetCurrentScreen()->update();
+    UpdateScene();
+    // Also refresh secondary views so property/entity changes are visible.
+    if (ecvViewManager::instance().viewCount() > 1) {
+        auto* primary = TheInstance();
+        for (auto* view : ecvViewManager::instance().getAllViews()) {
+            if (view && view != primary) {
+                view->redraw(false, false);
+            }
+        }
+    }
+}
+
 void ecvDisplayTools::UpdateScreenSize() { ResizeGL(Width(), Height()); }
 
 CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y) {
@@ -2021,6 +2042,13 @@ void ecvDisplayTools::RedrawObject(ccHObject* obj,
     if (!obj || !HasInstance()) return;
     SetRedrawRecursive(false);
     obj->setRedrawFlagRecursive(true);
+
+    // If entity lives in a secondary view, redraw that view directly
+    // so property changes (e.g. SF scale visibility) take effect there.
+    ecvGenericGLDisplay* disp = obj->getDisplay();
+    if (disp && disp != TheInstance()) {
+        disp->redraw(only2D, forceRedraw);
+    }
     RedrawDisplay(only2D, forceRedraw);
 }
 
@@ -2031,6 +2059,14 @@ void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
     SetRedrawRecursive(false);
     for (auto* obj : objects) {
         if (obj) obj->setRedrawFlagRecursive(true);
+    }
+    // Redraw secondary views that own any of these entities.
+    for (auto* obj : objects) {
+        if (!obj) continue;
+        ecvGenericGLDisplay* disp = obj->getDisplay();
+        if (disp && disp != TheInstance()) {
+            disp->redraw(only2D, forceRedraw);
+        }
     }
     RedrawDisplay(only2D, forceRedraw);
 }
@@ -2477,6 +2513,10 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
 
     // other options
     CONTEXT.drawRoundedPoints = guiParams.drawRoundedPoints;
+
+    // Multi-window: default to the primary view.  Each ecvGLView::redraw()
+    // overrides CONTEXT.display to itself before drawing.
+    CONTEXT.display = s_tools.instance;
 }
 
 bool ecvDisplayTools::RenderToFile(QString filename,
@@ -2915,6 +2955,10 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
                                     bool forceRedraw /* = true*/) {
     if (!HasInstance()) return;
 
+    // Ensure the primary rendering pipeline is used (not the
+    // tool-binding pipeline that switchActiveView may have re-routed).
+    s_tools.instance->beginPrimaryRender();
+
     // visual traces
     if (s_tools.instance->m_showDebugTraces) {
         // clear history
@@ -2978,6 +3022,7 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
     // context initialization
     CC_DRAW_CONTEXT CONTEXT;
     GetContext(CONTEXT);
+    CONTEXT.display = s_tools.instance;
 
     // clean the outdated messages
     {
@@ -3092,6 +3137,9 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
 
     // update canvas
     UpdateScreen();
+
+    // Restore the tool-binding pipeline that was saved in beginPrimaryRender.
+    s_tools.instance->endPrimaryRender();
 }
 
 void ecvDisplayTools::SetGLViewport(const QRect& rect) {
@@ -3175,6 +3223,10 @@ bool ecvDisplayTools::HideShowEntities(const ccHObject* obj, bool visible) {
     context.hideShowEntityType = obj->getEntityType();
     ecvDisplayTools::HideShowEntities(context);
     return true;
+}
+
+void ecvDisplayTools::RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT) {
+    TheInstance()->removeEntities(CONTEXT);
 }
 
 void ecvDisplayTools::RemoveEntities(const ccHObject* obj) {
@@ -3576,6 +3628,7 @@ void ecvDisplayTools::DisplayTexture2DPosition(QImage image,
 }
 
 void ecvDisplayTools::ClearBubbleView() {
+    if (!s_tools.instance->m_hotZone) return;
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
                                     s_tools.instance->m_hotZone->bbv_label));
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
@@ -3594,6 +3647,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     if (!s_tools.instance->m_hotZone) {
         s_tools.instance->m_hotZone =
                 new HotZone(ecvDisplayTools::GetCurrentScreen());
+        s_tools.instance->m_hotZoneOwnedBySingleton = true;
     } else if (GetPlatformAwareDPIScale() !=
                s_tools.instance->m_hotZone
                        ->pixelDeviceRatio)  // the device pixel ratio has
@@ -4184,4 +4238,55 @@ void ecvDisplayTools::DrawPivot() {
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {
     s_tools.instance->m_currentScreen = widget;
     widget->update();
+}
+
+// -- ecvGenericGLDisplay overrides (primary window delegation) --
+
+void ecvDisplayTools::redraw(bool only2D, bool forceRedraw) {
+    RedrawDisplay(only2D, forceRedraw);
+}
+
+void ecvDisplayTools::refresh(bool only2D) { RefreshDisplay(only2D); }
+
+void ecvDisplayTools::toBeRefreshed() { m_shouldBeRefreshed = true; }
+
+const ecvViewportParameters& ecvDisplayTools::getViewportParameters() const {
+    return m_viewportParams;
+}
+
+void ecvDisplayTools::setViewportParameters(
+        const ecvViewportParameters& params) {
+    SetViewportParameters(params);
+}
+
+void ecvDisplayTools::setPerspectiveState(bool state, bool objectCenteredView) {
+    SetPerspectiveState(state, objectCenteredView);
+}
+
+bool ecvDisplayTools::perspectiveView() const {
+    return m_viewportParams.perspectiveView;
+}
+
+bool ecvDisplayTools::objectCenteredView() const {
+    return m_viewportParams.objectCenteredView;
+}
+
+void ecvDisplayTools::setSceneDB(ccHObject* root) { SetSceneDB(root); }
+
+ccHObject* ecvDisplayTools::getSceneDB() { return m_globalDBRoot; }
+
+ccHObject* ecvDisplayTools::getOwnDB() { return m_winDBRoot; }
+
+void ecvDisplayTools::addToOwnDB(ccHObject* obj, bool noDependency) {
+    AddToOwnDB(obj, noDependency);
+}
+
+void ecvDisplayTools::removeFromOwnDB(ccHObject* obj) { RemoveFromOwnDB(obj); }
+
+QWidget* ecvDisplayTools::asWidget() { return m_currentScreen; }
+
+const QWidget* ecvDisplayTools::asWidget() const { return m_currentScreen; }
+
+bool ecvDisplayTools::hasOverriddenDisplayParameters() const {
+    return m_overridenDisplayParametersEnabled;
 }

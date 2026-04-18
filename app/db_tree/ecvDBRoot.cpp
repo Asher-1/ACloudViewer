@@ -36,6 +36,7 @@
 #include <ecvDisplayTools.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvHObject.h>
@@ -47,6 +48,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // common
 #include <ecvPickOneElementDlg.h>
@@ -2457,6 +2459,24 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
                 menu.addAction(m_editLabelScalarValue);
             }
 
+            if (toggleVisibility &&
+                ecvViewManager::instance().viewCount() > 1) {
+                menu.addSeparator();
+                QMenu* moveMenu = menu.addMenu(QIcon(), tr("Move to View"));
+                moveMenu->addAction(
+                        tr("None (All Views)"), [this, selectedIndexes]() {
+                            moveSelectedToView(nullptr, selectedIndexes);
+                        });
+                const auto& views = ecvViewManager::instance().getAllViews();
+                for (auto* view : views) {
+                    if (!view) continue;
+                    moveMenu->addAction(
+                            view->getTitle(), [this, view, selectedIndexes]() {
+                                moveSelectedToView(view, selectedIndexes);
+                            });
+                }
+            }
+
             menu.addSeparator();
         }
 
@@ -2468,6 +2488,17 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
     }
 
     menu.exec(m_dbTreeWidget->mapToGlobal(menuPos));
+}
+
+void ccDBRoot::moveSelectedToView(ecvGenericGLDisplay* view,
+                                  const QModelIndexList& indexes) {
+    for (const auto& idx : indexes) {
+        auto* item = static_cast<ccHObject*>(idx.internalPointer());
+        if (!item) continue;
+        item->setDisplay_recursive(view);
+    }
+    ecvViewManager::instance().redrawAll();
+    updatePropertiesView();
 }
 
 QItemSelectionModel::SelectionFlags ccCustomQTreeView::selectionCommand(
