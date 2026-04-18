@@ -205,10 +205,6 @@ public:
                  bool bold = false);
 
 public:
-    /** @param state true to enable 2D viewer mode
-     */
-    void enable2Dviewer(bool state);
-
     /** @param x,y Screen coordinates
      *  @return Picked layer/item ID or empty string
      */

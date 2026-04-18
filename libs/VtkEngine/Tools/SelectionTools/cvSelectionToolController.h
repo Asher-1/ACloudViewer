@@ -152,6 +152,13 @@ public:
     };
 
     /**
+     * @brief Dynamically create all selection QActions (no .ui dependency).
+     * @param parent Widget that owns the actions.
+     * @return Fully populated SelectionActions struct.
+     */
+    static SelectionActions createActions(QWidget* parent);
+
+    /**
      * @brief Setup all selection actions
      * @param actions Structure containing all action pointers
      */
@@ -251,6 +258,8 @@ public:
      * to ensure stale selection data is not used.
      */
     void invalidateCache();
+
+    const SelectionActions& getSelectionActions() const { return m_actions; }
 
 signals:
     /**

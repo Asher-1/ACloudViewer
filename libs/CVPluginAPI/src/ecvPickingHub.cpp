@@ -36,28 +36,22 @@ void ccPickingHub::togglePickingMode(bool state) {
 
 void ccPickingHub::onActiveWindowChanged(QMdiSubWindow* mdiSubWindow) {
     QWidget* window = (mdiSubWindow ? mdiSubWindow->widget() : nullptr);
-    // if (glWindow)
-    //	CVLog::Warning("New active GL window: " + glWindow->getViewId());
-    // else
-    //	CVLog::Warning("No more active GL window");
 
     if (m_activeWindow == window) {
-        // nothing to do
         return;
     }
 
     if (m_activeWindow) {
-        // take care of the previously linked window
         togglePickingMode(false);
-        disconnect(m_activeWindow);
+        disconnect(m_activeWindow.data(), &QObject::destroyed, this,
+                   &ccPickingHub::onActiveWindowDeleted);
         m_activeWindow = nullptr;
     }
 
     if (window) {
-        // link this new window
         connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked,
                 this, &ccPickingHub::processPickedItem, Qt::UniqueConnection);
-        connect(ecvDisplayTools::TheInstance(), &QObject::destroyed, this,
+        connect(window, &QObject::destroyed, this,
                 &ccPickingHub::onActiveWindowDeleted);
         m_activeWindow = window;
 
@@ -67,8 +61,29 @@ void ccPickingHub::onActiveWindowChanged(QMdiSubWindow* mdiSubWindow) {
     }
 }
 
+void ccPickingHub::onActiveViewWidgetChanged(QWidget* viewWidget) {
+    if (!viewWidget || m_activeWindow == viewWidget) return;
+
+    if (m_activeWindow) {
+        togglePickingMode(false);
+        disconnect(m_activeWindow.data(), &QObject::destroyed, this,
+                   &ccPickingHub::onActiveWindowDeleted);
+        m_activeWindow = nullptr;
+    }
+
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked, this,
+            &ccPickingHub::processPickedItem, Qt::UniqueConnection);
+    connect(viewWidget, &QObject::destroyed, this,
+            &ccPickingHub::onActiveWindowDeleted);
+    m_activeWindow = viewWidget;
+
+    if (m_autoEnableOnActivatedWindow && !m_listeners.empty()) {
+        togglePickingMode(true);
+    }
+}
+
 void ccPickingHub::onActiveWindowDeleted(QObject* obj) {
-    if (obj == m_activeWindow) {
+    if (obj == m_activeWindow.data()) {
         m_activeWindow = nullptr;
     }
 }

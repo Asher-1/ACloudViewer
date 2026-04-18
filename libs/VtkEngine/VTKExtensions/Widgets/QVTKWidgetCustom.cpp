@@ -222,6 +222,13 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
 }
 
 QVTKWidgetCustom::~QVTKWidgetCustom() {
+    // Detach per-widget HotZone from the singleton if it points to ours
+    if (m_tools && m_tools->m_hotZone == m_localHotZone) {
+        m_tools->m_hotZone = nullptr;
+    }
+    delete m_localHotZone;
+    m_localHotZone = nullptr;
+
     if (d_ptr) {
         delete d_ptr;
         d_ptr = nullptr;
@@ -230,7 +237,6 @@ QVTKWidgetCustom::~QVTKWidgetCustom() {
         delete m_scaleBar;
         m_scaleBar = nullptr;
     }
-    // Timer will be automatically deleted as child of this widget
     m_wheelZoomUpdateTimer = nullptr;
 }
 
@@ -679,12 +685,14 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
     const int x = event->x();
     const int y = event->y();
-    // update mouse coordinate in status bar
-    m_tools->m_lastMouseMovePos = event->pos();
-    emit m_tools->mousePosChanged(event->pos());
+    if (ecvDisplayTools::GetCurrentScreen() == this) {
+        m_tools->m_lastMouseMovePos = event->pos();
+        emit m_tools->mousePosChanged(event->pos());
+    }
 
-    if (m_tools->m_interactionFlags &
-        ecvDisplayTools::INTERACT_SIG_MOUSE_MOVED) {
+    if ((m_tools->m_interactionFlags &
+         ecvDisplayTools::INTERACT_SIG_MOUSE_MOVED) &&
+        (ecvDisplayTools::GetCurrentScreen() == this)) {
         emit m_tools->mouseMoved(x, y, event->buttons());
         event->accept();
     }
@@ -693,25 +701,30 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     if (event->buttons() == Qt::NoButton) {
         if (m_tools->m_interactionFlags &
             ecvDisplayTools::INTERACT_CLICKABLE_ITEMS) {
-            // what would be the size of the 'hot zone' if it was displayed with
-            // all options
-            if (!m_tools->m_hotZone) {
-                m_tools->m_hotZone = new ecvDisplayTools::HotZone(this);
+            // Per-widget HotZone for multi-window support
+            if (!m_localHotZone) {
+                m_localHotZone = new ecvDisplayTools::HotZone(this);
             }
-            QRect areaRect = m_tools->m_hotZone->rect(
+            // Replace the singleton-owned fallback HotZone with ours
+            if (m_tools->m_hotZoneOwnedBySingleton && m_tools->m_hotZone &&
+                m_tools->m_hotZone != m_localHotZone) {
+                delete m_tools->m_hotZone;
+                m_tools->m_hotZoneOwnedBySingleton = false;
+            }
+            m_tools->m_hotZone = m_localHotZone;
+
+            QRect areaRect = m_localHotZone->rect(
                     true, m_tools->m_bubbleViewModeEnabled,
                     ecvDisplayTools::ExclusiveFullScreen());
 
             const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
-            bool inZone =
-                    (x * retinaScale * 3 <
-                             m_tools->m_hotZone->topCorner.x() +
-                                     areaRect.width() * 4  // 25% margin
-                     && y * retinaScale * 2 <
-                                m_tools->m_hotZone->topCorner.y() +
-                                        areaRect.height() * 4);  // 50% margin
+            bool inZone = (x * retinaScale * 3 < m_localHotZone->topCorner.x() +
+                                                         areaRect.width() * 4 &&
+                           y * retinaScale * 2 < m_localHotZone->topCorner.y() +
+                                                         areaRect.height() * 4);
 
-            if (inZone != m_tools->m_clickableItemsVisible) {
+            if (inZone != m_localClickableVisible) {
+                m_localClickableVisible = inZone;
                 m_tools->m_clickableItemsVisible = inZone;
                 ecvDisplayTools::RedrawDisplay(true, false);
             }

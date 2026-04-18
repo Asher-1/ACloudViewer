@@ -445,6 +445,44 @@ void VtkVis::resetCenterOfRotation(int viewport) {
     setCenterOfRotation(center[0], center[1], center[2]);
 }
 
+//----------------------------------------------------------------------------
+void VtkVis::setInteractionMode(int mode) {
+    if (m_interactionMode == mode) return;
+    if (mode != INTERACTION_MODE_3D && mode != INTERACTION_MODE_2D) return;
+    m_interactionMode = mode;
+
+    vtkRenderWindowInteractor* iren = getRenderWindowInteractor();
+    vtkRenderer* ren = getCurrentRenderer();
+
+    switch (mode) {
+        case INTERACTION_MODE_3D:
+            if (iren && ThreeDInteractorStyle) {
+                iren->SetInteractorStyle(ThreeDInteractorStyle);
+            }
+            if (ren && ren->GetActiveCamera()) {
+                ren->GetActiveCamera()->SetParallelProjection(
+                        m_savedParallelProjection);
+            }
+            break;
+        case INTERACTION_MODE_2D:
+            if (ren && ren->GetActiveCamera()) {
+                m_savedParallelProjection =
+                        ren->GetActiveCamera()->GetParallelProjection();
+                ren->GetActiveCamera()->SetParallelProjection(1);
+            }
+            if (iren && TwoDInteractorStyle) {
+                iren->SetInteractorStyle(TwoDInteractorStyle);
+            }
+            break;
+        default:
+            break;
+    }
+    if (iren && iren->GetRenderWindow()) {
+        iren->GetRenderWindow()->Render();
+    }
+}
+
+//----------------------------------------------------------------------------
 void VtkVis::setCenterOfRotation(double x, double y, double z) {
     this->m_centerAxes->SetPosition(x, y, z);
     if (this->TwoDInteractorStyle) {
@@ -1356,6 +1394,27 @@ void VtkVis::setBackgroundColor(double r, double g, double b, int viewport) {
     while ((renderer = rens_->GetNextItem())) {
         if (viewport == 0 || viewport == i) {
             renderer->SetBackground(r, g, b);
+        }
+        ++i;
+    }
+}
+
+void VtkVis::setBackgroundColor(double r1,
+                                double g1,
+                                double b1,
+                                double r2,
+                                double g2,
+                                double b2,
+                                bool gradient,
+                                int viewport) {
+    rens_->InitTraversal();
+    vtkRenderer* renderer = nullptr;
+    int i = 0;
+    while ((renderer = rens_->GetNextItem())) {
+        if (viewport == 0 || viewport == i) {
+            renderer->SetBackground(r1, g1, b1);
+            renderer->SetBackground2(r2, g2, b2);
+            renderer->SetGradientBackground(gradient);
         }
         ++i;
     }

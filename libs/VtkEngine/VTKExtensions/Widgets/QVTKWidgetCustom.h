@@ -51,7 +51,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  */
 
 class QMainWindow;
-class ecvDisplayTools;
+#include <ecvDisplayTools.h>
 
 namespace VTKExtensions {
 class vtkCustomInteractorStyle;
@@ -184,12 +184,18 @@ protected:
     virtual void updateActivateditems(
             int x, int y, int dx, int dy, bool updatePosition = false);
 
+public:
+    ecvDisplayTools::HotZone* localHotZone() const { return m_localHotZone; }
+    bool localClickableItemsVisible() const { return m_localClickableVisible; }
+
 protected:
     bool m_unclosable = true;
     bool m_useVBO = false;
     vtkRenderer* m_render;
     QMainWindow* m_win;
     ecvDisplayTools* m_tools;
+    ecvDisplayTools::HotZone* m_localHotZone = nullptr;
+    bool m_localClickableVisible = false;
 
     vtkDataObject* m_dataObject;
     vtkActor* m_modelActor = nullptr;

@@ -560,6 +560,24 @@ public:  // display
                                                                     toggleShowName,
                                                                     toggleShowName_recursive);
 
+    // -- Multi-window display association --
+
+    ccHObject_recursive_call1(setDisplay,
+                              ecvGenericGLDisplay*,
+                              setDisplay_recursive)
+
+            /// Recursively clear display association for entities bound to the
+            /// given display.
+            void removeFromDisplay_recursive(
+                    const ecvGenericGLDisplay* display);
+
+    /// Returns true if this entity should be drawn in the given display.
+    /// Compatible three-way logic:
+    ///   display == nullptr:          legacy mode, no filtering
+    ///   m_currentDisplay == nullptr:  entity unbound, draw in all windows
+    ///   m_currentDisplay == display:  normal match
+    bool isDisplayedIn(const ecvGenericGLDisplay* display) const;
+
     //! Returns the max 'unique ID' of this entity and its siblings
     unsigned findMaxUniqueID_recursive() const;
 

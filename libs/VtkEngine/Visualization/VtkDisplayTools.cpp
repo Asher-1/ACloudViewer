@@ -35,7 +35,10 @@
 #include <ecvSensor.h>
 
 // LOCAL
+#include <ecvViewManager.h>
+
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
+#include "ecvGLView.h"
 
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>
@@ -106,6 +109,87 @@ VtkDisplayTools::~VtkDisplayTools() {
         delete this->m_vtkWidget;
         this->m_vtkWidget = nullptr;
     }
+}
+
+void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
+                                       QVTKWidgetCustom* widget) {
+    if (!vis || !widget) return;
+
+    // Save the primary pipeline on first switch
+    if (!m_primaryVis) {
+        m_primaryVis = m_visualizer3D;
+        m_primaryWidget = m_vtkWidget;
+    }
+
+    m_visualizer3D = vis;
+    m_vtkWidget = widget;
+    SetCurrentScreen(widget);
+}
+
+void VtkDisplayTools::restorePrimaryView() {
+    if (!m_primaryVis) return;
+
+    m_visualizer3D = m_primaryVis;
+    m_vtkWidget = m_primaryWidget;
+    SetCurrentScreen(m_primaryWidget);
+
+    // Restore the primary widget's HotZone so the overlay draws
+    // correctly in the primary view after returning from a secondary view.
+    if (m_primaryWidget && m_primaryWidget->localHotZone()) {
+        m_hotZone = m_primaryWidget->localHotZone();
+        m_clickableItemsVisible = m_primaryWidget->localClickableItemsVisible();
+    }
+
+    m_primaryVis = nullptr;
+    m_primaryWidget = nullptr;
+}
+
+void VtkDisplayTools::beginPrimaryRender() {
+    if (m_renderGuardActive) return;
+    if (m_primaryVis && m_visualizer3D != m_primaryVis) {
+        m_renderGuardSavedVis = m_visualizer3D;
+        m_renderGuardSavedWidget = m_vtkWidget;
+        m_visualizer3D = m_primaryVis;
+        m_vtkWidget = m_primaryWidget;
+        SetCurrentScreen(m_primaryWidget);
+
+        // Restore primary widget's HotZone for the primary draw pass
+        m_renderGuardSavedHz = m_hotZone;
+        m_renderGuardSavedClickable = m_clickableItemsVisible;
+        if (m_primaryWidget && m_primaryWidget->localHotZone()) {
+            m_hotZone = m_primaryWidget->localHotZone();
+            m_clickableItemsVisible =
+                    m_primaryWidget->localClickableItemsVisible();
+        }
+        m_renderGuardActive = true;
+    }
+}
+
+void VtkDisplayTools::endPrimaryRender() {
+    if (!m_renderGuardActive) return;
+    m_visualizer3D = m_renderGuardSavedVis;
+    m_vtkWidget = m_renderGuardSavedWidget;
+    SetCurrentScreen(m_renderGuardSavedWidget);
+    m_hotZone = m_renderGuardSavedHz;
+    m_clickableItemsVisible = m_renderGuardSavedClickable;
+    m_renderGuardSavedVis = nullptr;
+    m_renderGuardSavedWidget = nullptr;
+    m_renderGuardSavedHz = nullptr;
+    m_renderGuardSavedClickable = false;
+    m_renderGuardActive = false;
+}
+
+VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
+    if (!display || display == static_cast<const ecvDisplayTools*>(this)) {
+        VtkVis* primary =
+                m_primaryVis ? m_primaryVis.get() : m_visualizer3D.get();
+        return primary;
+    }
+    auto* glView = dynamic_cast<ecvGLView*>(display);
+    if (glView && glView->getVisualizer3D()) {
+        return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
+    }
+    return m_visualizer3D.get();
 }
 
 void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
@@ -816,19 +900,17 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
         if (m_visualizer2D) {
             m_visualizer2D->removeAllLayers();
         }
-        return;
-    }
-
-    if (context.removeEntityType == ENTITY_TYPE::ECV_IMAGE ||
-        context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
-        context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
-        if (!m_visualizer2D) return;
-        std::string viewId = CVTools::FromQString(context.removeViewID);
-        if (m_visualizer2D->contains(viewId)) {
-            m_visualizer2D->removeLayer(viewId);
+    } else if (context.removeEntityType == ENTITY_TYPE::ECV_IMAGE ||
+               context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
+               context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
+        if (m_visualizer2D) {
+            std::string viewId = CVTools::FromQString(context.removeViewID);
+            if (m_visualizer2D->contains(viewId)) {
+                m_visualizer2D->removeLayer(viewId);
+            }
         }
     } else {
         if (context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
@@ -843,6 +925,16 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
 
         if (m_visualizer3D && m_visualizer3D->removeEntities(context)) {
             m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
+        }
+    }
+
+    // Multi-window: also remove from all secondary views' VtkVis instances
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        if (!view || view == this) continue;
+        auto* glView = dynamic_cast<ecvGLView*>(view);
+        if (glView && glView->getVisualizer3D()) {
+            glView->getVisualizer3D()->removeEntities(context);
         }
     }
 }
@@ -1162,8 +1254,12 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
 }
 
 void VtkDisplayTools::toggle2Dviewer(bool state) {
-    if (m_visualizer2D) {
-        m_visualizer2D->enable2Dviewer(state);
+    // ParaView-style: toggle interaction mode on the 3D viewer, not swap
+    // the interactor on the 2D visualizer.  'state == true' means "switch
+    // to 2D"; 'false' means "back to 3D".
+    if (m_visualizer3D) {
+        m_visualizer3D->setInteractionMode(state ? VtkVis::INTERACTION_MODE_2D
+                                                 : VtkVis::INTERACTION_MODE_3D);
     }
 }
 
@@ -1288,27 +1384,34 @@ void VtkDisplayTools::changeOpacity(double opacity,
 void VtkDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
     std::string viewId = CVTools::FromQString(param.viewId);
     int viewport = param.viewport;
+
+    // Route to the VtkVis that actually owns the entity's actors.
+    VtkVis* vis = m_visualizer3D.get();
+    if (param.entity) {
+        VtkVis* resolved = resolveVisualizer(param.entity->getDisplay());
+        if (resolved) vis = resolved;
+    }
+
     switch (param.property) {
         case PROPERTY_MODE::ECV_POINTSSIZE_PROPERTY: {
-            m_visualizer3D->setPointSize(param.pointSize, viewId, viewport);
+            vis->setPointSize(param.pointSize, viewId, viewport);
         } break;
         case PROPERTY_MODE::ECV_LINEWITH_PROPERTY: {
-            m_visualizer3D->setLineWidth(
-                    static_cast<unsigned char>(param.lineWidth), viewId,
-                    viewport);
+            vis->setLineWidth(static_cast<unsigned char>(param.lineWidth),
+                              viewId, viewport);
         } break;
         case PROPERTY_MODE::ECV_COLOR_PROPERTY: {
             ecvColor::Rgbf colf = ecvTools::TransFormRGB(param.color);
             switch (param.entityType) {
                 case ENTITY_TYPE::ECV_POINT_CLOUD:
                 case ENTITY_TYPE::ECV_MESH: {
-                    m_visualizer3D->setPointCloudUniqueColor(
-                            colf.r, colf.g, colf.b, viewId, viewport);
+                    vis->setPointCloudUniqueColor(colf.r, colf.g, colf.b,
+                                                  viewId, viewport);
                 } break;
                 case ENTITY_TYPE::ECV_SHAPE:
                 case ENTITY_TYPE::ECV_LINES_3D: {
-                    m_visualizer3D->setShapeUniqueColor(colf.r, colf.g, colf.b,
-                                                        viewId, viewport);
+                    vis->setShapeUniqueColor(colf.r, colf.g, colf.b, viewId,
+                                             viewport);
                 } break;
                 default:
                     break;
@@ -1317,23 +1420,14 @@ void VtkDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
         case PROPERTY_MODE::ECV_OPACITY_PROPERTY: {
             switch (param.entityType) {
                 case ENTITY_TYPE::ECV_POINT_CLOUD: {
-                    // Point clouds use PCL's point cloud opacity setting
-                    m_visualizer3D->setPointCloudOpacity(param.opacity, viewId,
-                                                         viewport);
+                    vis->setPointCloudOpacity(param.opacity, viewId, viewport);
                 } break;
                 case ENTITY_TYPE::ECV_MESH: {
-                    // Meshes (textured or not) use dedicated mesh opacity
-                    // method This properly handles:
-                    // - Textured meshes with alpha blending
-                    // - Non-textured meshes with simple opacity
-                    // - Depth peeling for correct transparency rendering
-                    m_visualizer3D->setMeshOpacity(param.opacity, viewId,
-                                                   viewport);
+                    vis->setMeshOpacity(param.opacity, viewId, viewport);
                 } break;
                 case ENTITY_TYPE::ECV_SHAPE:
                 case ENTITY_TYPE::ECV_LINES_3D: {
-                    m_visualizer3D->setShapeOpacity(param.opacity, viewId,
-                                                    viewport);
+                    vis->setShapeOpacity(param.opacity, viewId, viewport);
                 } break;
                 default:
                     break;
@@ -1343,13 +1437,13 @@ void VtkDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
             switch (param.entityType) {
                 case ENTITY_TYPE::ECV_POINT_CLOUD:
                 case ENTITY_TYPE::ECV_MESH: {
-                    m_visualizer3D->setMeshShadingMode(param.shadingMode,
-                                                       viewId, viewport);
-                }
+                    vis->setMeshShadingMode(param.shadingMode, viewId,
+                                            viewport);
+                } break;
                 case ENTITY_TYPE::ECV_SHAPE:
                 case ENTITY_TYPE::ECV_LINES_3D: {
-                    m_visualizer3D->setShapeShadingMode(param.shadingMode,
-                                                        viewId, viewport);
+                    vis->setShapeShadingMode(param.shadingMode, viewId,
+                                             viewport);
                 } break;
                 default:
                     break;

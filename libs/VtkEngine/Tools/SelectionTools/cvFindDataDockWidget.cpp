@@ -102,6 +102,13 @@ void cvFindDataDockWidget::configure(cvSelectionHighlighter* highlighter,
 
     if (manager) {
         m_selectionWidget->setSelectionManager(manager);
+        // Global aggregation: update the dock whenever any view produces a
+        // selection, regardless of which view triggered it.
+        connect(manager,
+                qOverload<const cvSelectionData&>(
+                        &cvViewSelectionManager::selectionChanged),
+                this, &cvFindDataDockWidget::updateSelection,
+                Qt::UniqueConnection);
     } else {
         CVLog::Warning("[cvFindDataDockWidget] Selection manager is nullptr!");
     }

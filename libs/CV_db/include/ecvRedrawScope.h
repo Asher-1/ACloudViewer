@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecvDisplayTools.h"
+#include "ecvViewManager.h"
 
 // RAII guard for selective scene redraw.
 //
@@ -50,6 +51,12 @@ public:
     ~ecvRedrawScope() {
         if (!m_dismissed && ecvDisplayTools::HasInstance()) {
             ecvDisplayTools::RedrawDisplay(m_only2D, m_forceRedraw);
+            // Refresh secondary views; pass includePrimary=false since
+            // RedrawDisplay() already handled the primary above.
+            if (ecvViewManager::instance().viewCount() > 1) {
+                ecvViewManager::instance().redrawAll(m_only2D, m_forceRedraw,
+                                                     /*includePrimary=*/false);
+            }
         }
     }
 

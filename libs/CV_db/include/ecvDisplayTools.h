@@ -10,6 +10,7 @@
 // Local
 #include "ecvGLMatrix.h"
 #include "ecvGenericDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGuiParameters.h"
 #include "ecvHObject.h"
 #include "ecvViewportParameters.h"
@@ -117,7 +118,8 @@ struct CV_DB_LIB_API AxesGridProperties {
  * @see ecvGenericVisualizer2D
  */
 class CV_DB_LIB_API ecvDisplayTools : public QObject,
-                                      public ecvGenericDisplayTools {
+                                      public ecvGenericDisplayTools,
+                                      public ecvGenericGLDisplay {
     Q_OBJECT
 public:
     /**
@@ -155,6 +157,35 @@ public:
      * @brief Virtual destructor
      */
     virtual ~ecvDisplayTools() override;
+
+    /// Called at the start of RedrawDisplay() so subclasses can ensure the
+    /// primary rendering pipeline is active (e.g. VtkDisplayTools restores
+    /// its primary VtkVis even when switchActiveView() has re-routed to a
+    /// secondary view for tool operations).
+    virtual void beginPrimaryRender() {}
+    /// Called at the end of RedrawDisplay() to restore the tool-binding state.
+    virtual void endPrimaryRender() {}
+
+    // -- ecvGenericGLDisplay implementation (primary window) --
+
+    int getUniqueID() const override { return m_uniqueID; }
+    QString getTitle() const override { return QStringLiteral("RenderView1"); }
+    void redraw(bool only2D = false, bool forceRedraw = true) override;
+    void refresh(bool only2D = false) override;
+    void toBeRefreshed() override;
+    const ecvViewportParameters& getViewportParameters() const override;
+    void setViewportParameters(const ecvViewportParameters& params) override;
+    void setPerspectiveState(bool state, bool objectCenteredView) override;
+    bool perspectiveView() const override;
+    bool objectCenteredView() const override;
+    void setSceneDB(ccHObject* root) override;
+    ccHObject* getSceneDB() override;
+    ccHObject* getOwnDB() override;
+    void addToOwnDB(ccHObject* obj, bool noDependency = true) override;
+    void removeFromOwnDB(ccHObject* obj) override;
+    QWidget* asWidget() override;
+    const QWidget* asWidget() const override;
+    bool hasOverriddenDisplayParameters() const override;
 
     /**
      * @brief Schedule a full redraw
@@ -1633,9 +1664,7 @@ public:  // Main interface accessors
     static void RemoveEntities(const ccHObject* obj);
     static void RemoveEntities(const QStringList& viewIDs,
                                ENTITY_TYPE removeEntityType);
-    inline static void RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT) {
-        TheInstance()->removeEntities(CONTEXT);
-    }
+    static void RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT);
     inline virtual void removeEntities(
             const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
@@ -1757,10 +1786,7 @@ public:  // visualization matrix transformation
         GetCurrentScreen()->update();
         UpdateCamera();
     }
-    inline static void UpdateScreen() {
-        GetCurrentScreen()->update();
-        UpdateScene();
-    }
+    static void UpdateScreen();
     inline static void ResetCamera(const ccBBox* bbox) {
         TheInstance()->resetCamera(bbox);
         UpdateScreen();
@@ -2559,8 +2585,11 @@ public:  // event representation
     //! Last click time (msec)
     qint64 m_lastClickTime_ticks;
 
-    //! Hot zone
+    //! Hot zone (may point to a per-widget HotZone or a fallback created here)
     HotZone* m_hotZone;
+    //! True when m_hotZone was allocated by DrawClickableItems (singleton owns
+    //! it)
+    bool m_hotZoneOwnedBySingleton = false;
 
     //! Last mouse position
     QPoint m_lastMousePos;

@@ -14,6 +14,8 @@
 // CV_CORE_LIB
 #include <CVGeom.h>
 
+class ecvGenericGLDisplay;
+
 //! Simple (clipping) plane equation
 struct ccClipPlane {
     Tuple4Tpl<double> equation;
@@ -29,6 +31,17 @@ public:
     ccDrawableObject(const ccDrawableObject& object);
 
     virtual ~ccDrawableObject() = default;
+
+public:  // display association (multi-window support)
+    /// Returns the currently associated GL display, or nullptr (= all windows).
+    virtual ecvGenericGLDisplay* getDisplay() const { return m_currentDisplay; }
+
+    /// Associates this entity with a specific display window.
+    /// Pass nullptr to unbind (entity will be drawn in all windows).
+    virtual void setDisplay(ecvGenericGLDisplay* display);
+
+    /// Clears the display association if it matches the given display.
+    virtual void removeFromDisplay(const ecvGenericGLDisplay* display);
 
 public:  // drawing and drawing options
     //! Draws entity and its children
@@ -305,6 +318,10 @@ public:  // push and pop display state
     virtual void applyDisplayState(const DisplayState& state);
 
 protected:  // members
+    /// Currently associated GL display (window).
+    /// nullptr = show in any window that draws this entity (legacy mode).
+    ecvGenericGLDisplay* m_currentDisplay = nullptr;
+
     bool m_fixedId;
     bool m_modelRedraw;
     bool m_forceRedraw;

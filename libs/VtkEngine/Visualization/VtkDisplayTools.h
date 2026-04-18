@@ -36,6 +36,7 @@ class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
 class QMainWindow;
+class ecvGLView;
 
 namespace cloudViewer {
 namespace geometry {
@@ -436,6 +437,40 @@ public:
     inline VtkVis* get3DViewer() { return m_visualizer3D.get(); }
     inline ImageVis* get2DViewer() { return m_visualizer2D.get(); }
 
+    /// Persistently switch the active VtkVis + widget to a secondary view.
+    /// Called when ecvViewManager::activeViewChanged fires.
+    /// Pass nullptr to restore the primary pipeline.
+    void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
+
+    /// Restore the primary VtkVis + widget after switchActiveView.
+    void restorePrimaryView();
+
+    /// RAII helper: temporarily swaps m_visualizer3D + m_vtkWidget so that
+    /// the existing draw code renders to a different VtkVis/widget pair.
+    class ScopedVisSwap {
+    public:
+        ScopedVisSwap(VtkDisplayTools* dt,
+                      VtkVisPtr vis,
+                      QVTKWidgetCustom* widget)
+            : m_dt(dt),
+              m_savedVis(dt->m_visualizer3D),
+              m_savedWidget(dt->m_vtkWidget) {
+            dt->m_visualizer3D = vis;
+            dt->m_vtkWidget = widget;
+        }
+        ~ScopedVisSwap() {
+            m_dt->m_visualizer3D = m_savedVis;
+            m_dt->m_vtkWidget = m_savedWidget;
+        }
+        ScopedVisSwap(const ScopedVisSwap&) = delete;
+        ScopedVisSwap& operator=(const ScopedVisSwap&) = delete;
+
+    private:
+        VtkDisplayTools* m_dt;
+        VtkVisPtr m_savedVis;
+        QVTKWidgetCustom* m_savedWidget;
+    };
+
     virtual QString pick2DLabel(int x, int y) override;
 
     virtual QString pick3DItem(int x = -1, int y = -1) override;
@@ -572,12 +607,34 @@ private:
 
     bool updateEntityColor(const CC_DRAW_CONTEXT& context, ccHObject* ent);
 
+    /// Resolve the VtkVis instance for the given display context.
+    /// Routes to the correct per-window visualizer:
+    ///   nullptr / this singleton → m_visualizer3D (primary)
+    ///   ecvGLView*              → glView->getVisualizer3D()
+    VtkVis* resolveVisualizer(ecvGenericGLDisplay* display) const;
+
+    // -- Primary render guards (multi-window safety) --
+
+    void beginPrimaryRender() override;
+    void endPrimaryRender() override;
+
 protected:
     QVTKWidgetCustom* m_vtkWidget = nullptr;
 
     ImageVisPtr m_visualizer2D = nullptr;
 
     VtkVisPtr m_visualizer3D = nullptr;
+
+    /// Saved primary pipeline for restorePrimaryView()
+    VtkVisPtr m_primaryVis = nullptr;
+    QVTKWidgetCustom* m_primaryWidget = nullptr;
+
+    /// Saved active-tool pipeline during primary render guard
+    VtkVisPtr m_renderGuardSavedVis = nullptr;
+    QVTKWidgetCustom* m_renderGuardSavedWidget = nullptr;
+    HotZone* m_renderGuardSavedHz = nullptr;
+    bool m_renderGuardSavedClickable = false;
+    bool m_renderGuardActive = false;
 
     /** @param widget Main window for VTK widget
      *  @param stereoMode Whether to enable stereo rendering

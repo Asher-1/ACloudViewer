@@ -20,6 +20,7 @@
 
 class ccHObject;
 class ccScalarField;
+class ecvGenericGLDisplay;
 
 /**
  * @brief Display parameters of a 3D entity
@@ -568,9 +569,16 @@ enum CC_DRAWING_FLAGS {
  * settings, and transformation information.
  */
 struct ccGLDrawContext {
-    int drawingFlags;             ///< Drawing flags (see CC_DRAWING_FLAGS)
-    bool forceRedraw;             ///< Force redraw
-    bool visFiltering;            ///< Visibility filtering enabled
+    int drawingFlags;   ///< Drawing flags (see CC_DRAWING_FLAGS)
+    bool forceRedraw;   ///< Force redraw
+    bool visFiltering;  ///< Visibility filtering enabled
+
+    /// The display (window) that owns this draw context.
+    /// Used for per-window draw filtering: entities check their
+    /// m_currentDisplay against this pointer to decide whether they
+    /// should be drawn in the current window.
+    /// nullptr means "draw in all windows" (backward-compatible default).
+    ecvGenericGLDisplay* display = nullptr;
     TransformInfo transformInfo;  ///< Transformation information
     ecvTextParam textParam;       ///< Text rendering parameters
 

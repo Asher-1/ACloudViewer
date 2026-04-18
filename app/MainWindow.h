@@ -35,6 +35,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSet>
+#include <QShortcut>
 #include <QStatusBar>
 #include <QString>
 #include <QTextEdit>
@@ -44,6 +45,7 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <functional>
 
 // system
 #include <algorithm>
@@ -80,6 +82,7 @@ class cvViewSelectionManager;
 class cvSelectionData;
 class cvSelectionHighlighter;
 class cvSelectionToolController;
+class cvPerViewSelectionManager;
 class cvFindDataDockWidget;
 #endif
 
@@ -97,8 +100,12 @@ class ecvShortcutDialog;
 
 class QMdiArea;
 class QMdiSubWindow;
+class QSplitter;
 class QTreeWidgetItem;
 class QUIWidget;
+class ecvGenericGLDisplay;
+class ecvGLView;
+class ecvMultiViewFrameManager;
 
 struct dbTreeSelectionInfo;
 
@@ -201,9 +208,26 @@ public:
     QWidget* getWindow(int index) const;
     void update3DViewsMenu();
 
+    // Multi-window support
+    ecvGenericGLDisplay* getActiveGLView();
+    ecvGLView* new3DView();
+    void splitCurrentView(Qt::Orientation orientation);
+    void splitViewFrame(QWidget* frameToSplit, Qt::Orientation orientation);
+    void toggleMaximizeViewFrame(QWidget* frame, QToolButton* btn);
+    void equalizeSplitter(QSplitter* splitter, bool horizontal, bool vertical);
+    void swapViewFrames(QWidget* frameA, QWidget* frameB);
+    void lockViewSize(const QSize& size);
+    void copyPrimaryViewConfig(ecvGLView* view);
+    void rebindToolsToActiveView(ecvGenericGLDisplay* display);
+    QWidget* createViewFrame(QWidget* innerWidget, const QString& title);
+    int getGLViewCount() const;
+    void refreshAllViews(bool only2D = false);
+
 public:
     //! Flag: first time the window is made visible
     bool m_FirstShow;
+    //! Flag: MainWindow is being destroyed — suppresses stale signal handlers
+    bool m_closing = false;
     static bool s_autoSaveGuiElementPos;
 
 public:  // inherited from ecvMainAppInterface
@@ -309,6 +333,9 @@ private:
     //! \param except Pointer to the tool that should NOT be disabled (nullptr
     //! to disable all)
     void disableAllSelectionTools(void* except = nullptr);
+    //! Highlight the active view frame (ParaView-style border + bold label).
+    //! Works for both MDI-level and QSplitter-level views.
+    void markActiveViewFrame(QWidget* activeViewWidget);
 #endif
 
     //! Adds the "Edit Plane" action to the given menu.
@@ -470,6 +497,8 @@ private slots:
     void toggleFullScreen(bool state);
     //! Slot called when the exclusive full screen mode is toggled on a window
     void onExclusiveFullScreenToggled(bool);
+    //! Show/hide all view title bars and the tab bar (ParaView-style)
+    void setViewDecorationsVisible(bool visible);
     void showDisplayOptions();
 
     void toggleActiveWindowAutoPickRotCenter(bool state);
@@ -717,6 +746,11 @@ private:
     /***        MDI AREA        ***/
     /******************************/
     QMdiArea* m_mdiArea;
+    int m_layoutCounter = 0;
+    bool m_creatingView = false;
+    QSize m_lockedViewSize;
+
+    ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
 
     //! CloudViewer MDI area overlay dialogs
     struct ccMDIDialogs {
@@ -772,6 +806,8 @@ private:
     //! Selection tool controller (manages all selection tools, ParaView-style)
     //! This is a singleton, but we keep a pointer for convenience
     cvSelectionToolController* m_selectionController;
+    cvPerViewSelectionManager* m_perViewSelMgr = nullptr;
+    QShortcut* m_selectionEscShortcut = nullptr;
 
     //! Find Data dock widget (ParaView-style selection properties panel)
     //! This is a standalone dock that can be shown/hidden independently of

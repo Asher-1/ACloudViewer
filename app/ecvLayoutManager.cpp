@@ -381,9 +381,8 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     // Add toolbar break for third row
     m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
 
-    // Add third row toolbars
-    QStringList thirdRowOrder = {"AnnotationToolBar", "MeasurementsToolBar",
-                                 "SelectionToolBar"};
+    // Add third row toolbars (SelectionToolBar moved to per-view title bars)
+    QStringList thirdRowOrder = {"AnnotationToolBar", "MeasurementsToolBar"};
     for (const QString& name : thirdRowOrder) {
         if (toolbarMap.contains(name)) {
             QToolBar* toolbar = toolbarMap[name];
@@ -426,9 +425,8 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         setToolbarIconSize(toolbar, screenWidth);
     }
 
-    // Add second row toolbars
-    QStringList secondRowOrder = {"AnnotationToolBar", "MeasurementsToolBar",
-                                  "SelectionToolBar"};
+    // Add second row toolbars (SelectionToolBar moved to per-view title bars)
+    QStringList secondRowOrder = {"AnnotationToolBar", "MeasurementsToolBar"};
     for (const QString& name : secondRowOrder) {
         if (toolbarMap.contains(name)) {
             QToolBar* toolbar = toolbarMap[name];
