@@ -59,6 +59,11 @@ public:
             QWidget* viewWidget,
             const cvSelectionToolController::SelectionActions& actions);
 
+    /// Uncheck all per-view mirror actions in every view toolbar.
+    /// Called when ESC or disableAllTools clears the global actions with
+    /// signals blocked — the per-view mirrors would otherwise stay checked.
+    void uncheckAllMirrors();
+
 private:
     QAction* mirrorSimple(QWidget* parent, QAction* global);
     QAction* mirrorIsolated(QWidget* parent,

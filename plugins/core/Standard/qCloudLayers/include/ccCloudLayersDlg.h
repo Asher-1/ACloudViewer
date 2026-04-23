@@ -48,6 +48,7 @@ public:
     virtual ~ccCloudLayersDlg();
 
     //! inherited from ccOverlayDialog
+    bool linkWith(QWidget* win) override;
     bool start() override;
     void stop(bool accepted) override;
 

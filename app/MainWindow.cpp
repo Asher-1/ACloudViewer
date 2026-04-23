@@ -752,6 +752,7 @@ void MainWindow::initial() {
             QList<QMdiSubWindow*> subs = m_mdiArea->subWindowList();
             if (subs.size() <= 1) return;
             if (idx >= 0 && idx < subs.size()) {
+                prepareViewClose(subs[idx]->widget());
                 subs[idx]->close();
             }
         });
@@ -850,11 +851,21 @@ void MainWindow::initial() {
                 this,
                 [this](ecvGenericGLDisplay* newActive,
                        ecvGenericGLDisplay* /*oldActive*/) {
-                    if (!m_pickingHub || !newActive) return;
-                    auto* glView = dynamic_cast<ecvGLView*>(newActive);
-                    if (glView) {
-                        m_pickingHub->onActiveViewWidgetChanged(
-                                glView->asWidget());
+                    if (!newActive) return;
+
+                    // Rebind the VtkDisplayTools pipeline first so that
+                    // m_visualizer3D, m_vtkWidget, and m_currentScreen all
+                    // point to the correct view BEFORE we touch picking or
+                    // frame highlights.  This handles BOTH ecvGLView (split
+                    // views) and the primary singleton.
+                    rebindToolsToActiveView(newActive);
+
+                    QWidget* viewWidget = ecvDisplayTools::GetCurrentScreen();
+                    if (viewWidget) {
+                        if (m_pickingHub) {
+                            m_pickingHub->onActiveViewWidgetChanged(viewWidget);
+                        }
+                        markActiveViewFrame(viewWidget);
                     }
                 });
     }
@@ -2460,6 +2471,13 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     } else {
         primaryDT->restorePrimaryView();
 
+        // If restorePrimaryView returned early (m_primaryVis was already
+        // null), the current m_vtkWidget IS the primary widget but
+        // m_currentScreen may still point to a stale split-view widget
+        // (e.g. restored by a ScopedVisSwap destructor during a secondary
+        // view redraw).  Force it to the authoritative widget.
+        ecvDisplayTools::SetCurrentScreen(primaryDT->getQVtkWidget());
+
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
             ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
@@ -2499,7 +2517,86 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
         m_ccRoot->getPropertiesDelegate()->setVisualizer(activeViewer);
     }
+
+    // Annotation tool caches visualizer at creation; re-bind on view switch.
+    if (m_annoTool && m_annoTool->started()) {
+        auto* annoImpl = m_annoTool->getAnnotationsTool();
+        if (annoImpl) {
+            annoImpl->setVisualizer(activeViewer);
+        }
+    }
+
+    // Filter tool caches visualizer at creation; re-bind on view switch.
+    if (m_filterTool && m_filterTool->started()) {
+        auto* filterImpl =
+                dynamic_cast<VtkFiltersTool*>(m_filterTool->getFilter());
+        if (filterImpl) {
+            filterImpl->setVisualizer(activeViewer);
+        }
+    }
 #endif
+}
+
+void MainWindow::prepareViewClose(QWidget* viewFrame) {
+    if (!viewFrame) return;
+
+    // Find the ecvGLView (or primary display) inside this frame
+    auto findViewInFrame = [](QWidget* root) -> ecvGenericGLDisplay* {
+        if (!root) return nullptr;
+        auto* d = ecvGenericGLDisplay::FromWidget(root);
+        if (d) return d;
+        for (auto* child : root->findChildren<QWidget*>()) {
+            d = ecvGenericGLDisplay::FromWidget(child);
+            if (d) return d;
+        }
+        return nullptr;
+    };
+
+    auto* closingDisplay = findViewInFrame(viewFrame);
+    if (!closingDisplay) return;
+
+    auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
+
+    // Unregister from view manager — this auto-switches the active view
+    ecvViewManager::instance().unregisterView(closingDisplay);
+
+    // If the closing view's widget is the primary singleton's current screen,
+    // we need to promote another ecvGLView to be the new primary pipeline.
+    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
+            ecvDisplayTools::TheInstance());
+    QWidget* primaryScreen = ecvDisplayTools::GetCurrentScreen();
+    bool closingPrimary = false;
+
+    if (glView && glView->getVtkWidget() == primaryScreen) {
+        closingPrimary = true;
+    } else if (closingDisplay == ecvDisplayTools::TheInstance()) {
+        closingPrimary = true;
+    }
+
+    if (closingPrimary && primaryDT) {
+        // Find another surviving ecvGLView to become the new primary
+        const auto& views = ecvViewManager::instance().getAllViews();
+        ecvGLView* newPrimary = nullptr;
+        for (auto* v : views) {
+            auto* gv = dynamic_cast<ecvGLView*>(v);
+            if (gv && gv != glView && gv->getVisualizer3D() &&
+                gv->getVtkWidget()) {
+                newPrimary = gv;
+                break;
+            }
+        }
+        if (newPrimary) {
+            primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
+                                       newPrimary->getVtkWidget());
+            rebindToolsToActiveView(newPrimary);
+        }
+    }
+
+    // Clean up camera link
+    if (glView && glView->getVisualizer3D()) {
+        Visualization::VtkCameraLink::instance().removeView(
+                glView->getVisualizer3D());
+    }
 }
 
 QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
@@ -2640,6 +2737,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                        tr("Close View"));
     connect(closeBtn, &QToolButton::clicked, this, [this, frame]() {
         if (ecvViewManager::instance().viewCount() <= 1) return;
+
+        prepareViewClose(frame);
+
         // Check if frame is inside a QSplitter (split view)
         auto* splitter = qobject_cast<QSplitter*>(frame->parentWidget());
         if (splitter && splitter->count() > 1) {
@@ -2701,13 +2801,14 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 menu.addSeparator();
                 auto* closeAct = menu.addAction(tr("Close"), [this, frame]() {
                     if (ecvViewManager::instance().viewCount() <= 1) return;
+
+                    prepareViewClose(frame);
+
                     auto* splitter =
                             qobject_cast<QSplitter*>(frame->parentWidget());
                     if (splitter && splitter->count() > 1) {
                         frame->setParent(nullptr);
                         frame->deleteLater();
-                        // Unwrap if only one child left (consistent
-                        // with toolbar close button — ParaView Collapse)
                         if (splitter->count() == 1) {
                             QWidget* remaining = splitter->widget(0);
                             auto* mdiSub = qobject_cast<QMdiSubWindow*>(
@@ -3403,18 +3504,17 @@ void MainWindow::addToDB(ccHObject* obj,
         refreshObject(obj);
     }
 
-    // Multi-window: only redraw the view the entity was assigned to.
-    // Per-view visibility (isDisplayedIn) prevents objects from leaking
-    // into other windows.  If the active view is a secondary ecvGLView,
-    // zoom + redraw it so the newly loaded entity is immediately visible.
-    ecvGenericGLDisplay* activeView2 =
-            ecvViewManager::instance().getActiveView();
-    if (activeView2 && activeView2 != ecvDisplayTools::TheInstance()) {
-        auto* glView = dynamic_cast<ecvGLView*>(activeView2);
-        if (glView) {
-            if (updateZoom) {
-                glView->zoomGlobal();
-            }
+    // Update secondary views: per-view zoom (with per-display BB filtering)
+    // and a single redraw. zoomGlobal() already calls Render() internally
+    // so we only need an extra redraw for non-zoom updates.
+    const auto& allViews = ecvViewManager::instance().getAllViews();
+    for (auto* view : allViews) {
+        if (view == ecvDisplayTools::TheInstance()) continue;
+        auto* glView = dynamic_cast<ecvGLView*>(view);
+        if (!glView) continue;
+        if (updateZoom) {
+            glView->zoomGlobal();
+        } else {
             glView->redraw();
         }
     }

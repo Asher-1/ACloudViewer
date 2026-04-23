@@ -28,17 +28,21 @@ ccPointPickingGenericInterface::ccPointPickingGenericInterface(
 }
 
 bool ccPointPickingGenericInterface::linkWith(QWidget* win) {
-    // just in case
-    if (m_pickingHub) {
-        m_pickingHub->removeListener(this);
+    if (m_associatedWin == win) {
+        return true;
     }
+
+    bool wasProcessing = m_processing;
 
     if (!ccOverlayDialog::linkWith(win)) {
         return false;
     }
 
-    // if the dialog is already linked to a window, we must disconnect the
-    // 'point picked' signal
+    if (wasProcessing && win && m_pickingHub) {
+        m_pickingHub->addListener(this, true, true,
+                                  ecvDisplayTools::POINT_PICKING);
+    }
+
     return true;
 }
 

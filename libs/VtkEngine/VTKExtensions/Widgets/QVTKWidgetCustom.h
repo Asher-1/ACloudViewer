@@ -51,6 +51,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  */
 
 class QMainWindow;
+namespace Visualization { class ImageVis; }
 #include <ecvDisplayTools.h>
 
 namespace VTKExtensions {
@@ -186,7 +187,23 @@ protected:
 
 public:
     ecvDisplayTools::HotZone* localHotZone() const { return m_localHotZone; }
+    void setLocalHotZone(ecvDisplayTools::HotZone* hz) { m_localHotZone = hz; }
     bool localClickableItemsVisible() const { return m_localClickableVisible; }
+
+    /// Resolve the ecvGenericGLDisplay associated with this widget.
+    ecvGenericGLDisplay* resolveDisplay() const;
+
+    /// Per-view 2D overlay (lazy-created for secondary views).
+    std::shared_ptr<Visualization::ImageVis> localImageVis() const { return m_localImageVis; }
+    void setLocalImageVis(std::shared_ptr<Visualization::ImageVis> vis) { m_localImageVis = vis; }
+
+    /// Per-view default point size (independent of global singleton value).
+    float localDefaultPointSize() const { return m_localDefaultPointSize; }
+    void setLocalDefaultPointSize(float s) { m_localDefaultPointSize = s; }
+
+    /// Per-view default line width (independent of global singleton value).
+    float localDefaultLineWidth() const { return m_localDefaultLineWidth; }
+    void setLocalDefaultLineWidth(float w) { m_localDefaultLineWidth = w; }
 
 protected:
     bool m_unclosable = true;
@@ -196,6 +213,9 @@ protected:
     ecvDisplayTools* m_tools;
     ecvDisplayTools::HotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
+    std::shared_ptr<Visualization::ImageVis> m_localImageVis;
+    float m_localDefaultPointSize = 1.0f;
+    float m_localDefaultLineWidth = 2.0f;
 
     vtkDataObject* m_dataObject;
     vtkActor* m_modelActor = nullptr;

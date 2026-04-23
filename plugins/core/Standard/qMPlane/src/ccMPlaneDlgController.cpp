@@ -10,6 +10,7 @@
 // app
 #include <ecvPickingHub.h>
 #include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <QtCompat.h>
@@ -181,12 +182,34 @@ void ccMPlaneDlgController::startPicking() {
                 ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
     }
 
-    m_app->getActiveWindow()->installEventFilter(this);
+    m_filteredWindows.clear();
+    QWidget* win = m_app->getActiveWindow();
+    if (win) {
+        win->installEventFilter(this);
+        m_filteredWindows.insert(win);
+    }
+
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this, [this](ecvGenericGLDisplay*, ecvGenericGLDisplay*) {
+                if (m_app && m_app->getActiveWindow()) {
+                    QWidget* w = m_app->getActiveWindow();
+                    if (!m_filteredWindows.contains(w)) {
+                        w->installEventFilter(this);
+                        m_filteredWindows.insert(w);
+                    }
+                    if (m_dialog) m_dialog->linkWith(w);
+                }
+            }, Qt::UniqueConnection);
 }
 
 void ccMPlaneDlgController::stopPicking() {
     m_app->pickingHub()->removeListener(this);
-    m_app->getActiveWindow()->removeEventFilter(this);
+    for (QWidget* w : m_filteredWindows) {
+        if (w) w->removeEventFilter(this);
+    }
+    m_filteredWindows.clear();
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+               this, nullptr);
 }
 
 void ccMPlaneDlgController::pickFittingPoint(

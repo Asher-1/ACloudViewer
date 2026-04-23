@@ -11,6 +11,7 @@
 
 #include <ecvBBox.h>
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvHObject.h>
 
 #include "../casters.h"
@@ -175,7 +176,7 @@ void define_ccDisplayTools(py::module &m)
                     &ecvDisplayTools::UpdateConstellationCenterAndZoom,
                     "boundingBox"_a = nullptr,
                     "redraw"_a = true)
-        .def_static("getVisibleObjectsBB", &ecvDisplayTools::GetVisibleObjectsBB, "box"_a)
+        .def_static("getVisibleObjectsBB", &ecvDisplayTools::GetVisibleObjectsBB, "box"_a, py::arg("display") = nullptr)
         .def_static(
             "setView",
             [](CC_VIEW_ORIENTATION orientation, bool redraw)

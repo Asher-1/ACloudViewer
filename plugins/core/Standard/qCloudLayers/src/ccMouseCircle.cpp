@@ -48,10 +48,20 @@ ccMouseCircle::ccMouseCircle(ecvMainAppInterface* appInterface,
 }
 
 ccMouseCircle::~ccMouseCircle() {
-    // cleanup event listner
     if (m_owner) {
         m_owner->removeEventFilter(this);
         ecvDisplayTools::RemoveFromOwnDB(this);
+    }
+}
+
+void ccMouseCircle::setOwner(QWidget* newOwner) {
+    if (m_owner == newOwner) return;
+    if (m_owner) {
+        m_owner->removeEventFilter(this);
+    }
+    m_owner = newOwner;
+    if (m_owner) {
+        m_owner->installEventFilter(this);
     }
 }
 

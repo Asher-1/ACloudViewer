@@ -40,6 +40,9 @@ public:
     virtual bool linkWith(QWidget* win) override;
 
     bool setAnnotationsTool(ecvGenericAnnotationTool* annotationTool);
+    ecvGenericAnnotationTool* getAnnotationsTool() const {
+        return m_annotationTool;
+    }
 
     //! Adds an entity
     /** \return success, if the entity is eligible for clipping

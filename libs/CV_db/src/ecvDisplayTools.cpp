@@ -61,6 +61,15 @@ static ecvSingleton<ecvDisplayTools> s_tools;
 bool ecvDisplayTools::USE_2D = true;
 bool ecvDisplayTools::USE_VTK_PICK = false;
 
+/// Returns a non-primary active view (ecvGenericGLDisplay*) if one exists
+/// and it differs from the singleton.  Used by static methods to delegate
+/// to the per-view implementation.
+static ecvGenericGLDisplay* activeSecondaryView() {
+    auto* av = ecvViewManager::instance().getEffectiveView();
+    if (av && av != s_tools.instance) return av;
+    return nullptr;
+}
+
 static const QString DEBUG_LAYER_ID = "DEBUG_LAYER";
 
 // default interaction flags
@@ -463,28 +472,24 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y) {
         case ClickableItem::INCREASE_POINT_SIZE: {
             SetPointSize(s_tools.instance->m_viewportParams.defaultPointSize +
                          1.0f);
-            ecvRedrawScope scope;
         }
             return true;
 
         case ClickableItem::DECREASE_POINT_SIZE: {
             SetPointSize(s_tools.instance->m_viewportParams.defaultPointSize -
                          1.0f);
-            ecvRedrawScope scope;
         }
             return true;
 
         case ClickableItem::INCREASE_LINE_WIDTH: {
             SetLineWidth(s_tools.instance->m_viewportParams.defaultLineWidth +
                          1.0f);
-            ecvRedrawScope scope;
         }
             return true;
 
         case ClickableItem::DECREASE_LINE_WIDTH: {
             SetLineWidth(s_tools.instance->m_viewportParams.defaultLineWidth -
                          1.0f);
-            ecvRedrawScope scope;
         }
             return true;
 
@@ -517,17 +522,21 @@ void ecvDisplayTools::SetPointSize(float size, bool silent, int viewport) {
         CVLog::Print(QString("New point size: %1").arg(newSize));
     }
 
+    // Write-through: update both singleton and active secondary view.
+    auto* av = activeSecondaryView();
+    if (av) {
+        ecvViewportParameters vp = av->getViewportParameters();
+        vp.defaultPointSize = newSize;
+        av->setViewportParameters(vp);
+    }
+
     if (s_tools.instance->m_viewportParams.defaultPointSize != newSize) {
         s_tools.instance->m_viewportParams.defaultPointSize = newSize;
-        SetPointSizeRecursive(static_cast<int>(newSize));
 
         if (!silent) {
             ecvDisplayTools::DisplayNewMessage(
                     QString("New default point size: %1").arg(newSize),
-                    ecvDisplayTools::LOWER_LEFT_MESSAGE,  // DGM HACK: we cheat
-                                                          // and use the same
-                                                          // 'slot' as the
-                                                          // window size
+                    ecvDisplayTools::LOWER_LEFT_MESSAGE,
                     false, 2, SCREEN_SIZE_MESSAGE);
         }
     }
@@ -551,16 +560,20 @@ void ecvDisplayTools::SetLineWidth(float width, bool silent, int viewport) {
         CVLog::Print(QString("New line with: %1").arg(newWidth));
     }
 
+    // Write-through: update both singleton and active secondary view.
+    auto* av = activeSecondaryView();
+    if (av) {
+        ecvViewportParameters vp = av->getViewportParameters();
+        vp.defaultLineWidth = newWidth;
+        av->setViewportParameters(vp);
+    }
+
     if (s_tools.instance->m_viewportParams.defaultLineWidth != newWidth) {
         s_tools.instance->m_viewportParams.defaultLineWidth = newWidth;
-        SetLineWithRecursive(newWidth);
         if (!silent) {
             ecvDisplayTools::DisplayNewMessage(
                     QString("New default line width: %1").arg(newWidth),
-                    ecvDisplayTools::LOWER_LEFT_MESSAGE,  // DGM HACK: we cheat
-                                                          // and use the same
-                                                          // 'slot' as the
-                                                          // window size
+                    ecvDisplayTools::LOWER_LEFT_MESSAGE,
                     false, 2, SCREEN_SIZE_MESSAGE);
         }
     }
@@ -575,6 +588,14 @@ void ecvDisplayTools::SetLineWithRecursive(PointCoordinateType with) {
     if (s_tools.instance->m_winDBRoot) {
         s_tools.instance->m_winDBRoot->setLineWidthRecursive(with);
     }
+}
+
+void ecvDisplayTools::SetViewportDefaultPointSize(float size) {
+    s_tools.instance->m_viewportParams.defaultPointSize = size;
+}
+
+void ecvDisplayTools::SetViewportDefaultLineWidth(float width) {
+    s_tools.instance->m_viewportParams.defaultLineWidth = width;
 }
 
 void ecvDisplayTools::StartPicking(PickingParameters& params) {
@@ -668,6 +689,7 @@ void ecvDisplayTools::ProcessPickingResult(
 
             if (label) {
                 label->setVisible(true);
+                label->setDisplay(s_tools.instance);
                 label->setPosition(
                         static_cast<float>(params.centerX + 20) /
                                 s_tools.instance->m_glViewport.width(),
@@ -808,9 +830,6 @@ void ecvDisplayTools::StartOpenGLPicking(const PickingParameters& params) {
 void ecvDisplayTools::StartCPUBasedPointPicking(
         const PickingParameters& params) {
     // qint64 t0 = m_timer.elapsed();
-    CCVector2d clickedPos(
-            params.centerX,
-            s_tools.instance->m_glViewport.height() - 1 - params.centerY);
 
     ccHObject* nearestEntity = nullptr;
     int nearestElementIndex = -1;
@@ -825,6 +844,13 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
 
     ccGLCameraParameters camera;
     GetGLCameraParameters(camera);
+
+    // Compute clickedPos AFTER GetGLCameraParameters so m_glViewport
+    // reflects the active view's actual dimensions (critical for
+    // multi-window picking where views may differ in size).
+    CCVector2d clickedPos(
+            params.centerX,
+            s_tools.instance->m_glViewport.height() - 1 - params.centerY);
 
     if (ecvDisplayTools::USE_VTK_PICK) {
         int pickedIndex = -1;
@@ -1302,15 +1328,6 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
 void ecvDisplayTools::UpdateScreen() {
     GetCurrentScreen()->update();
     UpdateScene();
-    // Also refresh secondary views so property/entity changes are visible.
-    if (ecvViewManager::instance().viewCount() > 1) {
-        auto* primary = TheInstance();
-        for (auto* view : ecvViewManager::instance().getAllViews()) {
-            if (view && view != primary) {
-                view->redraw(false, false);
-            }
-        }
-    }
 }
 
 void ecvDisplayTools::UpdateScreenSize() { ResizeGL(Width(), Height()); }
@@ -1949,6 +1966,16 @@ bool ecvDisplayTools::ViewerPerspectiveEnabled() {
 
 void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
                                                        bool redraw) {
+    // Delegate to active secondary view if one exists.
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->updateConstellationCenterAndZoom(aBox);
+        if (redraw) {
+            av->redraw();
+        }
+        return;
+    }
+
     if (s_tools.instance->m_bubbleViewModeEnabled) {
         CVLog::Warning(
                 "[updateConstellationCenterAndZoom] Not when bubble-view is "
@@ -1960,12 +1987,10 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
 
     ccBBox zoomedBox;
 
-    // the user has provided a valid bounding box
     if (aBox) {
         zoomedBox = (*aBox);
-    } else  // otherwise we'll take the default one (if possible)
-    {
-        GetVisibleObjectsBB(zoomedBox);
+    } else {
+        GetVisibleObjectsBB(zoomedBox, TheInstance());
     }
 
     if (!zoomedBox.isValid()) {
@@ -2071,17 +2096,17 @@ void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
     RedrawDisplay(only2D, forceRedraw);
 }
 
-void ecvDisplayTools::GetVisibleObjectsBB(ccBBox& box) {
-    // compute center of visible objects constellation
+void ecvDisplayTools::GetVisibleObjectsBB(ccBBox& box,
+                                          const ecvGenericGLDisplay* display) {
     if (s_tools.instance->m_globalDBRoot) {
-        // get whole bounding-box
-        box = s_tools.instance->m_globalDBRoot->getDisplayBB_recursive(false);
+        box = s_tools.instance->m_globalDBRoot->getDisplayBB_recursive(
+                false, display);
     }
 
-    // incorporate window own db
     if (s_tools.instance->m_winDBRoot) {
         ccBBox ownBox =
-                s_tools.instance->m_winDBRoot->getDisplayBB_recursive(false);
+                s_tools.instance->m_winDBRoot->getDisplayBB_recursive(
+                        false, display);
         if (ownBox.isValid()) {
             box += ownBox;
         }
@@ -2163,6 +2188,12 @@ void ecvDisplayTools::AddToOwnDB(ccHObject* obj, bool noDependency /*=true*/) {
         return;
     }
 
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->addToOwnDB(obj, noDependency);
+        return;
+    }
+
     if (s_tools.instance->m_winDBRoot) {
         s_tools.instance->m_winDBRoot->addChild(
                 obj, noDependency ? ccHObject::DP_NONE
@@ -2173,6 +2204,11 @@ void ecvDisplayTools::AddToOwnDB(ccHObject* obj, bool noDependency /*=true*/) {
 }
 
 void ecvDisplayTools::RemoveFromOwnDB(ccHObject* obj) {
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->removeFromOwnDB(obj);
+        return;
+    }
     if (s_tools.instance->m_winDBRoot)
         s_tools.instance->m_winDBRoot->removeChild(obj);
 }
@@ -2195,10 +2231,20 @@ void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport) {
 }
 
 void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
+    // Write-through: update both the active secondary view AND the singleton.
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->setInteractionMode(flags);
+        QWidget* w = av->asWidget();
+        if (w) {
+            w->setMouseTracking(
+                    flags &
+                    (INTERACT_CLICKABLE_ITEMS | INTERACT_SIG_MOUSE_MOVED));
+        }
+    }
+
     s_tools.instance->m_interactionFlags = flags;
 
-    // we need to explicitely enable 'mouse tracking' to track the mouse when no
-    // button is clicked
 #ifdef CV_GL_WINDOW_USE_QWINDOW
     if (m_parentWidget) {
         m_parentWidget->setMouseTracking(
@@ -2210,35 +2256,42 @@ void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
 #endif
 
     if ((flags & INTERACT_CLICKABLE_ITEMS) == 0) {
-        // auto-hide the embedded icons if they are disabled
         s_tools.instance->m_clickableItemsVisible = false;
     }
 }
 
 ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::GetInteractionMode() {
+    auto* av = activeSecondaryView();
+    if (av) {
+        return av->getInteractionMode();
+    }
     return s_tools.instance->m_interactionFlags;
 }
 
 CCVector3d ecvDisplayTools::GetCurrentViewDir() {
-    // view direction is (the opposite of) the 3rd line of the current view
-    // matrix
-    const double* M = s_tools.instance->m_viewportParams.viewMat.data();
+    auto* av = activeSecondaryView();
+    const auto& vp = av ? av->getViewportParameters() : s_tools.instance->m_viewportParams;
+    const double* M = vp.viewMat.data();
     CCVector3d axis(-M[2], -M[6], -M[10]);
     axis.normalize();
-
     return axis;
 }
 
 CCVector3d ecvDisplayTools::GetCurrentUpDir() {
-    // otherwise up direction is the 2nd line of the current view matrix
-    const double* M = s_tools.instance->m_viewportParams.viewMat.data();
+    auto* av = activeSecondaryView();
+    const auto& vp = av ? av->getViewportParameters() : s_tools.instance->m_viewportParams;
+    const double* M = vp.viewMat.data();
     CCVector3d axis(M[1], M[5], M[9]);
     axis.normalize();
-
     return axis;
 }
 
 float ecvDisplayTools::GetFov() {
+    auto* av = activeSecondaryView();
+    if (av) {
+        const auto& vp = av->getViewportParameters();
+        return vp.fov_deg;
+    }
     return (s_tools.instance->m_bubbleViewModeEnabled
                     ? s_tools.instance->m_bubbleViewFov_deg
                     : s_tools.instance->m_viewportParams.fov_deg);
@@ -2514,9 +2567,24 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
     // other options
     CONTEXT.drawRoundedPoints = guiParams.drawRoundedPoints;
 
-    // Multi-window: default to the primary view.  Each ecvGLView::redraw()
-    // overrides CONTEXT.display to itself before drawing.
-    CONTEXT.display = s_tools.instance;
+    // Per-view point size / line width — delegate to active view when
+    // a secondary view is active so each window gets independent values.
+    auto* av = activeSecondaryView();
+    if (av) {
+        const auto& vp = av->getViewportParameters();
+        CONTEXT.defaultPointSize =
+                static_cast<unsigned char>(vp.defaultPointSize);
+        CONTEXT.defaultLineWidth =
+                static_cast<unsigned char>(vp.defaultLineWidth);
+        CONTEXT.display = av;
+    } else {
+        CONTEXT.defaultPointSize = static_cast<unsigned char>(
+                s_tools.instance->m_viewportParams.defaultPointSize);
+        CONTEXT.defaultLineWidth = static_cast<unsigned char>(
+                s_tools.instance->m_viewportParams.defaultLineWidth);
+        CONTEXT.display = s_tools.instance;
+    }
+    CONTEXT.currentLineWidth = CONTEXT.defaultLineWidth;
 }
 
 bool ecvDisplayTools::RenderToFile(QString filename,
@@ -2571,6 +2639,10 @@ void ecvDisplayTools::SetCameraPos(const CCVector3d& P) {
 }
 
 const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
+    auto* av = activeSecondaryView();
+    if (av) {
+        return av->getDisplayParameters();
+    }
     if (s_tools.instance->m_overridenDisplayParametersEnabled) {
         s_tools.instance->m_overridenDisplayParameters.initFontSizesIfNeeded();
         return s_tools.instance->m_overridenDisplayParameters;
@@ -2582,6 +2654,12 @@ const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
 }
 
 void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->getGLCameraParameters(params);
+        return;
+    }
+
     // get/compute the modelview matrix
     { GetViewMatrix(params.modelViewMat.data()); }
 
@@ -2616,6 +2694,12 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
 }
 
 void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
+    // Write-through: also update the active secondary view.
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->setDisplayParameters(params, true);
+    }
+
     s_tools.instance->m_overridenDisplayParametersEnabled = true;
     s_tools.instance->m_overridenDisplayParameters = params;
     s_tools.instance->m_overridenDisplayParameters.initFontSizesIfNeeded();
@@ -2668,6 +2752,12 @@ void ecvDisplayTools::UpdateDisplayParameters() {
 
 void ecvDisplayTools::SetViewportParameters(
         const ecvViewportParameters& params) {
+    // Write-through: also update the active secondary view.
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->setViewportParameters(params);
+    }
+
     ecvViewportParameters oldParams = s_tools.instance->m_viewportParams;
     s_tools.instance->m_viewportParams = params;
 
@@ -2705,6 +2795,10 @@ void ecvDisplayTools::SetViewportParameters(
 }
 
 const ecvViewportParameters& ecvDisplayTools::GetViewportParameters() {
+    auto* av = activeSecondaryView();
+    if (av) {
+        return av->getViewportParameters();
+    }
     UpdateDisplayParameters();
     return s_tools.instance->m_viewportParams;
 }
@@ -2793,7 +2887,13 @@ void ecvDisplayTools::UpdateZoom(float zoomFactor) {
 }
 
 void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
-    // is the picking mode locked?
+    // Write-through: update both the active secondary view AND the singleton
+    // so that m_tools-> direct access in QVTKWidgetCustom sees the correct value.
+    auto* av = activeSecondaryView();
+    if (av) {
+        av->setPickingMode(mode);
+    }
+
     if (s_tools.instance->m_pickingModeLocked) {
         if ((mode != s_tools.instance->m_pickingMode) &&
             (mode != DEFAULT_PICKING))
@@ -2821,16 +2921,22 @@ void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
     }
 
     s_tools.instance->m_pickingMode = mode;
-
-    // CVLog::Warning(QString("[%1] Picking mode set to: ").arg(m_uniqueID) +
-    // ToString(m_pickingMode));
 }
 
 ecvDisplayTools::PICKING_MODE ecvDisplayTools::GetPickingMode() {
+    auto* av = activeSecondaryView();
+    if (av) {
+        return av->getPickingMode();
+    }
     return s_tools.instance->m_pickingMode;
 }
 
 void ecvDisplayTools::LockPickingMode(bool state) {
+    auto* av = activeSecondaryView();
+    if (av) {
+        // ecvGLView stores its own m_pickingModeLocked; keep it in sync.
+        // (setPickingMode already checks the lock on the view side)
+    }
     s_tools.instance->m_pickingModeLocked = state;
 }
 
@@ -3464,7 +3570,8 @@ void ecvDisplayTools::RenderText(
         const QString& str,
         const QFont& font /*=QFont()*/,
         const ecvColor::Rgbub& color /* = ecvColor::defaultLabelBkgColor*/,
-        const QString& id) {
+        const QString& id,
+        ecvGenericGLDisplay* display /*=nullptr*/) {
     CC_DRAW_CONTEXT context;
     // for T2D
     if (id.isEmpty()) {
@@ -3535,7 +3642,8 @@ void ecvDisplayTools::DisplayText(
         float bkgAlpha /*=0*/,
         const unsigned char* rgbColor /*=0*/,
         const QFont* font /*=0*/,
-        const QString& id /*=""*/) {
+        const QString& id /*=""*/,
+        ecvGenericGLDisplay* display /*=nullptr*/) {
     int x2 = x;
     int y2 = s_tools.instance->m_glViewport.height() - 1 - y;
 

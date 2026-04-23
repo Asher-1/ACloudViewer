@@ -89,13 +89,16 @@ bool ccPointPropertiesDlg::linkWith(QWidget* win) {
         ecvDisplayTools::AddToOwnDB(m_label);
         ecvDisplayTools::AddToOwnDB(m_rect2DLabel);
         connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved,
-                this, &ccPointPropertiesDlg::update2DZone);
+                this, &ccPointPropertiesDlg::update2DZone,
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(),
                 &ecvDisplayTools::leftButtonClicked, this,
-                &ccPointPropertiesDlg::processClickedPoint);
+                &ccPointPropertiesDlg::processClickedPoint,
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(),
                 &ecvDisplayTools::buttonReleased, this,
-                &ccPointPropertiesDlg::close2DZone);
+                &ccPointPropertiesDlg::close2DZone,
+                Qt::UniqueConnection);
     }
 
     return true;

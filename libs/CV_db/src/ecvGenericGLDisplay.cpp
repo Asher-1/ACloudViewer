@@ -7,14 +7,80 @@
 
 #include "ecvGenericGLDisplay.h"
 
+#include <ecvGuiParameters.h>
+
 #include <QMap>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QWidget>
 
 namespace {
 QMutex s_registryMutex;
 QMap<QWidget*, ecvGenericGLDisplay*> s_displayRegistry;
 }  // namespace
+
+// ================================================================
+// Default implementations for the new per-view virtual methods.
+// Concrete subclasses (ecvDisplayTools, ecvGLView) override these
+// with real per-view logic.
+// ================================================================
+
+void ecvGenericGLDisplay::getGLCameraParameters(
+        ccGLCameraParameters& /*params*/) const {}
+
+void ecvGenericGLDisplay::getVisibleObjectsBB(ccBBox& /*box*/) const {}
+
+void ecvGenericGLDisplay::updateConstellationCenterAndZoom(
+        const ccBBox* /*box*/) {}
+
+QRect ecvGenericGLDisplay::getGLViewport() const {
+    const QWidget* w = asWidget();
+    if (w) return QRect(0, 0, w->width(), w->height());
+    return {};
+}
+
+int ecvGenericGLDisplay::glWidth() const {
+    return getGLViewport().width();
+}
+
+int ecvGenericGLDisplay::glHeight() const {
+    return getGLViewport().height();
+}
+
+int ecvGenericGLDisplay::getDevicePixelRatio() const {
+    const QWidget* w = asWidget();
+    return w ? static_cast<int>(w->devicePixelRatio()) : 1;
+}
+
+void ecvGenericGLDisplay::setInteractionMode(INTERACTION_FLAGS /*flags*/) {}
+
+ecvGenericGLDisplay::INTERACTION_FLAGS
+ecvGenericGLDisplay::getInteractionMode() const {
+    return INTERACT_NONE;
+}
+
+void ecvGenericGLDisplay::setPickingMode(PICKING_MODE /*mode*/) {}
+
+ecvGenericGLDisplay::PICKING_MODE
+ecvGenericGLDisplay::getPickingMode() const {
+    return NO_PICKING;
+}
+
+void ecvGenericGLDisplay::getContext(ccGLDrawContext& /*context*/) const {}
+
+const ecvGui::ParamStruct& ecvGenericGLDisplay::getDisplayParameters() const {
+    return ecvGui::Parameters();
+}
+
+void ecvGenericGLDisplay::setDisplayParameters(
+        const ecvGui::ParamStruct& /*params*/, bool /*thisWindowOnly*/) {}
+
+void ecvGenericGLDisplay::drawClickableItems(int /*xStart*/,
+                                             int& /*yStart*/) {}
+
+// ================================================================
+// Static registry
+// ================================================================
 
 ecvGenericGLDisplay* ecvGenericGLDisplay::FromWidget(QWidget* widget) {
     QMutexLocker lock(&s_registryMutex);

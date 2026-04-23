@@ -56,6 +56,9 @@ public:
     //! Returns whether the tool is currently started or not
     bool started() const { return m_processing; }
 
+    //! Returns the associated window widget (may be null)
+    QWidget* getAssociatedWindow() const { return m_associatedWin; }
+
 signals:
 
     //! Signal emitted when process is finished

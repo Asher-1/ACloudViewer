@@ -121,13 +121,63 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
         m_primaryWidget = m_vtkWidget;
     }
 
+    // Reconnect picking signal from the new visualizer so that
+    // interactor-based picking works correctly in the active view.
+    if (m_visualizer3D && m_visualizer3D != vis) {
+        disconnect(m_visualizer3D.get(),
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
+                   this, &ecvDisplayTools::onPointPicking);
+    }
+    connect(vis.get(),
+            &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking,
+            Qt::UniqueConnection);
+
     m_visualizer3D = vis;
     m_vtkWidget = widget;
     SetCurrentScreen(widget);
 }
 
+void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis,
+                                     QVTKWidgetCustom* widget) {
+    if (!vis || !widget) return;
+
+    if (m_visualizer3D && m_visualizer3D != vis) {
+        disconnect(m_visualizer3D.get(),
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
+                   this, &ecvDisplayTools::onPointPicking);
+    }
+    connect(vis.get(),
+            &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking,
+            Qt::UniqueConnection);
+
+    m_visualizer3D = vis;
+    m_vtkWidget = widget;
+    SetCurrentScreen(widget);
+
+    m_primaryVis = nullptr;
+    m_primaryWidget = nullptr;
+
+    if (widget->localHotZone()) {
+        m_hotZone = widget->localHotZone();
+        m_clickableItemsVisible = widget->localClickableItemsVisible();
+    }
+}
+
 void VtkDisplayTools::restorePrimaryView() {
     if (!m_primaryVis) return;
+
+    // Reconnect picking signal back to the primary visualizer
+    if (m_visualizer3D && m_visualizer3D != m_primaryVis) {
+        disconnect(m_visualizer3D.get(),
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
+                   this, &ecvDisplayTools::onPointPicking);
+    }
+    connect(m_primaryVis.get(),
+            &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking,
+            Qt::UniqueConnection);
 
     m_visualizer3D = m_primaryVis;
     m_vtkWidget = m_primaryWidget;
@@ -142,6 +192,55 @@ void VtkDisplayTools::restorePrimaryView() {
 
     m_primaryVis = nullptr;
     m_primaryWidget = nullptr;
+}
+
+VtkDisplayTools::ScopedVisSwap::ScopedVisSwap(VtkDisplayTools* dt,
+                                              VtkVisPtr vis,
+                                              QVTKWidgetCustom* widget)
+        : m_dt(dt),
+          m_savedVis(dt->m_visualizer3D),
+          m_saved2D(dt->m_visualizer2D),
+          m_savedWidget(dt->m_vtkWidget),
+          m_savedGLViewport(dt->m_glViewport) {
+    dt->m_visualizer3D = vis;
+    dt->m_vtkWidget = widget;
+    dt->SetCurrentScreen(widget);
+
+    // Set m_glViewport to match this widget's size so all code that
+    // reads m_glViewport (DrawClickableItems, GetGLCameraParameters,
+    // 2D label projection, etc.) uses the correct per-view dimensions.
+    if (widget) {
+        ecvDisplayTools::SetGLViewport(
+                QRect(0, 0, widget->width(), widget->height()));
+    }
+
+    // Swap the 2D overlay to a per-widget ImageVis so 2D labels,
+    // text, and rectangles render into this view's renderer instead
+    // of polluting the primary window.
+    if (ecvDisplayTools::USE_2D && widget) {
+        auto localVis = widget->localImageVis();
+        if (!localVis && widget->getVtkRender()) {
+            localVis = std::make_shared<ImageVis>("2Dviewer_secondary", false);
+            localVis->setRender(widget->getVtkRender());
+            localVis->setupInteractor(widget->GetInteractor(),
+                                      widget->GetRenderWindow());
+            widget->setLocalImageVis(localVis);
+        }
+        if (localVis) {
+            dt->m_visualizer2D = localVis;
+        }
+    }
+
+    ++dt->m_scopedVisSwapDepth;
+}
+
+VtkDisplayTools::ScopedVisSwap::~ScopedVisSwap() {
+    --m_dt->m_scopedVisSwapDepth;
+    m_dt->m_visualizer3D = m_savedVis;
+    m_dt->m_visualizer2D = m_saved2D;
+    m_dt->m_vtkWidget = m_savedWidget;
+    m_dt->m_glViewport = m_savedGLViewport;
+    m_dt->SetCurrentScreen(m_savedWidget);
 }
 
 void VtkDisplayTools::beginPrimaryRender() {

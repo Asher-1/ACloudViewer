@@ -10,6 +10,7 @@
  * @brief Implementation of selection tool controller singleton.
  */
 
+#include "cvPerViewSelectionManager.h"
 #include "cvSelectionToolController.h"
 
 #include "cvRenderViewSelectionReaction.h"
@@ -259,6 +260,12 @@ void cvSelectionToolController::disableAllTools(
     // End any active reaction
     cvRenderViewSelectionReaction::endActiveSelection();
 
+    // Uncheck per-view mirror actions (signals were blocked above,
+    // so the mirror connections did not fire)
+    if (m_perViewSelMgr) {
+        m_perViewSelMgr->uncheckAllMirrors();
+    }
+
     // Update selection properties panel
     if (except == nullptr) {
         setSelectionPropertiesActive(false);
@@ -283,14 +290,15 @@ cvSelectionToolController::currentMode() const {
 
 //-----------------------------------------------------------------------------
 bool cvSelectionToolController::handleEscapeKey() {
-    if (!isAnyToolActive()) {
-        return false;
-    }
+    // Check both the reaction system AND visual button state —
+    // per-view mirror buttons may still be checked even when the
+    // reaction has already ended.
+    bool hadActiveReaction = isAnyToolActive();
 
     // Disable all selection tools via the reaction system
     disableAllTools(nullptr);
 
-    // Also explicitly uncheck all actions to keep UI synchronized
+    // Also explicitly uncheck all global actions to keep UI synchronized
     auto uncheckAction = [](QAction* action) {
         if (action && action->isCheckable() && action->isChecked()) {
             action->blockSignals(true);
@@ -299,19 +307,32 @@ bool cvSelectionToolController::handleEscapeKey() {
         }
     };
 
-    uncheckAction(m_actions.selectSurfaceCells);
-    uncheckAction(m_actions.selectSurfacePoints);
-    uncheckAction(m_actions.selectFrustumCells);
-    uncheckAction(m_actions.selectFrustumPoints);
-    uncheckAction(m_actions.selectPolygonCells);
-    uncheckAction(m_actions.selectPolygonPoints);
-    uncheckAction(m_actions.selectBlocks);
-    uncheckAction(m_actions.selectFrustumBlocks);
-    uncheckAction(m_actions.interactiveSelectCells);
-    uncheckAction(m_actions.interactiveSelectPoints);
-    uncheckAction(m_actions.hoverCells);
-    uncheckAction(m_actions.hoverPoints);
-    uncheckAction(m_actions.zoomToBox);
+    bool hadCheckedAction = false;
+    QAction* allActions[] = {
+            m_actions.selectSurfaceCells,
+            m_actions.selectSurfacePoints,
+            m_actions.selectFrustumCells,
+            m_actions.selectFrustumPoints,
+            m_actions.selectPolygonCells,
+            m_actions.selectPolygonPoints,
+            m_actions.selectBlocks,
+            m_actions.selectFrustumBlocks,
+            m_actions.interactiveSelectCells,
+            m_actions.interactiveSelectPoints,
+            m_actions.hoverCells,
+            m_actions.hoverPoints,
+            m_actions.zoomToBox,
+    };
+    for (auto* a : allActions) {
+        if (a && a->isCheckable() && a->isChecked()) hadCheckedAction = true;
+        uncheckAction(a);
+    }
+
+    // uncheckAllMirrors is already called by disableAllTools above
+
+    if (!hadActiveReaction && !hadCheckedAction) {
+        return false;
+    }
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] ESC key handled - disabled all "

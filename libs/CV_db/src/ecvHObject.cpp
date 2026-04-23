@@ -816,13 +816,19 @@ void ccHObject::setLineWidthRecursive(PointCoordinateType with) {
     }
 }
 
-ccBBox ccHObject::getDisplayBB_recursive(bool relative) {
+ccBBox ccHObject::getDisplayBB_recursive(
+        bool relative, const ecvGenericGLDisplay* display) {
     ccBBox box;
-    box = getOwnBB(true);
+    // Only include this node's own BB if it belongs to the requested display
+    // (or no display filter is set, or entity is unbound to any display).
+    if (!display || m_currentDisplay == nullptr ||
+        m_currentDisplay == display) {
+        box = getOwnBB(true);
+    }
 
     for (auto child : m_children) {
         if (child->isEnabled()) {
-            ccBBox childBox = child->getDisplayBB_recursive(true);
+            ccBBox childBox = child->getDisplayBB_recursive(true, display);
             if (child->isGLTransEnabled()) {
                 childBox = childBox * child->getGLTransformation();
             }
@@ -831,7 +837,6 @@ ccBBox ccHObject::getDisplayBB_recursive(bool relative) {
     }
 
     if (!relative && box.isValid()) {
-        // get absolute bounding-box?
         ccGLMatrix trans;
         getAbsoluteGLTransformation(trans);
         box = box * trans;
@@ -1434,7 +1439,7 @@ void ccHObject::drawNameIn3D() {
             getName(), static_cast<int>(m_nameIn3DPos.x),
             static_cast<int>(m_nameIn3DPos.y),
             ecvDisplayTools::ALIGN_HMIDDLE | ecvDisplayTools::ALIGN_VMIDDLE,
-            0.75f, nullptr, &font);
+            0.75f, nullptr, &font, QString(), getDisplay());
 }
 
 void ccHObject::draw(CC_DRAW_CONTEXT& context) {
@@ -1525,11 +1530,17 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         }
     }
 
-    // draw name - container objects are not visible but can still show a name
+    // draw name - only when the object (or its parent hierarchy) is actually
+    // visible/enabled.  Container objects (folders) that are enabled but not
+    // "visible" in the geometric sense can still show a name, but objects
+    // whose visibility checkbox is unchecked, or whose parent folder is
+    // disabled, must not draw names.
     // Guard with isDisplayedIn() to prevent accessing the wrong VTK pipeline
     // when the object belongs to a secondary view but the primary redraws.
-    if (m_showNameIn3D && !MACRO_EntityPicking(context) &&
-        isDisplayedIn(context.display)) {
+    bool shouldDrawName = m_showNameIn3D && !MACRO_EntityPicking(context) &&
+                          isDisplayedIn(context.display) &&
+                          (m_visible || m_selected);
+    if (shouldDrawName) {
         if (MACRO_Draw3D(context)) {
             ccBBox bBox = getBB_recursive(true);
             if (bBox.isValid()) {
@@ -1542,7 +1553,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         } else if (MACRO_Draw2D(context) && MACRO_Foreground(context)) {
             drawNameIn3D();
         }
-    } else if (!m_showNameIn3D && isDisplayedIn(context.display)) {
+    } else if (!shouldDrawName && isDisplayedIn(context.display)) {
         if (!isKindOf(CV_TYPES::LABEL_2D)) {
             ecvDisplayTools::RemoveWidgets(
                     WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
@@ -1609,7 +1620,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 }
 
 void ccHObject::updateNameIn3DRecursive() {
-    if (nameShownIn3D()) {
+    if (nameShownIn3D() && isEnabled() && (isVisible() || isSelected())) {
         ccBBox bBox = getBB_recursive(
                 true);  // DGM: take the OpenGL features into account (as some
                         // entities are purely 'GL'!)
@@ -1836,9 +1847,8 @@ bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
     if (display == nullptr) return true;
 
     if (m_currentDisplay == nullptr) {
-        // Unbound entity: only visible in the primary singleton view.
-        // This prevents objects from "leaking" into every secondary window.
-        return (display == ecvDisplayTools::TheInstance());
+        // Unbound entity: visible in all views (primary and secondary).
+        return true;
     }
     return (m_currentDisplay == display);
 }

@@ -445,30 +445,28 @@ public:
     /// Restore the primary VtkVis + widget after switchActiveView.
     void restorePrimaryView();
 
-    /// RAII helper: temporarily swaps m_visualizer3D + m_vtkWidget so that
-    /// the existing draw code renders to a different VtkVis/widget pair.
+    /// Replace the primary pipeline entirely (used when the original primary
+    /// view is being destroyed and a surviving view takes over).
+    /// Unlike switchActiveView, this does NOT save the old pipeline.
+    void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
+
+    /// RAII helper: temporarily swaps m_visualizer3D + m_vtkWidget + m_visualizer2D
+    /// so that the existing draw code renders to a different VtkVis/widget pair.
     class ScopedVisSwap {
     public:
         ScopedVisSwap(VtkDisplayTools* dt,
                       VtkVisPtr vis,
-                      QVTKWidgetCustom* widget)
-            : m_dt(dt),
-              m_savedVis(dt->m_visualizer3D),
-              m_savedWidget(dt->m_vtkWidget) {
-            dt->m_visualizer3D = vis;
-            dt->m_vtkWidget = widget;
-        }
-        ~ScopedVisSwap() {
-            m_dt->m_visualizer3D = m_savedVis;
-            m_dt->m_vtkWidget = m_savedWidget;
-        }
+                      QVTKWidgetCustom* widget);
+        ~ScopedVisSwap();
         ScopedVisSwap(const ScopedVisSwap&) = delete;
         ScopedVisSwap& operator=(const ScopedVisSwap&) = delete;
 
     private:
         VtkDisplayTools* m_dt;
         VtkVisPtr m_savedVis;
+        ImageVisPtr m_saved2D;
         QVTKWidgetCustom* m_savedWidget;
+        QRect m_savedGLViewport;
     };
 
     virtual QString pick2DLabel(int x, int y) override;
@@ -635,6 +633,19 @@ protected:
     HotZone* m_renderGuardSavedHz = nullptr;
     bool m_renderGuardSavedClickable = false;
     bool m_renderGuardActive = false;
+
+    /// >0 when a ScopedVisSwap is active (drawing into a secondary view).
+    /// Text rendering should use m_visualizer3D instead of m_visualizer2D
+    /// when this is non-zero so that 2D overlays (show name, labels) appear
+    /// in the correct view.
+    int m_scopedVisSwapDepth = 0;
+
+    /// Pending text background stored by WIDGET_RECTANGLE_2D during
+    /// ScopedVisSwap, applied to the next text actor via vtkTextProperty.
+    struct PendingTextBg {
+        bool valid = false;
+        double r = 0, g = 0, b = 0, a = 0;
+    } m_pendingTextBg;
 
     /** @param widget Main window for VTK widget
      *  @param stereoMode Whether to enable stereo rendering

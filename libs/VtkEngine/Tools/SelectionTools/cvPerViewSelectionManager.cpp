@@ -18,6 +18,7 @@ QAction* cvPerViewSelectionManager::mirrorSimple(QWidget* parent,
                                                  QAction* global) {
     if (!global) return nullptr;
     auto* local = new QAction(global->icon(), global->toolTip(), parent);
+    local->setObjectName(global->objectName());
     local->setCheckable(global->isCheckable());
     local->setChecked(global->isChecked());
     local->setEnabled(global->isEnabled());
@@ -67,6 +68,26 @@ void cvPerViewSelectionManager::uncheckOtherViews(QWidget* viewWidget,
                 auto* w = static_cast<QWidget*>(stored.value<void*>());
                 if (w == viewWidget) continue;
                 if (act->toolTip() == globalName && act->isChecked()) {
+                    QSignalBlocker blk(act);
+                    act->setChecked(false);
+                }
+            }
+        }
+    }
+}
+
+void cvPerViewSelectionManager::uncheckAllMirrors() {
+    if (!m_mdiArea) return;
+    for (auto* sub : m_mdiArea->subWindowList()) {
+        QWidget* frame = sub->widget();
+        if (!frame) continue;
+        for (auto* tb :
+             frame->findChildren<QWidget*>("ViewSelectionToolBar")) {
+            for (auto* btn : tb->findChildren<QToolButton*>()) {
+                auto* act = btn->defaultAction();
+                if (!act || !act->isCheckable()) continue;
+                if (!act->property("viewWidget").isValid()) continue;
+                if (act->isChecked()) {
                     QSignalBlocker blk(act);
                     act->setChecked(false);
                 }
