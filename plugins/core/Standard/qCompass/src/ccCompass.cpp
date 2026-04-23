@@ -21,6 +21,7 @@
 #include <ecvBox.h>
 #include <ecvDisplayTools.h>
 #include <ecvExternalFactory.h>
+#include <ecvViewManager.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvProgressDialog.h>
 #include <qcombobox.h>
@@ -549,7 +550,27 @@ bool ccCompass::startMeasuring() {
     }
 
     // setup listener for mouse events
-    m_app->getActiveWindow()->installEventFilter(this);
+    m_filteredWindows.clear();
+    QWidget* activeWin = m_app->getActiveWindow();
+    if (activeWin) {
+        activeWin->installEventFilter(this);
+        m_filteredWindows.insert(activeWin);
+    }
+
+    // Follow multi-window view switches while measuring
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this, [this](ecvGenericGLDisplay*, ecvGenericGLDisplay*) {
+                if (m_app && m_app->getActiveWindow()) {
+                    QWidget* w = m_app->getActiveWindow();
+                    if (!m_filteredWindows.contains(w)) {
+                        w->installEventFilter(this);
+                        m_filteredWindows.insert(w);
+                    }
+                    // Re-link overlay dialogs to the new active view
+                    if (m_dlg) m_dlg->linkWith(w);
+                    if (m_mapDlg) m_mapDlg->linkWith(w);
+                }
+            }, Qt::UniqueConnection);
 
     // refresh window
     ecvDisplayTools::RedrawDisplay(true, false);
@@ -573,9 +594,12 @@ bool ccCompass::stopMeasuring(bool finalStop /*=false*/) {
         return true;
     }
     // remove click listener
-    if (m_app->getActiveWindow()) {
-        m_app->getActiveWindow()->removeEventFilter(this);
+    for (QWidget* w : m_filteredWindows) {
+        if (w) w->removeEventFilter(this);
     }
+    m_filteredWindows.clear();
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+               this, nullptr);
 
     // reset gui
     cleanupBeforeToolChange(!finalStop);

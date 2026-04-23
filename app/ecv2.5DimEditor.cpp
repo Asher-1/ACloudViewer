@@ -61,32 +61,16 @@ void cc2Point5DimEditor::createBoundingBoxEditor(const ccBBox& gridBBox,
 }
 
 void cc2Point5DimEditor::create2DView(QFrame* parentFrame) {
-    ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-    // black (text) & white (background) display by default
-    params.backgroundCol = ecvColor::white;
-    params.textDefaultCol = ecvColor::black;
-    params.drawBackgroundGradient = false;
-    params.decimateMeshOnMove = false;
-    params.displayCross = false;
-    params.colorScaleUseShader = false;
-    ecvDisplayTools::SetDisplayParameters(params);
-    ecvDisplayTools::SetPerspectiveState(false, true);
-    ecvDisplayTools::SetInteractionMode(
-            ecvDisplayTools::INTERACT_PAN |
-            ecvDisplayTools::INTERACT_ZOOM_CAMERA |
-            ecvDisplayTools::INTERACT_CLICKABLE_ITEMS);
-    ecvDisplayTools::SetPickingMode(ecvDisplayTools::NO_PICKING);
-    ecvDisplayTools::DisplayOverlayEntities(true);
+    // NOTE: The embedded 2D preview is not yet implemented for the VTK
+    // backend (the widget below is a placeholder). We no longer modify
+    // global ecvDisplayTools state here to avoid polluting active 3D
+    // views in multi-window setups.
 
-    // add window to the input frame (if any)
     if (parentFrame) {
         auto layout = new QHBoxLayout;
-
         layout->setContentsMargins(0, 0, 0, 0);
-        // TODO
         QWidget* widget = new QWidget();
         layout->addWidget(widget);
-
         parentFrame->setLayout(layout);
     }
 }

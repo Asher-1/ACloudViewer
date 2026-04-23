@@ -48,10 +48,12 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // QT
 #include <QApplication>
@@ -238,6 +240,11 @@ QVTKWidgetCustom::~QVTKWidgetCustom() {
         m_scaleBar = nullptr;
     }
     m_wheelZoomUpdateTimer = nullptr;
+}
+
+ecvGenericGLDisplay* QVTKWidgetCustom::resolveDisplay() const {
+    return ecvGenericGLDisplay::FromWidget(
+            const_cast<QVTKWidgetCustom*>(this));
 }
 
 vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
@@ -510,6 +517,17 @@ double QVTKWidgetCustom::zMax() const { return d_ptr->bounds[5]; }
 
 // event processing
 void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
+    // Activate the view on click (ParaView-style): the render view becomes
+    // current when the user presses the mouse here, not when the cursor
+    // merely passes over the widget (see mouseMoveEvent).
+    auto* display = ecvGenericGLDisplay::FromWidget(this);
+    if (display) {
+        auto& vm = ecvViewManager::instance();
+        if (vm.getActiveView() != display) {
+            vm.setActiveView(display);
+        }
+    }
+
     m_tools->m_mouseMoved = false;
     m_tools->m_mouseButtonPressed = true;
     m_tools->m_ignoreMouseReleaseEvent = false;
@@ -562,6 +580,15 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 }
 
 void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
+    // Same click-to-activate rule as mousePressEvent (some paths only double-click).
+    auto* display = ecvGenericGLDisplay::FromWidget(this);
+    if (display) {
+        auto& vm = ecvViewManager::instance();
+        if (vm.getActiveView() != display) {
+            vm.setActiveView(display);
+        }
+    }
+
     m_tools->m_deferredPickingTimer
             .stop();  // prevent the picking process from starting
     m_tools->m_ignoreMouseReleaseEvent = true;
@@ -580,88 +607,121 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
-    bool doRedraw = false;
-    Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
+    // Zoom / modifiers apply to THIS widget without calling setActiveView.
+    // When the wheel target view is not the UI-active view ("foreign wheel"),
+    // mirror that view into the singleton for the duration of this handler, then
+    // restore the previously active view's state into the singleton.
+    ecvGenericGLDisplay* wheelDisplay =
+            ecvGenericGLDisplay::FromWidget(this);
+    ecvGenericGLDisplay* prevActive =
+            ecvViewManager::instance().getActiveView();
+    const bool foreignWheel =
+            wheelDisplay != nullptr && wheelDisplay != prevActive;
 
-    emit m_tools->mouseWheelChanged(event);
+    {
+        ecvViewManager::ScopedRenderOverride wheelRenderScope(wheelDisplay);
 
-    // Qt5/Qt6 compatibility: get wheel delta
-    double delta = qtCompatWheelEventDelta(event);
-
-    if (keyboardModifiers & Qt::AltModifier) {
-        event->accept();
-
-        // same shortcut as Meshlab: change the point size
-        float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
-        ecvDisplayTools::SetPointSize(
-                m_tools->m_viewportParams.defaultPointSize + sizeModifier);
-        { ecvRedrawScope redrawScope; }
-        doRedraw = true;
-    } else if (keyboardModifiers & Qt::ControlModifier) {
-        event->accept();
-        if (m_tools->m_viewportParams.perspectiveView) {
-            // same shortcut as Meshlab: change the zNear value
-            static const int MAX_INCREMENT = 150;
-            int increment = ecvViewportParameters::ZNearCoefToIncrement(
-                    m_tools->m_viewportParams.zNearCoef, MAX_INCREMENT + 1);
-            int newIncrement =
-                    std::min(std::max(0, increment + (delta < 0 ? -1 : 1)),
-                             MAX_INCREMENT);  // the zNearCoef must be < 1!
-            if (newIncrement != increment) {
-                double newCoef = ecvViewportParameters::IncrementToZNearCoef(
-                        newIncrement, MAX_INCREMENT + 1);
-                ecvDisplayTools::SetZNearCoef(newCoef);
-                { ecvRedrawScope redrawScope; }
-                doRedraw = true;
-            }
+        if (foreignWheel) {
+            wheelDisplay->pushStateToSingleton();
         }
-    } else if (keyboardModifiers & Qt::ShiftModifier) {
-        event->accept();
-        if (m_tools->m_viewportParams.perspectiveView) {
-            // same shortcut as Meshlab: change the fov value
-            float newFOV = (m_tools->m_viewportParams.fov_deg +
-                            (delta < 0 ? -1.0f : 1.0f));
-            newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
-            if (newFOV != m_tools->m_viewportParams.fov_deg) {
-                ecvDisplayTools::SetFov(newFOV);
-                { ecvRedrawScope redrawScope; }
-                doRedraw = true;
+
+        bool doRedraw = false;
+        Qt::KeyboardModifiers keyboardModifiers =
+                QApplication::keyboardModifiers();
+
+        emit m_tools->mouseWheelChanged(event);
+
+        // Qt5/Qt6 compatibility: get wheel delta
+        double delta = qtCompatWheelEventDelta(event);
+
+        if (keyboardModifiers & Qt::AltModifier) {
+            event->accept();
+
+            // same shortcut as Meshlab: change the point size
+            float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
+            ecvDisplayTools::SetPointSize(
+                    m_tools->m_viewportParams.defaultPointSize + sizeModifier);
+            { ecvRedrawScope redrawScope; }
+            doRedraw = true;
+        } else if (keyboardModifiers & Qt::ControlModifier) {
+            event->accept();
+            if (m_tools->m_viewportParams.perspectiveView) {
+                // same shortcut as Meshlab: change the zNear value
+                static const int MAX_INCREMENT = 150;
+                int increment = ecvViewportParameters::ZNearCoefToIncrement(
+                        m_tools->m_viewportParams.zNearCoef, MAX_INCREMENT + 1);
+                int newIncrement =
+                        std::min(std::max(0, increment + (delta < 0 ? -1 : 1)),
+                                 MAX_INCREMENT);  // the zNearCoef must be < 1!
+                if (newIncrement != increment) {
+                    double newCoef = ecvViewportParameters::IncrementToZNearCoef(
+                            newIncrement, MAX_INCREMENT + 1);
+                    ecvDisplayTools::SetZNearCoef(newCoef);
+                    { ecvRedrawScope redrawScope; }
+                    doRedraw = true;
+                }
             }
+        } else if (keyboardModifiers & Qt::ShiftModifier) {
+            event->accept();
+            if (m_tools->m_viewportParams.perspectiveView) {
+                // same shortcut as Meshlab: change the fov value
+                float newFOV = (m_tools->m_viewportParams.fov_deg +
+                                (delta < 0 ? -1.0f : 1.0f));
+                newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
+                if (newFOV != m_tools->m_viewportParams.fov_deg) {
+                    ecvDisplayTools::SetFov(newFOV);
+                    { ecvRedrawScope redrawScope; }
+                    doRedraw = true;
+                }
+            }
+        } else if (m_tools->m_interactionFlags &
+                   ecvDisplayTools::INTERACT_ZOOM_CAMERA) {
+            QVTKOpenGLNativeWidget::wheelEvent(event);
+
+            // see QWheelEvent documentation ("distance that the wheel is rotated,
+            // in eighths of a degree")
+            float wheelDelta_deg = static_cast<float>(delta) / 8;
+            m_tools->onWheelEvent(wheelDelta_deg);
+            emit m_tools->mouseWheelRotated(wheelDelta_deg);
+            emit m_tools->cameraParamChanged();
+
+            doRedraw = true;
+            event->accept();
         }
-    } else if (m_tools->m_interactionFlags &
-               ecvDisplayTools::INTERACT_ZOOM_CAMERA) {
-        QVTKOpenGLNativeWidget::wheelEvent(event);
 
-        // see QWheelEvent documentation ("distance that the wheel is rotated,
-        // in eighths of a degree")
-        float wheelDelta_deg = static_cast<float>(delta) / 8;
-        m_tools->onWheelEvent(wheelDelta_deg);
-        emit m_tools->mouseWheelRotated(wheelDelta_deg);
-        emit m_tools->cameraParamChanged();
+        if (doRedraw) {
+            // update label and 3D name if visible
+            emit m_tools->labelmove2D(0, 0, 0, 0);
+            ecvDisplayTools::UpdateNamePoseRecursive();
 
-        doRedraw = true;
-        event->accept();
+            // OPTIMIZATION: Delay 2D label update during wheel zoom to improve
+            // performance. Restart the timer on each wheel event, so labels are
+            // updated 150ms after the last wheel event, reducing frequent updates
+            // during continuous scrolling.
+            if (m_wheelZoomUpdateTimer) {
+                m_wheelZoomUpdateTimer->stop();
+                m_wheelZoomUpdateTimer->start();
+            }
+
+            ecvDisplayTools::Update();
+        }
+
+        if (foreignWheel) {
+            wheelDisplay->pullStateFromSingleton();
+        }
     }
 
-    if (doRedraw) {
-        // update label and 3D name if visible
-        emit m_tools->labelmove2D(0, 0, 0, 0);
-        ecvDisplayTools::UpdateNamePoseRecursive();
-
-        // OPTIMIZATION: Delay 2D label update during wheel zoom to improve
-        // performance. Restart the timer on each wheel event, so labels are
-        // updated 150ms after the last wheel event, reducing frequent updates
-        // during continuous scrolling.
-        if (m_wheelZoomUpdateTimer) {
-            m_wheelZoomUpdateTimer->stop();
-            m_wheelZoomUpdateTimer->start();
-        }
-
-        ecvDisplayTools::Update();
+    if (foreignWheel && prevActive) {
+        prevActive->pushStateToSingleton();
     }
 }
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
+    // Do NOT call setActiveView here: ParaView-style UX activates a render view
+    // on click (see mousePressEvent), not when the cursor merely moves across a
+    // split window. Activating on every mouseMove caused the wrong view to
+    // become "current" during passive hover.
+
     if (!((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) &&
           (m_tools->m_interactionFlags &
            ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES))) {
@@ -725,8 +785,17 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
             if (inZone != m_localClickableVisible) {
                 m_localClickableVisible = inZone;
-                m_tools->m_clickableItemsVisible = inZone;
-                ecvDisplayTools::RedrawDisplay(true, false);
+
+                auto* display = ecvGenericGLDisplay::FromWidget(this);
+                bool isSecondary =
+                        display &&
+                        display != ecvDisplayTools::TheInstance();
+                if (isSecondary) {
+                    display->redraw(true, false);
+                } else {
+                    m_tools->m_clickableItemsVisible = inZone;
+                    ecvDisplayTools::RedrawDisplay(true, false);
+                }
             }
 
             event->accept();
@@ -1296,13 +1365,46 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 int x = m_tools->m_lastMousePos.x();
                 int y = m_tools->m_lastMousePos.y();
 
-                // first test if the user has clicked on a particular item on
-                // the screen
+                // Save global point size / line width before
+                // ProcessClickableItems potentially modifies them.
+                float savedGlobalPtSize =
+                        ecvDisplayTools::GetViewportParameters()
+                                .defaultPointSize;
+                float savedGlobalLnWidth =
+                        ecvDisplayTools::GetViewportParameters()
+                                .defaultLineWidth;
+
                 if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
                     m_tools->m_lastMousePos =
-                            event->pos();  // just in case (it should be already
-                                           // at this position)
+                            event->pos();
                     m_tools->m_deferredPickingTimer.start();
+                } else {
+                    // Sync per-widget local values from the
+                    // (just-updated) global.
+                    m_localDefaultPointSize =
+                            ecvDisplayTools::GetViewportParameters()
+                                    .defaultPointSize;
+                    m_localDefaultLineWidth =
+                            ecvDisplayTools::GetViewportParameters()
+                                    .defaultLineWidth;
+
+                    auto* display =
+                            ecvGenericGLDisplay::FromWidget(this);
+                    bool isSecondary =
+                            display &&
+                            display !=
+                                    ecvDisplayTools::TheInstance();
+                    if (isSecondary) {
+                        // Restore global so primary view's state
+                        // is not contaminated.
+                        ecvDisplayTools::SetViewportDefaultPointSize(
+                                savedGlobalPtSize);
+                        ecvDisplayTools::SetViewportDefaultLineWidth(
+                                savedGlobalLnWidth);
+                        display->redraw();
+                    } else {
+                        ecvRedrawScope scope;
+                    }
                 }
             } else if (m_tools->m_widgetClicked) {
                 CVLog::PrintVerbose(

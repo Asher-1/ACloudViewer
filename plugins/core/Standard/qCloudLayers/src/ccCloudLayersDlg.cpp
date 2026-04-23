@@ -85,6 +85,14 @@ ccCloudLayersDlg::~ccCloudLayersDlg() {
     }
 }
 
+bool ccCloudLayersDlg::linkWith(QWidget* win) {
+    if (!ccOverlayDialog::linkWith(win)) return false;
+    if (m_mouseCircle && win) {
+        m_mouseCircle->setOwner(win);
+    }
+    return true;
+}
+
 void ccCloudLayersDlg::reject() {
     if (m_helper && m_helper->hasChanges()) {
         if (QMessageBox::question(

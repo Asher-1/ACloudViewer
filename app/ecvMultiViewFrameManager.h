@@ -35,6 +35,9 @@ public:
 
     QMdiArea* mdiArea() const { return m_mdiArea; }
 
+    /// Adopt an externally-owned QMdiArea (e.g. the one from MainWindow.ui).
+    void setMdiArea(QMdiArea* area) { m_mdiArea = area; }
+
     // -- Frame creation --
 
     /// Build a view frame (title bar + content frame) for the given widget.

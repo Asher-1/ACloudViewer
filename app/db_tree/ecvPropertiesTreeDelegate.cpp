@@ -2695,7 +2695,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 m_currentObject->setVisible(item->checkState() == Qt::Checked);
             }
 
-            m_currentObject->setForceRedrawRecursive(true);
+            m_currentObject->setRedrawFlagRecursive(true);
 
             bool objectIsDisplayed = m_currentObject->isDisplayed();
             if (objectWasDisplayed != objectIsDisplayed) {
@@ -2708,7 +2708,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
         } break;
         case OBJECT_NORMALS_SHOWN: {
             m_currentObject->showNormals(item->checkState() == Qt::Checked);
-            m_currentObject->setForceRedrawRecursive(true);
+            m_currentObject->setRedrawFlagRecursive(true);
         }
             redraw = true;
             break;
@@ -2717,7 +2717,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showMaterials(item->checkState() == Qt::Checked);
-            mesh->setForceRedrawRecursive(true);
+            mesh->setRedrawFlagRecursive(true);
         }
             redraw = true;
             break;
@@ -2748,7 +2748,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToCoordinateSystem(m_currentObject);
             if (cs) {
                 cs->ShowAxisPlanes(item->checkState() == Qt::Checked);
-                cs->setForceRedrawRecursive(true);
+                cs->setRedrawFlagRecursive(true);
             }
         }
             redraw = true;
@@ -2779,7 +2779,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(plane);
             if (plane) {
                 plane->showNormalVector(item->checkState() == Qt::Checked);
-                m_currentObject->setForceRedrawRecursive(true);
+                m_currentObject->setRedrawFlagRecursive(true);
             }
         }
             redraw = true;
@@ -2862,7 +2862,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             break;
         case OBJECT_NAME_IN_3D: {
             m_currentObject->showNameIn3D(item->checkState() == Qt::Checked);
-            m_currentObject->setForceRedrawRecursive(true);
+            m_currentObject->setRedrawFlagRecursive(true);
         }
             redraw = true;
             break;
@@ -3207,7 +3207,7 @@ void ccPropertiesTreeDelegate::octreeDisplayModeChanged(int pos) {
         ccOctreeProxy* octreeProxy =
                 ccHObjectCaster::ToOctreeProxy(m_currentObject);
         if (octreeProxy) {
-            octreeProxy->setForceRedrawRecursive(true);
+            octreeProxy->setRedrawFlagRecursive(true);
         }
 
         updateDisplay();
@@ -3768,7 +3768,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showSF(false);
         if (m_currentObject->hasColors() &&
             !m_currentObject->isColorOverridden()) {
-            m_currentObject->setForceRedrawRecursive(true);
+            m_currentObject->setRedrawFlagRecursive(true);
         }
     } else if (source == s_sfColor) {
         appearanceChanged =
@@ -3782,7 +3782,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
     if (appearanceChanged) {
         updateDisplay();
     } else {
-        m_currentObject->setForceRedrawRecursive(true);
+        m_currentObject->setRedrawFlagRecursive(true);
         m_currentObject->redrawDisplay();
     }
 }

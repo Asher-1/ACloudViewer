@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QObject>
+#include <QSet>
 #include <QXmlStreamWriter>
 #include <cmath>
 #include <random>
@@ -183,6 +184,9 @@ protected:
     // picking or not?
     bool m_picking = false;
     bool m_active = false;
+
+    // track windows with installed event filters for proper cleanup
+    QSet<QWidget*> m_filteredWindows;
 
     // ccCompass toolbar gui
     ccCompassDlg* m_dlg = nullptr;

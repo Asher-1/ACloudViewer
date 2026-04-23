@@ -219,6 +219,7 @@ public:
     void lockViewSize(const QSize& size);
     void copyPrimaryViewConfig(ecvGLView* view);
     void rebindToolsToActiveView(ecvGenericGLDisplay* display);
+    void prepareViewClose(QWidget* viewFrame);
     QWidget* createViewFrame(QWidget* innerWidget, const QString& title);
     int getGLViewCount() const;
     void refreshAllViews(bool only2D = false);

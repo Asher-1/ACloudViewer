@@ -40,6 +40,9 @@ public:
     // removes the link with the owner (no cleanup)
     inline void ownerIsDead() { m_owner = nullptr; }
 
+    // Re-attach to a new owner widget (for multi-window view switches)
+    void setOwner(QWidget* newOwner);
+
     // sets whether scroll is allowed or not
     inline void setAllowScroll(bool state) { m_allowScroll = state; }
 

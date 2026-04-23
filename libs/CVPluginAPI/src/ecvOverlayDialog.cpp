@@ -30,13 +30,6 @@ ccOverlayDialog::ccOverlayDialog(
 ccOverlayDialog::~ccOverlayDialog() { onLinkedWindowDeletion(); }
 
 bool ccOverlayDialog::linkWith(QWidget* win) {
-    if (m_processing) {
-        CVLog::Warning(
-                "[ccOverlayDialog] Can't change associated window while "
-                "running/displayed!");
-        return false;
-    }
-
     // same dialog? nothing to do
     if (m_associatedWin == win) {
         return true;
@@ -45,9 +38,11 @@ bool ccOverlayDialog::linkWith(QWidget* win) {
     if (m_associatedWin) {
         // we automatically detach the former dialog
         {
-            QWidgetList topWidgets = QApplication::topLevelWidgets();
-            foreach (QWidget* widget, topWidgets) {
-                widget->removeEventFilter(this);
+            // Only remove event filter from the associated window and the main
+            // window — not every top-level widget, which would intercept keys
+            // across unrelated windows in a multi-view setup.
+            if (auto* mainWin = qobject_cast<QWidget*>(parent())) {
+                mainWin->removeEventFilter(this);
             }
             m_associatedWin->removeEventFilter(this);
             disconnect(m_associatedWin, &QObject::destroyed, this,
@@ -59,9 +54,10 @@ bool ccOverlayDialog::linkWith(QWidget* win) {
 
     m_associatedWin = win;
     if (m_associatedWin) {
-        QWidgetList topWidgets = QApplication::topLevelWidgets();
-        foreach (QWidget* widget, topWidgets) {
-            widget->installEventFilter(this);
+        // Scope event filter to the associated window and the main window only,
+        // preventing shortcut interception from leaking into other views.
+        if (auto* mainWin = qobject_cast<QWidget*>(parent())) {
+            mainWin->installEventFilter(this);
         }
         m_associatedWin->installEventFilter(this);
         connect(m_associatedWin, &QObject::destroyed, this,

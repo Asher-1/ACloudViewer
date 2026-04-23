@@ -271,9 +271,11 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
     if (ecvDisplayTools::TheInstance()) {
         connect(ecvDisplayTools::TheInstance(),
                 &ecvDisplayTools::rightButtonClicked, this,
-                &ccTracePolylineTool::closePolyLine);
+                &ccTracePolylineTool::closePolyLine,
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved,
-                this, &ccTracePolylineTool::updatePolyLineTip);
+                this, &ccTracePolylineTool::updatePolyLineTip,
+                Qt::UniqueConnection);
     }
 
     return true;

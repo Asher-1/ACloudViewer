@@ -191,15 +191,19 @@ bool ccGraphicalSegmentationTool::linkWith(QWidget* win) {
     if (ecvDisplayTools::TheInstance()) {
         connect(ecvDisplayTools::TheInstance(),
                 SIGNAL(leftButtonClicked(int, int)), this,
-                SLOT(addPointToPolyline(int, int)));
+                SLOT(addPointToPolyline(int, int)),
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(),
                 SIGNAL(rightButtonClicked(int, int)), this,
-                SLOT(closePolyLine(int, int)));
+                SLOT(closePolyLine(int, int)),
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(),
                 SIGNAL(mouseMoved(int, int, Qt::MouseButtons)), this,
-                SLOT(updatePolyLine(int, int, Qt::MouseButtons)));
+                SLOT(updatePolyLine(int, int, Qt::MouseButtons)),
+                Qt::UniqueConnection);
         connect(ecvDisplayTools::TheInstance(), SIGNAL(buttonReleased()), this,
-                SLOT(closeRectangle()));
+                SLOT(closeRectangle()),
+                Qt::UniqueConnection);
     }
 
     return true;

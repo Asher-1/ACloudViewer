@@ -13,6 +13,7 @@
 #include "ecvGenericGLDisplay.h"
 #include "ecvGuiParameters.h"
 #include "ecvHObject.h"
+#include "ecvViewManager.h"
 #include "ecvViewportParameters.h"
 
 // QT
@@ -203,123 +204,14 @@ public:
     void cancelScheduledRedraw();
 
 public:
-    /**
-     * @brief Picking mode enumeration
-     *
-     * Defines the type of picking operation for user selection.
-     */
-    enum PICKING_MODE {
-        NO_PICKING,                          ///< No picking enabled
-        ENTITY_PICKING,                      ///< Pick entire entities
-        ENTITY_RECT_PICKING,                 ///< Rectangular entity selection
-        FAST_PICKING,                        ///< Fast picking (optimized)
-        POINT_PICKING,                       ///< Pick individual points
-        TRIANGLE_PICKING,                    ///< Pick mesh triangles
-        POINT_OR_TRIANGLE_PICKING,           ///< Pick points or triangles
-        POINT_OR_TRIANGLE_OR_LABEL_PICKING,  ///< Pick points, triangles, or
-                                             ///< labels
-        LABEL_PICKING,                       ///< Pick labels only
-        DEFAULT_PICKING,                     ///< Default picking mode
-    };
+    // PICKING_MODE, INTERACTION_FLAG/FLAGS, MessagePosition, MessageType,
+    // PivotVisibility are now defined in the base class ecvGenericGLDisplay
+    // and inherited here.  Existing code using ecvDisplayTools::NO_PICKING,
+    // ecvDisplayTools::INTERACT_ROTATE, etc. still compiles.
 
-    /**
-     * @brief Interaction flags for mouse/keyboard handling
-     *
-     * Bitflags defining enabled interaction types and signal emissions.
-     * Can be combined to create custom interaction modes.
-     */
-    enum INTERACTION_FLAG {
-        // No interaction
-        INTERACT_NONE = 0,  ///< No interactions enabled
-
-        // Camera interactions
-        INTERACT_ROTATE = 1,       ///< Enable camera rotation
-        INTERACT_PAN = 2,          ///< Enable camera panning
-        INTERACT_CTRL_PAN = 4,     ///< Enable Ctrl+pan
-        INTERACT_ZOOM_CAMERA = 8,  ///< Enable camera zoom
-        INTERACT_2D_ITEMS = 16,  ///< Enable 2D item interaction (labels, etc.)
-        INTERACT_CLICKABLE_ITEMS = 32,  ///< Enable hot zone interaction
-
-        // Options / modifiers
-        INTERACT_TRANSFORM_ENTITIES = 64,  ///< Enable entity transformation
-
-        // Signals
-        INTERACT_SIG_RB_CLICKED = 128,  ///< Emit right button clicked signal
-        INTERACT_SIG_LB_CLICKED = 256,  ///< Emit left button clicked signal
-        INTERACT_SIG_MOUSE_MOVED =
-                512,  ///< Emit mouse moved signal (when button pressed)
-        INTERACT_SIG_BUTTON_RELEASED = 1024,  ///< Emit button released signal
-        INTERACT_SIG_MB_CLICKED = 2048,  ///< Emit middle button clicked signal
-        INTERACT_SEND_ALL_SIGNALS =      ///< Emit all signals
-        INTERACT_SIG_RB_CLICKED | INTERACT_SIG_LB_CLICKED |
-        INTERACT_SIG_MB_CLICKED | INTERACT_SIG_MOUSE_MOVED |
-        INTERACT_SIG_BUTTON_RELEASED,
-
-        // Default interaction modes
-        MODE_PAN_ONLY =  ///< Pan and zoom only
-        INTERACT_PAN | INTERACT_ZOOM_CAMERA | INTERACT_2D_ITEMS |
-        INTERACT_CLICKABLE_ITEMS,
-        MODE_TRANSFORM_CAMERA =  ///< Camera transformation mode
-        INTERACT_ROTATE | MODE_PAN_ONLY,
-        MODE_TRANSFORM_ENTITIES =  ///< Entity transformation mode
-        INTERACT_ROTATE | INTERACT_PAN | INTERACT_ZOOM_CAMERA |
-        INTERACT_TRANSFORM_ENTITIES | INTERACT_CLICKABLE_ITEMS,
-    };
-    Q_DECLARE_FLAGS(INTERACTION_FLAGS, INTERACTION_FLAG)
-
-    /**
-     * @brief Get pan-only interaction mode
-     * @return Pan-only interaction flags
-     */
     static INTERACTION_FLAGS PAN_ONLY();
-
-    /**
-     * @brief Get camera transformation mode
-     * @return Camera transformation interaction flags
-     */
     static INTERACTION_FLAGS TRANSFORM_CAMERA();
-
-    /**
-     * @brief Get entity transformation mode
-     * @return Entity transformation interaction flags
-     */
     static INTERACTION_FLAGS TRANSFORM_ENTITIES();
-
-    /**
-     * @brief Message display positions on screen
-     */
-    enum MessagePosition {
-        LOWER_LEFT_MESSAGE,     ///< Lower-left corner
-        UPPER_CENTER_MESSAGE,   ///< Upper-center
-        SCREEN_CENTER_MESSAGE,  ///< Screen center
-    };
-
-    /**
-     * @brief Message type enumeration
-     *
-     * Defines the type of on-screen message, allowing only one
-     * message of each type to be displayed simultaneously.
-     */
-    enum MessageType {
-        CUSTOM_MESSAGE,                 ///< Custom user message
-        SCREEN_SIZE_MESSAGE,            ///< Screen size info
-        PERSPECTIVE_STATE_MESSAGE,      ///< Perspective mode state
-        SUN_LIGHT_STATE_MESSAGE,        ///< Sun light state
-        CUSTOM_LIGHT_STATE_MESSAGE,     ///< Custom light state
-        MANUAL_TRANSFORMATION_MESSAGE,  ///< Manual transformation mode
-        MANUAL_SEGMENTATION_MESSAGE,    ///< Manual segmentation mode
-        ROTAION_LOCK_MESSAGE,           ///< Rotation lock state
-        FULL_SCREEN_MESSAGE,            ///< Full screen mode state
-    };
-
-    /**
-     * @brief Pivot symbol visibility modes
-     */
-    enum PivotVisibility {
-        PIVOT_HIDE,          ///< Always hide pivot
-        PIVOT_SHOW_ON_MOVE,  ///< Show pivot only during camera movement
-        PIVOT_ALWAYS_SHOW,   ///< Always show pivot
-    };
 
     /**
      * @struct MessageToDisplay
@@ -542,7 +434,8 @@ public:
                             float bkgAlpha = 0.0f,
                             const unsigned char* rgbColor = nullptr,
                             const QFont* font = nullptr,
-                            const QString& id = "");
+                            const QString& id = "",
+                            ecvGenericGLDisplay* display = nullptr);
 
     /**
      * @brief Display text with draw context
@@ -1036,6 +929,11 @@ public:  // Main interface accessors
      */
     inline static QWidget* GetCurrentScreen() {
         if (!HasInstance()) return nullptr;
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) {
+            QWidget* w = av->asWidget();
+            if (w) return w;
+        }
         return TheInstance()->m_currentScreen;
     }
 
@@ -1109,7 +1007,11 @@ public:  // Main interface accessors
      * @brief Get window's own database root
      * @return Window database root object
      */
-    inline static ccHObject* GetOwnDB() { return TheInstance()->m_winDBRoot; }
+    inline static ccHObject* GetOwnDB() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) return av->getOwnDB();
+        return TheInstance()->m_winDBRoot;
+    }
 
     /**
      * @brief Add entity to window's own database
@@ -1183,7 +1085,9 @@ public:  // Main interface accessors
      * @brief Get bounding box of all visible objects
      * @param box Output bounding box
      */
-    static void GetVisibleObjectsBB(ccBBox& box);
+    static void GetVisibleObjectsBB(
+            ccBBox& box,
+            const ecvGenericGLDisplay* display = nullptr);
 
     /**
      * @brief Rotate the base view matrix
@@ -1255,7 +1159,12 @@ public:  // Main interface accessors
             const ccGLMatrixd& projMat) { /* do nothing */ }
 
     static inline int GetDevicePixelRatio() {
-        // return TheInstance()->getDevicePixelRatio();
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) {
+            return av->getDevicePixelRatio();
+        }
+        QWidget* screen = GetCurrentScreen();
+        if (screen) return screen->devicePixelRatio();
         return GetMainWindow()->devicePixelRatio();
     }
 
@@ -1735,6 +1644,12 @@ public:  // Main interface accessors
                              int viewport = 0);
     static void SetLineWithRecursive(PointCoordinateType with);
 
+    /// Direct setters for viewport default point size / line width,
+    /// without recursive entity updates or user messages.
+    /// Used by per-view HotZone synchronization.
+    static void SetViewportDefaultPointSize(float size);
+    static void SetViewportDefaultLineWidth(float width);
+
     inline static void Toggle2Dviewer(bool state) {
         TheInstance()->toggle2Dviewer(state);
     }
@@ -1938,7 +1853,8 @@ public:  // visualization matrix transformation
             const QString& str,
             const QFont& font = QFont(),
             const ecvColor::Rgbub& color = ecvColor::defaultLabelBkgColor,
-            const QString& id = "");
+            const QString& id = "",
+            ecvGenericGLDisplay* display = nullptr);
     static void RenderText(
             double x,
             double y,
@@ -2285,6 +2201,15 @@ public:  // visualization matrix transformation
      **/
     static bool ProcessClickableItems(int x, int y);
 
+    //! Processes clickable items for a specific view (per-view point size / line width)
+    /** \param localPointSize  per-view point size to modify (instead of global)
+     *  \param localLineWidth  per-view line width to modify (instead of global)
+     *  \return true if an item has been clicked
+     **/
+    static bool ProcessClickableItems(int x, int y,
+                                      float* localPointSize,
+                                      float* localLineWidth);
+
     //! Sets current camera 'zNear' coefficient
     /** zNear coef. is only used in perspective mode.
      **/
@@ -2614,12 +2539,17 @@ public:  // event representation
     static int Height() { return size().height(); }
     static QSize size() { return GetScreenSize(); }
 
-    //! Returns the OpenGL context width
-    static int GlWidth() { return TheInstance()->m_glViewport.width(); }
-    //! Returns the OpenGL context height
-    static int GlHeight() { return TheInstance()->m_glViewport.height(); }
-    //! Returns the OpenGL context size
-    static QSize GlSize() { return TheInstance()->m_glViewport.size(); }
+    static int GlWidth() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) return av->glWidth();
+        return TheInstance()->m_glViewport.width();
+    }
+    static int GlHeight() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) return av->glHeight();
+        return TheInstance()->m_glViewport.height();
+    }
+    static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
     static void ClearBubbleView();
 
@@ -2785,4 +2715,6 @@ signals:
     void cameraParamChanged();
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(ecvDisplayTools::INTERACTION_FLAGS);
+// Q_DECLARE_OPERATORS_FOR_FLAGS for INTERACTION_FLAGS is now in
+// ecvGenericGLDisplay.h (base class).  The type is the same through
+// inheritance so no duplicate declaration is needed.

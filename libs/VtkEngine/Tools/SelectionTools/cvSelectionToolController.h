@@ -37,6 +37,7 @@
 class QAction;
 class QMenu;
 class QToolBar;
+class cvPerViewSelectionManager;
 class cvRenderViewSelectionReaction;
 class cvSelectionData;
 class cvSelectionHighlighter;
@@ -261,6 +262,12 @@ public:
 
     const SelectionActions& getSelectionActions() const { return m_actions; }
 
+    /// Set the per-view selection manager so that ESC / disableAllTools can
+    /// also uncheck the per-view mirror actions.
+    void setPerViewSelectionManager(cvPerViewSelectionManager* mgr) {
+        m_perViewSelMgr = mgr;
+    }
+
 signals:
     /**
      * @brief Emitted when a selection operation is completed
@@ -339,4 +346,7 @@ private:
     QPointer<QAction> m_growAction;
     QPointer<QAction> m_shrinkAction;
     QPointer<QAction> m_clearAction;
+
+    // Per-view selection manager for mirror uncheck
+    cvPerViewSelectionManager* m_perViewSelMgr = nullptr;
 };

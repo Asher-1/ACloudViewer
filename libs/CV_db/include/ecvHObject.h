@@ -473,7 +473,9 @@ public:  // bounding-box
     method will return the bounding-box of this entity (and its children) in the
     specified 3D view (i.e. potentially not visible) \return bounding-box
     **/
-    virtual ccBBox getDisplayBB_recursive(bool relative);
+    virtual ccBBox getDisplayBB_recursive(
+            bool relative,
+            const ecvGenericGLDisplay* display = nullptr);
 
     //! Returns best-fit bounding-box (if available)
     /** \warning Only suitable for leaf objects (i.e. without children)

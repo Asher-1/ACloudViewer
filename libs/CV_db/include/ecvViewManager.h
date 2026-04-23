@@ -33,6 +33,29 @@ public:
     ecvGenericGLDisplay* getActiveView() const;
     void setActiveView(ecvGenericGLDisplay* view);
 
+    /// RAII helper that temporarily overrides the "effective" active view
+    /// during rendering.  This ensures delegation methods
+    /// (GetGLCameraParameters, etc.) return the rendering view's data
+    /// rather than the UI-active view's data.
+    class ScopedRenderOverride {
+    public:
+        explicit ScopedRenderOverride(ecvGenericGLDisplay* view)
+            : m_saved(ecvViewManager::instance().m_renderingView) {
+            ecvViewManager::instance().m_renderingView = view;
+        }
+        ~ScopedRenderOverride() {
+            ecvViewManager::instance().m_renderingView = m_saved;
+        }
+        ScopedRenderOverride(const ScopedRenderOverride&) = delete;
+        ScopedRenderOverride& operator=(const ScopedRenderOverride&) = delete;
+
+    private:
+        ecvGenericGLDisplay* m_saved;
+    };
+
+    /// Returns the rendering override if set, otherwise the UI-active view.
+    ecvGenericGLDisplay* getEffectiveView() const;
+
     // -- View registration --
 
     void registerView(ecvGenericGLDisplay* view);
@@ -73,5 +96,6 @@ private:
     ecvViewManager();
 
     ecvGenericGLDisplay* m_activeView = nullptr;
+    ecvGenericGLDisplay* m_renderingView = nullptr;
     QList<ecvGenericGLDisplay*> m_views;
 };

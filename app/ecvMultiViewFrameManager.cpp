@@ -8,7 +8,7 @@
 #include "ecvMultiViewFrameManager.h"
 
 #include <CVLog.h>
-#include <Visualization/ecvGLView.h>
+#include <ecvGLView.h>
 
 #include <QApplication>
 #include <QDrag>
@@ -21,11 +21,12 @@
 
 ecvMultiViewFrameManager::ecvMultiViewFrameManager(QWidget* parent)
     : QObject(parent), m_parentWidget(parent) {
-    m_mdiArea = new QMdiArea(parent);
-    m_mdiArea->setViewMode(QMdiArea::TabbedView);
-    m_mdiArea->setTabsClosable(true);
-    m_mdiArea->setTabsMovable(true);
-    m_mdiArea->setDocumentMode(false);
+    // Do NOT create a QMdiArea here — MainWindow already owns one via its .ui
+    // file.  Creating a second QMdiArea(parent) makes Qt parent it to the main
+    // window widget tree, producing a visible orphan (gray rectangle in the
+    // toolbar area).  The manager will adopt MainWindow's existing QMdiArea
+    // when setMdiArea() is called.
+    m_mdiArea = nullptr;
 }
 
 ecvMultiViewFrameManager::~ecvMultiViewFrameManager() = default;
