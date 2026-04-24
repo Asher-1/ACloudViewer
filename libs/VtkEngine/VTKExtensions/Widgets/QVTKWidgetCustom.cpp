@@ -48,6 +48,7 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
+#include "../../Visualization/ecvGLView.h"
 #include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
@@ -82,6 +83,167 @@
 #define VTK_CREATE(TYPE, NAME) \
     vtkSmartPointer<TYPE> NAME = vtkSmartPointer<TYPE>::New()
 #endif
+
+ecvViewContext* QVTKWidgetCustom::ownerCtx() {
+    return m_ownerView ? &m_ownerView->context() : nullptr;
+}
+
+ecvGenericGLDisplay::INTERACTION_FLAGS& QVTKWidgetCustom::curInteractionFlags() {
+    if (m_ownerView) return m_ownerView->context().interactionFlags;
+    return m_tools->m_interactionFlags;
+}
+
+ecvViewportParameters& QVTKWidgetCustom::curViewportParams() {
+    if (m_ownerView) return m_ownerView->context().viewportParams;
+    return m_tools->m_viewportParams;
+}
+
+const ecvViewportParameters& QVTKWidgetCustom::curViewportParams() const {
+    if (m_ownerView) return m_ownerView->context().viewportParams;
+    return m_tools->m_viewportParams;
+}
+
+QPoint& QVTKWidgetCustom::curLastMousePos() {
+    if (m_ownerView) return m_ownerView->context().lastMousePos;
+    return m_tools->m_lastMousePos;
+}
+
+QPoint& QVTKWidgetCustom::curLastMouseMovePos() {
+    if (m_ownerView) return m_ownerView->context().lastMouseMovePos;
+    return m_tools->m_lastMouseMovePos;
+}
+
+bool& QVTKWidgetCustom::curMouseMoved() {
+    if (m_ownerView) return m_ownerView->context().mouseMoved;
+    return m_tools->m_mouseMoved;
+}
+
+bool& QVTKWidgetCustom::curMouseButtonPressed() {
+    if (m_ownerView) return m_ownerView->context().mouseButtonPressed;
+    return m_tools->m_mouseButtonPressed;
+}
+
+bool& QVTKWidgetCustom::curIgnoreMouseReleaseEvent() {
+    if (m_ownerView) return m_ownerView->context().ignoreMouseReleaseEvent;
+    return m_tools->m_ignoreMouseReleaseEvent;
+}
+
+bool& QVTKWidgetCustom::curWidgetClicked() {
+    if (m_ownerView) return m_ownerView->context().widgetClicked;
+    return m_tools->m_widgetClicked;
+}
+
+ecvGenericGLDisplay::PICKING_MODE& QVTKWidgetCustom::curPickingMode() {
+    if (m_ownerView) return m_ownerView->context().pickingMode;
+    return m_tools->m_pickingMode;
+}
+
+bool& QVTKWidgetCustom::curPickingModeLocked() {
+    if (m_ownerView) return m_ownerView->context().pickingModeLocked;
+    return m_tools->m_pickingModeLocked;
+}
+
+int& QVTKWidgetCustom::curPickRadius() {
+    if (m_ownerView) return m_ownerView->context().pickRadius;
+    return m_tools->m_pickRadius;
+}
+
+bool& QVTKWidgetCustom::curAllowRectangularEntityPicking() {
+    if (m_ownerView) return m_ownerView->context().allowRectangularEntityPicking;
+    return m_tools->m_allowRectangularEntityPicking;
+}
+
+int& QVTKWidgetCustom::curLastPointIndex() {
+    if (m_ownerView) return m_ownerView->context().lastPointIndex;
+    return m_tools->m_last_point_index;
+}
+
+QString& QVTKWidgetCustom::curLastPickedId() {
+    if (m_ownerView) return m_ownerView->context().lastPickedId;
+    return m_tools->m_last_picked_id;
+}
+
+bool& QVTKWidgetCustom::curTouchInProgress() {
+    if (m_ownerView) return m_ownerView->context().touchInProgress;
+    return m_tools->m_touchInProgress;
+}
+
+qreal& QVTKWidgetCustom::curTouchBaseDist() {
+    if (m_ownerView) return m_ownerView->context().touchBaseDist;
+    return m_tools->m_touchBaseDist;
+}
+
+bool& QVTKWidgetCustom::curClickableItemsVisible() {
+    if (m_ownerView) return m_ownerView->context().clickableItemsVisible;
+    return m_tools->m_clickableItemsVisible;
+}
+
+bool& QVTKWidgetCustom::curBubbleViewModeEnabled() {
+    if (m_ownerView) return m_ownerView->context().bubbleViewModeEnabled;
+    return m_tools->m_bubbleViewModeEnabled;
+}
+
+float& QVTKWidgetCustom::curBubbleViewFov_deg() {
+    if (m_ownerView) return m_ownerView->context().bubbleViewFov_deg;
+    return m_tools->m_bubbleViewFov_deg;
+}
+
+bool& QVTKWidgetCustom::curCustomLightEnabled() {
+    if (m_ownerView) return m_ownerView->context().customLightEnabled;
+    return m_tools->m_customLightEnabled;
+}
+
+float* QVTKWidgetCustom::curCustomLightPos() {
+    if (m_ownerView) return m_ownerView->context().customLightPos;
+    return m_tools->m_customLightPos;
+}
+
+bool& QVTKWidgetCustom::curRotationAxisLocked() {
+    if (m_ownerView) return m_ownerView->context().rotationAxisLocked;
+    return m_tools->m_rotationAxisLocked;
+}
+
+CCVector3d& QVTKWidgetCustom::curLockedRotationAxis() {
+    if (m_ownerView) return m_ownerView->context().lockedRotationAxis;
+    return m_tools->m_lockedRotationAxis;
+}
+
+ecvGenericGLDisplay::PivotVisibility& QVTKWidgetCustom::curPivotVisibility() {
+    if (m_ownerView) return m_ownerView->context().pivotVisibility;
+    return m_tools->m_pivotVisibility;
+}
+
+bool& QVTKWidgetCustom::curPivotSymbolShown() {
+    if (m_ownerView) return m_ownerView->context().pivotSymbolShown;
+    return m_tools->m_pivotSymbolShown;
+}
+
+bool& QVTKWidgetCustom::curAutoPickPivotAtCenter() {
+    if (m_ownerView) return m_ownerView->context().autoPickPivotAtCenter;
+    return m_tools->m_autoPickPivotAtCenter;
+}
+
+bool& QVTKWidgetCustom::curShowCursorCoordinates() {
+    if (m_ownerView) return m_ownerView->context().showCursorCoordinates;
+    return m_tools->m_showCursorCoordinates;
+}
+
+qint64& QVTKWidgetCustom::curLastClickTime() {
+    if (m_ownerView) return m_ownerView->context().lastClickTime_ticks;
+    return m_tools->m_lastClickTime_ticks;
+}
+
+ccPolyline*& QVTKWidgetCustom::curRectPickingPoly() {
+    return m_tools->m_rectPickingPoly;
+}
+
+std::list<ccInteractor*>& QVTKWidgetCustom::curActiveItems() {
+    return m_tools->m_activeItems;
+}
+
+ecvDisplayTools::HotZone*& QVTKWidgetCustom::curHotZone() {
+    return m_tools->m_hotZone;
+}
 
 class VtkWidgetPrivate {
 public:
@@ -225,8 +387,8 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
 
 QVTKWidgetCustom::~QVTKWidgetCustom() {
     // Detach per-widget HotZone from the singleton if it points to ours
-    if (m_tools && m_tools->m_hotZone == m_localHotZone) {
-        m_tools->m_hotZone = nullptr;
+    if (m_tools && curHotZone() == m_localHotZone) {
+        curHotZone() = nullptr;
     }
     delete m_localHotZone;
     m_localHotZone = nullptr;
@@ -528,44 +690,44 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
         }
     }
 
-    m_tools->m_mouseMoved = false;
-    m_tools->m_mouseButtonPressed = true;
-    m_tools->m_ignoreMouseReleaseEvent = false;
-    m_tools->m_lastMousePos = event->pos();
+    curMouseMoved() = false;
+    curMouseButtonPressed() = true;
+    curIgnoreMouseReleaseEvent() = false;
+    curLastMousePos() = event->pos();
 
     if (!ecvDisplayTools::USE_VTK_PICK) {
-        m_tools->m_last_point_index = -1;
-        m_tools->m_last_picked_id = QString();
+        curLastPointIndex() = -1;
+        curLastPickedId() = QString();
     }
 
     if ((event->buttons() & Qt::RightButton)) {
         // right click = panning (2D translation)
-        if ((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_PAN) ||
+        if ((curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) ||
             ((QApplication::keyboardModifiers() & Qt::ControlModifier) &&
-             (m_tools->m_interactionFlags &
+             (curInteractionFlags() &
               ecvDisplayTools::INTERACT_CTRL_PAN))) {
             QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
         }
 
-        if (m_tools->m_interactionFlags &
+        if (curInteractionFlags() &
             ecvDisplayTools::INTERACT_SIG_RB_CLICKED) {
             emit m_tools->rightButtonClicked(event->x(), event->y());
         }
     } else if (event->buttons() & Qt::LeftButton) {
-        m_tools->m_lastClickTime_ticks = m_tools->m_timer.elapsed();  // in msec
+        curLastClickTime() = m_tools->m_timer.elapsed();  // in msec
 
         // left click = rotation
-        if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) {
+        if (curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) {
             QApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
         }
 
-        if (m_tools->m_interactionFlags &
+        if (curInteractionFlags() &
             ecvDisplayTools::INTERACT_SIG_LB_CLICKED) {
             emit m_tools->leftButtonClicked(event->x(), event->y());
         }
 
         // do this before drawing the pivot!
-        if (m_tools->m_autoPickPivotAtCenter) {
+        if (curAutoPickPivotAtCenter()) {
             CCVector3d P;
             // if (m_tools->GetClick3DPos(m_tools->m_glViewport.width() / 2,
             // m_tools->m_glViewport.height() / 2, P))
@@ -591,7 +753,7 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
 
     m_tools->m_deferredPickingTimer
             .stop();  // prevent the picking process from starting
-    m_tools->m_ignoreMouseReleaseEvent = true;
+    curIgnoreMouseReleaseEvent() = true;
 
     const int x = event->x();
     const int y = event->y();
@@ -607,112 +769,78 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
-    // Zoom / modifiers apply to THIS widget without calling setActiveView.
-    // When the wheel target view is not the UI-active view ("foreign wheel"),
-    // mirror that view into the singleton for the duration of this handler, then
-    // restore the previously active view's state into the singleton.
     ecvGenericGLDisplay* wheelDisplay =
             ecvGenericGLDisplay::FromWidget(this);
-    ecvGenericGLDisplay* prevActive =
-            ecvViewManager::instance().getActiveView();
-    const bool foreignWheel =
-            wheelDisplay != nullptr && wheelDisplay != prevActive;
+    ecvViewManager::ScopedRenderOverride wheelRenderScope(wheelDisplay);
 
-    {
-        ecvViewManager::ScopedRenderOverride wheelRenderScope(wheelDisplay);
+    bool doRedraw = false;
+    Qt::KeyboardModifiers keyboardModifiers =
+            QApplication::keyboardModifiers();
 
-        if (foreignWheel) {
-            wheelDisplay->pushStateToSingleton();
-        }
+    emit m_tools->mouseWheelChanged(event);
 
-        bool doRedraw = false;
-        Qt::KeyboardModifiers keyboardModifiers =
-                QApplication::keyboardModifiers();
+    double delta = qtCompatWheelEventDelta(event);
 
-        emit m_tools->mouseWheelChanged(event);
+    if (keyboardModifiers & Qt::AltModifier) {
+        event->accept();
 
-        // Qt5/Qt6 compatibility: get wheel delta
-        double delta = qtCompatWheelEventDelta(event);
-
-        if (keyboardModifiers & Qt::AltModifier) {
-            event->accept();
-
-            // same shortcut as Meshlab: change the point size
-            float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
-            ecvDisplayTools::SetPointSize(
-                    m_tools->m_viewportParams.defaultPointSize + sizeModifier);
-            { ecvRedrawScope redrawScope; }
-            doRedraw = true;
-        } else if (keyboardModifiers & Qt::ControlModifier) {
-            event->accept();
-            if (m_tools->m_viewportParams.perspectiveView) {
-                // same shortcut as Meshlab: change the zNear value
-                static const int MAX_INCREMENT = 150;
-                int increment = ecvViewportParameters::ZNearCoefToIncrement(
-                        m_tools->m_viewportParams.zNearCoef, MAX_INCREMENT + 1);
-                int newIncrement =
-                        std::min(std::max(0, increment + (delta < 0 ? -1 : 1)),
-                                 MAX_INCREMENT);  // the zNearCoef must be < 1!
-                if (newIncrement != increment) {
-                    double newCoef = ecvViewportParameters::IncrementToZNearCoef(
-                            newIncrement, MAX_INCREMENT + 1);
-                    ecvDisplayTools::SetZNearCoef(newCoef);
-                    { ecvRedrawScope redrawScope; }
-                    doRedraw = true;
-                }
+        float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
+        ecvDisplayTools::SetPointSize(
+                curViewportParams().defaultPointSize + sizeModifier);
+        { ecvRedrawScope redrawScope; }
+        doRedraw = true;
+    } else if (keyboardModifiers & Qt::ControlModifier) {
+        event->accept();
+        if (curViewportParams().perspectiveView) {
+            static const int MAX_INCREMENT = 150;
+            int increment = ecvViewportParameters::ZNearCoefToIncrement(
+                    curViewportParams().zNearCoef, MAX_INCREMENT + 1);
+            int newIncrement =
+                    std::min(std::max(0, increment + (delta < 0 ? -1 : 1)),
+                             MAX_INCREMENT);
+            if (newIncrement != increment) {
+                double newCoef = ecvViewportParameters::IncrementToZNearCoef(
+                        newIncrement, MAX_INCREMENT + 1);
+                ecvDisplayTools::SetZNearCoef(newCoef);
+                { ecvRedrawScope redrawScope; }
+                doRedraw = true;
             }
-        } else if (keyboardModifiers & Qt::ShiftModifier) {
-            event->accept();
-            if (m_tools->m_viewportParams.perspectiveView) {
-                // same shortcut as Meshlab: change the fov value
-                float newFOV = (m_tools->m_viewportParams.fov_deg +
-                                (delta < 0 ? -1.0f : 1.0f));
-                newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
-                if (newFOV != m_tools->m_viewportParams.fov_deg) {
-                    ecvDisplayTools::SetFov(newFOV);
-                    { ecvRedrawScope redrawScope; }
-                    doRedraw = true;
-                }
+        }
+    } else if (keyboardModifiers & Qt::ShiftModifier) {
+        event->accept();
+        if (curViewportParams().perspectiveView) {
+            float newFOV = (curViewportParams().fov_deg +
+                            (delta < 0 ? -1.0f : 1.0f));
+            newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
+            if (newFOV != curViewportParams().fov_deg) {
+                ecvDisplayTools::SetFov(newFOV);
+                { ecvRedrawScope redrawScope; }
+                doRedraw = true;
             }
-        } else if (m_tools->m_interactionFlags &
-                   ecvDisplayTools::INTERACT_ZOOM_CAMERA) {
-            QVTKOpenGLNativeWidget::wheelEvent(event);
-
-            // see QWheelEvent documentation ("distance that the wheel is rotated,
-            // in eighths of a degree")
-            float wheelDelta_deg = static_cast<float>(delta) / 8;
-            m_tools->onWheelEvent(wheelDelta_deg);
-            emit m_tools->mouseWheelRotated(wheelDelta_deg);
-            emit m_tools->cameraParamChanged();
-
-            doRedraw = true;
-            event->accept();
         }
+    } else if (curInteractionFlags() &
+               ecvDisplayTools::INTERACT_ZOOM_CAMERA) {
+        QVTKOpenGLNativeWidget::wheelEvent(event);
 
-        if (doRedraw) {
-            // update label and 3D name if visible
-            emit m_tools->labelmove2D(0, 0, 0, 0);
-            ecvDisplayTools::UpdateNamePoseRecursive();
+        float wheelDelta_deg = static_cast<float>(delta) / 8;
+        m_tools->onWheelEvent(wheelDelta_deg);
+        emit m_tools->mouseWheelRotated(wheelDelta_deg);
+        emit m_tools->cameraParamChanged();
 
-            // OPTIMIZATION: Delay 2D label update during wheel zoom to improve
-            // performance. Restart the timer on each wheel event, so labels are
-            // updated 150ms after the last wheel event, reducing frequent updates
-            // during continuous scrolling.
-            if (m_wheelZoomUpdateTimer) {
-                m_wheelZoomUpdateTimer->stop();
-                m_wheelZoomUpdateTimer->start();
-            }
-
-            ecvDisplayTools::Update();
-        }
-
-        if (foreignWheel) {
-            wheelDisplay->pullStateFromSingleton();
-        }
+        doRedraw = true;
+        event->accept();
     }
 
-    if (foreignWheel && prevActive) {
-        prevActive->pushStateToSingleton();
+    if (doRedraw) {
+        emit m_tools->labelmove2D(0, 0, 0, 0);
+        ecvDisplayTools::UpdateNamePoseRecursive();
+
+        if (m_wheelZoomUpdateTimer) {
+            m_wheelZoomUpdateTimer->stop();
+            m_wheelZoomUpdateTimer->start();
+        }
+
+        ecvDisplayTools::Update();
     }
 }
 
@@ -722,19 +850,19 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     // split window. Activating on every mouseMove caused the wrong view to
     // become "current" during passive hover.
 
-    if (!((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) &&
-          (m_tools->m_interactionFlags &
+    if (!((curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) &&
+          (curInteractionFlags() &
            ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES))) {
-        if ((m_tools->m_interactionFlags &
+        if ((curInteractionFlags() &
              ecvDisplayTools::TRANSFORM_CAMERA())) {
             // lock axis
-            if ((m_tools->m_interactionFlags &
+            if ((curInteractionFlags() &
                  ecvDisplayTools::INTERACT_ROTATE) &&
-                (m_tools->m_interactionFlags &
+                (curInteractionFlags() &
                  ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) !=
                         ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES &&
                 (event->buttons() & Qt::LeftButton) &&
-                m_tools->m_rotationAxisLocked) {
+                curRotationAxisLocked()) {
                 event->accept();
             } else {  // normal
                 QVTKOpenGLNativeWidget::mouseMoveEvent(event);
@@ -746,11 +874,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     const int x = event->x();
     const int y = event->y();
     if (ecvDisplayTools::GetCurrentScreen() == this) {
-        m_tools->m_lastMouseMovePos = event->pos();
+        curLastMouseMovePos() = event->pos();
         emit m_tools->mousePosChanged(event->pos());
     }
 
-    if ((m_tools->m_interactionFlags &
+    if ((curInteractionFlags() &
          ecvDisplayTools::INTERACT_SIG_MOUSE_MOVED) &&
         (ecvDisplayTools::GetCurrentScreen() == this)) {
         emit m_tools->mouseMoved(x, y, event->buttons());
@@ -759,22 +887,22 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
     // no button pressed
     if (event->buttons() == Qt::NoButton) {
-        if (m_tools->m_interactionFlags &
+        if (curInteractionFlags() &
             ecvDisplayTools::INTERACT_CLICKABLE_ITEMS) {
             // Per-widget HotZone for multi-window support
             if (!m_localHotZone) {
                 m_localHotZone = new ecvDisplayTools::HotZone(this);
             }
             // Replace the singleton-owned fallback HotZone with ours
-            if (m_tools->m_hotZoneOwnedBySingleton && m_tools->m_hotZone &&
-                m_tools->m_hotZone != m_localHotZone) {
-                delete m_tools->m_hotZone;
+            if (m_tools->m_hotZoneOwnedBySingleton && curHotZone() &&
+                curHotZone() != m_localHotZone) {
+                delete curHotZone();
                 m_tools->m_hotZoneOwnedBySingleton = false;
             }
-            m_tools->m_hotZone = m_localHotZone;
+            curHotZone() = m_localHotZone;
 
             QRect areaRect = m_localHotZone->rect(
-                    true, m_tools->m_bubbleViewModeEnabled,
+                    true, curBubbleViewModeEnabled(),
                     ecvDisplayTools::ExclusiveFullScreen());
 
             const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
@@ -793,7 +921,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 if (isSecondary) {
                     display->redraw(true, false);
                 } else {
-                    m_tools->m_clickableItemsVisible = inZone;
+                    curClickableItemsVisible() = inZone;
                     ecvDisplayTools::RedrawDisplay(true, false);
                 }
             }
@@ -803,7 +931,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
         // display the 3D coordinates of the pixel below the mouse cursor (if
         // possible)
-        if (m_tools->m_showCursorCoordinates) {
+        if (curShowCursorCoordinates()) {
             CCVector3d P;
             QString message = QString("2D (%1 ; %2)").arg(x).arg(y);
             if (ecvDisplayTools::GetClick3DPos(x, y, P)) {
@@ -822,8 +950,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         return;
     }
 
-    int dx = x - m_tools->m_lastMousePos.x();
-    int dy = y - m_tools->m_lastMousePos.y();
+    int dx = x - curLastMousePos().x();
+    int dy = y - curLastMousePos().y();
 
     if ((event->buttons() & Qt::RightButton)) {
         // OPTIMIZATION: Skip 2D label updates during zoom to improve
@@ -838,41 +966,41 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
     } else if ((event->buttons() & Qt::MiddleButton)) {
         // right button = panning / translating
-        if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_PAN) {
+        if (curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) {
             // displacement vector (in "3D")
             double pixSize = ecvDisplayTools::ComputeActualPixelSize();
             CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
-            if (!m_tools->m_viewportParams.perspectiveView) {
-                u.y *= m_tools->m_viewportParams.cameraAspectRatio;
+            if (!curViewportParams().perspectiveView) {
+                u.y *= curViewportParams().cameraAspectRatio;
             }
 
             const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
             u *= retinaScale;
 
             bool entityMovingMode =
-                    (m_tools->m_interactionFlags &
+                    (curInteractionFlags() &
                      ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) ||
                     ((QApplication::keyboardModifiers() &
                       Qt::ControlModifier) &&
-                     m_tools->m_customLightEnabled);
+                     curCustomLightEnabled());
             if (entityMovingMode) {
                 // apply inverse view matrix
-                m_tools->m_viewportParams.viewMat.transposed().applyRotation(u);
+                curViewportParams().viewMat.transposed().applyRotation(u);
 
-                if (m_tools->m_interactionFlags &
+                if (curInteractionFlags() &
                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
                     emit m_tools->translation(u);
-                } else if (m_tools->m_customLightEnabled) {
+                } else if (curCustomLightEnabled()) {
                     // update custom light position
-                    m_tools->m_customLightPos[0] += static_cast<float>(u.x);
-                    m_tools->m_customLightPos[1] += static_cast<float>(u.y);
-                    m_tools->m_customLightPos[2] += static_cast<float>(u.z);
+                    curCustomLightPos()[0] += static_cast<float>(u.x);
+                    curCustomLightPos()[1] += static_cast<float>(u.y);
+                    curCustomLightPos()[2] += static_cast<float>(u.z);
                     ecvDisplayTools::InvalidateViewport();
                     ecvDisplayTools::Deprecate3DLayer();
                 }
             } else  // camera moving mode
             {
-                if (m_tools->m_viewportParams.objectCenteredView) {
+                if (curViewportParams().objectCenteredView) {
                     // inverse displacement in object-based mode
                     u = -u;
                 }
@@ -883,11 +1011,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
         }  // if (m_interactionFlags & INTERACT_PAN)
 
-        if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
             // on the first time, let's check if the mouse is on a (selected) 2D
             // item
-            if (!m_tools->m_mouseMoved) {
-                if (m_tools->m_pickingMode != ecvDisplayTools::NO_PICKING
+            if (!curMouseMoved()) {
+                if (curPickingMode() != ecvDisplayTools::NO_PICKING
                     // DGM: in fact we still need to move labels in those modes
                     // below (see the 'Point Picking' tool of CLOUDVIEWER  for
                     // instance)
@@ -898,8 +1026,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         QApplication::keyboardModifiers() ==
                                 Qt::ControlModifier)) {
                     ecvDisplayTools::UpdateActiveItemsList(
-                            m_tools->m_lastMousePos.x(),
-                            m_tools->m_lastMousePos.y(), true);
+                            curLastMousePos().x(),
+                            curLastMousePos().y(), true);
                 }
             }
         }
@@ -914,7 +1042,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             emit m_tools->labelmove2D(x, y, dx, dy);
             ecvDisplayTools::UpdateNamePoseRecursive();
             // specific case: move active item(s)
-            if (!m_tools->m_activeItems.empty()) {
+            if (!curActiveItems().empty()) {
                 updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
             }
         }
@@ -922,11 +1050,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     {
         m_tools->scheduleFullRedraw(1000);
 
-        if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
             // on the first time, let's check if the mouse is on a (selected) 2D
             // item
-            if (!m_tools->m_mouseMoved) {
-                if (m_tools->m_pickingMode != ecvDisplayTools::NO_PICKING
+            if (!curMouseMoved()) {
+                if (curPickingMode() != ecvDisplayTools::NO_PICKING
                     // DGM: in fact we still need to move labels in those modes
                     // below (see the 'Point Picking' tool of CLOUDVIEWER  for
                     // instance)
@@ -937,13 +1065,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         QApplication::keyboardModifiers() ==
                                 Qt::ControlModifier)) {
                     ecvDisplayTools::UpdateActiveItemsList(
-                            m_tools->m_lastMousePos.x(),
-                            m_tools->m_lastMousePos.y(), true);
+                            curLastMousePos().x(),
+                            curLastMousePos().y(), true);
                 }
             }
         } else {
-            // assert(m_tools->m_activeItems.empty());
-            m_tools->m_activeItems.clear();
+            // assert(curActiveItems().empty());
+            curActiveItems().clear();
         }
 
         // update label and 3D name if visible
@@ -953,7 +1081,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
 
         // specific case: move active item(s)
-        if (!m_tools->m_activeItems.empty()) {
+        if (!curActiveItems().empty()) {
             if (abs(dx) > 0 || abs(dy) > 0) {
                 updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
             }
@@ -968,39 +1096,39 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 emit m_tools->labelmove2D(x, y, dx, dy);
                 ecvDisplayTools::UpdateNamePoseRecursive();
                 // specific case: move active item(s)
-                if (!m_tools->m_activeItems.empty()) {
+                if (!curActiveItems().empty()) {
                     updateActivateditems(x, y, dx, dy,
                                          !ecvDisplayTools::USE_2D);
                 }
-                m_tools->m_activeItems.clear();
+                curActiveItems().clear();
             }
 
             // specific case: rectangular polyline drawing (for rectangular area
             // selection mode)
-            if (m_tools->m_allowRectangularEntityPicking &&
-                (m_tools->m_pickingMode == ecvDisplayTools::ENTITY_PICKING ||
-                 m_tools->m_pickingMode ==
+            if (curAllowRectangularEntityPicking() &&
+                (curPickingMode() == ecvDisplayTools::ENTITY_PICKING ||
+                 curPickingMode() ==
                          ecvDisplayTools::ENTITY_RECT_PICKING) &&
-                (m_tools->m_rectPickingPoly ||
+                (curRectPickingPoly() ||
                  (QApplication::keyboardModifiers() & Qt::AltModifier))) {
                 // first time: initialization of the rectangle
-                if (!m_tools->m_rectPickingPoly) {
+                if (!curRectPickingPoly()) {
                     ccPointCloud* vertices = new ccPointCloud("rect.vertices");
-                    m_tools->m_rectPickingPoly = new ccPolyline(vertices);
-                    m_tools->m_rectPickingPoly->addChild(vertices);
+                    curRectPickingPoly() = new ccPolyline(vertices);
+                    curRectPickingPoly()->addChild(vertices);
                     if (vertices->reserve(4) &&
-                        m_tools->m_rectPickingPoly->addPointIndex(0, 4)) {
-                        m_tools->m_rectPickingPoly->setForeground(true);
-                        m_tools->m_rectPickingPoly->setColor(ecvColor::green);
-                        m_tools->m_rectPickingPoly->showColors(true);
-                        m_tools->m_rectPickingPoly->set2DMode(true);
-                        m_tools->m_rectPickingPoly->setVisible(true);
+                        curRectPickingPoly()->addPointIndex(0, 4)) {
+                        curRectPickingPoly()->setForeground(true);
+                        curRectPickingPoly()->setColor(ecvColor::green);
+                        curRectPickingPoly()->showColors(true);
+                        curRectPickingPoly()->set2DMode(true);
+                        curRectPickingPoly()->setVisible(true);
                         // QPointF posA =
-                        // ecvDisplayTools::ToCenteredGLCoordinates(m_tools->m_lastMousePos.x(),
-                        // m_tools->m_lastMousePos.y());
+                        // ecvDisplayTools::ToCenteredGLCoordinates(curLastMousePos().x(),
+                        // curLastMousePos().y());
                         CCVector3d pos3D = ecvDisplayTools::ToVtkCoordinates(
-                                m_tools->m_lastMousePos.x(),
-                                m_tools->m_lastMousePos.y());
+                                curLastMousePos().x(),
+                                curLastMousePos().y());
 
                         CCVector3 A(static_cast<PointCoordinateType>(pos3D.x),
                                     static_cast<PointCoordinateType>(pos3D.y),
@@ -1011,23 +1139,23 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         vertices->addPoint(A);
                         vertices->addPoint(A);
                         vertices->addPoint(A);
-                        m_tools->m_rectPickingPoly->setClosed(true);
-                        ecvDisplayTools::AddToOwnDB(m_tools->m_rectPickingPoly,
+                        curRectPickingPoly()->setClosed(true);
+                        ecvDisplayTools::AddToOwnDB(curRectPickingPoly(),
                                                     false);
                     } else {
                         CVLog::Warning(
                                 "[ QVTKWidgetCustom::mouseMoveEvent] Failed to "
                                 "create seleciton polyline! Not enough "
                                 "memory!");
-                        delete m_tools->m_rectPickingPoly;
-                        m_tools->m_rectPickingPoly = nullptr;
+                        delete curRectPickingPoly();
+                        curRectPickingPoly() = nullptr;
                         vertices = nullptr;
                     }
                 }
 
-                if (m_tools->m_rectPickingPoly) {
+                if (curRectPickingPoly()) {
                     cloudViewer::GenericIndexedCloudPersist* vertices =
-                            m_tools->m_rectPickingPoly->getAssociatedCloud();
+                            curRectPickingPoly()->getAssociatedCloud();
                     assert(vertices);
                     CCVector3* B = const_cast<CCVector3*>(
                             vertices->getPointPersistentPtr(1));
@@ -1045,7 +1173,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 }
             }
             // standard rotation around the current pivot
-            else if (m_tools->m_interactionFlags &
+            else if (curInteractionFlags() &
                      ecvDisplayTools::INTERACT_ROTATE) {
                 // choose the right rotation mode
                 enum RotationMode {
@@ -1054,12 +1182,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     LockedAxisMode
                 };
                 RotationMode rotationMode = StandardMode;
-                if ((m_tools->m_interactionFlags &
+                if ((curInteractionFlags() &
                      ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) !=
                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
-                    if (m_tools->m_bubbleViewModeEnabled)
+                    if (curBubbleViewModeEnabled())
                         rotationMode = BubbleViewMode;
-                    else if (m_tools->m_rotationAxisLocked)
+                    else if (curRotationAxisLocked())
                         rotationMode = LockedAxisMode;
                 }
 
@@ -1067,16 +1195,16 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 switch (rotationMode) {
                     case BubbleViewMode: {
                         QPoint posDelta =
-                                m_tools->m_lastMousePos - event->pos();
+                                curLastMousePos() - event->pos();
 
                         if (std::abs(posDelta.x()) != 0) {
                             double delta_deg =
                                     (posDelta.x() *
                                      static_cast<double>(
-                                             m_tools->m_bubbleViewFov_deg)) /
+                                             curBubbleViewFov_deg())) /
                                     height();
                             // rotation about the sensor Z axis
-                            CCVector3d axis = m_tools->m_viewportParams.viewMat
+                            CCVector3d axis = curViewportParams().viewMat
                                                       .getColumnAsVec3D(2);
                             rotMat.initFromParameters(
                                     cloudViewer::DegreesToRadians(delta_deg),
@@ -1087,7 +1215,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                             double delta_deg =
                                     (posDelta.y() *
                                      static_cast<double>(
-                                             m_tools->m_bubbleViewFov_deg)) /
+                                             curBubbleViewFov_deg())) /
                                     height();
                             // rotation about the local X axis
                             ccGLMatrixd rotX;
@@ -1100,13 +1228,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
                     case StandardMode: {
                         static CCVector3d s_lastMouseOrientation;
-                        if (!m_tools->m_mouseMoved) {
+                        if (!curMouseMoved()) {
                             // on the first time, we must compute the previous
                             // orientation (the camera hasn't moved yet)
                             s_lastMouseOrientation = ecvDisplayTools::
                                     ConvertMousePositionToOrientation(
-                                            m_tools->m_lastMousePos.x(),
-                                            m_tools->m_lastMousePos.y());
+                                            curLastMousePos().x(),
+                                            curLastMousePos().y());
                         }
 
                         CCVector3d currentMouseOrientation = ecvDisplayTools::
@@ -1119,8 +1247,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
                     case LockedAxisMode: {
                         // apply rotation about the locked axis
-                        CCVector3d axis = m_tools->m_lockedRotationAxis;
-                        // m_tools->m_viewportParams.objectCenteredView
+                        CCVector3d axis = curLockedRotationAxis();
+                        // curViewportParams().objectCenteredView
                         ccGLCameraParameters camera;
                         ecvDisplayTools::GetGLCameraParameters(camera);
                         camera.modelViewMat.applyRotation(axis);
@@ -1131,9 +1259,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         if (topView) {
                             // rotation origin
                             CCVector3d C2D;
-                            if (m_tools->m_viewportParams.objectCenteredView) {
+                            if (curViewportParams().objectCenteredView) {
                                 // project the current pivot point on screen
-                                camera.project(m_tools->m_viewportParams
+                                camera.project(curViewportParams()
                                                        .getPivotPoint(),
                                                C2D);
                                 C2D.z = 0.0;
@@ -1144,10 +1272,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
                             CCVector3d previousMousePos(
                                     static_cast<double>(
-                                            m_tools->m_lastMousePos.x()),
+                                            curLastMousePos().x()),
                                     static_cast<double>(
                                             height() -
-                                            m_tools->m_lastMousePos.y()),
+                                            curLastMousePos().y()),
                                     0.0);
                             CCVector3d currentMousePos(
                                     static_cast<double>(x),
@@ -1163,7 +1291,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                         u_norm / (a.norm() * b.norm());
 
                                 // determine the rotation direction
-                                if (u.z * m_tools->m_lockedRotationAxis.z > 0) {
+                                if (u.z * curLockedRotationAxis().z > 0) {
                                     sin_angle = -sin_angle;
                                 }
 
@@ -1176,14 +1304,14 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         {
                             // project the current pivot point on screen
                             CCVector3d A2D, B2D;
-                            if (camera.project(m_tools->m_viewportParams
+                            if (camera.project(curViewportParams()
                                                        .getPivotPoint(),
                                                A2D) &&
                                 camera.project(
-                                        m_tools->m_viewportParams
+                                        curViewportParams()
                                                         .getPivotPoint() +
-                                                m_tools->m_viewportParams.zFar *
-                                                        m_tools->m_lockedRotationAxis,
+                                                curViewportParams().zFar *
+                                                        curLockedRotationAxis(),
                                         B2D)) {
                                 CCVector3d lockedRotationAxis2D = B2D - A2D;
                                 lockedRotationAxis2D.z = 0;  // just in case
@@ -1213,7 +1341,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         // Note: -cloudViewer::RadiansToDegrees(angle_rad):
                         // inverse direction rotation
                         ecvDisplayTools::RotateWithAxis(
-                                CCVector2i(x, y), m_tools->m_lockedRotationAxis,
+                                CCVector2i(x, y), curLockedRotationAxis(),
                                 -cloudViewer::RadiansToDegrees(angle_rad));
                     } break;
 
@@ -1222,10 +1350,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         break;
                 }
 
-                if (m_tools->m_interactionFlags &
+                if (curInteractionFlags() &
                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
-                    rotMat = m_tools->m_viewportParams.viewMat.transposed() *
-                             rotMat * m_tools->m_viewportParams.viewMat;
+                    rotMat = curViewportParams().viewMat.transposed() *
+                             rotMat * curViewportParams().viewMat;
                     // feedback for 'interactive transformation' mode
                     emit m_tools->rotation(rotMat);
                 } else {
@@ -1241,8 +1369,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
     }
 
-    m_tools->m_mouseMoved = true;
-    m_tools->m_lastMousePos = event->pos();
+    curMouseMoved() = true;
+    curLastMousePos() = event->pos();
     emit m_tools->cameraParamChanged();
     if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     event->accept();
@@ -1254,12 +1382,12 @@ void QVTKWidgetCustom::updateActivateditems(
         // displacement vector (in "3D")
         double pixSize = ecvDisplayTools::ComputeActualPixelSize();
         CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
-        m_tools->m_viewportParams.viewMat.transposed().applyRotation(u);
+        curViewportParams().viewMat.transposed().applyRotation(u);
 
         const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
         u *= retinaScale;
 
-        for (auto& activeItem : m_tools->m_activeItems) {
+        for (auto& activeItem : curActiveItems()) {
             if (activeItem->move2D(x * retinaScale, y * retinaScale,
                                    dx * retinaScale, dy * retinaScale,
                                    ecvDisplayTools::GlWidth(),
@@ -1276,48 +1404,48 @@ void QVTKWidgetCustom::updateActivateditems(
 }
 
 void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
-    if (m_tools->m_interactionFlags & ecvDisplayTools::TRANSFORM_CAMERA()) {
+    if (curInteractionFlags() & ecvDisplayTools::TRANSFORM_CAMERA()) {
         QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
     }
 
-    if (m_tools->m_ignoreMouseReleaseEvent) {
-        m_tools->m_ignoreMouseReleaseEvent = false;
+    if (curIgnoreMouseReleaseEvent()) {
+        curIgnoreMouseReleaseEvent() = false;
         return;
     }
-    bool mouseHasMoved = m_tools->m_mouseMoved;
+    bool mouseHasMoved = curMouseMoved();
 
     // reset to default state
-    m_tools->m_mouseButtonPressed = false;
-    m_tools->m_mouseMoved = false;
+    curMouseButtonPressed() = false;
+    curMouseMoved() = false;
     QApplication::restoreOverrideCursor();
 
-    if (m_tools->m_interactionFlags &
+    if (curInteractionFlags() &
         ecvDisplayTools::INTERACT_SIG_BUTTON_RELEASED) {
         event->accept();
         emit m_tools->buttonReleased();
     }
 
-    if (m_tools->m_pivotSymbolShown) {
-        if (m_tools->m_pivotVisibility == ecvDisplayTools::PIVOT_SHOW_ON_MOVE) {
+    if (curPivotSymbolShown()) {
+        if (curPivotVisibility() == ecvDisplayTools::PIVOT_SHOW_ON_MOVE) {
             ecvDisplayTools::ToBeRefreshed();
         }
-        ecvDisplayTools::ShowPivotSymbol(m_tools->m_pivotVisibility ==
+        ecvDisplayTools::ShowPivotSymbol(curPivotVisibility() ==
                                          ecvDisplayTools::PIVOT_ALWAYS_SHOW);
     }
 
     if ((event->button() == Qt::MiddleButton)) {
         if (mouseHasMoved) {
             event->accept();
-            m_tools->m_activeItems.clear();
+            curActiveItems().clear();
             // ecvDisplayTools::ToBeRefreshed();
-        } else if (m_tools->m_interactionFlags &
+        } else if (curInteractionFlags() &
                    ecvDisplayTools::INTERACT_2D_ITEMS) {
             // interaction with 2D item(s)
             ecvDisplayTools::UpdateActiveItemsList(event->x(), event->y(),
                                                    false);
-            if (!m_tools->m_activeItems.empty()) {
-                ccInteractor* item = m_tools->m_activeItems.front();
-                m_tools->m_activeItems.clear();
+            if (!curActiveItems().empty()) {
+                ccInteractor* item = curActiveItems().front();
+                curActiveItems().clear();
                 if (item->acceptClick(event->x(), height() - 1 - event->y(),
                                       Qt::MiddleButton)) {
                     event->accept();
@@ -1327,9 +1455,9 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     } else if (event->button() == Qt::LeftButton) {
         if (mouseHasMoved) {
             // if a rectangular picking area has been defined
-            if (m_tools->m_rectPickingPoly) {
+            if (curRectPickingPoly()) {
                 cloudViewer::GenericIndexedCloudPersist* vertices =
-                        m_tools->m_rectPickingPoly->getAssociatedCloud();
+                        curRectPickingPoly()->getAssociatedCloud();
                 assert(vertices);
                 const CCVector3* A = vertices->getPointPersistentPtr(0);
                 const CCVector3* C = vertices->getPointPersistentPtr(2);
@@ -1339,8 +1467,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 int pickW = static_cast<int>(std::abs(C->x - A->x));
                 int pickH = static_cast<int>(std::abs(C->y - A->y));
 
-                ecvDisplayTools::RemoveFromOwnDB(m_tools->m_rectPickingPoly);
-                m_tools->m_rectPickingPoly = nullptr;
+                ecvDisplayTools::RemoveFromOwnDB(curRectPickingPoly());
+                curRectPickingPoly() = nullptr;
                 vertices = nullptr;
 
                 ecvDisplayTools::PickingParameters params(
@@ -1357,13 +1485,13 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             // CRITICAL: Don't start deferred picking if a VTK widget was
             // clicked This prevents doPicking() from overriding the widget
             // selection
-            if (!m_tools->m_widgetClicked &&
+            if (!curWidgetClicked() &&
                 m_tools->m_timer.elapsed() <
-                        m_tools->m_lastClickTime_ticks +
+                        curLastClickTime() +
                                 CC_MAX_PICKING_CLICK_DURATION_MS)  // in msec
             {
-                int x = m_tools->m_lastMousePos.x();
-                int y = m_tools->m_lastMousePos.y();
+                int x = curLastMousePos().x();
+                int y = curLastMousePos().y();
 
                 // Save global point size / line width before
                 // ProcessClickableItems potentially modifies them.
@@ -1375,8 +1503,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                                 .defaultLineWidth;
 
                 if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
-                    m_tools->m_lastMousePos =
+                    curLastMousePos() =
                             event->pos();
+                    m_tools->setPickingTargetView(
+                            ecvGenericGLDisplay::FromWidget(this));
                     m_tools->m_deferredPickingTimer.start();
                 } else {
                     // Sync per-widget local values from the
@@ -1406,17 +1536,17 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                         ecvRedrawScope scope;
                     }
                 }
-            } else if (m_tools->m_widgetClicked) {
+            } else if (curWidgetClicked()) {
                 CVLog::PrintVerbose(
                         "[QVTKWidgetCustom::mouseReleaseEvent] Skipping "
                         "deferred "
                         "picking because VTK widget was clicked");
                 // Reset the flag after checking
-                m_tools->m_widgetClicked = false;
+                curWidgetClicked() = false;
             }
         }
 
-        m_tools->m_activeItems.clear();
+        curActiveItems().clear();
     } else if (event->button() == Qt::RightButton) {
         // CRITICAL: Update 2D labels after zoom/scale to ensure they align with
         // their 3D anchor points
@@ -1520,10 +1650,10 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
         case QEvent::TouchEnd: {
             QTouchEvent* touchEvent = static_cast<QTouchEvent*>(evt);
             touchEvent->accept();
-            m_tools->m_touchInProgress = (evt->type() == QEvent::TouchBegin);
-            m_tools->m_touchBaseDist = 0.0;
+            curTouchInProgress() = (evt->type() == QEvent::TouchBegin);
+            curTouchBaseDist() = 0.0;
             CVLog::PrintDebug(QString("Touch event %1")
-                                      .arg(m_tools->m_touchInProgress
+                                      .arg(curTouchInProgress()
                                                    ? "begins"
                                                    : "ends"));
         } break;
@@ -1549,19 +1679,19 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
 
         case QEvent::TouchUpdate: {
             // Gesture update
-            if (m_tools->m_touchInProgress &&
-                !m_tools->m_viewportParams.perspectiveView) {
+            if (curTouchInProgress() &&
+                !curViewportParams().perspectiveView) {
                 QTouchEvent* touchEvent = static_cast<QTouchEvent*>(evt);
                 const QList<QTouchEvent::TouchPoint>& touchPoints =
                         touchEvent->touchPoints();
                 if (touchPoints.size() == 2) {
                     QPointF D = (touchPoints[1].pos() - touchPoints[0].pos());
                     qreal dist = std::sqrt(D.x() * D.x() + D.y() * D.y());
-                    if (m_tools->m_touchBaseDist != 0.0) {
-                        float zoomFactor = dist / m_tools->m_touchBaseDist;
+                    if (curTouchBaseDist() != 0.0) {
+                        float zoomFactor = dist / curTouchBaseDist();
                         ecvDisplayTools::UpdateZoom(zoomFactor);
                     }
-                    m_tools->m_touchBaseDist = dist;
+                    curTouchBaseDist() = dist;
                     evt->accept();
                     break;
                 }

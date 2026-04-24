@@ -13,6 +13,7 @@
 #include "ecvGenericGLDisplay.h"
 #include "ecvGuiParameters.h"
 #include "ecvHObject.h"
+#include "ecvViewContext.h"
 #include "ecvViewManager.h"
 #include "ecvViewportParameters.h"
 
@@ -166,6 +167,59 @@ public:
     virtual void beginPrimaryRender() {}
     /// Called at the end of RedrawDisplay() to restore the tool-binding state.
     virtual void endPrimaryRender() {}
+
+    // ================================================================
+    // Per-view context  (Phase A → Phase E)
+    //
+    // The primary view's per-view state lives in m_primaryCtx.
+    // Static methods use effectiveCtx() which returns the effective
+    // view's context (secondary ecvGLView or primary singleton).
+    // ================================================================
+
+    /// Primary view's per-view state (replaces scattered m_viewportParams etc.)
+    ecvViewContext m_primaryCtx;
+
+    /// Override from ecvGenericGLDisplay — returns &m_primaryCtx.
+    ecvViewContext* viewContext() override { return &m_primaryCtx; }
+    const ecvViewContext* viewContext() const override { return &m_primaryCtx; }
+
+    /// Returns the effective view's context for the current scope.
+    /// If a rendering override is set (ScopedRenderOverride), returns that
+    /// view's context; otherwise the primary context.
+    ecvViewContext& effectiveCtx();
+    const ecvViewContext& effectiveCtx() const;
+
+    void copyContextFrom(const ecvViewContext& ctx);
+    ecvViewContext snapshotContext() const;
+
+    // ================================================================
+    // Context-aware static API overloads  (Phase A)
+    //
+    // These overloads accept an explicit ecvViewContext so callers can
+    // operate on a specific view's state without relying on the
+    // singleton or activeSecondaryView delegation.  The original
+    // overloads (no ecvViewContext param) still work as before.
+    // ================================================================
+
+    /// Fill a draw context from explicit per-view state.
+    static void GetContext(CC_DRAW_CONTEXT& CONTEXT,
+                           const ecvViewContext& viewCtx);
+
+    /// Read camera params from explicit per-view state.
+    static void GetGLCameraParameters(ccGLCameraParameters& params,
+                                      const ecvViewContext& viewCtx);
+
+    /// Modify point size inside a context (no singleton side-effects).
+    static void SetPointSize(ecvViewContext& ctx, float size);
+
+    /// Modify line width inside a context (no singleton side-effects).
+    static void SetLineWidth(ecvViewContext& ctx, float width);
+
+    /// Modify near/far clip inside a context (no singleton side-effects).
+    static void SetCameraClip(ecvViewContext& ctx, double znear, double zfar);
+
+    /// Modify vertical FOV inside a context (no singleton side-effects).
+    static void SetCameraFovy(ecvViewContext& ctx, double fovy);
 
     // -- ecvGenericGLDisplay implementation (primary window) --
 
@@ -1105,6 +1159,12 @@ public:  // Main interface accessors
      * @return Reference to base view matrix
      */
     inline static ccGLMatrixd& GetBaseViewMat() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) {
+            return const_cast<ecvViewportParameters&>(
+                       av->getViewportParameters())
+                .viewMat;
+        }
         return TheInstance()->m_viewportParams.viewMat;
     }
 
@@ -1443,6 +1503,13 @@ public:  // Main interface accessors
                                      int viewport = 0) {
         TheInstance()->m_viewportParams.zNear = znear;
         TheInstance()->m_viewportParams.zFar = zfar;
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) {
+            auto vp = av->getViewportParameters();
+            vp.zNear = znear;
+            vp.zFar = zfar;
+            av->setViewportParameters(vp);
+        }
         TheInstance()->setCameraClip(znear, zfar, viewport);
     }
     virtual void setCameraClip(double znear,
@@ -1464,6 +1531,12 @@ public:  // Main interface accessors
     }
     inline static void SetCameraFovy(double fovy, int viewport = 0) {
         TheInstance()->m_viewportParams.fov_deg = static_cast<float>(fovy);
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av && av != TheInstance()) {
+            auto vp = av->getViewportParameters();
+            vp.fov_deg = static_cast<float>(fovy);
+            av->setViewportParameters(vp);
+        }
         TheInstance()->setCameraFovy(cloudViewer::DegreesToRadians(fovy),
                                      viewport);
     }
@@ -1928,7 +2001,7 @@ public:  // visualization matrix transformation
         return TheInstance()->getPerspectiveState(viewport);
     }
     inline virtual bool getPerspectiveState(int viewport = 0) const override {
-        return TheInstance()->m_viewportParams.perspectiveView;
+        return GetViewportParameters().perspectiveView;
     }
 
     //! Shortcut: returns whether object-based perspective mode is enabled
@@ -2499,6 +2572,9 @@ public:
     //! Deferred picking
     QTimer m_deferredPickingTimer;
 
+    //! View that triggered the current deferred pick (nullptr = primary/singleton).
+    ecvGenericGLDisplay* m_pickingTargetView = nullptr;
+
 public:  // event representation
     static bool USE_2D;
     static bool USE_VTK_PICK;
@@ -2566,9 +2642,14 @@ public slots:
     //! Checks for scheduled redraw
     void checkScheduledRedraw();
 
-    //! Performs standard picking at the last clicked mouse position (see
-    //! m_lastMousePos)
+    //! Performs standard picking at the last clicked mouse position.
+    //! Uses m_pickingTargetView's context if set, otherwise singleton state.
     void doPicking();
+
+    //! Set the view that should provide state for the next deferred pick.
+    void setPickingTargetView(ecvGenericGLDisplay* view) {
+        m_pickingTargetView = view;
+    }
 
     // called when receiving mouse wheel is rotated
     void onWheelEvent(float wheelDelta_deg);

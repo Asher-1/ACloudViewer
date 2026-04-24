@@ -2498,6 +2498,9 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     for (auto& mdi : m_mdiDialogs) {
         if (mdi.dialog && mdi.dialog->started()) {
             mdi.dialog->linkWith(screen);
+            if (auto* glView = dynamic_cast<ecvGenericGLDisplay*>(display)) {
+                mdi.dialog->bindToView(glView);
+            }
         }
     }
 

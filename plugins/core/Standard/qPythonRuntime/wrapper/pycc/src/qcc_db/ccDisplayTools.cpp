@@ -142,7 +142,9 @@ void define_ccDisplayTools(py::module &m)
             "id"_a = "")
         // TODO as widget
         .def_static("getScreenSize", &ecvDisplayTools::GetScreenSize)
-        .def_static("getGLCameraParameters", &ecvDisplayTools::GetGLCameraParameters, "params"_a)
+        .def_static("getGLCameraParameters",
+                    static_cast<void (*)(ccGLCameraParameters&)>(&ecvDisplayTools::GetGLCameraParameters),
+                    "params"_a)
         .def_static("displayNewMessage",
                     &ecvDisplayTools::DisplayNewMessage,
                     "message"_a,
@@ -191,15 +193,17 @@ void define_ccDisplayTools(py::module &m)
         .def_static("getPickingMode", &ecvDisplayTools::GetPickingMode)
         .def_static("lockPickingMode", &ecvDisplayTools::LockPickingMode, "state"_a)
         .def_static("isPickingModeLocked", &ecvDisplayTools::IsPickingModeLocked)
-        .def_static("getContext", &ecvDisplayTools::GetContext, "context"_a)
+        .def_static("getContext",
+                    static_cast<void (*)(CC_DRAW_CONTEXT&)>(&ecvDisplayTools::GetContext),
+                    "context"_a)
         // TODO static constexprs
         .def_static("setPointSize",
-                    &ecvDisplayTools::SetPointSize,
+                    static_cast<void (*)(float, bool, int)>(&ecvDisplayTools::SetPointSize),
                     "size"_a,
                     "silent"_a = false,
                     "viewport"_a = 0)
         .def_static("setLineWidth",
-                    &ecvDisplayTools::SetLineWidth,
+                    static_cast<void (*)(float, bool, int)>(&ecvDisplayTools::SetLineWidth),
                     "width"_a,
                     "silent"_a = false,
                     "viewport"_a = 0)
@@ -279,7 +283,9 @@ void define_ccDisplayTools(py::module &m)
                     "font"_a = QFont())
         .def_static("remove3DLabel", &ecvDisplayTools::Remove3DLabel, "view_id"_a)
         .def_static("removeAllWidgets", &ecvDisplayTools::RemoveAllWidgets, "update"_a = true)
-        .def_static("getGLCameraParameters", &ecvDisplayTools::GetGLCameraParameters, "params"_a)
+        .def_static("getGLCameraParameters",
+                    static_cast<void (*)(ccGLCameraParameters&)>(&ecvDisplayTools::GetGLCameraParameters),
+                    "params"_a)
         .def_static(
             "toCenteredGLCoordinates", &ecvDisplayTools::ToCenteredGLCoordinates, "x"_a, "y"_a)
         .def_static("getViewportParameters", &ecvDisplayTools::GetViewportParameters)

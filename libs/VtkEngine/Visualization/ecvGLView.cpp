@@ -21,6 +21,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 
+#include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 #include "VtkDisplayTools.h"
@@ -31,11 +32,11 @@ int ecvGLView::s_nextWindowID = 1000;
 ecvGLView::ecvGLView(QMainWindow* parent) : QObject(parent) {
     m_uniqueID = ++s_nextWindowID;
     m_title = QString("RenderView%1").arg(m_uniqueID);
-    m_viewportParams.viewMat.toIdentity();
-    m_viewportParams.setCameraCenter(CCVector3d(0.0, 0.0, 1.0));
+    m_ctx.viewportParams.viewMat.toIdentity();
+    m_ctx.viewportParams.setCameraCenter(CCVector3d(0.0, 0.0, 1.0));
 
-    m_viewMatd.toIdentity();
-    m_projMatd.toIdentity();
+    m_ctx.viewMatd.toIdentity();
+    m_ctx.projMatd.toIdentity();
 }
 
 ecvGLView::~ecvGLView() {
@@ -80,6 +81,7 @@ ecvGLView* ecvGLView::Create(QMainWindow* parent, bool stereoMode) {
 void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget = new QVTKWidgetCustom(parent, ecvDisplayTools::TheInstance(),
                                        stereoMode);
+    m_vtkWidget->setOwnerView(this);
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
     auto renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -108,33 +110,45 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
 void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     if (!m_visualizer3D || !m_vtkWidget) return;
 
-    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
-            ecvDisplayTools::TheInstance());
-    Visualization::VtkDisplayTools::ScopedVisSwap swap(
-            primaryDT, m_visualizer3D, m_vtkWidget);
+    // Phase B: self-contained draw — no ScopedVisSwap, no ScopedRenderOverride.
+    // All state comes from m_ctx; rendering goes directly to this view's
+    // VtkVis and QVTKWidgetCustom.
 
-    // Ensure all delegation methods (GetGLCameraParameters, etc.)
-    // return THIS view's data during the draw pass, even if this view
-    // is not the UI-active view (e.g. during redrawAll).
-    ecvViewManager::ScopedRenderOverride renderOverride(this);
-
+    // --- Build draw context from per-view state ---
     CC_DRAW_CONTEXT context;
-    ecvDisplayTools::GetContext(context);
-    context.display = this;
+    getContext(context);
     context.forceRedraw = forceRedraw;
-    context.glW = m_vtkWidget->width();
-    context.glH = m_vtkWidget->height();
-    context.devicePixelRatio =
-            static_cast<float>(m_vtkWidget->devicePixelRatioF());
 
-    context.defaultPointSize =
-            static_cast<unsigned char>(m_viewportParams.defaultPointSize);
-    context.defaultLineWidth =
-            static_cast<unsigned char>(m_viewportParams.defaultLineWidth);
-    context.currentLineWidth = context.defaultLineWidth;
+    // --- Background ---
+    context.drawingFlags = CC_DRAW_2D;
+    if (m_ctx.interactionFlags &
+        ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
+        context.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
+    }
 
-    ecvDisplayTools::DrawBackground(context);
+    const ecvGui::ParamStruct& displayParams = getDisplayParameters();
+    if (displayParams.drawBackgroundGradient) {
+        const ecvColor::Rgbub& bkgCol2 = displayParams.backgroundCol;
+        ecvColor::Rgbub bkgCol1;
+        bkgCol1.r = 255 - displayParams.textDefaultCol.r;
+        bkgCol1.g = 255 - displayParams.textDefaultCol.g;
+        bkgCol1.b = 255 - displayParams.textDefaultCol.b;
+        context.backgroundCol = bkgCol1;
+        context.backgroundCol2 = bkgCol2;
+        context.drawBackgroundGradient = true;
+    } else {
+        const ecvColor::Rgbub& bkgCol = displayParams.backgroundCol;
+        context.backgroundCol = bkgCol;
+        context.backgroundCol2 = bkgCol;
+        context.drawBackgroundGradient = false;
+    }
 
+    m_vtkWidget->setBackgroundColor(
+            ecvTools::TransFormRGB(context.backgroundCol),
+            ecvTools::TransFormRGB(context.backgroundCol2),
+            context.drawBackgroundGradient);
+
+    // --- 3D pass ---
     if (!only2D && m_globalDBRoot) {
         context.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
         m_globalDBRoot->draw(context);
@@ -144,6 +158,7 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
         m_winDBRoot->draw(context);
     }
 
+    // --- 2D foreground pass ---
     if (m_globalDBRoot) {
         context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
         m_globalDBRoot->draw(context);
@@ -153,38 +168,18 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
         m_winDBRoot->draw(context);
     }
 
-    if (m_vtkWidget) {
-        auto* savedHz = primaryDT->m_hotZone;
-        bool savedVis = primaryDT->m_clickableItemsVisible;
-        float savedPtSize = primaryDT->m_viewportParams.defaultPointSize;
-        float savedLnWidth = primaryDT->m_viewportParams.defaultLineWidth;
-        auto savedItems = primaryDT->m_clickableItems;
-
-        if (!m_hotZone) {
-            m_hotZone = new ecvDisplayTools::HotZone(m_vtkWidget);
+    // --- Hot zone / clickable items ---
+    // Phase B: the per-view hot zone is rendered by temporarily routing
+    // DrawClickableItems through this view's VtkVis pipeline.
+    {
+        auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
+                ecvDisplayTools::TheInstance());
+        if (primaryDT) {
+            Visualization::VtkDisplayTools::ScopedHotZoneRender hzRender(
+                    primaryDT, m_visualizer3D, m_vtkWidget,
+                    m_hotZone, m_ctx, m_clickableItems);
+            hzRender.draw();
         }
-
-        primaryDT->m_hotZone = m_hotZone;
-        primaryDT->m_clickableItemsVisible = m_clickableItemsVisible;
-        primaryDT->m_viewportParams.defaultPointSize =
-                m_viewportParams.defaultPointSize;
-        primaryDT->m_viewportParams.defaultLineWidth =
-                m_viewportParams.defaultLineWidth;
-
-        int yStart = 0;
-        ecvDisplayTools::DrawClickableItems(0, yStart);
-
-        m_viewportParams.defaultPointSize =
-                primaryDT->m_viewportParams.defaultPointSize;
-        m_viewportParams.defaultLineWidth =
-                primaryDT->m_viewportParams.defaultLineWidth;
-        m_clickableItems = primaryDT->m_clickableItems;
-
-        primaryDT->m_viewportParams.defaultPointSize = savedPtSize;
-        primaryDT->m_viewportParams.defaultLineWidth = savedLnWidth;
-        primaryDT->m_hotZone = savedHz;
-        primaryDT->m_clickableItemsVisible = savedVis;
-        primaryDT->m_clickableItems = savedItems;
     }
 
     m_visualizer3D->getRenderWindow()->Render();
@@ -200,24 +195,24 @@ void ecvGLView::refresh(bool only2D) {
 void ecvGLView::toBeRefreshed() { m_shouldBeRefreshed = true; }
 
 const ecvViewportParameters& ecvGLView::getViewportParameters() const {
-    return m_viewportParams;
+    return m_ctx.viewportParams;
 }
 
 void ecvGLView::setViewportParameters(const ecvViewportParameters& params) {
-    m_viewportParams = params;
+    m_ctx.viewportParams = params;
 }
 
 void ecvGLView::setPerspectiveState(bool state, bool objectCenteredView) {
-    m_viewportParams.perspectiveView = state;
-    m_viewportParams.objectCenteredView = objectCenteredView;
+    m_ctx.viewportParams.perspectiveView = state;
+    m_ctx.viewportParams.objectCenteredView = objectCenteredView;
 }
 
 bool ecvGLView::perspectiveView() const {
-    return m_viewportParams.perspectiveView;
+    return m_ctx.viewportParams.perspectiveView;
 }
 
 bool ecvGLView::objectCenteredView() const {
-    return m_viewportParams.objectCenteredView;
+    return m_ctx.viewportParams.objectCenteredView;
 }
 
 void ecvGLView::setSceneDB(ccHObject* root) { m_globalDBRoot = root; }
@@ -265,12 +260,11 @@ void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     params.viewport[1] = 0;
     params.viewport[2] = m_vtkWidget->width();
     params.viewport[3] = m_vtkWidget->height();
-    params.perspective = m_viewportParams.perspectiveView;
-    params.fov_deg = m_viewportParams.fov_deg;
-    params.pixelSize = m_viewportParams.pixelSize;
-    // Model-view and projection matrices — use cached per-view values
-    params.modelViewMat = m_viewMatd;
-    params.projectionMat = m_projMatd;
+    params.perspective = m_ctx.viewportParams.perspectiveView;
+    params.fov_deg = m_ctx.viewportParams.fov_deg;
+    params.pixelSize = m_ctx.viewportParams.pixelSize;
+    params.modelViewMat = m_ctx.viewMatd;
+    params.projectionMat = m_ctx.projMatd;
 }
 
 void ecvGLView::getVisibleObjectsBB(ccBBox& box) const {
@@ -288,7 +282,7 @@ void ecvGLView::getVisibleObjectsBB(ccBBox& box) const {
 void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
     if (box && box->isValid()) {
         CCVector3d center = CCVector3d::fromArray(box->getCenter().u);
-        m_viewportParams.setPivotPoint(center, true);
+        m_ctx.viewportParams.setPivotPoint(center, true);
         if (m_visualizer3D) {
             m_visualizer3D->resetCamera(box);
         }
@@ -298,8 +292,8 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
 }
 
 QRect ecvGLView::getGLViewport() const {
-    return m_glViewport.isValid()
-                   ? m_glViewport
+    return m_ctx.glViewport.isValid()
+                   ? m_ctx.glViewport
                    : (m_vtkWidget
                               ? QRect(0, 0, m_vtkWidget->width(),
                                       m_vtkWidget->height())
@@ -315,21 +309,21 @@ int ecvGLView::getDevicePixelRatio() const {
 }
 
 void ecvGLView::setInteractionMode(INTERACTION_FLAGS flags) {
-    m_interactionFlags = flags;
+    m_ctx.interactionFlags = flags;
 }
 
 ecvGLView::INTERACTION_FLAGS ecvGLView::getInteractionMode() const {
-    return m_interactionFlags;
+    return m_ctx.interactionFlags;
 }
 
 void ecvGLView::setPickingMode(PICKING_MODE mode) {
-    if (!m_pickingModeLocked) {
-        m_pickingMode = mode;
+    if (!m_ctx.pickingModeLocked) {
+        m_ctx.pickingMode = mode;
     }
 }
 
 ecvGLView::PICKING_MODE ecvGLView::getPickingMode() const {
-    return m_pickingMode;
+    return m_ctx.pickingMode;
 }
 
 void ecvGLView::getContext(ccGLDrawContext& context) const {
@@ -342,9 +336,9 @@ void ecvGLView::getContext(ccGLDrawContext& context) const {
                 static_cast<float>(m_vtkWidget->devicePixelRatioF());
     }
     context.defaultPointSize =
-            static_cast<unsigned char>(m_viewportParams.defaultPointSize);
+            static_cast<unsigned char>(m_ctx.viewportParams.defaultPointSize);
     context.defaultLineWidth =
-            static_cast<unsigned char>(m_viewportParams.defaultLineWidth);
+            static_cast<unsigned char>(m_ctx.viewportParams.defaultLineWidth);
     context.currentLineWidth = context.defaultLineWidth;
 }
 
@@ -379,7 +373,7 @@ void ecvGLView::zoomGlobal() {
     if (bbox.isValid()) {
         m_visualizer3D->resetCamera(&bbox);
         CCVector3d center = CCVector3d::fromArray(bbox.getCenter().u);
-        m_viewportParams.setPivotPoint(center, true);
+        m_ctx.viewportParams.setPivotPoint(center, true);
     } else {
         m_visualizer3D->resetCamera();
     }
@@ -392,132 +386,9 @@ void ecvGLView::zoomGlobal() {
 // ================================================================
 
 void ecvGLView::pushStateToSingleton() {
-    auto* dt = ecvDisplayTools::TheInstance();
-    if (!dt) return;
-
-    // Interaction / picking
-    dt->m_interactionFlags = m_interactionFlags;
-    dt->m_pickingMode = m_pickingMode;
-    dt->m_pickingModeLocked = m_pickingModeLocked;
-    dt->m_pickRadius = m_pickRadius;
-
-    // Mouse state
-    dt->m_lastMousePos = m_lastMousePos;
-    dt->m_lastMouseMovePos = m_lastMouseMovePos;
-    dt->m_mouseMoved = m_mouseMoved;
-    dt->m_mouseButtonPressed = m_mouseButtonPressed;
-    dt->m_ignoreMouseReleaseEvent = m_ignoreMouseReleaseEvent;
-    dt->m_widgetClicked = m_widgetClicked;
-
-    // Touch
-    dt->m_touchInProgress = m_touchInProgress;
-    dt->m_touchBaseDist = m_touchBaseDist;
-
-    // HotZone / clickable
-    dt->m_hotZone = m_hotZone;
-    dt->m_clickableItemsVisible = m_clickableItemsVisible;
-    dt->m_clickableItems = m_clickableItems;
-
-    // Display
-    dt->m_displayOverlayEntities = m_displayOverlayEntities;
-    dt->m_exclusiveFullscreen = m_exclusiveFullscreen;
-    dt->m_showCursorCoordinates = m_showCursorCoordinates;
-    dt->m_showDebugTraces = m_showDebugTraces;
-
-    // Bubble view
-    dt->m_bubbleViewModeEnabled = m_bubbleViewModeEnabled;
-    dt->m_bubbleViewFov_deg = m_bubbleViewFov_deg;
-
-    // Pivot
-    dt->m_pivotVisibility = m_pivotVisibility;
-    dt->m_autoPickPivotAtCenter = m_autoPickPivotAtCenter;
-
-    // Viewport params — sync all fields so m_tools-> access is consistent.
-    dt->m_viewportParams = m_viewportParams;
-
-    // Rotation lock
-    dt->m_rotationAxisLocked = m_rotationAxisLocked;
-    dt->m_lockedRotationAxis = m_lockedRotationAxis;
-
-    // Picking aux
-    dt->m_last_point_index = m_lastPointIndex;
-    dt->m_last_picked_id = m_lastPickedId;
-    dt->m_rectPickingPoly = m_rectPickingPoly;
-    dt->m_allowRectangularEntityPicking = m_allowRectangularEntityPicking;
-
-    // Light
-    dt->m_sunLightEnabled = m_sunLightEnabled;
-    dt->m_customLightEnabled = m_customLightEnabled;
-    memcpy(dt->m_customLightPos, m_customLightPos, sizeof(m_customLightPos));
-
-    // Pivot shown
-    dt->m_pivotSymbolShown = m_pivotSymbolShown;
-
-    // Timer
-    dt->m_lastClickTime_ticks = m_lastClickTime_ticks;
+    // Phase E: no-op — views own their state; effectiveCtx() routes reads.
 }
 
 void ecvGLView::pullStateFromSingleton() {
-    auto* dt = ecvDisplayTools::TheInstance();
-    if (!dt) return;
-
-    // Interaction / picking
-    m_interactionFlags = dt->m_interactionFlags;
-    m_pickingMode = dt->m_pickingMode;
-    m_pickingModeLocked = dt->m_pickingModeLocked;
-    m_pickRadius = dt->m_pickRadius;
-
-    // Mouse state
-    m_lastMousePos = dt->m_lastMousePos;
-    m_lastMouseMovePos = dt->m_lastMouseMovePos;
-    m_mouseMoved = dt->m_mouseMoved;
-    m_mouseButtonPressed = dt->m_mouseButtonPressed;
-    m_ignoreMouseReleaseEvent = dt->m_ignoreMouseReleaseEvent;
-    m_widgetClicked = dt->m_widgetClicked;
-
-    // Touch
-    m_touchInProgress = dt->m_touchInProgress;
-    m_touchBaseDist = dt->m_touchBaseDist;
-
-    // HotZone / clickable
-    m_clickableItemsVisible = dt->m_clickableItemsVisible;
-    m_clickableItems = dt->m_clickableItems;
-
-    // Display
-    m_displayOverlayEntities = dt->m_displayOverlayEntities;
-    m_exclusiveFullscreen = dt->m_exclusiveFullscreen;
-    m_showCursorCoordinates = dt->m_showCursorCoordinates;
-    m_showDebugTraces = dt->m_showDebugTraces;
-
-    // Bubble view
-    m_bubbleViewModeEnabled = dt->m_bubbleViewModeEnabled;
-    m_bubbleViewFov_deg = dt->m_bubbleViewFov_deg;
-
-    // Pivot
-    m_pivotVisibility = dt->m_pivotVisibility;
-    m_autoPickPivotAtCenter = dt->m_autoPickPivotAtCenter;
-
-    // Viewport params — sync all fields back.
-    m_viewportParams = dt->m_viewportParams;
-
-    // Rotation lock
-    m_rotationAxisLocked = dt->m_rotationAxisLocked;
-    m_lockedRotationAxis = dt->m_lockedRotationAxis;
-
-    // Picking aux
-    m_lastPointIndex = dt->m_last_point_index;
-    m_lastPickedId = dt->m_last_picked_id;
-    m_rectPickingPoly = dt->m_rectPickingPoly;
-    m_allowRectangularEntityPicking = dt->m_allowRectangularEntityPicking;
-
-    // Light
-    m_sunLightEnabled = dt->m_sunLightEnabled;
-    m_customLightEnabled = dt->m_customLightEnabled;
-    memcpy(m_customLightPos, dt->m_customLightPos, sizeof(m_customLightPos));
-
-    // Pivot shown
-    m_pivotSymbolShown = dt->m_pivotSymbolShown;
-
-    // Timer
-    m_lastClickTime_ticks = dt->m_lastClickTime_ticks;
+    // Phase E: no-op — views own their state; effectiveCtx() routes reads.
 }
