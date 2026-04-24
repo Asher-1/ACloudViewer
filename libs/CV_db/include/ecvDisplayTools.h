@@ -220,6 +220,12 @@ public:
 
     /// Modify vertical FOV inside a context (no singleton side-effects).
     static void SetCameraFovy(ecvViewContext& ctx, double fovy);
+    static PivotVisibility GetPivotVisibility(const ecvViewContext& ctx);
+    static void SetInteractionMode(ecvViewContext& ctx,
+                                   INTERACTION_FLAGS flags);
+    static INTERACTION_FLAGS GetInteractionMode(const ecvViewContext& ctx);
+    static void SetPickingMode(ecvViewContext& ctx, PICKING_MODE mode);
+    static PICKING_MODE GetPickingMode(const ecvViewContext& ctx);
 
     // -- ecvGenericGLDisplay implementation (primary window) --
 
@@ -1165,7 +1171,7 @@ public:  // Main interface accessors
                        av->getViewportParameters())
                 .viewMat;
         }
-        return TheInstance()->m_viewportParams.viewMat;
+        return TheInstance()->effectiveCtx().viewportParams.viewMat;
     }
 
     /**
@@ -1501,8 +1507,8 @@ public:  // Main interface accessors
     inline static void SetCameraClip(double znear,
                                      double zfar,
                                      int viewport = 0) {
-        TheInstance()->m_viewportParams.zNear = znear;
-        TheInstance()->m_viewportParams.zFar = zfar;
+        TheInstance()->effectiveCtx().viewportParams.zNear = znear;
+        TheInstance()->effectiveCtx().viewportParams.zFar = zfar;
         auto* av = ecvViewManager::instance().getEffectiveView();
         if (av && av != TheInstance()) {
             auto vp = av->getViewportParameters();
@@ -1530,7 +1536,7 @@ public:  // Main interface accessors
         return 0; /* do nothing */
     }
     inline static void SetCameraFovy(double fovy, int viewport = 0) {
-        TheInstance()->m_viewportParams.fov_deg = static_cast<float>(fovy);
+        TheInstance()->effectiveCtx().viewportParams.fov_deg = static_cast<float>(fovy);
         auto* av = ecvViewManager::instance().getEffectiveView();
         if (av && av != TheInstance()) {
             auto vp = av->getViewportParameters();
@@ -1946,10 +1952,10 @@ public:  // visualization matrix transformation
 
     //! Returns whether the window is in exclusive full screen mode or not
     inline static bool ExclusiveFullScreen() {
-        return TheInstance()->m_exclusiveFullscreen;
+        return TheInstance()->effectiveCtx().exclusiveFullscreen;
     }
     inline static void SetExclusiveFullScreenFlage(bool state) {
-        TheInstance()->m_exclusiveFullscreen = state;
+        TheInstance()->effectiveCtx().exclusiveFullscreen = state;
     }
 
     //! Sets pixel size (i.e. zoom base)
@@ -2096,7 +2102,7 @@ public:  // visualization matrix transformation
 
     //! Returns pivot visibility
     inline static PivotVisibility GetPivotVisibility() {
-        return TheInstance()->m_pivotVisibility;
+        return TheInstance()->effectiveCtx().pivotVisibility;
     }
 
     //! Shows or hide the pivot symbol
@@ -2145,10 +2151,10 @@ public:  // visualization matrix transformation
 
     inline static void Deprecate3DLayer() { TheInstance()->m_updateFBO = true; }
     inline static void InvalidateViewport() {
-        TheInstance()->m_validProjectionMatrix = false;
+        TheInstance()->effectiveCtx().validProjectionMatrix = false;
     }
     inline static void InvalidateVisualization() {
-        TheInstance()->m_validModelviewMatrix = false;
+        TheInstance()->effectiveCtx().validModelviewMatrix = false;
     }
 
     static CCVector3d GetRealCameraCenter();
@@ -2176,7 +2182,7 @@ public:  // visualization matrix transformation
     static void SetBubbleViewMode(bool state);
     //! Returns whether bubble-view mode is enabled or no
     inline static bool BubbleViewModeEnabled() {
-        return TheInstance()->m_bubbleViewModeEnabled;
+        return TheInstance()->effectiveCtx().bubbleViewModeEnabled;
     }
     //! Set bubble-view f.o.v. (in degrees)
     static void SetBubbleViewFov(float fov_deg);
@@ -2184,12 +2190,12 @@ public:  // visualization matrix transformation
     //! Sets whether to display the coordinates of the point below the cursor
     //! position
     inline static void ShowCursorCoordinates(bool state) {
-        TheInstance()->m_showCursorCoordinates = state;
+        TheInstance()->effectiveCtx().showCursorCoordinates = state;
     }
     //! Whether the coordinates of the point below the cursor position are
     //! displayed or not
     inline static bool CursorCoordinatesShown() {
-        return TheInstance()->m_showCursorCoordinates;
+        return TheInstance()->effectiveCtx().showCursorCoordinates;
     }
 
     //! Toggles the automatic setting of the pivot point at the center of the
@@ -2200,7 +2206,7 @@ public:  // visualization matrix transformation
     }
     //! Whether the pivot point is automatically set at the center of the screen
     inline static bool AutoPickPivotAtCenter() {
-        return TheInstance()->m_autoPickPivotAtCenter;
+        return TheInstance()->effectiveCtx().autoPickPivotAtCenter;
     }
 
     //! Lock the rotation axis
@@ -2208,7 +2214,7 @@ public:  // visualization matrix transformation
 
     //! Returns whether the rotation axis is locaked or not
     inline static bool IsRotationAxisLocked() {
-        return TheInstance()->m_rotationAxisLocked;
+        return TheInstance()->effectiveCtx().rotationAxisLocked;
     }
 
     //! Returns the approximate 3D position of the clicked pixel
@@ -2219,12 +2225,13 @@ public:  // visualization matrix transformation
     // debug traces on screen
     //! Shows debug info on screen
     inline static void EnableDebugTrace(bool state) {
-        TheInstance()->m_showDebugTraces = state;
+        TheInstance()->effectiveCtx().showDebugTraces = state;
     }
 
     //! Toggles debug info on screen
     inline static void ToggleDebugTrace() {
-        TheInstance()->m_showDebugTraces = !TheInstance()->m_showDebugTraces;
+        auto& ctx = TheInstance()->effectiveCtx();
+        ctx.showDebugTraces = !ctx.showDebugTraces;
     }
 
     /**
@@ -2322,10 +2329,10 @@ public:  // visualization matrix transformation
     static int GetLabelFontPointSize();
 
     static void SetClickableItemsVisible(bool state) {
-        TheInstance()->m_clickableItemsVisible = state;
+        TheInstance()->effectiveCtx().clickableItemsVisible = state;
     }
     static bool GetClickableItemsVisible() {
-        return TheInstance()->m_clickableItemsVisible;
+        return TheInstance()->effectiveCtx().clickableItemsVisible;
     }
 
     // takes rendering zoom into account!
@@ -2340,10 +2347,10 @@ public:  // visualization matrix transformation
 
     //! Sets picking radius
     inline static void SetPickingRadius(int radius) {
-        TheInstance()->m_pickRadius = radius;
+        TheInstance()->effectiveCtx().pickRadius = radius;
     }
     //! Returns the current picking radius
-    inline static int GetPickingRadius() { return TheInstance()->m_pickRadius; }
+    inline static int GetPickingRadius() { return TheInstance()->effectiveCtx().pickRadius; }
 
     //! Sets whether overlay entities (scale, tetrahedron, etc.) should be
     //! displayed or not
@@ -2352,7 +2359,7 @@ public:  // visualization matrix transformation
     //! Returns whether overlay entities (scale, tetrahedron, etc.) are
     //! displayed or not
     inline static bool OverlayEntitiesAreDisplayed() {
-        return TheInstance()->m_displayOverlayEntities;
+        return TheInstance()->effectiveCtx().displayOverlayEntities;
     }
 
     //! Currently active items
@@ -2618,12 +2625,12 @@ public:  // event representation
     static int GlWidth() {
         auto* av = ecvViewManager::instance().getEffectiveView();
         if (av && av != TheInstance()) return av->glWidth();
-        return TheInstance()->m_glViewport.width();
+        return TheInstance()->effectiveCtx().glViewport.width();
     }
     static int GlHeight() {
         auto* av = ecvViewManager::instance().getEffectiveView();
         if (av && av != TheInstance()) return av->glHeight();
-        return TheInstance()->m_glViewport.height();
+        return TheInstance()->effectiveCtx().glViewport.height();
     }
     static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
