@@ -181,6 +181,30 @@ void ecvDisplayTools::SetCameraFovy(ecvViewContext& ctx, double fovy) {
     ctx.viewportParams.fov_deg = static_cast<float>(fovy);
 }
 
+ecvDisplayTools::PivotVisibility ecvDisplayTools::GetPivotVisibility(
+        const ecvViewContext& ctx) {
+    return ctx.pivotVisibility;
+}
+
+void ecvDisplayTools::SetInteractionMode(ecvViewContext& ctx,
+                                         INTERACTION_FLAGS flags) {
+    ctx.interactionFlags = flags;
+}
+
+ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::GetInteractionMode(
+        const ecvViewContext& ctx) {
+    return ctx.interactionFlags;
+}
+
+void ecvDisplayTools::SetPickingMode(ecvViewContext& ctx, PICKING_MODE mode) {
+    ctx.pickingMode = mode;
+}
+
+ecvDisplayTools::PICKING_MODE ecvDisplayTools::GetPickingMode(
+        const ecvViewContext& ctx) {
+    return ctx.pickingMode;
+}
+
 // default interaction flags
 ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::PAN_ONLY() {
     ecvDisplayTools::INTERACTION_FLAGS flags =
@@ -440,6 +464,15 @@ void ecvDisplayTools::onPointPicking(const CCVector3& p,
     m_last_picked_point = p;
     m_last_point_index = index;
     m_last_picked_id = id.c_str();
+
+    // Sync VTK pick results into the effective view context so that
+    // doPicking → StartOpenGLPicking / StartCPUBasedPointPicking can
+    // read them from effectiveCtx() (Phase-A bridging).
+    ecvViewContext& ctx = effectiveCtx();
+    ctx.lastPickedPoint = p;
+    ctx.lastPointIndex = index;
+    ctx.lastPickedId = m_last_picked_id;
+
 #ifdef QT_DEBUG
     CVLog::Print(QString("current selected index is %1").arg(index));
     CVLog::Print(
@@ -3179,24 +3212,19 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
                                     bool forceRedraw /* = true*/) {
     if (!HasInstance()) return;
 
-    // Ensure the primary rendering pipeline is used (not the
-    // tool-binding pipeline that switchActiveView may have re-routed).
-    s_tools.instance->beginPrimaryRender();
+    // === Global housekeeping (stays in RedrawDisplay) ===
 
-    // visual traces
+    // Debug traces cleanup
     if (s_tools.instance->effectiveCtx().showDebugTraces) {
-        // clear history
         RemoveWidgets(
                 WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, DEBUG_LAYER_ID));
         if (!s_tools.instance->m_diagStrings.isEmpty()) {
             QStringList::iterator it = s_tools.instance->m_diagStrings.begin();
             while (it != s_tools.instance->m_diagStrings.end()) {
-                // no more valid? we delete the message
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, *it));
                 it = s_tools.instance->m_diagStrings.erase(it);
             }
         }
-
         s_tools.instance->m_diagStrings
                 << QString("only2D : %1").arg(only2D ? "true" : "false");
         s_tools.instance->m_diagStrings
@@ -3208,7 +3236,6 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         if (!s_tools.instance->m_diagStrings.isEmpty()) {
             QStringList::iterator it = s_tools.instance->m_diagStrings.begin();
             while (it != s_tools.instance->m_diagStrings.end()) {
-                // no more valid? we delete the message
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, *it));
                 it = s_tools.instance->m_diagStrings.erase(it);
             }
@@ -3221,43 +3248,18 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         return;
     }
 
-    // we update font size (for text display)
     SetFontPointSize(GetFontPointSize());
 
     if (!only2D) {
-        // force the 3D layer to be redrawn
         Deprecate3DLayer();
     }
 
-    bool drawBackground = false;
-    bool draw3DPass = false;
-    bool drawForeground = true;
-    bool draw3DCross = GetDisplayParameters().displayCross;
-
-    // here are all the reasons for which we would like to update the main 3D
-    // layer
-    if (s_tools.instance->m_updateFBO ||
-        s_tools.instance->m_captureMode.enabled) {
-        // we must update the FBO (or display without FBO)
-        drawBackground = true;
-        draw3DPass = true;
-    }
-
-    // context initialization
-    CC_DRAW_CONTEXT CONTEXT;
-    GetContext(CONTEXT);
-    CONTEXT.display = s_tools.instance;
-
-    // clean the outdated messages
+    // Clean outdated messages (global, not per-view)
     {
         std::list<MessageToDisplay>::iterator it =
                 s_tools.instance->m_messagesToDisplay.begin();
         qint64 currentTime_sec = s_tools.instance->m_timer.elapsed() / 1000;
-        // CVLog::PrintDebug(QString("[paintGL] Current time:
-        // %1.").arg(currentTime_sec));
-
         while (it != s_tools.instance->m_messagesToDisplay.end()) {
-            // no more valid? we delete the message
             if (it->messageValidity_sec < currentTime_sec) {
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
                                                 it->message));
@@ -3268,48 +3270,63 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         }
     }
 
-    // backup the current viewport
+    // === Per-view delegation (Phase B) ===
+    const auto& views = ecvViewManager::instance().getAllViews();
+    if (!views.isEmpty()) {
+        for (auto* viewDisplay : views) {
+            viewDisplay->redraw(only2D, forceRedraw);
+        }
+        s_tools.instance->m_shouldBeRefreshed = false;
+        return;
+    }
+
+    // === Legacy singleton draw path (fallback when no views registered) ===
+    s_tools.instance->beginPrimaryRender();
+
+    bool drawBackground = false;
+    bool draw3DPass = false;
+    bool drawForeground = true;
+    bool draw3DCross = GetDisplayParameters().displayCross;
+
+    if (s_tools.instance->m_updateFBO ||
+        s_tools.instance->m_captureMode.enabled) {
+        drawBackground = true;
+        draw3DPass = true;
+    }
+
+    CC_DRAW_CONTEXT CONTEXT;
+    GetContext(CONTEXT);
+    CONTEXT.display = s_tools.instance;
+
     QRect originViewport = s_tools.instance->effectiveCtx().glViewport;
     bool modifiedViewport = false;
 
-    /******************/
-    /*** BACKGROUND ***/
-    /******************/
-    // shall we clear the background (depth and/or color)
     if (drawBackground) {
         if (s_tools.instance->effectiveCtx().showDebugTraces) {
             s_tools.instance->m_diagStrings << "draw background";
         }
-
         CONTEXT.clearColorLayer = true;
         CONTEXT.clearDepthLayer = true;
         DrawBackground(CONTEXT);
     }
 
-    /*********************/
-    /*** MAIN 3D LAYER ***/
-    /*********************/
     if (draw3DPass) {
         if (s_tools.instance->effectiveCtx().showDebugTraces) {
             s_tools.instance->m_diagStrings << "draw 3D";
         }
-
         CONTEXT.forceRedraw = forceRedraw;
         Draw3D(CONTEXT);
     }
 
-    // display traces
+    // Display debug traces
     if (s_tools.instance->effectiveCtx().showDebugTraces) {
         if (!s_tools.instance->m_diagStrings.isEmpty()) {
             QFont font = GetTextDisplayFont();
             int font_size = font.pointSize();
             QFontMetrics fm(font);
-
             int x = s_tools.instance->effectiveCtx().glViewport.width() / 2 - 100;
             int margin = font_size / 2;
             int y = margin;
-
-            // draw black background
             {
                 int height = (s_tools.instance->m_diagStrings.size() + 1) *
                              (fm.height() + margin);
@@ -3331,22 +3348,16 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         }
     }
 
-    // restore viewport if necessary
     if (modifiedViewport) {
-        // correction for HD screens
         SetGLViewport(originViewport);
         CONTEXT.glW = originViewport.width();
         CONTEXT.glH = originViewport.height();
-        modifiedViewport = false;
     }
 
     if (drawBackground || draw3DCross) {
         s_tools.instance->m_updateFBO = false;
     }
 
-    /******************/
-    /*** FOREGROUND ***/
-    /******************/
     if (drawForeground) {
         DrawForeground(CONTEXT);
     }
@@ -3359,10 +3370,7 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         SetPivotPoint(s_tools.instance->effectiveCtx().autoPivotCandidate, true, false);
     }
 
-    // update canvas
     UpdateScreen();
-
-    // Restore the tool-binding pipeline that was saved in beginPrimaryRender.
     s_tools.instance->endPrimaryRender();
 }
 
@@ -4477,7 +4485,7 @@ void ecvDisplayTools::refresh(bool only2D) { RefreshDisplay(only2D); }
 void ecvDisplayTools::toBeRefreshed() { m_shouldBeRefreshed = true; }
 
 const ecvViewportParameters& ecvDisplayTools::getViewportParameters() const {
-    return m_viewportParams;
+    return m_primaryCtx.viewportParams;
 }
 
 void ecvDisplayTools::setViewportParameters(
