@@ -327,7 +327,7 @@ ecvGLView::PICKING_MODE ecvGLView::getPickingMode() const {
 }
 
 void ecvGLView::getContext(ccGLDrawContext& context) const {
-    ecvDisplayTools::GetContext(context);
+    ecvDisplayTools::GetContext(context, m_ctx);
     context.display = const_cast<ecvGLView*>(this);
     if (m_vtkWidget) {
         context.glW = m_vtkWidget->width();
@@ -335,11 +335,6 @@ void ecvGLView::getContext(ccGLDrawContext& context) const {
         context.devicePixelRatio =
                 static_cast<float>(m_vtkWidget->devicePixelRatioF());
     }
-    context.defaultPointSize =
-            static_cast<unsigned char>(m_ctx.viewportParams.defaultPointSize);
-    context.defaultLineWidth =
-            static_cast<unsigned char>(m_ctx.viewportParams.defaultLineWidth);
-    context.currentLineWidth = context.defaultLineWidth;
 }
 
 const ecvGui::ParamStruct& ecvGLView::getDisplayParameters() const {
