@@ -628,7 +628,9 @@ private:
 
     // -- Primary render guards (multi-window safety) --
 
+    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     void beginPrimaryRender() override;
+    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     void endPrimaryRender() override;
 
 protected:
