@@ -769,10 +769,6 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
-    ecvGenericGLDisplay* wheelDisplay =
-            ecvGenericGLDisplay::FromWidget(this);
-    ecvViewManager::ScopedRenderOverride wheelRenderScope(wheelDisplay);
-
     bool doRedraw = false;
     Qt::KeyboardModifiers keyboardModifiers =
             QApplication::keyboardModifiers();
