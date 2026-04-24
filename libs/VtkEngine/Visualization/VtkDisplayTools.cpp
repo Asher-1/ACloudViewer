@@ -211,9 +211,6 @@ VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
           m_savedWidget(dt->m_vtkWidget),
           m_savedGLViewport(dt->m_glViewport),
           m_savedHz(dt->m_hotZone),
-          m_savedClickableVis(dt->m_clickableItemsVisible),
-          m_savedPtSize(dt->m_viewportParams.defaultPointSize),
-          m_savedLnWidth(dt->m_viewportParams.defaultLineWidth),
           m_savedItems(dt->m_clickableItems),
           m_hotZone(hotZone),
           m_ctx(ctx),
@@ -247,32 +244,18 @@ VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
         m_hotZone = new ecvDisplayTools::HotZone(widget);
     }
     dt->m_hotZone = m_hotZone;
-    dt->m_clickableItemsVisible = ctx.clickableItemsVisible;
-    dt->m_viewportParams.defaultPointSize =
-            ctx.viewportParams.defaultPointSize;
-    dt->m_viewportParams.defaultLineWidth =
-            ctx.viewportParams.defaultLineWidth;
-    dt->m_bubbleViewModeEnabled = ctx.bubbleViewModeEnabled;
 }
 
 void VtkDisplayTools::ScopedHotZoneRender::draw() {
     int yStart = 0;
     ecvDisplayTools::DrawClickableItems(0, yStart);
-
-    m_ctx.viewportParams.defaultPointSize =
-            m_dt->m_viewportParams.defaultPointSize;
-    m_ctx.viewportParams.defaultLineWidth =
-            m_dt->m_viewportParams.defaultLineWidth;
     m_clickableItems = m_dt->m_clickableItems;
 }
 
 VtkDisplayTools::ScopedHotZoneRender::~ScopedHotZoneRender() {
     --m_dt->m_scopedVisSwapDepth;
 
-    m_dt->m_viewportParams.defaultPointSize = m_savedPtSize;
-    m_dt->m_viewportParams.defaultLineWidth = m_savedLnWidth;
     m_dt->m_hotZone = m_savedHz;
-    m_dt->m_clickableItemsVisible = m_savedClickableVis;
     m_dt->m_clickableItems = m_savedItems;
 
     m_dt->m_visualizer3D = m_savedVis;

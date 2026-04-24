@@ -477,9 +477,6 @@ public:
         QRect m_savedGLViewport;
 
         ecvDisplayTools::HotZone* m_savedHz;
-        bool m_savedClickableVis;
-        float m_savedPtSize;
-        float m_savedLnWidth;
         std::vector<ecvDisplayTools::ClickableItem> m_savedItems;
 
         ecvDisplayTools::HotZone*& m_hotZone;
