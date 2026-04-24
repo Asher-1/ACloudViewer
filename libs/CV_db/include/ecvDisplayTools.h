@@ -948,6 +948,7 @@ private:
      * @brief Internal 3D drawing method
      * @param CONTEXT Drawing context
      */
+    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     static void Draw3D(CC_DRAW_CONTEXT& CONTEXT);
 
 public:  // Main interface accessors
@@ -1656,7 +1657,9 @@ public:  // Main interface accessors
     inline virtual void removeEntities(
             const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
+    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
+    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
     static void Update2DLabel(bool immediateUpdate = false);
     static void Pick2DLabel(int x, int y);
