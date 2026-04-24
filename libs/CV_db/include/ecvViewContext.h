@@ -105,7 +105,7 @@ struct CV_DB_LIB_API ecvViewContext {
     ecvGenericGLDisplay::PivotVisibility pivotVisibility =
             ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE;
     bool pivotSymbolShown = false;
-    bool autoPickPivotAtCenter = true;
+    bool autoPickPivotAtCenter = false;
     CCVector3d autoPivotCandidate{0, 0, 0};
 
     // ================================================================

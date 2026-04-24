@@ -820,6 +820,7 @@ void MainWindow::initial() {
                         }
                     } else if (chosen == closeAct) {
                         if (tabIdx < subs.size()) {
+                            prepareViewClose(subs[tabIdx]->widget());
                             subs[tabIdx]->close();
                         }
                     } else if (splitter &&
@@ -2420,6 +2421,14 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
+    // CC pattern: new windows inherit the full state of the primary view.
+    // Copy the entire ecvViewContext so that pivot mode, interaction flags,
+    // display flags, light settings, etc. are all inherited.
+    const ecvViewContext* primaryCtx = primaryInstance->viewContext();
+    if (primaryCtx) {
+        view->context() = *primaryCtx;
+    }
+
     // Background color: copy from current draw context + set on renderer
     CC_DRAW_CONTEXT ctx;
     ecvDisplayTools::GetContext(ctx);
@@ -2427,8 +2436,6 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
                                   ecvTools::TransFormRGB(ctx.backgroundCol2),
                                   ctx.drawBackgroundGradient);
 
-    // Also set directly on the VTK renderer (with gradient) for immediate
-    // effect
     ecvColor::Rgbf bkg1 = ecvTools::TransFormRGB(ctx.backgroundCol);
     ecvColor::Rgbf bkg2 = ecvTools::TransFormRGB(ctx.backgroundCol2);
     newVis->setBackgroundColor(bkg1.r, bkg1.g, bkg1.b, bkg2.r, bkg2.g, bkg2.b,
@@ -2444,11 +2451,6 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
         newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
     }
 
-    // Copy viewport parameters from primary (camera angle, perspective etc)
-    view->setViewportParameters(ecvDisplayTools::GetViewportParameters());
-
-    // Force an immediate render so background is visible before user
-    // interaction
     view->redraw();
 }
 
@@ -4842,21 +4844,14 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
             }
             break;
         }
-        case QEvent::FocusIn: {
-            // ParaView-style click-to-activate for split views:
-            // when a view widget inside a splitter gets focus, set it as active
-            // and rebind the tools pipeline.
-            auto* widget = qobject_cast<QWidget*>(obj);
-            if (widget) {
-                auto* display = ecvGenericGLDisplay::FromWidget(widget);
-                if (display) {
-                    ecvViewManager::instance().setActiveView(display);
-                    rebindToolsToActiveView(display);
-                    markActiveViewFrame(widget);
-                }
-            }
+        case QEvent::FocusIn:
+            // NOT activating views on FocusIn — CC and PV both activate on
+            // mouse click only.  Click-to-activate is handled by:
+            //   QVTKWidgetCustom::mousePressEvent  → setActiveView
+            //   QMdiArea::subWindowActivated        → on3DViewActivated
+            // FocusIn fires on Tab key, programmatic setFocus(), etc.,
+            // which should not switch the active 3D view.
             break;
-        }
         default:
             break;
     }

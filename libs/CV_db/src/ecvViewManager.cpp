@@ -53,6 +53,8 @@ void ecvViewManager::unregisterView(ecvGenericGLDisplay* view) {
     int idx = m_views.indexOf(view);
     if (idx < 0) return;
 
+    detachEntitiesFromView(view);
+
     m_views.removeAt(idx);
     emit viewUnregistered(view);
     emit viewCountChanged(m_views.size());
@@ -102,9 +104,12 @@ void ecvViewManager::associateToActiveView(ccHObject* obj) {
 }
 
 void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* view) {
-    // This will be called when a view is closed.
-    // Entities bound to this view should have their display cleared.
-    // The actual recursive walk is done by the caller passing in
-    // the DB root, since ecvViewManager doesn't hold the DB root.
-    Q_UNUSED(view);
+    if (!view) return;
+
+    // CC pattern: mainwindow.cpp → removeFromDisplay_recursive(glWindow)
+    // Walk the global scene DB and clear display bindings for this view.
+    ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
+    if (sceneDB) {
+        sceneDB->removeFromDisplay_recursive(view);
+    }
 }
