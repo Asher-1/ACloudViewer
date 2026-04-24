@@ -450,16 +450,24 @@ public:
     /// Unlike switchActiveView, this does NOT save the old pipeline.
     void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
-    /// RAII helper: temporarily swaps m_visualizer3D + m_vtkWidget + m_visualizer2D
-    /// so that the existing draw code renders to a different VtkVis/widget pair.
-    class ScopedVisSwap {
+    /// Phase B helper: renders hot zone / clickable items for a specific
+    /// ecvGLView by temporarily routing widget rendering to that view's
+    /// VtkVis pipeline.  Only swaps the minimal
+    /// state needed for DrawClickableItems.
+    class ScopedHotZoneRender {
     public:
-        ScopedVisSwap(VtkDisplayTools* dt,
-                      VtkVisPtr vis,
-                      QVTKWidgetCustom* widget);
-        ~ScopedVisSwap();
-        ScopedVisSwap(const ScopedVisSwap&) = delete;
-        ScopedVisSwap& operator=(const ScopedVisSwap&) = delete;
+        ScopedHotZoneRender(
+                VtkDisplayTools* dt,
+                VtkVisPtr vis,
+                QVTKWidgetCustom* widget,
+                ecvDisplayTools::HotZone*& hotZone,
+                ecvViewContext& ctx,
+                std::vector<ecvDisplayTools::ClickableItem>& clickableItems);
+        ~ScopedHotZoneRender();
+        ScopedHotZoneRender(const ScopedHotZoneRender&) = delete;
+        ScopedHotZoneRender& operator=(const ScopedHotZoneRender&) = delete;
+
+        void draw();
 
     private:
         VtkDisplayTools* m_dt;
@@ -467,6 +475,16 @@ public:
         ImageVisPtr m_saved2D;
         QVTKWidgetCustom* m_savedWidget;
         QRect m_savedGLViewport;
+
+        ecvDisplayTools::HotZone* m_savedHz;
+        bool m_savedClickableVis;
+        float m_savedPtSize;
+        float m_savedLnWidth;
+        std::vector<ecvDisplayTools::ClickableItem> m_savedItems;
+
+        ecvDisplayTools::HotZone*& m_hotZone;
+        ecvViewContext& m_ctx;
+        std::vector<ecvDisplayTools::ClickableItem>& m_clickableItems;
     };
 
     virtual QString pick2DLabel(int x, int y) override;
@@ -634,14 +652,14 @@ protected:
     bool m_renderGuardSavedClickable = false;
     bool m_renderGuardActive = false;
 
-    /// >0 when a ScopedVisSwap is active (drawing into a secondary view).
+    /// >0 when scoped rendering is active (drawing into a secondary view).
     /// Text rendering should use m_visualizer3D instead of m_visualizer2D
     /// when this is non-zero so that 2D overlays (show name, labels) appear
     /// in the correct view.
     int m_scopedVisSwapDepth = 0;
 
     /// Pending text background stored by WIDGET_RECTANGLE_2D during
-    /// ScopedVisSwap, applied to the next text actor via vtkTextProperty.
+    /// scoped rendering, applied to the next text actor via vtkTextProperty.
     struct PendingTextBg {
         bool valid = false;
         double r = 0, g = 0, b = 0, a = 0;

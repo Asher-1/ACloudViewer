@@ -21,6 +21,7 @@ class QWidget;
 class ecvViewportParameters;
 struct ccGLCameraParameters;
 struct ccGLDrawContext;
+struct ecvViewContext;
 
 /// Per-window display interface for multi-window rendering.
 ///
@@ -198,6 +199,12 @@ public:
 
     virtual void pushStateToSingleton() {}
     virtual void pullStateFromSingleton() {}
+
+    /// Access the per-view state container.
+    /// Returns nullptr for the primary/singleton display (state lives in
+    /// ecvDisplayTools members).  ecvGLView overrides to return &m_ctx.
+    virtual ecvViewContext* viewContext() { return nullptr; }
+    virtual const ecvViewContext* viewContext() const { return nullptr; }
 
     // ================================================================
     // Lifecycle notification (ref: CloudCompare aboutToBeRemoved)

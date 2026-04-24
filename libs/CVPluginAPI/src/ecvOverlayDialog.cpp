@@ -67,6 +67,10 @@ bool ccOverlayDialog::linkWith(QWidget* win) {
     return true;
 }
 
+void ccOverlayDialog::bindToView(ecvGenericGLDisplay* view) {
+    m_boundView = view;
+}
+
 void ccOverlayDialog::onLinkedWindowDeletion(QObject* object /*=0*/) {
     if (m_processing) stop(false);
 

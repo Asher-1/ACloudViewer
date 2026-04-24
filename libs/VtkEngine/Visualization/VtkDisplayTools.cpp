@@ -194,33 +194,43 @@ void VtkDisplayTools::restorePrimaryView() {
     m_primaryWidget = nullptr;
 }
 
-VtkDisplayTools::ScopedVisSwap::ScopedVisSwap(VtkDisplayTools* dt,
-                                              VtkVisPtr vis,
-                                              QVTKWidgetCustom* widget)
+// ================================================================
+// ScopedHotZoneRender  (Phase B)
+// ================================================================
+
+VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
+        VtkDisplayTools* dt,
+        VtkVisPtr vis,
+        QVTKWidgetCustom* widget,
+        ecvDisplayTools::HotZone*& hotZone,
+        ecvViewContext& ctx,
+        std::vector<ecvDisplayTools::ClickableItem>& clickableItems)
         : m_dt(dt),
           m_savedVis(dt->m_visualizer3D),
           m_saved2D(dt->m_visualizer2D),
           m_savedWidget(dt->m_vtkWidget),
-          m_savedGLViewport(dt->m_glViewport) {
+          m_savedGLViewport(dt->m_glViewport),
+          m_savedHz(dt->m_hotZone),
+          m_savedClickableVis(dt->m_clickableItemsVisible),
+          m_savedPtSize(dt->m_viewportParams.defaultPointSize),
+          m_savedLnWidth(dt->m_viewportParams.defaultLineWidth),
+          m_savedItems(dt->m_clickableItems),
+          m_hotZone(hotZone),
+          m_ctx(ctx),
+          m_clickableItems(clickableItems) {
     dt->m_visualizer3D = vis;
     dt->m_vtkWidget = widget;
     dt->SetCurrentScreen(widget);
 
-    // Set m_glViewport to match this widget's size so all code that
-    // reads m_glViewport (DrawClickableItems, GetGLCameraParameters,
-    // 2D label projection, etc.) uses the correct per-view dimensions.
     if (widget) {
         ecvDisplayTools::SetGLViewport(
                 QRect(0, 0, widget->width(), widget->height()));
     }
 
-    // Swap the 2D overlay to a per-widget ImageVis so 2D labels,
-    // text, and rectangles render into this view's renderer instead
-    // of polluting the primary window.
     if (ecvDisplayTools::USE_2D && widget) {
         auto localVis = widget->localImageVis();
         if (!localVis && widget->getVtkRender()) {
-            localVis = std::make_shared<ImageVis>("2Dviewer_secondary", false);
+            localVis = std::make_shared<ImageVis>("2Dviewer_hz", false);
             localVis->setRender(widget->getVtkRender());
             localVis->setupInteractor(widget->GetInteractor(),
                                       widget->GetRenderWindow());
@@ -232,10 +242,39 @@ VtkDisplayTools::ScopedVisSwap::ScopedVisSwap(VtkDisplayTools* dt,
     }
 
     ++dt->m_scopedVisSwapDepth;
+
+    if (!m_hotZone) {
+        m_hotZone = new ecvDisplayTools::HotZone(widget);
+    }
+    dt->m_hotZone = m_hotZone;
+    dt->m_clickableItemsVisible = ctx.clickableItemsVisible;
+    dt->m_viewportParams.defaultPointSize =
+            ctx.viewportParams.defaultPointSize;
+    dt->m_viewportParams.defaultLineWidth =
+            ctx.viewportParams.defaultLineWidth;
+    dt->m_bubbleViewModeEnabled = ctx.bubbleViewModeEnabled;
 }
 
-VtkDisplayTools::ScopedVisSwap::~ScopedVisSwap() {
+void VtkDisplayTools::ScopedHotZoneRender::draw() {
+    int yStart = 0;
+    ecvDisplayTools::DrawClickableItems(0, yStart);
+
+    m_ctx.viewportParams.defaultPointSize =
+            m_dt->m_viewportParams.defaultPointSize;
+    m_ctx.viewportParams.defaultLineWidth =
+            m_dt->m_viewportParams.defaultLineWidth;
+    m_clickableItems = m_dt->m_clickableItems;
+}
+
+VtkDisplayTools::ScopedHotZoneRender::~ScopedHotZoneRender() {
     --m_dt->m_scopedVisSwapDepth;
+
+    m_dt->m_viewportParams.defaultPointSize = m_savedPtSize;
+    m_dt->m_viewportParams.defaultLineWidth = m_savedLnWidth;
+    m_dt->m_hotZone = m_savedHz;
+    m_dt->m_clickableItemsVisible = m_savedClickableVis;
+    m_dt->m_clickableItems = m_savedItems;
+
     m_dt->m_visualizer3D = m_savedVis;
     m_dt->m_visualizer2D = m_saved2D;
     m_dt->m_vtkWidget = m_savedWidget;

@@ -30,19 +30,7 @@ void ecvViewManager::setActiveView(ecvGenericGLDisplay* view) {
     if (m_activeView == view) return;
 
     ecvGenericGLDisplay* oldActive = m_activeView;
-
-    // Save modified singleton state back to the outgoing view.
-    if (oldActive) {
-        oldActive->pullStateFromSingleton();
-    }
-
     m_activeView = view;
-
-    // Load the incoming view's per-view state into the singleton
-    // so that all existing m_tools-> code sees the correct values.
-    if (m_activeView) {
-        m_activeView->pushStateToSingleton();
-    }
 
     emit activeViewChanged(m_activeView, oldActive);
 }

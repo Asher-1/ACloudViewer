@@ -10,6 +10,7 @@
 #include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGuiParameters.h>
+#include <ecvViewContext.h>
 #include <ecvViewportParameters.h>
 
 #include <QElapsedTimer>
@@ -37,8 +38,8 @@ using ImageVisPtr = std::shared_ptr<ImageVis>;
 
 /// Per-window 3D view — the **complete per-view state container**.
 ///
-/// After the Phase-1 refactoring this class holds all display state
-/// that was formerly global in ecvDisplayTools:
+/// After the Phase-A refactoring this class holds all display state
+/// that was formerly global in ecvDisplayTools inside `ecvViewContext m_ctx`:
 ///   - Viewport / camera / projection matrices
 ///   - Interaction & picking mode
 ///   - Mouse & touch state
@@ -120,6 +121,17 @@ public:
     void zoomGlobal();
 
     // ================================================================
+    // Per-view context — the single source of truth for view state.
+    //
+    // All per-view display state (viewport, camera matrices,
+    // interaction mode, picking, mouse, display flags, light, pivot)
+    // lives in m_ctx.  Accessors below are thin wrappers.
+    // ================================================================
+
+    const ecvViewContext& context() const { return m_ctx; }
+    ecvViewContext& context() { return m_ctx; }
+
+    // ================================================================
     // Per-view state <-> singleton synchronization
     //
     // When this view becomes the active view, pushStateToSingleton()
@@ -132,40 +144,49 @@ public:
     void pushStateToSingleton() override;
     void pullStateFromSingleton() override;
 
+    ecvViewContext* viewContext() override { return &m_ctx; }
+    const ecvViewContext* viewContext() const override { return &m_ctx; }
+
     // ================================================================
-    // Per-view state accessors
+    // Per-view state accessors (delegate to m_ctx)
     // ================================================================
 
-    const QPoint& lastMousePos() const { return m_lastMousePos; }
-    void setLastMousePos(const QPoint& p) { m_lastMousePos = p; }
+    const QPoint& lastMousePos() const { return m_ctx.lastMousePos; }
+    void setLastMousePos(const QPoint& p) { m_ctx.lastMousePos = p; }
 
-    bool mouseMoved() const { return m_mouseMoved; }
-    void setMouseMoved(bool v) { m_mouseMoved = v; }
+    bool mouseMoved() const { return m_ctx.mouseMoved; }
+    void setMouseMoved(bool v) { m_ctx.mouseMoved = v; }
 
-    bool mouseButtonPressed() const { return m_mouseButtonPressed; }
-    void setMouseButtonPressed(bool v) { m_mouseButtonPressed = v; }
+    bool mouseButtonPressed() const { return m_ctx.mouseButtonPressed; }
+    void setMouseButtonPressed(bool v) { m_ctx.mouseButtonPressed = v; }
 
-    bool clickableItemsVisible() const { return m_clickableItemsVisible; }
-    void setClickableItemsVisible(bool v) { m_clickableItemsVisible = v; }
+    bool clickableItemsVisible() const {
+        return m_ctx.clickableItemsVisible;
+    }
+    void setClickableItemsVisible(bool v) {
+        m_ctx.clickableItemsVisible = v;
+    }
 
     ecvDisplayTools::HotZone* hotZone() const { return m_hotZone; }
     void setHotZone(ecvDisplayTools::HotZone* hz) { m_hotZone = hz; }
 
     float defaultPointSize() const {
-        return m_viewportParams.defaultPointSize;
+        return m_ctx.viewportParams.defaultPointSize;
     }
     void setDefaultPointSize(float s) {
-        m_viewportParams.defaultPointSize = s;
+        m_ctx.viewportParams.defaultPointSize = s;
     }
 
     float defaultLineWidth() const {
-        return m_viewportParams.defaultLineWidth;
+        return m_ctx.viewportParams.defaultLineWidth;
     }
     void setDefaultLineWidth(float w) {
-        m_viewportParams.defaultLineWidth = w;
+        m_ctx.viewportParams.defaultLineWidth = w;
     }
 
-    bool bubbleViewModeEnabled() const { return m_bubbleViewModeEnabled; }
+    bool bubbleViewModeEnabled() const {
+        return m_ctx.bubbleViewModeEnabled;
+    }
 
 signals:
     void aboutToClose(ecvGLView* self);
@@ -181,84 +202,42 @@ private:
     int m_uniqueID;
     QString m_title;
 
-    // -- VTK pipeline (per-view) --
+    // -- VTK pipeline (per-view, not part of context) --
     QVTKWidgetCustom* m_vtkWidget = nullptr;
     Visualization::VtkVisPtr m_visualizer3D;
     Visualization::ImageVisPtr m_visualizer2D;
 
-    // -- Scene DB --
+    // -- Scene DB (not part of context) --
     ccHObject* m_globalDBRoot = nullptr;
     ccHObject* m_winDBRoot = nullptr;
 
-    // -- Viewport / Camera group --
-    ecvViewportParameters m_viewportParams;
-    QRect m_glViewport;
-    ccGLMatrixd m_viewMatd;
-    ccGLMatrixd m_projMatd;
-    bool m_validModelviewMatrix = false;
-    bool m_validProjectionMatrix = false;
-    double m_cameraToBBCenterDist = 1.0;
-    double m_bbHalfDiag = 1.0;
-    bool m_bubbleViewModeEnabled = false;
-    float m_bubbleViewFov_deg = 90.0f;
-    ecvViewportParameters m_preBubbleViewParameters;
+    // ================================================================
+    // Per-view context: ALL push/pull-able value-type state.
+    // ================================================================
+    ecvViewContext m_ctx;
 
-    // -- Interaction / Picking group --
-    INTERACTION_FLAGS m_interactionFlags = MODE_TRANSFORM_CAMERA;
-    PICKING_MODE m_pickingMode = DEFAULT_PICKING;
-    bool m_pickingModeLocked = false;
-    int m_pickRadius = 3;
+    // ================================================================
+    // UI artifacts that depend on ecvDisplayTools nested types.
+    // These are pushed/pulled individually alongside m_ctx.
+    // ================================================================
+
     ccPolyline* m_rectPickingPoly = nullptr;
-    bool m_allowRectangularEntityPicking = true;
     QTimer m_deferredPickingTimer;
-    CCVector3 m_lastPickedPoint{0, 0, 0};
-    int m_lastPointIndex = -1;
-    QString m_lastPickedId;
-    bool m_widgetClicked = false;
-    bool m_ignoreMouseReleaseEvent = false;
-
-    // -- Mouse / Touch group --
-    QPoint m_lastMousePos;
-    QPoint m_lastMouseMovePos;
-    bool m_mouseMoved = false;
-    bool m_mouseButtonPressed = false;
-    bool m_touchInProgress = false;
-    qreal m_touchBaseDist = 1.0;
-
-    // -- HotZone / Clickable items group --
     ecvDisplayTools::HotZone* m_hotZone = nullptr;
     std::vector<ecvDisplayTools::ClickableItem> m_clickableItems;
-    bool m_clickableItemsVisible = false;
-
-    // -- Display group --
+    std::list<ccInteractor*> m_activeItems;
     std::list<ecvDisplayTools::MessageToDisplay> m_messagesToDisplay;
+
+    // -- Display (not pushed/pulled via context) --
     QFont m_font;
     ecvGui::ParamStruct m_overriddenDisplayParameters;
     bool m_overriddenDisplayParametersEnabled = false;
-    bool m_displayOverlayEntities = true;
-    bool m_exclusiveFullscreen = false;
-    bool m_showCursorCoordinates = false;
-    bool m_showDebugTraces = false;
 
-    // -- Refresh / Timer group --
+    // -- Refresh / Timer (not pushed/pulled) --
     bool m_shouldBeRefreshed = false;
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
-    qint64 m_lastClickTime_ticks = 0;
-
-    // -- Misc per-view --
-    PivotVisibility m_pivotVisibility = PIVOT_SHOW_ON_MOVE;
-    bool m_pivotSymbolShown = false;
-    bool m_rotationAxisLocked = false;
-    CCVector3d m_lockedRotationAxis{0, 0, 1};
-    bool m_autoPickPivotAtCenter = true;
-    CCVector3d m_autoPivotCandidate{0, 0, 0};
-
-    // -- Custom light per-view --
-    bool m_sunLightEnabled = true;
-    bool m_customLightEnabled = false;
-    float m_customLightPos[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
     static int s_nextWindowID;
 };

@@ -51,8 +51,10 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  */
 
 class QMainWindow;
+class ecvGLView;
 namespace Visualization { class ImageVis; }
 #include <ecvDisplayTools.h>
+#include <ecvViewContext.h>
 
 namespace VTKExtensions {
 class vtkCustomInteractorStyle;
@@ -190,6 +192,11 @@ public:
     void setLocalHotZone(ecvDisplayTools::HotZone* hz) { m_localHotZone = hz; }
     bool localClickableItemsVisible() const { return m_localClickableVisible; }
 
+    /// Phase C: per-view owner.  Set to the ecvGLView that created this
+    /// widget.  nullptr for the primary (singleton) widget.
+    void setOwnerView(ecvGLView* view) { m_ownerView = view; }
+    ecvGLView* ownerView() const { return m_ownerView; }
+
     /// Resolve the ecvGenericGLDisplay associated with this widget.
     ecvGenericGLDisplay* resolveDisplay() const;
 
@@ -205,12 +212,56 @@ public:
     float localDefaultLineWidth() const { return m_localDefaultLineWidth; }
     void setLocalDefaultLineWidth(float w) { m_localDefaultLineWidth = w; }
 
+    // ================================================================
+    // Phase C: per-view state accessors
+    //
+    // These return a mutable reference to the correct source of truth:
+    //   secondary views → m_ownerView->context().xxx
+    //   primary view    → m_tools->m_xxx  (singleton fallback)
+    // ================================================================
+
+    ecvViewContext* ownerCtx();
+    ecvGenericGLDisplay::INTERACTION_FLAGS& curInteractionFlags();
+    ecvViewportParameters& curViewportParams();
+    const ecvViewportParameters& curViewportParams() const;
+    QPoint& curLastMousePos();
+    QPoint& curLastMouseMovePos();
+    bool& curMouseMoved();
+    bool& curMouseButtonPressed();
+    bool& curIgnoreMouseReleaseEvent();
+    bool& curWidgetClicked();
+    ecvGenericGLDisplay::PICKING_MODE& curPickingMode();
+    bool& curPickingModeLocked();
+    int& curPickRadius();
+    bool& curAllowRectangularEntityPicking();
+    int& curLastPointIndex();
+    QString& curLastPickedId();
+    bool& curTouchInProgress();
+    qreal& curTouchBaseDist();
+    bool& curClickableItemsVisible();
+    bool& curBubbleViewModeEnabled();
+    float& curBubbleViewFov_deg();
+    bool& curCustomLightEnabled();
+    float* curCustomLightPos();
+    bool& curRotationAxisLocked();
+    CCVector3d& curLockedRotationAxis();
+    ecvGenericGLDisplay::PivotVisibility& curPivotVisibility();
+    bool& curPivotSymbolShown();
+    bool& curAutoPickPivotAtCenter();
+    bool& curShowCursorCoordinates();
+    qint64& curLastClickTime();
+
+    ccPolyline*& curRectPickingPoly();
+    std::list<ccInteractor*>& curActiveItems();
+    ecvDisplayTools::HotZone*& curHotZone();
+
 protected:
     bool m_unclosable = true;
     bool m_useVBO = false;
     vtkRenderer* m_render;
     QMainWindow* m_win;
     ecvDisplayTools* m_tools;
+    ecvGLView* m_ownerView = nullptr;
     ecvDisplayTools::HotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
