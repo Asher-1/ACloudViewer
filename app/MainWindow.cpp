@@ -2501,7 +2501,12 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     // view's widget. Overlay tools that cached the old widget at
     // activation need to be re-linked.
     QWidget* screen = ecvDisplayTools::GetCurrentScreen();
-    if (!screen) return;
+    if (!screen) {
+        // Degraded / no display target: still refresh menus, toolbars, and
+        // properties so UI does not stay bound to a stale view.
+        updateUI();
+        return;
+    }
 
     for (auto& mdi : m_mdiDialogs) {
         if (mdi.dialog && mdi.dialog->started()) {
@@ -2965,8 +2970,7 @@ ecvGLView* MainWindow::new3DView() {
     subWin->setAttribute(Qt::WA_DeleteOnClose);
     subWin->setWindowTitle(tr("Layout #%1").arg(m_layoutCounter));
 
-    ecvGenericGLDisplay::RegisterGLDisplay(view->asWidget(), view);
-    ecvViewManager::instance().registerView(view);
+    // RegisterGLDisplay + registerView are already done in ecvGLView::Create
     Visualization::VtkCameraLink::instance().addView(view->getVisualizer3D());
     view->asWidget()->installEventFilter(this);
 
