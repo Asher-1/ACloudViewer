@@ -2502,8 +2502,11 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     // activation need to be re-linked.
     QWidget* screen = ecvDisplayTools::GetCurrentScreen();
     if (!screen) {
-        // Degraded / no display target: still refresh menus, toolbars, and
-        // properties so UI does not stay bound to a stale view.
+        for (auto& mdi : m_mdiDialogs) {
+            if (mdi.dialog && mdi.dialog->started()) {
+                mdi.dialog->linkWith(nullptr);
+            }
+        }
         updateUI();
         return;
     }
