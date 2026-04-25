@@ -376,14 +376,3 @@ void ecvGLView::zoomGlobal() {
     m_visualizer3D->getRenderWindow()->Render();
 }
 
-// ================================================================
-// State synchronization with the singleton
-// ================================================================
-
-void ecvGLView::pushStateToSingleton() {
-    // Phase E: no-op — views own their state; effectiveCtx() routes reads.
-}
-
-void ecvGLView::pullStateFromSingleton() {
-    // Phase E: no-op — views own their state; effectiveCtx() routes reads.
-}

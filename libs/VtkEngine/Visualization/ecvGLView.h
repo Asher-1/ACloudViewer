@@ -131,19 +131,6 @@ public:
     const ecvViewContext& context() const { return m_ctx; }
     ecvViewContext& context() { return m_ctx; }
 
-    // ================================================================
-    // Per-view state <-> singleton synchronization
-    //
-    // When this view becomes the active view, pushStateToSingleton()
-    // copies per-view state INTO the ecvDisplayTools singleton so that
-    // all existing m_tools-> code sees the correct values.
-    // When this view loses active status, pullStateFromSingleton()
-    // saves any changes made via the singleton back into this view.
-    // ================================================================
-
-    void pushStateToSingleton() override;
-    void pullStateFromSingleton() override;
-
     ecvViewContext* viewContext() override { return &m_ctx; }
     const ecvViewContext* viewContext() const override { return &m_ctx; }
 

@@ -93,7 +93,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     if (tools) {
         // Mark that a widget was clicked - this will prevent doPicking() from
         // executing and overriding our selection
-        tools->m_widgetClicked = true;
+        tools->m_primaryCtx.widgetClicked = true;
 
         // Stop deferred picking timer immediately if already active
         if (tools->m_deferredPickingTimer.isActive()) {

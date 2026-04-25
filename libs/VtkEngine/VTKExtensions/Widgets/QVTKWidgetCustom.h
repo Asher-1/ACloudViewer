@@ -217,7 +217,7 @@ public:
     //
     // These return a mutable reference to the correct source of truth:
     //   secondary views → m_ownerView->context().xxx
-    //   primary view    → m_tools->m_xxx  (singleton fallback)
+    //   primary view    → m_tools->m_primaryCtx  (singleton fallback)
     // ================================================================
 
     ecvViewContext* ownerCtx();

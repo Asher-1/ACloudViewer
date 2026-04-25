@@ -461,31 +461,28 @@ void ecvDisplayTools::scheduleFullRedraw(unsigned maxDelay_ms) {
 void ecvDisplayTools::onPointPicking(const CCVector3& p,
                                      int index,
                                      const std::string& id) {
-    m_last_picked_point = p;
-    m_last_point_index = index;
-    m_last_picked_id = id.c_str();
-
     // Sync VTK pick results into the effective view context so that
     // doPicking → StartOpenGLPicking / StartCPUBasedPointPicking can
     // read them from effectiveCtx() (Phase-A bridging).
     ecvViewContext& ctx = effectiveCtx();
     ctx.lastPickedPoint = p;
     ctx.lastPointIndex = index;
-    ctx.lastPickedId = m_last_picked_id;
+    ctx.lastPickedId = id.c_str();
 
 #ifdef QT_DEBUG
     CVLog::Print(QString("current selected index is %1").arg(index));
     CVLog::Print(
-            QString("current selected entity id is %1").arg(m_last_picked_id));
+            QString("current selected entity id is %1").arg(ctx.lastPickedId));
     CVLog::Print(QString("current selected point coord is [%1, %2, %3]")
                          .arg(p.x)
                          .arg(p.y)
                          .arg(p.z));
 #endif  // !QDEBUG
 
-    if (m_last_picked_id.isEmpty()) {
+    if (ctx.lastPickedId.isEmpty()) {
         PICKING_MODE pickingMode = PICKING_MODE::ENTITY_PICKING;
-        PickingParameters params(pickingMode, 0, 0, m_pickRadius, m_pickRadius);
+        PickingParameters params(pickingMode, 0, 0, ctx.pickRadius,
+                                 ctx.pickRadius);
         ProcessPickingResult(params, nullptr, -1);
     } else {
         if (ecvDisplayTools::USE_VTK_PICK) {
@@ -498,7 +495,8 @@ void ecvDisplayTools::doPicking() {
     ecvViewContext* ctx =
             m_pickingTargetView ? m_pickingTargetView->viewContext() : nullptr;
 
-    bool widgetClicked = ctx ? ctx->widgetClicked : m_widgetClicked;
+    bool widgetClicked =
+            ctx ? ctx->widgetClicked : m_primaryCtx.widgetClicked;
     if (widgetClicked) {
         CVLog::PrintVerbose(
                 "[ecvDisplayTools::doPicking] Skipping picking because "
@@ -506,12 +504,13 @@ void ecvDisplayTools::doPicking() {
         if (ctx)
             ctx->widgetClicked = false;
         else
-            m_widgetClicked = false;
+            m_primaryCtx.widgetClicked = false;
         m_pickingTargetView = nullptr;
         return;
     }
 
-    const QPoint& mousePos = ctx ? ctx->lastMousePos : m_lastMousePos;
+    const QPoint& mousePos =
+            ctx ? ctx->lastMousePos : m_primaryCtx.lastMousePos;
     int x = mousePos.x();
     int y = mousePos.y();
 
@@ -521,10 +520,10 @@ void ecvDisplayTools::doPicking() {
         return;
     }
 
-    PICKING_MODE pickMode = ctx ? ctx->pickingMode : m_pickingMode;
+    PICKING_MODE pickMode = ctx ? ctx->pickingMode : m_primaryCtx.pickingMode;
     INTERACTION_FLAGS iFlags =
-            ctx ? ctx->interactionFlags : m_interactionFlags;
-    int pickRad = ctx ? ctx->pickRadius : m_pickRadius;
+            ctx ? ctx->interactionFlags : m_primaryCtx.interactionFlags;
+    int pickRad = ctx ? ctx->pickRadius : m_primaryCtx.pickRadius;
 
     if ((pickMode != NO_PICKING) || (iFlags & INTERACT_2D_ITEMS)) {
         if (iFlags & INTERACT_2D_ITEMS) {
@@ -563,22 +562,23 @@ void ecvDisplayTools::doPicking() {
 
 void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
     // in perspective mode, wheel event corresponds to 'walking'
-    if (m_viewportParams.perspectiveView) {
+    if (m_primaryCtx.viewportParams.perspectiveView) {
         // to zoom in and out we simply change the fov in bubble-view mode!
-        if (m_bubbleViewModeEnabled) {
-            SetBubbleViewFov(m_bubbleViewFov_deg -
+        if (m_primaryCtx.bubbleViewModeEnabled) {
+            SetBubbleViewFov(m_primaryCtx.bubbleViewFov_deg -
                              wheelDelta_deg / 3.6f);  // 1 turn = 100 degrees
         } else {
             // convert degrees in 'constant' walking speed in ... pixels ;)
             const double& deg2PixConversion = GetDisplayParameters().zoomSpeed;
             double delta = deg2PixConversion *
                            static_cast<double>(wheelDelta_deg) *
-                           m_viewportParams.pixelSize;
+                           m_primaryCtx.viewportParams.pixelSize;
 
             // if we are (clearly) outisde of the displayed objects bounding-box
-            if (m_cameraToBBCenterDist > m_bbHalfDiag) {
+            if (m_primaryCtx.cameraToBBCenterDist > m_primaryCtx.bbHalfDiag) {
                 // we go faster if we are far from the entities
-                delta *= 1.0 + std::log(m_cameraToBBCenterDist / m_bbHalfDiag);
+                delta *= 1.0 + std::log(m_primaryCtx.cameraToBBCenterDist /
+                                        m_primaryCtx.bbHalfDiag);
             }
 
             // MoveCamera(0.0f, 0.0f,
@@ -1467,7 +1467,7 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
             ccClipBox* cbox = static_cast<ccClipBox*>(pickedEntity);
             cbox->setActiveComponent(pickedItemIndex);
             cbox->setClickedPoint(x, y, Width(), Height(),
-                                  m_viewportParams.viewMat);
+                                  m_primaryCtx.viewportParams.viewMat);
 
             m_activeItems.push_back(cbox);
         }
@@ -4471,7 +4471,9 @@ void ecvDisplayTools::DrawPivot() {
 
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {
     s_tools.instance->m_currentScreen = widget;
-    widget->update();
+    if (widget) {
+        widget->update();
+    }
 }
 
 // -- ecvGenericGLDisplay overrides (primary window delegation) --
@@ -4498,11 +4500,11 @@ void ecvDisplayTools::setPerspectiveState(bool state, bool objectCenteredView) {
 }
 
 bool ecvDisplayTools::perspectiveView() const {
-    return m_viewportParams.perspectiveView;
+    return m_primaryCtx.viewportParams.perspectiveView;
 }
 
 bool ecvDisplayTools::objectCenteredView() const {
-    return m_viewportParams.objectCenteredView;
+    return m_primaryCtx.viewportParams.objectCenteredView;
 }
 
 void ecvDisplayTools::setSceneDB(ccHObject* root) { SetSceneDB(root); }

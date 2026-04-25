@@ -453,5 +453,40 @@ gantt
 
 ---
 
+## 9. 执行进度追踪（2026-04-24 更新）
+
+| 阶段 | 状态 | 关键成果 |
+|------|------|---------|
+| **A** 接口抽象 | **DONE** | `ecvViewContext` 定义、`effectiveCtx()` 桥接、context-aware API |
+| **B** 绘制管线 | **DONE** | `getContext` 本地化、`RedrawDisplay` per-view 委派、`ScopedRenderOverride` 移除、deprecated 旧 API |
+| **C** 交互管线 | **DONE** | `m_ownerView` + `ownerCtx()` 全量 accessor、foreign wheel 消除 |
+| **D** 工具重构 | **DONE** | `bindToView` 绑定、`doPicking` via `effectiveCtx()`、属性面板随活动视图刷新 |
+| **E** 清理单例 | **PARTIAL** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`ScopedHotZoneRender` 和 `m_tools` 因 `DrawClickableItems` 耦合暂缓 |
+| **F** 进阶功能 | **PENDING** | 可选产品功能，待需求驱动 |
+
+### 当前指标
+
+| 指标 | 初始值 | 当前值 | 目标 |
+|------|-------|--------|------|
+| `s_tools.instance->m_*` (ecvDisplayTools.cpp) | 527 | 55 (全部为全局成员) | < 50 |
+| `m_tools->m_*` (QVTKWidgetCustom.cpp) | 163 | 71 (m_primaryCtx 回退路径) | 0 (需 primary view 也用 ecvGLView) |
+| `pushState/pullState` 引用 | 16 | **0** | 0 |
+| `ScopedHotZoneRender` 引用 | 18 | 18 (DrawClickableItems 耦合) | 0 (需 per-view hot zone 绘制) |
+
+### 遗留项
+
+1. **ScopedHotZoneRender**: `DrawClickableItems` + `DrawWidgets` + `RenderText` 整条 2D overlay 管线依赖单例 VTK 管线指针。需将其参数化（接受 `VtkVis`/`QVTKWidget`）才能消除 swap。
+2. **m_tools fallback**: 主窗口的 `QVTKWidgetCustom` 没有 `m_ownerView`（因为主窗口不是 `ecvGLView` 实例），所以 accessor 仍需 `m_tools->m_primaryCtx` 回退。需将主窗口也包装为 `ecvGLView` 才能彻底删除 `m_tools`。
+
+### Bug 修复记录（2026-04-24）
+
+| Bug | 修复内容 | 文件 |
+|-----|---------|------|
+| **窗口激活** | 已验证：仅 canvas click + MDI tab 激活，无 hover/focus/DBtree 激活 | `QVTKWidgetCustom.cpp`, `MainWindow.cpp` |
+| **默认窗口删除 crash** | `SetCurrentScreen` 空指针守卫、`adoptNewPrimary` 更新 `m_mainScreen`、`prepareViewClose` edge-case 处理 | `ecvDisplayTools.cpp`, `VtkDisplayTools.cpp`, `MainWindow.cpp` |
+| **新窗口配置继承** | `copyPrimaryViewConfig` 改用 `effectiveCtx()`（活动视图），而非始终 `m_primaryCtx`；重置鼠标/触摸瞬态 | `MainWindow.cpp` |
+
+---
+
 *维护：架构变更时同步更新阶段验收项与统计数据。*
 *更新日期：2026-04-24*
