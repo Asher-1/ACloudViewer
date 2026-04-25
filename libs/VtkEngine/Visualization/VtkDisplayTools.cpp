@@ -101,6 +101,9 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     } else {
         m_visualizer2D = nullptr;
     }
+
+    m_builtInVis = m_visualizer3D;
+    m_builtInWidget = m_vtkWidget;
 }
 
 VtkDisplayTools::~VtkDisplayTools() {
@@ -157,6 +160,17 @@ void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis,
     SetMainScreen(widget);
     SetCurrentScreen(widget);
 
+    if (USE_2D) {
+        auto localVis = widget->localImageVis();
+        if (localVis) {
+            m_visualizer2D = localVis;
+        } else if (m_visualizer2D) {
+            m_visualizer2D->setRender(widget->getVtkRender());
+            m_visualizer2D->setupInteractor(widget->GetInteractor(),
+                                            widget->GetRenderWindow());
+        }
+    }
+
     m_primaryVis = nullptr;
     m_primaryWidget = nullptr;
 
@@ -185,12 +199,62 @@ void VtkDisplayTools::restorePrimaryView() {
     m_vtkWidget = m_primaryWidget;
     SetCurrentScreen(m_primaryWidget);
 
+    if (USE_2D && m_primaryWidget) {
+        auto localVis = m_primaryWidget->localImageVis();
+        if (localVis) {
+            m_visualizer2D = localVis;
+        } else if (m_visualizer2D) {
+            m_visualizer2D->setRender(m_primaryWidget->getVtkRender());
+            m_visualizer2D->setupInteractor(m_primaryWidget->GetInteractor(),
+                                            m_primaryWidget->GetRenderWindow());
+        }
+    }
+
     // Restore the primary widget's HotZone so the overlay draws
     // correctly in the primary view after returning from a secondary view.
     if (m_primaryWidget && m_primaryWidget->localHotZone()) {
         m_hotZone = m_primaryWidget->localHotZone();
         m_primaryCtx.clickableItemsVisible =
                 m_primaryWidget->localClickableItemsVisible();
+    }
+
+    m_primaryVis = nullptr;
+    m_primaryWidget = nullptr;
+}
+
+void VtkDisplayTools::resetToBuiltInPipeline() {
+    if (!m_builtInVis || !m_builtInWidget) return;
+
+    if (m_visualizer3D && m_visualizer3D != m_builtInVis) {
+        disconnect(m_visualizer3D.get(),
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
+                   this, &ecvDisplayTools::onPointPicking);
+    }
+    connect(m_builtInVis.get(),
+            &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking,
+            Qt::UniqueConnection);
+
+    m_visualizer3D = m_builtInVis;
+    m_vtkWidget = m_builtInWidget;
+    SetMainScreen(m_builtInWidget);
+    SetCurrentScreen(m_builtInWidget);
+
+    if (USE_2D && m_builtInWidget) {
+        auto localVis = m_builtInWidget->localImageVis();
+        if (localVis) {
+            m_visualizer2D = localVis;
+        } else if (m_visualizer2D) {
+            m_visualizer2D->setRender(m_builtInWidget->getVtkRender());
+            m_visualizer2D->setupInteractor(m_builtInWidget->GetInteractor(),
+                                            m_builtInWidget->GetRenderWindow());
+        }
+    }
+
+    if (m_builtInWidget->localHotZone()) {
+        m_hotZone = m_builtInWidget->localHotZone();
+        m_primaryCtx.clickableItemsVisible =
+                m_builtInWidget->localClickableItemsVisible();
     }
 
     m_primaryVis = nullptr;

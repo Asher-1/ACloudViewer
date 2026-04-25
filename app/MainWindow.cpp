@@ -2323,42 +2323,38 @@ void MainWindow::on3DViewActivated(QMdiSubWindow* mdiWin) {
     QWidget* screen = mdiWin->widget();
     if (!screen) return;
 
-    if (screen) {
-        auto findDisplay = [](QWidget* root) -> ecvGenericGLDisplay* {
-            if (!root) return nullptr;
-            auto* d = ecvGenericGLDisplay::FromWidget(root);
+    auto findDisplay = [](QWidget* root) -> ecvGenericGLDisplay* {
+        if (!root) return nullptr;
+        auto* d = ecvGenericGLDisplay::FromWidget(root);
+        if (d) return d;
+        for (auto* child : root->findChildren<QWidget*>(
+                     QString(), Qt::FindDirectChildrenOnly)) {
+            d = ecvGenericGLDisplay::FromWidget(child);
             if (d) return d;
-            for (auto* child : root->findChildren<QWidget*>(
+            for (auto* grandchild : child->findChildren<QWidget*>(
                          QString(), Qt::FindDirectChildrenOnly)) {
-                d = ecvGenericGLDisplay::FromWidget(child);
+                d = ecvGenericGLDisplay::FromWidget(grandchild);
                 if (d) return d;
-                for (auto* grandchild : child->findChildren<QWidget*>(
-                             QString(), Qt::FindDirectChildrenOnly)) {
-                    d = ecvGenericGLDisplay::FromWidget(grandchild);
-                    if (d) return d;
-                }
             }
-            return nullptr;
-        };
-        auto* display = findDisplay(screen);
-        if (display) {
-            ecvViewManager::instance().setActiveView(display);
-            statusBar()->showMessage(
-                    tr("Active View: %1").arg(display->getTitle()), 3000);
-            rebindToolsToActiveView(display);
-
-            // Highlight the active view's CentralWidgetFrame border —
-            // works for both single and split views within an MDI subwindow.
-            auto* glView = dynamic_cast<ecvGLView*>(display);
-            if (glView) markActiveViewFrame(glView->asWidget());
         }
+        return nullptr;
+    };
+    auto* display = findDisplay(screen);
+    if (display) {
+        ecvViewManager::instance().setActiveView(display);
+        statusBar()->showMessage(
+                tr("Active View: %1").arg(display->getTitle()), 3000);
+        rebindToolsToActiveView(display);
 
-        m_ui->actionExclusiveFullScreen->blockSignals(true);
-        m_ui->actionExclusiveFullScreen->setChecked(
-                ecvDisplayTools::ExclusiveFullScreen());
-        m_ui->actionExclusiveFullScreen->blockSignals(false);
+        auto* glView = dynamic_cast<ecvGLView*>(display);
+        if (glView) markActiveViewFrame(glView->asWidget());
     }
-    m_ui->actionExclusiveFullScreen->setEnabled(screen != nullptr);
+
+    m_ui->actionExclusiveFullScreen->blockSignals(true);
+    m_ui->actionExclusiveFullScreen->setChecked(
+            ecvDisplayTools::ExclusiveFullScreen());
+    m_ui->actionExclusiveFullScreen->blockSignals(false);
+    m_ui->actionExclusiveFullScreen->setEnabled(true);
 }
 
 ecvGenericGLDisplay* MainWindow::getActiveGLView() {
@@ -2427,13 +2423,7 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     const ecvViewContext& srcCtx = primaryInstance->effectiveCtx();
     view->context() = srcCtx;
 
-    // Reset transient mouse/touch state — should not carry over
-    view->context().mouseMoved = false;
-    view->context().mouseButtonPressed = false;
-    view->context().touchInProgress = false;
-    view->context().ignoreMouseReleaseEvent = false;
-    view->context().widgetClicked = false;
-    view->context().lastClickTime_ticks = 0;
+    view->context().resetInteractionState();
 
     // Background color: copy from current draw context + set on renderer
     CC_DRAW_CONTEXT ctx;
@@ -2624,10 +2614,8 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
         } else {
             CVLog::Warning("[prepareViewClose] No surviving ecvGLView — "
                            "restoring built-in primary pipeline.");
-            auto* primaryWidget = primaryDT->getQVtkWidget();
-            if (primaryWidget) {
-                primaryDT->SetCurrentScreen(primaryWidget);
-            }
+            primaryDT->resetToBuiltInPipeline();
+            rebindToolsToActiveView(nullptr);
         }
     }
 

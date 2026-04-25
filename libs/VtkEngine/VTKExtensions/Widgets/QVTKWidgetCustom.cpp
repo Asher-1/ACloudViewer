@@ -234,14 +234,17 @@ qint64& QVTKWidgetCustom::curLastClickTime() {
 }
 
 ccPolyline*& QVTKWidgetCustom::curRectPickingPoly() {
+    if (m_ownerView) return m_ownerView->rectPickingPolyRef();
     return m_tools->m_rectPickingPoly;
 }
 
 std::list<ccInteractor*>& QVTKWidgetCustom::curActiveItems() {
+    if (m_ownerView) return m_ownerView->activeItemsRef();
     return m_tools->m_activeItems;
 }
 
 ecvDisplayTools::HotZone*& QVTKWidgetCustom::curHotZone() {
+    if (m_ownerView) return m_ownerView->hotZoneRef();
     return m_tools->m_hotZone;
 }
 

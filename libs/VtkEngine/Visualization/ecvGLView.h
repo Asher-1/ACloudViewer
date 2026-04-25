@@ -17,6 +17,7 @@
 #include <QFont>
 #include <QObject>
 #include <QPoint>
+#include <QPointer>
 #include <QTimer>
 #include <list>
 #include <memory>
@@ -155,7 +156,10 @@ public:
     }
 
     ecvDisplayTools::HotZone* hotZone() const { return m_hotZone; }
+    ecvDisplayTools::HotZone*& hotZoneRef() { return m_hotZone; }
     void setHotZone(ecvDisplayTools::HotZone* hz) { m_hotZone = hz; }
+    ccPolyline*& rectPickingPolyRef() { return m_rectPickingPoly; }
+    std::list<ccInteractor*>& activeItemsRef() { return m_activeItems; }
 
     float defaultPointSize() const {
         return m_ctx.viewportParams.defaultPointSize;
@@ -190,7 +194,7 @@ private:
     QString m_title;
 
     // -- VTK pipeline (per-view, not part of context) --
-    QVTKWidgetCustom* m_vtkWidget = nullptr;
+    QPointer<QVTKWidgetCustom> m_vtkWidget;
     Visualization::VtkVisPtr m_visualizer3D;
     Visualization::ImageVisPtr m_visualizer2D;
 

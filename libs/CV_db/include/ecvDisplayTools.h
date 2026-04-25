@@ -1361,20 +1361,24 @@ public:  // Main interface accessors
     }
 
     inline static QRect GetScreenRect() {
-        QRect screenRect = GetCurrentScreen()->geometry();
-        QPoint globalPosition =
-                GetCurrentScreen()->mapToGlobal(screenRect.topLeft());
+        QWidget* w = GetCurrentScreen();
+        if (!w) return QRect();
+        QRect screenRect = w->geometry();
+        QPoint globalPosition = w->mapToGlobal(screenRect.topLeft());
         screenRect.setTopLeft(globalPosition);
         return screenRect;
     }
     inline static void SetScreenSize(int xw, int yw) {
-        GetCurrentScreen()->resize(QSize(xw, yw));
+        if (QWidget* w = GetCurrentScreen()) w->resize(QSize(xw, yw));
     }
     inline static void DoResize(int xw, int yw) { SetScreenSize(xw, yw); }
     inline static void DoResize(const QSize& size) {
         SetScreenSize(size.width(), size.height());
     }
-    inline static QSize GetScreenSize() { return GetCurrentScreen()->size(); }
+    inline static QSize GetScreenSize() {
+        QWidget* w = GetCurrentScreen();
+        return w ? w->size() : QSize();
+    }
 
     inline static void SetRenderWindowSize(int xw, int yw) {
         TheInstance()->setRenderWindowSize(xw, yw);
@@ -1780,7 +1784,7 @@ public:  // visualization matrix transformation
     static void ResizeGL(int w, int h);
     static void UpdateScreenSize();
     inline static void Update() {
-        GetCurrentScreen()->update();
+        if (QWidget* w = GetCurrentScreen()) w->update();
         UpdateCamera();
     }
     static void UpdateScreen();

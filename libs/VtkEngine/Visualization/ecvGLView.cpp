@@ -47,6 +47,7 @@ ecvGLView::~ecvGLView() {
     }
 
     ecvRepresentationManager::instance().removeRepresentationsForView(this);
+    // Safety net: idempotent if prepareViewClose() already called unregisterView
     ecvViewManager::instance().unregisterView(this);
 
     if (m_vtkWidget) {
