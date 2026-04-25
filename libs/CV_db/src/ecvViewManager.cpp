@@ -60,7 +60,7 @@ void ecvViewManager::unregisterView(ecvGenericGLDisplay* view) {
     emit viewCountChanged(m_views.size());
 
     if (m_activeView == view) {
-        setActiveView(m_views.isEmpty() ? nullptr : m_views.first());
+        setActiveView(m_views.isEmpty() ? nullptr : m_views.last());
     }
 }
 
