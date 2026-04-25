@@ -1477,7 +1477,9 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
 }
 
 void ecvDisplayTools::UpdateScreen() {
-    GetCurrentScreen()->update();
+    if (QWidget* w = GetCurrentScreen()) {
+        w->update();
+    }
     UpdateScene();
 }
 
@@ -2402,8 +2404,11 @@ void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
                 flags & (INTERACT_CLICKABLE_ITEMS | INTERACT_SIG_MOUSE_MOVED));
     }
 #else
-    GetCurrentScreen()->setMouseTracking(
-            flags & (INTERACT_CLICKABLE_ITEMS | INTERACT_SIG_MOUSE_MOVED));
+    if (QWidget* w = GetCurrentScreen()) {
+        w->setMouseTracking(
+                flags &
+                (INTERACT_CLICKABLE_ITEMS | INTERACT_SIG_MOUSE_MOVED));
+    }
 #endif
 
     if ((flags & INTERACT_CLICKABLE_ITEMS) == 0) {
@@ -3054,18 +3059,19 @@ void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
         return;
     }
 
+    QWidget* screen = GetCurrentScreen();
     switch (mode) {
         case DEFAULT_PICKING:
             mode = ENTITY_PICKING;
         case NO_PICKING:
         case ENTITY_PICKING:
-            GetCurrentScreen()->setCursor(QCursor(Qt::ArrowCursor));
+            if (screen) screen->setCursor(QCursor(Qt::ArrowCursor));
             break;
         case POINT_OR_TRIANGLE_PICKING:
         case POINT_OR_TRIANGLE_OR_LABEL_PICKING:
         case TRIANGLE_PICKING:
         case POINT_PICKING:
-            GetCurrentScreen()->setCursor(QCursor(Qt::PointingHandCursor));
+            if (screen) screen->setCursor(QCursor(Qt::PointingHandCursor));
             break;
         default:
             break;

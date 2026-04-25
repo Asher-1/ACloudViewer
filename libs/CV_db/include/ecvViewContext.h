@@ -136,4 +136,19 @@ struct CV_DB_LIB_API ecvViewContext {
     void copyLightPos(const float src[4]) {
         std::memcpy(customLightPos, src, sizeof(customLightPos));
     }
+
+    void resetInteractionState() {
+        mouseMoved = false;
+        mouseButtonPressed = false;
+        touchInProgress = false;
+        touchBaseDist = 1.0;
+        ignoreMouseReleaseEvent = false;
+        widgetClicked = false;
+        lastClickTime_ticks = 0;
+        lastMousePos = QPoint();
+        lastMouseMovePos = QPoint();
+        lastPickedPoint = CCVector3(0, 0, 0);
+        lastPointIndex = -1;
+        lastPickedId.clear();
+    }
 };

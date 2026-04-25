@@ -450,6 +450,13 @@ public:
     /// Unlike switchActiveView, this does NOT save the old pipeline.
     void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
+    /// When all ecvGLViews are closed, rebind to the original registerVisualizer()
+    /// pipeline (see m_builtInVis / m_builtInWidget).
+    void resetToBuiltInPipeline();
+
+    QVTKWidgetCustom* getBuiltInWidget() const { return m_builtInWidget; }
+    VtkVisPtr getBuiltInVis() const { return m_builtInVis; }
+
     /// Phase B helper: renders hot zone / clickable items for a specific
     /// ecvGLView by temporarily routing widget rendering to that view's
     /// VtkVis pipeline.  Only swaps the minimal
@@ -643,6 +650,11 @@ protected:
     /// Saved primary pipeline for restorePrimaryView()
     VtkVisPtr m_primaryVis = nullptr;
     QVTKWidgetCustom* m_primaryWidget = nullptr;
+
+    /// The original built-in pipeline created by registerVisualizer().
+    /// Never cleared — used as ultimate fallback when all ecvGLViews close.
+    VtkVisPtr m_builtInVis = nullptr;
+    QVTKWidgetCustom* m_builtInWidget = nullptr;
 
     /// Saved active-tool pipeline during primary render guard
     VtkVisPtr m_renderGuardSavedVis = nullptr;
