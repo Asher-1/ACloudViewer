@@ -90,147 +90,147 @@ ecvViewContext* QVTKWidgetCustom::ownerCtx() {
 
 ecvGenericGLDisplay::INTERACTION_FLAGS& QVTKWidgetCustom::curInteractionFlags() {
     if (m_ownerView) return m_ownerView->context().interactionFlags;
-    return m_tools->m_interactionFlags;
+    return m_tools->m_primaryCtx.interactionFlags;
 }
 
 ecvViewportParameters& QVTKWidgetCustom::curViewportParams() {
     if (m_ownerView) return m_ownerView->context().viewportParams;
-    return m_tools->m_viewportParams;
+    return m_tools->m_primaryCtx.viewportParams;
 }
 
 const ecvViewportParameters& QVTKWidgetCustom::curViewportParams() const {
     if (m_ownerView) return m_ownerView->context().viewportParams;
-    return m_tools->m_viewportParams;
+    return m_tools->m_primaryCtx.viewportParams;
 }
 
 QPoint& QVTKWidgetCustom::curLastMousePos() {
     if (m_ownerView) return m_ownerView->context().lastMousePos;
-    return m_tools->m_lastMousePos;
+    return m_tools->m_primaryCtx.lastMousePos;
 }
 
 QPoint& QVTKWidgetCustom::curLastMouseMovePos() {
     if (m_ownerView) return m_ownerView->context().lastMouseMovePos;
-    return m_tools->m_lastMouseMovePos;
+    return m_tools->m_primaryCtx.lastMouseMovePos;
 }
 
 bool& QVTKWidgetCustom::curMouseMoved() {
     if (m_ownerView) return m_ownerView->context().mouseMoved;
-    return m_tools->m_mouseMoved;
+    return m_tools->m_primaryCtx.mouseMoved;
 }
 
 bool& QVTKWidgetCustom::curMouseButtonPressed() {
     if (m_ownerView) return m_ownerView->context().mouseButtonPressed;
-    return m_tools->m_mouseButtonPressed;
+    return m_tools->m_primaryCtx.mouseButtonPressed;
 }
 
 bool& QVTKWidgetCustom::curIgnoreMouseReleaseEvent() {
     if (m_ownerView) return m_ownerView->context().ignoreMouseReleaseEvent;
-    return m_tools->m_ignoreMouseReleaseEvent;
+    return m_tools->m_primaryCtx.ignoreMouseReleaseEvent;
 }
 
 bool& QVTKWidgetCustom::curWidgetClicked() {
     if (m_ownerView) return m_ownerView->context().widgetClicked;
-    return m_tools->m_widgetClicked;
+    return m_tools->m_primaryCtx.widgetClicked;
 }
 
 ecvGenericGLDisplay::PICKING_MODE& QVTKWidgetCustom::curPickingMode() {
     if (m_ownerView) return m_ownerView->context().pickingMode;
-    return m_tools->m_pickingMode;
+    return m_tools->m_primaryCtx.pickingMode;
 }
 
 bool& QVTKWidgetCustom::curPickingModeLocked() {
     if (m_ownerView) return m_ownerView->context().pickingModeLocked;
-    return m_tools->m_pickingModeLocked;
+    return m_tools->m_primaryCtx.pickingModeLocked;
 }
 
 int& QVTKWidgetCustom::curPickRadius() {
     if (m_ownerView) return m_ownerView->context().pickRadius;
-    return m_tools->m_pickRadius;
+    return m_tools->m_primaryCtx.pickRadius;
 }
 
 bool& QVTKWidgetCustom::curAllowRectangularEntityPicking() {
     if (m_ownerView) return m_ownerView->context().allowRectangularEntityPicking;
-    return m_tools->m_allowRectangularEntityPicking;
+    return m_tools->m_primaryCtx.allowRectangularEntityPicking;
 }
 
 int& QVTKWidgetCustom::curLastPointIndex() {
     if (m_ownerView) return m_ownerView->context().lastPointIndex;
-    return m_tools->m_last_point_index;
+    return m_tools->m_primaryCtx.lastPointIndex;
 }
 
 QString& QVTKWidgetCustom::curLastPickedId() {
     if (m_ownerView) return m_ownerView->context().lastPickedId;
-    return m_tools->m_last_picked_id;
+    return m_tools->m_primaryCtx.lastPickedId;
 }
 
 bool& QVTKWidgetCustom::curTouchInProgress() {
     if (m_ownerView) return m_ownerView->context().touchInProgress;
-    return m_tools->m_touchInProgress;
+    return m_tools->m_primaryCtx.touchInProgress;
 }
 
 qreal& QVTKWidgetCustom::curTouchBaseDist() {
     if (m_ownerView) return m_ownerView->context().touchBaseDist;
-    return m_tools->m_touchBaseDist;
+    return m_tools->m_primaryCtx.touchBaseDist;
 }
 
 bool& QVTKWidgetCustom::curClickableItemsVisible() {
     if (m_ownerView) return m_ownerView->context().clickableItemsVisible;
-    return m_tools->m_clickableItemsVisible;
+    return m_tools->m_primaryCtx.clickableItemsVisible;
 }
 
 bool& QVTKWidgetCustom::curBubbleViewModeEnabled() {
     if (m_ownerView) return m_ownerView->context().bubbleViewModeEnabled;
-    return m_tools->m_bubbleViewModeEnabled;
+    return m_tools->m_primaryCtx.bubbleViewModeEnabled;
 }
 
 float& QVTKWidgetCustom::curBubbleViewFov_deg() {
     if (m_ownerView) return m_ownerView->context().bubbleViewFov_deg;
-    return m_tools->m_bubbleViewFov_deg;
+    return m_tools->m_primaryCtx.bubbleViewFov_deg;
 }
 
 bool& QVTKWidgetCustom::curCustomLightEnabled() {
     if (m_ownerView) return m_ownerView->context().customLightEnabled;
-    return m_tools->m_customLightEnabled;
+    return m_tools->m_primaryCtx.customLightEnabled;
 }
 
 float* QVTKWidgetCustom::curCustomLightPos() {
     if (m_ownerView) return m_ownerView->context().customLightPos;
-    return m_tools->m_customLightPos;
+    return m_tools->m_primaryCtx.customLightPos;
 }
 
 bool& QVTKWidgetCustom::curRotationAxisLocked() {
     if (m_ownerView) return m_ownerView->context().rotationAxisLocked;
-    return m_tools->m_rotationAxisLocked;
+    return m_tools->m_primaryCtx.rotationAxisLocked;
 }
 
 CCVector3d& QVTKWidgetCustom::curLockedRotationAxis() {
     if (m_ownerView) return m_ownerView->context().lockedRotationAxis;
-    return m_tools->m_lockedRotationAxis;
+    return m_tools->m_primaryCtx.lockedRotationAxis;
 }
 
 ecvGenericGLDisplay::PivotVisibility& QVTKWidgetCustom::curPivotVisibility() {
     if (m_ownerView) return m_ownerView->context().pivotVisibility;
-    return m_tools->m_pivotVisibility;
+    return m_tools->m_primaryCtx.pivotVisibility;
 }
 
 bool& QVTKWidgetCustom::curPivotSymbolShown() {
     if (m_ownerView) return m_ownerView->context().pivotSymbolShown;
-    return m_tools->m_pivotSymbolShown;
+    return m_tools->m_primaryCtx.pivotSymbolShown;
 }
 
 bool& QVTKWidgetCustom::curAutoPickPivotAtCenter() {
     if (m_ownerView) return m_ownerView->context().autoPickPivotAtCenter;
-    return m_tools->m_autoPickPivotAtCenter;
+    return m_tools->m_primaryCtx.autoPickPivotAtCenter;
 }
 
 bool& QVTKWidgetCustom::curShowCursorCoordinates() {
     if (m_ownerView) return m_ownerView->context().showCursorCoordinates;
-    return m_tools->m_showCursorCoordinates;
+    return m_tools->m_primaryCtx.showCursorCoordinates;
 }
 
 qint64& QVTKWidgetCustom::curLastClickTime() {
     if (m_ownerView) return m_ownerView->context().lastClickTime_ticks;
-    return m_tools->m_lastClickTime_ticks;
+    return m_tools->m_primaryCtx.lastClickTime_ticks;
 }
 
 ccPolyline*& QVTKWidgetCustom::curRectPickingPoly() {

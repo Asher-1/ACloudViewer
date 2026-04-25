@@ -189,20 +189,11 @@ public:
     virtual void drawClickableItems(int xStart, int& yStart);
 
     // ================================================================
-    // Per-view state synchronization (multi-window)
-    //
-    // Called by ecvViewManager when the active view changes.
-    // Secondary views (ecvGLView) override these to sync their
-    // per-view state with the ecvDisplayTools singleton.
-    // The primary view (ecvDisplayTools itself) keeps defaults (no-op).
     // ================================================================
 
-    virtual void pushStateToSingleton() {}
-    virtual void pullStateFromSingleton() {}
-
     /// Access the per-view state container.
-    /// Returns nullptr for the primary/singleton display (state lives in
-    /// ecvDisplayTools members).  ecvGLView overrides to return &m_ctx.
+    /// Returns nullptr for generic stubs; ecvDisplayTools returns &m_primaryCtx;
+    /// ecvGLView overrides to return &m_ctx.
     virtual ecvViewContext* viewContext() { return nullptr; }
     virtual const ecvViewContext* viewContext() const { return nullptr; }
 

@@ -2381,9 +2381,6 @@ protected:
     QMainWindow* m_win;
 
 public:
-    //! Viewport parameters (zoom, etc.)
-    ecvViewportParameters m_viewportParams;
-
     /**
      * @struct ClickableItem
      * @brief Clickable UI item in hot zone
@@ -2424,23 +2421,8 @@ public:
     //! Currently displayed clickable items
     std::vector<ClickableItem> m_clickableItems;
 
-    //! Whether clickable items are visible (= mouse over) or not
-    bool m_clickableItemsVisible;
-
-    //! Current intercation flags
-    INTERACTION_FLAGS m_interactionFlags;
-
-    PICKING_MODE m_pickingMode;
-    //! Whether picking mode is locked or not
-    bool m_pickingModeLocked;
-
     //! Internal timer
     QElapsedTimer m_timer;
-
-    //! Touch event in progress
-    bool m_touchInProgress;
-    //! Touch gesture initial distance
-    qreal m_touchBaseDist;
 
     //! Scheduler timer
     QTimer m_scheduleTimer;
@@ -2450,67 +2432,14 @@ public:
     //! Overridden display parameter
     ecvGui::ParamStruct m_overridenDisplayParameters;
 
-    //! Whether to display overlay entities or not (scale, tetrahedron, etc.)
-    bool m_displayOverlayEntities;
-
     //! Whether display parameters are overidden for this window
     bool m_overridenDisplayParametersEnabled;
-
-    //! Wether exclusive full screen is enabled or not
-    bool m_exclusiveFullscreen;
-
-    //! Whether to display the coordinates of the point below the cursor
-    //! position
-    bool m_showCursorCoordinates;
-
-    //! Whether the pivot point is automatically picked at the center of the
-    //! screen (when possible)
-    bool m_autoPickPivotAtCenter;
 
     //! Whether the display should be refreshed on next call to 'refresh'
     bool m_shouldBeRefreshed;
 
-    //! Candidate pivot point (will be used when the mouse is released)
-    CCVector3d m_autoPivotCandidate;
-
-    //! viewport
-    QRect m_glViewport;
-
-    //! Debug traces visibility
-    bool m_showDebugTraces;
-
-    //! Picking radius (pixels)
-    int m_pickRadius;
-
     //! Auto-refresh mode
     bool m_autoRefresh;
-
-    //! Wheter the rotation axis is locked or not
-    bool m_rotationAxisLocked;
-    //! Locked rotation axis
-    CCVector3d m_lockedRotationAxis;
-
-    //! Complete visualization matrix (GL style - double version)
-    ccGLMatrixd m_viewMatd;
-    //! Whether the model veiw matrix is valid (or need to be recomputed)
-    bool m_validModelviewMatrix;
-    //! Projection matrix (GL style - double version)
-    ccGLMatrixd m_projMatd;
-    //! Whether the projection matrix is valid (or need to be recomputed)
-    bool m_validProjectionMatrix;
-    //! Distance between the camera and the displayed objects bounding-box
-    double m_cameraToBBCenterDist;
-    //! Half size of the displayed objects bounding-box
-    double m_bbHalfDiag;
-
-    //! Pivot symbol visibility
-    PivotVisibility m_pivotVisibility;
-
-    //! Whether pivot symbol should be shown or not
-    bool m_pivotSymbolShown;
-
-    //! Whether rectangular picking is allowed or not
-    bool m_allowRectangularEntityPicking;
 
     //! Rectangular picking polyline
     ccPolyline* m_rectPickingPoly;
@@ -2533,31 +2462,6 @@ public:
     //! Whether FBO should be updated (or simply displayed as a texture =
     //! faster!)
     bool m_updateFBO;
-
-    //! Sun light position
-    /** Relative to screen.
-     **/
-    float m_sunLightPos[4];
-
-    //! Whether sun light is enabled or not
-    bool m_sunLightEnabled;
-
-    //! Custom light position
-    /** Relative to object.
-     **/
-    float m_customLightPos[4];
-
-    //! Whether custom light is enabled or not
-    bool m_customLightEnabled;
-
-    //! Bubble-view mode state
-    bool m_bubbleViewModeEnabled;
-
-    //! Bubble-view mode f.o.v. (degrees)
-    float m_bubbleViewFov_deg;
-
-    //! Pre-bubble-view camera parameters (backup)
-    ecvViewportParameters m_preBubbleViewParameters;
 
     //! Unique ID
     int m_uniqueID;
@@ -2589,37 +2493,13 @@ public:  // event representation
     static bool USE_2D;
     static bool USE_VTK_PICK;
 
-    CCVector3 m_last_picked_point;
-    int m_last_point_index = -1;
-    QString m_last_picked_id = QString();
-
-    //! Last click time (msec)
-    qint64 m_lastClickTime_ticks;
-
     //! Hot zone (may point to a per-widget HotZone or a fallback created here)
     HotZone* m_hotZone;
     //! True when m_hotZone was allocated by DrawClickableItems (singleton owns
     //! it)
     bool m_hotZoneOwnedBySingleton = false;
 
-    //! Last mouse position
-    QPoint m_lastMousePos;
-
-    QPoint m_lastMouseMovePos;
-
     QStringList m_diagStrings;
-
-    //! Whether the mouse (cursor) has moved after being pressed or not
-    bool m_mouseMoved;
-    //! Whether the mouse is currently pressed or not
-    bool m_mouseButtonPressed;
-
-    //! Ignore next mouse release event
-    bool m_ignoreMouseReleaseEvent;
-
-    //! Flag to indicate that a VTK widget was clicked (to prevent deferred
-    //! picking)
-    bool m_widgetClicked;
 
     static int Width() { return size().width(); }
     static int Height() { return size().height(); }

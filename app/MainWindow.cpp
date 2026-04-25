@@ -2421,13 +2421,19 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
-    // CC pattern: new windows inherit the full state of the primary view.
-    // Copy the entire ecvViewContext so that pivot mode, interaction flags,
-    // display flags, light settings, etc. are all inherited.
-    const ecvViewContext* primaryCtx = primaryInstance->viewContext();
-    if (primaryCtx) {
-        view->context() = *primaryCtx;
-    }
+    // CC pattern: new windows inherit the full state of the active view.
+    // Use effectiveCtx() so the new window matches whatever the user is
+    // currently looking at (secondary ecvGLView or primary fallback).
+    const ecvViewContext& srcCtx = primaryInstance->effectiveCtx();
+    view->context() = srcCtx;
+
+    // Reset transient mouse/touch state — should not carry over
+    view->context().mouseMoved = false;
+    view->context().mouseButtonPressed = false;
+    view->context().touchInProgress = false;
+    view->context().ignoreMouseReleaseEvent = false;
+    view->context().widgetClicked = false;
+    view->context().lastClickTime_ticks = 0;
 
     // Background color: copy from current draw context + set on renderer
     CC_DRAW_CONTEXT ctx;
@@ -2594,6 +2600,10 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
             primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
                                        newPrimary->getVtkWidget());
             rebindToolsToActiveView(newPrimary);
+        } else {
+            CVLog::Warning("[prepareViewClose] No surviving ecvGLView to "
+                           "adopt as primary pipeline.");
+            primaryDT->SetCurrentScreen(nullptr);
         }
     }
 

@@ -154,6 +154,7 @@ void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis,
 
     m_visualizer3D = vis;
     m_vtkWidget = widget;
+    SetMainScreen(widget);
     SetCurrentScreen(widget);
 
     m_primaryVis = nullptr;
@@ -161,7 +162,8 @@ void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis,
 
     if (widget->localHotZone()) {
         m_hotZone = widget->localHotZone();
-        m_clickableItemsVisible = widget->localClickableItemsVisible();
+        m_primaryCtx.clickableItemsVisible =
+                widget->localClickableItemsVisible();
     }
 }
 
@@ -187,7 +189,8 @@ void VtkDisplayTools::restorePrimaryView() {
     // correctly in the primary view after returning from a secondary view.
     if (m_primaryWidget && m_primaryWidget->localHotZone()) {
         m_hotZone = m_primaryWidget->localHotZone();
-        m_clickableItemsVisible = m_primaryWidget->localClickableItemsVisible();
+        m_primaryCtx.clickableItemsVisible =
+                m_primaryWidget->localClickableItemsVisible();
     }
 
     m_primaryVis = nullptr;
@@ -209,7 +212,7 @@ VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
           m_savedVis(dt->m_visualizer3D),
           m_saved2D(dt->m_visualizer2D),
           m_savedWidget(dt->m_vtkWidget),
-          m_savedGLViewport(dt->m_glViewport),
+          m_savedGLViewport(dt->m_primaryCtx.glViewport),
           m_savedHz(dt->m_hotZone),
           m_savedItems(dt->m_clickableItems),
           m_hotZone(hotZone),
@@ -261,7 +264,7 @@ VtkDisplayTools::ScopedHotZoneRender::~ScopedHotZoneRender() {
     m_dt->m_visualizer3D = m_savedVis;
     m_dt->m_visualizer2D = m_saved2D;
     m_dt->m_vtkWidget = m_savedWidget;
-    m_dt->m_glViewport = m_savedGLViewport;
+    m_dt->m_primaryCtx.glViewport = m_savedGLViewport;
     m_dt->SetCurrentScreen(m_savedWidget);
 }
 
@@ -276,10 +279,10 @@ void VtkDisplayTools::beginPrimaryRender() {
 
         // Restore primary widget's HotZone for the primary draw pass
         m_renderGuardSavedHz = m_hotZone;
-        m_renderGuardSavedClickable = m_clickableItemsVisible;
+        m_renderGuardSavedClickable = m_primaryCtx.clickableItemsVisible;
         if (m_primaryWidget && m_primaryWidget->localHotZone()) {
             m_hotZone = m_primaryWidget->localHotZone();
-            m_clickableItemsVisible =
+            m_primaryCtx.clickableItemsVisible =
                     m_primaryWidget->localClickableItemsVisible();
         }
         m_renderGuardActive = true;
@@ -292,7 +295,7 @@ void VtkDisplayTools::endPrimaryRender() {
     m_vtkWidget = m_renderGuardSavedWidget;
     SetCurrentScreen(m_renderGuardSavedWidget);
     m_hotZone = m_renderGuardSavedHz;
-    m_clickableItemsVisible = m_renderGuardSavedClickable;
+    m_primaryCtx.clickableItemsVisible = m_renderGuardSavedClickable;
     m_renderGuardSavedVis = nullptr;
     m_renderGuardSavedWidget = nullptr;
     m_renderGuardSavedHz = nullptr;
