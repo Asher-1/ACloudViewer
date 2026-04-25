@@ -498,6 +498,20 @@ gantt
 | **adoptNewPrimary 选择** | `prepareViewClose` 优先使用 `ecvViewManager::getActiveView()` 作为新 primary，而非总取 `getAllViews()` 第一个 | `MainWindow.cpp` |
 | **最后窗口关闭** | 无存活 `ecvGLView` 时恢复到内置 primary widget (`getQVtkWidget()`)，而非 `SetCurrentScreen(nullptr)` | `MainWindow.cpp` |
 
+### 综合审计加固记录（2026-04-25 续）
+
+| 严重性 | 问题 | 修复内容 | 文件 |
+|--------|------|---------|------|
+| **CRITICAL** | `GetCurrentScreen()` 空指针 | `UpdateScreen`/`setInteractionMode`/`setPickingMode` 中添加 null guard | `ecvDisplayTools.cpp` |
+| **CRITICAL** | `m_vtkWidget` 悬挂指针 | `ecvGLView::m_vtkWidget` 改为 `QPointer<QVTKWidgetCustom>` | `ecvGLView.h` |
+| **CRITICAL** | 管道恢复失败 | 添加 `resetToBuiltInPipeline()` + `m_builtInVis`/`m_builtInWidget` 永久引用 | `VtkDisplayTools.h/cpp`, `MainWindow.cpp` |
+| **HIGH** | `m_visualizer2D` 未同步 | `adoptNewPrimary`/`restorePrimaryView` 中同步 2D 可视化器 | `VtkDisplayTools.cpp` |
+| **HIGH** | 跨视图状态污染 | `QVTKWidgetCustom` 访问器通过 `m_ownerView` 路由而非总用单例 | `QVTKWidgetCustom.cpp`, `ecvGLView.h` |
+| **IMPORTANT** | 静态内联空指针 | `GetScreenRect`/`SetScreenSize`/`GetScreenSize`/`Update` 添加 null guard | `ecvDisplayTools.h` |
+| **IMPORTANT** | 全屏 action 状态残留 | `on3DViewActivated` 中 `!screen` 时更新 fullscreen action | `MainWindow.cpp` |
+| **IMPORTANT** | HotZone 悬挂 | `resetToBuiltInPipeline()` 中无 `localHotZone` 时清空 `m_hotZone` | `VtkDisplayTools.cpp` |
+| **MEDIUM** | 瞬态状态残留 | 添加 `ecvViewContext::resetInteractionState()` 集中重置 | `ecvViewContext.h`, `MainWindow.cpp` |
+
 ---
 
 *维护：架构变更时同步更新阶段验收项与统计数据。*
