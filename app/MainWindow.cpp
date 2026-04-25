@@ -852,8 +852,6 @@ void MainWindow::initial() {
                 this,
                 [this](ecvGenericGLDisplay* newActive,
                        ecvGenericGLDisplay* /*oldActive*/) {
-                    if (!newActive) return;
-
                     // Rebind the VtkDisplayTools pipeline first so that
                     // m_visualizer3D, m_vtkWidget, and m_currentScreen all
                     // point to the correct view BEFORE we touch picking or
@@ -2316,7 +2314,9 @@ void MainWindow::DestroyInstance() {
 }
 
 void MainWindow::on3DViewActivated(QMdiSubWindow* mdiWin) {
-    if (m_closing || !mdiWin) {
+    if (m_closing) return;
+    if (!mdiWin) {
+        ecvViewManager::instance().setActiveView(nullptr);
         return;
     }
 
