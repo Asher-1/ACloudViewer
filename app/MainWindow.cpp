@@ -2590,25 +2590,41 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
     }
 
     if (closingPrimary && primaryDT) {
-        // Find another surviving ecvGLView to become the new primary
-        const auto& views = ecvViewManager::instance().getAllViews();
         ecvGLView* newPrimary = nullptr;
-        for (auto* v : views) {
-            auto* gv = dynamic_cast<ecvGLView*>(v);
+
+        // Prefer the view that ecvViewManager already chose as active
+        auto* activeDisplay = ecvViewManager::instance().getActiveView();
+        if (activeDisplay) {
+            auto* gv = dynamic_cast<ecvGLView*>(activeDisplay);
             if (gv && gv != glView && gv->getVisualizer3D() &&
                 gv->getVtkWidget()) {
                 newPrimary = gv;
-                break;
             }
         }
+
+        if (!newPrimary) {
+            const auto& views = ecvViewManager::instance().getAllViews();
+            for (auto* v : views) {
+                auto* gv = dynamic_cast<ecvGLView*>(v);
+                if (gv && gv != glView && gv->getVisualizer3D() &&
+                    gv->getVtkWidget()) {
+                    newPrimary = gv;
+                    break;
+                }
+            }
+        }
+
         if (newPrimary) {
             primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
                                        newPrimary->getVtkWidget());
             rebindToolsToActiveView(newPrimary);
         } else {
-            CVLog::Warning("[prepareViewClose] No surviving ecvGLView to "
-                           "adopt as primary pipeline.");
-            primaryDT->SetCurrentScreen(nullptr);
+            CVLog::Warning("[prepareViewClose] No surviving ecvGLView — "
+                           "restoring built-in primary pipeline.");
+            auto* primaryWidget = primaryDT->getQVtkWidget();
+            if (primaryWidget) {
+                primaryDT->SetCurrentScreen(primaryWidget);
+            }
         }
     }
 
