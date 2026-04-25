@@ -255,6 +255,9 @@ void VtkDisplayTools::resetToBuiltInPipeline() {
         m_hotZone = m_builtInWidget->localHotZone();
         m_primaryCtx.clickableItemsVisible =
                 m_builtInWidget->localClickableItemsVisible();
+    } else {
+        m_hotZone = nullptr;
+        m_primaryCtx.clickableItemsVisible = false;
     }
 
     m_primaryVis = nullptr;
