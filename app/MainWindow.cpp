@@ -2321,7 +2321,13 @@ void MainWindow::on3DViewActivated(QMdiSubWindow* mdiWin) {
     }
 
     QWidget* screen = mdiWin->widget();
-    if (!screen) return;
+    if (!screen) {
+        m_ui->actionExclusiveFullScreen->blockSignals(true);
+        m_ui->actionExclusiveFullScreen->setChecked(false);
+        m_ui->actionExclusiveFullScreen->blockSignals(false);
+        m_ui->actionExclusiveFullScreen->setEnabled(false);
+        return;
+    }
 
     auto findDisplay = [](QWidget* root) -> ecvGenericGLDisplay* {
         if (!root) return nullptr;
