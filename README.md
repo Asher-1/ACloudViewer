@@ -261,6 +261,26 @@ Basically, you have to:
 - launch CMake (from the trunk root)
 - enjoy!
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=Asher-1%2FACloudViewer&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left" />
+ </picture>
+</a>
+
+## StarMapper
+
+<a href="https://starmapper.bruniaux.com/Asher-1/ACloudViewer">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://starmapper.bruniaux.com/api/map-image/Asher-1/ACloudViewer?theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://starmapper.bruniaux.com/api/map-image/Asher-1/ACloudViewer?theme=light" />
+    <img alt="StarMapper" src="https://starmapper.bruniaux.com/api/map-image/Asher-1/ACloudViewer" />
+  </picture>
+</a>
+
 Contributing to ACloudViewer
 ----------------------------
 
