@@ -1948,6 +1948,20 @@ void MainWindow::initDBRoot() {
                 new ccDBRoot(m_ui->dbTreeView, m_ui->propertiesTreeView, this);
         connect(m_ccRoot, &ccDBRoot::selectionChanged, this,
                 &MainWindow::updateUIWithSelection);
+        // Auto-activate the window that owns the first selected entity.
+        // This ensures clicking an entity in the DB tree focuses the correct
+        // view, matching user expectations in multi-window setups.
+        connect(m_ccRoot, &ccDBRoot::selectionChanged, this, [this]() {
+            const auto& selected = getSelectedEntities();
+            if (selected.empty()) return;
+
+            ccHObject* first = selected.front();
+            auto& vm = ecvViewManager::instance();
+            auto* ownerView = vm.findViewForEntity(first);
+            if (ownerView && ownerView != vm.getActiveView()) {
+                vm.setActiveView(ownerView);
+            }
+        });
         connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() {
             updateUIWithSelection();
             updateMenus();
@@ -2192,10 +2206,32 @@ void MainWindow::GetRenderWindows(std::vector<QWidget*>& glWindows) {
     if (windows.empty()) return;
 
     glWindows.clear();
-    glWindows.reserve(windows.size());
 
     for (QMdiSubWindow* window : windows) {
-        glWindows.push_back(window->widget());
+        if (!window) continue;
+        QWidget* w = window->widget();
+        if (!w) continue;
+
+        // Check if the MDI child itself is a GL view
+        auto* directDisplay = ecvGenericGLDisplay::FromWidget(w);
+        if (directDisplay) {
+            glWindows.push_back(w);
+            continue;
+        }
+
+        // If the MDI child is a splitter/container, find all GL views inside
+        const auto children = w->findChildren<QWidget*>();
+        bool foundAny = false;
+        for (QWidget* child : children) {
+            if (ecvGenericGLDisplay::FromWidget(child)) {
+                glWindows.push_back(child);
+                foundAny = true;
+            }
+        }
+
+        if (!foundAny) {
+            glWindows.push_back(w);
+        }
     }
 }
 
@@ -2246,6 +2282,10 @@ QWidget* MainWindow::getActiveWindow() {
         return subWindowList[0]->widget();
     }
     return nullptr;
+}
+
+ecvGenericGLDisplay* MainWindow::getActiveGLDisplay() {
+    return ecvViewManager::instance().getActiveView();
 }
 
 void MainWindow::ChangeStyle(const QString& qssFile) {
@@ -2364,11 +2404,12 @@ void MainWindow::on3DViewActivated(QMdiSubWindow* mdiWin) {
 }
 
 ecvGenericGLDisplay* MainWindow::getActiveGLView() {
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (activeDisplay) return activeDisplay;
     QWidget* widget = getActiveWindow();
-    if (!widget) return nullptr;
+    if (!widget) return ecvDisplayTools::TheInstance();
     ecvGenericGLDisplay* display = ecvGenericGLDisplay::FromWidget(widget);
-    if (display) return display;
-    return ecvDisplayTools::TheInstance();
+    return display ? display : ecvDisplayTools::TheInstance();
 }
 
 void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
@@ -2519,7 +2560,6 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
 #if defined(USE_VTK_BACKEND)
     ecvGenericVisualizer3D* activeViewer = ecvDisplayTools::GetVisualizer3D();
 
-    // EditCameraTool uses a static visualizer
     EditCameraTool::SetVisualizer(activeViewer);
 
     // FindData dock's selection widget caches the visualizer at configure time
@@ -2555,80 +2595,80 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
 void MainWindow::prepareViewClose(QWidget* viewFrame) {
     if (!viewFrame) return;
 
-    // Find the ecvGLView (or primary display) inside this frame
-    auto findViewInFrame = [](QWidget* root) -> ecvGenericGLDisplay* {
-        if (!root) return nullptr;
-        auto* d = ecvGenericGLDisplay::FromWidget(root);
-        if (d) return d;
-        for (auto* child : root->findChildren<QWidget*>()) {
-            d = ecvGenericGLDisplay::FromWidget(child);
-            if (d) return d;
+    // Collect ALL GL views in this frame (handles QSplitter with multiple views)
+    std::vector<ecvGenericGLDisplay*> viewsToClose;
+    auto* directDisplay = ecvGenericGLDisplay::FromWidget(viewFrame);
+    if (directDisplay) {
+        viewsToClose.push_back(directDisplay);
+    }
+    const auto children = viewFrame->findChildren<QWidget*>();
+    for (QWidget* child : children) {
+        auto* display = ecvGenericGLDisplay::FromWidget(child);
+        if (display && display != directDisplay) {
+            viewsToClose.push_back(display);
         }
-        return nullptr;
-    };
+    }
 
-    auto* closingDisplay = findViewInFrame(viewFrame);
-    if (!closingDisplay) return;
+    if (viewsToClose.empty()) return;
 
-    auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
-
-    // Unregister from view manager — this auto-switches the active view
-    ecvViewManager::instance().unregisterView(closingDisplay);
-
-    // If the closing view's widget is the primary singleton's current screen,
-    // we need to promote another ecvGLView to be the new primary pipeline.
     auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvDisplayTools::TheInstance());
     QWidget* primaryScreen = ecvDisplayTools::GetCurrentScreen();
-    bool closingPrimary = false;
+    bool primaryHandled = false;
 
-    if (glView && glView->getVtkWidget() == primaryScreen) {
-        closingPrimary = true;
-    } else if (closingDisplay == ecvDisplayTools::TheInstance()) {
-        closingPrimary = true;
-    }
+    for (auto* closingDisplay : viewsToClose) {
+        auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
 
-    if (closingPrimary && primaryDT) {
-        ecvGLView* newPrimary = nullptr;
+        ecvViewManager::instance().unregisterView(closingDisplay);
 
-        // Prefer the view that ecvViewManager already chose as active
-        auto* activeDisplay = ecvViewManager::instance().getActiveView();
-        if (activeDisplay) {
-            auto* gv = dynamic_cast<ecvGLView*>(activeDisplay);
-            if (gv && gv != glView && gv->getVisualizer3D() &&
-                gv->getVtkWidget()) {
-                newPrimary = gv;
-            }
+        bool closingPrimary = false;
+        if (glView && glView->getVtkWidget() == primaryScreen) {
+            closingPrimary = true;
+        } else if (closingDisplay == ecvDisplayTools::TheInstance()) {
+            closingPrimary = true;
         }
 
-        if (!newPrimary) {
-            const auto& views = ecvViewManager::instance().getAllViews();
-            for (auto* v : views) {
-                auto* gv = dynamic_cast<ecvGLView*>(v);
+        if (closingPrimary && primaryDT && !primaryHandled) {
+            primaryHandled = true;
+            ecvGLView* newPrimary = nullptr;
+
+            auto* activeDisplay = ecvViewManager::instance().getActiveView();
+            if (activeDisplay) {
+                auto* gv = dynamic_cast<ecvGLView*>(activeDisplay);
                 if (gv && gv != glView && gv->getVisualizer3D() &&
                     gv->getVtkWidget()) {
                     newPrimary = gv;
-                    break;
                 }
+            }
+
+            if (!newPrimary) {
+                const auto& views = ecvViewManager::instance().getAllViews();
+                for (auto* v : views) {
+                    auto* gv = dynamic_cast<ecvGLView*>(v);
+                    if (gv && gv != glView && gv->getVisualizer3D() &&
+                        gv->getVtkWidget()) {
+                        newPrimary = gv;
+                        break;
+                    }
+                }
+            }
+
+            if (newPrimary) {
+                primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
+                                           newPrimary->getVtkWidget());
+                rebindToolsToActiveView(newPrimary);
+            } else {
+                CVLog::Warning("[prepareViewClose] No surviving ecvGLView — "
+                               "restoring built-in primary pipeline.");
+                primaryDT->resetToBuiltInPipeline();
+                rebindToolsToActiveView(nullptr);
             }
         }
 
-        if (newPrimary) {
-            primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
-                                       newPrimary->getVtkWidget());
-            rebindToolsToActiveView(newPrimary);
-        } else {
-            CVLog::Warning("[prepareViewClose] No surviving ecvGLView — "
-                           "restoring built-in primary pipeline.");
-            primaryDT->resetToBuiltInPipeline();
-            rebindToolsToActiveView(nullptr);
+        if (glView && glView->getVisualizer3D()) {
+            Visualization::VtkCameraLink::instance().removeView(
+                    glView->getVisualizer3D());
         }
-    }
-
-    // Clean up camera link
-    if (glView && glView->getVisualizer3D()) {
-        Visualization::VtkCameraLink::instance().removeView(
-                glView->getVisualizer3D());
     }
 }
 
@@ -2683,12 +2723,38 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         tbLayout->addWidget(sep);
     };
 
+    auto activateViewAndDo = [this, innerWidget](auto slot) {
+        return [this, innerWidget, slot]() {
+            auto* glView = dynamic_cast<ecvGLView*>(
+                    ecvGenericGLDisplay::FromWidget(innerWidget));
+            if (glView) {
+                ecvViewManager::instance().setActiveView(glView);
+                rebindToolsToActiveView(glView);
+                markActiveViewFrame(innerWidget);
+            }
+            (this->*slot)();
+        };
+    };
+
     // 3D/2D toggle — per-view (mirrors global action3DView)
     auto* view3DBtn =
             makeToolBtn(QIcon(":/Resources/images/3D3.png"), tr("3D View"));
     view3DBtn->setCheckable(true);
     view3DBtn->setChecked(true);
-    connect(view3DBtn, &QToolButton::toggled, this, &MainWindow::toggle3DView);
+    connect(view3DBtn, &QToolButton::toggled, this,
+            [this, innerWidget](bool state) {
+                auto* glView = dynamic_cast<ecvGLView*>(
+                        ecvGenericGLDisplay::FromWidget(innerWidget));
+                if (glView) {
+                    auto& vm = ecvViewManager::instance();
+                    if (vm.getActiveView() != glView) {
+                        vm.setActiveView(glView);
+                        rebindToolsToActiveView(glView);
+                        markActiveViewFrame(innerWidget);
+                    }
+                }
+                toggle3DView(state);
+            });
     tbLayout->addWidget(view3DBtn);
 
     // Capture screenshot — per-view (ParaView actionCaptureView)
@@ -2696,7 +2762,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             makeToolBtn(QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
                         tr("Capture Screenshot"));
     connect(captureBtn, &QToolButton::clicked, this,
-            &MainWindow::doActionScreenShot);
+            activateViewAndDo(&MainWindow::doActionScreenShot));
     tbLayout->addWidget(captureBtn);
 
     // Edit camera — per-view (ParaView actionAdjustCamera)
@@ -2704,7 +2770,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             makeToolBtn(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
                         tr("Adjust Camera"));
     connect(editCamBtn, &QToolButton::clicked, this,
-            &MainWindow::doActionEditCamera);
+            activateViewAndDo(&MainWindow::doActionEditCamera));
     tbLayout->addWidget(editCamBtn);
 
     addSeparator();
@@ -3574,15 +3640,33 @@ void MainWindow::addToDB(ccHObject* obj,
 }
 
 void MainWindow::doActionEditCamera() {
-    // current active MDI area
-    QMdiSubWindow* qWin = m_mdiArea->activeSubWindow();
+    QWidget* activeWin = getActiveWindow();
+    if (!activeWin) return;
+
+    QMdiSubWindow* qWin = nullptr;
+    for (auto* sub : m_mdiArea->subWindowList()) {
+        if (sub->isAncestorOf(activeWin) || sub->widget() == activeWin) {
+            qWin = sub;
+            break;
+        }
+    }
+    if (!qWin) qWin = m_mdiArea->activeSubWindow();
     if (!qWin) return;
 
 #ifdef USE_VTK_BACKEND
+    ecvGenericVisualizer3D* activeVis = nullptr;
+    auto* activeView = dynamic_cast<ecvGLView*>(
+            ecvViewManager::instance().getActiveView());
+    if (activeView) {
+        activeVis = activeView->getVisualizer3D();
+    }
+    if (!activeVis) {
+        activeVis = ecvDisplayTools::GetVisualizer3D();
+    }
+
     if (!m_cpeDlg) {
         m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
-        EditCameraTool* tool =
-                new EditCameraTool(ecvDisplayTools::GetVisualizer3D());
+        EditCameraTool* tool = new EditCameraTool(activeVis);
         m_cpeDlg->setCameraTool(tool);
 
         connect(m_mdiArea, &QMdiArea::subWindowActivated, m_cpeDlg,
@@ -3590,6 +3674,11 @@ void MainWindow::doActionEditCamera() {
                         &ecvCameraParamEditDlg::linkWith));
 
         registerOverlayDialog(m_cpeDlg, Qt::BottomLeftCorner);
+    } else {
+        auto* tool = dynamic_cast<EditCameraTool*>(m_cpeDlg->getCameraTool());
+        if (tool) {
+            tool->SetVisualizer(activeVis);
+        }
     }
 
     m_cpeDlg->linkWith(qWin);
@@ -3654,8 +3743,17 @@ void MainWindow::toggleLockRotationAxis() {
 }
 
 void MainWindow::doActionAnimation() {
-    // current active MDI area
-    QMdiSubWindow* qWin = m_mdiArea->activeSubWindow();
+    QWidget* activeWin = getActiveWindow();
+    if (!activeWin) return;
+
+    QMdiSubWindow* qWin = nullptr;
+    for (auto* sub : m_mdiArea->subWindowList()) {
+        if (sub->isAncestorOf(activeWin) || sub->widget() == activeWin) {
+            qWin = sub;
+            break;
+        }
+    }
+    if (!qWin) qWin = m_mdiArea->activeSubWindow();
     if (!qWin) return;
 
     if (!m_animationDlg) {
@@ -3674,7 +3772,8 @@ void MainWindow::doActionAnimation() {
 }
 
 void MainWindow::doActionScreenShot() {
-    QWidget* win = getActiveWindow();
+    QWidget* win = ecvDisplayTools::GetCurrentScreen();
+    if (!win) win = getActiveWindow();
     if (!win) return;
 
     ccRenderToFileDlg rtfDlg(static_cast<unsigned>(win->width()),
@@ -4459,6 +4558,11 @@ void MainWindow::activateTranslateRotateMode() {
     if (!haveSelection()) return;
 
     if (!getActiveWindow()) return;
+
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
 
 #ifdef USE_VTK_BACKEND
     VtkTransformTool* pclTransTool =
@@ -5256,6 +5360,11 @@ void MainWindow::activatePointListPickingMode() {
         return;
     }
 
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
     if (!m_plpDlg) {
         m_plpDlg = new ccPointListPickingDlg(m_pickingHub, this);
         connect(m_plpDlg, &ccOverlayDialog::processFinished, this,
@@ -5295,6 +5404,11 @@ void MainWindow::activatePointPickingMode() {
                                           // (especially existing labels!)
     }
 
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
     if (!m_ppDlg) {
         m_ppDlg = new ccPointPropertiesDlg(m_pickingHub, this);
         connect(m_ppDlg, &ccOverlayDialog::processFinished, this,
@@ -5322,6 +5436,11 @@ void MainWindow::deactivatePointPickingMode(bool state) {
 }
 
 void MainWindow::activateTracePolylineMode() {
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
     if (!m_tplTool) {
         m_tplTool = new ccTracePolylineTool(m_pickingHub, this);
         connect(m_tplTool, &ccOverlayDialog::processFinished, this,
@@ -6230,7 +6349,11 @@ void MainWindow::onSelectionToolActivated(QAction* action) {
                     .arg(action ? action->text() : "unknown")
                     .arg(isSelectionTool ? "activated" : "deactivated"));
 
-    // Set visualizer for other property editors if needed
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
         if (isSelectionTool) {
             ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
@@ -10129,6 +10252,13 @@ void MainWindow::activateRegisterPointPairTool() {
         return;
     }
 
+    {
+        auto* ad = ecvViewManager::instance().getActiveView();
+        if (auto* av = dynamic_cast<ecvGLView*>(ad)) {
+            rebindToolsToActiveView(av);
+        }
+    }
+
     if (!m_pprDlg->init(ecvDisplayTools::GetCurrentScreen(), alignedEntities,
                         &refEntities))
         deactivateRegisterPointPairTool(false);
@@ -10871,6 +11001,13 @@ void MainWindow::doActionFilterByLabel() {
     if (!cloud || !cloud->isKindOf(CV_TYPES::POINT_CLOUD)) {
         ecvConsole::Warning(tr("only cloud is supported!"));
         return;
+    }
+
+    {
+        auto* ad = ecvViewManager::instance().getActiveView();
+        if (auto* av = dynamic_cast<ecvGLView*>(ad)) {
+            rebindToolsToActiveView(av);
+        }
     }
 
     if (!m_filterLabelTool) {
@@ -11726,6 +11863,11 @@ void MainWindow::activateContourMode() {
 void MainWindow::doActionMeasurementMode(int mode) {
     if (!haveOneSelection()) return;
 
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
     // we have to use a local copy: 'unselectEntity' will change the set of
     // currently selected entities!
     ccHObject::Container selectedEntities = getSelectedEntities();
@@ -11890,6 +12032,11 @@ void MainWindow::activateStreamlineMode() {
 void MainWindow::doActionFilterMode(int mode) {
     if (!haveOneSelection()) return;
 
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
 #ifdef USE_VTK_BACKEND
     ecvGenericFiltersTool* filter =
             new VtkFiltersTool(ecvDisplayTools::GetVisualizer3D(),
@@ -11986,6 +12133,11 @@ void MainWindow::doAnnotations(int mode) {
         return;
     }
 
+    auto* activeDisplay = ecvViewManager::instance().getActiveView();
+    if (auto* activeView = dynamic_cast<ecvGLView*>(activeDisplay)) {
+        rebindToolsToActiveView(activeView);
+    }
+
 #ifdef USE_VTK_BACKEND
     VtkAnnotationTool* annoTools = new VtkAnnotationTool(
             ecvDisplayTools::GetVisualizer3D(),
@@ -12036,6 +12188,13 @@ void MainWindow::doAnnotations(int mode) {
 void MainWindow::doSemanticSegmentation() {
 #ifdef USE_PYTHON_MODULE
     if (!haveSelection()) return;
+
+    {
+        auto* ad = ecvViewManager::instance().getActiveView();
+        if (auto* av = dynamic_cast<ecvGLView*>(ad)) {
+            rebindToolsToActiveView(av);
+        }
+    }
 
     if (!m_dssTool) {
         m_dssTool = new ecvDeepSemanticSegmentationTool(this);

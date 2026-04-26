@@ -111,9 +111,20 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
 void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     if (!m_visualizer3D || !m_vtkWidget) return;
 
-    // Phase B: self-contained draw — no ScopedVisSwap, no ScopedRenderOverride.
-    // All state comes from m_ctx; rendering goes directly to this view's
-    // VtkVis and QVTKWidgetCustom.
+    // Ensure effectiveCtx() resolves to THIS view's context for the
+    // entire duration of drawing. Without this guard, any code calling
+    // effectiveCtx() during a direct redraw (Qt resize, interaction)
+    // would get the primary view's context, causing wrong viewport
+    // dimensions for widgets/overlays in split windows.
+    ecvViewManager::ScopedRenderOverride viewGuard(this);
+
+    // Sync per-view glViewport from the actual widget so that
+    // ComputeActualPixelSize() (which reads effectiveCtx().glViewport)
+    // returns correct dimensions for this sub-window.
+    const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
+    m_ctx.glViewport = QRect(0, 0,
+                             m_vtkWidget->width() * dpr,
+                             m_vtkWidget->height() * dpr);
 
     // --- Build draw context from per-view state ---
     CC_DRAW_CONTEXT context;
@@ -247,6 +258,10 @@ bool ecvGLView::hasOverriddenDisplayParameters() const {
 
 void ecvGLView::aboutToBeRemoved(ccDrawableObject* obj) { Q_UNUSED(obj); }
 
+QVTKWidgetCustom* ecvGLView::getVtkWidget() const {
+    return m_vtkWidget.data();
+}
+
 Visualization::VtkVis* ecvGLView::getVisualizer3D() const {
     return m_visualizer3D.get();
 }
@@ -257,10 +272,11 @@ Visualization::VtkVis* ecvGLView::getVisualizer3D() const {
 
 void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     if (!m_vtkWidget) return;
+    const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
     params.viewport[0] = 0;
     params.viewport[1] = 0;
-    params.viewport[2] = m_vtkWidget->width();
-    params.viewport[3] = m_vtkWidget->height();
+    params.viewport[2] = m_vtkWidget->width() * dpr;
+    params.viewport[3] = m_vtkWidget->height() * dpr;
     params.perspective = m_ctx.viewportParams.perspectiveView;
     params.fov_deg = m_ctx.viewportParams.fov_deg;
     params.pixelSize = m_ctx.viewportParams.pixelSize;

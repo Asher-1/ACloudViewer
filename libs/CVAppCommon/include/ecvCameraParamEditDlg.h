@@ -45,6 +45,7 @@ public:
     void onItemPicked(const PickedItem& pi) override;
 
     bool setCameraTool(ecvGenericCameraTool* tool);
+    ecvGenericCameraTool* getCameraTool() const { return m_tool; }
 
     void SetCameraGroupsEnabled(bool enabled);
 

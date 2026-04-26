@@ -77,23 +77,29 @@ void RotateElevation(vtkCamera* camera, double angle) {
 
 };  // namespace
 
-static vtkSmartPointer<vtkCamera> s_camera = nullptr;
-static Visualization::VtkVis* s_viewer = nullptr;
+static EditCameraTool* s_activeTool = nullptr;
 
 //-----------------------------------------------------------------------------
 EditCameraTool::EditCameraTool(ecvGenericVisualizer3D* viewer)
     : ecvGenericCameraTool() {
     SetVisualizer(viewer);
+    s_activeTool = this;
     updateCameraParameters();
 }
 
 //-----------------------------------------------------------------------------
-EditCameraTool::~EditCameraTool() {}
+EditCameraTool::~EditCameraTool() {
+    if (s_activeTool == this) s_activeTool = nullptr;
+}
+
+EditCameraTool* EditCameraTool::ActiveTool() { return s_activeTool; }
 
 void EditCameraTool::SetVisualizer(ecvGenericVisualizer3D* viewer) {
+    auto* tool = s_activeTool;
+    if (!tool) return;
     if (viewer) {
-        s_viewer = reinterpret_cast<Visualization::VtkVis*>(viewer);
-        if (!s_viewer) {
+        tool->m_viewer = reinterpret_cast<Visualization::VtkVis*>(viewer);
+        if (!tool->m_viewer) {
             CVLog::Warning("[EditCameraTool::setVisualizer] viewer is Null!");
         }
     } else {
@@ -102,42 +108,48 @@ void EditCameraTool::SetVisualizer(ecvGenericVisualizer3D* viewer) {
 }
 
 void EditCameraTool::UpdateCameraInfo() {
-    if (!s_viewer) {
+    auto* tool = s_activeTool;
+    if (!tool) return;
+    if (!tool->m_viewer) {
         SetVisualizer(ecvDisplayTools::GetVisualizer3D());
     }
+    if (!tool->m_viewer) return;
 
-    s_camera = s_viewer->getVtkCamera();
-    OldCameraParam = CurrentCameraParam;
+    tool->m_camera = tool->m_viewer->getVtkCamera();
+    tool->OldCameraParam = tool->CurrentCameraParam;
 
-    s_camera->GetViewUp(CurrentCameraParam.viewUp.u);
-    s_camera->GetFocalPoint(CurrentCameraParam.focal.u);
-    s_camera->GetPosition(CurrentCameraParam.position.u);
-    s_camera->GetClippingRange(CurrentCameraParam.clippRange.u);
-    CurrentCameraParam.viewAngle = s_camera->GetViewAngle();
-    CurrentCameraParam.eyeAngle = s_camera->GetEyeAngle();
-    s_viewer->getCenterOfRotation(CurrentCameraParam.pivot.u);
-    CurrentCameraParam.rotationFactor = s_viewer->getRotationFactor();
+    tool->m_camera->GetViewUp(tool->CurrentCameraParam.viewUp.u);
+    tool->m_camera->GetFocalPoint(tool->CurrentCameraParam.focal.u);
+    tool->m_camera->GetPosition(tool->CurrentCameraParam.position.u);
+    tool->m_camera->GetClippingRange(tool->CurrentCameraParam.clippRange.u);
+    tool->CurrentCameraParam.viewAngle = tool->m_camera->GetViewAngle();
+    tool->CurrentCameraParam.eyeAngle = tool->m_camera->GetEyeAngle();
+    tool->m_viewer->getCenterOfRotation(tool->CurrentCameraParam.pivot.u);
+    tool->CurrentCameraParam.rotationFactor = tool->m_viewer->getRotationFactor();
 }
 
 void EditCameraTool::UpdateCamera() {
-    if (!s_viewer) {
+    auto* tool = s_activeTool;
+    if (!tool) return;
+    if (!tool->m_viewer) {
         SetVisualizer(ecvDisplayTools::GetVisualizer3D());
     }
+    if (!tool->m_viewer) return;
 
-    s_camera = s_viewer->getVtkCamera();
+    tool->m_camera = tool->m_viewer->getVtkCamera();
 
-    s_camera->SetViewUp(CurrentCameraParam.viewUp.u);
-    s_camera->SetFocalPoint(CurrentCameraParam.focal.u);
-    s_camera->SetPosition(CurrentCameraParam.position.u);
-    s_camera->SetClippingRange(CurrentCameraParam.clippRange.u);
+    tool->m_camera->SetViewUp(tool->CurrentCameraParam.viewUp.u);
+    tool->m_camera->SetFocalPoint(tool->CurrentCameraParam.focal.u);
+    tool->m_camera->SetPosition(tool->CurrentCameraParam.position.u);
+    tool->m_camera->SetClippingRange(tool->CurrentCameraParam.clippRange.u);
 
-    s_camera->SetViewAngle(CurrentCameraParam.viewAngle);
-    s_camera->SetEyeAngle(CurrentCameraParam.eyeAngle);
-    s_viewer->setCenterOfRotation(CurrentCameraParam.pivot.u);
-    s_viewer->setRotationFactor(CurrentCameraParam.rotationFactor);
+    tool->m_camera->SetViewAngle(tool->CurrentCameraParam.viewAngle);
+    tool->m_camera->SetEyeAngle(tool->CurrentCameraParam.eyeAngle);
+    tool->m_viewer->setCenterOfRotation(tool->CurrentCameraParam.pivot.u);
+    tool->m_viewer->setRotationFactor(tool->CurrentCameraParam.rotationFactor);
 
-    s_viewer->getCurrentRenderer()->SetActiveCamera(s_camera);
-    s_viewer->UpdateScreen();
+    tool->m_viewer->getCurrentRenderer()->SetActiveCamera(tool->m_camera);
+    tool->m_viewer->UpdateScreen();
 }
 
 //-----------------------------------------------------------------------------
@@ -147,13 +159,13 @@ void EditCameraTool::resetViewDirection(double look_x,
                                         double up_x,
                                         double up_y,
                                         double up_z) {
-    if (s_viewer) {
-        s_viewer->setCameraPosition(0.0, 0.0, 0.0, look_x, look_y, look_z, up_x,
+    if (m_viewer) {
+        m_viewer->setCameraPosition(0.0, 0.0, 0.0, look_x, look_y, look_z, up_x,
                                     up_y, up_z);
-        s_viewer->synchronizeGeometryBounds();
+        m_viewer->synchronizeGeometryBounds();
         double bounds[6];
-        s_viewer->getVisibleGeometryBounds().GetBounds(bounds);
-        s_viewer->resetCamera(bounds);
+        m_viewer->getVisibleGeometryBounds().GetBounds(bounds);
+        m_viewer->resetCamera(bounds);
         ecvDisplayTools::UpdateScreen();
     }
 }
@@ -164,45 +176,45 @@ void EditCameraTool::updateCameraParameters() { UpdateCameraInfo(); }
 
 //-----------------------------------------------------------------------------
 void EditCameraTool::adjustCamera(CameraAdjustmentType enType, double value) {
-    if (s_viewer && s_camera) {
+    if (m_viewer && m_camera) {
         switch (enType) {
             case ecvGenericCameraTool::Roll:
-                s_camera->Roll(value);
+                m_camera->Roll(value);
                 break;
             case ecvGenericCameraTool::Elevation:
-                RotateElevation(s_camera, value);
+                RotateElevation(m_camera, value);
                 break;
             case ecvGenericCameraTool::Azimuth:
-                s_camera->Azimuth(value);
+                m_camera->Azimuth(value);
                 break;
             case ecvGenericCameraTool::Zoom: {
-                if (s_camera->GetParallelProjection()) {
-                    s_camera->SetParallelScale(s_camera->GetParallelScale() /
+                if (m_camera->GetParallelProjection()) {
+                    m_camera->SetParallelScale(m_camera->GetParallelScale() /
                                                value);
                 } else {
-                    s_camera->Dolly(value);
+                    m_camera->Dolly(value);
                 }
-            }  // if (EditCameraTool::Zoom)
+            }
             break;
             default:
                 break;
         }
 
-        s_viewer->UpdateScreen();
+        m_viewer->UpdateScreen();
     }
 }
 
 //-----------------------------------------------------------------------------
 void EditCameraTool::saveCameraConfiguration(const std::string& file) {
-    if (s_viewer) {
-        s_viewer->saveCameraParameters(file);
+    if (m_viewer) {
+        m_viewer->saveCameraParameters(file);
     }
 }
 
 //-----------------------------------------------------------------------------
 void EditCameraTool::loadCameraConfiguration(const std::string& file) {
-    if (s_viewer) {
-        s_viewer->loadCameraParameters(file);
+    if (m_viewer) {
+        m_viewer->loadCameraParameters(file);
         updateCameraParameters();
     }
 }

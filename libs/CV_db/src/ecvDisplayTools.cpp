@@ -74,6 +74,14 @@ static ecvGenericGLDisplay* activeSecondaryView() {
 
 static const QString DEBUG_LAYER_ID = "DEBUG_LAYER";
 
+static int viewportHeightFor(ecvGenericGLDisplay* display) {
+    if (display && display != s_tools.instance) {
+        auto* ctx = display->viewContext();
+        if (ctx) return ctx->glViewport.height();
+    }
+    return s_tools.instance->effectiveCtx().glViewport.height();
+}
+
 // ================================================================
 // Per-view context  (Phase A → Phase E)
 // ================================================================
@@ -3277,13 +3285,17 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
     }
 
     // === Per-view delegation (Phase B) ===
+    // Skip the primary singleton (TheInstance) to avoid infinite recursion:
+    // ecvDisplayTools inherits ecvGenericGLDisplay so it may appear in the
+    // view list; calling its virtual redraw() re-enters RedrawDisplay().
     const auto& views = ecvViewManager::instance().getAllViews();
-    if (!views.isEmpty()) {
-        for (auto* viewDisplay : views) {
+    bool hasSecondary = false;
+    for (auto* viewDisplay : views) {
+        if (viewDisplay && viewDisplay != s_tools.instance) {
+            ecvViewManager::ScopedRenderOverride guard(viewDisplay);
             viewDisplay->redraw(only2D, forceRedraw);
+            hasSecondary = true;
         }
-        s_tools.instance->m_shouldBeRefreshed = false;
-        return;
     }
 
     // === Legacy singleton draw path (fallback when no views registered) ===
@@ -3719,9 +3731,10 @@ void ecvDisplayTools::RenderText(
     // QRect screen = QGuiApplication::primaryScreen()->geometry();
 
     context.textDefaultCol = color;
+    int vpH = viewportHeightFor(display);
     if (context.textParam.display3D) {
         context.textParam.textScale = GetPlatformAwareDPIScale();
-        CCVector3d input3D(x, s_tools.instance->effectiveCtx().glViewport.height() - y, 0);
+        CCVector3d input3D(x, vpH - y, 0);
         CCVector3d output2D;
         ToWorldPoint(input3D, output2D);
         context.textParam.textPos.x = output2D.x;
@@ -3729,8 +3742,7 @@ void ecvDisplayTools::RenderText(
         context.textParam.textPos.z = output2D.z;
     } else {
         context.textParam.textPos.x = x;
-        context.textParam.textPos.y =
-                s_tools.instance->effectiveCtx().glViewport.height() - y;
+        context.textParam.textPos.y = vpH - y;
         context.textParam.textPos.z = 0;
     }
     DisplayText(context);
@@ -3776,8 +3788,9 @@ void ecvDisplayTools::DisplayText(
         const QFont* font /*=0*/,
         const QString& id /*=""*/,
         ecvGenericGLDisplay* display /*=nullptr*/) {
+    int vpH = viewportHeightFor(display);
     int x2 = x;
-    int y2 = s_tools.instance->effectiveCtx().glViewport.height() - 1 - y;
+    int y2 = vpH - 1 - y;
 
     // actual text color
     const unsigned char* col =
@@ -3813,7 +3826,7 @@ void ecvDisplayTools::DisplayText(
             // yB += margin / 2; //empirical compensation
 
             int xB = x2;
-            int yB = s_tools.instance->effectiveCtx().glViewport.height() - y2;
+            int yB = vpH - y2;
 
             WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, id);
             param.text = text;
@@ -3836,7 +3849,7 @@ void ecvDisplayTools::DisplayText(
             param.rect.setWidth(param.rect.width() * 2);
             // Note: should be moved to the top of the screen (equal to move
             // bottom) in GL coordinates.
-            param.rect.moveTop(std::min(s_tools.instance->effectiveCtx().glViewport.height(),
+            param.rect.moveTop(std::min(vpH,
                                         param.rect.y() + 2 * margin));
 #endif
 

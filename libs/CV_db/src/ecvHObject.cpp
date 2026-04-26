@@ -1466,17 +1466,21 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     bool drawInThisContext =
             ((m_visible || m_selected) && isDisplayedIn(context.display));
 
-    // Per-view visibility override from Representation layer
-    if (drawInThisContext && context.display) {
-        auto* rep = ecvRepresentationManager::instance().getRepresentation(
+    // Per-view representation overrides (visibility, opacity, etc.)
+    ecvViewRepresentation* viewRep = nullptr;
+    if (context.display) {
+        viewRep = ecvRepresentationManager::instance().getRepresentation(
                 const_cast<ccHObject*>(this), context.display);
-        if (rep && rep->hasVisibilityOverride()) {
-            drawInThisContext = rep->isVisible();
-        }
+    }
+    if (drawInThisContext && viewRep && viewRep->hasVisibilityOverride()) {
+        drawInThisContext = viewRep->isVisible();
     }
 
     context.visible = m_visible;
-    context.opacity = getOpacity();
+    context.opacity =
+            (viewRep && viewRep->properties().opacity.has_value())
+                    ? viewRep->effectiveOpacity()
+                    : getOpacity();
 
     if (!isFixedId()) {
         context.viewID = getViewId();
@@ -1545,7 +1549,11 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             ccBBox bBox = getBB_recursive(true);
             if (bBox.isValid()) {
                 ccGLCameraParameters camera;
-                ecvDisplayTools::GetGLCameraParameters(camera);
+                if (context.display) {
+                    context.display->getGLCameraParameters(camera);
+                } else {
+                    ecvDisplayTools::GetGLCameraParameters(camera);
+                }
 
                 CCVector3 C = bBox.getCenter();
                 camera.project(C, m_nameIn3DPos);

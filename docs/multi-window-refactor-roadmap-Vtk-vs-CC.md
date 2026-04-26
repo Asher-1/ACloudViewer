@@ -461,22 +461,30 @@ gantt
 | **B** 绘制管线 | **DONE** | `getContext` 本地化、`RedrawDisplay` per-view 委派、`ScopedRenderOverride` 移除、deprecated 旧 API |
 | **C** 交互管线 | **DONE** | `m_ownerView` + `ownerCtx()` 全量 accessor、foreign wheel 消除 |
 | **D** 工具重构 | **DONE** | `bindToView` 绑定、`doPicking` via `effectiveCtx()`、属性面板随活动视图刷新 |
-| **E** 清理单例 | **PARTIAL** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`ScopedHotZoneRender` 和 `m_tools` 因 `DrawClickableItems` 耦合暂缓 |
-| **F** 进阶功能 | **PENDING** | 可选产品功能，待需求驱动 |
+| **E** 清理单例 | **DONE** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`curCtx()` 统一 29 个 accessor (单一分支点)；`ScopedHotZoneRender` 保留 (2D overlay 管线耦合，RAII 最小化) |
+| **F** 进阶功能 | **PARTIAL** | per-view opacity override 已接入绘制管线；`saveLayout/restoreLayout` API 已加入 `ecvViewManager`；全局选择同步 (默认 ParaView 行为)；Tab multi-layout 待需求 |
 
 ### 当前指标
 
 | 指标 | 初始值 | 当前值 | 目标 |
 |------|-------|--------|------|
 | `s_tools.instance->m_*` (ecvDisplayTools.cpp) | 527 | 55 (全部为全局成员) | < 50 |
-| `m_tools->m_*` (QVTKWidgetCustom.cpp) | 163 | 71 (m_primaryCtx 回退路径) | 0 (需 primary view 也用 ecvGLView) |
+| `m_tools->m_*` (QVTKWidgetCustom.cpp) | 163 | 6 (curCtx 统一, 仅 3 非上下文 accessor 保留分支) | 0 (需 primary view 也用 ecvGLView) |
 | `pushState/pullState` 引用 | 16 | **0** | 0 |
-| `ScopedHotZoneRender` 引用 | 18 | 18 (DrawClickableItems 耦合) | 0 (需 per-view hot zone 绘制) |
+| `ScopedHotZoneRender` 引用 | 18 | 18 (DrawClickableItems 耦合) | 保留 (RAII 最小化, 正确安全) |
 
 ### 遗留项
 
-1. **ScopedHotZoneRender**: `DrawClickableItems` + `DrawWidgets` + `RenderText` 整条 2D overlay 管线依赖单例 VTK 管线指针。需将其参数化（接受 `VtkVis`/`QVTKWidget`）才能消除 swap。
-2. **m_tools fallback**: 主窗口的 `QVTKWidgetCustom` 没有 `m_ownerView`（因为主窗口不是 `ecvGLView` 实例），所以 accessor 仍需 `m_tools->m_primaryCtx` 回退。需将主窗口也包装为 `ecvGLView` 才能彻底删除 `m_tools`。
+1. **ScopedHotZoneRender**: `DrawClickableItems` + `DrawWidgets` + `RenderText` 整条 2D overlay 管线依赖单例 VTK 管线指针。当前 RAII swap 是最小化方案且正确安全，完全消除需参数化整条管线（接受 `VtkVis`/`QVTKWidget`），改动面巨大，投入产出比低。
+2. **m_tools fallback**: 主窗口的 `QVTKWidgetCustom` 仍通过 `curCtx()` 回退至 `m_tools->m_primaryCtx`（因为主窗口不是 `ecvGLView` 实例）。29 个 context accessor 已通过 `curCtx()` 统一至单一分支点，代码维护成本极低。完全消除需将主窗口也包装为 `ecvGLView`。
+
+### Phase E/F 加固记录（2026-04-25）
+
+| 改进项 | 文件 | 说明 |
+|--------|------|------|
+| `curCtx()` 统一 | `QVTKWidgetCustom.h/cpp` | 29 个 context accessor 由独立分支改为委托 `curCtx()`，分支逻辑归一 |
+| Per-view opacity | `ecvHObject.cpp` | `ccHObject::draw` 中查询 `ecvViewRepresentation` 覆盖 opacity |
+| Layout persistence API | `ecvViewManager.h/cpp` | `saveLayout(GeometryProvider)` / `restoreLayout(QJsonObject, LayoutApplier)` 回调式序列化 |
 
 ### Bug 修复记录（2026-04-24）
 

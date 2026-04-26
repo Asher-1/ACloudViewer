@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include <QJsonObject>
 #include <QList>
 #include <QObject>
+#include <functional>
 
 #include "CV_db.h"
 
@@ -67,6 +69,10 @@ public:
     int viewCount() const;
     ecvGenericGLDisplay* findView(int uniqueID) const;
 
+    /// Find which registered view displays the given entity.
+    /// Returns nullptr if the entity has no display or its display is not registered.
+    ecvGenericGLDisplay* findViewForEntity(const ccHObject* entity) const;
+
     // -- Batch operations --
 
     void refreshAll(bool only2D = false);
@@ -77,13 +83,33 @@ public:
                    bool forceRedraw = true,
                    bool includePrimary = true);
 
+    // -- Layout persistence --
+
+    /// Serialize the current layout (view list + active view ID).
+    /// The caller supplies per-view geometry via the callback.
+    using GeometryProvider =
+            std::function<QJsonObject(ecvGenericGLDisplay* view)>;
+    QJsonObject saveLayout(GeometryProvider geometryOf) const;
+
+    /// Restore a previously saved layout.
+    /// The caller creates views / applies geometry via the callback.
+    using LayoutApplier =
+            std::function<void(const QJsonObject& viewJson)>;
+    void restoreLayout(const QJsonObject& layout, LayoutApplier apply);
+
     // -- Entity-view association helpers --
 
     /// Recursively associate entity with the active view (if unbound).
     void associateToActiveView(ccHObject* obj);
 
-    /// Clear display association for all entities bound to the given view.
+    /// Reassign all entities bound to the closing view to a surviving view.
+    /// If no surviving view exists, clears the display association.
     void detachEntitiesFromView(ecvGenericGLDisplay* view);
+
+    /// Recursively reassign entities from one view to another.
+    void reassignEntitiesFromView(ccHObject* root,
+                                  ecvGenericGLDisplay* fromView,
+                                  ecvGenericGLDisplay* toView);
 
 signals:
     void activeViewChanged(ecvGenericGLDisplay* newActive,

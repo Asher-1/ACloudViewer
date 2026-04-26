@@ -156,7 +156,8 @@ void define_ccDisplayTools(py::module &m)
             "setPivotVisibility",
             [](ecvDisplayTools::PivotVisibility vis) { ecvDisplayTools::SetPivotVisibility(vis); },
             "vis"_a)
-        .def_static("getPivotVisibility", &ecvDisplayTools::GetPivotVisibility)
+        .def_static("getPivotVisibility",
+                    static_cast<ecvDisplayTools::PivotVisibility (*)()>(&ecvDisplayTools::GetPivotVisibility))
         .def_static("showPivotSymbol", &ecvDisplayTools::ShowPivotSymbol, "state"_a)
         .def_static("setPivotPoint",
                     &ecvDisplayTools::SetPivotPoint,
@@ -185,12 +186,16 @@ void define_ccDisplayTools(py::module &m)
             { ecvDisplayTools::SetView(orientation, redraw); },
             "orientation"_a,
             "redraw"_a = true)
-        .def_static("setInteractionMode", &ecvDisplayTools::SetInteractionMode, "flags"_a)
-        .def_static("getInteractionMode", &ecvDisplayTools::GetInteractionMode)
+        .def_static("setInteractionMode",
+                    static_cast<void (*)(ecvDisplayTools::INTERACTION_FLAGS)>(&ecvDisplayTools::SetInteractionMode),
+                    "flags"_a)
+        .def_static("getInteractionMode",
+                    static_cast<ecvDisplayTools::INTERACTION_FLAGS (*)()>(&ecvDisplayTools::GetInteractionMode))
         .def_static("setPickingMode",
-                    &ecvDisplayTools::SetPickingMode,
+                    static_cast<void (*)(ecvDisplayTools::PICKING_MODE)>(&ecvDisplayTools::SetPickingMode),
                     "mode"_a = ecvDisplayTools::PICKING_MODE::DEFAULT_PICKING)
-        .def_static("getPickingMode", &ecvDisplayTools::GetPickingMode)
+        .def_static("getPickingMode",
+                    static_cast<ecvDisplayTools::PICKING_MODE (*)()>(&ecvDisplayTools::GetPickingMode))
         .def_static("lockPickingMode", &ecvDisplayTools::LockPickingMode, "state"_a)
         .def_static("isPickingModeLocked", &ecvDisplayTools::IsPickingModeLocked)
         .def_static("getContext",
