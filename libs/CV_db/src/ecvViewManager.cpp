@@ -7,6 +7,9 @@
 
 #include "ecvViewManager.h"
 
+#include <QJsonArray>
+#include <QJsonObject>
+
 #include "ecvDisplayTools.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvHObject.h"
@@ -79,9 +82,23 @@ ecvGenericGLDisplay* ecvViewManager::findView(int uniqueID) const {
     return nullptr;
 }
 
+ecvGenericGLDisplay* ecvViewManager::findViewForEntity(
+        const ccHObject* entity) const {
+    if (!entity) return nullptr;
+    auto* display = entity->getDisplay();
+    if (!display) return nullptr;
+    for (auto* view : m_views) {
+        if (view == display) return view;
+    }
+    return nullptr;
+}
+
 void ecvViewManager::refreshAll(bool only2D) {
     for (auto* view : m_views) {
-        if (view) view->refresh(only2D);
+        if (view) {
+            ScopedRenderOverride guard(view);
+            view->refresh(only2D);
+        }
     }
 }
 
@@ -92,6 +109,7 @@ void ecvViewManager::redrawAll(bool only2D,
     for (auto* view : m_views) {
         if (!view) continue;
         if (!includePrimary && view == primary) continue;
+        ScopedRenderOverride guard(view);
         view->redraw(only2D, forceRedraw);
     }
 }
@@ -103,13 +121,86 @@ void ecvViewManager::associateToActiveView(ccHObject* obj) {
     }
 }
 
-void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* view) {
-    if (!view) return;
+void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* closingView) {
+    if (!closingView) return;
 
-    // CC pattern: mainwindow.cpp → removeFromDisplay_recursive(glWindow)
-    // Walk the global scene DB and clear display bindings for this view.
     ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
-    if (sceneDB) {
-        sceneDB->removeFromDisplay_recursive(view);
+    if (!sceneDB) return;
+
+    // Find a surviving view to receive orphaned entities (prefer the one
+    // that will become active — last registered, excluding the closing one).
+    ecvGenericGLDisplay* recipient = nullptr;
+    for (int i = m_views.size() - 1; i >= 0; --i) {
+        if (m_views[i] != closingView) {
+            recipient = m_views[i];
+            break;
+        }
+    }
+
+    reassignEntitiesFromView(sceneDB, closingView, recipient);
+}
+
+void ecvViewManager::reassignEntitiesFromView(
+        ccHObject* root,
+        ecvGenericGLDisplay* fromView,
+        ecvGenericGLDisplay* toView) {
+    if (!root) return;
+
+    if (root->getDisplay() == fromView) {
+        if (toView) {
+            root->setDisplay(toView);
+        } else {
+            root->removeFromDisplay(fromView);
+        }
+    }
+
+    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+        reassignEntitiesFromView(root->getChild(i), fromView, toView);
+    }
+}
+
+QJsonObject ecvViewManager::saveLayout(GeometryProvider geometryOf) const {
+    QJsonArray viewsArr;
+    auto* primary = ecvDisplayTools::TheInstance();
+
+    for (auto* view : m_views) {
+        if (!view) continue;
+        QJsonObject vObj;
+        vObj["id"] = view->getUniqueID();
+        vObj["title"] = view->getTitle();
+        vObj["is_primary"] = (view == primary);
+
+        if (geometryOf) {
+            QJsonObject geom = geometryOf(view);
+            if (!geom.isEmpty()) {
+                vObj["geometry"] = geom;
+            }
+        }
+        viewsArr.append(vObj);
+    }
+
+    QJsonObject layout;
+    layout["views"] = viewsArr;
+    layout["active_view_id"] =
+            m_activeView ? m_activeView->getUniqueID() : -1;
+    layout["view_count"] = m_views.size();
+    return layout;
+}
+
+void ecvViewManager::restoreLayout(const QJsonObject& layout,
+                                   LayoutApplier apply) {
+    if (!apply) return;
+
+    QJsonArray viewsArr = layout["views"].toArray();
+    for (const auto& val : viewsArr) {
+        QJsonObject vObj = val.toObject();
+        apply(vObj);
+    }
+
+    int activeId = layout["active_view_id"].toInt(-1);
+    if (activeId >= 0) {
+        if (auto* view = findView(activeId)) {
+            setActiveView(view);
+        }
     }
 }

@@ -331,8 +331,8 @@ public:
     QString getTitle() const;
     Qt::Alignment getAlignment() const;
 
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 private:
     void closeEvent(QCloseEvent *event) override;

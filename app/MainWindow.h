@@ -205,6 +205,7 @@ public:
     //! Returns MDI area subwindow corresponding to a given 3D view
     QMdiSubWindow* getMDISubWindow(QWidget* win);
     QWidget* getActiveWindow() override;
+    ecvGenericGLDisplay* getActiveGLDisplay() override;
     QWidget* getWindow(int index) const;
     void update3DViewsMenu();
 

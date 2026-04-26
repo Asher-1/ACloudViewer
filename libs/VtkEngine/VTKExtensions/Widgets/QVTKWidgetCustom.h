@@ -213,43 +213,49 @@ public:
     void setLocalDefaultLineWidth(float w) { m_localDefaultLineWidth = w; }
 
     // ================================================================
-    // Phase C: per-view state accessors
+    // Per-view state accessors
     //
-    // These return a mutable reference to the correct source of truth:
-    //   secondary views → m_ownerView->context().xxx
-    //   primary view    → m_tools->m_primaryCtx  (singleton fallback)
+    // curCtx() returns the canonical context for this widget:
+    //   secondary views → m_ownerView->context()
+    //   primary view    → m_tools->m_primaryCtx
+    //
+    // All cur*() helpers delegate to curCtx() so the branch exists
+    // in exactly one place.
     // ================================================================
 
+    ecvViewContext& curCtx();
+    const ecvViewContext& curCtx() const;
     ecvViewContext* ownerCtx();
-    ecvGenericGLDisplay::INTERACTION_FLAGS& curInteractionFlags();
-    ecvViewportParameters& curViewportParams();
-    const ecvViewportParameters& curViewportParams() const;
-    QPoint& curLastMousePos();
-    QPoint& curLastMouseMovePos();
-    bool& curMouseMoved();
-    bool& curMouseButtonPressed();
-    bool& curIgnoreMouseReleaseEvent();
-    bool& curWidgetClicked();
-    ecvGenericGLDisplay::PICKING_MODE& curPickingMode();
-    bool& curPickingModeLocked();
-    int& curPickRadius();
-    bool& curAllowRectangularEntityPicking();
-    int& curLastPointIndex();
-    QString& curLastPickedId();
-    bool& curTouchInProgress();
-    qreal& curTouchBaseDist();
-    bool& curClickableItemsVisible();
-    bool& curBubbleViewModeEnabled();
-    float& curBubbleViewFov_deg();
-    bool& curCustomLightEnabled();
-    float* curCustomLightPos();
-    bool& curRotationAxisLocked();
-    CCVector3d& curLockedRotationAxis();
-    ecvGenericGLDisplay::PivotVisibility& curPivotVisibility();
-    bool& curPivotSymbolShown();
-    bool& curAutoPickPivotAtCenter();
-    bool& curShowCursorCoordinates();
-    qint64& curLastClickTime();
+
+    ecvGenericGLDisplay::INTERACTION_FLAGS& curInteractionFlags() { return curCtx().interactionFlags; }
+    ecvViewportParameters& curViewportParams() { return curCtx().viewportParams; }
+    const ecvViewportParameters& curViewportParams() const { return curCtx().viewportParams; }
+    QPoint& curLastMousePos() { return curCtx().lastMousePos; }
+    QPoint& curLastMouseMovePos() { return curCtx().lastMouseMovePos; }
+    bool& curMouseMoved() { return curCtx().mouseMoved; }
+    bool& curMouseButtonPressed() { return curCtx().mouseButtonPressed; }
+    bool& curIgnoreMouseReleaseEvent() { return curCtx().ignoreMouseReleaseEvent; }
+    bool& curWidgetClicked() { return curCtx().widgetClicked; }
+    ecvGenericGLDisplay::PICKING_MODE& curPickingMode() { return curCtx().pickingMode; }
+    bool& curPickingModeLocked() { return curCtx().pickingModeLocked; }
+    int& curPickRadius() { return curCtx().pickRadius; }
+    bool& curAllowRectangularEntityPicking() { return curCtx().allowRectangularEntityPicking; }
+    int& curLastPointIndex() { return curCtx().lastPointIndex; }
+    QString& curLastPickedId() { return curCtx().lastPickedId; }
+    bool& curTouchInProgress() { return curCtx().touchInProgress; }
+    qreal& curTouchBaseDist() { return curCtx().touchBaseDist; }
+    bool& curClickableItemsVisible() { return curCtx().clickableItemsVisible; }
+    bool& curBubbleViewModeEnabled() { return curCtx().bubbleViewModeEnabled; }
+    float& curBubbleViewFov_deg() { return curCtx().bubbleViewFov_deg; }
+    bool& curCustomLightEnabled() { return curCtx().customLightEnabled; }
+    float* curCustomLightPos() { return curCtx().customLightPos; }
+    bool& curRotationAxisLocked() { return curCtx().rotationAxisLocked; }
+    CCVector3d& curLockedRotationAxis() { return curCtx().lockedRotationAxis; }
+    ecvGenericGLDisplay::PivotVisibility& curPivotVisibility() { return curCtx().pivotVisibility; }
+    bool& curPivotSymbolShown() { return curCtx().pivotSymbolShown; }
+    bool& curAutoPickPivotAtCenter() { return curCtx().autoPickPivotAtCenter; }
+    bool& curShowCursorCoordinates() { return curCtx().showCursorCoordinates; }
+    qint64& curLastClickTime() { return curCtx().lastClickTime_ticks; }
 
     ccPolyline*& curRectPickingPoly();
     std::list<ccInteractor*>& curActiveItems();

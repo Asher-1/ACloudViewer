@@ -53,10 +53,10 @@ public:
     virtual void reset() override;
     virtual void clear() override;
 
-    virtual void setTranlationMode(TranslationMOde mode);
-    virtual void setRotationMode(RotationMode mode);
-    virtual void setScaleEnabled(bool state);
-    virtual void setShearEnabled(bool state);
+    void setTranlationMode(TranslationMOde mode) override;
+    void setRotationMode(RotationMode mode) override;
+    void setScaleEnabled(bool state) override;
+    void setShearEnabled(bool state) override;
 
     virtual const ccGLMatrixd getFinalTransformation() override;
     virtual void getOutput(std::vector<ccHObject*>& out) override;

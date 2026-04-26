@@ -112,7 +112,7 @@ public:
     // VTK-specific accessors
     // ================================================================
 
-    QVTKWidgetCustom* getVtkWidget() const { return m_vtkWidget; }
+    QVTKWidgetCustom* getVtkWidget() const;
     Visualization::VtkVis* getVisualizer3D() const;
     Visualization::VtkVisPtr getVisualizer3DSP() const {
         return m_visualizer3D;

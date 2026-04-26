@@ -60,6 +60,7 @@
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
 #include <ecvViewManager.h>
+#include <CVLog.h>
 
 // Qt
 #include <QAbstractItemView>
@@ -3741,7 +3742,11 @@ void ccPropertiesTreeDelegate::objectDisplayChanged(
         }
     }
     if (!targetDisplay) {
-        targetDisplay = ecvViewManager::instance().getActiveView();
+        CVLog::Warning(
+                QString("[Properties] No view found with title '%1', "
+                        "keeping current display")
+                        .arg(newDisplayTitle));
+        return;
     }
 
     auto* oldDisplay = m_currentObject->getDisplay();
