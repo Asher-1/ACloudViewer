@@ -22,7 +22,6 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QDialogButtonBox>
-#include <QMdiSubWindow>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QtConcurrentRun>
@@ -202,12 +201,6 @@ bool ecvAnimationParamDlg::start() {
     return true;
 }
 
-void ecvAnimationParamDlg::linkWith(QMdiSubWindow* qWin) {
-    QWidget* associatedWin =
-            (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
-
-    linkWith(associatedWin);
-}
 
 bool ecvAnimationParamDlg::linkWith(QWidget* win) {
     QWidget* oldWin = m_associatedWin;

@@ -4299,6 +4299,7 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
             poly->draw(CONTEXT);
         } break;
         case WIDGETS_TYPE::WIDGET_SPHERE:
+        case WIDGETS_TYPE::WIDGET_POINT:
             s_tools.instance->drawWidgets(param);
             break;
         case WIDGETS_TYPE::WIDGET_CAPTION:

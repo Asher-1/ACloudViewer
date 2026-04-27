@@ -9,7 +9,6 @@
 
 #include <QFrame>
 #include <QHBoxLayout>
-#include <QMdiArea>
 #include <QObject>
 #include <QSignalBlocker>
 #include <QToolButton>
@@ -27,9 +26,8 @@ class ecvGenericGLDisplay;
 ///   - Manages radio-button isolation (one tool active at a time per view)
 ///   - Unchecks mirrored actions in OTHER views when one view activates a tool
 ///
-/// This class is stateless per-instance — each call to populateToolbar() wires
-/// up a self-contained set of actions on the target toolbar widget.  Cross-view
-/// uncheck operates by walking the QMdiArea to find sibling toolbars.
+/// Cross-view uncheck walks a configurable root widget tree to find sibling
+/// ViewSelectionToolBar instances.
 class QVTK_ENGINE_LIB_API cvPerViewSelectionManager : public QObject {
     Q_OBJECT
 
@@ -38,9 +36,10 @@ public:
 
     explicit cvPerViewSelectionManager(QObject* parent = nullptr);
 
-    /// The mdiArea pointer is used by uncheckOtherViews() to walk all open
-    /// views.  Must be set before calling populateToolbar().
-    void setMdiArea(QMdiArea* mdi) { m_mdiArea = mdi; }
+    /// Set the root widget whose subtree contains all per-view
+    /// ViewSelectionToolBar widgets. Both uncheckOtherViews() and
+    /// uncheckAllMirrors() search from this root.
+    void setViewRoot(QWidget* root) { m_viewRoot = root; }
 
     /// Callback type invoked when a per-view action activates — the caller
     /// (MainWindow) should rebind tools to the specified display.
@@ -71,6 +70,6 @@ private:
                             QWidget* viewWidget);
     void uncheckOtherViews(QWidget* viewWidget, const QString& globalName);
 
-    QMdiArea* m_mdiArea = nullptr;
+    QWidget* m_viewRoot = nullptr;
     ActivateViewFn m_activateViewFn;
 };

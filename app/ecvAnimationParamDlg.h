@@ -18,7 +18,6 @@
 // system
 #include <map>
 
-class QMdiSubWindow;
 class ccHObject;
 class ccPickingHub;
 class AnimationDialogInternal;
@@ -55,8 +54,7 @@ public:
 
 public slots:
 
-    //! Links this dialog with a given sub-window
-    void linkWith(QMdiSubWindow* qWin);
+    
 
     //! Updates dialog values with axis point
     void updateRotationAxisPoint(AxisType axisType, const CCVector3d& P);

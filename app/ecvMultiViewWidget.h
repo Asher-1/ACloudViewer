@@ -1,0 +1,141 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <QWidget>
+#include <QMap>
+#include <QPointer>
+#include <QVector>
+#include <functional>
+
+class ecvViewLayoutProxy;
+class ecvGLView;
+class ecvGenericGLDisplay;
+class QSplitter;
+class QFrame;
+class QToolButton;
+
+/// UI widget that mirrors a single ecvViewLayoutProxy (KD-tree layout).
+///
+/// Directly inspired by ParaView's pqMultiViewWidget:
+///   - Subscribes to ecvViewLayoutProxy::layoutChanged()
+///   - Rebuilds the QSplitter tree to match the KD-tree on every change
+///   - Creates view frames for each leaf cell
+///   - Handles click-to-activate via application-wide event filter
+///   - Provides split/maximize/close/swap operations that go through the proxy
+///
+/// One ecvMultiViewWidget per Tab in ecvTabbedMultiViewWidget.
+class ecvMultiViewWidget : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit ecvMultiViewWidget(QWidget* parent = nullptr);
+    ~ecvMultiViewWidget() override;
+
+    /// Set the layout proxy this widget mirrors. Triggers reload().
+    void setLayoutManager(ecvViewLayoutProxy* layout);
+    ecvViewLayoutProxy* layoutManager() const { return m_layout; }
+
+    /// Get the list of all views currently in this layout.
+    QList<ecvGenericGLDisplay*> viewProxies() const;
+
+    /// Check if a view is assigned to this layout.
+    bool isViewAssigned(ecvGenericGLDisplay* view) const;
+
+    /// Returns the currently active view frame (may be null).
+    QWidget* activeFrame() const { return m_activeFrame; }
+
+    /// Returns the cell index of the active frame, or -1.
+    int activeFrameLocation() const;
+
+    /// Set the factory used to create new views for split operations.
+    using ViewFactory = std::function<ecvGLView*()>;
+    void setViewFactory(ViewFactory factory) { m_viewFactory = factory; }
+
+    /// Set the callback for creating the title-bar/frame wrapper.
+    using FrameFactory =
+            std::function<QWidget*(QWidget* viewWidget, const QString& title)>;
+    void setFrameFactory(FrameFactory factory) { m_frameFactory = factory; }
+
+    /// Set a callback invoked after each frame is wired to a view.
+    using FrameWiredCallback =
+            std::function<void(QWidget* frame, ecvGenericGLDisplay* view)>;
+    void setFrameWiredCallback(FrameWiredCallback cb) {
+        m_frameWiredCallback = cb;
+    }
+
+    /// Whether view frame decorations (title bar) are visible.
+    bool decorationsVisibility() const { return m_decorationsVisible; }
+
+    /// Destroy all views in this layout.
+    void destroyAllViews();
+
+signals:
+    /// Emitted when the active frame changes (click on a view).
+    void frameActivated();
+
+    /// Emitted before a view is removed/destroyed from this layout.
+    /// Receivers should perform cleanup (unregister, camera link removal,
+    /// primary-view adoption, etc.) before the view is actually detached.
+    void viewClosing(ecvGenericGLDisplay* view);
+
+    void decorationsVisibilityChanged(bool visible);
+
+public slots:
+    /// Rebuild the entire widget tree from the layout proxy.
+    void reload();
+
+    /// Ensure some frame is active (used when tab is shown).
+    void makeFrameActive();
+
+    /// Show/hide title bars and decorations.
+    void setDecorationsVisibility(bool visible);
+
+    /// Lock all view sizes to the given dimension (empty = unlock).
+    void lockViewSize(const QSize& size);
+
+    /// Reset the layout (single empty cell).
+    void reset();
+
+public slots:
+    /// Make a specific frame the active one.
+    void makeActive(QWidget* frame);
+
+    /// Update the visual "active" highlight.
+    void markActive(ecvGenericGLDisplay* view);
+
+    /// Handle standard buttons (split/close/maximize).
+    void onSplitHorizontal(QWidget* frame);
+    void onSplitVertical(QWidget* frame);
+    void onCloseView(QWidget* frame);
+    void onMaximize(QWidget* frame);
+
+protected:
+    bool eventFilter(QObject* caller, QEvent* evt) override;
+
+private:
+    /// Recursively build the splitter tree for a KD-tree cell.
+    QWidget* buildCell(int location);
+
+    /// Find the frame for a given view.
+    QWidget* findFrameForView(ecvGenericGLDisplay* view) const;
+
+    /// Find the cell index for a given frame widget.
+    int findLocationForFrame(QWidget* frame) const;
+
+    ecvViewLayoutProxy* m_layout = nullptr;
+    QWidget* m_activeFrame = nullptr;
+    bool m_decorationsVisible = true;
+
+    ViewFactory m_viewFactory;
+    FrameFactory m_frameFactory;
+    FrameWiredCallback m_frameWiredCallback;
+
+    QMap<int, QWidget*> m_cellFrames;
+    QMap<ecvGenericGLDisplay*, QWidget*> m_viewFrames;
+};

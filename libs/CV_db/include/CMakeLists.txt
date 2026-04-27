@@ -40,6 +40,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericGLDisplay.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvViewContext.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewLayoutProxy.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvViewManager.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvViewRepresentation.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRepresentationManager.h

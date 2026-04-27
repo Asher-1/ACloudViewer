@@ -462,7 +462,7 @@ gantt
 | **C** 交互管线 | **DONE** | `m_ownerView` + `ownerCtx()` 全量 accessor、foreign wheel 消除 |
 | **D** 工具重构 | **DONE** | `bindToView` 绑定、`doPicking` via `effectiveCtx()`、属性面板随活动视图刷新 |
 | **E** 清理单例 | **DONE** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`curCtx()` 统一 29 个 accessor (单一分支点)；`ScopedHotZoneRender` 保留 (2D overlay 管线耦合，RAII 最小化) |
-| **F** 进阶功能 | **PARTIAL** | per-view opacity override 已接入绘制管线；`saveLayout/restoreLayout` API 已加入 `ecvViewManager`；全局选择同步 (默认 ParaView 行为)；Tab multi-layout 待需求 |
+| **F** 进阶功能 | **DONE** | per-view opacity override 已接入绘制管线；KD-tree 布局模型 (`ecvViewLayoutProxy`)；`ecvMultiViewWidget` + `ecvTabbedMultiViewWidget` (ParaView 级多视图/Tab 布局)；`ecvViewManager` 扩展为 `pqActiveObjects` 模式 (源/表示追踪 + `triggerSignals` 批量信号) |
 
 ### 当前指标
 
@@ -520,7 +520,206 @@ gantt
 | **IMPORTANT** | HotZone 悬挂 | `resetToBuiltInPipeline()` 中无 `localHotZone` 时清空 `m_hotZone` | `VtkDisplayTools.cpp` |
 | **MEDIUM** | 瞬态状态残留 | 添加 `ecvViewContext::resetInteractionState()` 集中重置 | `ecvViewContext.h`, `MainWindow.cpp` |
 
+### Phase G — ParaView 兼容架构（2026-04-27）
+
+引入与 ParaView 完全对齐的多窗口架构组件：
+
+| 组件 | ParaView 对应 | 文件 | 说明 |
+|------|-------------|------|------|
+| `ecvViewLayoutProxy` | `vtkSMViewLayoutProxy` | `libs/CV_db/include/ecvViewLayoutProxy.h`, `src/ecvViewLayoutProxy.cpp` | KD-tree 布局模型：heap 索引二叉树、Split/Assign/Collapse/Swap/Equalize/Maximize、JSON 序列化 |
+| `ecvMultiViewWidget` | `pqMultiViewWidget` | `app/ecvMultiViewWidget.h`, `.cpp` | UI 层：订阅 `layoutChanged()` 重建 QSplitter 树、事件过滤点击激活、Split/Close/Maximize 操作走 Proxy |
+| `ecvTabbedMultiViewWidget` | `pqTabbedMultiViewWidget` | `app/ecvTabbedMultiViewWidget.h`, `.cpp` | Tab 容器：每 Tab 一个 `ecvMultiViewWidget` + `ecvViewLayoutProxy`、"+" 按钮新建 Tab、右键重命名/Equalize/关闭 |
+| `ecvViewManager` 扩展 | `pqActiveObjects` | `libs/CV_db/include/ecvViewManager.h`, `src/ecvViewManager.cpp` | 新增 `activeSource`/`activeRepresentation`/`activeLayout` 追踪、`triggerSignals()` 批量信号、Layout proxy 注册管理 |
+
+### Phase H — QMdiArea 替换为 ecvTabbedMultiViewWidget（2026-04-27）
+
+**核心切换**：`setCentralWidget(m_mdiArea)` → `setCentralWidget(m_tabbedMultiView)`
+
+| 变更类别 | 内容 | 文件 |
+|---------|------|------|
+| **中心控件切换** | `m_mdiArea = nullptr`；`setCentralWidget(m_tabbedMultiView)` 在 `initParaViewLayoutSystem()` 后调用 | `MainWindow.cpp::initial()` |
+| **视图生命周期** | `viewClosing(ecvGenericGLDisplay*)` 信号链：`ecvMultiViewWidget` → `ecvTabbedMultiViewWidget` → `MainWindow::onViewClosingFromLayout`；处理 unregister、primary 接管、camera link 移除 | `ecvMultiViewWidget.h/cpp`, `ecvTabbedMultiViewWidget.h/cpp`, `MainWindow.cpp` |
+| **Overlay 定位** | `centralViewWidget()` 辅助方法替代硬编码 `m_mdiArea` 几何 | `MainWindow.h/cpp` |
+| **视图枚举** | `getRenderWindowCount`/`GetRenderWindows`/`GetRenderWindow`/`getWindow`/`getActiveWindow`/`addWidgetToQMdiArea` 优先走 `m_tabbedMultiView->allViews()` | `MainWindow.cpp` |
+| **新建视图** | `new3DView()` → `m_tabbedMultiView->createTab()`；ViewFactory 自动创建 `ecvGLView` 并赋给 cell 0 | `MainWindow.cpp` |
+| **分屏** | `splitCurrentView()` 委托 `ecvMultiViewWidget::onSplitHorizontal/Vertical` | `MainWindow.cpp` |
+| **关闭视图** | `createViewFrame` 的 close lambda 委托 `ecvMultiViewWidget::onCloseView` | `MainWindow.cpp` |
+| **Camera/Animation 对话框** | 移除 `QMdiSubWindow` 硬依赖；null guard + `activeWin` 降级 | `MainWindow.cpp` |
+| **活跃帧高亮** | `markActiveViewFrame` 从 `m_tabbedMultiView` 搜索 `CentralWidgetFrame` | `MainWindow.cpp` |
+| **装饰/锁定/启禁** | `setViewDecorationsVisible` / `lockViewSize` / `enableAll` / `disableAll` 走 `m_tabbedMultiView` API | `MainWindow.cpp` |
+| **事件过滤** | `m_tabbedMultiView` 安装 `installEventFilter(this)` 用于 Resize→overlay 重定位 | `MainWindow.cpp` |
+| **菜单更新** | `updateMenus()` 接入 `activeViewChanged` 信号（替代 `subWindowActivated`） | `MainWindow.cpp` |
+| **析构清理** | null-guard `m_mdiArea->disconnect()`；新增 `m_tabbedMultiView->reset()` | `MainWindow.cpp` |
+
+### Phase I — 深度清理与完善（2026-04-27 续）
+
+**QMdiArea 彻底清除：**
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **m_mdiArea 成员移除** | `QMdiArea* m_mdiArea` 从 `MainWindow.h` 删除 | `MainWindow.h` |
+| **QMdiArea forward decl 移除** | 仅保留 `QMdiSubWindow` 前向声明（接口兼容） | `MainWindow.h` |
+| **死代码清除（~67处）** | 所有 `m_mdiArea->subWindowList()`/`activeSubWindow()`/`addSubWindow()` 分支移除 | `MainWindow.cpp` |
+| **关闭逻辑简化** | close button/context menu 中 QSplitter→QMdiSubWindow 拆包逻辑移除，统一走 `ecvMultiViewWidget::onCloseView` | `MainWindow.cpp` |
+| **new3DView 简化** | 移除 MDI `addSubWindow` 路径，仅保留 `m_tabbedMultiView->createTab()` | `MainWindow.cpp` |
+| **splitCurrentView 简化** | 移除遗留 widget 遍历路径，仅保留 `ecvMultiViewWidget` 委托 | `MainWindow.cpp` |
+| **toggleMaximize 重写** | 移除 MDI maximize/restore，新增 `ecvMultiViewWidget::onMaximize` 委托 | `MainWindow.cpp` |
+| **splitViewFrame 清理** | 移除 `QMdiSubWindow` parent 检测，保留 QSplitter/QLayout 路径 | `MainWindow.cpp` |
+| **Camera/Animation 对话框** | 完全移除 `QMdiSubWindow` parent 查找和 `subWindowActivated` 连接 | `MainWindow.cpp` |
+| **findActiveAction 重写** | 从 `ecvViewManager::getActiveView()` 查找活跃 toolbar，替代 `m_mdiArea->activeSubWindow()` | `MainWindow.cpp` |
+| **deactivateRegisterPointPairTool** | 移除 `QMdiSubWindow` restore 逻辑 | `MainWindow.cpp` |
+
+**cvPerViewSelectionManager 完整集成：**
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **QMdiArea 依赖移除** | `QMdiArea* m_mdiArea` → `QWidget* m_viewRoot`；`setMdiArea()` 替换为 `setViewRoot()` | `cvPerViewSelectionManager.h` |
+| **搜索逻辑简化** | `uncheckOtherViews`/`uncheckAllMirrors` 从 `m_viewRoot->findChildren<>("ViewSelectionToolBar")` 一步搜索，移除 `subWindowList` 两层遍历 | `cvPerViewSelectionManager.cpp` |
+| **MainWindow 接线** | `initParaViewLayoutSystem()` 后调用 `setViewRoot(m_tabbedMultiView)` | `MainWindow.cpp` |
+| **安全网更新** | 选择工具 retroactive populate 改用 `centralViewWidget()` + `findChildren` | `MainWindow.cpp` |
+
+**Camera Link 完整性修复：**
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **Primary view removeView 缺口** | `onViewClosingFromLayout` 和 `prepareViewClose` 中，当 `closingDisplay == TheInstance()` 时也调用 `removeView(primaryDT->get3DViewer())` | `MainWindow.cpp` |
+
+**选择管理器审计结论：**
+
+对比 ParaView `pqSelectionManager` 与现有架构，确认以下 ParaView 核心模式已实现：
+
+| ParaView 模式 | ACloudViewer 实现 |
+|--------------|-----------------|
+| `ActiveReaction` 静态守卫（单一活跃选择模式） | `cvRenderViewSelectionReaction::ActiveReaction` |
+| `setActiveView()` 视图切换时重绑定 | `rebindToolsToActiveView()` → `cvSelectionToolController::setVisualizer()` |
+| Per-view action 镜像 | `cvPerViewSelectionManager::populateToolbar()` |
+| 跨视图 uncheck | `cvPerViewSelectionManager::uncheckOtherViews()` |
+| ESC 全局清除 | `disableAllTools()` + `uncheckAllMirrors()` |
+| `beginSelection()`/`endSelection()` 状态机 | `cvRenderViewSelectionReaction` 完整实现 |
+
+**Phase I 续 — 接口清理（2026-04-27）：**
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **`addWidgetToQMdiArea` → `addViewWidget`** | 接口重命名，实现重定向至 `m_tabbedMultiView` | `ecvMainAppInterface.h`, `MainWindow.h/cpp` |
+| **`getMDISubWindow` 移除** | 函数和声明删除（仅 MainWindow 内部使用） | `MainWindow.h/cpp` |
+| **`on3DViewActivated` 移除** | 死代码删除（不再连接 `QMdiArea::subWindowActivated`） | `MainWindow.h/cpp` |
+| **`QMdiSubWindow` 前向声明移除** | `MainWindow.h` 中 `class QMdiSubWindow` 删除 | `MainWindow.h` |
+| **`ecvCameraParamEditDlg::linkWith(QMdiSubWindow*)` 移除** | 仅保留 `linkWith(QWidget*)` | `ecvCameraParamEditDlg.h/cpp` |
+| **`ecvAnimationParamDlg::linkWith(QMdiSubWindow*)` 移除** | 仅保留 `linkWith(QWidget*)` | `ecvAnimationParamDlg.h/cpp` |
+| **`ccPickingHub::onActiveWindowChanged(QMdiSubWindow*)` 移除** | 仅保留 `onActiveViewWidgetChanged(QWidget*)` | `ecvPickingHub.h/cpp` |
+| **`#include <QMdiSubWindow>` 移除** | 从 `.cpp` 中移除无用 include | 多文件 |
+
+---
+
+### 完整性审计 — ParaView vs ACloudViewer 对比（2026-04-27 最终审计）
+
+#### 已实现（IMPLEMENTED）
+
+| ParaView 特性 | ACloudViewer 实现 |
+|--------------|-----------------|
+| KD-tree 布局模型 (`vtkSMViewLayoutProxy`) | `ecvViewLayoutProxy` (heap 索引、split/assign/collapse/swap/equalize/maximize) |
+| KD-tree UI 镜像 (`pqMultiViewWidget`) | `ecvMultiViewWidget` (监听 `layoutChanged`, 重建 QSplitter 树) |
+| Tab 容器 (`pqTabbedMultiViewWidget`) | `ecvTabbedMultiViewWidget` (每 Tab 一个 layout + widget) |
+| 中心控件切换 | `setCentralWidget(m_tabbedMultiView)` 完成 |
+| 活动对象协调 (`pqActiveObjects`) | `ecvViewManager` (activeView/Source/Repr + triggerSignals) |
+| 每视图状态 (`vtkSMViewProxy`) | `ecvViewContext` (Phase A) |
+| Per-view 选择 toolbar (`pqStandardViewFrameActionsImplementation`) | `cvPerViewSelectionManager` + `setViewRoot` |
+| 选择管理 (`pqSelectionManager` + `pqRenderViewSelectionReaction`) | `cvViewSelectionManager` + `cvRenderViewSelectionReaction` |
+| 相机联动 (`vtkSMCameraLink`) | `VtkCameraLink` (含 primary view 清理) |
+| 标题栏 split/max/close 按钮 | `ecvMultiViewFrameManager` 创建 |
+| Tab 右键菜单 (rename/close/equalize) | `ecvTabbedMultiViewWidget` context menu |
+| "+" 按钮创建新 Tab | 角标 QToolButton |
+| `lockViewSize` / Preview | 简化版 `CentralWidgetFrame` max-size |
+| 帧间拖拽交换 | `ecvMultiViewFrameManager` drag-drop (mime + `swapViewFrames`) |
+| 布局 JSON 序列化 (`saveState`) | `ecvViewLayoutProxy::saveState()` |
+
+#### 部分实现（PARTIALLY）
+
+| 特性 | 差异 | 优先级 |
+|------|------|--------|
+| **布局持久化恢复** | `loadState` 恢复树结构但不恢复 view 指针（`view_id` → 实例映射未实现） | HIGH |
+| **Splitter resize → fraction** | 更新 `setSplitFraction` 但无 undo set | MEDIUM |
+| **Maximize 持久性** | `notifyChanged()` 清除 `m_maximizedCell`，行为与 PV 不同 | LOW |
+| **View frame 工具栏** | 有部分按钮（capture/camera/selection），无 hint-gated 完整集 | LOW |
+| **空 cell 创建 UX** | 空 cell 为 blank QWidget，无 "Create View" 按钮 | LOW |
+
+#### 未实现（MISSING）
+
+| 特性 | 说明 | 优先级 |
+|------|------|--------|
+| **布局操作 Undo/Redo** | ParaView `BEGIN_UNDO_SET` 包装 split/close/tab/resize | MEDIUM |
+| **完整 session restore** | XML/JSON 全局 session 包含 layouts + view 重绑定 | HIGH |
+| **Per-view camera undo/redo** | `pqCameraUndoRedoReaction` 每帧按钮 | LOW |
+| **"Convert To..." 视图类型切换** | 视图类型注册表 + 菜单（仅适用于多视图类型场景） | LOW |
+| **Popout 布局到独立窗口** | `togglePopout` 弹出布局为独立窗口 | LOW |
+
+#### 不适用（NOT_APPLICABLE）
+
+| 特性 | 说明 |
+|------|------|
+| SM proxy session / XML state | ParaView 特有的 ServerManager 架构 |
+| Python trace (`SM_SCOPED_TRACE`) | ParaView 特有 |
+| 分布式/Tile 显示 | `ShowViewsOnTileDisplay` |
+| Spreadsheet/Chart 视图类型 | 需先添加对应视图实现 |
+| Annotation 过滤 | 多客户端 UI 特有 |
+
+**架构对比（最终）：**
+
+| 维度 | ParaView | ACloudViewer |
+|------|----------|-------------|
+| 布局模型 | `vtkSMViewLayoutProxy` (KD-tree) | `ecvViewLayoutProxy` (KD-tree, API 对齐) |
+| 布局 UI | `pqMultiViewWidget` | `ecvMultiViewWidget` |
+| Tab 管理 | `pqTabbedMultiViewWidget` | `ecvTabbedMultiViewWidget` |
+| 中心控件 | `pqTabbedMultiViewWidget` | `ecvTabbedMultiViewWidget` |
+| 活动对象 | `pqActiveObjects` | `ecvViewManager` |
+| 每视图状态 | `vtkSMViewProxy` | `ecvViewContext` |
+| 视图创建 | `pqObjectBuilder::createView` | `ecvGLView::Create` + layout `assignView` |
+| Per-view 表示 | `vtkSMRepresentationProxy` | `ecvViewRepresentation` |
+| 相机联动 | `vtkSMCameraLink` | `VtkCameraLink` |
+| 选择管理 | `pqSelectionManager` | `cvViewSelectionManager` + `cvPerViewSelectionManager` |
+| Per-view toolbar | `pqStandardViewFrameActionsImplementation` | `cvPerViewSelectionManager` |
+| 布局 Undo | `pqUndoStack` + `BEGIN_UNDO_SET` | **未实现** |
+| Session 恢复 | XML state + proxy locator | JSON 序列化（**部分**） |
+| 视图类型注册 | proxy definitions + "Convert To" | **未实现** |
+
+### Phase J — 关键运行时回归修复（2026-04-27）
+
+**问题**：Phase H/I 完成后编译通过，但启动后 **主渲染视图完全不显示**，Layout #1 tab 内容为空白灰色区域。
+
+**根因**：`ecvMultiViewWidget::buildCell()` 仅通过 `dynamic_cast<ecvGLView*>` 处理视图，但主视图 `ecvDisplayTools::TheInstance()` 的类型是 `VtkDisplayTools*`（非 `ecvGLView` 子类），导致 cast 失败后 **整个 view frame 未被创建**。
+
+| 变更类别 | 内容 | 文件 |
+|---------|------|------|
+| **buildCell 泛化** | `dynamic_cast<ecvGLView*>` → `view->asWidget()` + `view->getTitle()`，支持任何 `ecvGenericGLDisplay*` | `ecvMultiViewWidget.cpp` |
+| **FrameWiredCallback 类型** | `ecvGLView*` → `ecvGenericGLDisplay*`，确保主视图 frame 的按钮也被正确连接 | `ecvMultiViewWidget.h`, `ecvTabbedMultiViewWidget.h`, `MainWindow.cpp` |
+| **activateViewAndDo 泛化** | `dynamic_cast<ecvGLView*>` → `ecvGenericGLDisplay::FromWidget()`，主视图工具栏按钮可正确激活 | `MainWindow.cpp` |
+| **3D/2D toggle 修复** | 同上，改用 `ecvGenericGLDisplay*` | `MainWindow.cpp` |
+| **移除 showMaximized()** | 删除旧 QMdiArea 时代的 `viewWidget->showMaximized()` 调用 | `MainWindow.cpp` |
+| **splitBtn objectName** | 补设 `btnSplitHorizontal`/`btnSplitVertical` 使 `FrameWiredCallback` 能通过 `findChild` 找到并重新连接 | `MainWindow.cpp` |
+
+**`dynamic_cast<ecvGLView*>` 全面排查（15 处修复）：**
+
+| 函数 | 问题 | 修复 |
+|------|------|------|
+| `getActiveWindow()` | 主视图 active 时返回 `nullptr` | `activeDisplay->asWidget()` |
+| `GetRenderWindows()` | 遗漏主视图 | `display->asWidget()` |
+| `GetRenderWindow(title)` | 找不到主视图 | `display->getTitle()` |
+| `getWindow(index)` | 按索引无法获取主视图 | `display->asWidget()` |
+| `findActiveAction` | 快捷键分发对主视图无效 | `activeDisplay->asWidget()` |
+| 9 处 `rebindToolsToActiveView` guard | 不必要的 cast 导致主视图跳过工具绑定 | 直接传递 `ecvGenericGLDisplay*` |
+
+**保留的 `dynamic_cast<ecvGLView*>`（正确场景）：**
+
+| 位置 | 原因 |
+|------|------|
+| `onViewClosingFromLayout` / `prepareViewClose` | 需要 `getVtkWidget()` / `getVisualizer3D()` 等 `ecvGLView` 特有 API |
+| `rebindToolsToActiveView` 内部 | 需要 `switchActiveView()` 参数（VtkVis + Widget） |
+| `new3DView` | 返回 `ecvGLView*` 类型 |
+| `refreshAllViews` | 需要 `zoomGlobal()` 等 `ecvGLView` 特有 API |
+| `ecvMultiViewWidget::onCloseView/destroyAllViews` | 需要 `aboutToClose` 信号（ecvGLView 特有） |
+
 ---
 
 *维护：架构变更时同步更新阶段验收项与统计数据。*
-*更新日期：2026-04-25*
+*更新日期：2026-04-27*

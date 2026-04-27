@@ -1350,16 +1350,18 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
     switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
+            comboBox->addItem(tr("All Views"), -1);
             const auto& views = ecvViewManager::instance().getAllViews();
             for (auto* view : views) {
                 if (view) {
-                    comboBox->addItem(view->getTitle());
+                    comboBox->addItem(view->getTitle(),
+                                     view->getUniqueID());
                 }
             }
             connect(comboBox,
-                    static_cast<void (QComboBox::*)(const QString&)>(
-                            &QComboBox::currentTextChanged),
-                    this, &ccPropertiesTreeDelegate::objectDisplayChanged);
+                    QOverload<int>::of(&QComboBox::currentIndexChanged),
+                    this,
+                    &ccPropertiesTreeDelegate::objectDisplayIndexChanged);
             outputWidget = comboBox;
         } break;
         case OBJECT_CURRENT_SCALAR_FIELD: {
@@ -2085,7 +2087,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             auto* display = m_currentObject->getDisplay();
             int pos = 0;
             if (display) {
-                pos = comboBox->findText(display->getTitle());
+                pos = comboBox->findData(display->getUniqueID());
                 if (pos < 0) pos = 0;
             }
             comboBox->setCurrentIndex(pos);
@@ -3729,24 +3731,18 @@ void ccPropertiesTreeDelegate::coordinateSystemAxisWidthChanged(int size) {
     }
 }
 
-void ccPropertiesTreeDelegate::objectDisplayChanged(
-        const QString& newDisplayTitle) {
+
+void ccPropertiesTreeDelegate::objectDisplayIndexChanged(int index) {
     if (!m_currentObject) return;
 
+    auto* comboBox = qobject_cast<QComboBox*>(sender());
+    if (!comboBox || index < 0) return;
+
+    int viewID = comboBox->itemData(index).toInt();
     ecvGenericGLDisplay* targetDisplay = nullptr;
-    const auto& views = ecvViewManager::instance().getAllViews();
-    for (auto* view : views) {
-        if (view && view->getTitle() == newDisplayTitle) {
-            targetDisplay = view;
-            break;
-        }
-    }
-    if (!targetDisplay) {
-        CVLog::Warning(
-                QString("[Properties] No view found with title '%1', "
-                        "keeping current display")
-                        .arg(newDisplayTitle));
-        return;
+    if (viewID >= 0) {
+        targetDisplay = ecvViewManager::instance().findView(viewID);
+        if (!targetDisplay) return;
     }
 
     auto* oldDisplay = m_currentObject->getDisplay();

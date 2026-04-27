@@ -19,7 +19,6 @@
 // system
 #include <map>
 
-class QMdiSubWindow;
 class ccHObject;
 class ccPickingHub;
 class CameraDialogInternal;
@@ -86,8 +85,7 @@ public:
 
 public slots:
 
-    //! Links this dialog with a given sub-window
-    void linkWith(QMdiSubWindow* qWin);
+    
 
     //! Updates dialog values with pivot point
     void updatePivotPoint(const CCVector3d& P);

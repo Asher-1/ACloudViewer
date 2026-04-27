@@ -11,8 +11,6 @@
 #include <ecvDisplayTools.h>
 
 // Qt
-#include <QMdiSubWindow>
-
 // Plugins
 #include <ecvMainAppInterface.h>
 
@@ -31,33 +29,6 @@ void ccPickingHub::togglePickingMode(bool state) {
     if (m_activeWindow) {
         ecvDisplayTools::SetPickingMode(
                 state ? m_pickingMode : ecvDisplayTools::DEFAULT_PICKING);
-    }
-}
-
-void ccPickingHub::onActiveWindowChanged(QMdiSubWindow* mdiSubWindow) {
-    QWidget* window = (mdiSubWindow ? mdiSubWindow->widget() : nullptr);
-
-    if (m_activeWindow == window) {
-        return;
-    }
-
-    if (m_activeWindow) {
-        togglePickingMode(false);
-        disconnect(m_activeWindow.data(), &QObject::destroyed, this,
-                   &ccPickingHub::onActiveWindowDeleted);
-        m_activeWindow = nullptr;
-    }
-
-    if (window) {
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked,
-                this, &ccPickingHub::processPickedItem, Qt::UniqueConnection);
-        connect(window, &QObject::destroyed, this,
-                &ccPickingHub::onActiveWindowDeleted);
-        m_activeWindow = window;
-
-        if (m_autoEnableOnActivatedWindow && !m_listeners.empty()) {
-            togglePickingMode(true);
-        }
     }
 }
 
