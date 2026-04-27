@@ -31,7 +31,6 @@
 #include <ecvGlobalShiftManager.h>
 
 // QT
-#include <QMdiSubWindow>
 #include <QMessageBox>
 #include <QSettings>
 #include <QToolButton>

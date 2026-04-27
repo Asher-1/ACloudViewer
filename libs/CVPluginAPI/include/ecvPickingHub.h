@@ -23,7 +23,6 @@
 #include <set>
 
 class ccHObject;
-class QMdiSubWindow;
 class ecvMainAppInterface;
 
 /**
@@ -131,16 +130,7 @@ public:
 public slots:
 
     /**
-     * @brief Handle active window change (MDI level)
-     * @param window Newly active MDI subwindow
-     */
-    void onActiveWindowChanged(QMdiSubWindow* window);
-
-    /**
-     * @brief Handle active view change (split-view aware)
-     *
-     * Called when the active ecvGLView changes, including inside
-     * QSplitter split layouts within the same MDI subwindow.
+     * @brief Handle active view change.
      * @param viewWidget The activated view's QWidget
      */
     void onActiveViewWidgetChanged(QWidget* viewWidget);

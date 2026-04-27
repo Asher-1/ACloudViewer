@@ -10,35 +10,41 @@
 #include <QJsonObject>
 #include <QList>
 #include <QObject>
+#include <QPointer>
 #include <functional>
 
 #include "CV_db.h"
 
 class ccHObject;
 class ecvGenericGLDisplay;
+class ecvViewLayoutProxy;
+class ecvViewRepresentation;
 
-/// Global view manager — tracks all open display views and the active one.
+/// Global active-objects coordinator — tracks active view, source,
+/// representation, and all registered views.
 ///
-/// Replaces stacking active-window static methods on ecvDisplayTools.
-/// Inspired by ParaView's pqActiveObjects but lighter-weight.
+/// Mirrors ParaView's pqActiveObjects:
+///   - Active view/source/representation tracking
+///   - Signal batching via triggerSignals() (emit only on actual changes)
+///   - Layout proxy management
+///   - Event-driven: UI components subscribe to signals
 ///
-/// Signals enable UI components (properties panel, toolbar, status bar)
-/// to react automatically when the active view changes.
+/// Also replaces the stacking active-window static methods on ecvDisplayTools.
 class CV_DB_LIB_API ecvViewManager : public QObject {
     Q_OBJECT
 
 public:
     static ecvViewManager& instance();
 
-    // -- Active view --
+    // ================================================================
+    // Active view (ParaView pqActiveObjects::activeView)
+    // ================================================================
 
     ecvGenericGLDisplay* getActiveView() const;
     void setActiveView(ecvGenericGLDisplay* view);
 
     /// RAII helper that temporarily overrides the "effective" active view
-    /// during rendering.  This ensures delegation methods
-    /// (GetGLCameraParameters, etc.) return the rendering view's data
-    /// rather than the UI-active view's data.
+    /// during rendering.
     class ScopedRenderOverride {
     public:
         explicit ScopedRenderOverride(ecvGenericGLDisplay* view)
@@ -58,70 +64,104 @@ public:
     /// Returns the rendering override if set, otherwise the UI-active view.
     ecvGenericGLDisplay* getEffectiveView() const;
 
-    // -- View registration --
+    // ================================================================
+    // Active source / representation (ParaView pqActiveObjects pattern)
+    // ================================================================
+
+    ccHObject* activeSource() const;
+    void setActiveSource(ccHObject* source);
+
+    ecvViewRepresentation* activeRepresentation() const;
+
+    // ================================================================
+    // View registration
+    // ================================================================
 
     void registerView(ecvGenericGLDisplay* view);
     void unregisterView(ecvGenericGLDisplay* view);
 
-    // -- Query --
+    // ================================================================
+    // Layout proxy management (ParaView layout registration)
+    // ================================================================
+
+    void registerLayout(ecvViewLayoutProxy* layout);
+    void unregisterLayout(ecvViewLayoutProxy* layout);
+    const QList<ecvViewLayoutProxy*>& allLayouts() const;
+    ecvViewLayoutProxy* activeLayout() const;
+
+    // ================================================================
+    // Query
+    // ================================================================
 
     const QList<ecvGenericGLDisplay*>& getAllViews() const;
     int viewCount() const;
     ecvGenericGLDisplay* findView(int uniqueID) const;
-
-    /// Find which registered view displays the given entity.
-    /// Returns nullptr if the entity has no display or its display is not registered.
     ecvGenericGLDisplay* findViewForEntity(const ccHObject* entity) const;
 
-    // -- Batch operations --
+    // ================================================================
+    // Batch operations
+    // ================================================================
 
     void refreshAll(bool only2D = false);
-    /// Redraw all views.  Pass includePrimary=false when the caller
-    /// already redraws the primary (ecvDisplayTools::TheInstance) view
-    /// separately, to avoid double-refresh.
     void redrawAll(bool only2D = false,
                    bool forceRedraw = true,
                    bool includePrimary = true);
 
-    // -- Layout persistence --
+    // ================================================================
+    // Layout persistence
+    // ================================================================
 
-    /// Serialize the current layout (view list + active view ID).
-    /// The caller supplies per-view geometry via the callback.
     using GeometryProvider =
             std::function<QJsonObject(ecvGenericGLDisplay* view)>;
     QJsonObject saveLayout(GeometryProvider geometryOf) const;
 
-    /// Restore a previously saved layout.
-    /// The caller creates views / applies geometry via the callback.
     using LayoutApplier =
             std::function<void(const QJsonObject& viewJson)>;
     void restoreLayout(const QJsonObject& layout, LayoutApplier apply);
 
-    // -- Entity-view association helpers --
+    // ================================================================
+    // Entity-view association helpers
+    // ================================================================
 
-    /// Recursively associate entity with the active view (if unbound).
     void associateToActiveView(ccHObject* obj);
-
-    /// Reassign all entities bound to the closing view to a surviving view.
-    /// If no surviving view exists, clears the display association.
     void detachEntitiesFromView(ecvGenericGLDisplay* view);
-
-    /// Recursively reassign entities from one view to another.
     void reassignEntitiesFromView(ccHObject* root,
                                   ecvGenericGLDisplay* fromView,
                                   ecvGenericGLDisplay* toView);
 
 signals:
+    // ParaView pqActiveObjects signal set
     void activeViewChanged(ecvGenericGLDisplay* newActive,
                            ecvGenericGLDisplay* oldActive);
+    void activeSourceChanged(ccHObject* source);
+    void activeRepresentationChanged(ecvViewRepresentation* repr);
+    void activeLayoutChanged(ecvViewLayoutProxy* layout);
+
     void viewRegistered(ecvGenericGLDisplay* view);
     void viewUnregistered(ecvGenericGLDisplay* view);
     void viewCountChanged(int count);
 
+    void layoutRegistered(ecvViewLayoutProxy* layout);
+    void layoutUnregistered(ecvViewLayoutProxy* layout);
+
 private:
     ecvViewManager();
 
+    /// ParaView triggerSignals pattern: compare cached vs current, emit only
+    /// on actual change.
+    void triggerSignals();
+    void updateActiveRepresentation();
+
     ecvGenericGLDisplay* m_activeView = nullptr;
     ecvGenericGLDisplay* m_renderingView = nullptr;
+    ccHObject* m_activeSource = nullptr;
+    ecvViewRepresentation* m_activeRepresentation = nullptr;
+
+    // Cached values for triggerSignals
+    ecvGenericGLDisplay* m_cachedView = nullptr;
+    ccHObject* m_cachedSource = nullptr;
+    ecvViewRepresentation* m_cachedRepresentation = nullptr;
+
     QList<ecvGenericGLDisplay*> m_views;
+    QList<ecvViewLayoutProxy*> m_layouts;
 };

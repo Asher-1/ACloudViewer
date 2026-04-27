@@ -1073,27 +1073,14 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                     c_unitPointMarker->setTempColor(
                             context.labelDefaultMarkerCol);
 
-                const ecvViewportParameters& viewportParams =
-                        ecvDisplayTools::GetViewportParameters();
+                static constexpr float LABEL_MARKER_PIXEL_SIZE = 10.0f;
                 for (size_t i = 0; i < count; i++) {
                     CCVector3 P = m_pickedPoints[i].getPointPosition();
-                    float scale = context.labelMarkerSize * m_relMarkerScale;
-                    if (viewportParams.perspectiveView &&
-                        viewportParams.zFar > 0) {
-                        ccGLCameraParameters camera;
-                        ecvDisplayTools::GetGLCameraParameters(camera);
 
-                        double d = (camera.modelViewMat *
-                                    CCVector3d::fromArray(P.u))
-                                           .norm();
-                        double unitD = viewportParams.zFar / 2;
-                        scale = static_cast<float>(scale * sqrt(d / unitD));
-                    }
-
-                    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
+                    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_POINT,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius = scale;
-                    m_pickedPoints[i].markerScale = scale;
+                    param.pointSize = LABEL_MARKER_PIXEL_SIZE;
+                    m_pickedPoints[i].markerScale = LABEL_MARKER_PIXEL_SIZE;
                     param.center = P;
                     param.color = ecvColor::FromRgba(ecvColor::ored);
                     ecvDisplayTools::DrawWidgets(param, false);

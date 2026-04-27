@@ -9,8 +9,6 @@
 
 #include <ecvGenericGLDisplay.h>
 
-#include <QMdiSubWindow>
-
 cvPerViewSelectionManager::cvPerViewSelectionManager(QObject* parent)
     : QObject(parent) {}
 
@@ -55,42 +53,35 @@ QAction* cvPerViewSelectionManager::mirrorIsolated(QWidget* parent,
 
 void cvPerViewSelectionManager::uncheckOtherViews(QWidget* viewWidget,
                                                   const QString& globalName) {
-    if (!m_mdiArea) return;
-    for (auto* sub : m_mdiArea->subWindowList()) {
-        QWidget* frame = sub->widget();
-        if (!frame) continue;
-        for (auto* tb : frame->findChildren<QWidget*>("ViewSelectionToolBar")) {
-            for (auto* btn : tb->findChildren<QToolButton*>()) {
-                auto* act = btn->defaultAction();
-                if (!act || !act->isCheckable()) continue;
-                auto stored = act->property("viewWidget");
-                if (!stored.isValid()) continue;
-                auto* w = static_cast<QWidget*>(stored.value<void*>());
-                if (w == viewWidget) continue;
-                if (act->toolTip() == globalName && act->isChecked()) {
-                    QSignalBlocker blk(act);
-                    act->setChecked(false);
-                }
+    if (!m_viewRoot) return;
+    for (auto* tb :
+         m_viewRoot->findChildren<QWidget*>("ViewSelectionToolBar")) {
+        for (auto* btn : tb->findChildren<QToolButton*>()) {
+            auto* act = btn->defaultAction();
+            if (!act || !act->isCheckable()) continue;
+            auto stored = act->property("viewWidget");
+            if (!stored.isValid()) continue;
+            auto* w = static_cast<QWidget*>(stored.value<void*>());
+            if (w == viewWidget) continue;
+            if (act->toolTip() == globalName && act->isChecked()) {
+                QSignalBlocker blk(act);
+                act->setChecked(false);
             }
         }
     }
 }
 
 void cvPerViewSelectionManager::uncheckAllMirrors() {
-    if (!m_mdiArea) return;
-    for (auto* sub : m_mdiArea->subWindowList()) {
-        QWidget* frame = sub->widget();
-        if (!frame) continue;
-        for (auto* tb :
-             frame->findChildren<QWidget*>("ViewSelectionToolBar")) {
-            for (auto* btn : tb->findChildren<QToolButton*>()) {
-                auto* act = btn->defaultAction();
-                if (!act || !act->isCheckable()) continue;
-                if (!act->property("viewWidget").isValid()) continue;
-                if (act->isChecked()) {
-                    QSignalBlocker blk(act);
-                    act->setChecked(false);
-                }
+    if (!m_viewRoot) return;
+    for (auto* tb :
+         m_viewRoot->findChildren<QWidget*>("ViewSelectionToolBar")) {
+        for (auto* btn : tb->findChildren<QToolButton*>()) {
+            auto* act = btn->defaultAction();
+            if (!act || !act->isCheckable()) continue;
+            if (!act->property("viewWidget").isValid()) continue;
+            if (act->isChecked()) {
+                QSignalBlocker blk(act);
+                act->setChecked(false);
             }
         }
     }

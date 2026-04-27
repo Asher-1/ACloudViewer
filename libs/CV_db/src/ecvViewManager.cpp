@@ -13,6 +13,9 @@
 #include "ecvDisplayTools.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvHObject.h"
+#include "ecvRepresentationManager.h"
+#include "ecvViewLayoutProxy.h"
+#include "ecvViewRepresentation.h"
 
 ecvViewManager::ecvViewManager() : QObject(nullptr) {}
 
@@ -20,6 +23,10 @@ ecvViewManager& ecvViewManager::instance() {
     static ecvViewManager s_instance;
     return s_instance;
 }
+
+// ============================================================================
+// Active view
+// ============================================================================
 
 ecvGenericGLDisplay* ecvViewManager::getActiveView() const {
     return m_activeView;
@@ -35,8 +42,61 @@ void ecvViewManager::setActiveView(ecvGenericGLDisplay* view) {
     ecvGenericGLDisplay* oldActive = m_activeView;
     m_activeView = view;
 
-    emit activeViewChanged(m_activeView, oldActive);
+    updateActiveRepresentation();
+    triggerSignals();
+
+    if (m_activeView != oldActive) {
+        emit activeViewChanged(m_activeView, oldActive);
+    }
 }
+
+// ============================================================================
+// Active source / representation (ParaView pqActiveObjects pattern)
+// ============================================================================
+
+ccHObject* ecvViewManager::activeSource() const { return m_activeSource; }
+
+void ecvViewManager::setActiveSource(ccHObject* source) {
+    if (m_activeSource == source) return;
+    m_activeSource = source;
+    updateActiveRepresentation();
+    triggerSignals();
+}
+
+ecvViewRepresentation* ecvViewManager::activeRepresentation() const {
+    return m_activeRepresentation;
+}
+
+void ecvViewManager::updateActiveRepresentation() {
+    ecvViewRepresentation* repr = nullptr;
+    if (m_activeSource && m_activeView) {
+        repr = ecvRepresentationManager::instance().getRepresentation(
+                m_activeSource, m_activeView);
+    }
+    m_activeRepresentation = repr;
+}
+
+void ecvViewManager::triggerSignals() {
+    if (signalsBlocked()) return;
+
+    if (m_cachedView != m_activeView) {
+        m_cachedView = m_activeView;
+    }
+
+    if (m_cachedSource != m_activeSource) {
+        m_cachedSource = m_activeSource;
+        emit activeSourceChanged(m_activeSource);
+    }
+
+    if (m_cachedRepresentation != m_activeRepresentation) {
+        m_cachedRepresentation = m_activeRepresentation;
+        emit activeRepresentationChanged(m_activeRepresentation);
+    }
+}
+
+// ============================================================================
+// View registration
+// ============================================================================
 
 void ecvViewManager::registerView(ecvGenericGLDisplay* view) {
     if (!view || m_views.contains(view)) return;
@@ -67,6 +127,40 @@ void ecvViewManager::unregisterView(ecvGenericGLDisplay* view) {
     }
 }
 
+// ============================================================================
+// Layout proxy management
+// ============================================================================
+
+void ecvViewManager::registerLayout(ecvViewLayoutProxy* layout) {
+    if (!layout || m_layouts.contains(layout)) return;
+    m_layouts.append(layout);
+    emit layoutRegistered(layout);
+}
+
+void ecvViewManager::unregisterLayout(ecvViewLayoutProxy* layout) {
+    if (!layout) return;
+    int idx = m_layouts.indexOf(layout);
+    if (idx < 0) return;
+    m_layouts.removeAt(idx);
+    emit layoutUnregistered(layout);
+}
+
+const QList<ecvViewLayoutProxy*>& ecvViewManager::allLayouts() const {
+    return m_layouts;
+}
+
+ecvViewLayoutProxy* ecvViewManager::activeLayout() const {
+    if (!m_activeView) return nullptr;
+    for (auto* layout : m_layouts) {
+        if (layout->containsView(m_activeView)) return layout;
+    }
+    return m_layouts.isEmpty() ? nullptr : m_layouts.last();
+}
+
+// ============================================================================
+// Query
+// ============================================================================
+
 const QList<ecvGenericGLDisplay*>& ecvViewManager::getAllViews() const {
     return m_views;
 }
@@ -93,6 +187,10 @@ ecvGenericGLDisplay* ecvViewManager::findViewForEntity(
     return nullptr;
 }
 
+// ============================================================================
+// Batch operations
+// ============================================================================
+
 void ecvViewManager::refreshAll(bool only2D) {
     for (auto* view : m_views) {
         if (view) {
@@ -114,6 +212,10 @@ void ecvViewManager::redrawAll(bool only2D,
     }
 }
 
+// ============================================================================
+// Entity-view association
+// ============================================================================
+
 void ecvViewManager::associateToActiveView(ccHObject* obj) {
     if (!obj || !m_activeView) return;
     if (!obj->getDisplay()) {
@@ -127,8 +229,6 @@ void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* closingView) {
     ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
     if (!sceneDB) return;
 
-    // Find a surviving view to receive orphaned entities (prefer the one
-    // that will become active — last registered, excluding the closing one).
     ecvGenericGLDisplay* recipient = nullptr;
     for (int i = m_views.size() - 1; i >= 0; --i) {
         if (m_views[i] != closingView) {
@@ -159,6 +259,10 @@ void ecvViewManager::reassignEntitiesFromView(
     }
 }
 
+// ============================================================================
+// Layout persistence
+// ============================================================================
+
 QJsonObject ecvViewManager::saveLayout(GeometryProvider geometryOf) const {
     QJsonArray viewsArr;
     auto* primary = ecvDisplayTools::TheInstance();
@@ -184,6 +288,13 @@ QJsonObject ecvViewManager::saveLayout(GeometryProvider geometryOf) const {
     layout["active_view_id"] =
             m_activeView ? m_activeView->getUniqueID() : -1;
     layout["view_count"] = m_views.size();
+
+    QJsonArray layoutsArr;
+    for (auto* lp : m_layouts) {
+        if (lp) layoutsArr.append(lp->saveState());
+    }
+    layout["layout_proxies"] = layoutsArr;
+
     return layout;
 }
 

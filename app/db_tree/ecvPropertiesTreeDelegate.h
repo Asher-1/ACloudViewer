@@ -219,7 +219,7 @@ private:
     void applyLabelViewport();
     void updateLabelViewport();
     void updateDisplay();
-    void objectDisplayChanged(const QString&);
+    void objectDisplayIndexChanged(int index);
     void colorSourceChanged(const QString&);
     void sensorScaleChanged(double);
     void coordinateSystemDisplayScaleChanged(double);

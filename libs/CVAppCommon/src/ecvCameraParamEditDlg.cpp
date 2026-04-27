@@ -26,7 +26,6 @@
 
 // Qt
 #include <QFileDialog>
-#include <QMdiSubWindow>
 #include <QtMath>
 
 namespace {
@@ -249,14 +248,6 @@ bool ecvCameraParamEditDlg::start() {
     m_processing = false;
 
     return true;
-}
-
-void ecvCameraParamEditDlg::linkWith(QMdiSubWindow* qWin) {
-    // corresponding MainWindow
-    QWidget* associatedWin =
-            (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
-
-    linkWith(associatedWin);
 }
 
 bool ecvCameraParamEditDlg::linkWith(QWidget* win) {

@@ -98,14 +98,15 @@ class ecvPrimitiveFactoryDlg;
 class ccPointPairRegistrationDlg;
 class ecvShortcutDialog;
 
-class QMdiArea;
-class QMdiSubWindow;
 class QSplitter;
 class QTreeWidgetItem;
 class QUIWidget;
 class ecvGenericGLDisplay;
 class ecvGLView;
 class ecvMultiViewFrameManager;
+class ecvTabbedMultiViewWidget;
+class ecvMultiViewWidget;
+class ecvViewLayoutProxy;
 
 struct dbTreeSelectionInfo;
 
@@ -202,8 +203,6 @@ public:
     //! Returns the number of 3D views
     int getRenderWindowCount() const;
 
-    //! Returns MDI area subwindow corresponding to a given 3D view
-    QMdiSubWindow* getMDISubWindow(QWidget* win);
     QWidget* getActiveWindow() override;
     ecvGenericGLDisplay* getActiveGLDisplay() override;
     QWidget* getWindow(int index) const;
@@ -287,7 +286,7 @@ public:  // inherited from ecvMainAppInterface
             ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
     ccUniqueIDGenerator::Shared getUniqueIDGenerator() override;
 
-    void addWidgetToQMdiArea(QWidget* widget) override;
+    void addViewWidget(QWidget* widget) override;
 
     void increasePointSize() override;
     void decreasePointSize() override;
@@ -314,6 +313,16 @@ private:
     void initLanguages();
     void initApplicationUpdate();
     void initial();
+    void initParaViewLayoutSystem();
+
+    /// Returns the ecvTabbedMultiViewWidget used as the central view area.
+    QWidget* centralViewWidget() const;
+
+    /// Cleanup handler invoked when a view is being removed from the layout.
+    /// Performs ecvViewManager unregistration, primary-view adoption, and
+    /// camera-link removal.
+    void onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay);
+
     void initStatusBar();
     void initDBRoot();
     void initConsole();
@@ -535,7 +544,6 @@ private slots:
     void deactivateTranslateRotateMode(bool state);
 
     void updateMenus();
-    void on3DViewActivated(QMdiSubWindow*);
 
     //! Handles new label
     void handleNewLabel(ccHObject*);
@@ -745,14 +753,18 @@ private:
     ccPickingHub* m_pickingHub;
 
     /******************************/
-    /***        MDI AREA        ***/
+    /***     VIEW LAYOUT       ***/
     /******************************/
-    QMdiArea* m_mdiArea;
     int m_layoutCounter = 0;
     bool m_creatingView = false;
     QSize m_lockedViewSize;
 
     ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
+
+    /******************************************/
+    /*** ParaView-style multi-view (Phase G) **/
+    /******************************************/
+    ecvTabbedMultiViewWidget* m_tabbedMultiView = nullptr;
 
     //! CloudViewer MDI area overlay dialogs
     struct ccMDIDialogs {
