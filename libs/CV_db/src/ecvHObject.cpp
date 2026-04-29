@@ -40,6 +40,7 @@
 #include "ecvSphere.h"
 #include "ecvSubMesh.h"
 #include "ecvTorus.h"
+#include "ecvViewManager.h"
 #include "ecvViewRepresentation.h"
 
 // CV_CORE_LIB
@@ -1433,13 +1434,12 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
 }
 
 void ccHObject::drawNameIn3D() {
-    QFont font = ecvDisplayTools::GetTextDisplayFont();  // takes rendering zoom
-                                                         // into account!
+    QFont font = ecvDisplayTools::GetTextDisplayFont();
     ecvDisplayTools::DisplayText(
             getName(), static_cast<int>(m_nameIn3DPos.x),
             static_cast<int>(m_nameIn3DPos.y),
             ecvDisplayTools::ALIGN_HMIDDLE | ecvDisplayTools::ALIGN_VMIDDLE,
-            0.75f, nullptr, &font, QString(), getDisplay());
+            0.75f, nullptr, &font, getViewId(), getDisplay());
 }
 
 void ccHObject::draw(CC_DRAW_CONTEXT& context) {
@@ -1466,9 +1466,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     bool drawInThisContext =
             ((m_visible || m_selected) && isDisplayedIn(context.display));
 
-    // Per-view representation overrides (visibility, opacity, etc.)
+    // Per-view representation (ParaView-style: ensure one exists for every
+    // drawn (entity, view) pair so per-view visibility/opacity overrides work).
     ecvViewRepresentation* viewRep = nullptr;
-    if (context.display) {
+    if (context.display && drawInThisContext && !isFixedId()) {
+        viewRep = ecvRepresentationManager::instance().ensureRepresentation(
+                const_cast<ccHObject*>(this), context.display);
+    } else if (context.display) {
         viewRep = ecvRepresentationManager::instance().getRepresentation(
                 const_cast<ccHObject*>(this), context.display);
     }
@@ -1629,21 +1633,24 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
 void ccHObject::updateNameIn3DRecursive() {
     if (nameShownIn3D() && isEnabled() && (isVisible() || isSelected())) {
-        ccBBox bBox = getBB_recursive(
-                true);  // DGM: take the OpenGL features into account (as some
-                        // entities are purely 'GL'!)
+        ecvGenericGLDisplay* disp = getDisplay();
+        if (!disp) disp = ecvDisplayTools::TheInstance();
+
+        ccBBox bBox = getBB_recursive(true);
         if (bBox.isValid()) {
             ccGLCameraParameters camera;
-            ecvDisplayTools::GetGLCameraParameters(camera);
+            if (disp && disp != ecvDisplayTools::TheInstance()) {
+                disp->getGLCameraParameters(camera);
+            } else {
+                ecvDisplayTools::GetGLCameraParameters(camera);
+            }
 
             CCVector3 C = bBox.getCenter();
             camera.project(C, m_nameIn3DPos);
 
-            // clear history name 3D
             ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
+                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getViewId()));
 
-            // draw name in 3D
             drawNameIn3D();
         }
     }
@@ -1765,6 +1772,7 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
     CC_DRAW_CONTEXT context;
     getTypeID_recursive(hdInfos, recursive);
     context.visible = visible;
+    context.display = const_cast<ecvGenericGLDisplay*>(getDisplay());
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
         context.hideShowEntityType = hdInfo.hideType;
@@ -1855,8 +1863,12 @@ bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
     if (display == nullptr) return true;
 
     if (m_currentDisplay == nullptr) {
-        // Unbound entity: visible in all views (primary and secondary).
-        return true;
+        if (ecvViewManager::instance().viewCount() <= 1) {
+            return true;
+        }
+        const ecvGenericGLDisplay* effective =
+                ecvViewManager::instance().getEffectiveView();
+        return (effective == nullptr || display == effective);
     }
     return (m_currentDisplay == display);
 }

@@ -21,7 +21,7 @@ struct RpcMethodEntry {
 class JsonRPCPlugin : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.JsonRPC" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.JsonRPC" FILE
                           "../info.json")
 
 public:

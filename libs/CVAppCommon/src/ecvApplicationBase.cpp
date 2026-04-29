@@ -86,7 +86,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     : QApplication(argc, argv),
       c_VersionStr(version),
       c_CommandLine(isCommandLine) {
-    setOrganizationName("ECVCorp");
+    setOrganizationName("CVCorp");
 
     setupPaths();
 

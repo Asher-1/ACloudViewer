@@ -18,7 +18,7 @@ Wahl, and Reinhard Klein, in Computer Graphics Forum (June 2007), 26:2(214-226)
 class qRansacSD : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qRansacSD" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qRansacSD" FILE
                           "../info.json")
 
 public:

@@ -23,7 +23,7 @@ https://github.com/cloudcompare/cork
 class qCork : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qCork" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qCork" FILE
                           "../info.json")
 
 public:

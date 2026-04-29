@@ -19,6 +19,7 @@
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
+#include <ecvViewManager.h>
 
 // cloudViewer
 #include <ScalarField.h>
@@ -211,6 +212,13 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
         ccHObject* parentEntity = m_label->getPickedPoint(0).entity();
         if (parentEntity) {
             parentEntity->addChild(labelObject);
+            ecvGenericGLDisplay* activeView =
+                    ecvViewManager::instance().getActiveView();
+            if (activeView) {
+                labelObject->setDisplay(activeView);
+            } else if (parentEntity->getDisplay()) {
+                labelObject->setDisplay(parentEntity->getDisplay());
+            }
         } else {
             CVLog::Warning("Parent entity not found for label!");
         }

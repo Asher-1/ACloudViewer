@@ -576,8 +576,10 @@ public:  // display
     /// Returns true if this entity should be drawn in the given display.
     /// Compatible three-way logic:
     ///   display == nullptr:          legacy mode, no filtering
-    ///   m_currentDisplay == nullptr:  entity unbound, draw in all windows
-    ///   m_currentDisplay == display:  normal match
+    /// View isolation (ParaView-style):
+    ///   m_currentDisplay == nullptr + single view: draw everywhere (backward
+    ///   compat) m_currentDisplay == nullptr + multi-view: draw only in the
+    ///   effective (rendering) view m_currentDisplay == display:  normal match
     bool isDisplayedIn(const ecvGenericGLDisplay* display) const;
 
     //! Returns the max 'unique ID' of this entity and its siblings

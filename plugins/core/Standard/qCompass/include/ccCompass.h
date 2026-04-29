@@ -37,7 +37,7 @@ class ccCompass : public QObject,
                   public ccPickingListener {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.ccCompass" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.ccCompass" FILE
                           "../info.json")
 
 public:

@@ -129,7 +129,7 @@ public:  // inherit from ecvDisplayTools
      *  @param obj Entity to check
      *  @return true if entity needs redraw
      */
-    bool checkEntityNeedUpdate(std::string& viewID, const ccHObject* obj);
+    bool checkEntityNeedUpdate(VtkVis* vis, std::string& viewID, const ccHObject* obj);
 
     virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                           const ccBBox* bbox) override;
@@ -165,7 +165,8 @@ public:  // inherit from ecvDisplayTools
 
     inline virtual void resetCameraViewpoint(
             const std::string& viewID) override {
-        m_visualizer3D->resetCameraViewpoint(viewID);
+        VtkVis* vis = findVisByActorId(viewID);
+        if (vis) vis->resetCameraViewpoint(viewID);
     }
 
     inline virtual void setBackgroundColor(
@@ -632,6 +633,10 @@ private:
     ///   nullptr / this singleton → m_visualizer3D (primary)
     ///   ecvGLView*              → glView->getVisualizer3D()
     VtkVis* resolveVisualizer(ecvGenericGLDisplay* display) const;
+
+    /// Find the VtkVis that contains an actor with the given viewId.
+    /// Searches active/primary first, then all secondary views.
+    VtkVis* findVisByActorId(const std::string& viewId) const;
 
     // -- Primary render guards (multi-window safety) --
 

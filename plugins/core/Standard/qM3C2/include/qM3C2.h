@@ -21,7 +21,7 @@ Leroux, J., 2013, ISPRS journal of Photogrammmetry and Remote Sensing
 class qM3C2Plugin : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qM3C2" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qM3C2" FILE
                           "../info.json")
 
 public:

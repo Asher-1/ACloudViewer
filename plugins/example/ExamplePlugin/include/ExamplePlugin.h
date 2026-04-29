@@ -52,7 +52,7 @@ class ExamplePlugin : public QObject, public ccStdPluginInterface {
     // your plugin name is unique ;) The info.json file provides information
     // about the plugin to the loading system and it is displayed in the plugin
     // information dialog.
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.Example" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.Example" FILE
                           "../info.json")
 
 public:

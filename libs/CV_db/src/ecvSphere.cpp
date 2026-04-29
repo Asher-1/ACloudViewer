@@ -181,22 +181,25 @@ bool ccSphere::fromFile_MeOnly(QFile& in,
 }
 
 void ccSphere::drawNameIn3D() {
-    // we display it in the 2D layer in fact!
     ccBBox bBox = getOwnBB();
     if (!bBox.isValid()) return;
 
     ccGLMatrix trans;
     getAbsoluteGLTransformation(trans);
 
+    ecvGenericGLDisplay* disp = getDisplay();
     ccGLCameraParameters camera;
-    ecvDisplayTools::GetGLCameraParameters(camera);
+    if (disp && disp != ecvDisplayTools::TheInstance()) {
+        disp->getGLCameraParameters(camera);
+    } else {
+        ecvDisplayTools::GetGLCameraParameters(camera);
+    }
 
     CCVector3 C = bBox.getCenter();
     CCVector3d Q2D;
     trans.apply(C);
     camera.project(C, Q2D);
 
-    // we want to display this name next to the sphere, and not above it!
     const ecvViewportParameters& params =
             ecvDisplayTools::GetViewportParameters();
     int dPix =
@@ -205,11 +208,10 @@ void ccSphere::drawNameIn3D() {
     int bkgBorder =
             QFontMetrics(ecvDisplayTools::GetTextDisplayFont()).height() / 4 +
             4;
-    QFont font = ecvDisplayTools::GetTextDisplayFont();  // takes rendering zoom
-                                                         // into account!
+    QFont font = ecvDisplayTools::GetTextDisplayFont();
     ecvDisplayTools::DisplayText(
             getName(), static_cast<int>(Q2D.x) + dPix + bkgBorder,
             static_cast<int>(Q2D.y),
             ecvDisplayTools::ALIGN_HLEFT | ecvDisplayTools::ALIGN_VMIDDLE,
-            0.75f, nullptr, &font);
+            0.75f, nullptr, &font, getViewId(), disp);
 }

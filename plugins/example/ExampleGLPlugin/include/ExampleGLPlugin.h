@@ -24,7 +24,7 @@ class ExampleGLPlugin : public QObject, public ccGLPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccGLPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.ExampleGL" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.ExampleGL" FILE
                           "../info.json")
 
 public:

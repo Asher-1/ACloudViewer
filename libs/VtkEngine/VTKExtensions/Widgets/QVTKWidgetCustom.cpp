@@ -728,6 +728,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 (event->buttons() & Qt::LeftButton) &&
                 curRotationAxisLocked()) {
                 event->accept();
+            } else if (event->buttons() & Qt::MiddleButton) {
+                if (m_ownerView) {
+                    QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+                } else {
+                    event->accept();
+                }
             } else {  // normal
                 QVTKOpenGLNativeWidget::mouseMoveEvent(event);
                 m_tools->UpdateDisplayParameters();
@@ -829,51 +835,48 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             ecvDisplayTools::UpdateNamePoseRecursive();
         }
     } else if ((event->buttons() & Qt::MiddleButton)) {
-        // right button = panning / translating
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) {
-            // displacement vector (in "3D")
-            double pixSize = ecvDisplayTools::ComputeActualPixelSize();
-            CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
-            if (!curViewportParams().perspectiveView) {
-                u.y *= curViewportParams().cameraAspectRatio;
-            }
-
-            const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
-            u *= retinaScale;
-
-            bool entityMovingMode =
-                    (curInteractionFlags() &
-                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) ||
-                    ((QApplication::keyboardModifiers() &
-                      Qt::ControlModifier) &&
-                     curCustomLightEnabled());
-            if (entityMovingMode) {
-                // apply inverse view matrix
-                curViewportParams().viewMat.transposed().applyRotation(u);
-
-                if (curInteractionFlags() &
-                    ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
-                    emit m_tools->translation(u);
-                } else if (curCustomLightEnabled()) {
-                    // update custom light position
-                    curCustomLightPos()[0] += static_cast<float>(u.x);
-                    curCustomLightPos()[1] += static_cast<float>(u.y);
-                    curCustomLightPos()[2] += static_cast<float>(u.z);
-                    ecvDisplayTools::InvalidateViewport();
-                    ecvDisplayTools::Deprecate3DLayer();
+        if (!m_ownerView) {
+            // Primary view: CC-side pan
+            if (curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) {
+                double pixSize = ecvDisplayTools::ComputeActualPixelSize();
+                CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
+                if (!curViewportParams().perspectiveView) {
+                    u.y *= curViewportParams().cameraAspectRatio;
                 }
-            } else  // camera moving mode
-            {
-                if (curViewportParams().objectCenteredView) {
-                    // inverse displacement in object-based mode
-                    u = -u;
-                }
-                ecvDisplayTools::MoveCamera(static_cast<float>(u.x),
-                                            static_cast<float>(u.y),
-                                            static_cast<float>(u.z));
-            }
 
-        }  // if (m_interactionFlags & INTERACT_PAN)
+                const int retinaScale =
+                        ecvDisplayTools::GetDevicePixelRatio();
+                u *= retinaScale;
+
+                bool entityMovingMode =
+                        (curInteractionFlags() &
+                         ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) ||
+                        ((QApplication::keyboardModifiers() &
+                          Qt::ControlModifier) &&
+                         curCustomLightEnabled());
+                if (entityMovingMode) {
+                    curViewportParams().viewMat.transposed().applyRotation(u);
+
+                    if (curInteractionFlags() &
+                        ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
+                        emit m_tools->translation(u);
+                    } else if (curCustomLightEnabled()) {
+                        curCustomLightPos()[0] += static_cast<float>(u.x);
+                        curCustomLightPos()[1] += static_cast<float>(u.y);
+                        curCustomLightPos()[2] += static_cast<float>(u.z);
+                        ecvDisplayTools::InvalidateViewport();
+                        ecvDisplayTools::Deprecate3DLayer();
+                    }
+                } else {
+                    if (curViewportParams().objectCenteredView) {
+                        u = -u;
+                    }
+                    ecvDisplayTools::MoveCamera(static_cast<float>(u.x),
+                                                static_cast<float>(u.y),
+                                                static_cast<float>(u.z));
+                }
+            }
+        }
 
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
             // on the first time, let's check if the mouse is on a (selected) 2D

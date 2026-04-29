@@ -7,6 +7,7 @@
 
 #include "ecvViewRepresentation.h"
 
+#include "ecvGenericPointCloud.h"
 #include "ecvHObject.h"
 
 ecvViewRepresentation::ecvViewRepresentation(ccHObject* entity,
@@ -48,6 +49,11 @@ float ecvViewRepresentation::effectiveOpacity() const {
 float ecvViewRepresentation::effectivePointSize() const {
     if (m_properties.pointSize.has_value()) {
         return m_properties.pointSize.value();
+    }
+    if (m_entity && m_entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        auto* cloud =
+                static_cast<ccGenericPointCloud*>(m_entity);
+        return static_cast<float>(cloud->getPointSize());
     }
     return 1.0f;
 }

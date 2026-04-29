@@ -8,6 +8,7 @@
 #include "ecvViewLayoutProxy.h"
 
 #include "ecvGenericGLDisplay.h"
+#include "ecvViewManager.h"
 
 #include <QJsonArray>
 
@@ -78,6 +79,7 @@ int ecvViewLayoutProxy::split(int location, Direction direction,
     if (!isValidLocation(location)) return -1;
     if (!isLeaf(location)) return -1;
 
+    beginUndoSet(QStringLiteral("Split View"));
     fraction = std::clamp(fraction, 0.0, 1.0);
 
     int child1 = firstChild(location);
@@ -90,6 +92,7 @@ int ecvViewLayoutProxy::split(int location, Direction direction,
     m_tree[location].splitFraction = fraction;
 
     notifyChanged();
+    endUndoSet();
     return child1;
 }
 
@@ -160,6 +163,7 @@ bool ecvViewLayoutProxy::collapse(int location) {
     if (m_tree[location].view != nullptr) return false;
     if (location == 0) return false;
 
+    beginUndoSet(QStringLiteral("Close View"));
     int par = parent(location);
     int sibling = (location == firstChild(par)) ? secondChild(par)
                                                 : firstChild(par);
@@ -167,6 +171,7 @@ bool ecvViewLayoutProxy::collapse(int location) {
     moveSubtree(par, sibling);
     shrink();
     notifyChanged();
+    endUndoSet();
     return true;
 }
 
@@ -177,8 +182,10 @@ bool ecvViewLayoutProxy::collapse(int location) {
 bool ecvViewLayoutProxy::swapCells(int location1, int location2) {
     if (!isLeaf(location1) || !isLeaf(location2)) return false;
 
+    beginUndoSet(QStringLiteral("Swap Views"));
     std::swap(m_tree[location1].view, m_tree[location2].view);
     notifyChanged();
+    endUndoSet();
     return true;
 }
 
@@ -199,11 +206,17 @@ bool ecvViewLayoutProxy::setSplitFraction(int location, double fraction) {
 // Equalize
 // ============================================================================
 
-void ecvViewLayoutProxy::equalize() { equalize(NONE); }
+void ecvViewLayoutProxy::equalize() {
+    beginUndoSet(QStringLiteral("Equalize Views"));
+    equalize(NONE);
+    endUndoSet();
+}
 
 void ecvViewLayoutProxy::equalize(Direction direction) {
+    beginUndoSet(QStringLiteral("Equalize Views"));
     equalizeRecursive(0, direction);
     notifyChanged();
+    endUndoSet();
 }
 
 void ecvViewLayoutProxy::equalizeRecursive(int location,
@@ -225,15 +238,19 @@ void ecvViewLayoutProxy::equalizeRecursive(int location,
 
 bool ecvViewLayoutProxy::maximizeCell(int location) {
     if (!isLeaf(location)) return false;
+    beginUndoSet(QStringLiteral("Maximize View"));
     m_maximizedCell = location;
     emit layoutChanged();
+    endUndoSet();
     return true;
 }
 
 void ecvViewLayoutProxy::restoreMaximizedState() {
     if (m_maximizedCell >= 0) {
+        beginUndoSet(QStringLiteral("Restore Layout"));
         m_maximizedCell = -1;
         emit layoutChanged();
+        endUndoSet();
     }
 }
 
@@ -356,6 +373,14 @@ bool ecvViewLayoutProxy::loadState(const QJsonObject& state) {
             m_tree[idx].direction =
                     static_cast<Direction>(obj["direction"].toInt());
             m_tree[idx].splitFraction = obj["fraction"].toDouble(0.5);
+
+            int viewId = obj["view_id"].toInt(-1);
+            if (viewId >= 0) {
+                auto* view = ecvViewManager::instance().findView(viewId);
+                if (view) {
+                    m_tree[idx].view = view;
+                }
+            }
         }
     }
 
@@ -367,5 +392,77 @@ void ecvViewLayoutProxy::reset() {
     m_tree.clear();
     m_tree.resize(1);
     m_maximizedCell = -1;
+    m_undoStack.clear();
+    m_redoStack.clear();
+    m_undoNesting = 0;
     emit layoutChanged();
+    emit undoRedoChanged();
+}
+
+// ============================================================================
+// Undo / Redo
+// ============================================================================
+
+ecvViewLayoutProxy::Snapshot ecvViewLayoutProxy::takeSnapshot(
+        const QString& label) const {
+    Snapshot snap;
+    snap.label = label;
+    snap.tree = m_tree;
+    snap.maximizedCell = m_maximizedCell;
+    return snap;
+}
+
+void ecvViewLayoutProxy::applySnapshot(const Snapshot& snap) {
+    m_tree = snap.tree;
+    m_maximizedCell = snap.maximizedCell;
+    emit layoutChanged();
+}
+
+void ecvViewLayoutProxy::beginUndoSet(const QString& label) {
+    if (m_undoNesting == 0) {
+        m_pendingSnapshot = takeSnapshot(label);
+    }
+    ++m_undoNesting;
+}
+
+void ecvViewLayoutProxy::endUndoSet() {
+    if (m_undoNesting <= 0) return;
+    --m_undoNesting;
+    if (m_undoNesting == 0) {
+        m_undoStack.push_back(m_pendingSnapshot);
+        m_redoStack.clear();
+        if (m_undoStack.size() > MaxUndoDepth) {
+            m_undoStack.removeFirst();
+        }
+        emit undoRedoChanged();
+    }
+}
+
+bool ecvViewLayoutProxy::canUndo() const { return !m_undoStack.isEmpty(); }
+bool ecvViewLayoutProxy::canRedo() const { return !m_redoStack.isEmpty(); }
+
+QString ecvViewLayoutProxy::undoLabel() const {
+    return m_undoStack.isEmpty() ? QString() : m_undoStack.last().label;
+}
+
+QString ecvViewLayoutProxy::redoLabel() const {
+    return m_redoStack.isEmpty() ? QString() : m_redoStack.last().label;
+}
+
+void ecvViewLayoutProxy::undo() {
+    if (m_undoStack.isEmpty()) return;
+
+    m_redoStack.push_back(takeSnapshot(m_undoStack.last().label));
+    Snapshot snap = m_undoStack.takeLast();
+    applySnapshot(snap);
+    emit undoRedoChanged();
+}
+
+void ecvViewLayoutProxy::redo() {
+    if (m_redoStack.isEmpty()) return;
+
+    m_undoStack.push_back(takeSnapshot(m_redoStack.last().label));
+    Snapshot snap = m_redoStack.takeLast();
+    applySnapshot(snap);
+    emit undoRedoChanged();
 }
