@@ -223,6 +223,31 @@ void ecvViewManager::associateToActiveView(ccHObject* obj) {
     }
 }
 
+void ecvViewManager::moveEntityToView(ccHObject* obj,
+                                      ecvGenericGLDisplay* targetView) {
+    if (!obj || !targetView) return;
+
+    ecvGenericGLDisplay* oldView = obj->getDisplay();
+    if (oldView == targetView) return;
+
+    // Remove from old view's VTK pipeline
+    if (oldView) {
+        ecvDisplayTools::RemoveEntities(obj);
+    }
+
+    // Rebind to the target view
+    obj->setDisplay_recursive(targetView);
+
+    // Remove representation from old view
+    if (oldView) {
+        ecvRepresentationManager::instance().removeRepresentation(obj, oldView);
+    }
+
+    // Trigger redraw on both views
+    if (oldView) oldView->redraw();
+    targetView->redraw();
+}
+
 void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* closingView) {
     if (!closingView) return;
 

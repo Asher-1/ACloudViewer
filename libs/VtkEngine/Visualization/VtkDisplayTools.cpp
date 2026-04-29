@@ -1405,28 +1405,43 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                           param.color.a);
             }
             break;
-        case WIDGETS_TYPE::WIDGET_RECTANGLE_2D:
-            if (m_visualizer2D) {
+        case WIDGETS_TYPE::WIDGET_RECTANGLE_2D: {
+            // Route rectangle to the correct view's 2D visualizer
+            // (same secondary-view routing as WIDGET_T2D)
+            bool isSecondaryRect =
+                    param.context.display &&
+                    param.context.display !=
+                            static_cast<ecvDisplayTools*>(this);
+            Visualization::ImageVis* rectVis2D =
+                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
+            if (isSecondaryRect) {
+                auto* glView =
+                        dynamic_cast<ecvGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    rectVis2D = glView->getImageVis().get();
+                }
+            }
+
+            if (rectVis2D) {
                 int minX = std::max(param.rect.x(), 0);
                 int maxX = std::min(minX + param.rect.width(),
-                                    m_visualizer2D->getSize()[0]);
+                                    rectVis2D->getSize()[0]);
                 int minY = std::max(param.rect.y(), 0);
                 int maxY = std::min(minY + param.rect.height(),
-                                    m_visualizer2D->getSize()[1]);
-
+                                    rectVis2D->getSize()[1]);
                 if (param.filled) {
-                    m_visualizer2D->addFilledRectangle(
+                    rectVis2D->addFilledRectangle(
                             minX, maxX, minY, maxY, param.color.r,
                             param.color.g, param.color.b, viewID,
                             param.color.a);
                 } else {
-                    m_visualizer2D->addRectangle(minX, maxX, minY, maxY,
-                                                 param.color.r, param.color.g,
-                                                 param.color.b, viewID,
-                                                 param.color.a);
+                    rectVis2D->addRectangle(minX, maxX, minY, maxY,
+                                            param.color.r, param.color.g,
+                                            param.color.b, viewID,
+                                            param.color.a);
                 }
             }
-            break;
+        } break;
         case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
             if (m_visualizer2D) {
                 m_visualizer2D->addCircle(param.rect.x(), param.rect.y(),

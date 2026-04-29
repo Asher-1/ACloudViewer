@@ -520,6 +520,8 @@ struct CV_DB_LIB_API ecvTextParam {
     CCVector3d textPos = CCVector3d(0.0, 0.0, 0.0);  ///< Text position
     QString text = "";                               ///< Text content
     QFont font = QFont();                            ///< Font settings
+    double bkgAlpha = 0.0;                           ///< Background opacity [0,1]
+    double bkgColor[3] = {0, 0, 0};                  ///< Background RGB [0,1]
 };
 
 /**
