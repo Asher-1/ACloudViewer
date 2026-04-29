@@ -213,6 +213,35 @@ void ecvViewManager::redrawAll(bool only2D,
 }
 
 // ============================================================================
+// Active-view dispatchers (Phase 4)
+// ============================================================================
+
+QWidget* ecvViewManager::activeWidget() const {
+    auto* view = getEffectiveView();
+    return view ? view->asWidget() : nullptr;
+}
+
+void ecvViewManager::invalidateActiveViewport() {
+    auto* view = getEffectiveView();
+    if (view) view->invalidateViewport();
+}
+
+void ecvViewManager::deprecateActive3DLayer() {
+    auto* view = getEffectiveView();
+    if (view) view->deprecate3DLayer();
+}
+
+void ecvViewManager::displayMessageOnActiveView(
+        const QString& message,
+        ecvGenericGLDisplay::MessagePosition pos,
+        bool append,
+        int displayMaxDelay_sec,
+        ecvGenericGLDisplay::MessageType type) {
+    auto* view = getEffectiveView();
+    if (view) view->displayNewMessage(message, pos, append, displayMaxDelay_sec, type);
+}
+
+// ============================================================================
 // Entity-view association
 // ============================================================================
 

@@ -11,12 +11,14 @@
 #include <QList>
 #include <QObject>
 #include <QPointer>
+#include <QStringList>
 #include <functional>
+#include <unordered_set>
 
 #include "CV_db.h"
+#include "ecvGenericGLDisplay.h"
 
 class ccHObject;
-class ecvGenericGLDisplay;
 class ecvViewLayoutProxy;
 class ecvViewRepresentation;
 
@@ -108,6 +110,22 @@ public:
                    bool includePrimary = true);
 
     // ================================================================
+    // Active-view dispatchers (Phase 4: replace ecvDisplayTools statics)
+    // These dispatch to the effective view or all views as appropriate.
+    // ================================================================
+
+    QWidget* activeWidget() const;
+    void invalidateActiveViewport();
+    void deprecateActive3DLayer();
+    void displayMessageOnActiveView(
+            const QString& message,
+            ecvGenericGLDisplay::MessagePosition pos,
+            bool append = false,
+            int displayMaxDelay_sec = 2,
+            ecvGenericGLDisplay::MessageType type =
+                    ecvGenericGLDisplay::CUSTOM_MESSAGE);
+
+    // ================================================================
     // Layout persistence
     // ================================================================
 
@@ -149,6 +167,15 @@ signals:
 
     void layoutRegistered(ecvViewLayoutProxy* layout);
     void layoutUnregistered(ecvViewLayoutProxy* layout);
+
+    // -- Relayed per-view signals from the active view (Phase 1) --
+    // Consumers that want "active view" events connect here.
+    // These are automatically reconnected when the active view changes.
+    void entitySelectionChanged(ccHObject* entity);
+    void entitiesSelectionChanged(std::unordered_set<int> entIDs);
+    void newLabel(ccHObject* obj);
+    void filesDropped(const QStringList& filenames, bool displayDialog);
+    void cameraParamChanged();
 
 private:
     ecvViewManager();

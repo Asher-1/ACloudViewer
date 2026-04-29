@@ -678,10 +678,13 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
         }
 
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_RB_CLICKED) {
+            if (m_ownerView)
+                emit m_ownerView->rightButtonClicked(event->x(), event->y());
             emit m_tools->rightButtonClicked(event->x(), event->y());
         }
     } else if (event->buttons() & Qt::LeftButton) {
-        curLastClickTime() = m_tools->m_timer.elapsed();  // in msec
+        curLastClickTime() = m_ownerView ? m_ownerView->elapsedMs()
+                                         : m_tools->m_timer.elapsed();
 
         // Check if click is on a 2D label ROI BEFORE starting VTK rotation.
         // Only do direct ROI check (no FAST_PICKING fallback) to avoid
@@ -718,6 +721,8 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
         }
 
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_LB_CLICKED) {
+            if (m_ownerView)
+                emit m_ownerView->leftButtonClicked(event->x(), event->y());
             emit m_tools->leftButtonClicked(event->x(), event->y());
         }
 
@@ -753,8 +758,10 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
         }
     }
 
-    m_tools->m_deferredPickingTimer
-            .stop();  // prevent the picking process from starting
+    if (m_ownerView)
+        m_ownerView->deferredPickingTimer().stop();
+    else
+        m_tools->m_deferredPickingTimer.stop();
     curIgnoreMouseReleaseEvent() = true;
 
     const int x = event->x();
@@ -765,6 +772,8 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
         ecvDisplayTools::SetPivotPoint(P, true, true);
     }
 
+    if (m_ownerView)
+        emit m_ownerView->doubleButtonClicked(event->x(), event->y());
     emit m_tools->doubleButtonClicked(event->x(), event->y());
 
     QVTKOpenGLNativeWidget::mouseDoubleClickEvent(event);
@@ -775,7 +784,6 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
     Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
 
     emit m_tools->mouseWheelChanged(event);
-
     double delta = qtCompatWheelEventDelta(event);
 
     if (keyboardModifiers & Qt::AltModifier) {
@@ -820,6 +828,10 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 
         float wheelDelta_deg = static_cast<float>(delta) / 8;
         m_tools->onWheelEvent(wheelDelta_deg);
+        if (m_ownerView) {
+            emit m_ownerView->mouseWheelRotated(wheelDelta_deg);
+            emit m_ownerView->cameraParamChanged();
+        }
         emit m_tools->mouseWheelRotated(wheelDelta_deg);
         emit m_tools->cameraParamChanged();
 
@@ -828,6 +840,8 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
     }
 
     if (doRedraw) {
+        if (m_ownerView)
+            emit m_ownerView->labelmove2D(0, 0, 0, 0);
         emit m_tools->labelmove2D(0, 0, 0, 0);
         ecvDisplayTools::UpdateNamePoseRecursive();
 
@@ -883,11 +897,15 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     const int y = event->y();
     if (ecvDisplayTools::GetCurrentScreen() == this) {
         curLastMouseMovePos() = event->pos();
+        if (m_ownerView)
+            emit m_ownerView->mousePosChanged(event->pos());
         emit m_tools->mousePosChanged(event->pos());
     }
 
     if ((curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_MOUSE_MOVED) &&
         (ecvDisplayTools::GetCurrentScreen() == this)) {
+        if (m_ownerView)
+            emit m_ownerView->mouseMoved(x, y, event->buttons());
         emit m_tools->mouseMoved(x, y, event->buttons());
         event->accept();
     }
@@ -899,9 +917,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             if (!m_localHotZone) {
                 m_localHotZone = new ecvDisplayTools::HotZone(this);
             }
-            // Replace the singleton-owned fallback HotZone with ours
-            if (m_tools->m_hotZoneOwnedBySingleton && curHotZone() &&
-                curHotZone() != m_localHotZone) {
+            if (!m_ownerView && m_tools->m_hotZoneOwnedBySingleton &&
+                curHotZone() && curHotZone() != m_localHotZone) {
                 delete curHotZone();
                 m_tools->m_hotZoneOwnedBySingleton = false;
             }
@@ -959,13 +976,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     int dy = y - curLastMousePos().y();
 
     if ((event->buttons() & Qt::RightButton)) {
-        // OPTIMIZATION: Skip 2D label updates during zoom to improve
-        // performance Only emit signal for label movement, but skip expensive
-        // Update2DLabel during zoom The label will be updated when zoom stops
-        // (in mouseReleaseEvent)
         if (abs(dx) > 0 || abs(dy) > 0) {
-            // Only emit signal for label movement, but skip expensive
-            // Update2DLabel during zoom
+            if (m_ownerView)
+                emit m_ownerView->labelmove2D(x, y, 0, 0);
             emit m_tools->labelmove2D(x, y, 0, 0);
             ecvDisplayTools::UpdateNamePoseRecursive();
         }
@@ -993,13 +1006,20 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
                     if (curInteractionFlags() &
                         ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
+                        if (m_ownerView)
+                            emit m_ownerView->translation(u);
                         emit m_tools->translation(u);
                     } else if (curCustomLightEnabled()) {
                         curCustomLightPos()[0] += static_cast<float>(u.x);
                         curCustomLightPos()[1] += static_cast<float>(u.y);
                         curCustomLightPos()[2] += static_cast<float>(u.z);
-                        ecvDisplayTools::InvalidateViewport();
-                        ecvDisplayTools::Deprecate3DLayer();
+                        if (m_ownerView) {
+                            m_ownerView->invalidateViewport();
+                            m_ownerView->deprecate3DLayer();
+                        } else {
+                            ecvDisplayTools::InvalidateViewport();
+                            ecvDisplayTools::Deprecate3DLayer();
+                        }
                     }
                 } else {
                     if (curViewportParams().objectCenteredView) {
@@ -1037,11 +1057,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         // Update2DLabel during panning The label will be updated when panning
         // stops (in mouseReleaseEvent)
         if (abs(dx) > 0 || abs(dy) > 0) {
-            // Only emit signal for label movement, but skip expensive
-            // Update2DLabel during panning
+            if (m_ownerView)
+                emit m_ownerView->labelmove2D(x, y, dx, dy);
             emit m_tools->labelmove2D(x, y, dx, dy);
             ecvDisplayTools::UpdateNamePoseRecursive();
-            // specific case: move active item(s)
             if (!curActiveItems().empty()) {
                 updateActivateditems(x, y, dx, dy, true);
             }
@@ -1058,7 +1077,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     camPos[0], camPos[1], camPos[2]);
         }
         if (!m_labelClickedOnPress) {
-            m_tools->scheduleFullRedraw(1000);
+            if (m_ownerView)
+                m_ownerView->scheduleFullRedraw(1000);
+            else
+                m_tools->scheduleFullRedraw(1000);
         }
 
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
@@ -1087,12 +1109,16 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             }
         } else if (!curActiveItems().empty()) {
             if (abs(dx) > 0 || abs(dy) > 0) {
+                if (m_ownerView)
+                    emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit m_tools->labelmove2D(x, y, dx, dy);
                 ecvDisplayTools::UpdateNamePoseRecursive();
                 updateActivateditems(x, y, dx, dy, true);
             }
         } else {
             if (abs(dx) > 0 || abs(dy) > 0) {
+                if (m_ownerView)
+                    emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit m_tools->labelmove2D(x, y, dx, dy);
                 ecvDisplayTools::UpdateNamePoseRecursive();
                 if (!curActiveItems().empty()) {
@@ -1350,15 +1376,16 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
                     rotMat = curViewportParams().viewMat.transposed() * rotMat *
                              curViewportParams().viewMat;
-                    // feedback for 'interactive transformation' mode
+                    if (m_ownerView)
+                        emit m_ownerView->rotation(rotMat);
                     emit m_tools->rotation(rotMat);
                 } else {
-                    // ecvDisplayTools::RotateBaseViewMat(rotMat);
                     ecvDisplayTools::ShowPivotSymbol(true);
                     QApplication::changeOverrideCursor(
                             QCursor(Qt::ClosedHandCursor));
 
-                    // feedback for 'echo' mode
+                    if (m_ownerView)
+                        emit m_ownerView->viewMatRotated(rotMat);
                     emit m_tools->viewMatRotated(rotMat);
                 }
             }
@@ -1368,6 +1395,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     curMouseMoved() = true;
     curLastMousePos() = event->pos();
     if (!m_labelClickedOnPress) {
+        if (m_ownerView)
+            emit m_ownerView->cameraParamChanged();
         emit m_tools->cameraParamChanged();
         if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     }
@@ -1404,8 +1433,13 @@ void QVTKWidgetCustom::updateActivateditems(
                                    ecvDisplayTools::GlHeight())) {
                 movedAs2D = true;
             } else if (activeItem->move3D(u)) {
-                ecvDisplayTools::InvalidateViewport();
-                ecvDisplayTools::Deprecate3DLayer();
+                if (m_ownerView) {
+                    m_ownerView->invalidateViewport();
+                    m_ownerView->deprecate3DLayer();
+                } else {
+                    ecvDisplayTools::InvalidateViewport();
+                    ecvDisplayTools::Deprecate3DLayer();
+                }
             }
         }
     }
@@ -1438,12 +1472,17 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
 
     if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_BUTTON_RELEASED) {
         event->accept();
+        if (m_ownerView)
+            emit m_ownerView->buttonReleased();
         emit m_tools->buttonReleased();
     }
 
     if (curPivotSymbolShown()) {
         if (curPivotVisibility() == ecvDisplayTools::PIVOT_SHOW_ON_MOVE) {
-            ecvDisplayTools::ToBeRefreshed();
+            if (m_ownerView)
+                m_ownerView->toBeRefreshed();
+            else
+                ecvDisplayTools::ToBeRefreshed();
         }
         ecvDisplayTools::ShowPivotSymbol(curPivotVisibility() ==
                                          ecvDisplayTools::PIVOT_ALWAYS_SHOW);
@@ -1491,7 +1530,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                         pickX + ecvDisplayTools::Width() / 2,
                         ecvDisplayTools::Height() / 2 - pickY, pickW, pickH);
                 ecvDisplayTools::StartPicking(params);
-                ecvDisplayTools::ToBeRefreshed();
+                if (m_ownerView)
+                    m_ownerView->toBeRefreshed();
+                else
+                    ecvDisplayTools::ToBeRefreshed();
             }
 
             event->accept();
@@ -1501,9 +1543,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             // clicked This prevents doPicking() from overriding the widget
             // selection
             if (!curWidgetClicked() &&
-                m_tools->m_timer.elapsed() <
+                (m_ownerView ? m_ownerView->elapsedMs()
+                             : m_tools->m_timer.elapsed()) <
                         curLastClickTime() +
-                                CC_MAX_PICKING_CLICK_DURATION_MS)  // in msec
+                                CC_MAX_PICKING_CLICK_DURATION_MS)
             {
                 int x = curLastMousePos().x();
                 int y = curLastMousePos().y();
@@ -1521,7 +1564,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                     curLastMousePos() = event->pos();
                     m_tools->setPickingTargetView(
                             ecvGenericGLDisplay::FromWidget(this));
-                    m_tools->m_deferredPickingTimer.start();
+                    if (m_ownerView)
+                        m_ownerView->startDeferredPicking();
+                    else
+                        m_tools->m_deferredPickingTimer.start();
                 } else {
                     // Sync per-widget local values from the
                     // (just-updated) global.
@@ -1625,6 +1671,8 @@ void QVTKWidgetCustom::dropEvent(QDropEvent* event) {
         }
 
         if (!fileNames.empty()) {
+            if (m_ownerView)
+                emit m_ownerView->filesDropped(fileNames, true);
             emit m_tools->filesDropped(fileNames, true);
         }
 
@@ -1803,6 +1851,8 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 CVLog::Print(
                         "[QVTKWidgetCustom] ESC key pressed, forwarding to "
                         "MainWindow");
+                if (m_ownerView)
+                    emit m_ownerView->exclusiveFullScreenToggled(false);
                 emit m_tools->exclusiveFullScreenToggled(false);
                 if (m_win) {
                     QKeyEvent* newEvent =
