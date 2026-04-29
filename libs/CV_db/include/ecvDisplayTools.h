@@ -183,6 +183,9 @@ public:
     ecvViewContext* viewContext() override { return &m_primaryCtx; }
     const ecvViewContext* viewContext() const override { return &m_primaryCtx; }
 
+    /// Override from ecvGenericGLDisplay — returns primary-window active items.
+    std::list<ccInteractor*>& activeItemsRef() override { return m_activeItems; }
+
     /// Returns the effective view's context for the current scope.
     /// If a rendering override is set (ScopedRenderOverride), returns that
     /// view's context; otherwise the primary context.

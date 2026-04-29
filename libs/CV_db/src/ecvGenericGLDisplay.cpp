@@ -78,6 +78,11 @@ void ecvGenericGLDisplay::setDisplayParameters(
 void ecvGenericGLDisplay::drawClickableItems(int /*xStart*/,
                                              int& /*yStart*/) {}
 
+std::list<ccInteractor*>& ecvGenericGLDisplay::activeItemsRef() {
+    static std::list<ccInteractor*> s_fallback;
+    return s_fallback;
+}
+
 // ================================================================
 // Static registry
 // ================================================================

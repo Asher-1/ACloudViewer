@@ -21,6 +21,7 @@
 #include <QTimer>
 #include <list>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "qVTK.h"
@@ -107,6 +108,13 @@ public:
     void setDisplayParameters(const ecvGui::ParamStruct& params,
                               bool thisWindowOnly = false) override;
     void drawClickableItems(int xStart, int& yStart) override;
+    void invalidateViewport() override;
+    void deprecate3DLayer() override;
+    void displayNewMessage(const QString& message,
+                           MessagePosition pos,
+                           bool append = false,
+                           int displayMaxDelay_sec = 2,
+                           MessageType type = CUSTOM_MESSAGE) override;
 
     // ================================================================
     // VTK-specific accessors
@@ -120,6 +128,15 @@ public:
     Visualization::ImageVisPtr getImageVis() const { return m_visualizer2D; }
 
     void zoomGlobal();
+
+    // ================================================================
+    // Per-view timer & scheduling (replaces singleton m_timer)
+    // ================================================================
+
+    qint64 elapsedMs() const { return m_timer.elapsed(); }
+    void scheduleFullRedraw(int delayMs);
+    void startDeferredPicking();
+    QTimer& deferredPickingTimer() { return m_deferredPickingTimer; }
 
     // ================================================================
     // Per-view context — the single source of truth for view state.
@@ -159,7 +176,7 @@ public:
     ecvDisplayTools::HotZone*& hotZoneRef() { return m_hotZone; }
     void setHotZone(ecvDisplayTools::HotZone* hz) { m_hotZone = hz; }
     ccPolyline*& rectPickingPolyRef() { return m_rectPickingPoly; }
-    std::list<ccInteractor*>& activeItemsRef() { return m_activeItems; }
+    std::list<ccInteractor*>& activeItemsRef() override { return m_activeItems; }
 
     float defaultPointSize() const {
         return m_ctx.viewportParams.defaultPointSize;
@@ -182,6 +199,49 @@ public:
 signals:
     void aboutToClose(ecvGLView* self);
     void viewActivated(ecvGLView* self);
+
+    // -- Per-view picking signals (ParaView pqView pattern) --
+    void itemPicked(ccHObject* entity, unsigned subEntityID, int x, int y, const CCVector3& P);
+    void itemPickedFast(ccHObject* entity, int subEntityID, int x, int y);
+    void fastPickingFinished();
+    void pointPicked(double x, double y, double z);
+
+    // -- Per-view camera signals --
+    void viewMatRotated(const ccGLMatrixd& rotMat);
+    void cameraDisplaced(float ddx, float ddy);
+    void mouseWheelRotated(float wheelDelta_deg);
+    void perspectiveStateChanged();
+    void baseViewMatChanged(const ccGLMatrixd& newViewMat);
+    void pixelSizeChanged(float pixelSize);
+    void fovChanged(float fov);
+    void zNearCoefChanged(float coef);
+    void pivotPointChanged(const CCVector3d&);
+    void cameraPosChanged(const CCVector3d&);
+    void cameraParamChanged();
+
+    // -- Per-view transform signals --
+    void translation(const CCVector3d& t);
+    void rotation(const ccGLMatrixd& rotMat);
+
+    // -- Per-view mouse signals --
+    void leftButtonClicked(int x, int y);
+    void rightButtonClicked(int x, int y);
+    void doubleButtonClicked(int x, int y);
+    void mouseMoved(int x, int y, Qt::MouseButtons buttons);
+    void buttonReleased();
+    void mousePosChanged(const QPoint& pos);
+
+    // -- Per-view misc signals --
+    void drawing3D();
+    void filesDropped(const QStringList& filenames, bool displayDialog);
+    void newLabel(ccHObject* obj);
+    void exclusiveFullScreenToggled(bool exclusive);
+    void autoPickPivot(bool state);
+    void labelmove2D(int x, int y, int dx, int dy);
+
+    // -- Selection (per-view emission, relayed to global via ecvViewManager) --
+    void entitySelectionChanged(ccHObject* entity);
+    void entitiesSelectionChanged(std::unordered_set<int> entIDs);
 
 protected:
     explicit ecvGLView(QMainWindow* parent);
@@ -229,6 +289,7 @@ private:
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
+    QElapsedTimer m_timer;
 
     static int s_nextWindowID;
 };

@@ -225,6 +225,8 @@ public:
     void refreshAllViews(bool only2D = false);
 
 public:
+    QWidget* getActiveGLWidget() const;
+
     //! Flag: first time the window is made visible
     bool m_FirstShow;
     //! Flag: MainWindow is being destroyed — suppresses stale signal handlers

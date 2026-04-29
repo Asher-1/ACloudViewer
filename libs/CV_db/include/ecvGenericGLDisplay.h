@@ -11,12 +11,15 @@
 #include <QRect>
 #include <QString>
 
+#include <list>
+
 #include "CV_db.h"
 #include "ecvGuiParameters.h"
 
 class ccBBox;
 class ccHObject;
 class ccDrawableObject;
+class ccInteractor;
 class QWidget;
 class ecvViewportParameters;
 struct ccGLCameraParameters;
@@ -196,6 +199,26 @@ public:
     /// ecvGLView overrides to return &m_ctx.
     virtual ecvViewContext* viewContext() { return nullptr; }
     virtual const ecvViewContext* viewContext() const { return nullptr; }
+
+    /// Per-view active interactor items (labels, etc. being dragged/interacted).
+    /// Default returns a process-wide static list; subclasses override with
+    /// their own per-window storage.
+    virtual std::list<ccInteractor*>& activeItemsRef();
+
+    // ================================================================
+    // Per-view entity operations (Phase 3: replaces static dispatch)
+    // ================================================================
+
+    virtual void invalidateViewport() {}
+    virtual void deprecate3DLayer() {}
+    virtual void displayNewMessage(const QString& message,
+                                   MessagePosition pos,
+                                   bool append = false,
+                                   int displayMaxDelay_sec = 2,
+                                   MessageType type = CUSTOM_MESSAGE) {
+        Q_UNUSED(message); Q_UNUSED(pos); Q_UNUSED(append);
+        Q_UNUSED(displayMaxDelay_sec); Q_UNUSED(type);
+    }
 
     // ================================================================
     // Lifecycle notification (ref: CloudCompare aboutToBeRemoved)

@@ -105,14 +105,13 @@ ccHObject::~ccHObject() {
 }
 
 void ccHObject::notifyGeometryUpdate() {
-    // the associated display bounding-box is (potentially) deprecated!!!
-    if (!ecvDisplayTools::HasInstance()) {
-        return;
+    ecvGenericGLDisplay* disp = getDisplay();
+    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+    if (disp) {
+        disp->invalidateViewport();
+        disp->deprecate3DLayer();
     }
-
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::Deprecate3DLayer();
+    if (ecvDisplayTools::HasInstance()) {
         ecvDisplayTools::RemoveBB(getViewId());
     }
 
@@ -1634,12 +1633,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 void ccHObject::updateNameIn3DRecursive() {
     if (nameShownIn3D() && isEnabled() && (isVisible() || isSelected())) {
         ecvGenericGLDisplay* disp = getDisplay();
+        if (!disp) disp = ecvViewManager::instance().getEffectiveView();
         if (!disp) disp = ecvDisplayTools::TheInstance();
 
         ccBBox bBox = getBB_recursive(true);
         if (bBox.isValid()) {
             ccGLCameraParameters camera;
-            if (disp && disp != ecvDisplayTools::TheInstance()) {
+            if (disp) {
                 disp->getGLCameraParameters(camera);
             } else {
                 ecvDisplayTools::GetGLCameraParameters(camera);
@@ -1805,14 +1805,9 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
 
 void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
-    if (m_currentDisplay &&
-        m_currentDisplay != ecvDisplayTools::TheInstance()) {
-        // Entity lives in a secondary view — redraw that view directly
-        // so property changes take effect in the correct VtkVis.
+    if (m_currentDisplay) {
         m_currentDisplay->redraw(only2D, forceRedraw);
     }
-    // Always update the primary singleton path as well (drives the
-    // primary render window and keeps the FBO/overlay state in sync).
     ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
 }
 

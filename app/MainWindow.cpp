@@ -299,6 +299,12 @@ static bool IsValidFileName(QString filename) {
 #endif
 }
 
+QWidget* MainWindow::getActiveGLWidget() const {
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (view) return view->asWidget();
+    return ecvDisplayTools::GetCurrentScreen();
+}
+
 MainWindow::MainWindow()
     : m_FirstShow(true),
       m_ui(new Ui::MainViewerClass),
@@ -511,7 +517,7 @@ MainWindow::MainWindow()
         m_ui->actionToggleCameraOrientationWidget->setChecked(
                 showCameraOrientationWidget);
         m_ui->actionToggleCameraOrientationWidget->blockSignals(false);
-        if (ecvDisplayTools::GetCurrentScreen()) {
+        if (getActiveGLWidget()) {
             ecvDisplayTools::ToggleCameraOrientationWidget(
                     showCameraOrientationWidget);
         }
@@ -731,7 +737,7 @@ void MainWindow::initial() {
                        ecvGenericGLDisplay* /*oldActive*/) {
                     rebindToolsToActiveView(newActive);
 
-                    QWidget* viewWidget = ecvDisplayTools::GetCurrentScreen();
+                    QWidget* viewWidget = getActiveGLWidget();
                     if (viewWidget) {
                         if (m_pickingHub) {
                             m_pickingHub->onActiveViewWidgetChanged(viewWidget);
@@ -866,7 +872,7 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
 
     auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvDisplayTools::TheInstance());
-    QWidget* primaryScreen = ecvDisplayTools::GetCurrentScreen();
+    QWidget* primaryScreen = getActiveGLWidget();
 
     auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
 
@@ -2259,7 +2265,7 @@ void MainWindow::autoShowReconstructionToolBar(bool state) {
 #endif
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetAutoPickPivotAtCenter(state);
 
         // save the option
@@ -2271,13 +2277,13 @@ void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
 }
 
 void MainWindow::doActionResetRotCenter() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::ResetCenterOfRotation();
     }
 }
 
 void MainWindow::toggleRotationCenterVisibility(bool state) {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         if (state) {
             ecvDisplayTools::SetPivotVisibility(
                     ecvDisplayTools::PIVOT_ALWAYS_SHOW);
@@ -2295,7 +2301,7 @@ void MainWindow::toggleRotationCenterVisibility(bool state) {
 
 void MainWindow::doActionToggleCameraOrientationWidget(bool state) {
     // ParaView-style Camera Orientation Widget control
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::ToggleCameraOrientationWidget(state);
 
         // Save the option
@@ -2328,7 +2334,7 @@ void MainWindow::setAutoPickPivot(bool state) {
 }
 
 void MainWindow::setOrthoView() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetPerspectiveState(false, true);
 
         // update pop-up menu 'top' icon
@@ -2339,7 +2345,7 @@ void MainWindow::setOrthoView() {
 }
 
 void MainWindow::setPerspectiveView() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetPerspectiveState(true, true);
 
         // update pop-up menu 'top' icon
@@ -2372,7 +2378,7 @@ void MainWindow::updateViewModePopUpMenu() {
     if (!m_viewModePopupButton) return;
 
     // update the view mode pop-up 'top' icon
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         bool perspectiveEnabled = ecvDisplayTools::GetPerspectiveState();
 
         QAction* currentModeAction = nullptr;
@@ -2492,7 +2498,7 @@ void MainWindow::setUiManager(QUIWidget* uiManager) {
 }
 
 void MainWindow::toggleVisualDebugTraces() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::ToggleDebugTrace();
         ecvDisplayTools::RedrawDisplay(true, false);
     }
@@ -2660,7 +2666,7 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     // After switchActiveView, GetCurrentScreen() returns the active
     // view's widget. Overlay tools that cached the old widget at
     // activation need to be re-linked.
-    QWidget* screen = ecvDisplayTools::GetCurrentScreen();
+    QWidget* screen = getActiveGLWidget();
     if (!screen) {
         for (auto& mdi : m_mdiDialogs) {
             if (mdi.dialog && mdi.dialog->started()) {
@@ -2736,7 +2742,7 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
 
     auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvDisplayTools::TheInstance());
-    QWidget* primaryScreen = ecvDisplayTools::GetCurrentScreen();
+    QWidget* primaryScreen = getActiveGLWidget();
     bool primaryHandled = false;
 
     for (auto* closingDisplay : viewsToClose) {
@@ -3882,7 +3888,7 @@ void MainWindow::doActionAnimation() {
 }
 
 void MainWindow::doActionScreenShot() {
-    QWidget* win = ecvDisplayTools::GetCurrentScreen();
+    QWidget* win = getActiveGLWidget();
     if (!win) win = getActiveWindow();
     if (!win) return;
 
@@ -4685,7 +4691,7 @@ void MainWindow::activateTranslateRotateMode() {
 #endif  // USE_VTK_BACKEND
 
     if (!m_transTool->setTansformTool(pclTransTool) ||
-        !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
+        !m_transTool->linkWith(getActiveGLWidget())) {
         CVLog::Warning(
                 "[MainWindow::activateTranslateRotateMode] Initialization "
                 "failed!");
@@ -5161,7 +5167,7 @@ void MainWindow::zoomOn(ccHObject* object) {
         vm.setActiveView(ownerView);
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ccBBox box = object->getDisplayBB_recursive(false);
         ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
     }
@@ -5397,14 +5403,14 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
 }
 
 void MainWindow::toggle3DView(bool state) {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::Toggle2Dviewer(!state);
     }
 }
 
 void MainWindow::onExclusiveFullScreenToggled(bool state) {
     // we simply update the full-screen action method icon (whatever the window)
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetExclusiveFullScreenFlage(state);
         m_ui->actionExclusiveFullScreen->blockSignals(true);
         m_ui->actionExclusiveFullScreen->setChecked(state);
@@ -5455,7 +5461,7 @@ void MainWindow::activatePointListPickingMode() {
     m_plpDlg->markerSizeSpinBox->setValue(
             ecvDisplayTools::GetDisplayParameters().labelMarkerSize);
 
-    m_plpDlg->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_plpDlg->linkWith(getActiveGLWidget());
     m_plpDlg->linkWithEntity(entity);
 
     freezeUI(true);
@@ -5495,7 +5501,7 @@ void MainWindow::activatePointPickingMode() {
         registerOverlayDialog(m_ppDlg, Qt::TopRightCorner);
     }
 
-    m_ppDlg->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_ppDlg->linkWith(getActiveGLWidget());
 
     freezeUI(true);
 
@@ -5521,7 +5527,7 @@ void MainWindow::activateTracePolylineMode() {
         registerOverlayDialog(m_tplTool, Qt::TopRightCorner);
     }
 
-    m_tplTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_tplTool->linkWith(getActiveGLWidget());
 
     freezeUI(true);
     m_ui->ViewToolBar->setDisabled(false);
@@ -6125,7 +6131,7 @@ void MainWindow::zoomOnEntities(ccHObject* obj) {
 }
 
 void MainWindow::setGlobalZoom() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvRedrawScope scope;
         scope.dismiss();
         ecvDisplayTools::ZoomGlobal();
@@ -6527,7 +6533,7 @@ void MainWindow::showDisplayOptions() {
 }
 
 void MainWindow::doActionPerspectiveProjection() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetPerspectiveProjection();
     }
 
@@ -6537,7 +6543,7 @@ void MainWindow::doActionPerspectiveProjection() {
 }
 
 void MainWindow::doActionOrthogonalProjection() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         ecvDisplayTools::SetOrthoProjection();
     }
 
@@ -7240,7 +7246,7 @@ void MainWindow::doMeshTwoPolylines() {
     // Ask the user how the 2D projection should be computed
     bool useViewingDir = false;
     CCVector3 viewingDir(0, 0, 0);
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (getActiveGLWidget()) {
         useViewingDir =
                 (QMessageBox::question(this, tr("Projection method"),
                                        tr("Use best fit plane (yes) or the "
@@ -7593,7 +7599,7 @@ void MainWindow::doActionCreateCameraSensor() {
     QWidget* win = nullptr;
     if (ent) {
         ent->addChild(sensor);
-        win = static_cast<QWidget*>(ecvDisplayTools::GetCurrentScreen());
+        win = static_cast<QWidget*>(getActiveGLWidget());
     } else {
         win = getActiveWindow();
     }
@@ -10361,7 +10367,7 @@ void MainWindow::activateRegisterPointPairTool() {
 
     rebindToolsToActiveView(ecvViewManager::instance().getActiveView());
 
-    if (!m_pprDlg->init(ecvDisplayTools::GetCurrentScreen(), alignedEntities,
+    if (!m_pprDlg->init(getActiveGLWidget(), alignedEntities,
                         &refEntities))
         deactivateRegisterPointPairTool(false);
 
@@ -10373,7 +10379,7 @@ void MainWindow::activateRegisterPointPairTool() {
             m_ccRoot->selectEntities(alignedEntities);
             m_ccRoot->selectEntities(refEntities);
         }
-        if (ecvDisplayTools::GetCurrentScreen()) {
+        if (getActiveGLWidget()) {
             ecvRedrawScope scope;
             scope.dismiss();
             zoomOnSelectedEntities();
@@ -11111,7 +11117,7 @@ void MainWindow::doActionFilterByLabel() {
         registerOverlayDialog(m_filterLabelTool, Qt::TopRightCorner);
     }
 
-    if (!m_filterLabelTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
+    if (!m_filterLabelTool->linkWith(getActiveGLWidget())) {
         CVLog::Warning(
                 "[MainWindow::doSemanticSegmentation] Initialization failed!");
         return;
@@ -11996,7 +12002,7 @@ void MainWindow::doActionMeasurementMode(int mode) {
 
     // Add the new tool instance to the measurement tool dialog
     m_measurementTool->setMeasurementTool(measurementTool);
-    m_measurementTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_measurementTool->linkWith(getActiveGLWidget());
 
     for (ccHObject* entity : selectedEntities) {
         if (m_measurementTool->addAssociatedEntity(entity)) {
@@ -12158,7 +12164,7 @@ void MainWindow::doActionFilterMode(int mode) {
     }
 
     m_filterTool->setFilter(filter);
-    m_filterTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_filterTool->linkWith(getActiveGLWidget());
 
     for (ccHObject* entity : selectedEntities) {
         if (m_filterTool->addAssociatedEntity(entity)) {
@@ -12238,7 +12244,7 @@ void MainWindow::doAnnotations(int mode) {
 #endif  // USE_VTK_BACKEND
 
     if (!m_annoTool->setAnnotationsTool(annoTools) ||
-        !m_annoTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
+        !m_annoTool->linkWith(getActiveGLWidget())) {
         CVLog::Warning("[MainWindow::doAnnotations] Initialization failed!");
         return;
     }
@@ -12279,7 +12285,7 @@ void MainWindow::doSemanticSegmentation() {
         registerOverlayDialog(m_dssTool, Qt::TopRightCorner);
     }
 
-    if (!m_dssTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
+    if (!m_dssTool->linkWith(getActiveGLWidget())) {
         CVLog::Warning(
                 "[MainWindow::doSemanticSegmentation] Initialization failed!");
         return;
@@ -12398,7 +12404,7 @@ void MainWindow::activateSegmentationMode() {
         registerOverlayDialog(m_gsTool, Qt::TopRightCorner);
     }
 
-    m_gsTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_gsTool->linkWith(getActiveGLWidget());
 
     for (ccHObject* entity : getSelectedEntities()) {
         entity->setSelected_recursive(false);
@@ -12649,7 +12655,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
         {
             ecvRedrawScope scope;
             m_gsTool->removeAllEntities();
-            if (!ecvDisplayTools::GetCurrentScreen()) {
+            if (!getActiveGLWidget()) {
                 scope.dismiss();
             }
         }

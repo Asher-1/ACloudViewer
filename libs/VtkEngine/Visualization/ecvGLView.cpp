@@ -37,6 +37,7 @@ ecvGLView::ecvGLView(QMainWindow* parent) : QObject(parent) {
 
     m_ctx.viewMatd.toIdentity();
     m_ctx.projMatd.toIdentity();
+    m_timer.start();
 }
 
 ecvGLView::~ecvGLView() {
@@ -377,6 +378,36 @@ void ecvGLView::drawClickableItems(int xStart, int& yStart) {
     Q_UNUSED(yStart);
 }
 
+void ecvGLView::invalidateViewport() {
+    m_ctx.validProjectionMatrix = false;
+}
+
+void ecvGLView::deprecate3DLayer() {
+    m_shouldBeRefreshed = true;
+}
+
+void ecvGLView::displayNewMessage(const QString& message,
+                                   MessagePosition pos,
+                                   bool append,
+                                   int displayMaxDelay_sec,
+                                   MessageType type) {
+    if (!append) {
+        m_messagesToDisplay.remove_if(
+                [type](const ecvDisplayTools::MessageToDisplay& msg) {
+                    return msg.type == type;
+                });
+    }
+    if (!message.isEmpty()) {
+        ecvDisplayTools::MessageToDisplay msg;
+        msg.message = message;
+        msg.messageValidity_sec = displayMaxDelay_sec;
+        msg.position = pos;
+        msg.type = type;
+        m_messagesToDisplay.push_back(msg);
+    }
+    toBeRefreshed();
+}
+
 void ecvGLView::zoomGlobal() {
     if (!m_visualizer3D) return;
 
@@ -392,5 +423,16 @@ void ecvGLView::zoomGlobal() {
     }
 
     m_visualizer3D->getRenderWindow()->Render();
+}
+
+void ecvGLView::scheduleFullRedraw(int delayMs) {
+    m_scheduledFullRedrawTime = m_timer.elapsed() + delayMs;
+    if (!m_scheduleTimer.isActive()) {
+        m_scheduleTimer.start(delayMs);
+    }
+}
+
+void ecvGLView::startDeferredPicking() {
+    m_deferredPickingTimer.start();
 }
 

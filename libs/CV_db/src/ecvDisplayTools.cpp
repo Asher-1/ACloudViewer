@@ -1425,7 +1425,12 @@ void ecvDisplayTools::MoveCamera(float dx, float dy, float dz) {
 
 void ecvDisplayTools::UpdateActiveItemsList(
         int x, int y, bool extendToSelectedLabels /*=false*/) {
-    s_tools.instance->m_activeItems.clear();
+    // Route to the effective view's active-items list (per-window isolation).
+    auto* effView = ecvViewManager::instance().getEffectiveView();
+    std::list<ccInteractor*>& items =
+            effView ? effView->activeItemsRef()
+                    : s_tools.instance->m_activeItems;
+    items.clear();
 
     {
         ccHObject::Container labels;
@@ -1444,29 +1449,24 @@ void ecvDisplayTools::UpdateActiveItemsList(
                          roi.isValid(), roi.contains(x, y),
                          l->isDisplayedIn2D(), l->isPointLegendDisplayed());
             if (roi.isValid() && roi.contains(x, y)) {
-                s_tools.instance->m_activeItems.push_back(l);
+                items.push_back(l);
                 CVLog::Print("[Label]   >>> HIT! Added to active items");
                 break;
             }
         }
     }
 
-    // Fall back to VTK FAST_PICKING for 3D markers/objects
-    if (s_tools.instance->m_activeItems.empty()) {
+    if (items.empty()) {
         PickingParameters params(FAST_PICKING, x, y, 2, 2);
         StartPicking(params);
     }
 
-    if (s_tools.instance->m_activeItems.size() == 1) {
-        ccInteractor* pickedObj = s_tools.instance->m_activeItems.front();
+    if (items.size() == 1) {
+        ccInteractor* pickedObj = items.front();
         cc2DLabel* label = dynamic_cast<cc2DLabel*>(pickedObj);
         if (label) {
             if (!label->isSelected() || !extendToSelectedLabels) {
-                // select it?
-                // emit entitySelectionChanged(label);
-                // QApplication::processEvents();
             } else {
-                // we get the other selected labels as well!
                 ccHObject::Container labels;
                 if (s_tools.instance->m_globalDBRoot)
                     s_tools.instance->m_globalDBRoot->filterChildren(
@@ -1478,13 +1478,10 @@ void ecvDisplayTools::UpdateActiveItemsList(
                 for (auto& label : labels) {
                     if (label->isA(CV_TYPES::LABEL_2D) &&
                         label->isEnabled() &&
-                        label->isVisible())  // Warning: cc2DViewportLabel is
-                                             // also a kind of
-                                             // 'CV_TYPES::LABEL_2D'!
-                    {
+                        label->isVisible()) {
                         cc2DLabel* l = static_cast<cc2DLabel*>(label);
                         if (l != label && l->isSelected()) {
-                            s_tools.instance->m_activeItems.push_back(l);
+                            items.push_back(l);
                         }
                     }
                 }
@@ -3731,9 +3728,12 @@ void ecvDisplayTools::Redraw2DLabel() {
 }
 
 void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
-    // we get the other selected labels as well!
-
-    s_tools.instance->m_activeItems.clear();
+    // Only update overlay data for visible labels.
+    // Do NOT add labels to m_activeItems here — active items should only be
+    // populated by explicit user interaction (click/pick), not by periodic
+    // timer updates.  The old approach of clearing and refilling m_activeItems
+    // every 50 ms caused cross-window pollution and unintended label movement
+    // during camera rotation.
     ccHObject::Container labels;
     FilterByEntityType(labels, CV_TYPES::LABEL_2D);
 
@@ -3742,7 +3742,6 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
             cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
             if (!l) continue;
 
-            s_tools.instance->m_activeItems.push_back(l);
             if (immediateUpdate) {
                 CC_DRAW_CONTEXT context;
                 GetContext(context);
@@ -3768,18 +3767,19 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
 void ecvDisplayTools::Pick2DLabel(int x, int y) {
     QString id = s_tools.instance->pick2DLabel(x, y);
 
-    // we get the other selected labels as well!
-    s_tools.instance->m_activeItems.clear();
+    auto* effView = ecvViewManager::instance().getEffectiveView();
+    std::list<ccInteractor*>& items =
+            effView ? effView->activeItemsRef()
+                    : s_tools.instance->m_activeItems;
+    items.clear();
     if (!id.isEmpty()) {
         ccHObject::Container labels;
         FilterByEntityType(labels, CV_TYPES::LABEL_2D);
         for (auto& label : labels) {
-            // Warning: cc2DViewportLabel is also a kind of
-            // 'CV_TYPES::LABEL_2D'!
             if (label->isA(CV_TYPES::LABEL_2D) && label->isEnabled() && label->isVisible()) {
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
                 if (l->getViewId().compare(id) == 0) {
-                    s_tools.instance->m_activeItems.push_back(l);
+                    items.push_back(l);
                 }
             }
         }
