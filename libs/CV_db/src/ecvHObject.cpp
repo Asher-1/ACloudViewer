@@ -1866,9 +1866,14 @@ bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
         if (ecvViewManager::instance().viewCount() <= 1) {
             return true;
         }
-        const ecvGenericGLDisplay* effective =
-                ecvViewManager::instance().getEffectiveView();
-        return (effective == nullptr || display == effective);
+        // Unbound objects only render in the ACTIVE view (the one the user
+        // last clicked), not in whichever view happens to be redrawing.
+        // This prevents cross-window "pollution" where objects appear in
+        // all split windows. Use getActiveView() instead of
+        // getEffectiveView() to avoid ScopedRenderOverride side-effects.
+        const ecvGenericGLDisplay* active =
+                ecvViewManager::instance().getActiveView();
+        return (active == nullptr || display == active);
     }
     return (m_currentDisplay == display);
 }

@@ -175,6 +175,7 @@ public:
 protected:
     // events handling
     virtual bool event(QEvent* evt) override;
+    void paintGL() override;
     virtual void wheelEvent(QWheelEvent* event) override;
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void mouseMoveEvent(QMouseEvent* event) override;
@@ -306,4 +307,9 @@ protected:
 
     // Timer for delayed 2D label update after wheel zoom
     QTimer* m_wheelZoomUpdateTimer = nullptr;
+
+    // True when a cc2DLabel was directly hit in mousePressEvent
+    bool m_labelClickedOnPress = false;
+    // True when right-click landed on a cc2DLabel (collapse toggle)
+    bool m_rightClickOnLabel = false;
 };

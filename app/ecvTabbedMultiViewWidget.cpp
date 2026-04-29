@@ -25,6 +25,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <CVLog.h>
+
 ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
     : QWidget(parent) {
     auto* mainLayout = new QGridLayout(this);
@@ -113,8 +115,22 @@ ecvTabbedMultiViewWidget::~ecvTabbedMultiViewWidget() = default;
 
 int ecvTabbedMultiViewWidget::createTab() {
     auto* layout = new ecvViewLayoutProxy(this);
-    ++m_layoutCounter;
-    layout->setName(tr("Layout #%1").arg(m_layoutCounter));
+
+    // ParaView-style: reuse the lowest available layout number
+    QSet<int> usedNumbers;
+    for (int i = 0; i < m_tabWidget->count(); ++i) {
+        QString text = m_tabWidget->tabText(i);
+        QRegExp rx("Layout #(\\d+)");
+        if (rx.exactMatch(text)) {
+            usedNumbers.insert(rx.cap(1).toInt());
+        }
+    }
+    int nextNum = 1;
+    while (usedNumbers.contains(nextNum)) ++nextNum;
+    m_layoutCounter = qMax(m_layoutCounter, nextNum);
+    layout->setName(tr("Layout #%1").arg(nextNum));
+    CVLog::Print("[Tab] createTab: name='%s' usedNumbers=%d nextNum=%d",
+                 qPrintable(layout->name()), usedNumbers.size(), nextNum);
 
     auto* mvw = createMultiViewWidget(layout);
 
@@ -171,11 +187,19 @@ ecvMultiViewWidget* ecvTabbedMultiViewWidget::createMultiViewWidget(
 // ============================================================================
 
 void ecvTabbedMultiViewWidget::closeTab(int index) {
+    CVLog::Print("[Tab] closeTab: index=%d count=%d", index,
+                 m_tabWidget->count());
     if (index < 0 || index >= m_tabWidget->count()) return;
     if (m_tabWidget->widget(index) == m_newTabWidget) return;
 
     auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(index));
     if (!mvw) return;
+
+    CVLog::Print("[Tab] closeTab: closing '%s'",
+                 qPrintable(m_tabWidget->tabText(index)));
+
+    // Suppress auto-creation in onCurrentTabChanged while closing
+    m_closingTab = true;
 
     QList<ecvGLView*> orphanedViews = mvw->destroyAllViews();
 
@@ -193,6 +217,16 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
     m_tabWidget->removeTab(index);
     mvw->deleteLater();
     if (layout) layout->deleteLater();
+
+    m_closingTab = false;
+
+    // Select the first real tab if available
+    for (int i = 0; i < m_tabWidget->count(); ++i) {
+        if (m_tabWidget->widget(i) != m_newTabWidget) {
+            m_tabWidget->setCurrentIndex(i);
+            break;
+        }
+    }
 
     int realCount = tabCount();
     if (!m_readOnly && realCount == 0) {
@@ -225,6 +259,12 @@ void ecvTabbedMultiViewWidget::setCurrentTab(int index) {
 
 void ecvTabbedMultiViewWidget::onCurrentTabChanged(int index) {
     if (index < 0) return;
+
+    CVLog::Print("[Tab] onCurrentTabChanged: index=%d closingTab=%d count=%d",
+                 index, m_closingTab, m_tabWidget->count());
+
+    // Don't auto-create a new tab when closing shifts selection to "+"
+    if (m_closingTab) return;
 
     QWidget* currentWidget = m_tabWidget->widget(index);
     if (auto* mvw = qobject_cast<ecvMultiViewWidget*>(currentWidget)) {
@@ -330,6 +370,8 @@ bool ecvTabbedMultiViewWidget::eventFilter(QObject* obj, QEvent* evt) {
         if (me && me->button() == Qt::LeftButton) {
             int closeIdx = tabButtonIndex(qobject_cast<QWidget*>(obj),
                                           QTabBar::RightSide);
+            CVLog::Print("[Tab] eventFilter: close button click, closeIdx=%d",
+                         closeIdx);
             if (closeIdx != -1) {
                 closeTab(closeIdx);
                 return true;

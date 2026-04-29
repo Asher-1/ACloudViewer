@@ -171,6 +171,7 @@ private:
     bool m_decorationsVisible = true;
     bool m_readOnly = false;
     bool m_tabBarVisible = true;
+    bool m_closingTab = false;  // guard: suppress auto-create during closeTab
 
     ViewFactory m_viewFactory;
     FrameFactory m_frameFactory;

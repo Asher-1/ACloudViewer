@@ -1940,7 +1940,9 @@ public:  // visualization matrix transformation
             const QFont& font = QFont(),
             const ecvColor::Rgbub& color = ecvColor::defaultLabelBkgColor,
             const QString& id = "",
-            ecvGenericGLDisplay* display = nullptr);
+            ecvGenericGLDisplay* display = nullptr,
+            double bkgAlpha = 0.0,
+            const double* bkgColor = nullptr);
     static void RenderText(
             double x,
             double y,

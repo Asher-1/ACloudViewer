@@ -2171,6 +2171,20 @@ void VtkVis::displayText(const CC_DRAW_CONTEXT& context) {
             addText(text, xPos, yPos, textParam.font.pointSize(), textColor.r,
                     textColor.g, textColor.b, viewID, viewport);
         }
+        // Apply background if specified (for secondary view show-name)
+        if (textParam.bkgAlpha > 0) {
+            auto it = shape_actor_map_->find(viewID);
+            if (it != shape_actor_map_->end()) {
+                auto textActor = vtkTextActor::SafeDownCast(it->second);
+                if (textActor) {
+                    auto tp = textActor->GetTextProperty();
+                    tp->SetBackgroundColor(textParam.bkgColor[0],
+                                           textParam.bkgColor[1],
+                                           textParam.bkgColor[2]);
+                    tp->SetBackgroundOpacity(textParam.bkgAlpha);
+                }
+            }
+        }
     }
 }
 

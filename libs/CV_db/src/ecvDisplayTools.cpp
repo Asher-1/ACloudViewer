@@ -1427,9 +1427,35 @@ void ecvDisplayTools::UpdateActiveItemsList(
         int x, int y, bool extendToSelectedLabels /*=false*/) {
     s_tools.instance->m_activeItems.clear();
 
-    PickingParameters params(FAST_PICKING, x, y, 2, 2);
+    {
+        ccHObject::Container labels;
+        FilterByEntityType(labels, CV_TYPES::LABEL_2D);
+        CVLog::Print("[Label] UpdateActiveItemsList: mouse(%d,%d) labels=%zu",
+                     x, y, labels.size());
+        for (auto* obj : labels) {
+            if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible()) continue;
+            cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
+            if (!l) continue;
+            QRect roi = l->getLabelROI();
+            CVLog::Print("[Label]   '%s' ROI=(%d,%d %dx%d) valid=%d contains=%d "
+                         "dispIn2D=%d dispLegend=%d",
+                         qPrintable(l->getName()),
+                         roi.x(), roi.y(), roi.width(), roi.height(),
+                         roi.isValid(), roi.contains(x, y),
+                         l->isDisplayedIn2D(), l->isPointLegendDisplayed());
+            if (roi.isValid() && roi.contains(x, y)) {
+                s_tools.instance->m_activeItems.push_back(l);
+                CVLog::Print("[Label]   >>> HIT! Added to active items");
+                break;
+            }
+        }
+    }
 
-    StartPicking(params);
+    // Fall back to VTK FAST_PICKING for 3D markers/objects
+    if (s_tools.instance->m_activeItems.empty()) {
+        PickingParameters params(FAST_PICKING, x, y, 2, 2);
+        StartPicking(params);
+    }
 
     if (s_tools.instance->m_activeItems.size() == 1) {
         ccInteractor* pickedObj = s_tools.instance->m_activeItems.front();
@@ -1451,6 +1477,7 @@ void ecvDisplayTools::UpdateActiveItemsList(
 
                 for (auto& label : labels) {
                     if (label->isA(CV_TYPES::LABEL_2D) &&
+                        label->isEnabled() &&
                         label->isVisible())  // Warning: cc2DViewportLabel is
                                              // also a kind of
                                              // 'CV_TYPES::LABEL_2D'!
@@ -3673,30 +3700,33 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
 }
 
 void ecvDisplayTools::Redraw2DLabel() {
-    // we get the other selected labels as well!
     ccHObject::Container labels;
     FilterByEntityType(labels, CV_TYPES::LABEL_2D);
 
     for (auto& label : labels) {
-        // Warning: cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
-        if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) {
-            cc2DLabel* l = static_cast<cc2DLabel*>(label);
-            if (!l || (l->isDisplayedIn2D() && !l->isPointLegendDisplayed()))
-                continue;
+        if (!label->isA(CV_TYPES::LABEL_2D) || !label->isEnabled() || !label->isVisible()) continue;
+        cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
+        if (!l) continue;
 
-            CC_DRAW_CONTEXT context;
-            GetContext(context);
-            auto* disp = l->getDisplay();
-            if (disp && disp != TheInstance()) {
-                context.display = disp;
-                auto* viewCtx = disp->viewContext();
-                if (viewCtx) {
-                    context.glW = viewCtx->glViewport.width();
-                    context.glH = viewCtx->glViewport.height();
-                }
+        CC_DRAW_CONTEXT context;
+        GetContext(context);
+        auto* disp = l->getDisplay();
+        if (disp && disp != TheInstance()) {
+            context.display = disp;
+            auto* viewCtx = disp->viewContext();
+            if (viewCtx) {
+                context.glW = viewCtx->glViewport.width();
+                context.glH = viewCtx->glViewport.height();
             }
-            l->update2DLabelView(context);
         }
+        l->update2DLabelView(context, false);
+    }
+
+    if (QWidget* w = GetCurrentScreen()) {
+        w->update();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().redrawAll(true, true);
     }
 }
 
@@ -3708,11 +3738,9 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
     FilterByEntityType(labels, CV_TYPES::LABEL_2D);
 
     for (auto& label : labels) {
-        // Warning: cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
-        if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) {
+        if (label->isA(CV_TYPES::LABEL_2D) && label->isEnabled() && label->isVisible()) {
             cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
-            if (!l || (l->isDisplayedIn2D() && !l->isPointLegendDisplayed()))
-                continue;
+            if (!l) continue;
 
             s_tools.instance->m_activeItems.push_back(l);
             if (immediateUpdate) {
@@ -3748,7 +3776,7 @@ void ecvDisplayTools::Pick2DLabel(int x, int y) {
         for (auto& label : labels) {
             // Warning: cc2DViewportLabel is also a kind of
             // 'CV_TYPES::LABEL_2D'!
-            if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) {
+            if (label->isA(CV_TYPES::LABEL_2D) && label->isEnabled() && label->isVisible()) {
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
                 if (l->getViewId().compare(id) == 0) {
                     s_tools.instance->m_activeItems.push_back(l);
@@ -3773,10 +3801,11 @@ void ecvDisplayTools::RenderText(
         const QFont& font /*=QFont()*/,
         const ecvColor::Rgbub& color /* = ecvColor::defaultLabelBkgColor*/,
         const QString& id,
-        ecvGenericGLDisplay* display /*=nullptr*/) {
+        ecvGenericGLDisplay* display /*=nullptr*/,
+        double bkgAlpha /*=0.0*/,
+        const double* bkgColor /*=nullptr*/) {
     CC_DRAW_CONTEXT context;
     context.display = display;
-    // for T2D
     if (id.isEmpty()) {
         context.viewID = str;
     } else {
@@ -3787,6 +3816,12 @@ void ecvDisplayTools::RenderText(
     context.textParam.display3D = false;
     context.textParam.font = font;
     context.textParam.font.setPointSize(font.pointSize());
+    context.textParam.bkgAlpha = bkgAlpha;
+    if (bkgColor && bkgAlpha > 0) {
+        context.textParam.bkgColor[0] = bkgColor[0];
+        context.textParam.bkgColor[1] = bkgColor[1];
+        context.textParam.bkgColor[2] = bkgColor[2];
+    }
 
     context.textDefaultCol = color;
     int vpH = viewportHeightFor(display);
@@ -3849,6 +3884,7 @@ void ecvDisplayTools::DisplayText(
     int vpH = viewportHeightFor(display);
     int x2 = x;
     int y2 = vpH - 1 - y;
+    double bkgInfoForText[4] = {0, 0, 0, 0};
 
     // actual text color
     const unsigned char* col =
@@ -3878,40 +3914,13 @@ void ecvDisplayTools::DisplayText(
                                           (255 - col[1]) / 255.0f,
                                           (255 - col[2]) / 255.0f, bkgAlpha};
 
-            // int xB = x2 - s_tools.instance->effectiveCtx().glViewport.width() / 2;
-            // int yB = s_tools.instance->effectiveCtx().glViewport.height() / 2 - y2;
-            // yB += margin / 2; //empirical compensation
-
-            int xB = x2;
-            int yB = vpH - y2;
-
-            WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, id);
-            param.text = text;
-            param.context.display = display;
-
-            if (id.isEmpty()) {
-                param.viewID = text;
-                RemoveWidgets(param);
-            }
-
-            param.color.r = invertedCol[0];
-            param.color.g = invertedCol[1];
-            param.color.b = invertedCol[2];
-            param.color.a = invertedCol[3];
-            param.rect =
-                    QRect(xB - margin, yB - margin, rect.width() + 2 * margin,
-                          static_cast<int>(rect.height() + 1.5 * margin));
-
-#ifdef Q_OS_MAC
-            // fix name3d background issues on mac
-            param.rect.setWidth(param.rect.width() * 2);
-            // Note: should be moved to the top of the screen (equal to move
-            // bottom) in GL coordinates.
-            param.rect.moveTop(std::min(vpH,
-                                        param.rect.y() + 2 * margin));
-#endif
-
-            DrawWidgets(param, true);
+            // Always render background via VTK text actor's BackgroundColor/
+            // BackgroundOpacity. This ensures the background is always
+            // co-located with the text, regardless of which view it's in.
+            bkgInfoForText[0] = invertedCol[0];
+            bkgInfoForText[1] = invertedCol[1];
+            bkgInfoForText[2] = invertedCol[2];
+            bkgInfoForText[3] = bkgAlpha;
         }
     }
 
@@ -3921,7 +3930,8 @@ void ecvDisplayTools::DisplayText(
         y2 -= margin / 2;  // empirical compensation
 
     ecvColor::Rgbub textColor(col);
-    RenderText(x2, y2, text, realFont, textColor, id, display);
+    RenderText(x2, y2, text, realFont, textColor, id, display,
+               bkgInfoForText[3], bkgInfoForText);
 }
 
 void ecvDisplayTools::DisplayTexture2DPosition(QImage image,

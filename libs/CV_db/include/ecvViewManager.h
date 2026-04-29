@@ -124,6 +124,12 @@ public:
     // ================================================================
 
     void associateToActiveView(ccHObject* obj);
+
+    /// Move an entity (and its children) from its current view to a target
+    /// view. Removes VTK representations from the old view and redraws both.
+    /// ParaView equivalent: pqActiveObjects + representation visibility toggle.
+    void moveEntityToView(ccHObject* obj, ecvGenericGLDisplay* targetView);
+
     void detachEntitiesFromView(ecvGenericGLDisplay* view);
     void reassignEntitiesFromView(ccHObject* root,
                                   ecvGenericGLDisplay* fromView,
