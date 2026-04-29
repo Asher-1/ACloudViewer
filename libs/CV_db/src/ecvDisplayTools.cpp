@@ -43,6 +43,7 @@
 
 // QT
 #include <QApplication>
+#include <QElapsedTimer>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
 #endif
@@ -848,7 +849,9 @@ void ecvDisplayTools::ProcessPickingResult(
 
             if (label) {
                 label->setVisible(true);
-                label->setDisplay(s_tools.instance);
+                auto* parentDisplay = pickedEntity->getDisplay();
+                label->setDisplay(parentDisplay ? parentDisplay
+                                                : s_tools.instance);
                 label->setPosition(
                         static_cast<float>(params.centerX + 20) /
                                 s_tools.instance->effectiveCtx().glViewport.width(),
@@ -1489,6 +1492,10 @@ void ecvDisplayTools::UpdateScreen() {
         w->update();
     }
     UpdateScene();
+
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
 }
 
 void ecvDisplayTools::UpdateScreenSize() { ResizeGL(Width(), Height()); }
@@ -2214,6 +2221,17 @@ void ecvDisplayTools::UpdateNamePoseRecursive() {
     if (!HasInstance()) return;
     GetSceneDB()->updateNameIn3DRecursive();
     GetOwnDB()->updateNameIn3DRecursive();
+
+    static QElapsedTimer s_labelTimer;
+    static bool s_timerStarted = false;
+    if (!s_timerStarted) {
+        s_labelTimer.start();
+        s_timerStarted = true;
+    }
+    if (s_labelTimer.elapsed() >= 50) {
+        Update2DLabel(true);
+        s_labelTimer.restart();
+    }
 }
 
 void ecvDisplayTools::SetRedrawRecursive(ccHObject* obj,
@@ -3471,7 +3489,18 @@ bool ecvDisplayTools::HideShowEntities(const ccHObject* obj, bool visible) {
     context.visible = visible;
     context.viewID = obj->getViewId();
     context.hideShowEntityType = obj->getEntityType();
+    context.display = const_cast<ecvGenericGLDisplay*>(obj->getDisplay());
     ecvDisplayTools::HideShowEntities(context);
+
+    if (!obj->getDisplay()) {
+        const auto& views = ecvViewManager::instance().getAllViews();
+        for (auto* view : views) {
+            if (!view || view == TheInstance()) continue;
+            CC_DRAW_CONTEXT viewCtx = context;
+            viewCtx.display = view;
+            TheInstance()->hideShowEntities(viewCtx);
+        }
+    }
     return true;
 }
 
@@ -3487,7 +3516,18 @@ void ecvDisplayTools::RemoveEntities(const ccHObject* obj) {
     CC_DRAW_CONTEXT context;
     context.removeViewID = obj->getViewId();
     context.removeEntityType = obj->getEntityType();
+    context.display = const_cast<ecvGenericGLDisplay*>(obj->getDisplay());
     ecvDisplayTools::RemoveEntities(context);
+
+    if (!obj->getDisplay()) {
+        const auto& views = ecvViewManager::instance().getAllViews();
+        for (auto* view : views) {
+            if (!view || view == TheInstance()) continue;
+            CC_DRAW_CONTEXT viewCtx = context;
+            viewCtx.display = view;
+            TheInstance()->removeEntities(viewCtx);
+        }
+    }
 }
 
 void ecvDisplayTools::RemoveEntities(const QStringList& viewIDs,
@@ -3646,6 +3686,15 @@ void ecvDisplayTools::Redraw2DLabel() {
 
             CC_DRAW_CONTEXT context;
             GetContext(context);
+            auto* disp = l->getDisplay();
+            if (disp && disp != TheInstance()) {
+                context.display = disp;
+                auto* viewCtx = disp->viewContext();
+                if (viewCtx) {
+                    context.glW = viewCtx->glViewport.width();
+                    context.glH = viewCtx->glViewport.height();
+                }
+            }
             l->update2DLabelView(context);
         }
     }
@@ -3669,6 +3718,15 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
             if (immediateUpdate) {
                 CC_DRAW_CONTEXT context;
                 GetContext(context);
+                auto* disp = l->getDisplay();
+                if (disp && disp != TheInstance()) {
+                    context.display = disp;
+                    auto* viewCtx = disp->viewContext();
+                    if (viewCtx) {
+                        context.glW = viewCtx->glViewport.width();
+                        context.glH = viewCtx->glViewport.height();
+                    }
+                }
                 l->update2DLabelView(context);
             }
         } else if (label->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
@@ -3717,6 +3775,7 @@ void ecvDisplayTools::RenderText(
         const QString& id,
         ecvGenericGLDisplay* display /*=nullptr*/) {
     CC_DRAW_CONTEXT context;
+    context.display = display;
     // for T2D
     if (id.isEmpty()) {
         context.viewID = str;
@@ -3728,7 +3787,6 @@ void ecvDisplayTools::RenderText(
     context.textParam.display3D = false;
     context.textParam.font = font;
     context.textParam.font.setPointSize(font.pointSize());
-    // QRect screen = QGuiApplication::primaryScreen()->geometry();
 
     context.textDefaultCol = color;
     int vpH = viewportHeightFor(display);
@@ -3816,10 +3874,9 @@ void ecvDisplayTools::DisplayText(
 
         // background is not totally transparent
         if (bkgAlpha != 0.0f) {
-            // inverted color with a bit of transparency
             const float invertedCol[4] = {(255 - col[0]) / 255.0f,
-                                          (255 - col[0]) / 255.0f,
-                                          (255 - col[0]) / 255.0f, bkgAlpha};
+                                          (255 - col[1]) / 255.0f,
+                                          (255 - col[2]) / 255.0f, bkgAlpha};
 
             // int xB = x2 - s_tools.instance->effectiveCtx().glViewport.width() / 2;
             // int yB = s_tools.instance->effectiveCtx().glViewport.height() / 2 - y2;
@@ -3830,6 +3887,7 @@ void ecvDisplayTools::DisplayText(
 
             WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, id);
             param.text = text;
+            param.context.display = display;
 
             if (id.isEmpty()) {
                 param.viewID = text;
@@ -3863,7 +3921,7 @@ void ecvDisplayTools::DisplayText(
         y2 -= margin / 2;  // empirical compensation
 
     ecvColor::Rgbub textColor(col);
-    RenderText(x2, y2, text, realFont, textColor, id);
+    RenderText(x2, y2, text, realFont, textColor, id, display);
 }
 
 void ecvDisplayTools::DisplayTexture2DPosition(QImage image,
@@ -4319,6 +4377,7 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
 void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param,
                                     bool update /* = false*/) {
     CC_DRAW_CONTEXT context;
+    context.display = param.context.display;
     switch (param.type) {
         case WIDGETS_TYPE::WIDGET_COORDINATE:
             break;
@@ -4539,9 +4598,9 @@ void ecvDisplayTools::addToOwnDB(ccHObject* obj, bool noDependency) {
 
 void ecvDisplayTools::removeFromOwnDB(ccHObject* obj) { RemoveFromOwnDB(obj); }
 
-QWidget* ecvDisplayTools::asWidget() { return m_currentScreen; }
+QWidget* ecvDisplayTools::asWidget() { return m_mainScreen; }
 
-const QWidget* ecvDisplayTools::asWidget() const { return m_currentScreen; }
+const QWidget* ecvDisplayTools::asWidget() const { return m_mainScreen; }
 
 bool ecvDisplayTools::hasOverriddenDisplayParameters() const {
     return m_overridenDisplayParametersEnabled;

@@ -262,52 +262,64 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
 }
 
 void cc2DLabel::clear3Dviews() {
+    auto makeParam = [this](WIDGETS_TYPE t, const QString& id) {
+        WIDGETS_PARAMETER p(t, id);
+        p.context.display = getDisplay();
+        return p;
+    };
+
     ecvDisplayTools::RemoveWidgets(
-            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID));
+            makeParam(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID));
 
     if (c_unitPointMarker) {
         for (int i = 0; i < 3; ++i) {
-            // ecvDisplayTools::RemoveWidgets(
-            //	WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYGONMESH,
-            //		QString::number(i) + m_sphereIdfix));
-            ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_SPHERE,
-                                      QString::number(i) + m_sphereIdfix));
+            ecvDisplayTools::RemoveWidgets(makeParam(
+                    WIDGETS_TYPE::WIDGET_POINT,
+                    QString::number(i) + m_sphereIdfix));
+            ecvDisplayTools::RemoveWidgets(makeParam(
+                    WIDGETS_TYPE::WIDGET_SPHERE,
+                    QString::number(i) + m_sphereIdfix));
         }
     }
 
     if (c_unitTriMarker) {
-        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix));
-        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix));
+        ecvDisplayTools::RemoveWidgets(
+                makeParam(WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix));
+        ecvDisplayTools::RemoveWidgets(
+                makeParam(WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix));
     }
 }
 
 void cc2DLabel::clear2Dviews() {
+    auto makeParam = [this](WIDGETS_TYPE t, const QString& id) {
+        WIDGETS_PARAMETER p(t, id);
+        p.context.display = getDisplay();
+        return p;
+    };
+
     if (!m_historyMessage.isEmpty()) {
         for (const QString& text : m_historyMessage) {
-            // no more valid? we delete the message
             ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, text));
+                    makeParam(WIDGETS_TYPE::WIDGET_T2D, text));
             ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text));
+                    makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text));
         }
         m_historyMessage.clear();
     }
 
     ecvDisplayTools::RemoveWidgets(
-            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
-    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-            WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
+            makeParam(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
+    ecvDisplayTools::RemoveWidgets(
+            makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
 }
 
 void cc2DLabel::clearLabel(bool ignoreCaption) {
     clear3Dviews();
     clear2Dviews();
     if (!ignoreCaption) {
-        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
+        WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
+        p.context.display = getDisplay();
+        ecvDisplayTools::RemoveWidgets(p);
     }
 }
 
@@ -863,7 +875,15 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     // ccDrawableObject::enableGLTransformation)
     if (MACRO_VirtualTransEnabled(context)) return;
 
-    if (!isRedraw()) {
+    // Labels must always update when the camera changes (zoom, rotate, pan)
+    // because their screen positions depend on 3D-to-2D projection.
+    // Only skip drawing if neither force-redraw nor model-redraw is set.
+    if (!isRedraw() && !context.forceRedraw) {
+        return;
+    }
+
+    ecvGenericGLDisplay* myDisp = getDisplay();
+    if (myDisp && context.display && myDisp != context.display) {
         return;
     }
 
@@ -1005,12 +1025,18 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
 
                 // draw triangle contour
                 if (c_unitTriMarker->getContour()) {
+                    if (context.display)
+                        c_unitTriMarker->getContour()->setDisplay(
+                                context.display);
                     markerContext.viewID = m_contourIdfix;
                     c_unitTriMarker->getContour()->setRedraw(true);
                     c_unitTriMarker->getContour()->draw(markerContext);
                 }
                 // draw triangle mesh surface
                 if (c_unitTriMarker->getPolygon()) {
+                    if (context.display)
+                        c_unitTriMarker->getPolygon()->setDisplay(
+                                context.display);
                     markerContext.viewID = m_surfaceIdfix;
                     c_unitTriMarker->getPolygon()->setRedraw(true);
                     c_unitTriMarker->getPolygon()->draw(markerContext);
@@ -1036,6 +1062,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
 
                 // we draw the line
                 WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
+                param.context.display = context.display;
                 param.setLineWidget(
                         LineWidget(lineSt, lineEd, lineWidth, lineColor));
                 ecvDisplayTools::DrawWidgets(param);
@@ -1080,6 +1107,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_POINT,
                                             QString::number(i) + m_sphereIdfix);
                     param.pointSize = LABEL_MARKER_PIXEL_SIZE;
+                    param.context.display = context.display;
                     m_pickedPoints[i].markerScale = LABEL_MARKER_PIXEL_SIZE;
                     param.center = P;
                     param.color = ecvColor::FromRgba(ecvColor::ored);
@@ -1197,10 +1225,11 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
             // we always project the points in 2D (maybe useful later, even when
             // displaying the label during the 2D pass!)
             ccGLCameraParameters camera;
-            // we can't use the context 'ccGLCameraParameters' (viewport,
-            // modelView matrix, etc. ) because it doesn't take the temporary
-            // 'GL transformation' into account!
-            ecvDisplayTools::GetGLCameraParameters(camera);
+            if (context.display && context.display != ecvDisplayTools::TheInstance()) {
+                context.display->getGLCameraParameters(camera);
+            } else {
+                ecvDisplayTools::GetGLCameraParameters(camera);
+            }
             for (size_t i = 0; i < count; i++) {
                 CCVector3 P3D = m_pickedPoints[i].getPointPosition();
                 camera.project(P3D, m_pickedPoints[i].pos2D);
@@ -1219,24 +1248,28 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         if (visibleCount) {
             // no need to display the point(s) legend in picking mode
             if (m_dispPointsLegend && !entityPickingMode) {
-                QFont font(ecvDisplayTools::
-                                   GetTextDisplayFont());  // takes rendering
-                                                           // zoom into account!
-                // font.setPointSize(font.pointSize() + 2);
-                font.setBold(true);
+                QFont font(ecvDisplayTools::GetTextDisplayFont());
+                {
+                    int basePt = font.pointSize();
+                    if (basePt < 6) basePt = 6;
+                    font.setPointSize(std::min(basePt, 9));
+                }
+                font.setBold(false);
                 static const QChar ABC[3] = {'A', 'B', 'C'};
 
                 // draw the label 'legend(s)'
                 for (size_t j = 0; j < count; j++) {
                     QString title;
                     if (count == 1)
-                        title = getName();  // for single-point labels we prefer
-                                            // the name
+                        title = getName();
                     else if (count == 3)
-                        title = ABC[j];  // for triangle-labels, we only display
-                                         // "A","B","C"
+                        title = ABC[j];
                     else
                         title = QString("P#%0").arg(m_pickedPoints[j].index);
+
+                    QString legendId = QString("%1_legend_%2")
+                                               .arg(this->getViewId())
+                                               .arg(j);
 
                     ecvDisplayTools::DisplayText(
                             title,
@@ -1245,8 +1278,9 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                             static_cast<int>(m_pickedPoints[j].pos2D.y) +
                                     context.labelMarkerTextShift_pix,
                             ecvDisplayTools::ALIGN_DEFAULT,
-                            context.labelOpacity / 100.0f, ecvColor::white.rgb,
-                            &font, this->getViewId());
+                            0.55f,
+                            ecvColor::white.rgb, &font, legendId,
+                            context.display);
                 }
             }
         } else {
@@ -1290,83 +1324,14 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                                                          // into account!
         titleFont = bodyFont;  // takes rendering zoom into account!
 
-        // CRITICAL FIX: Adaptively increase title font size on macOS for better
-        // visibility Only affects eCV2DLabel caption text, not other fonts
-        // Adjust based on screen resolution and DPI for compatibility across
-        // different displays CRITICAL: Always get current screen info (not
-        // cached) to handle display changes
-#ifdef Q_OS_MAC
-        int currentSize = titleFont.pointSize();
-        float scaleFactor = 1.0f;
-
-        // CRITICAL: Get the screen where the label is actually displayed
-        // This ensures correct scaling when window moves between displays
-        // Use the widget's screen if available, otherwise fall back to primary
-        // screen
-        QWidget* win = ecvDisplayTools::GetMainWindow();
-        QScreen* screen = nullptr;
-        int dpiScale = 1;
-
-        if (win) {
-            // Get the screen where the window is currently displayed
-            // This is critical for multi-monitor setups and display changes
-            screen = win->screen();
-            if (!screen) {
-                screen = QApplication::primaryScreen();
-            }
-            dpiScale = win->devicePixelRatio();
-        } else {
-            screen = QApplication::primaryScreen();
+        {
+            int bodyPt = bodyFont.pointSize();
+            int titlePt = titleFont.pointSize();
+            if (bodyPt < 8) bodyPt = 8;
+            if (titlePt < 9) titlePt = 9;
+            bodyFont.setPointSize(std::min(bodyPt, 11));
+            titleFont.setPointSize(std::min(titlePt, 12));
         }
-
-        if (screen) {
-            QSize screenSize = screen->size();
-            int screenWidth = screenSize.width();
-            int screenHeight = screenSize.height();
-            int screenDPI = screen->physicalDotsPerInch();
-
-            // Adaptive scaling based on resolution and DPI
-            // User requested: increase all scaling by 50% (multiply by 1.5)
-            if (screenWidth >= 3840 || screenHeight >= 2160) {
-                // 4K and above: Use moderate scaling (1.3x * 1.5 = 1.95x)
-                scaleFactor = 1.95f;
-            } else if (screenWidth >= 2560 || screenHeight >= 1440) {
-                // 2K resolution: Use higher scaling (1.5x * 1.5 = 2.25x)
-                scaleFactor = 2.25f;
-            } else if (screenWidth >= 1920 && screenHeight >= 1080) {
-                // 1080p: Use higher scaling (1.6x * 1.5 = 2.4x) for better
-                // visibility
-                scaleFactor = 2.4f;
-            } else {
-                // Lower resolution: Use even higher scaling (1.8x * 1.5 = 2.7x)
-                scaleFactor = 2.7f;
-            }
-
-            // Adjust for Retina displays (dpiScale > 1)
-            // Retina displays have higher pixel density, so they need less
-            // scaling For Retina (dpiScale = 2), reduce scaling by ~20% For
-            // non-Retina (dpiScale = 1), keep full scaling
-            if (dpiScale >= 2) {
-                // Retina display: reduce scaling since text is already sharper
-                scaleFactor *= 0.85f;  // Reduce by 15% for Retina
-            } else if (dpiScale > 1) {
-                // Partial scaling (rare case)
-                scaleFactor *= (1.0f - (dpiScale - 1.0f) * 0.15f);
-            }
-
-            // Adjust for DPI: Higher DPI screens need less scaling
-            // This provides fine-tuning based on physical DPI
-            if (screenDPI > 150) {
-                scaleFactor *= 0.95f;  // Reduce by 5% for very high DPI
-            } else if (screenDPI < 100) {
-                scaleFactor *= 1.05f;  // Increase by 5% for lower DPI
-            }
-        }
-
-        // Apply the calculated scale factor
-        int newSize = static_cast<int>(currentSize * scaleFactor);
-        titleFont.setPointSize(newSize);
-#endif
         // titleFont.setBold(true);
 
         QFontMetrics titleFontMetrics(titleFont);
@@ -1708,6 +1673,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
         WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CAPTION,
                                 this->getViewId());
+        param.context.display = context.display;
         param.center = position;
         // CRITICAL: m_labelROI uses logical pixels (calculated from
         // logicalW/logicalH) VtkVis::addCaption divides pos2D by
@@ -1762,7 +1728,14 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         param.color.a = defaultBkgColor.a / 255.0f;
         param.text = m_historyMessage.join("\n");
         param.text = param.text.trimmed();
-        param.fontSize = bodyFont.pointSize();
+        {
+            const float logicalH = context.glH / context.devicePixelRatio;
+            const float logicalW = context.glW / context.devicePixelRatio;
+            const float refDim = std::min(logicalW, logicalH);
+            int captionFontSize =
+                    std::max(10, std::min(static_cast<int>(refDim / 42.0f), 28));
+            param.fontSize = captionFontSize;
+        }
         ecvDisplayTools::DrawWidgets(param, false);
     }
 }

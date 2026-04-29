@@ -85,11 +85,10 @@ void ecvGui::ParamStruct::reset() {
 
 #ifdef Q_OS_MAC
     defaultFontSize = 12;
-    labelFontSize = 24;  // Increased to 1.5x (16 * 1.5) for better visibility
-                         // on macOS, especially Retina displays
+    labelFontSize = 24;
 #else
-    defaultFontSize = 10;
-    labelFontSize = 8;
+    defaultFontSize = 12;
+    labelFontSize = 14;
 #endif
 
     displayedNumPrecision = 6;

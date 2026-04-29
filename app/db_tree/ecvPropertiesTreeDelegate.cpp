@@ -1350,7 +1350,6 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
     switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
-            comboBox->addItem(tr("All Views"), -1);
             const auto& views = ecvViewManager::instance().getAllViews();
             for (auto* view : views) {
                 if (view) {
@@ -3739,11 +3738,9 @@ void ccPropertiesTreeDelegate::objectDisplayIndexChanged(int index) {
     if (!comboBox || index < 0) return;
 
     int viewID = comboBox->itemData(index).toInt();
-    ecvGenericGLDisplay* targetDisplay = nullptr;
-    if (viewID >= 0) {
-        targetDisplay = ecvViewManager::instance().findView(viewID);
-        if (!targetDisplay) return;
-    }
+    ecvGenericGLDisplay* targetDisplay =
+            ecvViewManager::instance().findView(viewID);
+    if (!targetDisplay) return;
 
     auto* oldDisplay = m_currentObject->getDisplay();
     if (oldDisplay == targetDisplay) return;

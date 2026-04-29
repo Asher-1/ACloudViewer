@@ -30,6 +30,7 @@
 #include "VtkUtils/vtkutils.h"
 
 // SYSTEM
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <vector>
@@ -1909,8 +1910,6 @@ bool VtkVis::updateCaption(const std::string& text,
                            int fontSize,
                            const std::string& viewID,
                            int viewport) {
-    Q_UNUSED(pos2D);
-    Q_UNUSED(a);
     Q_UNUSED(viewport);
     vtkAbstractWidget* widget = getWidgetById(viewID);
     if (!widget) return false;
@@ -1922,9 +1921,25 @@ bool VtkVis::updateCaption(const std::string& text,
     vtkCaptionRepresentation* rep = vtkCaptionRepresentation::SafeDownCast(
             captionWidget->GetRepresentation());
     if (rep) {
-        // rep->SetPosition(1.0 * pos2D.x / getRenderWindow()->GetSize()[0], 1.0
-        // * pos2D.y / getRenderWindow()->GetSize()[1]);
         rep->SetAnchorPosition(CCVector3d::fromArray(anchorPos.u).u);
+
+        const int* winSize = getRenderWindow()->GetSize();
+        const int winW = std::max(winSize[0], 1);
+        const int winH = std::max(winSize[1], 1);
+
+        rep->SetPosition(1.0 * pos2D.x / winW, 1.0 * pos2D.y / winH);
+
+        const int lineCount =
+                1 + static_cast<int>(
+                            std::count(text.begin(), text.end(), '\n'));
+        const double refH = 800.0;
+        const double scaleFactor = std::clamp(refH / winH, 0.6, 1.6);
+        const double baseW = std::clamp(0.30 * scaleFactor, 0.18, 0.50);
+        const double perLineH = 0.045 * scaleFactor;
+        const double captionH =
+                std::clamp(perLineH * lineCount + 0.03, 0.06, 0.55);
+        rep->SetPosition2(baseW, captionH);
+
         vtkCaptionActor2D* actor2D = rep->GetCaptionActor2D();
         actor2D->SetCaption(text.c_str());
 
@@ -1932,8 +1947,8 @@ bool VtkVis::updateCaption(const std::string& text,
                 actor2D->GetTextActor()->GetTextProperty();
         textProperty->SetColor(r, g, b);
         textProperty->SetFontSize(fontSize);
-        // Set line spacing to prevent text overlap between lines
-        // 1.2 means 20% extra spacing between lines (1.0 = no extra spacing)
+        textProperty->SetBackgroundColor(1.0 - r, 1.0 - g, 1.0 - b);
+        textProperty->SetBackgroundOpacity(std::max(a, 0.55));
         textProperty->SetLineSpacing(1.2);
     }
 
@@ -2002,9 +2017,24 @@ bool VtkVis::addCaption(const std::string& text,
     {
         captionRepresentation->SetAnchorPosition(
                 CCVector3d::fromArray(anchorPos.u).u);
-        captionRepresentation->SetPosition(
-                1.0 * pos2D.x / getRenderWindow()->GetSize()[0],
-                1.0 * pos2D.y / getRenderWindow()->GetSize()[1]);
+
+        const int* winSize = getRenderWindow()->GetSize();
+        const int winW = std::max(winSize[0], 1);
+        const int winH = std::max(winSize[1], 1);
+
+        captionRepresentation->SetPosition(1.0 * pos2D.x / winW,
+                                           1.0 * pos2D.y / winH);
+
+        const int lineCount =
+                1 + static_cast<int>(
+                            std::count(text.begin(), text.end(), '\n'));
+        const double refH = 800.0;
+        const double scaleFactor = std::clamp(refH / winH, 0.6, 1.6);
+        const double baseW = std::clamp(0.30 * scaleFactor, 0.18, 0.50);
+        const double perLineH = 0.045 * scaleFactor;
+        const double captionH =
+                std::clamp(perLineH * lineCount + 0.03, 0.06, 0.55);
+        captionRepresentation->SetPosition2(baseW, captionH);
     }
 
     vtkCaptionActor2D* actor2D = captionRepresentation->GetCaptionActor2D();
@@ -2021,9 +2051,8 @@ bool VtkVis::addCaption(const std::string& text,
     vtkTextProperty* textProperty = actor2D->GetTextActor()->GetTextProperty();
     textProperty->SetColor(r, g, b);
     textProperty->SetFontSize(fontSize);
-    const ecvColor::Rgbf& col = ecvColor::FromRgb(ecvColor::white);
-    textProperty->SetBackgroundColor(col.r, col.g, col.b);
-    textProperty->SetBackgroundOpacity(a);
+    textProperty->SetBackgroundColor(1.0 - r, 1.0 - g, 1.0 - b);
+    textProperty->SetBackgroundOpacity(std::max(a, 0.55));
     textProperty->FrameOn();
     textProperty->SetFrameColor(actorColor.r, actorColor.g, actorColor.b);
     textProperty->SetFrameWidth(2);
@@ -2032,8 +2061,6 @@ bool VtkVis::addCaption(const std::string& text,
     textProperty->SetFontFamilyToArial();
     textProperty->SetJustificationToLeft();
     textProperty->SetVerticalJustificationToCentered();
-    // Set line spacing to prevent text overlap between lines
-    // 1.2 means 20% extra spacing between lines (1.0 = no extra spacing)
     textProperty->SetLineSpacing(1.2);
 
     vtkSmartPointer<CustomVtkCaptionWidget> captionWidget =
@@ -3501,6 +3528,8 @@ VtkVis::CameraParams VtkVis::getCamera(int viewport) {
         camera.clip[0] = clipRange[0];
         camera.clip[1] = clipRange[1];
         camera.fovy = vtkCam->GetViewAngle() * M_PI / 180.0;
+        camera.parallelProjection = vtkCam->GetParallelProjection() != 0;
+        camera.parallelScale = vtkCam->GetParallelScale();
     }
     return camera;
 }
@@ -3508,6 +3537,81 @@ VtkVis::CameraParams VtkVis::getCamera(int viewport) {
 vtkSmartPointer<vtkCamera> VtkVis::getVtkCamera(int viewport) {
     vtkRenderer* ren = getCurrentRenderer(viewport);
     return ren ? ren->GetActiveCamera() : nullptr;
+}
+
+// ----------------------------------------------------------------
+// Camera undo / redo
+// ----------------------------------------------------------------
+
+void VtkVis::pushCameraState() {
+    CameraParams state = getCamera(0);
+    if (!m_cameraUndoStack.empty()) {
+        const auto& top = m_cameraUndoStack.back();
+        auto eq = [](const double* a, const double* b, int n) {
+            for (int i = 0; i < n; ++i)
+                if (std::abs(a[i] - b[i]) > 1e-12) return false;
+            return true;
+        };
+        if (eq(top.pos, state.pos, 3) && eq(top.focal, state.focal, 3) &&
+            eq(top.view, state.view, 3))
+            return;
+    }
+    m_cameraUndoStack.push_back(state);
+    while (static_cast<int>(m_cameraUndoStack.size()) > CAMERA_STACK_DEPTH) {
+        m_cameraUndoStack.pop_front();
+    }
+    m_cameraRedoStack.clear();
+}
+
+bool VtkVis::canCameraUndo() const {
+    return m_cameraUndoStack.size() > 0;
+}
+
+bool VtkVis::canCameraRedo() const {
+    return !m_cameraRedoStack.empty();
+}
+
+static void applyCameraState(vtkCamera* cam,
+                             const VtkVis::CameraParams& state) {
+    cam->SetPosition(state.pos);
+    cam->SetFocalPoint(state.focal);
+    cam->SetViewUp(state.view);
+    cam->SetClippingRange(state.clip);
+    cam->SetViewAngle(state.fovy * 180.0 / M_PI);
+    cam->SetParallelProjection(state.parallelProjection ? 1 : 0);
+    cam->SetParallelScale(state.parallelScale);
+}
+
+void VtkVis::cameraUndo() {
+    if (!canCameraUndo()) return;
+    m_inCameraUndoRedo = true;
+
+    m_cameraRedoStack.push_back(getCamera(0));
+    CameraParams state = m_cameraUndoStack.back();
+    m_cameraUndoStack.pop_back();
+
+    vtkSmartPointer<vtkCamera> cam = getVtkCamera(0);
+    if (cam) {
+        applyCameraState(cam, state);
+        UpdateScreen();
+    }
+    m_inCameraUndoRedo = false;
+}
+
+void VtkVis::cameraRedo() {
+    if (!canCameraRedo()) return;
+    m_inCameraUndoRedo = true;
+
+    m_cameraUndoStack.push_back(getCamera(0));
+    CameraParams state = m_cameraRedoStack.back();
+    m_cameraRedoStack.pop_back();
+
+    vtkSmartPointer<vtkCamera> cam = getVtkCamera(0);
+    if (cam) {
+        applyCameraState(cam, state);
+        UpdateScreen();
+    }
+    m_inCameraUndoRedo = false;
 }
 
 void VtkVis::setModelViewMatrix(const ccGLMatrixd& viewMat,
@@ -3918,6 +4022,17 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
         iren->SetInteractorStyle(ThreeDInteractorStyle);
         ThreeDInteractorStyle->Initialize();
         ThreeDInteractorStyle->setRendererCollection(rens_);
+
+        auto camUndoCb = vtkSmartPointer<vtkCallbackCommand>::New();
+        camUndoCb->SetClientData(this);
+        camUndoCb->SetCallback([](vtkObject*, unsigned long, void* cd, void*) {
+            auto* self = static_cast<VtkVis*>(cd);
+            if (self && !self->m_inCameraUndoRedo) {
+                self->pushCameraState();
+            }
+        });
+        ThreeDInteractorStyle->AddObserver(
+                vtkCommand::StartInteractionEvent, camUndoCb);
     }
     iren->SetDesiredUpdateRate(30.0);
     iren->Initialize();

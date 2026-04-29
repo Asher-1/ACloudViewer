@@ -633,26 +633,28 @@ gantt
 | `lockViewSize` / Preview | 简化版 `CentralWidgetFrame` max-size |
 | 帧间拖拽交换 | `ecvMultiViewFrameManager` drag-drop (mime + `swapViewFrames`) |
 | 布局 JSON 序列化 (`saveState`) | `ecvViewLayoutProxy::saveState()` |
+| 布局操作 Undo/Redo (`BEGIN_UNDO_SET`) | `ecvViewLayoutProxy::beginUndoSet/endUndoSet` (split/collapse/equalize/swap/maximize + splitter 拖动防抖) |
+| 布局持久化恢复 (session restore) | `loadState` 通过 `ecvViewManager::findView(view_id)` 重绑定视图指针 |
+| Tab/布局会话持久化 | `ecvTabbedMultiViewWidget::saveLayoutState/restoreLayoutState` + `QSettings` |
+| 空 cell 创建 UX (`pqEmptyView`) | `createEmptyCellWidget` ("Create Render View" 按钮 + view factory) |
+| Popout 布局到独立窗口 | `ecvMultiViewWidget::togglePopout()` + tab context menu |
+| Fullscreen 切换 (F11/Ctrl+F11) | `ecvTabbedMultiViewWidget::toggleFullScreen/toggleFullScreenActiveView` |
+| Splitter 样式 (4px gap) | `SPLITTER_GAP` + hover/pressed stylesheet |
+| Equalize Views (Horiz/Vert/Both) | `ecvViewLayoutProxy::equalize(Direction)` + Display 菜单 + 右键菜单 |
+| Per-view 背景/坐标轴独立控制 | View Properties 右键菜单 (Gradient Background / Orientation Axes / Camera Widget) |
 
 #### 部分实现（PARTIALLY）
 
 | 特性 | 差异 | 优先级 |
 |------|------|--------|
-| **布局持久化恢复** | `loadState` 恢复树结构但不恢复 view 指针（`view_id` → 实例映射未实现） | HIGH |
-| **Splitter resize → fraction** | 更新 `setSplitFraction` 但无 undo set | MEDIUM |
-| **Maximize 持久性** | `notifyChanged()` 清除 `m_maximizedCell`，行为与 PV 不同 | LOW |
 | **View frame 工具栏** | 有部分按钮（capture/camera/selection），无 hint-gated 完整集 | LOW |
-| **空 cell 创建 UX** | 空 cell 为 blank QWidget，无 "Create View" 按钮 | LOW |
 
 #### 未实现（MISSING）
 
 | 特性 | 说明 | 优先级 |
 |------|------|--------|
-| **布局操作 Undo/Redo** | ParaView `BEGIN_UNDO_SET` 包装 split/close/tab/resize | MEDIUM |
-| **完整 session restore** | XML/JSON 全局 session 包含 layouts + view 重绑定 | HIGH |
 | **Per-view camera undo/redo** | `pqCameraUndoRedoReaction` 每帧按钮 | LOW |
 | **"Convert To..." 视图类型切换** | 视图类型注册表 + 菜单（仅适用于多视图类型场景） | LOW |
-| **Popout 布局到独立窗口** | `togglePopout` 弹出布局为独立窗口 | LOW |
 
 #### 不适用（NOT_APPLICABLE）
 
@@ -679,9 +681,11 @@ gantt
 | 相机联动 | `vtkSMCameraLink` | `VtkCameraLink` |
 | 选择管理 | `pqSelectionManager` | `cvViewSelectionManager` + `cvPerViewSelectionManager` |
 | Per-view toolbar | `pqStandardViewFrameActionsImplementation` | `cvPerViewSelectionManager` |
-| 布局 Undo | `pqUndoStack` + `BEGIN_UNDO_SET` | **未实现** |
-| Session 恢复 | XML state + proxy locator | JSON 序列化（**部分**） |
-| 视图类型注册 | proxy definitions + "Convert To" | **未实现** |
+| 布局 Undo | `pqUndoStack` + `BEGIN_UNDO_SET` | `beginUndoSet/endUndoSet` (memento 模式) |
+| Session 恢复 | XML state + proxy locator | JSON + `view_id` 重绑定 + `QSettings` 持久化 |
+| 视图类型注册 | proxy definitions + "Convert To" | 单类型 (3D); 空 cell "Create Render View" 按钮 |
+| Per-view 属性 | RenderView Properties panel | 右键 "View Properties" 菜单 (背景/坐标轴) |
+| Popout / Fullscreen | `pqMultiViewWidget::togglePopout` | `togglePopout` + F11/Ctrl+F11 |
 
 ### Phase J — 关键运行时回归修复（2026-04-27）
 
@@ -718,6 +722,40 @@ gantt
 | `new3DView` | 返回 `ecvGLView*` 类型 |
 | `refreshAllViews` | 需要 `zoomGlobal()` 等 `ecvGLView` 特有 API |
 | `ecvMultiViewWidget::onCloseView/destroyAllViews` | 需要 `aboutToClose` 信号（ecvGLView 特有） |
+
+---
+
+### Phase K — 主视图初始化竞态修复（2026-04-27）
+
+**问题**：Phase J 修复后，3D 渲染视图显示在 **侧边栏** 而非中央 Layout 区域。Layout #1 tab 中央区域为空白灰色。
+
+**根因（Widget 生命周期竞态）**：
+
+1. `initParaViewLayoutSystem()` 将主视图 (`ecvDisplayTools::TheInstance()`) 分配到 layout cell 0
+2. `restoreLayoutState()` 从 QSettings 加载上次保存的分割布局（包含 `view_id: 1` 和 `view_id: 1001`）
+3. `loadState()` 执行 `m_tree.clear()`，**清除主视图分配**
+4. `reload()` 对包含 VTK widget 的旧 frame 调用 `deleteLater()`，主视图 widget 被 **孤立**
+5. `createLeafViews` 创建全新的 `ecvGLView` 实例填充空 cell，但主 `ecvDisplayTools` 实例浮在 MainWindow 上渲染到侧边栏
+
+| 变更类别 | 内容 | 文件 |
+|---------|------|------|
+| **reload() 保护 view widget** | 删除旧 frame 前先 `setParent(nullptr)` 分离 view widget，防止 `deleteLater()` 连带销毁 | `ecvMultiViewWidget.cpp` |
+| **延迟主视图分配** | `initParaViewLayoutSystem()` 不再分配主视图，仅创建空 tab；分配推迟到 `restoreLayoutState` 之后 | `MainWindow.cpp` |
+| **确保主视图始终在布局中** | `initial()` 新增 `ensurePrimaryViewInLayout` 逻辑：检查主视图是否在布局中，若未找到则查找第一个叶节点替换 | `MainWindow.cpp` |
+
+**初始化时序（修复后）**：
+
+```
+initial()
+  ├── initParaViewLayoutSystem()     → 创建空 tab (不分配主视图)
+  ├── setCentralWidget()
+  ├── restoreLayoutState()           → 从 QSettings 加载 (可能覆盖树结构)
+  ├── ensurePrimaryViewInLayout()    → 保证主视图占据一个 cell
+  └── setupShortcuts()
+
+showEvent()
+  └── restoreGUILayout()             → 恢复 dock/toolbar 布局 (不影响 central widget)
+```
 
 ---
 

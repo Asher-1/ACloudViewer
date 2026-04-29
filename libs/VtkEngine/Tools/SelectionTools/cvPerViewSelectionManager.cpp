@@ -9,6 +9,8 @@
 
 #include <ecvGenericGLDisplay.h>
 
+#include <QToolBar>
+
 cvPerViewSelectionManager::cvPerViewSelectionManager(QObject* parent)
     : QObject(parent) {}
 
@@ -92,29 +94,44 @@ void cvPerViewSelectionManager::populateToolbar(
         QWidget* viewWidget,
         const cvSelectionToolController::SelectionActions& actions) {
     if (!toolbar) return;
-    auto* tbLayout = toolbar->layout();
-    if (!tbLayout) return;
+    auto* qtb = qobject_cast<QToolBar*>(toolbar);
 
     const int iconSz = PV_ICON_SIZE;
 
-    auto addActionBtn = [toolbar, tbLayout,
+    auto addActionBtn = [toolbar, qtb,
                          iconSz](QAction* action) -> QToolButton* {
         if (!action) return nullptr;
+        if (qtb) {
+            qtb->addAction(action);
+            auto* btn =
+                    qobject_cast<QToolButton*>(qtb->widgetForAction(action));
+            if (btn) {
+                btn->setAutoRaise(true);
+                btn->setIconSize(QSize(iconSz, iconSz));
+            }
+            return btn;
+        }
         auto* btn = new QToolButton(toolbar);
         btn->setDefaultAction(action);
         btn->setAutoRaise(true);
         btn->setIconSize(QSize(iconSz, iconSz));
         btn->setFixedSize(iconSz + 6, iconSz + 6);
-        tbLayout->addWidget(btn);
+        if (toolbar->layout()) {
+            toolbar->layout()->addWidget(btn);
+        }
         return btn;
     };
 
-    auto addSeparator = [toolbar, tbLayout]() {
-        auto* sep = new QFrame(toolbar);
-        sep->setFrameShape(QFrame::VLine);
-        sep->setFrameShadow(QFrame::Sunken);
-        sep->setFixedWidth(2);
-        tbLayout->addWidget(sep);
+    auto addSeparator = [toolbar, qtb]() {
+        if (qtb) {
+            qtb->addSeparator();
+        } else if (toolbar->layout()) {
+            auto* sep = new QFrame(toolbar);
+            sep->setFrameShape(QFrame::VLine);
+            sep->setFrameShadow(QFrame::Sunken);
+            sep->setFixedWidth(2);
+            toolbar->layout()->addWidget(sep);
+        }
     };
 
     ecvGenericGLDisplay* display = ecvGenericGLDisplay::FromWidget(viewWidget);

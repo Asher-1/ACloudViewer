@@ -11,19 +11,53 @@
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
+
 #include <QApplication>
 #include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QSplitter>
+#include <QStyle>
+#include <QTimer>
 #include <QVBoxLayout>
+
+namespace {
+constexpr int SPLITTER_GAP = 4; // ParaView PARAVIEW_DEFAULT_LAYOUT_SPACING
+}
 
 ecvMultiViewWidget::ecvMultiViewWidget(QWidget* parent) : QWidget(parent) {
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(0);
+
+    m_contentContainer = new QWidget(this);
+    m_contentContainer->setObjectName("MVWContentContainer");
+    auto* containerLayout = new QVBoxLayout(m_contentContainer);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setSpacing(0);
+    rootLayout->addWidget(m_contentContainer);
+
+    auto* placeholderWidget = new QWidget();
+    auto* phLayout = new QVBoxLayout(placeholderWidget);
+    phLayout->setContentsMargins(20, 20, 20, 20);
+    auto* phLabel = new QLabel(tr("Layout shown in separate window"));
+    phLabel->setAlignment(Qt::AlignCenter);
+    phLayout->addStretch(1);
+    phLayout->addWidget(phLabel);
+    auto* restoreBtn = new QPushButton(tr("Click to restore"));
+    restoreBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    auto* btnLayout = new QHBoxLayout();
+    btnLayout->addStretch(1);
+    btnLayout->addWidget(restoreBtn);
+    btnLayout->addStretch(1);
+    phLayout->addWidget(restoreBtn, 0, Qt::AlignCenter);
+    phLayout->addStretch(1);
+    connect(restoreBtn, &QPushButton::clicked, this,
+            [this]() { togglePopout(); });
+    m_popoutPlaceholder.reset(placeholderWidget);
 
     qApp->installEventFilter(this);
 
@@ -77,14 +111,31 @@ int ecvMultiViewWidget::activeFrameLocation() const {
 // ============================================================================
 
 void ecvMultiViewWidget::reload() {
+    // Detach view widgets from their frame wrappers BEFORE deleting frames.
+    // buildCell() reparents view->asWidget() into a frame; when that frame is
+    // destroyed the view widget would be destroyed too.  Reparenting to nullptr
+    // first keeps the view widget alive so it can be re-wrapped in the new tree.
+    for (auto it = m_viewFrames.constBegin(); it != m_viewFrames.constEnd();
+         ++it) {
+        if (auto* display = it.key()) {
+            QWidget* vw = display->asWidget();
+            if (vw) {
+                vw->setParent(nullptr);
+                vw->hide();
+            }
+        }
+    }
+
     m_cellFrames.clear();
     m_viewFrames.clear();
+    m_activeFrame = nullptr;
 
-    auto* rootLayout = layout();
-    if (!rootLayout) return;
+    auto* containerLayout =
+            m_contentContainer ? m_contentContainer->layout() : nullptr;
+    if (!containerLayout) return;
 
     QLayoutItem* child;
-    while ((child = rootLayout->takeAt(0)) != nullptr) {
+    while ((child = containerLayout->takeAt(0)) != nullptr) {
         if (child->widget()) {
             child->widget()->setParent(nullptr);
             child->widget()->deleteLater();
@@ -96,7 +147,7 @@ void ecvMultiViewWidget::reload() {
 
     QWidget* rootWidget = buildCell(0);
     if (rootWidget) {
-        rootLayout->addWidget(rootWidget);
+        containerLayout->addWidget(rootWidget);
     }
 
     auto* activeView = ecvViewManager::instance().getActiveView();
@@ -114,11 +165,17 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         auto dir = m_layout->splitDirection(location);
         auto fraction = m_layout->splitFraction(location);
 
-        auto* splitter = new QSplitter(
+        Qt::Orientation qtDir =
                 dir == ecvViewLayoutProxy::HORIZONTAL ? Qt::Horizontal
-                                                     : Qt::Vertical,
-                this);
+                                                     : Qt::Vertical;
+        auto* splitter = new QSplitter(qtDir, this);
         splitter->setChildrenCollapsible(false);
+        splitter->setHandleWidth(SPLITTER_GAP);
+        splitter->setOpaqueResize(true);
+        splitter->setStyleSheet(QStringLiteral(
+                "QSplitter::handle { background: palette(window); }"
+                "QSplitter::handle:hover { background: palette(mid); }"
+                "QSplitter::handle:pressed { background: palette(highlight); }"));
         splitter->setProperty("CELL_INDEX", location);
 
         QWidget* left = buildCell(ecvViewLayoutProxy::firstChild(location));
@@ -127,13 +184,41 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         if (left) splitter->addWidget(left);
         if (right) splitter->addWidget(right);
 
-        int total = (dir == ecvViewLayoutProxy::HORIZONTAL) ? 1000 : 1000;
-        int leftSize = static_cast<int>(total * fraction);
-        splitter->setSizes({leftSize, total - leftSize});
+        int leftSize = static_cast<int>(1000 * fraction);
+        splitter->setSizes({leftSize, 1000 - leftSize});
+
+        QTimer::singleShot(0, splitter, [splitter, fraction]() {
+            if (!splitter->isVisible()) return;
+            int total = (splitter->orientation() == Qt::Horizontal)
+                                ? splitter->width()
+                                : splitter->height();
+            if (total > 0) {
+                int sz = static_cast<int>(total * fraction);
+                splitter->setSizes({sz, total - sz});
+            }
+        });
+
+        auto* undoTimer = new QTimer(splitter);
+        undoTimer->setSingleShot(true);
+        undoTimer->setInterval(500);
+        undoTimer->setProperty("_undoActive", false);
+        connect(undoTimer, &QTimer::timeout, this, [this, undoTimer]() {
+            if (m_layout && undoTimer->property("_undoActive").toBool()) {
+                m_layout->endUndoSet();
+                undoTimer->setProperty("_undoActive", false);
+            }
+        });
 
         connect(splitter, &QSplitter::splitterMoved, this,
-                [this, location, splitter](int, int) {
+                [this, location, splitter, undoTimer](int, int) {
                     if (!m_layout) return;
+                    if (!undoTimer->property("_undoActive").toBool()) {
+                        m_layout->beginUndoSet(
+                                QStringLiteral("Resize Split"));
+                        undoTimer->setProperty("_undoActive", true);
+                    }
+                    undoTimer->start();
+
                     QList<int> sizes = splitter->sizes();
                     int total = sizes[0] + sizes[1];
                     if (total > 0) {
@@ -177,9 +262,11 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         } else if (viewWidget) {
             frame = viewWidget;
         }
+        if (viewWidget && !viewWidget->isVisible()) {
+            viewWidget->show();
+        }
     } else {
-        frame = new QWidget(this);
-        frame->setMinimumSize(50, 50);
+        frame = createEmptyCellWidget(location);
     }
 
     if (frame) {
@@ -197,13 +284,76 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
 }
 
 // ============================================================================
+// Empty cell placeholder (ParaView pqEmptyView / "Create View" pattern)
+// ============================================================================
+
+QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
+    auto* frame = new QFrame(this);
+    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    frame->setMinimumSize(50, 50);
+
+    auto* layout = new QVBoxLayout(frame);
+    layout->setContentsMargins(20, 20, 20, 20);
+
+    layout->addStretch(1);
+
+    auto* icon = new QLabel(frame);
+    icon->setAlignment(Qt::AlignCenter);
+    icon->setText(QStringLiteral("\xF0\x9F\x96\xBC"));
+    icon->setStyleSheet(QStringLiteral("font-size: 32px;"));
+    layout->addWidget(icon);
+
+    auto* label = new QLabel(tr("No view created for this cell"), frame);
+    label->setAlignment(Qt::AlignCenter);
+    label->setWordWrap(true);
+    label->setStyleSheet(
+            QStringLiteral("color: palette(mid); font-size: 11pt;"));
+    layout->addWidget(label);
+
+    layout->addSpacing(10);
+
+    auto* btnRow = new QHBoxLayout();
+    btnRow->addStretch(1);
+
+    auto* createBtn = new QPushButton(tr("Create Render View"), frame);
+    createBtn->setIcon(frame->style()->standardIcon(
+            QStyle::SP_DesktopIcon));
+    createBtn->setIconSize(QSize(16, 16));
+    createBtn->setCursor(Qt::PointingHandCursor);
+    createBtn->setStyleSheet(QStringLiteral(
+            "QPushButton { padding: 6px 16px; font-weight: bold; }"));
+
+    connect(createBtn, &QPushButton::clicked, this,
+            [this, location]() {
+                if (!m_viewFactory || !m_layout) return;
+                auto* newView = m_viewFactory();
+                if (!newView) return;
+                m_layout->assignView(location, newView);
+            });
+
+    btnRow->addWidget(createBtn);
+    btnRow->addStretch(1);
+    layout->addLayout(btnRow);
+
+    layout->addStretch(1);
+
+    return frame;
+}
+
+// ============================================================================
 // Activation (ParaView pqMultiViewWidget::makeActive pattern)
 // ============================================================================
 
 bool ecvMultiViewWidget::eventFilter(QObject* caller, QEvent* evt) {
     if (evt->type() == QEvent::MouseButtonPress) {
         auto* wdg = qobject_cast<QWidget*>(caller);
-        if (wdg && (isAncestorOf(wdg) || wdg == this)) {
+        bool isInScope = wdg && (isAncestorOf(wdg) || wdg == this);
+        if (!isInScope && m_poppedOut && m_popoutWindow &&
+            (m_popoutWindow->isAncestorOf(wdg) ||
+             wdg == m_popoutWindow.data())) {
+            isInScope = true;
+        }
+        if (isInScope) {
             for (auto it = m_cellFrames.begin(); it != m_cellFrames.end();
                  ++it) {
                 QWidget* frame = it.value();
@@ -213,6 +363,9 @@ bool ecvMultiViewWidget::eventFilter(QObject* caller, QEvent* evt) {
                 }
             }
         }
+    } else if (evt->type() == QEvent::Close &&
+               caller == m_popoutWindow.data()) {
+        togglePopout();
     }
     return QWidget::eventFilter(caller, evt);
 }
@@ -280,38 +433,80 @@ void ecvMultiViewWidget::markActive(ecvGenericGLDisplay* view) {
 }
 
 // ============================================================================
+// Popout (ParaView pqMultiViewWidget::togglePopout pattern)
+// ============================================================================
+
+bool ecvMultiViewWidget::togglePopout() {
+    m_poppedOut = !m_poppedOut;
+
+    if (m_poppedOut) {
+        if (!m_popoutWindow) {
+            auto* win = new QWidget(
+                    this, Qt::Window | Qt::CustomizeWindowHint |
+                                  Qt::WindowTitleHint |
+                                  Qt::WindowMaximizeButtonHint |
+                                  Qt::WindowCloseButtonHint);
+            win->setObjectName("PopoutWindow");
+            auto* wl = new QVBoxLayout(win);
+            wl->setContentsMargins(0, 0, 0, 0);
+            win->resize(this->size());
+            m_popoutWindow.reset(win);
+        }
+
+        QString title = m_layout ? m_layout->name() : tr("Layout");
+        m_popoutWindow->setWindowTitle(title);
+
+        layout()->removeWidget(m_contentContainer);
+        layout()->addWidget(m_popoutPlaceholder.data());
+        m_popoutPlaceholder->show();
+
+        m_popoutWindow->layout()->addWidget(m_contentContainer);
+        m_popoutWindow->show();
+    } else {
+        Q_ASSERT(m_popoutWindow);
+        m_popoutWindow->hide();
+        m_popoutWindow->layout()->removeWidget(m_contentContainer);
+
+        m_popoutPlaceholder->hide();
+        layout()->removeWidget(m_popoutPlaceholder.data());
+        layout()->addWidget(m_contentContainer);
+    }
+    return m_poppedOut;
+}
+
+// ============================================================================
 // Split / Close / Maximize
 // ============================================================================
 
 void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
-    if (!m_layout || !m_viewFactory) return;
+    if (!m_layout) return;
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    auto* newView = m_viewFactory();
-    if (!newView) return;
-
     int child = m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
-    if (child >= 0) {
-        int newCell = ecvViewLayoutProxy::secondChild(
-                ecvViewLayoutProxy::parent(child));
-        m_layout->assignView(newCell, newView);
+    if (child >= 0 && m_viewFactory) {
+        auto* newView = m_viewFactory();
+        if (newView) {
+            int newCell = ecvViewLayoutProxy::secondChild(
+                    ecvViewLayoutProxy::parent(child));
+            m_layout->assignView(newCell, newView);
+        }
     }
 }
 
 void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
-    if (!m_layout || !m_viewFactory) return;
+    if (!m_layout) return;
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    auto* newView = m_viewFactory();
-    if (!newView) return;
-
     int child = m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
-    if (child >= 0) {
-        int newCell = ecvViewLayoutProxy::secondChild(
-                ecvViewLayoutProxy::parent(child));
-        m_layout->assignView(newCell, newView);
+    if (child >= 0 && m_viewFactory) {
+        auto* newView = m_viewFactory();
+        if (newView) {
+            int newCell = ecvViewLayoutProxy::secondChild(
+                    ecvViewLayoutProxy::parent(child));
+            m_layout->assignView(newCell, newView);
+        }
     }
 }
 
@@ -336,6 +531,15 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
         auto* glView = dynamic_cast<ecvGLView*>(view);
         if (glView) {
             emit glView->aboutToClose(glView);
+            QWidget* vw = glView->asWidget();
+            if (vw) {
+                vw->setParent(nullptr);
+                vw->hide();
+            }
+            QTimer::singleShot(0, this, [glView, vw]() {
+                glView->deleteLater();
+                if (vw) vw->deleteLater();
+            });
         }
     }
 
@@ -391,8 +595,15 @@ void ecvMultiViewWidget::reset() {
     }
 }
 
-void ecvMultiViewWidget::destroyAllViews() {
-    if (!m_layout) return;
+QList<ecvGLView*> ecvMultiViewWidget::destroyAllViews() {
+    QList<ecvGLView*> orphaned;
+    if (!m_layout) return orphaned;
+
+    if (m_layout) {
+        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged,
+                   this, &ecvMultiViewWidget::reload);
+    }
+
     auto views = m_layout->getViews();
     for (auto* v : views) {
         emit viewClosing(v);
@@ -400,8 +611,11 @@ void ecvMultiViewWidget::destroyAllViews() {
         auto* glView = dynamic_cast<ecvGLView*>(v);
         if (glView) {
             emit glView->aboutToClose(glView);
+            orphaned.append(glView);
         }
     }
+
+    return orphaned;
 }
 
 // ============================================================================

@@ -302,6 +302,7 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
         m_ctx.viewportParams.setPivotPoint(center, true);
         if (m_visualizer3D) {
             m_visualizer3D->resetCamera(box);
+            m_visualizer3D->getRenderWindow()->Render();
         }
     } else {
         zoomGlobal();

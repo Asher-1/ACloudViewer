@@ -13,7 +13,7 @@
 class qCSVMatrixIO : public QObject, public ccIOPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qCSVMatrixIO" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qCSVMatrixIO" FILE
                           "../info.json")
 
 public:

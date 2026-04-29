@@ -7,26 +7,33 @@
 
 #pragma once
 
-#include <QTabWidget>
+#include <QFrame>
+#include <QJsonObject>
 #include <QList>
+#include <QPointer>
+#include <QStyle>
+#include <QTabBar>
+#include <QTabWidget>
 #include <functional>
 
 class ecvMultiViewWidget;
 class ecvViewLayoutProxy;
 class ecvGLView;
 class ecvGenericGLDisplay;
-class QToolButton;
-
 /// Tabbed container for multiple layout widgets.
 ///
 /// Directly mirrors ParaView's pqTabbedMultiViewWidget:
 ///   - Each tab is one ecvMultiViewWidget backed by one ecvViewLayoutProxy
-///   - "+" button to create new tabs
-///   - Tab close / rename
+///   - "+" tab to create new layouts (positioned after last real tab)
+///   - Per-tab popout and close buttons
+///   - Tab right-click context menu (rename, close, equalize)
+///   - Read-only mode (hides "+" tab and close buttons)
 ///   - Tab switch activates the appropriate view frame
+///   - Full-screen mode for all views or active view only
 ///   - Manages layout proxy lifecycle
 class ecvTabbedMultiViewWidget : public QWidget {
     Q_OBJECT
+    Q_PROPERTY(bool readOnly READ readOnly WRITE setReadOnly)
 
 public:
     explicit ecvTabbedMultiViewWidget(QWidget* parent = nullptr);
@@ -47,11 +54,23 @@ public:
     /// Get all views across all tabs.
     QList<ecvGenericGLDisplay*> allViews() const;
 
-    /// Tab count.
+    /// Number of real layout tabs (excludes the "+" tab).
     int tabCount() const;
+
+    /// Returns the size of the current tab's content area.
+    QSize clientSize() const;
 
     /// Whether frame decorations are visible.
     bool decorationsVisibility() const { return m_decorationsVisible; }
+
+    /// When true, user cannot add/remove tabs (hides "+" tab and close
+    /// buttons). Mirrors ParaView's readOnly property.
+    void setReadOnly(bool val);
+    bool readOnly() const { return m_readOnly; }
+
+    /// Tab bar visibility, independent of decoration visibility.
+    void setTabVisibility(bool visible);
+    bool tabVisibility() const { return m_tabBarVisible; }
 
     /// Set the factory for creating new views.
     using ViewFactory = std::function<ecvGLView*()>;
@@ -72,14 +91,24 @@ public:
     /// The underlying QTabWidget (for MainWindow to access tab bar, etc.).
     QTabWidget* tabWidget() const { return m_tabWidget; }
 
+    /// Save the full layout state (all tabs + structure) for session persistence.
+    QJsonObject saveLayoutState() const;
+
+    /// Restore layout state from a previously saved JSON object.
+    bool restoreLayoutState(const QJsonObject& state);
+
 signals:
     /// Forwarded from each ecvMultiViewWidget: a view is about to be
     /// removed/destroyed. Receivers should perform cleanup before the view
     /// is actually detached (unregister, camera-link removal, etc.).
     void viewClosing(ecvGenericGLDisplay* view);
 
+    /// Emitted when the active tab changes.
+    void currentTabChanged(int index);
+
     void viewSizeLocked(bool locked);
     void fullScreenEnabled(bool enabled);
+    void fullScreenActiveViewEnabled(bool enabled);
 
 public slots:
     /// Create a new tab with an empty layout. Returns the tab index.
@@ -88,7 +117,8 @@ public slots:
     /// Create a new tab with a view already in it. Returns the tab index.
     int createTabWithView(ecvGLView* view);
 
-    /// Close a tab by index.
+    /// Close a tab by index. If all real tabs are closed, a new one is
+    /// automatically created (ParaView behavior).
     void closeTab(int index);
 
     /// Set the current tab.
@@ -97,11 +127,17 @@ public slots:
     /// Show/hide all decorations (title bars + tab bar).
     void setDecorationsVisibility(bool visible);
 
+    /// Toggle decoration visibility.
+    void toggleWidgetDecoration();
+
     /// Lock view sizes.
     void lockViewSize(const QSize& size);
 
-    /// Toggle fullscreen mode.
+    /// Toggle fullscreen mode (reparents TabWidget into a fullscreen window).
     void toggleFullScreen();
+
+    /// Toggle fullscreen for the active render view only (Ctrl+F11).
+    void toggleFullScreenActiveView();
 
     /// Reset all tabs.
     void reset();
@@ -109,18 +145,32 @@ public slots:
     /// Preview layout at specific size.
     QSize preview(const QSize& previewSize = QSize());
 
+protected:
+    bool eventFilter(QObject* obj, QEvent* evt) override;
+
 protected slots:
     void onCurrentTabChanged(int index);
     void onTabCloseRequested(int index);
 
 private:
     ecvMultiViewWidget* createMultiViewWidget(ecvViewLayoutProxy* layout);
-    void setupPlusButton();
+    void addNewTabWidget();
+    void removeNewTabWidget();
+    void setupTabButtons(int tabIndex);
+    int tabButtonIndex(QWidget* button, QTabBar::ButtonPosition pos) const;
+
+    static constexpr int TAB_BUTTON_PIXMAP_SIZE = 16;
+    static QString popoutTooltip(bool poppedOut);
+    static QStyle::StandardPixmap popoutPixmap(bool poppedOut);
 
     QTabWidget* m_tabWidget;
-    QToolButton* m_plusButton;
+    QWidget* m_newTabWidget = nullptr;
+    QPointer<QWidget> m_fullScreenWindow;
+    QPointer<QFrame> m_fullScreenActiveFrame;
     int m_layoutCounter = 0;
     bool m_decorationsVisible = true;
+    bool m_readOnly = false;
+    bool m_tabBarVisible = true;
 
     ViewFactory m_viewFactory;
     FrameFactory m_frameFactory;

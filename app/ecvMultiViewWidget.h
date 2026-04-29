@@ -10,6 +10,7 @@
 #include <QWidget>
 #include <QMap>
 #include <QPointer>
+#include <QScopedPointer>
 #include <QVector>
 #include <functional>
 
@@ -72,8 +73,17 @@ public:
     /// Whether view frame decorations (title bar) are visible.
     bool decorationsVisibility() const { return m_decorationsVisible; }
 
-    /// Destroy all views in this layout.
-    void destroyAllViews();
+    /// Whether the layout is currently popped out into a separate window.
+    bool isPoppedOut() const { return m_poppedOut; }
+
+    /// Toggle popout: moves the layout content into a floating window
+    /// (or restores it back). Returns true if now popped out.
+    /// Mirrors ParaView's pqMultiViewWidget::togglePopout().
+    bool togglePopout();
+
+    /// Destroy all views in this layout.  Returns the list of ecvGLView
+    /// pointers that were detached (caller may schedule deletion).
+    QList<ecvGLView*> destroyAllViews();
 
 signals:
     /// Emitted when the active frame changes (click on a view).
@@ -122,6 +132,10 @@ private:
     /// Recursively build the splitter tree for a KD-tree cell.
     QWidget* buildCell(int location);
 
+    /// Create the placeholder widget shown for empty (no-view) cells.
+    /// Provides a "Create View" button that fills the cell with a new view.
+    QWidget* createEmptyCellWidget(int location);
+
     /// Find the frame for a given view.
     QWidget* findFrameForView(ecvGenericGLDisplay* view) const;
 
@@ -131,6 +145,11 @@ private:
     ecvViewLayoutProxy* m_layout = nullptr;
     QWidget* m_activeFrame = nullptr;
     bool m_decorationsVisible = true;
+    bool m_poppedOut = false;
+
+    QScopedPointer<QWidget> m_popoutWindow;
+    QScopedPointer<QWidget> m_popoutPlaceholder;
+    QWidget* m_contentContainer = nullptr;
 
     ViewFactory m_viewFactory;
     FrameFactory m_frameFactory;

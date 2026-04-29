@@ -17,13 +17,17 @@
 // Qt
 #include <QDrag>
 #include <QGuiApplication>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMimeData>
 #include <QScreen>
 #include <QSettings>
+#include <QShortcut>
 #include <QSplitter>
 #include <QTabBar>
 #include <QThread>
 #include <QTimer>
+#include <QToolBar>
 #include <QToolButton>
 
 // Standard
@@ -697,7 +701,7 @@ void MainWindow::initial() {
 #endif
 
     QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
-    viewWidget->setMinimumSize(400, 300);
+    viewWidget->setMinimumSize(0, 0);
     m_layoutCounter = 1;
 
     // Register the display BEFORE creating the view frame, so that
@@ -742,11 +746,34 @@ void MainWindow::initial() {
     if (m_pickingHub) {
         connect(this, &QObject::destroyed, m_pickingHub,
                 &ccPickingHub::onActiveWindowDeleted);
+        m_pickingHub->onActiveViewWidgetChanged(viewWidget);
     }
 
+    QWidget* oldCentralWidget = QMainWindow::centralWidget();
     initParaViewLayoutSystem();
     setCentralWidget(m_tabbedMultiView);
+    if (oldCentralWidget && oldCentralWidget != m_tabbedMultiView) {
+        oldCentralWidget->hide();
+        oldCentralWidget->setParent(nullptr);
+        oldCentralWidget->deleteLater();
+    }
     m_tabbedMultiView->installEventFilter(this);
+
+    // Place the primary ecvDisplayTools instance in the first cell of the
+    // first tab. ParaView always starts with a single tab / single view;
+    // additional tabs and views are created by the user at runtime. Layout
+    // state from the previous session is saved for persistence, but on
+    // startup we only restore the split structure of the FIRST tab (not
+    // extra tabs or extra views) to keep the one-view default.
+    {
+        auto* primaryView = ecvDisplayTools::TheInstance();
+        auto* mvw = m_tabbedMultiView->currentMultiView();
+        auto* layout = mvw ? mvw->layoutManager() : nullptr;
+        if (primaryView && layout) {
+            layout->assignView(0, primaryView);
+        }
+    }
+
 
     QTimer::singleShot(0, this, [this]() {
         ecvDisplayTools::InvalidateViewport();
@@ -822,17 +849,11 @@ void MainWindow::initParaViewLayoutSystem() {
     connect(m_tabbedMultiView, &ecvTabbedMultiViewWidget::viewClosing, this,
             &MainWindow::onViewClosingFromLayout);
 
-    // Create first tab with the primary view already assigned.
-    // ecvTabbedMultiViewWidget::createTab creates a layout proxy + multi-view
-    // widget internally. We then assign the primary view to that layout's
-    // root cell (location 0).
     int firstTab = m_tabbedMultiView->createTab();
     auto* firstMvw = qobject_cast<ecvMultiViewWidget*>(
             m_tabbedMultiView->tabWidget()->widget(firstTab));
     if (firstMvw && firstMvw->layoutManager()) {
-        auto* layout = firstMvw->layoutManager();
-        layout->assignView(0, ecvDisplayTools::TheInstance());
-        ecvViewManager::instance().registerLayout(layout);
+        ecvViewManager::instance().registerLayout(firstMvw->layoutManager());
     }
 }
 
@@ -1369,6 +1390,180 @@ void MainWindow::connectActions() {
         m_ui->ViewToolBar->addAction(linkCamerasAction);
         displayMenu->addSeparator();
         displayMenu->addAction(linkCamerasAction);
+
+        auto* eqMenu = displayMenu->addMenu(tr("Equalize Views"));
+        eqMenu->addAction(tr("Horizontally"), [this]() {
+            if (auto* mvw = m_tabbedMultiView
+                                    ? m_tabbedMultiView->currentMultiView()
+                                    : nullptr) {
+                if (mvw->layoutManager())
+                    mvw->layoutManager()->equalize(
+                            ecvViewLayoutProxy::HORIZONTAL);
+            }
+        });
+        eqMenu->addAction(tr("Vertically"), [this]() {
+            if (auto* mvw = m_tabbedMultiView
+                                    ? m_tabbedMultiView->currentMultiView()
+                                    : nullptr) {
+                if (mvw->layoutManager())
+                    mvw->layoutManager()->equalize(
+                            ecvViewLayoutProxy::VERTICAL);
+            }
+        });
+        eqMenu->addAction(tr("Both"), [this]() {
+            if (auto* mvw = m_tabbedMultiView
+                                    ? m_tabbedMultiView->currentMultiView()
+                                    : nullptr) {
+                if (mvw->layoutManager())
+                    mvw->layoutManager()->equalize();
+            }
+        });
+
+        // Preview submenu (ParaView pqPreviewMenuManager)
+        {
+            auto* previewMenu = displayMenu->addMenu(
+                    QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
+                    tr("Preview"));
+
+            struct PreviewPreset {
+                int w, h;
+                const char* label;
+            };
+            static const PreviewPreset presets[] = {
+                    {1280, 720, "1280 \xc3\x97 720 (HD)"},
+                    {1280, 800, "1280 \xc3\x97 800 (WXGA)"},
+                    {1280, 1024, "1280 \xc3\x97 1024 (SXGA)"},
+                    {1600, 900, "1600 \xc3\x97 900 (HD+)"},
+                    {1920, 1080, "1920 \xc3\x97 1080 (FHD)"},
+                    {3840, 2160, "3840 \xc3\x97 2160 (4K UHD)"},
+            };
+            auto* previewGroup = new QActionGroup(previewMenu);
+            previewGroup->setExclusive(false);
+
+            for (const auto& p : presets) {
+                auto* act = previewMenu->addAction(QString::fromUtf8(p.label));
+                act->setCheckable(true);
+                act->setData(QSize(p.w, p.h));
+                previewGroup->addAction(act);
+                connect(act, &QAction::triggered, this,
+                        [this, act, previewGroup]() {
+                            QSize sz = act->data().toSize();
+                            bool entering = act->isChecked();
+                            for (auto* other : previewGroup->actions()) {
+                                if (other != act && other->isChecked()) {
+                                    QSignalBlocker blk(other);
+                                    other->setChecked(false);
+                                }
+                            }
+                            lockViewSize(entering ? sz : QSize());
+                        });
+            }
+
+            previewMenu->addSeparator();
+            previewMenu->addAction(tr("Custom..."), this, [this, previewGroup]() {
+                bool ok = false;
+                int w = QInputDialog::getInt(this, tr("Preview Size"),
+                                             tr("Width:"), 800, 50, 7680, 1, &ok);
+                if (!ok) return;
+                int h = QInputDialog::getInt(this, tr("Preview Size"),
+                                             tr("Height:"), 600, 50, 4320, 1, &ok);
+                if (!ok) return;
+                for (auto* a : previewGroup->actions()) {
+                    if (a->isChecked()) {
+                        QSignalBlocker blk(a);
+                        a->setChecked(false);
+                    }
+                }
+                lockViewSize(QSize(w, h));
+            });
+        }
+
+        // Full Screen (ParaView pqViewMenuManager)
+        {
+            displayMenu->addSeparator();
+            auto* fsLayoutAct = displayMenu->addAction(
+                    tr("Full Screen (Layout)"), [this]() {
+                        if (m_tabbedMultiView)
+                            m_tabbedMultiView->toggleFullScreen();
+                    });
+            fsLayoutAct->setShortcut(QKeySequence(Qt::Key_F11));
+            fsLayoutAct->setShortcutContext(Qt::ApplicationShortcut);
+
+            auto* fsActiveAct = displayMenu->addAction(
+                    tr("Full Screen (Active View)"), [this]() {
+                        if (m_tabbedMultiView)
+                            m_tabbedMultiView->toggleFullScreenActiveView();
+                    });
+            fsActiveAct->setShortcut(
+                    QKeySequence(Qt::CTRL | Qt::Key_F11));
+            fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
+        }
+
+        displayMenu->addSeparator();
+
+        auto* undoLayoutAct =
+                displayMenu->addAction(tr("Undo Layout"), [this]() {
+                    if (auto* layout = m_tabbedMultiView
+                                               ? m_tabbedMultiView->layoutProxy()
+                                               : nullptr) {
+                        if (layout->canUndo()) layout->undo();
+                    }
+                });
+        undoLayoutAct->setShortcut(
+                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z));
+        undoLayoutAct->setEnabled(false);
+
+        auto* redoLayoutAct =
+                displayMenu->addAction(tr("Redo Layout"), [this]() {
+                    if (auto* layout = m_tabbedMultiView
+                                               ? m_tabbedMultiView->layoutProxy()
+                                               : nullptr) {
+                        if (layout->canRedo()) layout->redo();
+                    }
+                });
+        redoLayoutAct->setShortcut(
+                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Y));
+        redoLayoutAct->setEnabled(false);
+
+        auto updateUndoRedoState = [undoLayoutAct, redoLayoutAct,
+                                    this]() {
+            auto* layout = m_tabbedMultiView
+                                   ? m_tabbedMultiView->layoutProxy()
+                                   : nullptr;
+            bool canU = layout && layout->canUndo();
+            bool canR = layout && layout->canRedo();
+            undoLayoutAct->setEnabled(canU);
+            redoLayoutAct->setEnabled(canR);
+            undoLayoutAct->setText(
+                    canU ? tr("Undo Layout: %1").arg(layout->undoLabel())
+                         : tr("Undo Layout"));
+            redoLayoutAct->setText(
+                    canR ? tr("Redo Layout: %1").arg(layout->redoLabel())
+                         : tr("Redo Layout"));
+        };
+
+        connect(m_tabbedMultiView,
+                &ecvTabbedMultiViewWidget::currentTabChanged, this,
+                [updateUndoRedoState, this]() {
+                    updateUndoRedoState();
+                    auto* layout = m_tabbedMultiView
+                                           ? m_tabbedMultiView->layoutProxy()
+                                           : nullptr;
+                    if (layout) {
+                        connect(layout,
+                                &ecvViewLayoutProxy::undoRedoChanged,
+                                this, updateUndoRedoState,
+                                Qt::UniqueConnection);
+                    }
+                });
+
+        if (auto* firstLayout = m_tabbedMultiView
+                                        ? m_tabbedMultiView->layoutProxy()
+                                        : nullptr) {
+            connect(firstLayout,
+                    &ecvViewLayoutProxy::undoRedoChanged, this,
+                    updateUndoRedoState, Qt::UniqueConnection);
+        }
     }
 
     // Lock View Size (ParaView-style: Tools → Lock View Size)
@@ -2412,7 +2607,17 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
         newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
     }
 
-    view->redraw();
+    // Defer the full redraw until the widget is shown in the layout with
+    // a valid size.  Calling Render() before the FBO is properly initialised
+    // causes driver-dependent artefacts (often bright green on Mesa/NVIDIA).
+    // A 100 ms delay gives the layout time to assign geometry.
+    QTimer::singleShot(100, view, [view]() {
+        if (!view) return;
+        QWidget* w = view->asWidget();
+        if (w && w->isVisible() && w->width() > 0 && w->height() > 0) {
+            view->redraw();
+        }
+    });
 }
 
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
@@ -2615,37 +2820,17 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
 #if defined(USE_VTK_BACKEND)
     // --- Per-view toolbar (ParaView pqViewFrame ToolBar) ---
-    // NOTE: We use a plain QWidget + QHBoxLayout instead of QToolBar because
-    // QMainWindow auto-reparents any QToolBar descendant, which would steal
-    // the toolbar out of the view frame.
-    static constexpr int PV_ICON_SIZE = 24;
-    auto* viewToolBar = new QWidget(titleBar);
+    // ParaView creates a QToolBar parented to pqViewFrame (not QMainWindow),
+    // which avoids QMainWindow's auto-reparenting of QToolBars. We follow
+    // the same pattern: parent is titleBar (inside the frame, not QMainWindow).
+    static constexpr int PV_ICON_SIZE = 18;
+    auto* viewToolBar = new QToolBar(titleBar);
     viewToolBar->setObjectName("ViewSelectionToolBar");
-    viewToolBar->setMinimumHeight(PV_ICON_SIZE + 4);
-    viewToolBar->setStyleSheet("QToolButton{padding:1px;margin:0;}");
-    auto* tbLayout = new QHBoxLayout(viewToolBar);
-    tbLayout->setContentsMargins(0, 0, 0, 0);
-    tbLayout->setSpacing(1);
-
-    const int pvIconSz = PV_ICON_SIZE;
-    auto makeToolBtn = [viewToolBar, pvIconSz](const QIcon& icon,
-                                               const QString& tip) {
-        auto* btn = new QToolButton(viewToolBar);
-        btn->setIcon(icon);
-        btn->setToolTip(tip);
-        btn->setAutoRaise(true);
-        btn->setIconSize(QSize(pvIconSz, pvIconSz));
-        btn->setFixedSize(pvIconSz + 6, pvIconSz + 6);
-        return btn;
-    };
-
-    auto addSeparator = [viewToolBar, tbLayout]() {
-        auto* sep = new QFrame(viewToolBar);
-        sep->setFrameShape(QFrame::VLine);
-        sep->setFrameShadow(QFrame::Sunken);
-        sep->setFixedWidth(2);
-        tbLayout->addWidget(sep);
-    };
+    viewToolBar->setIconSize(QSize(PV_ICON_SIZE, PV_ICON_SIZE));
+    viewToolBar->layout()->setSpacing(0);
+    viewToolBar->layout()->setContentsMargins(0, 0, 0, 0);
+    viewToolBar->setMovable(false);
+    viewToolBar->setFloatable(false);
 
     auto activateViewAndDo = [this, innerWidget](auto slot) {
         return [this, innerWidget, slot]() {
@@ -2659,12 +2844,73 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         };
     };
 
+    auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
+        auto* display = ecvGenericGLDisplay::FromWidget(w);
+        auto* glView =
+                display ? dynamic_cast<ecvGLView*>(display) : nullptr;
+        if (glView) return glView->getVisualizer3D();
+        auto* dt = dynamic_cast<Visualization::VtkDisplayTools*>(
+                ecvDisplayTools::TheInstance());
+        return dt ? dt->get3DViewer() : nullptr;
+    };
+
+    // Camera Undo — per-view (ParaView pqCameraUndoRedoReaction)
+    auto* camUndoAct = new QAction(
+            QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
+            tr("Camera Undo"), viewToolBar);
+    camUndoAct->setEnabled(false);
+    connect(camUndoAct, &QAction::triggered, this,
+            [getVtkVisForWidget, innerWidget]() {
+                auto* vis = getVtkVisForWidget(innerWidget);
+                if (vis) vis->cameraUndo();
+            });
+    viewToolBar->addAction(camUndoAct);
+
+    // Camera Redo — per-view (ParaView pqCameraUndoRedoReaction)
+    auto* camRedoAct = new QAction(
+            QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
+            tr("Camera Redo"), viewToolBar);
+    camRedoAct->setEnabled(false);
+    connect(camRedoAct, &QAction::triggered, this,
+            [getVtkVisForWidget, innerWidget]() {
+                auto* vis = getVtkVisForWidget(innerWidget);
+                if (vis) vis->cameraRedo();
+            });
+    viewToolBar->addAction(camRedoAct);
+
+    auto* camTimer = new QTimer(viewToolBar);
+    camTimer->setInterval(500);
+    connect(camTimer, &QTimer::timeout, viewToolBar,
+            [getVtkVisForWidget, innerWidget, camUndoAct, camRedoAct]() {
+                auto* vis = getVtkVisForWidget(innerWidget);
+                if (vis) {
+                    camUndoAct->setEnabled(vis->canCameraUndo());
+                    camRedoAct->setEnabled(vis->canCameraRedo());
+                } else {
+                    camUndoAct->setEnabled(false);
+                    camRedoAct->setEnabled(false);
+                }
+            });
+    camTimer->start();
+
+    viewToolBar->addSeparator();
+
+    // Capture screenshot — per-view (ParaView actionCaptureView)
+    auto* captureAct = new QAction(
+            QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
+            tr("Capture Screenshot"), viewToolBar);
+    connect(captureAct, &QAction::triggered, this,
+            activateViewAndDo(&MainWindow::doActionScreenShot));
+    viewToolBar->addAction(captureAct);
+
+    viewToolBar->addSeparator();
+
     // 3D/2D toggle — per-view (mirrors global action3DView)
-    auto* view3DBtn =
-            makeToolBtn(QIcon(":/Resources/images/3D3.png"), tr("3D View"));
-    view3DBtn->setCheckable(true);
-    view3DBtn->setChecked(true);
-    connect(view3DBtn, &QToolButton::toggled, this,
+    auto* view3DAct = new QAction(
+            QIcon(":/Resources/images/3D3.png"), tr("3D View"), viewToolBar);
+    view3DAct->setCheckable(true);
+    view3DAct->setChecked(true);
+    connect(view3DAct, &QAction::toggled, this,
             [this, innerWidget](bool state) {
                 auto* display =
                         ecvGenericGLDisplay::FromWidget(innerWidget);
@@ -2678,30 +2924,24 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 }
                 toggle3DView(state);
             });
-    tbLayout->addWidget(view3DBtn);
-
-    // Capture screenshot — per-view (ParaView actionCaptureView)
-    auto* captureBtn =
-            makeToolBtn(QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
-                        tr("Capture Screenshot"));
-    connect(captureBtn, &QToolButton::clicked, this,
-            activateViewAndDo(&MainWindow::doActionScreenShot));
-    tbLayout->addWidget(captureBtn);
+    viewToolBar->addAction(view3DAct);
 
     // Edit camera — per-view (ParaView actionAdjustCamera)
-    auto* editCamBtn =
-            makeToolBtn(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
-                        tr("Adjust Camera"));
-    connect(editCamBtn, &QToolButton::clicked, this,
+    auto* editCamAct = new QAction(
+            QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+            tr("Adjust Camera"), viewToolBar);
+    connect(editCamAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionEditCamera));
-    tbLayout->addWidget(editCamBtn);
+    viewToolBar->addAction(editCamAct);
 
-    addSeparator();
+    viewToolBar->addSeparator();
 
     if (m_perViewSelMgr && m_selectionController) {
-        m_perViewSelMgr->populateToolbar(
-                viewToolBar, innerWidget,
-                m_selectionController->getSelectionActions());
+        const auto& acts = m_selectionController->getSelectionActions();
+        if (acts.selectSurfaceCells) {
+            m_perViewSelMgr->populateToolbar(viewToolBar, innerWidget, acts);
+            viewToolBar->setProperty("_selectionPopulated", true);
+        }
     }
     titleLayout->addWidget(viewToolBar, 0);
 #endif
@@ -2714,11 +2954,10 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     titleLabel->setProperty("plainTitle", title);
     titleLayout->addWidget(titleLabel);
 
-    titleLayout->addSpacing(10);
+    titleLayout->addSpacing(4);
 
-    // ParaView pqViewFrame standard buttons — same ICON_SIZE as toolbar
     const int btnIconPx = PV_ICON_SIZE;
-    const int btnSizePx = btnIconPx + 6;
+    const int btnSizePx = btnIconPx + 4;
 
     auto makeSvgBtn = [titleBar, btnIconPx, btnSizePx](const QString& iconPath,
                                                        const QString& tip) {
@@ -2768,6 +3007,13 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             auto* mvw = m_tabbedMultiView->currentMultiView();
             if (mvw) mvw->onCloseView(frame);
         }
+
+        QTimer::singleShot(0, this, [this]() {
+            ecvDisplayTools::InvalidateViewport();
+            ecvDisplayTools::InvalidateVisualization();
+            ecvDisplayTools::Deprecate3DLayer();
+            ecvDisplayTools::RedrawDisplay();
+        });
     });
     titleLayout->addWidget(closeBtn);
 
@@ -2778,16 +3024,41 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 auto* splitH = menu.addAction(
                         QIcon(":/Resources/images/svg/pqSplitHorizontal.svg"),
                         tr("Split Left|Right"), [this, frame]() {
-                            splitViewFrame(frame, Qt::Horizontal);
+                            auto* mvw = m_tabbedMultiView
+                                                ? m_tabbedMultiView->currentMultiView()
+                                                : nullptr;
+                            if (mvw) mvw->onSplitHorizontal(frame);
                         });
                 auto* splitV = menu.addAction(
                         QIcon(":/Resources/images/svg/pqSplitVertical.svg"),
                         tr("Split Top|Bottom"), [this, frame]() {
-                            splitViewFrame(frame, Qt::Vertical);
+                            auto* mvw = m_tabbedMultiView
+                                                ? m_tabbedMultiView->currentMultiView()
+                                                : nullptr;
+                            if (mvw) mvw->onSplitVertical(frame);
                         });
                 menu.addSeparator();
 
-                // Rename view — ParaView pqViewFrame context menu
+                auto* mvwForCtx = m_tabbedMultiView
+                                          ? m_tabbedMultiView->currentMultiView()
+                                          : nullptr;
+                if (mvwForCtx && mvwForCtx->layoutManager() &&
+                    mvwForCtx->layoutManager()->viewCount() > 1) {
+                    auto* eqMenu = menu.addMenu(tr("Equalize Views"));
+                    eqMenu->addAction(tr("Horizontally"), [mvwForCtx]() {
+                        mvwForCtx->layoutManager()->equalize(
+                                ecvViewLayoutProxy::HORIZONTAL);
+                    });
+                    eqMenu->addAction(tr("Vertically"), [mvwForCtx]() {
+                        mvwForCtx->layoutManager()->equalize(
+                                ecvViewLayoutProxy::VERTICAL);
+                    });
+                    eqMenu->addAction(tr("Both"), [mvwForCtx]() {
+                        mvwForCtx->layoutManager()->equalize();
+                    });
+                    menu.addSeparator();
+                }
+
                 menu.addAction(tr("Rename"), [titleLabel, frame]() {
                     bool ok = false;
                     QString cur = titleLabel->property("plainTitle").toString();
@@ -2802,8 +3073,73 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 });
 
                 menu.addSeparator();
+
+                auto* viewDisplay = [&]() -> ecvGenericGLDisplay* {
+                    auto* cFrame = frame->findChild<QWidget*>(
+                            "CentralWidgetFrame");
+                    if (!cFrame || !cFrame->layout()) return nullptr;
+                    for (int i = 0; i < cFrame->layout()->count(); ++i) {
+                        auto* item = cFrame->layout()->itemAt(i);
+                        if (item && item->widget()) {
+                            return ecvGenericGLDisplay::FromWidget(
+                                    item->widget());
+                        }
+                    }
+                    return nullptr;
+                }();
+
+                if (viewDisplay) {
+                    auto* viewMenu = menu.addMenu(tr("View Properties"));
+                    auto* glView =
+                            dynamic_cast<ecvGLView*>(viewDisplay);
+
+                    auto* gradAct = viewMenu->addAction(
+                            tr("Gradient Background"));
+                    gradAct->setCheckable(true);
+                    auto params = viewDisplay->getDisplayParameters();
+                    gradAct->setChecked(params.drawBackgroundGradient);
+                    connect(gradAct, &QAction::toggled, this,
+                            [viewDisplay](bool on) {
+                                auto p = viewDisplay->getDisplayParameters();
+                                p.drawBackgroundGradient = on;
+                                viewDisplay->setDisplayParameters(p, true);
+                                viewDisplay->redraw();
+                            });
+
+                    if (glView && glView->getVisualizer3D()) {
+                        auto* vis = glView->getVisualizer3D();
+                        auto* axesAct = viewMenu->addAction(
+                                tr("Orientation Axes"));
+                        axesAct->setCheckable(true);
+                        axesAct->setChecked(vis->pclMarkerAxesShown());
+                        connect(axesAct, &QAction::toggled, this,
+                                [glView, vis](bool on) {
+                                    if (on)
+                                        vis->showPclMarkerAxes(
+                                                vis->getRenderWindowInteractor());
+                                    else
+                                        vis->hidePclMarkerAxes();
+                                    glView->redraw();
+                                });
+
+                        auto* camWidgetAct = viewMenu->addAction(
+                                tr("Camera Orientation Widget"));
+                        camWidgetAct->setCheckable(true);
+                        camWidgetAct->setChecked(
+                                vis->IsCameraOrientationWidgetShown());
+                        connect(camWidgetAct, &QAction::toggled, this,
+                                [glView, vis](bool on) {
+                                    vis->ToggleCameraOrientationWidget(on);
+                                    glView->redraw();
+                                });
+                    }
+
+                    menu.addSeparator();
+                }
+
                 auto* closeAct = menu.addAction(tr("Close"), [this, frame]() {
                     if (ecvViewManager::instance().viewCount() <= 1) return;
+                    prepareViewClose(frame);
                     if (m_tabbedMultiView) {
                         auto* mvw = m_tabbedMultiView->currentMultiView();
                         if (mvw) mvw->onCloseView(frame);
@@ -2898,7 +3234,6 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     dragFilter->deleteLater();
     titleBar->installEventFilter(filter);
 
-    // --- Central widget frame (ParaView CentralWidgetFrame) ---
     auto* contentFrame = new QFrame(frame);
     contentFrame->setObjectName("CentralWidgetFrame");
     contentFrame->setFrameStyle(QFrame::Plain | QFrame::Box);
@@ -2906,8 +3241,10 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* contentLayout = new QVBoxLayout(contentFrame);
     contentLayout->setContentsMargins(1, 1, 1, 1);
     contentLayout->setSpacing(0);
+
     contentLayout->addWidget(innerWidget);
 
+    frame->setMinimumSize(0, 0);
     frameLayout->addWidget(titleBar, 0);
     frameLayout->addWidget(contentFrame, 1);
 
@@ -3002,11 +3339,17 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     copyPrimaryViewConfig(view);
 
     QWidget* newFrame = createViewFrame(view->asWidget(), view->getTitle());
-    newFrame->setMinimumSize(100, 100);
 
-    // Create a new splitter to replace `frameToSplit` in its parent.
     auto* splitter = new QSplitter(orientation);
     splitter->setChildrenCollapsible(false);
+    splitter->setHandleWidth(8);
+    splitter->setOpaqueResize(true);
+    splitter->setStyleSheet(
+            QStringLiteral(
+                    "QSplitter::handle { background: palette(mid); }"
+                    "QSplitter::handle:hover { background: palette(highlight); }"
+                    "QSplitter::handle:horizontal { min-width: 8px; }"
+                    "QSplitter::handle:vertical { min-height: 8px; }"));
 
     QWidget* parent = frameToSplit->parentWidget();
     auto* parentSplitter = qobject_cast<QSplitter*>(parent);
@@ -3105,44 +3448,31 @@ void MainWindow::equalizeSplitter(QSplitter* splitter,
 void MainWindow::swapViewFrames(QWidget* frameA, QWidget* frameB) {
     if (!frameA || !frameB || frameA == frameB) return;
 
-    auto* splitterA = qobject_cast<QSplitter*>(frameA->parentWidget());
-    auto* splitterB = qobject_cast<QSplitter*>(frameB->parentWidget());
+    // ParaView swaps via vtkSMViewLayoutProxy::SwapCells then reload().
+    // We do the same: resolve cell indices, call swapCells on the layout
+    // proxy, and let the rebuild (triggered by notifyChanged) handle the UI.
+    QVariant vA = frameA->property("CELL_INDEX");
+    QVariant vB = frameB->property("CELL_INDEX");
+    if (!vA.isValid() || !vB.isValid()) return;
 
-    // Both must be in splitters (or the same splitter) for swap to make sense.
-    // If one is at MDI level (no splitter), we can still swap if both are in
-    // the same layout hierarchy.
-    if (splitterA && splitterB) {
-        int idxA = splitterA->indexOf(frameA);
-        int idxB = splitterB->indexOf(frameB);
+    int locA = vA.toInt();
+    int locB = vB.toInt();
 
-        if (splitterA == splitterB) {
-            // Same splitter — just swap positions
-            QList<int> sizes = splitterA->sizes();
-            // QSplitter doesn't have a direct swap, so we remove and re-insert.
-            // We must handle the index shift when removing.
-            if (idxA < idxB) {
-                splitterA->insertWidget(idxA, frameB);
-                splitterA->insertWidget(idxB, frameA);
-            } else {
-                splitterA->insertWidget(idxB, frameA);
-                splitterA->insertWidget(idxA, frameB);
-            }
-            splitterA->setSizes(sizes);
-        } else {
-            // Different splitters — cross-swap
-            QList<int> sizesA = splitterA->sizes();
-            QList<int> sizesB = splitterB->sizes();
-
-            splitterA->insertWidget(idxA, frameB);
-            splitterB->insertWidget(idxB, frameA);
-
-            splitterA->setSizes(sizesA);
-            splitterB->setSizes(sizesB);
+    auto findOwningMultiView = [](QWidget* w) -> ecvMultiViewWidget* {
+        for (QWidget* p = w; p; p = p->parentWidget()) {
+            if (auto* mvw = qobject_cast<ecvMultiViewWidget*>(p)) return mvw;
         }
+        return nullptr;
+    };
 
-        frameA->show();
-        frameB->show();
-    }
+    auto* mvwA = findOwningMultiView(frameA);
+    auto* mvwB = findOwningMultiView(frameB);
+    if (!mvwA || mvwA != mvwB) return;
+
+    auto* layout = mvwA->layoutManager();
+    if (!layout) return;
+
+    layout->swapCells(locA, locB);
 }
 
 void MainWindow::lockViewSize(const QSize& size) {
@@ -3406,34 +3736,25 @@ void MainWindow::addToDB(ccHObject* obj,
         assert(false);
     }
 
-    // Multi-window: bind new entities to the currently active view so they
-    // only render in that window (matching CloudCompare/ParaView behavior).
-    ecvGenericGLDisplay* activeView =
-            ecvViewManager::instance().getActiveView();
-    if (activeView && !obj->getDisplay()) {
-        obj->setDisplay_recursive(activeView);
-    }
+    // ParaView-style: bind newly loaded objects to the active view so they
+    // only render there, not in every window.
+    ecvViewManager::instance().associateToActiveView(obj);
 
-    // eventually we update the corresponding display
     if (updateZoom) {
-        ecvDisplayTools::ZoomGlobal();  // automatically calls redrawDisplay()
-    } else if (autoRedraw) {
-        refreshObject(obj);
-    }
-
-    // Update secondary views: per-view zoom (with per-display BB filtering)
-    // and a single redraw. zoomGlobal() already calls Render() internally
-    // so we only need an extra redraw for non-zoom updates.
-    const auto& allViews = ecvViewManager::instance().getAllViews();
-    for (auto* view : allViews) {
-        if (view == ecvDisplayTools::TheInstance()) continue;
-        auto* glView = dynamic_cast<ecvGLView*>(view);
-        if (!glView) continue;
-        if (updateZoom) {
-            glView->zoomGlobal();
+        auto* activeView = ecvViewManager::instance().getActiveView();
+        if (!activeView ||
+            activeView == ecvDisplayTools::TheInstance()) {
+            ecvDisplayTools::ZoomGlobal();
         } else {
-            glView->redraw();
+            auto* glView = dynamic_cast<ecvGLView*>(activeView);
+            if (glView) glView->zoomGlobal();
         }
+    }
+    if (autoRedraw || updateZoom) {
+        ecvDisplayTools::InvalidateViewport();
+        ecvDisplayTools::InvalidateVisualization();
+        ecvDisplayTools::Deprecate3DLayer();
+        refreshAll();
     }
 
 #ifdef USE_VTK_BACKEND
@@ -4832,6 +5153,14 @@ void MainWindow::addEditPlaneAction(QMenu& menu) const {
 }
 
 void MainWindow::zoomOn(ccHObject* object) {
+    if (!object) return;
+
+    auto& vm = ecvViewManager::instance();
+    auto* ownerView = vm.findViewForEntity(object);
+    if (ownerView && ownerView != vm.getActiveView()) {
+        vm.setActiveView(ownerView);
+    }
+
     if (ecvDisplayTools::GetCurrentScreen()) {
         ccBBox box = object->getDisplayBB_recursive(false);
         ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
@@ -5769,7 +6098,8 @@ void MainWindow::freezeUI(bool state) {
 void MainWindow::zoomOnSelectedEntities() {
     ccBBox bbox = getSelectedEntityBbox();
     if (bbox.isValid()) {
-        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, false);
+        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, true);
+        refreshAll();
     } else {
         CVLog::Warning(tr("Selected entities have no valid bounding-box!"));
     }
@@ -5777,9 +6107,16 @@ void MainWindow::zoomOnSelectedEntities() {
 
 void MainWindow::zoomOnEntities(ccHObject* obj) {
     if (obj) {
+        auto& vm = ecvViewManager::instance();
+        auto* ownerView = vm.findViewForEntity(obj);
+        if (ownerView && ownerView != vm.getActiveView()) {
+            vm.setActiveView(ownerView);
+        }
+
         ccBBox bbox = obj->getDisplayBB_recursive(false);
         if (bbox.isValid()) {
-            ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, false);
+            ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, true);
+            refreshAll();
         } else {
             CVLog::Warning(tr("entity [%1] has no valid bounding-box!")
                                    .arg(obj->getName()));
@@ -6000,14 +6337,14 @@ void MainWindow::initSelectionController() {
 
     // Safety net: retroactively populate per-view selection actions on any
     // view frames whose toolbar was not fully populated (the first
-    // createViewFrame runs before setupActions, so selection buttons are
-    // missing on the initial primary view).
+    // createViewFrame runs before initSelectionController, so selection
+    // buttons are missing on the initial primary view).
     QWidget* viewRoot = centralViewWidget();
     if (viewRoot && m_perViewSelMgr) {
         const auto& acts = m_selectionController->getSelectionActions();
         for (auto* tb :
              viewRoot->findChildren<QWidget*>("ViewSelectionToolBar")) {
-            if (tb->findChildren<QToolButton*>().size() > 4) continue;
+            if (tb->property("_selectionPopulated").toBool()) continue;
             // Hierarchy: outerFrame -> titleBar -> ViewSelectionToolBar
             //            outerFrame -> CentralWidgetFrame -> innerWidget
             QWidget* titleBar = tb->parentWidget();
@@ -6027,9 +6364,12 @@ void MainWindow::initSelectionController() {
             }
             if (innerWidget) {
                 m_perViewSelMgr->populateToolbar(tb, innerWidget, acts);
+                tb->setProperty("_selectionPopulated", true);
             }
         }
     }
+
+    m_selectionController->setPerViewSelectionManager(m_perViewSelMgr);
 }
 
 void MainWindow::disableAllSelectionTools(void* except) {
@@ -6442,6 +6782,13 @@ void MainWindow::showEvent(QShowEvent* event) {
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);
     }
+
+    QTimer::singleShot(200, this, [this]() {
+        ecvDisplayTools::InvalidateViewport();
+        ecvDisplayTools::InvalidateVisualization();
+        ecvDisplayTools::Deprecate3DLayer();
+        ecvDisplayTools::RedrawDisplay();
+    });
 }
 
 // exit event
@@ -6511,11 +6858,18 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::saveGUIElementsPos() {
-    // Use layout manager to save layout
     if (m_layoutManager) {
         m_layoutManager->saveGUILayout();
     } else {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
+
+    if (m_tabbedMultiView) {
+        QJsonObject layoutState = m_tabbedMultiView->saveLayoutState();
+        QSettings settings;
+        settings.setValue(QStringLiteral("MultiView/LayoutState"),
+                          QJsonDocument(layoutState).toJson(
+                                  QJsonDocument::Compact));
     }
 }
 

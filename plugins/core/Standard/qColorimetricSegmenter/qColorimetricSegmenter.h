@@ -39,7 +39,7 @@ class ColorimetricSegmenter : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
     Q_PLUGIN_METADATA(IID
-                      "ecvcorp.cloudviewer.plugin.ColorimetricSegmenter" FILE
+                      "cvcorp.cloudviewer.plugin.ColorimetricSegmenter" FILE
                       "info.json")
 
 public:

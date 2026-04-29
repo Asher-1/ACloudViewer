@@ -14,6 +14,7 @@
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
+#include <deque>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -202,6 +203,8 @@ public:
         double fovy = 0.8575;
         double window_size[2] = {0, 0};
         double window_pos[2] = {0, 0};
+        bool parallelProjection = false;
+        double parallelScale = 1.0;
     };
 
     /** @param viewport Viewport ID (default 0)
@@ -1239,6 +1242,16 @@ public:
     /// Save screenshot to file.
     void saveScreenshot(const std::string& file);
 
+    // ----------------------------------------------------------------
+    // Camera undo / redo  (mirrors ParaView pqRenderView camera stack)
+    // ----------------------------------------------------------------
+
+    bool canCameraUndo() const;
+    bool canCameraRedo() const;
+    void cameraUndo();
+    void cameraRedo();
+    void pushCameraState();
+
     /// Save/load camera parameters.
     void saveCameraParameters(const std::string& file);
     void loadCameraParameters(const std::string& file);
@@ -1319,6 +1332,12 @@ protected:
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;
+
+    // Camera undo / redo stack
+    static constexpr int CAMERA_STACK_DEPTH = 20;
+    std::deque<CameraParams> m_cameraUndoStack;
+    std::deque<CameraParams> m_cameraRedoStack;
+    bool m_inCameraUndoRedo = false;
 };
 
 typedef std::shared_ptr<VtkVis> VtkVisPtr;

@@ -264,6 +264,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
 
     // Categorize toolbars by area
     for (QToolBar* toolbar : toolBars) {
+        // Skip toolbars embedded in view frames (not direct children of
+        // QMainWindow). These are per-view toolbars created by createViewFrame,
+        // matching ParaView's pqViewFrame ToolBar pattern.
+        if (toolbar->parent() != m_mainWindow) {
+            continue;
+        }
+
         // Skip hidden toolbars
         if (!toolbar->isVisible() && toolbar->parent() == m_mainWindow &&
             toolbar->objectName() != "UnifiedPluginToolbar") {

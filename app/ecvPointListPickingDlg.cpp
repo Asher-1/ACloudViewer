@@ -26,6 +26,7 @@
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // qCC_io
 #include <AsciiFilter.h>
@@ -559,6 +560,15 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     newLabel->setDisplayedIn2D(false);
     newLabel->displayPointLegend(true);
     newLabel->setCollapsed(true);
+    {
+        ecvGenericGLDisplay* activeView =
+                ecvViewManager::instance().getActiveView();
+        if (activeView) {
+            newLabel->setDisplay(activeView);
+        } else if (picked.entity && picked.entity->getDisplay()) {
+            newLabel->setDisplay(picked.entity->getDisplay());
+        }
+    }
     QSize size = ecvDisplayTools::GetScreenSize();
     newLabel->setPosition(
             static_cast<float>(picked.clickPoint.x() + 20) / size.width(),
