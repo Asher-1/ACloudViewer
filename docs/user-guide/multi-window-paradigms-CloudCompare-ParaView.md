@@ -9,6 +9,7 @@
 **配套文档：**
 - **`multi-window-refactor-roadmap-Vtk-vs-CC.md`**：分阶段重构方案与执行计划
 - **`audit-TheInstance-m_-members.md`**：单例直读全量扫描
+- **`multi-window-paraview-alignment-design.md`**：ParaView ↔ ACloudViewer 全面对齐设计文档（15 维度对比 + Phase M–N 重构方案）
 
 ---
 

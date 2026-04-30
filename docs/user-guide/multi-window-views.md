@@ -11,6 +11,7 @@
 > - 12 `ecvViewManager::shared*()` forwarders replace all non-core `ecvDisplayTools::` calls
 > - See [singleton-removal-migration-plan.md](singleton-removal-migration-plan.md) for full changelog
 > - See [multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10 for next TODOs (L1–L5)
+> - See [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md) for the ParaView ↔ ACloudViewer full alignment design (15 dimensions, 7 GAPs, Phase M–N plans)
 >
 > **Note**: Some code examples below still reference `TheInstance()` patterns from the pre-migration architecture. These are preserved as historical context for understanding the design evolution.
 

@@ -616,30 +616,26 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y) {
         } break;
 
         case ClickableItem::INCREASE_POINT_SIZE: {
-            SetPointSize(
-                    s_tools->effectiveCtx().viewportParams.defaultPointSize +
-                    1.0f);
+            const auto& ctx = s_tools->effectiveCtx();
+            SetPointSize(ctx.viewportParams.defaultPointSize + 1.0f);
         }
             return true;
 
         case ClickableItem::DECREASE_POINT_SIZE: {
-            SetPointSize(
-                    s_tools->effectiveCtx().viewportParams.defaultPointSize -
-                    1.0f);
+            const auto& ctx = s_tools->effectiveCtx();
+            SetPointSize(ctx.viewportParams.defaultPointSize - 1.0f);
         }
             return true;
 
         case ClickableItem::INCREASE_LINE_WIDTH: {
-            SetLineWidth(
-                    s_tools->effectiveCtx().viewportParams.defaultLineWidth +
-                    1.0f);
+            const auto& ctx = s_tools->effectiveCtx();
+            SetLineWidth(ctx.viewportParams.defaultLineWidth + 1.0f);
         }
             return true;
 
         case ClickableItem::DECREASE_LINE_WIDTH: {
-            SetLineWidth(
-                    s_tools->effectiveCtx().viewportParams.defaultLineWidth -
-                    1.0f);
+            const auto& ctx = s_tools->effectiveCtx();
+            SetLineWidth(ctx.viewportParams.defaultLineWidth - 1.0f);
         }
             return true;
 
@@ -1401,24 +1397,17 @@ void ecvDisplayTools::ResizeGL(int w, int h) {
 }
 
 void ecvDisplayTools::MoveCamera(float dx, float dy, float dz) {
-    if (dx != 0.0f || dy != 0.0f)  // camera movement? (dz doesn't count as it
-                                   // only corresponds to a zoom)
-    {
-        // feedback for echo mode
+    if (dx != 0.0f || dy != 0.0f) {
         emit s_tools->cameraDisplaced(dx, dy);
     }
 
-    // current X, Y and Z viewing directions
-    // correspond to the 'model view' matrix
-    // lines.
+    auto& ctx = s_tools->effectiveCtx();
     CCVector3d V(dx, dy, dz);
-    if (!s_tools->effectiveCtx().viewportParams.objectCenteredView) {
-        s_tools->effectiveCtx()
-                .viewportParams.viewMat.transposed()
-                .applyRotation(V);
+    if (!ctx.viewportParams.objectCenteredView) {
+        ctx.viewportParams.viewMat.transposed().applyRotation(V);
     }
 
-    SetCameraPos(s_tools->effectiveCtx().viewportParams.getCameraCenter() + V);
+    SetCameraPos(ctx, ctx.viewportParams.getCameraCenter() + V);
 }
 
 void ecvDisplayTools::UpdateActiveItemsList(
@@ -2027,13 +2016,9 @@ CCVector3d ecvDisplayTools::GetRealCameraCenter() {
 }
 
 ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix() {
-    ccGLMatrixd viewMatd =
-            s_tools->effectiveCtx().viewportParams.computeViewMatrix();
-
-    ccGLMatrixd scaleMatd =
-            s_tools->effectiveCtx().viewportParams.computeScaleMatrix(
-                    s_tools->effectiveCtx().glViewport);
-
+    const auto& ctx = s_tools->effectiveCtx();
+    ccGLMatrixd viewMatd = ctx.viewportParams.computeViewMatrix();
+    ccGLMatrixd scaleMatd = ctx.viewportParams.computeScaleMatrix(ctx.glViewport);
     return scaleMatd * viewMatd;
 }
 
@@ -2522,9 +2507,9 @@ float ecvDisplayTools::GetFov() {
         const auto& vp = av->getViewportParameters();
         return vp.fov_deg;
     }
-    return (s_tools->effectiveCtx().bubbleViewModeEnabled
-                    ? s_tools->effectiveCtx().bubbleViewFov_deg
-                    : s_tools->effectiveCtx().viewportParams.fov_deg);
+    const auto& ctx = s_tools->effectiveCtx();
+    return (ctx.bubbleViewModeEnabled ? ctx.bubbleViewFov_deg
+                                      : ctx.viewportParams.fov_deg);
 }
 
 void ecvDisplayTools::SetupProjectiveViewport(
@@ -3084,14 +3069,15 @@ void ecvDisplayTools::SetBubbleViewMode(bool state) {
 void ecvDisplayTools::SetBubbleViewFov(float fov_deg) {
     if (fov_deg < FLT_EPSILON || fov_deg > 180.0f) return;
 
-    if (fov_deg != s_tools->effectiveCtx().bubbleViewFov_deg) {
-        s_tools->effectiveCtx().bubbleViewFov_deg = fov_deg;
+    auto& ctx = s_tools->effectiveCtx();
+    if (fov_deg != ctx.bubbleViewFov_deg) {
+        ctx.bubbleViewFov_deg = fov_deg;
 
-        if (s_tools->effectiveCtx().bubbleViewModeEnabled) {
+        if (ctx.bubbleViewModeEnabled) {
             InvalidateViewport();
             InvalidateVisualization();
             Deprecate3DLayer();
-            emit s_tools->fovChanged(s_tools->effectiveCtx().bubbleViewFov_deg);
+            emit s_tools->fovChanged(ctx.bubbleViewFov_deg);
             emit s_tools->cameraParamChanged();
         }
     }

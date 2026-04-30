@@ -1317,9 +1317,9 @@ void SetZoom(ecvViewContext& ctx, float value);
 | `DrawWidgets (POLYLINE)` | 需要 CONTEXT 路由 |
 | `RenderText (3D)` | 需要 glViewport.height() 路由 |
 
-### Phase N2: State Setters/Getters（2-8 次调用，含 N1 移入项）
+### Phase N2: State Setters/Getters（2-8 次调用，含 N1 移入项）— N2b ✅, N2a 推迟
 
-**预估**: 3-5 天 | **风险**: MEDIUM | **函数数**: ~36 (原 25 + N1 移入 11)
+**预估**: 3-5 天 | **风险**: MEDIUM | **函数数**: N2b 13 ✅ + N2a 11 推迟 + 原 N2 剩余 12 待处理
 
 **N2a: N1 移入项（1-2 次 effectiveCtx，有副作用）**:
 
