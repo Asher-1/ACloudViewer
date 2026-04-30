@@ -36,7 +36,7 @@ class ecvGenericGLDisplay;
 
 // CV_DB_LIB
 #include <ecvColorTypes.h>
-#include <ecvDisplayTools.h>  // For AxesGridProperties
+#include <ecvDisplayTypes.h>  // For AxesGridProperties
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvHObject.h>

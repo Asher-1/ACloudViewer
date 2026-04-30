@@ -176,6 +176,51 @@ public:
     static void SetPickingMode(ecvViewContext& ctx, PICKING_MODE mode);
     static PICKING_MODE GetPickingMode(const ecvViewContext& ctx);
 
+    // ================================================================
+    // Phase N1: Per-view context parameterized overloads
+    // Each has a corresponding singleton wrapper (no ctx param) that
+    // calls effectiveCtx() internally for backward compatibility.
+    // ================================================================
+
+    static bool IsRectangularPickingAllowed(const ecvViewContext& ctx);
+    static void SetRectangularPickingAllowed(ecvViewContext& ctx, bool state);
+    static void LockPickingMode(ecvViewContext& ctx, bool state);
+    static bool IsPickingModeLocked(const ecvViewContext& ctx);
+    static void DisplayOverlayEntities(ecvViewContext& ctx, bool state);
+    static void SetViewportDefaultPointSize(ecvViewContext& ctx, float size);
+    static void SetViewportDefaultLineWidth(ecvViewContext& ctx, float width);
+    static bool ObjectPerspectiveEnabled(const ecvViewContext& ctx);
+    static bool ViewerPerspectiveEnabled(const ecvViewContext& ctx);
+    static void SetGLViewport(ecvViewContext& ctx, const QRect& rect);
+    static CCVector3d GetCurrentViewDir(const ecvViewContext& ctx);
+    static CCVector3d GetCurrentUpDir(const ecvViewContext& ctx);
+    static const ecvViewportParameters& GetViewportParameters(
+            const ecvViewContext& ctx);
+    static bool GetClick3DPos(const ecvViewContext& ctx,
+                              int x, int y, CCVector3d& P3D);
+
+    // ================================================================
+    // Phase N2: Per-view context parameterized overloads (continued)
+    // N2a: Functions with side effects (emit, QSettings, VTK callbacks)
+    // N2b: State setters/getters (2-6 effectiveCtx calls)
+    // ================================================================
+
+    // N2b: Simple state accessors
+    static void SetPixelSize(ecvViewContext& ctx, float pixelSize);
+    static void SetZoom(ecvViewContext& ctx, float value);
+    static void UpdateZoom(ecvViewContext& ctx, float zoomFactor);
+    static void SetAspectRatio(ecvViewContext& ctx, float ar);
+    static void UpdateModelViewMatrix(ecvViewContext& ctx);
+    static void SetBaseViewMat(ecvViewContext& ctx, ccGLMatrixd& mat);
+    static ccGLMatrixd& GetModelViewMatrix(ecvViewContext& ctx);
+    static ccGLMatrixd& GetProjectionMatrix(ecvViewContext& ctx);
+    static CCVector3d GetRealCameraCenter(const ecvViewContext& ctx);
+    static void SetCameraPos(ecvViewContext& ctx, const CCVector3d& P);
+    static float ComputePerspectiveZoom(const ecvViewContext& ctx);
+    static void LockRotationAxis(ecvViewContext& ctx, bool state,
+                                 const CCVector3d& axis);
+    static void ShowPivotSymbol(ecvViewContext& ctx, bool state);
+
     // -- ecvGenericGLDisplay implementation (primary window) --
 
     int getUniqueID() const override { return m_uniqueID; }
