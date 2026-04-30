@@ -377,22 +377,21 @@ void VtkDisplayTools::endPrimaryRender() {
 }
 
 VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
-    if (!display || display == static_cast<const ecvDisplayTools*>(this)) {
-        VtkVis* primary =
-                m_primaryVis ? m_primaryVis.get() : m_visualizer3D.get();
-        return primary;
+    // Phase M1.2: prefer per-view pipeline from ecvGLView, then fall back
+    // to the engine's pipeline. The m_primaryVis backup is still needed
+    // while switchActiveView() can swap m_visualizer3D (removed in M3).
+    if (display && display != static_cast<const ecvDisplayTools*>(this)) {
+        auto* glView = dynamic_cast<ecvGLView*>(display);
+        if (glView && glView->getVisualizer3D()) {
+            return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
+        }
     }
-    auto* glView = dynamic_cast<ecvGLView*>(display);
-    if (glView && glView->getVisualizer3D()) {
-        return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
-    }
-    return m_visualizer3D.get();
+    return m_primaryVis ? m_primaryVis.get() : m_visualizer3D.get();
 }
 
 VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
-    if (m_visualizer3D && m_visualizer3D->contains(viewId)) {
-        return m_visualizer3D.get();
-    }
+    // Phase M1.2: search all registered views first (including those that
+    // may share the engine's own pipeline), then fall back to engine's own.
     const auto& views = ecvViewManager::instance().getAllViews();
     for (auto* view : views) {
         auto* glView = dynamic_cast<ecvGLView*>(view);
@@ -403,7 +402,10 @@ VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
             }
         }
     }
-    return m_visualizer3D.get();
+    if (m_visualizer3D && m_visualizer3D->contains(viewId)) {
+        return m_visualizer3D.get();
+    }
+    return nullptr;
 }
 
 void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,

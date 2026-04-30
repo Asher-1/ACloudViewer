@@ -810,6 +810,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
     bool doRedraw = false;
     Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
 
+    if (m_ownerView) emit m_ownerView->mouseWheelChanged(event);
     emit m_tools->mouseWheelChanged(event);
     double delta = qtCompatWheelEventDelta(event);
 
