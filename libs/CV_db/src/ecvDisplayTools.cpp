@@ -3339,98 +3339,18 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
         }
     }
 
-    // === Legacy singleton draw path (fallback when no views registered) ===
-    s_tools->beginPrimaryRender();
+    // === Post-render housekeeping ===
+    // Phase M4: the legacy singleton draw path (background, 3D, foreground,
+    // debug traces) has been removed.  Each ecvGLView::redraw() now contains
+    // the full pipeline including ColorRamp, Messages, ScaleBar, and the
+    // parameterized DrawClickableItems.
 
-    bool drawBackground = false;
-    bool draw3DPass = false;
-    bool drawForeground = true;
-    bool draw3DCross = GetDisplayParameters().displayCross;
-
-    if (s_tools->m_updateFBO || s_tools->m_captureMode.enabled) {
-        drawBackground = true;
-        draw3DPass = true;
-    }
-
-    CC_DRAW_CONTEXT CONTEXT;
-    GetContext(CONTEXT);
-    CONTEXT.display = s_tools;
-
-    QRect originViewport = s_tools->effectiveCtx().glViewport;
-    bool modifiedViewport = false;
-
-    if (drawBackground) {
-        if (s_tools->effectiveCtx().showDebugTraces) {
-            s_tools->m_diagStrings << "draw background";
-        }
-        CONTEXT.clearColorLayer = true;
-        CONTEXT.clearDepthLayer = true;
-        DrawBackground(CONTEXT);
-    }
-
-    if (draw3DPass) {
-        if (s_tools->effectiveCtx().showDebugTraces) {
-            s_tools->m_diagStrings << "draw 3D";
-        }
-        CONTEXT.forceRedraw = forceRedraw;
-        Draw3D(CONTEXT);
-    }
-
-    // Display debug traces
-    if (s_tools->effectiveCtx().showDebugTraces) {
-        if (!s_tools->m_diagStrings.isEmpty()) {
-            QFont font = GetTextDisplayFont();
-            int font_size = font.pointSize();
-            QFontMetrics fm(font);
-            int x = s_tools->effectiveCtx().glViewport.width() / 2 - 100;
-            int margin = font_size / 2;
-            int y = margin;
-            {
-                int height = (s_tools->m_diagStrings.size() + 1) *
-                             (fm.height() + margin);
-                WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                        DEBUG_LAYER_ID);
-                param.color = ecvColor::dark;
-                param.color.a = 0.5f;
-                param.rect = QRect(x,
-                                   s_tools->effectiveCtx().glViewport.height() -
-                                           y - height,
-                                   200, height);
-                DrawWidgets(param, true);
-            }
-            y += margin;
-            for (const QString& str : s_tools->m_diagStrings) {
-                RenderText(x + font_size, y + font_size, str, font,
-                           ecvColor::yellow, DEBUG_LAYER_ID);
-                y += fm.height() + margin;
-            }
-        }
-    }
-
-    if (modifiedViewport) {
-        SetGLViewport(originViewport);
-        CONTEXT.glW = originViewport.width();
-        CONTEXT.glH = originViewport.height();
-    }
-
-    if (drawBackground || draw3DCross) {
+    if (s_tools->m_updateFBO || GetDisplayParameters().displayCross) {
         s_tools->m_updateFBO = false;
     }
 
-    if (drawForeground) {
-        DrawForeground(CONTEXT);
-    }
-
     s_tools->m_shouldBeRefreshed = false;
-
-    if (false && s_tools->effectiveCtx().autoPickPivotAtCenter &&
-        !s_tools->effectiveCtx().mouseMoved &&
-        s_tools->effectiveCtx().autoPivotCandidate.norm2d() != 0.0) {
-        SetPivotPoint(s_tools->effectiveCtx().autoPivotCandidate, true, false);
-    }
-
     UpdateScreen();
-    s_tools->endPrimaryRender();
 }
 
 void ecvDisplayTools::SetGLViewport(const QRect& rect) {
@@ -3967,54 +3887,53 @@ void ecvDisplayTools::ClearBubbleView() {
 }
 
 void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
+    DrawClickableItems(xStart0, yStart,
+                       s_tools->m_hotZone, s_tools->m_clickableItems, nullptr);
+}
+
+void ecvDisplayTools::DrawClickableItems(
+        int xStart0,
+        int& yStart,
+        HotZone*& hotZone,
+        std::vector<ecvClickableItem>& clickableItems,
+        ecvGenericGLDisplay* display) {
     const static char* CLICKED_ITEMS = "clicked_items";
-    // we init the necessary parameters the first time we need them
-    if (!s_tools->m_hotZone) {
-        s_tools->m_hotZone = new HotZone(ecvDisplayTools::GetCurrentScreen());
-        s_tools->m_hotZoneOwnedBySingleton = true;
-    } else if (GetPlatformAwareDPIScale() !=
-               s_tools->m_hotZone
-                       ->pixelDeviceRatio)  // the device pixel ratio has
-                                            // changed (happens when changing
-                                            // screen for instance)
-    {
-        s_tools->m_hotZone->updateInternalVariables(
-                ecvDisplayTools::GetCurrentScreen());
+    if (!hotZone) {
+        hotZone = new HotZone(ecvDisplayTools::GetCurrentScreen());
+        if (!display) s_tools->m_hotZoneOwnedBySingleton = true;
+    } else if (GetPlatformAwareDPIScale() != hotZone->pixelDeviceRatio) {
+        hotZone->updateInternalVariables(ecvDisplayTools::GetCurrentScreen());
     }
 
-    // remember the last position of the 'top corner'
-    s_tools->m_hotZone->topCorner =
+    hotZone->topCorner =
             QPoint(xStart0, yStart) +
-            QPoint(s_tools->m_hotZone->margin, s_tools->m_hotZone->margin);
+            QPoint(hotZone->margin, hotZone->margin);
 
     bool fullScreenEnabled = ExclusiveFullScreen();
 
     if (!s_tools->effectiveCtx().clickableItemsVisible &&
         !s_tools->effectiveCtx().bubbleViewModeEnabled && !fullScreenEnabled) {
         ClearBubbleView();
-        // nothing to do
         return;
     }
 
-    //"exit" icon
-    // static const QImage c_exitIcon =
-    // QImage(":/Resources/images/ecvExit.png").mirrored();
     int fullW = s_tools->effectiveCtx().glViewport.width();
     int fullH = s_tools->effectiveCtx().glViewport.height();
+    (void)fullW;
 
-    // clear history
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
 
     // draw semi-transparent background
     {
-        QRect areaRect = s_tools->m_hotZone->rect(
+        QRect areaRect = hotZone->rect(
                 s_tools->effectiveCtx().clickableItemsVisible,
                 s_tools->effectiveCtx().bubbleViewModeEnabled,
                 fullScreenEnabled);
-        areaRect.translate(s_tools->m_hotZone->topCorner);
+        areaRect.translate(hotZone->topCorner);
 
         WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                 CLICKED_ITEMS);
+        param.context.display = display;
         param.color = ecvColor::FromRgba(ecvColor::odarkGrey);
         param.color.a = 210 / 255.0f;
         int x0 = areaRect.x();
@@ -4023,30 +3942,25 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         DrawWidgets(param, false);
     }
 
-    yStart = s_tools->m_hotZone->topCorner.y();
+    yStart = hotZone->topCorner.y();
     int offset = 0;
 #ifdef Q_OS_MAC
-    // fix the start of text vertically on macos
-    offset = s_tools->m_hotZone->margin / 3;
+    offset = hotZone->margin / 3;
 #endif
-    int iconSize = s_tools->m_hotZone->iconSize;
+    int iconSize = hotZone->iconSize;
 
     if (fullScreenEnabled) {
-        int xStart = s_tools->m_hotZone->topCorner.x();
+        int xStart = hotZone->topCorner.x();
 
-        // label
         RenderText(xStart,
-                   yStart + offset + s_tools->m_hotZone->yTextBottomLineShift,
-                   s_tools->m_hotZone->fs_label, s_tools->m_hotZone->font,
-                   ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
+                   yStart + offset + hotZone->yTextBottomLineShift,
+                   hotZone->fs_label, hotZone->font,
+                   ecvColor::defaultLabelBkgColor, CLICKED_ITEMS, display);
 
-        // icon
-        xStart += s_tools->m_hotZone->fs_labelRect.width() +
-                  s_tools->m_hotZone->margin;
+        xStart += hotZone->fs_labelRect.width() + hotZone->margin;
 
 #ifdef Q_OS_MAC
-        // fix the start of icon on mac
-        xStart += s_tools->m_hotZone->margin * 4;
+        xStart += hotZone->margin * 4;
 #endif
         //"full-screen" icon
         {
@@ -4054,85 +3968,82 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
             int y0 = fullH - (yStart + iconSize);
             WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                     CLICKED_ITEMS);
+            param.context.display = display;
             param.color = ecvColor::FromRgba(ecvColor::ored);
             param.rect = QRect(x0, y0, iconSize + offset, iconSize);
             DrawWidgets(param, false);
 
             WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+            texParam.context.display = display;
             texParam.color = ecvColor::bright;
             texParam.text = "Exit";
             texParam.rect =
                     QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
                           iconSize, iconSize);
-            texParam.fontSize = s_tools->m_hotZone->font.pointSize();
+            texParam.fontSize = hotZone->font.pointSize();
             DrawWidgets(texParam, false);
-            s_tools->m_clickableItems.emplace_back(
+            clickableItems.emplace_back(
                     ClickableItem::LEAVE_FULLSCREEN_MODE,
                     QRect(xStart, yStart, iconSize, iconSize));
             xStart += iconSize;
         }
 
         yStart += iconSize;
-        yStart += s_tools->m_hotZone->margin;
+        yStart += hotZone->margin;
     }
 
     if (s_tools->effectiveCtx().bubbleViewModeEnabled) {
-        int xStart = s_tools->m_hotZone->topCorner.x();
+        int xStart = hotZone->topCorner.x();
 
-        // label
         RenderText(xStart,
-                   yStart + offset + s_tools->m_hotZone->yTextBottomLineShift,
-                   s_tools->m_hotZone->bbv_label, s_tools->m_hotZone->font);
+                   yStart + offset + hotZone->yTextBottomLineShift,
+                   hotZone->bbv_label, hotZone->font,
+                   ecvColor::defaultLabelBkgColor, "", display);
 
-        // icon
-        xStart += s_tools->m_hotZone->bbv_labelRect.width() +
-                  s_tools->m_hotZone->margin;
+        xStart += hotZone->bbv_labelRect.width() + hotZone->margin;
 #ifdef Q_OS_MAC
-        // fix the start of icon on mac
-        xStart += s_tools->m_hotZone->margin * 4;
+        xStart += hotZone->margin * 4;
 #endif
 
         //"exit" icon
         {
-            s_tools->m_clickableItems.emplace_back(
+            clickableItems.emplace_back(
                     ClickableItem::LEAVE_BUBBLE_VIEW_MODE,
-                    QRect(xStart, yStart, s_tools->m_hotZone->iconSize,
-                          s_tools->m_hotZone->iconSize));
-            xStart += s_tools->m_hotZone->iconSize;
+                    QRect(xStart, yStart, hotZone->iconSize,
+                          hotZone->iconSize));
+            xStart += hotZone->iconSize;
         }
 
-        yStart += s_tools->m_hotZone->iconSize;
-        yStart += s_tools->m_hotZone->margin;
+        yStart += hotZone->iconSize;
+        yStart += hotZone->margin;
     }
 
     if (s_tools->effectiveCtx().clickableItemsVisible) {
-        ecvColor::Rgb textColor = ecvColor::Rgb(s_tools->m_hotZone->color);
+        ecvColor::Rgb textColor = ecvColor::Rgb(hotZone->color);
         WIDGETS_PARAMETER widgetParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                       CLICKED_ITEMS);
+        widgetParam.context.display = display;
         widgetParam.color = ecvColor::FromRgba(ecvColor::ogreen);
         WIDGETS_PARAMETER sepParam(WIDGETS_TYPE::WIDGET_POINTS_2D,
                                    CLICKED_ITEMS);
+        sepParam.context.display = display;
         sepParam.color = widgetParam.color;
         sepParam.color.a = 0.5f;
 
         // default point size
         {
-            int xStart = s_tools->m_hotZone->topCorner.x();
+            int xStart = hotZone->topCorner.x();
 
             RenderText(
                     xStart,
-                    yStart + offset + s_tools->m_hotZone->yTextBottomLineShift,
-                    s_tools->m_hotZone->psi_label, s_tools->m_hotZone->font,
-                    textColor, CLICKED_ITEMS);
+                    yStart + offset + hotZone->yTextBottomLineShift,
+                    hotZone->psi_label, hotZone->font,
+                    textColor, CLICKED_ITEMS, display);
 
-            // icons
-            xStart += s_tools->m_hotZone->psi_labelRect.width() +
-                      s_tools->m_hotZone->margin;
+            xStart += hotZone->psi_labelRect.width() + hotZone->margin;
 #ifdef Q_OS_MAC
-            // fix the start of icon on mac
-            xStart += s_tools->m_hotZone->margin * 4;
+            xStart += hotZone->margin * 4;
 #else
-            // fix the start of icon on linux or windows
             xStart -= iconSize;
 #endif
             //"minus" icon
@@ -4141,7 +4052,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 int y0 = fullH - (yStart + iconSize / 2);
                 widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
                 DrawWidgets(widgetParam, false);
-                s_tools->m_clickableItems.emplace_back(
+                clickableItems.emplace_back(
                         ClickableItem::DECREASE_POINT_SIZE,
                         QRect(xStart, yStart, iconSize, iconSize));
                 xStart += iconSize;
@@ -4152,14 +4063,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 sepParam.radius = s_tools->effectiveCtx()
                                           .viewportParams.defaultPointSize /
                                   2;
-                int x0 = xStart +
-                         s_tools->m_hotZone->margin /*s_tools->m_hotZone->margin
-                                                       / 2*/
-                        ;
+                int x0 = xStart + hotZone->margin;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0, iconSize, iconSize);
                 DrawWidgets(sepParam, false);
-                xStart += s_tools->m_hotZone->margin * 2;
+                xStart += hotZone->margin * 2;
             }
 
             //"plus" icon
@@ -4173,34 +4081,30 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
                 DrawWidgets(widgetParam, false);
 
-                s_tools->m_clickableItems.emplace_back(
+                clickableItems.emplace_back(
                         ClickableItem::INCREASE_POINT_SIZE,
                         QRect(xStart, yStart, iconSize, iconSize));
                 xStart += iconSize;
             }
 
             yStart += iconSize;
-            yStart += s_tools->m_hotZone->margin;
+            yStart += hotZone->margin;
         }
 
         // default line size
         {
-            int xStart = s_tools->m_hotZone->topCorner.x();
+            int xStart = hotZone->topCorner.x();
 
             RenderText(
                     xStart,
-                    yStart + offset + s_tools->m_hotZone->yTextBottomLineShift,
-                    s_tools->m_hotZone->lsi_label, s_tools->m_hotZone->font,
-                    textColor, CLICKED_ITEMS);
+                    yStart + offset + hotZone->yTextBottomLineShift,
+                    hotZone->lsi_label, hotZone->font,
+                    textColor, CLICKED_ITEMS, display);
 
-            // icons
-            xStart += s_tools->m_hotZone->lsi_labelRect.width() +
-                      s_tools->m_hotZone->margin;
+            xStart += hotZone->lsi_labelRect.width() + hotZone->margin;
 #ifdef Q_OS_MAC
-            // fix the start of icon on mac
-            xStart += s_tools->m_hotZone->margin * 4;
+            xStart += hotZone->margin * 4;
 #else
-            // fix the start of icon on linux or windows
             xStart -= iconSize;
 #endif
             //"minus" icon
@@ -4210,7 +4114,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
                 DrawWidgets(widgetParam, false);
 
-                s_tools->m_clickableItems.emplace_back(
+                clickableItems.emplace_back(
                         ClickableItem::DECREASE_LINE_WIDTH,
                         QRect(xStart, yStart, iconSize, iconSize));
                 xStart += iconSize;
@@ -4221,14 +4125,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 sepParam.radius = s_tools->effectiveCtx()
                                           .viewportParams.defaultLineWidth /
                                   2;
-                int x0 = xStart +
-                         s_tools->m_hotZone->margin /*s_tools->m_hotZone->margin
-                                                       / 2*/
-                        ;
+                int x0 = xStart + hotZone->margin;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0, iconSize, iconSize);
                 DrawWidgets(sepParam, false);
-                xStart += s_tools->m_hotZone->margin * 2;
+                xStart += hotZone->margin * 2;
             }
 
             //"plus" icon
@@ -4242,14 +4143,14 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
                 widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
                 DrawWidgets(widgetParam, false);
 
-                s_tools->m_clickableItems.emplace_back(
+                clickableItems.emplace_back(
                         ClickableItem::INCREASE_LINE_WIDTH,
                         QRect(xStart, yStart, iconSize, iconSize));
                 xStart += iconSize;
             }
 
             yStart += iconSize;
-            yStart += s_tools->m_hotZone->margin;
+            yStart += hotZone->margin;
         }
     }
 }

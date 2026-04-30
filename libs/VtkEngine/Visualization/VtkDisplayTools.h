@@ -458,40 +458,6 @@ public:
     /// Called automatically when the active view changes (rebindToolsToActiveView).
     void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
-    /// [A] Phase B helper: renders hot zone / clickable items for a specific
-    /// ecvGLView by temporarily routing widget rendering to that view's
-    /// VtkVis pipeline.  Only swaps the minimal
-    /// state needed for DrawClickableItems.
-    class ScopedHotZoneRender {
-    public:
-        ScopedHotZoneRender(
-                VtkDisplayTools* dt,
-                VtkVisPtr vis,
-                QVTKWidgetCustom* widget,
-                ecvDisplayTools::HotZone*& hotZone,
-                ecvViewContext& ctx,
-                std::vector<ecvDisplayTools::ClickableItem>& clickableItems);
-        ~ScopedHotZoneRender();
-        ScopedHotZoneRender(const ScopedHotZoneRender&) = delete;
-        ScopedHotZoneRender& operator=(const ScopedHotZoneRender&) = delete;
-
-        void draw();
-
-    private:
-        VtkDisplayTools* m_dt;
-        VtkVisPtr m_savedVis;
-        ImageVisPtr m_saved2D;
-        QVTKWidgetCustom* m_savedWidget;
-        QRect m_savedGLViewport;
-
-        ecvDisplayTools::HotZone* m_savedHz;
-        std::vector<ecvDisplayTools::ClickableItem> m_savedItems;
-
-        ecvDisplayTools::HotZone*& m_hotZone;
-        ecvViewContext& m_ctx;
-        std::vector<ecvDisplayTools::ClickableItem>& m_clickableItems;
-    };
-
     // ===== Category C: Per-view picking/rendering (MOVE to ecvGLView) =====
 
     /// [C] 2D label picking — needs that view's widget.
@@ -654,11 +620,7 @@ private:
     // ===== Category A: Primary render guards (ELIMINATE) =====
 
     /// [A] Temporarily swap singleton pipeline to primary for legacy
-    /// RedrawDisplay() tail.
-    [[deprecated("Phase M: eliminate with RedrawDisplay singleton tail")]]
-    void beginPrimaryRender() override;
-    [[deprecated("Phase M: eliminate with RedrawDisplay singleton tail")]]
-    void endPrimaryRender() override;
+    // Phase M4: beginPrimaryRender/endPrimaryRender removed (were no-ops).
 
 protected:
     // ===== Current pipeline pointers (Category B/C in Phase M) =====
@@ -676,9 +638,7 @@ protected:
     // ===== Category A: Primary-view-only members (ELIMINATE) =====
 
     // Phase M3: m_renderGuard* members removed (beginPrimaryRender is no-op)
-
-    /// [A] Scoped rendering depth counter for ScopedHotZoneRender.
-    int m_scopedVisSwapDepth = 0;
+    // Phase M4: m_scopedVisSwapDepth removed (ScopedHotZoneRender deleted)
 
     /// [A] Pending text background for scoped rendering.
     struct PendingTextBg {

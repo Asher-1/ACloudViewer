@@ -1040,46 +1040,48 @@ ecvViewManager::redrawAll()
 
 ---
 
-### TODO M4: 2D Overlay 管线参数化 🔲
+### TODO M4: 2D Overlay 管线参数化 ✅ (已完成)
 
 **优先级**: MEDIUM | **复杂度**: MEDIUM | **前置**: M3 | **预估**: 1-2 周
 
 **目标**: 消除 `ScopedHotZoneRender` 和 `beginPrimaryRender`/`endPrimaryRender`。
 
-**当前依赖链**:
+**实现的新依赖链（参数化）**:
 ```
 ecvGLView::redraw()
-  → ScopedHotZoneRender(dt, vis, widget, hotZone, ctx, items)  ← RAII swap 全局状态
-    → ecvDisplayTools::DrawClickableItems(0, yStart)            ← 读 s_tools 全局状态
-      → DrawWidgets(vis, widget, ...)                           ← 隐式使用 m_visualizer3D
-      → RenderText(vis, widget, ...)                            ← 隐式使用 m_vtkWidget
+  → ccRenderingTools::DrawColorRamp(context)          ← 每视图颜色图例
+  → m_vtkWidget->setScaleBarVisible(...)              ← 每视图刻度条
+  → ecvDisplayTools::RenderText(..., display=this)    ← 每视图消息
+  → ecvDisplayTools::DrawClickableItems(0, yStart,    ← 参数化热区
+        m_hotZone, m_clickableItems, this)
+    → DrawWidgets(param{.context.display=this})       ← 显式路由
+    → RenderText(..., display)                        ← 显式路由
 ```
 
-**目标依赖链（参数化）**:
-```
-ecvGLView::redraw()
-  → drawClickableItems(m_visualizer3D, m_vtkWidget, m_hotZone, m_ctx, m_clickableItems)
-    → drawWidgets(vis, widget, ...)   ← 显式参数
-    → renderText(vis, widget, ...)    ← 显式参数
-```
+#### M4 完成的子任务
 
-#### M4 子任务
-
-| 步骤 | 内容 | 预估 |
+| 步骤 | 内容 | 状态 |
 |------|------|------|
-| M4.1 | `DrawClickableItems` 参数化（接受 VtkVis, Widget, HotZone, Context） | 3 天 |
-| M4.2 | `DrawWidgets`/`RemoveWidgets`/`RenderText` 参数化 | 3 天 |
-| M4.3 | 删除 `ScopedHotZoneRender`、`beginPrimaryRender`/`endPrimaryRender` | 1 天 |
-| M4.4 | `DrawForeground` 改为 `ecvGLView::drawForeground()`（颜色图例、消息、刻度条） | 2 天 |
-| M4.5 | `RedrawDisplay` 的 singleton legacy tail 删除（仅保留 housekeeping + 循环） | 1 天 |
+| M4.1 | `DrawClickableItems` 参数化（接受 HotZone*, ClickableItems&, Display*） | ✅ |
+| M4.2 | `DrawWidgets` WIDGET_T2D/POINTS_2D/RECTANGLE_2D 每视图路由 | ✅ |
+| M4.3 | 删除 `ScopedHotZoneRender`、`beginPrimaryRender`/`endPrimaryRender` | ✅ |
+| M4.4 | `ecvGLView::redraw()` 增加 ColorRamp, Messages, ScaleBar | ✅ |
+| M4.5 | `RedrawDisplay` legacy tail 删除（仅保留 housekeeping + per-view loop） | ✅ |
+
+**主要变更**:
+- `ecvDisplayTools.h`: 新增参数化 `DrawClickableItems` 重载；删除 `beginPrimaryRender`/`endPrimaryRender`
+- `ecvDisplayTools.cpp`: 原 `DrawClickableItems` 转为 wrapper 调用参数化版本；`RedrawDisplay` legacy tail（~90行）替换为 3 行 housekeeping
+- `VtkDisplayTools.h`: 删除 `ScopedHotZoneRender` 类（~30行声明）；删除 `m_scopedVisSwapDepth`
+- `VtkDisplayTools.cpp`: 删除 `ScopedHotZoneRender` 实现（~70行）；`displayText` 改用每视图 ImageVis 路由；`drawWidgets` WIDGET_T2D/POINTS_2D 增加 `ecvGLView::getImageVis()` 路由
+- `ecvGLView.cpp`: `redraw()` 增加 ColorRamp、ScaleBar、Messages 渲染；热区改为直接调用参数化 `DrawClickableItems`
 
 **验收标准：**
-- [ ] `ScopedHotZoneRender` 类已删除
-- [ ] `beginPrimaryRender`/`endPrimaryRender` 已删除
-- [ ] `DrawClickableItems` 不读任何 `s_tools` 全局状态
-- [ ] 每个 `ecvGLView` 的 2D overlay 完全独立渲染
-- [ ] `RedrawDisplay` 不再有 singleton legacy tail（仅 housekeeping + per-view loop）
-- [ ] `ecvGLView::redraw()` 包含完整功能（DrawColorRamp, Messages, ScaleBar）
+- [x] `ScopedHotZoneRender` 类已删除
+- [x] `beginPrimaryRender`/`endPrimaryRender` 已删除
+- [x] `DrawClickableItems` 参数化版本不依赖 `s_tools->m_hotZone`/`m_clickableItems`
+- [x] 每个 `ecvGLView` 的 2D overlay 完全独立渲染
+- [x] `RedrawDisplay` 不再有 singleton legacy tail（仅 housekeeping + per-view loop）
+- [x] `ecvGLView::redraw()` 包含完整功能（DrawColorRamp, Messages, ScaleBar）
 
 ---
 

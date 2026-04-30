@@ -109,13 +109,8 @@ public:
      */
     virtual ~ecvDisplayTools() override;
 
-    /// Called at the start of RedrawDisplay() so subclasses can ensure the
-    /// primary rendering pipeline is active (e.g. VtkDisplayTools restores
-    /// its primary VtkVis even when switchActiveView() has re-routed to a
-    /// secondary view for tool operations).
-    virtual void beginPrimaryRender() {}
-    /// Called at the end of RedrawDisplay() to restore the tool-binding state.
-    virtual void endPrimaryRender() {}
+    // Phase M4: beginPrimaryRender/endPrimaryRender removed. Each ecvGLView
+    // now does its own full rendering pipeline without singleton swap.
 
     // ================================================================
     // Per-view context  (Phase A → Phase E)
@@ -1696,8 +1691,14 @@ public:  // visualization matrix transformation
                                          int h,
                                          unsigned char alpha = 255);
     //! Draws the 'hot zone' (+/- icons for point size), 'leave bubble-view'
-    //! button, etc.
+    //! button, etc.  Legacy wrapper using singleton state.
     static void DrawClickableItems(int xStart, int& yStart);
+    //! Phase M4 parameterized overload: accepts explicit per-view state so
+    //! callers (ecvGLView) can bypass ScopedHotZoneRender.
+    static void DrawClickableItems(int xStart, int& yStart,
+                                   HotZone*& hotZone,
+                                   std::vector<ecvClickableItem>& clickableItems,
+                                   ecvGenericGLDisplay* display);
     static void RenderText(
             int x,
             int y,

@@ -13,6 +13,7 @@
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
 #include <ecvHObject.h>
+#include <ecvRenderingTools.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 #include <vtkActor.h>
@@ -185,25 +186,76 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     }
 
     // --- 2D foreground pass ---
-    if (m_globalDBRoot) {
-        context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
-        m_globalDBRoot->draw(context);
+    context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
+    if (m_ctx.interactionFlags &
+        ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
+        context.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
     }
-    if (m_winDBRoot) {
-        context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
-        m_winDBRoot->draw(context);
+    if (m_globalDBRoot) m_globalDBRoot->draw(context);
+    if (m_winDBRoot) m_winDBRoot->draw(context);
+
+    // --- Color ramp ---
+    ccRenderingTools::DrawColorRamp(context);
+
+    // --- Scale bar ---
+    if (m_ctx.displayOverlayEntities && m_vtkWidget) {
+        m_vtkWidget->setScaleBarVisible(
+                !m_ctx.viewportParams.perspectiveView);
     }
 
-    // --- Hot zone / clickable items ---
-    // Phase B: the per-view hot zone is rendered by temporarily routing
-    // DrawClickableItems through this view's VtkVis pipeline.
-    {
-        if (m_displayTools) {
-            Visualization::VtkDisplayTools::ScopedHotZoneRender hzRender(
-                    m_displayTools, m_visualizer3D, m_vtkWidget, m_hotZone,
-                    m_ctx, m_clickableItems);
-            hzRender.draw();
+    // --- Messages overlay ---
+    if (m_ctx.displayOverlayEntities) {
+        auto* st = ecvDisplayTools::sharedTools();
+        if (st && !st->m_messagesToDisplay.empty()) {
+            QFont font = m_font;
+            QFontMetrics fm(font);
+            int margin = fm.height() / 4;
+            int ll_currentHeight = m_ctx.glViewport.height() - 10;
+            int uc_currentHeight = 10;
+
+            for (const auto& message : st->m_messagesToDisplay) {
+                switch (message.position) {
+                    case ecvGenericGLDisplay::LOWER_LEFT_MESSAGE: {
+                        ecvDisplayTools::RenderText(10, ll_currentHeight,
+                                                    message.message, font,
+                                                    ecvColor::defaultLabelBkgColor,
+                                                    "", this);
+                        int messageHeight = fm.height();
+                        ll_currentHeight -= (messageHeight + margin);
+                    } break;
+                    case ecvGenericGLDisplay::UPPER_CENTER_MESSAGE: {
+                        QRect rect = fm.boundingRect(message.message);
+                        int x = (m_ctx.glViewport.width() - rect.width()) / 2;
+                        int y = uc_currentHeight + rect.height();
+                        ecvDisplayTools::RenderText(x, y, message.message,
+                                                    font,
+                                                    ecvColor::defaultLabelBkgColor,
+                                                    "", this);
+                        uc_currentHeight += (rect.height() + margin);
+                    } break;
+                    case ecvGenericGLDisplay::SCREEN_CENTER_MESSAGE: {
+                        QFont newFont(font);
+                        int fontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+                        newFont.setPointSize(fontSize);
+                        QRect rect = QFontMetrics(newFont).boundingRect(
+                                message.message);
+                        ecvDisplayTools::RenderText(
+                                (m_ctx.glViewport.width() - rect.width()) / 2,
+                                (m_ctx.glViewport.height() - rect.height()) / 2,
+                                message.message, newFont,
+                                ecvColor::defaultLabelBkgColor, "", this);
+                    } break;
+                }
+            }
         }
+    }
+
+    // --- Hot zone / clickable items (Phase M4: direct parameterized call) ---
+    if (m_ctx.displayOverlayEntities) {
+        m_clickableItems.clear();
+        int yStart = 0;
+        ecvDisplayTools::DrawClickableItems(0, yStart, m_hotZone,
+                                            m_clickableItems, this);
     }
 
     m_visualizer3D->getRenderWindow()->Render();
