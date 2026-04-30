@@ -452,31 +452,11 @@ public:
     inline VtkVis* get3DViewer() { return m_visualizer3D.get(); }
     inline ImageVis* get2DViewer() { return m_visualizer2D.get(); }
 
-    // ===== Category A: Primary-view-only (ELIMINATE in Phase M) =====
+    // ===== Engine-to-view binding =====
 
-    /// [A] Persistently switch the active VtkVis + widget to a secondary view.
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
+    /// Bind the engine's active VTK pipeline to an ecvGLView's VtkVis + widget.
+    /// Called automatically when the active view changes (rebindToolsToActiveView).
     void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
-
-    /// [A] Restore the primary VtkVis + widget after switchActiveView.
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
-    void restorePrimaryView();
-
-    /// [A] Replace the primary pipeline entirely (used when the original
-    /// primary view is being destroyed and a surviving view takes over).
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
-    void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
-
-    /// [A] When all ecvGLViews are closed, rebind to the original
-    /// registerVisualizer() pipeline (see m_builtInVis / m_builtInWidget).
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
-    void resetToBuiltInPipeline();
-
-    /// [A] Access the original built-in pipeline.
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
-    QVTKWidgetCustom* getBuiltInWidget() const { return m_builtInWidget; }
-    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
-    VtkVisPtr getBuiltInVis() const { return m_builtInVis; }
 
     /// [A] Phase B helper: renders hot zone / clickable items for a specific
     /// ecvGLView by temporarily routing widget rendering to that view's
@@ -695,20 +675,7 @@ protected:
 
     // ===== Category A: Primary-view-only members (ELIMINATE) =====
 
-    /// [A] Saved primary pipeline for restorePrimaryView()
-    VtkVisPtr m_primaryVis = nullptr;
-    QVTKWidgetCustom* m_primaryWidget = nullptr;
-
-    /// [A] The original built-in pipeline created by registerVisualizer().
-    VtkVisPtr m_builtInVis = nullptr;
-    QVTKWidgetCustom* m_builtInWidget = nullptr;
-
-    /// [A] Saved active-tool pipeline during primary render guard
-    VtkVisPtr m_renderGuardSavedVis = nullptr;
-    QVTKWidgetCustom* m_renderGuardSavedWidget = nullptr;
-    HotZone* m_renderGuardSavedHz = nullptr;
-    bool m_renderGuardSavedClickable = false;
-    bool m_renderGuardActive = false;
+    // Phase M3: m_renderGuard* members removed (beginPrimaryRender is no-op)
 
     /// [A] Scoped rendering depth counter for ScopedHotZoneRender.
     int m_scopedVisSwapDepth = 0;
@@ -719,9 +686,9 @@ protected:
         double r = 0, g = 0, b = 0, a = 0;
     } m_pendingTextBg;
 
-    /// [A] Creates the first QVTKWidgetCustom + VtkVis.
-    /// In Phase M3, this logic moves to ecvGLView::initVtkPipeline().
-    [[deprecated("Phase M3: ecvGLView creates its own pipeline")]]
+    /// Creates the engine's base QVTKWidgetCustom + VtkVis infrastructure.
+    /// In M3, ecvGLView creates its own per-view pipeline; this provides
+    /// the shared engine foundation.
     virtual void registerVisualizer(QMainWindow* widget,
                                     bool stereoMode = false) override;
 };
