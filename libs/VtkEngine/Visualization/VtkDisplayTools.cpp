@@ -141,84 +141,8 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     SetCurrentScreen(widget);
 }
 
-// ================================================================
-// ScopedHotZoneRender  (Phase B)
-// ================================================================
-
-VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
-        VtkDisplayTools* dt,
-        VtkVisPtr vis,
-        QVTKWidgetCustom* widget,
-        ecvDisplayTools::HotZone*& hotZone,
-        ecvViewContext& ctx,
-        std::vector<ecvDisplayTools::ClickableItem>& clickableItems)
-    : m_dt(dt),
-      m_savedVis(dt->m_visualizer3D),
-      m_saved2D(dt->m_visualizer2D),
-      m_savedWidget(dt->m_vtkWidget),
-      m_savedGLViewport(dt->m_primaryCtx.glViewport),
-      m_savedHz(dt->m_hotZone),
-      m_savedItems(dt->m_clickableItems),
-      m_hotZone(hotZone),
-      m_ctx(ctx),
-      m_clickableItems(clickableItems) {
-    dt->m_visualizer3D = vis;
-    dt->m_vtkWidget = widget;
-    dt->SetCurrentScreen(widget);
-
-    if (widget) {
-        ecvDisplayTools::SetGLViewport(
-                QRect(0, 0, widget->width(), widget->height()));
-    }
-
-    if (ecvDisplayTools::USE_2D && widget) {
-        auto localVis = widget->localImageVis();
-        if (!localVis && widget->getVtkRender()) {
-            localVis = std::make_shared<ImageVis>("2Dviewer_hz", false);
-            localVis->setRender(widget->getVtkRender());
-            localVis->setupInteractor(widget->GetInteractor(),
-                                      widget->GetRenderWindow());
-            widget->setLocalImageVis(localVis);
-        }
-        if (localVis) {
-            dt->m_visualizer2D = localVis;
-        }
-    }
-
-    ++dt->m_scopedVisSwapDepth;
-
-    if (!m_hotZone) {
-        m_hotZone = new ecvDisplayTools::HotZone(widget);
-    }
-    dt->m_hotZone = m_hotZone;
-}
-
-void VtkDisplayTools::ScopedHotZoneRender::draw() {
-    int yStart = 0;
-    ecvDisplayTools::DrawClickableItems(0, yStart);
-    m_clickableItems = m_dt->m_clickableItems;
-}
-
-VtkDisplayTools::ScopedHotZoneRender::~ScopedHotZoneRender() {
-    --m_dt->m_scopedVisSwapDepth;
-
-    m_dt->m_hotZone = m_savedHz;
-    m_dt->m_clickableItems = m_savedItems;
-
-    m_dt->m_visualizer3D = m_savedVis;
-    m_dt->m_visualizer2D = m_saved2D;
-    m_dt->m_vtkWidget = m_savedWidget;
-    m_dt->m_primaryCtx.glViewport = m_savedGLViewport;
-    m_dt->SetCurrentScreen(m_savedWidget);
-}
-
-void VtkDisplayTools::beginPrimaryRender() {
-    // Phase M3: no-op. All views are ecvGLView; no primary/secondary swap.
-}
-
-void VtkDisplayTools::endPrimaryRender() {
-    // Phase M3: no-op. All views are ecvGLView; no primary/secondary swap.
-}
+// Phase M4: ScopedHotZoneRender deleted. ecvGLView now calls
+// DrawClickableItems(xStart, yStart, hotZone, items, display) directly.
 
 VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
     // Phase M3: prefer per-view pipeline from ecvGLView, fall back to engine.
@@ -1048,15 +972,23 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
         case WIDGETS_TYPE::WIDGET_BBOX:
             break;
         case WIDGETS_TYPE::WIDGET_T2D: {
-            bool isSecondary = param.context.display &&
-                               param.context.display !=
-                                       static_cast<ecvDisplayTools*>(this);
-            if (m_visualizer2D && !isSecondary) {
+            bool isSecondaryT2D = param.context.display &&
+                                  param.context.display !=
+                                          static_cast<ecvDisplayTools*>(this);
+            Visualization::ImageVis* txtVis2D =
+                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
+            if (isSecondaryT2D) {
+                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    txtVis2D = glView->getImageVis().get();
+                }
+            }
+            if (txtVis2D) {
                 std::string text = CVTools::FromQString(param.text);
-                m_visualizer2D->addText(param.rect.x(), param.rect.y(), text,
-                                        param.color.r, param.color.g,
-                                        param.color.b, viewID, param.color.a,
-                                        param.fontSize);
+                txtVis2D->addText(param.rect.x(), param.rect.y(), text,
+                                  param.color.r, param.color.g,
+                                  param.color.b, viewID, param.color.a,
+                                  param.fontSize);
             } else {
                 CC_DRAW_CONTEXT context = param.context;
                 ecvDisplayTools::GetContext(context);
@@ -1229,15 +1161,26 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 }
             }
             break;
-        case WIDGETS_TYPE::WIDGET_POINTS_2D:
-            if (m_visualizer2D) {
+        case WIDGETS_TYPE::WIDGET_POINTS_2D: {
+            bool isSecondaryPt = param.context.display &&
+                                 param.context.display !=
+                                         static_cast<ecvDisplayTools*>(this);
+            Visualization::ImageVis* ptVis2D =
+                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
+            if (isSecondaryPt) {
+                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    ptVis2D = glView->getImageVis().get();
+                }
+            }
+            if (ptVis2D) {
                 Eigen::Array<unsigned char, 3, 1> color(
                         param.color.r, param.color.g, param.color.b);
-                m_visualizer2D->markPoint(param.rect.x(), param.rect.y(), color,
-                                          color, param.radius, viewID,
-                                          param.color.a);
+                ptVis2D->markPoint(param.rect.x(), param.rect.y(), color,
+                                   color, param.radius, viewID,
+                                   param.color.a);
             }
-            break;
+        } break;
         case WIDGETS_TYPE::WIDGET_RECTANGLE_2D: {
             // Route rectangle to the correct view's 2D visualizer
             // (same secondary-view routing as WIDGET_T2D)
@@ -1300,17 +1243,24 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
     bool isSecondaryView =
             context.display &&
             context.display != static_cast<ecvDisplayTools*>(this);
-    if (m_visualizer2D && m_scopedVisSwapDepth == 0 && !isSecondaryView) {
+    Visualization::ImageVis* txtVis2D =
+            m_visualizer2D ? m_visualizer2D.get() : nullptr;
+    if (isSecondaryView) {
+        auto* glView = dynamic_cast<ecvGLView*>(context.display);
+        if (glView && glView->getImageVis()) {
+            txtVis2D = glView->getImageVis().get();
+        }
+    }
+    if (txtVis2D) {
         ecvTextParam textParam = context.textParam;
         std::string viewID = CVTools::FromQString(context.viewID);
         std::string text = CVTools::FromQString(textParam.text);
-
         ecvColor::Rgbf textColor =
                 ecvTools::TransFormRGB(context.textDefaultCol);
-        m_visualizer2D->addText(textParam.textPos.x, textParam.textPos.y, text,
-                                textColor.r, textColor.g, textColor.b, viewID,
-                                textParam.opacity, textParam.font.pointSize(),
-                                textParam.font.bold());
+        txtVis2D->addText(textParam.textPos.x, textParam.textPos.y, text,
+                          textColor.r, textColor.g, textColor.b, viewID,
+                          textParam.opacity, textParam.font.pointSize(),
+                          textParam.font.bold());
     } else {
         vis->displayText(context);
     }
