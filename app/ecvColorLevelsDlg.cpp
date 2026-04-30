@@ -12,9 +12,9 @@
 #include "ecvHistogramWindow.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <QPushButton>
@@ -192,7 +192,7 @@ void ccColorLevelsDlg::onApply() {
         }
 
         // update display
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
 
         // update histogram
         onChannelChanged(channelComboBox->currentIndex());

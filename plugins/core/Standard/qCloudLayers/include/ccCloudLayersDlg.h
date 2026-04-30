@@ -33,6 +33,8 @@
 // CC
 #include <ecvOverlayDialog.h>
 
+#include <QMetaObject>
+
 class ccPointCloud;
 class ccMouseCircle;
 
@@ -107,4 +109,5 @@ private:
     ccCloudLayersHelper* m_helper;
     ccMouseCircle* m_mouseCircle;
     QList<QString> m_presets;
+    QMetaObject::Connection m_mouseMovedConnection{};
 };

@@ -25,6 +25,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvDish.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDisc.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTypes.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawContext.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.h

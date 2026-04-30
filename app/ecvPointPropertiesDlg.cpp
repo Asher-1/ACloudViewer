@@ -15,10 +15,11 @@
 #include <CVLog.h>
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
 // cloudViewer
@@ -77,29 +78,30 @@ bool ccPointPropertiesDlg::linkWith(QWidget* win) {
         return false;
     }
 
-    ecvDisplayTools::RemoveFromOwnDB(m_label);
-    ecvDisplayTools::RemoveFromOwnDB(m_rect2DLabel);
-    ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->removeFromOwnDB(m_label);
+        view->removeFromOwnDB(m_rect2DLabel);
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
 
     m_rect2DLabel->setVisible(false);  //=invalid
     m_rect2DLabel->setSelected(true);  //=closed
     m_label->clear();
 
     // new window?
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::AddToOwnDB(m_label);
-        ecvDisplayTools::AddToOwnDB(m_rect2DLabel);
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved,
-                this, &ccPointPropertiesDlg::update2DZone,
-                Qt::UniqueConnection);
-        connect(ecvDisplayTools::TheInstance(),
-                &ecvDisplayTools::leftButtonClicked, this,
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->addToOwnDB(m_label);
+            view->addToOwnDB(m_rect2DLabel);
+        }
+        ecvViewManager& vm = ecvViewManager::instance();
+        connect(&vm, &ecvViewManager::mouseMoved, this,
+                &ccPointPropertiesDlg::update2DZone, Qt::UniqueConnection);
+        connect(&vm, &ecvViewManager::leftButtonClicked, this,
                 &ccPointPropertiesDlg::processClickedPoint,
                 Qt::UniqueConnection);
-        connect(ecvDisplayTools::TheInstance(),
-                &ecvDisplayTools::buttonReleased, this,
-                &ccPointPropertiesDlg::close2DZone,
-                Qt::UniqueConnection);
+        connect(&vm, &ecvViewManager::buttonReleased, this,
+                &ccPointPropertiesDlg::close2DZone, Qt::UniqueConnection);
     }
 
     return true;
@@ -113,9 +115,12 @@ bool ccPointPropertiesDlg::start() {
 void ccPointPropertiesDlg::stop(bool state) {
     initializeState();
 
-    if (ecvDisplayTools::GetCurrentScreen())
-        ecvDisplayTools::SetInteractionMode(
-                ecvDisplayTools::TRANSFORM_CAMERA());
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        }
+    }
 
     ccPointPickingGenericInterface::stop(state);
 }
@@ -123,9 +128,12 @@ void ccPointPropertiesDlg::stop(bool state) {
 void ccPointPropertiesDlg::onClose() { stop(false); }
 
 void ccPointPropertiesDlg::activatePointPropertiesDisplay() {
-    if (ecvDisplayTools::GetCurrentScreen())
-        ecvDisplayTools::SetInteractionMode(
-                ecvDisplayTools::TRANSFORM_CAMERA());
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        }
+    }
 
     m_pickingMode = POINT_INFO;
     pointPropertiesButton->setDown(true);
@@ -145,7 +153,9 @@ void ccPointPropertiesDlg::activateDistanceDisplay() {
     m_label->setVisible(true);
     m_rect2DLabel->setVisible(false);
 
-    ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
 }
 
 void ccPointPropertiesDlg::activateAngleDisplay() {
@@ -157,7 +167,9 @@ void ccPointPropertiesDlg::activateAngleDisplay() {
     m_label->setVisible(true);
     m_rect2DLabel->setVisible(false);
 
-    ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
 }
 
 void ccPointPropertiesDlg::activate2DZonePicking() {
@@ -169,8 +181,10 @@ void ccPointPropertiesDlg::activate2DZonePicking() {
     m_label->setVisible(false);
     // m_rect2DLabel->setVisible(false);
 
-    ecvDisplayTools::SetInteractionMode(
-            ecvDisplayTools::INTERACT_SEND_ALL_SIGNALS);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(
+                ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
 }
 
 void ccPointPropertiesDlg::initializeState() {
@@ -188,7 +202,7 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
                                : 0);
     } else {
         labelObject = (m_label && m_label->size() > 0 ? m_label : 0);
-        if (labelObject && !ecvDisplayTools::USE_2D) {
+        if (labelObject && !ecvViewManager::use2D()) {
             m_label->setDisplayedIn2D(false);
             m_label->displayPointLegend(true);
         }
@@ -199,8 +213,10 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
     }
 
     // detach current label from window
-    if (ecvDisplayTools::GetCurrentScreen())
-        ecvDisplayTools::RemoveFromOwnDB(labelObject);
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->removeFromOwnDB(labelObject);
+    }
     labelObject->setSelected(false);
 
     ccHObject* newLabelObject = 0;
@@ -228,9 +244,10 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
 
     emit newLabel(labelObject);
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::AddToOwnDB(newLabelObject);
-        ecvDisplayTools::RedrawObject(newLabelObject, true, true);
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->addToOwnDB(newLabelObject);
+        { ecvRedrawScope scope({newLabelObject}, true, true); }
     }
 }
 
@@ -283,11 +300,15 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
     m_label->displayPointLegend(
             m_label->size() ==
             3);  // we need to display 'A', 'B' and 'C' for 3-points labels
-    if (m_label->size() == 1 && ecvDisplayTools::GetCurrentScreen()) {
-        m_label->setPosition(static_cast<float>(picked.clickPoint.x() + 20) /
-                                     ecvDisplayTools::GlWidth(),
-                             static_cast<float>(picked.clickPoint.y() + 20) /
-                                     ecvDisplayTools::GlWidth());
+    if (m_label->size() == 1 && ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            const float gw = static_cast<float>(view->glWidth());
+            if (gw > 0.0f) {
+                m_label->setPosition(
+                        static_cast<float>(picked.clickPoint.x() + 20) / gw,
+                        static_cast<float>(picked.clickPoint.y() + 20) / gw);
+            }
+        }
     }
 
     // output info to Console
@@ -298,7 +319,7 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
         CVLog::Print(QString("[Picked]\t- ") + row);
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         m_label->setEnabled(true);
         m_label->updateLabel();
     }
@@ -309,22 +330,23 @@ void ccPointPropertiesDlg::processClickedPoint(int x, int y) {
         return;
     }
 
-    if (!m_rect2DLabel || !ecvDisplayTools::GetCurrentScreen()) {
+    if (!m_rect2DLabel || !ecvViewManager::instance().activeWidget()) {
         assert(false);
         return;
     }
 
-    CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
+    CCVector3d pos2D(0, 0, 0);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        pos2D = v->toVtkCoordinates(x, y);
+    }
 
     if (m_rect2DLabel->isSelected())  // already closed? we start a new label
     {
         float roi[4] = {static_cast<float>(pos2D.x),
                         static_cast<float>(pos2D.y), 0, 0};
 
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            m_rect2DLabel->setParameters(
-                    ecvDisplayTools::GetViewportParameters());
-        }
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            m_rect2DLabel->setParameters(view->getViewportParameters());
         m_rect2DLabel->setVisible(false);   //=invalid
         m_rect2DLabel->setSelected(false);  //=not closed
         m_rect2DLabel->setRoi(roi);
@@ -339,9 +361,7 @@ void ccPointPropertiesDlg::processClickedPoint(int x, int y) {
         m_rect2DLabel->setSelected(true);  //=closed
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        m_rect2DLabel->updateLabel();
-    }
+    if (ecvViewManager::instance().activeWidget()) m_rect2DLabel->updateLabel();
 }
 
 void ccPointPropertiesDlg::update2DZone(int x,
@@ -355,21 +375,22 @@ void ccPointPropertiesDlg::update2DZone(int x,
         return;
     }
 
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!ecvViewManager::instance().activeWidget()) {
         assert(false);
         return;
     }
 
-    CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
+    CCVector3d pos2D(0, 0, 0);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        pos2D = v->toVtkCoordinates(x, y);
+    }
 
     float roi[4] = {m_rect2DLabel->roi()[0], m_rect2DLabel->roi()[1],
                     static_cast<float>(pos2D.x), static_cast<float>(pos2D.y)};
     m_rect2DLabel->setRoi(roi);
     m_rect2DLabel->setVisible(true);
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        m_rect2DLabel->updateLabel();
-    }
+    if (ecvViewManager::instance().activeWidget()) m_rect2DLabel->updateLabel();
 }
 
 static QString s_last2DLabelComment("");
@@ -391,7 +412,5 @@ void ccPointPropertiesDlg::close2DZone() {
         s_last2DLabelComment = title;
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        m_rect2DLabel->updateLabel();
-    }
+    if (ecvViewManager::instance().activeWidget()) m_rect2DLabel->updateLabel();
 }

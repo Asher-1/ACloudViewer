@@ -25,8 +25,8 @@
 #include <ClassMap.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvPointCloud.h>
+#include <ecvViewManager.h>
 
 #ifdef USE_TBB
 #include <tbb/parallel_for.h>
@@ -653,7 +653,9 @@ void VtkAnnotationTool::updateCloud() {
     m_baseCloud->Modified();
     m_viewer->updatePointCloud(m_baseCloud, m_annotationCloudId);
     CVLog::PrintDebug("[VtkAnnotationTool::updateCloud] calling UpdateScreen");
-    ecvDisplayTools::UpdateScreen();
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->updateScene();
+    }
     CVLog::PrintDebug("[VtkAnnotationTool::updateCloud] UpdateScreen done");
 }
 

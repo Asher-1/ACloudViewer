@@ -141,7 +141,9 @@ public:  // inherit from ecvDisplayTools
      *  @param obj Entity to check
      *  @return true if entity needs redraw
      */
-    bool checkEntityNeedUpdate(VtkVis* vis, std::string& viewID, const ccHObject* obj);
+    bool checkEntityNeedUpdate(VtkVis* vis,
+                               std::string& viewID,
+                               const ccHObject* obj);
 
     virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                           const ccBBox* bbox) override;

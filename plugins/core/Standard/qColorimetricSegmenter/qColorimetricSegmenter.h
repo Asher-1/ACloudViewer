@@ -38,9 +38,8 @@ class ccPointCloud;
 class ColorimetricSegmenter : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID
-                      "cvcorp.cloudviewer.plugin.ColorimetricSegmenter" FILE
-                      "info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.ColorimetricSegmenter" FILE
+                          "info.json")
 
 public:
     explicit ColorimetricSegmenter(QObject* parent = nullptr);

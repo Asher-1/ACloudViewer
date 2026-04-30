@@ -8,7 +8,7 @@
 #include "ecvPlane.h"
 
 // ECV_CORE_LIB
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvMaterialSet.h"
 #include "ecvPointCloud.h"
 
@@ -85,9 +85,9 @@ void ccPlane::hideNormalArrowActors(CC_DRAW_CONTEXT& context) {
         hideCtx.visible = false;
         hideCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
         hideCtx.viewID = m_bodyId;
-        ecvDisplayTools::HideShowEntities(hideCtx);
+        if (hideCtx.display) hideCtx.display->hideShowEntities(hideCtx);
         hideCtx.viewID = m_headId;
-        ecvDisplayTools::HideShowEntities(hideCtx);
+        if (hideCtx.display) hideCtx.display->hideShowEntities(hideCtx);
     }
 }
 
@@ -97,9 +97,9 @@ void ccPlane::showNormalArrowActors(CC_DRAW_CONTEXT& context) {
         showCtx.visible = true;
         showCtx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
         showCtx.viewID = m_bodyId;
-        ecvDisplayTools::HideShowEntities(showCtx);
+        if (showCtx.display) showCtx.display->hideShowEntities(showCtx);
         showCtx.viewID = m_headId;
-        ecvDisplayTools::HideShowEntities(showCtx);
+        if (showCtx.display) showCtx.display->hideShowEntities(showCtx);
     }
 }
 

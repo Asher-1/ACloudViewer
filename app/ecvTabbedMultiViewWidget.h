@@ -91,7 +91,8 @@ public:
     /// The underlying QTabWidget (for MainWindow to access tab bar, etc.).
     QTabWidget* tabWidget() const { return m_tabWidget; }
 
-    /// Save the full layout state (all tabs + structure) for session persistence.
+    /// Save the full layout state (all tabs + structure) for session
+    /// persistence.
     QJsonObject saveLayoutState() const;
 
     /// Restore layout state from a previously saved JSON object.

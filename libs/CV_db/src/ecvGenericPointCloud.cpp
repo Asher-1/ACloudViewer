@@ -20,12 +20,12 @@
 // Local
 #include <limits>
 
-#include "ecvDisplayTools.h"
 #include "ecvOctreeProxy.h"
 #include "ecvPointCloud.h"
 #include "ecvProgressDialog.h"
 #include "ecvScalarField.h"
 #include "ecvSensor.h"
+#include "ecvViewManager.h"
 
 ccGenericPointCloud::ccGenericPointCloud(QString name)
     : ccShiftedObject(name), m_pointSize(0) {
@@ -263,10 +263,11 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
     if (pickWidth == pickHeight) {
         ccOctree::Shared octree = getOctree();
         if (!octree && autoComputeOctree) {
-            ecvProgressDialog pDlg(false,
-                                   ecvDisplayTools::GetMainWindow()
-                                           ? ecvDisplayTools::GetMainWindow()
-                                           : nullptr);
+            QWidget* dlgParent = nullptr;
+            if (auto* aw = ecvViewManager::instance().activeWidget()) {
+                dlgParent = aw->window();
+            }
+            ecvProgressDialog pDlg(false, dlgParent);
             octree = computeOctree(&pDlg);
         }
 
@@ -293,8 +294,6 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
 #ifdef QT_DEBUG
                 if (sf) {
                     sf->computeMinAndMax();
-                    // if (ecvDisplayTools::GetCurrentScreen())
-                    //	ecvDisplayTools::RedrawDisplay();
                 }
 #endif
                 if (point.point) {

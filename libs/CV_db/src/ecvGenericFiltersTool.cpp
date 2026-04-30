@@ -7,11 +7,25 @@
 
 #include "ecvGenericFiltersTool.h"
 
-#include "ecvDisplayTools.h"
+#include <QWidget>
+
+#include "ecvGenericGLDisplay.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
+#include "ecvViewManager.h"
 
 ecvGenericFiltersTool::ecvGenericFiltersTool(FilterType type)
     : m_filterType(type), m_associatedEntity(nullptr) {}
 
-void ecvGenericFiltersTool::update() { ecvDisplayTools::UpdateScreen(); }
+void ecvGenericFiltersTool::update() {
+    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        v->updateScene();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}

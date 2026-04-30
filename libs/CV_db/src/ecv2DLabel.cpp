@@ -7,10 +7,15 @@
 
 #include "ecv2DLabel.h"
 
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
+
 #include "ecvBasicTypes.h"
-#include "ecvDisplayTools.h"
 #include "ecvFacet.h"
+#include "ecvGenericDisplayTools.h"
 #include "ecvGenericPointCloud.h"
+#include "ecvGuiParameters.h"
 #include "ecvHObjectCaster.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
@@ -19,6 +24,7 @@
 
 // Qt
 #include <QApplication>
+#include <QFont>
 #include <QPainter>
 #include <QScreen>
 #include <QSharedPointer>
@@ -27,11 +33,54 @@
 #include <QtCompat.h>
 
 // System
-#include <algorithm>
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
 #include <algorithm>  // For std::max, std::min
+
+namespace {
+
+//! Route widget removal to the view that owns param.context.display, else
+//! effective view.
+inline void removeWidgetsDispatch(const WIDGETS_PARAMETER& param) {
+    if (ecvGenericGLDisplay* display = param.context.display) {
+        display->removeWidgets(param);
+    } else if (ecvGenericGLDisplay* ev =
+                       ecvViewManager::instance().getEffectiveView()) {
+        ev->removeWidgets(param);
+    }
+}
+
+static void mirrorUpdateScreenLikeDrawWidgetsSuffix() {
+    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        v->updateScene();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}
+
+//! Route widget drawing to the active display when available.
+inline void drawWidgetsDispatch(ecvGenericGLDisplay* display,
+                                const WIDGETS_PARAMETER& param,
+                                bool update = false) {
+    if (display) {
+        display->drawWidgets(param);
+    } else if (ecvGenericGLDisplay* ev =
+                       ecvViewManager::instance().getEffectiveView()) {
+        ev->drawWidgets(param);
+    }
+    if (update) {
+        mirrorUpdateScreenLikeDrawWidgetsSuffix();
+    }
+}
+
+}  // namespace
 
 //'Delta' character
 // static const QChar MathSymbolDelta(0x0394);
@@ -238,10 +287,11 @@ bool cc2DLabel::move2D(
     setPosition(m_screenPos[0] + static_cast<float>(dx) / screenWidth,
                 m_screenPos[1] - static_cast<float>(dy) / screenHeight);
 
-    CVLog::Print("[Label] move2D: '%s' dx=%d dy=%d screenWH=(%d,%d) "
-                 "pos (%.4f,%.4f)->(%.4f,%.4f)",
-                 qPrintable(getName()), dx, dy, screenWidth, screenHeight,
-                 oldX, oldY, m_screenPos[0], m_screenPos[1]);
+    CVLog::Print(
+            "[Label] move2D: '%s' dx=%d dy=%d screenWH=(%d,%d) "
+            "pos (%.4f,%.4f)->(%.4f,%.4f)",
+            qPrintable(getName()), dx, dy, screenWidth, screenHeight, oldX,
+            oldY, m_screenPos[0], m_screenPos[1]);
     return true;
 }
 
@@ -265,7 +315,7 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
     setVisible(false);
     setName("Label");
 
-    ecvDisplayTools::UpdateScreen();
+    { ecvRedrawScope scope({this}); }
 }
 
 void cc2DLabel::clear3Dviews() {
@@ -275,24 +325,23 @@ void cc2DLabel::clear3Dviews() {
         return p;
     };
 
-    ecvDisplayTools::RemoveWidgets(
-            makeParam(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID));
+    removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID));
 
     if (c_unitPointMarker) {
         for (int i = 0; i < 3; ++i) {
-            ecvDisplayTools::RemoveWidgets(makeParam(
-                    WIDGETS_TYPE::WIDGET_POINT,
-                    QString::number(i) + m_sphereIdfix));
-            ecvDisplayTools::RemoveWidgets(makeParam(
-                    WIDGETS_TYPE::WIDGET_SPHERE,
-                    QString::number(i) + m_sphereIdfix));
+            removeWidgetsDispatch(
+                    makeParam(WIDGETS_TYPE::WIDGET_POINT,
+                              QString::number(i) + m_sphereIdfix));
+            removeWidgetsDispatch(
+                    makeParam(WIDGETS_TYPE::WIDGET_SPHERE,
+                              QString::number(i) + m_sphereIdfix));
         }
     }
 
     if (c_unitTriMarker) {
-        ecvDisplayTools::RemoveWidgets(
+        removeWidgetsDispatch(
                 makeParam(WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix));
-        ecvDisplayTools::RemoveWidgets(
+        removeWidgetsDispatch(
                 makeParam(WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix));
     }
 }
@@ -306,17 +355,16 @@ void cc2DLabel::clear2Dviews() {
 
     if (!m_historyMessage.isEmpty()) {
         for (const QString& text : m_historyMessage) {
-            ecvDisplayTools::RemoveWidgets(
-                    makeParam(WIDGETS_TYPE::WIDGET_T2D, text));
-            ecvDisplayTools::RemoveWidgets(
+            removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_T2D, text));
+            removeWidgetsDispatch(
                     makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text));
         }
         m_historyMessage.clear();
     }
 
-    ecvDisplayTools::RemoveWidgets(
+    removeWidgetsDispatch(
             makeParam(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
-    ecvDisplayTools::RemoveWidgets(
+    removeWidgetsDispatch(
             makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
 
     // Clean up legacy VTK legend text actors (now rendered by QPainter overlay)
@@ -324,14 +372,13 @@ void cc2DLabel::clear2Dviews() {
     for (size_t j = 0; j < count; ++j) {
         QString legendId =
                 QString("%1_legend_%2").arg(this->getViewId()).arg(j);
-        ecvDisplayTools::RemoveWidgets(
-                makeParam(WIDGETS_TYPE::WIDGET_T2D, legendId));
-        ecvDisplayTools::RemoveWidgets(
+        removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_T2D, legendId));
+        removeWidgetsDispatch(
                 makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId));
     }
 
     // Clean up legacy VTK caption widget (now rendered by QPainter overlay)
-    ecvDisplayTools::RemoveWidgets(
+    removeWidgetsDispatch(
             makeParam(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
 }
 
@@ -341,16 +388,23 @@ void cc2DLabel::clearLabel(bool ignoreCaption) {
     if (!ignoreCaption) {
         WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
         p.context.display = getDisplay();
-        ecvDisplayTools::RemoveWidgets(p);
+        removeWidgetsDispatch(p);
     }
 }
 
 void cc2DLabel::updateLabel() {
     CC_DRAW_CONTEXT context;
-    ecvDisplayTools::GetContext(context);
+    ecvGenericGLDisplay* disp = getDisplay();
+    if (disp) {
+        disp->getContext(context);
+    } else if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+        ev->getContext(context);
+    } else {
+        return;
+    }
     update3DLabelView(context, false);
     update2DLabelView(context, false);
-    ecvDisplayTools::UpdateScreen();
+    { ecvRedrawScope scope({this}); }
 }
 
 void cc2DLabel::update3DLabelView(CC_DRAW_CONTEXT& context,
@@ -358,7 +412,9 @@ void cc2DLabel::update3DLabelView(CC_DRAW_CONTEXT& context,
     context.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
     drawMeOnly3D(context);
     if (updateScreen) {
-        ecvDisplayTools::UpdateScreen();
+        {
+            ecvRedrawScope scope({this});
+        }
     }
 }
 
@@ -367,7 +423,9 @@ void cc2DLabel::update2DLabelView(CC_DRAW_CONTEXT& context,
     context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
     drawMeOnly2D(context);
     if (updateScreen) {
-        ecvDisplayTools::UpdateScreen();
+        {
+            ecvRedrawScope scope({this});
+        }
     }
 }
 
@@ -877,7 +935,15 @@ bool cc2DLabel::acceptClick(int x, int y, Qt::MouseButton button) {
         if (rect.contains(x - m_lastScreenPos[0], y - m_lastScreenPos[1])) {
             m_showFullBody = !m_showFullBody;
             CC_DRAW_CONTEXT context;
-            ecvDisplayTools::GetContext(context);
+            ecvGenericGLDisplay* disp = getDisplay();
+            if (disp) {
+                disp->getContext(context);
+            } else if (auto* ev =
+                               ecvViewManager::instance().getEffectiveView()) {
+                ev->getContext(context);
+            } else {
+                return false;
+            }
             update2DLabelView(context, true);
             return true;
         }
@@ -894,8 +960,10 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!isRedraw() && !context.forceRedraw) {
         static int s_skipLog = 0;
         if ((s_skipLog++ % 300) == 0) {
-            CVLog::Print("[Label] drawMeOnly SKIPPED '%s': isRedraw=%d forceRedraw=%d",
-                         qPrintable(getName()), isRedraw(), context.forceRedraw);
+            CVLog::Print(
+                    "[Label] drawMeOnly SKIPPED '%s': isRedraw=%d "
+                    "forceRedraw=%d",
+                    qPrintable(getName()), isRedraw(), context.forceRedraw);
         }
         return;
     }
@@ -910,11 +978,11 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     } else if (MACRO_Draw2D(context)) {
         static int s_draw2DLog = 0;
         if ((s_draw2DLog++ % 60) == 0) {
-            CVLog::Print("[Label] drawMeOnly -> drawMeOnly2D '%s' "
-                         "display=%p myDisp=%p",
-                         qPrintable(getName()),
-                         static_cast<void*>(context.display),
-                         static_cast<void*>(myDisp));
+            CVLog::Print(
+                    "[Label] drawMeOnly -> drawMeOnly2D '%s' "
+                    "display=%p myDisp=%p",
+                    qPrintable(getName()), static_cast<void*>(context.display),
+                    static_cast<void*>(myDisp));
         }
         drawMeOnly2D(context);
     }
@@ -932,7 +1000,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
+    if (!context.display || !context.display->asWidget()) {
         assert(false);
         return;
     }
@@ -1092,7 +1160,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 param.context.display = context.display;
                 param.setLineWidget(
                         LineWidget(lineSt, lineEd, lineWidth, lineColor));
-                ecvDisplayTools::DrawWidgets(param);
+                drawWidgetsDispatch(context.display, param, false);
             }
         }
 
@@ -1138,7 +1206,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                     m_pickedPoints[i].markerScale = LABEL_MARKER_PIXEL_SIZE;
                     param.center = P;
                     param.color = ecvColor::FromRgba(ecvColor::ored);
-                    ecvDisplayTools::DrawWidgets(param, false);
+                    drawWidgetsDispatch(context.display, param, false);
                 }
             }
         }
@@ -1222,7 +1290,7 @@ struct Tab {
 };
 
 void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!context.display || !context.display->asWidget()) {
         assert(false);
         return;
     }
@@ -1254,10 +1322,11 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
             // we always project the points in 2D (maybe useful later, even when
             // displaying the label during the 2D pass!)
             ccGLCameraParameters camera;
-            if (context.display && context.display != ecvDisplayTools::TheInstance()) {
+            if (context.display) {
                 context.display->getGLCameraParameters(camera);
-            } else {
-                ecvDisplayTools::GetGLCameraParameters(camera);
+            } else if (auto* ev =
+                               ecvViewManager::instance().getEffectiveView()) {
+                ev->getGLCameraParameters(camera);
             }
             for (size_t i = 0; i < count; i++) {
                 CCVector3 P3D = m_pickedPoints[i].getPointPosition();
@@ -1276,7 +1345,19 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
         if (visibleCount) {
             if (m_dispPointsLegend && !entityPickingMode) {
-                QFont font(ecvDisplayTools::GetTextDisplayFont());
+                QFont font = QApplication::font();
+                if (context.display) {
+                    font.setPointSize(static_cast<int>(
+                            context.display->getDisplayParameters()
+                                    .defaultFontSize));
+                } else if (auto* ev = ecvViewManager::instance()
+                                              .getEffectiveView()) {
+                    font.setPointSize(static_cast<int>(
+                            ev->getDisplayParameters().defaultFontSize));
+                } else {
+                    font.setPointSize(static_cast<int>(
+                            ecvGui::Parameters().defaultFontSize));
+                }
                 {
                     int basePt = font.pointSize();
                     if (basePt < 6) basePt = 6;
@@ -1301,11 +1382,9 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                     leg.text = legendText;
                     leg.font = font;
                     leg.color = Qt::white;
-                    float vtkX = static_cast<float>(
-                                         m_pickedPoints[j].pos2D.x) +
+                    float vtkX = static_cast<float>(m_pickedPoints[j].pos2D.x) +
                                  context.labelMarkerTextShift_pix;
-                    float vtkY = static_cast<float>(
-                                         m_pickedPoints[j].pos2D.y) +
+                    float vtkY = static_cast<float>(m_pickedPoints[j].pos2D.y) +
                                  context.labelMarkerTextShift_pix;
                     leg.pos = QPointF(vtkX / dpr, lH - 1.0f - vtkY / dpr);
                     m_overlayData.legends.push_back(leg);
@@ -1323,8 +1402,10 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     // Only display full panel when dispIn2D is set
     if (!m_dispIn2D) {
-        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
+        WIDGETS_PARAMETER capWp(WIDGETS_TYPE::WIDGET_CAPTION,
+                                this->getViewId());
+        capWp.context.display = context.display;
+        removeWidgetsDispatch(capWp);
         return;
     }
 
@@ -1352,10 +1433,16 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     QFont bodyFont, titleFont;
     if (!entityPickingMode) {
         /*** label border ***/
-        bodyFont =
-                ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
-                                                         // into account!
-        titleFont = bodyFont;  // takes rendering zoom into account!
+        bodyFont = QApplication::font();
+        ecvGenericGLDisplay* labelDisp =
+                context.display ? context.display
+                                : ecvViewManager::instance().getEffectiveView();
+        const ecvGui::ParamStruct& lp =
+                labelDisp ? labelDisp->getDisplayParameters()
+                          : ecvGui::Parameters();
+        bodyFont.setPointSize(ecvGenericDisplayTools::FontSizeModifier(
+                static_cast<int>(lp.labelFontSize), context.renderZoom));
+        titleFont = bodyFont;  // label body + title use same base zoom
 
         {
             int bodyPt = bodyFont.pointSize();
@@ -1706,8 +1793,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         m_overlayData.borderColor =
                 QColor(defaultBorderColor.r, defaultBorderColor.g,
                        defaultBorderColor.b, defaultBorderColor.a);
-        m_overlayData.textColor = QColor(defaultTextColor.r,
-                                         defaultTextColor.g,
+        m_overlayData.textColor = QColor(defaultTextColor.r, defaultTextColor.g,
                                          defaultTextColor.b);
         m_overlayData.highlighted = highlighted;
         m_overlayData.title = title;
@@ -1757,7 +1843,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         for (size_t i = 0; i < count; ++i) {
             float cx = static_cast<float>(m_pickedPoints[i].pos2D.x) / dpr;
             float cy = lH - 1.0f -
-                        static_cast<float>(m_pickedPoints[i].pos2D.y) / dpr;
+                       static_cast<float>(m_pickedPoints[i].pos2D.y) / dpr;
             centroid2D += QPointF(cx, cy);
         }
         centroid2D /= static_cast<qreal>(count);
@@ -1765,40 +1851,37 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         QRectF panel = m_overlayData.panelRect;
         QPointF edgePt;
         if (centroid2D.y() > panel.bottom()) {
-            edgePt = QPointF(
-                    qBound(panel.left(), centroid2D.x(), panel.right()),
-                    panel.bottom());
+            edgePt =
+                    QPointF(qBound(panel.left(), centroid2D.x(), panel.right()),
+                            panel.bottom());
         } else if (centroid2D.y() < panel.top()) {
-            edgePt = QPointF(
-                    qBound(panel.left(), centroid2D.x(), panel.right()),
-                    panel.top());
+            edgePt =
+                    QPointF(qBound(panel.left(), centroid2D.x(), panel.right()),
+                            panel.top());
         } else if (centroid2D.x() < panel.left()) {
-            edgePt = QPointF(panel.left(), qBound(panel.top(),
-                                                   centroid2D.y(),
-                                                   panel.bottom()));
+            edgePt = QPointF(panel.left(), qBound(panel.top(), centroid2D.y(),
+                                                  panel.bottom()));
         } else {
-            edgePt = QPointF(panel.right(), qBound(panel.top(),
-                                                    centroid2D.y(),
-                                                    panel.bottom()));
+            edgePt = QPointF(panel.right(), qBound(panel.top(), centroid2D.y(),
+                                                   panel.bottom()));
         }
 
-        int arrowBase =
-                static_cast<int>(c_arrowBaseSize * context.renderZoom);
+        int arrowBase = static_cast<int>(c_arrowBaseSize * context.renderZoom);
         QPointF dir = centroid2D - edgePt;
         qreal len = QLineF(edgePt, centroid2D).length();
         if (len > 3.0) {
             QPointF perp(-dir.y() / len, dir.x() / len);
             QPolygonF wedge;
-            wedge << (edgePt + perp * arrowBase)
-                  << centroid2D
+            wedge << (edgePt + perp * arrowBase) << centroid2D
                   << (edgePt - perp * arrowBase);
             m_overlayData.arrowPolygon = wedge;
         } else {
             m_overlayData.arrowPolygon.clear();
         }
 
-        // CloudCompare-style: connect picked points TO EACH OTHER (not to panel)
-        // 1-point: no segments; 2-point: P0-P1; 3-point: triangle outline
+        // CloudCompare-style: connect picked points TO EACH OTHER (not to
+        // panel) 1-point: no segments; 2-point: P0-P1; 3-point: triangle
+        // outline
         m_overlayData.segmentColor =
                 highlighted ? QColor(Qt::red)
                             : QColor(context.labelDefaultMarkerCol.r,
@@ -1808,16 +1891,12 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
             for (size_t i = 0; i < count; ++i) {
                 size_t j = (i + 1) % count;
                 if (count == 2 && i == 1) break;
-                float px0 = static_cast<float>(
-                                    m_pickedPoints[i].pos2D.x) / dpr;
+                float px0 = static_cast<float>(m_pickedPoints[i].pos2D.x) / dpr;
                 float py0 = lH - 1.0f -
-                             static_cast<float>(
-                                     m_pickedPoints[i].pos2D.y) / dpr;
-                float px1 = static_cast<float>(
-                                    m_pickedPoints[j].pos2D.x) / dpr;
+                            static_cast<float>(m_pickedPoints[i].pos2D.y) / dpr;
+                float px1 = static_cast<float>(m_pickedPoints[j].pos2D.x) / dpr;
                 float py1 = lH - 1.0f -
-                             static_cast<float>(
-                                     m_pickedPoints[j].pos2D.y) / dpr;
+                            static_cast<float>(m_pickedPoints[j].pos2D.y) / dpr;
                 LabelOverlayData::Segment2D seg;
                 seg.from = QPointF(px0, py0);
                 seg.to = QPointF(px1, py1);
@@ -1831,20 +1910,20 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         static int s_prevPanelX = -9999, s_prevPanelY = -9999;
         int curPanelX = static_cast<int>(m_overlayData.panelRect.x());
         int curPanelY = static_cast<int>(m_overlayData.panelRect.y());
-        bool panelMoved = (curPanelX != s_prevPanelX || curPanelY != s_prevPanelY);
+        bool panelMoved =
+                (curPanelX != s_prevPanelX || curPanelY != s_prevPanelY);
         if (panelMoved || (s_drawLogCounter++ % 60) == 0) {
-            CVLog::Print("[Label] drawMeOnly2D: '%s' panel=(%d,%d %dx%d) "
-                         "screenPos=(%.4f,%.4f) logicalWH=(%.1f,%.1f) "
-                         "glW=%d glH=%d dpr=%.1f %s",
-                         qPrintable(getName()),
-                         curPanelX, curPanelY,
-                         static_cast<int>(m_overlayData.panelRect.width()),
-                         static_cast<int>(m_overlayData.panelRect.height()),
-                         m_screenPos[0], m_screenPos[1],
-                         logicalW, logicalH,
-                         context.glW, context.glH,
-                         static_cast<double>(context.devicePixelRatio),
-                         panelMoved ? "*** PANEL MOVED ***" : "");
+            CVLog::Print(
+                    "[Label] drawMeOnly2D: '%s' panel=(%d,%d %dx%d) "
+                    "screenPos=(%.4f,%.4f) logicalWH=(%.1f,%.1f) "
+                    "glW=%d glH=%d dpr=%.1f %s",
+                    qPrintable(getName()), curPanelX, curPanelY,
+                    static_cast<int>(m_overlayData.panelRect.width()),
+                    static_cast<int>(m_overlayData.panelRect.height()),
+                    m_screenPos[0], m_screenPos[1], logicalW, logicalH,
+                    context.glW, context.glH,
+                    static_cast<double>(context.devicePixelRatio),
+                    panelMoved ? "*** PANEL MOVED ***" : "");
             s_prevPanelX = curPanelX;
             s_prevPanelY = curPanelY;
         }
@@ -1892,12 +1971,9 @@ void cc2DLabel::paintOverlay(QPainter& painter) const {
         // Title
         painter.setPen(od.textColor);
         painter.setFont(od.titleFont);
-        QRectF titleRect(panel.left() + od.margin,
-                         panel.top() + od.margin,
-                         panel.width() - 2 * od.margin,
-                         od.titleHeight);
-        painter.drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter,
-                         od.title);
+        QRectF titleRect(panel.left() + od.margin, panel.top() + od.margin,
+                         panel.width() - 2 * od.margin, od.titleHeight);
+        painter.drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter, od.title);
 
         // Body: per-column rendering (CloudCompare style)
         if (!od.columns.isEmpty() && !od.tabCells.isEmpty()) {
@@ -1911,8 +1987,7 @@ void cc2DLabel::paintOverlay(QPainter& painter) const {
                 qreal yRow = panel.top() + od.margin + od.titleHeight +
                              od.tabMarginY + 2;
 
-                int actualRowCount = qMin(od.tabRowCount,
-                                          od.tabCells.size());
+                int actualRowCount = qMin(od.tabRowCount, od.tabCells.size());
                 for (int r = 0; r < actualRowCount; ++r) {
                     if (r > 0 && (r % 3) == 0) yRow += od.margin;
 
@@ -1932,14 +2007,14 @@ void cc2DLabel::paintOverlay(QPainter& painter) const {
                         painter.drawRect(cellRect);
                     }
 
-                    const QString& str =
-                            (c < od.tabCells[r].size())
-                                    ? od.tabCells[r][c]
-                                    : QString();
+                    const QString& str = (c < od.tabCells[r].size())
+                                                 ? od.tabCells[r][c]
+                                                 : QString();
                     int xShift = 0;
                     if (col.isLabel) {
                         xShift = (col.width - 2 * od.tabMarginX -
-                                  bfm.horizontalAdvance(str)) / 2;
+                                  bfm.horizontalAdvance(str)) /
+                                 2;
                         painter.setPen(Qt::white);
                     } else {
                         xShift = col.width - 2 * od.tabMarginX -
@@ -1949,8 +2024,8 @@ void cc2DLabel::paintOverlay(QPainter& painter) const {
                     painter.setBrush(Qt::NoBrush);
                     QRectF textRect(xCol + od.tabMarginX + xShift, yRow,
                                     col.width, rowH);
-                    painter.drawText(textRect,
-                                     Qt::AlignLeft | Qt::AlignVCenter, str);
+                    painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
+                                     str);
 
                     yRow += rowH;
                 }
@@ -1983,10 +2058,8 @@ void cc2DLabel::paintOverlay(QPainter& painter) const {
         QFontMetrics fm(boldFont);
         QRect textRect = fm.boundingRect(leg.text);
         int margin = fm.height() / 4;
-        QRect bgRect(leg.pos.x() - margin,
-                     leg.pos.y() - fm.ascent() - margin,
-                     textRect.width() + 2 * margin,
-                     fm.height() + 2 * margin);
+        QRect bgRect(leg.pos.x() - margin, leg.pos.y() - fm.ascent() - margin,
+                     textRect.width() + 2 * margin, fm.height() + 2 * margin);
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(0, 0, 0, 178));
         painter.drawRect(bgRect);

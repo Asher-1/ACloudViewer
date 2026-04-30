@@ -7,16 +7,15 @@
 
 #pragma once
 
+#include <QPoint>
+#include <QRect>
+#include <QString>
+#include <cstring>
+
 #include "CV_db.h"
 #include "ecvGLMatrix.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvViewportParameters.h"
-
-#include <QPoint>
-#include <QRect>
-#include <QString>
-
-#include <cstring>
 
 /// Per-view state container — groups every piece of display state that
 /// is logically owned by a single 3D view window.

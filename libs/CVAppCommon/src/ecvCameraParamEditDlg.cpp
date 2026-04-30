@@ -18,6 +18,11 @@
 
 // CV_DB_LIB
 #include <ecvGenericCameraTool.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewContext.h>
+#include <ecvViewManager.h>
+#include <ecvViewportParameters.h>
 
 // CV_CORE_LIB
 #include <CVConst.h>
@@ -175,8 +180,13 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
                      SIGNAL(clicked()), this,
                      SLOT(ConfigureCustomViewpoints()));
 
-    this->Internal->AutoPickCenterOfRotation->setChecked(
-            ecvDisplayTools::AutoPickPivotAtCenter());
+    bool autoPickPivotCenter = false;
+    if (ecvGenericGLDisplay* eff =
+                ecvViewManager::instance().getEffectiveView()) {
+        if (const ecvViewContext* vctx = eff->viewContext())
+            autoPickPivotCenter = vctx->autoPickPivotAtCenter;
+    }
+    this->Internal->AutoPickCenterOfRotation->setChecked(autoPickPivotCenter);
 
     QObject::connect(this->Internal->updatePushButton, SIGNAL(clicked()), this,
                      SLOT(updateCamera()));
@@ -185,8 +195,8 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
                      &ecvCameraParamEditDlg::pickPointAsPivot);
     QObject::connect(ecvSettingManager::TheInstance(), SIGNAL(modified()),
                      SLOT(updateCustomViewpointButtons()));
-    QObject::connect(ecvDisplayTools::TheInstance(),
-                     &ecvDisplayTools::cameraParamChanged, this,
+    QObject::connect(&ecvViewManager::instance(),
+                     &ecvViewManager::cameraParamChanged, this,
                      &ecvCameraParamEditDlg::cameraChanged);
 
     // load custom view buttons with any tool tips set by the user in a previous
@@ -216,9 +226,19 @@ void ecvCameraParamEditDlg::onItemPicked(const PickedItem& pi) {
         return;
     }
 
-    ecvDisplayTools::SetPivotPoint(CCVector3d::fromArray(pi.P3D.u));
-    ecvDisplayTools::UpdateScreen();
+    const CCVector3d pivot = CCVector3d::fromArray(pi.P3D.u);
+    if (ecvGenericGLDisplay* view =
+                ecvViewManager::instance().getEffectiveView()) {
+        ecvViewportParameters vp = view->getViewportParameters();
+        vp.setPivotPoint(pivot, true);
+        view->setViewportParameters(vp);
+        view->invalidateViewport();
+        view->deprecate3DLayer();
+        { ecvRedrawScope scope; }
+    }
+    updatePivotPoint(pivot);
 
+    reflectParamChange();
     pickPointAsPivot(false);
 }
 
@@ -234,9 +254,19 @@ void ecvCameraParamEditDlg::processPickedItem(
         return;
     }
 
-    ecvDisplayTools::SetPivotPoint(CCVector3d::fromArray(P.u));
-    ecvDisplayTools::UpdateScreen();
+    const CCVector3d pivot = CCVector3d::fromArray(P.u);
+    if (ecvGenericGLDisplay* view =
+                ecvViewManager::instance().getEffectiveView()) {
+        ecvViewportParameters vp = view->getViewportParameters();
+        vp.setPivotPoint(pivot, true);
+        view->setViewportParameters(vp);
+        view->invalidateViewport();
+        view->deprecate3DLayer();
+        { ecvRedrawScope scope; }
+    }
+    updatePivotPoint(pivot);
 
+    reflectParamChange();
     pickPointAsPivot(false);
 }
 
@@ -269,14 +299,15 @@ bool ecvCameraParamEditDlg::linkWith(QWidget* win) {
 
     if (m_associatedWin) {
         initWith(m_associatedWin);
-        connect(ecvDisplayTools::TheInstance(),
-                &ecvDisplayTools::pivotPointChanged, this,
+        ecvViewManager& vm = ecvViewManager::instance();
+        connect(&vm, &ecvViewManager::pivotPointChanged, this,
                 &ecvCameraParamEditDlg::updatePivotPoint);
-        connect(ecvDisplayTools::TheInstance(),
-                &ecvDisplayTools::perspectiveStateChanged, this,
+        connect(&vm, &ecvViewManager::perspectiveStateChanged, this,
                 &ecvCameraParamEditDlg::updateViewMode);
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::destroyed,
-                this, &QWidget::hide);
+        connect(&vm, &ecvViewManager::activeViewChanged, this,
+                [this](ecvGenericGLDisplay* newView, ecvGenericGLDisplay*) {
+                    if (!newView) hide();
+                });
     }
 
     return true;
@@ -316,7 +347,11 @@ void ecvCameraParamEditDlg::updatePivotPoint(const CCVector3d& P) {
 void ecvCameraParamEditDlg::updateViewMode() {
     if (m_associatedWin) {
         bool objectBased = true;
-        bool perspective = ecvDisplayTools::GetPerspectiveState();
+        bool perspective = false;
+        if (ecvGenericGLDisplay* v =
+                    ecvViewManager::instance().getEffectiveView()) {
+            perspective = v->perspectiveView();
+        }
 
         if (!perspective) {
             this->Internal->currentModeLabel->setText("parallel projection");
@@ -365,7 +400,7 @@ void ecvCameraParamEditDlg::cameraChanged() {
 
 //-----------------------------------------------------------------------------
 void ecvCameraParamEditDlg::autoPickRotationCenterWithCamera() {
-    ecvDisplayTools::SendAutoPickPivotAtCenter(
+    ecvViewManager::instance().notifyAutoPickPivot(
             this->Internal->AutoPickCenterOfRotation->isChecked());
     // m_app->setAutoPickPivot(this->Internal->AutoPickCenterOfRotation->isChecked());
 }
@@ -853,17 +888,22 @@ void ecvCameraParamEditDlg::pickPointAsPivot(bool state) {
             m_pickingHub->removeListener(this);
         }
     } else if (m_associatedWin) {
+        ecvGenericGLDisplay* disp =
+                ecvGenericGLDisplay::FromWidget(m_associatedWin);
+        if (!disp) disp = ecvViewManager::instance().getEffectiveView();
         if (state) {
-            ecvDisplayTools::SetPickingMode(
-                    ecvDisplayTools::POINT_OR_TRIANGLE_PICKING);
-            connect(ecvDisplayTools::TheInstance(),
-                    &ecvDisplayTools::itemPicked, this,
-                    &ecvCameraParamEditDlg::processPickedItem);
+            if (disp) {
+                disp->setPickingMode(
+                        ecvGenericGLDisplay::POINT_OR_TRIANGLE_PICKING);
+            }
+            connect(&ecvViewManager::instance(), &ecvViewManager::itemPicked,
+                    this, &ecvCameraParamEditDlg::processPickedItem);
         } else {
-            ecvDisplayTools::SetPickingMode(ecvDisplayTools::DEFAULT_PICKING);
-            disconnect(ecvDisplayTools::TheInstance(),
-                       &ecvDisplayTools::itemPicked, this,
-                       &ecvCameraParamEditDlg::processPickedItem);
+            if (disp) {
+                disp->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
+            }
+            disconnect(&ecvViewManager::instance(), &ecvViewManager::itemPicked,
+                       this, &ecvCameraParamEditDlg::processPickedItem);
         }
     }
 

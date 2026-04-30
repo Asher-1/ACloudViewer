@@ -109,8 +109,7 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     ecvRepresentationManager::instance().setActorCleanupCallback(
             [this](ccHObject* entity, ecvGenericGLDisplay* view) {
                 if (!entity) return;
-                std::string viewID =
-                        CVTools::FromQString(entity->getViewId());
+                std::string viewID = CVTools::FromQString(entity->getViewId());
                 VtkVis* vis = resolveVisualizer(view);
                 if (vis && vis->contains(viewID)) {
                     vis->removePointCloud(viewID);
@@ -142,32 +141,27 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     // interactor-based picking works correctly in the active view.
     if (m_visualizer3D && m_visualizer3D != vis) {
         disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
-                   this, &ecvDisplayTools::onPointPicking);
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+                   &ecvDisplayTools::onPointPicking);
     }
-    connect(vis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            this, &ecvDisplayTools::onPointPicking,
-            Qt::UniqueConnection);
+    connect(vis.get(), &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
     m_visualizer3D = vis;
     m_vtkWidget = widget;
     SetCurrentScreen(widget);
 }
 
-void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis,
-                                     QVTKWidgetCustom* widget) {
+void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget) {
     if (!vis || !widget) return;
 
     if (m_visualizer3D && m_visualizer3D != vis) {
         disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
-                   this, &ecvDisplayTools::onPointPicking);
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+                   &ecvDisplayTools::onPointPicking);
     }
-    connect(vis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            this, &ecvDisplayTools::onPointPicking,
-            Qt::UniqueConnection);
+    connect(vis.get(), &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            this, &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
     m_visualizer3D = vis;
     m_vtkWidget = widget;
@@ -201,13 +195,12 @@ void VtkDisplayTools::restorePrimaryView() {
     // Reconnect picking signal back to the primary visualizer
     if (m_visualizer3D && m_visualizer3D != m_primaryVis) {
         disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
-                   this, &ecvDisplayTools::onPointPicking);
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+                   &ecvDisplayTools::onPointPicking);
     }
     connect(m_primaryVis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            this, &ecvDisplayTools::onPointPicking,
-            Qt::UniqueConnection);
+            &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+            &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
     m_visualizer3D = m_primaryVis;
     m_vtkWidget = m_primaryWidget;
@@ -241,13 +234,12 @@ void VtkDisplayTools::resetToBuiltInPipeline() {
 
     if (m_visualizer3D && m_visualizer3D != m_builtInVis) {
         disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent,
-                   this, &ecvDisplayTools::onPointPicking);
+                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+                   &ecvDisplayTools::onPointPicking);
     }
     connect(m_builtInVis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            this, &ecvDisplayTools::onPointPicking,
-            Qt::UniqueConnection);
+            &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
+            &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
     m_visualizer3D = m_builtInVis;
     m_vtkWidget = m_builtInWidget;
@@ -289,16 +281,16 @@ VtkDisplayTools::ScopedHotZoneRender::ScopedHotZoneRender(
         ecvDisplayTools::HotZone*& hotZone,
         ecvViewContext& ctx,
         std::vector<ecvDisplayTools::ClickableItem>& clickableItems)
-        : m_dt(dt),
-          m_savedVis(dt->m_visualizer3D),
-          m_saved2D(dt->m_visualizer2D),
-          m_savedWidget(dt->m_vtkWidget),
-          m_savedGLViewport(dt->m_primaryCtx.glViewport),
-          m_savedHz(dt->m_hotZone),
-          m_savedItems(dt->m_clickableItems),
-          m_hotZone(hotZone),
-          m_ctx(ctx),
-          m_clickableItems(clickableItems) {
+    : m_dt(dt),
+      m_savedVis(dt->m_visualizer3D),
+      m_saved2D(dt->m_visualizer2D),
+      m_savedWidget(dt->m_vtkWidget),
+      m_savedGLViewport(dt->m_primaryCtx.glViewport),
+      m_savedHz(dt->m_hotZone),
+      m_savedItems(dt->m_clickableItems),
+      m_hotZone(hotZone),
+      m_ctx(ctx),
+      m_clickableItems(clickableItems) {
     dt->m_visualizer3D = vis;
     dt->m_vtkWidget = widget;
     dt->SetCurrentScreen(widget);
@@ -486,8 +478,8 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                 if (localContext.drawParam.showNorms) {
                     vis->updateNormals(localContext, ecvCloud);
                 } else {
-                    vis->updateNormals(
-                            localContext, static_cast<ccPointCloud*>(nullptr));
+                    vis->updateNormals(localContext,
+                                       static_cast<ccPointCloud*>(nullptr));
                 }
             }
         }
@@ -506,8 +498,8 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
         if (firstShow || localContext.forceRedraw) {
             unsigned numSFs = ecvCloud->getNumberOfScalarFields();
             for (unsigned i = 0; i < numSFs; ++i) {
-                vis->addScalarFieldToVTK(
-                        viewID, ecvCloud, static_cast<int>(i), viewport);
+                vis->addScalarFieldToVTK(viewID, ecvCloud, static_cast<int>(i),
+                                         viewport);
             }
 
             // For point clouds without scalar fields, we still need to set
@@ -569,16 +561,16 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
             ecvCloud->isColorOverridden()) {
             ecvColor::Rgbf pointUniqueColor =
                     ecvTools::TransFormRGB(context.pointsCurrentCol);
-            vis->setPointCloudUniqueColor(
-                    pointUniqueColor.r, pointUniqueColor.g, pointUniqueColor.b,
-                    viewID, viewport);
+            vis->setPointCloudUniqueColor(pointUniqueColor.r,
+                                          pointUniqueColor.g,
+                                          pointUniqueColor.b, viewID, viewport);
         }
 
-        vis->setPointGaussianRendering(
-                ecvCloud->pointGaussianEnabled(),
-                ecvCloud->pointGaussianRadius(),
-                ecvCloud->pointGaussianShaderPreset(),
-                ecvCloud->pointGaussianEmissive(), viewID, viewport);
+        vis->setPointGaussianRendering(ecvCloud->pointGaussianEnabled(),
+                                       ecvCloud->pointGaussianRadius(),
+                                       ecvCloud->pointGaussianShaderPreset(),
+                                       ecvCloud->pointGaussianEmissive(),
+                                       viewID, viewport);
     }
 }
 
@@ -708,8 +700,8 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             mesh->isColorOverridden()) {
             ecvColor::Rgbf meshColor =
                     ecvTools::TransFormRGB(context.defaultMeshColor);
-            vis->setPointCloudUniqueColor(
-                    meshColor.r, meshColor.g, meshColor.b, viewID, viewport);
+            vis->setPointCloudUniqueColor(meshColor.r, meshColor.g, meshColor.b,
+                                          viewID, viewport);
         }
         vis->setPointCloudOpacity(context.opacity, viewID, viewport);
         vis->setMeshStippling(mesh->stipplingEnabled(), viewID, viewport);
@@ -734,8 +726,8 @@ void VtkDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context,
     if (vis->contains(viewID)) {
         ecvColor::Rgbf polygonColor =
                 ecvTools::TransFormRGB(context.defaultPolylineColor);
-        vis->setShapeUniqueColor(polygonColor.r, polygonColor.g,
-                                 polygonColor.b, viewID, viewport);
+        vis->setShapeUniqueColor(polygonColor.r, polygonColor.g, polygonColor.b,
+                                 viewID, viewport);
         vis->setLineWidth(context.currentLineWidth, viewID, viewport);
         vis->setLightMode(viewID, viewport);
     }
@@ -1039,8 +1031,8 @@ void VtkDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
         if (!vis->contains(bboxID)) {
             vis->addCube(bbox->minCorner().x, bbox->maxCorner().x,
                          bbox->minCorner().y, bbox->maxCorner().y,
-                         bbox->minCorner().z, bbox->maxCorner().z,
-                         colf.r, colf.g, colf.b, bboxID, viewport);
+                         bbox->minCorner().z, bbox->maxCorner().z, colf.r,
+                         colf.g, colf.b, bboxID, viewport);
 
             vis->setShapeRenderingProperties(
                     VtkVis::PCL_VISUALIZER_REPRESENTATION,
@@ -1054,9 +1046,8 @@ void VtkDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
         vis->setLineWidth(context.defaultLineWidth, bboxID, viewport);
 
         if (context.opacity >= 0.0 && context.opacity <= 1.0) {
-            vis->setShapeRenderingProperties(
-                    VtkVis::PCL_VISUALIZER_OPACITY, context.opacity, bboxID,
-                    viewport);
+            vis->setShapeRenderingProperties(VtkVis::PCL_VISUALIZER_OPACITY,
+                                             context.opacity, bboxID, viewport);
         }
     }
 }
@@ -1133,8 +1124,10 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
     for (auto* view : views) {
         if (!view || view == this) continue;
         auto* glView = dynamic_cast<ecvGLView*>(view);
-        if (glView && glView->getVisualizer3D()) {
-            glView->getVisualizer3D()->removeEntities(context);
+        auto* vis = glView ? dynamic_cast<VtkVis*>(glView->getVisualizer3D())
+                           : nullptr;
+        if (vis) {
+            vis->removeEntities(context);
         }
     }
 }
@@ -1211,10 +1204,9 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
         case WIDGETS_TYPE::WIDGET_BBOX:
             break;
         case WIDGETS_TYPE::WIDGET_T2D: {
-            bool isSecondary =
-                    param.context.display &&
-                    param.context.display !=
-                            static_cast<ecvDisplayTools*>(this);
+            bool isSecondary = param.context.display &&
+                               param.context.display !=
+                                       static_cast<ecvDisplayTools*>(this);
             if (m_visualizer2D && !isSecondary) {
                 std::string text = CVTools::FromQString(param.text);
                 m_visualizer2D->addText(param.rect.x(), param.rect.y(), text,
@@ -1255,9 +1247,8 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             break;
         case WIDGETS_TYPE::WIDGET_SPHERE:
             if (!vis->contains(viewID)) {
-                vis->addSphere(param.center.x, param.center.y,
-                               param.center.z, param.radius,
-                               param.color.r, param.color.g,
+                vis->addSphere(param.center.x, param.center.y, param.center.z,
+                               param.radius, param.color.r, param.color.g,
                                param.color.b, viewID, viewport);
             }
             break;
@@ -1265,10 +1256,10 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
         case WIDGETS_TYPE::WIDGET_POINT:
             if (!vis->contains(viewID)) {
                 float pxSize = param.pointSize > 0 ? param.pointSize : 10.0f;
-                vis->addPointSprite(
-                        param.center.x, param.center.y, param.center.z,
-                        pxSize, param.color.r, param.color.g, param.color.b,
-                        viewID, viewport);
+                vis->addPointSprite(param.center.x, param.center.y,
+                                    param.center.z, pxSize, param.color.r,
+                                    param.color.g, param.color.b, viewID,
+                                    viewport);
             }
             break;
 
@@ -1278,16 +1269,14 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             }
             break;
         case WIDGETS_TYPE::WIDGET_CAPTION:
-            if (!vis->updateCaption(
-                        CVTools::FromQString(param.text), param.pos,
-                        param.center, param.color.r, param.color.g,
-                        param.color.b, param.color.a, param.fontSize, viewID,
-                        viewport)) {
-                vis->addCaption(
-                        CVTools::FromQString(param.text), param.pos,
-                        param.center, param.color.r, param.color.g,
-                        param.color.b, param.color.a, param.fontSize, viewID,
-                        param.handleEnabled, viewport);
+            if (!vis->updateCaption(CVTools::FromQString(param.text), param.pos,
+                                    param.center, param.color.r, param.color.g,
+                                    param.color.b, param.color.a,
+                                    param.fontSize, viewID, viewport)) {
+                vis->addCaption(CVTools::FromQString(param.text), param.pos,
+                                param.center, param.color.r, param.color.g,
+                                param.color.b, param.color.a, param.fontSize,
+                                viewID, param.handleEnabled, viewport);
             }
             break;
         case WIDGETS_TYPE::WIDGET_LINE_2D:
@@ -1408,15 +1397,13 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
         case WIDGETS_TYPE::WIDGET_RECTANGLE_2D: {
             // Route rectangle to the correct view's 2D visualizer
             // (same secondary-view routing as WIDGET_T2D)
-            bool isSecondaryRect =
-                    param.context.display &&
-                    param.context.display !=
-                            static_cast<ecvDisplayTools*>(this);
+            bool isSecondaryRect = param.context.display &&
+                                   param.context.display !=
+                                           static_cast<ecvDisplayTools*>(this);
             Visualization::ImageVis* rectVis2D =
                     m_visualizer2D ? m_visualizer2D.get() : nullptr;
             if (isSecondaryRect) {
-                auto* glView =
-                        dynamic_cast<ecvGLView*>(param.context.display);
+                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     rectVis2D = glView->getImageVis().get();
                 }
@@ -1430,10 +1417,10 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 int maxY = std::min(minY + param.rect.height(),
                                     rectVis2D->getSize()[1]);
                 if (param.filled) {
-                    rectVis2D->addFilledRectangle(
-                            minX, maxX, minY, maxY, param.color.r,
-                            param.color.g, param.color.b, viewID,
-                            param.color.a);
+                    rectVis2D->addFilledRectangle(minX, maxX, minY, maxY,
+                                                  param.color.r, param.color.g,
+                                                  param.color.b, viewID,
+                                                  param.color.a);
                 } else {
                     rectVis2D->addRectangle(minX, maxX, minY, maxY,
                                             param.color.r, param.color.g,
@@ -1476,10 +1463,10 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
 
         ecvColor::Rgbf textColor =
                 ecvTools::TransFormRGB(context.textDefaultCol);
-        m_visualizer2D->addText(
-                textParam.textPos.x, textParam.textPos.y, text, textColor.r,
-                textColor.g, textColor.b, viewID, textParam.opacity,
-                textParam.font.pointSize(), textParam.font.bold());
+        m_visualizer2D->addText(textParam.textPos.x, textParam.textPos.y, text,
+                                textColor.r, textColor.g, textColor.b, viewID,
+                                textParam.opacity, textParam.font.pointSize(),
+                                textParam.font.bold());
     } else {
         vis->displayText(context);
     }

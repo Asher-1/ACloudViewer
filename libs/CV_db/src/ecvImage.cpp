@@ -9,7 +9,7 @@
 
 // Local
 #include "ecvCameraSensor.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 
 // Qt
 #include <QFileInfo>
@@ -78,7 +78,9 @@ void ccImage::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     if (!MACRO_Draw2D(context) || !MACRO_Foreground(context)) return;
 
-    ecvDisplayTools::Draw(context, this);
+    if (!context.display) return;
+
+    context.display->draw(context, this);
     ////get the set of OpenGL functions (version 2.1)
     // QOpenGLFunctions_2_1 *glFunc =
     // context.glFunctions<QOpenGLFunctions_2_1>(); assert( glFunc != nullptr );

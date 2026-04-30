@@ -8,8 +8,11 @@
 #pragma once
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
+
+#include <QWidget>
 
 //! 2D map display window
 class ccMapWindow : public QWidget {
@@ -45,9 +48,11 @@ public:
         return m_sfForRampDisplay;
     }
 
-    // inherited fro ecvDisplayTools
+    // Uses the effective GL view for draw context when available.
     virtual void getContext(CC_DRAW_CONTEXT& context) {
-        ecvDisplayTools::GetContext(context);
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->getContext(context);
+        }
 
         if (m_showSF) {
             // override sf that will be used for color ramp display

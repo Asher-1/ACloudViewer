@@ -18,8 +18,7 @@ struct SIBRViewerOptions;
 class qSIBR : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qSIBR" FILE
-                          "../info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qSIBR" FILE "../info.json")
 
 public:
     explicit qSIBR(QObject* parent = nullptr);

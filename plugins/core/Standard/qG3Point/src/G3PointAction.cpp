@@ -18,7 +18,6 @@
 #include <Neighbourhood.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
@@ -334,7 +333,7 @@ int G3PointAction::segmentLabels(bool useParallelStrategy) {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    ecvDisplayTools::RedrawObject(m_cloud);
+    { ecvRedrawScope scope({m_cloud}); }
     if (m_app) {
         m_app->updateUI();
     }
@@ -557,7 +556,7 @@ bool G3PointAction::updateLabelsAndColors() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    ecvDisplayTools::RedrawObject(m_cloud);
+    { ecvRedrawScope scope({m_cloud}); }
     if (m_app) {
         m_app->updateUI();
     }
@@ -1588,7 +1587,7 @@ int G3PointAction::segmentLabelsBraunWillett() {
     m_cloud->showColors(true);
     m_cloud->showSF(false);
 
-    ecvDisplayTools::RedrawObject(m_cloud);
+    { ecvRedrawScope scope({m_cloud}); }
     if (m_app) {
         m_app->updateUI();
     }

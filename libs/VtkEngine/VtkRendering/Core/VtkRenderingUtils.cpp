@@ -22,11 +22,11 @@
 #include <LineSet.h>
 #include <ecvCameraSensor.h>
 #include <ecvColorScale.h>
-#include <ecvDisplayTools.h>
 #include <ecvDrawContext.h>
 #include <ecvGBLSensor.h>
+#include <ecvGuiParameters.h>
 #include <ecvScalarField.h>
-
+#include <ecvViewManager.h>
 // VTK Extensions
 #include <VTKExtensions/Utility/vtkDiscretizableColorTransferFunctionCustom.h>
 #include <VTKExtensions/Views/vtkContext2DScalarBarActor.h>
@@ -668,15 +668,19 @@ bool UpdateScalarBar(vtkAbstractWidget* widget,
     double maxRange =
             sortedKeyValues.back().value - sortedKeyValues.front().value;
 
+    ecvGenericGLDisplay* view =
+            CONTEXT.display ? CONTEXT.display
+                            : ecvViewManager::instance().getEffectiveView();
+
     const ecvGui::ParamStruct& displayParams =
-            ecvDisplayTools::GetDisplayParameters();
+            view ? view->getDisplayParameters() : ecvGui::Parameters();
     const ecvColor::Rgbub& textColor = displayParams.textDefaultCol;
     const ccScalarField::Histogram histogram = sf->getHistogram();
     bool showHistogram = (displayParams.colorScaleShowHistogram && !logScale &&
                           histogram.maxValue != 0 && histogram.size() > 1);
 
     float renderZoom = CONTEXT.renderZoom;
-    QFont font = ecvDisplayTools::GetTextDisplayFont();
+    QFont font = view ? view->textDisplayFont() : QFont();
     const int strHeight =
             static_cast<int>(displayParams.defaultFontSize * renderZoom);
     const int scaleWidth =

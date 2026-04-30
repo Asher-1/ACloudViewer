@@ -9,12 +9,13 @@
 
 // Local
 #include "Visualization/VtkVis.h"
+#include "Visualization/ecvGLView.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 // VTK / ParaView Server Manager includes.
 #include <vtkCamera.h>
@@ -77,6 +78,15 @@ void RotateElevation(vtkCamera* camera, double angle) {
 
 };  // namespace
 
+static ecvGenericVisualizer3D* visualizerFromEffectiveView() {
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) return nullptr;
+    if (auto* glv = dynamic_cast<ecvGLView*>(view)) {
+        return glv->getVisualizer3D();
+    }
+    return nullptr;
+}
+
 static EditCameraTool* s_activeTool = nullptr;
 
 //-----------------------------------------------------------------------------
@@ -111,7 +121,7 @@ void EditCameraTool::UpdateCameraInfo() {
     auto* tool = s_activeTool;
     if (!tool) return;
     if (!tool->m_viewer) {
-        SetVisualizer(ecvDisplayTools::GetVisualizer3D());
+        SetVisualizer(visualizerFromEffectiveView());
     }
     if (!tool->m_viewer) return;
 
@@ -125,14 +135,15 @@ void EditCameraTool::UpdateCameraInfo() {
     tool->CurrentCameraParam.viewAngle = tool->m_camera->GetViewAngle();
     tool->CurrentCameraParam.eyeAngle = tool->m_camera->GetEyeAngle();
     tool->m_viewer->getCenterOfRotation(tool->CurrentCameraParam.pivot.u);
-    tool->CurrentCameraParam.rotationFactor = tool->m_viewer->getRotationFactor();
+    tool->CurrentCameraParam.rotationFactor =
+            tool->m_viewer->getRotationFactor();
 }
 
 void EditCameraTool::UpdateCamera() {
     auto* tool = s_activeTool;
     if (!tool) return;
     if (!tool->m_viewer) {
-        SetVisualizer(ecvDisplayTools::GetVisualizer3D());
+        SetVisualizer(visualizerFromEffectiveView());
     }
     if (!tool->m_viewer) return;
 
@@ -166,7 +177,9 @@ void EditCameraTool::resetViewDirection(double look_x,
         double bounds[6];
         m_viewer->getVisibleGeometryBounds().GetBounds(bounds);
         m_viewer->resetCamera(bounds);
-        ecvDisplayTools::UpdateScreen();
+        if (auto* w = ecvViewManager::instance().activeWidget()) {
+            w->update();
+        }
     }
 }
 
@@ -194,8 +207,7 @@ void EditCameraTool::adjustCamera(CameraAdjustmentType enType, double value) {
                 } else {
                     m_camera->Dolly(value);
                 }
-            }
-            break;
+            } break;
             default:
                 break;
         }

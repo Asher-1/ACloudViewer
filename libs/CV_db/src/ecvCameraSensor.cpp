@@ -10,10 +10,12 @@
 #include <cmath>
 
 // LOCAL
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvImage.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
+#include "ecvRedrawScope.h"
+#include "ecvViewManager.h"
 
 // CV_CORE_LIB
 #include <ConjugateGradient.h>
@@ -23,6 +25,37 @@
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
+
+#include "ecvGenericGLDisplay.h"
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->removeEntities(context);
+}
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.visible = visible;
+    context.viewID = obj->getViewId();
+    context.hideShowEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->hideShowEntities(context);
+}
+
+}  // namespace
 
 ccCameraSensor::IntrinsicParameters::IntrinsicParameters()
     : vertFocal_pix(1.0f),
@@ -329,7 +362,8 @@ void ccCameraSensor::setIntrinsicParameters(const IntrinsicParameters& params) {
 }
 
 bool ccCameraSensor::applyViewport() {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !view->asWidget()) {
         CVLog::Warning(
                 "[ccCameraSensor::applyViewport] No associated display!");
         return false;
@@ -347,7 +381,7 @@ bool ccCameraSensor::applyViewport() {
 
     float fov_deg = cloudViewer::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
 
-    ecvViewportParameters viewParams = ecvDisplayTools::GetViewportParameters();
+    ecvViewportParameters viewParams = view->getViewportParameters();
     viewParams.fov_deg = fov_deg;
     viewParams.zFar = static_cast<double>(m_intrinsicParams.zFar_mm);
     viewParams.zNear = static_cast<double>(m_intrinsicParams.zNear_mm);
@@ -382,8 +416,8 @@ bool ccCameraSensor::applyViewport() {
     viewParams.focal = CCVector3d::fromArray(focal3D);
     viewParams.setPivotPoint(viewParams.focal, true);
 
-    ecvDisplayTools::SetViewportParameters(viewParams);
-    ecvDisplayTools::UpdateScreen();
+    view->setViewportParameters(viewParams);
+    { ecvRedrawScope scope; }
 
     return true;
 }
@@ -1476,7 +1510,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     // we draw a little 3d representation of the sensor and some of its
     // attributes
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!context.display || !context.display->asWidget()) {
         return;
     }
 
@@ -1589,7 +1623,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
                             MESH_RENDERING_MODE::ECV_SURFACE_MODE;
                     cameraContext.viewID =
                             m_frustumInfos.frustumHull->getViewId();
-                    ecvDisplayTools::Draw(cameraContext,
+                    context.display->draw(cameraContext,
                                           m_frustumInfos.frustumHull);
                 }
             }
@@ -1601,7 +1635,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         cameraContext.visible =
                 context.visible && m_frustumInfos.drawSidePlanes;
         cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
-        ecvDisplayTools::HideShowEntities(cameraContext);
+        context.display->hideShowEntities(cameraContext);
     }
 
     // tranformation
@@ -1619,7 +1653,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
     cameraContext.defaultMeshColor = getPlaneColor();
-    ecvDisplayTools::Draw(cameraContext, this);
+    context.display->draw(cameraContext, this);
 }
 
 void ccCameraSensor::clearDrawings() {
@@ -1627,17 +1661,18 @@ void ccCameraSensor::clearDrawings() {
         CC_DRAW_CONTEXT context;
         context.removeEntityType = ENTITY_TYPE::ECV_MESH;
         context.removeViewID = m_frustumInfos.frustumHull->getViewId();
-        ecvDisplayTools::RemoveEntities(context);
+        context.display = const_cast<ecvGenericGLDisplay*>(getDisplay());
+        if (context.display) context.display->removeEntities(context);
     }
-    ecvDisplayTools::RemoveEntities(this);
+    removeObjectFromDisplays(this);
 }
 
 void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context) {
     context.viewID = this->getViewId();
-    ecvDisplayTools::HideShowEntities(context);
+    if (context.display) context.display->hideShowEntities(context);
 
     if (m_frustumInfos.frustumHull) {
-        ecvDisplayTools::HideShowEntities(
+        hideShowObjectOnDisplays(
                 m_frustumInfos.frustumHull,
                 context.visible && m_frustumInfos.drawSidePlanes);
     }

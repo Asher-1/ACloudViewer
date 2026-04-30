@@ -8,7 +8,12 @@
 #include "ccSymbolCloud.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
+
+// Qt
+#include <QApplication>
 
 ccSymbolCloud::ccSymbolCloud(QString name /*=QString()*/)
     : ccPointCloud(name),
@@ -16,8 +21,8 @@ ccSymbolCloud::ccSymbolCloud(QString name /*=QString()*/)
       m_fontSize(12),
       m_showSymbols(true),
       m_showLabels(true),
-      m_labelAlignFlags(ecvDisplayTools::ALIGN_HMIDDLE |
-                        ecvDisplayTools::ALIGN_VBOTTOM) {}
+      m_labelAlignFlags(ecvGenericDisplayTools::ALIGN_HMIDDLE |
+                        ecvGenericDisplayTools::ALIGN_VBOTTOM) {}
 
 bool ccSymbolCloud::reserve(unsigned numberOfPoints) {
     if (!ccPointCloud::reserve(numberOfPoints)) return false;
@@ -108,15 +113,15 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
     // nothing to do?!
     if (!m_showSymbols && !m_showLabels) return;
 
-    // get the set of OpenGL functions (version 2.1)
-    assert(ecvDisplayTools::GetCurrentScreen() != nullptr);
-
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
+    if (!context.display || !context.display->asWidget()) {
+        return;
+    }
 
     if (MACRO_Draw3D(context)) {
         // store the 3D camera parameters as we will need them for the 2D pass
         //(and we need the real ones, especially if the rendering zoom is != 1)
-        ecvDisplayTools::GetGLCameraParameters(m_lastCameraParams);
+        if (context.display)
+            context.display->getGLCameraParameters(m_lastCameraParams);
     }
 
     if (MACRO_Draw2D(context) && MACRO_Foreground(context)) {
@@ -149,10 +154,16 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         // ccGLCameraParameters camera;
         // context.display->getGLCameraParameters(camera);
 
-        // only useful when displaying labels!
-        QFont font(
-                ecvDisplayTools::GetTextDisplayFont());  // takes rendering zoom
-                                                         // into account!
+        // Base font per view when available (fallback: primary display tools).
+        QFont font;
+        if (context.display->asWidget()) {
+            font = context.display->asWidget()->font();
+        } else if (ecvGenericGLDisplay* ev =
+                           ecvViewManager::instance().getEffectiveView()) {
+            font = ev->textDisplayFont();
+        } else {
+            font = QApplication::font();
+        }
         font.setPointSize(static_cast<int>(m_fontSize * context.renderZoom));
         // font.setBold(true);
         QFontMetrics fontMetrics(font);
@@ -161,15 +172,15 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         m_symbolSize *= static_cast<double>(context.renderZoom);
 
         double xpShift = 0.0;
-        if (m_labelAlignFlags & ecvDisplayTools::ALIGN_HLEFT)
+        if (m_labelAlignFlags & ecvGenericDisplayTools::ALIGN_HLEFT)
             xpShift = m_symbolSize / 2.0;
-        else if (m_labelAlignFlags & ecvDisplayTools::ALIGN_HRIGHT)
+        else if (m_labelAlignFlags & ecvGenericDisplayTools::ALIGN_HRIGHT)
             xpShift = -m_symbolSize / 2.0;
 
         double ypShift = 0.0;
-        if (m_labelAlignFlags & ecvDisplayTools::ALIGN_VTOP)
+        if (m_labelAlignFlags & ecvGenericDisplayTools::ALIGN_VTOP)
             ypShift = m_symbolSize / 2.0;
-        else if (m_labelAlignFlags & ecvDisplayTools::ALIGN_VBOTTOM)
+        else if (m_labelAlignFlags & ecvGenericDisplayTools::ALIGN_VBOTTOM)
             ypShift = -m_symbolSize / 2.0;
 
         // draw symbols + labels
@@ -198,11 +209,11 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 // draw associated label?
                 if (m_showLabels && hasLabels && m_labels.size() > i &&
                     !m_labels[i].isNull()) {
-                    // draw label
-                    ecvDisplayTools::DisplayText(
+                    context.display->display2DText(
                             m_labels[i], static_cast<int>(Q2D.x + xpShift),
                             static_cast<int>(Q2D.y + ypShift),
-                            m_labelAlignFlags, 0, color->rgb, &font);
+                            static_cast<unsigned char>(m_labelAlignFlags), 0.0f,
+                            color->rgb, &font, QString());
                 }
             }
         }

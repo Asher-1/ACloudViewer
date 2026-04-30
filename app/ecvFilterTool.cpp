@@ -17,7 +17,9 @@
 #include <ecvProgressDialog.h>
 
 // CV_DB_LIB
+#include <ecvGenericGLDisplay.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // QT
 #include <QMessageBox>
@@ -273,5 +275,8 @@ void ecvFilterTool::setView(CC_VIEW_ORIENTATION orientation) {
     // if (box.isValid()) {
     //     bbox = &box;
     // }
-    ecvDisplayTools::SetView(orientation);
+    if (auto* av = ecvViewManager::instance().getEffectiveView()) {
+        ecvViewManager::ScopedRenderOverride scope(av);
+        av->setView(orientation);
+    }
 }

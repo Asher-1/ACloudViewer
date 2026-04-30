@@ -17,7 +17,8 @@
 
 // CV_DB_LIB
 #include <ecvColorTypes.h>
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
 
 #include "ecvHObject.h"
 
@@ -489,7 +490,11 @@ void ccDisplayOptionsDlg::doReject() {
     }
 
     // Force redraw of selected objects to restore BoundingBox properties
-    ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
+    ccHObject* sceneDB = nullptr;
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        sceneDB = v->getSceneDB();
+    }
     if (sceneDB) {
         // Find all selected entities and force them to redraw
         ccHObject::Container allEntities;
@@ -538,7 +543,11 @@ void ccDisplayOptionsDlg::apply() {
     }
 
     // Force redraw of selected objects to update BoundingBox properties
-    ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
+    ccHObject* sceneDB = nullptr;
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        sceneDB = v->getSceneDB();
+    }
     if (sceneDB) {
         // Find all selected entities and force them to redraw
         ccHObject::Container allEntities;

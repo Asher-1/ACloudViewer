@@ -11,12 +11,13 @@
 
 // CV_DB_LIB
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
 #include <ecvFacet.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericTransformTool.h>
 #include <ecvMesh.h>
 #include <ecvPolyline.h>
 #include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 ccGraphicalTransformationTool::ccGraphicalTransformationTool(QWidget* parent)
     : ccOverlayDialog(parent),
@@ -165,24 +166,24 @@ void ccGraphicalTransformationTool::onTranlationModeChanged(bool dummy) {
 }
 
 void ccGraphicalTransformationTool::pause(bool state) {
-    if (!ecvDisplayTools::GetCurrentScreen()) return;
+    if (!ecvViewManager::instance().activeWidget()) return;
 
     if (state) {
-        // ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
-        ecvDisplayTools::DisplayNewMessage(
+        // SetInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        ecvViewManager::instance().displayMessageOnActiveView(
                 "Transformation [PAUSED]",
-                ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 3600,
-                ecvDisplayTools::MANUAL_TRANSFORMATION_MESSAGE);
-        ecvDisplayTools::DisplayNewMessage(
+                ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 3600,
+                ecvGenericGLDisplay::MANUAL_TRANSFORMATION_MESSAGE);
+        ecvViewManager::instance().displayMessageOnActiveView(
                 "Unpause to transform again",
-                ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600,
-                ecvDisplayTools::MANUAL_TRANSFORMATION_MESSAGE);
+                ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, true, 3600,
+                ecvGenericGLDisplay::MANUAL_TRANSFORMATION_MESSAGE);
     } else {
-        // ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_ENTITIES());
-        ecvDisplayTools::DisplayNewMessage(
+        // SetInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_ENTITIES);
+        ecvViewManager::instance().displayMessageOnActiveView(
                 "[Rotation/Translation mode]",
-                ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 3600,
-                ecvDisplayTools::MANUAL_TRANSFORMATION_MESSAGE);
+                ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 3600,
+                ecvGenericGLDisplay::MANUAL_TRANSFORMATION_MESSAGE);
     }
 
     if (m_tool) {
@@ -204,9 +205,9 @@ void ccGraphicalTransformationTool::clear() {
         m_tool->clear();
     }
 
-    ecvDisplayTools::DisplayNewMessage(
+    ecvViewManager::instance().displayMessageOnActiveView(
             QString(),
-            ecvDisplayTools::UPPER_CENTER_MESSAGE);  // clear the area
+            ecvGenericGLDisplay::UPPER_CENTER_MESSAGE);  // clear the area
 }
 
 bool ccGraphicalTransformationTool::addEntity(ccHObject* entity) {
@@ -284,7 +285,7 @@ bool ccGraphicalTransformationTool::linkWith(QWidget* win) {
 
 bool ccGraphicalTransformationTool::start() {
     assert(!m_processing);
-    if (!ecvDisplayTools::GetCurrentScreen() || !m_tool) return false;
+    if (!ecvViewManager::instance().activeWidget() || !m_tool) return false;
 
     unsigned childNum = m_toTransform.getChildrenNumber();
     if (childNum == 0) return false;

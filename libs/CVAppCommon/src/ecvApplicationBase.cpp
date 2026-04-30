@@ -21,7 +21,7 @@
 #include <CVPlatform.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvMaterial.h>
 
 // Common
 #include "ecvApplicationBase.h"

@@ -36,8 +36,8 @@
 
 // CV_DB_LIB
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
+#include <ecvViewManager.h>
 
 // QT
 #include <QFileDialog>
@@ -329,7 +329,7 @@ ccHObject* cvProbeFilter::getOutput() {
         QString filters = "*.png;;*.bmp;;*.pdf";
         QString selectedFilter = "*.png";
         QString selectedFilename = QFileDialog::getSaveFileName(
-                ecvDisplayTools::GetCurrentScreen(),
+                ecvViewManager::instance().activeWidget(),
                 tr("export current plot figure"),
                 ecvFileUtils::defaultDocPath(), filters, &selectedFilter);
 

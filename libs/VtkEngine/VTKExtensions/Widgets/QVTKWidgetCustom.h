@@ -52,8 +52,11 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 class QMainWindow;
 class ecvGLView;
-namespace Visualization { class ImageVis; }
+namespace Visualization {
+class ImageVis;
+}
 #include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
 #include <ecvViewContext.h>
 
 namespace VTKExtensions {
@@ -189,8 +192,8 @@ protected:
             int x, int y, int dx, int dy, bool updatePosition = false);
 
 public:
-    ecvDisplayTools::HotZone* localHotZone() const { return m_localHotZone; }
-    void setLocalHotZone(ecvDisplayTools::HotZone* hz) { m_localHotZone = hz; }
+    ecvHotZone* localHotZone() const { return m_localHotZone; }
+    void setLocalHotZone(ecvHotZone* hz) { m_localHotZone = hz; }
     bool localClickableItemsVisible() const { return m_localClickableVisible; }
 
     /// Phase C: per-view owner.  Set to the ecvGLView that created this
@@ -202,8 +205,12 @@ public:
     ecvGenericGLDisplay* resolveDisplay() const;
 
     /// Per-view 2D overlay (lazy-created for secondary views).
-    std::shared_ptr<Visualization::ImageVis> localImageVis() const { return m_localImageVis; }
-    void setLocalImageVis(std::shared_ptr<Visualization::ImageVis> vis) { m_localImageVis = vis; }
+    std::shared_ptr<Visualization::ImageVis> localImageVis() const {
+        return m_localImageVis;
+    }
+    void setLocalImageVis(std::shared_ptr<Visualization::ImageVis> vis) {
+        m_localImageVis = vis;
+    }
 
     /// Per-view default point size (independent of global singleton value).
     float localDefaultPointSize() const { return m_localDefaultPointSize; }
@@ -228,19 +235,31 @@ public:
     const ecvViewContext& curCtx() const;
     ecvViewContext* ownerCtx();
 
-    ecvGenericGLDisplay::INTERACTION_FLAGS& curInteractionFlags() { return curCtx().interactionFlags; }
-    ecvViewportParameters& curViewportParams() { return curCtx().viewportParams; }
-    const ecvViewportParameters& curViewportParams() const { return curCtx().viewportParams; }
+    ecvGenericGLDisplay::INTERACTION_FLAGS& curInteractionFlags() {
+        return curCtx().interactionFlags;
+    }
+    ecvViewportParameters& curViewportParams() {
+        return curCtx().viewportParams;
+    }
+    const ecvViewportParameters& curViewportParams() const {
+        return curCtx().viewportParams;
+    }
     QPoint& curLastMousePos() { return curCtx().lastMousePos; }
     QPoint& curLastMouseMovePos() { return curCtx().lastMouseMovePos; }
     bool& curMouseMoved() { return curCtx().mouseMoved; }
     bool& curMouseButtonPressed() { return curCtx().mouseButtonPressed; }
-    bool& curIgnoreMouseReleaseEvent() { return curCtx().ignoreMouseReleaseEvent; }
+    bool& curIgnoreMouseReleaseEvent() {
+        return curCtx().ignoreMouseReleaseEvent;
+    }
     bool& curWidgetClicked() { return curCtx().widgetClicked; }
-    ecvGenericGLDisplay::PICKING_MODE& curPickingMode() { return curCtx().pickingMode; }
+    ecvGenericGLDisplay::PICKING_MODE& curPickingMode() {
+        return curCtx().pickingMode;
+    }
     bool& curPickingModeLocked() { return curCtx().pickingModeLocked; }
     int& curPickRadius() { return curCtx().pickRadius; }
-    bool& curAllowRectangularEntityPicking() { return curCtx().allowRectangularEntityPicking; }
+    bool& curAllowRectangularEntityPicking() {
+        return curCtx().allowRectangularEntityPicking;
+    }
     int& curLastPointIndex() { return curCtx().lastPointIndex; }
     QString& curLastPickedId() { return curCtx().lastPickedId; }
     bool& curTouchInProgress() { return curCtx().touchInProgress; }
@@ -252,7 +271,9 @@ public:
     float* curCustomLightPos() { return curCtx().customLightPos; }
     bool& curRotationAxisLocked() { return curCtx().rotationAxisLocked; }
     CCVector3d& curLockedRotationAxis() { return curCtx().lockedRotationAxis; }
-    ecvGenericGLDisplay::PivotVisibility& curPivotVisibility() { return curCtx().pivotVisibility; }
+    ecvGenericGLDisplay::PivotVisibility& curPivotVisibility() {
+        return curCtx().pivotVisibility;
+    }
     bool& curPivotSymbolShown() { return curCtx().pivotSymbolShown; }
     bool& curAutoPickPivotAtCenter() { return curCtx().autoPickPivotAtCenter; }
     bool& curShowCursorCoordinates() { return curCtx().showCursorCoordinates; }
@@ -260,7 +281,7 @@ public:
 
     ccPolyline*& curRectPickingPoly();
     std::list<ccInteractor*>& curActiveItems();
-    ecvDisplayTools::HotZone*& curHotZone();
+    ecvHotZone*& curHotZone();
 
 protected:
     bool m_unclosable = true;
@@ -269,7 +290,7 @@ protected:
     QMainWindow* m_win;
     ecvDisplayTools* m_tools;
     ecvGLView* m_ownerView = nullptr;
-    ecvDisplayTools::HotZone* m_localHotZone = nullptr;
+    ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
     float m_localDefaultPointSize = 1.0f;

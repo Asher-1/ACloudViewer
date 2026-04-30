@@ -47,14 +47,15 @@
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvColorScale.h>
-#include <ecvDisplayTools.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 #include <ecvOrientedBBox.h>
 #include <ecvScalarField.h>
+#include <ecvViewContext.h>
 
 // VTK Extension
 #include <VTKExtensions/Core/vtkMemberFunctionCommand.h>
@@ -1929,9 +1930,8 @@ bool VtkVis::updateCaption(const std::string& text,
 
         rep->SetPosition(1.0 * pos2D.x / winW, 1.0 * pos2D.y / winH);
 
-        const int lineCount =
-                1 + static_cast<int>(
-                            std::count(text.begin(), text.end(), '\n'));
+        const int lineCount = 1 + static_cast<int>(std::count(
+                                          text.begin(), text.end(), '\n'));
         const double refH = 800.0;
         const double scaleFactor = std::clamp(refH / winH, 0.6, 1.6);
         const double baseW = std::clamp(0.30 * scaleFactor, 0.18, 0.50);
@@ -2025,9 +2025,8 @@ bool VtkVis::addCaption(const std::string& text,
         captionRepresentation->SetPosition(1.0 * pos2D.x / winW,
                                            1.0 * pos2D.y / winH);
 
-        const int lineCount =
-                1 + static_cast<int>(
-                            std::count(text.begin(), text.end(), '\n'));
+        const int lineCount = 1 + static_cast<int>(std::count(
+                                          text.begin(), text.end(), '\n'));
         const double refH = 800.0;
         const double scaleFactor = std::clamp(refH / winH, 0.6, 1.6);
         const double baseW = std::clamp(0.30 * scaleFactor, 0.18, 0.50);
@@ -2079,7 +2078,8 @@ bool VtkVis::addCaption(const std::string& text,
     // Associate the widget with the corresponding cc2DLabel for selection
     // Find the cc2DLabel by viewID in the scene database
     cc2DLabel* associatedLabel = nullptr;
-    ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
+    ccHObject* sceneRoot =
+            m_ownerDisplay ? m_ownerDisplay->getSceneDB() : nullptr;
     if (sceneRoot) {
         QString viewIDStr = QString::fromStdString(viewID);
 
@@ -3577,13 +3577,9 @@ void VtkVis::pushCameraState() {
     m_cameraRedoStack.clear();
 }
 
-bool VtkVis::canCameraUndo() const {
-    return m_cameraUndoStack.size() > 0;
-}
+bool VtkVis::canCameraUndo() const { return m_cameraUndoStack.size() > 0; }
 
-bool VtkVis::canCameraRedo() const {
-    return !m_cameraRedoStack.empty();
-}
+bool VtkVis::canCameraRedo() const { return !m_cameraRedoStack.empty(); }
 
 static void applyCameraState(vtkCamera* cam,
                              const VtkVis::CameraParams& state) {
@@ -4045,8 +4041,8 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
                 self->pushCameraState();
             }
         });
-        ThreeDInteractorStyle->AddObserver(
-                vtkCommand::StartInteractionEvent, camUndoCb);
+        ThreeDInteractorStyle->AddObserver(vtkCommand::StartInteractionEvent,
+                                           camUndoCb);
     }
     iren->SetDesiredUpdateRate(30.0);
     iren->Initialize();
@@ -4306,20 +4302,29 @@ QImage VtkVis::renderToImage(int zoomFactor,
                              int viewport) {
     bool coords_changed = false;
     bool lengend_changed = false;
-    bool coords_shown = ecvDisplayTools::OrientationMarkerShown();
-    bool lengend_shown = ecvDisplayTools::OverlayEntitiesAreDisplayed();
+    bool coords_shown = pclMarkerAxesShown();
+    bool lengend_shown =
+            m_ownerDisplay && m_ownerDisplay->viewContext()
+                    ? m_ownerDisplay->viewContext()->displayOverlayEntities
+                    : false;
     if (lengend_shown) {
-        ecvDisplayTools::DisplayOverlayEntities(false);
+        if (m_ownerDisplay && m_ownerDisplay->viewContext()) {
+            m_ownerDisplay->viewContext()->displayOverlayEntities = false;
+        }
         lengend_changed = true;
     }
     if (renderOverlayItems) {
         if (!coords_shown) {
-            ecvDisplayTools::ToggleOrientationMarker(true);
+            if (m_ownerDisplay) {
+                m_ownerDisplay->toggleOrientationMarker(true);
+            }
             coords_changed = true;
         }
     } else {
         if (coords_shown) {
-            ecvDisplayTools::ToggleOrientationMarker(false);
+            if (m_ownerDisplay) {
+                m_ownerDisplay->toggleOrientationMarker(false);
+            }
             coords_changed = true;
         }
     }
@@ -4379,11 +4384,16 @@ QImage VtkVis::renderToImage(int zoomFactor,
     }
 
     if (lengend_changed) {
-        ecvDisplayTools::DisplayOverlayEntities(lengend_shown);
+        if (m_ownerDisplay && m_ownerDisplay->viewContext()) {
+            m_ownerDisplay->viewContext()->displayOverlayEntities =
+                    lengend_shown;
+        }
     }
 
     if (coords_changed) {
-        ecvDisplayTools::ToggleOrientationMarker(coords_shown);
+        if (m_ownerDisplay) {
+            m_ownerDisplay->toggleOrientationMarker(coords_shown);
+        }
     }
 
     return outputImage;
@@ -4718,7 +4728,8 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
             // This handles parent nodes/folders that aren't registered in
             // m_sourceObjectMap
             if (!obj) {
-                ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
+                ccHObject* sceneRoot =
+                        m_ownerDisplay ? m_ownerDisplay->getSceneDB() : nullptr;
                 if (sceneRoot) {
                     QString viewIDStr = QString::fromStdString(viewID);
                     // Recursively search for object with matching viewID

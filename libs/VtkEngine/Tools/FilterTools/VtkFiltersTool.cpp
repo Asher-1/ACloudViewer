@@ -37,7 +37,6 @@
 #include <CVTools.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 
 // VTK

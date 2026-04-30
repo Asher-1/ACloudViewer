@@ -14,10 +14,10 @@
 #include <CVTools.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <qtconcurrentrun.h>
@@ -86,7 +86,7 @@ unsigned ecvDeepSemanticSegmentationTool::getNumberOfValidEntities() const {
 }
 
 bool ecvDeepSemanticSegmentationTool::start() {
-    if (!ecvDisplayTools::GetCurrentScreen()) return false;
+    if (!ecvViewManager::instance().activeWidget()) return false;
 
     // clear history in case
     if (!m_clusters_map.empty()) {

@@ -20,10 +20,10 @@
 #include "ecv2DLabel.h"
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
 #include "ecvFastMarchingForNormsDirection.h"
 #include "ecvFrustum.h"
 #include "ecvGBLSensor.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericMesh.h"
 #include "ecvHObjectCaster.h"
 #include "ecvImage.h"
@@ -3004,7 +3004,7 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         }
 
         // main display procedure
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
     } else if (MACRO_Draw2D(context)) {
         if (MACRO_Foreground(context) && !context.sfColorScaleToDisplay) {
             if (sfColorScaleShown() && sfShown()) {

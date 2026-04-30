@@ -20,12 +20,13 @@
 
 // CV_DB_LIB
 #include <ecv2DLabel.h>
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
 #include <ecvRedrawScope.h>
 #include <ecvSphere.h>
+#include <ecvViewManager.h>
 
 // CV_IO_LIB
 #include <ecvGlobalShiftManager.h>
@@ -141,7 +142,7 @@ void ccPointPairRegistrationDlg::EntityContext::restore() {
     entity->setVisible(wasVisible);
     entity->setEnabled(wasEnabled);
     entity->setSelected(wasSelected);
-    if (ecvDisplayTools::GetMainScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         ecvRedrawScope scope(false, false);
     }
 }
@@ -191,7 +192,7 @@ void ccPointPairRegistrationDlg::clear() {
         it.key()->showSF(false);
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         // clear aligned markers
         for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
             ccHObject* child = m_alignedLabels.getChild(i);
@@ -242,7 +243,7 @@ bool ccPointPairRegistrationDlg::linkWith(QWidget* win) {
 
 bool ccPointPairRegistrationDlg::start() {
     assert(!m_alignedEntities.empty());
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         if (!m_pickingHub->addListener(this, true)) {
             CVLog::Error(
                     "Picking mechanism is already in use! Close the other tool "
@@ -250,8 +251,8 @@ bool ccPointPairRegistrationDlg::start() {
             return false;
         }
 
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::labelmove2D,
-                this, &ccPointPairRegistrationDlg::label2DMove);
+        connect(&ecvViewManager::instance(), &ecvViewManager::labelmove2D, this,
+                &ccPointPairRegistrationDlg::label2DMove);
     }
     return ccOverlayDialog::start();
 }
@@ -259,15 +260,15 @@ bool ccPointPairRegistrationDlg::start() {
 void ccPointPairRegistrationDlg::stop(bool state) {
     updateAlignInfo();
 
-    disconnect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::labelmove2D,
-               this, &ccPointPairRegistrationDlg::label2DMove);
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::labelmove2D, this,
+               &ccPointPairRegistrationDlg::label2DMove);
     m_pickingHub->removeListener(this);
 
     // clear the area
-    ecvDisplayTools::DisplayNewMessage(QString(),
-                                       ecvDisplayTools::UPPER_CENTER_MESSAGE);
-    ecvDisplayTools::DisplayNewMessage(QString(),
-                                       ecvDisplayTools::LOWER_LEFT_MESSAGE);
+    ecvViewManager::instance().displayMessageOnActiveView(
+            QString(), ecvGenericGLDisplay::UPPER_CENTER_MESSAGE);
+    ecvViewManager::instance().displayMessageOnActiveView(
+            QString(), ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
     ccOverlayDialog::stop(state);
 }
 
@@ -278,52 +279,53 @@ static void SetEnabled_recursive(ccHObject* ent) {
 }
 
 void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
-        for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
-            ccHObject* child = m_alignedLabels.getChild(i);
-            if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
-                cc2DLabel* alignLabel = ccHObjectCaster::To2DLabel(child);
-                if (alignLabel) {
-                    if (abs(dx) > 0 || abs(dy) > 0) {
-                        alignLabel->move2D(x * retinaScale, y * retinaScale,
-                                           dx * retinaScale, dy * retinaScale,
-                                           ecvDisplayTools::GlWidth(),
-                                           ecvDisplayTools::GlHeight());
-                    }
+    if (!ecvViewManager::instance().activeWidget()) return;
 
-                    CC_DRAW_CONTEXT context;
-                    ecvDisplayTools::GetContext(context);
-                    alignLabel->update2DLabelView(context);
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
+
+    const int retinaScale = view->getDevicePixelRatio();
+    for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
+        ccHObject* child = m_alignedLabels.getChild(i);
+        if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
+            cc2DLabel* alignLabel = ccHObjectCaster::To2DLabel(child);
+            if (alignLabel) {
+                if (abs(dx) > 0 || abs(dy) > 0) {
+                    alignLabel->move2D(x * retinaScale, y * retinaScale,
+                                       dx * retinaScale, dy * retinaScale,
+                                       view->glWidth(), view->glHeight());
                 }
-            } else  // probably sphere
-            {
-                if (child) {
-                    child->updateNameIn3DRecursive();
-                }
+
+                CC_DRAW_CONTEXT context;
+                view->getContext(context);
+                alignLabel->update2DLabelView(context);
+            }
+        } else  // probably sphere
+        {
+            if (child) {
+                child->updateNameIn3DRecursive();
             }
         }
-        for (unsigned i = 0; i < m_refLabels.getChildrenNumber(); ++i) {
-            ccHObject* child = m_refLabels.getChild(i);
-            if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
-                cc2DLabel* refLabel = ccHObjectCaster::To2DLabel(child);
-                if (refLabel) {
-                    if (abs(dx) > 0 || abs(dy) > 0) {
-                        refLabel->move2D(x * retinaScale, y * retinaScale,
-                                         dx * retinaScale, dy * retinaScale,
-                                         ecvDisplayTools::GlWidth(),
-                                         ecvDisplayTools::GlHeight());
-                    }
+    }
+    for (unsigned i = 0; i < m_refLabels.getChildrenNumber(); ++i) {
+        ccHObject* child = m_refLabels.getChild(i);
+        if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
+            cc2DLabel* refLabel = ccHObjectCaster::To2DLabel(child);
+            if (refLabel) {
+                if (abs(dx) > 0 || abs(dy) > 0) {
+                    refLabel->move2D(x * retinaScale, y * retinaScale,
+                                     dx * retinaScale, dy * retinaScale,
+                                     view->glWidth(), view->glHeight());
+                }
 
-                    CC_DRAW_CONTEXT context;
-                    ecvDisplayTools::GetContext(context);
-                    refLabel->update2DLabelView(context);
-                }
-            } else  // probably sphere
-            {
-                if (child) {
-                    child->updateNameIn3DRecursive();
-                }
+                CC_DRAW_CONTEXT context;
+                view->getContext(context);
+                refLabel->update2DLabelView(context);
+            }
+        } else  // probably sphere
+        {
+            if (child) {
+                child->updateNameIn3DRecursive();
             }
         }
     }
@@ -363,9 +365,11 @@ bool ccPointPairRegistrationDlg::init(
     for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
          ++it) {
         ccHObject* aligned = it.key();
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            hasOriginViewportParams = true;
-            originViewportParams = ecvDisplayTools::GetViewportParameters();
+        if (ecvViewManager::instance().activeWidget()) {
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                hasOriginViewportParams = true;
+                originViewportParams = view->getViewportParameters();
+            }
         }
         // DGM: it's already in the global DB!
         // m_associatedWin->addToOwnDB(aligned);
@@ -378,9 +382,12 @@ bool ccPointPairRegistrationDlg::init(
     for (auto it = m_referenceEntities.begin(); it != m_referenceEntities.end();
          ++it) {
         ccHObject* reference = it.key();
-        if (!hasOriginViewportParams && ecvDisplayTools::GetCurrentScreen()) {
-            hasOriginViewportParams = true;
-            originViewportParams = ecvDisplayTools::GetViewportParameters();
+        if (!hasOriginViewportParams &&
+            ecvViewManager::instance().activeWidget()) {
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                hasOriginViewportParams = true;
+                originViewportParams = view->getViewportParameters();
+            }
         }
         // DGM: it's already in the global DB!
         // m_associatedWin->addToOwnDB(reference);
@@ -393,27 +400,33 @@ bool ccPointPairRegistrationDlg::init(
     showReferenceCheckBox->setEnabled(!m_referenceEntities.empty());
     showAlignedCheckBox->setChecked(true);
 
-    ecvDisplayTools::GetCurrentScreen()->showMaximized();
+    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        w->showMaximized();
+    }
     resetTitle();
-    ecvDisplayTools::DisplayNewMessage(QString(),
-                                       ecvDisplayTools::LOWER_LEFT_MESSAGE);
-    ecvDisplayTools::DisplayNewMessage(
+    ecvViewManager::instance().displayMessageOnActiveView(
+            QString(), ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
+    ecvViewManager::instance().displayMessageOnActiveView(
             "(you can add points 'manually' if necessary)",
-            ecvDisplayTools::LOWER_LEFT_MESSAGE, true, 3600);
-    ecvDisplayTools::DisplayNewMessage(
+            ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, true, 3600);
+    ecvViewManager::instance().displayMessageOnActiveView(
             QString("Pick equivalent points on both clouds (at least %1 pairs "
                     "- mind the order)")
                     .arg(MIN_PAIRS_COUNT),
-            ecvDisplayTools::LOWER_LEFT_MESSAGE, true, 3600);
+            ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, true, 3600);
 
     {
         ecvRedrawScope scope;
         scope.dismiss();
         if (hasOriginViewportParams) {
-            ecvDisplayTools::SetViewportParameters(originViewportParams);
-            ecvDisplayTools::RedrawDisplay(true);
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->setViewportParameters(originViewportParams);
+            }
+            { ecvRedrawScope redrawScope(true); }
         } else {
-            ecvDisplayTools::ZoomGlobal();
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->updateConstellationCenterAndZoom(nullptr);
+            }
         }
     }
 
@@ -586,7 +599,7 @@ bool ccPointPairRegistrationDlg::convertToSphereCenter(
 }
 
 void ccPointPairRegistrationDlg::onItemPicked(const PickedItem& pi) {
-    if (!ecvDisplayTools::GetCurrentScreen()) return;
+    if (!ecvViewManager::instance().activeWidget()) return;
 
     // no point picking when paused!
     if (m_paused) return;
@@ -1089,7 +1102,10 @@ void ccPointPairRegistrationDlg::updateSphereMarks(ccHObject* obj,
         if (remove) {
             context.removeEntityType = ENTITY_TYPE::ECV_MESH;
             context.removeViewID = obj->getViewId();
-            ecvDisplayTools::RemoveEntities(context);
+            if (auto* disp = ecvViewManager::instance().getEffectiveView()) {
+                context.display = disp;
+                disp->removeEntities(context);
+            }
             obj->showNameIn3D(false);
         } else {
             obj->showNameIn3D(true);
@@ -1107,7 +1123,7 @@ void ccPointPairRegistrationDlg::updateAlignedMarkers(int index) {
         return;
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         ccHObject* child = m_alignedLabels.getChild(index);
         if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
             cc2DLabel* label = ccHObjectCaster::To2DLabel(child);
@@ -1124,7 +1140,7 @@ void ccPointPairRegistrationDlg::updateRefMarkers(int index) {
         return;
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         ccHObject* child = m_refLabels.getChild(index);
         if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
             cc2DLabel* label = ccHObjectCaster::To2DLabel(child);
@@ -1159,9 +1175,11 @@ void ccPointPairRegistrationDlg::showAlignedEntities(bool state) {
         ecvRedrawScope scope;
         scope.dismiss();
         if (autoZoomCheckBox->isChecked()) {
-            ecvDisplayTools::ZoomGlobal();
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->updateConstellationCenterAndZoom(nullptr);
+            }
         } else {
-            ecvDisplayTools::RedrawDisplay();
+            { ecvRedrawScope redrawScope; }
         }
     }
 }
@@ -1189,9 +1207,11 @@ void ccPointPairRegistrationDlg::showReferenceEntities(bool state) {
         ecvRedrawScope scope;
         scope.dismiss();
         if (autoZoomCheckBox->isChecked()) {
-            ecvDisplayTools::ZoomGlobal();
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->updateConstellationCenterAndZoom(nullptr);
+            }
         } else {
-            ecvDisplayTools::RedrawDisplay();
+            { ecvRedrawScope redrawScope; }
         }
     }
 }
@@ -1295,12 +1315,12 @@ void ccPointPairRegistrationDlg::clearRMSColumns() {
 }
 
 void ccPointPairRegistrationDlg::resetTitle() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::DisplayNewMessage(
-                QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false);
-        ecvDisplayTools::DisplayNewMessage(
+    if (ecvViewManager::instance().activeWidget()) {
+        ecvViewManager::instance().displayMessageOnActiveView(
+                QString(), ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false);
+        ecvViewManager::instance().displayMessageOnActiveView(
                 "[Point-pair registration]",
-                ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600);
+                ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, true, 3600);
     }
 }
 
@@ -1315,8 +1335,8 @@ void ccPointPairRegistrationDlg::updateAlignInfo() {
         m_refPoints.size() >= MIN_PAIRS_COUNT &&
         callHornRegistration(trans, rms, true)) {
         QString rmsString = QString("Achievable RMS: %1").arg(rms);
-        ecvDisplayTools::DisplayNewMessage(
-                rmsString, ecvDisplayTools::UPPER_CENTER_MESSAGE, true,
+        ecvViewManager::instance().displayMessageOnActiveView(
+                rmsString, ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, true,
                 60 * 60);
         resetToolButton->setEnabled(true);
         validToolButton->setEnabled(true);
@@ -1325,7 +1345,7 @@ void ccPointPairRegistrationDlg::updateAlignInfo() {
         validToolButton->setEnabled(false);
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         ecvRedrawScope scope(true);
     }
 }
@@ -1342,8 +1362,8 @@ void ccPointPairRegistrationDlg::align() {
         if (rms >= 0) {
             QString rmsString = QString("Current RMS: %1").arg(rms);
             CVLog::Print(QString("[PointPairRegistration] ") + rmsString);
-            ecvDisplayTools::DisplayNewMessage(
-                    rmsString, ecvDisplayTools::UPPER_CENTER_MESSAGE, true,
+            ecvViewManager::instance().displayMessageOnActiveView(
+                    rmsString, ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, true,
                     60 * 60);
         } else {
             CVLog::Warning(
@@ -1367,7 +1387,7 @@ void ccPointPairRegistrationDlg::align() {
         m_transMatHistory = transMat;
         transformAlignedEntity(transMat, true);
 
-        if (ecvDisplayTools::GetCurrentScreen()) {
+        if (ecvViewManager::instance().activeWidget()) {
             ecvRedrawScope scope;
             for (auto it = m_alignedEntities.begin();
                  it != m_alignedEntities.end(); ++it) {
@@ -1459,7 +1479,9 @@ void ccPointPairRegistrationDlg::transformAlignedEntity(
         if (m_app) m_app->putObjectBackIntoDBTree(it.key(), objContext);
 
         if (!apply) {
-            ecvDisplayTools::RemoveBB(it.key()->getViewId());
+            if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+                v->removeBB(it.key()->getViewId());
+            }
         }
     }
     m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat
@@ -1480,7 +1502,7 @@ void ccPointPairRegistrationDlg::reset() {
         }
     }
 
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         ecvRedrawScope scope;
         for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
              ++it) {
@@ -1517,7 +1539,9 @@ void ccPointPairRegistrationDlg::zoomGlobalOnRegistrationEntities() {
         bbox = tempGroup.getDisplayBB_recursive(false);
     }
     if (bbox.isValid()) {
-        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, false);
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->updateConstellationCenterAndZoom(&bbox);
+        }
     }
 }
 

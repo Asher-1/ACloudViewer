@@ -10,7 +10,7 @@
 // LOCAL
 #include <Logging.h>
 
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvOrientedBBox.h"
 
 using namespace cloudViewer;
@@ -71,12 +71,12 @@ void ccBBox::draw(CC_DRAW_CONTEXT& context) {
 }
 
 void ccBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
-    if (!ecvDisplayTools::GetMainWindow()) {
+    if (!context.display) {
         return;
     }
     context.bbDefaultCol = col;
     context.viewID = QString("BBox-") + context.viewID;
-    ecvDisplayTools::DrawBBox(context, this);
+    context.display->drawBBox(context, this);
 }
 
 ccBBox ccBBox::CreateFromPoints(const std::vector<CCVector3>& points) {

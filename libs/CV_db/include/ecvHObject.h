@@ -474,8 +474,7 @@ public:  // bounding-box
     specified 3D view (i.e. potentially not visible) \return bounding-box
     **/
     virtual ccBBox getDisplayBB_recursive(
-            bool relative,
-            const ecvGenericGLDisplay* display = nullptr);
+            bool relative, const ecvGenericGLDisplay* display = nullptr);
 
     //! Returns best-fit bounding-box (if available)
     /** \warning Only suitable for leaf objects (i.e. without children)

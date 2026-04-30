@@ -10,7 +10,8 @@
 // Local
 #include "ecvCone.h"
 #include "ecvCylinder.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
+#include "ecvViewManager.h"
 
 // Qt
 #include <QSharedPointer>
@@ -32,7 +33,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context,
                                            const ecvColor::Rgb* color /*=0*/) {
     // get the set of OpenGL functions (version 2.1)
 
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
+    if (ecvViewManager::instance().activeWidget() == nullptr) return;
 
     // delete history
     clearNormalVector(context);
@@ -115,10 +116,10 @@ void ccPlanarEntityInterface::clearNormalVector(CC_DRAW_CONTEXT& context) {
     context.removeEntityType = ENTITY_TYPE::ECV_MESH;
     if (c_unitNormalSymbol) {
         context.removeViewID = m_bodyId;
-        ecvDisplayTools::RemoveEntities(context);
+        if (context.display) context.display->removeEntities(context);
     }
     if (c_unitNormalHeadSymbol) {
         context.removeViewID = m_headId;
-        ecvDisplayTools::RemoveEntities(context);
+        if (context.display) context.display->removeEntities(context);
     }
 }

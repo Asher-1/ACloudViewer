@@ -7,10 +7,8 @@
 
 #include "ecvGLView.h"
 
-#include <cstring>
-
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
 #include <ecvHObject.h>
@@ -20,6 +18,10 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
@@ -48,7 +50,8 @@ ecvGLView::~ecvGLView() {
     }
 
     ecvRepresentationManager::instance().removeRepresentationsForView(this);
-    // Safety net: idempotent if prepareViewClose() already called unregisterView
+    // Safety net: idempotent if prepareViewClose() already called
+    // unregisterView
     ecvViewManager::instance().unregisterView(this);
 
     if (m_vtkWidget) {
@@ -81,8 +84,9 @@ ecvGLView* ecvGLView::Create(QMainWindow* parent, bool stereoMode) {
 }
 
 void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
-    m_vtkWidget = new QVTKWidgetCustom(parent, ecvDisplayTools::TheInstance(),
-                                       stereoMode);
+    m_displayTools = static_cast<Visualization::VtkDisplayTools*>(
+            ecvViewManager::instance().displayTools());
+    m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
     m_vtkWidget->setOwnerView(this);
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
@@ -95,6 +99,7 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_visualizer3D = std::make_shared<Visualization::VtkVis>(
             renderer, renderWindow, interactorStyle, m_title.toStdString(),
             false);
+    m_visualizer3D->setOwnerDisplay(this);
 
     m_vtkWidget->SetRenderWindow(renderWindow);
     m_visualizer3D->setupInteractor(m_vtkWidget->GetInteractor(),
@@ -123,8 +128,7 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     // ComputeActualPixelSize() (which reads effectiveCtx().glViewport)
     // returns correct dimensions for this sub-window.
     const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
-    m_ctx.glViewport = QRect(0, 0,
-                             m_vtkWidget->width() * dpr,
+    m_ctx.glViewport = QRect(0, 0, m_vtkWidget->width() * dpr,
                              m_vtkWidget->height() * dpr);
 
     // --- Build draw context from per-view state ---
@@ -185,12 +189,10 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     // Phase B: the per-view hot zone is rendered by temporarily routing
     // DrawClickableItems through this view's VtkVis pipeline.
     {
-        auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
-                ecvDisplayTools::TheInstance());
-        if (primaryDT) {
+        if (m_displayTools) {
             Visualization::VtkDisplayTools::ScopedHotZoneRender hzRender(
-                    primaryDT, m_visualizer3D, m_vtkWidget,
-                    m_hotZone, m_ctx, m_clickableItems);
+                    m_displayTools, m_visualizer3D, m_vtkWidget, m_hotZone,
+                    m_ctx, m_clickableItems);
             hzRender.draw();
         }
     }
@@ -259,9 +261,7 @@ bool ecvGLView::hasOverriddenDisplayParameters() const {
 
 void ecvGLView::aboutToBeRemoved(ccDrawableObject* obj) { Q_UNUSED(obj); }
 
-QVTKWidgetCustom* ecvGLView::getVtkWidget() const {
-    return m_vtkWidget.data();
-}
+QVTKWidgetCustom* ecvGLView::getVtkWidget() const { return m_vtkWidget.data(); }
 
 Visualization::VtkVis* ecvGLView::getVisualizer3D() const {
     return m_visualizer3D.get();
@@ -313,10 +313,9 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
 QRect ecvGLView::getGLViewport() const {
     return m_ctx.glViewport.isValid()
                    ? m_ctx.glViewport
-                   : (m_vtkWidget
-                              ? QRect(0, 0, m_vtkWidget->width(),
-                                      m_vtkWidget->height())
-                              : QRect());
+                   : (m_vtkWidget ? QRect(0, 0, m_vtkWidget->width(),
+                                          m_vtkWidget->height())
+                                  : QRect());
 }
 
 int ecvGLView::glWidth() const { return getGLViewport().width(); }
@@ -346,7 +345,7 @@ ecvGLView::PICKING_MODE ecvGLView::getPickingMode() const {
 }
 
 void ecvGLView::getContext(ccGLDrawContext& context) const {
-    ecvDisplayTools::GetContext(context, m_ctx);
+    ecvViewManager::instance().sharedGetContext(context, m_ctx);
     context.display = const_cast<ecvGLView*>(this);
     if (m_vtkWidget) {
         context.glW = m_vtkWidget->width();
@@ -378,27 +377,22 @@ void ecvGLView::drawClickableItems(int xStart, int& yStart) {
     Q_UNUSED(yStart);
 }
 
-void ecvGLView::invalidateViewport() {
-    m_ctx.validProjectionMatrix = false;
-}
+void ecvGLView::invalidateViewport() { m_ctx.validProjectionMatrix = false; }
 
-void ecvGLView::deprecate3DLayer() {
-    m_shouldBeRefreshed = true;
-}
+void ecvGLView::deprecate3DLayer() { m_shouldBeRefreshed = true; }
 
 void ecvGLView::displayNewMessage(const QString& message,
-                                   MessagePosition pos,
-                                   bool append,
-                                   int displayMaxDelay_sec,
-                                   MessageType type) {
+                                  MessagePosition pos,
+                                  bool append,
+                                  int displayMaxDelay_sec,
+                                  MessageType type) {
     if (!append) {
-        m_messagesToDisplay.remove_if(
-                [type](const ecvDisplayTools::MessageToDisplay& msg) {
-                    return msg.type == type;
-                });
+        m_messagesToDisplay.remove_if([type](const ecvMessageToDisplay& msg) {
+            return msg.type == type;
+        });
     }
     if (!message.isEmpty()) {
-        ecvDisplayTools::MessageToDisplay msg;
+        ecvMessageToDisplay msg;
         msg.message = message;
         msg.messageValidity_sec = displayMaxDelay_sec;
         msg.position = pos;
@@ -425,6 +419,315 @@ void ecvGLView::zoomGlobal() {
     m_visualizer3D->getRenderWindow()->Render();
 }
 
+// ================================================================
+// Phase 7a: Per-view VTK operation overrides
+//
+// All delegates route through the singleton's VtkDisplayTools which
+// internally calls resolveVisualizer(context.display) to target the
+// correct per-view VtkVis.  When Phase 7b removes the singleton,
+// these will call m_visualizer3D methods directly.
+// ================================================================
+
+void ecvGLView::draw(const ccGLDrawContext& context, const ccHObject* obj) {
+    if (m_displayTools) m_displayTools->draw(context, obj);
+}
+
+void ecvGLView::drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) {
+    if (m_displayTools) m_displayTools->drawBBox(context, bbox);
+}
+
+void ecvGLView::drawOrientedBBox(const ccGLDrawContext& context,
+                                 const ecvOrientedBBox* obb) {
+    if (m_displayTools) m_displayTools->drawOrientedBBox(context, obb);
+}
+
+void ecvGLView::updateMeshTextures(const ccGLDrawContext& context,
+                                   const ccGenericMesh* mesh) {
+    if (m_displayTools) m_displayTools->updateMeshTextures(context, mesh);
+}
+
+void ecvGLView::drawWidgets(const WIDGETS_PARAMETER& param) {
+    if (m_displayTools) m_displayTools->drawWidgets(param);
+}
+
+void ecvGLView::removeWidgets(const WIDGETS_PARAMETER& param) {
+    if (m_displayTools) m_displayTools->removeWidgets(param);
+}
+
+bool ecvGLView::hideShowEntities(const ccGLDrawContext& context) {
+    if (m_displayTools) return m_displayTools->hideShowEntities(context);
+    return true;
+}
+
+void ecvGLView::removeEntities(const ccGLDrawContext& context) {
+    if (m_displayTools) m_displayTools->removeEntities(context);
+}
+
+void ecvGLView::changeEntityProperties(PROPERTY_PARAM& param) {
+    if (m_displayTools) m_displayTools->changeEntityProperties(param);
+}
+
+void ecvGLView::updateCamera() {
+    if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
+}
+
+void ecvGLView::updateScene() {
+    if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
+}
+
+void ecvGLView::resetCamera(const ccBBox* bbox) {
+    if (m_visualizer3D) {
+        m_visualizer3D->resetCamera(bbox);
+        m_visualizer3D->getRenderWindow()->Render();
+    }
+}
+
+void ecvGLView::resetCamera() {
+    if (m_visualizer3D) {
+        m_visualizer3D->resetCamera();
+        m_visualizer3D->getRenderWindow()->Render();
+    }
+}
+
+void ecvGLView::toggle2Dviewer(bool state) {
+    if (m_visualizer3D) {
+        m_visualizer3D->setInteractionMode(
+                state ? Visualization::VtkVis::INTERACTION_MODE_2D
+                      : Visualization::VtkVis::INTERACTION_MODE_3D);
+    }
+}
+
+// ================================================================
+// Phase 7a wave 2: Additional per-view virtual overrides
+// ================================================================
+
+CCVector3d ecvGLView::toVtkCoordinates(int x, int y, int z) {
+    CCVector3d p(x * 1.0, y * 1.0, z * 1.0);
+    p.y = glHeight() - p.y;
+    p *= getDevicePixelRatio();
+    return p;
+}
+
+bool ecvGLView::getClick3DPos(int x, int y, CCVector3d& pos) {
+    return m_displayTools ? m_displayTools->getClick3DPos(x, y, pos) : false;
+}
+
+void ecvGLView::setView(CC_VIEW_ORIENTATION orientation) {
+    if (m_displayTools) m_displayTools->setView(orientation);
+}
+
+CCVector3d ecvGLView::getCurrentViewDir() const {
+    const double* M = m_ctx.viewportParams.viewMat.data();
+    CCVector3d axis(-M[2], -M[6], -M[10]);
+    axis.normalize();
+    return axis;
+}
+
+void ecvGLView::setPivotPoint(const CCVector3d& P,
+                              bool autoRedraw,
+                              bool verbose) {
+    if (m_displayTools) m_displayTools->setPivotPoint(P, autoRedraw, verbose);
+}
+
+void ecvGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
+    if (m_displayTools) m_displayTools->setPivotVisibility(vis);
+}
+
+void ecvGLView::setAutoPickPivotAtCenter(bool state) {
+    if (m_ctx.autoPickPivotAtCenter != state) {
+        m_ctx.autoPickPivotAtCenter = state;
+        if (state) {
+            m_ctx.autoPivotCandidate = CCVector3d(0, 0, 0);
+        }
+    }
+}
+
+void ecvGLView::resetCenterOfRotation(int viewport) {
+    if (m_displayTools) m_displayTools->resetCenterOfRotation(viewport);
+}
+
+bool ecvGLView::isRotationAxisLocked() const {
+    return m_ctx.rotationAxisLocked;
+}
+
+void ecvGLView::lockRotationAxis(bool state, const CCVector3d& axis) {
+    m_ctx.rotationAxisLocked = state;
+    m_ctx.lockedRotationAxis = axis;
+    m_ctx.lockedRotationAxis.normalize();
+}
+
+void ecvGLView::toggleCameraOrientationWidget(bool state) {
+    if (m_displayTools) m_displayTools->toggleCameraOrientationWidget(state);
+}
+
+void ecvGLView::toggleOrientationMarker(bool state) {
+    if (m_displayTools) m_displayTools->toggleOrientationMarker(state);
+}
+
+void ecvGLView::toggleDebugTrace() {
+    m_ctx.showDebugTraces = !m_ctx.showDebugTraces;
+}
+
+void ecvGLView::update2DLabels(bool immediateUpdate) {
+    if (m_displayTools) m_displayTools->update2DLabels(immediateUpdate);
+}
+
+bool ecvGLView::renderToFile(const QString& filename,
+                             float zoomFactor,
+                             bool dontScale) {
+    return m_displayTools ? m_displayTools->renderToFile(filename, zoomFactor,
+                                                         dontScale)
+                          : false;
+}
+
+void ecvGLView::removeBB(const QString& viewId) {
+    if (m_displayTools) m_displayTools->removeBB(viewId);
+}
+
+void ecvGLView::removeBB(const ccGLDrawContext& context) {
+    if (m_displayTools) m_displayTools->removeBB(context);
+}
+
+void ecvGLView::setExclusiveFullScreenFlag(bool state) {
+    m_ctx.exclusiveFullscreen = state;
+}
+
+double ecvGLView::getObjectLightIntensity(const QString& viewID) const {
+    return m_displayTools ? m_displayTools->getObjectLightIntensity(viewID)
+                          : 1.0;
+}
+
+void ecvGLView::setObjectLightIntensity(const QString& viewID,
+                                        double intensity) {
+    if (m_displayTools)
+        m_displayTools->setObjectLightIntensity(viewID, intensity);
+}
+
+double ecvGLView::getLightIntensity() const {
+    return m_displayTools ? m_displayTools->getLightIntensity() : 1.0;
+}
+
+void ecvGLView::setLightIntensity(double intensity) {
+    if (m_displayTools) m_displayTools->setLightIntensity(intensity);
+}
+
+void ecvGLView::getDataAxesGridProperties(const QString& viewID,
+                                          AxesGridProperties& props,
+                                          int viewport) const {
+    if (m_displayTools)
+        m_displayTools->getDataAxesGridProperties(viewID, props, viewport);
+}
+
+void ecvGLView::setDataAxesGridProperties(const QString& viewID,
+                                          const AxesGridProperties& props,
+                                          int viewport) {
+    if (m_displayTools)
+        m_displayTools->setDataAxesGridProperties(viewID, props, viewport);
+}
+
+void ecvGLView::filterByEntityType(std::vector<ccHObject*>& entities,
+                                   CV_CLASS_ENUM type) {
+    if (m_displayTools) m_displayTools->filterByEntityType(entities, type);
+}
+
+void ecvGLView::updateActiveItemsList(int x, int y, bool centerItems) {
+    if (m_displayTools)
+        m_displayTools->updateActiveItemsList(x, y, centerItems);
+}
+
+double ecvGLView::computeActualPixelSize() const {
+    if (!m_ctx.viewportParams.perspectiveView) {
+        return static_cast<double>(m_ctx.viewportParams.pixelSize /
+                                   m_ctx.viewportParams.zoom);
+    }
+
+    int minScreenDim =
+            std::min(m_ctx.glViewport.width(), m_ctx.glViewport.height());
+    if (minScreenDim <= 0) return 1.0;
+
+    double zoomEquivalentDist = (m_ctx.viewportParams.getCameraCenter() -
+                                 m_ctx.viewportParams.getPivotPoint())
+                                        .norm();
+
+    float fov_deg = m_ctx.bubbleViewModeEnabled ? m_ctx.bubbleViewFov_deg
+                                                : m_ctx.viewportParams.fov_deg;
+    return zoomEquivalentDist *
+           std::tan(cloudViewer::DegreesToRadians(
+                   std::min(static_cast<double>(fov_deg), 75.0))) /
+           minScreenDim;
+}
+
+void ecvGLView::updateNamePoseRecursive() {
+    if (m_displayTools) m_displayTools->updateNamePoseRecursive();
+}
+
+void ecvGLView::showPivotSymbol(bool state) {
+    if (state && !m_ctx.pivotSymbolShown &&
+        m_ctx.viewportParams.objectCenteredView &&
+        m_ctx.pivotVisibility != PIVOT_HIDE) {
+        invalidateViewport();
+        deprecate3DLayer();
+    }
+    m_ctx.pivotSymbolShown = state;
+}
+
+bool ecvGLView::exclusiveFullScreen() const {
+    return m_ctx.exclusiveFullscreen;
+}
+
+CCVector3d ecvGLView::convertMousePositionToOrientation(int x, int y) {
+    return m_displayTools
+                   ? m_displayTools->convertMousePositionToOrientation(x, y)
+                   : CCVector3d(0, 0, 0);
+}
+
+bool ecvGLView::processClickableItems(int x, int y) {
+    return m_displayTools ? m_displayTools->processClickableItems(x, y) : false;
+}
+
+void ecvGLView::updateZoom(float zoomFactor) {
+    if (m_displayTools) m_displayTools->updateZoom(zoomFactor);
+}
+
+void ecvGLView::resizeGL(int w, int h) {
+    if (m_displayTools) m_displayTools->resizeGL(w, h);
+}
+
+void ecvGLView::setViewportDefaultPointSize(float size) {
+    m_ctx.viewportParams.defaultPointSize = size;
+}
+
+void ecvGLView::setViewportDefaultLineWidth(float width) {
+    m_ctx.viewportParams.defaultLineWidth = width;
+}
+
+void ecvGLView::setZNearCoef(double coef) {
+    if (m_displayTools) m_displayTools->setZNearCoef(coef);
+}
+
+void ecvGLView::setFov(float fov_deg) {
+    if (m_displayTools) m_displayTools->setFov(fov_deg);
+}
+
+void ecvGLView::setPointSizeOnView(float size) {
+    if (m_displayTools) m_displayTools->setPointSizeOnView(size);
+}
+
+void ecvGLView::rotateWithAxis(const CCVector2i& mousePos,
+                               const CCVector3d& axis,
+                               double angle_deg) {
+    if (m_displayTools)
+        m_displayTools->rotateWithAxis(mousePos, axis, angle_deg, 0);
+}
+
+void ecvGLView::startPicking(PICKING_MODE mode, int x, int y, int w, int h) {
+    if (m_displayTools) m_displayTools->startPicking(mode, x, y, w, h);
+}
+
+void ecvGLView::redraw2DLabel() {
+    if (m_displayTools) m_displayTools->redraw2DLabel();
+}
+
 void ecvGLView::scheduleFullRedraw(int delayMs) {
     m_scheduledFullRedrawTime = m_timer.elapsed() + delayMs;
     if (!m_scheduleTimer.isActive()) {
@@ -432,7 +735,4 @@ void ecvGLView::scheduleFullRedraw(int delayMs) {
     }
 }
 
-void ecvGLView::startDeferredPicking() {
-    m_deferredPickingTimer.start();
-}
-
+void ecvGLView::startDeferredPicking() { m_deferredPickingTimer.start(); }

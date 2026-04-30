@@ -7,7 +7,10 @@
 
 #include "ecvGenericMeasurementTools.h"
 
-#include "ecvDisplayTools.h"
+#include <QWidget>
+
+#include "ecvGenericGLDisplay.h"
+#include "ecvViewManager.h"
 
 ecvGenericMeasurementTools::ecvGenericMeasurementTools(MeasurementType type)
     : m_measurementType(type), m_associatedEntity(nullptr) {}
@@ -16,4 +19,15 @@ ecvGenericMeasurementTools::~ecvGenericMeasurementTools() {
     // Empty destructor - required for vtable generation
 }
 
-void ecvGenericMeasurementTools::update() { ecvDisplayTools::UpdateScreen(); }
+void ecvGenericMeasurementTools::update() {
+    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        v->updateScene();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}

@@ -23,7 +23,6 @@
 
 // CV_DB_LIB
 #include <ecvCone.h>
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
@@ -401,7 +400,7 @@ bool qSRA::doComputeRadialDists(ccPointCloud* cloud,
         // cloud->prepareDisplayForRefresh();
         if (m_app) {
             m_app->updateUI();
-            ecvDisplayTools::RedrawObject(cloud);
+            m_app->refreshAll();
         }
         return true;
     } else {

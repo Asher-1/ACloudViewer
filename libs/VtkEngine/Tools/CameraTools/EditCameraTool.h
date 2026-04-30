@@ -13,14 +13,16 @@
  */
 
 #include <ecvGenericCameraTool.h>
+#include <vtkSmartPointer.h>
 
 #include <QObject>
-#include <vtkSmartPointer.h>
 
 #include "qVTK.h"
 
 class vtkCamera;
-namespace Visualization { class VtkVis; }
+namespace Visualization {
+class VtkVis;
+}
 
 /**
  * @class EditCameraTool

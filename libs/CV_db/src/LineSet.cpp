@@ -10,7 +10,7 @@
 #include <numeric>
 
 #include "ecvBBox.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvOrientedBBox.h"
 
 namespace cloudViewer {
@@ -32,7 +32,7 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context) {
 
     if (is_empty) return;
 
-    if (MACRO_Draw3D(context) && ecvDisplayTools::GetMainScreen()) {
+    if (MACRO_Draw3D(context) && context.display) {
         if (isColorOverridden()) {
             context.defaultPolylineColor = getTempColor();
         } /*
@@ -42,7 +42,7 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context) {
          ecvColor::Rgb::FromEigen(colors_[0]);
          }*/
         context.currentLineWidth = 1;
-        ecvDisplayTools::Draw(context, this);
+        context.display->draw(context, this);
     }
 }
 

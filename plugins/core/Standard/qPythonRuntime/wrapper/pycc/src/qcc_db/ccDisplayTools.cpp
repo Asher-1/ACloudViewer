@@ -22,85 +22,87 @@ using namespace pybind11::literals;
 void define_ccDisplayTools(py::module &m)
 {
     py::class_<ecvDisplayTools, ecvGenericDisplayTools> PyccDisplayTools(m, "ccDisplayTools");
-    py::enum_<ecvDisplayTools::PICKING_MODE> PyPickingMode(PyccDisplayTools, "PICKING_MODE");
-    py::enum_<ecvDisplayTools::INTERACTION_FLAG> PyInteractionFlag(
+    py::enum_<ecvGenericGLDisplay::PICKING_MODE> PyPickingMode(PyccDisplayTools, "PICKING_MODE");
+    py::enum_<ecvGenericGLDisplay::INTERACTION_FLAG> PyInteractionFlag(
         PyccDisplayTools, "INTERACTION_FLAG", py::arithmetic());
-    py::enum_<ecvDisplayTools::MessagePosition> PyMessagePosition(PyccDisplayTools,
-                                                                  "MessagePosition");
-    py::enum_<ecvDisplayTools::MessageType> PyMessageType(PyccDisplayTools, "MessageType");
-    py::enum_<ecvDisplayTools::PivotVisibility> PyPivotVisibility(PyccDisplayTools,
-                                                                  "PivotVisibility");
+    py::enum_<ecvGenericGLDisplay::MessagePosition> PyMessagePosition(PyccDisplayTools,
+                                                                      "MessagePosition");
+    py::enum_<ecvGenericGLDisplay::MessageType> PyMessageType(PyccDisplayTools, "MessageType");
+    py::enum_<ecvGenericGLDisplay::PivotVisibility> PyPivotVisibility(PyccDisplayTools,
+                                                                      "PivotVisibility");
 
-    PyPickingMode.value("NO_PICKING", ecvDisplayTools::PICKING_MODE::NO_PICKING)
-        .value("ENTITY_PICKING", ecvDisplayTools::PICKING_MODE::ENTITY_PICKING)
-        .value("ENTITY_RECT_PICKING", ecvDisplayTools::PICKING_MODE::ENTITY_RECT_PICKING)
-        .value("FAST_PICKING", ecvDisplayTools::PICKING_MODE::FAST_PICKING)
-        .value("POINT_PICKING", ecvDisplayTools::PICKING_MODE::POINT_PICKING)
-        .value("TRIANGLE_PICKING", ecvDisplayTools::PICKING_MODE::TRIANGLE_PICKING)
+    PyPickingMode.value("NO_PICKING", ecvGenericGLDisplay::PICKING_MODE::NO_PICKING)
+        .value("ENTITY_PICKING", ecvGenericGLDisplay::PICKING_MODE::ENTITY_PICKING)
+        .value("ENTITY_RECT_PICKING", ecvGenericGLDisplay::PICKING_MODE::ENTITY_RECT_PICKING)
+        .value("FAST_PICKING", ecvGenericGLDisplay::PICKING_MODE::FAST_PICKING)
+        .value("POINT_PICKING", ecvGenericGLDisplay::PICKING_MODE::POINT_PICKING)
+        .value("TRIANGLE_PICKING", ecvGenericGLDisplay::PICKING_MODE::TRIANGLE_PICKING)
         .value("POINT_OR_TRIANGLE_PICKING",
-               ecvDisplayTools::PICKING_MODE::POINT_OR_TRIANGLE_PICKING)
+               ecvGenericGLDisplay::PICKING_MODE::POINT_OR_TRIANGLE_PICKING)
         .value("POINT_OR_TRIANGLE_OR_LABEL_PICKING",
-               ecvDisplayTools::PICKING_MODE::POINT_OR_TRIANGLE_OR_LABEL_PICKING)
-        .value("LABEL_PICKING", ecvDisplayTools::PICKING_MODE::LABEL_PICKING)
-        .value("DEFAULT_PICKING", ecvDisplayTools::PICKING_MODE::DEFAULT_PICKING)
+               ecvGenericGLDisplay::PICKING_MODE::POINT_OR_TRIANGLE_OR_LABEL_PICKING)
+        .value("LABEL_PICKING", ecvGenericGLDisplay::PICKING_MODE::LABEL_PICKING)
+        .value("DEFAULT_PICKING", ecvGenericGLDisplay::PICKING_MODE::DEFAULT_PICKING)
         .export_values();
 
     PyInteractionFlag
-        .value("INTERACT_NONE", ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_NONE)
-        .value("INTERACT_ROTATE", ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_ROTATE)
-        .value("INTERACT_PAN", ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_PAN)
+        .value("INTERACT_NONE", ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_NONE)
+        .value("INTERACT_ROTATE",
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_ROTATE)
+        .value("INTERACT_PAN", ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_PAN)
         .value("INTERACT_CTRL_PAN",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_CTRL_PAN)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_CTRL_PAN)
         .value("INTERACT_ZOOM_CAMERA",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_ZOOM_CAMERA)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_ZOOM_CAMERA)
         .value("INTERACT_2D_ITEMS",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_2D_ITEMS)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_2D_ITEMS)
         .value("INTERACT_CLICKABLE_ITEMS",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_CLICKABLE_ITEMS)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_CLICKABLE_ITEMS)
         .value("INTERACT_TRANSFORM_ENTITIES",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_TRANSFORM_ENTITIES)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_TRANSFORM_ENTITIES)
         .value("INTERACT_SIG_RB_CLICKED",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SIG_RB_CLICKED)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SIG_RB_CLICKED)
         .value("INTERACT_SIG_LB_CLICKED",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SIG_LB_CLICKED)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SIG_LB_CLICKED)
         .value("INTERACT_SIG_MOUSE_MOVED",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SIG_MOUSE_MOVED)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SIG_MOUSE_MOVED)
         .value("INTERACT_SIG_BUTTON_RELEASED",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SIG_BUTTON_RELEASED)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SIG_BUTTON_RELEASED)
         .value("INTERACT_SIG_MB_CLICKED",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SIG_MB_CLICKED)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SIG_MB_CLICKED)
         .value("INTERACT_SEND_ALL_SIGNALS",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::INTERACT_SEND_ALL_SIGNALS)
-        .value("MODE_PAN_ONLY", ecvDisplayTools::INTERACTION_FLAGS::enum_type::MODE_PAN_ONLY)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::INTERACT_SEND_ALL_SIGNALS)
+        .value("MODE_PAN_ONLY", ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::MODE_PAN_ONLY)
         .value("MODE_TRANSFORM_CAMERA",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::MODE_TRANSFORM_CAMERA)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::MODE_TRANSFORM_CAMERA)
         .value("MODE_TRANSFORM_ENTITIES",
-               ecvDisplayTools::INTERACTION_FLAGS::enum_type::MODE_TRANSFORM_ENTITIES)
+               ecvGenericGLDisplay::INTERACTION_FLAGS::enum_type::MODE_TRANSFORM_ENTITIES)
         .export_values();
 
     PyMessagePosition
-        .value("LOWER_LEFT_MESSAGE", ecvDisplayTools::MessagePosition::LOWER_LEFT_MESSAGE)
-        .value("UPPER_CENTER_MESSAGE", ecvDisplayTools::MessagePosition::UPPER_CENTER_MESSAGE)
-        .value("SCREEN_CENTER_MESSAGE", ecvDisplayTools::MessagePosition::SCREEN_CENTER_MESSAGE)
+        .value("LOWER_LEFT_MESSAGE", ecvGenericGLDisplay::MessagePosition::LOWER_LEFT_MESSAGE)
+        .value("UPPER_CENTER_MESSAGE", ecvGenericGLDisplay::MessagePosition::UPPER_CENTER_MESSAGE)
+        .value("SCREEN_CENTER_MESSAGE", ecvGenericGLDisplay::MessagePosition::SCREEN_CENTER_MESSAGE)
         .export_values();
 
-    PyMessageType.value("CUSTOM_MESSAGE", ecvDisplayTools::MessageType::CUSTOM_MESSAGE)
-        .value("SCREEN_SIZE_MESSAGE", ecvDisplayTools::MessageType::SCREEN_SIZE_MESSAGE)
-        .value("PERSPECTIVE_STATE_MESSAGE", ecvDisplayTools::MessageType::PERSPECTIVE_STATE_MESSAGE)
-        .value("SUN_LIGHT_STATE_MESSAGE", ecvDisplayTools::MessageType::SUN_LIGHT_STATE_MESSAGE)
+    PyMessageType.value("CUSTOM_MESSAGE", ecvGenericGLDisplay::MessageType::CUSTOM_MESSAGE)
+        .value("SCREEN_SIZE_MESSAGE", ecvGenericGLDisplay::MessageType::SCREEN_SIZE_MESSAGE)
+        .value("PERSPECTIVE_STATE_MESSAGE",
+               ecvGenericGLDisplay::MessageType::PERSPECTIVE_STATE_MESSAGE)
+        .value("SUN_LIGHT_STATE_MESSAGE", ecvGenericGLDisplay::MessageType::SUN_LIGHT_STATE_MESSAGE)
         .value("CUSTOM_LIGHT_STATE_MESSAGE",
-               ecvDisplayTools::MessageType::CUSTOM_LIGHT_STATE_MESSAGE)
+               ecvGenericGLDisplay::MessageType::CUSTOM_LIGHT_STATE_MESSAGE)
         .value("MANUAL_TRANSFORMATION_MESSAGE",
-               ecvDisplayTools::MessageType::MANUAL_TRANSFORMATION_MESSAGE)
+               ecvGenericGLDisplay::MessageType::MANUAL_TRANSFORMATION_MESSAGE)
         .value("MANUAL_SEGMENTATION_MESSAGE",
-               ecvDisplayTools::MessageType::MANUAL_SEGMENTATION_MESSAGE)
-        .value("ROTAION_LOCK_MESSAGE", ecvDisplayTools::MessageType::ROTAION_LOCK_MESSAGE)
-        .value("FULL_SCREEN_MESSAGE", ecvDisplayTools::MessageType::FULL_SCREEN_MESSAGE)
+               ecvGenericGLDisplay::MessageType::MANUAL_SEGMENTATION_MESSAGE)
+        .value("ROTAION_LOCK_MESSAGE", ecvGenericGLDisplay::MessageType::ROTAION_LOCK_MESSAGE)
+        .value("FULL_SCREEN_MESSAGE", ecvGenericGLDisplay::MessageType::FULL_SCREEN_MESSAGE)
         .export_values();
 
-    PyPivotVisibility.value("PIVOT_HIDE", ecvDisplayTools::PivotVisibility::PIVOT_HIDE)
-        .value("PIVOT_SHOW_ON_MOVE", ecvDisplayTools::PivotVisibility::PIVOT_SHOW_ON_MOVE)
-        .value("PIVOT_ALWAYS_SHOW", ecvDisplayTools::PivotVisibility::PIVOT_ALWAYS_SHOW)
+    PyPivotVisibility.value("PIVOT_HIDE", ecvGenericGLDisplay::PivotVisibility::PIVOT_HIDE)
+        .value("PIVOT_SHOW_ON_MOVE", ecvGenericGLDisplay::PivotVisibility::PIVOT_SHOW_ON_MOVE)
+        .value("PIVOT_ALWAYS_SHOW", ecvGenericGLDisplay::PivotVisibility::PIVOT_ALWAYS_SHOW)
         .export_values();
 
     PyccDisplayTools.def_static("getDevicePixelRatio", &ecvDisplayTools::GetDevicePixelRatio)
@@ -142,22 +144,25 @@ void define_ccDisplayTools(py::module &m)
             "id"_a = "")
         // TODO as widget
         .def_static("getScreenSize", &ecvDisplayTools::GetScreenSize)
-        .def_static("getGLCameraParameters",
-                    static_cast<void (*)(ccGLCameraParameters&)>(&ecvDisplayTools::GetGLCameraParameters),
-                    "params"_a)
+        .def_static(
+            "getGLCameraParameters",
+            static_cast<void (*)(ccGLCameraParameters &)>(&ecvDisplayTools::GetGLCameraParameters),
+            "params"_a)
         .def_static("displayNewMessage",
                     &ecvDisplayTools::DisplayNewMessage,
                     "message"_a,
                     "pos"_a,
                     "append"_a = false,
                     "displayMaxDelay_sec"_a = 2,
-                    "type"_a = ecvDisplayTools::MessageType::CUSTOM_MESSAGE)
+                    "type"_a = ecvGenericGLDisplay::MessageType::CUSTOM_MESSAGE)
         .def_static(
             "setPivotVisibility",
-            [](ecvDisplayTools::PivotVisibility vis) { ecvDisplayTools::SetPivotVisibility(vis); },
+            [](ecvGenericGLDisplay::PivotVisibility vis)
+            { ecvDisplayTools::SetPivotVisibility(vis); },
             "vis"_a)
         .def_static("getPivotVisibility",
-                    static_cast<ecvDisplayTools::PivotVisibility (*)()>(&ecvDisplayTools::GetPivotVisibility))
+                    static_cast<ecvGenericGLDisplay::PivotVisibility (*)()>(
+                        &ecvDisplayTools::GetPivotVisibility))
         .def_static("showPivotSymbol", &ecvDisplayTools::ShowPivotSymbol, "state"_a)
         .def_static("setPivotPoint",
                     &ecvDisplayTools::SetPivotPoint,
@@ -179,7 +184,10 @@ void define_ccDisplayTools(py::module &m)
                     &ecvDisplayTools::UpdateConstellationCenterAndZoom,
                     "boundingBox"_a = nullptr,
                     "redraw"_a = true)
-        .def_static("getVisibleObjectsBB", &ecvDisplayTools::GetVisibleObjectsBB, "box"_a, py::arg("display") = nullptr)
+        .def_static("getVisibleObjectsBB",
+                    &ecvDisplayTools::GetVisibleObjectsBB,
+                    "box"_a,
+                    py::arg("display") = nullptr)
         .def_static(
             "setView",
             [](CC_VIEW_ORIENTATION orientation, bool redraw)
@@ -187,19 +195,23 @@ void define_ccDisplayTools(py::module &m)
             "orientation"_a,
             "redraw"_a = true)
         .def_static("setInteractionMode",
-                    static_cast<void (*)(ecvDisplayTools::INTERACTION_FLAGS)>(&ecvDisplayTools::SetInteractionMode),
+                    static_cast<void (*)(ecvGenericGLDisplay::INTERACTION_FLAGS)>(
+                        &ecvDisplayTools::SetInteractionMode),
                     "flags"_a)
         .def_static("getInteractionMode",
-                    static_cast<ecvDisplayTools::INTERACTION_FLAGS (*)()>(&ecvDisplayTools::GetInteractionMode))
+                    static_cast<ecvGenericGLDisplay::INTERACTION_FLAGS (*)()>(
+                        &ecvDisplayTools::GetInteractionMode))
         .def_static("setPickingMode",
-                    static_cast<void (*)(ecvDisplayTools::PICKING_MODE)>(&ecvDisplayTools::SetPickingMode),
-                    "mode"_a = ecvDisplayTools::PICKING_MODE::DEFAULT_PICKING)
-        .def_static("getPickingMode",
-                    static_cast<ecvDisplayTools::PICKING_MODE (*)()>(&ecvDisplayTools::GetPickingMode))
+                    static_cast<void (*)(ecvGenericGLDisplay::PICKING_MODE)>(
+                        &ecvDisplayTools::SetPickingMode),
+                    "mode"_a = ecvGenericGLDisplay::PICKING_MODE::DEFAULT_PICKING)
+        .def_static(
+            "getPickingMode",
+            static_cast<ecvGenericGLDisplay::PICKING_MODE (*)()>(&ecvDisplayTools::GetPickingMode))
         .def_static("lockPickingMode", &ecvDisplayTools::LockPickingMode, "state"_a)
         .def_static("isPickingModeLocked", &ecvDisplayTools::IsPickingModeLocked)
         .def_static("getContext",
-                    static_cast<void (*)(CC_DRAW_CONTEXT&)>(&ecvDisplayTools::GetContext),
+                    static_cast<void (*)(CC_DRAW_CONTEXT &)>(&ecvDisplayTools::GetContext),
                     "context"_a)
         // TODO static constexprs
         .def_static("setPointSize",
@@ -275,7 +287,7 @@ void define_ccDisplayTools(py::module &m)
             "text"_a,
             "x"_a,
             "y"_a,
-            "align"_a = ecvDisplayTools::ALIGN_DEFAULT,
+            "align"_a = ecvGenericDisplayTools::ALIGN_DEFAULT,
             "bkgAlpha"_a = 0.0f,
             "color"_a = nullptr,
             "font"_a = nullptr,
@@ -288,9 +300,10 @@ void define_ccDisplayTools(py::module &m)
                     "font"_a = QFont())
         .def_static("remove3DLabel", &ecvDisplayTools::Remove3DLabel, "view_id"_a)
         .def_static("removeAllWidgets", &ecvDisplayTools::RemoveAllWidgets, "update"_a = true)
-        .def_static("getGLCameraParameters",
-                    static_cast<void (*)(ccGLCameraParameters&)>(&ecvDisplayTools::GetGLCameraParameters),
-                    "params"_a)
+        .def_static(
+            "getGLCameraParameters",
+            static_cast<void (*)(ccGLCameraParameters &)>(&ecvDisplayTools::GetGLCameraParameters),
+            "params"_a)
         .def_static(
             "toCenteredGLCoordinates", &ecvDisplayTools::ToCenteredGLCoordinates, "x"_a, "y"_a)
         .def_static("getViewportParameters", &ecvDisplayTools::GetViewportParameters)

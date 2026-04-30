@@ -21,6 +21,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -810,7 +811,12 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PolylineToPolyData(
         const CCVector3* pp = polyline->getPoint(i);
         CCVector3d out;
         if (polyline->is2DMode()) {
-            ecvDisplayTools::TheInstance()->toWorldPoint(*pp, out);
+            ecvGenericGLDisplay* disp = polyline->getDisplay();
+            if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+            if (auto* dt = dynamic_cast<ecvDisplayTools*>(disp))
+                dt->toWorldPoint(*pp, out);
+            else
+                out = CCVector3d::fromArray(pp->u);
         } else {
             out = CCVector3d::fromArray(pp->u);
         }

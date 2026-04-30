@@ -65,11 +65,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QOpenGLWidget>
 #include <QPushButton>
 #include <QSettings>
 #include <QThread>
 #include <QTimer>
-#include <QOpenGLWidget>
 #include <QTouchEvent>
 #include <QWheelEvent>
 #include <QWidget>
@@ -81,9 +81,9 @@
 #include <ecv2DLabel.h>
 #include <ecvHObjectCaster.h>
 
-#include <QPainter>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QPainter>
 
 #include "ScaleBarWidget.h"
 
@@ -117,7 +117,7 @@ std::list<ccInteractor*>& QVTKWidgetCustom::curActiveItems() {
     return m_tools->m_activeItems;
 }
 
-ecvDisplayTools::HotZone*& QVTKWidgetCustom::curHotZone() {
+ecvHotZone*& QVTKWidgetCustom::curHotZone() {
     if (m_ownerView) return m_ownerView->hotZoneRef();
     return m_tools->m_hotZone;
 }
@@ -559,13 +559,19 @@ void QVTKWidgetCustom::paintGL() {
     ecvGenericGLDisplay* myDisplay = ecvGenericGLDisplay::FromWidget(this);
 
     ccHObject::Container labels;
-    ecvDisplayTools::FilterByEntityType(labels, CV_TYPES::LABEL_2D);
+    if (m_ownerView)
+        m_ownerView->filterByEntityType(labels, CV_TYPES::LABEL_2D);
+    else
+        m_tools->filterByEntityType(labels, CV_TYPES::LABEL_2D);
     if (labels.empty()) return;
 
-    int totalLabels = 0, visibleLabels = 0, displayedLabels = 0, validLabels = 0;
+    int totalLabels = 0, visibleLabels = 0, displayedLabels = 0,
+        validLabels = 0;
     for (auto* obj : labels) {
         ++totalLabels;
-        if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible()) continue;
+        if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
+            !obj->isVisible())
+            continue;
         ++visibleLabels;
         auto* label = static_cast<cc2DLabel*>(obj);
         if (!label->isDisplayedIn(myDisplay)) continue;
@@ -576,9 +582,11 @@ void QVTKWidgetCustom::paintGL() {
 
     static int s_logCounter = 0;
     if ((s_logCounter++ % 120) == 0) {
-        CVLog::Print("[QPainter] paintGL: labels=%d visible=%d displayed=%d valid=%d myDisplay=%p",
-                     totalLabels, visibleLabels, displayedLabels, validLabels,
-                     static_cast<void*>(myDisplay));
+        CVLog::Print(
+                "[QPainter] paintGL: labels=%d visible=%d displayed=%d "
+                "valid=%d myDisplay=%p",
+                totalLabels, visibleLabels, displayedLabels, validLabels,
+                static_cast<void*>(myDisplay));
     }
 
     if (validLabels == 0) return;
@@ -592,14 +600,17 @@ void QVTKWidgetCustom::paintGL() {
 
     QPainter painter(this);
     if (!painter.isActive()) {
-        CVLog::Warning("[QPainter] painter.isActive() = false! Cannot draw overlay.");
+        CVLog::Warning(
+                "[QPainter] painter.isActive() = false! Cannot draw overlay.");
         return;
     }
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
 
     for (auto* obj : labels) {
-        if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible()) continue;
+        if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
+            !obj->isVisible())
+            continue;
         auto* label = static_cast<cc2DLabel*>(obj);
         if (!label->isDisplayedIn(myDisplay)) continue;
         if (!label->overlayValid()) continue;
@@ -607,15 +618,15 @@ void QVTKWidgetCustom::paintGL() {
         const auto& od = label->overlayData();
         static int s_paintLog = 0;
         if ((s_paintLog++ % 30) == 0) {
-            CVLog::Print("[QPainter] DRAW overlay '%s' panel=(%d,%d %dx%d) "
-                         "segments=%d legends=%d body=%d",
-                         qPrintable(label->getName()),
-                         static_cast<int>(od.panelRect.x()),
-                         static_cast<int>(od.panelRect.y()),
-                         static_cast<int>(od.panelRect.width()),
-                         static_cast<int>(od.panelRect.height()),
-                         od.segments.size(), od.legends.size(),
-                         od.bodyLines.size());
+            CVLog::Print(
+                    "[QPainter] DRAW overlay '%s' panel=(%d,%d %dx%d) "
+                    "segments=%d legends=%d body=%d",
+                    qPrintable(label->getName()),
+                    static_cast<int>(od.panelRect.x()),
+                    static_cast<int>(od.panelRect.y()),
+                    static_cast<int>(od.panelRect.width()),
+                    static_cast<int>(od.panelRect.height()), od.segments.size(),
+                    od.legends.size(), od.bodyLines.size());
         }
 
         label->paintOverlay(painter);
@@ -642,7 +653,7 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curIgnoreMouseReleaseEvent() = false;
     curLastMousePos() = event->pos();
 
-    if (!ecvDisplayTools::USE_VTK_PICK) {
+    if (!ecvViewManager::useVtkPick()) {
         curLastPointIndex() = -1;
         curLastPickedId() = QString();
     }
@@ -650,17 +661,20 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     if ((event->buttons() & Qt::RightButton)) {
         // Check if right-click is on a cc2DLabel (collapse toggle)
         m_rightClickOnLabel = false;
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
             ccHObject::Container labels;
-            ecvDisplayTools::FilterByEntityType(labels, CV_TYPES::LABEL_2D);
+            if (m_ownerView)
+                m_ownerView->filterByEntityType(labels, CV_TYPES::LABEL_2D);
+            else
+                m_tools->filterByEntityType(labels, CV_TYPES::LABEL_2D);
             for (auto* obj : labels) {
-                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible())
+                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
+                    !obj->isVisible())
                     continue;
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
                 if (!l) continue;
                 QRect roi = l->getLabelROI();
-                if (roi.isValid() &&
-                    roi.contains(event->x(), event->y())) {
+                if (roi.isValid() && roi.contains(event->x(), event->y())) {
                     m_rightClickOnLabel = true;
                     break;
                 }
@@ -669,15 +683,16 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 
         if (!m_rightClickOnLabel) {
             // right click = panning (2D translation)
-            if ((curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) ||
+            if ((curInteractionFlags() & ecvGenericGLDisplay::INTERACT_PAN) ||
                 ((QApplication::keyboardModifiers() & Qt::ControlModifier) &&
                  (curInteractionFlags() &
-                  ecvDisplayTools::INTERACT_CTRL_PAN))) {
+                  ecvGenericGLDisplay::INTERACT_CTRL_PAN))) {
                 QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
             }
         }
 
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_RB_CLICKED) {
+        if (curInteractionFlags() &
+            ecvGenericGLDisplay::INTERACT_SIG_RB_CLICKED) {
             if (m_ownerView)
                 emit m_ownerView->rightButtonClicked(event->x(), event->y());
             emit m_tools->rightButtonClicked(event->x(), event->y());
@@ -690,37 +705,40 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
         // Only do direct ROI check (no FAST_PICKING fallback) to avoid
         // picking 3D objects that would block camera rotation.
         m_labelClickedOnPress = false;
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
             ccHObject::Container labels;
-            ecvDisplayTools::FilterByEntityType(labels, CV_TYPES::LABEL_2D);
+            if (m_ownerView)
+                m_ownerView->filterByEntityType(labels, CV_TYPES::LABEL_2D);
+            else
+                m_tools->filterByEntityType(labels, CV_TYPES::LABEL_2D);
             for (auto* obj : labels) {
-                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible())
+                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
+                    !obj->isVisible())
                     continue;
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
                 if (!l) continue;
                 QRect roi = l->getLabelROI();
-                if (roi.isValid() &&
-                    roi.contains(event->x(), event->y())) {
+                if (roi.isValid() && roi.contains(event->x(), event->y())) {
                     curActiveItems().clear();
                     curActiveItems().push_back(l);
                     m_labelClickedOnPress = true;
                     CVLog::Print(
                             "[Label] mousePressEvent: HIT label '%s' at "
                             "(%d,%d) ROI=(%d,%d %dx%d)",
-                            qPrintable(l->getName()), event->x(),
-                            event->y(), roi.x(), roi.y(), roi.width(),
-                            roi.height());
+                            qPrintable(l->getName()), event->x(), event->y(),
+                            roi.x(), roi.y(), roi.width(), roi.height());
                     break;
                 }
             }
         }
 
         // left click = rotation
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) {
+        if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_ROTATE) {
             QApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
         }
 
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_LB_CLICKED) {
+        if (curInteractionFlags() &
+            ecvGenericGLDisplay::INTERACT_SIG_LB_CLICKED) {
             if (m_ownerView)
                 emit m_ownerView->leftButtonClicked(event->x(), event->y());
             emit m_tools->leftButtonClicked(event->x(), event->y());
@@ -729,8 +747,12 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
         // do this before drawing the pivot!
         if (curAutoPickPivotAtCenter()) {
             CCVector3d P;
-            if (m_tools->GetClick3DPos(event->x(), event->y(), P)) {
-                ecvDisplayTools::SetPivotPoint(P, true, false);
+            if (m_ownerView) {
+                if (m_ownerView->getClick3DPos(event->x(), event->y(), P))
+                    m_ownerView->setPivotPoint(P, true, false);
+            } else {
+                if (m_tools->getClick3DPos(event->x(), event->y(), P))
+                    m_tools->setPivotPoint(P, true, false);
             }
         }
     } else {
@@ -738,9 +760,10 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 
     // Skip VTK mouse processing when a cc2DLabel was clicked (left or right)
     if (m_labelClickedOnPress || m_rightClickOnLabel) {
-        CVLog::Print("[Label] BLOCKED VTK mousePress, labelClicked=%d "
-                     "rightClickOnLabel=%d",
-                     m_labelClickedOnPress, m_rightClickOnLabel);
+        CVLog::Print(
+                "[Label] BLOCKED VTK mousePress, labelClicked=%d "
+                "rightClickOnLabel=%d",
+                m_labelClickedOnPress, m_rightClickOnLabel);
         event->accept();
     } else {
         QVTKOpenGLNativeWidget::mousePressEvent(event);
@@ -768,8 +791,12 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     const int y = event->y();
 
     CCVector3d P;
-    if (ecvDisplayTools::GetClick3DPos(x, y, P)) {
-        ecvDisplayTools::SetPivotPoint(P, true, true);
+    if (m_ownerView) {
+        if (m_ownerView->getClick3DPos(x, y, P))
+            m_ownerView->setPivotPoint(P, true, true);
+    } else {
+        if (m_tools->getClick3DPos(x, y, P))
+            m_tools->setPivotPoint(P, true, true);
     }
 
     if (m_ownerView)
@@ -790,8 +817,12 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
         event->accept();
 
         float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
-        ecvDisplayTools::SetPointSize(curViewportParams().defaultPointSize +
-                                      sizeModifier);
+        if (m_ownerView)
+            m_ownerView->setPointSizeOnView(
+                    curViewportParams().defaultPointSize + sizeModifier);
+        else
+            m_tools->setPointSizeOnView(curViewportParams().defaultPointSize +
+                                        sizeModifier);
         { ecvRedrawScope redrawScope; }
         doRedraw = true;
     } else if (keyboardModifiers & Qt::ControlModifier) {
@@ -806,7 +837,10 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
             if (newIncrement != increment) {
                 double newCoef = ecvViewportParameters::IncrementToZNearCoef(
                         newIncrement, MAX_INCREMENT + 1);
-                ecvDisplayTools::SetZNearCoef(newCoef);
+                if (m_ownerView)
+                    m_ownerView->setZNearCoef(newCoef);
+                else
+                    m_tools->setZNearCoef(newCoef);
                 { ecvRedrawScope redrawScope; }
                 doRedraw = true;
             }
@@ -818,12 +852,16 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
                     (curViewportParams().fov_deg + (delta < 0 ? -1.0f : 1.0f));
             newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
             if (newFOV != curViewportParams().fov_deg) {
-                ecvDisplayTools::SetFov(newFOV);
+                if (m_ownerView)
+                    m_ownerView->setFov(newFOV);
+                else
+                    m_tools->setFov(newFOV);
                 { ecvRedrawScope redrawScope; }
                 doRedraw = true;
             }
         }
-    } else if (curInteractionFlags() & ecvDisplayTools::INTERACT_ZOOM_CAMERA) {
+    } else if (curInteractionFlags() &
+               ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA) {
         QVTKOpenGLNativeWidget::wheelEvent(event);
 
         float wheelDelta_deg = static_cast<float>(delta) / 8;
@@ -840,17 +878,24 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
     }
 
     if (doRedraw) {
-        if (m_ownerView)
-            emit m_ownerView->labelmove2D(0, 0, 0, 0);
+        if (m_ownerView) emit m_ownerView->labelmove2D(0, 0, 0, 0);
         emit m_tools->labelmove2D(0, 0, 0, 0);
-        ecvDisplayTools::UpdateNamePoseRecursive();
+        if (m_ownerView)
+            m_ownerView->updateNamePoseRecursive();
+        else
+            m_tools->updateNamePoseRecursive();
 
         if (m_wheelZoomUpdateTimer) {
             m_wheelZoomUpdateTimer->stop();
             m_wheelZoomUpdateTimer->start();
         }
 
-        ecvDisplayTools::Update();
+        if (m_ownerView) {
+            if (auto* w = m_ownerView->asWidget()) w->update();
+            m_ownerView->updateCamera();
+        } else {
+            m_tools->updateScene();
+        }
     }
 }
 
@@ -860,15 +905,17 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     // split window. Activating on every mouseMove caused the wrong view to
     // become "current" during passive hover.
 
-    if (!((curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) &&
+    if (!((curInteractionFlags() & ecvGenericGLDisplay::INTERACT_ROTATE) &&
           (curInteractionFlags() &
-           ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES))) {
-        if ((curInteractionFlags() & ecvDisplayTools::TRANSFORM_CAMERA())) {
+           ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES))) {
+        if ((curInteractionFlags() &
+             ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA)) {
             // lock axis
-            if ((curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) &&
+            if ((curInteractionFlags() &
+                 ecvGenericGLDisplay::INTERACT_ROTATE) &&
                 (curInteractionFlags() &
-                 ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) !=
-                        ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES &&
+                 ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) !=
+                        ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES &&
                 (event->buttons() & Qt::LeftButton) &&
                 curRotationAxisLocked()) {
                 event->accept();
@@ -895,27 +942,32 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
     const int x = event->x();
     const int y = event->y();
-    if (ecvDisplayTools::GetCurrentScreen() == this) {
+    const bool isActiveWidget =
+            m_ownerView ? (ecvViewManager::instance().getEffectiveView() ==
+                           m_ownerView)
+                        : (ecvGenericGLDisplay::FromWidget(this) ==
+                           static_cast<ecvGenericGLDisplay*>(m_tools));
+    if (isActiveWidget) {
         curLastMouseMovePos() = event->pos();
-        if (m_ownerView)
-            emit m_ownerView->mousePosChanged(event->pos());
+        if (m_ownerView) emit m_ownerView->mousePosChanged(event->pos());
         emit m_tools->mousePosChanged(event->pos());
     }
 
-    if ((curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_MOUSE_MOVED) &&
-        (ecvDisplayTools::GetCurrentScreen() == this)) {
-        if (m_ownerView)
-            emit m_ownerView->mouseMoved(x, y, event->buttons());
+    if ((curInteractionFlags() &
+         ecvGenericGLDisplay::INTERACT_SIG_MOUSE_MOVED) &&
+        isActiveWidget) {
+        if (m_ownerView) emit m_ownerView->mouseMoved(x, y, event->buttons());
         emit m_tools->mouseMoved(x, y, event->buttons());
         event->accept();
     }
 
     // no button pressed
     if (event->buttons() == Qt::NoButton) {
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_CLICKABLE_ITEMS) {
+        if (curInteractionFlags() &
+            ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
             // Per-widget HotZone for multi-window support
             if (!m_localHotZone) {
-                m_localHotZone = new ecvDisplayTools::HotZone(this);
+                m_localHotZone = new ecvHotZone(this);
             }
             if (!m_ownerView && m_tools->m_hotZoneOwnedBySingleton &&
                 curHotZone() && curHotZone() != m_localHotZone) {
@@ -926,9 +978,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
             QRect areaRect = m_localHotZone->rect(
                     true, curBubbleViewModeEnabled(),
-                    ecvDisplayTools::ExclusiveFullScreen());
+                    m_ownerView ? m_ownerView->context().exclusiveFullscreen
+                                : m_tools->exclusiveFullScreen());
 
-            const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
+            const int retinaScale = m_ownerView
+                                            ? m_ownerView->getDevicePixelRatio()
+                                            : m_tools->getDevicePixelRatio();
             bool inZone = (x * retinaScale * 3 < m_localHotZone->topCorner.x() +
                                                          areaRect.width() * 4 &&
                            y * retinaScale * 2 < m_localHotZone->topCorner.y() +
@@ -937,14 +992,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             if (inZone != m_localClickableVisible) {
                 m_localClickableVisible = inZone;
 
-                auto* display = ecvGenericGLDisplay::FromWidget(this);
-                bool isSecondary =
-                        display && display != ecvDisplayTools::TheInstance();
-                if (isSecondary) {
-                    display->redraw(true, false);
+                curClickableItemsVisible() = inZone;
+                if (m_ownerView) {
+                    m_ownerView->redraw(true, false);
                 } else {
-                    curClickableItemsVisible() = inZone;
-                    ecvDisplayTools::RedrawDisplay(true, false);
+                    m_tools->redraw(true, false);
                 }
             }
 
@@ -956,16 +1008,29 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (curShowCursorCoordinates()) {
             CCVector3d P;
             QString message = QString("2D (%1 ; %2)").arg(x).arg(y);
-            if (ecvDisplayTools::GetClick3DPos(x, y, P)) {
-                message += QString(" --> 3D (%1 ; %2 ; %3)")
-                                   .arg(P.x)
-                                   .arg(P.y)
-                                   .arg(P.z);
+            {
+                auto* ev =
+                        m_ownerView
+                                ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                                : static_cast<ecvGenericGLDisplay*>(m_tools);
+                if (ev->getClick3DPos(x, y, P)) {
+                    message += QString(" --> 3D (%1 ; %2 ; %3)")
+                                       .arg(P.x)
+                                       .arg(P.y)
+                                       .arg(P.z);
+                }
             }
-            ecvDisplayTools::DisplayNewMessage(
-                    message, ecvDisplayTools::LOWER_LEFT_MESSAGE, false, 5,
-                    ecvDisplayTools::SCREEN_SIZE_MESSAGE);
-            ecvDisplayTools::RedrawDisplay(true);
+            if (m_ownerView) {
+                m_ownerView->displayNewMessage(
+                        message, ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false,
+                        5, ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
+                m_ownerView->redraw(true);
+            } else {
+                m_tools->displayNewMessage(
+                        message, ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false,
+                        5, ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
+                m_tools->redraw(true);
+            }
         }
 
         // don't need to process any further
@@ -977,27 +1042,28 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
     if ((event->buttons() & Qt::RightButton)) {
         if (abs(dx) > 0 || abs(dy) > 0) {
-            if (m_ownerView)
-                emit m_ownerView->labelmove2D(x, y, 0, 0);
+            if (m_ownerView) emit m_ownerView->labelmove2D(x, y, 0, 0);
             emit m_tools->labelmove2D(x, y, 0, 0);
-            ecvDisplayTools::UpdateNamePoseRecursive();
+            (m_ownerView ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                         : static_cast<ecvGenericGLDisplay*>(m_tools))
+                    ->updateNamePoseRecursive();
         }
     } else if ((event->buttons() & Qt::MiddleButton)) {
         if (!m_ownerView) {
             // Primary view: CC-side pan
-            if (curInteractionFlags() & ecvDisplayTools::INTERACT_PAN) {
-                double pixSize = ecvDisplayTools::ComputeActualPixelSize();
+            if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_PAN) {
+                double pixSize = m_tools->computeActualPixelSize();
                 CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
                 if (!curViewportParams().perspectiveView) {
                     u.y *= curViewportParams().cameraAspectRatio;
                 }
 
-                const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
+                const int retinaScale = m_tools->getDevicePixelRatio();
                 u *= retinaScale;
 
                 bool entityMovingMode =
                         (curInteractionFlags() &
-                         ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) ||
+                         ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) ||
                         ((QApplication::keyboardModifiers() &
                           Qt::ControlModifier) &&
                          curCustomLightEnabled());
@@ -1005,9 +1071,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     curViewportParams().viewMat.transposed().applyRotation(u);
 
                     if (curInteractionFlags() &
-                        ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
-                        if (m_ownerView)
-                            emit m_ownerView->translation(u);
+                        ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
+                        if (m_ownerView) emit m_ownerView->translation(u);
                         emit m_tools->translation(u);
                     } else if (curCustomLightEnabled()) {
                         curCustomLightPos()[0] += static_cast<float>(u.x);
@@ -1017,26 +1082,26 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                             m_ownerView->invalidateViewport();
                             m_ownerView->deprecate3DLayer();
                         } else {
-                            ecvDisplayTools::InvalidateViewport();
-                            ecvDisplayTools::Deprecate3DLayer();
+                            m_tools->invalidateViewport();
+                            m_tools->deprecate3DLayer();
                         }
                     }
                 } else {
                     if (curViewportParams().objectCenteredView) {
                         u = -u;
                     }
-                    ecvDisplayTools::MoveCamera(static_cast<float>(u.x),
-                                                static_cast<float>(u.y),
-                                                static_cast<float>(u.z));
+                    m_tools->moveCamera(static_cast<float>(u.x),
+                                        static_cast<float>(u.y),
+                                        static_cast<float>(u.z));
                 }
             }
         }
 
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
             // on the first time, let's check if the mouse is on a (selected) 2D
             // item
             if (!curMouseMoved()) {
-                if (curPickingMode() != ecvDisplayTools::NO_PICKING
+                if (curPickingMode() != ecvGenericGLDisplay::NO_PICKING
                     // DGM: in fact we still need to move labels in those modes
                     // below (see the 'Point Picking' tool of CLOUDVIEWER  for
                     // instance)
@@ -1046,8 +1111,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     && (QApplication::keyboardModifiers() == Qt::NoModifier ||
                         QApplication::keyboardModifiers() ==
                                 Qt::ControlModifier)) {
-                    ecvDisplayTools::UpdateActiveItemsList(
-                            curLastMousePos().x(), curLastMousePos().y(), true);
+                    auto* ev = m_ownerView ? static_cast<ecvGenericGLDisplay*>(
+                                                     m_ownerView)
+                                           : static_cast<ecvGenericGLDisplay*>(
+                                                     m_tools);
+                    ev->updateActiveItemsList(curLastMousePos().x(),
+                                              curLastMousePos().y(), true);
                 }
             }
         }
@@ -1057,10 +1126,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         // Update2DLabel during panning The label will be updated when panning
         // stops (in mouseReleaseEvent)
         if (abs(dx) > 0 || abs(dy) > 0) {
-            if (m_ownerView)
-                emit m_ownerView->labelmove2D(x, y, dx, dy);
+            if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
             emit m_tools->labelmove2D(x, y, dx, dy);
-            ecvDisplayTools::UpdateNamePoseRecursive();
+            (m_ownerView ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                         : static_cast<ecvGenericGLDisplay*>(m_tools))
+                    ->updateNamePoseRecursive();
             if (!curActiveItems().empty()) {
                 updateActivateditems(x, y, dx, dy, true);
             }
@@ -1073,8 +1143,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             CVLog::Print(
                     "[Label-Drag] LB move: labelClicked=1 "
                     "activeItems=%zu dx=%d dy=%d cam=(%.1f,%.1f,%.1f)",
-                    curActiveItems().size(), dx, dy,
-                    camPos[0], camPos[1], camPos[2]);
+                    curActiveItems().size(), dx, dy, camPos[0], camPos[1],
+                    camPos[2]);
         }
         if (!m_labelClickedOnPress) {
             if (m_ownerView)
@@ -1083,16 +1153,20 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 m_tools->scheduleFullRedraw(1000);
         }
 
-        if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
             // Skip re-detection if a label was already activated in
             // mousePressEvent to avoid FAST_PICKING replacing the label.
             if (!curMouseMoved() && !m_labelClickedOnPress) {
-                if (curPickingMode() != ecvDisplayTools::NO_PICKING
-                    && (QApplication::keyboardModifiers() == Qt::NoModifier ||
-                        QApplication::keyboardModifiers() ==
-                                Qt::ControlModifier)) {
-                    ecvDisplayTools::UpdateActiveItemsList(
-                            curLastMousePos().x(), curLastMousePos().y(), true);
+                if (curPickingMode() != ecvGenericGLDisplay::NO_PICKING &&
+                    (QApplication::keyboardModifiers() == Qt::NoModifier ||
+                     QApplication::keyboardModifiers() ==
+                             Qt::ControlModifier)) {
+                    auto* ev = m_ownerView ? static_cast<ecvGenericGLDisplay*>(
+                                                     m_ownerView)
+                                           : static_cast<ecvGenericGLDisplay*>(
+                                                     m_tools);
+                    ev->updateActiveItemsList(curLastMousePos().x(),
+                                              curLastMousePos().y(), true);
                 }
             }
         } else if (!m_labelClickedOnPress) {
@@ -1109,18 +1183,20 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             }
         } else if (!curActiveItems().empty()) {
             if (abs(dx) > 0 || abs(dy) > 0) {
-                if (m_ownerView)
-                    emit m_ownerView->labelmove2D(x, y, dx, dy);
+                if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit m_tools->labelmove2D(x, y, dx, dy);
-                ecvDisplayTools::UpdateNamePoseRecursive();
+                (m_ownerView ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                             : static_cast<ecvGenericGLDisplay*>(m_tools))
+                        ->updateNamePoseRecursive();
                 updateActivateditems(x, y, dx, dy, true);
             }
         } else {
             if (abs(dx) > 0 || abs(dy) > 0) {
-                if (m_ownerView)
-                    emit m_ownerView->labelmove2D(x, y, dx, dy);
+                if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit m_tools->labelmove2D(x, y, dx, dy);
-                ecvDisplayTools::UpdateNamePoseRecursive();
+                (m_ownerView ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                             : static_cast<ecvGenericGLDisplay*>(m_tools))
+                        ->updateNamePoseRecursive();
                 if (!curActiveItems().empty()) {
                     updateActivateditems(x, y, dx, dy, true);
                 }
@@ -1130,10 +1206,15 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             // specific case: rectangular polyline drawing (for rectangular area
             // selection mode)
             if (curAllowRectangularEntityPicking() &&
-                (curPickingMode() == ecvDisplayTools::ENTITY_PICKING ||
-                 curPickingMode() == ecvDisplayTools::ENTITY_RECT_PICKING) &&
+                (curPickingMode() == ecvGenericGLDisplay::ENTITY_PICKING ||
+                 curPickingMode() ==
+                         ecvGenericGLDisplay::ENTITY_RECT_PICKING) &&
                 (curRectPickingPoly() ||
                  (QApplication::keyboardModifiers() & Qt::AltModifier))) {
+                auto* evRect =
+                        m_ownerView
+                                ? static_cast<ecvGenericGLDisplay*>(m_ownerView)
+                                : static_cast<ecvGenericGLDisplay*>(m_tools);
                 // first time: initialization of the rectangle
                 if (!curRectPickingPoly()) {
                     ccPointCloud* vertices = new ccPointCloud("rect.vertices");
@@ -1146,10 +1227,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         curRectPickingPoly()->showColors(true);
                         curRectPickingPoly()->set2DMode(true);
                         curRectPickingPoly()->setVisible(true);
-                        // QPointF posA =
-                        // ecvDisplayTools::ToCenteredGLCoordinates(curLastMousePos().x(),
-                        // curLastMousePos().y());
-                        CCVector3d pos3D = ecvDisplayTools::ToVtkCoordinates(
+                        CCVector3d pos3D = evRect->toVtkCoordinates(
                                 curLastMousePos().x(), curLastMousePos().y());
 
                         CCVector3 A(static_cast<PointCoordinateType>(pos3D.x),
@@ -1162,8 +1240,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         vertices->addPoint(A);
                         vertices->addPoint(A);
                         curRectPickingPoly()->setClosed(true);
-                        ecvDisplayTools::AddToOwnDB(curRectPickingPoly(),
+                        if (m_ownerView)
+                            m_ownerView->addToOwnDB(curRectPickingPoly(),
                                                     false);
+                        else
+                            m_tools->addToOwnDB(curRectPickingPoly(), false);
                     } else {
                         CVLog::Warning(
                                 "[ QVTKWidgetCustom::mouseMoveEvent] Failed to "
@@ -1185,17 +1266,15 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                             vertices->getPointPersistentPtr(2));
                     CCVector3* D = const_cast<CCVector3*>(
                             vertices->getPointPersistentPtr(3));
-                    // QPointF posD =
-                    // ecvDisplayTools::ToCenteredGLCoordinates(event->x(),
-                    // event->y());
-                    CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(
-                            event->x(), event->y());
+                    CCVector3d pos2D =
+                            evRect->toVtkCoordinates(event->x(), event->y());
                     B->x = C->x = static_cast<PointCoordinateType>(pos2D.x);
                     C->y = D->y = static_cast<PointCoordinateType>(pos2D.y);
                 }
             }
             // standard rotation around the current pivot
-            else if (curInteractionFlags() & ecvDisplayTools::INTERACT_ROTATE) {
+            else if (curInteractionFlags() &
+                     ecvGenericGLDisplay::INTERACT_ROTATE) {
                 CVLog::Print(
                         "[Camera-Rot] CC rotation code ENTERED! "
                         "labelClicked=%d activeItems=%zu",
@@ -1208,8 +1287,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 };
                 RotationMode rotationMode = StandardMode;
                 if ((curInteractionFlags() &
-                     ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) !=
-                    ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
+                     ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) !=
+                    ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
                     if (curBubbleViewModeEnabled())
                         rotationMode = BubbleViewMode;
                     else if (curRotationAxisLocked())
@@ -1256,14 +1335,26 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         if (!curMouseMoved()) {
                             // on the first time, we must compute the previous
                             // orientation (the camera hasn't moved yet)
-                            s_lastMouseOrientation = ecvDisplayTools::
-                                    ConvertMousePositionToOrientation(
-                                            curLastMousePos().x(),
-                                            curLastMousePos().y());
+                            s_lastMouseOrientation =
+                                    m_ownerView
+                                            ? m_ownerView
+                                                      ->convertMousePositionToOrientation(
+                                                              curLastMousePos()
+                                                                      .x(),
+                                                              curLastMousePos()
+                                                                      .y())
+                                            : m_tools->convertMousePositionToOrientation(
+                                                      curLastMousePos().x(),
+                                                      curLastMousePos().y());
                         }
 
-                        CCVector3d currentMouseOrientation = ecvDisplayTools::
-                                ConvertMousePositionToOrientation(x, y);
+                        CCVector3d currentMouseOrientation =
+                                m_ownerView
+                                        ? m_ownerView
+                                                  ->convertMousePositionToOrientation(
+                                                          x, y)
+                                        : m_tools->convertMousePositionToOrientation(
+                                                  x, y);
                         rotMat = ccGLMatrixd::FromToRotation(
                                 s_lastMouseOrientation,
                                 currentMouseOrientation);
@@ -1275,7 +1366,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         CCVector3d axis = curLockedRotationAxis();
                         // curViewportParams().objectCenteredView
                         ccGLCameraParameters camera;
-                        ecvDisplayTools::GetGLCameraParameters(camera);
+                        if (m_ownerView)
+                            m_ownerView->getGLCameraParameters(camera);
+                        else
+                            m_tools->getGLCameraParameters(camera);
                         camera.modelViewMat.applyRotation(axis);
 
                         // determine whether we are in a side or top view
@@ -1362,9 +1456,14 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         // rotate camera with axis
                         // Note: -cloudViewer::RadiansToDegrees(angle_rad):
                         // inverse direction rotation
-                        ecvDisplayTools::RotateWithAxis(
-                                CCVector2i(x, y), curLockedRotationAxis(),
-                                -cloudViewer::RadiansToDegrees(angle_rad));
+                        if (m_ownerView)
+                            m_ownerView->rotateWithAxis(
+                                    CCVector2i(x, y), curLockedRotationAxis(),
+                                    -cloudViewer::RadiansToDegrees(angle_rad));
+                        else
+                            m_tools->rotateWithAxis(
+                                    CCVector2i(x, y), curLockedRotationAxis(),
+                                    -cloudViewer::RadiansToDegrees(angle_rad));
                     } break;
 
                     default:
@@ -1373,19 +1472,20 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 }
 
                 if (curInteractionFlags() &
-                    ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) {
+                    ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
                     rotMat = curViewportParams().viewMat.transposed() * rotMat *
                              curViewportParams().viewMat;
-                    if (m_ownerView)
-                        emit m_ownerView->rotation(rotMat);
+                    if (m_ownerView) emit m_ownerView->rotation(rotMat);
                     emit m_tools->rotation(rotMat);
                 } else {
-                    ecvDisplayTools::ShowPivotSymbol(true);
+                    if (m_ownerView)
+                        m_ownerView->showPivotSymbol(true);
+                    else
+                        m_tools->showPivotSymbol(true);
                     QApplication::changeOverrideCursor(
                             QCursor(Qt::ClosedHandCursor));
 
-                    if (m_ownerView)
-                        emit m_ownerView->viewMatRotated(rotMat);
+                    if (m_ownerView) emit m_ownerView->viewMatRotated(rotMat);
                     emit m_tools->viewMatRotated(rotMat);
                 }
             }
@@ -1395,8 +1495,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     curMouseMoved() = true;
     curLastMousePos() = event->pos();
     if (!m_labelClickedOnPress) {
-        if (m_ownerView)
-            emit m_ownerView->cameraParamChanged();
+        if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit m_tools->cameraParamChanged();
         if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     }
@@ -1405,17 +1504,21 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
 void QVTKWidgetCustom::updateActivateditems(
         int x, int y, int dx, int dy, bool updatePosition) {
-    CVLog::Print("[Label] updateActivateditems: pos(%d,%d) delta(%d,%d) "
-                 "updatePos=%d activeItems=%zu labelDrag=%d",
-                 x, y, dx, dy, updatePosition, curActiveItems().size(),
-                 m_labelClickedOnPress);
+    CVLog::Print(
+            "[Label] updateActivateditems: pos(%d,%d) delta(%d,%d) "
+            "updatePos=%d activeItems=%zu labelDrag=%d",
+            x, y, dx, dy, updatePosition, curActiveItems().size(),
+            m_labelClickedOnPress);
     bool movedAs2D = false;
     if (updatePosition) {
-        double pixSize = ecvDisplayTools::ComputeActualPixelSize();
+        const double pixSize = m_ownerView
+                                       ? m_ownerView->computeActualPixelSize()
+                                       : m_tools->computeActualPixelSize();
         CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
         curViewportParams().viewMat.transposed().applyRotation(u);
 
-        const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
+        const int retinaScale = m_ownerView ? m_ownerView->getDevicePixelRatio()
+                                            : m_tools->getDevicePixelRatio();
         u *= retinaScale;
 
         for (auto& activeItem : curActiveItems()) {
@@ -1429,34 +1532,40 @@ void QVTKWidgetCustom::updateActivateditems(
             }
             if (activeItem->move2D(x * retinaScale, y * retinaScale,
                                    dx * retinaScale, dy * retinaScale,
-                                   ecvDisplayTools::GlWidth(),
-                                   ecvDisplayTools::GlHeight())) {
+                                   m_ownerView ? m_ownerView->glWidth()
+                                               : m_tools->glWidth(),
+                                   m_ownerView ? m_ownerView->glHeight()
+                                               : m_tools->glHeight())) {
                 movedAs2D = true;
             } else if (activeItem->move3D(u)) {
                 if (m_ownerView) {
                     m_ownerView->invalidateViewport();
                     m_ownerView->deprecate3DLayer();
                 } else {
-                    ecvDisplayTools::InvalidateViewport();
-                    ecvDisplayTools::Deprecate3DLayer();
+                    m_tools->invalidateViewport();
+                    m_tools->deprecate3DLayer();
                 }
             }
         }
     }
 
-    ecvDisplayTools::Redraw2DLabel();
+    if (m_ownerView)
+        m_ownerView->redraw(true);
+    else
+        m_tools->redraw2DLabel();
 }
 
 void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
-    if ((curInteractionFlags() & ecvDisplayTools::TRANSFORM_CAMERA()) &&
+    if ((curInteractionFlags() & ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA) &&
         !m_labelClickedOnPress) {
         CVLog::Print("[VTK-FWD] mouseReleaseEvent -> VTK btn=0x%x",
                      (unsigned)event->button());
         QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
     } else if (m_labelClickedOnPress) {
-        CVLog::Print("[Label-Drag] BLOCKED VTK mouseRelease, "
-                     "labelClicked=%d",
-                     m_labelClickedOnPress);
+        CVLog::Print(
+                "[Label-Drag] BLOCKED VTK mouseRelease, "
+                "labelClicked=%d",
+                m_labelClickedOnPress);
     }
 
     if (curIgnoreMouseReleaseEvent()) {
@@ -1470,33 +1579,41 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     curMouseMoved() = false;
     QApplication::restoreOverrideCursor();
 
-    if (curInteractionFlags() & ecvDisplayTools::INTERACT_SIG_BUTTON_RELEASED) {
+    if (curInteractionFlags() &
+        ecvGenericGLDisplay::INTERACT_SIG_BUTTON_RELEASED) {
         event->accept();
-        if (m_ownerView)
-            emit m_ownerView->buttonReleased();
+        if (m_ownerView) emit m_ownerView->buttonReleased();
         emit m_tools->buttonReleased();
     }
 
     if (curPivotSymbolShown()) {
-        if (curPivotVisibility() == ecvDisplayTools::PIVOT_SHOW_ON_MOVE) {
+        if (curPivotVisibility() == ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE) {
             if (m_ownerView)
                 m_ownerView->toBeRefreshed();
             else
-                ecvDisplayTools::ToBeRefreshed();
+                m_tools->toBeRefreshed();
         }
-        ecvDisplayTools::ShowPivotSymbol(curPivotVisibility() ==
-                                         ecvDisplayTools::PIVOT_ALWAYS_SHOW);
+        if (m_ownerView)
+            m_ownerView->showPivotSymbol(
+                    curPivotVisibility() ==
+                    ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
+        else
+            m_tools->showPivotSymbol(curPivotVisibility() ==
+                                     ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
     }
 
     if ((event->button() == Qt::MiddleButton)) {
         if (mouseHasMoved) {
             event->accept();
             curActiveItems().clear();
-            // ecvDisplayTools::ToBeRefreshed();
-        } else if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
+        } else if (curInteractionFlags() &
+                   ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
             // interaction with 2D item(s)
-            ecvDisplayTools::UpdateActiveItemsList(event->x(), event->y(),
+            if (m_ownerView)
+                m_ownerView->updateActiveItemsList(event->x(), event->y(),
                                                    false);
+            else
+                m_tools->updateActiveItemsList(event->x(), event->y(), false);
             if (!curActiveItems().empty()) {
                 ccInteractor* item = curActiveItems().front();
                 curActiveItems().clear();
@@ -1521,19 +1638,39 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 int pickW = static_cast<int>(std::abs(C->x - A->x));
                 int pickH = static_cast<int>(std::abs(C->y - A->y));
 
-                ecvDisplayTools::RemoveFromOwnDB(curRectPickingPoly());
+                if (m_ownerView)
+                    m_ownerView->removeFromOwnDB(curRectPickingPoly());
+                else
+                    m_tools->removeFromOwnDB(curRectPickingPoly());
                 curRectPickingPoly() = nullptr;
                 vertices = nullptr;
 
-                ecvDisplayTools::PickingParameters params(
-                        ecvDisplayTools::ENTITY_RECT_PICKING,
-                        pickX + ecvDisplayTools::Width() / 2,
-                        ecvDisplayTools::Height() / 2 - pickY, pickW, pickH);
-                ecvDisplayTools::StartPicking(params);
+                const int pickRefW =
+                        m_ownerView && m_ownerView->asWidget()
+                                ? m_ownerView->asWidget()->width()
+                                : (m_tools->asWidget()
+                                           ? m_tools->asWidget()->width()
+                                           : 0);
+                const int pickRefH =
+                        m_ownerView && m_ownerView->asWidget()
+                                ? m_ownerView->asWidget()->height()
+                                : (m_tools->asWidget()
+                                           ? m_tools->asWidget()->height()
+                                           : 0);
+                if (m_ownerView)
+                    m_ownerView->startPicking(
+                            ecvGenericGLDisplay::ENTITY_RECT_PICKING,
+                            pickX + pickRefW / 2, pickRefH / 2 - pickY, pickW,
+                            pickH);
+                else
+                    m_tools->startPicking(
+                            ecvGenericGLDisplay::ENTITY_RECT_PICKING,
+                            pickX + pickRefW / 2, pickRefH / 2 - pickY, pickW,
+                            pickH);
                 if (m_ownerView)
                     m_ownerView->toBeRefreshed();
                 else
-                    ecvDisplayTools::ToBeRefreshed();
+                    m_tools->toBeRefreshed();
             }
 
             event->accept();
@@ -1545,22 +1682,22 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             if (!curWidgetClicked() &&
                 (m_ownerView ? m_ownerView->elapsedMs()
                              : m_tools->m_timer.elapsed()) <
-                        curLastClickTime() +
-                                CC_MAX_PICKING_CLICK_DURATION_MS)
-            {
+                        curLastClickTime() + CC_MAX_PICKING_CLICK_DURATION_MS) {
                 int x = curLastMousePos().x();
                 int y = curLastMousePos().y();
 
                 // Save global point size / line width before
                 // ProcessClickableItems potentially modifies them.
-                float savedGlobalPtSize =
-                        ecvDisplayTools::GetViewportParameters()
-                                .defaultPointSize;
-                float savedGlobalLnWidth =
-                        ecvDisplayTools::GetViewportParameters()
-                                .defaultLineWidth;
+                const auto& vp = m_ownerView
+                                         ? m_ownerView->getViewportParameters()
+                                         : m_tools->getViewportParameters();
+                float savedGlobalPtSize = vp.defaultPointSize;
+                float savedGlobalLnWidth = vp.defaultLineWidth;
 
-                if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
+                const bool picked =
+                        m_ownerView ? m_ownerView->processClickableItems(x, y)
+                                    : m_tools->processClickableItems(x, y);
+                if (!picked) {
                     curLastMousePos() = event->pos();
                     m_tools->setPickingTargetView(
                             ecvGenericGLDisplay::FromWidget(this));
@@ -1571,23 +1708,19 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 } else {
                     // Sync per-widget local values from the
                     // (just-updated) global.
-                    m_localDefaultPointSize =
-                            ecvDisplayTools::GetViewportParameters()
-                                    .defaultPointSize;
-                    m_localDefaultLineWidth =
-                            ecvDisplayTools::GetViewportParameters()
-                                    .defaultLineWidth;
+                    const auto& vpAfter =
+                            m_ownerView ? m_ownerView->getViewportParameters()
+                                        : m_tools->getViewportParameters();
+                    m_localDefaultPointSize = vpAfter.defaultPointSize;
+                    m_localDefaultLineWidth = vpAfter.defaultLineWidth;
 
                     auto* display = ecvGenericGLDisplay::FromWidget(this);
-                    bool isSecondary =
-                            display &&
-                            display != ecvDisplayTools::TheInstance();
+                    bool isSecondary = display && (m_ownerView != nullptr);
                     if (isSecondary) {
                         // Restore global so primary view's state
                         // is not contaminated.
-                        ecvDisplayTools::SetViewportDefaultPointSize(
-                                savedGlobalPtSize);
-                        ecvDisplayTools::SetViewportDefaultLineWidth(
+                        m_tools->setViewportDefaultPointSize(savedGlobalPtSize);
+                        m_tools->setViewportDefaultLineWidth(
                                 savedGlobalLnWidth);
                         display->redraw();
                     } else {
@@ -1610,25 +1743,31 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
         if (m_rightClickOnLabel) {
             // Right-click on label = toggle collapse (CloudCompare behavior)
             ccHObject::Container labels;
-            ecvDisplayTools::FilterByEntityType(labels, CV_TYPES::LABEL_2D);
+            if (m_ownerView)
+                m_ownerView->filterByEntityType(labels, CV_TYPES::LABEL_2D);
+            else
+                m_tools->filterByEntityType(labels, CV_TYPES::LABEL_2D);
             for (auto* obj : labels) {
-                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() || !obj->isVisible())
+                if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
+                    !obj->isVisible())
                     continue;
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
                 if (!l) continue;
                 QRect roi = l->getLabelROI();
-                if (roi.isValid() &&
-                    roi.contains(event->x(), event->y())) {
+                if (roi.isValid() && roi.contains(event->x(), event->y())) {
                     if (l->acceptClick(event->x(), event->y(),
                                        Qt::RightButton)) {
-                        ecvDisplayTools::Redraw2DLabel();
-                        ecvDisplayTools::RedrawDisplay(true);
+                        if (m_ownerView) {
+                            m_ownerView->redraw(true);
+                        } else {
+                            m_tools->redraw2DLabel();
+                            m_tools->redraw(true);
+                        }
                         event->accept();
                         CVLog::Print(
                                 "[Label] Right-click toggle collapse "
                                 "'%s' collapsed=%d",
-                                qPrintable(l->getName()),
-                                l->isCollapsed());
+                                qPrintable(l->getName()), l->isCollapsed());
                     }
                     break;
                 }
@@ -1647,7 +1786,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
         m_tools->Update2DLabel(true);
     }
 
-    ecvDisplayTools::RefreshDisplay(true);
+    if (m_ownerView)
+        m_ownerView->refresh(true);
+    else
+        m_tools->refresh(true);
 }
 
 void QVTKWidgetCustom::dragEnterEvent(QDragEnterEvent* event) {
@@ -1671,8 +1813,7 @@ void QVTKWidgetCustom::dropEvent(QDropEvent* event) {
         }
 
         if (!fileNames.empty()) {
-            if (m_ownerView)
-                emit m_ownerView->filesDropped(fileNames, true);
+            if (m_ownerView) emit m_ownerView->filesDropped(fileNames, true);
             emit m_tools->filesDropped(fileNames, true);
         }
 
@@ -1743,10 +1884,13 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 me->button() == Qt::RightButton) {
                 bool onLabel = false;
                 if (curInteractionFlags() &
-                    ecvDisplayTools::INTERACT_2D_ITEMS) {
+                    ecvGenericGLDisplay::INTERACT_2D_ITEMS) {
                     ccHObject::Container labels;
-                    ecvDisplayTools::FilterByEntityType(labels,
-                                                       CV_TYPES::LABEL_2D);
+                    if (m_ownerView)
+                        m_ownerView->filterByEntityType(labels,
+                                                        CV_TYPES::LABEL_2D);
+                    else
+                        m_tools->filterByEntityType(labels, CV_TYPES::LABEL_2D);
                     for (auto* obj : labels) {
                         if (!obj->isA(CV_TYPES::LABEL_2D) ||
                             !obj->isEnabled() || !obj->isVisible())
@@ -1754,8 +1898,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                         cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
                         if (!l) continue;
                         QRect roi = l->getLabelROI();
-                        if (roi.isValid() &&
-                            roi.contains(me->x(), me->y())) {
+                        if (roi.isValid() && roi.contains(me->x(), me->y())) {
                             onLabel = true;
                             break;
                         }
@@ -1828,7 +1971,10 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                     qreal dist = std::sqrt(D.x() * D.x() + D.y() * D.y());
                     if (curTouchBaseDist() != 0.0) {
                         float zoomFactor = dist / curTouchBaseDist();
-                        ecvDisplayTools::UpdateZoom(zoomFactor);
+                        if (m_ownerView)
+                            m_ownerView->updateZoom(zoomFactor);
+                        else
+                            m_tools->updateZoom(zoomFactor);
                     }
                     curTouchBaseDist() = dist;
                     evt->accept();
@@ -1839,7 +1985,10 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
 
         case QEvent::Resize: {
             QSize newSize = static_cast<QResizeEvent*>(evt)->size();
-            ecvDisplayTools::ResizeGL(newSize.width(), newSize.height());
+            if (m_ownerView)
+                m_ownerView->resizeGL(newSize.width(), newSize.height());
+            else
+                m_tools->resizeGL(newSize.width(), newSize.height());
             if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
             evt->accept();
         } break;

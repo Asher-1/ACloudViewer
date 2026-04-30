@@ -17,12 +17,12 @@
 #include <ClassMap.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvSubMesh.h>
+#include <ecvViewManager.h>
 
 // QT
 #include <QCheckBox>
@@ -57,7 +57,7 @@ ecvFilterByLabelDlg::ecvFilterByLabelDlg(QWidget* parent)
 ecvFilterByLabelDlg::~ecvFilterByLabelDlg() {}
 
 bool ecvFilterByLabelDlg::start() {
-    if (!ecvDisplayTools::GetCurrentScreen()) return false;
+    if (!ecvViewManager::instance().activeWidget()) return false;
 
     ccHObject* ent = m_toFilter.first;
     ccPointCloud* pc = m_toFilter.second;

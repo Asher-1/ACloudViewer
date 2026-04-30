@@ -7,9 +7,9 @@
 
 #include "ccSNECloud.h"
 
-#include <ecvDisplayTools.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 ccSNECloud::ccSNECloud() : ccPointCloud() { updateMetadata(); }
 
@@ -28,11 +28,18 @@ ccSNECloud::ccSNECloud(ccPointCloud* obj) : ccPointCloud() {
 ccSNECloud::~ccSNECloud() { removeNormalActors(); }
 
 void ccSNECloud::removeNormalActors() {
+    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
+    if (!eff) {
+        m_normalViewIds.clear();
+        return;
+    }
     for (const QString& viewId : m_normalViewIds) {
         CC_DRAW_CONTEXT ctx;
+        ctx.display = eff;
+        ctx.defaultViewPort = 0;
         ctx.removeViewID = viewId;
         ctx.removeEntityType = ENTITY_TYPE::ECV_LINES_3D;
-        ecvDisplayTools::RemoveEntities(ctx);
+        if (ctx.display) ctx.display->removeEntities(ctx);
     }
     m_normalViewIds.clear();
 }
@@ -60,7 +67,7 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
+        if (ecvViewManager::instance().activeWidget() == nullptr) {
             assert(false);
             return;
         }

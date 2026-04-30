@@ -7,12 +7,11 @@
 
 #include "ecvViewLayoutProxy.h"
 
+#include <QJsonArray>
+#include <algorithm>
+
 #include "ecvGenericGLDisplay.h"
 #include "ecvViewManager.h"
-
-#include <QJsonArray>
-
-#include <algorithm>
 
 ecvViewLayoutProxy::ecvViewLayoutProxy(QObject* parent) : QObject(parent) {
     m_tree.resize(1);
@@ -73,7 +72,8 @@ void ecvViewLayoutProxy::notifyChanged() {
 // Split
 // ============================================================================
 
-int ecvViewLayoutProxy::split(int location, Direction direction,
+int ecvViewLayoutProxy::split(int location,
+                              Direction direction,
                               double fraction) {
     if (direction == NONE) return -1;
     if (!isValidLocation(location)) return -1;
@@ -100,8 +100,7 @@ int ecvViewLayoutProxy::split(int location, Direction direction,
 // View assignment
 // ============================================================================
 
-bool ecvViewLayoutProxy::assignView(int location,
-                                    ecvGenericGLDisplay* view) {
+bool ecvViewLayoutProxy::assignView(int location, ecvGenericGLDisplay* view) {
     if (!isValidLocation(location)) return false;
     if (!isLeaf(location)) return false;
     if (m_tree[location].view != nullptr && m_tree[location].view != view)
@@ -165,8 +164,8 @@ bool ecvViewLayoutProxy::collapse(int location) {
 
     beginUndoSet(QStringLiteral("Close View"));
     int par = parent(location);
-    int sibling = (location == firstChild(par)) ? secondChild(par)
-                                                : firstChild(par);
+    int sibling =
+            (location == firstChild(par)) ? secondChild(par) : firstChild(par);
 
     moveSubtree(par, sibling);
     shrink();
@@ -219,8 +218,7 @@ void ecvViewLayoutProxy::equalize(Direction direction) {
     endUndoSet();
 }
 
-void ecvViewLayoutProxy::equalizeRecursive(int location,
-                                           Direction filterDir) {
+void ecvViewLayoutProxy::equalizeRecursive(int location, Direction filterDir) {
     if (!isValidLocation(location)) return;
     if (m_tree[location].direction == NONE) return;
 

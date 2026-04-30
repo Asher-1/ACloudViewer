@@ -19,13 +19,14 @@
 #include <ReferenceCloud.h>
 #include <ScalarFieldTools.h>
 #include <ecvColorScalesManager.h>
-#include <ecvDisplayTools.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 #include <QDir>
 #include <QElapsedTimer>
@@ -1002,7 +1003,7 @@ JsonRPCResult JsonRPCPlugin::rpcFileConvert(
         }
     }
 
-    if (ecvDisplayTools::HasInstance()) {
+    if (ecvViewManager::instance().getEffectiveView()) {
         loaded->removeFromRenderScreen(true);
     }
     delete loaded;
@@ -1133,7 +1134,10 @@ JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>&) {
 
     CC_DRAW_CONTEXT ctx;
     ctx.removeEntityType = ENTITY_TYPE::ECV_ALL;
-    ecvDisplayTools::RemoveEntities(ctx);
+    if (auto* eff = ecvViewManager::instance().getEffectiveView()) {
+        ctx.display = eff;
+        eff->removeEntities(ctx);
+    }
     redraw();
 
     QJsonObject result;
@@ -1247,12 +1251,15 @@ JsonRPCResult JsonRPCPlugin::rpcViewScreenshot(
 // ═══════════════════════════════════════════════════════════════════════════
 
 JsonRPCResult JsonRPCPlugin::rpcViewGetCamera(const QMap<QString, QVariant>&) {
-    ccGLMatrixd viewMat = ecvDisplayTools::GetViewportParameters().viewMat;
+    ccGLMatrixd viewMat;
+    ecvViewportParameters vp;
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        vp = view->getViewportParameters();
+        viewMat = vp.viewMat;
+    }
     QJsonArray mat;
     const double* data = viewMat.data();
     for (int i = 0; i < 16; ++i) mat.append(data[i]);
-
-    auto vp = ecvDisplayTools::GetViewportParameters();
     QJsonObject result;
     result["view_matrix"] = mat;
     result["fov_deg"] = vp.fov_deg;
@@ -3598,8 +3605,9 @@ JsonRPCResult JsonRPCPlugin::rpcProcessRansac(
 // ═══════════════════════════════════════════════════════════════════════════
 
 void JsonRPCPlugin::redraw() {
-    QWidget* win = m_app->getActiveWindow();
-    if (win) {
-        ecvDisplayTools::RedrawDisplay();
+    if (m_app->getActiveWindow()) {
+        {
+            ecvRedrawScope scope;
+        }
     }
 }

@@ -27,11 +27,11 @@
 
 // CV_DB_LIB
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // VTK
 #include <vtk3DWidget.h>
@@ -60,9 +60,8 @@ cvGenericFilter::cvGenericFilter(QWidget* parent)
       m_meshMode(false),
       m_preview(true) {
     setWindowTitle(tr("GenericFilter"));
-    connect(ecvDisplayTools::TheInstance(),
-            &ecvDisplayTools::doubleButtonClicked, this,
-            &cvGenericFilter::onDoubleClick);
+    connect(&ecvViewManager::instance(), &ecvViewManager::doubleButtonClicked,
+            this, &cvGenericFilter::onDoubleClick);
 }
 
 cvGenericFilter::~cvGenericFilter() {
@@ -181,7 +180,9 @@ void cvGenericFilter::getOutput(std::vector<ccHObject*>& outputSlices,
 
 void cvGenericFilter::modelReady() {
     showOutline(false);
-    ecvDisplayTools::UpdateCamera();
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->updateCamera();
+    }
 }
 
 void cvGenericFilter::setUpViewer(Visualization::VtkVis* viewer) {
@@ -207,7 +208,9 @@ void cvGenericFilter::colorsChanged() {
 ////////////////////Visualization///////////////////////////
 void cvGenericFilter::update() {
     QWidget::update();
-    ecvDisplayTools::UpdateScreen();
+    if (auto* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
 }
 
 void cvGenericFilter::reset() {

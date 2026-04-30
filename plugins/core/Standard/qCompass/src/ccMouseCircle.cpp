@@ -9,6 +9,9 @@
 
 #include <CVLog.h>
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 #include <QWheelEvent>
 #include <cmath>
@@ -25,24 +28,41 @@ ccMouseCircle::ccMouseCircle(QWidget* owner, QString name)
     assert(owner);
     m_owner = owner;
     m_owner->installEventFilter(this);
-    ecvDisplayTools::AddToOwnDB(this, true);
+    if (ecvGenericGLDisplay* eff =
+                ecvViewManager::instance().getEffectiveView()) {
+        eff->addToOwnDB(this, true);
+    }
 }
 
 ccMouseCircle::~ccMouseCircle() {
     if (m_owner) {
         m_owner->removeEventFilter(this);
 
-        // Remove the circle overlay widget
-        WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,
-                                      getViewId());
-        ecvDisplayTools::RemoveWidgets(removeParam);
+        if (ecvGenericGLDisplay* eff =
+                    ecvViewManager::instance().getEffectiveView()) {
+            CC_DRAW_CONTEXT ctx;
+            ctx.display = eff;
+            ctx.defaultViewPort = 0;
+            ctx.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+            ctx.removeViewID = getViewId();
+            if (ctx.display) {
+                ctx.display->removeEntities(ctx);
+            }
 
-        ecvDisplayTools::RemoveFromOwnDB(this);
+            eff->removeFromOwnDB(this);
+        }
     }
 }
 
 float ccMouseCircle::computeOrthoPixelSize(int viewportHeight) {
-    double parallelScale = ecvDisplayTools::GetParallelScale(0);
+    double parallelScale = -1.0;
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        ecvViewManager::ScopedRenderOverride guard(v);
+        if (auto* dt = dynamic_cast<ecvDisplayTools*>(v)) {
+            parallelScale = dt->getParallelScale(0);
+        }
+    }
     if (parallelScale <= 0 || viewportHeight <= 0) {
         return 0.0f;
     }
@@ -51,16 +71,17 @@ float ccMouseCircle::computeOrthoPixelSize(int viewportHeight) {
 
 float ccMouseCircle::getRadiusWorld() {
     if (m_pixelSize == 0) {
-        const ecvViewportParameters& params =
-                ecvDisplayTools::GetViewportParameters();
-        QWidget* screen = ecvDisplayTools::GetCurrentScreen();
-        if (screen) {
-            if (params.perspectiveView) {
-                m_pixelSize = static_cast<float>(
-                        std::abs(params.computePixelSize(screen->width())));
-            } else {
-                m_pixelSize = computeOrthoPixelSize(screen->height());
-            }
+        ecvGenericGLDisplay* eff =
+                ecvViewManager::instance().getEffectiveView();
+        QWidget* screen = ecvViewManager::instance().activeWidget();
+        if (!eff || !screen) return 0.0f;
+
+        const ecvViewportParameters& params = eff->getViewportParameters();
+        if (params.perspectiveView) {
+            m_pixelSize = static_cast<float>(
+                    std::abs(params.computePixelSize(screen->width())));
+        } else {
+            m_pixelSize = computeOrthoPixelSize(screen->height());
         }
     }
     float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
@@ -81,12 +102,17 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
+    if (!ecvViewManager::instance().activeWidget()) {
         return;
     }
 
-    const ecvViewportParameters& params =
-            ecvDisplayTools::GetViewportParameters();
+    ecvGenericGLDisplay* effView =
+            ecvViewManager::instance().getEffectiveView();
+    if (!effView) {
+        return;
+    }
+
+    const ecvViewportParameters& params = effView->getViewportParameters();
     if (params.perspectiveView) {
         m_pixelSize = static_cast<float>(
                 std::abs(params.computePixelSize(context.glW)));
@@ -95,9 +121,14 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     }
 
     {
-        WIDGETS_PARAMETER removeParam(WIDGETS_TYPE::WIDGET_CIRCLE_2D,
-                                      getViewId());
-        ecvDisplayTools::RemoveWidgets(removeParam);
+        CC_DRAW_CONTEXT clr;
+        clr.display = effView;
+        clr.defaultViewPort = 0;
+        clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+        clr.removeViewID = getViewId();
+        if (clr.display) {
+            clr.display->removeEntities(clr);
+        }
     }
 
     QPoint p =
@@ -106,10 +137,13 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     int my = context.glH - 1 - p.y();
 
     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CIRCLE_2D, getViewId());
+    param.context.display = effView;
     param.rect = QRect(mx, my, 0, 0);
     param.radius = static_cast<float>(m_radius);
     param.color = ecvColor::Rgbaf(1.0f, 0.0f, 0.0f, 0.8f);
-    ecvDisplayTools::DrawWidgets(param, false);
+    if (param.context.display) {
+        param.context.display->drawWidgets(param);
+    }
 }
 
 bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
@@ -119,7 +153,9 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
 
     if (event->type() == QEvent::MouseMove) {
         if (m_owner) {
-            ecvDisplayTools::RedrawDisplay(true, true);
+            {
+                ecvRedrawScope redrawScope(true, true);
+            }
         }
     }
 
@@ -132,7 +168,7 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
                     m_radius - static_cast<int>(
                                        m_radiusStep *
                                        (wheelEvent->angleDelta().y() / 100.0)));
-            ecvDisplayTools::RedrawDisplay(true, true);
+            { ecvRedrawScope redrawScope(true, true); }
         }
     }
     return false;
