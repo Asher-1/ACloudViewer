@@ -110,6 +110,13 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget->setCustomInteractorStyle(
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
+
+    m_deferredPickingTimer.setSingleShot(true);
+    m_deferredPickingTimer.setInterval(100);
+    connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
+        m_displayTools->setPickingTargetView(this);
+        m_displayTools->doPicking();
+    });
 }
 
 // ================================================================

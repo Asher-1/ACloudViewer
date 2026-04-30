@@ -560,32 +560,28 @@ void ecvDisplayTools::doPicking() {
 }
 
 void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
+    // Phase M2.3: use effectiveCtx() for multi-view correctness instead
+    // of m_primaryCtx (which ignores secondary views).
+    const auto& ctx = effectiveCtx();
+
     // in perspective mode, wheel event corresponds to 'walking'
-    if (m_primaryCtx.viewportParams.perspectiveView) {
+    if (ctx.viewportParams.perspectiveView) {
         // to zoom in and out we simply change the fov in bubble-view mode!
-        if (m_primaryCtx.bubbleViewModeEnabled) {
-            SetBubbleViewFov(m_primaryCtx.bubbleViewFov_deg -
+        if (ctx.bubbleViewModeEnabled) {
+            SetBubbleViewFov(ctx.bubbleViewFov_deg -
                              wheelDelta_deg / 3.6f);  // 1 turn = 100 degrees
         } else {
-            // convert degrees in 'constant' walking speed in ... pixels ;)
             const double& deg2PixConversion = GetDisplayParameters().zoomSpeed;
             double delta = deg2PixConversion *
                            static_cast<double>(wheelDelta_deg) *
-                           m_primaryCtx.viewportParams.pixelSize;
+                           ctx.viewportParams.pixelSize;
 
-            // if we are (clearly) outisde of the displayed objects bounding-box
-            if (m_primaryCtx.cameraToBBCenterDist > m_primaryCtx.bbHalfDiag) {
-                // we go faster if we are far from the entities
-                delta *= 1.0 + std::log(m_primaryCtx.cameraToBBCenterDist /
-                                        m_primaryCtx.bbHalfDiag);
+            if (ctx.cameraToBBCenterDist > ctx.bbHalfDiag) {
+                delta *= 1.0 + std::log(ctx.cameraToBBCenterDist /
+                                        ctx.bbHalfDiag);
             }
-
-            // MoveCamera(0.0f, 0.0f,
-            // static_cast<float>(-delta));
         }
-    } else  // ortho. mode
-    {
-        // convert degrees in zoom 'power'
+    } else {
         static const float c_defaultDeg2Zoom = 20.0f;
         float zoomFactor = std::pow(1.1f, wheelDelta_deg / c_defaultDeg2Zoom);
         UpdateZoom(zoomFactor);

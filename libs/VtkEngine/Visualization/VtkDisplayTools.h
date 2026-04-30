@@ -455,21 +455,27 @@ public:
     // ===== Category A: Primary-view-only (ELIMINATE in Phase M) =====
 
     /// [A] Persistently switch the active VtkVis + widget to a secondary view.
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
     /// [A] Restore the primary VtkVis + widget after switchActiveView.
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     void restorePrimaryView();
 
     /// [A] Replace the primary pipeline entirely (used when the original
     /// primary view is being destroyed and a surviving view takes over).
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
     /// [A] When all ecvGLViews are closed, rebind to the original
     /// registerVisualizer() pipeline (see m_builtInVis / m_builtInWidget).
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     void resetToBuiltInPipeline();
 
     /// [A] Access the original built-in pipeline.
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     QVTKWidgetCustom* getBuiltInWidget() const { return m_builtInWidget; }
+    [[deprecated("Phase M3: will be removed when ecvGLView is sole view type")]]
     VtkVisPtr getBuiltInVis() const { return m_builtInVis; }
 
     /// [A] Phase B helper: renders hot zone / clickable items for a specific
@@ -714,7 +720,8 @@ protected:
     } m_pendingTextBg;
 
     /// [A] Creates the first QVTKWidgetCustom + VtkVis.
-    /// In Phase M, this logic moves to ecvGLView::initVtkPipeline().
+    /// In Phase M3, this logic moves to ecvGLView::initVtkPipeline().
+    [[deprecated("Phase M3: ecvGLView creates its own pipeline")]]
     virtual void registerVisualizer(QMainWindow* widget,
                                     bool stereoMode = false) override;
 };
