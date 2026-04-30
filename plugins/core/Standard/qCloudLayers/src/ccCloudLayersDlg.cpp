@@ -19,7 +19,10 @@
 #include <QWidget>
 
 // CC
+#include <ecvGenericGLDisplay.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 ccCloudLayersDlg::ccCloudLayersDlg(ecvMainAppInterface* app, QWidget* parent)
     : ccOverlayDialog(parent),
@@ -122,8 +125,10 @@ bool ccCloudLayersDlg::start() {
     resetUI();
     m_app->freezeUI(true);
 
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved, this,
-            &ccCloudLayersDlg::mouseMoved);
+    QObject::disconnect(m_mouseMovedConnection);
+    m_mouseMovedConnection =
+            connect(&ecvViewManager::instance(), &ecvViewManager::mouseMoved,
+                    this, &ccCloudLayersDlg::mouseMoved);
 
     if (m_helper) {
         m_helper->saveState();
@@ -133,6 +138,9 @@ bool ccCloudLayersDlg::start() {
 }
 
 void ccCloudLayersDlg::stop(bool accepted) {
+    QObject::disconnect(m_mouseMovedConnection);
+    m_mouseMovedConnection = {};
+
     if (m_mouseCircle && m_mouseCircle->isVisible()) pauseClicked();
 
     if (accepted && m_helper) {
@@ -300,7 +308,7 @@ void ccCloudLayersDlg::deleteClicked() {
 
     updateInputOutput();
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void ccCloudLayersDlg::startClicked() {
@@ -308,12 +316,13 @@ void ccCloudLayersDlg::startClicked() {
         return;
     }
 
-    ecvDisplayTools::SetPickingMode(ecvDisplayTools::PICKING_MODE::NO_PICKING);
-
-    // set orthographic view (as this tool doesn't work in perspective mode)
-    ecvDisplayTools::SetPerspectiveState(false, true);
-    ecvDisplayTools::SetInteractionMode(
-            ecvDisplayTools::INTERACT_SEND_ALL_SIGNALS);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setPickingMode(ecvGenericGLDisplay::PICKING_MODE::NO_PICKING);
+        // set orthographic view (as this tool doesn't work in perspective mode)
+        view->setPerspectiveState(false, true);
+        view->setInteractionMode(
+                ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
     m_mouseCircle->setVisible(true);
 
     pbStart->setEnabled(false);
@@ -326,10 +335,12 @@ void ccCloudLayersDlg::pauseClicked() {
     }
 
     m_mouseCircle->setVisible(false);
-    ecvDisplayTools::SetPickingMode(
-            ecvDisplayTools::PICKING_MODE::DEFAULT_PICKING);
-    ecvDisplayTools::SetInteractionMode(ecvDisplayTools::MODE_TRANSFORM_CAMERA);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setPickingMode(
+                ecvGenericGLDisplay::PICKING_MODE::DEFAULT_PICKING);
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        { ecvRedrawScope scope(true, false); }
+    }
 
     pbStart->setEnabled(true);
     pbPause->setEnabled(false);
@@ -374,11 +385,17 @@ void ccCloudLayersDlg::mouseMoved(int x, int y, Qt::MouseButtons buttons) {
     }
 
     ccGLCameraParameters camera;
-    ecvDisplayTools::GetGLCameraParameters(camera);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->getGLCameraParameters(camera);
+    }
 
     m_helper->projectCloud(camera);
 
-    QPointF pos2D = ecvDisplayTools::ToCenteredGLCoordinates(x, y);
+    QPointF pos2D;
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        pos2D = QPointF(x - view->glWidth() / 2.0f,
+                        view->glHeight() / 2.0f - y);
+    }
     CCVector2 center(static_cast<PointCoordinateType>(pos2D.x()),
                      static_cast<PointCoordinateType>(pos2D.y()));
 

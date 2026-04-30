@@ -11,7 +11,6 @@
 #include <CVLog.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 
 // Qt
 #include <QApplication>

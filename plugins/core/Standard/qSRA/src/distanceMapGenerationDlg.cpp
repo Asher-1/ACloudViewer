@@ -30,12 +30,16 @@
 #include <QtCompat.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
+#include <ecvGenericDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+#include <ecvViewContext.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <QColorDialog>
@@ -196,22 +200,26 @@ DistanceMapGenerationDlg::DistanceMapGenerationDlg(
     // add window
     {
         m_window = new ccMapWindow();
-        ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-        params.backgroundCol = ecvColor::white;
-        params.textDefaultCol = ecvColor::black;
-        params.drawBackgroundGradient = false;
-        params.colorScaleShowHistogram = false;
-        params.colorScaleRampWidth = 30;
-        params.decimateMeshOnMove = false;
-        params.displayCross = false;
-        params.colorScaleUseShader = false;
-        ecvDisplayTools::SetDisplayParameters(params);
-        ecvDisplayTools::SetPerspectiveState(false, true);
-        ecvDisplayTools::SetInteractionMode(
-                ecvDisplayTools::INTERACT_PAN |
-                ecvDisplayTools::INTERACT_CLICKABLE_ITEMS |
-                ecvDisplayTools::INTERACT_ZOOM_CAMERA);
-        ecvDisplayTools::DisplayOverlayEntities(false);
+        ecvGui::ParamStruct mapDispParams = ecvGui::Parameters();
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            mapDispParams = view->getDisplayParameters();
+            mapDispParams.backgroundCol = ecvColor::white;
+            mapDispParams.textDefaultCol = ecvColor::black;
+            mapDispParams.drawBackgroundGradient = false;
+            mapDispParams.colorScaleShowHistogram = false;
+            mapDispParams.colorScaleRampWidth = 30;
+            mapDispParams.decimateMeshOnMove = false;
+            mapDispParams.displayCross = false;
+            mapDispParams.colorScaleUseShader = false;
+            view->setDisplayParameters(mapDispParams);
+            view->setPerspectiveState(false, true);
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::INTERACT_PAN |
+                    ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS |
+                    ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA);
+            if (auto* ctx = view->viewContext())
+                ctx->displayOverlayEntities = false;
+        }
 
         m_window->showSF(displayColorScaleCheckBox->isChecked());
         // add window to the right side layout
@@ -221,7 +229,8 @@ DistanceMapGenerationDlg::DistanceMapGenerationDlg(
 #else
         mapFrame->layout()->addWidget(m_window);
 #endif
-        precisionSpinBox->setValue(params.displayedNumPrecision);
+        precisionSpinBox->setValue(
+                static_cast<int>(mapDispParams.displayedNumPrecision));
     }
 
     // create labels "clouds" (empty)
@@ -229,15 +238,19 @@ DistanceMapGenerationDlg::DistanceMapGenerationDlg(
         m_xLabels = new ccSymbolCloud(XLABEL_CLOUD_NAME);
         m_xLabels->showSymbols(false);
         m_xLabels->setSymbolSize(DEFAULT_LABEL_MARGIN);
-        m_xLabels->setLabelAlignmentFlags(ecvDisplayTools::ALIGN_HMIDDLE |
-                                          ecvDisplayTools::ALIGN_VBOTTOM);
-        ecvDisplayTools::AddToOwnDB(m_xLabels, false);
+        m_xLabels->setLabelAlignmentFlags(
+                ecvGenericDisplayTools::ALIGN_HMIDDLE |
+                ecvGenericDisplayTools::ALIGN_VBOTTOM);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->addToOwnDB(m_xLabels, false);
         m_yLabels = new ccSymbolCloud(YLABEL_CLOUD_NAME);
         m_yLabels->showSymbols(false);
         m_yLabels->setSymbolSize(DEFAULT_LABEL_MARGIN);
-        m_yLabels->setLabelAlignmentFlags(ecvDisplayTools::ALIGN_HRIGHT |
-                                          ecvDisplayTools::ALIGN_VMIDDLE);
-        ecvDisplayTools::AddToOwnDB(m_yLabels, false);
+        m_yLabels->setLabelAlignmentFlags(
+                ecvGenericDisplayTools::ALIGN_HRIGHT |
+                ecvGenericDisplayTools::ALIGN_VMIDDLE);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->addToOwnDB(m_yLabels, false);
     }
 
     connect(projectionComboBox, SIGNAL(currentIndexChanged(int)), this,
@@ -517,9 +530,11 @@ double DistanceMapGenerationDlg::getSpinboxAngularValue(
 void DistanceMapGenerationDlg::updateZoom(ccBBox& box) {
     if (!m_window || !box.isValid()) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+
     // we get the bounding-box diagonal length
     PointCoordinateType bbDiag = box.getDiagNorm();
-    if (cloudViewer::GreaterThanEpsilon(bbDiag)) {
+    if (ev && cloudViewer::GreaterThanEpsilon(bbDiag)) {
         bool sfDisplayed =
                 m_window->getAssociatedScalarField() && m_window->sfShown();
         bool yLabelDisplayed =
@@ -528,25 +543,29 @@ void DistanceMapGenerationDlg::updateZoom(ccBBox& box) {
 
         // we compute the pixel size (in world coordinates)
         {
-            ecvViewportParameters params =
-                    ecvDisplayTools::GetViewportParameters();
+            ecvViewportParameters params = ev->getViewportParameters();
             params.zoom = 1.0f;
 
-            int screenWidth = ecvDisplayTools::GlWidth();
+            int screenWidth = ev->glWidth();
             int scaleWidth = 0;
             int labelsWidth = 0;
+            const ecvGui::ParamStruct& dispParams = ev->getDisplayParameters();
             if (sfDisplayed) {
-                scaleWidth = ecvDisplayTools::GetDisplayParameters()
-                                     .colorScaleRampWidth +
-                             QFontMetrics(ecvDisplayTools::GetTextDisplayFont())
-                                     .horizontalAdvance("123.456789");
+                QFont scaleFont;
+                scaleFont.setPointSize(
+                        static_cast<int>(dispParams.defaultFontSize));
+                scaleWidth =
+                        static_cast<int>(dispParams.colorScaleRampWidth) +
+                        QFontMetrics(scaleFont).horizontalAdvance("123.456789");
                 // scaleWidth =
-                // ecvDisplayTools::GetDisplayParameters().colorScaleRampWidth +
-                // QFontMetrics(ecvDisplayTools::GetTextDisplayFont()).width("123.456789");
+                // dispParams.colorScaleRampWidth +
+                // QFontMetrics(scaleFont).width("123.456789");
             }
             if (yLabelDisplayed) {
                 // find the largest label width
-                QFont labelFont = ecvDisplayTools::GetTextDisplayFont();
+                QFont labelFont;
+                labelFont.setPointSize(
+                        static_cast<int>(dispParams.defaultFontSize));
                 labelFont.setPointSize(m_yLabels->getFontSize());
                 QFontMetrics fm(labelFont);
                 int maxWidth = 0;
@@ -576,12 +595,12 @@ void DistanceMapGenerationDlg::updateZoom(ccBBox& box) {
             centerPos = (0.5f - mapStart) / mapPart;
 
             // update pixel size accordingly
-            float screenHeight =
-                    ecvDisplayTools::GlHeight() * params.cameraAspectRatio;
+            float screenHeight = static_cast<float>(ev->glHeight()) *
+                                 params.cameraAspectRatio;
             params.pixelSize = static_cast<float>(
                     std::max(box.getDiagVec().x / mapWidth,
                              box.getDiagVec().y / screenHeight));
-            ecvDisplayTools::SetViewportParameters(params);
+            ev->setViewportParameters(params);
         }
 
         // we set the pivot point on the box center
@@ -590,37 +609,42 @@ void DistanceMapGenerationDlg::updateZoom(ccBBox& box) {
             0.5f)  // if we don't look exactly at the center of the map
             P.x = box.minCorner().x * (1.0f - centerPos) +
                   box.maxCorner().x * centerPos;
-        ecvDisplayTools::SetPivotPoint(CCVector3d::fromArray(P.u));
-        ecvDisplayTools::SetCameraPos(CCVector3d::fromArray(P.u));
+        CCVector3d Pd = CCVector3d::fromArray(P.u);
+        ecvViewportParameters vpc = ev->getViewportParameters();
+        vpc.setPivotPoint(Pd, true);
+        vpc.setCameraCenter(Pd, true);
+        ev->setViewportParameters(vpc);
 
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::InvalidateVisualization();
-        ecvDisplayTools::Deprecate3DLayer();
+        ev->invalidateViewport();
+        if (auto* ctx = ev->viewContext()) ctx->validModelviewMatrix = false;
+        ev->deprecate3DLayer();
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::clearView() {
     if (!m_window) return;
+
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
 
     // remove existing sf
     m_window->setAssociatedScalarField(0);
 
     // remove existing map (or maps?)
     ccHObject::Container maps;
-    ecvDisplayTools::GetOwnDB()->filterChildren(maps, false, CV_TYPES::MESH);
+    ev->getOwnDB()->filterChildren(maps, false, CV_TYPES::MESH);
     for (size_t i = 0; i < maps.size(); ++i) {
-        ecvDisplayTools::RemoveFromOwnDB(maps[i]);
+        ev->removeFromOwnDB(maps[i]);
     }
 
     // remove any polylines
     {
         ccHObject::Container polylines;
-        ecvDisplayTools::GetOwnDB()->filterChildren(polylines, false,
-                                                    CV_TYPES::POLY_LINE);
+        ev->getOwnDB()->filterChildren(polylines, false, CV_TYPES::POLY_LINE);
         for (size_t i = 0; i < polylines.size(); ++i) {
-            ecvDisplayTools::RemoveFromOwnDB(polylines[i]);
+            ev->removeFromOwnDB(polylines[i]);
         }
     }
     m_xLabels->setVisible(false);
@@ -660,59 +684,62 @@ void DistanceMapGenerationDlg::update() {
     updateVolumes();
 
     if (m_map && m_window) {
-        ccMesh* mapMesh = 0;
+        if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+            ccMesh* mapMesh = 0;
 
-        ProjectionMode mode = getProjectionMode();
-        if (mode == PROJ_CYLINDRICAL) {
-            // by default we map an image on a plane
-            double dx = static_cast<double>(m_map->xSteps) * m_map->xStep;
-            double dy = static_cast<double>(m_map->ySteps) * m_map->yStep;
-            ccGLMatrix transMat;
-            transMat.setTranslation(CCVector3(
-                    static_cast<PointCoordinateType>(dx / 2 + m_map->xMin),
-                    static_cast<PointCoordinateType>(dy / 2 + m_map->yMin), 0));
-            ccPlane* mapPlane = new ccPlane(
-                    static_cast<PointCoordinateType>(dx),
-                    static_cast<PointCoordinateType>(dy), &transMat, "map");
-            mapMesh = static_cast<ccMesh*>(mapPlane);
-        } else  // if (mode == PROJ_CONICAL) //conical projection
-        {
-            // no choice, we create a mesh
-            bool ccw = ccwCheckBox->isChecked();
-            m_map->conicalSpanRatio = conicSpanRatioDoubleSpinBox->value();
-            mapMesh = DistanceMapGenerationTool::ConvertConicalMapToMesh(m_map,
-                                                                         ccw);
-        }
-
-        if (mapMesh) {
-            mapMesh->setVisible(true);
-            mapMesh->showNormals(false);
-            ecvDisplayTools::AddToOwnDB(mapMesh, false);
-
-            updateMapTexture();
-
-            // add a virtual scalar field for color ramp display
-            ccScalarField* sf = new ccScalarField();
+            ProjectionMode mode = getProjectionMode();
+            if (mode == PROJ_CYLINDRICAL) {
+                // by default we map an image on a plane
+                double dx = static_cast<double>(m_map->xSteps) * m_map->xStep;
+                double dy = static_cast<double>(m_map->ySteps) * m_map->yStep;
+                ccGLMatrix transMat;
+                transMat.setTranslation(CCVector3(
+                        static_cast<PointCoordinateType>(dx / 2 + m_map->xMin),
+                        static_cast<PointCoordinateType>(dy / 2 + m_map->yMin),
+                        0));
+                ccPlane* mapPlane = new ccPlane(
+                        static_cast<PointCoordinateType>(dx),
+                        static_cast<PointCoordinateType>(dy), &transMat, "map");
+                mapMesh = static_cast<ccMesh*>(mapPlane);
+            } else  // if (mode == PROJ_CONICAL) //conical projection
             {
-                sf->reserve(2);
-                ScalarType smin = static_cast<ScalarType>(m_map->minVal);
-                ScalarType smax = static_cast<ScalarType>(m_map->maxVal);
-                sf->addElement(smin);
-                sf->addElement(smax);
-                sf->computeMinAndMax();
+                // no choice, we create a mesh
+                bool ccw = ccwCheckBox->isChecked();
+                m_map->conicalSpanRatio = conicSpanRatioDoubleSpinBox->value();
+                mapMesh = DistanceMapGenerationTool::ConvertConicalMapToMesh(
+                        m_map, ccw);
             }
-            // selected color scale
-            ccColorScale::Shared colorScale =
-                    ccColorScalesManager::GetDefaultScale();
-            if (m_colorScaleSelector)
-                colorScale = m_colorScaleSelector->getSelectedScale();
-            sf->setColorScale(colorScale);
-            sf->setColorRampSteps(colorScaleStepsSpinBox->value());
-            m_window->setAssociatedScalarField(sf);
-        } else {
-            m_app->dispToConsole(
-                    QString("Not enough memory to display the map!"),
-                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+
+            if (mapMesh) {
+                mapMesh->setVisible(true);
+                mapMesh->showNormals(false);
+                ev->addToOwnDB(mapMesh, false);
+
+                updateMapTexture();
+
+                // add a virtual scalar field for color ramp display
+                ccScalarField* sf = new ccScalarField();
+                {
+                    sf->reserve(2);
+                    ScalarType smin = static_cast<ScalarType>(m_map->minVal);
+                    ScalarType smax = static_cast<ScalarType>(m_map->maxVal);
+                    sf->addElement(smin);
+                    sf->addElement(smax);
+                    sf->computeMinAndMax();
+                }
+                // selected color scale
+                ccColorScale::Shared colorScale =
+                        ccColorScalesManager::GetDefaultScale();
+                if (m_colorScaleSelector)
+                    colorScale = m_colorScaleSelector->getSelectedScale();
+                sf->setColorScale(colorScale);
+                sf->setColorRampSteps(colorScaleStepsSpinBox->value());
+                m_window->setAssociatedScalarField(sf);
+            } else {
+                m_app->dispToConsole(
+                        QString("Not enough memory to display the map!"),
+                        ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+            }
         }
     }
 
@@ -721,10 +748,11 @@ void DistanceMapGenerationDlg::update() {
     // force grid update if necessary
     // updateOverlayGrid();
     // update zoom
-    ccBBox box =
-            m_window
-                    ? ecvDisplayTools::GetOwnDB()->getDisplayBB_recursive(false)
-                    : ccBBox();
+    ccBBox box;
+    if (m_window) {
+        if (auto* ev = ecvViewManager::instance().getEffectiveView())
+            box = ev->getOwnDB()->getDisplayBB_recursive(false);
+    }
     updateZoom(box);
 
     saveToPersistentSettings();
@@ -745,18 +773,21 @@ void DistanceMapGenerationDlg::updateHeightUnits() {
 void DistanceMapGenerationDlg::updateMapTexture() {
     if (!m_map || !m_colorScaleSelector || !m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     ccHObject::Container texturedEntities;
 
     ProjectionMode mode = getProjectionMode();
     if (mode == PROJ_CYLINDRICAL) {
         // cylindrical projection: look for a plane
-        if (ecvDisplayTools::GetOwnDB()->filterChildren(texturedEntities, false,
-                                                        CV_TYPES::PLANE) == 0)
+        if (ev->getOwnDB()->filterChildren(texturedEntities, false,
+                                           CV_TYPES::PLANE) == 0)
             return;
     } else if (mode == PROJ_CONICAL) {
         // conical projection: look for a standard mesh
-        if (ecvDisplayTools::GetOwnDB()->filterChildren(texturedEntities, false,
-                                                        CV_TYPES::MESH) == 0)
+        if (ev->getOwnDB()->filterChildren(texturedEntities, false,
+                                           CV_TYPES::MESH) == 0)
             return;
     }
 
@@ -821,7 +852,7 @@ void DistanceMapGenerationDlg::updateMapTexture() {
         }
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::colorScaleChanged(int) {
@@ -836,7 +867,7 @@ void DistanceMapGenerationDlg::colorScaleChanged(int) {
         sf->setColorScale(colorScale);
         sf->setColorRampSteps(steps);
 
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
     }
 
     // same thing with textures
@@ -1109,10 +1140,12 @@ double DistanceMapGenerationDlg::getBaseRadius() const {
 void DistanceMapGenerationDlg::baseRadiusChanged(double) {
     if (!m_window) return;
 
-    ecvViewportParameters params = ecvDisplayTools::GetViewportParameters();
-    params.cameraAspectRatio = static_cast<float>(getBaseRadius());
-    ecvDisplayTools::SetViewportParameters(params);
-    ecvDisplayTools::RedrawDisplay();
+    if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+        ecvViewportParameters params = ev->getViewportParameters();
+        params.cameraAspectRatio = static_cast<float>(getBaseRadius());
+        ev->setViewportParameters(params);
+        { ecvRedrawScope scope; }
+    }
 }
 
 QString DistanceMapGenerationDlg::getHeightUnitString() const {
@@ -1307,16 +1340,24 @@ void DistanceMapGenerationDlg::exportMapAsGrid() {
 void DistanceMapGenerationDlg::exportMapAsImage() {
     if (!m_window) return;
 
-    ccRenderToFileDlg rtfDlg(ecvDisplayTools::GlWidth(),
-                             ecvDisplayTools::GlHeight(),
-                             m_app->getMainWindow());
+    QWidget* dlgParent = ecvViewManager::instance().activeWidget();
+    unsigned rw = 0;
+    unsigned rh = 0;
+    if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+        rw = static_cast<unsigned>(std::max(0, ev->glWidth()));
+        rh = static_cast<unsigned>(std::max(0, ev->glHeight()));
+    }
+
+    ccRenderToFileDlg rtfDlg(static_cast<unsigned>(rw),
+                             static_cast<unsigned>(rh), dlgParent);
     rtfDlg.hideOptions();
 
     if (rtfDlg.exec()) {
         QApplication::processEvents();
-        ecvDisplayTools::RenderToFile(rtfDlg.getFilename(), rtfDlg.getZoom(),
-                                      rtfDlg.dontScalePoints(),
-                                      rtfDlg.renderOverlayItems());
+        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+            v->renderToFile(rtfDlg.getFilename(), rtfDlg.getZoom(),
+                            rtfDlg.dontScalePoints());
+        }
     }
 }
 
@@ -1567,8 +1608,10 @@ void DistanceMapGenerationDlg::loadOverlaySymbols() {
                           static_cast<ColorCompType>(m_symbolColor.blue()));
         symbolCloud->setTempColor(rgb, true);
         if (m_window != nullptr) {
-            ecvDisplayTools::AddToOwnDB(symbolCloud, false);
-            ecvDisplayTools::RedrawDisplay();
+            if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+                ev->addToOwnDB(symbolCloud, false);
+                { ecvRedrawScope scope; }
+            }
         }
 
         clearLabelsPushButton->setEnabled(true);
@@ -1584,25 +1627,30 @@ void DistanceMapGenerationDlg::loadOverlaySymbols() {
 void DistanceMapGenerationDlg::clearOverlaySymbols() {
     if (!m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     ccHObject::Container clouds;
-    ecvDisplayTools::GetOwnDB()->filterChildren(clouds, false,
-                                                CV_TYPES::POINT_CLOUD);
+    ev->getOwnDB()->filterChildren(clouds, false, CV_TYPES::POINT_CLOUD);
 
     for (size_t i = 0; i < clouds.size(); ++i)
         if (clouds[i] != m_xLabels && clouds[i] != m_yLabels)
-            ecvDisplayTools::RemoveFromOwnDB(clouds[i]);
+            ev->removeFromOwnDB(clouds[i]);
 
     clearLabelsPushButton->setEnabled(false);
     clearLabelsPushButton->setText("Clear");
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::overlaySymbolsSizeChanged(int size) {
     if (!m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     double symbolSize = (double)symbolSizeSpinBox->value();
 
-    ccHObject* db = ecvDisplayTools::GetOwnDB();
+    ccHObject* db = ev->getOwnDB();
     for (unsigned i = 0; i < db->getChildrenNumber(); ++i) {
         ccHObject* child = db->getChild(i);
         if (child->isA(CV_TYPES::POINT_CLOUD) && child != m_xLabels &&
@@ -1611,7 +1659,7 @@ void DistanceMapGenerationDlg::overlaySymbolsSizeChanged(int size) {
             static_cast<ccSymbolCloud*>(child)->setSymbolSize(symbolSize);
         }
     }
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::overlaySymbolsColorChanged() {
@@ -1619,11 +1667,14 @@ void DistanceMapGenerationDlg::overlaySymbolsColorChanged() {
 
     if (!m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     ecvColor::Rgb rgb(static_cast<ColorCompType>(m_symbolColor.red()),
                       static_cast<ColorCompType>(m_symbolColor.green()),
                       static_cast<ColorCompType>(m_symbolColor.blue()));
 
-    ccHObject* db = ecvDisplayTools::GetOwnDB();
+    ccHObject* db = ev->getOwnDB();
     for (unsigned i = 0; i < db->getChildrenNumber(); ++i) {
         ccHObject* child = db->getChild(i);
         if (child->isA(CV_TYPES::POINT_CLOUD) && child != m_xLabels &&
@@ -1633,7 +1684,7 @@ void DistanceMapGenerationDlg::overlaySymbolsColorChanged() {
         }
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::overlayGridColorChanged() {
@@ -1641,11 +1692,14 @@ void DistanceMapGenerationDlg::overlayGridColorChanged() {
 
     if (!m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     ecvColor::Rgb rgb(static_cast<ColorCompType>(m_gridColor.red()),
                       static_cast<ColorCompType>(m_gridColor.green()),
                       static_cast<ColorCompType>(m_gridColor.blue()));
 
-    ccHObject* db = ecvDisplayTools::GetOwnDB();
+    ccHObject* db = ev->getOwnDB();
     for (unsigned i = 0; i < db->getChildrenNumber(); ++i) {
         ccHObject* child = db->getChild(i);
         if (child->isA(CV_TYPES::POLY_LINE)) {
@@ -1656,15 +1710,18 @@ void DistanceMapGenerationDlg::overlayGridColorChanged() {
     m_xLabels->setTempColor(rgb, true);
     m_yLabels->setTempColor(rgb, true);
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::labelFontSizeChanged(int) {
     if (!m_window) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     int fontSize = fontSizeSpinBox->value();
 
-    ccHObject* db = ecvDisplayTools::GetOwnDB();
+    ccHObject* db = ev->getOwnDB();
     for (unsigned i = 0; i < db->getChildrenNumber(); ++i) {
         ccHObject* child = db->getChild(i);
         if (child->isA(CV_TYPES::POINT_CLOUD)) {
@@ -1673,22 +1730,25 @@ void DistanceMapGenerationDlg::labelFontSizeChanged(int) {
     }
 
     // update window font-size
-    ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-    params.defaultFontSize = fontSize;
+    ecvGui::ParamStruct params = ev->getDisplayParameters();
+    params.defaultFontSize = static_cast<unsigned>(fontSize);
 
-    ecvDisplayTools::SetDisplayParameters(params);
-    ecvDisplayTools::RedrawDisplay();
+    ev->setDisplayParameters(params);
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::labelPrecisionChanged(int prec) {
     if (!m_window) return;
 
-    // update numerical precision
-    ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-    params.displayedNumPrecision = prec;
-    ecvDisplayTools::SetDisplayParameters(params);
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
 
-    ecvDisplayTools::RedrawDisplay();
+    // update numerical precision
+    ecvGui::ParamStruct params = ev->getDisplayParameters();
+    params.displayedNumPrecision = static_cast<unsigned>(prec);
+    ev->setDisplayParameters(params);
+
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::colorRampStepsChanged(int) {
@@ -1705,13 +1765,15 @@ void DistanceMapGenerationDlg::toggleOverlayGrid(bool state) {
     assert(m_xLabels && m_yLabels);
     if (!m_xLabels || !m_yLabels) return;
 
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) return;
+
     // remove any polylines
     {
         ccHObject::Container polylines;
-        ecvDisplayTools::GetOwnDB()->filterChildren(polylines, false,
-                                                    CV_TYPES::POLY_LINE);
+        ev->getOwnDB()->filterChildren(polylines, false, CV_TYPES::POLY_LINE);
         for (size_t i = 0; i < polylines.size(); ++i)
-            ecvDisplayTools::RemoveFromOwnDB(polylines[i]);
+            ev->removeFromOwnDB(polylines[i]);
     }
     // and labels
     m_xLabels->clear();
@@ -1740,7 +1802,7 @@ void DistanceMapGenerationDlg::toggleOverlayGrid(bool state) {
                 m_app->dispToConsole(
                         QString("Internal error: invalid step values?!"),
                         ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-            ecvDisplayTools::RedrawDisplay();
+            { ecvRedrawScope scope; }
             return;
         }
 
@@ -1813,7 +1875,7 @@ void DistanceMapGenerationDlg::toggleOverlayGrid(bool state) {
                 poly->showColors(true);
                 poly->setVisible(true);
                 poly->set2DMode(false);
-                ecvDisplayTools::AddToOwnDB(poly, false);
+                ev->addToOwnDB(poly, false);
 
                 if (m_xLabels->isVisible()) {
                     m_xLabels->addPoint(Pbottom);
@@ -1889,7 +1951,7 @@ void DistanceMapGenerationDlg::toggleOverlayGrid(bool state) {
                     poly->showColors(true);
                     poly->setVisible(true);
                     poly->set2DMode(false);
-                    ecvDisplayTools::AddToOwnDB(poly, false);
+                    ev->addToOwnDB(poly, false);
                 } else {
                     delete vertices;
                     vertices = 0;
@@ -1908,7 +1970,7 @@ void DistanceMapGenerationDlg::toggleOverlayGrid(bool state) {
         }
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void DistanceMapGenerationDlg::changeGridColor() {
@@ -1932,7 +1994,7 @@ void DistanceMapGenerationDlg::changeSymbolColor() {
 void DistanceMapGenerationDlg::toggleColorScaleDisplay(bool state) {
     if (m_window) {
         m_window->showSF(state);
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
     }
 }
 

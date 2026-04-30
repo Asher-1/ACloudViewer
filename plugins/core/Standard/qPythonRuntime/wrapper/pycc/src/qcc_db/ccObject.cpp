@@ -274,7 +274,10 @@ void define_ccObject(py::module &m)
             py::keep_alive<0, 1>())
         .def("isAncestorOf", &ccHObject::isAncestorOf, "anObject"_a)
         // bounding-box
-        .def("getDisplayBB_recursive", &ccHObject::getDisplayBB_recursive, "relative"_a, py::arg("display") = nullptr)
+        .def("getDisplayBB_recursive",
+             &ccHObject::getDisplayBB_recursive,
+             "relative"_a,
+             py::arg("display") = nullptr)
 
         // display
         .def("applyGLTransformation_recursive",

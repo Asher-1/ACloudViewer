@@ -7,8 +7,7 @@
 
 #include "ecvTabbedMultiViewWidget.h"
 
-#include "ecvMultiViewWidget.h"
-
+#include <CVLog.h>
 #include <ecvGLView.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
@@ -25,7 +24,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include <CVLog.h>
+#include "ecvMultiViewWidget.h"
 
 ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
     : QWidget(parent) {
@@ -70,10 +69,9 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
                 });
 
                 if (!m_readOnly) {
-                    auto* closeAct =
-                            menu.addAction(tr("Close Tab"), [this, tabIdx]() {
-                                closeTab(tabIdx);
-                            });
+                    auto* closeAct = menu.addAction(
+                            tr("Close Tab"),
+                            [this, tabIdx]() { closeTab(tabIdx); });
                     Q_UNUSED(closeAct);
                 }
 
@@ -86,8 +84,9 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
                     mvw->layoutManager()->equalize(
                             ecvViewLayoutProxy::VERTICAL);
                 });
-                eqMenu->addAction(tr("Both"),
-                                  [mvw]() { mvw->layoutManager()->equalize(); });
+                eqMenu->addAction(tr("Both"), [mvw]() {
+                    mvw->layoutManager()->equalize();
+                });
 
                 menu.exec(tb->mapToGlobal(pos));
             });
@@ -97,14 +96,12 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
     connect(m_tabWidget, &QTabWidget::currentChanged, this,
             &ecvTabbedMultiViewWidget::onCurrentTabChanged);
 
-    connect(m_tabWidget, &QTabWidget::tabBarClicked, this,
-            [this](int index) {
-                if (m_tabWidget->currentIndex() == 0 &&
-                    m_tabWidget->count() == 1) {
-                    createTab();
-                }
-                Q_UNUSED(index);
-            });
+    connect(m_tabWidget, &QTabWidget::tabBarClicked, this, [this](int index) {
+        if (m_tabWidget->currentIndex() == 0 && m_tabWidget->count() == 1) {
+            createTab();
+        }
+        Q_UNUSED(index);
+    });
 }
 
 ecvTabbedMultiViewWidget::~ecvTabbedMultiViewWidget() = default;
@@ -134,9 +131,8 @@ int ecvTabbedMultiViewWidget::createTab() {
 
     auto* mvw = createMultiViewWidget(layout);
 
-    int insertPos = m_newTabWidget
-                            ? m_tabWidget->indexOf(m_newTabWidget)
-                            : m_tabWidget->count();
+    int insertPos = m_newTabWidget ? m_tabWidget->indexOf(m_newTabWidget)
+                                   : m_tabWidget->count();
     if (insertPos < 0) insertPos = m_tabWidget->count();
 
     int idx = m_tabWidget->insertTab(insertPos, mvw, layout->name());
@@ -269,8 +265,7 @@ void ecvTabbedMultiViewWidget::onCurrentTabChanged(int index) {
     QWidget* currentWidget = m_tabWidget->widget(index);
     if (auto* mvw = qobject_cast<ecvMultiViewWidget*>(currentWidget)) {
         mvw->makeFrameActive();
-    } else if (currentWidget == m_newTabWidget &&
-               m_tabWidget->count() > 1) {
+    } else if (currentWidget == m_newTabWidget && m_tabWidget->count() > 1) {
         int newIdx = createTab();
         if (m_viewFactory) {
             auto* mvw2 = qobject_cast<ecvMultiViewWidget*>(
@@ -415,8 +410,7 @@ ecvMultiViewWidget* ecvTabbedMultiViewWidget::currentMultiView() const {
 ecvMultiViewWidget* ecvTabbedMultiViewWidget::findTab(
         ecvViewLayoutProxy* layout) const {
     for (int i = 0; i < m_tabWidget->count(); ++i) {
-        auto* mvw =
-                qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
         if (mvw && mvw->layoutManager() == layout) return mvw;
     }
     return nullptr;
@@ -425,10 +419,8 @@ ecvMultiViewWidget* ecvTabbedMultiViewWidget::findTab(
 QList<ecvViewLayoutProxy*> ecvTabbedMultiViewWidget::allLayouts() const {
     QList<ecvViewLayoutProxy*> result;
     for (int i = 0; i < m_tabWidget->count(); ++i) {
-        auto* mvw =
-                qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
-        if (mvw && mvw->layoutManager())
-            result.append(mvw->layoutManager());
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        if (mvw && mvw->layoutManager()) result.append(mvw->layoutManager());
     }
     return result;
 }
@@ -436,8 +428,7 @@ QList<ecvViewLayoutProxy*> ecvTabbedMultiViewWidget::allLayouts() const {
 QList<ecvGenericGLDisplay*> ecvTabbedMultiViewWidget::allViews() const {
     QList<ecvGenericGLDisplay*> result;
     for (int i = 0; i < m_tabWidget->count(); ++i) {
-        auto* mvw =
-                qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
         if (mvw) result.append(mvw->viewProxies());
     }
     return result;
@@ -488,8 +479,7 @@ void ecvTabbedMultiViewWidget::setDecorationsVisibility(bool visible) {
     m_tabWidget->tabBar()->setVisible(visible);
 
     for (int i = 0; i < m_tabWidget->count(); ++i) {
-        auto* mvw =
-                qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
         if (mvw) mvw->setDecorationsVisibility(visible);
     }
 }
@@ -500,8 +490,7 @@ void ecvTabbedMultiViewWidget::toggleWidgetDecoration() {
 
 void ecvTabbedMultiViewWidget::lockViewSize(const QSize& size) {
     for (int i = 0; i < m_tabWidget->count(); ++i) {
-        auto* mvw =
-                qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
         if (mvw) mvw->lockViewSize(size);
     }
     emit viewSizeLocked(!size.isEmpty());
@@ -598,8 +587,7 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
     auto* esc = new QShortcut(Qt::Key_Escape, fsw);
     connect(esc, &QShortcut::activated, this,
             &ecvTabbedMultiViewWidget::toggleFullScreenActiveView);
-    auto* ctrlF11 =
-            new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11), fsw);
+    auto* ctrlF11 = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11), fsw);
     connect(ctrlF11, &QShortcut::activated, this,
             &ecvTabbedMultiViewWidget::toggleFullScreenActiveView);
     emit fullScreenActiveViewEnabled(true);

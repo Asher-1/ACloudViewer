@@ -17,6 +17,12 @@
 // CV_CORE_LIB
 #include <CVTools.h>
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
+
+// VtkEngine
+#include <Visualization/VtkVis.h>
+#include <ecvGLView.h>
 
 // Qt
 #include <QApplication>
@@ -26,6 +32,35 @@
 #include <QPushButton>
 #include <QtConcurrentRun>
 #include <QtMath>
+
+namespace {
+
+CCVector2i viewportCenterPx() {
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        return CCVector2i(v->glWidth() / 2, v->glHeight() / 2);
+    }
+    return CCVector2i(0, 0);
+}
+
+void rotateEffectiveViewWithAxis(const CCVector2i& pos,
+                                 const CCVector3d& axis,
+                                 double angle_deg,
+                                 int viewport) {
+    auto* eff = ecvViewManager::instance().getEffectiveView();
+    if (!eff) return;
+
+    if (auto* dt = dynamic_cast<ecvDisplayTools*>(eff)) {
+        dt->rotateWithAxis(pos, axis, angle_deg, viewport);
+        return;
+    }
+
+    auto* glv = dynamic_cast<ecvGLView*>(eff);
+    if (glv && glv->getVisualizer3D()) {
+        glv->getVisualizer3D()->rotateWithAxis(pos, axis, angle_deg, viewport);
+    }
+}
+
+}  // namespace
 
 //=============================================================================
 class AnimationDialogInternal : public Ui::AnimationParamDlg {
@@ -105,13 +140,12 @@ void ecvAnimationParamDlg::startAnimation() {
 
     double angle_step = this->getRotationAngle();
     CCVector3d rotationAxis = this->getRotationAxis();
-    CCVector2i pos(ecvDisplayTools::GlWidth() / 2,
-                   ecvDisplayTools::GlHeight() / 2);
+    CCVector2i pos(viewportCenterPx());
 
     while (true) {
         // next frame
         timer.restart();
-        ecvDisplayTools::RotateWithAxis(pos, rotationAxis, angle_step, 0);
+        rotateEffectiveViewWithAxis(pos, rotationAxis, angle_step, 0);
         if (this->isSavingViewport() && this->getMainWindow()) {
             this->getMainWindow()->doActionSaveViewportAsCamera();
             progressDialog.setLabelText(
@@ -196,11 +230,12 @@ bool ecvAnimationParamDlg::start() {
     m_processing = false;
 
     // cache history viewport params
-    viewportParamsHistory = ecvDisplayTools::GetViewportParameters();
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        viewportParamsHistory = v->getViewportParameters();
+    }
 
     return true;
 }
-
 
 bool ecvAnimationParamDlg::linkWith(QWidget* win) {
     QWidget* oldWin = m_associatedWin;
@@ -226,8 +261,7 @@ bool ecvAnimationParamDlg::linkWith(QWidget* win) {
 
     if (m_associatedWin) {
         initWith(m_associatedWin);
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::destroyed,
-                this, &QWidget::hide);
+        connect(m_associatedWin, &QObject::destroyed, this, &QWidget::hide);
     }
 
     return true;
@@ -280,8 +314,12 @@ void ecvAnimationParamDlg::updateRotationAxisPoint(AxisType axisType,
 }
 
 void ecvAnimationParamDlg::reset() {
-    ecvDisplayTools::SetViewportParameters(viewportParamsHistory);
-    ecvDisplayTools::UpdateScreen();
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->setViewportParameters(viewportParamsHistory);
+    }
+    if (auto* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -303,10 +341,9 @@ void ecvAnimationParamDlg::enablePickRotationAxis(bool state) {
 //-----------------------------------------------------------------------------
 void ecvAnimationParamDlg::angleStep() {
     double angle_step = this->getRotationAngle();
-    CCVector2i pos(ecvDisplayTools::GlWidth() / 2,
-                   ecvDisplayTools::GlHeight() / 2);
+    CCVector2i pos(viewportCenterPx());
     CCVector3d rotationAxis = getRotationAxis();
-    ecvDisplayTools::RotateWithAxis(pos, rotationAxis, angle_step, 0);
+    rotateEffectiveViewWithAxis(pos, rotationAxis, angle_step, 0);
     if (this->isSavingViewport() && this->getMainWindow()) {
         this->getMainWindow()->doActionSaveViewportAsCamera();
     }
@@ -325,17 +362,24 @@ void ecvAnimationParamDlg::enableListener(bool state) {
             m_pickingHub->removeListener(this);
         }
     } else if (m_associatedWin) {
+        auto* view = ecvViewManager::instance().getEffectiveView();
         if (state) {
-            ecvDisplayTools::SetPickingMode(
-                    ecvDisplayTools::POINT_OR_TRIANGLE_PICKING);
-            connect(ecvDisplayTools::TheInstance(),
-                    &ecvDisplayTools::itemPicked, this,
-                    &ecvAnimationParamDlg::processPickedItem);
+            if (view) {
+                view->setPickingMode(
+                        ecvGenericGLDisplay::POINT_OR_TRIANGLE_PICKING);
+                if (QWidget* w = view->asWidget())
+                    w->setCursor(Qt::PointingHandCursor);
+            }
+            connect(&ecvViewManager::instance(), &ecvViewManager::itemPicked,
+                    this, &ecvAnimationParamDlg::processPickedItem);
         } else {
-            ecvDisplayTools::SetPickingMode(ecvDisplayTools::DEFAULT_PICKING);
-            disconnect(ecvDisplayTools::TheInstance(),
-                       &ecvDisplayTools::itemPicked, this,
-                       &ecvAnimationParamDlg::processPickedItem);
+            if (view) {
+                view->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
+                if (QWidget* w = view->asWidget())
+                    w->setCursor(Qt::ArrowCursor);
+            }
+            disconnect(&ecvViewManager::instance(), &ecvViewManager::itemPicked,
+                       this, &ecvAnimationParamDlg::processPickedItem);
         }
     }
 }

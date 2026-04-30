@@ -8,7 +8,8 @@
 #include "ecvPickingHub.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
 
 // Qt
 // Plugins
@@ -18,7 +19,7 @@ ccPickingHub::ccPickingHub(ecvMainAppInterface* app, QObject* parent /*=0*/)
     : QObject(parent),
       m_app(app),
       m_activeWindow(nullptr),
-      m_pickingMode(ecvDisplayTools::POINT_OR_TRIANGLE_PICKING),
+      m_pickingMode(ecvGenericGLDisplay::POINT_OR_TRIANGLE_PICKING),
       m_autoEnableOnActivatedWindow(true),
       m_exclusive(false) {}
 
@@ -27,8 +28,12 @@ void ccPickingHub::togglePickingMode(bool state) {
     // + " --> " + (m_activeGLWindow ? QString("View ") +
     // QString::number(m_activeGLWindow->getUniqueID()) : QString("no view")));
     if (m_activeWindow) {
-        ecvDisplayTools::SetPickingMode(
-                state ? m_pickingMode : ecvDisplayTools::DEFAULT_PICKING);
+        ecvGenericGLDisplay* view =
+                ecvGenericGLDisplay::FromWidget(m_activeWindow.data());
+        if (view) {
+            view->setPickingMode(state ? m_pickingMode
+                                       : ecvGenericGLDisplay::DEFAULT_PICKING);
+        }
     }
 }
 
@@ -42,7 +47,7 @@ void ccPickingHub::onActiveViewWidgetChanged(QWidget* viewWidget) {
         m_activeWindow = nullptr;
     }
 
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::itemPicked, this,
             &ccPickingHub::processPickedItem, Qt::UniqueConnection);
     connect(viewWidget, &QObject::destroyed, this,
             &ccPickingHub::onActiveWindowDeleted);
@@ -91,7 +96,7 @@ bool ccPickingHub::addListener(
         ccPickingListener* listener,
         bool exclusive /*=false*/,
         bool autoStartPicking /*=true*/,
-        ecvDisplayTools::PICKING_MODE mode /*=POINT_OR_TRIANGLE_PICKING*/) {
+        ecvGenericGLDisplay::PICKING_MODE mode /*=POINT_OR_TRIANGLE_PICKING*/) {
     if (!listener) {
         assert(false);
         return false;

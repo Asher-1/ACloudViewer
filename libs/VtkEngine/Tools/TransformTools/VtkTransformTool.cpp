@@ -26,10 +26,10 @@
 #include <CVTools.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // VTK
 #include <vtkActor.h>
@@ -169,7 +169,9 @@ void VtkTransformTool::reset() {
                 actor->Modified();
             }
         }
-        ecvDisplayTools::UpdateScreen();
+        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+            v->updateScene();
+        }
     }
 }
 

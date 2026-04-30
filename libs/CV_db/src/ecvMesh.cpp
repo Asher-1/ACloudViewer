@@ -11,7 +11,7 @@
 #include "ecvBBox.h"
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvHObjectCaster.h"
 #include "ecvMaterialSet.h"
@@ -2637,7 +2637,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     handleColorRamp(context);
 
-    if (!ecvDisplayTools::GetMainWindow()) return;
+    if (!context.display) return;
 
     // 3D pass
     if (MACRO_Draw3D(context)) {
@@ -2740,7 +2740,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
         bool visFiltering =
                 (verticesVisibility.size() >= m_associatedCloud->size());
         context.visFiltering = visFiltering;
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
     }
 }
 

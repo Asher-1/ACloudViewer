@@ -69,7 +69,7 @@ public:
         // ABC legend entries near 3D markers
         struct Legend {
             QString text;
-            QPointF pos;   // Qt logical coords
+            QPointF pos;  // Qt logical coords
             QFont font;
             QColor color;  // per-legend text color (CloudCompare style)
         };

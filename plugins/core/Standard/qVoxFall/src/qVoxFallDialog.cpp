@@ -12,8 +12,8 @@
 #include <ecvQtHelpers.h>
 
 // qCC_db
-#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
+#include <ecvRedrawScope.h>
 
 // Qt
 #include <QComboBox>
@@ -109,7 +109,7 @@ void qVoxFallDialog::setMeshes(ccMesh* mesh1, ccMesh* mesh2) {
 void qVoxFallDialog::setMesh1Visibility(bool state) {
     if (m_mesh1) {
         m_mesh1->setVisible(state);
-        ecvDisplayTools::RedrawObject(m_mesh1);
+        { ecvRedrawScope scope({m_mesh1}); }
     }
     if (m_app) {
         m_app->updateUI();
@@ -120,7 +120,7 @@ void qVoxFallDialog::setMesh2Visibility(bool state) {
     if (m_mesh2) {
         m_mesh2->setVisible(state);
         // m_mesh2->prepareDisplayForRefresh();
-        ecvDisplayTools::RedrawObject(m_mesh2);
+        { ecvRedrawScope scope({m_mesh2}); }
     }
     if (m_app) {
         m_app->updateUI();

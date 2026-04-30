@@ -21,9 +21,11 @@
 
 // CV_DB_LIB
 #include <ecvGenericAnnotationTool.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
+#include <ecvViewManager.h>
 
 // QT
 #include <QMessageBox>
@@ -297,7 +299,7 @@ void ecvAnnotationsTool::toggleBox(bool state) {
     } else {
         m_annotationTool->hideAnnotation();
     }
-    ecvDisplayTools::UpdateScreen();
+    if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
 }
 
 void ecvAnnotationsTool::toggleOrigin(bool dummy) {
@@ -313,7 +315,7 @@ void ecvAnnotationsTool::toggleOrigin(bool dummy) {
     } else {
         m_annotationTool->hideOrigin();
     }
-    ecvDisplayTools::UpdateScreen();
+    if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
 }
 
 void ecvAnnotationsTool::releaseAssociatedEntities() {
@@ -524,5 +526,8 @@ void ecvAnnotationsTool::setView(CC_VIEW_ORIENTATION orientation) {
     // if (box.isValid()) {
     //     bbox = &box;
     // }
-    ecvDisplayTools::SetView(orientation);
+    if (auto* av = ecvViewManager::instance().getEffectiveView()) {
+        ecvViewManager::ScopedRenderOverride scope(av);
+        av->setView(orientation);
+    }
 }

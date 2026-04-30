@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <QWidget>
 #include <QMap>
 #include <QPointer>
 #include <QScopedPointer>
 #include <QVector>
+#include <QWidget>
 #include <functional>
 
 class ecvViewLayoutProxy;

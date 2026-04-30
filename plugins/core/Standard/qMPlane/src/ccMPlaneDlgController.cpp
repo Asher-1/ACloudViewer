@@ -104,7 +104,7 @@ void ccMPlaneDlgController::onFittingPointDelete(int index) {
 void ccMPlaneDlgController::onNormalCheckBoxClicked(bool checked) {
     m_showNormal = checked;
     m_data->getPlane()->showNormalVector(checked);
-    ecvDisplayTools::RedrawObject(m_data->getPlane());
+    { ecvRedrawScope scope({m_data->getPlane()}); }
 
     // m_selectedCloud->prepareDisplayForRefresh();
     // m_selectedCloud->refreshDisplay();
@@ -183,28 +183,31 @@ void ccMPlaneDlgController::startPicking() {
     }
 
     m_filteredWindows.clear();
-    QWidget* win = m_app->getActiveWindow();
+    QWidget *win = m_app->getActiveWindow();
     if (win) {
         win->installEventFilter(this);
         m_filteredWindows.insert(win);
     }
 
-    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
-            this, [this](ecvGenericGLDisplay*, ecvGenericGLDisplay*) {
+    connect(
+            &ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
+            [this](ecvGenericGLDisplay *, ecvGenericGLDisplay *) {
                 if (m_app && m_app->getActiveWindow()) {
-                    QWidget* w = m_app->getActiveWindow();
+                    QWidget *w = m_app->getActiveWindow();
                     if (!m_filteredWindows.contains(w)) {
                         w->installEventFilter(this);
                         m_filteredWindows.insert(w);
                     }
                     if (m_dialog) m_dialog->linkWith(w);
                 }
-            }, Qt::UniqueConnection);
+            },
+            Qt::UniqueConnection);
 }
 
 void ccMPlaneDlgController::stopPicking() {
     m_app->pickingHub()->removeListener(this);
-    for (QWidget* w : m_filteredWindows) {
+    for (QWidget *w : m_filteredWindows) {
         if (w) w->removeEventFilter(this);
     }
     m_filteredWindows.clear();

@@ -17,6 +17,7 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <QApplication>
@@ -31,6 +32,23 @@
 // standard includes
 #include <iomanip>
 #include <vector>
+
+namespace {
+
+QImage animationRenderToImage(int zoomFactor,
+                              bool renderOverlayItems,
+                              bool silent,
+                              int viewport) {
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    ecvViewManager::ScopedRenderOverride guard(view);
+    ecvDisplayTools* tools =
+            view ? dynamic_cast<ecvDisplayTools*>(view) : nullptr;
+    return tools ? tools->renderToImage(zoomFactor, renderOverlayItems, silent,
+                                        viewport)
+                 : QImage();
+}
+
+}  // namespace
 
 #ifdef QFFMPEG_SUPPORT
 // QTFFmpeg
@@ -259,7 +277,9 @@ bool qAnimationDlg::init(const std::vector<cc2DViewportObject*>& viewports,
     }
 
     ccBBox visibleObjectsBBox;
-    ecvDisplayTools::GetVisibleObjectsBB(visibleObjectsBBox);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->getVisibleObjectsBB(visibleObjectsBBox);
+    }
 
     for (size_t i = 0; i < viewports.size(); ++i) {
         cc2DViewportObject* vp = viewports[i];
@@ -754,8 +774,10 @@ int qAnimationDlg::getCurrentStepIndex() {
 void qAnimationDlg::applyViewport(
         const ecvViewportParameters& viewportParameters) {
     if (m_view3d) {
-        ecvDisplayTools::SetViewportParameters(viewportParameters);
-        ecvDisplayTools::UpdateScreen();
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setViewportParameters(viewportParameters);
+        }
+        if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
     }
 }
 
@@ -1226,7 +1248,7 @@ void qAnimationDlg::textureAnimationPreview(const QStringList& texture_files,
             CVLog::Warning(QString("Ignoring not existing texture image: %1")
                                    .arg(texture_file));
         }
-        ecvDisplayTools::UpdateScreen();
+        if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
 
         // next frame
         ++frameIndex;
@@ -1296,11 +1318,12 @@ bool qAnimationDlg::textureAnimationRender(
                             "toggle shown material first!");
                 };
             }
-            ecvDisplayTools::UpdateScreen();
+            if (auto* w = ecvViewManager::instance().activeWidget())
+                w->update();
         }
 
         // render to image
-        QImage image = ecvDisplayTools::RenderToImage(superRes, false, true, 0);
+        QImage image = animationRenderToImage(superRes, false, true, 0);
 
         if (image.isNull()) {
             QMessageBox::critical(this, "Error", "Failed to grab the screen!");
@@ -1438,7 +1461,9 @@ void qAnimationDlg::render(bool asSeparateFrames) {
     QSize originalViewSize;
     if (!asSeparateFrames) {
         // get original viewport size
-        originalViewSize = ecvDisplayTools::GetScreenSize();
+        if (auto* w = ecvViewManager::instance().activeWidget()) {
+            originalViewSize = w->size();
+        }
 
         // hack: as the encoder requires that the video dimensions are multiples
         // of 8, we resize the window a little bit...
@@ -1463,9 +1488,14 @@ void qAnimationDlg::render(bool asSeparateFrames) {
             animScale = superRes;
         }
 
+        int gw = 0;
+        int gh = 0;
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            gw = view->glWidth();
+            gh = view->glHeight();
+        }
         encoder.reset(new QVideoEncoder(
-                outputFilename, ecvDisplayTools::GlWidth() * animScale,
-                ecvDisplayTools::GlHeight() * animScale, bitrate, gop,
+                outputFilename, gw * animScale, gh * animScale, bitrate, gop,
                 static_cast<unsigned>(fpsSpinBox->value())));
         QStringList errors;
         QString outputFormat = outputFormatComboBox->currentData().toString();
@@ -1551,8 +1581,7 @@ void qAnimationDlg::render(bool asSeparateFrames) {
                 applyViewport(currentViewport);
 
                 // render to image
-                QImage image = ecvDisplayTools::RenderToImage(superRes, false,
-                                                              true, 0);
+                QImage image = animationRenderToImage(superRes, false, true, 0);
 
                 if (image.isNull()) {
                     QMessageBox::critical(this, "Error",

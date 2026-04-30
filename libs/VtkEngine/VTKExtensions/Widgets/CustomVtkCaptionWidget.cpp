@@ -22,6 +22,7 @@
 #include <CV_db/include/ecv2DLabel.h>
 #include <CV_db/include/ecvDisplayTools.h>
 #include <CV_db/include/ecvHObjectCaster.h>
+#include <CV_db/include/ecvViewManager.h>
 
 vtkStandardNewMacro(CustomVtkCaptionWidget);
 
@@ -80,7 +81,9 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // Notify DB tree that the label is selected
     cc2DLabel* label = self->m_associatedLabel;
 
-    if (!ecvDisplayTools::HasInstance()) {
+    ecvDisplayTools* tools = dynamic_cast<ecvDisplayTools*>(
+            ecvViewManager::instance().getPrimaryView());
+    if (!tools) {
         return;
     }
 
@@ -89,32 +92,27 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // timer is started in QVTKWidgetCustom::mouseReleaseEvent when
     // ProcessClickableItems returns false, and it would trigger doPicking()
     // which might clear our selection.
-    ecvDisplayTools* tools = ecvDisplayTools::TheInstance();
-    if (tools) {
-        // Mark that a widget was clicked - this will prevent doPicking() from
-        // executing and overriding our selection
-        tools->m_primaryCtx.widgetClicked = true;
+    tools->m_primaryCtx.widgetClicked = true;
 
-        // Stop deferred picking timer immediately if already active
-        if (tools->m_deferredPickingTimer.isActive()) {
-            tools->m_deferredPickingTimer.stop();
-        }
+    // Stop deferred picking timer immediately if already active
+    if (tools->m_deferredPickingTimer.isActive()) {
+        tools->m_deferredPickingTimer.stop();
     }
 
     // Use QTimer::singleShot to safely emit signal from VTK callback
     // This ensures the signal is emitted in the Qt event loop
     QTimer::singleShot(0, [label, tools]() {
-        if (!ecvDisplayTools::HasInstance()) {
+        if (!ecvViewManager::instance().hasAnyView() || !tools) {
             return;
         }
 
         // Stop deferred picking timer again in case mouseReleaseEvent started
         // it after our OnWidgetInteraction callback
-        if (tools && tools->m_deferredPickingTimer.isActive()) {
+        if (tools->m_deferredPickingTimer.isActive()) {
             tools->m_deferredPickingTimer.stop();
         }
 
         // Directly emit the signal - we're now in Qt event loop
-        emit ecvDisplayTools::TheInstance() -> entitySelectionChanged(label);
+        emit tools->entitySelectionChanged(label);
     });
 }

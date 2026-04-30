@@ -12,8 +12,8 @@
 #include <ui_measurementToolDlg.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvGenericMeasurementTools.h>
+#include <ecvHObject.h>
 
 // CV_PLUGIN_API
 #include <ecvPickingListener.h>
@@ -23,7 +23,6 @@
 
 class QScrollArea;
 class QVBoxLayout;
-class ccHObject;
 class ccPickingHub;
 class ecvFontPropertyWidget;
 

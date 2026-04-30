@@ -18,16 +18,17 @@
 // CV_DB_LIB
 #include <CVConst.h>
 #include <ecvBox.h>
+#include <ecvDisplayTools.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
 #include <ecvDisc.h>
 #include <ecvDish.h>
-#include <ecvDisplayTools.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvPlane.h>
 #include <ecvSphere.h>
 #include <ecvTorus.h>
+#include <ecvViewManager.h>
 
 // system
 #include <assert.h>
@@ -161,7 +162,10 @@ void ecvPrimitiveFactoryDlg::createPrimitive() {
 
     if (primitive) {
         m_win->addToDB(primitive, true, true, true);
-        ecvDisplayTools::ResetCameraClippingRange();
+        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+            if (auto* inst = dynamic_cast<ecvDisplayTools*>(v))
+                inst->resetCameraClippingRange();
+        }
     }
 }
 

@@ -10,7 +10,7 @@
 #include "ccMPlaneErrors.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 bool compareObjects(QString name,
                     ccHObject *object,
@@ -85,7 +85,7 @@ cc2DLabel *CC_ITEM_TREE::createPointLabel2D(QString labelText,
     }
     cc2DLabel *newLabel = nullptr;
     // ccGenericGLDisplay* display = sourceCloud->getDisplay();
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (auto *scr = ecvViewManager::instance().activeWidget()) {
         newLabel = new cc2DLabel();
         newLabel->addPickedPoint(sourceCloud, pointIdx);
         newLabel->setName(labelText);
@@ -95,11 +95,13 @@ cc2DLabel *CC_ITEM_TREE::createPointLabel2D(QString labelText,
         newLabel->setCollapsed(true);
         // newLabel->setDisplay(display);
 
-        QSize size = ecvDisplayTools::GetScreenSize();
-        newLabel->setPosition(
-                static_cast<float>(clickPoint.x() + 20) / size.width(),
-                static_cast<float>(clickPoint.y() + 20) / size.height());
-        newLabel->redrawDisplay();
+        const QSize size = scr->size();
+        if (!size.isEmpty()) {
+            newLabel->setPosition(
+                    static_cast<float>(clickPoint.x() + 20) / size.width(),
+                    static_cast<float>(clickPoint.y() + 20) / size.height());
+            newLabel->redrawDisplay();
+        }
     }
     return newLabel;
 }

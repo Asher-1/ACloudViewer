@@ -19,7 +19,9 @@
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -172,7 +174,12 @@ ecvMeasurementTool::~ecvMeasurementTool() {
 ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
         ecvGenericMeasurementTools::MeasurementType type) {
 #ifdef USE_VTK_BACKEND
-    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    ecvGenericVisualizer3D* viewer = nullptr;
+    if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+        if (auto* dt = dynamic_cast<ecvDisplayTools*>(ev)) {
+            viewer = dt->getVisualizer3D();
+        }
+    }
     if (!viewer) {
         CVLog::Error("[ecvMeasurementTool] No visualizer available!");
         return nullptr;
@@ -562,7 +569,7 @@ void ecvMeasurementTool::removeInstance() {
         updateInstancesComboBox();
         removeInstanceButton->setEnabled(false);
     }
-    ecvDisplayTools::UpdateScreen();
+    if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
 }
 
 bool ecvMeasurementTool::addAssociatedEntity(ccHObject* entity) {
@@ -909,7 +916,7 @@ void ecvMeasurementTool::onPointPickingRequested(int pointIndex) {
 
     if (m_pickingHub) {
         if (!m_pickingHub->addListener(this, true, true,
-                                       ecvDisplayTools::POINT_PICKING)) {
+                                       ecvGenericGLDisplay::POINT_PICKING)) {
             CVLog::Warning(
                     "[ecvMeasurementTool] Failed to register picking listener");
             m_pickPointMode = 0;

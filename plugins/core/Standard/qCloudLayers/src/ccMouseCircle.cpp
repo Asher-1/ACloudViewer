@@ -7,6 +7,9 @@
 
 #include "../include/ccMouseCircle.h"
 
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
+
 // Qt
 #include <QWheelEvent>
 
@@ -44,13 +47,17 @@ ccMouseCircle::ccMouseCircle(ecvMainAppInterface* appInterface,
     assert(owner);  // check valid pointer
     ccMouseCircle::m_owner = owner;
     m_owner->installEventFilter(this);
-    ecvDisplayTools::AddToOwnDB(this, true);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->addToOwnDB(this, true);
+    }
 }
 
 ccMouseCircle::~ccMouseCircle() {
     if (m_owner) {
         m_owner->removeEventFilter(this);
-        ecvDisplayTools::RemoveFromOwnDB(this);
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->removeFromOwnDB(this);
+        }
     }
 }
 
@@ -93,8 +100,14 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     }
 
     // test viewport parameters
-    const ecvViewportParameters& params =
-            ecvDisplayTools::GetViewportParameters();
+    const ecvViewportParameters* paramsPtr = nullptr;
+    if (context.display) {
+        paramsPtr = &context.display->getViewportParameters();
+    }
+    if (!paramsPtr) {
+        return;
+    }
+    const ecvViewportParameters& params = *paramsPtr;
 
     // CVLog::Print(QString("WidthAtFocalDist = %1 (= %2 x
     // %3)").arg(params.computeWidthAtFocalDist()).arg(params.computeDistanceToWidthRatio()).arg(params.getFocalDistance()));
@@ -141,7 +154,9 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
 
     if (event->type() == QEvent::MouseMove) {
         if (m_owner) {
-            ecvDisplayTools::RedrawDisplay(true, false);  // redraw 2D graphics
+            {
+                ecvRedrawScope scope(true, false);
+            }  // redraw 2D graphics
         }
     }
 
@@ -155,7 +170,7 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
                 m_radius - static_cast<int>(m_radiusStep * (delta / 100.0)));
 
         // repaint
-        ecvDisplayTools::RedrawDisplay(true, false);
+        { ecvRedrawScope scope(true, false); }
     }
     return false;  // pass event to other listeners
 }

@@ -85,8 +85,6 @@ public:
 
 public slots:
 
-    
-
     //! Updates dialog values with pivot point
     void updatePivotPoint(const CCVector3d& P);
     //! Updates current view mode

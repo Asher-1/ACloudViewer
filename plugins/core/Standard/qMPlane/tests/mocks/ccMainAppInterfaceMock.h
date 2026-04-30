@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ecvDisplayTools.h"
 #include "ecvMainAppInterface.h"
 #include "trompeloeil\catch2\trompeloeil.hpp"
 

@@ -9,7 +9,7 @@
 
 // Local
 #include "ecvCone.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvPointCloud.h"
 
 ccPolyline::ccPolyline(GenericIndexedCloudPersist* associatedCloud)
@@ -192,7 +192,7 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     if (!draw) return;
 
-    if (ecvDisplayTools::GetMainWindow() == nullptr) return;
+    if (!context.display) return;
 
     if (isColorOverridden()) {
         context.defaultPolylineColor = getTempColor();
@@ -212,7 +212,7 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
             context.currentLineWidth = context.defaultLineWidth;
         }
 
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
 
         // display arrow
         if (m_showArrow && m_arrowIndex < vertCount &&

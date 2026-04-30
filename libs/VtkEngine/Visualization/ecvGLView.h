@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGuiParameters.h>
 #include <ecvViewContext.h>
@@ -33,6 +34,7 @@ class QVTKWidgetCustom;
 
 namespace Visualization {
 class VtkVis;
+class VtkDisplayTools;
 class ImageVis;
 using VtkVisPtr = std::shared_ptr<VtkVis>;
 using ImageVisPtr = std::shared_ptr<ImageVis>;
@@ -115,6 +117,93 @@ public:
                            bool append = false,
                            int displayMaxDelay_sec = 2,
                            MessageType type = CUSTOM_MESSAGE) override;
+    QFont textDisplayFont() const override { return m_font; }
+
+    // ================================================================
+    // Phase 7a: Per-view VTK operation overrides
+    //
+    // Delegate to VtkDisplayTools (which resolves per-view VtkVis
+    // via resolveVisualizer(context.display)).  When Phase 7b
+    // removes the singleton, these will use m_visualizer3D directly.
+    // ================================================================
+
+    void draw(const ccGLDrawContext& context, const ccHObject* obj) override;
+    void drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) override;
+    void drawOrientedBBox(const ccGLDrawContext& context,
+                          const ecvOrientedBBox* obb) override;
+    void updateMeshTextures(const ccGLDrawContext& context,
+                            const ccGenericMesh* mesh) override;
+    void drawWidgets(const WIDGETS_PARAMETER& param) override;
+    void removeWidgets(const WIDGETS_PARAMETER& param) override;
+    bool hideShowEntities(const ccGLDrawContext& context) override;
+    void removeEntities(const ccGLDrawContext& context) override;
+    void changeEntityProperties(PROPERTY_PARAM& param) override;
+    void updateCamera() override;
+    void updateScene() override;
+    void resetCamera(const ccBBox* bbox) override;
+    void resetCamera() override;
+    void toggle2Dviewer(bool state) override;
+
+    // ================================================================
+    // Phase 7a wave 2: Additional per-view virtual overrides
+    // ================================================================
+
+    CCVector3d toVtkCoordinates(int x, int y, int z = 0) override;
+    bool getClick3DPos(int x, int y, CCVector3d& pos) override;
+    void setView(CC_VIEW_ORIENTATION orientation) override;
+    CCVector3d getCurrentViewDir() const override;
+    void setPivotPoint(const CCVector3d& P,
+                       bool autoRedraw = true,
+                       bool verbose = false) override;
+    void setPivotVisibility(PivotVisibility vis) override;
+    void setAutoPickPivotAtCenter(bool state) override;
+    void resetCenterOfRotation(int viewport = 0) override;
+    bool isRotationAxisLocked() const override;
+    void lockRotationAxis(bool state, const CCVector3d& axis) override;
+    void toggleCameraOrientationWidget(bool state) override;
+    void toggleOrientationMarker(bool state) override;
+    void toggleDebugTrace() override;
+    void update2DLabels(bool immediateUpdate = false) override;
+    bool renderToFile(const QString& filename,
+                      float zoomFactor = 1.0f,
+                      bool dontScale = false) override;
+    void removeBB(const QString& viewId) override;
+    void removeBB(const ccGLDrawContext& context) override;
+    void setExclusiveFullScreenFlag(bool state) override;
+    double getObjectLightIntensity(const QString& viewID) const override;
+    void setObjectLightIntensity(const QString& viewID,
+                                 double intensity) override;
+    double getLightIntensity() const override;
+    void setLightIntensity(double intensity) override;
+    void getDataAxesGridProperties(const QString& viewID,
+                                   AxesGridProperties& props,
+                                   int viewport = 0) const override;
+    void setDataAxesGridProperties(const QString& viewID,
+                                   const AxesGridProperties& props,
+                                   int viewport = 0) override;
+
+    void filterByEntityType(std::vector<ccHObject*>& entities,
+                            CV_CLASS_ENUM type) override;
+    void updateActiveItemsList(int x, int y, bool centerItems) override;
+    double computeActualPixelSize() const override;
+    void updateNamePoseRecursive() override;
+    void showPivotSymbol(bool state) override;
+    bool exclusiveFullScreen() const override;
+    CCVector3d convertMousePositionToOrientation(int x, int y) override;
+    bool processClickableItems(int x, int y) override;
+    void updateZoom(float zoomFactor) override;
+    void resizeGL(int w, int h) override;
+    void setViewportDefaultPointSize(float size) override;
+    void setViewportDefaultLineWidth(float width) override;
+    void setZNearCoef(double coef) override;
+    void setFov(float fov_deg) override;
+    void setPointSizeOnView(float size) override;
+    void rotateWithAxis(const CCVector2i& mousePos,
+                        const CCVector3d& axis,
+                        double angle_deg) override;
+    void startPicking(
+            PICKING_MODE mode, int x, int y, int w = 0, int h = 0) override;
+    void redraw2DLabel() override;
 
     // ================================================================
     // VTK-specific accessors
@@ -165,18 +254,16 @@ public:
     bool mouseButtonPressed() const { return m_ctx.mouseButtonPressed; }
     void setMouseButtonPressed(bool v) { m_ctx.mouseButtonPressed = v; }
 
-    bool clickableItemsVisible() const {
-        return m_ctx.clickableItemsVisible;
-    }
-    void setClickableItemsVisible(bool v) {
-        m_ctx.clickableItemsVisible = v;
-    }
+    bool clickableItemsVisible() const { return m_ctx.clickableItemsVisible; }
+    void setClickableItemsVisible(bool v) { m_ctx.clickableItemsVisible = v; }
 
-    ecvDisplayTools::HotZone* hotZone() const { return m_hotZone; }
-    ecvDisplayTools::HotZone*& hotZoneRef() { return m_hotZone; }
-    void setHotZone(ecvDisplayTools::HotZone* hz) { m_hotZone = hz; }
+    ecvHotZone* hotZone() const { return m_hotZone; }
+    ecvHotZone*& hotZoneRef() { return m_hotZone; }
+    void setHotZone(ecvHotZone* hz) { m_hotZone = hz; }
     ccPolyline*& rectPickingPolyRef() { return m_rectPickingPoly; }
-    std::list<ccInteractor*>& activeItemsRef() override { return m_activeItems; }
+    std::list<ccInteractor*>& activeItemsRef() override {
+        return m_activeItems;
+    }
 
     float defaultPointSize() const {
         return m_ctx.viewportParams.defaultPointSize;
@@ -192,16 +279,18 @@ public:
         m_ctx.viewportParams.defaultLineWidth = w;
     }
 
-    bool bubbleViewModeEnabled() const {
-        return m_ctx.bubbleViewModeEnabled;
-    }
+    bool bubbleViewModeEnabled() const { return m_ctx.bubbleViewModeEnabled; }
 
 signals:
     void aboutToClose(ecvGLView* self);
     void viewActivated(ecvGLView* self);
 
     // -- Per-view picking signals (ParaView pqView pattern) --
-    void itemPicked(ccHObject* entity, unsigned subEntityID, int x, int y, const CCVector3& P);
+    void itemPicked(ccHObject* entity,
+                    unsigned subEntityID,
+                    int x,
+                    int y,
+                    const CCVector3& P);
     void itemPickedFast(ccHObject* entity, int subEntityID, int x, int y);
     void fastPickingFinished();
     void pointPicked(double x, double y, double z);
@@ -257,6 +346,7 @@ private:
     QPointer<QVTKWidgetCustom> m_vtkWidget;
     Visualization::VtkVisPtr m_visualizer3D;
     Visualization::ImageVisPtr m_visualizer2D;
+    Visualization::VtkDisplayTools* m_displayTools = nullptr;
 
     // -- Scene DB (not part of context) --
     ccHObject* m_globalDBRoot = nullptr;
@@ -274,10 +364,10 @@ private:
 
     ccPolyline* m_rectPickingPoly = nullptr;
     QTimer m_deferredPickingTimer;
-    ecvDisplayTools::HotZone* m_hotZone = nullptr;
-    std::vector<ecvDisplayTools::ClickableItem> m_clickableItems;
+    ecvHotZone* m_hotZone = nullptr;
+    std::vector<ecvClickableItem> m_clickableItems;
     std::list<ccInteractor*> m_activeItems;
-    std::list<ecvDisplayTools::MessageToDisplay> m_messagesToDisplay;
+    std::list<ecvMessageToDisplay> m_messagesToDisplay;
 
     // -- Display (not pushed/pulled via context) --
     QFont m_font;

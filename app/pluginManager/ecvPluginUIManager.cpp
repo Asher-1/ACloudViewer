@@ -13,7 +13,6 @@
 #include <QWidget>
 
 #include "ecvConsole.h"
-#include "ecvDisplayTools.h"
 #include "ecvIOPluginInterface.h"
 #include "ecvMainAppInterface.h"
 #include "ecvPclPluginInterface.h"

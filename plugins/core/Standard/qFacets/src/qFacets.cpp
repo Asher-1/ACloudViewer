@@ -39,7 +39,6 @@
 
 // CV_DB_LIB
 #include <ShpDBFFields.h>
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
 #include <ecvHObjectCaster.h>
 #include <ecvKdTree.h>

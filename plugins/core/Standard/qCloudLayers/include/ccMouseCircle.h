@@ -13,7 +13,6 @@ entirely transparent, except for a circle with radius r around the mouse.
 */
 
 #include <ecv2DViewportObject.h>
-#include <ecvDisplayTools.h>
 #include <ecvStdPluginInterface.h>
 
 // Qt

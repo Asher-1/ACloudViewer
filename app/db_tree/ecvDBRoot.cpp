@@ -33,7 +33,7 @@
 // CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
-#include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericGLDisplay.h>
@@ -417,7 +417,7 @@ void ccDBRoot::unloadAll() {
 
     updatePropertiesView();
 
-    ecvDisplayTools::SetRemoveAllFlag(true);
+    ecvViewManager::instance().setRemoveAllFlag(true);
     MainWindow::TheInstance()->refreshAll();
 }
 
@@ -684,8 +684,8 @@ void ccDBRoot::deleteSelectedEntities() {
     }
 
     if (!toBeDeletedInfos.empty()) {
-        ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
-        ecvDisplayTools::SetRedrawRecursive(false);
+        ecvViewManager::instance().setRemoveViewIds(toBeDeletedInfos);
+        ecvViewManager::instance().setRedrawRecursive(false);
         MainWindow::TheInstance()->refreshAll(false);
     }
 }
@@ -777,6 +777,30 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
     return QVariant();
 }
 
+namespace {
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.visible = visible;
+    ctx.viewID = obj->getViewId();
+    ctx.hideShowEntityType = obj->getEntityType();
+    ctx.display = const_cast<ecvGenericGLDisplay*>(obj->getDisplay());
+    if (ctx.display) ctx.display->hideShowEntities(ctx);
+    if (!obj->getDisplay()) {
+        for (auto* view : ecvViewManager::instance().getAllViews()) {
+            ecvGenericGLDisplay* primary =
+                    ecvViewManager::instance().getEffectiveView();
+            if (!view || view == primary) continue;
+            CC_DRAW_CONTEXT vctx = ctx;
+            vctx.display = view;
+            if (vctx.display) vctx.display->hideShowEntities(vctx);
+        }
+    }
+}
+
+}  // namespace
+
 static void toggleFolderChildrenVisibility(ccHObject* parent,
                                            bool parentActive) {
     for (unsigned i = 0; i < parent->getChildrenNumber(); ++i) {
@@ -810,11 +834,24 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 if (item->nameShownIn3D() ||
                     item->isKindOf(CV_TYPES::LABEL_2D)) {
                     if (item->isEnabled() && item->isVisible()) {
-                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                                WIDGETS_TYPE::WIDGET_T2D, item->getName()));
-                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                        ecvGenericGLDisplay* wpDisp =
+                                const_cast<ecvGenericGLDisplay*>(
+                                        item->getDisplay());
+                        if (!wpDisp) {
+                            wpDisp = ecvViewManager::instance()
+                                             .getEffectiveView();
+                        }
+                        WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
+                                                item->getName());
+                        wpTxt.context.display = wpDisp;
+                        if (wpTxt.context.display)
+                            wpTxt.context.display->removeWidgets(wpTxt);
+                        WIDGETS_PARAMETER wpRect(
                                 WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                item->getName()));
+                                item->getName());
+                        wpRect.context.display = wpDisp;
+                        if (wpRect.context.display)
+                            wpRect.context.display->removeWidgets(wpRect);
                     }
                 }
 
@@ -843,7 +880,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
                     item->isKindOf(CV_TYPES::POINT_KDTREE)) {
                     // rendering this item only
-                    ecvDisplayTools::RedrawObject(item);
+                    MainWindow::TheInstance()->refreshObject(item);
                 } else if (item->isA(CV_TYPES::LABEL_2D) ||
                            item->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
                     if (item->isEnabled()) {
@@ -853,8 +890,9 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         if (label) label->updateLabel();
                         if (vpLabel) vpLabel->updateLabel();
                     } else {
-                        ecvDisplayTools::HideShowEntities(item, false);
-                        ecvDisplayTools::UpdateScreen();
+                        hideShowObjectOnDisplays(item, false);
+                        if (auto* w = ecvViewManager::instance().activeWidget())
+                            w->update();
                     }
                 } else if (item->isKindOf(CV_TYPES::SENSOR)) {
                     ccSensor* sensor = ccHObjectCaster::ToSensor(item);
@@ -868,14 +906,22 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             // Check if Axes Grid is visible - if so, hide
                             // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::HasInstance()) {
-                                AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()
-                                        ->getDataAxesGridProperties(
-                                                context.viewID, axesGridProps);
-                                if (axesGridProps.visible) {
-                                    shouldShowBB = false;
-                                }
+                            ecvGenericGLDisplay* axesDisp =
+                                    const_cast<ecvGenericGLDisplay*>(
+                                            sensor->getDisplay());
+                            if (!axesDisp) {
+                                axesDisp = ecvViewManager::instance()
+                                                   .getEffectiveView();
+                            }
+                            AxesGridProperties axesGridProps;
+                            bool haveAxesProps = false;
+                            if (axesDisp) {
+                                axesDisp->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                haveAxesProps = true;
+                            }
+                            if (haveAxesProps && axesGridProps.visible) {
+                                shouldShowBB = false;
                             }
                             if (shouldShowBB) {
                                 sensor->showBB(context);
@@ -885,7 +931,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             sensor->hideBB(context);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        if (auto* w = ecvViewManager::instance().activeWidget())
+                            w->update();
                     }
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
@@ -910,14 +957,22 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         context.viewID = prim->getViewId();
                         if (prim->isSelected() && context.visible) {
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::HasInstance()) {
-                                AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()
-                                        ->getDataAxesGridProperties(
-                                                context.viewID, axesGridProps);
-                                if (axesGridProps.visible) {
-                                    shouldShowBB = false;
-                                }
+                            ecvGenericGLDisplay* axesDisp =
+                                    const_cast<ecvGenericGLDisplay*>(
+                                            prim->getDisplay());
+                            if (!axesDisp) {
+                                axesDisp = ecvViewManager::instance()
+                                                   .getEffectiveView();
+                            }
+                            AxesGridProperties axesGridProps;
+                            bool haveAxesProps = false;
+                            if (axesDisp) {
+                                axesDisp->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                haveAxesProps = true;
+                            }
+                            if (haveAxesProps && axesGridProps.visible) {
+                                shouldShowBB = false;
                             }
                             if (shouldShowBB) {
                                 prim->showBB(context);
@@ -927,7 +982,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             prim->hideBB(context);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        if (auto* w = ecvViewManager::instance().activeWidget())
+                            w->update();
                     }
                 } else {
                     bool active = item->isEnabled();
@@ -936,14 +992,15 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, false);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        if (auto* w = ecvViewManager::instance().activeWidget())
+                            w->update();
                     } else {
                         item->toggleVisibility_recursive(true, false);
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, true);
                         }
                         item->setForceRedrawRecursive(true);
-                        ecvDisplayTools::SetRedrawRecursive(false);
+                        ecvViewManager::instance().setRedrawRecursive(false);
                         redrawCCObjectAndChildren(item, false);
                     }
                 }
@@ -1064,7 +1121,7 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
 
     updatePropertiesView();
 
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvViewManager::instance().setRedrawRecursive(false);
     MainWindow::TheInstance()->refreshAll(false, true);
 
     emit selectionChanged();

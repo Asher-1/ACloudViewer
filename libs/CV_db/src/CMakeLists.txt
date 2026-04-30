@@ -20,6 +20,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDish.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisc.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTypes.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExtru.cpp

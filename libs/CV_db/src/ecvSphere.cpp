@@ -8,8 +8,11 @@
 #include "ecvSphere.h"
 
 // Local
-#include "ecvDisplayTools.h"
+#include <ecvViewManager.h>
+
+#include "ecvGenericDisplayTools.h"
 #include "ecvPointCloud.h"
+#include "ecvViewportParameters.h"
 
 ccSphere::ccSphere(PointCoordinateType radius,
                    const ccGLMatrix* transMat /*=0*/,
@@ -187,31 +190,30 @@ void ccSphere::drawNameIn3D() {
     ccGLMatrix trans;
     getAbsoluteGLTransformation(trans);
 
-    ecvGenericGLDisplay* disp = getDisplay();
+    ecvGenericGLDisplay* routingDisp = getDisplay();
+    if (!routingDisp)
+        routingDisp = ecvViewManager::instance().getEffectiveView();
+    if (!routingDisp) return;
+
     ccGLCameraParameters camera;
-    if (disp && disp != ecvDisplayTools::TheInstance()) {
-        disp->getGLCameraParameters(camera);
-    } else {
-        ecvDisplayTools::GetGLCameraParameters(camera);
-    }
+    routingDisp->getGLCameraParameters(camera);
 
     CCVector3 C = bBox.getCenter();
     CCVector3d Q2D;
     trans.apply(C);
     camera.project(C, Q2D);
 
-    const ecvViewportParameters& params =
-            ecvDisplayTools::GetViewportParameters();
+    const ecvViewportParameters& params = routingDisp->getViewportParameters();
     int dPix =
             static_cast<int>(ceil(params.zoom * m_radius / params.pixelSize));
 
     int bkgBorder =
-            QFontMetrics(ecvDisplayTools::GetTextDisplayFont()).height() / 4 +
-            4;
-    QFont font = ecvDisplayTools::GetTextDisplayFont();
-    ecvDisplayTools::DisplayText(
+            QFontMetrics(routingDisp->textDisplayFont()).height() / 4 + 4;
+    QFont font = routingDisp->textDisplayFont();
+    routingDisp->display2DText(
             getName(), static_cast<int>(Q2D.x) + dPix + bkgBorder,
             static_cast<int>(Q2D.y),
-            ecvDisplayTools::ALIGN_HLEFT | ecvDisplayTools::ALIGN_VMIDDLE,
-            0.75f, nullptr, &font, getViewId(), disp);
+            static_cast<unsigned char>(ecvGenericDisplayTools::ALIGN_HLEFT |
+                                       ecvGenericDisplayTools::ALIGN_VMIDDLE),
+            0.75f, nullptr, &font, getViewId());
 }

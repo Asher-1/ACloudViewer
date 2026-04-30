@@ -11,11 +11,12 @@
 #include <ScalarFieldTools.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
 #include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // Local
 #include "ecvCommon.h"
@@ -770,7 +771,17 @@ bool ApplyScaleMatchingAlgorithm(ScaleMatchingAlgorithm algo,
             for (unsigned i = 0; i < toBeRescaleEntities.size(); ++i) {
                 ccHObject* obj = toBeRescaleEntities[i];
                 if (obj) {
-                    ecvDisplayTools::RemoveBB(obj->getViewId());
+                    if (auto* disp = obj->getDisplay()
+                                             ? obj->getDisplay()
+                                             : ecvViewManager::instance()
+                                                       .getEffectiveView()) {
+                        CC_DRAW_CONTEXT context;
+                        context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+                        context.removeViewID =
+                                QStringLiteral("BBox-") + obj->getViewId();
+                        context.display = disp;
+                        disp->removeEntities(context);
+                    }
                     obj->setRedraw(true);
                 }
             }

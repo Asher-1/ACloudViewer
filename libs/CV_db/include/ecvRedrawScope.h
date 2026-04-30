@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecvDisplayTools.h"
+#include "ecvHObject.h"
 #include "ecvViewManager.h"
 
 // RAII guard for selective scene redraw.
@@ -31,8 +31,8 @@ class CV_DB_LIB_API ecvRedrawScope final {
 public:
     explicit ecvRedrawScope(bool only2D = false, bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (ecvDisplayTools::HasInstance()) {
-            ecvDisplayTools::SetRedrawRecursive(false);
+        if (ecvViewManager::instance().hasAnyView()) {
+            ecvViewManager::instance().setRedrawRecursive(false);
         }
     }
 
@@ -40,8 +40,8 @@ public:
                             bool only2D = false,
                             bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (ecvDisplayTools::HasInstance()) {
-            ecvDisplayTools::SetRedrawRecursive(false);
+        if (ecvViewManager::instance().hasAnyView()) {
+            ecvViewManager::instance().setRedrawRecursive(false);
         }
         for (auto* obj : objects) {
             if (obj) obj->setRedrawFlagRecursive(true);
@@ -49,13 +49,9 @@ public:
     }
 
     ~ecvRedrawScope() {
-        if (!m_dismissed && ecvDisplayTools::HasInstance()) {
-            ecvDisplayTools::RedrawDisplay(m_only2D, m_forceRedraw);
-            // Refresh secondary views; pass includePrimary=false since
-            // RedrawDisplay() already handled the primary above.
-            if (ecvViewManager::instance().viewCount() > 1) {
-                ecvViewManager::instance().redrawAll(m_only2D, m_forceRedraw,
-                                                     /*includePrimary=*/false);
+        if (!m_dismissed && ecvViewManager::instance().hasAnyView()) {
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->redraw(m_only2D, m_forceRedraw);
             }
         }
     }

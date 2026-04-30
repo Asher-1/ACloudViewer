@@ -13,7 +13,7 @@
 #include "ecvPickingListener.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 
 // Qt
 #include <QObject>
@@ -47,7 +47,7 @@ class ecvMainAppInterface;
  * 5. Listeners process the picked item
  *
  * @see ccPickingListener
- * @see ecvDisplayTools::PICKING_MODE
+ * @see ecvGenericGLDisplay::PICKING_MODE
  */
 class CVPLUGIN_LIB_API ccPickingHub : public QObject {
     Q_OBJECT
@@ -89,8 +89,8 @@ public:
     bool addListener(ccPickingListener* listener,
                      bool exclusive = false,
                      bool autoStartPicking = true,
-                     ecvDisplayTools::PICKING_MODE mode =
-                             ecvDisplayTools::POINT_OR_TRIANGLE_PICKING);
+                     ecvGenericGLDisplay::PICKING_MODE mode =
+                             ecvGenericGLDisplay::POINT_OR_TRIANGLE_PICKING);
 
     /**
      * @brief Unregister a picking listener
@@ -162,7 +162,7 @@ protected:
 
     QPointer<QWidget> m_activeWindow;  ///< Currently active display window
 
-    ecvDisplayTools::PICKING_MODE m_pickingMode;  ///< Current picking mode
+    ecvGenericGLDisplay::PICKING_MODE m_pickingMode;  ///< Current picking mode
 
     bool m_autoEnableOnActivatedWindow;  ///< Auto-enable on window activation
 

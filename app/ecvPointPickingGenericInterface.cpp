@@ -18,7 +18,7 @@
 #include <ecvPickingHub.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvPointCloud.h>
 
 ccPointPickingGenericInterface::ccPointPickingGenericInterface(
@@ -40,7 +40,7 @@ bool ccPointPickingGenericInterface::linkWith(QWidget* win) {
 
     if (wasProcessing && win && m_pickingHub) {
         m_pickingHub->addListener(this, true, true,
-                                  ecvDisplayTools::POINT_PICKING);
+                                  ecvGenericGLDisplay::POINT_PICKING);
     }
 
     return true;
@@ -54,7 +54,7 @@ bool ccPointPickingGenericInterface::start() {
 
     // activate "point picking mode" in associated GL window
     if (!m_pickingHub->addListener(this, true, true,
-                                   ecvDisplayTools::POINT_PICKING)) {
+                                   ecvGenericGLDisplay::POINT_PICKING)) {
         CVLog::Error(
                 "Picking mechanism already in use. Close the tool using it "
                 "first.");

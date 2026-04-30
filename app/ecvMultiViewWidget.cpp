@@ -11,7 +11,6 @@
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
-
 #include <QApplication>
 #include <QEvent>
 #include <QFrame>
@@ -25,7 +24,7 @@
 #include <QVBoxLayout>
 
 namespace {
-constexpr int SPLITTER_GAP = 4; // ParaView PARAVIEW_DEFAULT_LAYOUT_SPACING
+constexpr int SPLITTER_GAP = 4;  // ParaView PARAVIEW_DEFAULT_LAYOUT_SPACING
 }
 
 ecvMultiViewWidget::ecvMultiViewWidget(QWidget* parent) : QWidget(parent) {
@@ -61,16 +60,13 @@ ecvMultiViewWidget::ecvMultiViewWidget(QWidget* parent) : QWidget(parent) {
 
     qApp->installEventFilter(this);
 
-    connect(&ecvViewManager::instance(),
-            &ecvViewManager::activeViewChanged, this,
-            [this](ecvGenericGLDisplay* newActive, ecvGenericGLDisplay*) {
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this, [this](ecvGenericGLDisplay* newActive, ecvGenericGLDisplay*) {
                 markActive(newActive);
             });
 }
 
-ecvMultiViewWidget::~ecvMultiViewWidget() {
-    qApp->removeEventFilter(this);
-}
+ecvMultiViewWidget::~ecvMultiViewWidget() { qApp->removeEventFilter(this); }
 
 void ecvMultiViewWidget::setLayoutManager(ecvViewLayoutProxy* layout) {
     if (m_layout == layout) return;
@@ -114,7 +110,8 @@ void ecvMultiViewWidget::reload() {
     // Detach view widgets from their frame wrappers BEFORE deleting frames.
     // buildCell() reparents view->asWidget() into a frame; when that frame is
     // destroyed the view widget would be destroyed too.  Reparenting to nullptr
-    // first keeps the view widget alive so it can be re-wrapped in the new tree.
+    // first keeps the view widget alive so it can be re-wrapped in the new
+    // tree.
     for (auto it = m_viewFrames.constBegin(); it != m_viewFrames.constEnd();
          ++it) {
         if (auto* display = it.key()) {
@@ -165,9 +162,9 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         auto dir = m_layout->splitDirection(location);
         auto fraction = m_layout->splitFraction(location);
 
-        Qt::Orientation qtDir =
-                dir == ecvViewLayoutProxy::HORIZONTAL ? Qt::Horizontal
-                                                     : Qt::Vertical;
+        Qt::Orientation qtDir = dir == ecvViewLayoutProxy::HORIZONTAL
+                                        ? Qt::Horizontal
+                                        : Qt::Vertical;
         auto* splitter = new QSplitter(qtDir, this);
         splitter->setChildrenCollapsible(false);
         splitter->setHandleWidth(SPLITTER_GAP);
@@ -175,7 +172,8 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         splitter->setStyleSheet(QStringLiteral(
                 "QSplitter::handle { background: palette(window); }"
                 "QSplitter::handle:hover { background: palette(mid); }"
-                "QSplitter::handle:pressed { background: palette(highlight); }"));
+                "QSplitter::handle:pressed { background: palette(highlight); "
+                "}"));
         splitter->setProperty("CELL_INDEX", location);
 
         QWidget* left = buildCell(ecvViewLayoutProxy::firstChild(location));
@@ -213,8 +211,7 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
                 [this, location, splitter, undoTimer](int, int) {
                     if (!m_layout) return;
                     if (!undoTimer->property("_undoActive").toBool()) {
-                        m_layout->beginUndoSet(
-                                QStringLiteral("Resize Split"));
+                        m_layout->beginUndoSet(QStringLiteral("Resize Split"));
                         undoTimer->setProperty("_undoActive", true);
                     }
                     undoTimer->start();
@@ -222,8 +219,7 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
                     QList<int> sizes = splitter->sizes();
                     int total = sizes[0] + sizes[1];
                     if (total > 0) {
-                        double frac =
-                                static_cast<double>(sizes[0]) / total;
+                        double frac = static_cast<double>(sizes[0]) / total;
                         QSignalBlocker blocker(m_layout);
                         m_layout->setSplitFraction(location, frac);
                     }
@@ -238,8 +234,8 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
                 return self(ecvViewLayoutProxy::firstChild(root), self) ||
                        self(ecvViewLayoutProxy::secondChild(root), self);
             };
-            leftHasMax = checkContains(
-                    ecvViewLayoutProxy::firstChild(location), checkContains);
+            leftHasMax = checkContains(ecvViewLayoutProxy::firstChild(location),
+                                       checkContains);
             rightHasMax = checkContains(
                     ecvViewLayoutProxy::secondChild(location), checkContains);
 
@@ -316,20 +312,18 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     btnRow->addStretch(1);
 
     auto* createBtn = new QPushButton(tr("Create Render View"), frame);
-    createBtn->setIcon(frame->style()->standardIcon(
-            QStyle::SP_DesktopIcon));
+    createBtn->setIcon(frame->style()->standardIcon(QStyle::SP_DesktopIcon));
     createBtn->setIconSize(QSize(16, 16));
     createBtn->setCursor(Qt::PointingHandCursor);
     createBtn->setStyleSheet(QStringLiteral(
             "QPushButton { padding: 6px 16px; font-weight: bold; }"));
 
-    connect(createBtn, &QPushButton::clicked, this,
-            [this, location]() {
-                if (!m_viewFactory || !m_layout) return;
-                auto* newView = m_viewFactory();
-                if (!newView) return;
-                m_layout->assignView(location, newView);
-            });
+    connect(createBtn, &QPushButton::clicked, this, [this, location]() {
+        if (!m_viewFactory || !m_layout) return;
+        auto* newView = m_viewFactory();
+        if (!newView) return;
+        m_layout->assignView(location, newView);
+    });
 
     btnRow->addWidget(createBtn);
     btnRow->addStretch(1);
@@ -441,11 +435,10 @@ bool ecvMultiViewWidget::togglePopout() {
 
     if (m_poppedOut) {
         if (!m_popoutWindow) {
-            auto* win = new QWidget(
-                    this, Qt::Window | Qt::CustomizeWindowHint |
-                                  Qt::WindowTitleHint |
-                                  Qt::WindowMaximizeButtonHint |
-                                  Qt::WindowCloseButtonHint);
+            auto* win = new QWidget(this, Qt::Window | Qt::CustomizeWindowHint |
+                                                  Qt::WindowTitleHint |
+                                                  Qt::WindowMaximizeButtonHint |
+                                                  Qt::WindowCloseButtonHint);
             win->setObjectName("PopoutWindow");
             auto* wl = new QVBoxLayout(win);
             wl->setContentsMargins(0, 0, 0, 0);
@@ -600,8 +593,8 @@ QList<ecvGLView*> ecvMultiViewWidget::destroyAllViews() {
     if (!m_layout) return orphaned;
 
     if (m_layout) {
-        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged,
-                   this, &ecvMultiViewWidget::reload);
+        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+                   &ecvMultiViewWidget::reload);
     }
 
     auto views = m_layout->getViews();
@@ -622,8 +615,7 @@ QList<ecvGLView*> ecvMultiViewWidget::destroyAllViews() {
 // Helpers
 // ============================================================================
 
-QWidget* ecvMultiViewWidget::findFrameForView(
-        ecvGenericGLDisplay* view) const {
+QWidget* ecvMultiViewWidget::findFrameForView(ecvGenericGLDisplay* view) const {
     auto it = m_viewFrames.find(view);
     return (it != m_viewFrames.end()) ? it.value() : nullptr;
 }

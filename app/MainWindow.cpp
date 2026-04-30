@@ -83,7 +83,6 @@
 #include <ecvColorScalesManager.h>
 #include <ecvCylinder.h>
 #include <ecvDisc.h>
-#include <ecvDisplayTools.h>
 #include <ecvFacet.h>
 #include <ecvFileUtils.h>
 #include <ecvGBLSensor.h>
@@ -106,6 +105,7 @@
 #include <ecvViewManager.h>
 
 // VtkEngine
+#include <Visualization/VtkVis.h>
 #include <Visualization/ecvGLView.h>
 
 // CV_IO_LIB
@@ -302,7 +302,18 @@ static bool IsValidFileName(QString filename) {
 QWidget* MainWindow::getActiveGLWidget() const {
     auto* view = ecvViewManager::instance().getEffectiveView();
     if (view) return view->asWidget();
-    return ecvDisplayTools::GetCurrentScreen();
+    return ecvViewManager::instance().activeWidget();
+}
+
+static ecvGenericVisualizer3D* getActiveVisualizer3D() {
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (auto* glView = dynamic_cast<ecvGLView*>(view))
+        return glView->getVisualizer3D();
+    return ecvViewManager::instance().displayTools()
+                   ? ecvViewManager::instance()
+                             .displayTools()
+                             ->getVisualizer3D()
+                   : nullptr;
 }
 
 MainWindow::MainWindow()
@@ -517,9 +528,8 @@ MainWindow::MainWindow()
         m_ui->actionToggleCameraOrientationWidget->setChecked(
                 showCameraOrientationWidget);
         m_ui->actionToggleCameraOrientationWidget->blockSignals(false);
-        if (getActiveGLWidget()) {
-            ecvDisplayTools::ToggleCameraOrientationWidget(
-                    showCameraOrientationWidget);
+        if (auto* view = getActiveGLView()) {
+            view->toggleCameraOrientationWidget(showCameraOrientationWidget);
         }
     }
 
@@ -648,8 +658,10 @@ MainWindow::~MainWindow() {
         m_tabbedMultiView->reset();
     }
 
-    ecvDisplayTools::SetSceneDB(nullptr);
-    ecvDisplayTools::ReleaseInstance();
+    for (auto* v : ecvViewManager::instance().getAllViews()) {
+        if (v) v->setSceneDB(nullptr);
+    }
+    ecvViewManager::instance().releaseDisplayTools();
 
     if (ccRoot) {
         delete ccRoot;
@@ -680,11 +692,10 @@ QMenu* MainWindow::createPopupMenu() {
 // MainWindow Initialization
 void MainWindow::initial() {
     m_viewFrameManager = new ecvMultiViewFrameManager(this);
-    
 
     bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
-    ecvDisplayTools::Init(new Visualization::VtkDisplayTools(), this,
-                          stereoMode);
+    ecvViewManager::instance().initDisplayTools(
+            new Visualization::VtkDisplayTools(), this, stereoMode);
 
     // init themes
     initThemes();
@@ -706,23 +717,25 @@ void MainWindow::initial() {
     initReconstructions();
 #endif
 
-    QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
+    QWidget* viewWidget = ecvViewManager::instance().activeWidget();
+    assert(viewWidget);
     viewWidget->setMinimumSize(0, 0);
     m_layoutCounter = 1;
 
     // Register the display BEFORE creating the view frame, so that
     // cvPerViewSelectionManager can resolve the display from the widget.
-    ecvGenericGLDisplay::RegisterGLDisplay(viewWidget,
-                                           ecvDisplayTools::TheInstance());
-    ecvViewManager::instance().registerView(ecvDisplayTools::TheInstance());
+    auto* primaryDT = ecvViewManager::instance().displayTools();
+    ecvGenericGLDisplay::RegisterGLDisplay(viewWidget, primaryDT);
+    // initDisplayTools already registered with ecvViewManager, but ensure
+    // the widget→display mapping is in place.
 
     // Register primary VtkVis with the camera link system
     {
-        auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
-                ecvDisplayTools::TheInstance());
-        if (primaryDT && primaryDT->get3DViewer()) {
+        auto* primaryVtkDT =
+                static_cast<Visualization::VtkDisplayTools*>(primaryDT);
+        if (primaryVtkDT && primaryVtkDT->get3DViewer()) {
             Visualization::VtkCameraLink::instance().addView(
-                    primaryDT->get3DViewer());
+                    primaryVtkDT->get3DViewer());
         }
     }
 
@@ -772,20 +785,21 @@ void MainWindow::initial() {
     // startup we only restore the split structure of the FIRST tab (not
     // extra tabs or extra views) to keep the one-view default.
     {
-        auto* primaryView = ecvDisplayTools::TheInstance();
         auto* mvw = m_tabbedMultiView->currentMultiView();
         auto* layout = mvw ? mvw->layoutManager() : nullptr;
-        if (primaryView && layout) {
-            layout->assignView(0, primaryView);
+        if (primaryDT && layout) {
+            layout->assignView(0, primaryDT);
         }
     }
 
-
     QTimer::singleShot(0, this, [this]() {
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::InvalidateVisualization();
-        ecvDisplayTools::Deprecate3DLayer();
-        ecvDisplayTools::RedrawDisplay();
+        ecvViewManager::instance().invalidateActiveViewport();
+        if (auto* v = getActiveGLView()) {
+            v->invalidateViewport();
+            v->deprecate3DLayer();
+        }
+        ecvViewManager::instance().deprecateActive3DLayer();
+        refreshAll();
     });
 
 #if defined(USE_VTK_BACKEND)
@@ -838,7 +852,8 @@ void MainWindow::initParaViewLayoutSystem() {
                     disconnect(splitLRBtn, nullptr, nullptr, nullptr);
                     connect(splitLRBtn, &QToolButton::clicked, this,
                             [this, frame]() {
-                                auto* mvw = m_tabbedMultiView->currentMultiView();
+                                auto* mvw =
+                                        m_tabbedMultiView->currentMultiView();
                                 if (mvw) mvw->onSplitHorizontal(frame);
                             });
                 }
@@ -846,7 +861,8 @@ void MainWindow::initParaViewLayoutSystem() {
                     disconnect(splitTBBtn, nullptr, nullptr, nullptr);
                     connect(splitTBBtn, &QToolButton::clicked, this,
                             [this, frame]() {
-                                auto* mvw = m_tabbedMultiView->currentMultiView();
+                                auto* mvw =
+                                        m_tabbedMultiView->currentMultiView();
                                 if (mvw) mvw->onSplitVertical(frame);
                             });
                 }
@@ -863,15 +879,13 @@ void MainWindow::initParaViewLayoutSystem() {
     }
 }
 
-QWidget* MainWindow::centralViewWidget() const {
-    return m_tabbedMultiView;
-}
+QWidget* MainWindow::centralViewWidget() const { return m_tabbedMultiView; }
 
 void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
     if (!closingDisplay) return;
 
-    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
-            ecvDisplayTools::TheInstance());
+    auto* closingPrimaryDT = static_cast<Visualization::VtkDisplayTools*>(
+            ecvViewManager::instance().displayTools());
     QWidget* primaryScreen = getActiveGLWidget();
 
     auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
@@ -881,11 +895,11 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
     bool closingPrimary = false;
     if (glView && glView->getVtkWidget() == primaryScreen) {
         closingPrimary = true;
-    } else if (closingDisplay == ecvDisplayTools::TheInstance()) {
+    } else if (closingDisplay == ecvViewManager::instance().getPrimaryView()) {
         closingPrimary = true;
     }
 
-    if (closingPrimary && primaryDT) {
+    if (closingPrimary && closingPrimaryDT) {
         ecvGLView* newPrimary = nullptr;
 
         auto* activeDisplay = ecvViewManager::instance().getActiveView();
@@ -910,14 +924,14 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
         }
 
         if (newPrimary) {
-            primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
-                                       newPrimary->getVtkWidget());
+            closingPrimaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
+                                              newPrimary->getVtkWidget());
             rebindToolsToActiveView(newPrimary);
         } else {
             CVLog::Warning(
                     "[onViewClosingFromLayout] No surviving ecvGLView — "
                     "restoring built-in primary pipeline.");
-            primaryDT->resetToBuiltInPipeline();
+            closingPrimaryDT->resetToBuiltInPipeline();
             rebindToolsToActiveView(nullptr);
         }
     }
@@ -925,10 +939,11 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
     if (glView && glView->getVisualizer3D()) {
         Visualization::VtkCameraLink::instance().removeView(
                 glView->getVisualizer3D());
-    } else if (!glView && closingDisplay == ecvDisplayTools::TheInstance()) {
-        if (primaryDT && primaryDT->get3DViewer()) {
+    } else if (!glView &&
+               closingDisplay == ecvViewManager::instance().getPrimaryView()) {
+        if (closingPrimaryDT && closingPrimaryDT->get3DViewer()) {
             Visualization::VtkCameraLink::instance().removeView(
-                    primaryDT->get3DViewer());
+                    closingPrimaryDT->get3DViewer());
         }
     }
 }
@@ -1420,8 +1435,7 @@ void MainWindow::connectActions() {
             if (auto* mvw = m_tabbedMultiView
                                     ? m_tabbedMultiView->currentMultiView()
                                     : nullptr) {
-                if (mvw->layoutManager())
-                    mvw->layoutManager()->equalize();
+                if (mvw->layoutManager()) mvw->layoutManager()->equalize();
             }
         });
 
@@ -1466,22 +1480,25 @@ void MainWindow::connectActions() {
             }
 
             previewMenu->addSeparator();
-            previewMenu->addAction(tr("Custom..."), this, [this, previewGroup]() {
-                bool ok = false;
-                int w = QInputDialog::getInt(this, tr("Preview Size"),
-                                             tr("Width:"), 800, 50, 7680, 1, &ok);
-                if (!ok) return;
-                int h = QInputDialog::getInt(this, tr("Preview Size"),
-                                             tr("Height:"), 600, 50, 4320, 1, &ok);
-                if (!ok) return;
-                for (auto* a : previewGroup->actions()) {
-                    if (a->isChecked()) {
-                        QSignalBlocker blk(a);
-                        a->setChecked(false);
-                    }
-                }
-                lockViewSize(QSize(w, h));
-            });
+            previewMenu->addAction(
+                    tr("Custom..."), this, [this, previewGroup]() {
+                        bool ok = false;
+                        int w = QInputDialog::getInt(this, tr("Preview Size"),
+                                                     tr("Width:"), 800, 50,
+                                                     7680, 1, &ok);
+                        if (!ok) return;
+                        int h = QInputDialog::getInt(this, tr("Preview Size"),
+                                                     tr("Height:"), 600, 50,
+                                                     4320, 1, &ok);
+                        if (!ok) return;
+                        for (auto* a : previewGroup->actions()) {
+                            if (a->isChecked()) {
+                                QSignalBlocker blk(a);
+                                a->setChecked(false);
+                            }
+                        }
+                        lockViewSize(QSize(w, h));
+                    });
         }
 
         // Full Screen (ParaView pqViewMenuManager)
@@ -1500,8 +1517,7 @@ void MainWindow::connectActions() {
                         if (m_tabbedMultiView)
                             m_tabbedMultiView->toggleFullScreenActiveView();
                     });
-            fsActiveAct->setShortcut(
-                    QKeySequence(Qt::CTRL | Qt::Key_F11));
+            fsActiveAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
             fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
         }
 
@@ -1509,9 +1525,10 @@ void MainWindow::connectActions() {
 
         auto* undoLayoutAct =
                 displayMenu->addAction(tr("Undo Layout"), [this]() {
-                    if (auto* layout = m_tabbedMultiView
-                                               ? m_tabbedMultiView->layoutProxy()
-                                               : nullptr) {
+                    if (auto* layout =
+                                m_tabbedMultiView
+                                        ? m_tabbedMultiView->layoutProxy()
+                                        : nullptr) {
                         if (layout->canUndo()) layout->undo();
                     }
                 });
@@ -1521,9 +1538,10 @@ void MainWindow::connectActions() {
 
         auto* redoLayoutAct =
                 displayMenu->addAction(tr("Redo Layout"), [this]() {
-                    if (auto* layout = m_tabbedMultiView
-                                               ? m_tabbedMultiView->layoutProxy()
-                                               : nullptr) {
+                    if (auto* layout =
+                                m_tabbedMultiView
+                                        ? m_tabbedMultiView->layoutProxy()
+                                        : nullptr) {
                         if (layout->canRedo()) layout->redo();
                     }
                 });
@@ -1531,11 +1549,9 @@ void MainWindow::connectActions() {
                 QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Y));
         redoLayoutAct->setEnabled(false);
 
-        auto updateUndoRedoState = [undoLayoutAct, redoLayoutAct,
-                                    this]() {
-            auto* layout = m_tabbedMultiView
-                                   ? m_tabbedMultiView->layoutProxy()
-                                   : nullptr;
+        auto updateUndoRedoState = [undoLayoutAct, redoLayoutAct, this]() {
+            auto* layout = m_tabbedMultiView ? m_tabbedMultiView->layoutProxy()
+                                             : nullptr;
             bool canU = layout && layout->canUndo();
             bool canR = layout && layout->canRedo();
             undoLayoutAct->setEnabled(canU);
@@ -1548,16 +1564,14 @@ void MainWindow::connectActions() {
                          : tr("Redo Layout"));
         };
 
-        connect(m_tabbedMultiView,
-                &ecvTabbedMultiViewWidget::currentTabChanged, this,
-                [updateUndoRedoState, this]() {
+        connect(m_tabbedMultiView, &ecvTabbedMultiViewWidget::currentTabChanged,
+                this, [updateUndoRedoState, this]() {
                     updateUndoRedoState();
                     auto* layout = m_tabbedMultiView
                                            ? m_tabbedMultiView->layoutProxy()
                                            : nullptr;
                     if (layout) {
-                        connect(layout,
-                                &ecvViewLayoutProxy::undoRedoChanged,
+                        connect(layout, &ecvViewLayoutProxy::undoRedoChanged,
                                 this, updateUndoRedoState,
                                 Qt::UniqueConnection);
                     }
@@ -1566,8 +1580,7 @@ void MainWindow::connectActions() {
         if (auto* firstLayout = m_tabbedMultiView
                                         ? m_tabbedMultiView->layoutProxy()
                                         : nullptr) {
-            connect(firstLayout,
-                    &ecvViewLayoutProxy::undoRedoChanged, this,
+            connect(firstLayout, &ecvViewLayoutProxy::undoRedoChanged, this,
                     updateUndoRedoState, Qt::UniqueConnection);
         }
     }
@@ -1718,19 +1731,19 @@ void MainWindow::connectActions() {
             &ecvCustomQListWidget::customContextMenuRequested, this,
             &MainWindow::popMenuInConsole);
     // DGM: we don't want to block the 'dropEvent' method of MainWindow!
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::filesDropped,
-            this, &MainWindow::addToDBAuto, Qt::QueuedConnection);
+    connect(&ecvViewManager::instance(), &ecvViewManager::filesDropped, this,
+            &MainWindow::addToDBAuto, Qt::QueuedConnection);
 
     // hidden
     connect(m_ui->actionEnableVisualDebugTraces, &QAction::triggered, this,
             &MainWindow::toggleVisualDebugTraces);
 
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::newLabel, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::newLabel, this,
             &MainWindow::handleNewLabel);
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::autoPickPivot,
-            this, &MainWindow::setAutoPickPivot);
-    connect(ecvDisplayTools::TheInstance(),
-            &ecvDisplayTools::exclusiveFullScreenToggled, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::autoPickPivot, this,
+            &MainWindow::setAutoPickPivot);
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::exclusiveFullScreenToggled, this,
             &MainWindow::toggleExclusiveFullScreen);
 
     // Not yet implemented!
@@ -1862,9 +1875,8 @@ void MainWindow::initStatusBar() {
         m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
         m_mousePosLabel->setAlignment(Qt::AlignHCenter);
         m_ui->statusBar->insertWidget(0, m_mousePosLabel, 1);
-        connect(ecvDisplayTools::TheInstance(),
-                &ecvDisplayTools::mousePosChanged, this,
-                &MainWindow::onMousePosChanged);
+        connect(&ecvViewManager::instance(), &ecvViewManager::mousePosChanged,
+                this, &MainWindow::onMousePosChanged);
     }
 
     // set memory usage display widget (ParaView-style)
@@ -2200,14 +2212,16 @@ void MainWindow::initDBRoot() {
              // properties dialog
     }
 
-    ecvDisplayTools::SetSceneDB(m_ccRoot->getRootEntity());
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setSceneDB(m_ccRoot->getRootEntity());
+    }
     m_ccRoot->updatePropertiesView();
 
-    connect(ecvDisplayTools::TheInstance(),
-            &ecvDisplayTools::entitySelectionChanged, this,
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::entitySelectionChanged, this,
             [=](ccHObject* entity) { m_ccRoot->selectEntity(entity); });
-    connect(ecvDisplayTools::TheInstance(),
-            &ecvDisplayTools::entitiesSelectionChanged, this,
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::entitiesSelectionChanged, this,
             [=](std::unordered_set<int> entities) {
                 m_ccRoot->selectEntities(entities);
             });
@@ -2265,8 +2279,8 @@ void MainWindow::autoShowReconstructionToolBar(bool state) {
 #endif
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetAutoPickPivotAtCenter(state);
+    if (auto* view = getActiveGLView()) {
+        view->setAutoPickPivotAtCenter(state);
 
         // save the option
         {
@@ -2277,18 +2291,17 @@ void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
 }
 
 void MainWindow::doActionResetRotCenter() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::ResetCenterOfRotation();
+    if (auto* view = getActiveGLView()) {
+        view->resetCenterOfRotation();
     }
 }
 
 void MainWindow::toggleRotationCenterVisibility(bool state) {
-    if (getActiveGLWidget()) {
+    if (auto* view = getActiveGLView()) {
         if (state) {
-            ecvDisplayTools::SetPivotVisibility(
-                    ecvDisplayTools::PIVOT_ALWAYS_SHOW);
+            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
         } else {
-            ecvDisplayTools::SetPivotVisibility(ecvDisplayTools::PIVOT_HIDE);
+            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_HIDE);
         }
 
         // save the option
@@ -2301,8 +2314,8 @@ void MainWindow::toggleRotationCenterVisibility(bool state) {
 
 void MainWindow::doActionToggleCameraOrientationWidget(bool state) {
     // ParaView-style Camera Orientation Widget control
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::ToggleCameraOrientationWidget(state);
+    if (auto* view = getActiveGLView()) {
+        view->toggleCameraOrientationWidget(state);
 
         // Save the option
         {
@@ -2334,10 +2347,10 @@ void MainWindow::setAutoPickPivot(bool state) {
 }
 
 void MainWindow::setOrthoView() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetPerspectiveState(false, true);
+    auto* view = getActiveGLView();
+    if (view) {
+        view->setPerspectiveState(false, true);
 
-        // update pop-up menu 'top' icon
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
                     m_ui->actionOrthogonalProjection->icon());
@@ -2345,10 +2358,10 @@ void MainWindow::setOrthoView() {
 }
 
 void MainWindow::setPerspectiveView() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetPerspectiveState(true, true);
+    auto* view = getActiveGLView();
+    if (view) {
+        view->setPerspectiveState(true, true);
 
-        // update pop-up menu 'top' icon
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
                     m_ui->actionPerspectiveProjection->icon());
@@ -2362,7 +2375,6 @@ int MainWindow::getRenderWindowCount() const {
     return 0;
 }
 
-
 void MainWindow::update3DViewsMenu() {
     if (m_closing) return;
 
@@ -2371,15 +2383,14 @@ void MainWindow::update3DViewsMenu() {
         // via QTabWidget corner widget — no manual positioning needed.
         return;
     }
-
 }
 
 void MainWindow::updateViewModePopUpMenu() {
     if (!m_viewModePopupButton) return;
 
-    // update the view mode pop-up 'top' icon
-    if (getActiveGLWidget()) {
-        bool perspectiveEnabled = ecvDisplayTools::GetPerspectiveState();
+    auto* vmView = getActiveGLView();
+    if (vmView) {
+        bool perspectiveEnabled = vmView->perspectiveView();
 
         QAction* currentModeAction = nullptr;
         if (!perspectiveEnabled) {
@@ -2498,9 +2509,9 @@ void MainWindow::setUiManager(QUIWidget* uiManager) {
 }
 
 void MainWindow::toggleVisualDebugTraces() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::ToggleDebugTrace();
-        ecvDisplayTools::RedrawDisplay(true, false);
+    if (auto* view = getActiveGLView()) {
+        view->toggleDebugTrace();
+        refreshAll(true, false);
     }
 }
 
@@ -2536,9 +2547,9 @@ ecvGenericGLDisplay* MainWindow::getActiveGLView() {
     auto* activeDisplay = ecvViewManager::instance().getActiveView();
     if (activeDisplay) return activeDisplay;
     QWidget* widget = getActiveWindow();
-    if (!widget) return ecvDisplayTools::TheInstance();
+    if (!widget) return ecvViewManager::instance().getPrimaryView();
     ecvGenericGLDisplay* display = ecvGenericGLDisplay::FromWidget(widget);
-    return display ? display : ecvDisplayTools::TheInstance();
+    return display ? display : ecvViewManager::instance().getPrimaryView();
 }
 
 void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
@@ -2573,27 +2584,22 @@ void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
 void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     if (!view) return;
 
-    auto* primaryInstance = ecvDisplayTools::TheInstance();
-    auto* primaryDT =
-            static_cast<Visualization::VtkDisplayTools*>(primaryInstance);
-    if (!primaryDT) return;
+    auto* dt = ecvViewManager::instance().displayTools();
+    auto* vtkDT = static_cast<Visualization::VtkDisplayTools*>(dt);
+    if (!vtkDT) return;
 
-    auto* primaryVis = primaryDT->get3DViewer();
+    auto* primaryVis = vtkDT->get3DViewer();
     auto* newVis = view->getVisualizer3D();
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
-    // CC pattern: new windows inherit the full state of the active view.
-    // Use effectiveCtx() so the new window matches whatever the user is
-    // currently looking at (secondary ecvGLView or primary fallback).
-    const ecvViewContext& srcCtx = primaryInstance->effectiveCtx();
+    const ecvViewContext& srcCtx = dt->effectiveCtx();
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
 
-    // Background color: copy from current draw context + set on renderer
     CC_DRAW_CONTEXT ctx;
-    ecvDisplayTools::GetContext(ctx);
+    dt->getContext(ctx);
     newWidget->setBackgroundColor(ecvTools::TransFormRGB(ctx.backgroundCol),
                                   ecvTools::TransFormRGB(ctx.backgroundCol2),
                                   ctx.drawBackgroundGradient);
@@ -2627,9 +2633,8 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
 }
 
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
-    auto* primaryInstance = ecvDisplayTools::TheInstance();
-    auto* primaryDT =
-            static_cast<Visualization::VtkDisplayTools*>(primaryInstance);
+    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
+            ecvViewManager::instance().displayTools());
     if (!primaryDT) return;
 
     auto* glView = dynamic_cast<ecvGLView*>(display);
@@ -2649,12 +2654,13 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
         // null), the current m_vtkWidget IS the primary widget but
         // m_currentScreen may still point to a stale split-view widget
         // (e.g. restored by a ScopedVisSwap destructor during a secondary
-        // view redraw).  Force it to the authoritative widget.
-        ecvDisplayTools::SetCurrentScreen(primaryDT->getQVtkWidget());
+        // view redraw).  Point active routing at the primary display.
+        ecvViewManager::instance().setActiveView(
+                ecvViewManager::instance().displayTools());
 
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+            ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
             if (viewer) {
                 m_selectionController->setVisualizer(viewer);
             }
@@ -2687,7 +2693,7 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     }
 
 #if defined(USE_VTK_BACKEND)
-    ecvGenericVisualizer3D* activeViewer = ecvDisplayTools::GetVisualizer3D();
+    ecvGenericVisualizer3D* activeViewer = getActiveVisualizer3D();
 
     EditCameraTool::SetVisualizer(activeViewer);
 
@@ -2724,7 +2730,8 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
 void MainWindow::prepareViewClose(QWidget* viewFrame) {
     if (!viewFrame) return;
 
-    // Collect ALL GL views in this frame (handles QSplitter with multiple views)
+    // Collect ALL GL views in this frame (handles QSplitter with multiple
+    // views)
     std::vector<ecvGenericGLDisplay*> viewsToClose;
     auto* directDisplay = ecvGenericGLDisplay::FromWidget(viewFrame);
     if (directDisplay) {
@@ -2740,8 +2747,8 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
 
     if (viewsToClose.empty()) return;
 
-    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
-            ecvDisplayTools::TheInstance());
+    auto* framePrimaryDT = static_cast<Visualization::VtkDisplayTools*>(
+            ecvViewManager::instance().displayTools());
     QWidget* primaryScreen = getActiveGLWidget();
     bool primaryHandled = false;
 
@@ -2753,11 +2760,12 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
         bool closingPrimary = false;
         if (glView && glView->getVtkWidget() == primaryScreen) {
             closingPrimary = true;
-        } else if (closingDisplay == ecvDisplayTools::TheInstance()) {
+        } else if (closingDisplay ==
+                   ecvViewManager::instance().getPrimaryView()) {
             closingPrimary = true;
         }
 
-        if (closingPrimary && primaryDT && !primaryHandled) {
+        if (closingPrimary && framePrimaryDT && !primaryHandled) {
             primaryHandled = true;
             ecvGLView* newPrimary = nullptr;
 
@@ -2783,13 +2791,14 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
             }
 
             if (newPrimary) {
-                primaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
-                                           newPrimary->getVtkWidget());
+                framePrimaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
+                                                newPrimary->getVtkWidget());
                 rebindToolsToActiveView(newPrimary);
             } else {
-                CVLog::Warning("[prepareViewClose] No surviving ecvGLView — "
-                               "restoring built-in primary pipeline.");
-                primaryDT->resetToBuiltInPipeline();
+                CVLog::Warning(
+                        "[prepareViewClose] No surviving ecvGLView — "
+                        "restoring built-in primary pipeline.");
+                framePrimaryDT->resetToBuiltInPipeline();
                 rebindToolsToActiveView(nullptr);
             }
         }
@@ -2798,10 +2807,11 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
             Visualization::VtkCameraLink::instance().removeView(
                     glView->getVisualizer3D());
         } else if (!glView &&
-                   closingDisplay == ecvDisplayTools::TheInstance()) {
-            if (primaryDT && primaryDT->get3DViewer()) {
+                   closingDisplay ==
+                           ecvViewManager::instance().getPrimaryView()) {
+            if (framePrimaryDT && framePrimaryDT->get3DViewer()) {
                 Visualization::VtkCameraLink::instance().removeView(
-                        primaryDT->get3DViewer());
+                        framePrimaryDT->get3DViewer());
             }
         }
     }
@@ -2852,18 +2862,17 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
     auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
         auto* display = ecvGenericGLDisplay::FromWidget(w);
-        auto* glView =
-                display ? dynamic_cast<ecvGLView*>(display) : nullptr;
+        auto* glView = display ? dynamic_cast<ecvGLView*>(display) : nullptr;
         if (glView) return glView->getVisualizer3D();
         auto* dt = dynamic_cast<Visualization::VtkDisplayTools*>(
-                ecvDisplayTools::TheInstance());
+                ecvViewManager::instance().getPrimaryView());
         return dt ? dt->get3DViewer() : nullptr;
     };
 
     // Camera Undo — per-view (ParaView pqCameraUndoRedoReaction)
-    auto* camUndoAct = new QAction(
-            QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
-            tr("Camera Undo"), viewToolBar);
+    auto* camUndoAct =
+            new QAction(QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
+                        tr("Camera Undo"), viewToolBar);
     camUndoAct->setEnabled(false);
     connect(camUndoAct, &QAction::triggered, this,
             [getVtkVisForWidget, innerWidget]() {
@@ -2873,9 +2882,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     viewToolBar->addAction(camUndoAct);
 
     // Camera Redo — per-view (ParaView pqCameraUndoRedoReaction)
-    auto* camRedoAct = new QAction(
-            QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
-            tr("Camera Redo"), viewToolBar);
+    auto* camRedoAct =
+            new QAction(QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
+                        tr("Camera Redo"), viewToolBar);
     camRedoAct->setEnabled(false);
     connect(camRedoAct, &QAction::triggered, this,
             [getVtkVisForWidget, innerWidget]() {
@@ -2902,9 +2911,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     viewToolBar->addSeparator();
 
     // Capture screenshot — per-view (ParaView actionCaptureView)
-    auto* captureAct = new QAction(
-            QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
-            tr("Capture Screenshot"), viewToolBar);
+    auto* captureAct =
+            new QAction(QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
+                        tr("Capture Screenshot"), viewToolBar);
     connect(captureAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionScreenShot));
     viewToolBar->addAction(captureAct);
@@ -2912,14 +2921,13 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     viewToolBar->addSeparator();
 
     // 3D/2D toggle — per-view (mirrors global action3DView)
-    auto* view3DAct = new QAction(
-            QIcon(":/Resources/images/3D3.png"), tr("3D View"), viewToolBar);
+    auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
+                                  tr("3D View"), viewToolBar);
     view3DAct->setCheckable(true);
     view3DAct->setChecked(true);
     connect(view3DAct, &QAction::toggled, this,
             [this, innerWidget](bool state) {
-                auto* display =
-                        ecvGenericGLDisplay::FromWidget(innerWidget);
+                auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
                 if (display) {
                     auto& vm = ecvViewManager::instance();
                     if (vm.getActiveView() != display) {
@@ -2933,9 +2941,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     viewToolBar->addAction(view3DAct);
 
     // Edit camera — per-view (ParaView actionAdjustCamera)
-    auto* editCamAct = new QAction(
-            QIcon(":/Resources/images/svg/pqEditCamera.svg"),
-            tr("Adjust Camera"), viewToolBar);
+    auto* editCamAct =
+            new QAction(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+                        tr("Adjust Camera"), viewToolBar);
     connect(editCamAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionEditCamera));
     viewToolBar->addAction(editCamAct);
@@ -3015,10 +3023,13 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         }
 
         QTimer::singleShot(0, this, [this]() {
-            ecvDisplayTools::InvalidateViewport();
-            ecvDisplayTools::InvalidateVisualization();
-            ecvDisplayTools::Deprecate3DLayer();
-            ecvDisplayTools::RedrawDisplay();
+            ecvViewManager::instance().invalidateActiveViewport();
+            if (auto* v = getActiveGLView()) {
+                v->invalidateViewport();
+                v->deprecate3DLayer();
+            }
+            ecvViewManager::instance().deprecateActive3DLayer();
+            refreshAll();
         });
     });
     titleLayout->addWidget(closeBtn);
@@ -3031,7 +3042,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                         QIcon(":/Resources/images/svg/pqSplitHorizontal.svg"),
                         tr("Split Left|Right"), [this, frame]() {
                             auto* mvw = m_tabbedMultiView
-                                                ? m_tabbedMultiView->currentMultiView()
+                                                ? m_tabbedMultiView
+                                                          ->currentMultiView()
                                                 : nullptr;
                             if (mvw) mvw->onSplitHorizontal(frame);
                         });
@@ -3039,15 +3051,17 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                         QIcon(":/Resources/images/svg/pqSplitVertical.svg"),
                         tr("Split Top|Bottom"), [this, frame]() {
                             auto* mvw = m_tabbedMultiView
-                                                ? m_tabbedMultiView->currentMultiView()
+                                                ? m_tabbedMultiView
+                                                          ->currentMultiView()
                                                 : nullptr;
                             if (mvw) mvw->onSplitVertical(frame);
                         });
                 menu.addSeparator();
 
-                auto* mvwForCtx = m_tabbedMultiView
-                                          ? m_tabbedMultiView->currentMultiView()
-                                          : nullptr;
+                auto* mvwForCtx =
+                        m_tabbedMultiView
+                                ? m_tabbedMultiView->currentMultiView()
+                                : nullptr;
                 if (mvwForCtx && mvwForCtx->layoutManager() &&
                     mvwForCtx->layoutManager()->viewCount() > 1) {
                     auto* eqMenu = menu.addMenu(tr("Equalize Views"));
@@ -3081,8 +3095,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 menu.addSeparator();
 
                 auto* viewDisplay = [&]() -> ecvGenericGLDisplay* {
-                    auto* cFrame = frame->findChild<QWidget*>(
-                            "CentralWidgetFrame");
+                    auto* cFrame =
+                            frame->findChild<QWidget*>("CentralWidgetFrame");
                     if (!cFrame || !cFrame->layout()) return nullptr;
                     for (int i = 0; i < cFrame->layout()->count(); ++i) {
                         auto* item = cFrame->layout()->itemAt(i);
@@ -3096,11 +3110,10 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
                 if (viewDisplay) {
                     auto* viewMenu = menu.addMenu(tr("View Properties"));
-                    auto* glView =
-                            dynamic_cast<ecvGLView*>(viewDisplay);
+                    auto* glView = dynamic_cast<ecvGLView*>(viewDisplay);
 
-                    auto* gradAct = viewMenu->addAction(
-                            tr("Gradient Background"));
+                    auto* gradAct =
+                            viewMenu->addAction(tr("Gradient Background"));
                     gradAct->setCheckable(true);
                     auto params = viewDisplay->getDisplayParameters();
                     gradAct->setChecked(params.drawBackgroundGradient);
@@ -3114,8 +3127,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
                     if (glView && glView->getVisualizer3D()) {
                         auto* vis = glView->getVisualizer3D();
-                        auto* axesAct = viewMenu->addAction(
-                                tr("Orientation Axes"));
+                        auto* axesAct =
+                                viewMenu->addAction(tr("Orientation Axes"));
                         axesAct->setCheckable(true);
                         axesAct->setChecked(vis->pclMarkerAxesShown());
                         connect(axesAct, &QAction::toggled, this,
@@ -3350,12 +3363,11 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     splitter->setChildrenCollapsible(false);
     splitter->setHandleWidth(8);
     splitter->setOpaqueResize(true);
-    splitter->setStyleSheet(
-            QStringLiteral(
-                    "QSplitter::handle { background: palette(mid); }"
-                    "QSplitter::handle:hover { background: palette(highlight); }"
-                    "QSplitter::handle:horizontal { min-width: 8px; }"
-                    "QSplitter::handle:vertical { min-height: 8px; }"));
+    splitter->setStyleSheet(QStringLiteral(
+            "QSplitter::handle { background: palette(mid); }"
+            "QSplitter::handle:hover { background: palette(highlight); }"
+            "QSplitter::handle:horizontal { min-width: 8px; }"
+            "QSplitter::handle:vertical { min-height: 8px; }"));
 
     QWidget* parent = frameToSplit->parentWidget();
     auto* parentSplitter = qobject_cast<QSplitter*>(parent);
@@ -3747,19 +3759,17 @@ void MainWindow::addToDB(ccHObject* obj,
     ecvViewManager::instance().associateToActiveView(obj);
 
     if (updateZoom) {
-        auto* activeView = ecvViewManager::instance().getActiveView();
-        if (!activeView ||
-            activeView == ecvDisplayTools::TheInstance()) {
-            ecvDisplayTools::ZoomGlobal();
-        } else {
-            auto* glView = dynamic_cast<ecvGLView*>(activeView);
-            if (glView) glView->zoomGlobal();
+        if (auto* v = getActiveGLView()) {
+            v->updateConstellationCenterAndZoom();
         }
     }
     if (autoRedraw || updateZoom) {
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::InvalidateVisualization();
-        ecvDisplayTools::Deprecate3DLayer();
+        ecvViewManager::instance().invalidateActiveViewport();
+        if (auto* v = getActiveGLView()) {
+            v->invalidateViewport();
+            v->deprecate3DLayer();
+        }
+        ecvViewManager::instance().deprecateActive3DLayer();
         refreshAll();
     }
 
@@ -3797,7 +3807,7 @@ void MainWindow::doActionEditCamera() {
         activeVis = activeView->getVisualizer3D();
     }
     if (!activeVis) {
-        activeVis = ecvDisplayTools::GetVisualizer3D();
+        activeVis = getActiveVisualizer3D();
     }
 
     if (!m_cpeDlg) {
@@ -3830,15 +3840,18 @@ void MainWindow::doActionSaveViewportAsCamera() {
 
     cc2DViewportObject* viewportObject = new cc2DViewportObject(
             QString("Viewport #%1").arg(++s_viewportIndex));
-    viewportObject->setParameters(ecvDisplayTools::GetViewportParameters());
+    if (auto* view = getActiveGLView())
+        viewportObject->setParameters(view->getViewportParameters());
 
     addToDB(viewportObject);
 }
 
 void MainWindow::toggleLockRotationAxis() {
-    QMainWindow* win = ecvDisplayTools::GetMainWindow();
-    if (win) {
-        bool wasLocked = ecvDisplayTools::IsRotationAxisLocked();
+    auto* displayView = ecvViewManager::instance().getEffectiveView();
+    if (!displayView) return;
+
+    {
+        bool wasLocked = displayView->isRotationAxisLocked();
         bool isLocked = !wasLocked;
 
         static CCVector3d s_lastAxis(0.0, 0.0, 1.0);
@@ -3853,21 +3866,21 @@ void MainWindow::toggleLockRotationAxis() {
             s_lastAxis.y = axisDlg.doubleSpinBox2->value();
             s_lastAxis.z = axisDlg.doubleSpinBox3->value();
         }
-        ecvDisplayTools::LockRotationAxis(isLocked, s_lastAxis);
+        displayView->lockRotationAxis(isLocked, s_lastAxis);
 
         m_ui->actionLockRotationAxis->blockSignals(true);
         m_ui->actionLockRotationAxis->setChecked(isLocked);
         m_ui->actionLockRotationAxis->blockSignals(false);
 
         if (isLocked) {
-            ecvDisplayTools::DisplayNewMessage(
+            ecvViewManager::instance().displayMessageOnActiveView(
                     tr("[ROTATION LOCKED]"),
-                    ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 24 * 3600,
-                    ecvDisplayTools::ROTAION_LOCK_MESSAGE);
+                    ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 24 * 3600,
+                    ecvGenericGLDisplay::ROTAION_LOCK_MESSAGE);
         } else {
-            ecvDisplayTools::DisplayNewMessage(
-                    QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
-                    ecvDisplayTools::ROTAION_LOCK_MESSAGE);
+            ecvViewManager::instance().displayMessageOnActiveView(
+                    QString(), ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false,
+                    0, ecvGenericGLDisplay::ROTAION_LOCK_MESSAGE);
         }
         { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
     }
@@ -3878,7 +3891,8 @@ void MainWindow::doActionAnimation() {
     if (!activeWin) return;
 
     if (!m_animationDlg) {
-        m_animationDlg = new ecvAnimationParamDlg(activeWin, this, m_pickingHub);
+        m_animationDlg =
+                new ecvAnimationParamDlg(activeWin, this, m_pickingHub);
         registerOverlayDialog(m_animationDlg, Qt::BottomLeftCorner);
     }
 
@@ -3897,14 +3911,17 @@ void MainWindow::doActionScreenShot() {
 
     if (rtfDlg.exec()) {
         QApplication::processEvents();
-        ecvDisplayTools::RenderToFile(rtfDlg.getFilename(), rtfDlg.getZoom(),
-                                      rtfDlg.dontScalePoints(),
-                                      rtfDlg.renderOverlayItems());
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->renderToFile(rtfDlg.getFilename(), rtfDlg.getZoom(),
+                               rtfDlg.dontScalePoints());
+        }
     }
 }
 
 void MainWindow::doActionToggleOrientationMarker(bool state) {
-    ecvDisplayTools::ToggleOrientationMarker(state);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->toggleOrientationMarker(state);
+    }
 }
 
 void MainWindow::doActionSaveFile() {
@@ -4679,7 +4696,7 @@ void MainWindow::activateTranslateRotateMode() {
 
 #ifdef USE_VTK_BACKEND
     VtkTransformTool* pclTransTool =
-            new VtkTransformTool(ecvDisplayTools::GetVisualizer3D());
+            new VtkTransformTool(getActiveVisualizer3D());
     if (!m_transTool) m_transTool = new ccGraphicalTransformationTool(this);
     if (m_transTool->getNumberOfValidEntities() != 0) {
         m_transTool->clear();
@@ -5167,14 +5184,17 @@ void MainWindow::zoomOn(ccHObject* object) {
         vm.setActiveView(ownerView);
     }
 
-    if (getActiveGLWidget()) {
+    auto* view = getActiveGLView();
+    if (view) {
         ccBBox box = object->getDisplayBB_recursive(false);
-        ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
+        view->updateConstellationCenterAndZoom(&box);
     }
 }
 
 void MainWindow::setView(CC_VIEW_ORIENTATION view) {
-    ecvDisplayTools::SetView(view);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->setView(view);
+    }
 }
 
 void MainWindow::updateMenus() {
@@ -5363,10 +5383,10 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
             }
 
             onExclusiveFullScreenToggled(state);
-            ecvDisplayTools::DisplayNewMessage(
+            ecvViewManager::instance().displayMessageOnActiveView(
                     "Press F11 or ESC to disable full-screen mode",
-                    ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 30,
-                    ecvDisplayTools::FULL_SCREEN_MESSAGE);
+                    ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 30,
+                    ecvGenericGLDisplay::FULL_SCREEN_MESSAGE);
         }
     } else {
         // if we are currently in full-screen mode
@@ -5377,10 +5397,9 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
 
             m_exclusiveFullscreen = false;
             onExclusiveFullScreenToggled(state);
-            ecvDisplayTools::DisplayNewMessage(
-                    QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
-                    ecvDisplayTools::FULL_SCREEN_MESSAGE);  // remove any
-                                                            // message
+            ecvViewManager::instance().displayMessageOnActiveView(
+                    QString(), ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false,
+                    0, ecvGenericGLDisplay::FULL_SCREEN_MESSAGE);
 
             if (m_currentFullWidget) {
                 m_currentFullWidget->showNormal();
@@ -5403,15 +5422,29 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
 }
 
 void MainWindow::toggle3DView(bool state) {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::Toggle2Dviewer(!state);
+    if (!getActiveGLWidget()) return;
+    QWidget* w = getActiveGLWidget();
+    auto* display = ecvGenericGLDisplay::FromWidget(w);
+    ecvGenericGLDisplay* vtkTarget = display;
+    if (!vtkTarget) vtkTarget = ecvViewManager::instance().getPrimaryView();
+
+    Visualization::VtkVis* vis = nullptr;
+    if (auto* glView = dynamic_cast<ecvGLView*>(vtkTarget))
+        vis = glView->getVisualizer3D();
+    else if (auto* dt =
+                     dynamic_cast<Visualization::VtkDisplayTools*>(vtkTarget))
+        vis = dt->get3DViewer();
+    if (vis) {
+        vis->setInteractionMode(
+                state ? Visualization::VtkVis::INTERACTION_MODE_3D
+                      : Visualization::VtkVis::INTERACTION_MODE_2D);
     }
 }
 
 void MainWindow::onExclusiveFullScreenToggled(bool state) {
     // we simply update the full-screen action method icon (whatever the window)
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetExclusiveFullScreenFlage(state);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setExclusiveFullScreenFlag(state);
         m_ui->actionExclusiveFullScreen->blockSignals(true);
         m_ui->actionExclusiveFullScreen->setChecked(state);
         m_ui->actionExclusiveFullScreen->blockSignals(false);
@@ -5458,8 +5491,10 @@ void MainWindow::activatePointListPickingMode() {
         registerOverlayDialog(m_plpDlg, Qt::TopRightCorner);
     }
 
-    m_plpDlg->markerSizeSpinBox->setValue(
-            ecvDisplayTools::GetDisplayParameters().labelMarkerSize);
+    if (auto* view = getActiveGLView()) {
+        m_plpDlg->markerSizeSpinBox->setValue(
+                view->getDisplayParameters().labelMarkerSize);
+    }
 
     m_plpDlg->linkWith(getActiveGLWidget());
     m_plpDlg->linkWithEntity(entity);
@@ -5622,14 +5657,14 @@ void MainWindow::repositionOverlayDialog(ccMDIDialogs& mdiDlg) {
             break;
         case Qt::BottomLeftCorner:
             dx = margin;
-            dy = std::max(margin, viewArea->height() -
-                                          mdiDlg.dialog->height() - margin);
+            dy = std::max(margin, viewArea->height() - mdiDlg.dialog->height() -
+                                          margin);
             break;
         case Qt::BottomRightCorner:
             dx = std::max(margin,
                           viewArea->width() - mdiDlg.dialog->width() - margin);
-            dy = std::max(margin, viewArea->height() -
-                                          mdiDlg.dialog->height() - margin);
+            dy = std::max(margin, viewArea->height() - mdiDlg.dialog->height() -
+                                          margin);
             break;
     }
 
@@ -5855,8 +5890,7 @@ void MainWindow::doActionMerge() {
 
 void MainWindow::refreshAll(bool only2D /* = false*/,
                             bool forceRedraw /* = true*/) {
-    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
-    ecvViewManager::instance().redrawAll(only2D, forceRedraw, false);
+    { ecvRedrawScope scope(only2D, forceRedraw); }
 }
 
 void MainWindow::refreshSelected(bool only2D /* = false*/,
@@ -5868,10 +5902,10 @@ void MainWindow::refreshSelected(bool only2D /* = false*/,
 }
 
 void MainWindow::refreshObject(ccHObject* obj, bool only2D, bool forceRedraw) {
-    ecvDisplayTools::RedrawObject(obj, only2D, forceRedraw);
-    // Multi-window: also refresh secondary views that show this entity
-    if (ecvViewManager::instance().viewCount() > 1) {
-        ecvViewManager::instance().redrawAll(only2D);
+    if (obj) {
+        {
+            ecvRedrawScope scope({obj}, only2D, forceRedraw);
+        }
     }
 }
 
@@ -5885,20 +5919,19 @@ void MainWindow::refreshObjects(ccHObject::Container objs,
 }
 
 void MainWindow::resetSelectedBBox() {
+    auto* displayView = ecvViewManager::instance().getEffectiveView();
+    if (!displayView) return;
     for (ccHObject* entity : getSelectedEntities()) {
         if (entity) {
-            ecvDisplayTools::RemoveBB(entity->getViewId());
+            displayView->removeBB(entity->getViewId());
         }
     }
 }
 
 void MainWindow::toggleActiveWindowCenteredPerspective() {
-    QWidget* win = getActiveWindow();
-    if (win) {
-        const ecvViewportParameters& params =
-                ecvDisplayTools::GetViewportParameters();
-        // we need to check this only if we are already in object-centered
-        // perspective mode
+    auto* view = getActiveGLView();
+    if (view) {
+        const ecvViewportParameters& params = view->getViewportParameters();
         if (params.perspectiveView && params.objectCenteredView) {
             return;
         }
@@ -5909,19 +5942,15 @@ void MainWindow::toggleActiveWindowCenteredPerspective() {
 }
 
 void MainWindow::toggleActiveWindowViewerBasedPerspective() {
-    QWidget* win = getActiveWindow();
-    if (win) {
-        const ecvViewportParameters& params =
-                ecvDisplayTools::GetViewportParameters();
-        // we need to check this only if we are already in viewer-based
-        // perspective mode
+    auto* view = getActiveGLView();
+    if (view) {
+        const ecvViewportParameters& params = view->getViewportParameters();
         if (params.perspectiveView && !params.objectCenteredView) {
             return;
         }
         doActionOrthogonalProjection();
         refreshAll(true, false);
         updateViewModePopUpMenu();
-        // updatePivotVisibilityPopUpMenu(win);
     }
 }
 
@@ -6104,7 +6133,8 @@ void MainWindow::freezeUI(bool state) {
 void MainWindow::zoomOnSelectedEntities() {
     ccBBox bbox = getSelectedEntityBbox();
     if (bbox.isValid()) {
-        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, true);
+        if (auto* view = getActiveGLView())
+            view->updateConstellationCenterAndZoom(&bbox);
         refreshAll();
     } else {
         CVLog::Warning(tr("Selected entities have no valid bounding-box!"));
@@ -6121,7 +6151,8 @@ void MainWindow::zoomOnEntities(ccHObject* obj) {
 
         ccBBox bbox = obj->getDisplayBB_recursive(false);
         if (bbox.isValid()) {
-            ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox, true);
+            if (auto* view = getActiveGLView())
+                view->updateConstellationCenterAndZoom(&bbox);
             refreshAll();
         } else {
             CVLog::Warning(tr("entity [%1] has no valid bounding-box!")
@@ -6134,7 +6165,9 @@ void MainWindow::setGlobalZoom() {
     if (getActiveGLWidget()) {
         ecvRedrawScope scope;
         scope.dismiss();
-        ecvDisplayTools::ZoomGlobal();
+        if (auto* v = getActiveGLView()) {
+            v->updateConstellationCenterAndZoom();
+        }
 
         // Also zoom all secondary views
         for (auto* v : ecvViewManager::instance().getAllViews()) {
@@ -6158,7 +6191,7 @@ void MainWindow::initSelectionController() {
     m_selectionController->initialize(this);
 
     // Set visualizer
-    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
     if (viewer) {
         m_selectionController->setVisualizer(viewer);
     }
@@ -6300,11 +6333,13 @@ void MainWindow::initSelectionController() {
                                 .arg(xmax)
                                 .arg(ymax));
                 // Zoom is already performed by cvZoomToBoxTool using VTK
-                // This signal is for notification/logging purposes
-                ecvDisplayTools::UpdateScreen();
+                refreshAll();
                 // CRITICAL: Update 2D labels after zoom to box to ensure they
                 // align with their 3D anchor points
-                ecvDisplayTools::TheInstance()->Update2DLabel(true);
+                if (auto* view =
+                            ecvViewManager::instance().getEffectiveView()) {
+                    view->update2DLabels(true);
+                }
             });
 
     // Set the properties delegate for the controller
@@ -6314,7 +6349,7 @@ void MainWindow::initSelectionController() {
     }
 
     if (m_findDataDock) {
-        ecvGenericVisualizer3D* visualizer = ecvDisplayTools::GetVisualizer3D();
+        ecvGenericVisualizer3D* visualizer = getActiveVisualizer3D();
         cvSelectionHighlighter* highlighter =
                 m_selectionController->highlighter();
         cvViewSelectionManager* manager = getSelectionManager();
@@ -6437,7 +6472,7 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
         }
     }
 
-    ecvDisplayTools::UpdateScreen();
+    refreshAll();
 
     CVLog::PrintDebug(QString("[MainWindow] Selection UI updated: %1 elements")
                               .arg(selectionData.count()));
@@ -6455,7 +6490,7 @@ void MainWindow::onSelectionToolActivated(QAction* action) {
 
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
         if (isSelectionTool) {
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+            ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
             if (viewer) {
                 m_ccRoot->getPropertiesDelegate()->setVisualizer(viewer);
             }
@@ -6483,14 +6518,22 @@ void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
 //=============================================================================
 
 void MainWindow::increasePointSize() {
-    ecvDisplayTools::SetPointSize(
-            ecvDisplayTools::GetViewportParameters().defaultPointSize + 1);
+    auto* view = getActiveGLView();
+    if (view) {
+        ecvViewportParameters params = view->getViewportParameters();
+        params.defaultPointSize += 1;
+        view->setViewportParameters(params);
+    }
     refreshAll();
 }
 
 void MainWindow::decreasePointSize() {
-    ecvDisplayTools::SetPointSize(
-            ecvDisplayTools::GetViewportParameters().defaultPointSize - 1);
+    auto* view = getActiveGLView();
+    if (view) {
+        ecvViewportParameters params = view->getViewportParameters();
+        if (params.defaultPointSize > 1) params.defaultPointSize -= 1;
+        view->setViewportParameters(params);
+    }
     refreshAll();
 }
 
@@ -6533,20 +6576,14 @@ void MainWindow::showDisplayOptions() {
 }
 
 void MainWindow::doActionPerspectiveProjection() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetPerspectiveProjection();
-    }
-
+    // ecvGenericGLDisplay::setPerspectiveState (via setPerspectiveView) updates
+    // viewport state for the active view; VTK projection follows on redraw.
     setPerspectiveView();
 
     updateViewModePopUpMenu();
 }
 
 void MainWindow::doActionOrthogonalProjection() {
-    if (getActiveGLWidget()) {
-        ecvDisplayTools::SetOrthoProjection();
-    }
-
     setOrthoView();
 
     updateViewModePopUpMenu();
@@ -6576,9 +6613,9 @@ void MainWindow::enablePickingOperation(QString message) {
     // specific case: we prevent the 'point-pair based alignment' tool to
     // process the picked point! if (m_pprDlg) 	m_pprDlg->pause(true);
 
-    ecvDisplayTools::DisplayNewMessage(
-            message, ecvDisplayTools::LOWER_LEFT_MESSAGE, true, 24 * 3600);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    ecvViewManager::instance().displayMessageOnActiveView(
+            message, ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, true, 24 * 3600);
+    refreshAll(true, true);
 
     freezeUI(true);
 }
@@ -6590,7 +6627,9 @@ void MainWindow::cancelPreviousPickingOperation(bool aborted) {
             break;
         case PICKING_LEVEL_POINTS:
             if (s_levelMarkersCloud) {
-                ecvDisplayTools::RemoveFromOwnDB(s_levelMarkersCloud);
+                ecvGenericGLDisplay* rmv = getActiveGLView();
+                if (!rmv) rmv = ecvViewManager::instance().getEffectiveView();
+                if (rmv) rmv->removeFromOwnDB(s_levelMarkersCloud);
                 delete s_levelMarkersCloud;
                 s_levelMarkersCloud = nullptr;
             }
@@ -6601,12 +6640,11 @@ void MainWindow::cancelPreviousPickingOperation(bool aborted) {
     }
 
     if (aborted) {
-        ecvDisplayTools::DisplayNewMessage(
-                QString(),
-                ecvDisplayTools::LOWER_LEFT_MESSAGE);  // clear previous
-                                                       // messages
-        ecvDisplayTools::DisplayNewMessage("Picking operation aborted",
-                                           ecvDisplayTools::LOWER_LEFT_MESSAGE);
+        ecvViewManager::instance().displayMessageOnActiveView(
+                QString(), ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
+        ecvViewManager::instance().displayMessageOnActiveView(
+                "Picking operation aborted",
+                ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
     }
     { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
 
@@ -6669,7 +6707,10 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
                 CCVector3 Z = X.cross(Y);
                 // we choose 'Z' so that it points 'upward' relatively to the
                 // camera (assuming the user will be looking from the top)
-                CCVector3d viewDir = ecvDisplayTools::GetCurrentViewDir();
+                CCVector3d viewDir(0.0, 0.0, -1.0);
+                if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+                    viewDir = v->getCurrentViewDir();
+                }
                 if (CCVector3d::fromArray(Z.u).dot(viewDir) > 0) {
                     Z = -Z;
                 }
@@ -6707,10 +6748,13 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
                 applyTransformation(trans);
 
                 // clear message
-                ecvDisplayTools::DisplayNewMessage(
-                        QString(), ecvDisplayTools::LOWER_LEFT_MESSAGE,
-                        false);  // clear previous message
-                ecvDisplayTools::SetView(CC_TOP_VIEW);
+                ecvViewManager::instance().displayMessageOnActiveView(
+                        QString(), ecvGenericGLDisplay::LOWER_LEFT_MESSAGE,
+                        false);
+                if (auto* vTop =
+                            ecvViewManager::instance().getEffectiveView()) {
+                    vTop->setView(CC_TOP_VIEW);
+                }
             } else {
                 // we need more points!
                 return;
@@ -6727,26 +6771,30 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
             // specific case: transformation tool is enabled
             if (m_transTool && m_transTool->started()) {
                 m_transTool->setRotationCenter(newPivot);
-                const unsigned& precision =
-                        ecvDisplayTools::GetDisplayParameters()
-                                .displayedNumPrecision;
-                ecvDisplayTools::DisplayNewMessage(
-                        QString(), ecvDisplayTools::LOWER_LEFT_MESSAGE,
-                        false);  // clear previous message
-                ecvDisplayTools::DisplayNewMessage(
+                unsigned precision = 6;
+                if (auto* v = getActiveGLView())
+                    precision = v->getDisplayParameters().displayedNumPrecision;
+                ecvViewManager::instance().displayMessageOnActiveView(
+                        QString(), ecvGenericGLDisplay::LOWER_LEFT_MESSAGE,
+                        false);
+                ecvViewManager::instance().displayMessageOnActiveView(
                         tr("Point (%1 ; %2 ; %3) set as rotation center for "
                            "interactive transformation")
                                 .arg(pickedPoint.x, 0, 'f', precision)
                                 .arg(pickedPoint.y, 0, 'f', precision)
                                 .arg(pickedPoint.z, 0, 'f', precision),
-                        ecvDisplayTools::LOWER_LEFT_MESSAGE, true);
+                        ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, true);
             } else {
+                ecvGenericGLDisplay* pickView = getActiveGLView();
+                if (!pickView)
+                    pickView = ecvViewManager::instance().getEffectiveView();
+                if (!pickView)
+                    pickView = ecvViewManager::instance().getPrimaryView();
                 const ecvViewportParameters& params =
-                        ecvDisplayTools::GetViewportParameters();
+                        pickView->getViewportParameters();
                 if (!params.perspectiveView || params.objectCenteredView) {
-                    // apply current GL transformation (if any)
                     pi.entity->getGLTransformation().apply(newPivot);
-                    ecvDisplayTools::SetPivotPoint(newPivot, true, true);
+                    pickView->setPivotPoint(newPivot, true, true);
                 }
             }
             // s_pickingWindow->redraw(); //already called by
@@ -6790,10 +6838,13 @@ void MainWindow::showEvent(QShowEvent* event) {
     }
 
     QTimer::singleShot(200, this, [this]() {
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::InvalidateVisualization();
-        ecvDisplayTools::Deprecate3DLayer();
-        ecvDisplayTools::RedrawDisplay();
+        ecvViewManager::instance().invalidateActiveViewport();
+        if (auto* v = getActiveGLView()) {
+            v->invalidateViewport();
+            v->deprecate3DLayer();
+        }
+        ecvViewManager::instance().deprecateActive3DLayer();
+        refreshAll();
     });
 }
 
@@ -6873,9 +6924,9 @@ void MainWindow::saveGUIElementsPos() {
     if (m_tabbedMultiView) {
         QJsonObject layoutState = m_tabbedMultiView->saveLayoutState();
         QSettings settings;
-        settings.setValue(QStringLiteral("MultiView/LayoutState"),
-                          QJsonDocument(layoutState).toJson(
-                                  QJsonDocument::Compact));
+        settings.setValue(
+                QStringLiteral("MultiView/LayoutState"),
+                QJsonDocument(layoutState).toJson(QJsonDocument::Compact));
     }
 }
 
@@ -7254,8 +7305,11 @@ void MainWindow::doMeshTwoPolylines() {
                                        QMessageBox::Yes,
                                        QMessageBox::No) == QMessageBox::No);
         if (useViewingDir) {
-            viewingDir = -CCVector3::fromArray(
-                    ecvDisplayTools::GetCurrentViewDir().u);
+            CCVector3d vd(0.0, 0.0, -1.0);
+            if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+                vd = v->getCurrentViewDir();
+            }
+            viewingDir = -CCVector3::fromArray(vd.u);
         }
     }
 
@@ -7547,7 +7601,8 @@ void MainWindow::doActionCreateGBLSensor() {
                     // sensor->setDisplay_recursive(win);
                     sensor->setVisible(true);
                     ccBBox box = cloud->getOwnBB();
-                    ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
+                    if (auto* view = getActiveGLView())
+                        view->updateConstellationCenterAndZoom(&box);
                 }
 
                 addToDB(sensor);
@@ -7609,7 +7664,8 @@ void MainWindow::doActionCreateCameraSensor() {
         sensor->setVisible(true);
         if (ent) {
             ccBBox box = ent->getOwnBB();
-            ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
+            if (auto* view = getActiveGLView())
+                view->updateConstellationCenterAndZoom(&box);
         }
     }
 
@@ -9624,7 +9680,10 @@ void MainWindow::doComputeBestFitBB() {
                     CC_DRAW_CONTEXT context;
                     context.removeViewID =
                             QString::number(entity->getUniqueID());
-                    ecvDisplayTools::RemoveBB(context);
+                    if (auto* v =
+                                ecvViewManager::instance().getEffectiveView()) {
+                        v->removeBB(context);
+                    }
                 }
             }
         }
@@ -10367,8 +10426,7 @@ void MainWindow::activateRegisterPointPairTool() {
 
     rebindToolsToActiveView(ecvViewManager::instance().getActiveView());
 
-    if (!m_pprDlg->init(getActiveGLWidget(), alignedEntities,
-                        &refEntities))
+    if (!m_pprDlg->init(getActiveGLWidget(), alignedEntities, &refEntities))
         deactivateRegisterPointPairTool(false);
 
     freezeUI(true);
@@ -11110,7 +11168,7 @@ void MainWindow::doActionFilterByLabel() {
         m_filterLabelTool = new ecvFilterByLabelDlg(this);
         connect(m_filterLabelTool, &ccOverlayDialog::processFinished, this,
                 [=]() {
-                    ecvDisplayTools::UpdateScreen();
+                    refreshAll();
                     freezeUI(false);
                     updateUI();
                 });
@@ -11413,7 +11471,7 @@ void MainWindow::doActionAddConstantSF() {
         sf->computeMinAndMax();
         cloud->setCurrentDisplayedScalarField(sfIdx);
         cloud->showSF(true);
-        ecvDisplayTools::RedrawObject(cloud);
+        refreshObject(cloud);
         updateUI();
     }
 
@@ -11991,7 +12049,7 @@ void MainWindow::doActionMeasurementMode(int mode) {
     }
 
 #ifdef USE_VTK_BACKEND
-    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
     if (!viewer) {
         CVLog::Error("[MainWindow] No visualizer available!");
         return;
@@ -12019,7 +12077,7 @@ void MainWindow::doActionMeasurementMode(int mode) {
 
     if (m_measurementTool->start()) {
         updateOverlayDialogsPlacement();
-        ecvDisplayTools::UpdateScreen();
+        refreshAll();
     } else {
         freezeUI(false);
         updateUI();
@@ -12128,9 +12186,8 @@ void MainWindow::doActionFilterMode(int mode) {
     rebindToolsToActiveView(ecvViewManager::instance().getActiveView());
 
 #ifdef USE_VTK_BACKEND
-    ecvGenericFiltersTool* filter =
-            new VtkFiltersTool(ecvDisplayTools::GetVisualizer3D(),
-                               ecvGenericFiltersTool::FilterType(mode));
+    ecvGenericFiltersTool* filter = new VtkFiltersTool(
+            getActiveVisualizer3D(), ecvGenericFiltersTool::FilterType(mode));
 #else
     CVLog::Warning(
             "[MainWindow] please use pcl as backend and then try again!");
@@ -12227,12 +12284,12 @@ void MainWindow::doAnnotations(int mode) {
 
 #ifdef USE_VTK_BACKEND
     VtkAnnotationTool* annoTools = new VtkAnnotationTool(
-            ecvDisplayTools::GetVisualizer3D(),
+            getActiveVisualizer3D(),
             ecvGenericAnnotationTool::AnnotationMode(mode));
     if (!m_annoTool) {
         m_annoTool = new ecvAnnotationsTool(this);
         connect(m_annoTool, &ccOverlayDialog::processFinished, this, [=]() {
-            ecvDisplayTools::UpdateScreen();
+            refreshAll();
             freezeUI(false);
             updateUI();
         });
@@ -12423,9 +12480,10 @@ void MainWindow::activateSegmentationMode() {
         deactivateSegmentationMode(false);
     } else {
         updateOverlayDialogsPlacement();
-        bool perspectiveEnabled = ecvDisplayTools::GetPerspectiveState();
-        if (!perspectiveEnabled)  // segmentation must work in perspective mode
-        {
+        auto* activeViewForSeg = getActiveGLView();
+        bool perspectiveEnabled =
+                activeViewForSeg ? activeViewForSeg->perspectiveView() : false;
+        if (!perspectiveEnabled) {
             doActionPerspectiveProjection();
             m_lastViewMode = VIEWMODE::ORTHOGONAL;
         } else {
@@ -12649,9 +12707,8 @@ void MainWindow::deactivateSegmentationMode(bool state) {
             doActionPerspectiveProjection();
         }
 
-        ecvDisplayTools::DisplayNewMessage(
-                QString(),
-                ecvDisplayTools::UPPER_CENTER_MESSAGE);  // clear the area
+        ecvViewManager::instance().displayMessageOnActiveView(
+                QString(), ecvGenericGLDisplay::UPPER_CENTER_MESSAGE);
         {
             ecvRedrawScope scope;
             m_gsTool->removeAllEntities();
@@ -12659,8 +12716,8 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                 scope.dismiss();
             }
         }
-        ecvDisplayTools::SetInteractionMode(
-                ecvDisplayTools::TRANSFORM_CAMERA());
+        if (auto* v = getActiveGLView())
+            v->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
     }
 
     freezeUI(false);
@@ -13269,7 +13326,7 @@ void MainWindow::doActionCloudPrimitiveDist() {
             }
             compEnt->setCurrentDisplayedScalarField(sfIdx);
             compEnt->showSF(sfIdx >= 0);
-            ecvDisplayTools::RedrawObject(compEnt);
+            refreshObject(compEnt);
         }
 
         MainWindow::UpdateUI();

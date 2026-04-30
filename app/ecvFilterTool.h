@@ -12,7 +12,6 @@
 #include <ui_filterToolDlg.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvGenericFiltersTool.h>
 
 // SYSTEM

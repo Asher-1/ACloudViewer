@@ -20,7 +20,6 @@
 
 // CV_DB_LIB
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObject.h>
 #include <ecvOctree.h>

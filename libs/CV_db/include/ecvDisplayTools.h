@@ -8,6 +8,7 @@
 #pragma once
 
 // Local
+#include "ecvDisplayTypes.h"
 #include "ecvGLMatrix.h"
 #include "ecvGenericDisplayTools.h"
 #include "ecvGenericGLDisplay.h"
@@ -47,54 +48,7 @@ class ecvGenericVisualizer;
 class ecvGenericVisualizer2D;
 class ecvGenericVisualizer3D;
 
-// ============================================================================
-// Axes Grid Properties Structure (ParaView-compatible)
-// ============================================================================
-
-/**
- * @struct AxesGridProperties
- * @brief Data Axes Grid properties structure (ParaView-compatible)
- *
- * Encapsulates all properties for vtkCubeAxesActor configuration,
- * providing ParaView-style axis grid visualization with customizable
- * labels, bounds, and appearance.
- */
-struct CV_DB_LIB_API AxesGridProperties {
-    // Basic properties
-    bool visible = false;  ///< Axes grid visibility
-    CCVector3 color =
-            CCVector3(255, 255, 255);  ///< Color (RGB 0-255, default: white)
-    double lineWidth = 1.0;            ///< Line width in pixels
-    double spacing = 1.0;              ///< Grid spacing
-    int subdivisions = 10;             ///< Number of subdivisions
-    bool showLabels = true;            ///< Show axis labels
-    double opacity = 1.0;              ///< Opacity (0.0-1.0)
-
-    // Extended properties (ParaView-style)
-    bool showGrid = false;          ///< Show grid lines (default: OFF)
-    QString xTitle = "X-Axis";      ///< X-axis title
-    QString yTitle = "Y-Axis";      ///< Y-axis title
-    QString zTitle = "Z-Axis";      ///< Z-axis title
-    bool xUseCustomLabels = false;  ///< Use custom X labels
-    bool yUseCustomLabels = false;  ///< Use custom Y labels
-    bool zUseCustomLabels = false;  ///< Use custom Z labels
-    bool useCustomBounds = false;   ///< Use custom axis bounds
-
-    // Custom labels (ParaView-style: value -> label string)
-    QList<QPair<double, QString>> xCustomLabels;  ///< X-axis custom labels
-    QList<QPair<double, QString>> yCustomLabels;  ///< Y-axis custom labels
-    QList<QPair<double, QString>> zCustomLabels;  ///< Z-axis custom labels
-
-    // Custom bounds (ParaView-style: explicit min/max for each axis)
-    double xMin = 0.0, xMax = 1.0;  ///< X-axis bounds
-    double yMin = 0.0, yMax = 1.0;  ///< Y-axis bounds
-    double zMin = 0.0, zMax = 1.0;  ///< Z-axis bounds
-
-    /**
-     * @brief Default constructor
-     */
-    AxesGridProperties() = default;
-};
+// AxesGridProperties is now in ecvDisplayTypes.h (included above)
 
 /**
  * @class ecvDisplayTools
@@ -124,37 +78,32 @@ class CV_DB_LIB_API ecvDisplayTools : public QObject,
                                       public ecvGenericGLDisplay {
     Q_OBJECT
 public:
-    /**
-     * @brief Initialize the display tools singleton
-     * @param displayTools Display tools instance
-     * @param win Main window widget
-     * @param stereoMode Enable stereo rendering mode (default: false)
-     */
-    static void Init(ecvDisplayTools* displayTools,
-                     QMainWindow* win,
-                     bool stereoMode = false);
+    // ================================================================
+    // Shared-instance lifecycle (managed by ecvViewManager)
+    //
+    // These replace the former Init/TheInstance/ReleaseInstance API.
+    // External code should use ecvViewManager::initDisplayTools()
+    // and ecvViewManager::displayTools() instead.
+    // ================================================================
 
-    /**
-     * @brief Get the singleton instance
-     * @return Pointer to the singleton instance
-     */
-    static ecvDisplayTools* TheInstance();
+    /// Returns the shared display-tools instance.
+    /// Equivalent to the former sharedTools() but intended only for
+    /// internal / static-method use.  External callers should prefer
+    /// ecvViewManager::displayTools().
+    static ecvDisplayTools* sharedTools();
 
-    /**
-     * @brief Check whether the singleton has been initialized
-     *
-     * Unlike TheInstance(), this does not log a warning when the
-     * instance is null.  Use it in guard checks where running
-     * without a display context is expected (e.g. headless /
-     * command-line mode).
-     */
-    static bool HasInstance();
+private:
+    friend class ecvViewManager;
 
-    /**
-     * @brief Release and destroy the singleton instance
-     */
-    static void ReleaseInstance();
+    /// Called exclusively by ecvViewManager::initDisplayTools().
+    static void initializeSharedInstance(ecvDisplayTools* tools,
+                                         QMainWindow* win,
+                                         bool stereoMode);
 
+    /// Called exclusively by ecvViewManager::releaseDisplayTools().
+    static void releaseSharedInstance();
+
+public:
     /**
      * @brief Virtual destructor
      */
@@ -184,7 +133,9 @@ public:
     const ecvViewContext* viewContext() const override { return &m_primaryCtx; }
 
     /// Override from ecvGenericGLDisplay — returns primary-window active items.
-    std::list<ccInteractor*>& activeItemsRef() override { return m_activeItems; }
+    std::list<ccInteractor*>& activeItemsRef() override {
+        return m_activeItems;
+    }
 
     /// Returns the effective view's context for the current scope.
     /// If a rendering override is set (ScopedRenderOverride), returns that
@@ -247,9 +198,12 @@ public:
     ccHObject* getOwnDB() override;
     void addToOwnDB(ccHObject* obj, bool noDependency = true) override;
     void removeFromOwnDB(ccHObject* obj) override;
+    void updateConstellationCenterAndZoom(
+            const ccBBox* aBox = nullptr) override;
     QWidget* asWidget() override;
     const QWidget* asWidget() const override;
     bool hasOverriddenDisplayParameters() const override;
+    QFont textDisplayFont() const override { return m_font; }
 
     /**
      * @brief Schedule a full redraw
@@ -276,203 +230,13 @@ public:
     static INTERACTION_FLAGS TRANSFORM_CAMERA();
     static INTERACTION_FLAGS TRANSFORM_ENTITIES();
 
-    /**
-     * @struct MessageToDisplay
-     * @brief Temporary on-screen message descriptor
-     *
-     * Contains all information needed to display a temporary message
-     * on screen, including content, position, validity time, and type.
-     */
-    struct CV_DB_LIB_API MessageToDisplay {
-        /**
-         * @brief Default constructor
-         */
-        MessageToDisplay()
-            : messageValidity_sec(0),
-              position(LOWER_LEFT_MESSAGE),
-              type(CUSTOM_MESSAGE) {}
+    using MessageToDisplay = ecvMessageToDisplay;
 
-        QString message;             ///< Message text
-        qint64 messageValidity_sec;  ///< Message expiration time (seconds)
-        MessagePosition position;    ///< Display position on screen
-        MessageType type;            ///< Message type
-    };
-
-    /**
-     * @brief List of currently displayed messages
-     */
     std::list<MessageToDisplay> m_messagesToDisplay;
 
-    /**
-     * @struct ProjectionMetrics
-     * @brief Optional output metrics from projection matrix computation
-     *
-     * Contains computed camera and scene metrics useful for advanced
-     * rendering operations and debugging.
-     */
-    struct CV_DB_LIB_API ProjectionMetrics {
-        /**
-         * @brief Default constructor
-         */
-        ProjectionMetrics()
-            : zNear(0.0),
-              zFar(0.0),
-              cameraToBBCenterDist(0.0),
-              bbHalfDiag(0.0) {}
+    using ProjectionMetrics = ecvProjectionMetrics;
 
-        double zNear;                 ///< Near clipping plane distance
-        double zFar;                  ///< Far clipping plane distance
-        double cameraToBBCenterDist;  ///< Camera to bounding box center
-                                      ///< distance
-        double bbHalfDiag;            ///< Half diagonal of bounding box
-    };
-
-    /**
-     * @struct HotZone
-     * @brief Hot zone (interactive UI overlay) properties
-     *
-     * Manages the "hot zone" - an interactive overlay in the upper-right corner
-     * displaying clickable controls for point size, line width, bubble-view
-     * mode, and fullscreen mode. Includes pre-computed layout metrics for
-     * efficient rendering.
-     */
-    struct CV_DB_LIB_API HotZone {
-        // display font
-        QFont font;
-        // text height
-        int textHeight;
-        // text shift
-        int yTextBottomLineShift;
-        // default color
-        unsigned char color[3];
-
-        // bubble-view label rect.
-        QString bbv_label;
-        // bubble-view label rect.
-        QRect bbv_labelRect;
-        // bubble-view row width
-        int bbv_totalWidth;
-
-        // fullscreen label rect.
-        QString fs_label;
-        // fullscreen label rect.
-        QRect fs_labelRect;
-        // fullscreen row width
-        int fs_totalWidth;
-
-        // point size label
-        QString psi_label;
-        // point size label rect.
-        QRect psi_labelRect;
-        // point size row width
-        int psi_totalWidth;
-
-        // line size label
-        QString lsi_label;
-        // line size label rect.
-        QRect lsi_labelRect;
-        // line size row width
-        int lsi_totalWidth;
-
-        int margin;
-        int iconSize;
-        QPoint topCorner;
-        qreal pixelDeviceRatio;
-
-        explicit HotZone(QWidget* win)
-            : textHeight(0),
-              yTextBottomLineShift(0),
-              bbv_label("bubble-view mode"),
-              fs_label("fullscreen mode"),
-              psi_label("default point size"),
-              lsi_label("default line width"),
-              margin(16)  // 16|10
-              ,
-              iconSize(16)  // 16
-              ,
-              topCorner(0, 0),
-              pixelDeviceRatio(1.0) {
-            color[0] = ecvColor::defaultLabelBkgColor.r;
-            color[1] = ecvColor::defaultLabelBkgColor.g;
-            color[2] = ecvColor::defaultLabelBkgColor.b;
-
-            updateInternalVariables(win);
-        }
-
-        void updateInternalVariables(QWidget* win) {
-            if (win) {
-                font = win->font();
-                pixelDeviceRatio = GetPlatformAwareDPIScale();
-                int fontSize = GetOptimizedFontSize(12);
-                if (fontSize != pixelDeviceRatio) {
-                    font.setPointSize(fontSize);
-                } else {
-                    font.setPointSize(12 * pixelDeviceRatio);
-                }
-                CVLog::Print(QString("pixelDeviceRatio: %1 and fontSize %2")
-                                     .arg(pixelDeviceRatio)
-                                     .arg(fontSize));
-                margin *= pixelDeviceRatio;
-                iconSize *= pixelDeviceRatio;
-                font.setBold(true);
-            }
-
-            QFontMetrics metrics(font);
-            bbv_labelRect = metrics.boundingRect(bbv_label);
-            fs_labelRect = metrics.boundingRect(fs_label);
-            psi_labelRect = metrics.boundingRect(psi_label);
-            lsi_labelRect = metrics.boundingRect(lsi_label);
-
-            psi_totalWidth = /*margin() + */ psi_labelRect.width() + margin +
-                             iconSize + margin + iconSize /* + margin*/;
-            lsi_totalWidth = /*margin() + */ lsi_labelRect.width() + margin +
-                             iconSize + margin + iconSize /* + margin*/;
-            bbv_totalWidth = /*margin() + */ bbv_labelRect.width() + margin +
-                             iconSize /* + margin*/;
-            fs_totalWidth = /*margin() + */ fs_labelRect.width() + margin +
-                            iconSize /* + margin*/;
-
-            textHeight =
-                    std::max(psi_labelRect.height(), bbv_labelRect.height());
-            textHeight = std::max(lsi_labelRect.height(), textHeight);
-            textHeight = std::max(fs_labelRect.height(), textHeight);
-            textHeight = (3 * textHeight) /
-                         4;  // --> factor: to recenter the baseline a little
-            yTextBottomLineShift = (iconSize / 2) + (textHeight / 2);
-        }
-
-        QRect rect(bool clickableItemsVisible,
-                   bool bubbleViewModeEnabled,
-                   bool fullScreenEnabled) const {
-            // total hot zone area size (without margin)
-            int totalWidth = 0;
-            if (clickableItemsVisible)
-                totalWidth = std::max(psi_totalWidth, lsi_totalWidth);
-            if (bubbleViewModeEnabled)
-                totalWidth = std::max(totalWidth, bbv_totalWidth);
-            if (fullScreenEnabled)
-                totalWidth = std::max(totalWidth, fs_totalWidth);
-
-#ifdef Q_OS_MAC
-            // fix the hot zone width on mac
-            totalWidth = totalWidth + 3 * (margin + iconSize);
-#endif
-            QPoint minAreaCorner(
-                    0, std::min(0, yTextBottomLineShift - textHeight));
-            QPoint maxAreaCorner(totalWidth,
-                                 std::max(iconSize, yTextBottomLineShift));
-            int rowCount = clickableItemsVisible ? 2 : 0;
-            rowCount += bubbleViewModeEnabled ? 1 : 0;
-            rowCount += fullScreenEnabled ? 1 : 0;
-            maxAreaCorner.setY(maxAreaCorner.y() +
-                               (iconSize + margin) * (rowCount - 1));
-
-            QRect areaRect(minAreaCorner - QPoint(margin, margin) / 2,
-                           maxAreaCorner + QPoint(margin, margin) / 2);
-
-            return areaRect;
-        }
-    };
+    using HotZone = ecvHotZone;
 
     /**
      * @brief Display text at 2D screen position
@@ -505,7 +269,7 @@ public:
      * @param CONTEXT Drawing context containing text parameters
      */
     static void DisplayText(const CC_DRAW_CONTEXT& CONTEXT) {
-        TheInstance()->displayText(CONTEXT);
+        sharedTools()->displayText(CONTEXT);
     }
 
     /**
@@ -567,7 +331,7 @@ public:  // Main 3D layer drawing methods
      */
     inline static void Draw(const CC_DRAW_CONTEXT& context,
                             const ccHObject* obj) {
-        TheInstance()->draw(context, obj);
+        sharedTools()->draw(context, obj);
     }
 
     /**
@@ -575,8 +339,8 @@ public:  // Main 3D layer drawing methods
      * @param context Drawing context
      * @param obj Object to draw
      */
-    inline virtual void draw(const CC_DRAW_CONTEXT& context,
-                             const ccHObject* obj) { /* do nothing */ }
+    inline void draw(const CC_DRAW_CONTEXT& context,
+                     const ccHObject* obj) override { /* do nothing */ }
 
     /**
      * @brief Update mesh textures
@@ -585,7 +349,7 @@ public:  // Main 3D layer drawing methods
      */
     inline static void UpdateMeshTextures(const CC_DRAW_CONTEXT& context,
                                           const ccGenericMesh* mesh) {
-        TheInstance()->updateMeshTextures(context, mesh);
+        sharedTools()->updateMeshTextures(context, mesh);
     }
 
     /**
@@ -593,9 +357,9 @@ public:  // Main 3D layer drawing methods
      * @param context Drawing context
      * @param mesh Mesh to update
      */
-    inline virtual void updateMeshTextures(
+    inline void updateMeshTextures(
             const CC_DRAW_CONTEXT& context,
-            const ccGenericMesh* mesh) { /* do nothing */ }
+            const ccGenericMesh* mesh) override { /* do nothing */ }
 
     /**
      * @brief Draw axis-aligned bounding box
@@ -604,7 +368,7 @@ public:  // Main 3D layer drawing methods
      */
     inline static void DrawBBox(const CC_DRAW_CONTEXT& context,
                                 const ccBBox* bbox) {
-        TheInstance()->drawBBox(context, bbox);
+        sharedTools()->drawBBox(context, bbox);
     }
 
     /**
@@ -612,8 +376,8 @@ public:  // Main 3D layer drawing methods
      * @param context Drawing context
      * @param bbox Bounding box
      */
-    inline virtual void drawBBox(const CC_DRAW_CONTEXT& context,
-                                 const ccBBox* bbox) { /* do nothing */ }
+    inline void drawBBox(const CC_DRAW_CONTEXT& context,
+                         const ccBBox* bbox) override { /* do nothing */ }
 
     /**
      * @brief Draw oriented bounding box
@@ -622,7 +386,7 @@ public:  // Main 3D layer drawing methods
      */
     inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                         const ecvOrientedBBox* obb) {
-        TheInstance()->drawOrientedBBox(context, obb);
+        sharedTools()->drawOrientedBBox(context, obb);
     }
 
     /**
@@ -630,9 +394,9 @@ public:  // Main 3D layer drawing methods
      * @param context Drawing context
      * @param obb Oriented bounding box
      */
-    inline virtual void drawOrientedBBox(
+    inline void drawOrientedBBox(
             const CC_DRAW_CONTEXT& context,
-            const ecvOrientedBBox* obb) { /* do nothing */ }
+            const ecvOrientedBBox* obb) override { /* do nothing */ }
 
     /**
      * @brief Remove bounding box from view
@@ -658,8 +422,8 @@ public:  // Main 3D layer drawing methods
      * @brief Virtual interface for changing entity properties
      * @param propertyParam Property parameters
      */
-    inline virtual void changeEntityProperties(
-            PROPERTY_PARAM& propertyParam) { /* do nothing */ }
+    inline void changeEntityProperties(
+            PROPERTY_PARAM& propertyParam) override { /* do nothing */ }
 
     /**
      * @brief Draw widgets (2D/3D overlays)
@@ -673,14 +437,16 @@ public:  // Main 3D layer drawing methods
      * @brief Virtual interface for drawing widgets
      * @param param Widget parameters
      */
-    inline virtual void drawWidgets(
-            const WIDGETS_PARAMETER& param) { /* do nothing */ }
+    inline void drawWidgets(
+            const WIDGETS_PARAMETER& param) override { /* do nothing */ }
 
     /**
      * @brief Remove widgets by parameters
      * @param param Widget parameters identifying widgets to remove
      * @param update Update display immediately (default: false)
      */
+    void removeWidgets(const WIDGETS_PARAMETER& param) override;
+
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
                               bool update = false);
 
@@ -705,7 +471,7 @@ public:  // Main 3D layer drawing methods
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
                                        int viewport = 0) {
-        TheInstance()->drawCoordinates(scale, id, viewport);
+        sharedTools()->drawCoordinates(scale, id, viewport);
     }
 
     /**
@@ -731,7 +497,7 @@ public:  // Main 3D layer drawing methods
                                       const CCVector3d& axis,
                                       double angle,
                                       int viewport = 0) {
-        TheInstance()->rotateWithAxis(pos, axis, angle, viewport);
+        sharedTools()->rotateWithAxis(pos, axis, angle, viewport);
     }
 
     /**
@@ -744,14 +510,14 @@ public:  // Main 3D layer drawing methods
     inline virtual void rotateWithAxis(const CCVector2i& pos,
                                        const CCVector3d& axis,
                                        double angle,
-                                       int viewport = 0) { /* do nothing */ }
+                                       int viewport) { /* do nothing */ }
 
     /**
      * @brief Toggle orientation marker visibility
      * @param state Show marker (default: true)
      */
     inline static void ToggleOrientationMarker(bool state = true) {
-        TheInstance()->toggleOrientationMarker(state);
+        sharedTools()->toggleOrientationMarker(state);
         UpdateScreen();
     }
 
@@ -759,15 +525,15 @@ public:  // Main 3D layer drawing methods
      * @brief Virtual interface for toggling orientation marker
      * @param state Visibility state
      */
-    inline virtual void toggleOrientationMarker(
-            bool state = true) { /* do nothing */ }
+    inline void toggleOrientationMarker(
+            bool state = true) override { /* do nothing */ }
 
     /**
      * @brief Check if orientation marker is shown
      * @return true if marker is visible
      */
     inline static bool OrientationMarkerShown() {
-        return TheInstance()->orientationMarkerShown();
+        return sharedTools()->orientationMarkerShown();
     }
 
     /**
@@ -797,7 +563,7 @@ public:  // Main 3D layer drawing methods
             const QString& viewID,
             const AxesGridProperties& props,
             int viewport = 0) {
-        TheInstance()->setDataAxesGridProperties(viewID, props, viewport);
+        sharedTools()->setDataAxesGridProperties(viewID, props, viewport);
         UpdateScreen();
     }
 
@@ -805,10 +571,10 @@ public:  // Main 3D layer drawing methods
      * @brief Set Data Axes Grid properties (Virtual interface for derived
      * classes)
      */
-    inline virtual void setDataAxesGridProperties(
+    inline void setDataAxesGridProperties(
             const QString& viewID,
             const AxesGridProperties& props,
-            int viewport = 0) { /* do nothing */ }
+            int viewport = 0) override { /* do nothing */ }
 
     /**
      * @brief Get Data Axes Grid properties (Unified Interface)
@@ -820,23 +586,22 @@ public:  // Main 3D layer drawing methods
     inline static void GetDataAxesGridProperties(const QString& viewID,
                                                  AxesGridProperties& props,
                                                  int viewport = 0) {
-        TheInstance()->getDataAxesGridProperties(viewID, props, viewport);
+        sharedTools()->getDataAxesGridProperties(viewID, props, viewport);
     }
 
     /**
      * @brief Get Data Axes Grid properties (Virtual interface for derived
      * classes)
      */
-    inline virtual void getDataAxesGridProperties(const QString& viewID,
-                                                  AxesGridProperties& props,
-                                                  int viewport = 0) const {
-        // Default implementation
+    inline void getDataAxesGridProperties(const QString& viewID,
+                                          AxesGridProperties& props,
+                                          int viewport = 0) const override {
         props = AxesGridProperties();
     }
 
     /// Enable/disable view axes grid (aligned with camera/view)
     inline static void SetViewAxesGridVisible(bool visible, int viewport = 0) {
-        TheInstance()->setViewAxesGridVisible(visible, viewport);
+        sharedTools()->setViewAxesGridVisible(visible, viewport);
         UpdateScreen();
     }
     inline virtual void setViewAxesGridVisible(
@@ -851,7 +616,7 @@ public:  // Main 3D layer drawing methods
                                                  bool showLabels,
                                                  double opacity,
                                                  int viewport = 0) {
-        TheInstance()->setViewAxesGridProperties(visible, color, lineWidth,
+        sharedTools()->setViewAxesGridProperties(visible, color, lineWidth,
                                                  spacing, subdivisions,
                                                  showLabels, opacity, viewport);
         UpdateScreen();
@@ -887,7 +652,7 @@ public:  // Main 3D layer drawing methods
 
     /// Enable/disable center axes visualization
     inline static void SetCenterAxesVisible(bool visible, int viewport = 0) {
-        TheInstance()->setCenterAxesVisible(visible, viewport);
+        sharedTools()->setCenterAxesVisible(visible, viewport);
         UpdateScreen();
     }
     inline virtual void setCenterAxesVisible(
@@ -896,15 +661,15 @@ public:  // Main 3D layer drawing methods
     /// Toggle Camera Orientation Widget visibility (ParaView-style interactive
     /// widget)
     inline static void ToggleCameraOrientationWidget(bool show) {
-        TheInstance()->toggleCameraOrientationWidget(show);
+        sharedTools()->toggleCameraOrientationWidget(show);
         UpdateScreen();
     }
-    inline virtual void toggleCameraOrientationWidget(
-            bool show) { /* do nothing */ }
+    inline void toggleCameraOrientationWidget(
+            bool show) override { /* do nothing */ }
 
     /// Check if Camera Orientation Widget is shown
     inline static bool IsCameraOrientationWidgetShown() {
-        return TheInstance()->isCameraOrientationWidgetShown();
+        return sharedTools()->isCameraOrientationWidgetShown();
     }
     inline virtual bool isCameraOrientationWidgetShown() const { return false; }
 
@@ -912,37 +677,38 @@ public:  // Main 3D layer drawing methods
     /// Modifies the renderer's headlight intensity for the entire scene.
     /// @param intensity Light intensity (0.0-1.0, default 1.0)
     inline static void SetLightIntensity(double intensity) {
-        TheInstance()->setLightIntensity(intensity);
+        sharedTools()->setLightIntensity(intensity);
         UpdateScreen();
     }
-    inline virtual void setLightIntensity(double intensity) { /* do nothing */ }
+    inline void setLightIntensity(double intensity) override { /* do nothing */
+    }
 
     /// Get current global default light intensity
     /// @return Current light intensity (0.0-1.0)
     inline static double GetLightIntensity() {
-        return TheInstance()->getLightIntensity();
+        return sharedTools()->getLightIntensity();
     }
-    inline virtual double getLightIntensity() const { return 1.0; }
+    inline double getLightIntensity() const override { return 1.0; }
 
     /// Set light intensity for a specific object (per-object)
     /// @param viewID The view ID of the target object
     /// @param intensity Light intensity (0.0-1.0)
     inline static void SetObjectLightIntensity(const QString& viewID,
                                                double intensity) {
-        TheInstance()->setObjectLightIntensity(viewID, intensity);
+        sharedTools()->setObjectLightIntensity(viewID, intensity);
         UpdateScreen();
     }
-    inline virtual void setObjectLightIntensity(const QString& /*viewID*/,
-                                                double /*intensity*/) {}
+    inline void setObjectLightIntensity(const QString& /*viewID*/,
+                                        double /*intensity*/) override {}
 
     /// Get light intensity for a specific object
     /// @param viewID The view ID of the target object
     /// @return Object's light intensity (falls back to global default)
     inline static double GetObjectLightIntensity(const QString& viewID) {
-        return TheInstance()->getObjectLightIntensity(viewID);
+        return sharedTools()->getObjectLightIntensity(viewID);
     }
-    inline virtual double getObjectLightIntensity(
-            const QString& /*viewID*/) const {
+    inline double getObjectLightIntensity(
+            const QString& /*viewID*/) const override {
         return 1.0;
     }
 
@@ -960,7 +726,7 @@ public:  // Main interface accessors
      * @return Pointer to 3D visualizer
      */
     inline static ecvGenericVisualizer3D* GetVisualizer3D() {
-        return TheInstance()->getVisualizer3D();
+        return sharedTools()->getVisualizer3D();
     }
 
     /**
@@ -976,7 +742,7 @@ public:  // Main interface accessors
      * @return Pointer to 2D visualizer
      */
     inline static ecvGenericVisualizer2D* GetVisualizer2D() {
-        return TheInstance()->getVisualizer2D();
+        return sharedTools()->getVisualizer2D();
     }
 
     /**
@@ -992,13 +758,13 @@ public:  // Main interface accessors
      * @return Current screen widget pointer
      */
     inline static QWidget* GetCurrentScreen() {
-        if (!HasInstance()) return nullptr;
+        if (!sharedTools()) return nullptr;
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) {
+        if (av && av != sharedTools()) {
             QWidget* w = av->asWidget();
             if (w) return w;
         }
-        return TheInstance()->m_currentScreen;
+        return sharedTools()->m_currentScreen;
     }
 
     /**
@@ -1012,8 +778,8 @@ public:  // Main interface accessors
      * @return Main screen widget pointer
      */
     inline static QWidget* GetMainScreen() {
-        if (!HasInstance()) return nullptr;
-        return TheInstance()->m_mainScreen;
+        if (!sharedTools()) return nullptr;
+        return sharedTools()->m_mainScreen;
     }
 
     /**
@@ -1021,21 +787,21 @@ public:  // Main interface accessors
      * @param widget Screen widget to set as main
      */
     inline static void SetMainScreen(QWidget* widget) {
-        TheInstance()->m_mainScreen = widget;
+        sharedTools()->m_mainScreen = widget;
     }
 
     /**
      * @brief Get main window
      * @return Main window pointer
      */
-    inline static QMainWindow* GetMainWindow() { return TheInstance()->m_win; }
+    inline static QMainWindow* GetMainWindow() { return sharedTools()->m_win; }
 
     /**
      * @brief Set main window
      * @param win Main window to set
      */
     inline static void SetMainWindow(QMainWindow* win) {
-        TheInstance()->m_win = win;
+        sharedTools()->m_win = win;
     }
 
     /**
@@ -1073,8 +839,8 @@ public:  // Main interface accessors
      */
     inline static ccHObject* GetOwnDB() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) return av->getOwnDB();
-        return TheInstance()->m_winDBRoot;
+        if (av && av != sharedTools()) return av->getOwnDB();
+        return sharedTools()->m_winDBRoot;
     }
 
     /**
@@ -1104,7 +870,7 @@ public:  // Main interface accessors
      * @return Scene database root object
      */
     inline static ccHObject* GetSceneDB() {
-        return TheInstance()->m_globalDBRoot;
+        return sharedTools()->m_globalDBRoot;
     }
 
     /**
@@ -1150,8 +916,7 @@ public:  // Main interface accessors
      * @param box Output bounding box
      */
     static void GetVisibleObjectsBB(
-            ccBBox& box,
-            const ecvGenericGLDisplay* display = nullptr);
+            ccBBox& box, const ecvGenericGLDisplay* display = nullptr);
 
     /**
      * @brief Rotate the base view matrix
@@ -1170,12 +935,12 @@ public:  // Main interface accessors
      */
     inline static ccGLMatrixd& GetBaseViewMat() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) {
+        if (av && av != sharedTools()) {
             return const_cast<ecvViewportParameters&>(
-                       av->getViewportParameters())
-                .viewMat;
+                           av->getViewportParameters())
+                    .viewMat;
         }
-        return TheInstance()->effectiveCtx().viewportParams.viewMat;
+        return sharedTools()->effectiveCtx().viewportParams.viewMat;
     }
 
     /**
@@ -1195,7 +960,7 @@ public:  // Main interface accessors
      * @param state Remove-all flag state
      */
     inline static void SetRemoveAllFlag(bool state) {
-        TheInstance()->m_removeAllFlag = state;
+        sharedTools()->m_removeAllFlag = state;
     }
 
     /**
@@ -1203,7 +968,7 @@ public:  // Main interface accessors
      * @param viewMat View transformation matrix
      */
     inline static void TransformCameraView(const ccGLMatrixd& viewMat) {
-        TheInstance()->transformCameraView(viewMat);
+        sharedTools()->transformCameraView(viewMat);
     }
 
     /**
@@ -1218,7 +983,7 @@ public:  // Main interface accessors
      * @param projMat Projection transformation matrix
      */
     inline static void TransformCameraProjection(const ccGLMatrixd& projMat) {
-        TheInstance()->transformCameraProjection(projMat);
+        sharedTools()->transformCameraProjection(projMat);
     }
 
     /**
@@ -1230,7 +995,7 @@ public:  // Main interface accessors
 
     static inline int GetDevicePixelRatio() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) {
+        if (av && av != sharedTools()) {
             return av->getDevicePixelRatio();
         }
         QWidget* screen = GetCurrentScreen();
@@ -1384,12 +1149,12 @@ public:  // Main interface accessors
     }
 
     inline static void SetRenderWindowSize(int xw, int yw) {
-        TheInstance()->setRenderWindowSize(xw, yw);
+        sharedTools()->setRenderWindowSize(xw, yw);
     }
     inline virtual void setRenderWindowSize(int xw, int yw) { /* do nothing */ }
 
     inline static void FullScreen(bool state) {
-        TheInstance()->fullScreen(state);
+        sharedTools()->fullScreen(state);
     }
     inline virtual void fullScreen(bool state) { /* do nothing */ }
 
@@ -1413,7 +1178,7 @@ public:  // Main interface accessors
      * @return Focal distance
      */
     inline static double GetCameraFocalDistance(int viewport = 0) {
-        return TheInstance()->getCameraFocalDistance(viewport);
+        return sharedTools()->getCameraFocalDistance(viewport);
     }
 
     /**
@@ -1432,7 +1197,7 @@ public:  // Main interface accessors
      */
     inline static void SetCameraFocalDistance(double focal_distance,
                                               int viewport = 0) {
-        TheInstance()->setCameraFocalDistance(focal_distance, viewport);
+        sharedTools()->setCameraFocalDistance(focal_distance, viewport);
     }
 
     /**
@@ -1444,23 +1209,23 @@ public:  // Main interface accessors
             double focal_distance, int viewport = 0) { /* do nothing */ }
 
     inline static void GetCameraPos(double* pos, int viewport = 0) {
-        TheInstance()->getCameraPos(pos, viewport);
+        sharedTools()->getCameraPos(pos, viewport);
     }
     inline virtual void getCameraPos(double* pos,
                                      int viewport = 0) { /* do nothing */ }
     inline static void GetCameraFocal(double* focal, int viewport = 0) {
-        TheInstance()->getCameraFocal(focal, viewport);
+        sharedTools()->getCameraFocal(focal, viewport);
     }
     inline virtual void getCameraFocal(double* focal,
                                        int viewport = 0) { /* do nothing */ }
     inline static void GetCameraUp(double* up, int viewport = 0) {
-        TheInstance()->getCameraUp(up, viewport);
+        sharedTools()->getCameraUp(up, viewport);
     }
     virtual void getCameraUp(double* up, int viewport = 0) { /* do nothing */ }
 
     inline static void SetCameraPosition(const CCVector3d& pos,
                                          int viewport = 0) {
-        TheInstance()->setCameraPosition(pos, viewport);
+        sharedTools()->setCameraPosition(pos, viewport);
     }
     inline virtual void setCameraPosition(const CCVector3d& pos,
                                           int viewport = 0) { /* do nothing */ }
@@ -1468,7 +1233,7 @@ public:  // Main interface accessors
                                          const double* focal,
                                          const double* up,
                                          int viewport = 0) {
-        TheInstance()->setCameraPosition(pos, focal, up, viewport);
+        sharedTools()->setCameraPosition(pos, focal, up, viewport);
     }
     inline virtual void setCameraPosition(const double* pos,
                                           const double* focal,
@@ -1477,7 +1242,7 @@ public:  // Main interface accessors
     inline static void SetCameraPosition(const double* pos,
                                          const double* up,
                                          int viewport = 0) {
-        TheInstance()->setCameraPosition(pos, up, viewport);
+        sharedTools()->setCameraPosition(pos, up, viewport);
     }
     inline virtual void setCameraPosition(const double* pos,
                                           const double* up,
@@ -1492,7 +1257,7 @@ public:  // Main interface accessors
                                          double up_y,
                                          double up_z,
                                          int viewport = 0) {
-        TheInstance()->setCameraPosition(pos_x, pos_y, pos_z, view_x, view_y,
+        sharedTools()->setCameraPosition(pos_x, pos_y, pos_z, view_x, view_y,
                                          view_z, up_x, up_y, up_z, viewport);
     }
     inline virtual void setCameraPosition(double pos_x,
@@ -1508,50 +1273,51 @@ public:  // Main interface accessors
 
     // set and get clip distances (near and far)
     inline static void GetCameraClip(double* clipPlanes, int viewport = 0) {
-        TheInstance()->getCameraClip(clipPlanes, viewport);
+        sharedTools()->getCameraClip(clipPlanes, viewport);
     }
     virtual void getCameraClip(double* clipPlanes,
                                int viewport = 0) { /* do nothing */ }
     inline static void SetCameraClip(double znear,
                                      double zfar,
                                      int viewport = 0) {
-        TheInstance()->effectiveCtx().viewportParams.zNear = znear;
-        TheInstance()->effectiveCtx().viewportParams.zFar = zfar;
+        sharedTools()->effectiveCtx().viewportParams.zNear = znear;
+        sharedTools()->effectiveCtx().viewportParams.zFar = zfar;
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) {
+        if (av && av != sharedTools()) {
             auto vp = av->getViewportParameters();
             vp.zNear = znear;
             vp.zFar = zfar;
             av->setViewportParameters(vp);
         }
-        TheInstance()->setCameraClip(znear, zfar, viewport);
+        sharedTools()->setCameraClip(znear, zfar, viewport);
     }
     virtual void setCameraClip(double znear,
                                double zfar,
                                int viewport = 0) { /* do nothing */ }
 
     inline static void ResetCameraClippingRange(int viewport = 0) {
-        TheInstance()->resetCameraClippingRange(viewport);
+        sharedTools()->resetCameraClippingRange(viewport);
     }
     inline virtual void resetCameraClippingRange(
             int viewport = 0) { /* do nothing */ }
 
     // set and get view angle in y direction
     inline static double GetCameraFovy(int viewport = 0) {
-        return TheInstance()->getCameraFovy(viewport);
+        return sharedTools()->getCameraFovy(viewport);
     }
     inline virtual double getCameraFovy(int viewport = 0) {
         return 0; /* do nothing */
     }
     inline static void SetCameraFovy(double fovy, int viewport = 0) {
-        TheInstance()->effectiveCtx().viewportParams.fov_deg = static_cast<float>(fovy);
+        sharedTools()->effectiveCtx().viewportParams.fov_deg =
+                static_cast<float>(fovy);
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) {
+        if (av && av != sharedTools()) {
             auto vp = av->getViewportParameters();
             vp.fov_deg = static_cast<float>(fovy);
             av->setViewportParameters(vp);
         }
-        TheInstance()->setCameraFovy(cloudViewer::DegreesToRadians(fovy),
+        sharedTools()->setCameraFovy(cloudViewer::DegreesToRadians(fovy),
                                      viewport);
     }
     inline virtual void setCameraFovy(double fovy,
@@ -1568,7 +1334,7 @@ public:  // Main interface accessors
      * \param[in] file the name of the PNG file
      */
     inline static void SaveScreenshot(const std::string& file) {
-        TheInstance()->saveScreenshot(file);
+        sharedTools()->saveScreenshot(file);
     }
     inline virtual void saveScreenshot(
             const std::string& file) { /* do nothing */ }
@@ -1577,31 +1343,31 @@ public:  // Main interface accessors
      * current camera. \param[in] file the name of the param file
      */
     inline static void SaveCameraParameters(const std::string& file) {
-        TheInstance()->saveCameraParameters(file);
+        sharedTools()->saveCameraParameters(file);
     }
     inline virtual void saveCameraParameters(
             const std::string& file) { /* do nothing */ }
 
     inline static void LoadCameraParameters(const std::string& file) {
-        TheInstance()->loadCameraParameters(file);
+        sharedTools()->loadCameraParameters(file);
     }
     inline virtual void loadCameraParameters(
             const std::string& file) { /* do nothing */ }
 
     inline static void ShowOrientationMarker() {
-        TheInstance()->showOrientationMarker();
+        sharedTools()->showOrientationMarker();
         UpdateScreen();
     }
     inline virtual void showOrientationMarker() { /* do nothing */ }
 
     inline static void SetOrthoProjection(int viewport = 0) {
-        TheInstance()->setOrthoProjection(viewport);
+        sharedTools()->setOrthoProjection(viewport);
         UpdateScreen();
     }
     inline virtual void setOrthoProjection(int viewport = 0) { /* do nothing */
     }
     inline static void SetPerspectiveProjection(int viewport = 0) {
-        TheInstance()->setPerspectiveProjection(viewport);
+        sharedTools()->setPerspectiveProjection(viewport);
         UpdateScreen();
     }
     inline virtual void setPerspectiveProjection(
@@ -1613,7 +1379,7 @@ public:  // Main interface accessors
      * transparently for the user. \param[in] use_vbos set to true to use VBOs
      */
     inline static void SetUseVbos(bool useVbos) {
-        TheInstance()->setUseVbos(useVbos);
+        sharedTools()->setUseVbos(useVbos);
     }
     inline virtual void setUseVbos(bool useVbos) { /* do nothing */ }
 
@@ -1621,36 +1387,36 @@ public:  // Main interface accessors
      * \param[in] id The id of the cloud/shape look up table to be displayed
      * The look up table is displayed by pressing 'u' in the PCLVisualizer */
     inline static void SetLookUpTableID(const std::string& viewID) {
-        TheInstance()->setLookUpTableID(viewID);
+        sharedTools()->setLookUpTableID(viewID);
     }
     inline virtual void setLookUpTableID(
             const std::string& viewID) { /* do nothing */ }
 
     inline static void GetProjectionMatrix(double* projArray,
                                            int viewport = 0) {
-        TheInstance()->getProjectionMatrix(projArray, viewport);
+        sharedTools()->getProjectionMatrix(projArray, viewport);
     }
     inline virtual void getProjectionMatrix(double* projArray,
                                             int viewport = 0) { /* do nothing */
     }
     inline static void GetViewMatrix(double* viewArray, int viewport = 0) {
-        TheInstance()->getViewMatrix(viewArray, viewport);
+        sharedTools()->getViewMatrix(viewArray, viewport);
     }
     inline virtual void getViewMatrix(double* viewArray,
                                       int viewport = 0) { /* do nothing */ }
 
     inline static void SetViewMatrix(const ccGLMatrixd& viewMat,
                                      int viewport = 0) {
-        TheInstance()->setViewMatrix(viewMat, viewport);
+        sharedTools()->setViewMatrix(viewMat, viewport);
     }
     inline virtual void setViewMatrix(const ccGLMatrixd& viewMat,
                                       int viewport = 0) { /* do nothing */ }
 
     static bool HideShowEntities(const ccHObject* obj, bool visible);
     inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) {
-        return TheInstance()->hideShowEntities(CONTEXT);
+        return sharedTools()->hideShowEntities(CONTEXT);
     }
-    inline virtual bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) {
+    inline bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) override {
         return true; /* do nothing */
     }
     static void HideShowEntities(const QStringList& viewIDs,
@@ -1661,8 +1427,8 @@ public:  // Main interface accessors
     static void RemoveEntities(const QStringList& viewIDs,
                                ENTITY_TYPE removeEntityType);
     static void RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT);
-    inline virtual void removeEntities(
-            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
+    inline void removeEntities(
+            const CC_DRAW_CONTEXT& CONTEXT) override { /* do nothing */ }
 
     [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
     static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
@@ -1670,29 +1436,25 @@ public:  // Main interface accessors
     static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
     static void Update2DLabel(bool immediateUpdate = false);
     static void Pick2DLabel(int x, int y);
-    virtual QString pick2DLabel(int x, int y) {
-        return QString(); /* do nothing */
-    }
+    QString pick2DLabel(int x, int y) override { return QString(); }
     static void Redraw2DLabel();
 
     static QString Pick3DItem(int x = -1, int y = -1) {
-        return TheInstance()->pick3DItem(x, y);
+        return sharedTools()->pick3DItem(x, y);
     }
-    virtual QString pick3DItem(int x = -1, int y = -1) {
-        return QString(); /* do nothing */
-    }
+    QString pick3DItem(int x = -1, int y = -1) override { return QString(); }
     static QString PickObject(double x = -1, double y = -1) {
-        return TheInstance()->pickObject(x, y);
+        return sharedTools()->pickObject(x, y);
     }
-    virtual QString pickObject(double x = -1, double y = -1) {
-        return QString(); /* do nothing */
+    QString pickObject(double x = -1, double y = -1) override {
+        return QString();
     }
 
     static void FilterByEntityType(ccHObject::Container& labels,
                                    CV_CLASS_ENUM type);
 
-    inline virtual void setBackgroundColor(
-            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
+    inline void setBackgroundColor(
+            const CC_DRAW_CONTEXT& CONTEXT) override { /* do nothing */ }
 
     /** \brief Create a new viewport from [xmin,ymin] -> [xmax,ymax].
      * \param[in] xmin the minimum X coordinate for the viewport (0.0 <= 1.0)
@@ -1708,7 +1470,7 @@ public:  // Main interface accessors
      */
     inline static void CreateViewPort(
             double xmin, double ymin, double xmax, double ymax, int& viewport) {
-        TheInstance()->createViewPort(xmin, ymin, xmax, ymax, viewport);
+        sharedTools()->createViewPort(xmin, ymin, xmax, ymax, viewport);
     }
     inline virtual void createViewPort(double xmin,
                                        double ymin,
@@ -1717,7 +1479,7 @@ public:  // Main interface accessors
                                        int& viewport) { /* do nothing */ }
 
     inline static void ResetCameraViewpoint(const std::string& viewID) {
-        TheInstance()->resetCameraViewpoint(viewID);
+        sharedTools()->resetCameraViewpoint(viewID);
     }
     inline virtual void resetCameraViewpoint(
             const std::string& viewID) { /* do nothing */ }
@@ -1740,9 +1502,9 @@ public:  // Main interface accessors
     static void SetViewportDefaultLineWidth(float width);
 
     inline static void Toggle2Dviewer(bool state) {
-        TheInstance()->toggle2Dviewer(state);
+        sharedTools()->toggle2Dviewer(state);
     }
-    inline virtual void toggle2Dviewer(bool state) { /* do nothing */ }
+    inline void toggle2Dviewer(bool state) override { /* do nothing */ }
 
 public:  // visualization matrix transformation
     //! Displays a status message in the bottom-left corner
@@ -1792,26 +1554,26 @@ public:  // visualization matrix transformation
     }
     static void UpdateScreen();
     inline static void ResetCamera(const ccBBox* bbox) {
-        TheInstance()->resetCamera(bbox);
+        sharedTools()->resetCamera(bbox);
         UpdateScreen();
     }
-    inline virtual void resetCamera(const ccBBox* bbox) { /* do nothing */ }
+    inline void resetCamera(const ccBBox* bbox) override { /* do nothing */ }
     inline static void ResetCamera() {
-        TheInstance()->resetCamera();
+        sharedTools()->resetCamera();
         UpdateScreen();
     }
-    inline virtual void resetCamera() { /* do nothing */ }
+    inline void resetCamera() override { /* do nothing */ }
     inline static void UpdateCamera() {
-        TheInstance()->updateCamera();
+        sharedTools()->updateCamera();
         UpdateScreen();
     }
-    inline virtual void updateCamera() { /* do nothing */ }
+    inline void updateCamera() override { /* do nothing */ }
 
-    inline static void UpdateScene() { TheInstance()->updateScene(); }
-    inline virtual void updateScene() { /* do nothing */ }
+    inline static void UpdateScene() { sharedTools()->updateScene(); }
+    inline void updateScene() override { /* do nothing */ }
 
     inline static void SetAutoUpateCameraPos(bool state) {
-        TheInstance()->setAutoUpateCameraPos(state);
+        sharedTools()->setAutoUpateCameraPos(state);
     }
     inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */ }
 
@@ -1819,10 +1581,10 @@ public:  // visualization matrix transformation
      * Get the current center of rotation
      */
     inline static void GetCenterOfRotation(double center[3]) {
-        TheInstance()->getCenterOfRotation(center);
+        sharedTools()->getCenterOfRotation(center);
     }
     inline static void GetCenterOfRotation(CCVector3d& center) {
-        TheInstance()->getCenterOfRotation(center.u);
+        sharedTools()->getCenterOfRotation(center.u);
     }
     inline virtual void getCenterOfRotation(double center[3]) { /* do nothing */
     }
@@ -1831,11 +1593,11 @@ public:  // visualization matrix transformation
      * Resets the center of rotation to the focal point.
      */
     inline static void ResetCenterOfRotation(int viewport = 0) {
-        TheInstance()->resetCenterOfRotation(viewport);
+        sharedTools()->resetCenterOfRotation(viewport);
         UpdateScreen();
     }
-    inline virtual void resetCenterOfRotation(
-            int viewport = 0) { /* do nothing */ }
+    inline void resetCenterOfRotation(
+            int viewport = 0) override { /* do nothing */ }
 
     /**
      * Set the center of rotation. For this to work,
@@ -1844,7 +1606,7 @@ public:  // visualization matrix transformation
      * They are setup correctly by default
      */
     inline static void SetCenterOfRotation(double x, double y, double z) {
-        TheInstance()->setCenterOfRotation(x, y, z);
+        sharedTools()->setCenterOfRotation(x, y, z);
     }
     inline virtual void setCenterOfRotation(double x,
                                             double y,
@@ -1859,7 +1621,7 @@ public:  // visualization matrix transformation
     }
 
     inline static double GetGLDepth(int x, int y) {
-        return TheInstance()->getGLDepth(x, y);
+        return sharedTools()->getGLDepth(x, y);
     }
     inline virtual double getGLDepth(int x, int y) {
         return 1.0; /* do nothing */
@@ -1868,7 +1630,7 @@ public:  // visualization matrix transformation
     inline static void ChangeOpacity(double opacity,
                                      const std::string& viewID,
                                      int viewport = 0) {
-        TheInstance()->changeOpacity(opacity, viewID, viewport);
+        sharedTools()->changeOpacity(opacity, viewID, viewport);
         UpdateScreen();
     }
     inline virtual void changeOpacity(double opacity,
@@ -1911,7 +1673,7 @@ public:  // visualization matrix transformation
                                        bool renderOverlayItems = false,
                                        bool silent = false,
                                        int viewport = 0) {
-        return TheInstance()->renderToImage(zoomFactor, renderOverlayItems,
+        return sharedTools()->renderToImage(zoomFactor, renderOverlayItems,
                                             silent, viewport);
     }
     inline virtual QImage renderToImage(int zoomFactor = 1,
@@ -1922,7 +1684,7 @@ public:  // visualization matrix transformation
     }
 
     inline static void SetScaleBarVisible(bool visible) {
-        return TheInstance()->setScaleBarVisible(visible);
+        return sharedTools()->setScaleBarVisible(visible);
     }
     inline virtual void setScaleBarVisible(bool visible) { /* do nothing */ }
 
@@ -1957,17 +1719,17 @@ public:  // visualization matrix transformation
 
     //! Toggles (exclusive) full-screen mode
     inline static void ToggleExclusiveFullScreen(bool state) {
-        TheInstance()->toggleExclusiveFullScreen(state);
+        sharedTools()->toggleExclusiveFullScreen(state);
     }
-    inline virtual void toggleExclusiveFullScreen(
-            bool state) { /* in this do nothing */ }
+    inline void toggleExclusiveFullScreen(
+            bool state) override { /* do nothing */ }
 
     //! Returns whether the window is in exclusive full screen mode or not
     inline static bool ExclusiveFullScreen() {
-        return TheInstance()->effectiveCtx().exclusiveFullscreen;
+        return sharedTools()->effectiveCtx().exclusiveFullscreen;
     }
     inline static void SetExclusiveFullScreenFlage(bool state) {
-        TheInstance()->effectiveCtx().exclusiveFullscreen = state;
+        sharedTools()->effectiveCtx().exclusiveFullscreen = state;
     }
 
     //! Sets pixel size (i.e. zoom base)
@@ -2016,7 +1778,7 @@ public:  // visualization matrix transformation
     static void SetPerspectiveState(bool state, bool objectCenteredView);
 
     static bool GetPerspectiveState(int viewport = 0) {
-        return TheInstance()->getPerspectiveState(viewport);
+        return sharedTools()->getPerspectiveState(viewport);
     }
     inline virtual bool getPerspectiveState(int viewport = 0) const override {
         return GetViewportParameters().perspectiveView;
@@ -2108,13 +1870,13 @@ public:  // visualization matrix transformation
     //! Sets pivot visibility
     static void SetPivotVisibility(PivotVisibility vis);
     static void SetPivotVisibility(bool state) {
-        TheInstance()->setPivotVisibility(state);
+        sharedTools()->setPivotVisibility(state);
     }
     virtual void setPivotVisibility(bool state) { /*do nothing here*/ }
 
     //! Returns pivot visibility
     inline static PivotVisibility GetPivotVisibility() {
-        return TheInstance()->effectiveCtx().pivotVisibility;
+        return sharedTools()->effectiveCtx().pivotVisibility;
     }
 
     //! Shows or hide the pivot symbol
@@ -2130,13 +1892,13 @@ public:  // visualization matrix transformation
 
     // return value (in rad)
     inline static double GetParallelScale(int viewport = 0) {
-        return TheInstance()->getParallelScale(viewport);
+        return sharedTools()->getParallelScale(viewport);
     }
     inline virtual double getParallelScale(int viewport = 0) { return -1.0; }
 
     // scale (in rad)
     inline static void SetParallelScale(double scale, int viewport = 0) {
-        TheInstance()->setParallelScale(scale, viewport);
+        sharedTools()->setParallelScale(scale, viewport);
     }
     inline virtual void setParallelScale(double scale,
                                          int viewport = 0) { /*do nothing here*/
@@ -2161,12 +1923,12 @@ public:  // visualization matrix transformation
             ProjectionMetrics* metrics = nullptr,
             double* eyeOffset = nullptr);
 
-    inline static void Deprecate3DLayer() { TheInstance()->m_updateFBO = true; }
+    inline static void Deprecate3DLayer() { sharedTools()->m_updateFBO = true; }
     inline static void InvalidateViewport() {
-        TheInstance()->effectiveCtx().validProjectionMatrix = false;
+        sharedTools()->effectiveCtx().validProjectionMatrix = false;
     }
     inline static void InvalidateVisualization() {
-        TheInstance()->effectiveCtx().validModelviewMatrix = false;
+        sharedTools()->effectiveCtx().validModelviewMatrix = false;
     }
 
     static CCVector3d GetRealCameraCenter();
@@ -2194,7 +1956,7 @@ public:  // visualization matrix transformation
     static void SetBubbleViewMode(bool state);
     //! Returns whether bubble-view mode is enabled or no
     inline static bool BubbleViewModeEnabled() {
-        return TheInstance()->effectiveCtx().bubbleViewModeEnabled;
+        return sharedTools()->effectiveCtx().bubbleViewModeEnabled;
     }
     //! Set bubble-view f.o.v. (in degrees)
     static void SetBubbleViewFov(float fov_deg);
@@ -2202,23 +1964,23 @@ public:  // visualization matrix transformation
     //! Sets whether to display the coordinates of the point below the cursor
     //! position
     inline static void ShowCursorCoordinates(bool state) {
-        TheInstance()->effectiveCtx().showCursorCoordinates = state;
+        sharedTools()->effectiveCtx().showCursorCoordinates = state;
     }
     //! Whether the coordinates of the point below the cursor position are
     //! displayed or not
     inline static bool CursorCoordinatesShown() {
-        return TheInstance()->effectiveCtx().showCursorCoordinates;
+        return sharedTools()->effectiveCtx().showCursorCoordinates;
     }
 
     //! Toggles the automatic setting of the pivot point at the center of the
     //! screen
     static void SetAutoPickPivotAtCenter(bool state);
     static void SendAutoPickPivotAtCenter(bool state) {
-        emit TheInstance() -> autoPickPivot(state);
+        emit sharedTools() -> autoPickPivot(state);
     }
     //! Whether the pivot point is automatically set at the center of the screen
     inline static bool AutoPickPivotAtCenter() {
-        return TheInstance()->effectiveCtx().autoPickPivotAtCenter;
+        return sharedTools()->effectiveCtx().autoPickPivotAtCenter;
     }
 
     //! Lock the rotation axis
@@ -2226,7 +1988,7 @@ public:  // visualization matrix transformation
 
     //! Returns whether the rotation axis is locaked or not
     inline static bool IsRotationAxisLocked() {
-        return TheInstance()->effectiveCtx().rotationAxisLocked;
+        return sharedTools()->effectiveCtx().rotationAxisLocked;
     }
 
     //! Returns the approximate 3D position of the clicked pixel
@@ -2237,68 +1999,30 @@ public:  // visualization matrix transformation
     // debug traces on screen
     //! Shows debug info on screen
     inline static void EnableDebugTrace(bool state) {
-        TheInstance()->effectiveCtx().showDebugTraces = state;
+        sharedTools()->effectiveCtx().showDebugTraces = state;
     }
 
     //! Toggles debug info on screen
     inline static void ToggleDebugTrace() {
-        auto& ctx = TheInstance()->effectiveCtx();
+        auto& ctx = sharedTools()->effectiveCtx();
         ctx.showDebugTraces = !ctx.showDebugTraces;
     }
 
-    /**
-     * @struct PickingParameters
-     * @brief Parameters for picking operations
-     *
-     * Encapsulates all parameters needed for entity/point/triangle picking,
-     * including picking mode, screen region, and database search scope.
-     */
-    struct PickingParameters {
-        /**
-         * @brief Constructor with parameters
-         * @param _mode Picking mode (default: NO_PICKING)
-         * @param _centerX Center X coordinate (default: 0)
-         * @param _centerY Center Y coordinate (default: 0)
-         * @param _pickWidth Pick region width (default: 5)
-         * @param _pickHeight Pick region height (default: 5)
-         * @param _pickInSceneDB Search in scene DB (default: true)
-         * @param _pickInLocalDB Search in local DB (default: true)
-         */
-        PickingParameters(PICKING_MODE _mode = NO_PICKING,
-                          int _centerX = 0,
-                          int _centerY = 0,
-                          int _pickWidth = 5,
-                          int _pickHeight = 5,
-                          bool _pickInSceneDB = true,
-                          bool _pickInLocalDB = true)
-            : mode(_mode),
-              centerX(_centerX),
-              centerY(_centerY),
-              pickWidth(_pickWidth),
-              pickHeight(_pickHeight),
-              pickInSceneDB(_pickInSceneDB),
-              pickInLocalDB(_pickInLocalDB) {}
-
-        PICKING_MODE mode;   ///< Picking mode
-        int centerX;         ///< Pick region center X
-        int centerY;         ///< Pick region center Y
-        int pickWidth;       ///< Pick region width (pixels)
-        int pickHeight;      ///< Pick region height (pixels)
-        bool pickInSceneDB;  ///< Search in scene database
-        bool pickInLocalDB;  ///< Search in local database
-    };
+    using PickingParameters = ecvPickingParameters;
 
     //! Processes the clickable items
     /** \return true if an item has been clicked
      **/
     static bool ProcessClickableItems(int x, int y);
 
-    //! Processes clickable items for a specific view (per-view point size / line width)
+    //! Processes clickable items for a specific view (per-view point size /
+    //! line width)
     /** \param localPointSize  per-view point size to modify (instead of global)
      *  \param localLineWidth  per-view line width to modify (instead of global)
      *  \return true if an item has been clicked
      **/
-    static bool ProcessClickableItems(int x, int y,
+    static bool ProcessClickableItems(int x,
+                                      int y,
                                       float* localPointSize,
                                       float* localLineWidth);
 
@@ -2333,7 +2057,7 @@ public:  // visualization matrix transformation
             Change 'defaultFontSize' with setDisplayParameters instead!
     **/
     inline static void SetFontPointSize(int pixelSize) {
-        TheInstance()->m_font.setPointSize(pixelSize);
+        sharedTools()->m_font.setPointSize(pixelSize);
     }
     //! Returns current font size
     static int GetFontPointSize();
@@ -2341,16 +2065,16 @@ public:  // visualization matrix transformation
     static int GetLabelFontPointSize();
 
     static void SetClickableItemsVisible(bool state) {
-        TheInstance()->effectiveCtx().clickableItemsVisible = state;
+        sharedTools()->effectiveCtx().clickableItemsVisible = state;
     }
     static bool GetClickableItemsVisible() {
-        return TheInstance()->effectiveCtx().clickableItemsVisible;
+        return sharedTools()->effectiveCtx().clickableItemsVisible;
     }
 
     // takes rendering zoom into account!
     static QFont GetLabelDisplayFont();
     // takes rendering zoom into account!
-    inline static QFont GetTextDisplayFont() { return TheInstance()->m_font; }
+    inline static QFont GetTextDisplayFont() { return sharedTools()->m_font; }
 
     static ENTITY_TYPE ConvertToEntityType(const CV_CLASS_ENUM& type);
 
@@ -2359,10 +2083,12 @@ public:  // visualization matrix transformation
 
     //! Sets picking radius
     inline static void SetPickingRadius(int radius) {
-        TheInstance()->effectiveCtx().pickRadius = radius;
+        sharedTools()->effectiveCtx().pickRadius = radius;
     }
     //! Returns the current picking radius
-    inline static int GetPickingRadius() { return TheInstance()->effectiveCtx().pickRadius; }
+    inline static int GetPickingRadius() {
+        return sharedTools()->effectiveCtx().pickRadius;
+    }
 
     //! Sets whether overlay entities (scale, tetrahedron, etc.) should be
     //! displayed or not
@@ -2371,7 +2097,7 @@ public:  // visualization matrix transformation
     //! Returns whether overlay entities (scale, tetrahedron, etc.) are
     //! displayed or not
     inline static bool OverlayEntitiesAreDisplayed() {
-        return TheInstance()->effectiveCtx().displayOverlayEntities;
+        return sharedTools()->effectiveCtx().displayOverlayEntities;
     }
 
     //! Currently active items
@@ -2390,44 +2116,8 @@ protected:
     QMainWindow* m_win;
 
 public:
-    /**
-     * @struct ClickableItem
-     * @brief Clickable UI item in hot zone
-     *
-     * Represents an interactive item in the hot zone overlay,
-     * with an associated role and screen area.
-     */
-    struct ClickableItem {
-        /**
-         * @brief Clickable item roles
-         */
-        enum Role {
-            NO_ROLE,                 ///< No role assigned
-            INCREASE_POINT_SIZE,     ///< Increase point size button
-            DECREASE_POINT_SIZE,     ///< Decrease point size button
-            INCREASE_LINE_WIDTH,     ///< Increase line width button
-            DECREASE_LINE_WIDTH,     ///< Decrease line width button
-            LEAVE_BUBBLE_VIEW_MODE,  ///< Exit bubble-view mode button
-            LEAVE_FULLSCREEN_MODE,   ///< Exit fullscreen mode button
-        };
+    using ClickableItem = ecvClickableItem;
 
-        /**
-         * @brief Default constructor
-         */
-        ClickableItem() : role(NO_ROLE) {}
-
-        /**
-         * @brief Constructor with role and area
-         * @param _role Item role
-         * @param _area Screen area rectangle
-         */
-        ClickableItem(Role _role, QRect _area) : role(_role), area(_area) {}
-
-        Role role;   ///< Item role/function
-        QRect area;  ///< Screen area (pixels)
-    };
-
-    //! Currently displayed clickable items
     std::vector<ClickableItem> m_clickableItems;
 
     //! Internal timer
@@ -2495,7 +2185,8 @@ public:
     //! Deferred picking
     QTimer m_deferredPickingTimer;
 
-    //! View that triggered the current deferred pick (nullptr = primary/singleton).
+    //! View that triggered the current deferred pick (nullptr =
+    //! primary/singleton).
     ecvGenericGLDisplay* m_pickingTargetView = nullptr;
 
 public:  // event representation
@@ -2516,13 +2207,13 @@ public:  // event representation
 
     static int GlWidth() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) return av->glWidth();
-        return TheInstance()->effectiveCtx().glViewport.width();
+        if (av && av != sharedTools()) return av->glWidth();
+        return sharedTools()->effectiveCtx().glViewport.width();
     }
     static int GlHeight() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != TheInstance()) return av->glHeight();
-        return TheInstance()->effectiveCtx().glViewport.height();
+        if (av && av != sharedTools()) return av->glHeight();
+        return sharedTools()->effectiveCtx().glViewport.height();
     }
     static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
@@ -2552,6 +2243,55 @@ public slots:
 
     // called when receiving mouse wheel is rotated
     void onWheelEvent(float wheelDelta_deg);
+
+public:
+    // ================================================================
+    // Phase 7a wave 2: Virtual overrides matching ecvGenericGLDisplay
+    // ================================================================
+
+    CCVector3d toVtkCoordinates(int x, int y, int z = 0) override;
+    bool getClick3DPos(int x, int y, CCVector3d& pos) override;
+    void setView(CC_VIEW_ORIENTATION orientation) override;
+    CCVector3d getCurrentViewDir() const override;
+    void setPivotPoint(const CCVector3d& P,
+                       bool autoRedraw = true,
+                       bool verbose = false) override;
+    void setPivotVisibility(PivotVisibility vis) override;
+    void setAutoPickPivotAtCenter(bool state) override;
+    bool isRotationAxisLocked() const override;
+    void lockRotationAxis(bool state, const CCVector3d& axis) override;
+    void toggleDebugTrace() override;
+    void update2DLabels(bool immediateUpdate = false) override;
+    bool renderToFile(const QString& filename,
+                      float zoomFactor = 1.0f,
+                      bool dontScale = false) override;
+    void removeBB(const QString& viewId) override;
+    void removeBB(const ccGLDrawContext& context) override;
+    void setExclusiveFullScreenFlag(bool state) override;
+
+    // Phase 2.6 overrides
+    void filterByEntityType(std::vector<ccHObject*>& entities,
+                            CV_CLASS_ENUM type) override;
+    void updateActiveItemsList(int x, int y, bool centerItems) override;
+    double computeActualPixelSize() const override;
+    void updateNamePoseRecursive() override;
+    void showPivotSymbol(bool state) override;
+    bool exclusiveFullScreen() const override;
+    CCVector3d convertMousePositionToOrientation(int x, int y) override;
+    bool processClickableItems(int x, int y) override;
+    void updateZoom(float zoomFactor) override;
+    void resizeGL(int w, int h) override;
+    void setViewportDefaultPointSize(float size) override;
+    void setViewportDefaultLineWidth(float width) override;
+    void setZNearCoef(double coef) override;
+    void setFov(float fov_deg) override;
+    void setPointSizeOnView(float size) override;
+    void rotateWithAxis(const CCVector2i& mousePos,
+                        const CCVector3d& axis,
+                        double angle_deg) override;
+    void startPicking(
+            PICKING_MODE mode, int x, int y, int w = 0, int h = 0) override;
+    void redraw2DLabel() override;
 
 signals:
 

@@ -10,9 +10,9 @@
  * @brief Implementation of selection tool controller singleton.
  */
 
-#include "cvPerViewSelectionManager.h"
 #include "cvSelectionToolController.h"
 
+#include "cvPerViewSelectionManager.h"
 #include "cvRenderViewSelectionReaction.h"
 #include "cvSelectionData.h"
 #include "cvSelectionHighlighter.h"

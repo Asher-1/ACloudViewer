@@ -30,7 +30,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 // CV_APP (forward declaration to avoid circular dependency)
 class MainWindow;
@@ -1351,7 +1351,7 @@ void cvRenderViewSelectionReaction::updateTooltip() {
     if (!tooltipText.isEmpty()) {
         // Get widget position for tooltip
         // Reference: ParaView uses DPI scaling - we should too
-        QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+        QWidget* widget = ecvViewManager::instance().activeWidget();
         if (widget) {
             // Take DPI scaling into account (ParaView-style)
             qreal dpr = widget->devicePixelRatioF();
@@ -1846,7 +1846,7 @@ bool cvRenderViewSelectionReaction::isTooltipMode() const {
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::setCursor(const QCursor& cursor) {
-    QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+    QWidget* widget = ecvViewManager::instance().activeWidget();
     if (widget) {
         widget->setCursor(cursor);
     }
@@ -1854,7 +1854,7 @@ void cvRenderViewSelectionReaction::setCursor(const QCursor& cursor) {
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::unsetCursor() {
-    QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+    QWidget* widget = ecvViewManager::instance().activeWidget();
     if (widget) {
         widget->setCursor(Qt::ArrowCursor);  // Explicitly set arrow cursor
         widget->unsetCursor();  // Also unset to remove any override

@@ -7,6 +7,8 @@
 
 #include "ccTraceTool.h"
 
+#include <ecvRedrawScope.h>
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QMessageBox>
@@ -246,7 +248,7 @@ void ccTraceTool::finishCurrentTrace() {
         m_app->setSelectedInDB(t->getParent(),
                                true);  // select it's parent instead
 
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
     }
 }
 
@@ -302,6 +304,6 @@ void ccTraceTool::undo() {
     if (t) {
         t->undoLast();
         t->optimizePath();
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
     }
 }

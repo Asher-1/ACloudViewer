@@ -66,5 +66,5 @@ private:
 
     bool m_signedMeasurement = false;
     bool m_showNormal = false;
-    QSet<QWidget*> m_filteredWindows;
+    QSet<QWidget *> m_filteredWindows;
 };

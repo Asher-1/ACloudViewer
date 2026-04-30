@@ -8,13 +8,30 @@
 #include "ecvGBLSensor.h"
 
 // Local
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvPointCloud.h"
 #include "ecvProgressDialog.h"
 #include "ecvSphere.h"
+#include "ecvViewManager.h"
 
 // Qt
 #include <QCoreApplication>
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->removeEntities(context);
+}
+
+}  // namespace
 
 // maximum depth buffer dimension (width or height)
 static const int s_MaxDepthBufferSize = (1 << 14);  // 16384
@@ -702,7 +719,7 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!MACRO_Draw3D(context)) return;
 
     // DGM FIXME: this display routine is crap!
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!ecvViewManager::instance().activeWidget()) {
         return;
     }
 
@@ -787,7 +804,7 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
-    ecvDisplayTools::Draw(cameraContext, this);
+    if (cameraContext.display) cameraContext.display->draw(cameraContext, this);
 }
 
 ccBBox ccGBLSensor::getOwnBB(bool withGLFeatures /*=false*/) {
@@ -831,15 +848,15 @@ ccBBox ccGBLSensor::getOwnFitBB(ccGLMatrix& trans) {
                   CCVector3(m_scale, m_scale, m_scale));
 }
 
-void ccGBLSensor::clearDrawings() { ecvDisplayTools::RemoveEntities(this); }
+void ccGBLSensor::clearDrawings() { removeObjectFromDisplays(this); }
 
 void ccGBLSensor::hideShowDrawings(CC_DRAW_CONTEXT& context) {
     context.viewID = this->getViewId();
-    ecvDisplayTools::HideShowEntities(context);
+    if (context.display) context.display->hideShowEntities(context);
 }
 
 bool ccGBLSensor::applyViewport() {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!ecvViewManager::instance().activeWidget()) {
         CVLog::Warning("[ccGBLSensor::applyViewport] No associated display!");
         return false;
     }
@@ -899,10 +916,8 @@ bool ccGBLSensor::applyViewport() {
     ccGLMatrixd viewMat = ccGLMatrixd::FromViewDirAndUpDir(sensorX, sensorZ);
     viewMat.invert();
     viewMat.setTranslation(sensorCenterd);
-    // TODO: can we set the right FOV?
-    //    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true,
-    //    true);
-    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true, false);
+    ecvViewManager::instance().sharedSetupProjectiveViewport(viewMat, 0, 1.0f,
+                                                             true, false);
 
     return true;
 }

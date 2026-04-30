@@ -9,11 +9,12 @@
 
 #include "ecvBox.h"
 #include "ecvCameraSensor.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvNormalVectors.h"
 #include "ecvPointCloud.h"
 #include "ecvProgressDialog.h"
 #include "ecvScalarField.h"
+#include "ecvViewManager.h"
 
 // CV_CORE_LIB
 #include <Neighbourhood.h>
@@ -121,7 +122,7 @@ void ccOctree::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    if (!ecvDisplayTools::GetCurrentScreen()) return;
+    if (!ecvViewManager::instance().activeWidget()) return;
 
     if (m_displayMode == WIRE) {
         // this display mode is too heavy to be stored as a GL list
@@ -172,11 +173,11 @@ bool ccOctree::DrawCellAsABox(
 
         context.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
         ccBBox cellBox(bbMin, bbMax);
-        ecvDisplayTools::DrawBBox(context, &cellBox);
+        if (context.display) context.display->drawBBox(context, &cellBox);
     } else {
         context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
         context.removeViewID = context.viewID;
-        ecvDisplayTools::RemoveEntities(context);
+        if (context.display) context.display->removeEntities(context);
     }
 
     return true;

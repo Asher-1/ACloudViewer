@@ -7,8 +7,6 @@
 
 #include "ecvDrawableObject.h"
 
-#include "ecvDisplayTools.h"
-
 ccDrawableObject::ccDrawableObject() {
     setOpacity(1.0);
     setFixedId(false);
@@ -67,10 +65,6 @@ void ccDrawableObject::removeFromDisplay(const ecvGenericGLDisplay* display) {
 
 void ccDrawableObject::enableGLTransformation(bool state) {
     m_glTransEnabled = state;
-    // if (ecvDisplayTools::GetCurrentScreen())
-    //{
-    //	ecvDisplayTools::Deprecate3DLayer();
-    // }
 }
 
 void ccDrawableObject::setGLTransformation(const ccGLMatrix& trans) {

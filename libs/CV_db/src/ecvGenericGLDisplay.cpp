@@ -9,10 +9,13 @@
 
 #include <ecvGuiParameters.h>
 
+#include <QApplication>
 #include <QMap>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QWidget>
+
+#include "ecvViewManager.h"
 
 namespace {
 QMutex s_registryMutex;
@@ -21,7 +24,7 @@ QMap<QWidget*, ecvGenericGLDisplay*> s_displayRegistry;
 
 // ================================================================
 // Default implementations for the new per-view virtual methods.
-// Concrete subclasses (ecvDisplayTools, ecvGLView) override these
+// Concrete subclasses (ecvGLView) override these
 // with real per-view logic.
 // ================================================================
 
@@ -39,13 +42,9 @@ QRect ecvGenericGLDisplay::getGLViewport() const {
     return {};
 }
 
-int ecvGenericGLDisplay::glWidth() const {
-    return getGLViewport().width();
-}
+int ecvGenericGLDisplay::glWidth() const { return getGLViewport().width(); }
 
-int ecvGenericGLDisplay::glHeight() const {
-    return getGLViewport().height();
-}
+int ecvGenericGLDisplay::glHeight() const { return getGLViewport().height(); }
 
 int ecvGenericGLDisplay::getDevicePixelRatio() const {
     const QWidget* w = asWidget();
@@ -54,15 +53,14 @@ int ecvGenericGLDisplay::getDevicePixelRatio() const {
 
 void ecvGenericGLDisplay::setInteractionMode(INTERACTION_FLAGS /*flags*/) {}
 
-ecvGenericGLDisplay::INTERACTION_FLAGS
-ecvGenericGLDisplay::getInteractionMode() const {
+ecvGenericGLDisplay::INTERACTION_FLAGS ecvGenericGLDisplay::getInteractionMode()
+        const {
     return INTERACT_NONE;
 }
 
 void ecvGenericGLDisplay::setPickingMode(PICKING_MODE /*mode*/) {}
 
-ecvGenericGLDisplay::PICKING_MODE
-ecvGenericGLDisplay::getPickingMode() const {
+ecvGenericGLDisplay::PICKING_MODE ecvGenericGLDisplay::getPickingMode() const {
     return NO_PICKING;
 }
 
@@ -75,8 +73,43 @@ const ecvGui::ParamStruct& ecvGenericGLDisplay::getDisplayParameters() const {
 void ecvGenericGLDisplay::setDisplayParameters(
         const ecvGui::ParamStruct& /*params*/, bool /*thisWindowOnly*/) {}
 
-void ecvGenericGLDisplay::drawClickableItems(int /*xStart*/,
-                                             int& /*yStart*/) {}
+void ecvGenericGLDisplay::drawClickableItems(int /*xStart*/, int& /*yStart*/) {}
+
+QFont ecvGenericGLDisplay::textDisplayFont() const {
+    return QApplication::font();
+}
+
+void ecvGenericGLDisplay::display2DText(const QString& text,
+                                        int x,
+                                        int y,
+                                        unsigned char align,
+                                        float bkgAlpha,
+                                        const unsigned char* rgbColor,
+                                        const QFont* font,
+                                        const QString& id) {
+    ecvViewManager::instance().sharedDisplayText(text, x, y, align, bkgAlpha,
+                                                 rgbColor, font, id, this);
+}
+
+void ecvGenericGLDisplay::moveCamera(float dx, float dy, float dz) {
+    ecvViewManager::ScopedRenderOverride guard(this);
+    ecvViewManager::instance().sharedMoveCamera(dx, dy, dz);
+}
+
+void ecvGenericGLDisplay::rotateBaseViewMat(const ccGLMatrixd& rotMat) {
+    ecvViewManager::ScopedRenderOverride guard(this);
+    ecvViewManager::instance().sharedRotateBaseViewMat(rotMat);
+}
+
+void ecvGenericGLDisplay::loadCameraParameters(const std::string& file) {
+    ecvViewManager::ScopedRenderOverride guard(this);
+    ecvViewManager::instance().sharedLoadCameraParameters(file);
+}
+
+void ecvGenericGLDisplay::saveCameraParameters(const std::string& file) {
+    ecvViewManager::ScopedRenderOverride guard(this);
+    ecvViewManager::instance().sharedSaveCameraParameters(file);
+}
 
 std::list<ccInteractor*>& ecvGenericGLDisplay::activeItemsRef() {
     static std::list<ccInteractor*> s_fallback;

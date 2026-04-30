@@ -15,7 +15,6 @@
 #include <ecvBBox.h>
 #include <ecvColorTypes.h>
 #include <ecvCustomObject.h>
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvSerializableObject.h>
 

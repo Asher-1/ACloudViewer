@@ -54,8 +54,6 @@ public:
 
 public slots:
 
-    
-
     //! Updates dialog values with axis point
     void updateRotationAxisPoint(AxisType axisType, const CCVector3d& P);
 

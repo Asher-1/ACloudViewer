@@ -520,8 +520,8 @@ struct CV_DB_LIB_API ecvTextParam {
     CCVector3d textPos = CCVector3d(0.0, 0.0, 0.0);  ///< Text position
     QString text = "";                               ///< Text content
     QFont font = QFont();                            ///< Font settings
-    double bkgAlpha = 0.0;                           ///< Background opacity [0,1]
-    double bkgColor[3] = {0, 0, 0};                  ///< Background RGB [0,1]
+    double bkgAlpha = 0.0;           ///< Background opacity [0,1]
+    double bkgColor[3] = {0, 0, 0};  ///< Background RGB [0,1]
 };
 
 /**
@@ -760,10 +760,10 @@ public:
     QPoint p4 = QPoint(-1, -1);  ///< Fourth point (optional)
 
     // Circle/sphere parameters
-    float radius;                ///< Radius
-    float pointSize = 0;         ///< Screen-space point size in pixels (WIDGET_POINT)
-    CCVector3 center;            ///< 3D center
-    CCVector2 pos;               ///< 2D position
+    float radius;         ///< Radius
+    float pointSize = 0;  ///< Screen-space point size in pixels (WIDGET_POINT)
+    CCVector3 center;     ///< 3D center
+    CCVector2 pos;        ///< 2D position
     bool handleEnabled = false;  ///< Enable interactive handle
 
     // 3D line parameters

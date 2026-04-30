@@ -8,7 +8,7 @@
 #include "ecvOctreeProxy.h"
 
 #include "ecvBBox.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 
 // Local
 // #include "ccCameraSensor.h"
@@ -45,7 +45,7 @@ void ccOctreeProxy::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     if (!MACRO_Draw3D(context)) return;
 
-    if (ecvDisplayTools::GetMainWindow() == nullptr) return;
+    if (!context.display) return;
 
     bool entityPickingMode = MACRO_EntityPicking(context);
 

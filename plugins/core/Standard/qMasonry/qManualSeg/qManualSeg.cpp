@@ -27,7 +27,6 @@
 
 // CV_DB_LIB
 #include <ecvCone.h>
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObjectCaster.h>
@@ -36,6 +35,7 @@
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // CVCoreLib
 #include <CVConst.h>
@@ -114,7 +114,9 @@ vector<int> ccManualSeg::pointIdx(ccPointCloud* cloud, ccPolyline* poly) {
 
     // viewing parameters
     ccGLCameraParameters camera;
-    ecvDisplayTools::GetGLCameraParameters(camera);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->getGLCameraParameters(camera);
+    }
 
     m_segmentationPoly->clear();
     m_polyVertices->clear();

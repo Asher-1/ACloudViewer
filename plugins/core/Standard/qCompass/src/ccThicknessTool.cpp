@@ -8,6 +8,9 @@
 #include "ccThicknessTool.h"
 
 #include <CVLog.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 #include "ccCompass.h"
 #include "ccGeoObject.h"
@@ -54,12 +57,12 @@ void ccThicknessTool::onNewSelection(
             m_referencePlane->setVisible(true);
 
             // display instructions
-            ecvDisplayTools::DisplayNewMessage(
+            ecvViewManager::instance().displayMessageOnActiveView(
                     "Select measurement point.",
-                    ecvDisplayTools::LOWER_LEFT_MESSAGE);
+                    ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
 
             // redraw
-            ecvDisplayTools::RedrawDisplay(false, false);
+            { ecvRedrawScope scope(false, false); }
 
             // done
             return;
@@ -125,9 +128,9 @@ void ccThicknessTool::pointPicked(ccHObject* insertPoint,
             m_app->addToDB(temp, false, false, false, true);
 
             // display instructions
-            ecvDisplayTools::DisplayNewMessage(
+            ecvViewManager::instance().displayMessageOnActiveView(
                     "Select second measurement point.",
-                    ecvDisplayTools::LOWER_LEFT_MESSAGE);
+                    ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
 
         } else {
             // delete temporary graphic
@@ -204,12 +207,12 @@ void ccThicknessTool::toolActivated() {
     recurseChildren(m_app->dbRootObject(), true, false);
 
     // display instructions
-    ecvDisplayTools::DisplayNewMessage(
+    ecvViewManager::instance().displayMessageOnActiveView(
             "Select reference plane for thickness measurement.",
-            ecvDisplayTools::LOWER_LEFT_MESSAGE);
+            ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
 
     // redraw
-    ecvDisplayTools::RedrawDisplay(false, false);
+    { ecvRedrawScope scope(false, false); }
 }
 
 // called when the tool is set to disactive (for cleanup)
@@ -233,7 +236,7 @@ void ccThicknessTool::toolDisactivated() {
     m_hiddenObjects.clear();
 
     // redraw
-    ecvDisplayTools::RedrawDisplay(false, false);
+    { ecvRedrawScope scope(false, false); }
 }
 
 void ccThicknessTool::recurseChildren(ccHObject* obj,

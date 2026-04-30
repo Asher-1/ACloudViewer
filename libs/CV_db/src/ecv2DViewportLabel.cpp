@@ -7,7 +7,9 @@
 
 #include "ecv2DViewportLabel.h"
 
-#include "ecvDisplayTools.h"
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // CV_CORE_LIB
 #include <CVConst.h>
@@ -69,15 +71,27 @@ bool cc2DViewportLabel::fromFile_MeOnly(QFile& in,
 }
 
 void cc2DViewportLabel::clear2Dviews() {
-    if (!ecvDisplayTools::GetCurrentScreen()) return;
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !view->asWidget()) return;
 
-    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-            WIDGETS_TYPE::WIDGET_TRIANGLE_2D, this->getViewId()));
+    CC_DRAW_CONTEXT ctx;
+    ctx.display = view;
+    ctx.defaultViewPort = 0;
+    ctx.removeEntityType = ENTITY_TYPE::ECV_TRIANGLE_2D;
+    ctx.removeViewID = this->getViewId();
+
+    if (ctx.display) ctx.display->removeEntities(ctx);
 }
 
 void cc2DViewportLabel::updateLabel() {
     CC_DRAW_CONTEXT context;
-    ecvDisplayTools::GetContext(context);
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (view) {
+        view->getContext(context);
+    } else {
+        return;
+    }
+
     update2DLabelView(context, true);
 }
 
@@ -86,7 +100,9 @@ void cc2DViewportLabel::update2DLabelView(CC_DRAW_CONTEXT& context,
     context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
     drawMeOnly(context);
     if (updateScreen) {
-        ecvDisplayTools::UpdateScreen();
+        {
+            ecvRedrawScope scope;
+        }
     }
 }
 
@@ -94,17 +110,24 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     // 2D foreground only
     if (!MACRO_Foreground(context) || !MACRO_Draw2D(context)) return;
 
-    if (!ecvDisplayTools::GetCurrentScreen()) return;
+    if (!context.display || !context.display->asWidget()) return;
 
-    // clear history
-    clear2Dviews();
+    // clear history (widgets for this viewport label in this view only)
+    {
+        CC_DRAW_CONTEXT clearCtx;
+        clearCtx.display = context.display;
+        clearCtx.defaultViewPort = 0;
+        clearCtx.removeEntityType = ENTITY_TYPE::ECV_TRIANGLE_2D;
+        clearCtx.removeViewID = getViewId();
+        if (clearCtx.display) clearCtx.display->removeEntities(clearCtx);
+    }
     if (!isVisible() || !isEnabled()) {
         return;
     }
 
     // test viewport parameters
     const ecvViewportParameters& params =
-            ecvDisplayTools::GetViewportParameters();
+            context.display->getViewportParameters();
 
     // general parameters
     if (params.perspectiveView != m_params.perspectiveView ||
@@ -162,6 +185,7 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_TRIANGLE_2D,
                             this->getViewId());
+    param.context.display = context.display;
     const ecvColor::Rgbf& tempColor = ecvColor::FromRgb(*defaultColor);
     param.color.r = tempColor.r;
     param.color.g = tempColor.g;
@@ -175,13 +199,13 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
             QPoint(dx + m_roi[2] * relativeZoom, dy + m_roi[3] * relativeZoom);
     param.p4 =
             QPoint(dx + m_roi[0] * relativeZoom, dy + m_roi[3] * relativeZoom);
-    ecvDisplayTools::DrawWidgets(param, false);
+
+    if (context.display) context.display->drawWidgets(param);
 
     // title
     QString title(getName());
     if (!title.isEmpty()) {
-        // takes rendering zoom into account!
-        QFont titleFont(ecvDisplayTools::GetTextDisplayFont());
+        QFont titleFont(context.display->textDisplayFont());
         titleFont.setBold(true);
         QFontMetrics titleFontMetrics(titleFont);
         int titleHeight = titleFontMetrics.height();
@@ -191,9 +215,10 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
         int yStart = static_cast<int>(dy + std::min<float>(m_roi[1], m_roi[3]) *
                                                    relativeZoom);
 
-        ecvDisplayTools::DisplayText(title, xStart, yStart - 5 - titleHeight,
-                                     ecvDisplayTools::ALIGN_DEFAULT, 0,
-                                     defaultColor->rgb, &titleFont,
-                                     this->getViewId());
+        context.display->display2DText(
+                title, xStart, yStart - 5 - titleHeight,
+                static_cast<unsigned char>(
+                        ecvGenericDisplayTools::ALIGN_DEFAULT),
+                0.0f, defaultColor->rgb, &titleFont, this->getViewId());
     }
 }

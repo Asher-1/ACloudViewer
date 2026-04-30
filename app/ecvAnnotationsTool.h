@@ -13,7 +13,6 @@
 
 // CV_DB_LIB
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
 
 // SYSTEM
 #include <vector>

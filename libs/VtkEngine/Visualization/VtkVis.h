@@ -32,6 +32,8 @@ class TextureRenderManager;
 }
 }  // namespace Visualization
 
+class ecvGenericGLDisplay;
+
 // CV_DB_LIB
 #include <ecvColorTypes.h>
 #include <ecvDisplayTools.h>  // For AxesGridProperties
@@ -131,6 +133,12 @@ public:
 
     /// Performs initialization (renderer, camera, etc.).
     void initialize();
+
+    /// Owning ecvGenericGLDisplay (e.g. ecvGLView); used instead of singletons.
+    void setOwnerDisplay(ecvGenericGLDisplay* display) {
+        m_ownerDisplay = display;
+    }
+    ecvGenericGLDisplay* ownerDisplay() const { return m_ownerDisplay; }
 
     /// Configures the center axes actor.
     void configCenterAxes();
@@ -637,6 +645,8 @@ public:
     void displayText(const CC_DRAW_CONTEXT& context);
 
 private:
+    ecvGenericGLDisplay* m_ownerDisplay = nullptr;
+
     // Texture rendering manager
     std::unique_ptr<renders::TextureRenderManager> texture_render_manager_;
 
