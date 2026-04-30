@@ -49,6 +49,16 @@ namespace Visualization {
 /// @class VtkDisplayTools
 /// @brief Display tools bridging CloudViewer (CC) entities to VTK 3D and 2D
 /// viewers. Manages QVTKWidget, VtkVis (3D), and ImageVis (2D) visualizers.
+///
+/// Phase M classification (2026-04-30):
+///   Category A — Primary-view-only (ELIMINATE: used only because this class
+///                doubles as the "primary view"; migrate to per-view ecvGLView)
+///   Category B — Shared engine service (KEEP: CC→VTK translation, actor
+///                lookup; parameterize to accept explicit VtkVis/Widget args)
+///   Category C — Per-view functionality (MOVE to ecvGLView: methods that
+///                operate on a single view's pipeline)
+///
+/// See docs/user-guide/multi-window-refactor-roadmap-Vtk-vs-CC.md §10
 class QVTK_ENGINE_LIB_API VtkDisplayTools : public ecvDisplayTools {
 public:
     VtkDisplayTools() = default;
@@ -56,6 +66,9 @@ public:
     virtual ~VtkDisplayTools() override;
 
 public:  // inherit from ecvDisplayTools
+    // ===== Category C: Per-view accessors (MOVE to ecvGLView) =====
+
+    /// [C] In Phase M, each ecvGLView returns its own VtkVis/ImageVis.
     inline virtual ecvGenericVisualizer3D* getVisualizer3D() override {
         return get3DViewer();
     }
@@ -63,8 +76,7 @@ public:  // inherit from ecvDisplayTools
         return get2DViewer();
     }
 
-    /** @return Pointer to the QVTK widget
-     */
+    /// [C] Active widget accessor.
     inline QVTKWidgetCustom* getQVtkWidget() { return this->m_vtkWidget; }
 
     /** @param input2D 2D display coordinates
@@ -191,7 +203,7 @@ public:  // inherit from ecvDisplayTools
     inline virtual void rotateWithAxis(const CCVector2i& pos,
                                        const CCVector3d& axis,
                                        double angle,
-                                       int viewport = 0) override {
+                                       int viewport) override {
         m_visualizer3D->rotateWithAxis(pos, axis, angle, viewport);
     }
 
@@ -438,27 +450,27 @@ public:
     inline VtkVis* get3DViewer() { return m_visualizer3D.get(); }
     inline ImageVis* get2DViewer() { return m_visualizer2D.get(); }
 
-    /// Persistently switch the active VtkVis + widget to a secondary view.
-    /// Called when ecvViewManager::activeViewChanged fires.
-    /// Pass nullptr to restore the primary pipeline.
+    // ===== Category A: Primary-view-only (ELIMINATE in Phase M) =====
+
+    /// [A] Persistently switch the active VtkVis + widget to a secondary view.
     void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
-    /// Restore the primary VtkVis + widget after switchActiveView.
+    /// [A] Restore the primary VtkVis + widget after switchActiveView.
     void restorePrimaryView();
 
-    /// Replace the primary pipeline entirely (used when the original primary
-    /// view is being destroyed and a surviving view takes over).
-    /// Unlike switchActiveView, this does NOT save the old pipeline.
+    /// [A] Replace the primary pipeline entirely (used when the original
+    /// primary view is being destroyed and a surviving view takes over).
     void adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
-    /// When all ecvGLViews are closed, rebind to the original registerVisualizer()
-    /// pipeline (see m_builtInVis / m_builtInWidget).
+    /// [A] When all ecvGLViews are closed, rebind to the original
+    /// registerVisualizer() pipeline (see m_builtInVis / m_builtInWidget).
     void resetToBuiltInPipeline();
 
+    /// [A] Access the original built-in pipeline.
     QVTKWidgetCustom* getBuiltInWidget() const { return m_builtInWidget; }
     VtkVisPtr getBuiltInVis() const { return m_builtInVis; }
 
-    /// Phase B helper: renders hot zone / clickable items for a specific
+    /// [A] Phase B helper: renders hot zone / clickable items for a specific
     /// ecvGLView by temporarily routing widget rendering to that view's
     /// VtkVis pipeline.  Only swaps the minimal
     /// state needed for DrawClickableItems.
@@ -492,11 +504,17 @@ public:
         std::vector<ecvDisplayTools::ClickableItem>& m_clickableItems;
     };
 
+    // ===== Category C: Per-view picking/rendering (MOVE to ecvGLView) =====
+
+    /// [C] 2D label picking — needs that view's widget.
     virtual QString pick2DLabel(int x, int y) override;
 
+    /// [C] 3D item picking — needs that view's VtkVis.
     virtual QString pick3DItem(int x = -1, int y = -1) override;
+    /// [C] Object picking — needs that view's VtkVis.
     virtual QString pickObject(double x = -1, double y = -1) override;
 
+    /// [C] Render to image — needs that view's pipeline.
     virtual QImage renderToImage(int zoomFactor = 1,
                                  bool renderOverlayItems = false,
                                  bool silent = false,
@@ -618,72 +636,83 @@ public:
                                    int viewport = 0) const override;
 
 private:
+    // ===== Category B: Shared engine service (KEEP, parameterize) =====
+
+    /// [B] CC→VTK draw methods. Already accept CC_DRAW_CONTEXT with
+    /// context.display for resolveVisualizer. Parameterize to accept
+    /// explicit VtkVis* in Phase M1.2.
     void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud* ecvCloud);
     void drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);
     void drawPolygon(const CC_DRAW_CONTEXT& context, ccPolyline* polyline);
     void drawLines(const CC_DRAW_CONTEXT& context,
                    cloudViewer::geometry::LineSet* lineset);
-    void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
     void drawSensor(const CC_DRAW_CONTEXT& context, ccSensor* sensor);
 
+    /// [B] VTK actor color update.
     bool updateEntityColor(const CC_DRAW_CONTEXT& context, ccHObject* ent);
 
-    /// Resolve the VtkVis instance for the given display context.
-    /// Routes to the correct per-window visualizer:
-    ///   nullptr / this singleton → m_visualizer3D (primary)
-    ///   ecvGLView*              → glView->getVisualizer3D()
+    /// [B→simplify] Resolve VtkVis for a display context. In Phase M,
+    /// simplify to always require a valid ecvGLView* (no null/this fallback).
     VtkVis* resolveVisualizer(ecvGenericGLDisplay* display) const;
 
-    /// Find the VtkVis that contains an actor with the given viewId.
-    /// Searches active/primary first, then all secondary views.
+    /// [B] Cross-view actor lookup. Move to ecvViewManager or standalone.
     VtkVis* findVisByActorId(const std::string& viewId) const;
 
-    // -- Primary render guards (multi-window safety) --
+    // ===== Category C: Per-view (MOVE to ecvGLView in Phase M1.3) =====
 
-    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
+    /// [C] 2D image drawing — needs that view's ImageVis.
+    void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
+
+    // ===== Category A: Primary render guards (ELIMINATE) =====
+
+    /// [A] Temporarily swap singleton pipeline to primary for legacy
+    /// RedrawDisplay() tail.
+    [[deprecated("Phase M: eliminate with RedrawDisplay singleton tail")]]
     void beginPrimaryRender() override;
-    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
+    [[deprecated("Phase M: eliminate with RedrawDisplay singleton tail")]]
     void endPrimaryRender() override;
 
 protected:
+    // ===== Current pipeline pointers (Category B/C in Phase M) =====
+
+    /// [B→C] Active VTK widget. In Phase M, each ecvGLView owns its own.
+    /// This becomes the "engine's current target" until M3 removes it.
     QVTKWidgetCustom* m_vtkWidget = nullptr;
 
+    /// [B→C] 2D viewer. In Phase M, per-view ImageVis on ecvGLView.
     ImageVisPtr m_visualizer2D = nullptr;
 
+    /// [B→C] 3D viewer. In Phase M, per-view VtkVis on ecvGLView.
     VtkVisPtr m_visualizer3D = nullptr;
 
-    /// Saved primary pipeline for restorePrimaryView()
+    // ===== Category A: Primary-view-only members (ELIMINATE) =====
+
+    /// [A] Saved primary pipeline for restorePrimaryView()
     VtkVisPtr m_primaryVis = nullptr;
     QVTKWidgetCustom* m_primaryWidget = nullptr;
 
-    /// The original built-in pipeline created by registerVisualizer().
-    /// Never cleared — used as ultimate fallback when all ecvGLViews close.
+    /// [A] The original built-in pipeline created by registerVisualizer().
     VtkVisPtr m_builtInVis = nullptr;
     QVTKWidgetCustom* m_builtInWidget = nullptr;
 
-    /// Saved active-tool pipeline during primary render guard
+    /// [A] Saved active-tool pipeline during primary render guard
     VtkVisPtr m_renderGuardSavedVis = nullptr;
     QVTKWidgetCustom* m_renderGuardSavedWidget = nullptr;
     HotZone* m_renderGuardSavedHz = nullptr;
     bool m_renderGuardSavedClickable = false;
     bool m_renderGuardActive = false;
 
-    /// >0 when scoped rendering is active (drawing into a secondary view).
-    /// Text rendering should use m_visualizer3D instead of m_visualizer2D
-    /// when this is non-zero so that 2D overlays (show name, labels) appear
-    /// in the correct view.
+    /// [A] Scoped rendering depth counter for ScopedHotZoneRender.
     int m_scopedVisSwapDepth = 0;
 
-    /// Pending text background stored by WIDGET_RECTANGLE_2D during
-    /// scoped rendering, applied to the next text actor via vtkTextProperty.
+    /// [A] Pending text background for scoped rendering.
     struct PendingTextBg {
         bool valid = false;
         double r = 0, g = 0, b = 0, a = 0;
     } m_pendingTextBg;
 
-    /** @param widget Main window for VTK widget
-     *  @param stereoMode Whether to enable stereo rendering
-     */
+    /// [A] Creates the first QVTKWidgetCustom + VtkVis.
+    /// In Phase M, this logic moves to ecvGLView::initVtkPipeline().
     virtual void registerVisualizer(QMainWindow* widget,
                                     bool stereoMode = false) override;
 };
