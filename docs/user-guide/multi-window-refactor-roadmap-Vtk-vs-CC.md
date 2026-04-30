@@ -759,5 +759,432 @@ showEvent()
 
 ---
 
+### Phase L — 单例 API 彻底清除（2026-04-30）
+
+**在 Phase A–K 完成 ParaView 级布局后，单独执行 `ecvDisplayTools` 单例 API 清除。**
+
+详见 **[singleton-removal-migration-plan.md](singleton-removal-migration-plan.md)** v18.0。
+
+**成果摘要：**
+
+| 指标 | Phase K 时 | Phase L 后 |
+|------|-----------|-----------|
+| `ecvDisplayTools::` 非核心活跃引用 | ~1000+ | **0** |
+| 包含 `ecvDisplayTools::` 的文件数 | ~50+ | **9** (全部核心基础设施) |
+| `Init()`/`TheInstance()`/`HasInstance()`/`ReleaseInstance()` | 公开 API | **已删除**，替换为 `sharedTools()` (friend of ecvViewManager) |
+| 嵌套类型 (`HotZone`/`MessageToDisplay`/`ClickableItem`/`PickingParameters`) | 在 `ecvDisplayTools.h` | **提取**到 `ecvDisplayTypes.h` |
+| `ecvViewManager` 转发器 | 无 | **12 个** (shared*() 系列) |
+| Python wrapper enum 源 | `ecvDisplayTools::ENUM` | `ecvGenericGLDisplay::ENUM` (56 处迁移) |
+| 未使用 `#include ecvDisplayTools.h` | ~30 文件 | **全部移除** |
+
+---
+
+## 10. 下一阶段 TODO（2026-04-30 v2 — 消除 Primary/Secondary 区分）
+
+### 核心原则：所有视图结构相同，无 Primary 之分
+
+> **ParaView**: 每个视图都是 `pqRenderView` — 不存在"主视图"概念。`pqActiveObjects` 仅追踪焦点视图。
+>
+> **CloudCompare**: 每个窗口都是 `ccGLWindowInterface` — 全部结构相同。`MainWindow::TheInstance()` 是应用单例，不是视图单例。
+>
+> **ACloudViewer 当前问题**: `VtkDisplayTools` 同时充当"VTK 引擎服务"和"主视图"。这个双重角色导致：
+> - `switchActiveView` / `restorePrimaryView` / `resetToBuiltInPipeline` 等复杂切换逻辑
+> - `m_builtInVis` / `m_builtInWidget` / `m_primaryVis` / `m_primaryWidget` 等仅主视图使用的成员
+> - `ScopedHotZoneRender` RAII swap（因为 `DrawClickableItems` 读全局 `s_tools` 状态）
+> - `QVTKWidgetCustom::curCtx()` 的主/次双分支（~90+ `m_tools` 引用中仅 6 处是 context 回退，其余是信号/服务/状态）
+> - `beginPrimaryRender` / `endPrimaryRender`（singleton 绘制路径临时切回主管线）
+> - `dynamic_cast<ecvGLView*>` 14 处分支（其中 6 处显式处理"主视图不是 ecvGLView"）
+>
+> **目标**: 拆分 `VtkDisplayTools` 为两个角色：**纯引擎服务**（CC→VTK 转换、actor 查找等）和 **视图**（`ecvGLView`）。启动时第一个视图和后续视图完全相同，不再有 Primary 概念。
+
+---
+
+### Phase M 总览
+
+```
+Phase M1: VtkDisplayTools 职责拆分 ─────────────────────┐
+  ├── M1.1 分类成员/方法 (A/B/C)                         │
+  ├── M1.2 VtkDisplayTools → VtkEngine (纯服务)          │
+  └── M1.3 Category C → ecvGLView                       │
+                                                          │
+Phase M2: QVTKWidgetCustom 统一 ─────────────────────────┤
+  ├── M2.1 信号中枢迁移 (~19 signals → ecvViewManager)   │
+  ├── M2.2 per-view 方法路由 (~50+ → m_ownerView)       │
+  └── M2.3 删除 m_tools 成员                              │
+                                                          │
+Phase M3: ecvGLView 成为唯一视图类型 ────────────────────┤
+  ├── M3.1 MainWindow::initial() 创建 ecvGLView          │
+  ├── M3.2 消除 primary 切换机制                          │
+  └── M3.3 简化 dynamic_cast 分支                         │
+                                                          │
+Phase M4: 2D Overlay 管线参数化 ──────────────────────────┘
+  ├── M4.1 DrawClickableItems 参数化
+  ├── M4.2 消除 ScopedHotZoneRender
+  └── M4.3 消除 beginPrimaryRender/endPrimaryRender
+```
+
+---
+
+### TODO M1: VtkDisplayTools 职责拆分 🔲
+
+**优先级**: HIGH | **复杂度**: HIGH | **预估**: 2-3 周
+
+**目标**: 将 `VtkDisplayTools` 从「视图+引擎」拆分为「纯引擎服务」。
+
+#### M1 成员/方法三分类
+
+深度审计结果：
+
+**Category A — 仅主视图管理（全部删除）**
+
+| 成员/方法 | 说明 |
+|----------|------|
+| `m_builtInVis`, `m_builtInWidget` | 首个管线快照，用于 `resetToBuiltInPipeline` |
+| `m_primaryVis`, `m_primaryWidget` | `switchActiveView` 时保存旧管线 |
+| `m_primaryCtx` (on ecvDisplayTools) | 主视图 context 后备 |
+| `m_renderGuard*`, `m_renderGuardActive` | `beginPrimaryRender`/`endPrimaryRender` 守卫 |
+| `switchActiveView()` | 切换当前管线到指定视图 |
+| `restorePrimaryView()` | 恢复到保存的主管线 |
+| `adoptNewPrimary()` | 接管新的主管线（视图关闭时） |
+| `resetToBuiltInPipeline()` | 恢复到初始内置管线 |
+| `beginPrimaryRender()` / `endPrimaryRender()` | singleton 绘制路径临时切回主管线 |
+| `ScopedHotZoneRender` | RAII swap 全局管线为指定视图（1 处构造） |
+| `registerVisualizer()` | 创建首个 Widget+VtkVis（应迁移到 ecvGLView::Create） |
+| `resolveVisualizer` 中 `display==this/null` 分支 | 主视图回退逻辑 |
+
+**Category B — 共享引擎服务（保留为 VtkEngine 服务）**
+
+| 函数 | 说明 |
+|------|------|
+| `findVisByActorId()` | 跨所有视图搜索 actor → VtkVis |
+| `drawPointCloud/drawMesh/drawPolygon/drawLines/...` | CC→VTK 绘制转换（已接受 `display` 参数via resolveVisualizer） |
+| `updateEntityColor/checkEntityNeedUpdate` | VTK actor 属性更新 |
+| `SetDataAxesGridProperties/GetDataAxesGridProperties` | VTK 坐标轴网格 |
+| 表示管理回调 (`ecvRepresentationManager` closure) | actor 清理 |
+
+**Category C — Per-view 功能（迁移到 ecvGLView）**
+
+| 函数 | 说明 |
+|------|------|
+| `toWorldPoint/toDisplayPoint` | 需要特定视图的 VtkVis+Widget |
+| `setBackgroundColor/setRenderWindowSize` | 视图属性 |
+| `pick3DItem/pickObject` | 拾取（需要特定视图的管线） |
+| `renderToImage` | 离屏渲染 |
+| `toggleOrientationMarker/cameraShortcuts` | 视图相机/UI 控件 |
+| `drawImage` (2D) | 需要该视图的 ImageVis |
+| `updateScene` | VTK 场景更新 |
+
+#### M1 子任务
+
+| 步骤 | 内容 | 预估 |
+|------|------|------|
+| M1.1 | 标记所有 Category A/B/C 成员/方法（代码注释 + 审计表） | 1 天 |
+| M1.2 | Category B 方法改为接受显式 `(VtkVis*, QVTKWidgetCustom*, ecvGenericGLDisplay*)` 参数 | 5 天 |
+| M1.3 | Category C 方法迁移到 `ecvGLView`（使用 `m_visualizer3D`/`m_vtkWidget`） | 5 天 |
+| M1.4 | Category A 成员/方法标记 deprecated 或删除 | 3 天 |
+
+**验收标准：**
+- [ ] `VtkDisplayTools` 不再注册为 `ecvGenericGLDisplay`
+- [ ] Category A 全部删除或 deprecated
+- [ ] Category B 方法全部参数化（不依赖 `this` 的管线状态）
+- [ ] Category C 方法全部在 `ecvGLView` 上有对应实现
+
+---
+
+### TODO M2: QVTKWidgetCustom 统一 🔲
+
+**优先级**: HIGH | **复杂度**: HIGH | **前置**: M1 部分完成 | **预估**: 2 周
+
+**目标**: 消除 `m_tools` 成员。所有 `QVTKWidgetCustom` 实例始终有 `m_ownerView`。
+
+#### M2 当前 m_tools 引用分类 (~90+ 处)
+
+| 类别 | 数量 | 迁移方向 |
+|------|------|---------|
+| **信号 emit** (`emit m_tools->sig`) | ~19 个信号名 | → `emit m_ownerView->sig` + `ecvViewManager` relay |
+| **per-view 方法调用** (~50+) | `computeActualPixelSize`, `redraw`, `getClick3DPos`, `setPivotPoint`, `startPicking`, `addToOwnDB`, `removeFromOwnDB`, `filterByEntityType`, `updateNamePoseRecursive`, `convertMousePositionToOrientation`, `getGLCameraParameters`, `rotateWithAxis`, `showPivotSymbol`, `scheduleFullRedraw`, `getViewportParameters`, `processClickableItems`, `toBeRefreshed`, `resizeGL`, `updateZoom`, `glWidth`/`glHeight`, `exclusiveFullScreen`, `getDevicePixelRatio` 等 | → `m_ownerView->method()` |
+| **全局服务** (~10) | `Update2DLabel`, `onWheelEvent`, `setPickingTargetView`, `updateScene`, `setViewportDefaultPointSize/LineWidth` | → `ecvViewManager` 或新 per-view 版本 |
+| **context/state 回退** (6) | `curCtx()` → `m_primaryCtx`, `m_rectPickingPoly`, `m_activeItems`, `m_hotZone` | → 直接 `m_ownerView->context()` (分支删除) |
+| **identity cast** (~5) | `static_cast<ecvGenericGLDisplay*>(m_tools)` | → `m_ownerView` 或 `FromWidget(this)` |
+
+#### M2 新增到 ecvGLView 的信号
+
+目前 `ecvGLView` 缺少 `mouseWheelChanged(QWheelEvent*)` 信号，需补充。
+
+#### M2 子任务
+
+| 步骤 | 内容 | 预估 |
+|------|------|------|
+| M2.1 | 信号中枢迁移：19 个 `emit m_tools->sig` → `emit m_ownerView->sig` | 3 天 |
+| M2.2 | Per-view 方法路由：~50+ `m_tools->method()` → `m_ownerView->method()` | 4 天 |
+| M2.3 | 全局服务路由：~10 处 → `ecvViewManager` 或新 API | 2 天 |
+| M2.4 | 删除 `m_tools` 成员、`curCtx()` 分支、identity cast | 1 天 |
+
+**验收标准：**
+- [ ] `QVTKWidgetCustom` 无 `m_tools` 成员
+- [ ] 所有 `QVTKWidgetCustom` 实例均有 `m_ownerView != nullptr`
+- [ ] `curCtx()` 无分支（直接返回 `m_ownerView->context()`）
+
+---
+
+### TODO M3: ecvGLView 成为唯一视图类型 🔲
+
+**优先级**: HIGH | **复杂度**: MEDIUM | **前置**: M1 + M2 | **预估**: 1-2 周
+
+**目标**: `MainWindow::initial()` 创建的第一个视图也是 `ecvGLView`。
+
+**当前启动流程**:
+```
+MainWindow::initial()
+  → new VtkDisplayTools()
+  → ecvViewManager::initDisplayTools()
+  → VtkDisplayTools::registerVisualizer() → 创建 QVTKWidgetCustom + VtkVis
+  → registerView(s_tools)    ← VtkDisplayTools 作为视图注册
+  → assignView(0, primaryDT) ← 放入 layout
+```
+
+**目标启动流程**:
+```
+MainWindow::initial()
+  → new VtkEngine()          ← 纯服务，不注册为视图
+  → ecvViewManager::initEngine(engine)
+  → ecvGLView::Create(parent, stereoMode)  ← 创建第一个视图（与后续完全相同）
+  → assignView(0, firstGLView)
+```
+
+#### M3 子任务
+
+| 步骤 | 内容 | 预估 |
+|------|------|------|
+| M3.1 | `VtkDisplayTools::registerVisualizer` 逻辑迁移到 `ecvGLView::initVtkPipeline`（或新 factory） | 3 天 |
+| M3.2 | `MainWindow::initial()` 改为创建 `ecvGLView` 作为第一个视图 | 2 天 |
+| M3.3 | 删除 Category A 全部成员（`m_builtIn*`/`m_primary*`/`switchActiveView`/`restorePrimaryView` 等） | 2 天 |
+| M3.4 | 简化 `MainWindow.cpp` 中 14 处 `dynamic_cast<ecvGLView*>` 分支 | 2 天 |
+
+**验收标准：**
+- [ ] `VtkDisplayTools` 不注册为 `ecvGenericGLDisplay`（不在 `ecvViewManager::getAllViews()` 中）
+- [ ] `MainWindow::initial()` 的第一个视图是 `ecvGLView` 实例
+- [ ] `switchActiveView`/`restorePrimaryView`/`resetToBuiltInPipeline` 已删除
+- [ ] `resolveVisualizer` 简化为：总是从 `ecvGLView*` 获取 VtkVis
+
+---
+
+### RedrawDisplay 调用链分析（M3/M4 关键前置分析）
+
+`RedrawDisplay` 是当前的渲染协调中枢，身兼三职：全局 housekeeping、per-view 循环、singleton legacy tail。消除 Primary 后需拆解这三职。
+
+**当前完整渲染流程**:
+```
+RedrawDisplay (singleton 协调器)
+├── 全局 Housekeeping
+│   ├── debug widgets 清理 (RemoveWidgets)
+│   ├── CheckIfRemove() + m_removeAllFlag
+│   ├── SetFontPointSize / Deprecate3DLayer
+│   └── 清理过期 m_messagesToDisplay
+│
+├── Per-view Loop: getAllViews() 中每个非 s_tools 视图
+│   └── ScopedRenderOverride → view->redraw()
+│       └── ecvGLView::redraw() (自包含路径)
+│           ├── ScopedRenderOverride(this) + sync glViewport
+│           ├── getContext → CC_DRAW_CONTEXT
+│           ├── VTK 背景色 + 3D/2D DB 绘制
+│           ├── ScopedHotZoneRender → DrawClickableItems
+│           └── renderWindow->Render()
+│
+└── Singleton Legacy Tail (仅主视图)
+    ├── beginPrimaryRender() ← VTK 管线 swap 回主
+    ├── [条件] DrawBackground + Draw3D
+    ├── DrawForeground()
+    │   ├── 2D DB 绘制 (globalDBRoot + winDBRoot)
+    │   ├── DrawColorRamp        ← ⚠️ ecvGLView 缺少
+    │   ├── Messages overlay     ← ⚠️ ecvGLView 缺少
+    │   ├── Scale bar            ← ⚠️ ecvGLView 缺少
+    │   └── DrawClickableItems   ← 读 s_tools 全局状态
+    ├── UpdateScreen()
+    └── endPrimaryRender() ← 恢复管线
+```
+
+**ecvGLView::redraw() 缺少的功能（M3 需补全）**:
+
+| 功能 | DrawForeground 中的位置 | 迁移复杂度 |
+|------|----------------------|-----------|
+| `DrawColorRamp` | `ccRenderingTools::DrawColorRamp(CONTEXT)` | LOW — 接受 CONTEXT 参数 |
+| Messages overlay | `RenderText` for `m_messagesToDisplay` | LOW — 需 per-view 消息队列 |
+| Scale bar | `displayOverlayEntities` 条件下 | LOW |
+| Debug traces | `showDebugTraces` 条件下 | LOW (可选) |
+
+**全局 Housekeeping 迁移方案**:
+
+| 职责 | 当前位置 | M3 迁移到 |
+|------|---------|----------|
+| debug widgets 清理 | RedrawDisplay | `ecvViewManager::preRenderHousekeeping()` |
+| CheckIfRemove / m_removeAllFlag | RedrawDisplay | `ecvViewManager::preRenderHousekeeping()` |
+| SetFontPointSize | RedrawDisplay | `ecvViewManager::preRenderHousekeeping()` |
+| Deprecate3DLayer | RedrawDisplay | 每个 ecvGLView::redraw() 自行处理 |
+| 过期消息清理 | RedrawDisplay | 每个 ecvGLView 的 per-view 消息队列 |
+
+**消除 Primary 后的目标渲染流程**:
+```
+ecvViewManager::redrawAll()
+├── preRenderHousekeeping()   ← 全局维护
+└── For each ecvGLView in getAllViews():
+    └── view->redraw()        ← 每个视图完全自包含
+        ├── sync glViewport + getContext
+        ├── VTK 背景 + 3D/2D DB 绘制
+        ├── drawColorRamp(context)      ← 从 DrawForeground 迁移
+        ├── drawMessages(context)       ← per-view 消息
+        ├── drawClickableItems(vis, widget, hotZone, ctx, items)  ← 参数化
+        └── renderWindow->Render()
+```
+
+---
+
+### TODO M4: 2D Overlay 管线参数化 🔲
+
+**优先级**: MEDIUM | **复杂度**: MEDIUM | **前置**: M3 | **预估**: 1-2 周
+
+**目标**: 消除 `ScopedHotZoneRender` 和 `beginPrimaryRender`/`endPrimaryRender`。
+
+**当前依赖链**:
+```
+ecvGLView::redraw()
+  → ScopedHotZoneRender(dt, vis, widget, hotZone, ctx, items)  ← RAII swap 全局状态
+    → ecvDisplayTools::DrawClickableItems(0, yStart)            ← 读 s_tools 全局状态
+      → DrawWidgets(vis, widget, ...)                           ← 隐式使用 m_visualizer3D
+      → RenderText(vis, widget, ...)                            ← 隐式使用 m_vtkWidget
+```
+
+**目标依赖链（参数化）**:
+```
+ecvGLView::redraw()
+  → drawClickableItems(m_visualizer3D, m_vtkWidget, m_hotZone, m_ctx, m_clickableItems)
+    → drawWidgets(vis, widget, ...)   ← 显式参数
+    → renderText(vis, widget, ...)    ← 显式参数
+```
+
+#### M4 子任务
+
+| 步骤 | 内容 | 预估 |
+|------|------|------|
+| M4.1 | `DrawClickableItems` 参数化（接受 VtkVis, Widget, HotZone, Context） | 3 天 |
+| M4.2 | `DrawWidgets`/`RemoveWidgets`/`RenderText` 参数化 | 3 天 |
+| M4.3 | 删除 `ScopedHotZoneRender`、`beginPrimaryRender`/`endPrimaryRender` | 1 天 |
+| M4.4 | `DrawForeground` 改为 `ecvGLView::drawForeground()`（颜色图例、消息、刻度条） | 2 天 |
+| M4.5 | `RedrawDisplay` 的 singleton legacy tail 删除（仅保留 housekeeping + 循环） | 1 天 |
+
+**验收标准：**
+- [ ] `ScopedHotZoneRender` 类已删除
+- [ ] `beginPrimaryRender`/`endPrimaryRender` 已删除
+- [ ] `DrawClickableItems` 不读任何 `s_tools` 全局状态
+- [ ] 每个 `ecvGLView` 的 2D overlay 完全独立渲染
+- [ ] `RedrawDisplay` 不再有 singleton legacy tail（仅 housekeeping + per-view loop）
+- [ ] `ecvGLView::redraw()` 包含完整功能（DrawColorRamp, Messages, ScaleBar）
+
+---
+
+### TODO M5: Python API 现代化 🔲
+
+**优先级**: LOW | **复杂度**: MEDIUM | **前置**: M1 | **预估**: 1 周
+
+同原 TODO L3。Python wrapper 67 个静态方法绑定迁移到 per-view API。
+
+---
+
+### TODO M6: Per-View 表示完善 🔲
+
+**优先级**: LOW | **复杂度**: HIGH | **预估**: 2-3 周
+
+同原 TODO L4。对标 ParaView `vtkSMRepresentationProxy`。
+
+---
+
+## 11. 并行执行计划与分支策略
+
+### 并行时间线
+
+```
+        Week 1        Week 2        Week 3        Week 4        Week 5        Week 6-7
+M1.1 ─────┐
+(审计)     │
+           ├── M1.2 (B 参数化) ─────────────────────┐
+           │                                          │
+           └── M1.3 (C → ecvGLView) ────────────────┤
+                                                      │
+M2.1 ──────────────────────┐                         │
+(信号 19 处)                │                         │
+                            ├── M2.2 (已有~35 处) ───┤── M1.4 (A deprecated)
+                            │                         │── M2.3 (服务路由)
+                            │  M1.3 完成后 ──────────┤── M2.2-rest (~15 处)
+                            │                         │
+                            │                         ▼
+                            │                   ┌──────────┐
+                            └──────────────────►│ M3 唯一  │──► M4 (overlay)
+                                                │ 视图类型  │    (1-2 周)
+                                                └──────────┘
+```
+
+**优化后总预估**: 5-7 周（M1/M2 并行执行时间压缩 ~30%）
+
+### Git 分支策略
+
+```
+main
+├── feature/phase-m-audit        ← PR#1: M1.1 审计 (纯文档/注释)
+│
+├── feature/phase-m1-engine      ← M1.2 + M1.3 + M1.4
+│   ├── PR#2: M1.2 Category B 参数化 (签名变更 + 调用点更新)
+│   ├── PR#3: M1.3 Category C → ecvGLView (新方法)
+│   └── PR#4: M1.4 Category A deprecated
+│
+├── feature/phase-m2-widget      ← M2.1 + M2.2 + M2.3 (独立于 m1-engine)
+│   ├── PR#5: M2.1 信号迁移 (19 signals)
+│   ├── PR#6: M2.2 方法路由 (~35 已有方法)
+│   └── PR#7: M2.3 全局服务路由 (rebase on m1-engine)
+│
+├── feature/phase-m3-sole-view   ← M3 (从 m1+m2 合并后分支)
+│   ├── PR#8: M3.1+M3.2 MainWindow 创建 ecvGLView
+│   └── PR#9: M3.3+M3.4 删除 primary 机制
+│
+└── feature/phase-m4-overlay     ← M4 (从 m3 分支)
+    ├── PR#10: M4.1+M4.2 DrawClickableItems 参数化
+    └── PR#11: M4.3-M4.5 删除 ScopedHotZoneRender + RedrawDisplay tail
+```
+
+### 每个 PR 的验证标准
+
+| PR | 编译 | 功能验证 | 风险 |
+|----|------|---------|------|
+| #1 (审计) | ✅ 无代码变更 | N/A | LOW |
+| #2 (B 参数化) | ✅ | 现有功能不回归 | MEDIUM (大量调用点) |
+| #3 (C → ecvGLView) | ✅ | 新方法可用 | LOW |
+| #4 (A deprecated) | ✅ | 编译警告不报错 | LOW |
+| #5 (信号迁移) | ✅ | 多窗口信号正常 | LOW |
+| #6 (方法路由) | ✅ | 主+子窗口操作正常 | MEDIUM |
+| #7 (服务路由) | ✅ | 全局操作正常 | LOW |
+| **#8 (关键)** | ✅ | **首个视图渲染正确** | **HIGH** |
+| #9 (清理) | ✅ | 多窗口全功能测试 | MEDIUM |
+| #10 (参数化) | ✅ | 每视图 HotZone 独立 | MEDIUM |
+| #11 (最终清理) | ✅ | 完整回归测试 | LOW |
+
+### 风险缓解
+
+| 风险 | 概率 | 缓解措施 |
+|------|------|---------|
+| M1.2 签名变更大量调用点 | HIGH | Category B 加 `display` 默认参数 = `nullptr` (向后兼容) |
+| M2.2 不完整导致崩溃 | MEDIUM | `assert(m_ownerView)` 编译期检查 |
+| M3 首个视图创建顺序 | HIGH | Feature flag: `USE_ECVGLVIEW_AS_PRIMARY` |
+| M4 参数化遗漏 | MEDIUM | `[[nodiscard]]` 标记 + grep 验证 |
+
+### 与 ParaView/CC 对标
+
+| 目标 | ParaView 对应 | CloudCompare 对应 |
+|------|-------------|------------------|
+| 所有视图 = ecvGLView | 所有视图 = pqRenderView | 所有窗口 = ccGLWindowInterface |
+| VtkDisplayTools = 纯引擎 | vtkSMRenderViewProxy (服务层) | 无对应（CC 不用 VTK） |
+| ecvViewManager 追踪活动视图 | pqActiveObjects | MainWindow + QMdiArea::activeSubWindow |
+| 无 Primary 切换 | 无 Primary 切换 | 无 Primary 切换 |
+
+---
+
 *维护：架构变更时同步更新阶段验收项与统计数据。*
-*更新日期：2026-04-27*
+*更新日期：2026-04-30*

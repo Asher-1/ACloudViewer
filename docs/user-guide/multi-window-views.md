@@ -1,7 +1,18 @@
 # ACloudViewer Multi-Window 3D Views — Architecture & Implementation Reference
 
-> Date: 2026-04-29
-> Version: 3.0 (ParaView-aligned, with cc2DLabel rendering fixes)
+> Date: 2026-04-30
+> Version: 5.1 (Singleton removal + Phase M TODOs v2 — no Primary/Secondary)
+>
+> **Status (v5.0)**: The `ecvDisplayTools` singleton API has been fully removed. Next-phase TODOs formulated.
+> - `Init()`/`TheInstance()`/`HasInstance()`/`ReleaseInstance()` are gone from public API
+> - `ecvViewManager` now owns the shared `ecvDisplayTools` instance lifecycle
+> - `ecvGLView` routes through `m_displayTools` (typed as `VtkDisplayTools*`) instead of static singleton calls
+> - Nested types (`HotZone`, `MessageToDisplay`, etc.) extracted to `ecvDisplayTypes.h`
+> - 12 `ecvViewManager::shared*()` forwarders replace all non-core `ecvDisplayTools::` calls
+> - See [singleton-removal-migration-plan.md](singleton-removal-migration-plan.md) for full changelog
+> - See [multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10 for next TODOs (L1–L5)
+>
+> **Note**: Some code examples below still reference `TheInstance()` patterns from the pre-migration architecture. These are preserved as historical context for understanding the design evolution.
 
 ---
 
@@ -957,7 +968,7 @@ Uses `resolveVisualizer()` to find the correct `VtkVis` → calls public removal
 
 ### 8. ecvDisplayTools
 
-> Primary view singleton; provides global display utility functions.
+> Shared display tools instance managed by `ecvViewManager`. Provides display utility functions. **No longer a public singleton** — access via `ecvViewManager::instance().displayTools()` or per-view `m_displayTools`.
 
 | File | Path |
 |------|------|
@@ -2502,3 +2513,31 @@ for (each cc2DLabel in scene) {
 | `move2D()` | `cc2DLabel.cpp:268-276` | **Already aligned** in ACloudViewer `ecv2DLabel.cpp:231-238` |
 | `acceptClick()` | `cc2DLabel.cpp:968-976` | **Already aligned** in ACloudViewer `ecv2DLabel.cpp:852-866` |
 | `pointPicking()` | `cc2DLabel.cpp:1847-1922` | **Already aligned** in ACloudViewer `ecv2DLabel.cpp:1743-1811` |
+
+---
+
+## Next Steps — Architecture Evolution (2026-04-30)
+
+### Completed Milestones
+
+| Phase | Status | Key Result |
+|-------|--------|------------|
+| A–K (multi-window layout) | **DONE** | ParaView-aligned KD-tree layout, Tab system, per-view context, push/pull eliminated |
+| L (singleton API cleanup) | **DONE** | `TheInstance()`/`Init()`/`ReleaseInstance()` removed, 0 non-core `ecvDisplayTools::` refs |
+
+### Remaining Architectural Gap
+
+The primary remaining gap is that the **main view is still a `VtkDisplayTools*` instance** (not an `ecvGLView`). This creates dual code paths in `QVTKWidgetCustom`, retains `ScopedHotZoneRender`, and prevents full rendering independence.
+
+See **[multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10** for the detailed TODO list (M1–M6, v2).
+
+**Core principle: eliminate Primary/Secondary view distinction** — all views = `ecvGLView`, like ParaView's `pqRenderView`.
+
+| Phase | Title | Priority | Pre-req | Est. |
+|-------|-------|----------|---------|------|
+| **M1** | VtkDisplayTools 职责拆分 (→纯引擎服务) | HIGH | -- | 2-3 周 |
+| **M2** | QVTKWidgetCustom 统一 (消除 m_tools ~90+ 引用) | HIGH | M1 partial | 2 周 |
+| **M3** | ecvGLView 成为唯一视图类型 | HIGH | M1+M2 | 1-2 周 |
+| **M4** | 2D Overlay 管线参数化 (消除 ScopedHotZoneRender) | MEDIUM | M3 | 1-2 周 |
+| **M5** | Python API 现代化 | LOW | M1 | 1 周 |
+| **M6** | Per-View 表示完善 | LOW | -- | 2-3 周 |
