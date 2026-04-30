@@ -298,6 +298,7 @@ signals:
     // -- Per-view camera signals --
     void viewMatRotated(const ccGLMatrixd& rotMat);
     void cameraDisplaced(float ddx, float ddy);
+    void mouseWheelChanged(QWheelEvent* event);
     void mouseWheelRotated(float wheelDelta_deg);
     void perspectiveStateChanged();
     void baseViewMatChanged(const ccGLMatrixd& newViewMat);
