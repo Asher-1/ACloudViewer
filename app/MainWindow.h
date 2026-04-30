@@ -763,6 +763,9 @@ private:
 
     ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
 
+    // Phase M3: the first ecvGLView created at startup (sole view type)
+    ecvGLView* m_firstView = nullptr;
+
     /******************************************/
     /*** ParaView-style multi-view (Phase G) **/
     /******************************************/

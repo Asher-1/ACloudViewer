@@ -341,7 +341,7 @@ For each per-view signal:
 | 4.4 | Medium-Traffic Dialogs (15 files) | ~280 | ~142 | ~138 | ✅ Complete (13 files fully cleared) |
 | 4.5 | Libs tier (20+ files) | ~350 | ~265 | ~85 | ✅ Complete (6 files fully cleared) |
 | 4.6 | Plugins tier (excl. Python wrapper) | ~232 | 36 | ~196 | ✅ Complete (18 files fully cleared) |
-| 4.7 | VtkEngine internal | ~49 | — | — | 🔲 Pending (Phase 7 overlap) |
+| 4.7 | VtkEngine internal | ~49 | — | — | ✅ Superseded by Phase M (M1-M3) |
 
 **Files Fully Cleared of `ecvDisplayTools::`** (19 files):
 `ecvRasterizeTool`, `ecvContourExtractorDlg(.cpp/.h)`, `ecv2.5DimEditor`, `ecvPointListPickingDlg`,
@@ -439,19 +439,19 @@ The following virtual methods were moved from `ecvDisplayTools` to `ecvGenericGL
 - `GetTextDisplayFont`/`GetLabelDisplayFont`/`GetOptimizedFontSize` → `ecvGuiParameters`
 - `USE_2D`/`USE_VTK_PICK` → `ecvViewContext` flags
 
-#### Phase 7b: Singleton Elimination (Partial ✅ / Remaining 🔲)
+#### Phase 7b: Singleton Elimination ✅ (All items done except Python wrapper → Phase M5)
 
 | Task ID | File | Description | Est. Lines | Status |
 |---------|------|-------------|-----------|--------|
 | P7.8 | App/lib/plugin callers | Replace migratable `ecvDisplayTools::` calls with per-view virtual calls | ~200 | ✅ Done (20+ files cleared) |
 | P7.9 | Signal connects (~27) | Move from `TheInstance()` signals to per-view or `ecvViewManager` relay | ~60 | ✅ Done (9 relay signals added) |
 | P7.1 | `ecvDisplayTools.h/cpp` | Remove `s_tools` singleton, `Init()`, `ReleaseInstance()`, `TheInstance()` | ~-100 | ✅ Done — `s_tools` raw ptr; `initializeSharedInstance`/`releaseSharedInstance`/`sharedTools` replace lifecycle; `ecvSingleton.h` dropped |
-| P7.2 | `ecvDisplayTools.h` | Convert remaining static utilities to free functions or `ecvViewManager` methods | ~50 | 🔲 See TODO 4 |
+| P7.2 | `ecvDisplayTools.h` | Convert remaining static utilities to free functions or `ecvViewManager` methods | ~50 | ✅ See TODO 4 (partially extracted; rest deferred to Phase M5) |
 | P7.3 | `VtkDisplayTools.h/cpp` | Merge rendering pipeline into `ecvGLView` (each view owns its `VtkDisplayTools`) | ~-300 | ✅ Done — ecvGLView 33→1 static refs; all via m_displayTools-> or m_ctx |
 | P7.4 | `MainWindow.cpp` | Use `ecvViewManager::initDisplayTools()`/`releaseDisplayTools()` | ~30 | ✅ Done — all `TheInstance()` replaced with ecvViewManager accessors |
 | P7.5 | `ecvViewManager.h/cpp` | `initDisplayTools()`/`releaseDisplayTools()`/`displayTools()` lifecycle | ~20 | ✅ Done |
-| P7.6 | All files | Remove `#include "ecvDisplayTools.h"` where no longer needed | ~50 | 🔲 See TODO 8 |
-| P7.7 | Documentation | Update `multi-window-views.md` to reflect final architecture | ~100 | 🔲 See TODO 9 |
+| P7.6 | All files | Remove `#include "ecvDisplayTools.h"` where no longer needed | ~50 | ✅ Done (TODO 8) — 28 unused includes removed |
+| P7.7 | Documentation | Update `multi-window-views.md` to reflect final architecture | ~100 | ✅ Done (TODO 9) |
 
 #### Phase 7c: Python Wrapper Update (Phase 6 merge)
 
@@ -850,7 +850,7 @@ Migrate the remaining ~10 VTK-specific `ecvDisplayTools::GetVisualizer3D()` call
 
 **Strategy**: Add a convenience method `MainWindow::getActiveVisualizer3D()` that returns `dynamic_cast<ecvGLView*>(ecvViewManager::getActiveView())->getVisualizer3D()`.
 
-### TODO 6: Phase 7c — Python Wrapper Migration 🔲
+### TODO 6: Phase 7c — Python Wrapper Migration 🔲 → Phase M5
 
 **Priority**: LOW | **Complexity**: MEDIUM | **Est. Lines**: ~200 | **Prerequisite**: Phase 7.1 (singleton removal must be done first)
 
@@ -970,7 +970,7 @@ Phase 5 (MainWindow VTK calls) ──┘                                        
 3. **Phase 7.1** (singleton removal) depends on 7.3 because ecvGLView must be self-contained before we remove TheInstance()
 4. Everything else can be parallelized after 7.1
 
-**All TODOs (1–9) complete.** Remaining `ecvDisplayTools::` refs are core infrastructure (303), Python wrapper static method bindings (67), and 13 non-core active refs (global flags, utilities, base-class delegates).
+**All TODOs (1–9) complete.** Remaining: Python wrapper (TODO 6 → Phase M5). Phase M (M1-M6) ongoing — see `multi-window-refactor-roadmap-Vtk-vs-CC.md` §10. M1+M2 done, M3.1+M3.2 done, M3.3-M3.4+M4-M6 pending.
 
 ---
 
@@ -1250,3 +1250,4 @@ After the singleton removal, follow this pattern:
 || 2026-04-30 | 17.0 | **ecvGenericGLDisplay.cpp fully cleared (5→0)**. Added 5 `ecvViewManager::shared*()` forwarders (`sharedMoveCamera`, `sharedRotateBaseViewMat`, `sharedDisplayText`, `sharedLoadCameraParameters`, `sharedSaveCameraParameters`). `#include "ecvDisplayTools.h"` removed from ecvGenericGLDisplay.cpp. **Final: 14 files, 384 total. Core 309, per-view 2, entity 5, app 1, Python 67. Non-core active: 8 (from ~1000+)**. |
 || 2026-04-30 | 18.0 | **NON-CORE ACTIVE: 0**. All 8 remaining migrated: ecvGLView.cpp GetContext, QVTKWidgetCustom.cpp USE_VTK_PICK, ecvPointPropertiesDlg.cpp USE_2D, ecvGBLSensor.cpp SetupProjectiveViewport, ecvGuiParameters.cpp GetOptimizedFontSize (x3) — all routed through new ecvViewManager forwarders. **Final: 9 files (core infra + Python), 381 total. Zero non-core refs. Migration complete.** |
 || 2026-04-30 | 19.0 | **Next-phase TODOs formulated (M1–M6, v2)**. Core principle: **eliminate Primary/Secondary view distinction** (all views = ecvGLView, like ParaView pqRenderView). VtkDisplayTools → pure engine service. Cross-ref: see `multi-window-refactor-roadmap-Vtk-vs-CC.md` §10. Key phases: M1 (VtkDisplayTools role split), M2 (QVTKWidgetCustom ~90+ m_tools refs migration), M3 (ecvGLView as sole view type), M4 (2D overlay parameterization → ScopedHotZoneRender elimination). Est. 7-9 weeks. |
+|| 2026-04-30 | 20.0 | **Phase M1+M2 COMPLETE. Phase M3.1+M3.2 DONE.** (1) M1.4: 7 Category A methods marked `[[deprecated("Phase M3")]]`. (2) M2.3: `onWheelEvent` → `effectiveCtx()`, deferred picking timer connected in ecvGLView, `CustomVtkCaptionWidget` per-view timer stop. (3) **M3.1**: `initializeSharedInstance` no longer registers VtkDisplayTools as view. `MainWindow::initial()` creates `m_firstView = ecvGLView::Create()` as first view. Layout: `assignView(0, m_firstView)`. (4) **M3.2**: `rebindToolsToActiveView` simplified (no `restorePrimaryView` fallback). `onViewClosingFromLayout` / `prepareViewClose` simplified (no `adoptNewPrimary`/`resetToBuiltInPipeline`). Build clean. Remaining: M3.3 (delete Cat A impl), M3.4 (simplify dynamic_cast branches), M4-M6. P4.7, P7.2, P7.6, P7.7 marked ✅. |
