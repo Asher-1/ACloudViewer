@@ -51,11 +51,12 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  */
 
 class QMainWindow;
+class ccPolyline;
 class ecvGLView;
+class ecvDisplayTools;
 namespace Visualization {
 class ImageVis;
 }
-#include <ecvDisplayTools.h>
 #include <ecvDisplayTypes.h>
 #include <ecvViewContext.h>
 

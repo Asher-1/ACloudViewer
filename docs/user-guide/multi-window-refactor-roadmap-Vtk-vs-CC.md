@@ -5,6 +5,8 @@
 **配套文档：**
 - **`multi-window-paradigms-CloudCompare-ParaView.md`**：CC/PV/ACV 三方对比
 - **`audit-TheInstance-m_-members.md`**：单例直读全量扫描
+- **`multi-window-paraview-alignment-design.md`**：ParaView ↔ ACloudViewer 15 维度全面对齐设计文档（含 Phase M–N 详细迁移方案）
+- **`singleton-removal-migration-plan.md`**：单例 API 移除详细迁移计划
 
 ---
 
@@ -1207,5 +1209,266 @@ main
 
 ---
 
+### Include 清理进展
+
+| 文件 | 变更 | 状态 |
+|------|------|------|
+| `qPythonRuntime/ccGuiPythonInstance.cpp` | 删除 `#include <ecvDisplayTools.h>`（未使用） | ✅ |
+| `VtkVis.h` | `ecvDisplayTools.h` → `ecvDisplayTypes.h`（仅需 `AxesGridProperties`） | ✅ |
+| `QVTKWidgetCustom.h` | `ecvDisplayTools.h` → forward decl `class ecvDisplayTools;` + `class ccPolyline;` | ✅ |
+| 其余 16 处 | 保留：依赖 `s_tools->` / `dynamic_cast<VtkDisplayTools*>` / 核心 API | — |
+
+### `s_tools->` 引用分析摘要
+
+`libs/CV_db/src/ecvDisplayTools.cpp` 中 473 个 `s_tools->` 引用按类别:
+
+| 类别 | 数量 | 说明 |
+|------|------|------|
+| Display/View state (`m_activeGLFilter`, `m_rectPickingPoly` 等) | ~120 | 事件处理/拾取核心 |
+| Render context (`effectiveCtx`, `m_viewportParams` 等) | ~100 | 渲染管线参数 |
+| UI overlay (`m_hotZone`, `m_clickableItems`, `m_messagesToDisplay`) | ~80 | M4 已部分迁移 |
+| Draw pipeline (`DrawForeground`, `Draw3D`, `DrawWidgets`) | ~60 | 静态方法内部状态 |
+| Camera/projection | ~50 | 投影矩阵、视角计算 |
+| Flags/housekeeping (`m_updateFBO`, `m_shouldBeRefreshed` 等) | ~63 | 内部控制标志 |
+
+---
+
+## 12. Phase N: `effectiveCtx()` 分批参数化迁移计划
+
+### 背景
+
+`effectiveCtx()` 是 `ecvDisplayTools` 中连接 singleton 全局状态与 per-view 上下文的核心桥梁。
+它通过 `ecvViewManager::getEffectiveView()` 动态解析当前活动视图的 `ecvViewContext`，
+若无活动视图则回退到 `m_primaryCtx`。
+
+**审计统计**:
+- `ecvDisplayTools.cpp`: **307** 个 `effectiveCtx()` 调用，分布在 **~65** 个函数中
+- `ecvDisplayTools.h`: **26** 处（声明、内联方法）
+- `MainWindow.cpp`: **1** 处（`rebindToolsToActiveView` 中拷贝上下文）
+
+### 迁移策略
+
+**核心原则**: 每个使用 `effectiveCtx()` 的公共 API 都应接受显式的 `ecvViewContext&` 参数，
+使调用方明确指定操作目标视图，而非依赖全局 "effective" 解析。
+
+**向后兼容方案**: 每个改造的函数保留无参重载作为 wrapper，内部调用
+`effectiveCtx()` 传给新的参数化版本。待所有调用方迁移后再删除 wrapper。
+
+```
+// 示例：
+// 旧 API（保留为 wrapper）
+void SetZoom(float value) { SetZoom(effectiveCtx(), value); }
+// 新 API（参数化）
+void SetZoom(ecvViewContext& ctx, float value);
+```
+
+### Phase N1: Trivial Accessors ✅
+
+**实际完成**: 14 个函数 | **风险**: LOW | **Python 绑定修复**: 8 处 `static_cast` 消歧义
+
+**已完成函数**:
+
+| # | 函数 | 新签名 | 状态 |
+|---|------|-------|------|
+| 1 | `IsRectangularPickingAllowed` | `(const ecvViewContext&) → bool` | ✅ |
+| 2 | `SetRectangularPickingAllowed` | `(ecvViewContext&, bool)` | ✅ |
+| 3 | `LockPickingMode` | `(ecvViewContext&, bool)` | ✅ |
+| 4 | `IsPickingModeLocked` | `(const ecvViewContext&) → bool` | ✅ |
+| 5 | `DisplayOverlayEntities` | `(ecvViewContext&, bool)` | ✅ |
+| 6 | `SetViewportDefaultPointSize` | `(ecvViewContext&, float)` | ✅ |
+| 7 | `SetViewportDefaultLineWidth` | `(ecvViewContext&, float)` | ✅ |
+| 8 | `ObjectPerspectiveEnabled` | `(const ecvViewContext&) → bool` | ✅ |
+| 9 | `ViewerPerspectiveEnabled` | `(const ecvViewContext&) → bool` | ✅ |
+| 10 | `SetGLViewport` | `(ecvViewContext&, const QRect&)` | ✅ |
+| 11 | `GetCurrentViewDir` | `(const ecvViewContext&) → CCVector3d` | ✅ |
+| 12 | `GetCurrentUpDir` | `(const ecvViewContext&) → CCVector3d` | ✅ |
+| 13 | `GetViewportParameters` | `(const ecvViewContext&) → const ecvViewportParameters&` | ✅ |
+| 14 | `GetClick3DPos` | `(const ecvViewContext&, int, int, CCVector3d&) → bool` | ✅ |
+
+**已有的 ctx 参数化重载** (Phase A/E 遗留，无需重做):
+
+| 函数 | 签名 | 来源 |
+|------|------|------|
+| `SetPointSize` | `(ecvViewContext&, float)` | Phase A |
+| `SetLineWidth` | `(ecvViewContext&, float)` | Phase A |
+| `SetCameraClip` | `(ecvViewContext&, double, double)` | Phase A |
+| `SetCameraFovy` | `(ecvViewContext&, double)` | Phase A |
+| `GetPivotVisibility` | `(const ecvViewContext&)` | Phase A |
+| `SetInteractionMode` | `(ecvViewContext&, INTERACTION_FLAGS)` | Phase A |
+| `GetInteractionMode` | `(const ecvViewContext&)` | Phase A |
+| `SetPickingMode` | `(ecvViewContext&, PICKING_MODE)` | Phase A |
+| `GetPickingMode` | `(const ecvViewContext&)` | Phase A |
+| `GetContext` | `(CC_DRAW_CONTEXT&, const ecvViewContext&)` | Phase B |
+| `GetGLCameraParameters` | `(ccGLCameraParameters&, const ecvViewContext&)` | Phase B |
+
+**N1 → N2 移入的函数** (因有 emit/QSettings/复合 API 副作用):
+
+| 函数 | 原因 |
+|------|------|
+| `SetPivotVisibility` | emit + QSettings 持久化 |
+| `ResizeGL` | 调用 SetGLViewport + DisplayNewMessage |
+| `RotateBaseViewMat` | 调用 SetViewportParameters + emit baseViewMatChanged |
+| `ConvertMousePositionToOrientation` | 调用 GetGLCameraParameters |
+| `onPointPicking` | VTK 回调入口，写多个字段 |
+| `onWheelEvent` | VTK 回调入口，读多个字段后调用 SetBubbleViewFov/UpdateZoom |
+| `RedrawDisplay` | 全局 housekeeping (showDebugTraces) |
+| `DrawBackground` | 已有 CONTEXT，需要 CONTEXT.display 路由 |
+| `Draw3D` | 已有 CONTEXT，需要 CONTEXT.display 路由 |
+| `DrawWidgets (POLYLINE)` | 需要 CONTEXT 路由 |
+| `RenderText (3D)` | 需要 glViewport.height() 路由 |
+
+### Phase N2: State Setters/Getters（2-8 次调用，含 N1 移入项）
+
+**预估**: 3-5 天 | **风险**: MEDIUM | **函数数**: ~36 (原 25 + N1 移入 11)
+
+**N2a: N1 移入项（1-2 次 effectiveCtx，有副作用）**:
+
+| 函数 | 调用次数 | 主要副作用 |
+|------|---------|----------|
+| `SetPivotVisibility(PivotVisibility)` | 1 | emit + QSettings |
+| `ResizeGL` | 2 | SetGLViewport + DisplayNewMessage |
+| `RotateBaseViewMat` | 1 | SetViewportParameters + emit |
+| `ConvertMousePositionToOrientation` | 2 | GetGLCameraParameters |
+| `onPointPicking` | 1 | VTK 回调，写 pick 状态 |
+| `onWheelEvent` | 1 | VTK 回调，读 ctx + 调用 SetBubbleViewFov/UpdateZoom |
+| `RedrawDisplay` | 1 | 全局 housekeeping |
+| `DrawBackground` | 1 | CONTEXT.drawingFlags |
+| `Draw3D` | 4 | CONTEXT.drawingFlags + light flags |
+| `DrawWidgets (POLYLINE)` | 1 | CONTEXT + interactionFlags |
+| `RenderText (3D)` | 1 | glViewport.height() |
+
+**N2b: 原 N2 函数（2-8 次 effectiveCtx）**:
+
+| 函数 | 调用次数 | 主要访问 | 备注 |
+|------|---------|---------|------|
+| `ProcessPickingResult` | 2 | `glViewport` (label coords) | — |
+| `GetPickedEntity` | 2 | `lastPickedId` | — |
+| `SetupProjectiveViewport` | 2 | `perspectiveView`, `autoPickPivot` | — |
+| `SetAspectRatio` | 2 | `cameraAspectRatio` | — |
+| `SetPixelSize` | 2 | `viewportParams.pixelSize` | — |
+| `SetZoom` | 2 | `viewportParams.zoom` | — |
+| `UpdateZoom` | 2 | `perspectiveView`, `zoom` | — |
+| `UpdateModelViewMatrix` | 2 | `viewMatd`, `validModelviewMatrix` | — |
+| `SetBaseViewMat` | 2 | `viewportParams.viewMat` | — |
+| `GetFov` | 3 | `bubbleView*`, `fov_deg` | ✅ av |
+| `MoveCamera` | 3 | objectCentered, viewMat, camera | — |
+| `LockRotationAxis` | 3 | rotation lock state | — |
+| `GetModelViewMatrix` | 3 | `validModelviewMatrix`, `viewMatd` | — |
+| `GetProjectionMatrix` | 3 | `validProjectionMatrix`, `projMatd` | — |
+| `ComputeModelViewMatrix` | 3 | compute chain + `glViewport` | — |
+| `UpdateConstellationCenterAndZoom` | 3 | `bubbleView`, `glViewport` | ✅ av |
+| `ProcessClickableItems` | 4 | `viewportParams` sizes | — |
+| `ComputePerspectiveZoom` | 4 | camera/pivot/pixelSize | — |
+| `GetRealCameraCenter` | 4 | perspectiveView, getCameraCenter | — |
+| `SetCameraPos` | 4 | setCameraCenter, getCameraCenter | — |
+| `SetBubbleViewFov` | 4 | `bubbleViewFov_deg` | — |
+| `ShowPivotSymbol` | 4 | pivot flags + objectCentered | — |
+| `StartOpenGLPicking` | 4 | lastPoint index/picked | — |
+| `SetView (orient, forceRedraw)` | 5 | objectCentered, perspective, viewMat | — |
+| `SetFov` | 6 | bubbleView + fov_deg | — |
+| `UpdateProjectionMatrix` | 6 | projMatd, clip distances | — |
+
+**验收标准**: 同 N1 + 所有 `av` 委托路径确认使用 `ctx` 而非 `effectiveCtx()`。
+
+### Phase N3: Heavy State Mutators（7-12 次调用，复合状态更新）
+
+**预估**: 1 周 | **风险**: MEDIUM-HIGH | **函数数**: ~8
+
+| 函数 | 调用次数 | 说明 |
+|------|---------|------|
+| `SetZNearCoef` | 7 | clip 距离计算 + message |
+| `ComputeActualPixelSize` | 7 | 透视/正交分支像素尺寸 |
+| `SetViewportParameters` | 7 | `viewportParams` 批量写 + 多信号 emit |
+| `DrawForeground` | 8 | interaction flags, overlay, viewport, messages |
+| `DrawClickableItems (5-arg)` | 12 | 已有 `display` 参数，但仍读取全局 UI 状态 |
+| `SetPivotPoint` | 8 | pivot/camera/viewMat 联动 |
+| `SetBubbleViewMode` | 11 | bubble 全状态切换 + `preBubbleViewParameters` |
+| `UpdateDisplayParameters` | 11 | VTK → `viewportParams` 完整同步 |
+
+**验收标准**: 参数化后多视图同时操作（set different zoom/pivot per view）不干扰。
+
+### Phase N4: Core Projection/Camera Engine（19-36 次调用）
+
+**预估**: 1-2 周 | **风险**: HIGH | **函数数**: 3
+
+| 函数 | 调用次数 | 说明 |
+|------|---------|------|
+| `ComputeProjectionMatrix` | 19 | 投影矩阵完整计算：clip、FOV、pivot、光源 |
+| `SetPerspectiveState` | 20 | 透视/正交切换全状态：viewMat、zoom、glViewport |
+| `initializeSharedInstance` | 36 | 初始化所有 `m_primaryCtx` 字段（特殊：非运行时路径） |
+
+**`initializeSharedInstance` 特殊处理**: 此函数仅在启动时调用一次，不影响多视图运行时。
+可将 `effectiveCtx()` 替换为直接的 `m_primaryCtx` 引用（因为初始化时无活动视图），
+或改为初始化指定 `ecvViewContext` 的工厂方法。
+
+**验收标准**: 透视/正交切换 + 矩阵计算在多视图中各自独立。DrawPivot 在每个视图中正确渲染。
+
+### Phase N5: 拾取管线参数化
+
+**预估**: 1 周 | **风险**: HIGH（拾取涉及 VTK 交互器） | **函数数**: 3
+
+| 函数 | 调用次数 | 说明 |
+|------|---------|------|
+| `StartCPUBasedPointPicking` | 9 | 软件拾取：viewport、pick 结果状态 |
+| `DrawPivot` | 9 | pivot 渲染：viewport params + pivot flags |
+| `StartOpenGLPicking` | 4 | GL 拾取（已迁移到 VTK pick，可能为死代码路径） |
+
+**验收标准**: 每个视图独立拾取、pivot 仅在对应视图中渲染。
+
+### 并行执行计划
+
+```
+        Week 1        Week 2        Week 3        Week 4        Week 5
+N1 ─────┐
+(trivial │
+ ~25)    ├── N2 ──────────────────┐
+         │   (setters/getters)    │
+         │                        ├── N3 ──────────────────┐
+         │                        │   (heavy mutators)      │
+         │                        │                         ├── N4 + N5 ──────┐
+         │                        │                         │   (projection   │
+         │                        │                         │    + picking)   │
+         │                        │                         │                 ▼
+         │                        │                         │           全部完成
+         │                        │                         │
+         └────────────────────────┴─────────────────────────┘
+              每阶段完成后编译验证 + 功能回归测试
+```
+
+**总预估**: 4-5 周（保守） | **累计函数**: ~64 | **累计 `effectiveCtx()` 消除**: ~307
+
+### Git 分支策略
+
+```
+main
+└── feature/phase-n-effectivectx
+    ├── PR#N1: Trivial accessors (~25 functions, 1-2 calls each)
+    ├── PR#N2: State setters/getters (~25 functions, 2-8 calls each)
+    ├── PR#N3: Heavy state mutators (~8 functions, 7-12 calls each)
+    ├── PR#N4: Core projection engine (3 functions, 19-36 calls)
+    └── PR#N5: Picking pipeline (3 functions, 4-9 calls)
+```
+
+### 每阶段验证矩阵
+
+| PR | 编译 | 单视图行为 | 多视图独立性 | 风险 |
+|----|------|----------|------------|------|
+| N1 | ✅ | 现有功能不回归 | N/A（accessor 只读） | LOW |
+| N2 | ✅ | viewport 参数正确 | 各视图独立 set/get | MEDIUM |
+| N3 | ✅ | bubble/pivot/overlay 正常 | 各视图独立状态 | MEDIUM |
+| N4 | ✅ | 透视/正交切换正确 | 各视图独立投影矩阵 | HIGH |
+| N5 | ✅ | 点拾取功能正常 | 各视图独立拾取 | HIGH |
+
+### 与 ParaView 对标
+
+| 目标 | ParaView 模式 | ACloudViewer 目标 |
+|------|-------------|------------------|
+| 视图上下文 | `vtkSMViewProxy` 持有独立 camera/interactor | `ecvViewContext` 由 `ecvGLView` 持有 |
+| 投影矩阵 | 每个 `vtkRenderer` 独立 camera → 独立矩阵 | 每个 `ecvViewContext` 独立 `projMatd`/`viewMatd` |
+| 拾取 | `vtkSMRenderViewProxy::SelectSurfacePoints()` per-view | `ecvGLView` 独立 pick state |
+| 全局状态 | 无 singleton context | 最终目标：`effectiveCtx()` → 仅用于向后兼容 wrapper |
+
+---
+
 *维护：架构变更时同步更新阶段验收项与统计数据。*
-*更新日期：2026-04-30*
+*更新日期：2026-05-01*

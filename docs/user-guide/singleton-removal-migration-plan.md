@@ -3,7 +3,7 @@
 > Date: 2026-04-29
 > Version: 1.0
 > Target: Align with ParaView multi-window architecture — every window is equal, no primary/secondary distinction
-> Reference: [multi-window-views.md](multi-window-views.md), ParaView `/home/ludahai/develop/code/github/ParaView`, CloudCompare `/home/ludahai/develop/code/github/CloudCompare`
+> Reference: [multi-window-views.md](multi-window-views.md), [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md), ParaView `/home/ludahai/develop/code/github/ParaView`, CloudCompare `/home/ludahai/develop/code/github/CloudCompare`
 
 ---
 
@@ -284,8 +284,8 @@ For each per-view signal:
 | P1.2 | `ecvViewManager.h` | Add relay signals (entitySelectionChanged, newLabel, filesDropped, cameraParamChanged) | ✅ Done |
 | P1.3 | `QVTKWidgetCustom.cpp` | Dual-emit: `emit m_ownerView->signal()` + `emit m_tools->signal()` at 20 sites | ✅ Done |
 | P1.4 | `QVTKWidgetCustom.cpp` | Primary window fallback (no `m_ownerView`) — singleton emit preserved | ✅ Done (auto-fallback) |
-| P1.5 | `MainWindow.cpp` | Reconnect signal consumers to `ecvViewManager` relay signals | Pending (Phase 4) |
-| P1.6 | Plugin signal consumers | Update `connect(TheInstance(), ...)` to `connect(viewManager, ...)` | Pending (Phase 4) |
+| P1.5 | `MainWindow.cpp` | Reconnect signal consumers to `ecvViewManager` relay signals | ✅ Done (Phase M2 信号迁移) |
+| P1.6 | Plugin signal consumers | Update `connect(TheInstance(), ...)` to `connect(viewManager, ...)` | ✅ Done (Phase M2 信号迁移) |
 
 **Compile checkpoint**: ✅ Compiles and links successfully. Dual-emit ensures backward compatibility.
 
@@ -300,8 +300,8 @@ For each per-view signal:
 | P2.3 | `QVTKWidgetCustom.cpp` | Route `m_tools->m_deferredPickingTimer` → `m_ownerView->deferredPickingTimer()` (2 sites) | ✅ Done |
 | P2.4 | `QVTKWidgetCustom.cpp` | Route `m_tools->scheduleFullRedraw()` → `m_ownerView->scheduleFullRedraw()` | ✅ Done |
 | P2.5 | `QVTKWidgetCustom.cpp` | Guard `m_hotZoneOwnedBySingleton` to only apply for primary window | ✅ Done |
-| P2.6 | `QVTKWidgetCustom.h/cpp` | Full `m_tools` removal (member still exists for backward compat) | Deferred to Phase 7 |
-| P2.7 | `QVTKWidgetCustom.cpp` | Remaining static calls (`GetCurrentScreen`, `ProcessClickableItems`) | Deferred to Phase 4 |
+| P2.6 | `QVTKWidgetCustom.h/cpp` | Full `m_tools` removal (member still exists for backward compat) | ✅ Superseded by Phase M2/M3 |
+| P2.7 | `QVTKWidgetCustom.cpp` | Remaining static calls (`GetCurrentScreen`, `ProcessClickableItems`) | ✅ Superseded by Phase M3/M4 |
 
 **Compile checkpoint**: ✅ Compiles and links successfully.
 
@@ -314,12 +314,12 @@ For each per-view signal:
 | P3.1 | `ecvGenericGLDisplay.h` | Add virtual `invalidateViewport()`, `deprecate3DLayer()`, `displayNewMessage()` | ✅ Done |
 | P3.2 | `ecvGLView.h/cpp` | Implement `invalidateViewport()`, `deprecate3DLayer()`, `displayNewMessage()` | ✅ Done |
 | P3.3 | `ecvViewManager.h/cpp` | Add `activeWidget()`, `invalidateActiveViewport()`, `deprecateActive3DLayer()`, `displayMessageOnActiveView()` | ✅ Done |
-| P3.4 | `VtkDisplayTools.cpp` | Remove `switchActiveView` / `ScopedHotZoneRender` | Deferred (functional, but swap still used) |
-| P3.5 | `VtkDisplayTools.cpp` | Remove `m_primaryVis` swap state | Deferred (Phase 7) |
+| P3.4 | `VtkDisplayTools.cpp` | Remove `switchActiveView` / `ScopedHotZoneRender` | ✅ Done (Phase M4 — ScopedHotZoneRender 已删除) |
+| P3.5 | `VtkDisplayTools.cpp` | Remove `m_primaryVis` swap state | ✅ Done (Phase M3 Category A 删除) |
 
 **Compile checkpoint**: ✅ Compiles and links successfully.
 
-### Phase 4: Static Method Elimination (High-Traffic) — Batches 4.1–4.5 ✅, 4.6–4.7 pending
+### Phase 4: Static Method Elimination (High-Traffic) — Batches 4.1–4.7 ✅
 
 **Goal**: Add per-view dispatchers and replace high-traffic statics across the codebase.
 
@@ -850,7 +850,7 @@ Migrate the remaining ~10 VTK-specific `ecvDisplayTools::GetVisualizer3D()` call
 
 **Strategy**: Add a convenience method `MainWindow::getActiveVisualizer3D()` that returns `dynamic_cast<ecvGLView*>(ecvViewManager::getActiveView())->getVisualizer3D()`.
 
-### TODO 6: Phase 7c — Python Wrapper Migration 🔲 → Phase M5
+### TODO 6: Phase 7c — Python Wrapper Migration ✅ (Phase M5 完成)
 
 **Priority**: LOW | **Complexity**: MEDIUM | **Est. Lines**: ~200 | **Prerequisite**: Phase 7.1 (singleton removal must be done first)
 
@@ -970,7 +970,7 @@ Phase 5 (MainWindow VTK calls) ──┘                                        
 3. **Phase 7.1** (singleton removal) depends on 7.3 because ecvGLView must be self-contained before we remove TheInstance()
 4. Everything else can be parallelized after 7.1
 
-**All TODOs (1–9) complete.** Remaining: Python wrapper (TODO 6 → Phase M5). Phase M (M1-M6) ongoing — see `multi-window-refactor-roadmap-Vtk-vs-CC.md` §10. M1+M2 done, M3.1+M3.2 done, M3.3-M3.4+M4-M6 pending.
+**All TODOs (1–9) complete; TODO 6 → Phase M5 complete.** Phase M (M1-M6) all complete — see `multi-window-refactor-roadmap-Vtk-vs-CC.md` §10. Include cleanup (3 files) and s_tools→ residual analysis (473 refs) documented in roadmap §Include 清理进展.
 
 ---
 
@@ -1252,3 +1252,5 @@ After the singleton removal, follow this pattern:
 || 2026-04-30 | 19.0 | **Next-phase TODOs formulated (M1–M6, v2)**. Core principle: **eliminate Primary/Secondary view distinction** (all views = ecvGLView, like ParaView pqRenderView). VtkDisplayTools → pure engine service. Cross-ref: see `multi-window-refactor-roadmap-Vtk-vs-CC.md` §10. Key phases: M1 (VtkDisplayTools role split), M2 (QVTKWidgetCustom ~90+ m_tools refs migration), M3 (ecvGLView as sole view type), M4 (2D overlay parameterization → ScopedHotZoneRender elimination). Est. 7-9 weeks. |
 || 2026-04-30 | 20.0 | **Phase M1+M2 COMPLETE. Phase M3.1+M3.2 DONE.** (1) M1.4: 7 Category A methods marked `[[deprecated("Phase M3")]]`. (2) M2.3: `onWheelEvent` → `effectiveCtx()`, deferred picking timer connected in ecvGLView, `CustomVtkCaptionWidget` per-view timer stop. (3) **M3.1**: `initializeSharedInstance` no longer registers VtkDisplayTools as view. `MainWindow::initial()` creates `m_firstView = ecvGLView::Create()` as first view. Layout: `assignView(0, m_firstView)`. (4) **M3.2**: `rebindToolsToActiveView` simplified (no `restorePrimaryView` fallback). `onViewClosingFromLayout` / `prepareViewClose` simplified (no `adoptNewPrimary`/`resetToBuiltInPipeline`). Build clean. Remaining: M3.3 (delete Cat A impl), M3.4 (simplify dynamic_cast branches), M4-M6. P4.7, P7.2, P7.6, P7.7 marked ✅. |
 || 2026-04-30 | 21.0 | **Phase M COMPLETE (M1-M6)**. (1) **M3.3**: Deleted `adoptNewPrimary`/`restorePrimaryView`/`resetToBuiltInPipeline`/`getBuiltIn*` + `m_primaryVis`/`m_primaryWidget`/`m_builtInVis`/`m_builtInWidget` (-203 lines). (2) **M3.4**: Simplified `dynamic_cast<ecvGLView*>` in MainWindow, removed VtkDisplayTools fallbacks. (3) **M4**: Parameterized `DrawClickableItems` (explicit HotZone/ClickableItems/Display params). Deleted `ScopedHotZoneRender` (~100 lines). Removed `beginPrimaryRender`/`endPrimaryRender`. `ecvGLView::redraw()` now renders complete overlay (ColorRamp, ScaleBar, Messages, hot zone). `RedrawDisplay` legacy tail (~90 lines) removed. `drawWidgets` WIDGET_T2D/POINTS_2D per-view routing via `ecvGLView::getImageVis()`. Net: -134 lines for M4 alone. (4) **M5**: Python bindings verified intact; duplicate registrations cleaned. (5) **M6**: Audit confirms `ecvRepresentationManager` already per-`(entity,view)`. Deep VTK property propagation deferred. **Total M1-M6: ~600 lines deleted, primary/secondary distinction eliminated, ecvGLView is sole view type, VtkDisplayTools is pure engine service.** |
+|| 2026-04-30 | 22.0 | **Post-M cleanup**: (1) Include cleanup: 3 files modified (`ccGuiPythonInstance.cpp` remove include, `VtkVis.h` → `ecvDisplayTypes.h`, `QVTKWidgetCustom.h` → forward decl). (2) `effectiveCtx()` deep audit: 307 occurrences in ecvDisplayTools.cpp. Tier breakdown: ~4 EASY, ~25 MEDIUM, ~45 HARD (per function). Most are embedded in singleton's core camera/viewport/picking API. (3) Stale migration plan rows updated: P1.5, P1.6, P2.6, P2.7, P3.4, P3.5 all marked ✅/superseded. TODO 6 → ✅ (M5 complete). Phase 4 header corrected to "4.1-4.7 ✅". Full build verified. |
+|| 2026-04-30 | 23.0 | **Phase N 计划制定**: `effectiveCtx()` 分批参数化迁移，5 阶段 (N1-N5)，覆盖 ~64 函数 / 307 调用。N1 (trivial ~25 func, 1-2 天), N2 (setters ~25 func, 3-5 天), N3 (heavy mutators ~8 func, 1 周), N4 (projection engine 3 func, 1-2 周), N5 (picking 3 func, 1 周)。总预估 4-5 周。详见 `multi-window-refactor-roadmap-Vtk-vs-CC.md` §12. |

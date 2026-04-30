@@ -10,7 +10,6 @@
 #define slots Q_SLOTS
 #define signals Q_SIGNALS
 
-#include <ecvDisplayTools.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
 

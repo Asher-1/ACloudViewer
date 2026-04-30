@@ -163,13 +163,15 @@ void define_ccDisplayTools(py::module &m)
         .def_static("getPivotVisibility",
                     static_cast<ecvGenericGLDisplay::PivotVisibility (*)()>(
                         &ecvDisplayTools::GetPivotVisibility))
-        .def_static("showPivotSymbol", &ecvDisplayTools::ShowPivotSymbol, "state"_a)
+        .def_static("showPivotSymbol",
+                    static_cast<void(*)(bool)>(&ecvDisplayTools::ShowPivotSymbol), "state"_a)
         .def_static("setPivotPoint",
                     &ecvDisplayTools::SetPivotPoint,
                     "P"_a,
                     "autoUpdateCameraPos"_a = false,
                     "verbose"_a = false)
-        .def_static("setCameraPos", &ecvDisplayTools::SetCameraPos, "P"_a)
+        .def_static("setCameraPos",
+                    static_cast<void(*)(const CCVector3d&)>(&ecvDisplayTools::SetCameraPos), "P"_a)
         .def_static(
             "moveCamera", [](const CCVector3d &v) { ecvDisplayTools::MoveCamera(v); }, "v"_a)
         .def_static("setPerspectiveState",
@@ -178,8 +180,10 @@ void define_ccDisplayTools(py::module &m)
                     "objectCenteredView"_a)
         .def_static(
             "getPerspectiveState", &ecvDisplayTools::GetPerspectiveState, "objectCentered"_a)
-        .def_static("objectPerspectiveEnabled", &ecvDisplayTools::ObjectPerspectiveEnabled)
-        .def_static("viewerPerspectiveEnabled", &ecvDisplayTools::ViewerPerspectiveEnabled)
+        .def_static("objectPerspectiveEnabled",
+                    static_cast<bool(*)()>(&ecvDisplayTools::ObjectPerspectiveEnabled))
+        .def_static("viewerPerspectiveEnabled",
+                    static_cast<bool(*)()>(&ecvDisplayTools::ViewerPerspectiveEnabled))
         .def_static("updateConstellationCenterAndZoom",
                     &ecvDisplayTools::UpdateConstellationCenterAndZoom,
                     "boundingBox"_a = nullptr,
@@ -208,8 +212,10 @@ void define_ccDisplayTools(py::module &m)
         .def_static(
             "getPickingMode",
             static_cast<ecvGenericGLDisplay::PICKING_MODE (*)()>(&ecvDisplayTools::GetPickingMode))
-        .def_static("lockPickingMode", &ecvDisplayTools::LockPickingMode, "state"_a)
-        .def_static("isPickingModeLocked", &ecvDisplayTools::IsPickingModeLocked)
+        .def_static("lockPickingMode",
+                    static_cast<void(*)(bool)>(&ecvDisplayTools::LockPickingMode), "state"_a)
+        .def_static("isPickingModeLocked",
+                    static_cast<bool(*)()>(&ecvDisplayTools::IsPickingModeLocked))
         .def_static("getContext",
                     static_cast<void (*)(CC_DRAW_CONTEXT &)>(&ecvDisplayTools::GetContext),
                     "context"_a)
@@ -242,9 +248,10 @@ void define_ccDisplayTools(py::module &m)
                     "dontScaleFeatures"_a = false,
                     "renderOverlayItems"_a = false)
         .def_static("computeActualPixelSize", &ecvDisplayTools::ComputeActualPixelSize)
-        .def_static("isRectangularPickingAllowed", &ecvDisplayTools::IsRectangularPickingAllowed)
+        .def_static("isRectangularPickingAllowed",
+                    static_cast<bool(*)()>(&ecvDisplayTools::IsRectangularPickingAllowed))
         .def_static("setRectangularPickingAllowed",
-                    &ecvDisplayTools::SetRectangularPickingAllowed,
+                    static_cast<void(*)(bool)>(&ecvDisplayTools::SetRectangularPickingAllowed),
                     "state"_a)
         // TODO: this would need a ccGui::ParamStruct binding
         //        .def_static("setShader", &ecvDisplayTools::getDisplayParameters)
@@ -252,8 +259,9 @@ void define_ccDisplayTools(py::module &m)
         //        "params"_a, thisWindowOnly)
         .def_static("setPickingRadius", &ecvDisplayTools::SetPickingRadius, "radius"_a)
         .def_static("getPickingRadius", &ecvDisplayTools::GetPickingRadius)
-        .def_static(
-            "displayOverlayEntities", &ecvDisplayTools::DisplayOverlayEntities, "showScale"_a)
+        .def_static("displayOverlayEntities",
+                    static_cast<void(*)(bool)>(&ecvDisplayTools::DisplayOverlayEntities),
+                    "showScale"_a)
         // display
         .def_static(
             "getMainWindow", &ecvDisplayTools::GetMainWindow, py::return_value_policy::reference)
@@ -301,7 +309,9 @@ void define_ccDisplayTools(py::module &m)
         .def_static("removeAllWidgets", &ecvDisplayTools::RemoveAllWidgets, "update"_a = true)
         .def_static(
             "toCenteredGLCoordinates", &ecvDisplayTools::ToCenteredGLCoordinates, "x"_a, "y"_a)
-        .def_static("getViewportParameters", &ecvDisplayTools::GetViewportParameters)
+        .def_static("getViewportParameters",
+                    static_cast<const ecvViewportParameters&(*)()>(
+                            &ecvDisplayTools::GetViewportParameters))
         .def_static("setupProjectiveViewport",
                     &ecvDisplayTools::SetupProjectiveViewport,
                     "cameraMatrix"_a,
