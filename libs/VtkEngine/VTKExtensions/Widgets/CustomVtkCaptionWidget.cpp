@@ -23,6 +23,7 @@
 #include <CV_db/include/ecvDisplayTools.h>
 #include <CV_db/include/ecvHObjectCaster.h>
 #include <CV_db/include/ecvViewManager.h>
+#include "Visualization/ecvGLView.h"
 
 vtkStandardNewMacro(CustomVtkCaptionWidget);
 
@@ -98,6 +99,11 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     if (tools->m_deferredPickingTimer.isActive()) {
         tools->m_deferredPickingTimer.stop();
     }
+    for (auto* disp : ecvViewManager::instance().getAllViews()) {
+        if (auto* glv = dynamic_cast<ecvGLView*>(disp)) {
+            glv->deferredPickingTimer().stop();
+        }
+    }
 
     // Use QTimer::singleShot to safely emit signal from VTK callback
     // This ensures the signal is emitted in the Qt event loop
@@ -110,6 +116,11 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
         // it after our OnWidgetInteraction callback
         if (tools->m_deferredPickingTimer.isActive()) {
             tools->m_deferredPickingTimer.stop();
+        }
+        for (auto* disp : ecvViewManager::instance().getAllViews()) {
+            if (auto* glv = dynamic_cast<ecvGLView*>(disp)) {
+                glv->deferredPickingTimer().stop();
+            }
         }
 
         // Directly emit the signal - we're now in Qt event loop

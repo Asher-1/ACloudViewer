@@ -1701,12 +1701,13 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                                     : m_tools->processClickableItems(x, y);
                 if (!picked) {
                     curLastMousePos() = event->pos();
-                    m_tools->setPickingTargetView(
-                            ecvGenericGLDisplay::FromWidget(this));
-                    if (m_ownerView)
+                    if (m_ownerView) {
                         m_ownerView->startDeferredPicking();
-                    else
+                    } else {
+                        m_tools->setPickingTargetView(
+                                ecvGenericGLDisplay::FromWidget(this));
                         m_tools->m_deferredPickingTimer.start();
+                    }
                 } else {
                     // Sync per-widget local values from the
                     // (just-updated) global.
