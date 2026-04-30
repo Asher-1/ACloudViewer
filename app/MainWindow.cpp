@@ -709,6 +709,11 @@ void MainWindow::initial() {
     // init db root
     initDBRoot();
 
+    // Set scene DB on the first view (DB root is now ready)
+    if (m_firstView && m_ccRoot) {
+        m_firstView->setSceneDB(m_ccRoot->getRootEntity());
+    }
+
     // init status bar
     initStatusBar();
 
@@ -717,27 +722,40 @@ void MainWindow::initial() {
     initReconstructions();
 #endif
 
-    QWidget* viewWidget = ecvViewManager::instance().activeWidget();
+    // Phase M3: create the first ecvGLView as the primary view.
+    // VtkDisplayTools is a pure engine service, not a view.
+    m_firstView = ecvGLView::Create(this);
+    assert(m_firstView);
+    m_firstView->setSceneDB(nullptr);  // DB root not ready yet; set later
+    ecvViewManager::instance().setActiveView(m_firstView);
+
+    QWidget* viewWidget = m_firstView->asWidget();
     assert(viewWidget);
     viewWidget->setMinimumSize(0, 0);
     m_layoutCounter = 1;
 
-    // Register the display BEFORE creating the view frame, so that
-    // cvPerViewSelectionManager can resolve the display from the widget.
-    auto* primaryDT = ecvViewManager::instance().displayTools();
-    ecvGenericGLDisplay::RegisterGLDisplay(viewWidget, primaryDT);
-    // initDisplayTools already registered with ecvViewManager, but ensure
-    // the widget→display mapping is in place.
-
-    // Register primary VtkVis with the camera link system
-    {
-        auto* primaryVtkDT =
-                static_cast<Visualization::VtkDisplayTools*>(primaryDT);
-        if (primaryVtkDT && primaryVtkDT->get3DViewer()) {
-            Visualization::VtkCameraLink::instance().addView(
-                    primaryVtkDT->get3DViewer());
-        }
+    // Bind VtkDisplayTools engine to the first view's VTK pipeline so
+    // that static APIs (GetCameraClip, GetViewMatrix, etc.) route to
+    // the active VTK renderer.
+    auto* engineDT = static_cast<Visualization::VtkDisplayTools*>(
+            ecvViewManager::instance().displayTools());
+    if (engineDT && m_firstView->getVisualizer3D() &&
+        m_firstView->getVtkWidget()) {
+        engineDT->switchActiveView(m_firstView->getVisualizer3DSP(),
+                                   m_firstView->getVtkWidget());
     }
+
+    Visualization::VtkCameraLink::instance().addView(
+            m_firstView->getVisualizer3D());
+
+    connect(m_firstView, &ecvGLView::aboutToClose, this,
+            [this](ecvGLView* closingView) {
+                if (closingView && closingView->getVisualizer3D()) {
+                    Visualization::VtkCameraLink::instance().removeView(
+                            closingView->getVisualizer3D());
+                }
+                update3DViewsMenu();
+            });
 
     viewWidget->installEventFilter(this);
 
@@ -778,17 +796,12 @@ void MainWindow::initial() {
     }
     m_tabbedMultiView->installEventFilter(this);
 
-    // Place the primary ecvDisplayTools instance in the first cell of the
-    // first tab. ParaView always starts with a single tab / single view;
-    // additional tabs and views are created by the user at runtime. Layout
-    // state from the previous session is saved for persistence, but on
-    // startup we only restore the split structure of the FIRST tab (not
-    // extra tabs or extra views) to keep the one-view default.
+    // Phase M3: place the first ecvGLView in the first cell.
     {
         auto* mvw = m_tabbedMultiView->currentMultiView();
         auto* layout = mvw ? mvw->layoutManager() : nullptr;
-        if (primaryDT && layout) {
-            layout->assignView(0, primaryDT);
+        if (m_firstView && layout) {
+            layout->assignView(0, m_firstView);
         }
     }
 
@@ -884,67 +897,42 @@ QWidget* MainWindow::centralViewWidget() const { return m_tabbedMultiView; }
 void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
     if (!closingDisplay) return;
 
-    auto* closingPrimaryDT = static_cast<Visualization::VtkDisplayTools*>(
-            ecvViewManager::instance().displayTools());
-    QWidget* primaryScreen = getActiveGLWidget();
-
     auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
 
     ecvViewManager::instance().unregisterView(closingDisplay);
 
-    bool closingPrimary = false;
-    if (glView && glView->getVtkWidget() == primaryScreen) {
-        closingPrimary = true;
-    } else if (closingDisplay == ecvViewManager::instance().getPrimaryView()) {
-        closingPrimary = true;
-    }
+    // Phase M3: all views are ecvGLView. When the active view closes,
+    // find a surviving ecvGLView and rebind the engine to it.
+    bool closingActive =
+            (closingDisplay == ecvViewManager::instance().getActiveView()) ||
+            (glView && glView->asWidget() == getActiveGLWidget());
 
-    if (closingPrimary && closingPrimaryDT) {
-        ecvGLView* newPrimary = nullptr;
-
-        auto* activeDisplay = ecvViewManager::instance().getActiveView();
-        if (activeDisplay) {
-            auto* gv = dynamic_cast<ecvGLView*>(activeDisplay);
+    if (closingActive) {
+        ecvGLView* survivor = nullptr;
+        const auto& views = ecvViewManager::instance().getAllViews();
+        for (auto* v : views) {
+            auto* gv = dynamic_cast<ecvGLView*>(v);
             if (gv && gv != glView && gv->getVisualizer3D() &&
                 gv->getVtkWidget()) {
-                newPrimary = gv;
+                survivor = gv;
+                break;
             }
         }
 
-        if (!newPrimary) {
-            const auto& views = ecvViewManager::instance().getAllViews();
-            for (auto* v : views) {
-                auto* gv = dynamic_cast<ecvGLView*>(v);
-                if (gv && gv != glView && gv->getVisualizer3D() &&
-                    gv->getVtkWidget()) {
-                    newPrimary = gv;
-                    break;
-                }
-            }
-        }
-
-        if (newPrimary) {
-            closingPrimaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
-                                              newPrimary->getVtkWidget());
-            rebindToolsToActiveView(newPrimary);
+        if (survivor) {
+            ecvViewManager::instance().setActiveView(survivor);
+            rebindToolsToActiveView(survivor);
         } else {
             CVLog::Warning(
-                    "[onViewClosingFromLayout] No surviving ecvGLView — "
-                    "restoring built-in primary pipeline.");
-            closingPrimaryDT->resetToBuiltInPipeline();
+                    "[onViewClosingFromLayout] No surviving ecvGLView.");
             rebindToolsToActiveView(nullptr);
         }
     }
 
+    // Phase M3: all views are ecvGLView — remove from camera link.
     if (glView && glView->getVisualizer3D()) {
         Visualization::VtkCameraLink::instance().removeView(
                 glView->getVisualizer3D());
-    } else if (!glView &&
-               closingDisplay == ecvViewManager::instance().getPrimaryView()) {
-        if (closingPrimaryDT && closingPrimaryDT->get3DViewer()) {
-            Visualization::VtkCameraLink::instance().removeView(
-                    closingPrimaryDT->get3DViewer());
-        }
     }
 }
 
@@ -2633,14 +2621,16 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
 }
 
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
-    auto* primaryDT = static_cast<Visualization::VtkDisplayTools*>(
+    auto* engineDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
-    if (!primaryDT) return;
+    if (!engineDT) return;
 
     auto* glView = dynamic_cast<ecvGLView*>(display);
     if (glView && glView->getVisualizer3D() && glView->getVtkWidget()) {
-        primaryDT->switchActiveView(glView->getVisualizer3DSP(),
-                                    glView->getVtkWidget());
+        // Phase M3: all views are ecvGLView — bind the engine to the
+        // active view's VTK pipeline so static APIs route correctly.
+        engineDT->switchActiveView(glView->getVisualizer3DSP(),
+                                   glView->getVtkWidget());
 
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
@@ -2648,16 +2638,9 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
         }
 #endif
     } else {
-        primaryDT->restorePrimaryView();
-
-        // If restorePrimaryView returned early (m_primaryVis was already
-        // null), the current m_vtkWidget IS the primary widget but
-        // m_currentScreen may still point to a stale split-view widget
-        // (e.g. restored by a ScopedVisSwap destructor during a secondary
-        // view redraw).  Point active routing at the primary display.
-        ecvViewManager::instance().setActiveView(
-                ecvViewManager::instance().displayTools());
-
+        // No valid ecvGLView — all views might be closed.
+        // Don't restore a "primary" pipeline; there's no primary anymore.
+        CVLog::Warning("[rebindToolsToActiveView] No active ecvGLView");
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
             ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
@@ -2747,58 +2730,38 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
 
     if (viewsToClose.empty()) return;
 
-    auto* framePrimaryDT = static_cast<Visualization::VtkDisplayTools*>(
-            ecvViewManager::instance().displayTools());
-    QWidget* primaryScreen = getActiveGLWidget();
-    bool primaryHandled = false;
+    // Phase M3: simplified — all views are ecvGLView, no primary fallback.
+    QWidget* activeScreen = getActiveGLWidget();
+    bool activeHandled = false;
 
     for (auto* closingDisplay : viewsToClose) {
         auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
 
         ecvViewManager::instance().unregisterView(closingDisplay);
 
-        bool closingPrimary = false;
-        if (glView && glView->getVtkWidget() == primaryScreen) {
-            closingPrimary = true;
-        } else if (closingDisplay ==
-                   ecvViewManager::instance().getPrimaryView()) {
-            closingPrimary = true;
-        }
+        bool closingActive =
+                (glView && glView->asWidget() == activeScreen) ||
+                (closingDisplay == ecvViewManager::instance().getActiveView());
 
-        if (closingPrimary && framePrimaryDT && !primaryHandled) {
-            primaryHandled = true;
-            ecvGLView* newPrimary = nullptr;
-
-            auto* activeDisplay = ecvViewManager::instance().getActiveView();
-            if (activeDisplay) {
-                auto* gv = dynamic_cast<ecvGLView*>(activeDisplay);
+        if (closingActive && !activeHandled) {
+            activeHandled = true;
+            ecvGLView* survivor = nullptr;
+            const auto& views = ecvViewManager::instance().getAllViews();
+            for (auto* v : views) {
+                auto* gv = dynamic_cast<ecvGLView*>(v);
                 if (gv && gv != glView && gv->getVisualizer3D() &&
                     gv->getVtkWidget()) {
-                    newPrimary = gv;
+                    survivor = gv;
+                    break;
                 }
             }
 
-            if (!newPrimary) {
-                const auto& views = ecvViewManager::instance().getAllViews();
-                for (auto* v : views) {
-                    auto* gv = dynamic_cast<ecvGLView*>(v);
-                    if (gv && gv != glView && gv->getVisualizer3D() &&
-                        gv->getVtkWidget()) {
-                        newPrimary = gv;
-                        break;
-                    }
-                }
-            }
-
-            if (newPrimary) {
-                framePrimaryDT->adoptNewPrimary(newPrimary->getVisualizer3DSP(),
-                                                newPrimary->getVtkWidget());
-                rebindToolsToActiveView(newPrimary);
+            if (survivor) {
+                ecvViewManager::instance().setActiveView(survivor);
+                rebindToolsToActiveView(survivor);
             } else {
                 CVLog::Warning(
-                        "[prepareViewClose] No surviving ecvGLView — "
-                        "restoring built-in primary pipeline.");
-                framePrimaryDT->resetToBuiltInPipeline();
+                        "[prepareViewClose] No surviving ecvGLView.");
                 rebindToolsToActiveView(nullptr);
             }
         }
@@ -2806,13 +2769,6 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
         if (glView && glView->getVisualizer3D()) {
             Visualization::VtkCameraLink::instance().removeView(
                     glView->getVisualizer3D());
-        } else if (!glView &&
-                   closingDisplay ==
-                           ecvViewManager::instance().getPrimaryView()) {
-            if (framePrimaryDT && framePrimaryDT->get3DViewer()) {
-                Visualization::VtkCameraLink::instance().removeView(
-                        framePrimaryDT->get3DViewer());
-            }
         }
     }
 }

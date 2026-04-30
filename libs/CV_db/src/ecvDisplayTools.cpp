@@ -388,9 +388,9 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
     connect(&s_tools->m_deferredPickingTimer, &QTimer::timeout, s_tools,
             &ecvDisplayTools::doPicking);
 
-    // Register with the global view manager as the primary view
-    ecvViewManager::instance().registerView(s_tools);
-    ecvViewManager::instance().setActiveView(s_tools);
+    // Phase M3: VtkDisplayTools is a pure engine service, NOT a view.
+    // The first ecvGLView is created by MainWindow and registered as the
+    // actual view. We no longer register VtkDisplayTools with ecvViewManager.
 }
 
 ecvDisplayTools* ecvDisplayTools::sharedTools() { return s_tools; }
