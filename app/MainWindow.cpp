@@ -306,14 +306,10 @@ QWidget* MainWindow::getActiveGLWidget() const {
 }
 
 static ecvGenericVisualizer3D* getActiveVisualizer3D() {
+    // Phase M3: all views are ecvGLView — direct cast, no displayTools fallback.
     auto* view = ecvViewManager::instance().getEffectiveView();
-    if (auto* glView = dynamic_cast<ecvGLView*>(view))
-        return glView->getVisualizer3D();
-    return ecvViewManager::instance().displayTools()
-                   ? ecvViewManager::instance()
-                             .displayTools()
-                             ->getVisualizer3D()
-                   : nullptr;
+    auto* glView = dynamic_cast<ecvGLView*>(view);
+    return glView ? glView->getVisualizer3D() : nullptr;
 }
 
 MainWindow::MainWindow()
@@ -2819,10 +2815,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
         auto* display = ecvGenericGLDisplay::FromWidget(w);
         auto* glView = display ? dynamic_cast<ecvGLView*>(display) : nullptr;
-        if (glView) return glView->getVisualizer3D();
-        auto* dt = dynamic_cast<Visualization::VtkDisplayTools*>(
-                ecvViewManager::instance().getPrimaryView());
-        return dt ? dt->get3DViewer() : nullptr;
+        return glView ? glView->getVisualizer3D() : nullptr;
     };
 
     // Camera Undo — per-view (ParaView pqCameraUndoRedoReaction)
@@ -5384,12 +5377,8 @@ void MainWindow::toggle3DView(bool state) {
     ecvGenericGLDisplay* vtkTarget = display;
     if (!vtkTarget) vtkTarget = ecvViewManager::instance().getPrimaryView();
 
-    Visualization::VtkVis* vis = nullptr;
-    if (auto* glView = dynamic_cast<ecvGLView*>(vtkTarget))
-        vis = glView->getVisualizer3D();
-    else if (auto* dt =
-                     dynamic_cast<Visualization::VtkDisplayTools*>(vtkTarget))
-        vis = dt->get3DViewer();
+    auto* glView = dynamic_cast<ecvGLView*>(vtkTarget);
+    auto* vis = glView ? glView->getVisualizer3D() : nullptr;
     if (vis) {
         vis->setInteractionMode(
                 state ? Visualization::VtkVis::INTERACTION_MODE_3D
