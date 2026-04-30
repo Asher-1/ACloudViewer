@@ -205,6 +205,17 @@ public:
             PICKING_MODE mode, int x, int y, int w = 0, int h = 0) override;
     void redraw2DLabel() override;
 
+    // -- Per-view picking (Phase M1.3) --
+    QString pick2DLabel(int x, int y) override;
+    QString pick3DItem(int x = -1, int y = -1) override;
+    QString pickObject(double x = -1, double y = -1) override;
+
+    // -- Per-view rendering (Phase M1.3) --
+    QImage renderToImage(int zoomFactor = 1,
+                         bool renderOverlayItems = false,
+                         bool silent = false,
+                         int viewport = 0);
+
     // ================================================================
     // VTK-specific accessors
     // ================================================================

@@ -7,6 +7,7 @@
 
 #include "ecvGLView.h"
 
+#include <CVLog.h>
 #include <ecvBBox.h>
 #include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
@@ -14,6 +15,7 @@
 #include <ecvHObject.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
+#include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -473,6 +475,45 @@ void ecvGLView::updateCamera() {
 
 void ecvGLView::updateScene() {
     if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
+}
+
+// -- Phase M1.3: Per-view picking and rendering --
+
+QString ecvGLView::pick2DLabel(int x, int y) {
+    if (m_visualizer2D) {
+        return m_visualizer2D->pickItem(x, y).c_str();
+    }
+    return {};
+}
+
+QString ecvGLView::pick3DItem(int x, int y) {
+    if (m_visualizer3D) {
+        return m_visualizer3D->pickItem(x, y).c_str();
+    }
+    return {};
+}
+
+QString ecvGLView::pickObject(double x, double y) {
+    if (m_visualizer3D) {
+        vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
+        if (pickedActor) {
+            return m_visualizer3D->getIdByActor(pickedActor).c_str();
+        }
+    }
+    return QStringLiteral("-1");
+}
+
+QImage ecvGLView::renderToImage(int zoomFactor,
+                                bool renderOverlayItems,
+                                bool silent,
+                                int viewport) {
+    if (m_visualizer3D) {
+        return m_visualizer3D->renderToImage(zoomFactor, renderOverlayItems,
+                                             silent, viewport);
+    }
+    if (!silent)
+        CVLog::Error("[ecvGLView::renderToImage] No 3D visualizer");
+    return {};
 }
 
 void ecvGLView::resetCamera(const ccBBox* bbox) {

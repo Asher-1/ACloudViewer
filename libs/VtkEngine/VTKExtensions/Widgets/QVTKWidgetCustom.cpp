@@ -241,9 +241,10 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
     m_wheelZoomUpdateTimer->setSingleShot(true);
     m_wheelZoomUpdateTimer->setInterval(150);  // 150ms delay
     connect(m_wheelZoomUpdateTimer, &QTimer::timeout, this, [this]() {
-        if (m_tools) {
+        if (m_ownerView)
+            m_ownerView->update2DLabels(true);
+        else if (m_tools)
             m_tools->Update2DLabel(true);
-        }
     });
 
     QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
@@ -1775,7 +1776,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             }
             m_rightClickOnLabel = false;
         } else if (mouseHasMoved) {
-            m_tools->Update2DLabel(true);
+            if (m_ownerView)
+                m_ownerView->update2DLabels(true);
+            else
+                m_tools->Update2DLabel(true);
         }
     }
 
@@ -1784,7 +1788,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     // 3D anchor points. This fixes the issue where labels become detached after
     // mouse release.
     if (mouseHasMoved) {
-        m_tools->Update2DLabel(true);
+        if (m_ownerView)
+            m_ownerView->update2DLabels(true);
+        else
+            m_tools->Update2DLabel(true);
     }
 
     if (m_ownerView)
