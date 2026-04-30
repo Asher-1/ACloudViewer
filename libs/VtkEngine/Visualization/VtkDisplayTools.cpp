@@ -103,9 +103,6 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
         m_visualizer2D = nullptr;
     }
 
-    m_builtInVis = m_visualizer3D;
-    m_builtInWidget = m_vtkWidget;
-
     ecvRepresentationManager::instance().setActorCleanupCallback(
             [this](ccHObject* entity, ecvGenericGLDisplay* view) {
                 if (!entity) return;
@@ -131,14 +128,6 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
                                        QVTKWidgetCustom* widget) {
     if (!vis || !widget) return;
 
-    // Save the primary pipeline on first switch
-    if (!m_primaryVis) {
-        m_primaryVis = m_visualizer3D;
-        m_primaryWidget = m_vtkWidget;
-    }
-
-    // Reconnect picking signal from the new visualizer so that
-    // interactor-based picking works correctly in the active view.
     if (m_visualizer3D && m_visualizer3D != vis) {
         disconnect(m_visualizer3D.get(),
                    &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
@@ -150,124 +139,6 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     m_visualizer3D = vis;
     m_vtkWidget = widget;
     SetCurrentScreen(widget);
-}
-
-void VtkDisplayTools::adoptNewPrimary(VtkVisPtr vis, QVTKWidgetCustom* widget) {
-    if (!vis || !widget) return;
-
-    if (m_visualizer3D && m_visualizer3D != vis) {
-        disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
-                   &ecvDisplayTools::onPointPicking);
-    }
-    connect(vis.get(), &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            this, &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
-
-    m_visualizer3D = vis;
-    m_vtkWidget = widget;
-    SetMainScreen(widget);
-    SetCurrentScreen(widget);
-
-    if (USE_2D) {
-        auto localVis = widget->localImageVis();
-        if (localVis) {
-            m_visualizer2D = localVis;
-        } else if (m_visualizer2D) {
-            m_visualizer2D->setRender(widget->getVtkRender());
-            m_visualizer2D->setupInteractor(widget->GetInteractor(),
-                                            widget->GetRenderWindow());
-        }
-    }
-
-    m_primaryVis = nullptr;
-    m_primaryWidget = nullptr;
-
-    if (widget->localHotZone()) {
-        m_hotZone = widget->localHotZone();
-        m_primaryCtx.clickableItemsVisible =
-                widget->localClickableItemsVisible();
-    }
-}
-
-void VtkDisplayTools::restorePrimaryView() {
-    if (!m_primaryVis) return;
-
-    // Reconnect picking signal back to the primary visualizer
-    if (m_visualizer3D && m_visualizer3D != m_primaryVis) {
-        disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
-                   &ecvDisplayTools::onPointPicking);
-    }
-    connect(m_primaryVis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
-            &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
-
-    m_visualizer3D = m_primaryVis;
-    m_vtkWidget = m_primaryWidget;
-    SetCurrentScreen(m_primaryWidget);
-
-    if (USE_2D && m_primaryWidget) {
-        auto localVis = m_primaryWidget->localImageVis();
-        if (localVis) {
-            m_visualizer2D = localVis;
-        } else if (m_visualizer2D) {
-            m_visualizer2D->setRender(m_primaryWidget->getVtkRender());
-            m_visualizer2D->setupInteractor(m_primaryWidget->GetInteractor(),
-                                            m_primaryWidget->GetRenderWindow());
-        }
-    }
-
-    // Restore the primary widget's HotZone so the overlay draws
-    // correctly in the primary view after returning from a secondary view.
-    if (m_primaryWidget && m_primaryWidget->localHotZone()) {
-        m_hotZone = m_primaryWidget->localHotZone();
-        m_primaryCtx.clickableItemsVisible =
-                m_primaryWidget->localClickableItemsVisible();
-    }
-
-    m_primaryVis = nullptr;
-    m_primaryWidget = nullptr;
-}
-
-void VtkDisplayTools::resetToBuiltInPipeline() {
-    if (!m_builtInVis || !m_builtInWidget) return;
-
-    if (m_visualizer3D && m_visualizer3D != m_builtInVis) {
-        disconnect(m_visualizer3D.get(),
-                   &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
-                   &ecvDisplayTools::onPointPicking);
-    }
-    connect(m_builtInVis.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
-            &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
-
-    m_visualizer3D = m_builtInVis;
-    m_vtkWidget = m_builtInWidget;
-    SetMainScreen(m_builtInWidget);
-    SetCurrentScreen(m_builtInWidget);
-
-    if (USE_2D && m_builtInWidget) {
-        auto localVis = m_builtInWidget->localImageVis();
-        if (localVis) {
-            m_visualizer2D = localVis;
-        } else if (m_visualizer2D) {
-            m_visualizer2D->setRender(m_builtInWidget->getVtkRender());
-            m_visualizer2D->setupInteractor(m_builtInWidget->GetInteractor(),
-                                            m_builtInWidget->GetRenderWindow());
-        }
-    }
-
-    if (m_builtInWidget->localHotZone()) {
-        m_hotZone = m_builtInWidget->localHotZone();
-        m_primaryCtx.clickableItemsVisible =
-                m_builtInWidget->localClickableItemsVisible();
-    } else {
-        m_hotZone = nullptr;
-        m_primaryCtx.clickableItemsVisible = false;
-    }
-
-    m_primaryVis = nullptr;
-    m_primaryWidget = nullptr;
 }
 
 // ================================================================
@@ -342,51 +213,22 @@ VtkDisplayTools::ScopedHotZoneRender::~ScopedHotZoneRender() {
 }
 
 void VtkDisplayTools::beginPrimaryRender() {
-    if (m_renderGuardActive) return;
-    if (m_primaryVis && m_visualizer3D != m_primaryVis) {
-        m_renderGuardSavedVis = m_visualizer3D;
-        m_renderGuardSavedWidget = m_vtkWidget;
-        m_visualizer3D = m_primaryVis;
-        m_vtkWidget = m_primaryWidget;
-        SetCurrentScreen(m_primaryWidget);
-
-        // Restore primary widget's HotZone for the primary draw pass
-        m_renderGuardSavedHz = m_hotZone;
-        m_renderGuardSavedClickable = m_primaryCtx.clickableItemsVisible;
-        if (m_primaryWidget && m_primaryWidget->localHotZone()) {
-            m_hotZone = m_primaryWidget->localHotZone();
-            m_primaryCtx.clickableItemsVisible =
-                    m_primaryWidget->localClickableItemsVisible();
-        }
-        m_renderGuardActive = true;
-    }
+    // Phase M3: no-op. All views are ecvGLView; no primary/secondary swap.
 }
 
 void VtkDisplayTools::endPrimaryRender() {
-    if (!m_renderGuardActive) return;
-    m_visualizer3D = m_renderGuardSavedVis;
-    m_vtkWidget = m_renderGuardSavedWidget;
-    SetCurrentScreen(m_renderGuardSavedWidget);
-    m_hotZone = m_renderGuardSavedHz;
-    m_primaryCtx.clickableItemsVisible = m_renderGuardSavedClickable;
-    m_renderGuardSavedVis = nullptr;
-    m_renderGuardSavedWidget = nullptr;
-    m_renderGuardSavedHz = nullptr;
-    m_renderGuardSavedClickable = false;
-    m_renderGuardActive = false;
+    // Phase M3: no-op. All views are ecvGLView; no primary/secondary swap.
 }
 
 VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
-    // Phase M1.2: prefer per-view pipeline from ecvGLView, then fall back
-    // to the engine's pipeline. The m_primaryVis backup is still needed
-    // while switchActiveView() can swap m_visualizer3D (removed in M3).
-    if (display && display != static_cast<const ecvDisplayTools*>(this)) {
+    // Phase M3: prefer per-view pipeline from ecvGLView, fall back to engine.
+    if (display) {
         auto* glView = dynamic_cast<ecvGLView*>(display);
         if (glView && glView->getVisualizer3D()) {
             return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
         }
     }
-    return m_primaryVis ? m_primaryVis.get() : m_visualizer3D.get();
+    return m_visualizer3D.get();
 }
 
 VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
