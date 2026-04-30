@@ -1085,19 +1085,37 @@ ecvGLView::redraw()
 
 ---
 
-### TODO M5: Python API 现代化 🔲
+### TODO M5: Python API 现代化 ✅ (已完成 — 当前阶段)
 
 **优先级**: LOW | **复杂度**: MEDIUM | **前置**: M1 | **预估**: 1 周
 
-同原 TODO L3。Python wrapper 67 个静态方法绑定迁移到 per-view API。
+**当前状态**: M3/M4 删除的 API（`ScopedHotZoneRender`、`beginPrimaryRender`、
+`adoptNewPrimary` 等）均未在 Python 绑定中使用。现有 67 个静态方法绑定通过
+`sharedTools()` / `effectiveCtx()` 继续正常工作。
+
+**已完成变更**:
+- 清理 `ccDisplayTools.cpp` 中重复的 `getScreenSize` 和 `getGLCameraParameters` 绑定
+- 未来扩展: 添加 `ecvViewManager` / `ecvGLView` Python API 以支持 per-view 控制（非阻塞项）
 
 ---
 
-### TODO M6: Per-View 表示完善 🔲
+### TODO M6: Per-View 表示完善 🔲 (架构已就绪，深化待续)
 
 **优先级**: LOW | **复杂度**: HIGH | **预估**: 2-3 周
 
 同原 TODO L4。对标 ParaView `vtkSMRepresentationProxy`。
+
+**当前状态** (M6 审计结果):
+- `ecvRepresentationManager` 已是 `(ccHObject*, ecvGenericGLDisplay*)` 键值的全局注册表
+- `ccHObject::draw` 已通过 `context.display` 查找每视图 `ecvViewRepresentation`
+- `ecvGLView::~ecvGLView()` 已清理该视图的所有表示
+- 架构层面**已支持多视图表示**，每个 `ecvGLView` 自然获得独立的 `ecvViewRepresentation`
+
+**待完善项** (非阻塞，后续迭代):
+1. **VTK 属性传播**: `ecvViewRepresentation::Properties`（点大小、渲染模式、标量场等）→ VTK actor 管线
+2. **`representationChanged` 信号**: 已声明但从未发射，UI/属性面板无法跟踪表示变更
+3. **双重数据源对齐**: VTK `VtkVis` 使用 `getViewId()` 映射 vs `ecvViewRepresentation` 并行状态
+4. **属性面板集成**: 在属性面板中显示/编辑每视图覆盖（可见性、不透明度等）
 
 ---
 

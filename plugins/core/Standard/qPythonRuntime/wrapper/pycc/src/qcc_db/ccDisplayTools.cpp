@@ -266,7 +266,6 @@ void define_ccDisplayTools(py::module &m)
                     "only2D"_a = false,
                     "forceRedraw"_a = true)
 
-        .def_static("getScreenSize", &ecvDisplayTools::GetScreenSize)
         .def_static("toBeRefreshed", &ecvDisplayTools::ToBeRefreshed)
         .def_static("invalidateViewport", &ecvDisplayTools::InvalidateViewport)
         .def_static("deprecate3DLayer", &ecvDisplayTools::Deprecate3DLayer)
@@ -300,10 +299,6 @@ void define_ccDisplayTools(py::module &m)
                     "font"_a = QFont())
         .def_static("remove3DLabel", &ecvDisplayTools::Remove3DLabel, "view_id"_a)
         .def_static("removeAllWidgets", &ecvDisplayTools::RemoveAllWidgets, "update"_a = true)
-        .def_static(
-            "getGLCameraParameters",
-            static_cast<void (*)(ccGLCameraParameters &)>(&ecvDisplayTools::GetGLCameraParameters),
-            "params"_a)
         .def_static(
             "toCenteredGLCoordinates", &ecvDisplayTools::ToCenteredGLCoordinates, "x"_a, "y"_a)
         .def_static("getViewportParameters", &ecvDisplayTools::GetViewportParameters)
