@@ -674,9 +674,11 @@ double VtkVis::getGLDepth(int x, int y) {
     double cameraFP[4];
     getVtkCamera()->GetFocalPoint(cameraFP);
     cameraFP[3] = 1.0;
-    getCurrentRenderer()->SetWorldPoint(cameraFP);
-    getCurrentRenderer()->WorldToDisplay();
-    double* displayCoord = getCurrentRenderer()->GetDisplayPoint();
+    auto* ren = getCurrentRenderer();
+    if (!ren) return 0.0;
+    ren->SetWorldPoint(cameraFP);
+    ren->WorldToDisplay();
+    double* displayCoord = ren->GetDisplayPoint();
     double z_buffer = displayCoord[2];
 
     return z_buffer;
@@ -735,9 +737,11 @@ void VtkVis::resetCameraClippingRange(int viewport) {
     this->synchronizeGeometryBounds(viewport);
     this->GeometryBoundsDirty = false;
     if (this->GeometryBounds.IsValid()) {
+        auto* ren = getCurrentRenderer(viewport);
+        if (!ren) return;
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
-        getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
+        ren->ResetCameraClippingRange(bounds);
     }
 }
 
@@ -752,9 +756,11 @@ void VtkVis::resetCameraClippingCached(int viewport) {
         return;
     }
     if (this->GeometryBounds.IsValid()) {
+        auto* ren = getCurrentRenderer(viewport);
+        if (!ren) return;
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
-        getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
+        ren->ResetCameraClippingRange(bounds);
     }
 }
 
@@ -850,13 +856,16 @@ void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
         range[0] = 0.0;
     }
 
+    auto* ren = getCurrentRenderer();
+    if (!ren) return;
+
     // Give ourselves a little breathing room
     range[0] = 0.99 * range[0] -
                (range[1] - range[0]) *
-                       getCurrentRenderer()->GetClippingRangeExpansion();
+                       ren->GetClippingRangeExpansion();
     range[1] = 1.01 * range[1] +
                (range[1] - range[0]) *
-                       getCurrentRenderer()->GetClippingRangeExpansion();
+                       ren->GetClippingRangeExpansion();
 
     // Make sure near is not bigger than far
     range[0] = (range[0] >= range[1]) ? (0.01 * range[1]) : (range[0]);
@@ -864,12 +873,12 @@ void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
     // Make sure near is at least some fraction of far - this prevents near
     // from being behind the camera or too close in front. How close is too
     // close depends on the resolution of the depth buffer
-    if (!getCurrentRenderer()->GetNearClippingPlaneTolerance()) {
-        getCurrentRenderer()->SetNearClippingPlaneTolerance(0.01);
+    if (!ren->GetNearClippingPlaneTolerance()) {
+        ren->SetNearClippingPlaneTolerance(0.01);
         if (this->getRenderWindow()) {
             int ZBufferDepth = this->getRenderWindow()->GetDepthBufferSize();
             if (ZBufferDepth > 16) {
-                getCurrentRenderer()->SetNearClippingPlaneTolerance(0.001);
+                ren->SetNearClippingPlaneTolerance(0.001);
             }
         }
     }
@@ -878,8 +887,8 @@ void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
     // range, this is to make sure that the zbuffer resolution is effectively
     // used
     if (range[0] <
-        getCurrentRenderer()->GetNearClippingPlaneTolerance() * range[1]) {
-        range[0] = getCurrentRenderer()->GetNearClippingPlaneTolerance() *
+        ren->GetNearClippingPlaneTolerance() * range[1]) {
+        range[0] = ren->GetNearClippingPlaneTolerance() *
                    range[1];
     }
 }
@@ -1305,7 +1314,9 @@ void VtkVis::createViewPort(
 void VtkVis::resetCameraViewpoint(const std::string& id) {
     auto it = cloud_actor_map_->find(id);
     if (it != cloud_actor_map_->end() && it->second.viewpoint_transformation) {
-        auto cam = getCurrentRenderer()->GetActiveCamera();
+        auto* ren = getCurrentRenderer();
+        if (!ren) return;
+        auto cam = ren->GetActiveCamera();
         cam->SetPosition(0, 0, 0);
         cam->SetFocalPoint(0, 0, 1);
         cam->SetViewUp(0, -1, 0);
@@ -3644,20 +3655,24 @@ double VtkVis::getParallelScale(int viewport) {
 
 void VtkVis::setOrthoProjection(int viewport) {
     vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
+    if (!cam) return;
     int flag = cam->GetParallelProjection();
     if (!flag) {
         cam->SetParallelProjection(true);
-        getCurrentRenderer()->SetActiveCamera(cam);
+        auto* ren = getCurrentRenderer();
+        if (ren) ren->SetActiveCamera(cam);
         UpdateScreen();
     }
 }
 
 void VtkVis::setPerspectiveProjection(int viewport) {
     vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
+    if (!cam) return;
     int flag = cam->GetParallelProjection();
     if (flag) {
         cam->SetParallelProjection(false);
-        getCurrentRenderer()->SetActiveCamera(cam);
+        auto* ren = getCurrentRenderer();
+        if (ren) ren->SetActiveCamera(cam);
         UpdateScreen();
     }
 }
@@ -4273,7 +4288,9 @@ vtkActor* VtkVis::pickActor(double x, double y) {
         m_propPicker = vtkSmartPointer<vtkPropPicker>::New();
     }
 
-    m_propPicker->Pick(x, y, 0, getRendererCollection()->GetFirstRenderer());
+    auto* ren = getRendererCollection()->GetFirstRenderer();
+    if (!ren) return nullptr;
+    m_propPicker->Pick(x, y, 0, ren);
     return m_propPicker->GetActor();
 }
 
@@ -4286,8 +4303,10 @@ std::string VtkVis::pickItem(double x0 /* = -1*/,
     }
     int* pos = getRenderWindowInteractor()->GetEventPosition();
 
+    auto* firstRen = getRendererCollection()->GetFirstRenderer();
+    if (!firstRen) return {};
     m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1,
-                            getRendererCollection()->GetFirstRenderer());
+                            firstRen);
     vtkActor* pickedActor = m_area_picker->GetActor();
     if (pickedActor) {
         return getIdByActor(pickedActor);

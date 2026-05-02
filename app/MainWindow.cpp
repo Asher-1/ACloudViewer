@@ -110,6 +110,7 @@
 
 // CV_IO_LIB
 #include <AsciiFilter.h>
+#include <AcvProjectFilter.h>
 #include <BinFilter.h>
 #include <DepthMapFileFilter.h>
 #include <ecvGlobalShiftManager.h>
@@ -4225,11 +4226,14 @@ void MainWindow::doActionSaveProject() {
     }
     fullPathName += QString("/") + defaultFileName;
 
+    QString acvFilter = AcvProjectFilter::GetFileFilter();
     QString binFilter = BinFilter::GetFileFilter();
+    QString allFilters = acvFilter + ";;" + binFilter;
+    QString selectedFilter = acvFilter;
 
     // ask the user for the output filename
     QString selectedFilename = QFileDialog::getSaveFileName(
-            this, tr("Save file"), fullPathName, binFilter, &binFilter,
+            this, tr("Save file"), fullPathName, allFilters, &selectedFilter,
             ECVFileDialogOptions());
 
     if (selectedFilename.isEmpty()) {
@@ -4246,10 +4250,9 @@ void MainWindow::doActionSaveProject() {
     CC_FILE_ERROR result = FileIOFilter::SaveToFile(
             rootEntity->getChildrenNumber() == 1 ? rootEntity->getChild(0)
                                                  : rootEntity,
-            selectedFilename, parameters, binFilter);
+            selectedFilename, parameters, selectedFilter);
 
-    // display the compatible version info for BIN files
-    if (result == CC_FERR_NO_ERROR) {
+    if (result == CC_FERR_NO_ERROR && selectedFilter == binFilter) {
         short fileVersion = BinFilter::GetLastSavedFileVersion();
         if (fileVersion != 0) {
             QString minVersion =
@@ -6620,6 +6623,7 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
             if (!s_levelMarkersCloud) {
                 assert(false);
                 cancelPreviousPickingOperation(true);
+                return;
             }
 
             for (unsigned i = 0; i < s_levelMarkersCloud->size(); ++i) {
@@ -6735,6 +6739,7 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
                     pickView = ecvViewManager::instance().getEffectiveView();
                 if (!pickView)
                     pickView = ecvViewManager::instance().getPrimaryView();
+                if (!pickView) break;
                 const ecvViewportParameters& params =
                         pickView->getViewportParameters();
                 if (!params.perspectiveView || params.objectCenteredView) {
@@ -6800,7 +6805,8 @@ void MainWindow::closeEvent(QCloseEvent* event) {
             ecvOptions::Instance().askForConfirmationBeforeQuitting;
 
     // If no entities loaded, quit without asking
-    if (m_ccRoot && m_ccRoot->getRootEntity()->getChildrenNumber() == 0) {
+    if (m_ccRoot && m_ccRoot->getRootEntity() &&
+        m_ccRoot->getRootEntity()->getChildrenNumber() == 0) {
         event->accept();
         if (s_autoSaveGuiElementPos) {
             saveGUIElementsPos();
@@ -8972,6 +8978,10 @@ void MainWindow::doActionGlobalShiftSeetings() {
 ccPointCloud* MainWindow::askUserToSelectACloud(ccHObject* defaultCloudEntity,
                                                 QString inviteMessage) {
     ccHObject::Container clouds;
+    if (!m_ccRoot || !m_ccRoot->getRootEntity()) {
+        ecvConsole::Error(tr("No cloud in database!"));
+        return nullptr;
+    }
     m_ccRoot->getRootEntity()->filterChildren(clouds, true,
                                               CV_TYPES::POINT_CLOUD, true);
     if (clouds.empty()) {
@@ -12466,7 +12476,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                     // specific case: labels (do this before temporarily
                     // removing 'entity' from DB!)
                     ccHObject::Container labels;
-                    if (m_ccRoot) {
+                    if (m_ccRoot && m_ccRoot->getRootEntity()) {
                         m_ccRoot->getRootEntity()->filterChildren(
                                 labels, true, CV_TYPES::LABEL_2D);
                     }

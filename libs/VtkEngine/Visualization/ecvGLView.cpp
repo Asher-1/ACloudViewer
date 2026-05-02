@@ -118,6 +118,14 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
     });
+
+    connect(&ecvRepresentationManager::instance(),
+            &ecvRepresentationManager::representationChanged, this,
+            [this](ecvViewRepresentation* rep) {
+                if (rep && rep->getView() == this) {
+                    redraw(false, true);
+                }
+            });
 }
 
 // ================================================================

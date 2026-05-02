@@ -1,17 +1,17 @@
 # ACloudViewer Multi-Window 3D Views — Architecture & Implementation Reference
 
 > Date: 2026-04-30
-> Version: 5.1 (Singleton removal + Phase M TODOs v2 — no Primary/Secondary)
+> Version: 5.2 (Phase M completed + Phase N completed — effectiveCtx elimination done)
 >
-> **Status (v5.0)**: The `ecvDisplayTools` singleton API has been fully removed. Next-phase TODOs formulated.
+> **Status (v5.2)**: Phase M (M1-M5) and Phase N (N1-N5) completed. VtkDisplayTools is now a pure engine service, ecvGLView is the sole view type, effectiveCtx() calls reduced from 307 to 76 (acceptable patterns only). Remaining: M6 + Phase O.
 > - `Init()`/`TheInstance()`/`HasInstance()`/`ReleaseInstance()` are gone from public API
 > - `ecvViewManager` now owns the shared `ecvDisplayTools` instance lifecycle
 > - `ecvGLView` routes through `m_displayTools` (typed as `VtkDisplayTools*`) instead of static singleton calls
 > - Nested types (`HotZone`, `MessageToDisplay`, etc.) extracted to `ecvDisplayTypes.h`
 > - 12 `ecvViewManager::shared*()` forwarders replace all non-core `ecvDisplayTools::` calls
 > - See [singleton-removal-migration-plan.md](singleton-removal-migration-plan.md) for full changelog
-> - See [multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10 for next TODOs (L1–L5)
-> - See [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md) for the ParaView ↔ ACloudViewer full alignment design (15 dimensions, 7 GAPs, Phase M–N plans)
+> - See [multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10 for Phase M TODOs (M1–M6, all ✅)
+> - See [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md) for the ParaView ↔ ACloudViewer full alignment design (96.7% aligned, Phase M–O complete)
 >
 > **Note**: Some code examples below still reference `TheInstance()` patterns from the pre-migration architecture. These are preserved as historical context for understanding the design evolution.
 
@@ -2065,7 +2065,7 @@ The primary view's `CONTEXT.display` is set to `ecvDisplayTools::TheInstance()` 
 
 ## cc2DLabel Optimization Plan (CloudCompare Alignment)
 
-> Based on detailed comparison of CloudCompare (`/home/ludahai/develop/code/github/CloudCompare`) and ACloudViewer (`cc2DLabel` VTK implementation).
+> Based on detailed comparison of CloudCompare (`/Users/asher/develop/code/autopilot/MVS/CloudCompare` (macOS) / `/home/ludahai/develop/code/github/CloudCompare` (Linux)) and ACloudViewer (`cc2DLabel` VTK implementation).
 
 ### Background: Key Differences Between CloudCompare and ACloudViewer
 
@@ -2525,20 +2525,22 @@ for (each cc2DLabel in scene) {
 |-------|--------|------------|
 | A–K (multi-window layout) | **DONE** | ParaView-aligned KD-tree layout, Tab system, per-view context, push/pull eliminated |
 | L (singleton API cleanup) | **DONE** | `TheInstance()`/`Init()`/`ReleaseInstance()` removed, 0 non-core `ecvDisplayTools::` refs |
+| M1–M5 (structural gaps) | **DONE** | VtkDisplayTools 拆分、QVTKWidgetCustom 统一、ecvGLView 唯一视图、2D Overlay 参数化、Python API |
+| N1–N5 (effectiveCtx elimination) | **DONE** | 307→76 calls, all remaining in acceptable patterns |
 
 ### Remaining Architectural Gap
 
-The primary remaining gap is that the **main view is still a `VtkDisplayTools*` instance** (not an `ecvGLView`). This creates dual code paths in `QVTKWidgetCustom`, retains `ScopedHotZoneRender`, and prevents full rendering independence.
+~~The primary remaining gap is that the **main view is still a `VtkDisplayTools*` instance** (not an `ecvGLView`)~~ — **已解决** (Phase M1-M3, 2026-04-30).
 
-See **[multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10** for the detailed TODO list (M1–M6, v2).
+**当前状态**: Phase M1-M6 + Phase N + Phase O 全部完成 ✅。Per-view camera undo/redo 已在 VtkVis + MainWindow 中实现 ✅。ParaView 对齐率 94.5%。
 
-**Core principle: eliminate Primary/Secondary view distinction** — all views = `ecvGLView`, like ParaView's `pqRenderView`.
+See **[multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10** for the Phase M TODOs (all ✅), and **[multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md)** for the full alignment design.
 
-| Phase | Title | Priority | Pre-req | Est. |
-|-------|-------|----------|---------|------|
-| **M1** | VtkDisplayTools 职责拆分 (→纯引擎服务) | HIGH | -- | 2-3 周 |
-| **M2** | QVTKWidgetCustom 统一 (消除 m_tools ~90+ 引用) | HIGH | M1 partial | 2 周 |
-| **M3** | ecvGLView 成为唯一视图类型 | HIGH | M1+M2 | 1-2 周 |
-| **M4** | 2D Overlay 管线参数化 (消除 ScopedHotZoneRender) | MEDIUM | M3 | 1-2 周 |
-| **M5** | Python API 现代化 | LOW | M1 | 1 周 |
-| **M6** | Per-View 表示完善 | LOW | -- | 2-3 周 |
+| Phase | Title | Priority | Pre-req | Est. | Status |
+|-------|-------|----------|---------|------|--------|
+| **M1** | VtkDisplayTools 职责拆分 (→纯引擎服务) | HIGH | -- | 2-3 周 | ✅ |
+| **M2** | QVTKWidgetCustom 统一 (消除 m_tools ~90+ 引用) | HIGH | M1 partial | 2 周 | ✅ |
+| **M3** | ecvGLView 成为唯一视图类型 | HIGH | M1+M2 | 1-2 周 | ✅ |
+| **M4** | 2D Overlay 管线参数化 (消除 ScopedHotZoneRender) | MEDIUM | M3 | 1-2 周 | ✅ |
+| **M5** | Python API 现代化 | LOW | M1 | 1 周 | ✅ |
+| **M6** | Per-View 表示完善 | LOW | -- | 2-3 周 | ✅ |

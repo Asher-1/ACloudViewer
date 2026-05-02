@@ -8,6 +8,8 @@
 #include "FileIOFilter.h"
 
 // file wrappers
+// PROJECT
+#include "AcvProjectFilter.h"
 // CLOUDS
 #include "AsciiFilter.h"
 #include "BinFilter.h"
@@ -149,6 +151,7 @@ unsigned FileIOFilter::IncreaseSesionCounter() { return ++s_sessionCounter; }
 
 void FileIOFilter::InitInternalFilters() {
     // from the most useful to the less one!
+    Register(Shared(new AcvProjectFilter()));
     Register(Shared(new BinFilter()));
     Register(Shared(new AsciiFilter()));
     Register(Shared(new PTXFilter()));

@@ -5,8 +5,8 @@
 > Author: Automated Architecture Audit
 >
 > **References**:
-> - ParaView source: `/home/ludahai/develop/code/github/ParaView`
-> - ACloudViewer source: `/home/ludahai/develop/code/github/ACloudViewer`
+> - ParaView source: `/Users/asher/develop/code/autopilot/MVS/ParaView` (macOS) / `/home/ludahai/develop/code/github/ParaView` (Linux)
+> - ACloudViewer source: `/Users/asher/develop/code/github/ACloudViewer` (macOS) / `/home/ludahai/develop/code/github/ACloudViewer` (Linux)
 > - Prior docs: `multi-window-refactor-roadmap-Vtk-vs-CC.md`, `singleton-removal-migration-plan.md`, `multi-window-views.md`, `multi-window-paradigms-CloudCompare-ParaView.md`
 
 ---
@@ -76,13 +76,28 @@ ACloudViewer's multi-window rendering system has undergone an extensive refactor
 | Singleton API | ~1000+ external refs | **9 core infrastructure files** |
 | Per-view 2D overlay | Shared hotzone/messages | Independent per `ecvGLView` |
 
-**Remaining work** (Phase M–N) focuses on three structural gaps that prevent full ParaView parity:
+**Phase M–O 完成状态** (2026-05-01): 四个结构性 gap 已全部解决:
 
-1. **VtkDisplayTools dual role** — simultaneously acting as VTK engine service and "primary view"
-2. **QVTKWidgetCustom `m_tools` coupling** — ~90+ references to the singleton
-3. **`effectiveCtx()` global resolution** — 307 implicit context lookups in `ecvDisplayTools.cpp`
+1. ~~**VtkDisplayTools dual role**~~ ✅ — M1 拆分为纯引擎服务，M3 使 ecvGLView 成为唯一视图类型
+2. ~~**QVTKWidgetCustom `m_tools` coupling**~~ ✅ — M2 通过 `m_ownerView` 统一，消除 `m_tools`
+3. ~~**`effectiveCtx()` global resolution**~~ ✅ — Phase N (N1-N5) 将 307 降至 76（均为可接受模式）
+4. ~~**Per-View Representation VTK Propagation**~~ ✅ — Phase O: `effective*()` 全属性覆盖 + `representationChanged` 信号 + 属性面板集成
 
-This document provides the comprehensive, actionable redesign plan to close these gaps.
+**ParaView 对齐率**: 89/91 = **97.8%** ALIGNED（对比矩阵全部 91 行中仅剩 2 项 GAP，均为低优先级）。
+
+**剩余低优先级工作** (均标记 LOW — 2 GAP 均为功能范围，非多窗口架构缺失):
+- Phase P (View Type Registry) — 仅在需要 SpreadSheet/Chart 等视图类型时启动
+- ~~Phase Q (Per-View Camera Undo/Redo)~~ ✅ RESOLVED — 已在 VtkVis + MainWindow 中实现
+- ~~GAP-R: Project File (.acv) 持久化~~ ✅ ALIGNED — `AcvProjectFilter` 实现 .acv 复合项目格式 (实体 + 视图布局 + 元数据)
+- GAP-S: Global Undo Stack — 见 §7 实现方案
+- GAP-T: Source Undo — 见 §7 实现方案（依赖 GAP-S）
+
+**稳定性修复 (Null Dereference Hardening)**:
+- `ecvDisplayTools.cpp`: `SetRedrawRecursive` / `UpdateNamePoseRecursive` — 启动阶段 `m_globalDBRoot` 为 null 时的 guard
+- `VtkVis.cpp`: `resetCameraClippingCached` / `resetCameraClippingRange` / `getReasonableClippingRange` / `getGLDepth` / `resetCameraViewpoint` / `setOrthoProjection` / `setPerspectiveProjection` / `pickActor` / `pickItem` — `getCurrentRenderer()` / `getRendererCollection()->GetFirstRenderer()` 返回 null 时的 guard (共 8 处)
+- 修复了两个启动阶段 segfault (EXC_BAD_ACCESS): 一个在 `MainWindow` 构造期间 `refreshAll` 触发的 null `ccHObject` 调用，另一个在初始 resize 事件触发 `resetCameraClippingCached` 时的 null renderer 访问
+
+This document provides the comprehensive, actionable redesign plan and records the completion of Phase M–N–O.
 
 ---
 
@@ -169,13 +184,13 @@ ParaView: pqActiveObjects (singleton)        ACloudViewer: ecvViewManager (singl
 
 | Aspect | ParaView | ACloudViewer | Status |
 |--------|----------|-------------|--------|
-| Per-(entity, view) state | `vtkSMRepresentationProxy` | `ecvViewRepresentation` | **PARTIAL** |
+| Per-(entity, view) state | `vtkSMRepresentationProxy` | `ecvViewRepresentation` | **ALIGNED** (Phase O: full `effective*()` + draw context propagation) |
 | Registry | ProxyManager | `ecvRepresentationManager` | **ALIGNED** |
-| Properties | SM properties (color, opacity, visibility, etc.) | `Properties` struct (`opacity`, `pointSize`, `renderMode`, etc.) | **PARTIAL** — declared but not fully propagated to VTK actors |
+| Properties | SM properties (color, opacity, visibility, etc.) | `Properties` struct (`opacity`, `pointSize`, `renderMode`, etc.) | **ALIGNED** (Phase O: `effective*()` methods propagate all properties through `CC_DRAW_CONTEXT`) |
 | Dirty tracking | `MarkModified()` on proxy | `isDirty()` / `setDirty()` | **ALIGNED** |
 | Automatic creation | On `pqObjectBuilder::createRepresentation()` | On `ecvRepresentationManager::getOrCreate()` during draw | **ALIGNED** |
 | Cleanup on view close | Proxy unregister | `ecvGLView::~ecvGLView()` clears view representations | **ALIGNED** |
-| `representationChanged` signal | Emitted on SM update | Declared but **never fired** | **GAP** |
+| `representationChanged` signal | Emitted on SM update | Emitted via `notifyChanged()` on `setProperties()`/`setVisible()` | **ALIGNED** (Phase O) |
 
 ### 2.5 Camera Link / Synchronization
 
@@ -205,10 +220,10 @@ ParaView: pqActiveObjects (singleton)        ACloudViewer: ecvViewManager (singl
 |--------|----------|-------------|--------|
 | Frame class | `pqViewFrame` (title bar + border + central widget) | `CentralWidgetFrame` (via `ecvMultiViewFrameManager`) | **ALIGNED** |
 | Standard buttons | SplitH, SplitV, Maximize, Restore, Close | SplitH, SplitV, Maximize, Close | **ALIGNED** |
-| Custom actions | `addTitleBarAction(QAction*)` | Frame toolbar with capture/camera/selection | **PARTIAL** |
+| Custom actions | `addTitleBarAction(QAction*)` | `ecvMultiViewFrameManager::addTitleBarAction()` + built-in toolbar | **ALIGNED** |
 | Active border | `setBorderColor()` / `setBorderVisible()` | Active highlight via stylesheet | **ALIGNED** |
 | Drag-drop swap | Drag UUID via QMimeData | `ecvMultiViewFrameManager` drag-drop | **ALIGNED** |
-| Per-view camera undo | `pqCameraUndoRedoReaction` per frame | Not implemented | **GAP** (LOW priority) |
+| Per-view camera undo | `pqCameraUndoRedoReaction` per frame | `VtkVis::cameraUndo/Redo` + `MainWindow` toolbar buttons | ✅ **ALIGNED** |
 
 ### 2.8 Rendering Pipeline
 
@@ -241,8 +256,8 @@ ACloudViewer Render Flow (TARGET — Phase M3 complete):
 
 | Aspect | ParaView | ACloudViewer Current | ACloudViewer Target | Status |
 |--------|----------|---------------------|--------------------|----|
-| Render trigger | `pqView::render()` per view | `RedrawDisplay()` loop | `ecvViewManager::redrawAll()` or per-view `redraw()` | **M3 needed** |
-| Per-view independence | Complete (each vtkRenderer) | Almost — `ScopedRenderOverride` still used for housekeeping context | Complete after M3 | **PARTIAL** |
+| Render trigger | `pqView::render()` per view | Per-view `redraw()` + `ecvViewManager::redrawAll()` | Per-view `redraw()` | **ALIGNED** (Phase M3) |
+| Per-view independence | Complete (each vtkRenderer) | Complete — each `ecvGLView` owns its own `VtkVis` + `QVTKWidgetCustom` | Complete | **ALIGNED** (Phase M3+M4) |
 | 2D overlay | Per-view overlay actors | Per-view DrawClickableItems (M4 done) | Already done | **ALIGNED** |
 | Render-to-image | `vtkSMViewProxy::CaptureWindow()` | `ecvGLView::renderToFile()` | Already per-view | **ALIGNED** |
 
@@ -290,7 +305,7 @@ ACloudViewer View Lifecycle:
 | Factory | `pqObjectBuilder::createView()` | `ecvGLView::Create()` | **ALIGNED** |
 | Registration | SM proxy manager | `ecvViewManager::registerView()` | **ALIGNED** |
 | Cleanup | SM unregister + pqSMModel | `viewClosing` signal chain | **ALIGNED** |
-| Primary adoption | No concept (all views equal) | `prepareViewClose` + survivor lookup | **GAP** — M3 will eliminate |
+| Primary adoption | No concept (all views equal) | No concept (all views = `ecvGLView`, equal) | **ALIGNED** (Phase M3: Primary/Secondary eliminated) |
 
 ### 2.11 Pipeline Browser ↔ DB Tree Integration
 
@@ -337,7 +352,7 @@ ParaView pqPropertiesPanel (3 tabs):      ACloudViewer:
 | Aspect | ParaView | ACloudViewer | Status |
 |--------|----------|-------------|--------|
 | Source properties | SM proxy auto-generated widgets | ccPropertiesTreeDelegate | Different mechanism, same goal |
-| Display properties | `pqDataRepresentation` properties panel | Per-entity Properties dialog | **PARTIAL** — no per-view repr panel yet |
+| Display properties | `pqDataRepresentation` properties panel | `ecvPropertiesTreeDelegate` "Display (Per-View Override)" section | **ALIGNED** (Phase O: visibility, opacity, point size per-view) |
 | View properties | `VIEW_PROPERTIES` tab (background, axes, etc.) | Right-click "View Properties" menu | **ALIGNED** (simpler UX) |
 | Apply/Reset | Explicit Apply button | Immediate apply | By design (no SM deferred apply) |
 
@@ -347,7 +362,7 @@ ParaView pqPropertiesPanel (3 tabs):      ACloudViewer:
 |--------|----------|-------------|--------|
 | Global undo stack | `pqUndoStack` (wraps `vtkSMUndoStack`) | No global undo stack | **GAP** (low priority for multi-view) |
 | Layout undo | `BEGIN_UNDO_SET` via proxy | `ecvViewLayoutProxy::beginUndoSet/endUndoSet` (memento) | **ALIGNED** |
-| Camera undo | `pqCameraUndoRedoReaction` per frame | Not implemented | **GAP** (LOW) |
+| Camera undo | `pqCameraUndoRedoReaction` per frame | `VtkVis::cameraUndo/Redo` + per-frame toolbar | ✅ **ALIGNED** |
 | Source undo | SM undo elements | No source undo | **GAP** (feature scope, not multi-view specific) |
 
 ### 2.14 Plugin Multi-View API
@@ -357,8 +372,8 @@ ParaView pqPropertiesPanel (3 tabs):      ACloudViewer:
 | Plugin access to active view | `pqActiveObjects::instance().activeView()` | `ecvViewManager::instance().getActiveView()` | **ALIGNED** |
 | Plugin rendering into specific view | `vtkSMRepresentationProxy` per view | `context.display` routing in `ccHObject::draw()` | **ALIGNED** |
 | Plugin creating views | `pqObjectBuilder::createView()` | `ecvGLView::Create()` | **ALIGNED** |
-| Plugin per-view state | SM proxy properties | `ecvViewRepresentation::Properties` | **PARTIAL** |
-| Python multi-view API | `simple.CreateRenderView()`, `simple.SetActiveView()` | `ccDisplayTools.cpp` wrapper (67 bindings) | **PARTIAL** — per-view Python API planned (M5) |
+| Plugin per-view state | SM proxy properties | `ecvViewRepresentation::Properties` + `effective*()` | **ALIGNED** (Phase O) |
+| Python multi-view API | `simple.CreateRenderView()`, `simple.SetActiveView()` | `ccViewManager.cpp` pybind11 wrapper: `getActiveView/setActiveView/getAllViews/viewCount/redrawAll` | **ALIGNED** |
 
 ### 2.15 Animation & Multi-View
 
@@ -403,11 +418,11 @@ ParaView pqPropertiesPanel (3 tabs):      ACloudViewer:
 
 ## 4. Remaining Gaps & Root Cause Analysis
 
-### 4.1 GAP-1: VtkDisplayTools Dual Role
+### 4.1 GAP-1: VtkDisplayTools Dual Role ✅ RESOLVED
 
 **ParaView pattern**: `vtkSMRenderViewProxy` is a **per-view proxy** — one instance per view. It has no "primary" concept. The rendering engine (VTK) is shared infrastructure, not a view.
 
-**ACloudViewer problem**: `VtkDisplayTools` is simultaneously:
+**ACloudViewer solution** (Phase M1 完成): `VtkDisplayTools` 已拆分为纯引擎服务，不再注册为 `ecvGenericGLDisplay`。原有的:
 - **VTK engine service** (Category B): CC→VTK entity translation (`drawPointCloud`, `drawMesh`), actor lookup (`findVisByActorId`)
 - **Primary view** (Category A): `m_visualizer3D`, `m_vtkWidget`, `switchActiveView()`, `restorePrimaryView()`
 - **Per-view provider** (Category C): `toWorldPoint`, `pick3DItem`, `renderToImage`
@@ -420,11 +435,11 @@ This dual role causes:
 
 **Target**: Split into `VtkEngine` (stateless service, Category B) + all views are `ecvGLView` (Category A+C eliminated).
 
-### 4.2 GAP-2: QVTKWidgetCustom m_tools Coupling
+### 4.2 GAP-2: QVTKWidgetCustom m_tools Coupling ✅ RESOLVED
 
 **ParaView pattern**: The VTK widget is owned by its `pqView`. Events go to the view, not a global tools object.
 
-**ACloudViewer problem**: `QVTKWidgetCustom` references `m_tools` (the singleton `ecvDisplayTools*`) in ~90+ places:
+**ACloudViewer solution** (Phase M2 完成): `QVTKWidgetCustom` 已通过 `m_ownerView` 统一，消除 `m_tools` 成员。原有 ~90+ 处对 singleton 的引用已移除:
 
 | Category | Count | Examples |
 |----------|-------|---------|
@@ -436,11 +451,11 @@ This dual role causes:
 
 **Target**: All references route through `m_ownerView` (which every QVTKWidgetCustom already has for secondary views).
 
-### 4.3 GAP-3: effectiveCtx() Global Resolution
+### 4.3 GAP-3: effectiveCtx() Global Resolution ✅ RESOLVED
 
 **ParaView pattern**: No global context resolution. Each `vtkSMViewProxy` owns its properties directly.
 
-**ACloudViewer problem**: `ecvDisplayTools.cpp` contains **307** calls to `effectiveCtx()`, which dynamically resolves to the active view's `ecvViewContext` or falls back to `m_primaryCtx`. This creates implicit coupling between static methods and the active view.
+**ACloudViewer problem** (已解决): `ecvDisplayTools.cpp` 原含 **307** 个 `effectiveCtx()` 调用，Phase N (N1-N5) 已将其降至 **76** 个，残留均为可接受模式（wrapper delegations / local cached refs / single-use accessor lookups）。
 
 **Decomposition (64 functions, ~307 calls)**:
 
@@ -454,13 +469,13 @@ This dual role causes:
 
 **Target**: Each function accepts explicit `ecvViewContext&` parameter; old signatures become wrappers.
 
-### 4.4 GAP-4: Per-View Representation VTK Propagation
+### ~~4.4 GAP-4: Per-View Representation VTK Propagation~~ ✅ RESOLVED
 
 **ParaView pattern**: `vtkSMRepresentationProxy` properties directly control VTK actor pipeline. Changing opacity on a representation immediately updates the underlying `vtkMapper`/`vtkActor`.
 
-**ACloudViewer problem**: `ecvViewRepresentation::Properties` (opacity, pointSize, renderMode, etc.) are **declared** but only `effectiveOpacity()` is propagated during `ccHObject::draw()`. Other properties lack VTK actor pipeline integration.
+**ACloudViewer status**: ✅ `ecvViewRepresentation::Properties` now fully propagated via `effective*()` methods → `ccHObject::draw()` → `CC_DRAW_CONTEXT` → VTK actors. `representationChanged` signal emitted on property/visibility changes. `ecvGLView` auto-redraws. Properties panel has "Display (Per-View Override)" section.
 
-**Target**: Property changes on `ecvViewRepresentation` trigger VTK actor updates via `ecvRepresentationManager`.
+**Resolution**: Phase O implementation (2026-05-01). See [`docs/superpowers/plans/2026-05-01-phase-m6-o-perview-representation.md`](../superpowers/plans/2026-05-01-phase-m6-o-perview-representation.md).
 
 ### 4.5 GAP-5: View Type Registry
 
@@ -470,23 +485,21 @@ This dual role causes:
 
 **Priority**: LOW — only relevant when additional view types (2D chart, spreadsheet) are added.
 
-### 4.6 GAP-6: Per-View Display Properties Panel
+### ~~4.6 GAP-6: Per-View Display Properties Panel~~ ✅ RESOLVED
 
 **ParaView pattern**: `pqPropertiesPanel` has a dedicated "Display" tab that shows and edits `vtkSMRepresentationProxy` properties for the active representation in the active view. Changing opacity in View A is independent of View B.
 
-**ACloudViewer status**: Entity properties dialog shows global entity properties. Per-view overrides are possible through `ecvViewRepresentation::Properties` but there is no dedicated UI panel for editing them.
+**ACloudViewer status**: ✅ `ecvPropertiesTreeDelegate` now includes a "Display (Per-View Override)" section with per-view visibility checkbox, opacity slider (0-100), and point size spinbox (1-16, for point clouds). Uses `ecvRepresentationManager::getRepresentation()` to read/write the active view's representation. Changes emit `ccObjectAppearanceChanged` and trigger `representationChanged` → view auto-refresh.
 
-**Target**: Add a "Display (View)" section to the properties dialog that shows per-view override controls (opacity, point size, render mode) when multiple views exist.
+**Resolution**: Phase O implementation (2026-05-01).
 
-**Priority**: MEDIUM — improves multi-view UX significantly.
-
-### 4.7 GAP-7: Per-View Camera Undo/Redo
+### ~~4.7 GAP-7: Per-View Camera Undo/Redo~~ ✅ RESOLVED
 
 **ParaView pattern**: `pqCameraUndoRedoReaction` provides undo/redo buttons in each view frame's toolbar.
 
-**ACloudViewer status**: Layout undo/redo exists (`ecvViewLayoutProxy::undo/redo`). Per-view camera undo is not implemented.
+**ACloudViewer status**: ✅ Fully implemented. `VtkVis` owns per-view `m_cameraUndoStack`/`m_cameraRedoStack` (deque, max 20 entries). `pushCameraState()` is triggered on `vtkCommand::StartInteractionEvent` via `vtkCallbackCommand`. `MainWindow::createViewFrame` adds Camera Undo/Redo `QAction`s to each view frame's toolbar with ParaView-style icons (`pqUndoCamera.svg`/`pqRedoCamera.svg`). A 500ms `QTimer` polls `canCameraUndo()`/`canCameraRedo()` to update button enable state.
 
-**Priority**: LOW — nice-to-have UX improvement.
+**Resolution**: Already implemented in `VtkVis` + `MainWindow::createViewFrame` (lines ~2821–2858).
 
 ---
 
@@ -736,11 +749,11 @@ Mouse event in QVTKWidgetCustom
 
 ## 6. Refactoring Phases (M–N)
 
-### 6.1 Phase M1: VtkDisplayTools → VtkEngine
+### 6.1 Phase M1: VtkDisplayTools → VtkEngine ✅
 
 **Goal**: Split `VtkDisplayTools` from "view + engine" into "pure engine service".
 
-**Duration**: 2-3 weeks | **Risk**: HIGH | **Priority**: HIGH
+**Duration**: 2-3 weeks | **Risk**: HIGH | **Priority**: HIGH | **完成**: 2026-04-30
 
 #### Member/Method Classification
 
@@ -761,16 +774,16 @@ Mouse event in QVTKWidgetCustom
 
 #### Acceptance Criteria
 
-- [ ] `VtkDisplayTools` does not register as `ecvGenericGLDisplay`
-- [ ] Category A members/methods all deleted or deprecated
-- [ ] Category B methods accept explicit pipeline parameters
-- [ ] Category C methods have `ecvGLView` implementations
+- [x] `VtkDisplayTools` does not register as `ecvGenericGLDisplay`
+- [x] Category A members/methods all deleted or deprecated
+- [x] Category B methods accept explicit pipeline parameters
+- [x] Category C methods have `ecvGLView` implementations
 
-### 6.2 Phase M2: QVTKWidgetCustom Unification
+### 6.2 Phase M2: QVTKWidgetCustom Unification ✅
 
 **Goal**: Eliminate `m_tools` member. All QVTKWidgetCustom instances use `m_ownerView`.
 
-**Duration**: 2 weeks | **Risk**: HIGH | **Priority**: HIGH | **Prereq**: M1 partial
+**Duration**: 2 weeks | **Risk**: HIGH | **Priority**: HIGH | **Prereq**: M1 partial | **完成**: 2026-04-30
 
 #### Current m_tools Reference Breakdown (~90+ refs)
 
@@ -793,15 +806,15 @@ Mouse event in QVTKWidgetCustom
 
 #### Acceptance Criteria
 
-- [ ] `QVTKWidgetCustom` has no `m_tools` member
-- [ ] All instances have `m_ownerView != nullptr`
-- [ ] `curCtx()` has no branch (direct `m_ownerView->context()`)
+- [x] `QVTKWidgetCustom` has no `m_tools` member
+- [x] All instances have `m_ownerView != nullptr`
+- [x] `curCtx()` has no branch (direct `m_ownerView->context()`)
 
-### 6.3 Phase M3: ecvGLView as Sole View Type
+### 6.3 Phase M3: ecvGLView as Sole View Type ✅
 
 **Goal**: `MainWindow::initial()` creates `ecvGLView` as the first view. No "primary" concept.
 
-**Duration**: 1-2 weeks | **Risk**: HIGH | **Priority**: HIGH | **Prereq**: M1 + M2
+**Duration**: 1-2 weeks | **Risk**: HIGH | **Priority**: HIGH | **Prereq**: M1 + M2 | **完成**: 2026-04-30
 
 **Status**: M3.1 (first view creation) **DONE**. M3.2 (handler simplification) **DONE**.
 
@@ -811,8 +824,8 @@ Mouse event in QVTKWidgetCustom
 |------|---------|--------|
 | M3.1 | MainWindow creates ecvGLView + removes VtkDisplayTools view registration | **DONE** |
 | M3.2 | Simplify rebindToolsToActiveView + view close handlers | **DONE** |
-| M3.3 | Delete Category A implementation code | **TODO** |
-| M3.4 | Simplify `dynamic_cast<ecvGLView*>` branches (all views are ecvGLView) | **TODO** |
+| M3.3 | Delete Category A implementation code | ✅ **DONE** |
+| M3.4 | Simplify `dynamic_cast<ecvGLView*>` branches (all views are ecvGLView) | ✅ **DONE** |
 
 #### RedrawDisplay Coordination Migration
 
@@ -851,9 +864,9 @@ Callers of RedrawDisplay (~86 external):
 
 - [x] `VtkDisplayTools` not registered as `ecvGenericGLDisplay`
 - [x] First view is `ecvGLView` instance
-- [ ] `switchActiveView`/`restorePrimaryView`/`resetToBuiltInPipeline` deleted
-- [ ] `resolveVisualizer` simplified: always from `ecvGLView*`
-- [ ] `RedrawDisplay` replaced by `ecvViewManager::redrawAll()` + per-view `redraw()`
+- [x] `switchActiveView`/`restorePrimaryView`/`resetToBuiltInPipeline` deleted
+- [x] `resolveVisualizer` simplified: always from `ecvGLView*`
+- [x] `RedrawDisplay` replaced by `ecvViewManager::redrawAll()` + per-view `redraw()`
 
 ### 6.4 Phase M4: 2D Overlay Pipeline Parameterization
 
@@ -866,11 +879,14 @@ Key results:
 - Each `ecvGLView::redraw()` includes full DrawColorRamp, Messages, ScaleBar
 - `RedrawDisplay` legacy tail removed
 
-### 6.5 Phase N: effectiveCtx() Elimination
+### 6.5 Phase N: effectiveCtx() Elimination ✅
 
 **Goal**: Replace all 307 `effectiveCtx()` calls with explicit `ecvViewContext&` parameters.
 
-**Duration**: 4-5 weeks | **Risk**: MEDIUM-HIGH | **Priority**: MEDIUM
+**Duration**: 4-5 weeks | **Risk**: MEDIUM-HIGH | **Priority**: MEDIUM | **完成**: 2026-05-01
+
+> **结果**: `ecvDisplayTools.cpp` 中 `effectiveCtx()` 从 307 降至 76，残留 76 个均为可接受模式：
+> 52 wrapper delegations + 14 local cached refs + 3 single-use accessor lookups + 7 其他。
 
 #### Phase Breakdown
 
@@ -921,20 +937,22 @@ void ecvDisplayTools::SetZoom(float value) {
 | `SetPerspectiveState` | 20 | Full perspective/orthographic toggle with all state |
 | `initializeSharedInstance` | 36 | Startup init — replace `effectiveCtx()` with direct `m_primaryCtx` |
 
-### 6.6 Phase O: Per-View Representation Deep Integration
+### ~~6.6 Phase O: Per-View Representation Deep Integration~~ ✅ COMPLETE (2026-05-01)
 
 **Goal**: Full VTK actor pipeline propagation for per-view representation properties.
 
 **Duration**: 2-3 weeks | **Risk**: MEDIUM | **Priority**: LOW
 
+> **Implementation Plan**: [`docs/superpowers/plans/2026-05-01-phase-m6-o-perview-representation.md`](../superpowers/plans/2026-05-01-phase-m6-o-perview-representation.md) (unified M6+O plan)
+
 #### Tasks
 
-| Step | Content | ParaView Equivalent |
-|------|---------|-------------------|
-| O1 | `ecvViewRepresentation::Properties` → VTK actor pipeline (opacity, pointSize, renderMode) | `vtkSMRepresentationProxy::UpdateVTKObjects()` |
-| O2 | `representationChanged` signal emission | `pqActiveObjects::representationChanged()` |
-| O3 | Dual data source alignment: VtkVis `getViewId()` mapping vs `ecvViewRepresentation` | Proxy-based unified state |
-| O4 | Properties panel integration (show/edit per-view overrides) | ParaView Properties panel |
+| Step | Content | ParaView Equivalent | Status |
+|------|---------|-------------------|--------|
+| O1 | `ecvViewRepresentation::Properties` → VTK actor pipeline (opacity, pointSize, renderMode) | `vtkSMRepresentationProxy::UpdateVTKObjects()` | ✅ |
+| O2 | `representationChanged` signal emission | `pqActiveObjects::representationChanged()` | ✅ |
+| O3 | Dual data source alignment: VtkVis `getViewId()` mapping vs `ecvViewRepresentation` | Proxy-based unified state | ✅ |
+| O4 | Properties panel integration (show/edit per-view overrides) | ParaView Properties panel | ✅ |
 
 ---
 
@@ -1244,20 +1262,20 @@ classDiagram
 | `pqRenderView` | Qt/Core/pqRenderView.h | `ecvGLView` | libs/VtkEngine/Visualization/ecvGLView.h | **ALIGNED** |
 | `pqRenderViewBase` | Qt/Core/pqRenderViewBase.h | (merged into ecvGLView) | — | Simplified |
 | `vtkSMViewProxy` | Remoting/Views/vtkSMViewProxy.h | `ecvViewContext` (state) | libs/CV_db/include/ecvViewContext.h | **ALIGNED** (no SM layer) |
-| `vtkSMRenderViewProxy` | Remoting/Views/vtkSMRenderViewProxy.h | `VtkDisplayTools` → target: `VtkEngine` | libs/VtkEngine/Visualization/VtkDisplayTools.h | **GAP-1** |
+| `vtkSMRenderViewProxy` | Remoting/Views/vtkSMRenderViewProxy.h | `VtkDisplayTools` (pure engine service) | libs/VtkEngine/Visualization/VtkDisplayTools.h | **ALIGNED** (Phase M1: dual role resolved) |
 | `vtkSMViewLayoutProxy` | Remoting/Views/vtkSMViewLayoutProxy.h | `ecvViewLayoutProxy` | libs/CV_db/include/ecvViewLayoutProxy.h | **ALIGNED** |
 | `pqMultiViewWidget` | Qt/Components/pqMultiViewWidget.h | `ecvMultiViewWidget` | app/ecvMultiViewWidget.h | **ALIGNED** |
 | `pqTabbedMultiViewWidget` | Qt/Components/pqTabbedMultiViewWidget.h | `ecvTabbedMultiViewWidget` | app/ecvTabbedMultiViewWidget.h | **ALIGNED** |
 | `pqActiveObjects` | Qt/Components/pqActiveObjects.h | `ecvViewManager` | libs/CV_db/include/ecvViewManager.h | **ALIGNED** |
 | `pqViewFrame` | Qt/Components/pqViewFrame.h | `CentralWidgetFrame` (via ecvMultiViewFrameManager) | app/ecvMultiViewWidget.cpp | **ALIGNED** |
 | `pqObjectBuilder::createView` | Qt/Core/pqObjectBuilder.h | `ecvGLView::Create()` | libs/VtkEngine/Visualization/ecvGLView.h | **ALIGNED** |
-| `vtkSMRepresentationProxy` | Remoting/Views/vtkSMRepresentationProxy.h | `ecvViewRepresentation` | libs/CV_db/include/ecvViewRepresentation.h | **PARTIAL** |
+| `vtkSMRepresentationProxy` | Remoting/Views/vtkSMRepresentationProxy.h | `ecvViewRepresentation` | libs/CV_db/include/ecvViewRepresentation.h | **ALIGNED** (Phase O) |
 | `pqDataRepresentation` | Qt/Core/pqDataRepresentation.h | `ecvRepresentationManager` | libs/CV_db/include/ecvRepresentationManager.h | **ALIGNED** |
 | `vtkSMCameraLink` | Remoting/Views/vtkSMCameraLink.h | `VtkCameraLink` | libs/VtkEngine/Visualization/VtkCameraLink.h | **ALIGNED** |
 | `pqSelectionManager` | Qt/Components/ | `cvViewSelectionManager` | libs/VtkEngine/Tools/SelectionTools/ | **ALIGNED** |
 | `pqRenderViewSelectionReaction` | Qt/ApplicationComponents/ | `cvRenderViewSelectionReaction` | libs/VtkEngine/Tools/SelectionTools/ | **ALIGNED** |
 | `pqStandardViewFrameActionsImplementation` | Qt/ApplicationComponents/ | `cvPerViewSelectionManager` | libs/VtkEngine/Tools/SelectionTools/ | **ALIGNED** |
-| `pqCameraUndoRedoReaction` | Qt/ApplicationComponents/ | Not implemented | — | **GAP** (LOW) |
+| `pqCameraUndoRedoReaction` | Qt/ApplicationComponents/ | `VtkVis::cameraUndo/Redo` + `MainWindow::createViewFrame` toolbar | app/MainWindow.cpp, libs/VtkEngine/ | ✅ **ALIGNED** |
 | `pqEmptyView` | Qt/Components/ | `createEmptyCellWidget` | app/ecvMultiViewWidget.cpp | **ALIGNED** |
 
 ### Architectural Differences (By Design)
@@ -1273,6 +1291,124 @@ classDiagram
 
 ---
 
+## 7. GAP 实现方案 (100% 对齐路线图)
+
+完成以下 3 个 GAP 后，ParaView 对齐率将达到 91/91 = **100%**。
+
+### GAP-R: Project File (.acv) 复合项目文件 ✅ COMPLETED
+
+**对应矩阵**: §2.9 Persistence — `.pvsm` (SM state XML) vs `.acv` project file
+
+**实现概要**:
+`AcvProjectFilter` 继承 `FileIOFilter`，使用 `QDataStream` 二进制容器格式:
+- **保存**: 实体 → 临时 BIN (via `BinFilter`) → JSON 元数据 (manifest + viewLayout) → `.acv` 容器
+- **加载**: 验证 magic/version → 解析 JSON 元数据 → 从 BIN 流恢复实体 → 通过 `ecvViewManager` 恢复视图布局
+- **格式**: `ACV_MAGIC` + version (quint32) + metadata JSON + entity binary data
+
+**已完成文件**:
+| 操作 | 文件 | 状态 |
+|------|------|------|
+| 新建 | `libs/CV_io/include/AcvProjectFilter.h` | ✅ |
+| 新建 | `libs/CV_io/src/AcvProjectFilter.cpp` | ✅ |
+| 修改 | `libs/CV_io/src/CMakeLists.txt` — 添加源文件 | ✅ |
+| 修改 | `libs/CV_io/src/FileIOFilter.cpp` — 注册 AcvProjectFilter | ✅ |
+| 修改 | `app/MainWindow.cpp` — `doActionSaveProject()` 支持 .acv + .bin 双格式 | ✅ |
+
+**原优先级**: LOW | **复杂度**: MEDIUM-HIGH | **完成时间**: 1 session
+
+---
+
+### GAP-S: Global Undo Stack — 全局撤销/重做栈
+
+**对应矩阵**: §2.13 Undo/Redo — `pqUndoStack` (wraps `vtkSMUndoStack`)
+
+**当前基础设施**:
+- ✅ Layout undo: `ecvViewLayoutProxy` memento stack (`beginUndoSet/endUndoSet`)
+- ✅ Camera undo: `VtkVis::m_cameraUndoStack` deque (per-view)
+- ✅ VTK undo stack: `vtkUndoStack` 已存在于 `VTKExtensions/Core/` (未从 app 层使用)
+- ❌ 缺失: 统一的 `QUndoStack` 管理器，整合所有 undo 源
+
+**方案: QUndoStack + QUndoCommand 封装**:
+
+```
+ecvUndoManager : QObject (singleton, managed by ecvViewManager)
+├── QUndoStack*                       // Qt 标准 undo 栈
+├── ecvCameraUndoCommand  : QUndoCommand  // 包装 VtkVis camera state
+├── ecvLayoutUndoCommand  : QUndoCommand  // 包装 ecvViewLayoutProxy memento
+└── (Future) ecvEntityUndoCommand        // 包装 entity property changes
+```
+
+**涉及文件**:
+| 操作 | 文件 |
+|------|------|
+| 新建 | `libs/CV_db/include/ecvUndoManager.h` |
+| 新建 | `libs/CV_db/src/ecvUndoManager.cpp` |
+| 新建 | `libs/CV_db/include/ecvCameraUndoCommand.h` |
+| 新建 | `libs/CV_db/include/ecvLayoutUndoCommand.h` |
+| 修改 | `app/MainWindow.cpp` — Edit 菜单 Undo/Redo QAction 绑定 |
+| 修改 | `libs/CV_db/src/ecvViewLayoutProxy.cpp` — 发出 QUndoCommand 而非内部 stack |
+| 修改 | `libs/VtkEngine/Visualization/VtkVis.cpp` — camera undo 发出 QUndoCommand |
+
+**优先级**: LOW | **复杂度**: HIGH | **预估**: 3-4 周 | **依赖**: 无
+
+---
+
+### GAP-T: Source Undo — 实体/数据源撤销
+
+**对应矩阵**: §2.13 Undo/Redo — SM undo elements
+
+**当前基础设施**:
+- ❌ 完全没有 source-level undo
+- ✅ `ccSerializableObject` 提供实体序列化能力（可用于 snapshot）
+
+**方案: QUndoCommand 命令模式** (依赖 GAP-S):
+
+```
+基于 ecvUndoManager 的命令对象:
+├── ecvPropertyChangeCommand    // 记录 entity 属性 before/after (点大小、颜色、可见性等)
+├── ecvTransformCommand         // 记录变换矩阵 before/after
+├── ecvEntityAddRemoveCommand   // 记录实体添加/删除 (序列化 entity snapshot)
+└── ecvScalarFieldEditCommand   // 标量场编辑撤销
+```
+
+**涉及文件**:
+| 操作 | 文件 |
+|------|------|
+| 新建 | `libs/CV_db/include/ecvPropertyChangeCommand.h` |
+| 新建 | `libs/CV_db/include/ecvTransformCommand.h` |
+| 新建 | `libs/CV_db/include/ecvEntityAddRemoveCommand.h` |
+| 修改 | `libs/CV_db/src/ecvHObject.cpp` — 属性变更时发出 undo command |
+| 修改 | `app/MainWindow.cpp` — 删除/添加操作包装为 command |
+
+**优先级**: LOW | **复杂度**: VERY HIGH | **预估**: 4-6 周 | **依赖**: GAP-S (Global Undo Stack)
+
+**内存优化备注**: `ecvEntityAddRemoveCommand` 序列化完整实体 snapshot 在大规模点云场景（百万级以上）下可能造成显著内存压力。建议采用以下策略:
+- **属性变更** (`ecvPropertyChangeCommand`): 仅记录 before/after 值，不序列化整个实体 — 内存开销极小
+- **变换操作** (`ecvTransformCommand`): 仅存储变换矩阵的 before/after — 固定 128 字节
+- **实体添加/删除** (`ecvEntityAddRemoveCommand`): 使用延迟序列化 (lazy serialization) — 首次序列化时才写入临时文件，undo 时从文件反序列化；或采用 delta-based snapshot（仅记录与原始文件的差异）
+- **内存预算**: 可设置全局 undo 栈内存上限（如 500 MB），超限时自动丢弃最旧的 undo 记录
+
+---
+
+### 执行顺序与对齐率预测
+
+```
+GAP-R (Project File)  ────→  89/91 = 97.8%  ✅ DONE
+GAP-S (Global Undo)   ────→  90/91 = 98.9%
+GAP-T (Source Undo)    ────→  91/91 = 100.0%  ← Full ParaView alignment
+       │
+       └── GAP-S is prerequisite for GAP-T
+```
+
+| 阶段 | 对齐率 | 总工期 |
+|------|--------|--------|
+| 当前 (Phase M-O + PARTIAL 修复 + GAP-R) | 89/91 = 97.8% | — |
+| + GAP-S | 90/91 = 98.9% | +3-4 周 |
+| + GAP-T | 91/91 = 100% | +4-6 周 |
+| **总计** | **100%** | **7-10 周** |
+
+---
+
 *Maintained by: Architecture Team*
-*Last updated: 2026-04-30*
+*Last updated: 2026-05-02*
 *Cross-references: `multi-window-refactor-roadmap-Vtk-vs-CC.md`, `singleton-removal-migration-plan.md`, `multi-window-views.md`, `multi-window-paradigms-CloudCompare-ParaView.md`*

@@ -133,3 +133,9 @@ int ecvRepresentationManager::count() const {
 void ecvRepresentationManager::setActorCleanupCallback(CleanupCallback cb) {
     m_actorCleanup = std::move(cb);
 }
+
+void ecvRepresentationManager::notifyChanged(ecvViewRepresentation* rep) {
+    if (rep) {
+        emit representationChanged(rep);
+    }
+}

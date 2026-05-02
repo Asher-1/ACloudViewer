@@ -1584,6 +1584,23 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
                               ? viewRep->effectiveOpacity()
                               : getOpacity();
 
+    if (viewRep && viewRep->properties().pointSize.has_value()) {
+        context.defaultPointSize =
+                static_cast<unsigned char>(viewRep->effectivePointSize());
+    }
+    if (viewRep && viewRep->properties().lineWidth.has_value()) {
+        context.defaultLineWidth =
+                static_cast<unsigned char>(viewRep->effectiveLineWidth());
+        context.currentLineWidth = context.defaultLineWidth;
+    }
+    if (viewRep && viewRep->properties().renderMode.has_value()) {
+        auto rm = viewRep->effectiveRenderMode();
+        if (rm != ecvViewRepresentation::RenderMode::Inherit) {
+            context.meshRenderingMode =
+                    static_cast<MESH_RENDERING_MODE>(static_cast<int>(rm));
+        }
+    }
+
     if (!isFixedId()) {
         context.viewID = getViewId();
     }
@@ -1612,6 +1629,10 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             }
 
             drawMeOnly(context);
+
+            if (viewRep && viewRep->isDirty()) {
+                viewRep->setDirty(false);
+            }
 
             // disable clipping planes (if any)
             if (useClipPlanes) {

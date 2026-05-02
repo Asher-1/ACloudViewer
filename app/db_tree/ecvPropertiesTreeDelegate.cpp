@@ -46,6 +46,8 @@
 #include <ecvGuiParameters.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
+#include <ecvRepresentationManager.h>
+#include <ecvViewRepresentation.h>
 #include <ecvImage.h>
 #include <ecvIndexedTransformationBuffer.h>
 #include <ecvKdTree.h>
@@ -272,6 +274,9 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
                                                    // kind of info for viewport
                                                    // labels!
             fillWithHObject(m_currentObject);
+
+    // Per-view representation overrides
+    fillWithPerViewProperties();
 
     // View properties (ParaView-style) - added right after ECV Object section
     if (m_currentObject->getViewId().length() > 0) {
@@ -514,6 +519,42 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
                       PERSISTENT_EDITOR(OBJECT_VIEW_DATA_AXES_GRID_VISIBLE),
                       true);
         }
+    }
+}
+
+void ccPropertiesTreeDelegate::fillWithPerViewProperties() {
+    assert(m_model);
+    if (!m_currentObject) return;
+
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    if (!activeView) return;
+
+    auto* rep = ecvRepresentationManager::instance().getRepresentation(
+            m_currentObject, activeView);
+    if (!rep) return;
+
+    addSeparator(tr("Display (Per-View Override)"));
+
+    // Per-view visibility
+    {
+        QStandardItem* nameItem = new QStandardItem(tr("Per-View Visible"));
+        nameItem->setFlags(Qt::ItemIsEnabled);
+        QStandardItem* valueItem = new QStandardItem();
+        valueItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+        valueItem->setCheckState(rep->isVisible() ? Qt::Checked : Qt::Unchecked);
+        valueItem->setData(OBJECT_PERVIEW_VISIBILITY,
+                           Qt::UserRole);
+        appendRow(nameItem, valueItem);
+    }
+
+    // Per-view opacity
+    appendRow(ITEM(tr("Per-View Opacity")),
+              PERSISTENT_EDITOR(OBJECT_PERVIEW_OPACITY), true);
+
+    // Per-view point size (only for point clouds)
+    if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        appendRow(ITEM(tr("Per-View Point Size")),
+                  PERSISTENT_EDITOR(OBJECT_PERVIEW_POINT_SIZE), true);
     }
 }
 
@@ -2009,6 +2050,22 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             button->setMaximumWidth(80);
             outputWidget = button;
         } break;
+        case OBJECT_PERVIEW_OPACITY: {
+            QSlider* slider = new QSlider(Qt::Horizontal, parent);
+            slider->setRange(0, 100);
+            slider->setSingleStep(1);
+            connect(slider, &QAbstractSlider::valueChanged, this,
+                    &ccPropertiesTreeDelegate::perViewOpacityChanged);
+            outputWidget = slider;
+        } break;
+        case OBJECT_PERVIEW_POINT_SIZE: {
+            QSpinBox* spinBox = new QSpinBox(parent);
+            spinBox->setRange(1, 16);
+            spinBox->setSingleStep(1);
+            connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+                    &ccPropertiesTreeDelegate::perViewPointSizeChanged);
+            outputWidget = spinBox;
+        } break;
         // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
         // properties are now in standalone cvFindDataDockWidget
         default:
@@ -2525,6 +2582,32 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                     });
             break;
         }
+        case OBJECT_PERVIEW_OPACITY: {
+            QSlider* slider = qobject_cast<QSlider*>(editor);
+            if (!slider || !m_currentObject) return;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) return;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                slider->setValue(
+                        static_cast<int>(rep->effectiveOpacity() * 100.0f));
+            }
+            break;
+        }
+        case OBJECT_PERVIEW_POINT_SIZE: {
+            QSpinBox* spinBox = qobject_cast<QSpinBox*>(editor);
+            if (!spinBox || !m_currentObject) return;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) return;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                spinBox->setValue(
+                        static_cast<int>(rep->effectivePointSize()));
+            }
+            break;
+        }
         case OBJECT_SENSOR_INDEX: {
             ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
             assert(sensor);
@@ -2948,6 +3031,22 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             // ParaView-style: handled in setEditorData (persistent editor)
             // No action needed here in updateItem
         }
+            redraw = false;
+            break;
+        case OBJECT_PERVIEW_VISIBILITY: {
+            if (!m_currentObject) break;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) break;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                bool visible = (item->checkState() == Qt::Checked);
+                rep->setVisible(visible);
+            }
+        } break;
+        case OBJECT_PERVIEW_OPACITY:
+        case OBJECT_PERVIEW_POINT_SIZE:
+            // Handled by slot connections
             redraw = false;
             break;
     }
@@ -3549,6 +3648,34 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     }
+}
+
+void ccPropertiesTreeDelegate::perViewOpacityChanged(int val) {
+    if (!m_currentObject) return;
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    if (!activeView) return;
+    auto* rep = ecvRepresentationManager::instance().getRepresentation(
+            m_currentObject, activeView);
+    if (!rep) return;
+
+    auto props = rep->properties();
+    props.opacity = static_cast<float>(val) / 100.0f;
+    rep->setProperties(props);
+    emit ccObjectAppearanceChanged(m_currentObject);
+}
+
+void ccPropertiesTreeDelegate::perViewPointSizeChanged(int val) {
+    if (!m_currentObject) return;
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    if (!activeView) return;
+    auto* rep = ecvRepresentationManager::instance().getRepresentation(
+            m_currentObject, activeView);
+    if (!rep) return;
+
+    auto props = rep->properties();
+    props.pointSize = static_cast<float>(val);
+    rep->setProperties(props);
+    emit ccObjectAppearanceChanged(m_currentObject);
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {
