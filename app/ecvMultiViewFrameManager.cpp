@@ -293,6 +293,40 @@ QMdiSubWindow* ecvMultiViewFrameManager::addFrameToMdi(
     return subWin;
 }
 
+void ecvMultiViewFrameManager::addTitleBarAction(QWidget* frame,
+                                                 QAction* action) {
+    addTitleBarAction(frame, action, false);
+}
+
+void ecvMultiViewFrameManager::addTitleBarAction(QWidget* frame,
+                                                 QAction* action,
+                                                 bool withSeparator) {
+    if (!frame || !action) return;
+
+    auto* toolbar =
+            frame->findChild<QWidget*>("ViewSelectionToolBar");
+    if (!toolbar) return;
+
+    auto* tbLayout =
+            qobject_cast<QHBoxLayout*>(toolbar->layout());
+    if (!tbLayout) return;
+
+    if (withSeparator) {
+        auto* sep = new QFrame(toolbar);
+        sep->setFrameShape(QFrame::VLine);
+        sep->setFrameShadow(QFrame::Sunken);
+        sep->setFixedWidth(2);
+        tbLayout->addWidget(sep);
+    }
+
+    auto* btn = new QToolButton(toolbar);
+    btn->setDefaultAction(action);
+    btn->setAutoRaise(true);
+    btn->setIconSize(QSize(PV_ICON_SIZE, PV_ICON_SIZE));
+    btn->setFixedSize(PV_ICON_SIZE + 6, PV_ICON_SIZE + 6);
+    tbLayout->addWidget(btn);
+}
+
 void ecvMultiViewFrameManager::splitViewFrame(
         QWidget* frameToSplit,
         Qt::Orientation orientation,

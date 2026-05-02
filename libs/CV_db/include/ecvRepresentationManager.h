@@ -67,6 +67,8 @@ public:
             std::function<void(ccHObject* entity, ecvGenericGLDisplay* view)>;
     void setActorCleanupCallback(CleanupCallback cb);
 
+    void notifyChanged(ecvViewRepresentation* rep);
+
 signals:
     void representationAdded(ecvViewRepresentation* rep);
     void representationRemoved(ccHObject* entity, ecvGenericGLDisplay* view);

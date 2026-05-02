@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QAction>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -51,6 +52,20 @@ public:
 
     /// Create a new MDI sub-window wrapping the given frame widget.
     QMdiSubWindow* addFrameToMdi(QWidget* frame, const QString& tabTitle);
+
+    // -- Custom title-bar actions (mirrors ParaView pqViewFrame) --
+
+    /// Add a custom action to a view frame's title-bar toolbar.
+    /// The action is appended after the built-in buttons (3D toggle,
+    /// screenshot, camera) and any per-view callback actions.
+    /// @param frame  The frame widget returned by createViewFrame().
+    /// @param action The QAction to add (ownership unchanged).
+    void addTitleBarAction(QWidget* frame, QAction* action);
+
+    /// Overload: insert with a leading separator.
+    void addTitleBarAction(QWidget* frame,
+                           QAction* action,
+                           bool addSeparator);
 
     // -- Layout operations --
 

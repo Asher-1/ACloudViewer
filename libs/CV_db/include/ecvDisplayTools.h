@@ -221,6 +221,59 @@ public:
                                  const CCVector3d& axis);
     static void ShowPivotSymbol(ecvViewContext& ctx, bool state);
 
+    // N2 remaining: ctx-parameterized overloads
+    static ccGLMatrixd ComputeModelViewMatrix(const ecvViewContext& ctx);
+    static void MoveCamera(ecvViewContext& ctx, float dx, float dy, float dz);
+    static ccHObject* GetPickedEntity(const ecvViewContext& ctx,
+                                      const ecvPickingParameters& params);
+    static void SetBubbleViewFov(ecvViewContext& ctx, float fov_deg);
+    static void SetFov(ecvViewContext& ctx, float fov_deg);
+    static void UpdateProjectionMatrix(ecvViewContext& ctx);
+    static void SetView(ecvViewContext& ctx,
+                        CC_VIEW_ORIENTATION orientation,
+                        bool forceRedraw = false);
+    static void StartOpenGLPicking(ecvViewContext& ctx,
+                                   const ecvPickingParameters& params);
+    static void SetupProjectiveViewport(ecvViewContext& ctx,
+                                        const ccGLMatrixd& cameraMatrix,
+                                        float fov_deg = 0.0f,
+                                        float ar = 1.0f,
+                                        bool viewerBasedPerspective = true,
+                                        bool bubbleViewMode = false);
+    static bool ProcessClickableItems(ecvViewContext& ctx, int x, int y);
+
+    // N2a: Functions with side effects (emit, QSettings, VTK callbacks)
+    static void SetPivotVisibility(ecvViewContext& ctx, PivotVisibility vis);
+    static void ResizeGL(ecvViewContext& ctx, int w, int h);
+    static void RotateBaseViewMat(ecvViewContext& ctx,
+                                  const ccGLMatrixd& rotMat);
+    static CCVector3d ConvertMousePositionToOrientation(
+            const ecvViewContext& ctx, int x, int y);
+    static void RedrawDisplay(ecvViewContext& ctx, bool only2D = false);
+    static void Draw3D(ecvViewContext& ctx, CC_DRAW_CONTEXT& CONTEXT);
+
+    // N3: Heavy State Mutators
+    static void SetZNearCoef(ecvViewContext& ctx, double coef);
+    static double ComputeActualPixelSize(const ecvViewContext& ctx);
+    static void SetViewportParameters(ecvViewContext& ctx,
+                                      const ecvViewportParameters& params);
+    static void SetBubbleViewMode(ecvViewContext& ctx, bool state);
+    static void UpdateDisplayParameters(ecvViewContext& ctx);
+
+    // N4: Core Projection/Camera Engine
+    static ccGLMatrixd ComputeProjectionMatrix(
+            const ecvViewContext& ctx,
+            bool withGLfeatures,
+            ecvProjectionMetrics* metrics = nullptr,
+            double* eyeOffset = nullptr);
+    static void SetPerspectiveState(ecvViewContext& ctx, bool state,
+                                    bool objectCenteredView);
+
+    // N5: Picking Pipeline
+    static void StartCPUBasedPointPicking(ecvViewContext& ctx,
+                                          const ecvPickingParameters& params);
+    static void DrawPivot(const ecvViewContext& ctx);
+
     // -- ecvGenericGLDisplay implementation (primary window) --
 
     int getUniqueID() const override { return m_uniqueID; }

@@ -132,6 +132,9 @@ public:
                                                 // visibility (toolbar only)
         OBJECT_VIEW_CENTER_AXES_VISIBILITY,  // Center axes visibility (simple
                                              // coordinate system)
+        OBJECT_PERVIEW_VISIBILITY,
+        OBJECT_PERVIEW_OPACITY,
+        OBJECT_PERVIEW_POINT_SIZE,
         TREE_VIEW_HEADER,
     };
 
@@ -233,6 +236,8 @@ private:
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
     void opacityChanged(int);  // Opacity slider value changed [0, 100]
+    void perViewOpacityChanged(int);    // Per-view opacity [0, 100]
+    void perViewPointSizeChanged(int);  // Per-view point size
     void lightIntensityChanged(double);  // Light intensity changed [0.0, 1.0]
     // View property slots (ParaView-style)
     void dataAxesGridEditRequested();
@@ -269,7 +274,8 @@ protected:
     void fillWithShifted(ccShiftedObject*);
     void fillWithCoordinateSystem(const ccCoordinateSystem*);
     void fillWithSelectionProperties();
-    void fillWithViewProperties();  // ParaView-style view properties
+    void fillWithViewProperties();          // ParaView-style view properties
+    void fillWithPerViewProperties();       // Per-view representation overrides
     template <class Type, int N, class ComponentType>
     void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 

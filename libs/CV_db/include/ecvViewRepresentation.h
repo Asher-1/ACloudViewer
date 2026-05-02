@@ -67,6 +67,14 @@ public:
 
     float effectiveOpacity() const;
     float effectivePointSize() const;
+    float effectiveLineWidth() const;
+    RenderMode effectiveRenderMode() const;
+    bool effectiveEdgeVisibility() const;
+    int effectiveScalarFieldIndex() const;
+    bool effectiveShowScalarField() const;
+    bool effectiveShowColors() const;
+    bool effectiveShowNormals() const;
+    float effectiveNormalScale() const;
 
     // -- Dirty state (needs VTK actor update) --
 
