@@ -19,51 +19,22 @@
 #include "ecvViewLayoutProxy.h"
 #include "ecvViewRepresentation.h"
 
+namespace {
+ecvViewManager::SingletonRelayHook s_singletonRelayHook = nullptr;
+}
+
 ecvViewManager::ecvViewManager() : QObject(nullptr) {
     m_undoManager = new ecvUndoManager(this);
 }
 
+void ecvViewManager::registerSingletonRelayHook(SingletonRelayHook hook) {
+    s_singletonRelayHook = hook;
+}
+
 void ecvViewManager::setupSingletonRelay(ecvGenericGLDisplay* view) {
-    // Connect per-view signals to ViewManager relay signals.
-    // Every ecvGenericGLDisplay implementation (ecvDisplayTools, ecvGLView)
-    // is a QObject and declares identical signal signatures.
-    // We use string-based connections because CV_db cannot include ecvGLView.h.
-    QObject* src = dynamic_cast<QObject*>(view);
-    if (!src) return;
-
-    auto c = [&](const char* sig, const char* slot) {
-        connect(src, sig, this, slot);
-    };
-
-    c(SIGNAL(entitySelectionChanged(ccHObject*)),
-      SIGNAL(entitySelectionChanged(ccHObject*)));
-    c(SIGNAL(entitiesSelectionChanged(std::unordered_set<int>)),
-      SIGNAL(entitiesSelectionChanged(std::unordered_set<int>)));
-    c(SIGNAL(newLabel(ccHObject*)), SIGNAL(newLabel(ccHObject*)));
-    c(SIGNAL(filesDropped(QStringList, bool)),
-      SIGNAL(filesDropped(QStringList, bool)));
-    c(SIGNAL(cameraParamChanged()), SIGNAL(cameraParamChanged()));
-    c(SIGNAL(mousePosChanged(QPoint)), SIGNAL(mousePosChanged(QPoint)));
-    c(SIGNAL(autoPickPivot(bool)), SIGNAL(autoPickPivot(bool)));
-    c(SIGNAL(exclusiveFullScreenToggled(bool)),
-      SIGNAL(exclusiveFullScreenToggled(bool)));
-    c(SIGNAL(itemPicked(ccHObject*, unsigned, int, int, CCVector3)),
-      SIGNAL(itemPicked(ccHObject*, unsigned, int, int, CCVector3)));
-    c(SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
-      SIGNAL(mouseMoved(int, int, Qt::MouseButtons)));
-    c(SIGNAL(leftButtonClicked(int, int)),
-      SIGNAL(leftButtonClicked(int, int)));
-    c(SIGNAL(rightButtonClicked(int, int)),
-      SIGNAL(rightButtonClicked(int, int)));
-    c(SIGNAL(doubleButtonClicked(int, int)),
-      SIGNAL(doubleButtonClicked(int, int)));
-    c(SIGNAL(buttonReleased()), SIGNAL(buttonReleased()));
-    c(SIGNAL(labelmove2D(int, int, int, int)),
-      SIGNAL(labelmove2D(int, int, int, int)));
-    c(SIGNAL(pivotPointChanged(CCVector3d)),
-      SIGNAL(pivotPointChanged(CCVector3d)));
-    c(SIGNAL(perspectiveStateChanged()),
-      SIGNAL(perspectiveStateChanged()));
+    // Typed PMF connections are registered from the VTK layer
+    // (registerViewManagerTypedRelay) because CV_db cannot include ecvGLView.
+    if (s_singletonRelayHook) s_singletonRelayHook(this, view);
 }
 
 ecvViewManager& ecvViewManager::instance() {
@@ -375,7 +346,20 @@ void ecvViewManager::setRedrawRecursive(bool redraw) {
 }
 
 void ecvViewManager::setRemoveViewIds(std::vector<removeInfo>& removeinfos) {
-    ecvDisplayTools::SetRemoveViewIDs(removeinfos);
+    if (!removeinfos.empty()) {
+        m_removeInfos = removeinfos;
+        setRemoveFlag(true);
+        if (m_displayTools) {
+            m_displayTools->m_removeInfos = removeinfos;
+            m_displayTools->m_removeFlag = true;
+        }
+    } else {
+        setRemoveFlag(false);
+        m_removeInfos.clear();
+        if (m_displayTools) {
+            m_displayTools->m_removeFlag = false;
+        }
+    }
 }
 
 // ============================================================================

@@ -93,7 +93,10 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // timer is started in QVTKWidgetCustom::mouseReleaseEvent when
     // ProcessClickableItems returns false, and it would trigger doPicking()
     // which might clear our selection.
-    tools->m_primaryCtx.widgetClicked = true;
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        if (view->viewContext())
+            view->viewContext()->widgetClicked = true;
+    }
 
     // Stop deferred picking timer immediately if already active
     if (tools->m_deferredPickingTimer.isActive()) {
