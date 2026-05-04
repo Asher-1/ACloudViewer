@@ -211,8 +211,8 @@ public:
     // ================================================================
 
     /// Access the per-view state container.
-    /// Returns nullptr for generic stubs; ecvDisplayTools returns
-    /// &m_primaryCtx; ecvGLView overrides to return &m_ctx.
+    /// Returns nullptr for generic stubs; ecvDisplayTools (VTK engine) returns
+    /// nullptr; ecvGLView overrides to return &m_ctx.
     virtual ecvViewContext* viewContext() { return nullptr; }
     virtual const ecvViewContext* viewContext() const { return nullptr; }
 

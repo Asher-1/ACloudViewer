@@ -431,7 +431,7 @@ void ecvViewManager::initDisplayTools(ecvDisplayTools* tools,
     }
     m_displayTools = tools;
 
-    ecvDisplayTools::initializeSharedInstance(m_displayTools, win, stereoMode);
+    m_displayTools->initializeEngine(win, stereoMode);
     if (tools) {
         m_globalDBRoot = tools->m_globalDBRoot;
         m_mainWindow = tools->m_win;
@@ -460,7 +460,7 @@ void ecvViewManager::releaseDisplayTools() {
     if (!m_displayTools) return;
 
     unregisterView(m_displayTools);
-    ecvDisplayTools::releaseSharedInstance();
+    delete m_displayTools;
     m_displayTools = nullptr;
 }
 

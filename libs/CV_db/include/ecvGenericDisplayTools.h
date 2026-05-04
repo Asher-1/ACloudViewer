@@ -26,7 +26,8 @@
  *
  * Provides a comprehensive set of tools for 3D rendering, including
  * coordinate transformations, projection matrices, and text rendering.
- * This class uses the singleton pattern for global access.
+ * This class provides shared math and projection helpers; the live instance
+ * is owned by ecvViewManager (see GetInstance()).
  */
 class CV_DB_LIB_API ecvGenericDisplayTools : public cloudViewer::CVToolbox {
 public:
@@ -36,16 +37,9 @@ public:
     virtual ~ecvGenericDisplayTools() {}
 
     /**
-     * @brief Get the singleton instance
-     * @return Pointer to the singleton instance
+     * @brief Active display tools base (same as ecvViewManager::displayTools())
      */
     static ecvGenericDisplayTools* GetInstance();
-
-    /**
-     * @brief Set the singleton instance
-     * @param tool Pointer to the display tools instance
-     */
-    static void SetInstance(ecvGenericDisplayTools* tool);
 
 public:
     /**

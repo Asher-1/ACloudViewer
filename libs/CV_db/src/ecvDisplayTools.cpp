@@ -57,22 +57,22 @@
 // SYSTEM
 #include <assert.h>
 
-// Shared display-tools instance.
-// Ownership: created by ecvViewManager::initDisplayTools(),
-//            destroyed by ecvViewManager::releaseDisplayTools().
-static ecvDisplayTools* s_tools = nullptr;
+static ecvDisplayTools* primaryDT() {
+    return ecvViewManager::instance().displayTools();
+}
 
 namespace {
 
-/// The ecvGenericGLDisplay whose viewContext() is `ctx` (primary singleton
-/// or a registered ecvGLView). Falls back to the shared tools instance.
+/// The ecvGenericGLDisplay whose viewContext() is `ctx`, or the display-tools
+/// engine as fallback.
 ecvGenericGLDisplay* displayOwningContext(const ecvViewContext* ctxPtr) {
-    if (!s_tools) return nullptr;
-    if (!ctxPtr || s_tools->viewContext() == ctxPtr) return s_tools;
+    auto* primary = primaryDT();
+    if (!primary) return nullptr;
+    if (!ctxPtr) return primary;
     for (auto* v : ecvViewManager::instance().getAllViews()) {
-        if (v && v != s_tools && v->viewContext() == ctxPtr) return v;
+        if (v && v->viewContext() == ctxPtr) return v;
     }
-    return s_tools;
+    return primary;
 }
 
 /// Carries forceRedraw from RedrawDisplay(bool) into RedrawDisplay(ctx)
@@ -89,41 +89,19 @@ bool ecvDisplayTools::USE_VTK_PICK = false;
 /// to the per-view implementation.
 static ecvGenericGLDisplay* activeSecondaryView() {
     auto* av = ecvViewManager::instance().getEffectiveView();
-    if (av && av != s_tools) return av;
+    if (av && av != primaryDT()) return av;
     return nullptr;
 }
 
 static const QString DEBUG_LAYER_ID = "DEBUG_LAYER";
 
 static int viewportHeightFor(ecvGenericGLDisplay* display) {
-    if (display && display != s_tools) {
+    if (display && display != primaryDT()) {
         auto* ctx = display->viewContext();
         if (ctx) return ctx->glViewport.height();
     }
     return ecvViewManager::instance().resolveViewContext().glViewport.height();
 }
-
-// ================================================================
-// Per-view context  (Phase A → Phase E)
-// ================================================================
-
-ecvViewContext& ecvDisplayTools::effectiveCtx() {
-    auto* eff = ecvViewManager::instance().getEffectiveView();
-    if (eff && eff->viewContext()) return *eff->viewContext();
-    return m_primaryCtx;
-}
-
-const ecvViewContext& ecvDisplayTools::effectiveCtx() const {
-    auto* eff = ecvViewManager::instance().getEffectiveView();
-    if (eff && eff->viewContext()) return *eff->viewContext();
-    return m_primaryCtx;
-}
-
-void ecvDisplayTools::copyContextFrom(const ecvViewContext& ctx) {
-    m_primaryCtx = ctx;
-}
-
-ecvViewContext ecvDisplayTools::snapshotContext() const { return m_primaryCtx; }
 
 // ================================================================
 // Context-aware static API overloads  (Phase A)
@@ -275,32 +253,20 @@ static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 // Unique GL window ID
 static int s_GlWindowNumber = 0;
 
-void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
-                                               QMainWindow* win,
-                                               bool stereoMode) {
-    if (s_tools) {
-        assert(false && "Display tools already initialized");
-        return;
-    }
-
-    s_tools = displayTools;
-    ecvGenericDisplayTools::SetInstance(s_tools);
-
-    // start internal timer
-    s_tools->m_timer.start();
+void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
+    m_timer.start();
 
     SetMainWindow(win);
-    // register current instance visualizer only once
-    s_tools->registerVisualizer(win, stereoMode);
+    registerVisualizer(win, stereoMode);
 
-    s_tools->m_uniqueID = ++s_GlWindowNumber;  // GL window unique ID
-    auto& ctx = s_tools->m_primaryCtx;
+    m_uniqueID = ++s_GlWindowNumber;  // GL window unique ID
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     ctx.lastMousePos = QPoint(-1, -1);
     ctx.lastMouseMovePos = QPoint(-1, -1);
     ctx.validModelviewMatrix = false;
     ctx.validProjectionMatrix = false;
     ctx.cameraToBBCenterDist = 0.0;
-    s_tools->m_shouldBeRefreshed = false;
+    m_shouldBeRefreshed = false;
     ctx.mouseMoved = false;
     ctx.mouseButtonPressed = false;
     ctx.widgetClicked = false;
@@ -314,29 +280,29 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
     ctx.sunLightEnabled = true;
     ctx.customLightEnabled = false;
     ctx.clickableItemsVisible = false;
-    s_tools->m_alwaysUseFBO = false;
-    s_tools->m_updateFBO = true;
-    s_tools->m_winDBRoot = nullptr;
-    s_tools->m_globalDBRoot = nullptr;  // external DB
-    s_tools->m_removeFlag = false;
-    s_tools->m_removeAllFlag = false;
-    s_tools->m_font = QFont();
+    m_alwaysUseFBO = false;
+    m_updateFBO = true;
+    m_winDBRoot = nullptr;
+    m_globalDBRoot = nullptr;  // external DB
+    m_removeFlag = false;
+    m_removeAllFlag = false;
+    m_font = QFont();
     ctx.pivotVisibility = PIVOT_SHOW_ON_MOVE;
     ctx.pivotSymbolShown = false;
     ctx.allowRectangularEntityPicking = false;
-    s_tools->m_rectPickingPoly = nullptr;
-    s_tools->m_overridenDisplayParametersEnabled = false;
+    m_rectPickingPoly = nullptr;
+    m_overridenDisplayParametersEnabled = false;
     ctx.displayOverlayEntities = true;
     ctx.bubbleViewModeEnabled = false;
     ctx.bubbleViewFov_deg = 90.0f;
     ctx.touchInProgress = false;
     ctx.touchBaseDist = 0.0;
-    s_tools->m_scheduledFullRedrawTime = 0;
+    m_scheduledFullRedrawTime = 0;
     ctx.exclusiveFullscreen = false;
     ctx.showDebugTraces = false;
     ctx.pickRadius = DefaultPickRadius;
-    s_tools->m_autoRefresh = false;
-    s_tools->m_hotZone = nullptr;
+    m_autoRefresh = false;
+    m_hotZone = nullptr;
     ctx.showCursorCoordinates = false;
     ctx.autoPickPivotAtCenter = false;
     ctx.ignoreMouseReleaseEvent = false;
@@ -344,8 +310,7 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
     ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
 
     // GL window own DB
-    s_tools->m_winDBRoot =
-            new ccHObject(QString("DB.3DView_%1").arg(s_tools->m_uniqueID));
+    m_winDBRoot = new ccHObject(QString("DB.3DView_%1").arg(m_uniqueID));
 
     // matrices
     ctx.viewportParams.viewMat.toIdentity();
@@ -394,34 +359,24 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
         SetPerspectiveState(perspectiveView, objectCenteredView);
     }
 
-    s_tools->m_deferredPickingTimer.setSingleShot(true);
-    s_tools->m_deferredPickingTimer.setInterval(100);
+    m_deferredPickingTimer.setSingleShot(true);
+    m_deferredPickingTimer.setInterval(100);
 
     // signal/slot connections
-    connect(s_tools, &ecvDisplayTools::itemPickedFast, s_tools,
+    connect(this, &ecvDisplayTools::itemPickedFast, this,
             &ecvDisplayTools::onItemPickedFast, Qt::DirectConnection);
     connect(GetVisualizer3D(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent, s_tools,
+            &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
             &ecvDisplayTools::onPointPicking);
 
-    connect(&s_tools->m_scheduleTimer, &QTimer::timeout, s_tools,
+    connect(&m_scheduleTimer, &QTimer::timeout, this,
             &ecvDisplayTools::checkScheduledRedraw);
-    connect(&s_tools->m_deferredPickingTimer, &QTimer::timeout, s_tools,
+    connect(&m_deferredPickingTimer, &QTimer::timeout, this,
             &ecvDisplayTools::doPicking);
 
     // Phase M3: VtkDisplayTools is a pure engine service, NOT a view.
     // The first ecvGLView is created by MainWindow and registered as the
     // actual view. We no longer register VtkDisplayTools with ecvViewManager.
-}
-
-ecvDisplayTools* ecvDisplayTools::sharedTools() { return s_tools; }
-
-void ecvDisplayTools::releaseSharedInstance() {
-    if (s_tools) {
-        ecvGenericDisplayTools::SetInstance(nullptr);
-        delete s_tools;
-        s_tools = nullptr;
-    }
 }
 
 ecvDisplayTools::~ecvDisplayTools() {
@@ -515,8 +470,9 @@ void ecvDisplayTools::onPointPicking(const CCVector3& p,
 void ecvDisplayTools::doPicking() {
     ecvViewContext* ctx =
             m_pickingTargetView ? m_pickingTargetView->viewContext() : nullptr;
+    ecvViewContext& fallback = ecvViewManager::instance().resolveViewContext();
 
-    bool widgetClicked = ctx ? ctx->widgetClicked : m_primaryCtx.widgetClicked;
+    bool widgetClicked = ctx ? ctx->widgetClicked : fallback.widgetClicked;
     if (widgetClicked) {
         CVLog::PrintVerbose(
                 "[ecvDisplayTools::doPicking] Skipping picking because "
@@ -524,13 +480,12 @@ void ecvDisplayTools::doPicking() {
         if (ctx)
             ctx->widgetClicked = false;
         else
-            m_primaryCtx.widgetClicked = false;
+            fallback.widgetClicked = false;
         m_pickingTargetView = nullptr;
         return;
     }
 
-    const QPoint& mousePos =
-            ctx ? ctx->lastMousePos : m_primaryCtx.lastMousePos;
+    const QPoint& mousePos = ctx ? ctx->lastMousePos : fallback.lastMousePos;
     int x = mousePos.x();
     int y = mousePos.y();
 
@@ -540,15 +495,15 @@ void ecvDisplayTools::doPicking() {
         return;
     }
 
-    PICKING_MODE pickMode = ctx ? ctx->pickingMode : m_primaryCtx.pickingMode;
+    PICKING_MODE pickMode = ctx ? ctx->pickingMode : fallback.pickingMode;
     INTERACTION_FLAGS iFlags =
-            ctx ? ctx->interactionFlags : m_primaryCtx.interactionFlags;
-    int pickRad = ctx ? ctx->pickRadius : m_primaryCtx.pickRadius;
+            ctx ? ctx->interactionFlags : fallback.interactionFlags;
+    int pickRad = ctx ? ctx->pickRadius : fallback.pickRadius;
 
     if ((pickMode != NO_PICKING) || (iFlags & INTERACT_2D_ITEMS)) {
         ecvGenericGLDisplay* itemView = m_pickingTargetView;
         if (!itemView) itemView = ecvViewManager::instance().getEffectiveView();
-        if (!itemView) itemView = s_tools;
+        if (!itemView) itemView = primaryDT();
         std::list<ccInteractor*>& activeItems = itemView->activeItemsRef();
 
         if (iFlags & INTERACT_2D_ITEMS) {
@@ -557,7 +512,7 @@ void ecvDisplayTools::doPicking() {
                 ccInteractor* pickedObj = activeItems.front();
                 cc2DLabel* label = dynamic_cast<cc2DLabel*>(pickedObj);
                 if (label && !label->isSelected()) {
-                    emit s_tools->entitySelectionChanged(label);
+                    emit primaryDT()->entitySelectionChanged(label);
                     QApplication::processEvents();
                 }
             }
@@ -586,8 +541,8 @@ void ecvDisplayTools::doPicking() {
 }
 
 void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
-    // Phase M2.3: resolveViewContext for multi-view correctness instead
-    // of m_primaryCtx (which ignores secondary views).
+    // Phase M2.3: resolveViewContext for multi-view correctness (not a stale
+    // primary-only context).
     const auto& ctx = ecvViewManager::instance().resolveViewContext();
 
     // in perspective mode, wheel event corresponds to 'walking'
@@ -668,8 +623,8 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
             return true;
 
         case ClickableItem::LEAVE_FULLSCREEN_MODE: {
-            if (s_tools->m_win) {
-                emit s_tools->exclusiveFullScreenToggled(false);
+            if (primaryDT()->m_win) {
+                emit primaryDT()->exclusiveFullScreenToggled(false);
             }
         }
             return true;
@@ -800,7 +755,7 @@ void ecvDisplayTools::StartPicking(PickingParameters& params) {
     params.centerX *= retinaScale;
     params.centerY *= retinaScale;
 
-    if (!s_tools->m_globalDBRoot && !s_tools->m_winDBRoot) {
+    if (!primaryDT()->m_globalDBRoot && !primaryDT()->m_winDBRoot) {
         // we must always emit a signal!
         ProcessPickingResult(params, nullptr, -1);
         return;
@@ -826,12 +781,12 @@ void ecvDisplayTools::ProcessPickingResult(
         const std::unordered_set<int>* selectedIDs /*=0*/) {
     // standard "entity" picking
     if (params.mode == ENTITY_PICKING) {
-        emit s_tools->entitySelectionChanged(pickedEntity);
+        emit primaryDT()->entitySelectionChanged(pickedEntity);
     }
     // rectangular "entity" picking
     else if (params.mode == ENTITY_RECT_PICKING) {
         if (selectedIDs)
-            emit s_tools->entitiesSelectionChanged(*selectedIDs);
+            emit primaryDT()->entitiesSelectionChanged(*selectedIDs);
         else
             assert(false);
     }
@@ -841,16 +796,16 @@ void ecvDisplayTools::ProcessPickingResult(
         assert(pickedEntity == nullptr || pickedItemIndex >= 0);
         assert(nearestPoint);
 
-        emit s_tools->itemPicked(pickedEntity,
+        emit primaryDT()->itemPicked(pickedEntity,
                                  static_cast<unsigned>(pickedItemIndex),
                                  params.centerX, params.centerY, *nearestPoint);
     }
     // fast picking (labels, interactors, etc.)
     else if (params.mode == FAST_PICKING) {
-        emit s_tools->itemPickedFast(pickedEntity, pickedItemIndex,
+        emit primaryDT()->itemPickedFast(pickedEntity, pickedItemIndex,
                                      params.centerX, params.centerY);
     } else if (params.mode == LABEL_PICKING) {
-        if (s_tools->m_globalDBRoot && pickedEntity && pickedItemIndex >= 0) {
+        if (primaryDT()->m_globalDBRoot && pickedEntity && pickedItemIndex >= 0) {
             // qint64 stopTime = m_timer.nsecsElapsed();
             // CVLog::Print(QString("[Picking] entity ID %1 - item #%2 (time: %3
             // ms)").arg(selectedID).arg(pickedItemIndex).arg((stopTime-startTime)
@@ -885,13 +840,13 @@ void ecvDisplayTools::ProcessPickingResult(
             if (label) {
                 label->setVisible(true);
                 auto* parentDisplay = pickedEntity->getDisplay();
-                label->setDisplay(parentDisplay ? parentDisplay : s_tools);
+                label->setDisplay(parentDisplay ? parentDisplay : primaryDT());
                 label->setPosition(
                         static_cast<float>(params.centerX + 20) /
                                 GlWidth(),
                         static_cast<float>(params.centerY + 20) /
                                 GlHeight());
-                emit s_tools->newLabel(static_cast<ccHObject*>(label));
+                emit primaryDT()->newLabel(static_cast<ccHObject*>(label));
                 QApplication::processEvents();
             }
         }
@@ -923,8 +878,8 @@ void ecvDisplayTools::SetZNearCoef(ecvViewContext& ctx, double coef) {
                     false, 2, SCREEN_SIZE_MESSAGE);
         }
 
-        emit s_tools->zNearCoefChanged(coef);
-        emit s_tools->cameraParamChanged();
+        emit primaryDT()->zNearCoefChanged(coef);
+        emit primaryDT()->cameraParamChanged();
     }
 }
 
@@ -956,7 +911,7 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
             return;
     }
 
-    assert(!s_tools->m_captureMode.enabled);
+    assert(!primaryDT()->m_captureMode.enabled);
 
     std::unordered_set<int> selectedIDs;
     int pickedItemIndex = -1;
@@ -1098,9 +1053,9 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
     } else {
         try {
             ccHObject::Container toProcess;
-            if (s_tools->m_globalDBRoot)
-                toProcess.push_back(s_tools->m_globalDBRoot);
-            if (s_tools->m_winDBRoot) toProcess.push_back(s_tools->m_winDBRoot);
+            if (primaryDT()->m_globalDBRoot)
+                toProcess.push_back(primaryDT()->m_globalDBRoot);
+            if (primaryDT()->m_winDBRoot) toProcess.push_back(primaryDT()->m_winDBRoot);
 
             while (!toProcess.empty()) {
                 // get next item
@@ -1359,11 +1314,11 @@ ccHObject* ecvDisplayTools::GetPickedEntity(const ecvViewContext& ctx,
 
     ccHObject* pickedEntity = nullptr;
     unsigned int selectedID = ctx.lastPickedId.toUInt();
-    if (params.pickInSceneDB && s_tools->m_globalDBRoot) {
-        pickedEntity = s_tools->m_globalDBRoot->find(selectedID);
+    if (params.pickInSceneDB && primaryDT()->m_globalDBRoot) {
+        pickedEntity = primaryDT()->m_globalDBRoot->find(selectedID);
     }
-    if (!pickedEntity && params.pickInLocalDB && s_tools->m_winDBRoot) {
-        pickedEntity = s_tools->m_winDBRoot->find(selectedID);
+    if (!pickedEntity && params.pickInLocalDB && primaryDT()->m_winDBRoot) {
+        pickedEntity = primaryDT()->m_winDBRoot->find(selectedID);
     }
 
     return pickedEntity;
@@ -1442,7 +1397,7 @@ void ecvDisplayTools::ResizeGL(int w, int h) {
 void ecvDisplayTools::MoveCamera(ecvViewContext& ctx,
                                  float dx, float dy, float dz) {
     if (dx != 0.0f || dy != 0.0f) {
-        emit s_tools->cameraDisplaced(dx, dy);
+        emit primaryDT()->cameraDisplaced(dx, dy);
     }
 
     CCVector3d V(dx, dy, dz);
@@ -1459,9 +1414,9 @@ void ecvDisplayTools::MoveCamera(float dx, float dy, float dz) {
 
 void ecvDisplayTools::UpdateActiveItemsList(
         int x, int y, bool extendToSelectedLabels /*=false*/) {
-    ecvGenericGLDisplay* itemView = s_tools->m_pickingTargetView;
+    ecvGenericGLDisplay* itemView = primaryDT()->m_pickingTargetView;
     if (!itemView) itemView = ecvViewManager::instance().getEffectiveView();
-    if (!itemView) itemView = s_tools;
+    if (!itemView) itemView = primaryDT();
     std::list<ccInteractor*>& items = itemView->activeItemsRef();
     items.clear();
 
@@ -1503,11 +1458,11 @@ void ecvDisplayTools::UpdateActiveItemsList(
             if (!label->isSelected() || !extendToSelectedLabels) {
             } else {
                 ccHObject::Container labels;
-                if (s_tools->m_globalDBRoot)
-                    s_tools->m_globalDBRoot->filterChildren(labels, true,
+                if (primaryDT()->m_globalDBRoot)
+                    primaryDT()->m_globalDBRoot->filterChildren(labels, true,
                                                             CV_TYPES::LABEL_2D);
-                if (s_tools->m_winDBRoot)
-                    s_tools->m_winDBRoot->filterChildren(labels, true,
+                if (primaryDT()->m_winDBRoot)
+                    primaryDT()->m_winDBRoot->filterChildren(labels, true,
                                                          CV_TYPES::LABEL_2D);
 
                 for (auto& label : labels) {
@@ -1530,7 +1485,7 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
                                        int y) {
     ecvGenericGLDisplay* target = m_pickingTargetView;
     if (!target) target = ecvViewManager::instance().getEffectiveView();
-    if (!target) target = s_tools;
+    if (!target) target = primaryDT();
     std::list<ccInteractor*>& items = target->activeItemsRef();
     ecvViewContext* tctx = target->viewContext();
 
@@ -1543,7 +1498,9 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
             cbox->setActiveComponent(pickedItemIndex);
             ccGLMatrixd& viewMat =
                     tctx ? tctx->viewportParams.viewMat
-                         : m_primaryCtx.viewportParams.viewMat;
+                         : ecvViewManager::instance()
+                                   .resolveViewContext()
+                                   .viewportParams.viewMat;
             cbox->setClickedPoint(x, y, Width(), Height(), viewMat);
 
             items.push_back(cbox);
@@ -1632,7 +1589,7 @@ void ecvDisplayTools::RotateBaseViewMat(ecvViewContext& ctx,
 
     ecvDisplayTools::SetViewportParameters(viewParams);
 
-    emit s_tools->baseViewMatChanged(ctx.viewportParams.viewMat);
+    emit primaryDT()->baseViewMatChanged(ctx.viewportParams.viewMat);
 }
 
 void ecvDisplayTools::RotateBaseViewMat(const ccGLMatrixd& rotMat) {
@@ -1742,8 +1699,8 @@ void ecvDisplayTools::SetView(ecvViewContext& ctx,
         SetPerspectiveState(ctx.viewportParams.perspectiveView, false);
     }
 
-    emit s_tools->baseViewMatChanged(ctx.viewportParams.viewMat);
-    emit s_tools->cameraParamChanged();
+    emit primaryDT()->baseViewMatChanged(ctx.viewportParams.viewMat);
+    emit primaryDT()->cameraParamChanged();
     // may be useless
 
     // Get current camera parameters to preserve zoom/distance
@@ -1908,7 +1865,7 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
     double bbHalfDiag = 1.0;
     CCVector3d bbCenter(0, 0, 0);
 
-    if (s_tools->m_globalDBRoot || s_tools->m_winDBRoot) {
+    if (primaryDT()->m_globalDBRoot || primaryDT()->m_winDBRoot) {
         ccBBox box;
         GetVisibleObjectsBB(box);
         if (box.isValid()) {
@@ -2066,8 +2023,8 @@ void ecvDisplayTools::UpdateModelViewMatrix() {
 void ecvDisplayTools::SetBaseViewMat(ecvViewContext& ctx, ccGLMatrixd& mat) {
     ctx.viewportParams.viewMat = mat;
     InvalidateVisualization();
-    emit s_tools->baseViewMatChanged(ctx.viewportParams.viewMat);
-    emit s_tools->cameraParamChanged();
+    emit primaryDT()->baseViewMatChanged(ctx.viewportParams.viewMat);
+    emit primaryDT()->cameraParamChanged();
 }
 
 void ecvDisplayTools::SetBaseViewMat(ccGLMatrixd& mat) {
@@ -2130,8 +2087,8 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
 
     SetCameraPos(ctx, ctx.viewportParams.getPivotPoint() + PC);
 
-    emit s_tools->perspectiveStateChanged();
-    emit s_tools->cameraParamChanged();
+    emit primaryDT()->perspectiveStateChanged();
+    emit primaryDT()->cameraParamChanged();
 
     {
         QSettings settings;
@@ -2633,8 +2590,8 @@ void ecvDisplayTools::SetFov(ecvViewContext& ctx, float fov_deg) {
                     false, 2, SCREEN_SIZE_MESSAGE);
         }
 
-        emit s_tools->fovChanged(ctx.viewportParams.fov_deg);
-        emit s_tools->cameraParamChanged();
+        emit primaryDT()->fovChanged(ctx.viewportParams.fov_deg);
+        emit primaryDT()->cameraParamChanged();
     }
 }
 
@@ -2675,8 +2632,8 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
     SetAutoUpateCameraPos(autoUpdateCameraPos);
     SetCenterOfRotation(P);
 
-    emit s_tools->pivotPointChanged(ctx.viewportParams.getPivotPoint());
-    emit s_tools->cameraParamChanged();
+    emit primaryDT()->pivotPointChanged(ctx.viewportParams.getPivotPoint());
+    emit primaryDT()->cameraParamChanged();
 
     if (verbose) {
         const unsigned& precision =
@@ -2784,7 +2741,7 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
                 ctx.viewportParams.defaultPointSize);
         CONTEXT.defaultLineWidth = static_cast<unsigned char>(
                 ctx.viewportParams.defaultLineWidth);
-        CONTEXT.display = s_tools;
+        CONTEXT.display = primaryDT();
     }
     CONTEXT.currentLineWidth = CONTEXT.defaultLineWidth;
 }
@@ -2830,8 +2787,8 @@ void ecvDisplayTools::SetCameraPos(ecvViewContext& ctx, const CCVector3d& P) {
     if ((ctx.viewportParams.getCameraCenter() - P).norm2d() != 0.0) {
         ctx.viewportParams.setCameraCenter(P, true);
         SetCameraPosition(P);
-        emit s_tools->cameraPosChanged(ctx.viewportParams.getCameraCenter());
-        emit s_tools->cameraParamChanged();
+        emit primaryDT()->cameraPosChanged(ctx.viewportParams.getCameraCenter());
+        emit primaryDT()->cameraParamChanged();
         InvalidateViewport();
         InvalidateVisualization();
         Deprecate3DLayer();
@@ -2905,11 +2862,9 @@ void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
     }
 
     ecvViewManager::instance().setOverriddenDisplayParameters(params);
-    if (s_tools) {
-        s_tools->m_overridenDisplayParametersEnabled = true;
-        s_tools->m_overridenDisplayParameters = params;
-        s_tools->m_overridenDisplayParameters.initFontSizesIfNeeded();
-    }
+    m_overridenDisplayParametersEnabled = true;
+    m_overridenDisplayParameters = params;
+    m_overridenDisplayParameters.initFontSizesIfNeeded();
 
     ecvGui::Set(params);
 }
@@ -2986,11 +2941,11 @@ void ecvDisplayTools::SetViewportParameters(
     InvalidateVisualization();
     Deprecate3DLayer();
 
-    emit s_tools->baseViewMatChanged(ctx.viewportParams.viewMat);
-    emit s_tools->pivotPointChanged(ctx.viewportParams.getPivotPoint());
-    emit s_tools->cameraPosChanged(ctx.viewportParams.getCameraCenter());
-    emit s_tools->fovChanged(ctx.viewportParams.fov_deg);
-    emit s_tools->cameraParamChanged();
+    emit primaryDT()->baseViewMatChanged(ctx.viewportParams.viewMat);
+    emit primaryDT()->pivotPointChanged(ctx.viewportParams.getPivotPoint());
+    emit primaryDT()->cameraPosChanged(ctx.viewportParams.getCameraCenter());
+    emit primaryDT()->fovChanged(ctx.viewportParams.fov_deg);
+    emit primaryDT()->cameraParamChanged();
 }
 
 void ecvDisplayTools::SetViewportParameters(
@@ -3048,8 +3003,8 @@ void ecvDisplayTools::SetBubbleViewFov(ecvViewContext& ctx, float fov_deg) {
             InvalidateViewport();
             InvalidateVisualization();
             Deprecate3DLayer();
-            emit s_tools->fovChanged(ctx.bubbleViewFov_deg);
-            emit s_tools->cameraParamChanged();
+            emit primaryDT()->fovChanged(ctx.bubbleViewFov_deg);
+            emit primaryDT()->cameraParamChanged();
         }
     }
 }
@@ -3226,22 +3181,22 @@ void ecvDisplayTools::ShowPivotSymbol(bool state) {
 
 int ecvDisplayTools::GetFontPointSize() {
     return GetOptimizedFontSize(
-            s_tools->m_captureMode.enabled
+            primaryDT()->m_captureMode.enabled
                     ? FontSizeModifier(GetDisplayParameters().defaultFontSize,
-                                       s_tools->m_captureMode.zoomFactor)
+                                       primaryDT()->m_captureMode.zoomFactor)
                     : GetDisplayParameters().defaultFontSize);
 }
 
 int ecvDisplayTools::GetLabelFontPointSize() {
     return GetOptimizedFontSize(
-            s_tools->m_captureMode.enabled
+            primaryDT()->m_captureMode.enabled
                     ? FontSizeModifier(GetDisplayParameters().labelFontSize,
-                                       s_tools->m_captureMode.zoomFactor)
+                                       primaryDT()->m_captureMode.zoomFactor)
                     : GetDisplayParameters().labelFontSize);
 }
 
 QFont ecvDisplayTools::GetLabelDisplayFont() {
-    QFont font = s_tools->m_font;
+    QFont font = primaryDT()->m_font;
     font.setPointSize(GetLabelFontPointSize());
     return font;
 }
@@ -3280,8 +3235,8 @@ void ecvDisplayTools::SetFocusToScreen() {
 void ecvDisplayTools::ToBeRefreshed() {
     if (auto* av = ecvViewManager::instance().getEffectiveView()) {
         av->toBeRefreshed();
-    } else if (s_tools) {
-        s_tools->m_shouldBeRefreshed = true;
+    } else if (auto* p = primaryDT()) {
+        p->m_shouldBeRefreshed = true;
     }
 
     InvalidateViewport();
@@ -3291,9 +3246,10 @@ void ecvDisplayTools::ToBeRefreshed() {
 void ecvDisplayTools::RefreshDisplay(bool only2D /*=false*/,
                                      bool forceRedraw /* = true*/) {
     (void)forceRedraw;
-    if (!s_tools || !s_tools->m_shouldBeRefreshed) return;
+    auto* p = primaryDT();
+    if (!p || !p->m_shouldBeRefreshed) return;
     ecvViewManager::instance().refreshAll(only2D);
-    s_tools->m_shouldBeRefreshed = false;
+    p->m_shouldBeRefreshed = false;
 }
 
 void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
@@ -3304,32 +3260,32 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
     if (ctx.showDebugTraces) {
         RemoveWidgets(
                 WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, DEBUG_LAYER_ID));
-        if (!s_tools->m_diagStrings.isEmpty()) {
-            QStringList::iterator it = s_tools->m_diagStrings.begin();
-            while (it != s_tools->m_diagStrings.end()) {
+        if (!primaryDT()->m_diagStrings.isEmpty()) {
+            QStringList::iterator it = primaryDT()->m_diagStrings.begin();
+            while (it != primaryDT()->m_diagStrings.end()) {
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, *it));
-                it = s_tools->m_diagStrings.erase(it);
+                it = primaryDT()->m_diagStrings.erase(it);
             }
         }
-        s_tools->m_diagStrings
+        primaryDT()->m_diagStrings
                 << QString("only2D : %1").arg(only2D ? "true" : "false");
-        s_tools->m_diagStrings << QString("ForceRedraw : %1")
+        primaryDT()->m_diagStrings << QString("ForceRedraw : %1")
                                           .arg(g_redrawDisplayForceRedraw ? "true"
                                                                          : "false");
     } else {
         RemoveWidgets(
                 WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, DEBUG_LAYER_ID));
-        if (!s_tools->m_diagStrings.isEmpty()) {
-            QStringList::iterator it = s_tools->m_diagStrings.begin();
-            while (it != s_tools->m_diagStrings.end()) {
+        if (!primaryDT()->m_diagStrings.isEmpty()) {
+            QStringList::iterator it = primaryDT()->m_diagStrings.begin();
+            while (it != primaryDT()->m_diagStrings.end()) {
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, *it));
-                it = s_tools->m_diagStrings.erase(it);
+                it = primaryDT()->m_diagStrings.erase(it);
             }
         }
     }
 
     CheckIfRemove();
-    if (s_tools->m_removeAllFlag) {
+    if (primaryDT()->m_removeAllFlag) {
         Update();
         return;
     }
@@ -3343,13 +3299,13 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
     // Clean outdated messages (global, not per-view)
     {
         std::list<MessageToDisplay>::iterator it =
-                s_tools->m_messagesToDisplay.begin();
-        qint64 currentTime_sec = s_tools->m_timer.elapsed() / 1000;
-        while (it != s_tools->m_messagesToDisplay.end()) {
+                primaryDT()->m_messagesToDisplay.begin();
+        qint64 currentTime_sec = primaryDT()->m_timer.elapsed() / 1000;
+        while (it != primaryDT()->m_messagesToDisplay.end()) {
             if (it->messageValidity_sec < currentTime_sec) {
                 RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
                                                 it->message));
-                it = s_tools->m_messagesToDisplay.erase(it);
+                it = primaryDT()->m_messagesToDisplay.erase(it);
             } else {
                 ++it;
             }
@@ -3364,11 +3320,11 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
     // the full pipeline including ColorRamp, Messages, ScaleBar, and the
     // parameterized DrawClickableItems.
 
-    if (s_tools->m_updateFBO || GetDisplayParameters().displayCross) {
-        s_tools->m_updateFBO = false;
+    if (primaryDT()->m_updateFBO || GetDisplayParameters().displayCross) {
+        primaryDT()->m_updateFBO = false;
     }
 
-    s_tools->m_shouldBeRefreshed = false;
+    primaryDT()->m_shouldBeRefreshed = false;
     UpdateScreen();
 }
 
@@ -3405,12 +3361,12 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx,
         CONTEXT.drawingFlags |= CC_LIGHT_ENABLED;
     }
 
-    if (s_tools->m_globalDBRoot) {
-        s_tools->m_globalDBRoot->draw(CONTEXT);
+    if (primaryDT()->m_globalDBRoot) {
+        primaryDT()->m_globalDBRoot->draw(CONTEXT);
     }
 
-    if (s_tools->m_winDBRoot) {
-        s_tools->m_winDBRoot->draw(CONTEXT);
+    if (primaryDT()->m_winDBRoot) {
+        primaryDT()->m_winDBRoot->draw(CONTEXT);
     }
 
 #if 0
@@ -3424,8 +3380,8 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx,
 	}
 #endif
 
-    if (s_tools->m_globalDBRoot &&
-        s_tools->m_globalDBRoot->getChildrenNumber()) {
+    if (primaryDT()->m_globalDBRoot &&
+        primaryDT()->m_globalDBRoot->getChildrenNumber()) {
     }
 }
 
@@ -3564,20 +3520,20 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
     }
 
     // we draw 2D entities
-    if (s_tools->m_globalDBRoot) s_tools->m_globalDBRoot->draw(CONTEXT);
-    if (s_tools->m_winDBRoot) s_tools->m_winDBRoot->draw(CONTEXT);
+    if (primaryDT()->m_globalDBRoot) primaryDT()->m_globalDBRoot->draw(CONTEXT);
+    if (primaryDT()->m_winDBRoot) primaryDT()->m_winDBRoot->draw(CONTEXT);
 
     // current displayed scalar field color ramp (if any)
     ccRenderingTools::DrawColorRamp(CONTEXT);
 
     ecvGenericGLDisplay* fgView = ecvViewManager::instance().getEffectiveView();
-    if (!fgView) fgView = s_tools;
+    if (!fgView) fgView = primaryDT();
     fgView->clickableItemsRef().clear();
 
     /*** overlay entities ***/
     if (fgCtx.displayOverlayEntities) {
-        if (!s_tools->m_captureMode.enabled ||
-            s_tools->m_captureMode.renderOverlayItems) {
+        if (!primaryDT()->m_captureMode.enabled ||
+            primaryDT()->m_captureMode.renderOverlayItems) {
             // scale: only in ortho mode
             if (!fgCtx.viewportParams.perspectiveView) {
                 SetScaleBarVisible(true);
@@ -3587,19 +3543,19 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
             UpdateScreen();
         }
 
-        if (!s_tools->m_captureMode.enabled) {
+        if (!primaryDT()->m_captureMode.enabled) {
             int yStart = 0;
 
             // current messages (if valid)
-            if (!s_tools->m_messagesToDisplay.empty()) {
-                QFont font = s_tools->m_font;
+            if (!primaryDT()->m_messagesToDisplay.empty()) {
+                QFont font = primaryDT()->m_font;
                 QFontMetrics fm(font);
                 int margin = fm.height() / 4;
                 int ll_currentHeight =
                         fgCtx.glViewport.height() - 10;
                 int uc_currentHeight = 10;
 
-                for (const auto& message : s_tools->m_messagesToDisplay) {
+                for (const auto& message : primaryDT()->m_messagesToDisplay) {
                     switch (message.position) {
                         case LOWER_LEFT_MESSAGE: {
                             RenderText(10, ll_currentHeight, message.message,
@@ -3721,8 +3677,8 @@ void ecvDisplayTools::Pick2DLabel(int x, int y) {
     std::list<ccInteractor*>* itemsPtr = nullptr;
     if (auto* effView = ecvViewManager::instance().getEffectiveView()) {
         itemsPtr = &effView->activeItemsRef();
-    } else if (s_tools) {
-        itemsPtr = &s_tools->m_activeItems;
+    } else if (auto* p = primaryDT()) {
+        itemsPtr = &p->m_activeItems;
     }
     if (!itemsPtr) return;
 
@@ -3943,7 +3899,7 @@ void ecvDisplayTools::DrawClickableItems(
                                                     : GetCurrentScreen();
     if (!hotZone) {
         hotZone = new HotZone(hzWin);
-        if (!display) s_tools->m_hotZoneOwnedBySingleton = true;
+        if (!display) primaryDT()->m_hotZoneOwnedBySingleton = true;
     } else if (GetPlatformAwareDPIScale() != hotZone->pixelDeviceRatio) {
         hotZone->updateInternalVariables(hzWin);
     }
@@ -4199,13 +4155,13 @@ void ecvDisplayTools::DrawClickableItems(
 }
 
 void ecvDisplayTools::CheckIfRemove() {
-    if (s_tools->m_removeAllFlag) {
+    if (primaryDT()->m_removeAllFlag) {
         CC_DRAW_CONTEXT context;
         context.removeEntityType = ENTITY_TYPE::ECV_ALL;
         RemoveEntities(context);
         SetRemoveAllFlag(false);
-    } else if (s_tools->m_removeFlag) {
-        for (const removeInfo& rmInfo : s_tools->m_removeInfos) {
+    } else if (primaryDT()->m_removeFlag) {
+        for (const removeInfo& rmInfo : primaryDT()->m_removeInfos) {
             if (rmInfo.removeType == ENTITY_TYPE::ECV_NONE) continue;
             // octree and kdtree object has been deleted before
             if (rmInfo.removeType == ENTITY_TYPE::ECV_OCTREE) continue;
@@ -4219,7 +4175,7 @@ void ecvDisplayTools::CheckIfRemove() {
             RemoveEntities(context);
             RemoveBB(context);
         }
-        s_tools->m_removeFlag = false;
+        primaryDT()->m_removeFlag = false;
     }
 }
 
@@ -4509,7 +4465,7 @@ void ecvDisplayTools::DrawPivot() {
 }
 
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {
-    s_tools->m_currentScreen = widget;
+    primaryDT()->m_currentScreen = widget;
     if (widget) {
         widget->update();
     }
@@ -4526,7 +4482,7 @@ void ecvDisplayTools::refresh(bool only2D) { RefreshDisplay(only2D); }
 void ecvDisplayTools::toBeRefreshed() { m_shouldBeRefreshed = true; }
 
 const ecvViewportParameters& ecvDisplayTools::getViewportParameters() const {
-    return m_primaryCtx.viewportParams;
+    return ecvViewManager::instance().resolveViewContext().viewportParams;
 }
 
 void ecvDisplayTools::setViewportParameters(
@@ -4539,11 +4495,15 @@ void ecvDisplayTools::setPerspectiveState(bool state, bool objectCenteredView) {
 }
 
 bool ecvDisplayTools::perspectiveView() const {
-    return m_primaryCtx.viewportParams.perspectiveView;
+    return ecvViewManager::instance()
+            .resolveViewContext()
+            .viewportParams.perspectiveView;
 }
 
 bool ecvDisplayTools::objectCenteredView() const {
-    return m_primaryCtx.viewportParams.objectCenteredView;
+    return ecvViewManager::instance()
+            .resolveViewContext()
+            .viewportParams.objectCenteredView;
 }
 
 void ecvDisplayTools::setSceneDB(ccHObject* root) { SetSceneDB(root); }
