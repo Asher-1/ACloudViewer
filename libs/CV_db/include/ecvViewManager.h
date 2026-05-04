@@ -205,6 +205,13 @@ public:
     /// Returns the shared display tools (may be nullptr before init).
     ecvDisplayTools* displayTools() const;
 
+    /// Optional relay implementation (registered by VTK engine): typed
+    /// QObject::connect from ecvGLView to ViewManager relay signals. Required
+    /// for multi-window — CV_db cannot depend on ecvGLView headers.
+    /// When unset, registerView is registered without per-view relay connections.
+    using SingletonRelayHook = void (*)(ecvViewManager*, ecvGenericGLDisplay*);
+    static void registerSingletonRelayHook(SingletonRelayHook hook);
+
     ecvUndoManager* undoManager();
     const ecvUndoManager* undoManager() const;
 

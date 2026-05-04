@@ -173,7 +173,13 @@ public:
 
     /// @param visible Whether to show the scale bar
     void setScaleBarVisible(bool visible) {
-        if (m_scaleBar) m_scaleBar->setVisible(visible);
+        if (m_scaleBar) {
+            if (visible && !isVisible()) return;
+            m_scaleBar->setVisible(visible);
+            if (visible && m_scaleBar->isLayoutReady()) {
+                m_scaleBar->update(m_render, m_interactor);
+            }
+        }
     }
 
 protected:
@@ -205,6 +211,13 @@ public:
     /// Resolve the ecvGenericGLDisplay associated with this widget.
     ecvGenericGLDisplay* resolveDisplay() const;
 
+    /// Return the best display for per-view method calls.
+    /// Prefers resolveDisplay(); falls back to m_tools.
+    ecvGenericGLDisplay* displayTarget() const;
+
+    /// Forward this widget's input signals to the given ecvDisplayTools.
+    void connectSignalsTo(ecvDisplayTools* target);
+
     /// Per-view 2D overlay (lazy-created for secondary views).
     std::shared_ptr<Visualization::ImageVis> localImageVis() const {
         return m_localImageVis;
@@ -225,8 +238,8 @@ public:
     // Per-view state accessors
     //
     // curCtx() returns the canonical context for this widget:
-    //   secondary views → m_ownerView->context()
-    //   primary view    → m_tools->m_primaryCtx
+    //   secondary views → m_ownerView->viewContext()
+    //   primary view    → ecvViewManager::resolveViewContext()
     //
     // All cur*() helpers delegate to curCtx() so the branch exists
     // in exactly one place.
@@ -283,6 +296,23 @@ public:
     ccPolyline*& curRectPickingPoly();
     std::list<ccInteractor*>& curActiveItems();
     ecvHotZone*& curHotZone();
+
+signals:
+    void rightButtonClicked(int x, int y);
+    void leftButtonClicked(int x, int y);
+    void doubleButtonClicked(int x, int y);
+    void mouseWheelChanged(QWheelEvent* event);
+    void mouseWheelRotated(float wheelDelta_deg);
+    void mousePosChanged(const QPoint& pos);
+    void mouseMoved(int x, int y, Qt::MouseButtons buttons);
+    void translation(const CCVector3d& t);
+    void rotation(const ccGLMatrixd& rotMat);
+    void viewMatRotated(const ccGLMatrixd& rotMat);
+    void buttonReleased();
+    void filesDropped(const QStringList& filenames, bool displayDialog);
+    void exclusiveFullScreenToggled(bool exclusive);
+    void cameraParamChanged();
+    void labelmove2D(int x, int y, int dx, int dy);
 
 protected:
     bool m_unclosable = true;
