@@ -2602,60 +2602,13 @@ void ecvDisplayTools::DisplayNewMessage(const QString& message,
                                         bool append /*=false*/,
                                         int displayMaxDelay_sec /*=2*/,
                                         MessageType type /*=CUSTOM_MESSAGE*/) {
-    if (message.isEmpty()) {
-        if (!append) {
-            std::list<MessageToDisplay>::iterator it =
-                    s_tools->m_messagesToDisplay.begin();
-            while (it != s_tools->m_messagesToDisplay.end()) {
-                // same position? we remove the message
-                if (it->position == pos) {
-                    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                                    it->message));
-                    it = s_tools->m_messagesToDisplay.erase(it);
-                } else
-                    ++it;
-            }
-        } else {
-            CVLog::Warning(
-                    "[ecvDisplayTools::DisplayNewMessage] Appending an empty "
-                    "message has no effect!");
-        }
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (view) {
+        view->displayNewMessage(message, pos, append, displayMaxDelay_sec,
+                                type);
         return;
     }
-
-    // shall we replace the equivalent message(if any)?
-    if (!append) {
-        // only if type is not 'custom'
-        if (type != CUSTOM_MESSAGE) {
-            for (std::list<MessageToDisplay>::iterator it =
-                         s_tools->m_messagesToDisplay.begin();
-                 it != s_tools->m_messagesToDisplay.end();) {
-                // same type? we remove it
-                if (it->type == type) {
-                    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                                    it->message));
-                    it = s_tools->m_messagesToDisplay.erase(it);
-                } else
-                    ++it;
-            }
-        }
-    } else {
-        if (pos == SCREEN_CENTER_MESSAGE) {
-            CVLog::Warning(
-                    "[ecvDisplayTools::DisplayNewMessage] Append is not "
-                    "supported for center screen messages!");
-        }
-    }
-
-    MessageToDisplay mess;
-    mess.message = message;
-    mess.messageValidity_sec =
-            s_tools->m_timer.elapsed() / 1000 + displayMaxDelay_sec;
-    mess.position = pos;
-    mess.type = type;
-    s_tools->m_messagesToDisplay.push_back(mess);
-    // CVLog::Print(QString("[DisplayNewMessage] New message valid until %1
-    // s.").arg(mess.messageValidity_sec));
+    // No views yet — drop message (startup only, before any view is created)
 }
 
 void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
