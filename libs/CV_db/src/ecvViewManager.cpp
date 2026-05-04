@@ -11,6 +11,7 @@
 #include <QJsonObject>
 
 #include "ecvDisplayTools.h"
+#include "ecvUndoManager.h"
 #include "ecvDrawContext.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvHObject.h"
@@ -18,49 +19,51 @@
 #include "ecvViewLayoutProxy.h"
 #include "ecvViewRepresentation.h"
 
-ecvViewManager::ecvViewManager() : QObject(nullptr) {}
+ecvViewManager::ecvViewManager() : QObject(nullptr) {
+    m_undoManager = new ecvUndoManager(this);
+}
 
 void ecvViewManager::setupSingletonRelay(ecvGenericGLDisplay* view) {
-    if (m_singletonRelayConnected) return;
+    // Connect per-view signals to ViewManager relay signals.
+    // Every ecvGenericGLDisplay implementation (ecvDisplayTools, ecvGLView)
+    // is a QObject and declares identical signal signatures.
+    // We use string-based connections because CV_db cannot include ecvGLView.h.
+    QObject* src = dynamic_cast<QObject*>(view);
+    if (!src) return;
 
-    auto* dt = dynamic_cast<ecvDisplayTools*>(view);
-    if (!dt) return;
+    auto c = [&](const char* sig, const char* slot) {
+        connect(src, sig, this, slot);
+    };
 
-    m_singletonRelayConnected = true;
-
-    connect(dt, &ecvDisplayTools::entitySelectionChanged, this,
-            &ecvViewManager::entitySelectionChanged);
-    connect(dt, &ecvDisplayTools::entitiesSelectionChanged, this,
-            &ecvViewManager::entitiesSelectionChanged);
-    connect(dt, &ecvDisplayTools::newLabel, this, &ecvViewManager::newLabel);
-    connect(dt, &ecvDisplayTools::filesDropped, this,
-            &ecvViewManager::filesDropped);
-    connect(dt, &ecvDisplayTools::cameraParamChanged, this,
-            &ecvViewManager::cameraParamChanged);
-    connect(dt, &ecvDisplayTools::mousePosChanged, this,
-            &ecvViewManager::mousePosChanged);
-    connect(dt, &ecvDisplayTools::autoPickPivot, this,
-            &ecvViewManager::autoPickPivot);
-    connect(dt, &ecvDisplayTools::exclusiveFullScreenToggled, this,
-            &ecvViewManager::exclusiveFullScreenToggled);
-    connect(dt, &ecvDisplayTools::itemPicked, this,
-            &ecvViewManager::itemPicked);
-    connect(dt, &ecvDisplayTools::mouseMoved, this,
-            &ecvViewManager::mouseMoved);
-    connect(dt, &ecvDisplayTools::leftButtonClicked, this,
-            &ecvViewManager::leftButtonClicked);
-    connect(dt, &ecvDisplayTools::rightButtonClicked, this,
-            &ecvViewManager::rightButtonClicked);
-    connect(dt, &ecvDisplayTools::doubleButtonClicked, this,
-            &ecvViewManager::doubleButtonClicked);
-    connect(dt, &ecvDisplayTools::buttonReleased, this,
-            &ecvViewManager::buttonReleased);
-    connect(dt, &ecvDisplayTools::labelmove2D, this,
-            &ecvViewManager::labelmove2D);
-    connect(dt, &ecvDisplayTools::pivotPointChanged, this,
-            &ecvViewManager::pivotPointChanged);
-    connect(dt, &ecvDisplayTools::perspectiveStateChanged, this,
-            &ecvViewManager::perspectiveStateChanged);
+    c(SIGNAL(entitySelectionChanged(ccHObject*)),
+      SIGNAL(entitySelectionChanged(ccHObject*)));
+    c(SIGNAL(entitiesSelectionChanged(std::unordered_set<int>)),
+      SIGNAL(entitiesSelectionChanged(std::unordered_set<int>)));
+    c(SIGNAL(newLabel(ccHObject*)), SIGNAL(newLabel(ccHObject*)));
+    c(SIGNAL(filesDropped(QStringList, bool)),
+      SIGNAL(filesDropped(QStringList, bool)));
+    c(SIGNAL(cameraParamChanged()), SIGNAL(cameraParamChanged()));
+    c(SIGNAL(mousePosChanged(QPoint)), SIGNAL(mousePosChanged(QPoint)));
+    c(SIGNAL(autoPickPivot(bool)), SIGNAL(autoPickPivot(bool)));
+    c(SIGNAL(exclusiveFullScreenToggled(bool)),
+      SIGNAL(exclusiveFullScreenToggled(bool)));
+    c(SIGNAL(itemPicked(ccHObject*, unsigned, int, int, CCVector3)),
+      SIGNAL(itemPicked(ccHObject*, unsigned, int, int, CCVector3)));
+    c(SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
+      SIGNAL(mouseMoved(int, int, Qt::MouseButtons)));
+    c(SIGNAL(leftButtonClicked(int, int)),
+      SIGNAL(leftButtonClicked(int, int)));
+    c(SIGNAL(rightButtonClicked(int, int)),
+      SIGNAL(rightButtonClicked(int, int)));
+    c(SIGNAL(doubleButtonClicked(int, int)),
+      SIGNAL(doubleButtonClicked(int, int)));
+    c(SIGNAL(buttonReleased()), SIGNAL(buttonReleased()));
+    c(SIGNAL(labelmove2D(int, int, int, int)),
+      SIGNAL(labelmove2D(int, int, int, int)));
+    c(SIGNAL(pivotPointChanged(CCVector3d)),
+      SIGNAL(pivotPointChanged(CCVector3d)));
+    c(SIGNAL(perspectiveStateChanged()),
+      SIGNAL(perspectiveStateChanged()));
 }
 
 ecvViewManager& ecvViewManager::instance() {
@@ -80,10 +83,46 @@ ecvGenericGLDisplay* ecvViewManager::getEffectiveView() const {
     return m_renderingView ? m_renderingView : m_activeView;
 }
 
+ecvViewContext& ecvViewManager::resolveViewContext() {
+    auto* view = getEffectiveView();
+    if (view && view->viewContext()) return *view->viewContext();
+
+    auto* active = getActiveView();
+    if (active && active->viewContext()) return *active->viewContext();
+
+    if (!m_views.isEmpty()) {
+        auto* first = m_views.first();
+        if (first && first->viewContext()) return *first->viewContext();
+    }
+
+    Q_ASSERT_X(false, "resolveViewContext", "No view context available");
+    static ecvViewContext s_emergency;
+    return s_emergency;
+}
+
+const ecvViewContext& ecvViewManager::resolveViewContext() const {
+    auto* view = getEffectiveView();
+    if (view && view->viewContext()) return *view->viewContext();
+
+    auto* active = getActiveView();
+    if (active && active->viewContext()) return *active->viewContext();
+
+    if (!m_views.isEmpty()) {
+        auto* first = m_views.first();
+        if (first && first->viewContext()) return *first->viewContext();
+    }
+
+    Q_ASSERT_X(false, "resolveViewContext", "No view context available");
+    static ecvViewContext s_emergency;
+    return s_emergency;
+}
+
 void ecvViewManager::setActiveView(ecvGenericGLDisplay* view) {
     if (m_activeView == view) return;
 
     ecvGenericGLDisplay* oldActive = m_activeView;
+    ecvViewLayoutProxy* oldLayout = activeLayout();
+
     m_activeView = view;
 
     updateActiveRepresentation();
@@ -91,6 +130,11 @@ void ecvViewManager::setActiveView(ecvGenericGLDisplay* view) {
 
     if (m_activeView != oldActive) {
         emit activeViewChanged(m_activeView, oldActive);
+    }
+
+    ecvViewLayoutProxy* newLayout = activeLayout();
+    if (newLayout != oldLayout) {
+        emit activeLayoutChanged(newLayout);
     }
 }
 
@@ -164,12 +208,33 @@ void ecvViewManager::unregisterView(ecvGenericGLDisplay* view) {
 
     detachEntitiesFromView(view);
 
+    // Disconnect per-view signal relay.
+    if (auto* src = dynamic_cast<QObject*>(view)) {
+        disconnect(src, nullptr, this, nullptr);
+    }
+
     m_views.removeAt(idx);
     emit viewUnregistered(view);
     emit viewCountChanged(m_views.size());
 
     if (m_activeView == view) {
-        setActiveView(m_views.isEmpty() ? nullptr : m_views.last());
+        ecvGenericGLDisplay* replacement = nullptr;
+        if (!m_views.isEmpty()) {
+            for (auto* layout : m_layouts) {
+                if (!layout) continue;
+                for (auto* v : m_views) {
+                    if (v != view && layout->containsView(v)) {
+                        replacement = v;
+                        break;
+                    }
+                }
+                if (replacement) break;
+            }
+            if (!replacement) {
+                replacement = m_views.first();
+            }
+        }
+        setActiveView(replacement);
     }
 }
 
@@ -179,6 +244,7 @@ void ecvViewManager::unregisterView(ecvGenericGLDisplay* view) {
 
 void ecvViewManager::registerLayout(ecvViewLayoutProxy* layout) {
     if (!layout || m_layouts.contains(layout)) return;
+    layout->setUndoManager(m_undoManager);
     m_layouts.append(layout);
     emit layoutRegistered(layout);
 }
@@ -254,11 +320,9 @@ void ecvViewManager::refreshAll(bool only2D) {
 
 void ecvViewManager::redrawAll(bool only2D,
                                bool forceRedraw,
-                               bool includePrimary) {
-    auto* primary = getPrimaryView();
+                               bool /*includePrimary*/) {
     for (auto* view : m_views) {
         if (!view) continue;
-        if (!includePrimary && view == primary) continue;
         ScopedRenderOverride guard(view);
         view->redraw(only2D, forceRedraw);
     }
@@ -300,7 +364,10 @@ void ecvViewManager::notifyAutoPickPivot(bool state) {
 }
 
 void ecvViewManager::setRemoveAllFlag(bool flag) {
-    ecvDisplayTools::SetRemoveAllFlag(flag);
+    m_removeAllFlag_vm = flag;
+    if (m_displayTools) {
+        m_displayTools->m_removeAllFlag = flag;
+    }
 }
 
 void ecvViewManager::setRedrawRecursive(bool redraw) {
@@ -381,6 +448,28 @@ void ecvViewManager::initDisplayTools(ecvDisplayTools* tools,
     m_displayTools = tools;
 
     ecvDisplayTools::initializeSharedInstance(m_displayTools, win, stereoMode);
+    if (tools) {
+        m_globalDBRoot = tools->m_globalDBRoot;
+        m_mainWindow = tools->m_win;
+        m_defaultFont = tools->m_font;
+    }
+}
+
+const ecvGui::ParamStruct& ecvViewManager::overriddenDisplayParameters() const {
+    if (m_overridenDisplayParametersEnabled) return m_overridenDisplayParameters;
+    return ecvGui::Parameters();
+}
+
+void ecvViewManager::setOverriddenDisplayParameters(
+        const ecvGui::ParamStruct& params) {
+    m_overridenDisplayParameters = params;
+    m_overridenDisplayParametersEnabled = true;
+}
+
+void ecvViewManager::prepareOverriddenDisplayParameters() {
+    if (m_overridenDisplayParametersEnabled) {
+        m_overridenDisplayParameters.initFontSizesIfNeeded();
+    }
 }
 
 void ecvViewManager::releaseDisplayTools() {
@@ -402,6 +491,12 @@ void ecvViewManager::associateToActiveView(ccHObject* obj) {
     if (!obj->getDisplay()) {
         obj->setDisplay_recursive(m_activeView);
     }
+}
+
+void ecvViewManager::forceAssociateToView(ccHObject* obj,
+                                           ecvGenericGLDisplay* view) {
+    if (!obj || !view) return;
+    obj->setDisplay_recursive(view);
 }
 
 void ecvViewManager::moveEntityToView(ccHObject* obj,
@@ -522,4 +617,12 @@ void ecvViewManager::restoreLayout(const QJsonObject& layout,
             setActiveView(view);
         }
     }
+}
+
+ecvUndoManager* ecvViewManager::undoManager() {
+    return m_undoManager;
+}
+
+const ecvUndoManager* ecvViewManager::undoManager() const {
+    return m_undoManager;
 }

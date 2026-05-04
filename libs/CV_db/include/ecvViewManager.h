@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QFont>
 #include <QJsonObject>
 #include <QList>
 #include <QObject>
@@ -19,6 +20,7 @@
 #include "CV_db.h"
 #include "ecvDrawContext.h"
 #include "ecvGenericGLDisplay.h"
+#include "ecvGuiParameters.h"
 #include "ecvViewContext.h"
 
 class ccHObject;
@@ -27,6 +29,7 @@ class QMainWindow;
 struct removeInfo;
 class ecvViewLayoutProxy;
 class ecvViewRepresentation;
+class ecvUndoManager;
 
 /// Global active-objects coordinator — tracks active view, source,
 /// representation, and all registered views.
@@ -72,6 +75,10 @@ public:
     /// Returns the rendering override if set, otherwise the UI-active view.
     ecvGenericGLDisplay* getEffectiveView() const;
 
+    /// Returns a guaranteed non-null view context: effective view -> active view -> first view.
+    ecvViewContext& resolveViewContext();
+    const ecvViewContext& resolveViewContext() const;
+
     // ================================================================
     // Active source / representation (ParaView pqActiveObjects pattern)
     // ================================================================
@@ -108,6 +115,7 @@ public:
 
     /// Returns the first registered view (the "primary" view created at
     /// startup).
+    [[deprecated("All views are equivalent; use getActiveView() instead")]]
     ecvGenericGLDisplay* getPrimaryView() const;
 
     /// Returns true if at least one view is registered.
@@ -197,6 +205,36 @@ public:
     /// Returns the shared display tools (may be nullptr before init).
     ecvDisplayTools* displayTools() const;
 
+    ecvUndoManager* undoManager();
+    const ecvUndoManager* undoManager() const;
+
+    // ================================================================
+    // Global state (moved from ecvDisplayTools singleton)
+    // ================================================================
+
+    ccHObject* globalDBRoot() const { return m_globalDBRoot; }
+    void setGlobalDBRoot(ccHObject* root) { m_globalDBRoot = root; }
+
+    QMainWindow* mainWindow() const { return m_mainWindow; }
+    void setMainWindow(QMainWindow* win) { m_mainWindow = win; }
+
+    QFont defaultFont() const { return m_defaultFont; }
+    void setDefaultFont(const QFont& font) { m_defaultFont = font; }
+
+    bool removeFlag() const { return m_removeFlag; }
+    void setRemoveFlag(bool state) { m_removeFlag = state; }
+
+    std::vector<removeInfo>& removeInfos() { return m_removeInfos; }
+
+    const ecvGui::ParamStruct& overriddenDisplayParameters() const;
+    void setOverriddenDisplayParameters(const ecvGui::ParamStruct& params);
+    bool hasOverriddenDisplayParameters() const {
+        return m_overridenDisplayParametersEnabled;
+    }
+    /// Called before returning overridden display parameters (initializes
+    /// font sizes when override is active).
+    void prepareOverriddenDisplayParameters();
+
     // ================================================================
     // Layout persistence
     // ================================================================
@@ -213,6 +251,7 @@ public:
     // ================================================================
 
     void associateToActiveView(ccHObject* obj);
+    void forceAssociateToView(ccHObject* obj, ecvGenericGLDisplay* view);
 
     /// Move an entity (and its children) from its current view to a target
     /// view. Removes VTK representations from the old view and redraws both.
@@ -285,9 +324,18 @@ private:
     ccHObject* m_cachedSource = nullptr;
     ecvViewRepresentation* m_cachedRepresentation = nullptr;
 
-    bool m_singletonRelayConnected = false;
     QList<ecvGenericGLDisplay*> m_views;
     QList<ecvViewLayoutProxy*> m_layouts;
 
     ecvDisplayTools* m_displayTools = nullptr;
+    ecvUndoManager* m_undoManager = nullptr;
+
+    ccHObject* m_globalDBRoot = nullptr;
+    QMainWindow* m_mainWindow = nullptr;
+    QFont m_defaultFont;
+    bool m_removeFlag = false;
+    bool m_removeAllFlag_vm = false;
+    std::vector<removeInfo> m_removeInfos;
+    ecvGui::ParamStruct m_overridenDisplayParameters;
+    bool m_overridenDisplayParametersEnabled = false;
 };

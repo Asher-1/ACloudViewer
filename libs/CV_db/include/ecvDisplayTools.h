@@ -296,7 +296,9 @@ public:
     QWidget* asWidget() override;
     const QWidget* asWidget() const override;
     bool hasOverriddenDisplayParameters() const override;
-    QFont textDisplayFont() const override { return m_font; }
+    QFont textDisplayFont() const override {
+        return ecvViewManager::instance().defaultFont();
+    }
 
     /**
      * @brief Schedule a full redraw
@@ -887,14 +889,19 @@ public:  // Main interface accessors
      * @brief Get main window
      * @return Main window pointer
      */
-    inline static QMainWindow* GetMainWindow() { return sharedTools()->m_win; }
+    inline static QMainWindow* GetMainWindow() {
+        return ecvViewManager::instance().mainWindow();
+    }
 
     /**
      * @brief Set main window
      * @param win Main window to set
      */
     inline static void SetMainWindow(QMainWindow* win) {
-        sharedTools()->m_win = win;
+        ecvViewManager::instance().setMainWindow(win);
+        if (sharedTools()) {
+            sharedTools()->m_win = win;
+        }
     }
 
     /**
@@ -963,7 +970,7 @@ public:  // Main interface accessors
      * @return Scene database root object
      */
     inline static ccHObject* GetSceneDB() {
-        return sharedTools()->m_globalDBRoot;
+        return ecvViewManager::instance().globalDBRoot();
     }
 
     /**
@@ -1053,7 +1060,7 @@ public:  // Main interface accessors
      * @param state Remove-all flag state
      */
     inline static void SetRemoveAllFlag(bool state) {
-        sharedTools()->m_removeAllFlag = state;
+        ecvViewManager::instance().setRemoveAllFlag(state);
     }
 
     /**
@@ -2156,7 +2163,11 @@ public:  // visualization matrix transformation
             Change 'defaultFontSize' with setDisplayParameters instead!
     **/
     inline static void SetFontPointSize(int pixelSize) {
-        sharedTools()->m_font.setPointSize(pixelSize);
+        if (!sharedTools()) return;
+        QFont f = ecvViewManager::instance().defaultFont();
+        f.setPointSize(pixelSize);
+        ecvViewManager::instance().setDefaultFont(f);
+        sharedTools()->m_font = f;
     }
     //! Returns current font size
     static int GetFontPointSize();
@@ -2173,7 +2184,9 @@ public:  // visualization matrix transformation
     // takes rendering zoom into account!
     static QFont GetLabelDisplayFont();
     // takes rendering zoom into account!
-    inline static QFont GetTextDisplayFont() { return sharedTools()->m_font; }
+    inline static QFont GetTextDisplayFont() {
+        return ecvViewManager::instance().defaultFont();
+    }
 
     static ENTITY_TYPE ConvertToEntityType(const CV_CLASS_ENUM& type);
 

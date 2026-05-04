@@ -300,6 +300,7 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
     s_tools->m_winDBRoot = nullptr;
     s_tools->m_globalDBRoot = nullptr;  // external DB
     s_tools->m_removeFlag = false;
+    s_tools->m_removeAllFlag = false;
     s_tools->m_font = QFont();
     ctx.pivotVisibility = PIVOT_SHOW_ON_MOVE;
     ctx.pivotSymbolShown = false;
@@ -2351,7 +2352,10 @@ void ecvDisplayTools::DisplayOverlayEntities(bool state) {
 }
 
 void ecvDisplayTools::SetSceneDB(ccHObject* root) {
-    s_tools->m_globalDBRoot = root;
+    ecvViewManager::instance().setGlobalDBRoot(root);
+    if (s_tools) {
+        s_tools->m_globalDBRoot = root;
+    }
     ZoomGlobal();
 }
 
@@ -2386,11 +2390,20 @@ void ecvDisplayTools::RemoveFromOwnDB(ccHObject* obj) {
 }
 
 void ecvDisplayTools::SetRemoveViewIDs(std::vector<removeInfo>& removeinfos) {
+    auto& vm = ecvViewManager::instance();
     if (removeinfos.size() > 0) {
-        s_tools->m_removeInfos = removeinfos;
-        s_tools->m_removeFlag = true;
+        vm.removeInfos() = removeinfos;
+        vm.setRemoveFlag(true);
+        if (s_tools) {
+            s_tools->m_removeInfos = removeinfos;
+            s_tools->m_removeFlag = true;
+        }
     } else {
-        s_tools->m_removeFlag = false;
+        vm.setRemoveFlag(false);
+        vm.removeInfos().clear();
+        if (s_tools) {
+            s_tools->m_removeFlag = false;
+        }
     }
 }
 
@@ -2836,14 +2849,14 @@ const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
     if (av) {
         return av->getDisplayParameters();
     }
-    if (s_tools->m_overridenDisplayParametersEnabled) {
-        s_tools->m_overridenDisplayParameters.initFontSizesIfNeeded();
-        return s_tools->m_overridenDisplayParameters;
-    } else {
-        const ecvGui::ParamStruct& params = ecvGui::Parameters();
-        ecvGui::UpdateParameters();
-        return params;
+    auto& vm = ecvViewManager::instance();
+    if (vm.hasOverriddenDisplayParameters()) {
+        vm.prepareOverriddenDisplayParameters();
+        return vm.overriddenDisplayParameters();
     }
+    const ecvGui::ParamStruct& params = ecvGui::Parameters();
+    ecvGui::UpdateParameters();
+    return params;
 }
 
 void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
@@ -2893,9 +2906,13 @@ void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
         av->setDisplayParameters(params, true);
     }
 
-    s_tools->m_overridenDisplayParametersEnabled = true;
-    s_tools->m_overridenDisplayParameters = params;
-    s_tools->m_overridenDisplayParameters.initFontSizesIfNeeded();
+    ecvViewManager::instance().setOverriddenDisplayParameters(params);
+    if (s_tools) {
+        s_tools->m_overridenDisplayParametersEnabled = true;
+        s_tools->m_overridenDisplayParameters = params;
+        s_tools->m_overridenDisplayParameters.initFontSizesIfNeeded();
+    }
+
     ecvGui::Set(params);
 }
 
@@ -4504,7 +4521,9 @@ bool ecvDisplayTools::objectCenteredView() const {
 
 void ecvDisplayTools::setSceneDB(ccHObject* root) { SetSceneDB(root); }
 
-ccHObject* ecvDisplayTools::getSceneDB() { return m_globalDBRoot; }
+ccHObject* ecvDisplayTools::getSceneDB() {
+    return ecvViewManager::instance().globalDBRoot();
+}
 
 ccHObject* ecvDisplayTools::getOwnDB() { return m_winDBRoot; }
 
@@ -4523,7 +4542,7 @@ QWidget* ecvDisplayTools::asWidget() { return m_mainScreen; }
 const QWidget* ecvDisplayTools::asWidget() const { return m_mainScreen; }
 
 bool ecvDisplayTools::hasOverriddenDisplayParameters() const {
-    return m_overridenDisplayParametersEnabled;
+    return ecvViewManager::instance().hasOverriddenDisplayParameters();
 }
 
 // Phase 7a wave 2 virtual overrides
