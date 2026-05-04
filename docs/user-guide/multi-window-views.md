@@ -1,19 +1,15 @@
 # ACloudViewer Multi-Window 3D Views — Architecture & Implementation Reference
 
-> Date: 2026-04-30
-> Version: 5.2 (Phase M completed + Phase N completed — effectiveCtx elimination done)
+> Date: 2026-05-04
+> Version: 5.3 (ecvDisplayTools singleton fully removed — ecvViewManager-centric architecture)
 >
-> **Status (v5.2)**: Phase M (M1-M5) and Phase N (N1-N5) completed. VtkDisplayTools is now a pure engine service, ecvGLView is the sole view type, effectiveCtx() calls reduced from 307 to 76 (acceptable patterns only). Remaining: M6 + Phase O.
-> - `Init()`/`TheInstance()`/`HasInstance()`/`ReleaseInstance()` are gone from public API
-> - `ecvViewManager` now owns the shared `ecvDisplayTools` instance lifecycle
-> - `ecvGLView` routes through `m_displayTools` (typed as `VtkDisplayTools*`) instead of static singleton calls
-> - Nested types (`HotZone`, `MessageToDisplay`, etc.) extracted to `ecvDisplayTypes.h`
-> - 12 `ecvViewManager::shared*()` forwarders replace all non-core `ecvDisplayTools::` calls
-> - See [singleton-removal-migration-plan.md](singleton-removal-migration-plan.md) for full changelog
-> - See [multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10 for Phase M TODOs (M1–M6, all ✅)
-> - See [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md) for the ParaView ↔ ACloudViewer full alignment design (96.7% aligned, Phase M–O complete)
+> **Status (v5.3)**: The **`ecvDisplayTools` singleton pattern is gone.** `ecvViewManager` is the central coordinator (like ParaView `pqActiveObjects`): view registry, active objects, layout/display-tools lifecycle, global scene DB and batch-removal flags, `resolveViewContext()`, and `redrawAll()`. The **`ecvDisplayTools` / `VtkDisplayTools` instance** lives on `ecvViewManager::m_displayTools` — use `ecvViewManager::instance().displayTools()`. **`ecvGenericDisplayTools::GetInstance()`** forwards to that same instance.
+> - Each **`ecvGLView`** is a peer view: **`m_ctx`** (`ecvViewContext`), VTK pipeline, messages, **`m_activeItems` / `m_clickableItems` / `m_hotZone`**, timers, capture mode, and per-view signals.
+> - **`Init()`/`TheInstance()`/`HasInstance()`/`ReleaseInstance()`** are not part of the public API; lifecycle is **`ecvViewManager::initDisplayTools()` / `releaseDisplayTools()`**.
+> - Phase M (M1–M6), Phase N, and Phase O are complete; see [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md) for alignment status.
+> - See [singleton-removal-migration-plan.md](singleton-removal-migration-plan.md) for the migration changelog.
 >
-> **Note**: Some code examples below still reference `TheInstance()` patterns from the pre-migration architecture. These are preserved as historical context for understanding the design evolution.
+> **Note**: Some narrative sections below still mention **historical** patterns (`switchActiveView`, `ScopedHotZoneRender`, primary-only `RedrawDisplay`). Those mechanisms were **removed**; current behavior is summarized where noted. Older code snippets may still show `TheInstance()` for archival context.
 
 ---
 
@@ -112,7 +108,7 @@ Key capabilities:
 - View the same scene from different camera angles simultaneously
 - Show/hide specific entities per view
 - Apply different display properties (opacity, point size, render mode) per view
-- Work with a primary + N secondary views inside the MDI area
+- Work with **N peer `ecvGLView` windows** inside the tabbed multi-view layout (no primary/secondary distinction)
 - Newly loaded entities bind to the **active** view (not all views)
 - Each view's 2D labels (ABC text, captions) render independently with DPI-aware sizing
 
@@ -126,31 +122,24 @@ Key capabilities:
 ┌──────────────────────────────────────────────────────────┐
 │                     MainWindow (QMainWindow)             │
 │                                                          │
-│  ┌─────────────────────────────────────────────────────┐ │
-│  │                   QMdiArea                          │ │
-│  │                                                     │ │
-│  │  ┌──────────────────┐  ┌──────────────────┐         │ │
-│  │  │   Primary View   │  │   New 3D View    │  ...    │ │
-│  │  │                  │  │                  │         │ │
-│  │  │ ecvDisplayTools  │  │   ecvGLView      │         │ │
-│  │  │ (singleton)      │  │   (per-window)   │         │ │
-│  │  │                  │  │                  │         │ │
-│  │  │ ┌──────────────┐ │  │ ┌──────────────┐ │         │ │
-│  │  │ │QVTKWidget    │ │  │ │QVTKWidget    │ │         │ │
-│  │  │ │  vtkRenderer │ │  │ │  vtkRenderer │ │         │ │
-│  │  │ │  vtkRenWin   │ │  │ │  vtkRenWin   │ │         │ │
-│  │  │ │  VtkVis      │ │  │ │  VtkVis      │ │         │ │
-│  │  │ └──────────────┘ │  │ └──────────────┘ │         │ │
-│  │  └──────────────────┘  └──────────────────┘         │ │
-│  └─────────────────────────────────────────────────────┘ │
+│  ecvTabbedMultiViewWidget + ecvMultiViewWidget           │
+│  (KD-tree ecvViewLayoutProxy per tab)                    │
+│                                                          │
+│  ┌──────────────────┐  ┌──────────────────┐              │
+│  │   ecvGLView A    │  │   ecvGLView B    │   ...       │
+│  │   m_ctx, VtkVis  │  │   m_ctx, VtkVis  │              │
+│  │ ┌──────────────┐ │  │ ┌──────────────┐ │              │
+│  │ │QVTKWidget    │ │  │ │QVTKWidget    │ │              │
+│  │ │  vtkRenderer │ │  │ │  vtkRenderer │ │              │
+│  │ │  vtkRenWin   │ │  │ │  vtkRenWin   │ │              │
+│  │ └──────────────┘ │  │ └──────────────┘ │              │
+│  └──────────────────┘  └──────────────────┘              │
+│                                                          │
+│  ecvViewManager (singleton): registry, active view,      │
+│    m_displayTools (VtkDisplayTools engine, NOT a view)   │
 │                                                          │
 │  ┌───────────────┐  ┌───────────────────────────┐        │
 │  │  DB Tree      │  │  Properties Panel         │        │
-│  │  (ccDBRoot)   │  │  ccPropertiesTreeDelegate │        │
-│  │               │  │   Current Display: [___]  │        │
-│  │  Right-click: │  │                           │        │
-│  │  "Move to     │  │                           │        │
-│  │   View"       │  │                           │        │
 │  └───────────────┘  └───────────────────────────┘        │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -162,20 +151,18 @@ Key capabilities:
                      │  ecvGenericGLDisplay  │ (interface)
                      └──────────┬───────────┘
                                 │ implements
-                     ┌──────────┴───────────┐
-                     │                      │
-                     ▼                      ▼
-              ecvDisplayTools          ecvGLView
-              (primary window)         (per-window)
-              singleton                owns its own VtkVis
-                     │                      │
-                     └──────┬───────────────┘
-                            │ registered in
-                            ▼
-                  ┌─────────────────────┐
-                  │  ecvViewManager     │
-                  │  (singleton)        │
-                  │                     │
+                                ▼
+                           ecvGLView
+                     (one per cell; peers — same type)
+                                │
+                     ┌──────────┴──────────────┐
+                     │ registered / active in    │
+                     ▼                         │
+                  ┌─────────────────────┐     │
+                  │  ecvViewManager     │     │
+                  │  (singleton)        │◀────┘
+                  │  m_displayTools    │──▶ VtkDisplayTools engine (owned,
+                  │                     │    not ecvGenericGLDisplay)
                   │  m_activeView       │──▶ which view gets user input
                   │  m_renderingView    │──▶ which view is painting now
                   │  m_views[]          │──▶ all registered views
@@ -250,53 +237,28 @@ ecvGLView::redraw(only2D=false, forceRedraw=true)
     │
     ├──▶ [2D Pass] m_winDBRoot->draw(context)              [ecvGLView.cpp:180]
     │
-    ├──▶ ScopedHotZoneRender                               [ecvGLView.cpp:186-193]
-    │    ├── Save primary pipeline state
-    │    ├── Swap to THIS view's VtkVis/widget
-    │    ├── DrawClickableItems()
-    │    └── ~ScopedHotZoneRender: restore primary state
+    ├──▶ [Clickable overlay] DrawClickableItems(..., m_hotZone, m_clickableItems, this)
+    │    └── Uses THIS view's engine — no pipeline swap (Phase M4)
     │
     └──▶ ~ScopedRenderOverride: m_renderingView = saved
 ```
 
-### 2. Active View Switching (User Clicks Different View)
+### 2. Active view change (user clicks a different view)
 
 ```
-User clicks on secondary view's QVTKWidgetCustom
+User clicks on another view's QVTKWidgetCustom
     │
-    ├──▶ QVTKWidgetCustom::mousePressEvent()               [QVTKWidgetCustom.cpp:548]
-    │    ├── display = ecvGenericGLDisplay::FromWidget(this) [s_displayRegistry lookup]
-    │    └── ecvViewManager::setActiveView(display)          [ecvViewManager.cpp:39]
+    ├──▶ QVTKWidgetCustom::mousePressEvent()               [QVTKWidgetCustom.cpp]
+    │    ├── display = ecvGenericGLDisplay::FromWidget(this)
+    │    └── ecvViewManager::setActiveView(display)
     │         ├── m_activeView = display
     │         ├── updateActiveRepresentation()
-    │         └── triggerSignals()
-    │              └── emit activeViewChanged(newActive, oldActive) [ecvViewManager.cpp:82]
+    │         └── emit activeViewChanged(newActive, oldActive)
     │
-    └──▶ Signal received by MainWindow                      [MainWindow.cpp:728-743]
-         │
-         ├── rebindToolsToActiveView(newActive)             [MainWindow.cpp:2629-2647]
-         │    │
-         │    ├── [secondary view?]
-         │    │    └── VtkDisplayTools::switchActiveView(     [VtkDisplayTools.cpp:131]
-         │    │            glView->getVisualizer3DSP(),
-         │    │            glView->getVtkWidget())
-         │    │         ├── Save primary pipeline (m_primaryVis/Widget)
-         │    │         ├── Reconnect picking signal to new VtkVis
-         │    │         ├── m_visualizer3D = secondary VtkVis
-         │    │         ├── m_vtkWidget = secondary widget
-         │    │         └── SetCurrentScreen(widget)
-         │    │
-         │    └── [primary view?]
-         │         └── VtkDisplayTools::restorePrimaryView()
-         │              ├── m_visualizer3D = m_primaryVis
-         │              ├── m_vtkWidget = m_primaryWidget
-         │              └── SetCurrentScreen(m_primaryWidget)
-         │
+    └──▶ MainWindow receives activeViewChanged              [MainWindow.cpp]
+         ├── rebindToolsToActiveView(newActive)   ← UI: picking hub, frame, menus (no VTK swap)
          ├── m_pickingHub->onActiveViewWidgetChanged(widget)
-         │
          ├── markActiveViewFrame(widget)
-         │    └── Update colored border + bold title on active view
-         │
          └── updateMenus()
 ```
 
@@ -1552,105 +1514,23 @@ A: `isDisplayedIn()` (`ecvHObject.cpp:1862`) checks `m_currentDisplay` against t
 
 ---
 
-## Active View Switching — `switchActiveView` / `restorePrimaryView`
+## Active view coordination (current) — removed `switchActiveView` / `ScopedHotZoneRender`
 
-> Replaces the historical `ScopedVisSwap` pattern. Now a **persistent** switch instead of RAII scoped.
+> **Historical (pre Phase M3–M4):** The app used `VtkDisplayTools::switchActiveView` / `restorePrimaryView` to **swap** the engine's `m_visualizer3D` and `m_vtkWidget` onto whichever view was active, and `ScopedHotZoneRender` to temporarily point the engine at a view while drawing clickable overlays. That is **removed**. Every `ecvGLView` permanently owns its pipeline.
 
-| File | Path |
-|------|------|
-| **Header** | `libs/VtkEngine/Visualization/VtkDisplayTools.h:441-447` |
-| **Implementation** | `libs/VtkEngine/Visualization/VtkDisplayTools.cpp:131-156` |
+**Current behavior:**
 
-### `switchActiveView(vis, widget)`
-
-**Location**: `VtkDisplayTools.cpp:131-156`
-
-When the user clicks a different view, `MainWindow::rebindToolsToActiveView()` (`MainWindow.cpp:2629-2647`) calls this method to **persistently** swap the singleton `VtkDisplayTools`'s `m_visualizer3D` and `m_vtkWidget` to the secondary view's pipeline:
-
-```
-1. Save the primary pipeline on first switch (m_primaryVis, m_primaryWidget)  [line 136-139]
-2. Disconnect picking signal from old VtkVis                                   [line 143-147]
-3. Connect picking signal to new VtkVis                                        [line 148-151]
-4. m_visualizer3D = vis; m_vtkWidget = widget                                 [line 153-154]
-5. SetCurrentScreen(widget)                                                    [line 155]
-```
-
-### `restorePrimaryView()`
-
-**Location**: `VtkDisplayTools.cpp:158+`
-
-Called when user clicks back to the primary view. Restores `m_primaryVis` → `m_visualizer3D` and `m_primaryWidget` → `m_vtkWidget`.
-
-### Connection: `activeViewChanged` → `rebindToolsToActiveView`
-
-**Location**: `MainWindow.cpp:728-743`
+- **`ecvViewManager::setActiveView()`** updates which view receives UI focus and emits **`activeViewChanged`**.
+- **`MainWindow::rebindToolsToActiveView()`** (still wired to `activeViewChanged`) updates **toolbars, picking hub, frame highlight, and menus** for the new active view. It does **not** rebind VTK widgets on a global singleton engine — there is no longer a distinct “primary” tools view.
+- **`ecvGLView::redraw()`** uses this view's **`m_hotZone`**, **`m_clickableItems`**, and **`m_displayTools`** (per-view **`VtkDisplayTools`** owned through the view) and calls the parameterized **`DrawClickableItems(...)`** path (Phase M4).
+- **`ecvViewManager::ScopedRenderOverride`** may still be used during a draw so **`resolveViewContext()`** / **`getEffectiveView()`** resolve to the view currently painting (not a singleton primary context).
 
 ```cpp
 connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
         this, [this](ecvGenericGLDisplay* newActive, ecvGenericGLDisplay*) {
             rebindToolsToActiveView(newActive);
-            // ... picking hub, view frame highlight, menu update
+            // picking hub, view frame highlight, menu update, ...
         });
-```
-
-`rebindToolsToActiveView()` (`MainWindow.cpp:2629-2647`):
-- If `newActive` is an `ecvGLView` → `switchActiveView(glView->getVisualizer3DSP(), glView->getVtkWidget())`
-- Else → `restorePrimaryView()` + `SetCurrentScreen(primaryWidget)`
-
----
-
-## ScopedHotZoneRender — Per-View Hot Zone Rendering
-
-| File | Path |
-|------|------|
-| **Header** | `libs/VtkEngine/Visualization/VtkDisplayTools.h:461-493` |
-| **Implementation** | `libs/VtkEngine/Visualization/VtkDisplayTools.cpp:285-350` |
-
-**Purpose**: RAII helper that **temporarily** swaps `VtkDisplayTools`'s pipeline to a specific view's `VtkVis` for the duration of hot zone / clickable item rendering. Used inside `ecvGLView::redraw()`.
-
-### Constructor (`VtkDisplayTools.cpp:285-331`)
-
-```
-1. Save current state: m_visualizer3D, m_visualizer2D, m_vtkWidget, glViewport, hotZone, clickableItems
-2. Swap to target view's VtkVis + widget                            [line 302-304]
-3. Update GL viewport from widget dimensions                        [line 306-309]
-4. Setup local ImageVis (2D) if needed                              [line 311-323]
-5. Increment m_scopedVisSwapDepth                                   [line 325]
-6. Create HotZone if needed; assign to dt->m_hotZone                [line 327-330]
-```
-
-### `draw()` (`VtkDisplayTools.cpp:333-337`)
-
-```cpp
-void ScopedHotZoneRender::draw() {
-    int yStart = 0;
-    ecvDisplayTools::DrawClickableItems(0, yStart);
-    m_clickableItems = m_dt->m_clickableItems;
-}
-```
-
-### Destructor (`VtkDisplayTools.cpp:339-350`)
-
-```
-1. Decrement m_scopedVisSwapDepth
-2. Restore: m_hotZone, m_clickableItems, m_visualizer3D, m_visualizer2D,
-   m_vtkWidget, m_primaryCtx.glViewport, SetCurrentScreen
-```
-
-### Usage — Only in `ecvGLView::redraw()`
-
-**Location**: `ecvGLView.cpp:183-194`
-
-```cpp
-{
-    auto* primaryDT = static_cast<VtkDisplayTools*>(ecvDisplayTools::TheInstance());
-    if (primaryDT) {
-        VtkDisplayTools::ScopedHotZoneRender hzRender(
-                primaryDT, m_visualizer3D, m_vtkWidget,
-                m_hotZone, m_ctx, m_clickableItems);
-        hzRender.draw();
-    }
-}
 ```
 
 ---
@@ -1848,7 +1728,7 @@ if (!isRedraw() && !context.forceRedraw) {
 | `viewRegistered` | `ecvViewManager.h:140` | Emitted at `ecvViewManager.cpp:105` — no subscribers found |
 | `viewUnregistered` | `ecvViewManager.h:141` | Emitted at `ecvViewManager.cpp:122` — no subscribers found |
 | `viewCountChanged` | `ecvViewManager.h:142` | Emitted at `ecvViewManager.cpp:106,123` — no subscribers found |
-| `activeLayoutChanged` | `ecvViewManager.h:138` | **Never emitted** — declaration only |
+| `activeLayoutChanged` | `ecvViewManager.h:138` | ✅ Emitted in `ecvViewManager::setActiveView()` when layout context changes |
 | `representationAdded` | `ecvRepresentationManager.h:71` | Emitted at `ecvRepresentationManager.cpp:48` — no subscribers |
 | `representationRemoved` | `ecvRepresentationManager.h:72` | Emitted at `ecvRepresentationManager.cpp:90,108,124` — no subscribers |
 | `representationChanged` | `ecvRepresentationManager.h:73` | **Never emitted** — declaration only |
@@ -2016,34 +1896,11 @@ void ccDBRoot::moveSelectedToView(ecvGenericGLDisplay* view,
 
 ---
 
-## Primary View Draw Path (ecvDisplayTools::RedrawDisplay)
+## Global redraw path (`ecvViewManager::redrawAll`)
 
-| File | Path |
-|------|------|
-| **Implementation** | `libs/CV_db/src/ecvDisplayTools.cpp` |
+Coordinating redraw across views is handled by **`ecvViewManager::redrawAll()`**: it runs shared pre-render housekeeping, then iterates registered views and calls each **`ecvGLView::redraw()`**. Legacy **`ecvDisplayTools::RedrawDisplay()`** as a singleton-level coordinator is **removed**; use **`ecvViewManager::instance().redrawAll()`** (or **`view->redraw()`** when only one view should refresh).
 
-### Entry: `RedrawDisplay()`
-
-**Location**: `ecvDisplayTools.cpp:3243+`
-
-```
-1. Check update flags, capture mode                              [line ~3285-3330]
-2. Per-view delegation to secondary views                        [line ~3305-3317]
-3. beginPrimaryRender()                                          [line ~3320]
-4. Build CC_DRAW_CONTEXT                                         [line ~3340-3380]
-
-3D pass — Draw3D():                                              [line ~3425-3470]
-  5. drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND
-  6. m_globalDBRoot->draw(CONTEXT)                               [line ~3445]
-  7. m_winDBRoot->draw(CONTEXT)                                  [line ~3449]
-
-2D foreground — DrawForeground():                                [line ~3583-3597]
-  8. drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND
-  9. m_globalDBRoot->draw(CONTEXT)                               [line ~3594]
- 10. m_winDBRoot->draw(CONTEXT)                                  [line ~3596]
-```
-
-The primary view's `CONTEXT.display` is set to `ecvDisplayTools::TheInstance()` (the singleton), which is how `isDisplayedIn()` knows it's the primary window.
+For each draw, **`CC_DRAW_CONTEXT::display`** is set to the **`ecvGenericGLDisplay*`** doing the work (**`ecvGLView*`**), so **`isDisplayedIn()`** and per-view representation use the correct view — not a global “primary tools” instance.
 
 ---
 
@@ -2056,9 +1913,9 @@ The primary view's `CONTEXT.display` is set to `ecvDisplayTools::TheInstance()` 
 | Right-click "Show in View" / "Hide in View" context menu | Not yet implemented | Planned for `ecvDBRoot.cpp` |
 | Per-view scalar field switching | Properties struct supports it, not wired to UI | `ecvViewRepresentation.h:57-58` |
 | Per-view render mode switching | Properties struct supports it, not wired to UI | `ecvViewRepresentation.h:55` |
-| Layout persistence across sessions | `saveLayout()` / `restoreLayout()` exist, not integrated into session save | `ecvViewManager.h:114-120` |
-| `activeLayoutChanged` signal never emitted | Declared but no `emit` call exists | `ecvViewManager.h:138` |
-| `representationChanged` signal never emitted | Declared but no `emit` call exists | `ecvRepresentationManager.h:73` |
+| ~~Layout persistence across sessions~~ | ✅ RESOLVED — `saveState()`/`loadState()` now include per-view camera (`saveCameraToJson`/`loadCameraFromJson`); `restoreLayoutState()` properly calls `unregisterLayout()` | `ecvViewLayoutProxy.cpp`, `VtkVis.cpp`, `ecvGLView.cpp` |
+| ~~`activeLayoutChanged` signal never emitted~~ | ✅ RESOLVED — emitted in `setActiveView()` | `ecvViewManager.cpp:setActiveView()` |
+| ~~`representationChanged` signal never emitted~~ | ✅ RESOLVED — `ecvRepresentationManager` emits on `notifyChanged()` / representation updates | `ecvRepresentationManager.cpp` |
 | `activeSourceChanged`, `viewRegistered`, `viewUnregistered`, `viewCountChanged` | Emitted but no subscribers | Available for future UI extensions |
 
 ---
@@ -2269,13 +2126,12 @@ if (button == Qt::MiddleButton || button == Qt::RightButton) {
 
 **Problem**: `representationChanged` and `activeLayoutChanged` signals are declared but never emitted.
 
-**Locations**:
-- `ecvRepresentationManager.h:73` — `representationChanged`
-- `ecvViewManager.h:138` — `activeLayoutChanged`
+**Status**:
+- ~~`activeLayoutChanged`~~ ✅ **RESOLVED** (2026-05-03) — emitted in `ecvViewManager::setActiveView()` when the layout containing the active view changes.
+- `representationChanged` — still not emitted. Needs emit in `ecvViewRepresentation::setProperties()` and `setVisible()`.
 
-**Fix**:
-- Emit `representationChanged` in `ecvViewRepresentation::setProperties()` and `setVisible()`
-- Emit `activeLayoutChanged` in `ecvViewManager::registerLayout()` and when active view changes layout context
+**Remaining**:
+- `ecvRepresentationManager.h:73` — `representationChanged` (still declaration only)
 
 ---
 
@@ -2532,14 +2388,14 @@ for (each cc2DLabel in scene) {
 
 ~~The primary remaining gap is that the **main view is still a `VtkDisplayTools*` instance** (not an `ecvGLView`)~~ — **已解决** (Phase M1-M3, 2026-04-30).
 
-**当前状态**: Phase M1-M6 + Phase N + Phase O 全部完成 ✅。Per-view camera undo/redo 已在 VtkVis + MainWindow 中实现 ✅。ParaView 对齐率 94.5%。
+**当前状态 (2026-05-04)**: `ecvDisplayTools` **singleton fully removed**. `ecvViewManager` owns **`m_displayTools`** and **`ecvGenericDisplayTools::GetInstance()`** forwards to it. Phase M2 (**`m_tools`** on `QVTKWidgetCustom`) is **complete** — all views route through **`m_ownerView`**. ParaView structural alignment and global/source undo (GAP-S/T) are **done**. Remaining items in “Known Issues” / polish lists are **feature/UI scope**, not singleton architecture.
 
-See **[multi-window-refactor-roadmap-Vtk-vs-CC.md](multi-window-refactor-roadmap-Vtk-vs-CC.md) §10** for the Phase M TODOs (all ✅), and **[multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md)** for the full alignment design.
+See **[multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md)** for the full alignment matrix.
 
 | Phase | Title | Priority | Pre-req | Est. | Status |
 |-------|-------|----------|---------|------|--------|
 | **M1** | VtkDisplayTools 职责拆分 (→纯引擎服务) | HIGH | -- | 2-3 周 | ✅ |
-| **M2** | QVTKWidgetCustom 统一 (消除 m_tools ~90+ 引用) | HIGH | M1 partial | 2 周 | ✅ |
+| **M2** | QVTKWidgetCustom 统一 (消除 m_tools) | HIGH | M1 partial | 2 周 | ✅ |
 | **M3** | ecvGLView 成为唯一视图类型 | HIGH | M1+M2 | 1-2 周 | ✅ |
 | **M4** | 2D Overlay 管线参数化 (消除 ScopedHotZoneRender) | MEDIUM | M3 | 1-2 周 | ✅ |
 | **M5** | Python API 现代化 | LOW | M1 | 1 周 | ✅ |
