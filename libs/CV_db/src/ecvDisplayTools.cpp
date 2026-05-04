@@ -62,6 +62,21 @@
 //            destroyed by ecvViewManager::releaseDisplayTools().
 static ecvDisplayTools* s_tools = nullptr;
 
+namespace {
+
+/// The ecvGenericGLDisplay whose viewContext() is `ctx` (primary singleton
+/// or a registered ecvGLView). Falls back to the shared tools instance.
+ecvGenericGLDisplay* displayOwningContext(const ecvViewContext* ctxPtr) {
+    if (!s_tools) return nullptr;
+    if (!ctxPtr || s_tools->viewContext() == ctxPtr) return s_tools;
+    for (auto* v : ecvViewManager::instance().getAllViews()) {
+        if (v && v != s_tools && v->viewContext() == ctxPtr) return v;
+    }
+    return s_tools;
+}
+
+}  // namespace
+
 bool ecvDisplayTools::USE_2D = true;
 bool ecvDisplayTools::USE_VTK_PICK = false;
 
@@ -527,10 +542,15 @@ void ecvDisplayTools::doPicking() {
     int pickRad = ctx ? ctx->pickRadius : m_primaryCtx.pickRadius;
 
     if ((pickMode != NO_PICKING) || (iFlags & INTERACT_2D_ITEMS)) {
+        ecvGenericGLDisplay* itemView = m_pickingTargetView;
+        if (!itemView) itemView = ecvViewManager::instance().getEffectiveView();
+        if (!itemView) itemView = s_tools;
+        std::list<ccInteractor*>& activeItems = itemView->activeItemsRef();
+
         if (iFlags & INTERACT_2D_ITEMS) {
             UpdateActiveItemsList(x, y, false);
-            if (!m_activeItems.empty() && m_activeItems.size() == 1) {
-                ccInteractor* pickedObj = m_activeItems.front();
+            if (!activeItems.empty() && activeItems.size() == 1) {
+                ccInteractor* pickedObj = activeItems.front();
                 cc2DLabel* label = dynamic_cast<cc2DLabel*>(pickedObj);
                 if (label && !label->isSelected()) {
                     emit s_tools->entitySelectionChanged(label);
@@ -538,10 +558,10 @@ void ecvDisplayTools::doPicking() {
                 }
             }
         } else {
-            assert(m_activeItems.empty());
+            assert(activeItems.empty());
         }
 
-        if (m_activeItems.empty() && pickMode != NO_PICKING) {
+        if (activeItems.empty() && pickMode != NO_PICKING) {
             PICKING_MODE effectiveMode = pickMode;
 
             if (effectiveMode == ENTITY_PICKING &&
@@ -593,7 +613,10 @@ void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
 }
 
 bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
-    if (s_tools->m_clickableItems.empty()) {
+    ecvGenericGLDisplay* owner = displayOwningContext(&ctx);
+    if (!owner) return false;
+    std::vector<ClickableItem>& clickableItems = owner->clickableItemsRef();
+    if (clickableItems.empty()) {
         return false;
     }
 
@@ -602,9 +625,8 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
     y *= retinaScale;
 
     ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
-    for (std::vector<ClickableItem>::const_iterator it =
-                 s_tools->m_clickableItems.begin();
-         it != s_tools->m_clickableItems.end(); ++it) {
+    for (std::vector<ClickableItem>::const_iterator it = clickableItems.begin();
+         it != clickableItems.end(); ++it) {
         if (it->area.contains(x, y)) {
             clickedItem = it->role;
             break;
@@ -657,7 +679,18 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
 }
 
 bool ecvDisplayTools::ProcessClickableItems(int x, int y) {
-    return ProcessClickableItems(s_tools->effectiveCtx(), x, y);
+    ecvGenericGLDisplay* v = ecvViewManager::instance().getEffectiveView();
+    if (!v || !v->viewContext()) return false;
+    return ProcessClickableItems(*v->viewContext(), x, y);
+}
+
+bool ecvDisplayTools::ProcessClickableItems(int x,
+                                             int y,
+                                             float* localPointSize,
+                                             float* localLineWidth) {
+    Q_UNUSED(localPointSize);
+    Q_UNUSED(localLineWidth);
+    return ProcessClickableItems(x, y);
 }
 
 void ecvDisplayTools::SetPointSize(float size, bool silent, int viewport) {
@@ -1385,8 +1418,9 @@ void ecvDisplayTools::ResizeGL(ecvViewContext& ctx, int w, int h) {
     InvalidateVisualization();
     Deprecate3DLayer();
 
-    if (s_tools->m_hotZone) {
-        s_tools->m_hotZone->topCorner = QPoint(0, 0);
+    if (ecvGenericGLDisplay* owner = displayOwningContext(&ctx)) {
+        ecvHotZone*& hzRef = owner->hotZonePtrRef();
+        if (hzRef) hzRef->topCorner = QPoint(0, 0);
     }
 
     DisplayNewMessage(QString("New size = %1 * %2 (px)")
@@ -1419,10 +1453,10 @@ void ecvDisplayTools::MoveCamera(float dx, float dy, float dz) {
 
 void ecvDisplayTools::UpdateActiveItemsList(
         int x, int y, bool extendToSelectedLabels /*=false*/) {
-    // Route to the effective view's active-items list (per-window isolation).
-    auto* effView = ecvViewManager::instance().getEffectiveView();
-    std::list<ccInteractor*>& items =
-            effView ? effView->activeItemsRef() : s_tools->m_activeItems;
+    ecvGenericGLDisplay* itemView = s_tools->m_pickingTargetView;
+    if (!itemView) itemView = ecvViewManager::instance().getEffectiveView();
+    if (!itemView) itemView = s_tools;
+    std::list<ccInteractor*>& items = itemView->activeItemsRef();
     items.clear();
 
     {
@@ -1488,17 +1522,25 @@ void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity,
                                        int pickedItemIndex,
                                        int x,
                                        int y) {
+    ecvGenericGLDisplay* target = m_pickingTargetView;
+    if (!target) target = ecvViewManager::instance().getEffectiveView();
+    if (!target) target = s_tools;
+    std::list<ccInteractor*>& items = target->activeItemsRef();
+    ecvViewContext* tctx = target->viewContext();
+
     if (pickedEntity) {
         if (pickedEntity->isA(CV_TYPES::LABEL_2D)) {
             cc2DLabel* label = static_cast<cc2DLabel*>(pickedEntity);
-            m_activeItems.push_back(label);
+            items.push_back(label);
         } else if (pickedEntity->isA(CV_TYPES::CLIPPING_BOX)) {
             ccClipBox* cbox = static_cast<ccClipBox*>(pickedEntity);
             cbox->setActiveComponent(pickedItemIndex);
-            cbox->setClickedPoint(x, y, Width(), Height(),
-                                  m_primaryCtx.viewportParams.viewMat);
+            ccGLMatrixd& viewMat =
+                    tctx ? tctx->viewportParams.viewMat
+                         : m_primaryCtx.viewportParams.viewMat;
+            cbox->setClickedPoint(x, y, Width(), Height(), viewMat);
 
-            m_activeItems.push_back(cbox);
+            items.push_back(cbox);
         }
     }
 
@@ -3524,7 +3566,9 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
     // current displayed scalar field color ramp (if any)
     ccRenderingTools::DrawColorRamp(CONTEXT);
 
-    s_tools->m_clickableItems.clear();
+    ecvGenericGLDisplay* fgView = ecvViewManager::instance().getEffectiveView();
+    if (!fgView) fgView = s_tools;
+    fgView->clickableItemsRef().clear();
 
     /*** overlay entities ***/
     if (fgCtx.displayOverlayEntities) {
@@ -3849,22 +3893,23 @@ void ecvDisplayTools::DisplayTexture2DPosition(QImage image,
 }
 
 void ecvDisplayTools::ClearBubbleView() {
-    if (!s_tools->m_hotZone) return;
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                    s_tools->m_hotZone->bbv_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                    s_tools->m_hotZone->fs_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                    s_tools->m_hotZone->psi_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                    s_tools->m_hotZone->lsi_label));
+    ecvGenericGLDisplay* v = ecvViewManager::instance().getEffectiveView();
+    if (!v) return;
+    ecvHotZone* hz = v->hotZonePtrRef();
+    if (!hz) return;
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->bbv_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->fs_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->psi_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->lsi_label));
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
 }
 
 void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
-    DrawClickableItems(xStart0, yStart,
-                       s_tools->m_hotZone, s_tools->m_clickableItems, nullptr);
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
+    DrawClickableItems(xStart0, yStart, view->hotZonePtrRef(),
+                       view->clickableItemsRef(), view);
 }
 
 void ecvDisplayTools::DrawClickableItems(
@@ -3874,11 +3919,13 @@ void ecvDisplayTools::DrawClickableItems(
         std::vector<ecvClickableItem>& clickableItems,
         ecvGenericGLDisplay* display) {
     const static char* CLICKED_ITEMS = "clicked_items";
+    QWidget* hzWin = display && display->asWidget() ? display->asWidget()
+                                                    : GetCurrentScreen();
     if (!hotZone) {
-        hotZone = new HotZone(ecvDisplayTools::GetCurrentScreen());
+        hotZone = new HotZone(hzWin);
         if (!display) s_tools->m_hotZoneOwnedBySingleton = true;
     } else if (GetPlatformAwareDPIScale() != hotZone->pixelDeviceRatio) {
-        hotZone->updateInternalVariables(ecvDisplayTools::GetCurrentScreen());
+        hotZone->updateInternalVariables(hzWin);
     }
 
     hotZone->topCorner =
@@ -3887,7 +3934,9 @@ void ecvDisplayTools::DrawClickableItems(
 
     bool fullScreenEnabled = ExclusiveFullScreen();
 
-    const auto& hzCtx = s_tools->effectiveCtx();
+    ecvViewContext* dispCtx = display ? display->viewContext() : nullptr;
+    const ecvViewContext& hzCtx =
+            dispCtx ? *dispCtx : s_tools->effectiveCtx();
     if (!hzCtx.clickableItemsVisible && !hzCtx.bubbleViewModeEnabled &&
         !fullScreenEnabled) {
         ClearBubbleView();

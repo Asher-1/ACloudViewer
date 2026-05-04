@@ -132,6 +132,12 @@ public:
         return m_activeItems;
     }
 
+    ecvHotZone*& hotZonePtrRef() override { return m_hotZone; }
+
+    std::vector<ecvClickableItem>& clickableItemsRef() override {
+        return m_clickableItems;
+    }
+
     /// Returns the effective view's context for the current scope.
     /// If a rendering override is set (ScopedRenderOverride), returns that
     /// view's context; otherwise the primary context.

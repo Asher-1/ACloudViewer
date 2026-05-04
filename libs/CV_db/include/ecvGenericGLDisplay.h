@@ -11,6 +11,7 @@
 
 #include <QFlags>
 #include <QFont>
+#include <QJsonObject>
 #include <QRect>
 #include <QString>
 #include <list>
@@ -35,6 +36,8 @@ struct ccGLDrawContext;
 struct ecvViewContext;
 struct PROPERTY_PARAM;
 struct WIDGETS_PARAMETER;
+struct ecvHotZone;
+struct ecvClickableItem;
 
 /// Per-window display interface for multi-window rendering.
 ///
@@ -158,6 +161,10 @@ public:
     virtual int glHeight() const;
     virtual int getDevicePixelRatio() const;
 
+    /// VTK-backed views override to persist camera in layout/session JSON.
+    virtual QJsonObject saveLayoutCameraState() const;
+    virtual void loadLayoutCameraState(const QJsonObject& cameraJson);
+
     // ================================================================
     // Scene / own DB
     // ================================================================
@@ -213,6 +220,12 @@ public:
     /// dragged/interacted). Default returns a process-wide static list;
     /// subclasses override with their own per-window storage.
     virtual std::list<ccInteractor*>& activeItemsRef();
+
+    /// Hot zone pointer for +/- point size and overlay controls (per view).
+    virtual ecvHotZone*& hotZonePtrRef();
+
+    /// Clickable overlay regions built during DrawClickableItems (per view).
+    virtual std::vector<ecvClickableItem>& clickableItemsRef();
 
     // ================================================================
     // Per-view entity operations (Phase 3: replaces static dispatch)
@@ -466,6 +479,13 @@ public:
         Q_UNUSED(h);
     }
     virtual void redraw2DLabel() {}
+
+    virtual void scheduleFullRedraw(int delayMs) { Q_UNUSED(delayMs); }
+    virtual void stopDeferredPicking() {}
+    virtual void startDeferredPickingFor(ecvGenericGLDisplay* targetView) {
+        Q_UNUSED(targetView);
+    }
+    virtual qint64 elapsedMs() const { return 0; }
 
     // ================================================================
     // Lifecycle notification (ref: CloudCompare aboutToBeRemoved)
