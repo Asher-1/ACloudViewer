@@ -2450,7 +2450,9 @@ void ecvDisplayTools::SetRemoveViewIDs(std::vector<removeInfo>& removeinfos) {
 }
 
 void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport) {
-    sharedTools()->zoomCamera(zoomFactor, viewport);
+    if (auto* dt = ecvViewManager::instance().displayTools()) {
+        dt->zoomCamera(zoomFactor, viewport);
+    }
     if (!GetViewportParameters().perspectiveView) {
         sharedTools()->UpdateZoom(static_cast<float>(zoomFactor));
     }

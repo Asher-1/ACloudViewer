@@ -370,7 +370,8 @@ public:
      * @param CONTEXT Drawing context containing text parameters
      */
     static void DisplayText(const CC_DRAW_CONTEXT& CONTEXT) {
-        sharedTools()->displayText(CONTEXT);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->displayText(CONTEXT);
     }
 
     /**
@@ -432,7 +433,8 @@ public:  // Main 3D layer drawing methods
      */
     inline static void Draw(const CC_DRAW_CONTEXT& context,
                             const ccHObject* obj) {
-        sharedTools()->draw(context, obj);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->draw(context, obj);
     }
 
     /**
@@ -450,7 +452,8 @@ public:  // Main 3D layer drawing methods
      */
     inline static void UpdateMeshTextures(const CC_DRAW_CONTEXT& context,
                                           const ccGenericMesh* mesh) {
-        sharedTools()->updateMeshTextures(context, mesh);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->updateMeshTextures(context, mesh);
     }
 
     /**
@@ -469,7 +472,8 @@ public:  // Main 3D layer drawing methods
      */
     inline static void DrawBBox(const CC_DRAW_CONTEXT& context,
                                 const ccBBox* bbox) {
-        sharedTools()->drawBBox(context, bbox);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->drawBBox(context, bbox);
     }
 
     /**
@@ -487,7 +491,8 @@ public:  // Main 3D layer drawing methods
      */
     inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                         const ecvOrientedBBox* obb) {
-        sharedTools()->drawOrientedBBox(context, obb);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->drawOrientedBBox(context, obb);
     }
 
     /**
@@ -572,7 +577,8 @@ public:  // Main 3D layer drawing methods
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
                                        int viewport = 0) {
-        sharedTools()->drawCoordinates(scale, id, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->drawCoordinates(scale, id, viewport);
     }
 
     /**
@@ -598,7 +604,8 @@ public:  // Main 3D layer drawing methods
                                       const CCVector3d& axis,
                                       double angle,
                                       int viewport = 0) {
-        sharedTools()->rotateWithAxis(pos, axis, angle, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->rotateWithAxis(pos, axis, angle, viewport);
     }
 
     /**
@@ -618,7 +625,8 @@ public:  // Main 3D layer drawing methods
      * @param state Show marker (default: true)
      */
     inline static void ToggleOrientationMarker(bool state = true) {
-        sharedTools()->toggleOrientationMarker(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->toggleOrientationMarker(state);
         UpdateScreen();
     }
 
@@ -634,7 +642,9 @@ public:  // Main 3D layer drawing methods
      * @return true if marker is visible
      */
     inline static bool OrientationMarkerShown() {
-        return sharedTools()->orientationMarkerShown();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->orientationMarkerShown();
+        return false;
     }
 
     /**
@@ -664,7 +674,8 @@ public:  // Main 3D layer drawing methods
             const QString& viewID,
             const AxesGridProperties& props,
             int viewport = 0) {
-        sharedTools()->setDataAxesGridProperties(viewID, props, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setDataAxesGridProperties(viewID, props, viewport);
         UpdateScreen();
     }
 
@@ -687,7 +698,8 @@ public:  // Main 3D layer drawing methods
     inline static void GetDataAxesGridProperties(const QString& viewID,
                                                  AxesGridProperties& props,
                                                  int viewport = 0) {
-        sharedTools()->getDataAxesGridProperties(viewID, props, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getDataAxesGridProperties(viewID, props, viewport);
     }
 
     /**
@@ -702,7 +714,8 @@ public:  // Main 3D layer drawing methods
 
     /// Enable/disable view axes grid (aligned with camera/view)
     inline static void SetViewAxesGridVisible(bool visible, int viewport = 0) {
-        sharedTools()->setViewAxesGridVisible(visible, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setViewAxesGridVisible(visible, viewport);
         UpdateScreen();
     }
     inline virtual void setViewAxesGridVisible(
@@ -717,9 +730,10 @@ public:  // Main 3D layer drawing methods
                                                  bool showLabels,
                                                  double opacity,
                                                  int viewport = 0) {
-        sharedTools()->setViewAxesGridProperties(visible, color, lineWidth,
-                                                 spacing, subdivisions,
-                                                 showLabels, opacity, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setViewAxesGridProperties(visible, color, lineWidth, spacing,
+                                          subdivisions, showLabels, opacity,
+                                          viewport);
         UpdateScreen();
     }
     inline virtual void setViewAxesGridProperties(
@@ -753,7 +767,8 @@ public:  // Main 3D layer drawing methods
 
     /// Enable/disable center axes visualization
     inline static void SetCenterAxesVisible(bool visible, int viewport = 0) {
-        sharedTools()->setCenterAxesVisible(visible, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCenterAxesVisible(visible, viewport);
         UpdateScreen();
     }
     inline virtual void setCenterAxesVisible(
@@ -762,7 +777,8 @@ public:  // Main 3D layer drawing methods
     /// Toggle Camera Orientation Widget visibility (ParaView-style interactive
     /// widget)
     inline static void ToggleCameraOrientationWidget(bool show) {
-        sharedTools()->toggleCameraOrientationWidget(show);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->toggleCameraOrientationWidget(show);
         UpdateScreen();
     }
     inline void toggleCameraOrientationWidget(
@@ -770,7 +786,9 @@ public:  // Main 3D layer drawing methods
 
     /// Check if Camera Orientation Widget is shown
     inline static bool IsCameraOrientationWidgetShown() {
-        return sharedTools()->isCameraOrientationWidgetShown();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->isCameraOrientationWidgetShown();
+        return false;
     }
     inline virtual bool isCameraOrientationWidgetShown() const { return false; }
 
@@ -778,7 +796,8 @@ public:  // Main 3D layer drawing methods
     /// Modifies the renderer's headlight intensity for the entire scene.
     /// @param intensity Light intensity (0.0-1.0, default 1.0)
     inline static void SetLightIntensity(double intensity) {
-        sharedTools()->setLightIntensity(intensity);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setLightIntensity(intensity);
         UpdateScreen();
     }
     inline void setLightIntensity(double intensity) override { /* do nothing */
@@ -787,7 +806,9 @@ public:  // Main 3D layer drawing methods
     /// Get current global default light intensity
     /// @return Current light intensity (0.0-1.0)
     inline static double GetLightIntensity() {
-        return sharedTools()->getLightIntensity();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getLightIntensity();
+        return 1.0;
     }
     inline double getLightIntensity() const override { return 1.0; }
 
@@ -796,7 +817,8 @@ public:  // Main 3D layer drawing methods
     /// @param intensity Light intensity (0.0-1.0)
     inline static void SetObjectLightIntensity(const QString& viewID,
                                                double intensity) {
-        sharedTools()->setObjectLightIntensity(viewID, intensity);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setObjectLightIntensity(viewID, intensity);
         UpdateScreen();
     }
     inline void setObjectLightIntensity(const QString& /*viewID*/,
@@ -806,7 +828,9 @@ public:  // Main 3D layer drawing methods
     /// @param viewID The view ID of the target object
     /// @return Object's light intensity (falls back to global default)
     inline static double GetObjectLightIntensity(const QString& viewID) {
-        return sharedTools()->getObjectLightIntensity(viewID);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getObjectLightIntensity(viewID);
+        return 1.0;
     }
     inline double getObjectLightIntensity(
             const QString& /*viewID*/) const override {
@@ -827,7 +851,9 @@ public:  // Main interface accessors
      * @return Pointer to 3D visualizer
      */
     inline static ecvGenericVisualizer3D* GetVisualizer3D() {
-        return sharedTools()->getVisualizer3D();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getVisualizer3D();
+        return nullptr;
     }
 
     /**
@@ -843,7 +869,9 @@ public:  // Main interface accessors
      * @return Pointer to 2D visualizer
      */
     inline static ecvGenericVisualizer2D* GetVisualizer2D() {
-        return sharedTools()->getVisualizer2D();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getVisualizer2D();
+        return nullptr;
     }
 
     /**
@@ -1074,7 +1102,8 @@ public:  // Main interface accessors
      * @param viewMat View transformation matrix
      */
     inline static void TransformCameraView(const ccGLMatrixd& viewMat) {
-        sharedTools()->transformCameraView(viewMat);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->transformCameraView(viewMat);
     }
 
     /**
@@ -1089,7 +1118,8 @@ public:  // Main interface accessors
      * @param projMat Projection transformation matrix
      */
     inline static void TransformCameraProjection(const ccGLMatrixd& projMat) {
-        sharedTools()->transformCameraProjection(projMat);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->transformCameraProjection(projMat);
     }
 
     /**
@@ -1255,12 +1285,14 @@ public:  // Main interface accessors
     }
 
     inline static void SetRenderWindowSize(int xw, int yw) {
-        sharedTools()->setRenderWindowSize(xw, yw);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setRenderWindowSize(xw, yw);
     }
     inline virtual void setRenderWindowSize(int xw, int yw) { /* do nothing */ }
 
     inline static void FullScreen(bool state) {
-        sharedTools()->fullScreen(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->fullScreen(state);
     }
     inline virtual void fullScreen(bool state) { /* do nothing */ }
 
@@ -1284,7 +1316,9 @@ public:  // Main interface accessors
      * @return Focal distance
      */
     inline static double GetCameraFocalDistance(int viewport = 0) {
-        return sharedTools()->getCameraFocalDistance(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getCameraFocalDistance(viewport);
+        return 100.0;
     }
 
     /**
@@ -1303,7 +1337,8 @@ public:  // Main interface accessors
      */
     inline static void SetCameraFocalDistance(double focal_distance,
                                               int viewport = 0) {
-        sharedTools()->setCameraFocalDistance(focal_distance, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCameraFocalDistance(focal_distance, viewport);
     }
 
     /**
@@ -1315,23 +1350,27 @@ public:  // Main interface accessors
             double focal_distance, int viewport = 0) { /* do nothing */ }
 
     inline static void GetCameraPos(double* pos, int viewport = 0) {
-        sharedTools()->getCameraPos(pos, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCameraPos(pos, viewport);
     }
     inline virtual void getCameraPos(double* pos,
                                      int viewport = 0) { /* do nothing */ }
     inline static void GetCameraFocal(double* focal, int viewport = 0) {
-        sharedTools()->getCameraFocal(focal, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCameraFocal(focal, viewport);
     }
     inline virtual void getCameraFocal(double* focal,
                                        int viewport = 0) { /* do nothing */ }
     inline static void GetCameraUp(double* up, int viewport = 0) {
-        sharedTools()->getCameraUp(up, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCameraUp(up, viewport);
     }
     virtual void getCameraUp(double* up, int viewport = 0) { /* do nothing */ }
 
     inline static void SetCameraPosition(const CCVector3d& pos,
                                          int viewport = 0) {
-        sharedTools()->setCameraPosition(pos, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCameraPosition(pos, viewport);
     }
     inline virtual void setCameraPosition(const CCVector3d& pos,
                                           int viewport = 0) { /* do nothing */ }
@@ -1339,7 +1378,8 @@ public:  // Main interface accessors
                                          const double* focal,
                                          const double* up,
                                          int viewport = 0) {
-        sharedTools()->setCameraPosition(pos, focal, up, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCameraPosition(pos, focal, up, viewport);
     }
     inline virtual void setCameraPosition(const double* pos,
                                           const double* focal,
@@ -1348,7 +1388,8 @@ public:  // Main interface accessors
     inline static void SetCameraPosition(const double* pos,
                                          const double* up,
                                          int viewport = 0) {
-        sharedTools()->setCameraPosition(pos, up, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCameraPosition(pos, up, viewport);
     }
     inline virtual void setCameraPosition(const double* pos,
                                           const double* up,
@@ -1363,8 +1404,9 @@ public:  // Main interface accessors
                                          double up_y,
                                          double up_z,
                                          int viewport = 0) {
-        sharedTools()->setCameraPosition(pos_x, pos_y, pos_z, view_x, view_y,
-                                         view_z, up_x, up_y, up_z, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCameraPosition(pos_x, pos_y, pos_z, view_x, view_y, view_z,
+                                  up_x, up_y, up_z, viewport);
     }
     inline virtual void setCameraPosition(double pos_x,
                                           double pos_y,
@@ -1379,7 +1421,8 @@ public:  // Main interface accessors
 
     // set and get clip distances (near and far)
     inline static void GetCameraClip(double* clipPlanes, int viewport = 0) {
-        sharedTools()->getCameraClip(clipPlanes, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCameraClip(clipPlanes, viewport);
     }
     virtual void getCameraClip(double* clipPlanes,
                                int viewport = 0) { /* do nothing */ }
@@ -1402,14 +1445,17 @@ public:  // Main interface accessors
                                int viewport = 0) { /* do nothing */ }
 
     inline static void ResetCameraClippingRange(int viewport = 0) {
-        sharedTools()->resetCameraClippingRange(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->resetCameraClippingRange(viewport);
     }
     inline virtual void resetCameraClippingRange(
             int viewport = 0) { /* do nothing */ }
 
     // set and get view angle in y direction
     inline static double GetCameraFovy(int viewport = 0) {
-        return sharedTools()->getCameraFovy(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getCameraFovy(viewport);
+        return 0;
     }
     inline virtual double getCameraFovy(int viewport = 0) {
         return 0; /* do nothing */
@@ -1440,7 +1486,8 @@ public:  // Main interface accessors
      * \param[in] file the name of the PNG file
      */
     inline static void SaveScreenshot(const std::string& file) {
-        sharedTools()->saveScreenshot(file);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->saveScreenshot(file);
     }
     inline virtual void saveScreenshot(
             const std::string& file) { /* do nothing */ }
@@ -1449,31 +1496,36 @@ public:  // Main interface accessors
      * current camera. \param[in] file the name of the param file
      */
     inline static void SaveCameraParameters(const std::string& file) {
-        sharedTools()->saveCameraParameters(file);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->saveCameraParameters(file);
     }
     inline virtual void saveCameraParameters(
             const std::string& file) { /* do nothing */ }
 
     inline static void LoadCameraParameters(const std::string& file) {
-        sharedTools()->loadCameraParameters(file);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->loadCameraParameters(file);
     }
     inline virtual void loadCameraParameters(
             const std::string& file) { /* do nothing */ }
 
     inline static void ShowOrientationMarker() {
-        sharedTools()->showOrientationMarker();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->showOrientationMarker();
         UpdateScreen();
     }
     inline virtual void showOrientationMarker() { /* do nothing */ }
 
     inline static void SetOrthoProjection(int viewport = 0) {
-        sharedTools()->setOrthoProjection(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setOrthoProjection(viewport);
         UpdateScreen();
     }
     inline virtual void setOrthoProjection(int viewport = 0) { /* do nothing */
     }
     inline static void SetPerspectiveProjection(int viewport = 0) {
-        sharedTools()->setPerspectiveProjection(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setPerspectiveProjection(viewport);
         UpdateScreen();
     }
     inline virtual void setPerspectiveProjection(
@@ -1485,7 +1537,8 @@ public:  // Main interface accessors
      * transparently for the user. \param[in] use_vbos set to true to use VBOs
      */
     inline static void SetUseVbos(bool useVbos) {
-        sharedTools()->setUseVbos(useVbos);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setUseVbos(useVbos);
     }
     inline virtual void setUseVbos(bool useVbos) { /* do nothing */ }
 
@@ -1493,34 +1546,40 @@ public:  // Main interface accessors
      * \param[in] id The id of the cloud/shape look up table to be displayed
      * The look up table is displayed by pressing 'u' in the PCLVisualizer */
     inline static void SetLookUpTableID(const std::string& viewID) {
-        sharedTools()->setLookUpTableID(viewID);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setLookUpTableID(viewID);
     }
     inline virtual void setLookUpTableID(
             const std::string& viewID) { /* do nothing */ }
 
     inline static void GetProjectionMatrix(double* projArray,
                                            int viewport = 0) {
-        sharedTools()->getProjectionMatrix(projArray, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getProjectionMatrix(projArray, viewport);
     }
     inline virtual void getProjectionMatrix(double* projArray,
                                             int viewport = 0) { /* do nothing */
     }
     inline static void GetViewMatrix(double* viewArray, int viewport = 0) {
-        sharedTools()->getViewMatrix(viewArray, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getViewMatrix(viewArray, viewport);
     }
     inline virtual void getViewMatrix(double* viewArray,
                                       int viewport = 0) { /* do nothing */ }
 
     inline static void SetViewMatrix(const ccGLMatrixd& viewMat,
                                      int viewport = 0) {
-        sharedTools()->setViewMatrix(viewMat, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setViewMatrix(viewMat, viewport);
     }
     inline virtual void setViewMatrix(const ccGLMatrixd& viewMat,
                                       int viewport = 0) { /* do nothing */ }
 
     static bool HideShowEntities(const ccHObject* obj, bool visible);
     inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) {
-        return sharedTools()->hideShowEntities(CONTEXT);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->hideShowEntities(CONTEXT);
+        return true;
     }
     inline bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) override {
         return true; /* do nothing */
@@ -1546,11 +1605,15 @@ public:  // Main interface accessors
     static void Redraw2DLabel();
 
     static QString Pick3DItem(int x = -1, int y = -1) {
-        return sharedTools()->pick3DItem(x, y);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->pick3DItem(x, y);
+        return QString();
     }
     QString pick3DItem(int x = -1, int y = -1) override { return QString(); }
     static QString PickObject(double x = -1, double y = -1) {
-        return sharedTools()->pickObject(x, y);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->pickObject(x, y);
+        return QString();
     }
     QString pickObject(double x = -1, double y = -1) override {
         return QString();
@@ -1576,7 +1639,8 @@ public:  // Main interface accessors
      */
     inline static void CreateViewPort(
             double xmin, double ymin, double xmax, double ymax, int& viewport) {
-        sharedTools()->createViewPort(xmin, ymin, xmax, ymax, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->createViewPort(xmin, ymin, xmax, ymax, viewport);
     }
     inline virtual void createViewPort(double xmin,
                                        double ymin,
@@ -1585,7 +1649,8 @@ public:  // Main interface accessors
                                        int& viewport) { /* do nothing */ }
 
     inline static void ResetCameraViewpoint(const std::string& viewID) {
-        sharedTools()->resetCameraViewpoint(viewID);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->resetCameraViewpoint(viewID);
     }
     inline virtual void resetCameraViewpoint(
             const std::string& viewID) { /* do nothing */ }
@@ -1608,7 +1673,8 @@ public:  // Main interface accessors
     static void SetViewportDefaultLineWidth(float width);
 
     inline static void Toggle2Dviewer(bool state) {
-        sharedTools()->toggle2Dviewer(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->toggle2Dviewer(state);
     }
     inline void toggle2Dviewer(bool state) override { /* do nothing */ }
 
@@ -1660,26 +1726,33 @@ public:  // visualization matrix transformation
     }
     static void UpdateScreen();
     inline static void ResetCamera(const ccBBox* bbox) {
-        sharedTools()->resetCamera(bbox);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->resetCamera(bbox);
         UpdateScreen();
     }
     inline void resetCamera(const ccBBox* bbox) override { /* do nothing */ }
     inline static void ResetCamera() {
-        sharedTools()->resetCamera();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->resetCamera();
         UpdateScreen();
     }
     inline void resetCamera() override { /* do nothing */ }
     inline static void UpdateCamera() {
-        sharedTools()->updateCamera();
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->updateCamera();
         UpdateScreen();
     }
     inline void updateCamera() override { /* do nothing */ }
 
-    inline static void UpdateScene() { sharedTools()->updateScene(); }
+    inline static void UpdateScene() {
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->updateScene();
+    }
     inline void updateScene() override { /* do nothing */ }
 
     inline static void SetAutoUpateCameraPos(bool state) {
-        sharedTools()->setAutoUpateCameraPos(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setAutoUpateCameraPos(state);
     }
     inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */ }
 
@@ -1687,10 +1760,12 @@ public:  // visualization matrix transformation
      * Get the current center of rotation
      */
     inline static void GetCenterOfRotation(double center[3]) {
-        sharedTools()->getCenterOfRotation(center);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCenterOfRotation(center);
     }
     inline static void GetCenterOfRotation(CCVector3d& center) {
-        sharedTools()->getCenterOfRotation(center.u);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->getCenterOfRotation(center.u);
     }
     inline virtual void getCenterOfRotation(double center[3]) { /* do nothing */
     }
@@ -1699,7 +1774,8 @@ public:  // visualization matrix transformation
      * Resets the center of rotation to the focal point.
      */
     inline static void ResetCenterOfRotation(int viewport = 0) {
-        sharedTools()->resetCenterOfRotation(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->resetCenterOfRotation(viewport);
         UpdateScreen();
     }
     inline void resetCenterOfRotation(
@@ -1712,7 +1788,8 @@ public:  // visualization matrix transformation
      * They are setup correctly by default
      */
     inline static void SetCenterOfRotation(double x, double y, double z) {
-        sharedTools()->setCenterOfRotation(x, y, z);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setCenterOfRotation(x, y, z);
     }
     inline virtual void setCenterOfRotation(double x,
                                             double y,
@@ -1727,7 +1804,9 @@ public:  // visualization matrix transformation
     }
 
     inline static double GetGLDepth(int x, int y) {
-        return sharedTools()->getGLDepth(x, y);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getGLDepth(x, y);
+        return 1.0;
     }
     inline virtual double getGLDepth(int x, int y) {
         return 1.0; /* do nothing */
@@ -1736,7 +1815,8 @@ public:  // visualization matrix transformation
     inline static void ChangeOpacity(double opacity,
                                      const std::string& viewID,
                                      int viewport = 0) {
-        sharedTools()->changeOpacity(opacity, viewID, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->changeOpacity(opacity, viewID, viewport);
         UpdateScreen();
     }
     inline virtual void changeOpacity(double opacity,
@@ -1779,8 +1859,10 @@ public:  // visualization matrix transformation
                                        bool renderOverlayItems = false,
                                        bool silent = false,
                                        int viewport = 0) {
-        return sharedTools()->renderToImage(zoomFactor, renderOverlayItems,
-                                            silent, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->renderToImage(zoomFactor, renderOverlayItems, silent,
+                                    viewport);
+        return QImage();
     }
     inline virtual QImage renderToImage(int zoomFactor = 1,
                                         bool renderOverlayItems = false,
@@ -1790,7 +1872,8 @@ public:  // visualization matrix transformation
     }
 
     inline static void SetScaleBarVisible(bool visible) {
-        return sharedTools()->setScaleBarVisible(visible);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setScaleBarVisible(visible);
     }
     inline virtual void setScaleBarVisible(bool visible) { /* do nothing */ }
 
@@ -1831,7 +1914,8 @@ public:  // visualization matrix transformation
 
     //! Toggles (exclusive) full-screen mode
     inline static void ToggleExclusiveFullScreen(bool state) {
-        sharedTools()->toggleExclusiveFullScreen(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->toggleExclusiveFullScreen(state);
     }
     inline void toggleExclusiveFullScreen(
             bool state) override { /* do nothing */ }
@@ -1890,7 +1974,9 @@ public:  // visualization matrix transformation
     static void SetPerspectiveState(bool state, bool objectCenteredView);
 
     static bool GetPerspectiveState(int viewport = 0) {
-        return sharedTools()->getPerspectiveState(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getPerspectiveState(viewport);
+        return GetViewportParameters().perspectiveView;
     }
     inline virtual bool getPerspectiveState(int viewport = 0) const override {
         return GetViewportParameters().perspectiveView;
@@ -1982,7 +2068,8 @@ public:  // visualization matrix transformation
     //! Sets pivot visibility
     static void SetPivotVisibility(PivotVisibility vis);
     static void SetPivotVisibility(bool state) {
-        sharedTools()->setPivotVisibility(state);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setPivotVisibility(state);
     }
     virtual void setPivotVisibility(bool state) { /*do nothing here*/ }
 
@@ -2004,13 +2091,16 @@ public:  // visualization matrix transformation
 
     // return value (in rad)
     inline static double GetParallelScale(int viewport = 0) {
-        return sharedTools()->getParallelScale(viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            return dt->getParallelScale(viewport);
+        return -1.0;
     }
     inline virtual double getParallelScale(int viewport = 0) { return -1.0; }
 
     // scale (in rad)
     inline static void SetParallelScale(double scale, int viewport = 0) {
-        sharedTools()->setParallelScale(scale, viewport);
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->setParallelScale(scale, viewport);
     }
     inline virtual void setParallelScale(double scale,
                                          int viewport = 0) { /*do nothing here*/
