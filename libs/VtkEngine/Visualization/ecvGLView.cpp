@@ -118,6 +118,10 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
 
+    if (!m_hotZone && m_vtkWidget) {
+        m_hotZone = new ecvHotZone(m_vtkWidget);
+    }
+
     m_deferredPickingTimer.setSingleShot(true);
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {

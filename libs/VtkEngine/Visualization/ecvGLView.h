@@ -222,6 +222,8 @@ public:
 
     QVTKWidgetCustom* getVtkWidget() const;
     Visualization::VtkVis* getVisualizer3D() const;
+    QJsonObject saveLayoutCameraState() const override;
+    void loadLayoutCameraState(const QJsonObject& cameraJson) override;
     Visualization::VtkVisPtr getVisualizer3DSP() const {
         return m_visualizer3D;
     }
@@ -233,10 +235,15 @@ public:
     // Per-view timer & scheduling (replaces singleton m_timer)
     // ================================================================
 
-    qint64 elapsedMs() const { return m_timer.elapsed(); }
-    void scheduleFullRedraw(int delayMs);
+    qint64 elapsedMs() const override { return m_timer.elapsed(); }
+    void scheduleFullRedraw(int delayMs) override;
     void startDeferredPicking();
     QTimer& deferredPickingTimer() { return m_deferredPickingTimer; }
+    void stopDeferredPicking() override { m_deferredPickingTimer.stop(); }
+    void startDeferredPickingFor(ecvGenericGLDisplay* targetView) override {
+        Q_UNUSED(targetView);
+        startDeferredPicking();
+    }
 
     // ================================================================
     // Per-view context — the single source of truth for view state.
@@ -274,6 +281,12 @@ public:
     ccPolyline*& rectPickingPolyRef() { return m_rectPickingPoly; }
     std::list<ccInteractor*>& activeItemsRef() override {
         return m_activeItems;
+    }
+
+    ecvHotZone*& hotZonePtrRef() override { return m_hotZone; }
+
+    std::vector<ecvClickableItem>& clickableItemsRef() override {
+        return m_clickableItems;
     }
 
     float defaultPointSize() const {

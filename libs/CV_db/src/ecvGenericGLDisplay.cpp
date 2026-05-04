@@ -7,9 +7,11 @@
 
 #include "ecvGenericGLDisplay.h"
 
+#include <ecvDisplayTypes.h>
 #include <ecvGuiParameters.h>
 
 #include <QApplication>
+#include <QJsonObject>
 #include <QMap>
 #include <QMutex>
 #include <QMutexLocker>
@@ -50,6 +52,10 @@ int ecvGenericGLDisplay::getDevicePixelRatio() const {
     const QWidget* w = asWidget();
     return w ? static_cast<int>(w->devicePixelRatio()) : 1;
 }
+
+QJsonObject ecvGenericGLDisplay::saveLayoutCameraState() const { return {}; }
+
+void ecvGenericGLDisplay::loadLayoutCameraState(const QJsonObject& /*cameraJson*/) {}
 
 void ecvGenericGLDisplay::setInteractionMode(INTERACTION_FLAGS /*flags*/) {}
 
@@ -114,6 +120,16 @@ void ecvGenericGLDisplay::saveCameraParameters(const std::string& file) {
 std::list<ccInteractor*>& ecvGenericGLDisplay::activeItemsRef() {
     static std::list<ccInteractor*> s_fallback;
     return s_fallback;
+}
+
+ecvHotZone*& ecvGenericGLDisplay::hotZonePtrRef() {
+    static ecvHotZone* s_nullHz = nullptr;
+    return s_nullHz;
+}
+
+std::vector<ecvClickableItem>& ecvGenericGLDisplay::clickableItemsRef() {
+    static std::vector<ecvClickableItem> s_emptyClickable;
+    return s_emptyClickable;
 }
 
 // ================================================================
