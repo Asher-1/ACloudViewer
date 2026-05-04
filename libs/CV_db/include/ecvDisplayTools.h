@@ -54,8 +54,8 @@ class ecvGenericVisualizer3D;
  * @class ecvDisplayTools
  * @brief Main display and rendering management class
  *
- * Central singleton class for managing all visualization, rendering, and user
- * interaction in CloudViewer. Provides a comprehensive interface for:
+ * Central class for managing visualization, rendering, and user interaction in
+ * CloudViewer. Provides a comprehensive interface for:
  *
  * - 3D/2D rendering and display control
  * - Camera manipulation (position, orientation, projection)
@@ -66,8 +66,8 @@ class ecvGenericVisualizer3D;
  * - Screenshot and rendering to file
  * - Perspective/orthographic projection switching
  *
- * This class follows the singleton pattern and integrates with both Qt (for UI)
- * and VTK/OpenGL (for 3D rendering).
+ * Lifecycle is owned by ecvViewManager (displayTools()). Integrates with Qt
+ * (for UI) and VTK/OpenGL (for 3D rendering).
  *
  * @see ecvGenericDisplayTools
  * @see ecvGenericVisualizer3D
@@ -79,29 +79,18 @@ class CV_DB_LIB_API ecvDisplayTools : public QObject,
     Q_OBJECT
 public:
     // ================================================================
-    // Shared-instance lifecycle (managed by ecvViewManager)
+    // Shared display-tools lifecycle (managed by ecvViewManager)
     //
-    // These replace the former Init/TheInstance/ReleaseInstance API.
-    // External code should use ecvViewManager::initDisplayTools()
-    // and ecvViewManager::displayTools() instead.
+    // Use ecvViewManager::initDisplayTools() / displayTools() /
+    // releaseDisplayTools().
     // ================================================================
 
-    /// Returns the shared display-tools instance.
-    /// Equivalent to the former sharedTools() but intended only for
-    /// internal / static-method use.  External callers should prefer
-    /// ecvViewManager::displayTools().
-    static ecvDisplayTools* sharedTools();
+    /// One-time setup after construction; called from
+    /// ecvViewManager::initDisplayTools().
+    void initializeEngine(QMainWindow* win, bool stereoMode = false);
 
 private:
     friend class ecvViewManager;
-
-    /// Called exclusively by ecvViewManager::initDisplayTools().
-    static void initializeSharedInstance(ecvDisplayTools* tools,
-                                         QMainWindow* win,
-                                         bool stereoMode);
-
-    /// Called exclusively by ecvViewManager::releaseDisplayTools().
-    static void releaseSharedInstance();
 
 public:
     /**
@@ -113,20 +102,16 @@ public:
     // now does its own full rendering pipeline without singleton swap.
 
     // ================================================================
-    // Per-view context  (Phase A → Phase E)
+    // Per-view context
     //
-    // The primary view's per-view state lives in m_primaryCtx.
-    // Instance method effectiveCtx() returns the effective view context.
-    // Parameter-less static wrappers should use
+    // VtkDisplayTools is an engine, not a view; per-view state lives on
+    // ecvGLView. Parameter-less static wrappers use
     // ecvViewManager::instance().resolveViewContext().
     // ================================================================
 
-    /// Primary view's per-view state (replaces scattered m_viewportParams etc.)
-    ecvViewContext m_primaryCtx;
-
-    /// Override from ecvGenericGLDisplay — returns &m_primaryCtx.
-    ecvViewContext* viewContext() override { return &m_primaryCtx; }
-    const ecvViewContext* viewContext() const override { return &m_primaryCtx; }
+    /// ecvDisplayTools (VTK engine) does not own a view context.
+    ecvViewContext* viewContext() override { return nullptr; }
+    const ecvViewContext* viewContext() const override { return nullptr; }
 
     /// Override from ecvGenericGLDisplay — returns primary-window active items.
     std::list<ccInteractor*>& activeItemsRef() override {
@@ -138,15 +123,6 @@ public:
     std::vector<ecvClickableItem>& clickableItemsRef() override {
         return m_clickableItems;
     }
-
-    /// Returns the effective view's context for the current scope.
-    /// If a rendering override is set (ScopedRenderOverride), returns that
-    /// view's context; otherwise the primary context.
-    ecvViewContext& effectiveCtx();
-    const ecvViewContext& effectiveCtx() const;
-
-    void copyContextFrom(const ecvViewContext& ctx);
-    ecvViewContext snapshotContext() const;
 
     // ================================================================
     // Context-aware static API overloads  (Phase A)
@@ -209,7 +185,7 @@ public:
     // ================================================================
     // Phase N2: Per-view context parameterized overloads (continued)
     // N2a: Functions with side effects (emit, QSettings, VTK callbacks)
-    // N2b: State setters/getters (2-6 effectiveCtx calls)
+    // N2b: State setters/getters delegating to resolveViewContext()
     // ================================================================
 
     // N2b: Simple state accessors

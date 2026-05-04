@@ -19,6 +19,7 @@
 #include <QGuiApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QKeySequence>
 #include <QMimeData>
 #include <QScreen>
 #include <QSettings>
@@ -101,6 +102,8 @@
 #include <ecvScalarField.h>
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
+#include <ecvTransformCommand.h>
+#include <ecvUndoManager.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
@@ -706,11 +709,6 @@ void MainWindow::initial() {
     // init db root
     initDBRoot();
 
-    // Set scene DB on the first view (DB root is now ready)
-    if (m_firstView && m_ccRoot) {
-        m_firstView->setSceneDB(m_ccRoot->getRootEntity());
-    }
-
     // init status bar
     initStatusBar();
 
@@ -723,7 +721,7 @@ void MainWindow::initial() {
     // VtkDisplayTools is a pure engine service, not a view.
     m_firstView = ecvGLView::Create(this);
     assert(m_firstView);
-    m_firstView->setSceneDB(nullptr);  // DB root not ready yet; set later
+    m_firstView->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     ecvViewManager::instance().setActiveView(m_firstView);
 
     QWidget* viewWidget = m_firstView->asWidget();
@@ -773,6 +771,7 @@ void MainWindow::initial() {
                         markActiveViewFrame(viewWidget);
                     }
 
+                    syncPivotButtonStates(newActive);
                     updateMenus();
                 });
     }
@@ -1034,6 +1033,21 @@ void MainWindow::connectActions() {
             &MainWindow::doActionFilterNoise);
     connect(m_ui->actionVoxelSampling, &QAction::triggered, this,
             &MainWindow::doActionVoxelSampling);
+
+    if (auto* mgr = ecvViewManager::instance().undoManager()) {
+        QAction* undoAction = mgr->createUndoAction(this, tr("&Undo"));
+        undoAction->setShortcut(QKeySequence::Undo);
+        QAction* redoAction = mgr->createRedoAction(this, tr("&Redo"));
+        redoAction->setShortcut(QKeySequence::Redo);
+        if (QAction* anchor =
+                    (!m_ui->menuEdit->actions().isEmpty()
+                             ? m_ui->menuEdit->actions().first()
+                             : nullptr)) {
+            m_ui->menuEdit->insertAction(anchor, redoAction);
+            m_ui->menuEdit->insertAction(redoAction, undoAction);
+            m_ui->menuEdit->insertSeparator(anchor);
+        }
+    }
 
     //"Edit" menu
     connect(m_ui->actionSegment, &QAction::triggered, this,
@@ -1506,68 +1520,6 @@ void MainWindow::connectActions() {
             fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
         }
 
-        displayMenu->addSeparator();
-
-        auto* undoLayoutAct =
-                displayMenu->addAction(tr("Undo Layout"), [this]() {
-                    if (auto* layout =
-                                m_tabbedMultiView
-                                        ? m_tabbedMultiView->layoutProxy()
-                                        : nullptr) {
-                        if (layout->canUndo()) layout->undo();
-                    }
-                });
-        undoLayoutAct->setShortcut(
-                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z));
-        undoLayoutAct->setEnabled(false);
-
-        auto* redoLayoutAct =
-                displayMenu->addAction(tr("Redo Layout"), [this]() {
-                    if (auto* layout =
-                                m_tabbedMultiView
-                                        ? m_tabbedMultiView->layoutProxy()
-                                        : nullptr) {
-                        if (layout->canRedo()) layout->redo();
-                    }
-                });
-        redoLayoutAct->setShortcut(
-                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Y));
-        redoLayoutAct->setEnabled(false);
-
-        auto updateUndoRedoState = [undoLayoutAct, redoLayoutAct, this]() {
-            auto* layout = m_tabbedMultiView ? m_tabbedMultiView->layoutProxy()
-                                             : nullptr;
-            bool canU = layout && layout->canUndo();
-            bool canR = layout && layout->canRedo();
-            undoLayoutAct->setEnabled(canU);
-            redoLayoutAct->setEnabled(canR);
-            undoLayoutAct->setText(
-                    canU ? tr("Undo Layout: %1").arg(layout->undoLabel())
-                         : tr("Undo Layout"));
-            redoLayoutAct->setText(
-                    canR ? tr("Redo Layout: %1").arg(layout->redoLabel())
-                         : tr("Redo Layout"));
-        };
-
-        connect(m_tabbedMultiView, &ecvTabbedMultiViewWidget::currentTabChanged,
-                this, [updateUndoRedoState, this]() {
-                    updateUndoRedoState();
-                    auto* layout = m_tabbedMultiView
-                                           ? m_tabbedMultiView->layoutProxy()
-                                           : nullptr;
-                    if (layout) {
-                        connect(layout, &ecvViewLayoutProxy::undoRedoChanged,
-                                this, updateUndoRedoState,
-                                Qt::UniqueConnection);
-                    }
-                });
-
-        if (auto* firstLayout = m_tabbedMultiView
-                                        ? m_tabbedMultiView->layoutProxy()
-                                        : nullptr) {
-            connect(firstLayout, &ecvViewLayoutProxy::undoRedoChanged, this,
-                    updateUndoRedoState, Qt::UniqueConnection);
-        }
     }
 
     // Lock View Size (ParaView-style: Tools → Lock View Size)
@@ -2284,7 +2236,7 @@ void MainWindow::doActionResetRotCenter() {
 void MainWindow::toggleRotationCenterVisibility(bool state) {
     if (auto* view = getActiveGLView()) {
         if (state) {
-            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
+            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE);
         } else {
             view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_HIDE);
         }
@@ -2578,7 +2530,10 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
-    const ecvViewContext& srcCtx = dt->effectiveCtx();
+    auto* sourceView = ecvViewManager::instance().getActiveView();
+    const ecvViewContext& srcCtx = (sourceView && sourceView->viewContext())
+        ? *sourceView->viewContext()
+        : ecvViewManager::instance().resolveViewContext();
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
@@ -2705,6 +2660,29 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
         }
     }
 #endif
+}
+
+void MainWindow::syncPivotButtonStates(ecvGenericGLDisplay* display) {
+    auto* glView = dynamic_cast<ecvGLView*>(display);
+    if (!glView) return;
+
+    const auto& ctx = glView->context();
+
+    m_ui->actionAutoPickPivot->blockSignals(true);
+    m_ui->actionAutoPickPivot->setChecked(ctx.autoPickPivotAtCenter);
+    m_ui->actionAutoPickPivot->blockSignals(false);
+
+    bool showPivot =
+            (ctx.pivotVisibility == ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
+    m_ui->actionShowPivot->blockSignals(true);
+    m_ui->actionShowPivot->setChecked(showPivot);
+    m_ui->actionShowPivot->blockSignals(false);
+
+    auto* vis = glView->getVisualizer3D();
+    if (vis) {
+        vis->setCenterAxesVisibility(
+                ctx.pivotVisibility != ecvGenericGLDisplay::PIVOT_HIDE);
+    }
 }
 
 void MainWindow::prepareViewClose(QWidget* viewFrame) {
@@ -3511,6 +3489,10 @@ void MainWindow::getFileFilltersAndHistory(QStringList& fileFilters,
 }
 
 void MainWindow::doActionOpenFile() {
+    // Capture intended target view before the modal dialog, since dialog
+    // interaction or event processing can inadvertently change active view.
+    auto* targetView = ecvViewManager::instance().getActiveView();
+
     // persistent settings
     QString currentPath =
             ecvSettingManager::getValue(ecvPS::LoadFile(), ecvPS::CurrentPath(),
@@ -3528,6 +3510,13 @@ void MainWindow::doActionOpenFile() {
             ECVFileDialogOptions());
 
     if (selectedFiles.isEmpty()) return;
+
+    // Restore the target view — the modal dialog or subsequent event
+    // processing may have shifted focus to a different view.
+    if (targetView && ecvViewManager::instance().getActiveView() != targetView) {
+        CVLog::Print("[doActionOpenFile] Restoring active view after dialog");
+        ecvViewManager::instance().setActiveView(targetView);
+    }
 
     // persistent save last loading parameters
     currentPath = QFileInfo(selectedFiles[0]).absolutePath();
@@ -3551,6 +3540,9 @@ void MainWindow::addToDBAuto(const QStringList& filenames,
 void MainWindow::addToDB(const QStringList& filenames,
                          QString fileFilter /*=QString()*/,
                          bool displayDialog /* = true*/) {
+    // Snapshot the target view before any loading dialogs can shift focus.
+    auto* targetView = ecvViewManager::instance().getActiveView();
+
     // to use the same 'global shift' for multiple files
     CCVector3d loadCoordinatesShift(0, 0, 0);
     bool loadCoordinatesTransEnabled = false;
@@ -3573,6 +3565,13 @@ void MainWindow::addToDB(const QStringList& filenames,
     FileIOFilter::ResetSesionCounter();
 
     for (const QString& filename : filenames) {
+        // Restore the target view before each file — progress dialogs from
+        // LoadFromFile may process events that shift active view.
+        if (targetView &&
+            ecvViewManager::instance().getActiveView() != targetView) {
+            ecvViewManager::instance().setActiveView(targetView);
+        }
+
         CC_FILE_ERROR result = CC_FERR_NO_ERROR;
         ccHObject* newGroup = FileIOFilter::LoadFromFile(filename, parameters,
                                                          result, fileFilter);
@@ -3684,12 +3683,6 @@ void MainWindow::addToDB(ccHObject* obj,
             updateZoom = true;
         }
 
-        {
-            ecvRedrawScope scope;
-            scope.markDirty(obj);
-            scope.dismiss();
-        }
-
         ccHObject::Container childs;
         obj->filterChildren(childs, true, CV_TYPES::IMAGE);
         if (!childs.empty()) {
@@ -3708,11 +3701,21 @@ void MainWindow::addToDB(ccHObject* obj,
     // only render there, not in every window.
     ecvViewManager::instance().associateToActiveView(obj);
 
-    if (updateZoom) {
-        if (auto* v = getActiveGLView()) {
-            v->updateConstellationCenterAndZoom();
-        }
+    // Force-rebind if the entity already had a display from a different view
+    // (e.g., cloned objects from plugins).
+    auto* activeView = ecvViewManager::instance().getActiveView();
+    if (activeView && obj->getDisplay() && obj->getDisplay() != activeView) {
+        CVLog::Print("[addToDB] Rebinding entity to active view");
+        ecvViewManager::instance().forceAssociateToView(obj, activeView);
     }
+
+    // Ensure the new entity and its children have redraw flags set
+    // so the VTK pipeline creates actors during the draw pass.
+    obj->setRedrawFlagRecursive(true);
+
+    // First, trigger a full draw pass to create VTK actors for the new entity.
+    // This must happen BEFORE the camera reset so that resetCamera()
+    // can compute correct bounds from the actual VTK actors.
     if (autoRedraw || updateZoom) {
         ecvViewManager::instance().invalidateActiveViewport();
         if (auto* v = getActiveGLView()) {
@@ -3722,6 +3725,21 @@ void MainWindow::addToDB(ccHObject* obj,
         ecvViewManager::instance().deprecateActive3DLayer();
         refreshAll();
     }
+
+    // Now reset camera/zoom AFTER VTK actors exist, so the camera
+    // frames the actual geometry instead of an empty scene.
+    if (auto* v = getActiveGLView()) {
+        if (updateZoom) {
+            v->updateConstellationCenterAndZoom();
+        } else {
+            v->resetCenterOfRotation();
+        }
+    }
+
+    // Deferred re-render: VTK Render() may not synchronously update the
+    // QVTKOpenGLNativeWidget surface.  Force a full redraw after Qt processes
+    // pending layout/paint events so the framebuffer is flushed to screen.
+    QTimer::singleShot(0, this, [this]() { refreshAll(); });
 
 #ifdef USE_VTK_BACKEND
     // ParaView-style: When new entities are added, refresh Data Producer combo
@@ -4440,24 +4458,36 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat) {
             }
         }
 
-        // we temporarily detach entity, as it may undergo
-        //"severe" modifications (octree deletion, etc.) --> see
-        // ccHObject::applyRigidTransformation
+        ccGLMatrix histBefore = entity->getGLTransformationHistory();
+        ccGLMatrix appliedMat(transMat.data());
+
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
-        entity->setGLTransformation(ccGLMatrix(transMat.data()));
-        // DGM FIXME: we only test the entity own bounding box (and we update
-        // its shift & scale info) but we apply the transformation to all its
-        // children?!
+        entity->setGLTransformation(appliedMat);
         entity->applyGLTransformation_recursive();
-        // entity->prepareDisplayForRefresh_recursive();
         putObjectBackIntoDBTree(entity, objContext);
+
+        ccGLMatrix histAfter = entity->getGLTransformationHistory();
+
+        auto* undoMgr = ecvViewManager::instance().undoManager();
+        if (undoMgr) {
+            auto restoreFunc = [this](ccHObject* ent, const ccGLMatrix& t) {
+                ccHObjectContext ctx = removeObjectTemporarilyFromDBTree(ent);
+                ent->setGLTransformation(t);
+                ent->applyGLTransformation_recursive();
+                putObjectBackIntoDBTree(ent, ctx);
+            };
+            auto refreshFunc = [this]() { refreshSelected(); };
+            undoMgr->push(new ecvTransformCommand(
+                entity, histBefore, histAfter, appliedMat,
+                restoreFunc, refreshFunc,
+                tr("Transform '%1'").arg(entity->getName())));
+        }
     }
 
-    // reselect previously selected entities!
     if (m_ccRoot) m_ccRoot->selectEntities(selectedEntities);
 
     CVLog::Print(tr("[ApplyTransformation] Applied transformation matrix:"));
-    CVLog::Print(transMat.toString(12, ' '));  // full precision
+    CVLog::Print(transMat.toString(12, ' '));
     CVLog::Print(
             tr("Hint: copy it (CTRL+C) and apply it - or its inverse - on any "
                "entity with the 'Edit > Apply transformation' tool"));
@@ -6079,10 +6109,42 @@ void MainWindow::freezeUI(bool state) {
 }
 
 void MainWindow::zoomOnSelectedEntities() {
-    ccBBox bbox = getSelectedEntityBbox();
-    if (bbox.isValid()) {
-        if (auto* view = getActiveGLView())
-            view->updateConstellationCenterAndZoom(&bbox);
+    const auto& selected = getSelectedEntities();
+    if (selected.empty()) return;
+
+    auto& vm = ecvViewManager::instance();
+
+    // Group selected entities by their owner view so each view zooms
+    // only on the entities it actually contains.
+    QMap<ecvGenericGLDisplay*, ccBBox> viewBBoxes;
+    for (ccHObject* entity : selected) {
+        auto* ownerView = vm.findViewForEntity(entity);
+        if (!ownerView) ownerView = vm.getActiveView();
+        if (!ownerView) continue;
+        viewBBoxes[ownerView] += entity->getDisplayBB_recursive(false, ownerView);
+    }
+
+    if (viewBBoxes.isEmpty()) {
+        CVLog::Warning(tr("Selected entities have no valid bounding-box!"));
+        return;
+    }
+
+    // Activate the first entity's view for UI consistency.
+    auto* primaryView = vm.findViewForEntity(selected.front());
+    if (primaryView && primaryView != vm.getActiveView()) {
+        vm.setActiveView(primaryView);
+    }
+
+    bool anyValid = false;
+    for (auto it = viewBBoxes.constBegin(); it != viewBBoxes.constEnd(); ++it) {
+        if (it.value().isValid()) {
+            ccBBox bb = it.value();
+            it.key()->updateConstellationCenterAndZoom(&bb);
+            anyValid = true;
+        }
+    }
+
+    if (anyValid) {
         refreshAll();
     } else {
         CVLog::Warning(tr("Selected entities have no valid bounding-box!"));
@@ -9073,15 +9135,30 @@ void MainWindow::doActionFastRegistration(FastRegistrationMode mode) {
                 "Hint: copy it (CTRL+C) and apply it - or its inverse - on any "
                 "entity with the 'Edit > Apply transformation' tool");
 
-        // we temporarily detach entity, as it may undergo
-        //"severe" modifications (octree deletion, etc.) --> see
-        // ccHObject::applyGLTransformation
+        ccGLMatrix histBefore = entity->getGLTransformationHistory();
+
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
         entity->applyGLTransformation_recursive(&glTrans);
         putObjectBackIntoDBTree(entity, objContext);
+
+        ccGLMatrix histAfter = entity->getGLTransformationHistory();
+
+        auto* undoMgr = ecvViewManager::instance().undoManager();
+        if (undoMgr) {
+            auto restoreFunc = [this](ccHObject* ent, const ccGLMatrix& t) {
+                ccHObjectContext ctx = removeObjectTemporarilyFromDBTree(ent);
+                ent->setGLTransformation(t);
+                ent->applyGLTransformation_recursive();
+                putObjectBackIntoDBTree(ent, ctx);
+            };
+            auto refreshFunc = [this]() { refreshSelected(); };
+            undoMgr->push(new ecvTransformCommand(
+                    entity, histBefore, histAfter, glTrans,
+                    restoreFunc, refreshFunc,
+                    tr("Fast registration '%1'").arg(entity->getName())));
+        }
     }
 
-    // reselect previously selected entities!
     if (m_ccRoot) m_ccRoot->selectEntities(selectedEntities);
 
     refreshSelected();
@@ -10056,15 +10133,30 @@ void MainWindow::doActionMatchBBCenters() {
                 tr("Hint: copy it (CTRL+C) and apply it - or its inverse - on "
                    "any entity with the 'Edit > Apply transformation' tool"));
 
-        // we temporarily detach entity, as it may undergo
-        //"severe" modifications (octree deletion, etc.) --> see
-        // ccHObject::applyGLTransformation
+        ccGLMatrix histBefore = entity->getGLTransformationHistory();
+
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
         entity->applyGLTransformation_recursive(&glTrans);
         putObjectBackIntoDBTree(entity, objContext);
+
+        ccGLMatrix histAfter = entity->getGLTransformationHistory();
+
+        auto* undoMgr = ecvViewManager::instance().undoManager();
+        if (undoMgr) {
+            auto restoreFunc = [this](ccHObject* ent, const ccGLMatrix& t) {
+                ccHObjectContext ctx = removeObjectTemporarilyFromDBTree(ent);
+                ent->setGLTransformation(t);
+                ent->applyGLTransformation_recursive();
+                putObjectBackIntoDBTree(ent, ctx);
+            };
+            auto refreshFunc = [this]() { refreshSelected(); };
+            undoMgr->push(new ecvTransformCommand(
+                    entity, histBefore, histAfter, glTrans,
+                    restoreFunc, refreshFunc,
+                    tr("Match BB center '%1'").arg(entity->getName())));
+        }
     }
 
-    // reselect previously selected entities!
     if (m_ccRoot) m_ccRoot->selectEntities(selectedEntities);
 
     zoomOnSelectedEntities();
