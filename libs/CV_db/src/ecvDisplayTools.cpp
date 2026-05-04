@@ -75,6 +75,10 @@ ecvGenericGLDisplay* displayOwningContext(const ecvViewContext* ctxPtr) {
     return s_tools;
 }
 
+/// Carries forceRedraw from RedrawDisplay(bool) into RedrawDisplay(ctx)
+/// without changing the public ctx overload signature.
+bool g_redrawDisplayForceRedraw = true;
+
 }  // namespace
 
 bool ecvDisplayTools::USE_2D = true;
@@ -96,7 +100,7 @@ static int viewportHeightFor(ecvGenericGLDisplay* display) {
         auto* ctx = display->viewContext();
         if (ctx) return ctx->glViewport.height();
     }
-    return s_tools->effectiveCtx().glViewport.height();
+    return ecvViewManager::instance().resolveViewContext().glViewport.height();
 }
 
 // ================================================================
@@ -290,7 +294,7 @@ void ecvDisplayTools::initializeSharedInstance(ecvDisplayTools* displayTools,
     s_tools->registerVisualizer(win, stereoMode);
 
     s_tools->m_uniqueID = ++s_GlWindowNumber;  // GL window unique ID
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = s_tools->m_primaryCtx;
     ctx.lastMousePos = QPoint(-1, -1);
     ctx.lastMouseMovePos = QPoint(-1, -1);
     ctx.validModelviewMatrix = false;
@@ -478,10 +482,10 @@ void ecvDisplayTools::scheduleFullRedraw(unsigned maxDelay_ms) {
 void ecvDisplayTools::onPointPicking(const CCVector3& p,
                                      int index,
                                      const std::string& id) {
-    // Sync VTK pick results into the effective view context so that
+    // Sync VTK pick results into resolveViewContext() so that
     // doPicking → StartOpenGLPicking / StartCPUBasedPointPicking can
-    // read them from effectiveCtx() (Phase-A bridging).
-    ecvViewContext& ctx = effectiveCtx();
+    // read them from resolveViewContext().
+    ecvViewContext& ctx = ecvViewManager::instance().resolveViewContext();
     ctx.lastPickedPoint = p;
     ctx.lastPointIndex = index;
     ctx.lastPickedId = id.c_str();
@@ -582,9 +586,9 @@ void ecvDisplayTools::doPicking() {
 }
 
 void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
-    // Phase M2.3: use effectiveCtx() for multi-view correctness instead
+    // Phase M2.3: resolveViewContext for multi-view correctness instead
     // of m_primaryCtx (which ignores secondary views).
-    const auto& ctx = effectiveCtx();
+    const auto& ctx = ecvViewManager::instance().resolveViewContext();
 
     // in perspective mode, wheel event corresponds to 'walking'
     if (ctx.viewportParams.perspectiveView) {
@@ -708,7 +712,7 @@ void ecvDisplayTools::SetPointSize(float size, bool silent, int viewport) {
         av->setViewportParameters(vp);
     }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (ctx.viewportParams.defaultPointSize != newSize) {
         ctx.viewportParams.defaultPointSize = newSize;
 
@@ -722,13 +726,14 @@ void ecvDisplayTools::SetPointSize(float size, bool silent, int viewport) {
 }
 
 void ecvDisplayTools::SetPointSizeRecursive(int size) {
-    // we draw 3D entities
-    if (s_tools->m_globalDBRoot) {
-        s_tools->m_globalDBRoot->setPointSizeRecursive(size);
+    auto& vm = ecvViewManager::instance();
+    if (auto* root = vm.globalDBRoot()) {
+        root->setPointSizeRecursive(size);
     }
 
-    if (s_tools->m_winDBRoot) {
-        s_tools->m_winDBRoot->setPointSizeRecursive(size);
+    if (auto* dt = vm.displayTools();
+        dt && dt->m_winDBRoot) {
+        dt->m_winDBRoot->setPointSizeRecursive(size);
     }
 }
 
@@ -747,7 +752,7 @@ void ecvDisplayTools::SetLineWidth(float width, bool silent, int viewport) {
         av->setViewportParameters(vp);
     }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (ctx.viewportParams.defaultLineWidth != newWidth) {
         ctx.viewportParams.defaultLineWidth = newWidth;
         if (!silent) {
@@ -760,13 +765,14 @@ void ecvDisplayTools::SetLineWidth(float width, bool silent, int viewport) {
 }
 
 void ecvDisplayTools::SetLineWithRecursive(PointCoordinateType with) {
-    // we draw 3D entities
-    if (s_tools->m_globalDBRoot) {
-        s_tools->m_globalDBRoot->setLineWidthRecursive(with);
+    auto& vm = ecvViewManager::instance();
+    if (auto* root = vm.globalDBRoot()) {
+        root->setLineWidthRecursive(with);
     }
 
-    if (s_tools->m_winDBRoot) {
-        s_tools->m_winDBRoot->setLineWidthRecursive(with);
+    if (auto* dt = vm.displayTools();
+        dt && dt->m_winDBRoot) {
+        dt->m_winDBRoot->setLineWidthRecursive(with);
     }
 }
 
@@ -776,7 +782,7 @@ void ecvDisplayTools::SetViewportDefaultPointSize(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetViewportDefaultPointSize(float size) {
-    SetViewportDefaultPointSize(s_tools->effectiveCtx(), size);
+    SetViewportDefaultPointSize(ecvViewManager::instance().resolveViewContext(), size);
 }
 
 void ecvDisplayTools::SetViewportDefaultLineWidth(ecvViewContext& ctx,
@@ -785,7 +791,7 @@ void ecvDisplayTools::SetViewportDefaultLineWidth(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetViewportDefaultLineWidth(float width) {
-    SetViewportDefaultLineWidth(s_tools->effectiveCtx(), width);
+    SetViewportDefaultLineWidth(ecvViewManager::instance().resolveViewContext(), width);
 }
 
 void ecvDisplayTools::StartPicking(PickingParameters& params) {
@@ -923,7 +929,7 @@ void ecvDisplayTools::SetZNearCoef(ecvViewContext& ctx, double coef) {
 }
 
 void ecvDisplayTools::SetZNearCoef(double coef) {
-    SetZNearCoef(s_tools->effectiveCtx(), coef);
+    SetZNearCoef(ecvViewManager::instance().resolveViewContext(), coef);
 }
 
 // DGM: WARNING: OpenGL picking with the picking buffer is depreacted.
@@ -1008,7 +1014,7 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::StartOpenGLPicking(const PickingParameters& params) {
-    StartOpenGLPicking(s_tools->effectiveCtx(), params);
+    StartOpenGLPicking(ecvViewManager::instance().resolveViewContext(), params);
 }
 
 void ecvDisplayTools::StartCPUBasedPointPicking(
@@ -1344,7 +1350,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
 
 void ecvDisplayTools::StartCPUBasedPointPicking(
         const PickingParameters& params) {
-    StartCPUBasedPointPicking(s_tools->effectiveCtx(), params);
+    StartCPUBasedPointPicking(ecvViewManager::instance().resolveViewContext(), params);
 }
 
 ccHObject* ecvDisplayTools::GetPickedEntity(const ecvViewContext& ctx,
@@ -1364,7 +1370,7 @@ ccHObject* ecvDisplayTools::GetPickedEntity(const ecvViewContext& ctx,
 }
 
 ccHObject* ecvDisplayTools::GetPickedEntity(const PickingParameters& params) {
-    return GetPickedEntity(s_tools->effectiveCtx(), params);
+    return GetPickedEntity(ecvViewManager::instance().resolveViewContext(), params);
 }
 
 QPointF ecvDisplayTools::ToCenteredGLCoordinates(int x, int y) {
@@ -1409,7 +1415,7 @@ void ecvDisplayTools::SetPivotVisibility(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetPivotVisibility(PivotVisibility vis) {
-    SetPivotVisibility(s_tools->effectiveCtx(), vis);
+    SetPivotVisibility(ecvViewManager::instance().resolveViewContext(), vis);
 }
 
 void ecvDisplayTools::ResizeGL(ecvViewContext& ctx, int w, int h) {
@@ -1430,7 +1436,7 @@ void ecvDisplayTools::ResizeGL(ecvViewContext& ctx, int w, int h) {
 }
 
 void ecvDisplayTools::ResizeGL(int w, int h) {
-    ResizeGL(s_tools->effectiveCtx(), w, h);
+    ResizeGL(ecvViewManager::instance().resolveViewContext(), w, h);
 }
 
 void ecvDisplayTools::MoveCamera(ecvViewContext& ctx,
@@ -1448,7 +1454,7 @@ void ecvDisplayTools::MoveCamera(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::MoveCamera(float dx, float dy, float dz) {
-    MoveCamera(s_tools->effectiveCtx(), dx, dy, dz);
+    MoveCamera(ecvViewManager::instance().resolveViewContext(), dx, dy, dz);
 }
 
 void ecvDisplayTools::UpdateActiveItemsList(
@@ -1605,7 +1611,7 @@ CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(
 }
 
 CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y) {
-    return ConvertMousePositionToOrientation(s_tools->effectiveCtx(), x, y);
+    return ConvertMousePositionToOrientation(ecvViewManager::instance().resolveViewContext(), x, y);
 }
 
 void ecvDisplayTools::RotateBaseViewMat(ecvViewContext& ctx,
@@ -1630,7 +1636,7 @@ void ecvDisplayTools::RotateBaseViewMat(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::RotateBaseViewMat(const ccGLMatrixd& rotMat) {
-    RotateBaseViewMat(s_tools->effectiveCtx(), rotMat);
+    RotateBaseViewMat(ecvViewManager::instance().resolveViewContext(), rotMat);
 }
 
 ccGLMatrixd ecvDisplayTools::GenerateViewMat(CC_VIEW_ORIENTATION orientation) {
@@ -1839,7 +1845,7 @@ void ecvDisplayTools::SetView(ecvViewContext& ctx,
 
 void ecvDisplayTools::SetView(CC_VIEW_ORIENTATION orientation,
                               bool forceRedraw /*=false*/) {
-    SetView(s_tools->effectiveCtx(), orientation, forceRedraw);
+    SetView(ecvViewManager::instance().resolveViewContext(), orientation, forceRedraw);
 }
 
 inline float RoundScale(float equivalentWidth) {
@@ -1873,7 +1879,7 @@ float ecvDisplayTools::ComputePerspectiveZoom(const ecvViewContext& ctx) {
 }
 
 float ecvDisplayTools::ComputePerspectiveZoom() {
-    return ComputePerspectiveZoom(s_tools->effectiveCtx());
+    return ComputePerspectiveZoom(ecvViewManager::instance().resolveViewContext());
 }
 
 ccGLMatrixd& ecvDisplayTools::GetModelViewMatrix(ecvViewContext& ctx) {
@@ -1882,7 +1888,7 @@ ccGLMatrixd& ecvDisplayTools::GetModelViewMatrix(ecvViewContext& ctx) {
 }
 
 ccGLMatrixd& ecvDisplayTools::GetModelViewMatrix() {
-    return GetModelViewMatrix(s_tools->effectiveCtx());
+    return GetModelViewMatrix(ecvViewManager::instance().resolveViewContext());
 }
 
 ccGLMatrixd& ecvDisplayTools::GetProjectionMatrix(ecvViewContext& ctx) {
@@ -1891,7 +1897,7 @@ ccGLMatrixd& ecvDisplayTools::GetProjectionMatrix(ecvViewContext& ctx) {
 }
 
 ccGLMatrixd& ecvDisplayTools::GetProjectionMatrix() {
-    return GetProjectionMatrix(s_tools->effectiveCtx());
+    return GetProjectionMatrix(ecvViewManager::instance().resolveViewContext());
 }
 
 ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
@@ -1998,7 +2004,7 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
         bool withGLfeatures,
         ProjectionMetrics* metrics /*=nullptr*/,
         double* eyeOffset /*=nullptr*/) {
-    return ComputeProjectionMatrix(s_tools->effectiveCtx(), withGLfeatures,
+    return ComputeProjectionMatrix(ecvViewManager::instance().resolveViewContext(), withGLfeatures,
                                    metrics, eyeOffset);
 }
 
@@ -2018,7 +2024,7 @@ void ecvDisplayTools::UpdateProjectionMatrix(ecvViewContext& ctx) {
 }
 
 void ecvDisplayTools::UpdateProjectionMatrix() {
-    UpdateProjectionMatrix(s_tools->effectiveCtx());
+    UpdateProjectionMatrix(ecvViewManager::instance().resolveViewContext());
 }
 
 CCVector3d ecvDisplayTools::GetRealCameraCenter(const ecvViewContext& ctx) {
@@ -2035,7 +2041,7 @@ CCVector3d ecvDisplayTools::GetRealCameraCenter(const ecvViewContext& ctx) {
 }
 
 CCVector3d ecvDisplayTools::GetRealCameraCenter() {
-    return GetRealCameraCenter(s_tools->effectiveCtx());
+    return GetRealCameraCenter(ecvViewManager::instance().resolveViewContext());
 }
 
 ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const ecvViewContext& ctx) {
@@ -2045,7 +2051,7 @@ ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const ecvViewContext& ctx) {
 }
 
 ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix() {
-    return ComputeModelViewMatrix(s_tools->effectiveCtx());
+    return ComputeModelViewMatrix(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::UpdateModelViewMatrix(ecvViewContext& ctx) {
@@ -2054,7 +2060,7 @@ void ecvDisplayTools::UpdateModelViewMatrix(ecvViewContext& ctx) {
 }
 
 void ecvDisplayTools::UpdateModelViewMatrix() {
-    UpdateModelViewMatrix(s_tools->effectiveCtx());
+    UpdateModelViewMatrix(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::SetBaseViewMat(ecvViewContext& ctx, ccGLMatrixd& mat) {
@@ -2065,7 +2071,7 @@ void ecvDisplayTools::SetBaseViewMat(ecvViewContext& ctx, ccGLMatrixd& mat) {
 }
 
 void ecvDisplayTools::SetBaseViewMat(ccGLMatrixd& mat) {
-    SetBaseViewMat(s_tools->effectiveCtx(), mat);
+    SetBaseViewMat(ecvViewManager::instance().resolveViewContext(), mat);
 }
 
 void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
@@ -2145,7 +2151,7 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView) {
-    SetPerspectiveState(s_tools->effectiveCtx(), state, objectCenteredView);
+    SetPerspectiveState(ecvViewManager::instance().resolveViewContext(), state, objectCenteredView);
 }
 
 bool ecvDisplayTools::ObjectPerspectiveEnabled(const ecvViewContext& ctx) {
@@ -2154,7 +2160,7 @@ bool ecvDisplayTools::ObjectPerspectiveEnabled(const ecvViewContext& ctx) {
 }
 
 bool ecvDisplayTools::ObjectPerspectiveEnabled() {
-    return ObjectPerspectiveEnabled(s_tools->effectiveCtx());
+    return ObjectPerspectiveEnabled(ecvViewManager::instance().resolveViewContext());
 }
 
 bool ecvDisplayTools::ViewerPerspectiveEnabled(const ecvViewContext& ctx) {
@@ -2163,7 +2169,7 @@ bool ecvDisplayTools::ViewerPerspectiveEnabled(const ecvViewContext& ctx) {
 }
 
 bool ecvDisplayTools::ViewerPerspectiveEnabled() {
-    return ViewerPerspectiveEnabled(s_tools->effectiveCtx());
+    return ViewerPerspectiveEnabled(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
@@ -2178,7 +2184,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
         return;
     }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (ctx.bubbleViewModeEnabled) {
         CVLog::Warning(
                 "[updateConstellationCenterAndZoom] Not when bubble-view is "
@@ -2193,7 +2199,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
     if (aBox) {
         zoomedBox = (*aBox);
     } else {
-        GetVisibleObjectsBB(zoomedBox, sharedTools());
+        GetVisibleObjectsBB(zoomedBox, ecvViewManager::instance().displayTools());
     }
 
     if (!zoomedBox.isValid()) {
@@ -2243,17 +2249,19 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
     // CRITICAL: Update 2D labels after zoom operation to ensure they align with
     // their 3D anchor points. This fixes the issue where labels become detached
     // after zoom operations (zoom on selected, zoom to box, zoom to global).
-    s_tools->Update2DLabel(true);
+    if (auto* dt = ecvViewManager::instance().displayTools()) {
+        dt->Update2DLabel(true);
+    }
 }
 
 void ecvDisplayTools::SetRedrawRecursive(bool redraw /* = false*/) {
-    if (!sharedTools()) return;
+    if (!ecvViewManager::instance().displayTools()) return;
     if (auto* scene = GetSceneDB()) scene->setRedrawFlagRecursive(redraw);
     if (auto* own = GetOwnDB()) own->setRedrawFlagRecursive(redraw);
 }
 
 void ecvDisplayTools::UpdateNamePoseRecursive() {
-    if (!sharedTools()) return;
+    if (!ecvViewManager::instance().displayTools()) return;
     if (auto* scene = GetSceneDB()) scene->updateNameIn3DRecursive();
     if (auto* own = GetOwnDB()) own->updateNameIn3DRecursive();
 
@@ -2278,14 +2286,15 @@ void ecvDisplayTools::SetRedrawRecursive(ccHObject* obj,
 void ecvDisplayTools::RedrawObject(ccHObject* obj,
                                    bool only2D /* = false*/,
                                    bool forceRedraw /* = true*/) {
-    if (!obj || !sharedTools()) return;
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (!obj || !dt) return;
     SetRedrawRecursive(false);
     obj->setRedrawFlagRecursive(true);
 
     // If entity lives in a secondary view, redraw that view directly
     // so property changes (e.g. SF scale visibility) take effect there.
     ecvGenericGLDisplay* disp = obj->getDisplay();
-    if (disp && disp != sharedTools()) {
+    if (disp && disp != dt) {
         disp->redraw(only2D, forceRedraw);
     }
     RedrawDisplay(only2D, forceRedraw);
@@ -2294,7 +2303,8 @@ void ecvDisplayTools::RedrawObject(ccHObject* obj,
 void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
                                     bool only2D /* = false*/,
                                     bool forceRedraw /* = true*/) {
-    if (!sharedTools()) return;
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (!dt) return;
     SetRedrawRecursive(false);
     for (auto* obj : objects) {
         if (obj) obj->setRedrawFlagRecursive(true);
@@ -2303,7 +2313,7 @@ void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
     for (auto* obj : objects) {
         if (!obj) continue;
         ecvGenericGLDisplay* disp = obj->getDisplay();
-        if (disp && disp != sharedTools()) {
+        if (disp && disp != dt) {
             disp->redraw(only2D, forceRedraw);
         }
     }
@@ -2312,13 +2322,15 @@ void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,
 
 void ecvDisplayTools::GetVisibleObjectsBB(ccBBox& box,
                                           const ecvGenericGLDisplay* display) {
-    if (s_tools->m_globalDBRoot) {
-        box = s_tools->m_globalDBRoot->getDisplayBB_recursive(false, display);
+    auto& vm = ecvViewManager::instance();
+    if (auto* root = vm.globalDBRoot()) {
+        box = root->getDisplayBB_recursive(false, display);
     }
 
-    if (s_tools->m_winDBRoot) {
+    if (auto* dt = vm.displayTools();
+        dt && dt->m_winDBRoot) {
         ccBBox ownBox =
-                s_tools->m_winDBRoot->getDisplayBB_recursive(false, display);
+                dt->m_winDBRoot->getDisplayBB_recursive(false, display);
         if (ownBox.isValid()) {
             box += ownBox;
         }
@@ -2390,13 +2402,13 @@ void ecvDisplayTools::DisplayOverlayEntities(ecvViewContext& ctx, bool state) {
 }
 
 void ecvDisplayTools::DisplayOverlayEntities(bool state) {
-    DisplayOverlayEntities(s_tools->effectiveCtx(), state);
+    DisplayOverlayEntities(ecvViewManager::instance().resolveViewContext(), state);
 }
 
 void ecvDisplayTools::SetSceneDB(ccHObject* root) {
     ecvViewManager::instance().setGlobalDBRoot(root);
-    if (s_tools) {
-        s_tools->m_globalDBRoot = root;
+    if (auto* dt = ecvViewManager::instance().displayTools()) {
+        dt->m_globalDBRoot = root;
     }
     ZoomGlobal();
 }
@@ -2413,8 +2425,9 @@ void ecvDisplayTools::AddToOwnDB(ccHObject* obj, bool noDependency /*=true*/) {
         return;
     }
 
-    if (s_tools->m_winDBRoot) {
-        s_tools->m_winDBRoot->addChild(
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (dt && dt->m_winDBRoot) {
+        dt->m_winDBRoot->addChild(
                 obj, noDependency ? ccHObject::DP_NONE
                                   : ccHObject::DP_PARENT_OF_OTHER);
     } else {
@@ -2428,25 +2441,12 @@ void ecvDisplayTools::RemoveFromOwnDB(ccHObject* obj) {
         av->removeFromOwnDB(obj);
         return;
     }
-    if (s_tools->m_winDBRoot) s_tools->m_winDBRoot->removeChild(obj);
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (dt && dt->m_winDBRoot) dt->m_winDBRoot->removeChild(obj);
 }
 
 void ecvDisplayTools::SetRemoveViewIDs(std::vector<removeInfo>& removeinfos) {
-    auto& vm = ecvViewManager::instance();
-    if (removeinfos.size() > 0) {
-        vm.removeInfos() = removeinfos;
-        vm.setRemoveFlag(true);
-        if (s_tools) {
-            s_tools->m_removeInfos = removeinfos;
-            s_tools->m_removeFlag = true;
-        }
-    } else {
-        vm.setRemoveFlag(false);
-        vm.removeInfos().clear();
-        if (s_tools) {
-            s_tools->m_removeFlag = false;
-        }
-    }
+    ecvViewManager::instance().setRemoveViewIds(removeinfos);
 }
 
 void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport) {
@@ -2454,7 +2454,8 @@ void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport) {
         dt->zoomCamera(zoomFactor, viewport);
     }
     if (!GetViewportParameters().perspectiveView) {
-        sharedTools()->UpdateZoom(static_cast<float>(zoomFactor));
+        UpdateZoom(ecvViewManager::instance().resolveViewContext(),
+                   static_cast<float>(zoomFactor));
     }
     UpdateDisplayParameters();
 }
@@ -2471,7 +2472,7 @@ void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
         }
     }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     ctx.interactionFlags = flags;
 
 #ifdef CV_GL_WINDOW_USE_QWINDOW
@@ -2496,7 +2497,7 @@ ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::GetInteractionMode() {
     if (av) {
         return av->getInteractionMode();
     }
-    return s_tools->effectiveCtx().interactionFlags;
+    return ecvViewManager::instance().resolveViewContext().interactionFlags;
 }
 
 CCVector3d ecvDisplayTools::GetCurrentViewDir(const ecvViewContext& ctx) {
@@ -2510,7 +2511,7 @@ CCVector3d ecvDisplayTools::GetCurrentViewDir() {
     auto* av = activeSecondaryView();
     if (av && av->viewContext())
         return GetCurrentViewDir(*av->viewContext());
-    return GetCurrentViewDir(s_tools->effectiveCtx());
+    return GetCurrentViewDir(ecvViewManager::instance().resolveViewContext());
 }
 
 CCVector3d ecvDisplayTools::GetCurrentUpDir(const ecvViewContext& ctx) {
@@ -2524,7 +2525,7 @@ CCVector3d ecvDisplayTools::GetCurrentUpDir() {
     auto* av = activeSecondaryView();
     if (av && av->viewContext())
         return GetCurrentUpDir(*av->viewContext());
-    return GetCurrentUpDir(s_tools->effectiveCtx());
+    return GetCurrentUpDir(ecvViewManager::instance().resolveViewContext());
 }
 
 float ecvDisplayTools::GetFov() {
@@ -2533,7 +2534,7 @@ float ecvDisplayTools::GetFov() {
         const auto& vp = av->getViewportParameters();
         return vp.fov_deg;
     }
-    const auto& ctx = s_tools->effectiveCtx();
+    const auto& ctx = ecvViewManager::instance().resolveViewContext();
     return (ctx.bubbleViewModeEnabled ? ctx.bubbleViewFov_deg
                                       : ctx.viewportParams.fov_deg);
 }
@@ -2587,7 +2588,7 @@ void ecvDisplayTools::SetupProjectiveViewport(
         float ar /*=1.0f*/,
         bool viewerBasedPerspective /*=true*/,
         bool bubbleViewMode /*=false*/) {
-    SetupProjectiveViewport(s_tools->effectiveCtx(), cameraMatrix,
+    SetupProjectiveViewport(ecvViewManager::instance().resolveViewContext(), cameraMatrix,
                             fov_deg, ar, viewerBasedPerspective,
                             bubbleViewMode);
 }
@@ -2607,7 +2608,7 @@ void ecvDisplayTools::SetAspectRatio(ecvViewContext& ctx, float ar) {
 }
 
 void ecvDisplayTools::SetAspectRatio(float ar) {
-    SetAspectRatio(s_tools->effectiveCtx(), ar);
+    SetAspectRatio(ecvViewManager::instance().resolveViewContext(), ar);
 }
 
 void ecvDisplayTools::SetFov(ecvViewContext& ctx, float fov_deg) {
@@ -2638,7 +2639,7 @@ void ecvDisplayTools::SetFov(ecvViewContext& ctx, float fov_deg) {
 }
 
 void ecvDisplayTools::SetFov(float fov_deg) {
-    SetFov(s_tools->effectiveCtx(), fov_deg);
+    SetFov(ecvViewManager::instance().resolveViewContext(), fov_deg);
 }
 
 void ecvDisplayTools::DisplayNewMessage(const QString& message,
@@ -2658,7 +2659,7 @@ void ecvDisplayTools::DisplayNewMessage(const QString& message,
 void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
                                     bool autoUpdateCameraPos /*=false*/,
                                     bool verbose /*=false*/) {
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (autoUpdateCameraPos &&
         (!ctx.viewportParams.perspectiveView ||
          ctx.viewportParams.objectCenteredView)) {
@@ -2695,7 +2696,7 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
 }
 
 void ecvDisplayTools::SetAutoPickPivotAtCenter(bool state) {
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (ctx.autoPickPivotAtCenter != state) {
         ctx.autoPickPivotAtCenter = state;
 
@@ -2713,11 +2714,11 @@ void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx, bool state,
 }
 
 void ecvDisplayTools::LockRotationAxis(bool state, const CCVector3d& axis) {
-    LockRotationAxis(s_tools->effectiveCtx(), state, axis);
+    LockRotationAxis(ecvViewManager::instance().resolveViewContext(), state, axis);
 }
 
 void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
-    const auto& ctx = s_tools->effectiveCtx();
+    const auto& ctx = ecvViewManager::instance().resolveViewContext();
     CONTEXT.glW = ctx.glViewport.width();
     CONTEXT.glH = ctx.glViewport.height();
     CONTEXT.devicePixelRatio = static_cast<float>(GetDevicePixelRatio());
@@ -2838,7 +2839,7 @@ void ecvDisplayTools::SetCameraPos(ecvViewContext& ctx, const CCVector3d& P) {
 }
 
 void ecvDisplayTools::SetCameraPos(const CCVector3d& P) {
-    SetCameraPos(s_tools->effectiveCtx(), P);
+    SetCameraPos(ecvViewManager::instance().resolveViewContext(), P);
 }
 
 const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
@@ -2869,7 +2870,7 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
     // get/compute the projection matrix
     { GetProjectionMatrix(params.projectionMat.data()); }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     ccGLMatrixd rotationMat;
     rotationMat.setRotation(
             ccGLMatrixd::ToEigenMatrix3(params.modelViewMat).data());
@@ -2952,7 +2953,7 @@ void ecvDisplayTools::UpdateDisplayParameters(ecvViewContext& ctx) {
 }
 
 void ecvDisplayTools::UpdateDisplayParameters() {
-    UpdateDisplayParameters(s_tools->effectiveCtx());
+    UpdateDisplayParameters(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::SetViewportParameters(
@@ -2994,7 +2995,7 @@ void ecvDisplayTools::SetViewportParameters(
 
 void ecvDisplayTools::SetViewportParameters(
         const ecvViewportParameters& params) {
-    SetViewportParameters(s_tools->effectiveCtx(), params);
+    SetViewportParameters(ecvViewManager::instance().resolveViewContext(), params);
 }
 
 const ecvViewportParameters& ecvDisplayTools::GetViewportParameters(
@@ -3008,7 +3009,7 @@ const ecvViewportParameters& ecvDisplayTools::GetViewportParameters() {
         return av->getViewportParameters();
     }
     UpdateDisplayParameters();
-    return GetViewportParameters(s_tools->effectiveCtx());
+    return GetViewportParameters(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::SetBubbleViewMode(ecvViewContext& ctx, bool state) {
@@ -3034,7 +3035,7 @@ void ecvDisplayTools::SetBubbleViewMode(ecvViewContext& ctx, bool state) {
 }
 
 void ecvDisplayTools::SetBubbleViewMode(bool state) {
-    SetBubbleViewMode(s_tools->effectiveCtx(), state);
+    SetBubbleViewMode(ecvViewManager::instance().resolveViewContext(), state);
 }
 
 void ecvDisplayTools::SetBubbleViewFov(ecvViewContext& ctx, float fov_deg) {
@@ -3054,7 +3055,7 @@ void ecvDisplayTools::SetBubbleViewFov(ecvViewContext& ctx, float fov_deg) {
 }
 
 void ecvDisplayTools::SetBubbleViewFov(float fov_deg) {
-    SetBubbleViewFov(s_tools->effectiveCtx(), fov_deg);
+    SetBubbleViewFov(ecvViewManager::instance().resolveViewContext(), fov_deg);
 }
 
 void ecvDisplayTools::SetPixelSize(ecvViewContext& ctx, float pixelSize) {
@@ -3067,7 +3068,7 @@ void ecvDisplayTools::SetPixelSize(ecvViewContext& ctx, float pixelSize) {
 }
 
 void ecvDisplayTools::SetPixelSize(float pixelSize) {
-    SetPixelSize(s_tools->effectiveCtx(), pixelSize);
+    SetPixelSize(ecvViewManager::instance().resolveViewContext(), pixelSize);
 }
 
 void ecvDisplayTools::SetZoom(ecvViewContext& ctx, float value) {
@@ -3086,7 +3087,7 @@ void ecvDisplayTools::SetZoom(ecvViewContext& ctx, float value) {
 }
 
 void ecvDisplayTools::SetZoom(float value) {
-    SetZoom(s_tools->effectiveCtx(), value);
+    SetZoom(ecvViewManager::instance().resolveViewContext(), value);
 }
 
 void ecvDisplayTools::UpdateZoom(ecvViewContext& ctx, float zoomFactor) {
@@ -3098,7 +3099,7 @@ void ecvDisplayTools::UpdateZoom(ecvViewContext& ctx, float zoomFactor) {
 }
 
 void ecvDisplayTools::UpdateZoom(float zoomFactor) {
-    UpdateZoom(s_tools->effectiveCtx(), zoomFactor);
+    UpdateZoom(ecvViewManager::instance().resolveViewContext(), zoomFactor);
 }
 
 void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
@@ -3110,7 +3111,7 @@ void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
         av->setPickingMode(mode);
     }
 
-    auto& ctx = s_tools->effectiveCtx();
+    auto& ctx = ecvViewManager::instance().resolveViewContext();
     if (ctx.pickingModeLocked) {
         if ((mode != ctx.pickingMode) && (mode != DEFAULT_PICKING))
             CVLog::Warning(
@@ -3145,7 +3146,7 @@ ecvDisplayTools::PICKING_MODE ecvDisplayTools::GetPickingMode() {
     if (av) {
         return av->getPickingMode();
     }
-    return s_tools->effectiveCtx().pickingMode;
+    return ecvViewManager::instance().resolveViewContext().pickingMode;
 }
 
 void ecvDisplayTools::LockPickingMode(ecvViewContext& ctx, bool state) {
@@ -3153,7 +3154,7 @@ void ecvDisplayTools::LockPickingMode(ecvViewContext& ctx, bool state) {
 }
 
 void ecvDisplayTools::LockPickingMode(bool state) {
-    LockPickingMode(s_tools->effectiveCtx(), state);
+    LockPickingMode(ecvViewManager::instance().resolveViewContext(), state);
 }
 
 bool ecvDisplayTools::IsPickingModeLocked(const ecvViewContext& ctx) {
@@ -3161,7 +3162,7 @@ bool ecvDisplayTools::IsPickingModeLocked(const ecvViewContext& ctx) {
 }
 
 bool ecvDisplayTools::IsPickingModeLocked() {
-    return IsPickingModeLocked(s_tools->effectiveCtx());
+    return IsPickingModeLocked(ecvViewManager::instance().resolveViewContext());
 }
 
 double ecvDisplayTools::ComputeActualPixelSize(const ecvViewContext& ctx) {
@@ -3189,7 +3190,7 @@ double ecvDisplayTools::ComputeActualPixelSize(const ecvViewContext& ctx) {
 }
 
 double ecvDisplayTools::ComputeActualPixelSize() {
-    return ComputeActualPixelSize(s_tools->effectiveCtx());
+    return ComputeActualPixelSize(ecvViewManager::instance().resolveViewContext());
 }
 
 bool ecvDisplayTools::IsRectangularPickingAllowed(const ecvViewContext& ctx) {
@@ -3197,7 +3198,7 @@ bool ecvDisplayTools::IsRectangularPickingAllowed(const ecvViewContext& ctx) {
 }
 
 bool ecvDisplayTools::IsRectangularPickingAllowed() {
-    return IsRectangularPickingAllowed(s_tools->effectiveCtx());
+    return IsRectangularPickingAllowed(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::SetRectangularPickingAllowed(ecvViewContext& ctx,
@@ -3206,7 +3207,7 @@ void ecvDisplayTools::SetRectangularPickingAllowed(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetRectangularPickingAllowed(bool state) {
-    SetRectangularPickingAllowed(s_tools->effectiveCtx(), state);
+    SetRectangularPickingAllowed(ecvViewManager::instance().resolveViewContext(), state);
 }
 
 void ecvDisplayTools::ShowPivotSymbol(ecvViewContext& ctx, bool state) {
@@ -3220,7 +3221,7 @@ void ecvDisplayTools::ShowPivotSymbol(ecvViewContext& ctx, bool state) {
 }
 
 void ecvDisplayTools::ShowPivotSymbol(bool state) {
-    ShowPivotSymbol(s_tools->effectiveCtx(), state);
+    ShowPivotSymbol(ecvViewManager::instance().resolveViewContext(), state);
 }
 
 int ecvDisplayTools::GetFontPointSize() {
@@ -3277,7 +3278,11 @@ void ecvDisplayTools::SetFocusToScreen() {
 }
 
 void ecvDisplayTools::ToBeRefreshed() {
-    s_tools->m_shouldBeRefreshed = true;
+    if (auto* av = ecvViewManager::instance().getEffectiveView()) {
+        av->toBeRefreshed();
+    } else if (s_tools) {
+        s_tools->m_shouldBeRefreshed = true;
+    }
 
     InvalidateViewport();
     InvalidateVisualization();
@@ -3285,16 +3290,16 @@ void ecvDisplayTools::ToBeRefreshed() {
 
 void ecvDisplayTools::RefreshDisplay(bool only2D /*=false*/,
                                      bool forceRedraw /* = true*/) {
-    if (s_tools->m_shouldBeRefreshed) {
-        RedrawDisplay(only2D, forceRedraw);
-    }
+    (void)forceRedraw;
+    if (!s_tools || !s_tools->m_shouldBeRefreshed) return;
+    ecvViewManager::instance().refreshAll(only2D);
+    s_tools->m_shouldBeRefreshed = false;
 }
 
 void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
                                     bool only2D /*=false*/) {
-    if (!sharedTools()) return;
-
-    bool forceRedraw = true;
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (!dt) return;
 
     if (ctx.showDebugTraces) {
         RemoveWidgets(
@@ -3309,7 +3314,8 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
         s_tools->m_diagStrings
                 << QString("only2D : %1").arg(only2D ? "true" : "false");
         s_tools->m_diagStrings << QString("ForceRedraw : %1")
-                                          .arg(forceRedraw ? "true" : "false");
+                                          .arg(g_redrawDisplayForceRedraw ? "true"
+                                                                         : "false");
     } else {
         RemoveWidgets(
                 WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, DEBUG_LAYER_ID));
@@ -3350,19 +3356,7 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
         }
     }
 
-    // === Per-view delegation (Phase B) ===
-    // Skip the shared display tools to avoid infinite recursion:
-    // ecvDisplayTools inherits ecvGenericGLDisplay so it may appear in the
-    // view list; calling its virtual redraw() re-enters RedrawDisplay().
-    const auto& views = ecvViewManager::instance().getAllViews();
-    bool hasSecondary = false;
-    for (auto* viewDisplay : views) {
-        if (viewDisplay && viewDisplay != s_tools) {
-            ecvViewManager::ScopedRenderOverride guard(viewDisplay);
-            viewDisplay->redraw(only2D, forceRedraw);
-            hasSecondary = true;
-        }
-    }
+    ecvViewManager::instance().redrawAll(only2D, g_redrawDisplayForceRedraw);
 
     // === Post-render housekeeping ===
     // Phase M4: the legacy singleton draw path (background, 3D, foreground,
@@ -3380,7 +3374,8 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
 
 void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
                                     bool forceRedraw /* = true*/) {
-    RedrawDisplay(s_tools->effectiveCtx(), only2D);
+    g_redrawDisplayForceRedraw = forceRedraw;
+    RedrawDisplay(ecvViewManager::instance().resolveViewContext(), only2D);
 }
 
 void ecvDisplayTools::SetGLViewport(ecvViewContext& ctx, const QRect& rect) {
@@ -3392,7 +3387,7 @@ void ecvDisplayTools::SetGLViewport(ecvViewContext& ctx, const QRect& rect) {
 }
 
 void ecvDisplayTools::SetGLViewport(const QRect& rect) {
-    SetGLViewport(s_tools->effectiveCtx(), rect);
+    SetGLViewport(ecvViewManager::instance().resolveViewContext(), rect);
 }
 
 void ecvDisplayTools::drawCross() {}
@@ -3435,7 +3430,7 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::Draw3D(CC_DRAW_CONTEXT& CONTEXT) {
-    Draw3D(s_tools->effectiveCtx(), CONTEXT);
+    Draw3D(ecvViewManager::instance().resolveViewContext(), CONTEXT);
 }
 
 void ecvDisplayTools::HideShowEntities(const QStringList& viewIDs,
@@ -3463,18 +3458,21 @@ bool ecvDisplayTools::HideShowEntities(const ccHObject* obj, bool visible) {
 
     if (!obj->getDisplay()) {
         const auto& views = ecvViewManager::instance().getAllViews();
-        for (auto* view : views) {
-            if (!view || view == sharedTools()) continue;
-            CC_DRAW_CONTEXT viewCtx = context;
-            viewCtx.display = view;
-            sharedTools()->hideShowEntities(viewCtx);
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            for (auto* view : views) {
+                if (!view || view == dt) continue;
+                CC_DRAW_CONTEXT viewCtx = context;
+                viewCtx.display = view;
+                dt->hideShowEntities(viewCtx);
+            }
         }
     }
     return true;
 }
 
 void ecvDisplayTools::RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT) {
-    sharedTools()->removeEntities(CONTEXT);
+    if (auto* dt = ecvViewManager::instance().displayTools())
+        dt->removeEntities(CONTEXT);
 }
 
 void ecvDisplayTools::RemoveEntities(const ccHObject* obj) {
@@ -3490,11 +3488,13 @@ void ecvDisplayTools::RemoveEntities(const ccHObject* obj) {
 
     if (!obj->getDisplay()) {
         const auto& views = ecvViewManager::instance().getAllViews();
-        for (auto* view : views) {
-            if (!view || view == sharedTools()) continue;
-            CC_DRAW_CONTEXT viewCtx = context;
-            viewCtx.display = view;
-            sharedTools()->removeEntities(viewCtx);
+        if (auto* rmDt = ecvViewManager::instance().displayTools()) {
+            for (auto* view : views) {
+                if (!view || view == rmDt) continue;
+                CC_DRAW_CONTEXT viewCtx = context;
+                viewCtx.display = view;
+                rmDt->removeEntities(viewCtx);
+            }
         }
     }
 }
@@ -3510,7 +3510,7 @@ void ecvDisplayTools::RemoveEntities(const QStringList& viewIDs,
 }
 
 void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT) {
-    const auto& ctx = s_tools->effectiveCtx();
+    const auto& ctx = ecvViewManager::instance().resolveViewContext();
     CONTEXT.drawingFlags = CC_DRAW_2D;
     if (ctx.interactionFlags & INTERACT_TRANSFORM_ENTITIES) {
         CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
@@ -3545,7 +3545,9 @@ void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT) {
                 CONTEXT.drawBackgroundGradient = false;
             }
 
-            s_tools->setBackgroundColor(CONTEXT);
+            if (auto* dt = ecvViewManager::instance().displayTools()) {
+                dt->setBackgroundColor(CONTEXT);
+            }
         }
     }
 }
@@ -3555,7 +3557,7 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
     /****  PASS: 2D/FOREGROUND/NO LIGHT  ****/
     /****************************************/
 
-    const auto& fgCtx = s_tools->effectiveCtx();
+    const auto& fgCtx = ecvViewManager::instance().resolveViewContext();
     CONTEXT.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
     if (fgCtx.interactionFlags & INTERACT_TRANSFORM_ENTITIES) {
         CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
@@ -3634,7 +3636,7 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
             }
 
             // hot-zone
-            { s_tools->DrawClickableItems(0, yStart); }
+            { ecvDisplayTools::DrawClickableItems(0, yStart); }
         }
     }
 }
@@ -3653,7 +3655,8 @@ void ecvDisplayTools::Redraw2DLabel() {
         CC_DRAW_CONTEXT context;
         GetContext(context);
         auto* disp = l->getDisplay();
-        if (disp && disp != sharedTools()) {
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (disp && dt && disp != dt) {
             context.display = disp;
             auto* viewCtx = disp->viewContext();
             if (viewCtx) {
@@ -3692,7 +3695,8 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
                 CC_DRAW_CONTEXT context;
                 GetContext(context);
                 auto* disp = l->getDisplay();
-                if (disp && disp != sharedTools()) {
+                auto* dt = ecvViewManager::instance().displayTools();
+                if (disp && dt && disp != dt) {
                     context.display = disp;
                     auto* viewCtx = disp->viewContext();
                     if (viewCtx) {
@@ -3711,12 +3715,18 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
 }
 
 void ecvDisplayTools::Pick2DLabel(int x, int y) {
-    QString id = s_tools->pick2DLabel(x, y);
+    auto* dt = ecvViewManager::instance().displayTools();
+    QString id = dt ? dt->pick2DLabel(x, y) : QString();
 
-    auto* effView = ecvViewManager::instance().getEffectiveView();
-    std::list<ccInteractor*>& items =
-            effView ? effView->activeItemsRef() : s_tools->m_activeItems;
-    items.clear();
+    std::list<ccInteractor*>* itemsPtr = nullptr;
+    if (auto* effView = ecvViewManager::instance().getEffectiveView()) {
+        itemsPtr = &effView->activeItemsRef();
+    } else if (s_tools) {
+        itemsPtr = &s_tools->m_activeItems;
+    }
+    if (!itemsPtr) return;
+
+    itemsPtr->clear();
     if (!id.isEmpty()) {
         ccHObject::Container labels;
         FilterByEntityType(labels, CV_TYPES::LABEL_2D);
@@ -3725,7 +3735,7 @@ void ecvDisplayTools::Pick2DLabel(int x, int y) {
                 label->isVisible()) {
                 cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
                 if (l->getViewId().compare(id) == 0) {
-                    items.push_back(l);
+                    itemsPtr->push_back(l);
                 }
             }
         }
@@ -3734,10 +3744,14 @@ void ecvDisplayTools::Pick2DLabel(int x, int y) {
 
 void ecvDisplayTools::FilterByEntityType(ccHObject::Container& labels,
                                          CV_CLASS_ENUM type) {
-    if (s_tools->m_globalDBRoot)
-        s_tools->m_globalDBRoot->filterChildren(labels, true, type);
-    if (s_tools->m_winDBRoot)
-        s_tools->m_winDBRoot->filterChildren(labels, true, type);
+    auto& vm = ecvViewManager::instance();
+    if (auto* root = vm.globalDBRoot()) {
+        root->filterChildren(labels, true, type);
+    }
+    if (auto* dt = vm.displayTools();
+        dt && dt->m_winDBRoot) {
+        dt->m_winDBRoot->filterChildren(labels, true, type);
+    }
 }
 
 void ecvDisplayTools::RenderText(
@@ -3836,7 +3850,11 @@ void ecvDisplayTools::DisplayText(
     const unsigned char* col =
             (rgbColor ? rgbColor : GetDisplayParameters().textDefaultCol.rgb);
 
-    QFont realFont = (font ? *font : s_tools->m_font);
+    QFont realFont =
+            (font ? *font
+                  : (ecvViewManager::instance().displayTools()
+                             ? ecvViewManager::instance().displayTools()->m_font
+                             : QFont()));
     QFont textFont = realFont;
     QFontMetrics fm(textFont);
     int margin = fm.height() / 4;
@@ -3938,7 +3956,7 @@ void ecvDisplayTools::DrawClickableItems(
 
     ecvViewContext* dispCtx = display ? display->viewContext() : nullptr;
     const ecvViewContext& hzCtx =
-            dispCtx ? *dispCtx : s_tools->effectiveCtx();
+            dispCtx ? *dispCtx : ecvViewManager::instance().resolveViewContext();
     if (!hzCtx.clickableItemsVisible && !hzCtx.bubbleViewModeEnabled &&
         !fullScreenEnabled) {
         ClearBubbleView();
@@ -4228,7 +4246,9 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM& propertyParam,
         }
 
         propertyParam.viewId = propertyParam.entity->getViewId();
-        s_tools->changeEntityProperties(propertyParam);
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            dt->changeEntityProperties(propertyParam);
+        }
         if (autoUpdate) {
             UpdateScreen();
         }
@@ -4237,6 +4257,9 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM& propertyParam,
 
 void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
                                   bool update /* = false*/) {
+    auto* dt = ecvViewManager::instance().displayTools();
+    if (!dt) return;
+
     ccHObject* entity = param.entity;
     int viewport = param.viewport;
     switch (param.type) {
@@ -4247,11 +4270,11 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
             break;
 
         case WIDGETS_TYPE::WIDGET_T2D: {
-            QFont textFont = s_tools->m_font;
+            QFont textFont = dt->m_font;
             const_cast<WIDGETS_PARAMETER*>(&param)->fontSize =
                     textFont.pointSize();
 
-            s_tools->drawWidgets(param);
+            dt->drawWidgets(param);
         } break;
         case WIDGETS_TYPE::WIDGET_IMAGE:
         case WIDGETS_TYPE::WIDGET_LINE_2D:
@@ -4261,11 +4284,11 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
         case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
         case WIDGETS_TYPE::WIDGET_TRIANGLE_2D:
         case WIDGETS_TYPE::WIDGET_RECTANGLE_2D:
-            s_tools->drawWidgets(param);
+            dt->drawWidgets(param);
             break;
         case WIDGETS_TYPE::WIDGET_LINE_3D:
             if (param.lineWidget.valid) {
-                s_tools->drawWidgets(param);
+                dt->drawWidgets(param);
             }
             break;
         case WIDGETS_TYPE::WIDGET_POLYLINE: {
@@ -4287,10 +4310,10 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
         } break;
         case WIDGETS_TYPE::WIDGET_SPHERE:
         case WIDGETS_TYPE::WIDGET_POINT:
-            s_tools->drawWidgets(param);
+            dt->drawWidgets(param);
             break;
         case WIDGETS_TYPE::WIDGET_CAPTION:
-            s_tools->drawWidgets(param);
+            dt->drawWidgets(param);
             break;
         case WIDGETS_TYPE::WIDGET_T3D:
             break;
@@ -4447,7 +4470,7 @@ bool ecvDisplayTools::GetClick3DPos(const ecvViewContext& ctx,
 }
 
 bool ecvDisplayTools::GetClick3DPos(int x, int y, CCVector3d& P3D) {
-    return GetClick3DPos(s_tools->effectiveCtx(), x, y, P3D);
+    return GetClick3DPos(ecvViewManager::instance().resolveViewContext(), x, y, P3D);
 }
 
 void ecvDisplayTools::DrawPivot(const ecvViewContext& ctx) {
@@ -4482,7 +4505,7 @@ void ecvDisplayTools::DrawPivot(const ecvViewContext& ctx) {
 }
 
 void ecvDisplayTools::DrawPivot() {
-    DrawPivot(s_tools->effectiveCtx());
+    DrawPivot(ecvViewManager::instance().resolveViewContext());
 }
 
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {
@@ -4656,7 +4679,7 @@ void ecvDisplayTools::setZNearCoef(double coef) { SetZNearCoef(coef); }
 void ecvDisplayTools::setFov(float fov_deg) { SetFov(fov_deg); }
 
 void ecvDisplayTools::setPointSizeOnView(float size) {
-    SetPointSize(effectiveCtx(), size);
+    SetPointSize(ecvViewManager::instance().resolveViewContext(), size);
 }
 
 void ecvDisplayTools::rotateWithAxis(const CCVector2i& mousePos,

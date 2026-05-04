@@ -116,8 +116,9 @@ public:
     // Per-view context  (Phase A → Phase E)
     //
     // The primary view's per-view state lives in m_primaryCtx.
-    // Static methods use effectiveCtx() which returns the effective
-    // view's context (secondary ecvGLView or primary singleton).
+    // Instance method effectiveCtx() returns the effective view context.
+    // Parameter-less static wrappers should use
+    // ecvViewManager::instance().resolveViewContext().
     // ================================================================
 
     /// Primary view's per-view state (replaces scattered m_viewportParams etc.)
@@ -185,7 +186,7 @@ public:
     // ================================================================
     // Phase N1: Per-view context parameterized overloads
     // Each has a corresponding singleton wrapper (no ctx param) that
-    // calls effectiveCtx() internally for backward compatibility.
+    // delegate to resolveViewContext() (or ctx-parameterized overloads).
     // ================================================================
 
     static bool IsRectangularPickingAllowed(const ecvViewContext& ctx);
@@ -887,13 +888,15 @@ public:  // Main interface accessors
      * @return Current screen widget pointer
      */
     inline static QWidget* GetCurrentScreen() {
-        if (!sharedTools()) return nullptr;
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) {
+        if (av) {
             QWidget* w = av->asWidget();
             if (w) return w;
         }
-        return sharedTools()->m_currentScreen;
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            return dt->m_currentScreen;
+        }
+        return nullptr;
     }
 
     /**
@@ -907,8 +910,10 @@ public:  // Main interface accessors
      * @return Main screen widget pointer
      */
     inline static QWidget* GetMainScreen() {
-        if (!sharedTools()) return nullptr;
-        return sharedTools()->m_mainScreen;
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            return dt->m_mainScreen;
+        }
+        return nullptr;
     }
 
     /**
@@ -916,7 +921,9 @@ public:  // Main interface accessors
      * @param widget Screen widget to set as main
      */
     inline static void SetMainScreen(QWidget* widget) {
-        sharedTools()->m_mainScreen = widget;
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            dt->m_mainScreen = widget;
+        }
     }
 
     /**
@@ -933,8 +940,8 @@ public:  // Main interface accessors
      */
     inline static void SetMainWindow(QMainWindow* win) {
         ecvViewManager::instance().setMainWindow(win);
-        if (sharedTools()) {
-            sharedTools()->m_win = win;
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            dt->m_win = win;
         }
     }
 
@@ -973,8 +980,10 @@ public:  // Main interface accessors
      */
     inline static ccHObject* GetOwnDB() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) return av->getOwnDB();
-        return sharedTools()->m_winDBRoot;
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (!dt) return nullptr;
+        if (av && av != dt) return av->getOwnDB();
+        return dt->m_winDBRoot;
     }
 
     /**
@@ -1069,12 +1078,14 @@ public:  // Main interface accessors
      */
     inline static ccGLMatrixd& GetBaseViewMat() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) {
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) {
             return const_cast<ecvViewportParameters&>(
                            av->getViewportParameters())
                     .viewMat;
         }
-        return sharedTools()->effectiveCtx().viewportParams.viewMat;
+        return ecvViewManager::instance().resolveViewContext().viewportParams
+                .viewMat;
     }
 
     /**
@@ -1131,12 +1142,14 @@ public:  // Main interface accessors
 
     static inline int GetDevicePixelRatio() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) {
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) {
             return av->getDevicePixelRatio();
         }
         QWidget* screen = GetCurrentScreen();
-        if (screen) return screen->devicePixelRatio();
-        return GetMainWindow()->devicePixelRatio();
+        if (screen) return static_cast<int>(screen->devicePixelRatio());
+        QMainWindow* mw = GetMainWindow();
+        return mw ? static_cast<int>(mw->devicePixelRatio()) : 1;
     }
 
     // New: Cross-platform font size optimization function
@@ -1429,16 +1442,18 @@ public:  // Main interface accessors
     inline static void SetCameraClip(double znear,
                                      double zfar,
                                      int viewport = 0) {
-        sharedTools()->effectiveCtx().viewportParams.zNear = znear;
-        sharedTools()->effectiveCtx().viewportParams.zFar = zfar;
+        auto& ctx = ecvViewManager::instance().resolveViewContext();
+        ctx.viewportParams.zNear = znear;
+        ctx.viewportParams.zFar = zfar;
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) {
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) {
             auto vp = av->getViewportParameters();
             vp.zNear = znear;
             vp.zFar = zfar;
             av->setViewportParameters(vp);
         }
-        sharedTools()->setCameraClip(znear, zfar, viewport);
+        if (dt) dt->setCameraClip(znear, zfar, viewport);
     }
     virtual void setCameraClip(double znear,
                                double zfar,
@@ -1461,16 +1476,18 @@ public:  // Main interface accessors
         return 0; /* do nothing */
     }
     inline static void SetCameraFovy(double fovy, int viewport = 0) {
-        sharedTools()->effectiveCtx().viewportParams.fov_deg =
-                static_cast<float>(fovy);
+        auto& ctx = ecvViewManager::instance().resolveViewContext();
+        ctx.viewportParams.fov_deg = static_cast<float>(fovy);
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) {
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) {
             auto vp = av->getViewportParameters();
             vp.fov_deg = static_cast<float>(fovy);
             av->setViewportParameters(vp);
         }
-        sharedTools()->setCameraFovy(cloudViewer::DegreesToRadians(fovy),
-                                     viewport);
+        if (dt) {
+            dt->setCameraFovy(cloudViewer::DegreesToRadians(fovy), viewport);
+        }
     }
     inline virtual void setCameraFovy(double fovy,
                                       int viewport = 0) { /* do nothing */ }
@@ -1922,10 +1939,11 @@ public:  // visualization matrix transformation
 
     //! Returns whether the window is in exclusive full screen mode or not
     inline static bool ExclusiveFullScreen() {
-        return sharedTools()->effectiveCtx().exclusiveFullscreen;
+        return ecvViewManager::instance().resolveViewContext().exclusiveFullscreen;
     }
     inline static void SetExclusiveFullScreenFlage(bool state) {
-        sharedTools()->effectiveCtx().exclusiveFullscreen = state;
+        ecvViewManager::instance().resolveViewContext().exclusiveFullscreen =
+                state;
     }
 
     //! Sets pixel size (i.e. zoom base)
@@ -2075,7 +2093,7 @@ public:  // visualization matrix transformation
 
     //! Returns pivot visibility
     inline static PivotVisibility GetPivotVisibility() {
-        return sharedTools()->effectiveCtx().pivotVisibility;
+        return GetPivotVisibility(ecvViewManager::instance().resolveViewContext());
     }
 
     //! Shows or hide the pivot symbol
@@ -2125,12 +2143,18 @@ public:  // visualization matrix transformation
             ProjectionMetrics* metrics = nullptr,
             double* eyeOffset = nullptr);
 
-    inline static void Deprecate3DLayer() { sharedTools()->m_updateFBO = true; }
+    inline static void Deprecate3DLayer() {
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            dt->m_updateFBO = true;
+        }
+    }
     inline static void InvalidateViewport() {
-        sharedTools()->effectiveCtx().validProjectionMatrix = false;
+        ecvViewManager::instance().resolveViewContext().validProjectionMatrix =
+                false;
     }
     inline static void InvalidateVisualization() {
-        sharedTools()->effectiveCtx().validModelviewMatrix = false;
+        ecvViewManager::instance().resolveViewContext().validModelviewMatrix =
+                false;
     }
 
     static CCVector3d GetRealCameraCenter();
@@ -2158,7 +2182,9 @@ public:  // visualization matrix transformation
     static void SetBubbleViewMode(bool state);
     //! Returns whether bubble-view mode is enabled or no
     inline static bool BubbleViewModeEnabled() {
-        return sharedTools()->effectiveCtx().bubbleViewModeEnabled;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .bubbleViewModeEnabled;
     }
     //! Set bubble-view f.o.v. (in degrees)
     static void SetBubbleViewFov(float fov_deg);
@@ -2166,23 +2192,30 @@ public:  // visualization matrix transformation
     //! Sets whether to display the coordinates of the point below the cursor
     //! position
     inline static void ShowCursorCoordinates(bool state) {
-        sharedTools()->effectiveCtx().showCursorCoordinates = state;
+        ecvViewManager::instance().resolveViewContext().showCursorCoordinates =
+                state;
     }
     //! Whether the coordinates of the point below the cursor position are
     //! displayed or not
     inline static bool CursorCoordinatesShown() {
-        return sharedTools()->effectiveCtx().showCursorCoordinates;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .showCursorCoordinates;
     }
 
     //! Toggles the automatic setting of the pivot point at the center of the
     //! screen
     static void SetAutoPickPivotAtCenter(bool state);
     static void SendAutoPickPivotAtCenter(bool state) {
-        emit sharedTools() -> autoPickPivot(state);
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            emit dt->autoPickPivot(state);
+        }
     }
     //! Whether the pivot point is automatically set at the center of the screen
     inline static bool AutoPickPivotAtCenter() {
-        return sharedTools()->effectiveCtx().autoPickPivotAtCenter;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .autoPickPivotAtCenter;
     }
 
     //! Lock the rotation axis
@@ -2190,7 +2223,9 @@ public:  // visualization matrix transformation
 
     //! Returns whether the rotation axis is locaked or not
     inline static bool IsRotationAxisLocked() {
-        return sharedTools()->effectiveCtx().rotationAxisLocked;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .rotationAxisLocked;
     }
 
     //! Returns the approximate 3D position of the clicked pixel
@@ -2201,12 +2236,12 @@ public:  // visualization matrix transformation
     // debug traces on screen
     //! Shows debug info on screen
     inline static void EnableDebugTrace(bool state) {
-        sharedTools()->effectiveCtx().showDebugTraces = state;
+        ecvViewManager::instance().resolveViewContext().showDebugTraces = state;
     }
 
     //! Toggles debug info on screen
     inline static void ToggleDebugTrace() {
-        auto& ctx = sharedTools()->effectiveCtx();
+        auto& ctx = ecvViewManager::instance().resolveViewContext();
         ctx.showDebugTraces = !ctx.showDebugTraces;
     }
 
@@ -2259,11 +2294,12 @@ public:  // visualization matrix transformation
             Change 'defaultFontSize' with setDisplayParameters instead!
     **/
     inline static void SetFontPointSize(int pixelSize) {
-        if (!sharedTools()) return;
-        QFont f = ecvViewManager::instance().defaultFont();
-        f.setPointSize(pixelSize);
-        ecvViewManager::instance().setDefaultFont(f);
-        sharedTools()->m_font = f;
+        if (auto* dt = ecvViewManager::instance().displayTools()) {
+            QFont f = ecvViewManager::instance().defaultFont();
+            f.setPointSize(pixelSize);
+            ecvViewManager::instance().setDefaultFont(f);
+            dt->m_font = f;
+        }
     }
     //! Returns current font size
     static int GetFontPointSize();
@@ -2271,10 +2307,13 @@ public:  // visualization matrix transformation
     static int GetLabelFontPointSize();
 
     static void SetClickableItemsVisible(bool state) {
-        sharedTools()->effectiveCtx().clickableItemsVisible = state;
+        ecvViewManager::instance().resolveViewContext().clickableItemsVisible =
+                state;
     }
     static bool GetClickableItemsVisible() {
-        return sharedTools()->effectiveCtx().clickableItemsVisible;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .clickableItemsVisible;
     }
 
     // takes rendering zoom into account!
@@ -2291,11 +2330,11 @@ public:  // visualization matrix transformation
 
     //! Sets picking radius
     inline static void SetPickingRadius(int radius) {
-        sharedTools()->effectiveCtx().pickRadius = radius;
+        ecvViewManager::instance().resolveViewContext().pickRadius = radius;
     }
     //! Returns the current picking radius
     inline static int GetPickingRadius() {
-        return sharedTools()->effectiveCtx().pickRadius;
+        return ecvViewManager::instance().resolveViewContext().pickRadius;
     }
 
     //! Sets whether overlay entities (scale, tetrahedron, etc.) should be
@@ -2305,7 +2344,9 @@ public:  // visualization matrix transformation
     //! Returns whether overlay entities (scale, tetrahedron, etc.) are
     //! displayed or not
     inline static bool OverlayEntitiesAreDisplayed() {
-        return sharedTools()->effectiveCtx().displayOverlayEntities;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .displayOverlayEntities;
     }
 
     //! Currently active items
@@ -2409,19 +2450,35 @@ public:  // event representation
 
     QStringList m_diagStrings;
 
-    static int Width() { return size().width(); }
-    static int Height() { return size().height(); }
-    static QSize size() { return GetScreenSize(); }
+    static int Width() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av) {
+            QWidget* w = av->asWidget();
+            return w ? w->width() : 0;
+        }
+        return 0;
+    }
+    static int Height() {
+        auto* av = ecvViewManager::instance().getEffectiveView();
+        if (av) {
+            QWidget* w = av->asWidget();
+            return w ? w->height() : 0;
+        }
+        return 0;
+    }
+    static QSize size() { return QSize(Width(), Height()); }
 
     static int GlWidth() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) return av->glWidth();
-        return sharedTools()->effectiveCtx().glViewport.width();
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) return av->glWidth();
+        return ecvViewManager::instance().resolveViewContext().glViewport.width();
     }
     static int GlHeight() {
         auto* av = ecvViewManager::instance().getEffectiveView();
-        if (av && av != sharedTools()) return av->glHeight();
-        return sharedTools()->effectiveCtx().glViewport.height();
+        auto* dt = ecvViewManager::instance().displayTools();
+        if (av && av != dt) return av->glHeight();
+        return ecvViewManager::instance().resolveViewContext().glViewport.height();
     }
     static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
