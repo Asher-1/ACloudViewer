@@ -2862,9 +2862,6 @@ void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
     }
 
     ecvViewManager::instance().setOverriddenDisplayParameters(params);
-    m_overridenDisplayParametersEnabled = true;
-    m_overridenDisplayParameters = params;
-    m_overridenDisplayParameters.initFontSizesIfNeeded();
 
     ecvGui::Set(params);
 }
