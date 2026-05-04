@@ -386,6 +386,13 @@ private:
     ecvGui::ParamStruct m_overriddenDisplayParameters;
     bool m_overriddenDisplayParametersEnabled = false;
 
+    struct CaptureModeOptions {
+        bool enabled = false;
+        float zoomFactor = 1.0f;
+        bool renderOverlayItems = false;
+    };
+    CaptureModeOptions m_captureMode;
+
     // -- Refresh / Timer (not pushed/pulled) --
     bool m_shouldBeRefreshed = false;
     QTimer m_scheduleTimer;
