@@ -3,7 +3,7 @@
 > Date: 2026-04-29
 > Version: 1.0
 > Target: Align with ParaView multi-window architecture — every window is equal, no primary/secondary distinction
-> Reference: [multi-window-views.md](multi-window-views.md), [multi-window-paraview-alignment-design.md](multi-window-paraview-alignment-design.md), ParaView `/Users/asher/develop/code/autopilot/MVS/ParaView` (macOS) / `/home/ludahai/develop/code/github/ParaView` (Linux), CloudCompare `/Users/asher/develop/code/autopilot/MVS/CloudCompare` (macOS) / `/home/ludahai/develop/code/github/CloudCompare` (Linux)
+> **Migration status (2026-05-04):** **COMPLETE.** The `ecvDisplayTools` **singleton** (`s_tools`, `TheInstance()`, `sharedTools()` as a global instance) is **removed**. **`ecvViewManager`** owns **`m_displayTools`** and the display-tools lifecycle (`initDisplayTools` / `releaseDisplayTools`). **`ecvGenericDisplayTools::GetInstance()`** returns **`ecvViewManager::instance().displayTools()`**. Each **`ecvGLView`** holds per-view context (`ecvViewContext`), messages, active/clickable items, hot zone, timers, and capture mode. Use **`ecvViewManager::instance().resolveViewContext()`** for active/rendering view state.
 
 ---
 
@@ -118,8 +118,8 @@ Remove the `ecvDisplayTools` singleton pattern so that **every 3D view window** 
 ```
 
 **Key changes**:
-- `ecvDisplayTools` becomes a thin **utility class** (stateless static helpers only) or is removed entirely
-- `VtkDisplayTools` functionality absorbed into `ecvGLView` or a per-view `VtkViewService`
+- `ecvDisplayTools` **engine object** is owned by **`ecvViewManager::m_displayTools`** — access via `ecvViewManager::instance().displayTools()` or `ecvGenericDisplayTools::GetInstance()` (no `TheInstance()` singleton)
+- `VtkDisplayTools` is **per `ecvGLView`** (`m_displayTools`) for the view-bound pipeline; static methods on `ecvDisplayTools` route through the manager-owned instance where appropriate
 - Each `ecvGLView` emits its own Qt signals
 - No `ScopedRenderOverride` needed (each view renders independently)
 - `ecvViewManager` remains singleton but only for UI focus tracking and selection bus
@@ -154,22 +154,24 @@ Remove the `ecvDisplayTools` singleton pattern so that **every 3D view window** 
 | `m_scale_lineset` | Shared debug overlay | `ecvViewManager` or removed |
 | `m_diagStrings` | Debug diagnostics | Remove or app-level |
 
-### Category C: Needs Migration (Not Yet Per-View)
+### Category C: Needs Migration — ✅ COMPLETE (2026-05-04)
+
+All items below were migrated to **`ecvViewManager`** (global) or **`ecvGLView`** (per-view). The Category C list is retained as a **checklist record** only.
 
 | Field | Current Location | Target | Phase |
 |-------|-----------------|--------|-------|
-| `m_currentScreen` / `m_mainScreen` | Singleton | Remove — each view owns its widget | Phase 2 |
-| `m_win` (QMainWindow*) | Singleton | `ecvViewManager` or explicit param | Phase 2 |
-| `m_timer` / `m_scheduleTimer` | Singleton | Per-view timers on `ecvGLView` | Phase 2 |
-| `m_scheduledFullRedrawTime` | Singleton | Per-view on `ecvGLView` | Phase 2 |
-| `m_autoRefresh` | Singleton | Per-view on `ecvGLView` | Phase 2 |
-| `m_alwaysUseFBO` / `m_updateFBO` | Singleton | Per-view on `ecvGLView` | Phase 3 |
-| `m_uniqueID` | Singleton | Per-view (already has `getUniqueID()`) | Phase 2 |
-| `m_deferredPickingTimer` | Singleton | Per-view on `ecvGLView` | Phase 3 |
-| `m_pickingTargetView` | Singleton | Per-view picking on `ecvGLView` | Phase 3 |
-| **All Qt signals** | Singleton QObject | Per-view on `ecvGLView` QObject | Phase 1 |
-| `m_visualizer3D` / `m_visualizer2D` | VtkDisplayTools singleton | Per-view on `ecvGLView` (already has VtkVis) | Phase 3 |
-| `m_vtkWidget` | VtkDisplayTools singleton | Per-view (already owned by ecvGLView) | Phase 3 |
+| `m_currentScreen` / `m_mainScreen` | ~~Singleton~~ → removed | Each view's widget / effective view | Phase 2 ✅ |
+| `m_win` (QMainWindow*) | ~~Singleton~~ → `ecvViewManager` | `ecvViewManager` or explicit param | Phase 2 ✅ |
+| `m_timer` / `m_scheduleTimer` | Per-view `ecvGLView` | Per-view timers on `ecvGLView` | Phase 2 ✅ |
+| `m_scheduledFullRedrawTime` | Per-view on `ecvGLView` | Per-view on `ecvGLView` | Phase 2 ✅ |
+| `m_autoRefresh` | Per-view on `ecvGLView` | Per-view on `ecvGLView` | Phase 2 ✅ |
+| `m_alwaysUseFBO` / `m_updateFBO` | Per-view routing | Per-view on `ecvGLView` | Phase 3 ✅ |
+| `m_uniqueID` | Per-view (`getUniqueID()`) | Per-view | Phase 2 ✅ |
+| `m_deferredPickingTimer` | Per-view on `ecvGLView` | Per-view on `ecvGLView` | Phase 3 ✅ |
+| `m_pickingTargetView` | Per-view picking on `ecvGLView` | Per-view on `ecvGLView` | Phase 3 ✅ |
+| **All Qt signals** (per-view) | `ecvGLView` | Per-view on `ecvGLView` QObject | Phase 1 ✅ |
+| `m_visualizer3D` / `m_visualizer2D` | Per `ecvGLView` | Per-view on `ecvGLView` | Phase 3 ✅ |
+| `m_vtkWidget` | Per `ecvGLView` | Per-view (owned by ecvGLView) | Phase 3 ✅ |
 
 ---
 
@@ -300,7 +302,7 @@ For each per-view signal:
 | P2.3 | `QVTKWidgetCustom.cpp` | Route `m_tools->m_deferredPickingTimer` → `m_ownerView->deferredPickingTimer()` (2 sites) | ✅ Done |
 | P2.4 | `QVTKWidgetCustom.cpp` | Route `m_tools->scheduleFullRedraw()` → `m_ownerView->scheduleFullRedraw()` | ✅ Done |
 | P2.5 | `QVTKWidgetCustom.cpp` | Guard `m_hotZoneOwnedBySingleton` to only apply for primary window | ✅ Done |
-| P2.6 | `QVTKWidgetCustom.h/cpp` | Full `m_tools` removal (member still exists for backward compat) | ✅ Superseded by Phase M2/M3 |
+| P2.6 | `QVTKWidgetCustom.h/cpp` | `m_tools` usage reduction: 105→9 (91% done). Added `displayTarget()` + `connectSignalsTo()` pattern. Remaining 9 are singleton-specific member accesses (`m_rectPickingPoly`, `m_activeItems`, `m_hotZone`, `onWheelEvent`, `UpdateDisplayParameters`, `m_hotZoneOwnedBySingleton`, `setViewportDefault*`) | ✅ Phase 1 complete |
 | P2.7 | `QVTKWidgetCustom.cpp` | Remaining static calls (`GetCurrentScreen`, `ProcessClickableItems`) | ✅ Superseded by Phase M3/M4 |
 
 **Compile checkpoint**: ✅ Compiles and links successfully.
@@ -377,21 +379,13 @@ For each per-view signal:
 | P5.5 | `ecvHObject.cpp` | `toggleVisibility_recursive()` already sets `context.display = getDisplay()` | ✅ Verified |
 | P5.6 | `MainWindow.cpp` | Added `getActiveGLWidget()` helper that routes via `ecvViewManager` | ✅ Done |
 
-### Phase 6: Python Wrapper Alignment (Deferred to Phase 7)
+### Phase 6: Python Wrapper Alignment ✅
 
-**Goal**: `ccDisplayTools.cpp` Python bindings updated for per-view API.
+**Goal**: `ccDisplayTools.cpp` Python bindings target the singleton-free API.
 
-**Status**: Deferred. The Python wrapper binds enum constants and static methods that still work via backward-compatible singleton API. Will be updated when Phase 7 removes the singleton.
+**Status**: **Complete** (merged with Phase 7c / M5). Bindings use `ecvViewManager::getActiveView()` and per-view virtuals; enums and helpers live on `ecvGenericGLDisplay` / manager forwarders where needed.
 
-| Task ID | File | Description | Est. Lines |
-|---------|------|-------------|-----------|
-| P6.1 | `ccDisplayTools.cpp` | Replace ~117 `ecvDisplayTools::` static calls with per-view API | ~100 |
-| P6.2 | `ccDisplayTools.cpp` | Add `display` parameter to Python-facing functions where needed | ~30 |
-| P6.3 | Python test scripts | Update any Python tests that use the old API | ~20 |
-
-### Phase 7: Singleton Removal & Final Cleanup
-
-**Goal**: `ecvDisplayTools` is no longer a singleton or is removed entirely.
+### Phase 7: Singleton Removal & Final Cleanup ✅
 
 #### Phase 7a: New Per-View Virtual APIs on ecvGenericGLDisplay ✅ (Interface + 2 migration waves)
 
@@ -589,16 +583,18 @@ Each phase MUST compile independently:
 activate_pyenv 3.11 && cd build_app && make -j12
 ```
 
-### Test Checklist (after each phase)
+### Manual smoke tests (release / regression)
 
-- [ ] Single window: load point cloud, rotate, zoom, pick points
-- [ ] Multi-window: create 2+ views, verify entity isolation
-- [ ] cc2DLabel: create 1/2/3 point labels, drag caption, right-click collapse
-- [ ] cc2DLabel: hide/show via DB tree checkbox
-- [ ] Show name: verify background renders in correct window
-- [ ] Close tab: verify tab closes (not renames)
-- [ ] Layout numbering: verify number reuse after close
-- [ ] Plugin tools: segmentation, registration, SRA (basic smoke test)
+Migration phases are **complete** as of 2026-05-04. Use this list when validating a build (not pending migration work):
+
+- Single window: load point cloud, rotate, zoom, pick points
+- Multi-window: create 2+ views, verify entity isolation
+- cc2DLabel: create 1/2/3 point labels, drag caption, right-click collapse
+- cc2DLabel: hide/show via DB tree checkbox
+- Show name: verify background renders in correct window
+- Close tab: verify tab closes (not renames)
+- Layout numbering: verify number reuse after close
+- Plugin tools: segmentation, registration, SRA (basic smoke test)
 
 ---
 
@@ -1109,26 +1105,28 @@ After the singleton removal, follow this pattern:
 **Step 3**: Access from consumer code via `ecvViewManager::instance().getEffectiveView()->method()`
 
 **What NOT to do**:
-- Do NOT add new static methods to `ecvDisplayTools` (frozen for legacy compatibility)
-- Do NOT use `ecvDisplayTools::sharedTools()` in new code — use `ecvViewManager` instead
-- Do NOT store global state in `ecvDisplayTools` — use `ecvViewContext` for per-view state
+- Do NOT reintroduce `ecvDisplayTools::TheInstance()` / `sharedTools()` as a global mutable singleton
+- Do NOT bypass `ecvViewManager` for engine lifecycle — use `displayTools()` / `ecvGenericDisplayTools::GetInstance()` only
+- Do NOT store per-view state on the shared `ecvDisplayTools` instance — use `ecvViewContext` on `ecvGLView`
 
 ---
 
-## Estimated Effort (Remaining)
+## Estimated Effort
 
-| Phase | Est. Lines Changed | Complexity | Files Touched |
+**Status:** All phases (0–7) and TODOs 1–9 are **complete** as of **2026-05-04** (singleton removal landed; docs synced). The table below is **historical** effort for traceability only.
+
+| Phase | Est. Lines Changed (historical) | Complexity | Files Touched |
 |-------|-------------------|------------|---------------|
-| Phase 2.6 (QVTKWidgetCustom) | ~400 | High | 5 (ecvGenericGLDisplay.h, ecvDisplayTools.h/cpp, ecvGLView.h/cpp, QVTKWidgetCustom.h/cpp) |
-| Phase 7.3 (VtkEngine internal) | ~300 | High | 8 (VtkVis, VtkDisplayTools, ecvGLView, EditCameraTool, VtkMeasurementTools, CustomVtkCaptionWidget, new ecvDisplayTypes.h) |
-| Phase 7.1 (Singleton removal) | ~500 | Very High | 8 (ecvDisplayTools.h/cpp, MainWindow.cpp, ecvGLView.cpp, ecvViewManager.h/cpp, ecvRedrawScope.h, ecvCameraParamEditDlg.cpp) |
-| Phase 7.2 (Utility extraction) | ~100 | Low | 5 (ecvHObject, ecvGuiParameters, ecvGBLSensor, new ecvEntityTypeUtils.h) |
-| TODO 5 (MainWindow VTK) | ~100 | Medium | 1 (MainWindow.cpp) |
-| Phase 7c (Python wrapper) | ~200 | Medium | 1 (ccDisplayTools.cpp) |
-| TODO 7 (ecvDBRoot) | ~30 | Low | 1 (ecvDBRoot.cpp) |
-| TODO 8 (Include cleanup) | ~50 | Low | ~30 files (remove #include lines) |
-| TODO 9 (Documentation) | ~100 | Low | 2 (multi-window-views.md, this file) |
-| **Total Remaining** | **~1780** | | **~55 files** |
+| Phase 2.6 (QVTKWidgetCustom) | ~400 | High | 5 |
+| Phase 7.3 (VtkEngine internal) | ~300 | High | 8 |
+| Phase 7.1 (Singleton removal) | ~500 | Very High | 8 |
+| Phase 7.2 (Utility extraction) | ~100 | Low | 5 |
+| TODO 5 (MainWindow VTK) | ~100 | Medium | 1 |
+| Phase 7c (Python wrapper) | ~200 | Medium | 1 |
+| TODO 7 (ecvDBRoot) | ~30 | Low | 1 |
+| TODO 8 (Include cleanup) | ~50 | Low | ~30 |
+| TODO 9 (Documentation) | ~100 | Low | 3+ |
+| **Total (historical)** | **~1780** | | **~55 files** |
 
 ---
 
@@ -1257,4 +1255,4 @@ After the singleton removal, follow this pattern:
 || 2026-05-01 | 24.0 | **Phase N 全部完成 (N1-N5 + straggler cleanup)**. `effectiveCtx()` 从 307→76 次调用（ecvDisplayTools.cpp 内）。剩余 76 次分布：**52 wrapper 委托**（将 `s_tools->effectiveCtx()` 传递给 ctx-parameterized 重载，是最终设计模式）、**14 本地 `auto& ctx` 缓存**（函数入口一次查询后复用）、**3 单次查询**（轻量 accessor）。已清理的函数：`initializeSharedInstance` (32→1 ctx 引用)、`SetPointSize`/`SetLineWidth`/`SetPickingMode`/`GetPickingMode` (消除多次 effectiveCtx 查询)、`SetPivotPoint`/`SetAutoPickPivotAtCenter` (6→1)、`UpdateConstellationCenterAndZoom` (3→1)、`GetGLCameraParameters` (7→1)、`DrawForeground` (8→1)、`DrawBackground` (1→1)、`DrawClickableItems` (10→1)、`DrawWidgets` (1→0, 改用 `GetInteractionMode()`)、`GetContext` (2→1)。**Zero non-wrapper `effectiveCtx()` logic remains。** |
 || 2026-05-01 | 25.0 | **全代码库 effectiveCtx() 审计 + 文档同步**. 全局统计：**107 处** across 4 files — `ecvDisplayTools.cpp` 76 (52 wrapper + 14 cached + 3 accessor + 7 other), `ecvDisplayTools.h` 27 (2 decl + 2 comments + 23 inline wrappers), `ecvGLView.cpp` 3 (仅注释), `MainWindow.cpp` 1 (新视图初始化). **Zero problematic calls remaining**. 文档同步：4 份设计/路线图文档全部更新 — M1-M5/N1-N5 heading markers → ✅, 53 个验收标准 checkbox → [x], GAP-1/2/3 → RESOLVED, executive summary 更新, 仓库路径更新 (macOS/Linux dual path). 仅 M6 (Per-View 表示完善) 正确保留 🔲. |
 || 2026-05-01 | 26.0 | **Phase M6 + Phase O COMPLETE (Per-View Representation Deep Integration)**. 统一实施 6 个 Task: (1) `ecvViewRepresentation` 新增 `effectiveLineWidth`/`effectiveRenderMode`/`effectiveEdgeVisibility`/`effectiveScalarFieldIndex`/`effectiveShowScalarField`/`effectiveShowColors`/`effectiveShowNormals`/`effectiveNormalScale` 等 8 个 `effective*()` 方法。(2) `ecvRepresentationManager::notifyChanged()` + `representationChanged` 信号发射：`setProperties()`/`setVisible()` 触发。(3) `ccHObject::draw()` 扩展 per-view 属性传播：`pointSize`/`lineWidth`/`renderMode` → `CC_DRAW_CONTEXT`。(4) `ecvGLView::initVtkPipeline()` 连接 `representationChanged` → `redraw()` (per-view filter)。(5) `ecvPropertiesTreeDelegate` 新增 "Display (Per-View Override)" section：`OBJECT_PERVIEW_VISIBILITY`/`OBJECT_PERVIEW_OPACITY`/`OBJECT_PERVIEW_POINT_SIZE` 三个新属性角色。(6) GAP-4/GAP-6 → ✅ RESOLVED, Phase O → ✅ COMPLETE, M6 → ✅. **ParaView `vtkSMRepresentationProxy` 对齐完成。** |
-|| 2026-05-01 | 27.0 | **GAP-7 (Per-View Camera Undo/Redo) 确认已实现 ✅**. 代码审计发现 `VtkVis` 已包含完整 camera undo/redo: `CameraParams` struct, `m_cameraUndoStack`/`m_cameraRedoStack` (deque, max 20), `pushCameraState()` on `StartInteractionEvent`, `cameraUndo()`/`cameraRedo()`/`canCameraUndo()`/`canCameraRedo()`. `MainWindow::createViewFrame` 已添加 per-frame toolbar buttons (pqUndoCamera.svg/pqRedoCamera.svg) + 500ms QTimer 轮询。3 处文档矩阵行从 GAP → ALIGNED。**ParaView 对齐率**: 86/91 = **94.5%**（仅剩 3 GAP + 2 PARTIAL，均为低优先级功能范围外项）。`multi-window-views.md` M6 → ✅, 交叉引用更新。 |
+|| 2026-05-04 | 28.0 | **Singleton removal documentation sync:** `ecvDisplayTools` singleton fully removed from architecture; **`ecvViewManager`** owns **`m_displayTools`**; **`ecvGenericDisplayTools::GetInstance()`** → **`displayTools()`**; **`multi-window-views.md`**, **`multi-window-paraview-alignment-design.md`**, this plan, and **`2026-05-04-multi-window-singleton-complete-removal.md`** updated (all 23 plan tasks marked complete). Category C migration table marked complete; Phase 6 Python alignment marked complete. |
