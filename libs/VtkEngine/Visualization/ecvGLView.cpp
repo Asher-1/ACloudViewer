@@ -15,6 +15,7 @@
 #include <ecvHObject.h>
 #include <ecvRenderingTools.h>
 #include <ecvRepresentationManager.h>
+#include <ecvUndoManager.h>
 #include <ecvViewManager.h>
 #include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -83,6 +84,10 @@ ecvGLView* ecvGLView::Create(QMainWindow* parent, bool stereoMode) {
     ecvGenericGLDisplay::RegisterGLDisplay(view->m_vtkWidget, view);
     ecvViewManager::instance().registerView(view);
 
+    if (Visualization::VtkVis* vis = view->getVisualizer3D()) {
+        vis->setUndoManager(ecvViewManager::instance().undoManager());
+    }
+
     return view;
 }
 
@@ -91,6 +96,7 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
             ecvViewManager::instance().displayTools());
     m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
     m_vtkWidget->setOwnerView(this);
+    m_vtkWidget->connectSignalsTo(m_displayTools);
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
     auto renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -211,17 +217,32 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
                 !m_ctx.viewportParams.perspectiveView);
     }
 
-    // --- Messages overlay ---
-    if (m_ctx.displayOverlayEntities) {
-        auto* st = ecvDisplayTools::sharedTools();
-        if (st && !st->m_messagesToDisplay.empty()) {
+    // --- Messages overlay (per-view) ---
+    if (m_ctx.displayOverlayEntities && !m_messagesToDisplay.empty()) {
+        int currentTime = m_timer.elapsed() / 1000;
+
+        // Remove expired messages and clean up their VTK text actors
+        for (auto it = m_messagesToDisplay.begin();
+             it != m_messagesToDisplay.end();) {
+            if (currentTime > it->messageValidity_sec) {
+                WIDGETS_PARAMETER rmParam(WIDGETS_TYPE::WIDGET_T2D,
+                                          it->message);
+                rmParam.context.display = this;
+                removeWidgets(rmParam);
+                it = m_messagesToDisplay.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        if (!m_messagesToDisplay.empty()) {
             QFont font = m_font;
             QFontMetrics fm(font);
             int margin = fm.height() / 4;
             int ll_currentHeight = m_ctx.glViewport.height() - 10;
             int uc_currentHeight = 10;
 
-            for (const auto& message : st->m_messagesToDisplay) {
+            for (const auto& message : m_messagesToDisplay) {
                 switch (message.position) {
                     case ecvGenericGLDisplay::LOWER_LEFT_MESSAGE: {
                         ecvDisplayTools::RenderText(10, ll_currentHeight,
@@ -267,6 +288,7 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     }
 
     m_visualizer3D->getRenderWindow()->Render();
+    if (m_vtkWidget) m_vtkWidget->update();
     m_shouldBeRefreshed = false;
 }
 
@@ -336,6 +358,16 @@ Visualization::VtkVis* ecvGLView::getVisualizer3D() const {
     return m_visualizer3D.get();
 }
 
+QJsonObject ecvGLView::saveLayoutCameraState() const {
+    if (!m_visualizer3D) return {};
+    return m_visualizer3D->saveCameraToJson(0);
+}
+
+void ecvGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
+    if (!m_visualizer3D || cameraJson.isEmpty()) return;
+    m_visualizer3D->loadCameraFromJson(cameraJson, 0);
+}
+
 // ================================================================
 // New per-view overrides (Phase 1)
 // ================================================================
@@ -370,9 +402,14 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
     if (box && box->isValid()) {
         CCVector3d center = CCVector3d::fromArray(box->getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
+        m_ctx.autoPivotCandidate = center;
         if (m_visualizer3D) {
             m_visualizer3D->resetCamera(box);
+            if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+                vis->setCenterOfRotation(center.x, center.y, center.z);
+            }
             m_visualizer3D->getRenderWindow()->Render();
+            if (m_vtkWidget) m_vtkWidget->update();
         }
     } else {
         zoomGlobal();
@@ -455,19 +492,57 @@ void ecvGLView::displayNewMessage(const QString& message,
                                   bool append,
                                   int displayMaxDelay_sec,
                                   MessageType type) {
+    if (message.isEmpty()) {
+        if (!append) {
+            for (auto it = m_messagesToDisplay.begin();
+                 it != m_messagesToDisplay.end();) {
+                if (it->position == pos) {
+                    WIDGETS_PARAMETER rmParam(WIDGETS_TYPE::WIDGET_T2D,
+                                              it->message);
+                    rmParam.context.display = this;
+                    removeWidgets(rmParam);
+                    it = m_messagesToDisplay.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        } else {
+            CVLog::Warning(
+                    "[ecvDisplayTools::DisplayNewMessage] Appending an empty "
+                    "message has no effect!");
+        }
+        toBeRefreshed();
+        return;
+    }
+
     if (!append) {
-        m_messagesToDisplay.remove_if([type](const ecvMessageToDisplay& msg) {
-            return msg.type == type;
-        });
+        if (type != CUSTOM_MESSAGE) {
+            for (auto it = m_messagesToDisplay.begin();
+                 it != m_messagesToDisplay.end();) {
+                if (it->type == type) {
+                    WIDGETS_PARAMETER rmParam(WIDGETS_TYPE::WIDGET_T2D,
+                                              it->message);
+                    rmParam.context.display = this;
+                    removeWidgets(rmParam);
+                    it = m_messagesToDisplay.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+    } else if (pos == SCREEN_CENTER_MESSAGE) {
+        CVLog::Warning(
+                "[ecvDisplayTools::DisplayNewMessage] Append is not "
+                "supported for center screen messages!");
     }
-    if (!message.isEmpty()) {
-        ecvMessageToDisplay msg;
-        msg.message = message;
-        msg.messageValidity_sec = displayMaxDelay_sec;
-        msg.position = pos;
-        msg.type = type;
-        m_messagesToDisplay.push_back(msg);
-    }
+
+    ecvMessageToDisplay msg;
+    msg.message = message;
+    msg.messageValidity_sec =
+            m_timer.elapsed() / 1000 + displayMaxDelay_sec;
+    msg.position = pos;
+    msg.type = type;
+    m_messagesToDisplay.push_back(msg);
     toBeRefreshed();
 }
 
@@ -481,11 +556,16 @@ void ecvGLView::zoomGlobal() {
         m_visualizer3D->resetCamera(&bbox);
         CCVector3d center = CCVector3d::fromArray(bbox.getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
+        m_ctx.autoPivotCandidate = center;
+        if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+            vis->setCenterOfRotation(center.x, center.y, center.z);
+        }
     } else {
         m_visualizer3D->resetCamera();
     }
 
     m_visualizer3D->getRenderWindow()->Render();
+    if (m_vtkWidget) m_vtkWidget->update();
 }
 
 // ================================================================
@@ -638,6 +718,7 @@ void ecvGLView::setPivotPoint(const CCVector3d& P,
 }
 
 void ecvGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
+    m_ctx.pivotVisibility = vis;
     if (m_displayTools) m_displayTools->setPivotVisibility(vis);
 }
 
@@ -651,7 +732,17 @@ void ecvGLView::setAutoPickPivotAtCenter(bool state) {
 }
 
 void ecvGLView::resetCenterOfRotation(int viewport) {
-    if (m_displayTools) m_displayTools->resetCenterOfRotation(viewport);
+    if (!m_displayTools) return;
+    m_displayTools->resetCenterOfRotation(viewport);
+
+    auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get());
+    if (vis) {
+        double center[3] = {0, 0, 0};
+        vis->getCenterOfRotation(center);
+        CCVector3d pivot(center[0], center[1], center[2]);
+        m_ctx.viewportParams.setPivotPoint(pivot, true);
+        m_ctx.autoPivotCandidate = pivot;
+    }
 }
 
 bool ecvGLView::isRotationAxisLocked() const {
