@@ -311,6 +311,16 @@ signals:
     void pivotPointChanged(const CCVector3d&);
     void perspectiveStateChanged();
 
+    // -- Camera link / state signals (Phase 4) --
+    // Bridged from ecvDisplayTools so consumers on ecvViewManager can
+    // receive camera-state changes that originate in the rendering engine.
+    void baseViewMatChanged(const ccGLMatrixd& newViewMat);
+    void fovChanged(float fov);
+    void zNearCoefChanged(float coef);
+    void cameraPosChanged(const CCVector3d&);
+    void cameraDisplaced(float ddx, float ddy);
+    void itemPickedFast(ccHObject* entity, int subEntityID, int x, int y);
+
 private:
     ecvViewManager();
 

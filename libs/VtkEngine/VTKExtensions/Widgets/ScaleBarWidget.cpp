@@ -54,35 +54,39 @@ ScaleBarWidget::ScaleBarWidget(vtkRenderer* renderer) {
 
     // Create text - using cross-platform optimized font size
     textActor = vtkSmartPointer<vtkTextActor>::New();
-    textActor->SetInput("1 m");
+    textActor->SetInput("");
     int optimizedFontSize = getOptimizedFontSize(18);
     textActor->GetTextProperty()->SetFontSize(optimizedFontSize);
     textActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
     textActor->GetTextProperty()->SetJustificationToCentered();
     textActor->GetTextProperty()->SetVerticalJustificationToTop();
-    // Initial position set to center, will be adjusted in update()
-    textActor->SetPosition(100.0 * dpiScale, 25.0 * dpiScale);
+    textActor->SetPosition(-9999, -9999);
 
     // Create tick marks
     leftTickActor = createTickActor(0.0, 0.0, 10.0 * dpiScale);
     rightTickActor = createTickActor(100.0, 0.0, 10.0 * dpiScale);
 
-    if (renderer) {
-        renderer->AddActor2D(lineActor);
-        renderer->AddActor2D(textActor);
-        renderer->AddActor2D(leftTickActor);
-        renderer->AddActor2D(rightTickActor);
-    }
+    // Actors are NOT added to the renderer here to prevent rendering
+    // at the wrong position before the widget is properly laid out.
+    // They are registered on the first valid update() call.
+
+    lineActor->SetVisibility(false);
+    textActor->SetVisibility(false);
+    leftTickActor->SetVisibility(false);
+    rightTickActor->SetVisibility(false);
+    visible = false;
 }
 
 ScaleBarWidget::~ScaleBarWidget() {}
 
 void ScaleBarWidget::setVisible(bool v) {
     visible = v;
-    lineActor->SetVisibility(v);
-    textActor->SetVisibility(v);
-    leftTickActor->SetVisibility(v);
-    rightTickActor->SetVisibility(v);
+    if (!v) {
+        lineActor->SetVisibility(false);
+        textActor->SetVisibility(false);
+        leftTickActor->SetVisibility(false);
+        rightTickActor->SetVisibility(false);
+    }
 }
 
 double ScaleBarWidget::getDPIScale() {
@@ -267,6 +271,23 @@ void ScaleBarWidget::update(vtkRenderer* renderer,
                             vtkRenderWindowInteractor* interactor) {
     if (!visible || !renderer || !renderer->GetRenderWindow()) return;
 
+    int* size = renderer->GetRenderWindow()->GetSize();
+    if (!size || size[0] <= 1 || size[1] <= 1 || !layoutReady) {
+        lineActor->SetVisibility(false);
+        textActor->SetVisibility(false);
+        leftTickActor->SetVisibility(false);
+        rightTickActor->SetVisibility(false);
+        return;
+    }
+
+    if (!actorsRegistered) {
+        renderer->AddActor2D(lineActor);
+        renderer->AddActor2D(textActor);
+        renderer->AddActor2D(leftTickActor);
+        renderer->AddActor2D(rightTickActor);
+        actorsRegistered = true;
+    }
+
     // Dynamically update DPI scaling (in case window moves to different DPI
     // monitor)
     double currentDPIScale = getPlatformAwareDPIScale();
@@ -291,8 +312,6 @@ void ScaleBarWidget::update(vtkRenderer* renderer,
         }
     }
 
-    // Get window size
-    int* size = renderer->GetRenderWindow()->GetSize();
     int winW = size[0];
     int winH = size[1];
     // Scale bar length (pixels), considering DPI scaling
@@ -398,4 +417,12 @@ void ScaleBarWidget::update(vtkRenderer* renderer,
                              // centered
     double textY = bottomY - 10.0 * dpiScale;  // Below the line
     textActor->SetPosition(textX, textY);
+
+    // Make actors visible only after positioning is complete.
+    // This prevents the brief flash at (0,0) that causes the
+    // black rectangle in the top-left corner.
+    lineActor->SetVisibility(true);
+    textActor->SetVisibility(true);
+    leftTickActor->SetVisibility(true);
+    rightTickActor->SetVisibility(true);
 }

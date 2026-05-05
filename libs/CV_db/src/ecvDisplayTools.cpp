@@ -57,6 +57,10 @@
 // SYSTEM
 #include <assert.h>
 
+// Convenience accessor for the shared ecvDisplayTools instance managed by
+// ecvViewManager.  Not a singleton — the instance lifecycle is owned by
+// ecvViewManager.  Gap S in the architecture plan tracks migrating these
+// call sites to per-view signal emission.
 static ecvDisplayTools* primaryDT() {
     return ecvViewManager::instance().displayTools();
 }
@@ -85,8 +89,8 @@ bool ecvDisplayTools::USE_2D = true;
 bool ecvDisplayTools::USE_VTK_PICK = false;
 
 /// Returns a non-primary active view (ecvGenericGLDisplay*) if one exists
-/// and it differs from the singleton.  Used by static methods to delegate
-/// to the per-view implementation.
+/// and it differs from the primary ecvDisplayTools (ecvViewManager).
+/// Used by static methods to delegate to the per-view implementation.
 static ecvGenericGLDisplay* activeSecondaryView() {
     auto* av = ecvViewManager::instance().getEffectiveView();
     if (av && av != primaryDT()) return av;
@@ -389,11 +393,7 @@ ecvDisplayTools::~ecvDisplayTools() {
         delete m_rectPickingPoly;
         m_rectPickingPoly = nullptr;
     }
-    if (m_hotZone && m_hotZoneOwnedBySingleton) {
-        delete m_hotZone;
-    }
     m_hotZone = nullptr;
-    m_hotZoneOwnedBySingleton = false;
 }
 
 void ecvDisplayTools::checkScheduledRedraw() {
@@ -437,28 +437,31 @@ void ecvDisplayTools::scheduleFullRedraw(unsigned maxDelay_ms) {
 void ecvDisplayTools::onPointPicking(const CCVector3& p,
                                      int index,
                                      const std::string& id) {
-    // Sync VTK pick results into resolveViewContext() so that
-    // doPicking → StartOpenGLPicking / StartCPUBasedPointPicking can
-    // read them from resolveViewContext().
-    ecvViewContext& ctx = ecvViewManager::instance().resolveViewContext();
-    ctx.lastPickedPoint = p;
-    ctx.lastPointIndex = index;
-    ctx.lastPickedId = id.c_str();
+    ecvViewContext* ctx = nullptr;
+    if (m_pickingTargetView && m_pickingTargetView->viewContext()) {
+        ctx = m_pickingTargetView->viewContext();
+    }
+    if (!ctx) {
+        ctx = &ecvViewManager::instance().resolveViewContext();
+    }
+    ctx->lastPickedPoint = p;
+    ctx->lastPointIndex = index;
+    ctx->lastPickedId = id.c_str();
 
 #ifdef QT_DEBUG
     CVLog::Print(QString("current selected index is %1").arg(index));
     CVLog::Print(
-            QString("current selected entity id is %1").arg(ctx.lastPickedId));
+            QString("current selected entity id is %1").arg(ctx->lastPickedId));
     CVLog::Print(QString("current selected point coord is [%1, %2, %3]")
                          .arg(p.x)
                          .arg(p.y)
                          .arg(p.z));
 #endif  // !QDEBUG
 
-    if (ctx.lastPickedId.isEmpty()) {
+    if (ctx->lastPickedId.isEmpty()) {
         PICKING_MODE pickingMode = PICKING_MODE::ENTITY_PICKING;
-        PickingParameters params(pickingMode, 0, 0, ctx.pickRadius,
-                                 ctx.pickRadius);
+        PickingParameters params(pickingMode, 0, 0, ctx->pickRadius,
+                                 ctx->pickRadius);
         ProcessPickingResult(params, nullptr, -1);
     } else {
         if (ecvDisplayTools::USE_VTK_PICK) {
@@ -533,7 +536,8 @@ void ecvDisplayTools::doPicking() {
             }
 
             PickingParameters params(effectiveMode, x, y, pickRad, pickRad);
-            StartPicking(params);
+            ecvViewContext& pickCtx = ctx ? *ctx : fallback;
+            StartPicking(pickCtx, params);
         }
     }
 
@@ -659,7 +663,8 @@ void ecvDisplayTools::SetPointSize(float size, bool silent, int viewport) {
         CVLog::Print(QString("New point size: %1").arg(newSize));
     }
 
-    // Write-through: update both singleton and active secondary view.
+    // Write-through: update both ecvViewManager-resolved primary context and
+    // active secondary view.
     auto* av = activeSecondaryView();
     if (av) {
         ecvViewportParameters vp = av->getViewportParameters();
@@ -699,7 +704,8 @@ void ecvDisplayTools::SetLineWidth(float width, bool silent, int viewport) {
         CVLog::Print(QString("New line with: %1").arg(newWidth));
     }
 
-    // Write-through: update both singleton and active secondary view.
+    // Write-through: update both ecvViewManager-resolved primary context and
+    // active secondary view.
     auto* av = activeSecondaryView();
     if (av) {
         ecvViewportParameters vp = av->getViewportParameters();
@@ -750,26 +756,31 @@ void ecvDisplayTools::SetViewportDefaultLineWidth(float width) {
 }
 
 void ecvDisplayTools::StartPicking(PickingParameters& params) {
-    // correction for HD screens
+    StartPicking(ecvViewManager::instance().resolveViewContext(), params);
+}
+
+void ecvDisplayTools::StartPicking(ecvViewContext& ctx,
+                                   PickingParameters& params) {
     const int retinaScale = GetDevicePixelRatio();
     params.centerX *= retinaScale;
     params.centerY *= retinaScale;
 
-    if (!primaryDT()->m_globalDBRoot && !primaryDT()->m_winDBRoot) {
-        // we must always emit a signal!
+    bool hasDB = primaryDT()->m_globalDBRoot || primaryDT()->m_winDBRoot;
+    if (!hasDB && primaryDT()->m_pickingTargetView) {
+        hasDB = primaryDT()->m_pickingTargetView->getSceneDB() ||
+                primaryDT()->m_pickingTargetView->getOwnDB();
+    }
+    if (!hasDB) {
         ProcessPickingResult(params, nullptr, -1);
         return;
     }
 
     if (params.mode == POINT_OR_TRIANGLE_PICKING ||
         params.mode == POINT_PICKING || params.mode == TRIANGLE_PICKING ||
-        params.mode == LABEL_PICKING  // = spawn a label on the clicked point or
-                                      // triangle
-    ) {
-        // CPU-based point picking
-        StartCPUBasedPointPicking(params);
+        params.mode == LABEL_PICKING) {
+        StartCPUBasedPointPicking(ctx, params);
     } else {
-        StartOpenGLPicking(params);
+        StartOpenGLPicking(ctx, params);
     }
 }
 
@@ -839,8 +850,14 @@ void ecvDisplayTools::ProcessPickingResult(
 
             if (label) {
                 label->setVisible(true);
-                auto* parentDisplay = pickedEntity->getDisplay();
-                label->setDisplay(parentDisplay ? parentDisplay : primaryDT());
+                ecvGenericGLDisplay* labelDisplay =
+                        primaryDT()->m_pickingTargetView;
+                if (!labelDisplay)
+                    labelDisplay = pickedEntity->getDisplay();
+                if (!labelDisplay)
+                    labelDisplay = ecvViewManager::instance().getEffectiveView();
+                if (!labelDisplay) labelDisplay = primaryDT();
+                label->setDisplay(labelDisplay);
                 label->setPosition(
                         static_cast<float>(params.centerX + 20) /
                                 GlWidth(),
@@ -848,6 +865,7 @@ void ecvDisplayTools::ProcessPickingResult(
                                 GlHeight());
                 emit primaryDT()->newLabel(static_cast<ccHObject*>(label));
                 QApplication::processEvents();
+                Redraw2DLabel();
             }
         }
     }
@@ -986,7 +1004,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
     bool firstCloudWithoutOctree = true;
 
     ccGLCameraParameters camera;
-    GetGLCameraParameters(camera);
+    GetGLCameraParameters(camera, ctx);
 
     CCVector2d clickedPos(params.centerX,
                           ctx.glViewport.height() - 1 - params.centerY);
@@ -1053,9 +1071,13 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
     } else {
         try {
             ccHObject::Container toProcess;
-            if (primaryDT()->m_globalDBRoot)
-                toProcess.push_back(primaryDT()->m_globalDBRoot);
-            if (primaryDT()->m_winDBRoot) toProcess.push_back(primaryDT()->m_winDBRoot);
+            ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
+            ccHObject* sceneDB = pickView ? pickView->getSceneDB() : nullptr;
+            ccHObject* ownDB = pickView ? pickView->getOwnDB() : nullptr;
+            if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
+            if (!ownDB) ownDB = primaryDT()->m_winDBRoot;
+            if (sceneDB) toProcess.push_back(sceneDB);
+            if (ownDB) toProcess.push_back(ownDB);
 
             while (!toProcess.empty()) {
                 // get next item
@@ -1314,11 +1336,22 @@ ccHObject* ecvDisplayTools::GetPickedEntity(const ecvViewContext& ctx,
 
     ccHObject* pickedEntity = nullptr;
     unsigned int selectedID = ctx.lastPickedId.toUInt();
-    if (params.pickInSceneDB && primaryDT()->m_globalDBRoot) {
-        pickedEntity = primaryDT()->m_globalDBRoot->find(selectedID);
+
+    ccHObject* sceneDB = nullptr;
+    ccHObject* localDB = nullptr;
+
+    if (primaryDT()->m_pickingTargetView) {
+        sceneDB = primaryDT()->m_pickingTargetView->getSceneDB();
+        localDB = primaryDT()->m_pickingTargetView->getOwnDB();
     }
-    if (!pickedEntity && params.pickInLocalDB && primaryDT()->m_winDBRoot) {
-        pickedEntity = primaryDT()->m_winDBRoot->find(selectedID);
+    if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
+    if (!localDB) localDB = primaryDT()->m_winDBRoot;
+
+    if (params.pickInSceneDB && sceneDB) {
+        pickedEntity = sceneDB->find(selectedID);
+    }
+    if (!pickedEntity && params.pickInLocalDB && localDB) {
+        pickedEntity = localDB->find(selectedID);
     }
 
     return pickedEntity;
@@ -2418,7 +2451,8 @@ void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport) {
 }
 
 void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
-    // Write-through: update both the active secondary view AND the singleton.
+    // Write-through: update both the active secondary view AND the
+    // ecvViewManager-resolved primary context.
     auto* av = activeSecondaryView();
     if (av) {
         av->setInteractionMode(flags);
@@ -2741,7 +2775,8 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
                 ctx.viewportParams.defaultPointSize);
         CONTEXT.defaultLineWidth = static_cast<unsigned char>(
                 ctx.viewportParams.defaultLineWidth);
-        CONTEXT.display = primaryDT();
+        auto* ev = ecvViewManager::instance().getEffectiveView();
+        CONTEXT.display = ev ? ev : primaryDT();
     }
     CONTEXT.currentLineWidth = CONTEXT.defaultLineWidth;
 }
@@ -3055,9 +3090,9 @@ void ecvDisplayTools::UpdateZoom(float zoomFactor) {
 }
 
 void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
-    // Write-through: update both the active secondary view AND the singleton
-    // so that m_tools-> direct access in QVTKWidgetCustom sees the correct
-    // value.
+    // Write-through: update both the active secondary view AND the
+    // ecvViewManager-resolved primary context so that m_tools-> direct access
+    // in QVTKWidgetCustom sees the correct value.
     auto* av = activeSecondaryView();
     if (av) {
         av->setPickingMode(mode);
@@ -3312,7 +3347,8 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
     ecvViewManager::instance().redrawAll(only2D, g_redrawDisplayForceRedraw);
 
     // === Post-render housekeeping ===
-    // Phase M4: the legacy singleton draw path (background, 3D, foreground,
+    // Phase M4: the legacy draw path through ecvViewManager's primary
+    // ecvDisplayTools (background, 3D, foreground,
     // debug traces) has been removed.  Each ecvGLView::redraw() now contains
     // the full pipeline including ColorRamp, Messages, ScaleBar, and the
     // parameterized DrawClickableItems.
@@ -3410,6 +3446,7 @@ bool ecvDisplayTools::HideShowEntities(const ccHObject* obj, bool visible) {
     ecvDisplayTools::HideShowEntities(context);
 
     if (!obj->getDisplay()) {
+
         const auto& views = ecvViewManager::instance().getAllViews();
         if (auto* dt = ecvViewManager::instance().displayTools()) {
             for (auto* view : views) {
@@ -3865,17 +3902,30 @@ void ecvDisplayTools::DisplayTexture2DPosition(QImage image,
     DrawWidgets(param, true);
 }
 
-void ecvDisplayTools::ClearBubbleView() {
-    ecvGenericGLDisplay* v = ecvViewManager::instance().getEffectiveView();
-    if (!v) return;
-    ecvHotZone* hz = v->hotZonePtrRef();
+void ecvDisplayTools::ClearBubbleView(ecvGenericGLDisplay* display) {
+    if (!display) {
+        display = ecvViewManager::instance().getEffectiveView();
+    }
+    if (!display) return;
+    ecvHotZone* hz = display->hotZonePtrRef();
     if (!hz) return;
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->bbv_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->fs_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->psi_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, hz->lsi_label));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
+
+    auto makeParam = [display](WIDGETS_TYPE type, const QString& id) {
+        WIDGETS_PARAMETER p(type, id);
+        p.context.display = display;
+        return p;
+    };
+
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->bbv_label));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->fs_label));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->psi_label));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->lsi_label));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
+    RemoveWidgets(
+            makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, "clicked_items"));
+    RemoveWidgets(
+            makeParam(WIDGETS_TYPE::WIDGET_POINTS_2D, "clicked_items"));
 }
 
 void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
@@ -3896,7 +3946,6 @@ void ecvDisplayTools::DrawClickableItems(
                                                     : GetCurrentScreen();
     if (!hotZone) {
         hotZone = new HotZone(hzWin);
-        if (!display) primaryDT()->m_hotZoneOwnedBySingleton = true;
     } else if (GetPlatformAwareDPIScale() != hotZone->pixelDeviceRatio) {
         hotZone->updateInternalVariables(hzWin);
     }
@@ -3905,14 +3954,16 @@ void ecvDisplayTools::DrawClickableItems(
             QPoint(xStart0, yStart) +
             QPoint(hotZone->margin, hotZone->margin);
 
-    bool fullScreenEnabled = ExclusiveFullScreen();
+    bool fullScreenEnabled = (display && display->viewContext())
+            ? display->viewContext()->exclusiveFullscreen
+            : ExclusiveFullScreen();
 
     ecvViewContext* dispCtx = display ? display->viewContext() : nullptr;
     const ecvViewContext& hzCtx =
             dispCtx ? *dispCtx : ecvViewManager::instance().resolveViewContext();
     if (!hzCtx.clickableItemsVisible && !hzCtx.bubbleViewModeEnabled &&
         !fullScreenEnabled) {
-        ClearBubbleView();
+        ClearBubbleView(display);
         return;
     }
 
@@ -3920,7 +3971,11 @@ void ecvDisplayTools::DrawClickableItems(
     int fullH = hzCtx.glViewport.height();
     (void)fullW;
 
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
+    {
+        WIDGETS_PARAMETER rmParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+        rmParam.context.display = display;
+        RemoveWidgets(rmParam);
+    }
 
     // draw semi-transparent background
     {
@@ -4587,7 +4642,8 @@ void ecvDisplayTools::removeBB(const ccGLDrawContext& context) {
 }
 
 void ecvDisplayTools::setExclusiveFullScreenFlag(bool state) {
-    SetExclusiveFullScreenFlage(state);
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    SetExclusiveFullScreenFlag(state, view);
 }
 
 void ecvDisplayTools::filterByEntityType(std::vector<ccHObject*>& entities,
@@ -4608,7 +4664,8 @@ void ecvDisplayTools::updateNamePoseRecursive() { UpdateNamePoseRecursive(); }
 void ecvDisplayTools::showPivotSymbol(bool state) { ShowPivotSymbol(state); }
 
 bool ecvDisplayTools::exclusiveFullScreen() const {
-    return ExclusiveFullScreen();
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    return ExclusiveFullScreen(view);
 }
 
 CCVector3d ecvDisplayTools::convertMousePositionToOrientation(int x, int y) {

@@ -22,6 +22,8 @@
 #include "WidgetMap.h"
 #include "qVTK.h"
 
+#include <QJsonObject>
+
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>
 
@@ -90,6 +92,9 @@ namespace VTKExtensions {
 class vtkPVCenterAxesActor;
 class vtkCustomInteractorStyle;
 }  // namespace VTKExtensions
+
+class ecvUndoManager;
+struct ecvCameraState;
 
 namespace Visualization {
 
@@ -213,7 +218,13 @@ public:
         double window_pos[2] = {0, 0};
         bool parallelProjection = false;
         double parallelScale = 1.0;
+
+        static QJsonObject toJson(const CameraParams& p);
+        static CameraParams fromJson(const QJsonObject& obj);
     };
+
+    QJsonObject saveCameraToJson(int viewport = 0);
+    bool loadCameraFromJson(const QJsonObject& obj, int viewport = 0);
 
     /** @param viewport Viewport ID (default 0)
      *  @return Camera parameters (position, focal, view, etc.)
@@ -1262,6 +1273,9 @@ public:
     void cameraRedo();
     void pushCameraState();
 
+    void setUndoManager(ecvUndoManager* mgr);
+    void applyCameraState(const ecvCameraState& state, int viewport = 0);
+
     /// Save/load camera parameters.
     void saveCameraParameters(const std::string& file);
     void loadCameraParameters(const std::string& file);
@@ -1348,6 +1362,8 @@ protected:
     std::deque<CameraParams> m_cameraUndoStack;
     std::deque<CameraParams> m_cameraRedoStack;
     bool m_inCameraUndoRedo = false;
+
+    ecvUndoManager* m_undoManager = nullptr;
 };
 
 typedef std::shared_ptr<VtkVis> VtkVisPtr;

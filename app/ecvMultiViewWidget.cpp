@@ -150,7 +150,7 @@ void ecvMultiViewWidget::reload() {
     auto* activeView = ecvViewManager::instance().getActiveView();
     if (activeView && m_layout->containsView(activeView)) {
         markActive(activeView);
-    } else {
+    } else if (isVisible()) {
         makeFrameActive();
     }
 }
@@ -384,7 +384,21 @@ void ecvMultiViewWidget::makeActive(QWidget* frame) {
 }
 
 void ecvMultiViewWidget::makeFrameActive() {
-    if (m_activeFrame) return;
+    if (m_activeFrame) {
+        // Tab switch: frame already selected, but ecvViewManager may still
+        // point at a different tab's view.  Force-sync the active view.
+        ecvGenericGLDisplay* view = nullptr;
+        if (m_layout) {
+            int location = findLocationForFrame(m_activeFrame);
+            if (location >= 0) {
+                view = m_layout->getView(location);
+            }
+        }
+        if (view) {
+            ecvViewManager::instance().setActiveView(view);
+        }
+        return;
+    }
 
     for (auto it = m_cellFrames.begin(); it != m_cellFrames.end(); ++it) {
         if (it.value()) {

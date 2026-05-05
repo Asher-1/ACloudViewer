@@ -970,28 +970,33 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     if (event->buttons() == Qt::NoButton) {
         if (curInteractionFlags() &
             ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
-            // Per-widget HotZone for multi-window support
-            if (!m_localHotZone) {
-                m_localHotZone = new ecvHotZone(this);
-            }
-            if (!m_ownerView) {
-                auto* ownerDt = dynamic_cast<ecvDisplayTools*>(displayTarget());
-                if (ownerDt && ownerDt->m_hotZoneOwnedBySingleton &&
-                curHotZone() && curHotZone() != m_localHotZone) {
-                    delete curHotZone();
-                    ownerDt->m_hotZoneOwnedBySingleton = false;
+            ecvHotZone* hz = nullptr;
+            if (m_ownerView) {
+                hz = curHotZone();
+                if (!hz) {
+                    hz = new ecvHotZone(this);
+                    curHotZone() = hz;
                 }
+            } else {
+                if (!m_localHotZone) {
+                    m_localHotZone = new ecvHotZone(this);
+                }
+                if (curHotZone() && curHotZone() != m_localHotZone) {
+                    delete curHotZone();
+                    curHotZone() = nullptr;
+                }
+                curHotZone() = m_localHotZone;
+                hz = m_localHotZone;
             }
-            curHotZone() = m_localHotZone;
 
-            QRect areaRect = m_localHotZone->rect(
+            QRect areaRect = hz->rect(
                     true, curBubbleViewModeEnabled(),
                     displayTarget()->exclusiveFullScreen());
 
             const int retinaScale = displayTarget()->getDevicePixelRatio();
-            bool inZone = (x * retinaScale * 3 < m_localHotZone->topCorner.x() +
+            bool inZone = (x * retinaScale * 3 < hz->topCorner.x() +
                                                          areaRect.width() * 4 &&
-                           y * retinaScale * 2 < m_localHotZone->topCorner.y() +
+                           y * retinaScale * 2 < hz->topCorner.y() +
                                                          areaRect.height() * 4);
 
             if (inZone != m_localClickableVisible) {
@@ -1292,11 +1297,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     } break;
 
                     case StandardMode: {
-                        static CCVector3d s_lastMouseOrientation;
                         if (!curMouseMoved()) {
-                            // on the first time, we must compute the previous
-                            // orientation (the camera hasn't moved yet)
-                            s_lastMouseOrientation =
+                            m_lastMouseOrientation =
                                     displayTarget()
                                             ->convertMousePositionToOrientation(
                                                     curLastMousePos().x(),
@@ -1308,9 +1310,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                         ->convertMousePositionToOrientation(
                                                 x, y);
                         rotMat = ccGLMatrixd::FromToRotation(
-                                s_lastMouseOrientation,
+                                m_lastMouseOrientation,
                                 currentMouseOrientation);
-                        s_lastMouseOrientation = currentMouseOrientation;
+                        m_lastMouseOrientation = currentMouseOrientation;
                     } break;
 
                     case LockedAxisMode: {

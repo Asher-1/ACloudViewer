@@ -449,10 +449,9 @@ public:  // GLU equivalent methods
                         const int* viewport,
                         Vector3Tpl<oType>& output2D,
                         bool* inFrustum = nullptr) {
-        if (GetInstance() && !GetPerspectiveState()) {
-            ToDisplayPoint<iType, oType>(input3D, output2D);
-            return true;
-        }
+        // Always use matrix math for multi-view correctness.
+        // The old ToDisplayPoint shortcut for orthographic mode used
+        // the singleton renderer which is wrong in multi-window setups.
 
         // Modelview transform
         Tuple4Tpl<oType> Pm;
@@ -677,10 +676,9 @@ public:  // GLU equivalent methods
                           const oType* projection,
                           const int* viewport,
                           Vector3Tpl<oType>& output3D) {
-        if (GetInstance() && !GetPerspectiveState()) {
-            ToWorldPoint<iType, oType>(input2D, output3D);
-            return true;
-        }
+        // Always use matrix math for multi-view correctness.
+        // The old ToWorldPoint shortcut for orthographic mode used
+        // the singleton renderer which is wrong in multi-window setups.
 
         // compute projection x modelview
         ccGLMatrixTpl<oType> A = ccGLMatrixTpl<oType>(projection) *

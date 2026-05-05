@@ -35,6 +35,9 @@
 #include <functional>
 #include <vector>
 
+#include <QJsonArray>
+#include <QJsonObject>
+
 // CV_CORE_LIB
 #include <CVTools.h>
 #include <FileSystem.h>
@@ -48,6 +51,7 @@
 #include <ecvCameraSensor.h>
 #include <ecvColorScale.h>
 #include <ecvGBLSensor.h>
+#include <ecvCameraUndoCommand.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
@@ -55,6 +59,7 @@
 #include <ecvMaterialSet.h>
 #include <ecvOrientedBBox.h>
 #include <ecvScalarField.h>
+#include <ecvUndoManager.h>
 #include <ecvViewContext.h>
 
 // VTK Extension
@@ -1043,6 +1048,9 @@ bool VtkVis::addText(const std::string& text,
     tprop->SetJustificationToLeft();
     tprop->BoldOn();
     tprop->SetColor(r, g, b);
+    tprop->SetBackgroundOpacity(0.0);
+    tprop->FrameOff();
+    tprop->ShadowOff();
 
     addActorToRenderer(actor, viewport);
     (*shape_actor_map_)[tid] = actor;
@@ -3537,6 +3545,79 @@ void VtkVis::setLineWidth(const unsigned char lineWidth,
 
 /******************************** Camera Tools
  * *********************************/
+
+namespace {
+
+QJsonArray vec3ToJsonArray(const double v[3]) {
+    QJsonArray a;
+    a.append(v[0]);
+    a.append(v[1]);
+    a.append(v[2]);
+    return a;
+}
+
+void readVec3(const QJsonObject& obj, const char* key, double out[3]) {
+    const QJsonArray a = obj[key].toArray();
+    if (a.size() >= 3) {
+        out[0] = a.at(0).toDouble();
+        out[1] = a.at(1).toDouble();
+        out[2] = a.at(2).toDouble();
+    }
+}
+
+}  // namespace
+
+QJsonObject VtkVis::CameraParams::toJson(const CameraParams& p) {
+    QJsonObject o;
+    o[QStringLiteral("pos")] = vec3ToJsonArray(p.pos);
+    o[QStringLiteral("focal")] = vec3ToJsonArray(p.focal);
+    o[QStringLiteral("view")] = vec3ToJsonArray(p.view);
+    o[QStringLiteral("fovy")] = p.fovy;
+    o[QStringLiteral("parallelProjection")] = p.parallelProjection;
+    o[QStringLiteral("parallelScale")] = p.parallelScale;
+    return o;
+}
+
+VtkVis::CameraParams VtkVis::CameraParams::fromJson(const QJsonObject& obj) {
+    CameraParams p;
+    readVec3(obj, "pos", p.pos);
+    readVec3(obj, "focal", p.focal);
+    readVec3(obj, "view", p.view);
+    if (obj.contains(QStringLiteral("fovy"))) {
+        p.fovy = obj[QStringLiteral("fovy")].toDouble(p.fovy);
+    }
+    if (obj.contains(QStringLiteral("parallelProjection"))) {
+        p.parallelProjection =
+                obj[QStringLiteral("parallelProjection")].toBool(p.parallelProjection);
+    }
+    if (obj.contains(QStringLiteral("parallelScale"))) {
+        p.parallelScale =
+                obj[QStringLiteral("parallelScale")].toDouble(p.parallelScale);
+    }
+    return p;
+}
+
+QJsonObject VtkVis::saveCameraToJson(int viewport) {
+    return CameraParams::toJson(getCamera(viewport));
+}
+
+bool VtkVis::loadCameraFromJson(const QJsonObject& obj, int viewport) {
+    if (obj.isEmpty()) return false;
+    CameraParams p = CameraParams::fromJson(obj);
+    setCameraPosition(p.pos[0], p.pos[1], p.pos[2], p.focal[0], p.focal[1],
+                      p.focal[2], p.view[0], p.view[1], p.view[2], viewport);
+    if (p.parallelProjection) {
+        setOrthoProjection(viewport);
+        setParallelScale(p.parallelScale, viewport);
+    } else {
+        setPerspectiveProjection(viewport);
+        setCameraViewAngle(p.fovy * 180.0 / M_PI, viewport);
+    }
+    resetCameraClippingRange(viewport);
+    UpdateScreen();
+    return true;
+}
+
 VtkVis::CameraParams VtkVis::getCamera(int viewport) {
     CameraParams camera;
     vtkSmartPointer<vtkCamera> vtkCam = getVtkCamera(viewport);
@@ -3568,6 +3649,48 @@ vtkSmartPointer<vtkCamera> VtkVis::getVtkCamera(int viewport) {
 // Camera undo / redo
 // ----------------------------------------------------------------
 
+void VtkVis::setUndoManager(ecvUndoManager* mgr) {
+    m_undoManager = mgr;
+}
+
+void VtkVis::applyCameraState(const ecvCameraState& state, int viewport) {
+    vtkRenderer* ren = getCurrentRenderer(viewport);
+    if (!ren) return;
+    vtkCamera* cam = ren->GetActiveCamera();
+    if (!cam) return;
+    cam->SetPosition(state.pos);
+    cam->SetFocalPoint(state.focal);
+    cam->SetViewUp(state.view);
+    cam->SetClippingRange(state.clip);
+    cam->SetViewAngle(state.fovy);
+    if (state.parallelProjection) {
+        cam->ParallelProjectionOn();
+        cam->SetParallelScale(state.parallelScale);
+    } else {
+        cam->ParallelProjectionOff();
+    }
+    ren->ResetCameraClippingRange();
+    UpdateScreen();
+}
+
+namespace {
+
+inline ecvCameraState cameraParamsToUndoState(const VtkVis::CameraParams& p) {
+    ecvCameraState s;
+    std::copy(p.pos, p.pos + 3, s.pos);
+    std::copy(p.focal, p.focal + 3, s.focal);
+    std::copy(p.view, p.view + 3, s.view);
+    s.clip[0] = p.clip[0];
+    s.clip[1] = p.clip[1];
+    // ecvCameraState::fovy is stored in degrees (matches vtkCamera SetViewAngle)
+    s.fovy = p.fovy * 180.0 / M_PI;
+    s.parallelProjection = p.parallelProjection;
+    s.parallelScale = p.parallelScale;
+    return s;
+}
+
+}  // namespace
+
 void VtkVis::pushCameraState() {
     CameraParams state = getCamera(0);
     if (!m_cameraUndoStack.empty()) {
@@ -3581,19 +3704,33 @@ void VtkVis::pushCameraState() {
             eq(top.view, state.view, 3))
             return;
     }
+
+    const bool hadPrior = !m_cameraUndoStack.empty();
+    CameraParams beforeParams{};
+    if (hadPrior) beforeParams = m_cameraUndoStack.back();
+
     m_cameraUndoStack.push_back(state);
     while (static_cast<int>(m_cameraUndoStack.size()) > CAMERA_STACK_DEPTH) {
         m_cameraUndoStack.pop_front();
     }
     m_cameraRedoStack.clear();
+
+    if (m_undoManager && !m_inCameraUndoRedo && hadPrior) {
+        ecvCameraState before = cameraParamsToUndoState(beforeParams);
+        ecvCameraState after = cameraParamsToUndoState(state);
+        m_undoManager->push(new ecvCameraUndoCommand(
+                before, after,
+                [this](const ecvCameraState& cs) { applyCameraState(cs); },
+                QStringLiteral("Camera")));
+    }
 }
 
 bool VtkVis::canCameraUndo() const { return m_cameraUndoStack.size() > 0; }
 
 bool VtkVis::canCameraRedo() const { return !m_cameraRedoStack.empty(); }
 
-static void applyCameraState(vtkCamera* cam,
-                             const VtkVis::CameraParams& state) {
+static void applyCameraParamsToVtk(vtkCamera* cam,
+                                   const VtkVis::CameraParams& state) {
     cam->SetPosition(state.pos);
     cam->SetFocalPoint(state.focal);
     cam->SetViewUp(state.view);
@@ -3613,7 +3750,7 @@ void VtkVis::cameraUndo() {
 
     vtkSmartPointer<vtkCamera> cam = getVtkCamera(0);
     if (cam) {
-        applyCameraState(cam, state);
+        applyCameraParamsToVtk(cam, state);
         UpdateScreen();
     }
     m_inCameraUndoRedo = false;
@@ -3629,7 +3766,7 @@ void VtkVis::cameraRedo() {
 
     vtkSmartPointer<vtkCamera> cam = getVtkCamera(0);
     if (cam) {
-        applyCameraState(cam, state);
+        applyCameraParamsToVtk(cam, state);
         UpdateScreen();
     }
     m_inCameraUndoRedo = false;

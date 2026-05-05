@@ -238,6 +238,7 @@ public:
     qint64 elapsedMs() const override { return m_timer.elapsed(); }
     void scheduleFullRedraw(int delayMs) override;
     void startDeferredPicking();
+    void syncVtkCameraToContext();
     QTimer& deferredPickingTimer() { return m_deferredPickingTimer; }
     void stopDeferredPicking() override { m_deferredPickingTimer.stop(); }
     void startDeferredPickingFor(ecvGenericGLDisplay* targetView) override {

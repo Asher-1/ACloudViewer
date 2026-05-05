@@ -364,4 +364,6 @@ protected:
     bool m_labelClickedOnPress = false;
     // True when right-click landed on a cc2DLabel (collapse toggle)
     bool m_rightClickOnLabel = false;
+
+    CCVector3d m_lastMouseOrientation;
 };

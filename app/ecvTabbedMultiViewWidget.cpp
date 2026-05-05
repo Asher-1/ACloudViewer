@@ -129,6 +129,8 @@ int ecvTabbedMultiViewWidget::createTab() {
     CVLog::Print("[Tab] createTab: name='%s' usedNumbers=%d nextNum=%d",
                  qPrintable(layout->name()), usedNumbers.size(), nextNum);
 
+    ecvViewManager::instance().registerLayout(layout);
+
     auto* mvw = createMultiViewWidget(layout);
 
     int insertPos = m_newTabWidget ? m_tabWidget->indexOf(m_newTabWidget)
@@ -210,6 +212,7 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
     }
 
     auto* layout = mvw->layoutManager();
+    if (layout) ecvViewManager::instance().unregisterLayout(layout);
     m_tabWidget->removeTab(index);
     mvw->deleteLater();
     if (layout) layout->deleteLater();
@@ -666,6 +669,7 @@ bool ecvTabbedMultiViewWidget::restoreLayoutState(const QJsonObject& state) {
             if (mvw) {
                 mvw->destroyAllViews();
                 auto* layout = mvw->layoutManager();
+                if (layout) ecvViewManager::instance().unregisterLayout(layout);
                 m_tabWidget->removeTab(widgetIdx);
                 mvw->deleteLater();
                 if (layout) layout->deleteLater();
