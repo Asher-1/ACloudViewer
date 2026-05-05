@@ -1330,7 +1330,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
             }
             for (size_t i = 0; i < count; i++) {
                 CCVector3 P3D = m_pickedPoints[i].getPointPosition();
-                camera.project(P3D, m_pickedPoints[i].pos2D);
+                camera.projectSafe(P3D, m_pickedPoints[i].pos2D);
             }
         }
 
@@ -2111,11 +2111,11 @@ bool cc2DLabel::pointPicking(const CCVector2d& clickPos,
             CCVector3d Q2D;
             bool insideFrustum = false;
             if (noGLTrans) {
-                camera.project(P, Q2D, &insideFrustum);
+                camera.projectSafe(P, Q2D, &insideFrustum);
             } else {
                 CCVector3 P3D = P;
                 trans.apply(P3D);
-                camera.project(P3D, Q2D, &insideFrustum);
+                camera.projectSafe(P3D, Q2D, &insideFrustum);
             }
 
             if (!insideFrustum) {

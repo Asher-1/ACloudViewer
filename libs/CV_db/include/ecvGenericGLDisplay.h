@@ -43,8 +43,8 @@ struct ecvClickableItem;
 ///
 /// Each 3D view window implements this interface, holding its own
 /// viewport parameters, camera state, and scene/window DB roots.
-/// The global ecvDisplayTools singleton delegates to the "active"
-/// ecvGenericGLDisplay instance so that existing static call sites
+/// The global ecvDisplayTools (owned by ecvViewManager) delegates to the
+/// "active" ecvGenericGLDisplay instance so that existing static call sites
 /// keep working while new code can address a specific window.
 ///
 /// Design references:
@@ -267,9 +267,9 @@ public:
     //
     // Virtual methods for entity rendering, widget management, and
     // camera control.  Default implementations are empty stubs.
-    // ecvDisplayTools (via VtkDisplayTools) overrides them for the
-    // singleton primary view; ecvGLView overrides them for secondary
-    // views.  Call sites migrate from:
+    // ecvDisplayTools (via VtkDisplayTools) provides shared implementations;
+    // ecvGLView overrides them for per-view behavior.
+    // Call sites migrate from:
     //     ecvDisplayTools::DrawWidgets(param);
     // to:
     //     context.display->drawWidgets(param);

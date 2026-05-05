@@ -12,17 +12,21 @@
 #include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
+#include <ecvGenericVisualizer3D.h>
 #include <ecvHObject.h>
 #include <ecvRenderingTools.h>
 #include <ecvRepresentationManager.h>
 #include <ecvUndoManager.h>
 #include <ecvViewManager.h>
 #include <vtkActor.h>
+#include <vtkCamera.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkMatrix4x4.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 
+#include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -49,13 +53,15 @@ ecvGLView::ecvGLView(QMainWindow* parent) : QObject(parent) {
 ecvGLView::~ecvGLView() {
     emit aboutToClose(this);
 
+    if (m_vtkWidget) {
+        m_vtkWidget->setOwnerView(nullptr);
+    }
+
     if (m_globalDBRoot) {
         m_globalDBRoot->removeFromDisplay_recursive(this);
     }
 
     ecvRepresentationManager::instance().removeRepresentationsForView(this);
-    // Safety net: idempotent if prepareViewClose() already called
-    // unregisterView
     ecvViewManager::instance().unregisterView(this);
 
     if (m_vtkWidget) {
@@ -118,6 +124,11 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
 
+    connect(m_visualizer3D.get(),
+            &ecvGenericVisualizer3D::interactorPointPickedEvent,
+            m_displayTools, &ecvDisplayTools::onPointPicking,
+            Qt::UniqueConnection);
+
     if (!m_hotZone && m_vtkWidget) {
         m_hotZone = new ecvHotZone(m_vtkWidget);
     }
@@ -125,6 +136,7 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_deferredPickingTimer.setSingleShot(true);
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
+        syncVtkCameraToContext();
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
     });
@@ -192,6 +204,10 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
             ecvTools::TransFormRGB(context.backgroundCol),
             ecvTools::TransFormRGB(context.backgroundCol2),
             context.drawBackgroundGradient);
+
+    // Sync VTK camera → m_ctx matrices so getGLCameraParameters()
+    // returns valid projection/modelview for 2D label positioning.
+    syncVtkCameraToContext();
 
     // --- 3D pass ---
     if (!only2D && m_globalDBRoot) {
@@ -376,8 +392,39 @@ void ecvGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
 // New per-view overrides (Phase 1)
 // ================================================================
 
+void ecvGLView::syncVtkCameraToContext() {
+    if (!m_visualizer3D) return;
+    vtkCamera* cam = m_visualizer3D->getVtkCamera();
+    if (!cam) return;
+
+    Eigen::Matrix4d viewMat;
+    m_visualizer3D->getModelViewTransformMatrix(viewMat);
+    std::memcpy(m_ctx.viewMatd.data(), viewMat.data(),
+                16 * sizeof(double));
+    m_ctx.validModelviewMatrix = true;
+
+    if (m_vtkWidget) {
+        const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
+        int w = m_vtkWidget->width() * dpr;
+        int h = m_vtkWidget->height() * dpr;
+        m_ctx.glViewport = QRect(0, 0, w, h);
+
+        Eigen::Matrix4d projMat;
+        m_visualizer3D->getProjectionTransformMatrix(projMat);
+        std::memcpy(m_ctx.projMatd.data(), projMat.data(),
+                    16 * sizeof(double));
+        m_ctx.validProjectionMatrix = true;
+    }
+}
+
 void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     if (!m_vtkWidget) return;
+
+    // If matrices haven't been synced yet, do a live sync from VTK camera.
+    if (!m_ctx.validModelviewMatrix || !m_ctx.validProjectionMatrix) {
+        const_cast<ecvGLView*>(this)->syncVtkCameraToContext();
+    }
+
     const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
     params.viewport[0] = 0;
     params.viewport[1] = 0;
@@ -885,7 +932,8 @@ CCVector3d ecvGLView::convertMousePositionToOrientation(int x, int y) {
 }
 
 bool ecvGLView::processClickableItems(int x, int y) {
-    return m_displayTools ? m_displayTools->processClickableItems(x, y) : false;
+    if (!m_displayTools) return false;
+    return ecvDisplayTools::ProcessClickableItems(m_ctx, x, y);
 }
 
 void ecvGLView::updateZoom(float zoomFactor) {

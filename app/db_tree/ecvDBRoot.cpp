@@ -48,6 +48,10 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvEntityAddRemoveCommand.h>
+#include <ecvPropertyChangeCommand.h>
+#include <ecvScalarFieldEditCommand.h>
+#include <ecvUndoManager.h>
 #include <ecvViewManager.h>
 
 // common
@@ -651,6 +655,8 @@ void ccDBRoot::deleteSelectedEntities() {
 
     qism->clear();
     std::vector<removeInfo> toBeDeletedInfos;
+    auto* undoMgr = ecvViewManager::instance().undoManager();
+
     while (!toBeDeleted.empty()) {
         ccHObject* object = toBeDeleted.back();
         assert(object);
@@ -658,9 +664,6 @@ void ccDBRoot::deleteSelectedEntities() {
         toBeDeleted.pop_back();
 
         if (object->isKindOf(CV_TYPES::MESH)) {
-            // specific case: the object is a mesh and its parent is its
-            // vertices! (can happen if a Delaunay mesh is computed directly in
-            // CC)
             if (object->getParent() &&
                 object->getParent() == ccHObjectCaster::ToGenericMesh(object)
                                                ->getAssociatedCloud()) {
@@ -673,8 +676,34 @@ void ccDBRoot::deleteSelectedEntities() {
         assert(childPos >= 0);
 
         beginRemoveRows(index(object).parent(), childPos, childPos);
-        parent->removeChild(childPos);
+        parent->detachChild(object);
         endRemoveRows();
+
+        if (undoMgr) {
+            auto addFunc = [this](ccHObject* ent, ccHObject* par) {
+                par->addChild(ent);
+                addElement(ent, false);
+            };
+            auto removeFunc = [this](ccHObject* ent) {
+                ccHObject* par = ent->getParent();
+                if (!par) return;
+                int pos = par->getChildIndex(ent);
+                if (pos < 0) return;
+                beginRemoveRows(index(ent).parent(), pos, pos);
+                par->detachChild(ent);
+                endRemoveRows();
+            };
+            auto refreshFunc = []() {
+                MainWindow::TheInstance()->refreshAll();
+            };
+            undoMgr->push(new ecvEntityAddRemoveCommand(
+                object, parent,
+                ecvEntityAddRemoveCommand::Mode::Remove,
+                addFunc, removeFunc, refreshFunc,
+                tr("Delete '%1'").arg(object->getName())));
+        } else {
+            delete object;
+        }
     }
 
     updatePropertiesView();
@@ -855,7 +884,29 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     }
                 }
 
-                item->setName(value.toString());
+                QString oldName = item->getName();
+                QString newName = value.toString();
+                item->setName(newName);
+
+                auto refreshAfter = [this, index]() {
+                    reflectObjectPropChange(
+                            static_cast<ccHObject*>(index.internalPointer()));
+                    updatePropertiesView();
+                    emit dataChanged(index, index);
+                    MainWindow::TheInstance()->refreshAll(true, false);
+                };
+
+                auto* undoMgr =
+                        ecvViewManager::instance().undoManager();
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<QString>(
+                            item->getUniqueID(),
+                            QStringLiteral("name"), oldName, newName,
+                            [item](const QString& v) { item->setName(v); },
+                            refreshAfter,
+                            tr("Rename '%1' to '%2'")
+                                    .arg(oldName, newName)));
+                }
 
                 if (item->isEnabled() && item->isVisible()) {
                     MainWindow::TheInstance()->refreshAll(true, false);
@@ -872,10 +923,23 @@ bool ccDBRoot::setData(const QModelIndex& index,
             ccHObject* item = static_cast<ccHObject*>(index.internalPointer());
             assert(item);
             if (item) {
-                if (value == Qt::Checked)
-                    item->setEnabled(true);
-                else
-                    item->setEnabled(false);
+                bool wasBefore = item->isEnabled();
+                bool newVal = (value == Qt::Checked);
+                item->setEnabled(newVal);
+
+                auto* undoMgr =
+                        ecvViewManager::instance().undoManager();
+                if (undoMgr && wasBefore != newVal) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(),
+                            QStringLiteral("enabled"), wasBefore, newVal,
+                            [item](const bool& v) { item->setEnabled(v); },
+                            []() {
+                                MainWindow::TheInstance()->refreshAll();
+                            },
+                            tr("Toggle enable '%1'")
+                                    .arg(item->getName())));
+                }
 
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
                     item->isKindOf(CV_TYPES::POINT_KDTREE)) {
@@ -2121,8 +2185,8 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
     int selCount = selectedIndexes.size();
     if (selCount == 0) return;
 
-    // hide properties view
     hidePropertiesView();
+    auto* undoMgr = ecvViewManager::instance().undoManager();
 
     for (int i = 0; i < selCount; ++i) {
         ccHObject* item =
@@ -2131,35 +2195,94 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
             assert(false);
             continue;
         }
+
+        auto refreshAll = []() {
+            MainWindow::TheInstance()->refreshAll();
+        };
+
         switch (prop) {
-            case TG_ENABLE:  // enable state
-                item->setEnabled(!item->isEnabled());
-                break;
-            case TG_VISIBLE:  // visibility
+            case TG_ENABLE: {
+                bool wasBefore = item->isEnabled();
+                item->setEnabled(!wasBefore);
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("enabled"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) { item->setEnabled(v); },
+                        refreshAll,
+                        tr("Toggle enable '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_VISIBLE: {
+                bool wasBefore = item->isVisible();
                 item->toggleVisibility();
                 item->setForceRedrawRecursive(true);
-                break;
-            case TG_COLOR:  // color
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("visible"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) {
+                            item->setVisible(v);
+                            item->setForceRedrawRecursive(true);
+                        },
+                        refreshAll,
+                        tr("Toggle visibility '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_COLOR: {
+                bool wasBefore = item->colorsShown();
                 item->toggleColors();
-                break;
-            case TG_NORMAL:  // normal
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("colorsShown"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) { item->showColors(v); },
+                        refreshAll,
+                        tr("Toggle colors '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_NORMAL: {
+                bool wasBefore = item->normalsShown();
                 item->toggleNormals();
-                break;
-            case TG_SF:  // SF
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("normalsShown"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) { item->showNormals(v); },
+                        refreshAll,
+                        tr("Toggle normals '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_SF: {
+                bool wasBefore = item->sfShown();
                 item->toggleSF();
-                break;
-            case TG_3D_NAME:  // 3D name
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("sfShown"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) { item->showSF(v); },
+                        refreshAll,
+                        tr("Toggle SF '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_3D_NAME: {
+                bool wasBefore = item->nameShownIn3D();
                 item->toggleShowName();
-                break;
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                        item->getUniqueID(), QStringLiteral("showNameIn3D"),
+                        wasBefore, !wasBefore,
+                        [item](const bool& v) { item->showNameIn3D(v); },
+                        refreshAll,
+                        tr("Toggle 3D name '%1'").arg(item->getName())));
+                }
+            } break;
         }
     }
 
-    // we restablish properties view
     updatePropertiesView();
 
-    // MainWindow::RefreshAllGLWindow(false);
     if (TG_ENABLE == prop || TG_VISIBLE == prop || TG_3D_NAME == prop) {
-        // draw 3D and no need to forceredraw
         MainWindow::TheInstance()->refreshAll(true, false);
     } else {
         MainWindow::TheInstance()->refreshAll();
@@ -2244,10 +2367,21 @@ void ccDBRoot::editLabelScalarValue() {
 
     ScalarType newS = static_cast<ScalarType>(newValue);
     if (s != newS) {
-        // update the value and update the display
         sf->setValue(P.index, newS);
         sf->computeMinAndMax();
         pc->redrawDisplay();
+
+        auto* undoMgr = ecvViewManager::instance().undoManager();
+        if (undoMgr) {
+            std::vector<ScalarType> beforeVals = {s};
+            std::vector<ScalarType> afterVals = {newS};
+            int sfIdx = pc->getScalarFieldIndexByName(sf->getName());
+            undoMgr->push(new ecvScalarFieldEditCommand(
+                pc, sfIdx, P.index,
+                beforeVals, afterVals,
+                [pc]() { pc->redrawDisplay(); },
+                tr("Edit scalar value '%1'[%2]").arg(sf->getName()).arg(P.index)));
+        }
     }
 }
 

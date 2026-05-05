@@ -99,7 +99,8 @@ public:
     virtual ~ecvDisplayTools() override;
 
     // Phase M4: beginPrimaryRender/endPrimaryRender removed. Each ecvGLView
-    // now does its own full rendering pipeline without singleton swap.
+    // now does its own full rendering pipeline without ecvViewManager-wide
+    // primary display-tools context swap.
 
     // ================================================================
     // Per-view context
@@ -128,8 +129,9 @@ public:
     // Context-aware static API overloads  (Phase A)
     //
     // These overloads accept an explicit ecvViewContext so callers can
-    // operate on a specific view's state without relying on the
-    // singleton or activeSecondaryView delegation.  The original
+    // operate on a specific view's state without relying on
+    // ecvViewManager::resolveViewContext() or activeSecondaryView
+    // delegation.  The original
     // overloads (no ecvViewContext param) still work as before.
     // ================================================================
 
@@ -141,16 +143,16 @@ public:
     static void GetGLCameraParameters(ccGLCameraParameters& params,
                                       const ecvViewContext& viewCtx);
 
-    /// Modify point size inside a context (no singleton side-effects).
+    /// Modify point size inside a context (no shared-state side-effects).
     static void SetPointSize(ecvViewContext& ctx, float size);
 
-    /// Modify line width inside a context (no singleton side-effects).
+    /// Modify line width inside a context (no shared-state side-effects).
     static void SetLineWidth(ecvViewContext& ctx, float width);
 
-    /// Modify near/far clip inside a context (no singleton side-effects).
+    /// Modify near/far clip inside a context (no shared-state side-effects).
     static void SetCameraClip(ecvViewContext& ctx, double znear, double zfar);
 
-    /// Modify vertical FOV inside a context (no singleton side-effects).
+    /// Modify vertical FOV inside a context (no shared-state side-effects).
     static void SetCameraFovy(ecvViewContext& ctx, double fovy);
     static PivotVisibility GetPivotVisibility(const ecvViewContext& ctx);
     static void SetInteractionMode(ecvViewContext& ctx,
@@ -161,8 +163,9 @@ public:
 
     // ================================================================
     // Phase N1: Per-view context parameterized overloads
-    // Each has a corresponding singleton wrapper (no ctx param) that
-    // delegate to resolveViewContext() (or ctx-parameterized overloads).
+    // Each has a corresponding parameterless overload on display tools
+    // (managed by ecvViewManager) that delegates to resolveViewContext()
+    // (or ctx-parameterized overloads).
     // ================================================================
 
     static bool IsRectangularPickingAllowed(const ecvViewContext& ctx);
@@ -257,7 +260,7 @@ public:
                                           const ecvPickingParameters& params);
     static void DrawPivot(const ecvViewContext& ctx);
 
-    // -- ecvGenericGLDisplay implementation (primary window) --
+    // -- ecvGenericGLDisplay implementation (shared display tools, managed by ecvViewManager) --
 
     int getUniqueID() const override { return m_uniqueID; }
     QString getTitle() const override { return QStringLiteral("RenderView1"); }
@@ -1878,7 +1881,7 @@ public:  // visualization matrix transformation
                                          int h,
                                          unsigned char alpha = 255);
     //! Draws the 'hot zone' (+/- icons for point size), 'leave bubble-view'
-    //! button, etc.  Legacy wrapper using singleton state.
+    //! button, etc.  Legacy wrapper using shared state (ecvViewManager).
     static void DrawClickableItems(int xStart, int& yStart);
     //! Phase M4 parameterized overload: accepts explicit per-view state so
     //! callers (ecvGLView) can bypass ScopedHotZoneRender.
@@ -1917,9 +1920,26 @@ public:  // visualization matrix transformation
     inline static bool ExclusiveFullScreen() {
         return ecvViewManager::instance().resolveViewContext().exclusiveFullscreen;
     }
-    inline static void SetExclusiveFullScreenFlage(bool state) {
+    inline static bool ExclusiveFullScreen(ecvGenericGLDisplay* view) {
+        if (view && view->viewContext())
+            return view->viewContext()->exclusiveFullscreen;
+        return ExclusiveFullScreen();
+    }
+    inline static void SetExclusiveFullScreenFlag(bool state) {
         ecvViewManager::instance().resolveViewContext().exclusiveFullscreen =
                 state;
+    }
+    inline static void SetExclusiveFullScreenFlag(bool state,
+                                                  ecvGenericGLDisplay* view) {
+        if (view && view->viewContext()) {
+            view->viewContext()->exclusiveFullscreen = state;
+            return;
+        }
+        SetExclusiveFullScreenFlag(state);
+    }
+    // Legacy typo-compat alias
+    inline static void SetExclusiveFullScreenFlage(bool state) {
+        SetExclusiveFullScreenFlag(state);
     }
 
     //! Sets pixel size (i.e. zoom base)
@@ -2248,6 +2268,7 @@ public:  // visualization matrix transformation
     /** \param params picking parameters
      **/
     static void StartPicking(PickingParameters& params);
+    static void StartPicking(ecvViewContext& ctx, PickingParameters& params);
 
     static ccHObject* GetPickedEntity(const PickingParameters& params);
 
@@ -2411,7 +2432,7 @@ public:
     QTimer m_deferredPickingTimer;
 
     //! View that triggered the current deferred pick (nullptr =
-    //! primary/singleton).
+    //! resolve via active view from ecvViewManager).
     ecvGenericGLDisplay* m_pickingTargetView = nullptr;
 
 public:  // event representation
@@ -2420,9 +2441,6 @@ public:  // event representation
 
     //! Hot zone (may point to a per-widget HotZone or a fallback created here)
     HotZone* m_hotZone;
-    //! True when m_hotZone was allocated by DrawClickableItems (singleton owns
-    //! it)
-    bool m_hotZoneOwnedBySingleton = false;
 
     QStringList m_diagStrings;
 
@@ -2458,7 +2476,7 @@ public:  // event representation
     }
     static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
-    static void ClearBubbleView();
+    static void ClearBubbleView(ecvGenericGLDisplay* display = nullptr);
 
 public slots:
 
@@ -2474,7 +2492,8 @@ public slots:
     void checkScheduledRedraw();
 
     //! Performs standard picking at the last clicked mouse position.
-    //! Uses m_pickingTargetView's context if set, otherwise singleton state.
+    //! Uses m_pickingTargetView's context if set, otherwise shared state
+    //! (ecvViewManager).
     void doPicking();
 
     //! Set the view that should provide state for the next deferred pick.

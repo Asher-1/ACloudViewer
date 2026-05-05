@@ -8,7 +8,7 @@
 
 **Tech Stack:** C++17, Qt 5/6, VTK 9.x, CMake
 
-**Status (2026-05-04):** **Complete.** The `ecvDisplayTools` **singleton is removed**. `ecvViewManager` is the central coordinator (ParaView `pqActiveObjects` pattern): it owns `m_displayTools` (`ecvViewManager::instance().displayTools()`), global DB/font/removal batching state, `resolveViewContext()`, and `redrawAll()`. Each `ecvGLView` holds per-view context (`ecvViewContext`), messages, active/clickable items, hot zone, timers, and capture mode. `ecvGenericDisplayTools::GetInstance()` returns `ecvViewManager::instance().displayTools()` for legacy call sites.
+**Status (2026-05-04):** **Complete and build-verified (`make -j48` exits 0).** The `ecvDisplayTools` **singleton is removed**. `ecvViewManager` is the central coordinator (ParaView `pqActiveObjects` pattern): it owns `m_displayTools` (`ecvViewManager::instance().displayTools()`), global DB/font/removal batching state, `resolveViewContext()`, and `redrawAll()`. Each `ecvGLView` holds per-view context (`ecvViewContext`), messages, active/clickable items, hot zone, timers, and capture mode. `ecvGenericDisplayTools::GetInstance()` returns `ecvViewManager::instance().displayTools()` for legacy call sites. Build fixes applied: `QOverload` disambiguation for overloaded signals in `ecvViewManagerSetupRelay.cpp`, `static_cast` for return type in `ecvGenericDisplayTools::GetInstance()`, CMake reconfigure for new source files.
 
 **Implementation snapshot (before → after — for plan traceability only):**
 - ~~`s_tools` / `sharedTools()`~~ → display-tools instance owned by `ecvViewManager` only

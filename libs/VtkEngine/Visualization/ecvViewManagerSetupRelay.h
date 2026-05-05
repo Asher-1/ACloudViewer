@@ -13,4 +13,9 @@ namespace Visualization {
 /// ecvDisplayTools PMF connections). Safe to call more than once.
 void registerViewManagerTypedRelay();
 
+/// Bridges ecvDisplayTools result signals (picking, camera state, entity
+/// selection) to ecvViewManager so that app-level consumers receive them.
+/// Must be called after ecvDisplayTools is constructed. Idempotent.
+void installDisplayToolsRelay();
+
 }  // namespace Visualization

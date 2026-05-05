@@ -64,6 +64,7 @@ namespace Visualization {
 
 void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     registerViewManagerTypedRelay();
+    installDisplayToolsRelay();
 
     this->m_vtkWidget = new QVTKWidgetCustom(win, this, stereoMode);
     this->m_vtkWidget->connectSignalsTo(this);
@@ -144,6 +145,7 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     m_visualizer3D = vis;
     m_vtkWidget = widget;
     SetCurrentScreen(widget);
+    SetMainScreen(widget);
 }
 
 // Phase M4: ScopedHotZoneRender deleted. ecvGLView now calls
@@ -915,25 +917,39 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
         }
     }
 
-    // Multi-window: also remove from all secondary views' VtkVis + ImageVis
-    const auto& views = ecvViewManager::instance().getAllViews();
-    std::string removeId = CVTools::FromQString(context.removeViewID);
-    for (auto* view : views) {
-        if (!view || view == this) continue;
-        auto* glView = dynamic_cast<ecvGLView*>(view);
-        if (!glView) continue;
+    // Multi-window: propagate 3D scene entity removal to secondary views.
+    // 2D overlays (text, rectangles, images, etc.) are per-view and must NOT
+    // be propagated — each view's ClearBubbleView handles its own cleanup.
+    const bool is2DOverlay =
+            context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
+            context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
+            context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT ||
+            context.removeEntityType == ENTITY_TYPE::ECV_IMAGE ||
+            context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
+            context.removeEntityType == ENTITY_TYPE::ECV_POLYLINE_2D ||
+            context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
+            context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D;
 
-        auto* viewVis = dynamic_cast<VtkVis*>(glView->getVisualizer3D());
-        if (viewVis) {
-            viewVis->removeEntities(context);
-        }
+    if (!is2DOverlay) {
+        const auto& views = ecvViewManager::instance().getAllViews();
+        std::string removeId = CVTools::FromQString(context.removeViewID);
+        for (auto* view : views) {
+            if (!view || view == this) continue;
+            auto* glView = dynamic_cast<ecvGLView*>(view);
+            if (!glView) continue;
 
-        auto imgVis = glView->getImageVis();
-        if (imgVis) {
-            if (context.removeEntityType == ENTITY_TYPE::ECV_ALL) {
-                imgVis->removeAllLayers();
-            } else if (!removeId.empty() && imgVis->contains(removeId)) {
-                imgVis->removeLayer(removeId);
+            auto* viewVis = dynamic_cast<VtkVis*>(glView->getVisualizer3D());
+            if (viewVis) {
+                viewVis->removeEntities(context);
+            }
+
+            auto imgVis = glView->getImageVis();
+            if (imgVis) {
+                if (context.removeEntityType == ENTITY_TYPE::ECV_ALL) {
+                    imgVis->removeAllLayers();
+                } else if (!removeId.empty() && imgVis->contains(removeId)) {
+                    imgVis->removeLayer(removeId);
+                }
             }
         }
     }
@@ -1204,13 +1220,14 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             bool isSecondaryPt = param.context.display &&
                                  param.context.display !=
                                          static_cast<ecvDisplayTools*>(this);
-            Visualization::ImageVis* ptVis2D =
-                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
+            Visualization::ImageVis* ptVis2D = nullptr;
             if (isSecondaryPt) {
                 auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     ptVis2D = glView->getImageVis().get();
                 }
+            } else {
+                ptVis2D = m_visualizer2D ? m_visualizer2D.get() : nullptr;
             }
             if (ptVis2D) {
                 Eigen::Array<unsigned char, 3, 1> color(
@@ -1221,18 +1238,17 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             }
         } break;
         case WIDGETS_TYPE::WIDGET_RECTANGLE_2D: {
-            // Route rectangle to the correct view's 2D visualizer
-            // (same secondary-view routing as WIDGET_T2D)
             bool isSecondaryRect = param.context.display &&
                                    param.context.display !=
                                            static_cast<ecvDisplayTools*>(this);
-            Visualization::ImageVis* rectVis2D =
-                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
+            Visualization::ImageVis* rectVis2D = nullptr;
             if (isSecondaryRect) {
                 auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     rectVis2D = glView->getImageVis().get();
                 }
+            } else {
+                rectVis2D = m_visualizer2D ? m_visualizer2D.get() : nullptr;
             }
 
             if (rectVis2D) {

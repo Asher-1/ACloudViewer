@@ -34,6 +34,8 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericGLDisplay.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewLayoutProxy.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewManager.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvUndoManager.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvEntityAddRemoveCommand.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewRepresentation.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvRepresentationManager.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.cpp

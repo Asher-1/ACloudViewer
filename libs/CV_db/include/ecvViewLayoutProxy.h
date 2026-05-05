@@ -8,7 +8,6 @@
 #pragma once
 
 #include <QJsonObject>
-#include <QList>
 #include <QObject>
 #include <QString>
 #include <vector>
@@ -16,6 +15,7 @@
 #include "CV_db.h"
 
 class ecvGenericGLDisplay;
+class ecvUndoManager;
 
 /// KD-tree–based view layout model.
 ///
@@ -127,27 +127,21 @@ public:
     QString name() const { return m_name; }
     void setName(const QString& name);
 
-    // ================================================================
-    // Undo / Redo (ParaView BEGIN_UNDO_SET / END_UNDO_SET pattern)
-    // ================================================================
+    void setUndoManager(ecvUndoManager* mgr);
 
-    /// Begin an undo set. Saves a snapshot of the current tree.
-    /// Nested calls are ref-counted; the snapshot is taken only at depth 0.
+    // ================================================================
+    // Undo grouping (BEGIN_UNDO_SET / END_UNDO_SET pattern)
+    // ================================================================
+    ///
+    /// Records layout state transitions on the global `ecvUndoManager` stack
+    /// when nesting depth returns to zero. Nested calls are ref-counted; the
+    /// "before" snapshot is captured only when depth goes from 0 to 1.
+    ///
+    /// Begin an undo set.
     void beginUndoSet(const QString& label = QString());
 
-    /// End an undo set. On the outermost call, pushes the saved snapshot
-    /// onto the undo stack and clears the redo stack.
+    /// End an undo set (outermost nesting pushes when state changed).
     void endUndoSet();
-
-    bool canUndo() const;
-    bool canRedo() const;
-    QString undoLabel() const;
-    QString redoLabel() const;
-
-    void undo();
-    void redo();
-
-    static constexpr int MaxUndoDepth = 32;
 
     // ================================================================
     // Serialization
@@ -166,9 +160,6 @@ signals:
 
     void nameChanged(const QString& name);
 
-    /// Emitted when undo/redo availability changes.
-    void undoRedoChanged();
-
 private:
     struct Cell {
         Direction direction = NONE;
@@ -184,21 +175,12 @@ private:
     void notifyChanged();
     void equalizeRecursive(int location, Direction filterDir);
 
-    struct Snapshot {
-        QString label;
-        std::vector<Cell> tree;
-        int maximizedCell = -1;
-    };
-
-    Snapshot takeSnapshot(const QString& label = QString()) const;
-    void applySnapshot(const Snapshot& snap);
-
     std::vector<Cell> m_tree;
     int m_maximizedCell = -1;
     QString m_name;
 
-    QList<Snapshot> m_undoStack;
-    QList<Snapshot> m_redoStack;
-    Snapshot m_pendingSnapshot;
+    ecvUndoManager* m_undoManager = nullptr;
+    QJsonObject m_pendingBeforeState;
+    QString m_pendingLabel;
     int m_undoNesting = 0;
 };

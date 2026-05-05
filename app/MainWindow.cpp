@@ -2584,6 +2584,15 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
         engineDT->switchActiveView(glView->getVisualizer3DSP(),
                                    glView->getVtkWidget());
 
+        // Force a render on the newly-activated view so it doesn't appear
+        // gray/stale after switching tabs or split panes.
+        QTimer::singleShot(0, glView, [glView]() {
+            if (glView && glView->getVtkWidget() &&
+                glView->getVtkWidget()->isVisible()) {
+                glView->redraw(false, true);
+            }
+        });
+
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
             m_selectionController->setVisualizer(glView->getVisualizer3D());

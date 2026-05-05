@@ -3593,10 +3593,10 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Auto-pick rotation center</string>
    </property>
    <property name="toolTip">
-    <string>Auto-pick rotation center (rotation is always placed at the middle of the screen if possible)</string>
+    <string>Auto-pick rotation center at clicked 3D point</string>
    </property>
    <property name="statusTip">
-    <string>Auto-pick rotation center (rotation is always placed at the middle of the screen if possible)</string>
+    <string>Auto-pick rotation center at clicked 3D point</string>
    </property>
   </action>
   <action name="actionResetPivot">
@@ -3605,10 +3605,10 @@ QTreeView::branch:open:has-children:has-siblings  {
      <normaloff>:/Resources/images/pqResetCenter@2x.png</normaloff>:/Resources/images/pqResetCenter@2x.png</iconset>
    </property>
    <property name="text">
-    <string>reset Rotation Center</string>
+    <string>Reset Rotation Center</string>
    </property>
    <property name="statusTip">
-    <string>reset Rotation Center</string>
+    <string>Reset Rotation Center</string>
    </property>
   </action>
   <action name="actionShowPivot">

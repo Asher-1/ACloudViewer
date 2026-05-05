@@ -8,10 +8,17 @@
 #include "ecvViewLayoutProxy.h"
 
 #include <QJsonArray>
+#include <QJsonObject>
 #include <algorithm>
 
 #include "ecvGenericGLDisplay.h"
+#include "ecvLayoutUndoCommand.h"
+#include "ecvUndoManager.h"
 #include "ecvViewManager.h"
+
+void ecvViewLayoutProxy::setUndoManager(ecvUndoManager* mgr) {
+    m_undoManager = mgr;
+}
 
 ecvViewLayoutProxy::ecvViewLayoutProxy(QObject* parent) : QObject(parent) {
     m_tree.resize(1);
@@ -346,6 +353,12 @@ QJsonObject ecvViewLayoutProxy::saveState() const {
         obj["direction"] = static_cast<int>(cell.direction);
         obj["fraction"] = cell.splitFraction;
         obj["view_id"] = cell.view ? cell.view->getUniqueID() : -1;
+        if (cell.direction == NONE && cell.view) {
+            const QJsonObject camJson = cell.view->saveLayoutCameraState();
+            if (!camJson.isEmpty()) {
+                obj[QStringLiteral("camera")] = camJson;
+            }
+        }
         cells.append(obj);
     }
 
@@ -377,6 +390,11 @@ bool ecvViewLayoutProxy::loadState(const QJsonObject& state) {
                 auto* view = ecvViewManager::instance().findView(viewId);
                 if (view) {
                     m_tree[idx].view = view;
+                    const QJsonObject camObj =
+                            obj.value(QStringLiteral("camera")).toObject();
+                    if (!camObj.isEmpty()) {
+                        view->loadLayoutCameraState(camObj);
+                    }
                 }
             }
         }
@@ -390,35 +408,20 @@ void ecvViewLayoutProxy::reset() {
     m_tree.clear();
     m_tree.resize(1);
     m_maximizedCell = -1;
-    m_undoStack.clear();
-    m_redoStack.clear();
     m_undoNesting = 0;
+    m_pendingBeforeState = QJsonObject();
+    m_pendingLabel.clear();
     emit layoutChanged();
-    emit undoRedoChanged();
 }
 
 // ============================================================================
-// Undo / Redo
+// Undo grouping (global stack via ecvUndoManager)
 // ============================================================================
-
-ecvViewLayoutProxy::Snapshot ecvViewLayoutProxy::takeSnapshot(
-        const QString& label) const {
-    Snapshot snap;
-    snap.label = label;
-    snap.tree = m_tree;
-    snap.maximizedCell = m_maximizedCell;
-    return snap;
-}
-
-void ecvViewLayoutProxy::applySnapshot(const Snapshot& snap) {
-    m_tree = snap.tree;
-    m_maximizedCell = snap.maximizedCell;
-    emit layoutChanged();
-}
 
 void ecvViewLayoutProxy::beginUndoSet(const QString& label) {
     if (m_undoNesting == 0) {
-        m_pendingSnapshot = takeSnapshot(label);
+        m_pendingBeforeState = saveState();
+        m_pendingLabel = label;
     }
     ++m_undoNesting;
 }
@@ -426,41 +429,13 @@ void ecvViewLayoutProxy::beginUndoSet(const QString& label) {
 void ecvViewLayoutProxy::endUndoSet() {
     if (m_undoNesting <= 0) return;
     --m_undoNesting;
-    if (m_undoNesting == 0) {
-        m_undoStack.push_back(m_pendingSnapshot);
-        m_redoStack.clear();
-        if (m_undoStack.size() > MaxUndoDepth) {
-            m_undoStack.removeFirst();
+    if (m_undoNesting == 0 && m_undoManager) {
+        QJsonObject afterState = saveState();
+        if (m_pendingBeforeState != afterState) {
+            m_undoManager->push(new ecvLayoutUndoCommand(this, m_pendingBeforeState,
+                                                         afterState, m_pendingLabel));
         }
-        emit undoRedoChanged();
+        m_pendingBeforeState = QJsonObject();
+        m_pendingLabel.clear();
     }
-}
-
-bool ecvViewLayoutProxy::canUndo() const { return !m_undoStack.isEmpty(); }
-bool ecvViewLayoutProxy::canRedo() const { return !m_redoStack.isEmpty(); }
-
-QString ecvViewLayoutProxy::undoLabel() const {
-    return m_undoStack.isEmpty() ? QString() : m_undoStack.last().label;
-}
-
-QString ecvViewLayoutProxy::redoLabel() const {
-    return m_redoStack.isEmpty() ? QString() : m_redoStack.last().label;
-}
-
-void ecvViewLayoutProxy::undo() {
-    if (m_undoStack.isEmpty()) return;
-
-    m_redoStack.push_back(takeSnapshot(m_undoStack.last().label));
-    Snapshot snap = m_undoStack.takeLast();
-    applySnapshot(snap);
-    emit undoRedoChanged();
-}
-
-void ecvViewLayoutProxy::redo() {
-    if (m_redoStack.isEmpty()) return;
-
-    m_undoStack.push_back(takeSnapshot(m_redoStack.last().label));
-    Snapshot snap = m_redoStack.takeLast();
-    applySnapshot(snap);
-    emit undoRedoChanged();
 }
