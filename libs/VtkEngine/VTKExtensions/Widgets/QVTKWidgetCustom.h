@@ -44,6 +44,8 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // SYSTEM
 #include <assert.h>
 
+#include <vector>
+
 /**
  * @file QVTKWidgetCustom.h
  * @brief Custom QVTK widget with multi-viewport, scale bar, and coordinate
@@ -53,6 +55,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 class QMainWindow;
 class ccPolyline;
 class ecvGLView;
+class ccHObject;
 class ecvDisplayTools;
 namespace Visualization {
 class ImageVis;
@@ -183,6 +186,8 @@ public:
     }
 
 protected:
+    void paintGL() override;
+
     // events handling
     virtual bool event(QEvent* evt) override;
     void paintGL() override;
@@ -366,4 +371,5 @@ protected:
     bool m_rightClickOnLabel = false;
 
     CCVector3d m_lastMouseOrientation;
+    void collectAllLabels(std::vector<ccHObject*>& labels) const;
 };

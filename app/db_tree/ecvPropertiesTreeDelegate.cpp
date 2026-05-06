@@ -2957,6 +2957,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             CC_DRAW_CONTEXT context;
             fillDrawContextFromEffectiveView(context);
             label->update2DLabelView(context);
+            // label->update2DLabelView(context, true);
         }
             redraw = false;
             break;

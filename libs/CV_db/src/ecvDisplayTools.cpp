@@ -4375,7 +4375,8 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param,
             context.removeViewID = param.viewID;
             RemoveEntities(context);
         } break;
-        case WIDGETS_TYPE::WIDGET_SPHERE: {
+        case WIDGETS_TYPE::WIDGET_SPHERE:
+        case WIDGETS_TYPE::WIDGET_POINT: {
             context.defaultViewPort = param.viewport;
             context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
             context.removeViewID = param.viewID;
