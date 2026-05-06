@@ -2472,6 +2472,46 @@ bool VtkVis::addSphere(double cx,
     return true;
 }
 
+bool VtkVis::addPointSprite(double cx,
+                            double cy,
+                            double cz,
+                            float pointSizePixels,
+                            double r,
+                            double g,
+                            double b,
+                            const std::string& id,
+                            int viewport) {
+    if (getShapeActorMap()->find(id) != getShapeActorMap()->end()) {
+        return false;
+    }
+
+    auto points = vtkSmartPointer<vtkPoints>::New();
+    points->InsertNextPoint(cx, cy, cz);
+
+    auto verts = vtkSmartPointer<vtkCellArray>::New();
+    vtkIdType pid = 0;
+    verts->InsertNextCell(1, &pid);
+
+    auto polyData = vtkSmartPointer<vtkPolyData>::New();
+    polyData->SetPoints(points);
+    polyData->SetVerts(verts);
+
+    auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputData(polyData);
+
+    auto actor = vtkSmartPointer<vtkLODActor>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetRepresentationToPoints();
+    actor->GetProperty()->SetPointSize(pointSizePixels);
+    actor->GetProperty()->SetRenderPointsAsSpheres(true);
+    actor->GetProperty()->SetColor(r, g, b);
+    actor->GetProperty()->SetLighting(false);
+    addActorToRenderer(actor, viewport);
+
+    (*getShapeActorMap())[id] = actor;
+    return true;
+}
+
 /********************************Draw Entities*********************************/
 
 /******************************** Entities Removement
