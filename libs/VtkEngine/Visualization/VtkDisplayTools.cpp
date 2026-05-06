@@ -1094,6 +1094,16 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             }
             break;
 
+        case WIDGETS_TYPE::WIDGET_POINT:
+            if (!m_visualizer3D->contains(viewID)) {
+                float pxSize = param.pointSize > 0 ? param.pointSize : 10.0f;
+                m_visualizer3D->addPointSprite(param.center.x, param.center.y,
+                                               param.center.z, pxSize,
+                                               param.color.r, param.color.g,
+                                               param.color.b, viewID, viewport);
+            }
+            break;
+
         case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
             if (!vis->updateScalarBar(param.context)) {
                 vis->addScalarBar(param.context);

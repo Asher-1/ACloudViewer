@@ -34,14 +34,12 @@ public:
     struct LabelOverlayData {
         bool valid = false;
 
-        // Panel geometry (in Qt logical pixel coords, Y=0 at top)
         QRectF panelRect;
         QColor bkgColor;
         QColor borderColor;
         QColor textColor;
         bool highlighted = false;
 
-        // Title + body text
         QString title;
         QStringList bodyLines;
         QFont titleFont;
@@ -52,30 +50,25 @@ public:
         int tabMarginX = 0;
         int tabMarginY = 0;
 
-        // Per-column layout for CloudCompare-style colored label columns
         struct TabColumn {
-            int xOffset = 0;  // pixel offset from body left edge
+            int xOffset = 0;
             int width = 0;
-            bool isLabel = false;  // even columns (0,2,4...) are label cols
+            bool isLabel = false;
         };
         QVector<TabColumn> columns;
-        // Cell texts: tabCells[row][col]
         QVector<QVector<QString>> tabCells;
         int tabRowCount = 0;
 
-        // Arrow wedge from panel edge to centroid
         QPolygonF arrowPolygon;
 
-        // ABC legend entries near 3D markers
         struct Legend {
             QString text;
-            QPointF pos;  // Qt logical coords
+            QPointF pos;
             QFont font;
-            QColor color;  // per-legend text color (CloudCompare style)
+            QColor color;
         };
         QVector<Legend> legends;
 
-        // 2D connecting segments between projected points and panel
         struct Segment2D {
             QPointF from, to;
         };
@@ -85,6 +78,9 @@ public:
 
         void clear() {
             valid = false;
+            panelRect = QRectF();
+            title.clear();
+            bodyLines.clear();
             legends.clear();
             arrowPolygon.clear();
             segments.clear();

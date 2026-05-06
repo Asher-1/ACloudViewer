@@ -25,6 +25,7 @@
 // Qt
 #include <QApplication>
 #include <QFont>
+#include <QLineF>
 #include <QPainter>
 #include <QScreen>
 #include <QSharedPointer>
@@ -287,7 +288,7 @@ bool cc2DLabel::move2D(
     setPosition(m_screenPos[0] + static_cast<float>(dx) / screenWidth,
                 m_screenPos[1] - static_cast<float>(dy) / screenHeight);
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             "[Label] move2D: '%s' dx=%d dy=%d screenWH=(%d,%d) "
             "pos (%.4f,%.4f)->(%.4f,%.4f)",
             qPrintable(getName()), dx, dy, screenWidth, screenHeight, oldX,
@@ -958,13 +959,6 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (MACRO_VirtualTransEnabled(context)) return;
 
     if (!isRedraw() && !context.forceRedraw) {
-        static int s_skipLog = 0;
-        if ((s_skipLog++ % 300) == 0) {
-            CVLog::Print(
-                    "[Label] drawMeOnly SKIPPED '%s': isRedraw=%d "
-                    "forceRedraw=%d",
-                    qPrintable(getName()), isRedraw(), context.forceRedraw);
-        }
         return;
     }
 
@@ -976,20 +970,11 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (MACRO_Draw3D(context)) {
         drawMeOnly3D(context);
     } else if (MACRO_Draw2D(context)) {
-        static int s_draw2DLog = 0;
-        if ((s_draw2DLog++ % 60) == 0) {
-            CVLog::Print(
-                    "[Label] drawMeOnly -> drawMeOnly2D '%s' "
-                    "display=%p myDisp=%p",
-                    qPrintable(getName()), static_cast<void*>(context.display),
-                    static_cast<void*>(myDisp));
-        }
         drawMeOnly2D(context);
     }
 }
 
 void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
-    // clear history
     clear3Dviews();
     if (!isVisible() || !isEnabled()) {
         return;
@@ -1189,11 +1174,11 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 // doesn't push its own!
                 markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-                if (isSelected() && !entityPickingMode)
-                    c_unitPointMarker->setTempColor(ecvColor::red);
-                else
-                    c_unitPointMarker->setTempColor(
-                            context.labelDefaultMarkerCol);
+                ecvColor::Rgb markerColor =
+                        (isSelected() && !entityPickingMode)
+                                ? ecvColor::red
+                                : context.labelDefaultMarkerCol;
+                c_unitPointMarker->setTempColor(markerColor);
 
                 static constexpr float LABEL_MARKER_PIXEL_SIZE = 10.0f;
                 for (size_t i = 0; i < count; i++) {
@@ -1205,7 +1190,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                     param.context.display = context.display;
                     m_pickedPoints[i].markerScale = LABEL_MARKER_PIXEL_SIZE;
                     param.center = P;
-                    param.color = ecvColor::FromRgba(ecvColor::ored);
+                    param.color = ecvColor::FromRgbub(markerColor);
                     drawWidgetsDispatch(context.display, param, false);
                 }
             }
@@ -1344,50 +1329,89 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         }
 
         if (visibleCount) {
-            if (m_dispPointsLegend && !entityPickingMode) {
-                QFont font = QApplication::font();
-                if (context.display) {
-                    font.setPointSize(static_cast<int>(
-                            context.display->getDisplayParameters()
-                                    .defaultFontSize));
-                } else if (auto* ev = ecvViewManager::instance()
-                                              .getEffectiveView()) {
-                    font.setPointSize(static_cast<int>(
-                            ev->getDisplayParameters().defaultFontSize));
-                } else {
-                    font.setPointSize(static_cast<int>(
-                            ecvGui::Parameters().defaultFontSize));
-                }
-                {
-                    int basePt = font.pointSize();
-                    if (basePt < 6) basePt = 6;
-                    font.setPointSize(std::min(basePt, 9));
-                }
-                font.setBold(false);
-                static const QChar ABC[3] = {'A', 'B', 'C'};
-
+            if (!entityPickingMode) {
                 const float dpr = context.devicePixelRatio;
                 const float lH = context.glH / dpr;
 
-                for (size_t j = 0; j < count; j++) {
-                    QString legendText;
-                    if (count == 1)
-                        legendText = getName();
-                    else if (count == 3)
-                        legendText = ABC[j];
+                // Connecting segments between picked points
+                // (drawn before m_dispIn2D check, always visible when
+                // points are visible — consistent with CloudCompare)
+                if (count > 1) {
+                    m_overlayData.segmentColor =
+                            isSelected()
+                                    ? QColor(Qt::red)
+                                    : QColor(context.labelDefaultMarkerCol.r,
+                                             context.labelDefaultMarkerCol.g,
+                                             context.labelDefaultMarkerCol.b);
+                    for (size_t i = 0; i < count; ++i) {
+                        size_t j = (i + 1) % count;
+                        if (count == 2 && i == 1) break;
+                        float px0 =
+                                static_cast<float>(m_pickedPoints[i].pos2D.x) /
+                                dpr;
+                        float py0 =
+                                lH - 1.0f -
+                                static_cast<float>(m_pickedPoints[i].pos2D.y) /
+                                        dpr;
+                        float px1 =
+                                static_cast<float>(m_pickedPoints[j].pos2D.x) /
+                                dpr;
+                        float py1 =
+                                lH - 1.0f -
+                                static_cast<float>(m_pickedPoints[j].pos2D.y) /
+                                        dpr;
+                        LabelOverlayData::Segment2D seg;
+                        seg.from = QPointF(px0, py0);
+                        seg.to = QPointF(px1, py1);
+                        m_overlayData.segments.push_back(seg);
+                    }
+                }
 
-                    if (legendText.isEmpty()) continue;
+                // Point legends (controlled by m_dispPointsLegend)
+                if (m_dispPointsLegend) {
+                    QFont font = QApplication::font();
+                    if (context.display) {
+                        font.setPointSize(static_cast<int>(
+                                context.display->getDisplayParameters()
+                                        .defaultFontSize));
+                    } else if (auto* ev = ecvViewManager::instance()
+                                                  .getEffectiveView()) {
+                        font.setPointSize(static_cast<int>(
+                                ev->getDisplayParameters().defaultFontSize));
+                    } else {
+                        font.setPointSize(static_cast<int>(
+                                ecvGui::Parameters().defaultFontSize));
+                    }
+                    {
+                        int basePt = font.pointSize();
+                        if (basePt < 6) basePt = 6;
+                        font.setPointSize(std::min(basePt, 9));
+                    }
+                    font.setBold(false);
+                    static const QChar ABC[3] = {'A', 'B', 'C'};
 
-                    LabelOverlayData::Legend leg;
-                    leg.text = legendText;
-                    leg.font = font;
-                    leg.color = Qt::white;
-                    float vtkX = static_cast<float>(m_pickedPoints[j].pos2D.x) +
-                                 context.labelMarkerTextShift_pix;
-                    float vtkY = static_cast<float>(m_pickedPoints[j].pos2D.y) +
-                                 context.labelMarkerTextShift_pix;
-                    leg.pos = QPointF(vtkX / dpr, lH - 1.0f - vtkY / dpr);
-                    m_overlayData.legends.push_back(leg);
+                    for (size_t j = 0; j < count; j++) {
+                        QString legendText;
+                        if (count == 1)
+                            legendText = getName();
+                        else if (count == 3)
+                            legendText = ABC[j];
+
+                        if (legendText.isEmpty()) continue;
+
+                        LabelOverlayData::Legend leg;
+                        leg.text = legendText;
+                        leg.font = font;
+                        leg.color = Qt::white;
+                        float vtkX =
+                                static_cast<float>(m_pickedPoints[j].pos2D.x) +
+                                context.labelMarkerTextShift_pix;
+                        float vtkY =
+                                static_cast<float>(m_pickedPoints[j].pos2D.y) +
+                                context.labelMarkerTextShift_pix;
+                        leg.pos = QPointF(vtkX / dpr, lH - 1.0f - vtkY / dpr);
+                        m_overlayData.legends.push_back(leg);
+                    }
                 }
             }
         } else {
@@ -1396,7 +1420,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     }
 
     // Legend-only mode: mark overlay valid so legends are painted
-    if (!m_overlayData.legends.isEmpty()) {
+    if (!m_overlayData.legends.isEmpty() || !m_overlayData.segments.isEmpty()) {
         m_overlayData.valid = true;
     }
 
@@ -1406,6 +1430,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                                 this->getViewId());
         capWp.context.display = context.display;
         removeWidgetsDispatch(capWp);
+        m_labelROI = QRect(0, 0, 0, 0);
+        m_lastScreenPos[0] = m_lastScreenPos[1] = -1;
         return;
     }
 
@@ -1879,54 +1905,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
             m_overlayData.arrowPolygon.clear();
         }
 
-        // CloudCompare-style: connect picked points TO EACH OTHER (not to
-        // panel) 1-point: no segments; 2-point: P0-P1; 3-point: triangle
-        // outline
-        m_overlayData.segmentColor =
-                highlighted ? QColor(Qt::red)
-                            : QColor(context.labelDefaultMarkerCol.r,
-                                     context.labelDefaultMarkerCol.g,
-                                     context.labelDefaultMarkerCol.b);
-        if (count > 1) {
-            for (size_t i = 0; i < count; ++i) {
-                size_t j = (i + 1) % count;
-                if (count == 2 && i == 1) break;
-                float px0 = static_cast<float>(m_pickedPoints[i].pos2D.x) / dpr;
-                float py0 = lH - 1.0f -
-                            static_cast<float>(m_pickedPoints[i].pos2D.y) / dpr;
-                float px1 = static_cast<float>(m_pickedPoints[j].pos2D.x) / dpr;
-                float py1 = lH - 1.0f -
-                            static_cast<float>(m_pickedPoints[j].pos2D.y) / dpr;
-                LabelOverlayData::Segment2D seg;
-                seg.from = QPointF(px0, py0);
-                seg.to = QPointF(px1, py1);
-                m_overlayData.segments.push_back(seg);
-            }
-        }
-
         m_overlayData.valid = true;
-
-        static int s_drawLogCounter = 0;
-        static int s_prevPanelX = -9999, s_prevPanelY = -9999;
-        int curPanelX = static_cast<int>(m_overlayData.panelRect.x());
-        int curPanelY = static_cast<int>(m_overlayData.panelRect.y());
-        bool panelMoved =
-                (curPanelX != s_prevPanelX || curPanelY != s_prevPanelY);
-        if (panelMoved || (s_drawLogCounter++ % 60) == 0) {
-            CVLog::Print(
-                    "[Label] drawMeOnly2D: '%s' panel=(%d,%d %dx%d) "
-                    "screenPos=(%.4f,%.4f) logicalWH=(%.1f,%.1f) "
-                    "glW=%d glH=%d dpr=%.1f %s",
-                    qPrintable(getName()), curPanelX, curPanelY,
-                    static_cast<int>(m_overlayData.panelRect.width()),
-                    static_cast<int>(m_overlayData.panelRect.height()),
-                    m_screenPos[0], m_screenPos[1], logicalW, logicalH,
-                    context.glW, context.glH,
-                    static_cast<double>(context.devicePixelRatio),
-                    panelMoved ? "*** PANEL MOVED ***" : "");
-            s_prevPanelX = curPanelX;
-            s_prevPanelY = curPanelY;
-        }
     }
 }
 
