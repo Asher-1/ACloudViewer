@@ -620,6 +620,17 @@ public:
                    const std::string& id = "sphere",
                    int viewport = 0);
 
+    /// Add a screen-space point sprite (fixed pixel size, rendered as sphere).
+    bool addPointSprite(double cx,
+                        double cy,
+                        double cz,
+                        float pointSizePixels,
+                        double r,
+                        double g,
+                        double b,
+                        const std::string& id = "point_sprite",
+                        int viewport = 0);
+
     void displayText(const CC_DRAW_CONTEXT& context);
 
 private:

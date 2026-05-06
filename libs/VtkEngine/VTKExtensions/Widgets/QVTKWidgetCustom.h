@@ -44,6 +44,8 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // SYSTEM
 #include <assert.h>
 
+#include <vector>
+
 /**
  * @file QVTKWidgetCustom.h
  * @brief Custom QVTK widget with multi-viewport, scale bar, and coordinate
@@ -51,6 +53,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  */
 
 class QMainWindow;
+class ccHObject;
 class ecvDisplayTools;
 
 namespace VTKExtensions {
@@ -170,6 +173,8 @@ public:
     }
 
 protected:
+    void paintGL() override;
+
     // events handling
     virtual bool event(QEvent* evt) override;
     virtual void wheelEvent(QWheelEvent* event) override;
@@ -223,4 +228,9 @@ protected:
 
     // Timer for delayed 2D label update after wheel zoom
     QTimer* m_wheelZoomUpdateTimer = nullptr;
+
+    void collectAllLabels(std::vector<ccHObject*>& labels) const;
+
+    bool m_labelClickedOnPress = false;
+    bool m_rightClickOnLabel = false;
 };

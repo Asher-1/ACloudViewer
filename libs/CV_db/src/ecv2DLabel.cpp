@@ -11,6 +11,7 @@
 #include "ecvDisplayTools.h"
 #include "ecvFacet.h"
 #include "ecvGenericPointCloud.h"
+#include "ecvGuiParameters.h"
 #include "ecvHObjectCaster.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
@@ -19,6 +20,9 @@
 
 // Qt
 #include <QApplication>
+#include <QFont>
+#include <QLineF>
+#include <QPainter>
 #include <QScreen>
 #include <QSharedPointer>
 
@@ -29,6 +33,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
 #include <algorithm>  // For std::max, std::min
 
 //'Delta' character
@@ -224,16 +229,16 @@ QString cc2DLabel::getName() const {
 }
 
 void cc2DLabel::setPosition(float x, float y) {
-    m_screenPos[0] = x;
-    m_screenPos[1] = y;
+    m_screenPos[0] = std::clamp(x, -0.05f, 0.95f);
+    m_screenPos[1] = std::clamp(y, -0.05f, 0.95f);
 }
 
 bool cc2DLabel::move2D(
         int x, int y, int dx, int dy, int screenWidth, int screenHeight) {
     assert(screenHeight > 0 && screenWidth > 0);
 
-    m_screenPos[0] += static_cast<float>(dx) / screenWidth;
-    m_screenPos[1] += static_cast<float>(dy) / screenHeight;
+    setPosition(m_screenPos[0] + static_cast<float>(dx) / screenWidth,
+                m_screenPos[1] - static_cast<float>(dy) / screenHeight);
 
     return true;
 }
@@ -267,9 +272,9 @@ void cc2DLabel::clear3Dviews() {
 
     if (c_unitPointMarker) {
         for (int i = 0; i < 3; ++i) {
-            // ecvDisplayTools::RemoveWidgets(
-            //	WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYGONMESH,
-            //		QString::number(i) + m_sphereIdfix));
+            ecvDisplayTools::RemoveWidgets(
+                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POINT,
+                                      QString::number(i) + m_sphereIdfix));
             ecvDisplayTools::RemoveWidgets(
                     WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_SPHERE,
                                       QString::number(i) + m_sphereIdfix));
@@ -300,6 +305,19 @@ void cc2DLabel::clear2Dviews() {
             WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
     ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
             WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
+
+    size_t count = m_pickedPoints.size();
+    for (size_t j = 0; j < count; ++j) {
+        QString legendId =
+                QString("%1_legend_%2").arg(this->getViewId()).arg(j);
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, legendId));
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId));
+    }
+
+    ecvDisplayTools::RemoveWidgets(
+            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
 }
 
 void cc2DLabel::clearLabel(bool ignoreCaption) {
@@ -838,10 +856,9 @@ QStringList cc2DLabel::getLabelContent(int precision) const {
 }
 
 bool cc2DLabel::acceptClick(int x, int y, Qt::MouseButton button) {
-    if (button == Qt::MiddleButton) {
+    if (button == Qt::MiddleButton || button == Qt::RightButton) {
         QRect rect = QRect(0, 0, m_labelROI.width(), m_labelROI.height());
         if (rect.contains(x - m_lastScreenPos[0], y - m_lastScreenPos[1])) {
-            // toggle collapse state
             m_showFullBody = !m_showFullBody;
             CC_DRAW_CONTEXT context;
             ecvDisplayTools::GetContext(context);
@@ -855,26 +872,21 @@ bool cc2DLabel::acceptClick(int x, int y, Qt::MouseButton button) {
 
 void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (m_pickedPoints.empty()) return;
-
-    // 2D foreground only
     if (!MACRO_Foreground(context)) return;
-
-    // Not compatible with virtual transformation (see
-    // ccDrawableObject::enableGLTransformation)
     if (MACRO_VirtualTransEnabled(context)) return;
 
-    if (!isRedraw()) {
+    if (!isRedraw() && !context.forceRedraw) {
         return;
     }
 
-    if (MACRO_Draw3D(context))
+    if (MACRO_Draw3D(context)) {
         drawMeOnly3D(context);
-    else if (MACRO_Draw2D(context))
+    } else if (MACRO_Draw2D(context)) {
         drawMeOnly2D(context);
+    }
 }
 
 void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
-    // clear history
     clear3Dviews();
     if (!isVisible() || !isEnabled()) {
         return;
@@ -1067,35 +1079,22 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 // doesn't push its own!
                 markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-                if (isSelected() && !entityPickingMode)
-                    c_unitPointMarker->setTempColor(ecvColor::red);
-                else
-                    c_unitPointMarker->setTempColor(
-                            context.labelDefaultMarkerCol);
+                ecvColor::Rgb markerColor =
+                        (isSelected() && !entityPickingMode)
+                                ? ecvColor::red
+                                : context.labelDefaultMarkerCol;
+                c_unitPointMarker->setTempColor(markerColor);
 
-                const ecvViewportParameters& viewportParams =
-                        ecvDisplayTools::GetViewportParameters();
+                static constexpr float LABEL_MARKER_PIXEL_SIZE = 10.0f;
                 for (size_t i = 0; i < count; i++) {
                     CCVector3 P = m_pickedPoints[i].getPointPosition();
-                    float scale = context.labelMarkerSize * m_relMarkerScale;
-                    if (viewportParams.perspectiveView &&
-                        viewportParams.zFar > 0) {
-                        ccGLCameraParameters camera;
-                        ecvDisplayTools::GetGLCameraParameters(camera);
 
-                        double d = (camera.modelViewMat *
-                                    CCVector3d::fromArray(P.u))
-                                           .norm();
-                        double unitD = viewportParams.zFar / 2;
-                        scale = static_cast<float>(scale * sqrt(d / unitD));
-                    }
-
-                    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
+                    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_POINT,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius = scale;
-                    m_pickedPoints[i].markerScale = scale;
+                    param.pointSize = LABEL_MARKER_PIXEL_SIZE;
+                    m_pickedPoints[i].markerScale = LABEL_MARKER_PIXEL_SIZE;
                     param.center = P;
-                    param.color = ecvColor::FromRgba(ecvColor::ored);
+                    param.color = ecvColor::FromRgbub(markerColor);
                     ecvDisplayTools::DrawWidgets(param, false);
                 }
             }
@@ -1185,7 +1184,9 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    // clear history
+    m_overlayData.clear();
+    m_historyMessage.clear();
+
     clear2Dviews();
     if (!isVisible() || !isEnabled()) {
         clearLabel(false);
@@ -1230,36 +1231,80 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         }
 
         if (visibleCount) {
-            // no need to display the point(s) legend in picking mode
-            if (m_dispPointsLegend && !entityPickingMode) {
-                QFont font(ecvDisplayTools::
-                                   GetTextDisplayFont());  // takes rendering
-                                                           // zoom into account!
-                // font.setPointSize(font.pointSize() + 2);
-                font.setBold(true);
-                static const QChar ABC[3] = {'A', 'B', 'C'};
+            if (!entityPickingMode) {
+                const float dpr = context.devicePixelRatio;
+                const float lH = context.glH / dpr;
 
-                // draw the label 'legend(s)'
-                for (size_t j = 0; j < count; j++) {
-                    QString title;
-                    if (count == 1)
-                        title = getName();  // for single-point labels we prefer
-                                            // the name
-                    else if (count == 3)
-                        title = ABC[j];  // for triangle-labels, we only display
-                                         // "A","B","C"
-                    else
-                        title = QString("P#%0").arg(m_pickedPoints[j].index);
+                // Connecting segments between picked points
+                // (drawn before m_dispIn2D check, always visible when
+                // points are visible — consistent with CloudCompare)
+                if (count > 1) {
+                    m_overlayData.segmentColor =
+                            isSelected()
+                                    ? QColor(Qt::red)
+                                    : QColor(context.labelDefaultMarkerCol.r,
+                                             context.labelDefaultMarkerCol.g,
+                                             context.labelDefaultMarkerCol.b);
+                    for (size_t i = 0; i < count; ++i) {
+                        size_t j = (i + 1) % count;
+                        if (count == 2 && i == 1) break;
+                        float px0 =
+                                static_cast<float>(m_pickedPoints[i].pos2D.x) /
+                                dpr;
+                        float py0 =
+                                lH - 1.0f -
+                                static_cast<float>(m_pickedPoints[i].pos2D.y) /
+                                        dpr;
+                        float px1 =
+                                static_cast<float>(m_pickedPoints[j].pos2D.x) /
+                                dpr;
+                        float py1 =
+                                lH - 1.0f -
+                                static_cast<float>(m_pickedPoints[j].pos2D.y) /
+                                        dpr;
+                        LabelOverlayData::Segment2D seg;
+                        seg.from = QPointF(px0, py0);
+                        seg.to = QPointF(px1, py1);
+                        m_overlayData.segments.push_back(seg);
+                    }
+                }
 
-                    ecvDisplayTools::DisplayText(
-                            title,
-                            static_cast<int>(m_pickedPoints[j].pos2D.x) +
-                                    context.labelMarkerTextShift_pix,
-                            static_cast<int>(m_pickedPoints[j].pos2D.y) +
-                                    context.labelMarkerTextShift_pix,
-                            ecvDisplayTools::ALIGN_DEFAULT,
-                            context.labelOpacity / 100.0f, ecvColor::white.rgb,
-                            &font, this->getViewId());
+                // Point legends (controlled by m_dispPointsLegend)
+                if (m_dispPointsLegend) {
+                    QFont font = QApplication::font();
+                    {
+                        int basePt = ecvGenericDisplayTools::FontSizeModifier(
+                                static_cast<int>(
+                                        ecvGui::Parameters().defaultFontSize),
+                                context.renderZoom);
+                        if (basePt < 6) basePt = 6;
+                        font.setPointSize(std::min(basePt, 9));
+                    }
+                    font.setBold(false);
+                    static const QChar ABC[3] = {'A', 'B', 'C'};
+
+                    for (size_t j = 0; j < count; j++) {
+                        QString legendText;
+                        if (count == 1)
+                            legendText = getName();
+                        else if (count == 3)
+                            legendText = ABC[j];
+
+                        if (legendText.isEmpty()) continue;
+
+                        LabelOverlayData::Legend leg;
+                        leg.text = legendText;
+                        leg.font = font;
+                        leg.color = Qt::white;
+                        float vtkX =
+                                static_cast<float>(m_pickedPoints[j].pos2D.x) +
+                                context.labelMarkerTextShift_pix;
+                        float vtkY =
+                                static_cast<float>(m_pickedPoints[j].pos2D.y) +
+                                context.labelMarkerTextShift_pix;
+                        leg.pos = QPointF(vtkX / dpr, lH - 1.0f - vtkY / dpr);
+                        m_overlayData.legends.push_back(leg);
+                    }
                 }
             }
         } else {
@@ -1267,10 +1312,15 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         }
     }
 
-    // only display lengend other than 2D display
+    if (!m_overlayData.legends.isEmpty() || !m_overlayData.segments.isEmpty()) {
+        m_overlayData.valid = true;
+    }
+
     if (!m_dispIn2D) {
         ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
                 WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
+        m_labelROI = QRect(0, 0, 0, 0);
+        m_lastScreenPos[0] = m_lastScreenPos[1] = -1;
         return;
     }
 
@@ -1298,89 +1348,20 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     QFont bodyFont, titleFont;
     if (!entityPickingMode) {
         /*** label border ***/
-        bodyFont =
-                ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
-                                                         // into account!
-        titleFont = bodyFont;  // takes rendering zoom into account!
+        bodyFont = QApplication::font();
+        const ecvGui::ParamStruct& lp = ecvGui::Parameters();
+        bodyFont.setPointSize(ecvGenericDisplayTools::FontSizeModifier(
+                static_cast<int>(lp.labelFontSize), context.renderZoom));
+        titleFont = bodyFont;
 
-        // CRITICAL FIX: Adaptively increase title font size on macOS for better
-        // visibility Only affects eCV2DLabel caption text, not other fonts
-        // Adjust based on screen resolution and DPI for compatibility across
-        // different displays CRITICAL: Always get current screen info (not
-        // cached) to handle display changes
-#ifdef Q_OS_MAC
-        int currentSize = titleFont.pointSize();
-        float scaleFactor = 1.0f;
-
-        // CRITICAL: Get the screen where the label is actually displayed
-        // This ensures correct scaling when window moves between displays
-        // Use the widget's screen if available, otherwise fall back to primary
-        // screen
-        QWidget* win = ecvDisplayTools::GetMainWindow();
-        QScreen* screen = nullptr;
-        int dpiScale = 1;
-
-        if (win) {
-            // Get the screen where the window is currently displayed
-            // This is critical for multi-monitor setups and display changes
-            screen = win->screen();
-            if (!screen) {
-                screen = QApplication::primaryScreen();
-            }
-            dpiScale = win->devicePixelRatio();
-        } else {
-            screen = QApplication::primaryScreen();
+        {
+            int bodyPt = bodyFont.pointSize();
+            int titlePt = titleFont.pointSize();
+            if (bodyPt < 8) bodyPt = 8;
+            if (titlePt < 9) titlePt = 9;
+            bodyFont.setPointSize(std::min(bodyPt, 11));
+            titleFont.setPointSize(std::min(titlePt, 12));
         }
-
-        if (screen) {
-            QSize screenSize = screen->size();
-            int screenWidth = screenSize.width();
-            int screenHeight = screenSize.height();
-            int screenDPI = screen->physicalDotsPerInch();
-
-            // Adaptive scaling based on resolution and DPI
-            // User requested: increase all scaling by 50% (multiply by 1.5)
-            if (screenWidth >= 3840 || screenHeight >= 2160) {
-                // 4K and above: Use moderate scaling (1.3x * 1.5 = 1.95x)
-                scaleFactor = 1.95f;
-            } else if (screenWidth >= 2560 || screenHeight >= 1440) {
-                // 2K resolution: Use higher scaling (1.5x * 1.5 = 2.25x)
-                scaleFactor = 2.25f;
-            } else if (screenWidth >= 1920 && screenHeight >= 1080) {
-                // 1080p: Use higher scaling (1.6x * 1.5 = 2.4x) for better
-                // visibility
-                scaleFactor = 2.4f;
-            } else {
-                // Lower resolution: Use even higher scaling (1.8x * 1.5 = 2.7x)
-                scaleFactor = 2.7f;
-            }
-
-            // Adjust for Retina displays (dpiScale > 1)
-            // Retina displays have higher pixel density, so they need less
-            // scaling For Retina (dpiScale = 2), reduce scaling by ~20% For
-            // non-Retina (dpiScale = 1), keep full scaling
-            if (dpiScale >= 2) {
-                // Retina display: reduce scaling since text is already sharper
-                scaleFactor *= 0.85f;  // Reduce by 15% for Retina
-            } else if (dpiScale > 1) {
-                // Partial scaling (rare case)
-                scaleFactor *= (1.0f - (dpiScale - 1.0f) * 0.15f);
-            }
-
-            // Adjust for DPI: Higher DPI screens need less scaling
-            // This provides fine-tuning based on physical DPI
-            if (screenDPI > 150) {
-                scaleFactor *= 0.95f;  // Reduce by 5% for very high DPI
-            } else if (screenDPI < 100) {
-                scaleFactor *= 1.05f;  // Increase by 5% for lower DPI
-            }
-        }
-
-        // Apply the calculated scale factor
-        int newSize = static_cast<int>(currentSize * scaleFactor);
-        titleFont.setPointSize(newSize);
-#endif
-        // titleFont.setBold(true);
 
         QFontMetrics titleFontMetrics(titleFont);
         titleHeight = titleFontMetrics.height();
@@ -1712,71 +1693,231 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     }
 
     if (!entityPickingMode && count > 0 && !m_historyMessage.empty()) {
-        // compute arrow head position
-        CCVector3 position(0, 0, 0);
-        for (size_t i = 0; i < count; ++i) {
-            position += m_pickedPoints[i].getPointPosition();
+        const float dpr = context.devicePixelRatio;
+        const float lH = context.glH / dpr;
+
+        m_overlayData.panelRect = QRectF(m_labelROI);
+        m_overlayData.bkgColor = QColor(defaultBkgColor.r, defaultBkgColor.g,
+                                        defaultBkgColor.b, defaultBkgColor.a);
+        m_overlayData.borderColor =
+                QColor(defaultBorderColor.r, defaultBorderColor.g,
+                       defaultBorderColor.b, defaultBorderColor.a);
+        m_overlayData.textColor = QColor(defaultTextColor.r, defaultTextColor.g,
+                                         defaultTextColor.b);
+        m_overlayData.highlighted = highlighted;
+        m_overlayData.title = title;
+        m_overlayData.titleFont = titleFont;
+        m_overlayData.bodyFont = bodyFont;
+        m_overlayData.titleHeight = titleHeight;
+        m_overlayData.rowHeight = rowHeight;
+        m_overlayData.margin = margin;
+        m_overlayData.tabMarginX = tabMarginX;
+        m_overlayData.tabMarginY = tabMarginY;
+
+        if (m_showFullBody && m_historyMessage.size() > 1) {
+            m_overlayData.bodyLines = m_historyMessage.mid(1);
+        } else {
+            m_overlayData.bodyLines.clear();
         }
-        position /= static_cast<PointCoordinateType>(count);
 
-        WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CAPTION,
-                                this->getViewId());
-        param.center = position;
-        // CRITICAL: m_labelROI uses logical pixels (calculated from
-        // logicalW/logicalH) VtkVis::addCaption divides pos2D by
-        // getRenderWindow()->GetSize() to get relative coordinates
-        //
-        // Coordinate system analysis:
-        // - m_labelROI is in Qt coordinate system (top-left origin, Y increases
-        // downward)
-        //   m_labelROI.y() is the top edge of the label rectangle
-        // - VTK's SetPosition expects pixel coordinates that will be divided by
-        // GetSize()
-        //   to get normalized coordinates (0.0 to 1.0) where Y=0 is at BOTTOM
-        // - Since Qt Y increases downward and VTK Y=0 is at bottom, we need to
-        // invert Y
-        //   VTK_Y_pixel = windowHeight - Qt_Y_pixel
-        //
-        // Get render window size for coordinate conversion and boundary
-        // checking
-        const float logicalW = context.glW / context.devicePixelRatio;
-        const float logicalH = context.glH / context.devicePixelRatio;
+        m_overlayData.columns.clear();
+        m_overlayData.tabCells.clear();
+        m_overlayData.tabRowCount = 0;
+        if (m_showFullBody && tab.colCount > 0) {
+            m_overlayData.tabRowCount = tab.rowCount;
+            int xCol = 0;
+            for (int c = 0; c < tab.colCount; ++c) {
+                LabelOverlayData::TabColumn col;
+                col.xOffset = xCol;
+                col.width = tab.colWidth[c] + 2 * tabMarginX;
+                col.isLabel = ((c & 1) == 0);
+                m_overlayData.columns.push_back(col);
+                xCol += col.width;
+            }
+            for (int r = 0; r < tab.rowCount; ++r) {
+                QVector<QString> rowCells;
+                for (int c = 0; c < tab.colCount; ++c) {
+                    if (r < static_cast<int>(tab.colContent[c].size()))
+                        rowCells.push_back(tab.colContent[c][r]);
+                    else
+                        rowCells.push_back(QString());
+                }
+                m_overlayData.tabCells.push_back(rowCells);
+            }
+        }
 
-        // m_labelROI coordinates are in Qt system (top-left origin)
-        float posX = static_cast<float>(m_labelROI.x());
-        float posY = static_cast<float>(m_labelROI.y());
+        // Arrow wedge: from panel edge to centroid of projected points
+        QPointF centroid2D(0, 0);
+        for (size_t i = 0; i < count; ++i) {
+            float cx = static_cast<float>(m_pickedPoints[i].pos2D.x) / dpr;
+            float cy = lH - 1.0f -
+                       static_cast<float>(m_pickedPoints[i].pos2D.y) / dpr;
+            centroid2D += QPointF(cx, cy);
+        }
+        centroid2D /= static_cast<qreal>(count);
 
-        // Boundary check: ensure coordinates are within valid range
-        // This is a safety measure to prevent caption from going off-screen
-        posX = std::max(0.0f, std::min(posX, logicalW - 1.0f));
-        posY = std::max(0.0f, std::min(posY, logicalH - 1.0f));
+        QRectF panel = m_overlayData.panelRect;
+        QPointF edgePt;
+        if (centroid2D.y() > panel.bottom()) {
+            edgePt =
+                    QPointF(qBound(panel.left(), centroid2D.x(), panel.right()),
+                            panel.bottom());
+        } else if (centroid2D.y() < panel.top()) {
+            edgePt =
+                    QPointF(qBound(panel.left(), centroid2D.x(), panel.right()),
+                            panel.top());
+        } else if (centroid2D.x() < panel.left()) {
+            edgePt = QPointF(panel.left(), qBound(panel.top(), centroid2D.y(),
+                                                  panel.bottom()));
+        } else {
+            edgePt = QPointF(panel.right(), qBound(panel.top(), centroid2D.y(),
+                                                   panel.bottom()));
+        }
 
-        // CRITICAL: macOS-specific fix for coordinate system conversion
-        // On macOS, VTK's coordinate system may differ from Linux
-        // Only apply Y-axis inversion on macOS where this issue occurs
-#ifdef Q_OS_MAC
-        // Convert from Qt coordinate system (top-left) to VTK coordinate system
-        // (bottom-left) VTK expects Y coordinate where 0 is at bottom, Qt has
-        // Y=0 at top So we need to invert Y: VTK_Y = windowHeight - Qt_Y Since
-        // VtkVis::addCaption divides by GetSize(), we pass pixel coordinates If
-        // GetSize() returns logical pixels (Qt convention), this works
-        // correctly
-        float vtkY = logicalH - posY;
+        int arrowBase = static_cast<int>(c_arrowBaseSize * context.renderZoom);
+        QPointF dir = centroid2D - edgePt;
+        qreal len = QLineF(edgePt, centroid2D).length();
+        if (len > 3.0) {
+            QPointF perp(-dir.y() / len, dir.x() / len);
+            QPolygonF wedge;
+            wedge << (edgePt + perp * arrowBase) << centroid2D
+                  << (edgePt - perp * arrowBase);
+            m_overlayData.arrowPolygon = wedge;
+        } else {
+            m_overlayData.arrowPolygon.clear();
+        }
 
-        // Final boundary check for VTK coordinates
-        vtkY = std::max(0.0f, std::min(vtkY, logicalH - 1.0f));
+        m_overlayData.valid = true;
+    }
+}
 
-        param.pos = CCVector2(posX, vtkY);
-#else
-        // On Linux, use coordinates directly (no Y-axis inversion needed)
-        param.pos = CCVector2(posX, posY);
-#endif
-        param.color = ecvColor::FromRgbub(defaultTextColor);
-        param.color.a = defaultBkgColor.a / 255.0f;
-        param.text = m_historyMessage.join("\n");
-        param.text = param.text.trimmed();
-        param.fontSize = bodyFont.pointSize();
-        ecvDisplayTools::DrawWidgets(param, false);
+void cc2DLabel::paintOverlay(QPainter& painter) const {
+    if (!m_overlayData.valid) return;
+
+    const auto& od = m_overlayData;
+    const QRectF& panel = od.panelRect;
+    bool hasPanel = panel.width() > 0 && panel.height() > 0;
+
+    static const QColor s_darkGreen(0, 200, 0);
+
+    if (!od.segments.isEmpty()) {
+        QPen segPen(od.segmentColor, 4.0);
+        painter.setPen(segPen);
+        painter.setBrush(Qt::NoBrush);
+        for (const auto& seg : od.segments) {
+            painter.drawLine(seg.from, seg.to);
+        }
+    }
+
+    if (hasPanel) {
+        if (!od.arrowPolygon.isEmpty()) {
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(od.borderColor);
+            painter.drawPolygon(od.arrowPolygon);
+        }
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(od.bkgColor);
+        painter.drawRect(panel);
+
+        QPen borderPen(od.borderColor, od.highlighted ? 3.0 : 2.0);
+        painter.setPen(borderPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(panel);
+
+        painter.setPen(od.textColor);
+        painter.setFont(od.titleFont);
+        QRectF titleRect(panel.left() + od.margin, panel.top() + od.margin,
+                         panel.width() - 2 * od.margin, od.titleHeight);
+        painter.drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter, od.title);
+
+        if (!od.columns.isEmpty() && !od.tabCells.isEmpty()) {
+            int rowH = od.rowHeight + 2 * od.tabMarginY;
+            QFontMetrics bfm(od.bodyFont);
+            painter.setFont(od.bodyFont);
+
+            for (int c = 0; c < od.columns.size(); ++c) {
+                const auto& col = od.columns[c];
+                qreal xCol = panel.left() + od.margin + col.xOffset;
+                qreal yRow = panel.top() + od.margin + od.titleHeight +
+                             od.tabMarginY + 2;
+
+                int actualRowCount = qMin(od.tabRowCount, od.tabCells.size());
+                for (int r = 0; r < actualRowCount; ++r) {
+                    if (r > 0 && (r % 3) == 0) yRow += od.margin;
+
+                    if (col.isLabel) {
+                        int rgbIdx = r % 3;
+                        QColor cellBg;
+                        if (rgbIdx == 0)
+                            cellBg = QColor(255, 0, 0);
+                        else if (rgbIdx == 1)
+                            cellBg = s_darkGreen;
+                        else
+                            cellBg = QColor(0, 0, 255);
+
+                        QRectF cellRect(xCol, yRow, col.width, rowH);
+                        painter.setPen(Qt::NoPen);
+                        painter.setBrush(cellBg);
+                        painter.drawRect(cellRect);
+                    }
+
+                    const QString& str = (c < od.tabCells[r].size())
+                                                 ? od.tabCells[r][c]
+                                                 : QString();
+                    int xShift = 0;
+                    if (col.isLabel) {
+                        xShift = (col.width - 2 * od.tabMarginX -
+                                  bfm.horizontalAdvance(str)) /
+                                 2;
+                        painter.setPen(Qt::white);
+                    } else {
+                        xShift = col.width - 2 * od.tabMarginX -
+                                 bfm.horizontalAdvance(str);
+                        painter.setPen(od.textColor);
+                    }
+                    painter.setBrush(Qt::NoBrush);
+                    QRectF textRect(xCol + od.tabMarginX + xShift, yRow,
+                                    col.width, rowH);
+                    painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
+                                     str);
+
+                    yRow += rowH;
+                }
+            }
+        } else if (!od.bodyLines.isEmpty()) {
+            qreal yOff = panel.top() + od.margin + od.titleHeight +
+                         od.tabMarginY + 2;
+            int rowH = od.rowHeight + 2 * od.tabMarginY;
+            painter.setFont(od.bodyFont);
+            painter.setPen(od.textColor);
+            for (int i = 0; i < od.bodyLines.size(); ++i) {
+                QRectF rowRect(panel.left() + od.margin, yOff,
+                               panel.width() - 2 * od.margin, rowH);
+                painter.drawText(rowRect, Qt::AlignLeft | Qt::AlignVCenter,
+                                 od.bodyLines[i]);
+                yOff += rowH;
+                if (((i + 1) % 3) == 0 && i + 1 < od.bodyLines.size())
+                    yOff += od.margin;
+            }
+        }
+    }
+
+    for (const auto& leg : od.legends) {
+        QFont boldFont = leg.font;
+        boldFont.setBold(true);
+        painter.setFont(boldFont);
+        QFontMetrics fm(boldFont);
+        QRect textRect = fm.boundingRect(leg.text);
+        int margin = fm.height() / 4;
+        QRect bgRect(leg.pos.x() - margin, leg.pos.y() - fm.ascent() - margin,
+                     textRect.width() + 2 * margin, fm.height() + 2 * margin);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 178));
+        painter.drawRect(bgRect);
+        painter.setPen(Qt::white);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawText(leg.pos, leg.text);
     }
 }
 

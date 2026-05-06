@@ -123,6 +123,7 @@ enum WIDGETS_TYPE {
     WIDGET_POLYLINE_2D,   ///< 2D polyline widget
     WIDGET_LINE_3D,       ///< 3D line widget
     WIDGET_SPHERE,        ///< Sphere widget
+    WIDGET_POINT,         ///< Point sprite widget (screen-space pixel size)
     WIDGET_CAPTION,       ///< Caption widget
     WIDGET_SCALAR_BAR,    ///< Scalar bar widget
     WIDGET_T3D,           ///< 3D text widget
@@ -749,9 +750,10 @@ public:
     QPoint p4 = QPoint(-1, -1);  ///< Fourth point (optional)
 
     // Circle/sphere parameters
-    float radius;                ///< Radius
-    CCVector3 center;            ///< 3D center
-    CCVector2 pos;               ///< 2D position
+    float radius;         ///< Radius
+    float pointSize = 0;  ///< Screen-space point size in pixels (WIDGET_POINT)
+    CCVector3 center;     ///< 3D center
+    CCVector2 pos;        ///< 2D position
     bool handleEnabled = false;  ///< Enable interactive handle
 
     // 3D line parameters
