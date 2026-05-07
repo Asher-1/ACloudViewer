@@ -458,16 +458,10 @@ void ecvDisplayTools::onPointPicking(const CCVector3& p,
                          .arg(p.z));
 #endif  // !QDEBUG
 
-    if (ctx->lastPickedId.isEmpty()) {
-        PICKING_MODE pickingMode = PICKING_MODE::ENTITY_PICKING;
-        PickingParameters params(pickingMode, 0, 0, ctx->pickRadius,
-                                 ctx->pickRadius);
-        ProcessPickingResult(params, nullptr, -1);
-    } else {
-        if (ecvDisplayTools::USE_VTK_PICK) {
-            doPicking();
-        }
-    }
+    // Data stored. Processing is deferred to the per-view timer callback
+    // (ecvGLView::m_deferredPickingTimer) which sets m_pickingTargetView
+    // correctly before calling doPicking(). Do NOT call doPicking() here
+    // to avoid double-processing.
 }
 
 void ecvDisplayTools::doPicking() {
@@ -475,11 +469,14 @@ void ecvDisplayTools::doPicking() {
             m_pickingTargetView ? m_pickingTargetView->viewContext() : nullptr;
     ecvViewContext& fallback = ecvViewManager::instance().resolveViewContext();
 
+    CVLog::PrintDebug(QString("[doPicking] targetView=%1 ctx=%2")
+                         .arg(m_pickingTargetView != nullptr)
+                         .arg(ctx != nullptr));
+
     bool widgetClicked = ctx ? ctx->widgetClicked : fallback.widgetClicked;
     if (widgetClicked) {
-        CVLog::PrintVerbose(
-                "[ecvDisplayTools::doPicking] Skipping picking because "
-                "VTK widget was clicked");
+        CVLog::PrintDebug(
+                "[doPicking] ABORT: widgetClicked=true");
         if (ctx)
             ctx->widgetClicked = false;
         else
@@ -493,7 +490,8 @@ void ecvDisplayTools::doPicking() {
     int y = mousePos.y();
 
     if (x < 0 || y < 0) {
-        assert(false);
+        CVLog::PrintDebug(QString("[doPicking] ABORT: invalid pos (%1,%2)")
+                             .arg(x).arg(y));
         m_pickingTargetView = nullptr;
         return;
     }
@@ -502,6 +500,11 @@ void ecvDisplayTools::doPicking() {
     INTERACTION_FLAGS iFlags =
             ctx ? ctx->interactionFlags : fallback.interactionFlags;
     int pickRad = ctx ? ctx->pickRadius : fallback.pickRadius;
+
+    CVLog::PrintDebug(QString("[doPicking] pos=(%1,%2) pickMode=%3 iFlags=0x%4 "
+                         "pickRad=%5")
+                         .arg(x).arg(y).arg(static_cast<int>(pickMode))
+                         .arg(static_cast<int>(iFlags), 0, 16).arg(pickRad));
 
     if ((pickMode != NO_PICKING) || (iFlags & INTERACT_2D_ITEMS)) {
         ecvGenericGLDisplay* itemView = m_pickingTargetView;
@@ -535,10 +538,23 @@ void ecvDisplayTools::doPicking() {
                 effectiveMode = POINT_OR_TRIANGLE_PICKING;
             }
 
+            CVLog::PrintDebug(QString("[doPicking] StartPicking mode=%1 at (%2,%3)")
+                                 .arg(static_cast<int>(effectiveMode))
+                                 .arg(x).arg(y));
             PickingParameters params(effectiveMode, x, y, pickRad, pickRad);
             ecvViewContext& pickCtx = ctx ? *ctx : fallback;
             StartPicking(pickCtx, params);
+        } else {
+            CVLog::PrintDebug(QString("[doPicking] NO StartPicking: "
+                                 "activeItems=%1 pickMode=%2")
+                                 .arg(activeItems.size())
+                                 .arg(static_cast<int>(pickMode)));
         }
+    } else {
+        CVLog::PrintDebug(QString("[doPicking] SKIP: pickMode=%1 iFlags=0x%2 "
+                             "(NO_PICKING and no INTERACT_2D_ITEMS)")
+                             .arg(static_cast<int>(pickMode))
+                             .arg(static_cast<int>(iFlags), 0, 16));
     }
 
     m_pickingTargetView = nullptr;
@@ -770,7 +786,23 @@ void ecvDisplayTools::StartPicking(ecvViewContext& ctx,
         hasDB = primaryDT()->m_pickingTargetView->getSceneDB() ||
                 primaryDT()->m_pickingTargetView->getOwnDB();
     }
+    CVLog::PrintDebug(QString("[StartPicking] hasDB=%1 globalDB=%2 winDB=%3 "
+                         "targetView=%4 sceneDB=%5 retinaScale=%6 "
+                         "center=(%7,%8) viewport=(%9x%10)")
+                         .arg(hasDB)
+                         .arg(primaryDT()->m_globalDBRoot != nullptr)
+                         .arg(primaryDT()->m_winDBRoot != nullptr)
+                         .arg(primaryDT()->m_pickingTargetView != nullptr)
+                         .arg(primaryDT()->m_pickingTargetView
+                                      ? (primaryDT()->m_pickingTargetView
+                                                 ->getSceneDB() != nullptr)
+                                      : false)
+                         .arg(retinaScale)
+                         .arg(params.centerX).arg(params.centerY)
+                         .arg(ctx.glViewport.width())
+                         .arg(ctx.glViewport.height()));
     if (!hasDB) {
+        CVLog::PrintDebug("[StartPicking] ABORT: no DB");
         ProcessPickingResult(params, nullptr, -1);
         return;
     }
@@ -807,6 +839,16 @@ void ecvDisplayTools::ProcessPickingResult(
         assert(pickedEntity == nullptr || pickedItemIndex >= 0);
         assert(nearestPoint);
 
+        CVLog::PrintDebug(QString("[ProcessPickingResult] POINT/TRI pick: "
+                             "entity=%1 idx=%2 pos=(%3,%4) P=(%5,%6,%7)")
+                             .arg(pickedEntity
+                                          ? pickedEntity->getName()
+                                          : "null")
+                             .arg(pickedItemIndex)
+                             .arg(params.centerX).arg(params.centerY)
+                             .arg(nearestPoint->x).arg(nearestPoint->y)
+                             .arg(nearestPoint->z));
+
         emit primaryDT()->itemPicked(pickedEntity,
                                  static_cast<unsigned>(pickedItemIndex),
                                  params.centerX, params.centerY, *nearestPoint);
@@ -816,7 +858,14 @@ void ecvDisplayTools::ProcessPickingResult(
         emit primaryDT()->itemPickedFast(pickedEntity, pickedItemIndex,
                                      params.centerX, params.centerY);
     } else if (params.mode == LABEL_PICKING) {
-        if (primaryDT()->m_globalDBRoot && pickedEntity && pickedItemIndex >= 0) {
+        bool hasDB = primaryDT()->m_globalDBRoot != nullptr;
+        if (!hasDB && primaryDT()->m_pickingTargetView)
+            hasDB = primaryDT()->m_pickingTargetView->getSceneDB() != nullptr;
+        if (!hasDB) {
+            auto* ev = ecvViewManager::instance().getEffectiveView();
+            if (ev) hasDB = ev->getSceneDB() != nullptr;
+        }
+        if (hasDB && pickedEntity && pickedItemIndex >= 0) {
             // qint64 stopTime = m_timer.nsecsElapsed();
             // CVLog::Print(QString("[Picking] entity ID %1 - item #%2 (time: %3
             // ms)").arg(selectedID).arg(pickedItemIndex).arg((stopTime-startTime)
@@ -1009,6 +1058,50 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
     CCVector2d clickedPos(params.centerX,
                           ctx.glViewport.height() - 1 - params.centerY);
 
+    CVLog::PrintDebug(QString("[CPUPick] USE_VTK_PICK=%1 clickedPos=(%2,%3) "
+                         "viewport=(%4x%5) validMV=%6 validProj=%7 "
+                         "perspective=%8 fov=%9 pixelSize=%10")
+                         .arg(USE_VTK_PICK)
+                         .arg(clickedPos.x).arg(clickedPos.y)
+                         .arg(ctx.glViewport.width())
+                         .arg(ctx.glViewport.height())
+                         .arg(ctx.validModelviewMatrix)
+                         .arg(ctx.validProjectionMatrix)
+                         .arg(camera.perspective)
+                         .arg(camera.fov_deg)
+                         .arg(camera.pixelSize));
+    {
+        const double* mv = camera.modelViewMat.data();
+        const double* pj = camera.projectionMat.data();
+        CVLog::PrintDebug(QString("[CPUPick] MV row0=[%1,%2,%3,%4]")
+                             .arg(mv[0],0,'g',6).arg(mv[4],0,'g',6)
+                             .arg(mv[8],0,'g',6).arg(mv[12],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] MV row1=[%1,%2,%3,%4]")
+                             .arg(mv[1],0,'g',6).arg(mv[5],0,'g',6)
+                             .arg(mv[9],0,'g',6).arg(mv[13],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] MV row2=[%1,%2,%3,%4]")
+                             .arg(mv[2],0,'g',6).arg(mv[6],0,'g',6)
+                             .arg(mv[10],0,'g',6).arg(mv[14],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] MV row3=[%1,%2,%3,%4]")
+                             .arg(mv[3],0,'g',6).arg(mv[7],0,'g',6)
+                             .arg(mv[11],0,'g',6).arg(mv[15],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] PJ row0=[%1,%2,%3,%4]")
+                             .arg(pj[0],0,'g',6).arg(pj[4],0,'g',6)
+                             .arg(pj[8],0,'g',6).arg(pj[12],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] PJ row1=[%1,%2,%3,%4]")
+                             .arg(pj[1],0,'g',6).arg(pj[5],0,'g',6)
+                             .arg(pj[9],0,'g',6).arg(pj[13],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] PJ row2=[%1,%2,%3,%4]")
+                             .arg(pj[2],0,'g',6).arg(pj[6],0,'g',6)
+                             .arg(pj[10],0,'g',6).arg(pj[14],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] PJ row3=[%1,%2,%3,%4]")
+                             .arg(pj[3],0,'g',6).arg(pj[7],0,'g',6)
+                             .arg(pj[11],0,'g',6).arg(pj[15],0,'g',6));
+        CVLog::PrintDebug(QString("[CPUPick] VP=[%1,%2,%3,%4]")
+                             .arg(camera.viewport[0]).arg(camera.viewport[1])
+                             .arg(camera.viewport[2]).arg(camera.viewport[3]));
+    }
+
     if (ecvDisplayTools::USE_VTK_PICK) {
         int pickedIndex = -1;
         ccHObject* pickedEntity = nullptr;
@@ -1073,6 +1166,40 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
             ccHObject::Container toProcess;
             ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
             ccHObject* sceneDB = pickView ? pickView->getSceneDB() : nullptr;
+            CVLog::PrintDebug(QString("[CPUPick] CPU path: pickView=%1 sceneDB=%2 "
+                                 "children=%3")
+                                 .arg(pickView != nullptr)
+                                 .arg(sceneDB != nullptr)
+                                 .arg(sceneDB ? sceneDB->getChildrenNumber()
+                                              : 0));
+            if (sceneDB) {
+                ccHObject::Container clouds;
+                sceneDB->filterChildren(clouds, true,
+                                        CV_TYPES::POINT_CLOUD, true);
+                if (!clouds.empty()) {
+                    auto* cloud = static_cast<ccGenericPointCloud*>(clouds[0]);
+                    if (cloud->size() > 0) {
+                        const CCVector3* pt = cloud->getPoint(0);
+                        CCVector3d projected;
+                        bool ok = camera.projectSafe(*pt, projected);
+                        CVLog::PrintDebug(
+                                QString("[CPUPick] TestProj: pt=(%1,%2,%3)"
+                                        " -> screen=(%4,%5,%6) ok=%7"
+                                        " cloudEnabled=%8 cloudSize=%9")
+                                        .arg(pt->x,0,'g',6)
+                                        .arg(pt->y,0,'g',6)
+                                        .arg(pt->z,0,'g',6)
+                                        .arg(projected.x,0,'g',6)
+                                        .arg(projected.y,0,'g',6)
+                                        .arg(projected.z,0,'g',6)
+                                        .arg(ok)
+                                        .arg(cloud->isEnabled())
+                                        .arg(cloud->size()));
+                    }
+                } else {
+                    CVLog::PrintDebug("[CPUPick] No point clouds found in sceneDB!");
+                }
+            }
             ccHObject* ownDB = pickView ? pickView->getOwnDB() : nullptr;
             if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
             if (!ownDB) ownDB = primaryDT()->m_winDBRoot;
@@ -1310,8 +1437,10 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
             CVLog::Warning("[Picking][CPU] Not enough memory!");
         }
     }
-    // qint64 dt = m_timer.elapsed() - t0;
-    // CVLog::Print(QString("[Picking][CPU] Time: %1 ms").arg(dt));
+    CVLog::PrintDebug(QString("[CPUPick] Result: entity=%1 idx=%2 dist=%3")
+                         .arg(nearestEntity ? nearestEntity->getName() : "null")
+                         .arg(nearestElementIndex)
+                         .arg(nearestElementSquareDist));
 
     if (!ecvDisplayTools::USE_VTK_PICK) {
         ctx.lastPointIndex = nearestElementIndex;
@@ -1456,7 +1585,7 @@ void ecvDisplayTools::UpdateActiveItemsList(
     {
         ccHObject::Container labels;
         FilterByEntityType(labels, CV_TYPES::LABEL_2D);
-        CVLog::Print("[Label] UpdateActiveItemsList: mouse(%d,%d) labels=%zu",
+        CVLog::PrintDebug("[Label] UpdateActiveItemsList: mouse(%d,%d) labels=%zu",
                      x, y, labels.size());
         for (auto* obj : labels) {
             if (!obj->isA(CV_TYPES::LABEL_2D) || !obj->isEnabled() ||
@@ -1465,7 +1594,7 @@ void ecvDisplayTools::UpdateActiveItemsList(
             cc2DLabel* l = ccHObjectCaster::To2DLabel(obj);
             if (!l) continue;
             QRect roi = l->getLabelROI();
-            CVLog::Print(
+            CVLog::PrintDebug(
                     "[Label]   '%s' ROI=(%d,%d %dx%d) valid=%d contains=%d "
                     "dispIn2D=%d dispLegend=%d",
                     qPrintable(l->getName()), roi.x(), roi.y(), roi.width(),
@@ -1473,7 +1602,7 @@ void ecvDisplayTools::UpdateActiveItemsList(
                     l->isDisplayedIn2D(), l->isPointLegendDisplayed());
             if (roi.isValid() && roi.contains(x, y)) {
                 items.push_back(l);
-                CVLog::Print("[Label]   >>> HIT! Added to active items");
+                CVLog::PrintDebug("[Label]   >>> HIT! Added to active items");
                 break;
             }
         }
@@ -1491,18 +1620,13 @@ void ecvDisplayTools::UpdateActiveItemsList(
             if (!label->isSelected() || !extendToSelectedLabels) {
             } else {
                 ccHObject::Container labels;
-                if (primaryDT()->m_globalDBRoot)
-                    primaryDT()->m_globalDBRoot->filterChildren(labels, true,
-                                                            CV_TYPES::LABEL_2D);
-                if (primaryDT()->m_winDBRoot)
-                    primaryDT()->m_winDBRoot->filterChildren(labels, true,
-                                                         CV_TYPES::LABEL_2D);
+                FilterByEntityType(labels, CV_TYPES::LABEL_2D);
 
-                for (auto& label : labels) {
-                    if (label->isA(CV_TYPES::LABEL_2D) && label->isEnabled() &&
-                        label->isVisible()) {
-                        cc2DLabel* l = static_cast<cc2DLabel*>(label);
-                        if (l != label && l->isSelected()) {
+                for (auto& lbl : labels) {
+                    if (lbl->isA(CV_TYPES::LABEL_2D) && lbl->isEnabled() &&
+                        lbl->isVisible()) {
+                        cc2DLabel* l = static_cast<cc2DLabel*>(lbl);
+                        if (l != pickedObj && l->isSelected()) {
                             items.push_back(l);
                         }
                     }
@@ -3654,6 +3778,9 @@ void ecvDisplayTools::Redraw2DLabel() {
                 context.glH = viewCtx->glViewport.height();
             }
         }
+        // Sync both 3D markers and 2D overlay so selection highlight,
+        // marker colors, and caption state stay consistent.
+        l->update3DLabelView(context, false);
         l->update2DLabelView(context, false);
     }
 
@@ -3735,13 +3862,32 @@ void ecvDisplayTools::Pick2DLabel(int x, int y) {
 void ecvDisplayTools::FilterByEntityType(ccHObject::Container& labels,
                                          CV_CLASS_ENUM type) {
     auto& vm = ecvViewManager::instance();
-    if (auto* root = vm.globalDBRoot()) {
-        root->filterChildren(labels, true, type);
+
+    // Per-view architecture: prefer the picking target view or effective view's
+    // databases. Fall back to ecvViewManager::globalDBRoot / singleton DBs.
+    ccHObject* sceneDB = nullptr;
+    ccHObject* ownDB = nullptr;
+
+    if (primaryDT()->m_pickingTargetView) {
+        sceneDB = primaryDT()->m_pickingTargetView->getSceneDB();
+        ownDB = primaryDT()->m_pickingTargetView->getOwnDB();
     }
-    if (auto* dt = vm.displayTools();
-        dt && dt->m_winDBRoot) {
-        dt->m_winDBRoot->filterChildren(labels, true, type);
+    if (!sceneDB) {
+        if (auto* ev = vm.getEffectiveView()) {
+            sceneDB = ev->getSceneDB();
+            ownDB = ev->getOwnDB();
+        }
     }
+    if (!sceneDB) sceneDB = vm.globalDBRoot();
+    if (!sceneDB) {
+        if (auto* dt = vm.displayTools()) sceneDB = dt->m_globalDBRoot;
+    }
+    if (!ownDB) {
+        if (auto* dt = vm.displayTools()) ownDB = dt->m_winDBRoot;
+    }
+
+    if (sceneDB) sceneDB->filterChildren(labels, true, type);
+    if (ownDB) ownDB->filterChildren(labels, true, type);
 }
 
 void ecvDisplayTools::RenderText(

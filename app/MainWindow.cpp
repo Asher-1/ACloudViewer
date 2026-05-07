@@ -2035,7 +2035,7 @@ void MainWindow::initPlugins() {
             findChild<QToolBar*>("UnifiedPluginToolbar");
     if (existingUnifiedToolbar) {
         // Remove existing toolbar first to avoid duplicates
-        CVLog::Print("[MainWindow] Removing existing UnifiedPluginToolbar");
+        CVLog::Warning("[MainWindow] Removing existing UnifiedPluginToolbar");
         removeToolBar(existingUnifiedToolbar);
         existingUnifiedToolbar->deleteLater();
     }
@@ -2484,9 +2484,9 @@ ecvGenericGLDisplay* MainWindow::getActiveGLView() {
     auto* activeDisplay = ecvViewManager::instance().getActiveView();
     if (activeDisplay) return activeDisplay;
     QWidget* widget = getActiveWindow();
-    if (!widget) return ecvViewManager::instance().getPrimaryView();
+    if (!widget) return ecvViewManager::instance().getEffectiveView();
     ecvGenericGLDisplay* display = ecvGenericGLDisplay::FromWidget(widget);
-    return display ? display : ecvViewManager::instance().getPrimaryView();
+    return display ? display : ecvViewManager::instance().getEffectiveView();
 }
 
 void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
@@ -3523,7 +3523,7 @@ void MainWindow::doActionOpenFile() {
     // Restore the target view — the modal dialog or subsequent event
     // processing may have shifted focus to a different view.
     if (targetView && ecvViewManager::instance().getActiveView() != targetView) {
-        CVLog::Print("[doActionOpenFile] Restoring active view after dialog");
+        CVLog::PrintDebug("[doActionOpenFile] Restoring active view after dialog");
         ecvViewManager::instance().setActiveView(targetView);
     }
 
@@ -3714,7 +3714,7 @@ void MainWindow::addToDB(ccHObject* obj,
     // (e.g., cloned objects from plugins).
     auto* activeView = ecvViewManager::instance().getActiveView();
     if (activeView && obj->getDisplay() && obj->getDisplay() != activeView) {
-        CVLog::Print("[addToDB] Rebinding entity to active view");
+        CVLog::PrintDebug("[addToDB] Rebinding entity to active view");
         ecvViewManager::instance().forceAssociateToView(obj, activeView);
     }
 
@@ -5417,7 +5417,7 @@ void MainWindow::toggle3DView(bool state) {
     QWidget* w = getActiveGLWidget();
     auto* display = ecvGenericGLDisplay::FromWidget(w);
     ecvGenericGLDisplay* vtkTarget = display;
-    if (!vtkTarget) vtkTarget = ecvViewManager::instance().getPrimaryView();
+    if (!vtkTarget) vtkTarget = ecvViewManager::instance().getActiveView();
 
     auto* glView = dynamic_cast<ecvGLView*>(vtkTarget);
     auto* vis = glView ? glView->getVisualizer3D() : nullptr;
@@ -5626,8 +5626,15 @@ ccHObject* MainWindow::loadFile(QString filename, bool silent) {
 }
 
 void MainWindow::repositionOverlayDialog(ccMDIDialogs& mdiDlg) {
-    QWidget* viewArea = centralViewWidget();
-    if (!mdiDlg.dialog || !mdiDlg.dialog->isVisible() || !viewArea) return;
+    if (!mdiDlg.dialog || !mdiDlg.dialog->isVisible()) return;
+
+    // In multi-view mode, position relative to the active VIEW widget
+    // (the specific split pane) rather than the entire central container.
+    // This ensures the toolbar appears at the correct corner of the
+    // view the user is working in.
+    QWidget* viewArea = ecvViewManager::instance().activeWidget();
+    if (!viewArea) viewArea = centralViewWidget();
+    if (!viewArea) return;
 
     int dx = 0;
     int dy = 0;
@@ -6216,6 +6223,13 @@ void MainWindow::initSelectionController() {
     }
 
     auto actions = cvSelectionToolController::createActions(this);
+    // Replace the dynamically created zoom action with the UI toolbar action.
+    // createActions() makes its own QAction that's not in the toolbar, so the
+    // toolbar button (m_ui->actionZoomToBox) would have no effect.
+    if (actions.zoomToBox) {
+        actions.zoomToBox->deleteLater();
+    }
+    actions.zoomToBox = m_ui->actionZoomToBox;
     m_selectionController->setupActions(actions);
 
     // ParaView-style shortcut dispatch: each QShortcut looks up the active
@@ -6809,7 +6823,7 @@ void MainWindow::onItemPicked(const PickedItem& pi) {
                 if (!pickView)
                     pickView = ecvViewManager::instance().getEffectiveView();
                 if (!pickView)
-                    pickView = ecvViewManager::instance().getPrimaryView();
+                    pickView = ecvViewManager::instance().getActiveView();
                 if (!pickView) break;
                 const ecvViewportParameters& params =
                         pickView->getViewportParameters();

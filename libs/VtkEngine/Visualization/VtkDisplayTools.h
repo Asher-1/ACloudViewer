@@ -612,6 +612,10 @@ private:
     /// [B] Cross-view actor lookup. Move to ecvViewManager or standalone.
     VtkVis* findVisByActorId(const std::string& viewId) const;
 
+    /// Like findVisByActorId but falls back to the active view's VtkVis
+    /// so property-setting calls always have a target to store values.
+    VtkVis* findVisByActorIdOrActive(const std::string& viewId) const;
+
     // ===== Category C: Per-view (MOVE to ecvGLView in Phase M1.3) =====
 
     /// [C] 2D image drawing — needs that view's ImageVis.
@@ -628,6 +632,10 @@ protected:
     /// [B→C] Active VTK widget. In Phase M, each ecvGLView owns its own.
     /// This becomes the "engine's current target" until M3 removes it.
     QVTKWidgetCustom* m_vtkWidget = nullptr;
+
+    /// The original widget created in registerVisualizer(), orphaned after
+    /// switchActiveView(). Stored for proper cleanup in the destructor.
+    QVTKWidgetCustom* m_engineOwnedWidget = nullptr;
 
     /// [B→C] 2D viewer. In Phase M, per-view ImageVis on ecvGLView.
     ImageVisPtr m_visualizer2D = nullptr;

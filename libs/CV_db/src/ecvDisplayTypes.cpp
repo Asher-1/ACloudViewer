@@ -23,9 +23,9 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
         } else {
             font.setPointSize(12 * pixelDeviceRatio);
         }
-        CVLog::Print(QString("pixelDeviceRatio: %1 and fontSize %2")
-                             .arg(pixelDeviceRatio)
-                             .arg(fontSize));
+        CVLog::PrintDebug(QString("pixelDeviceRatio: %1 and fontSize %2")
+                                .arg(pixelDeviceRatio)
+                                .arg(fontSize));
         margin *= pixelDeviceRatio;
         iconSize *= pixelDeviceRatio;
         font.setBold(true);

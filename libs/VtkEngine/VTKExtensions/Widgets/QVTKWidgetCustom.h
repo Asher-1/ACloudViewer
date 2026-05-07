@@ -190,7 +190,6 @@ protected:
 
     // events handling
     virtual bool event(QEvent* evt) override;
-    void paintGL() override;
     virtual void wheelEvent(QWheelEvent* event) override;
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void mouseMoveEvent(QMouseEvent* event) override;
@@ -208,8 +207,7 @@ public:
     void setLocalHotZone(ecvHotZone* hz) { m_localHotZone = hz; }
     bool localClickableItemsVisible() const { return m_localClickableVisible; }
 
-    /// Phase C: per-view owner.  Set to the ecvGLView that created this
-    /// widget.  nullptr for the primary (singleton) widget.
+    /// Per-view owner.  Set to the ecvGLView that created this widget.
     void setOwnerView(ecvGLView* view) { m_ownerView = view; }
     ecvGLView* ownerView() const { return m_ownerView; }
 
@@ -217,7 +215,7 @@ public:
     ecvGenericGLDisplay* resolveDisplay() const;
 
     /// Return the best display for per-view method calls.
-    /// Prefers resolveDisplay(); falls back to m_tools.
+    /// Prefers resolveDisplay(); falls back to shared display tools.
     ecvGenericGLDisplay* displayTarget() const;
 
     /// Forward this widget's input signals to the given ecvDisplayTools.
@@ -243,8 +241,8 @@ public:
     // Per-view state accessors
     //
     // curCtx() returns the canonical context for this widget:
-    //   secondary views → m_ownerView->viewContext()
-    //   primary view    → ecvViewManager::resolveViewContext()
+    //   m_ownerView set → m_ownerView->viewContext()
+    //   fallback        → ecvViewManager::resolveViewContext()
     //
     // All cur*() helpers delegate to curCtx() so the branch exists
     // in exactly one place.
@@ -324,7 +322,6 @@ protected:
     bool m_useVBO = false;
     vtkRenderer* m_render;
     QMainWindow* m_win;
-    ecvDisplayTools* m_tools;
     ecvGLView* m_ownerView = nullptr;
     ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;

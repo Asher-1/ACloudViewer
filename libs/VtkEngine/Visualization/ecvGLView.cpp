@@ -13,6 +13,7 @@
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
 #include <ecvGenericVisualizer3D.h>
+#include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvRenderingTools.h>
 #include <ecvRepresentationManager.h>
@@ -137,6 +138,54 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
         syncVtkCameraToContext();
+
+        // Diagnostic: compare VTK's projection with ours
+        static int s_vtkProjLogCount = 0;
+        if (s_vtkProjLogCount < 3 && m_visualizer3D && m_globalDBRoot) {
+            vtkRenderer* ren = m_visualizer3D->getCurrentRenderer();
+            if (ren) {
+                const int* renSz = ren->GetSize();
+                CVLog::PrintDebug(QString("[VtkProjTest] RendererSize=(%1,%2) "
+                                    "WidgetSize=(%3,%4) DPR=%5 "
+                                    "glViewport=(%6,%7)")
+                                     .arg(renSz[0]).arg(renSz[1])
+                                     .arg(m_vtkWidget ? m_vtkWidget->width() : -1)
+                                     .arg(m_vtkWidget ? m_vtkWidget->height() : -1)
+                                     .arg(m_vtkWidget ? m_vtkWidget->devicePixelRatioF() : -1)
+                                     .arg(m_ctx.glViewport.width())
+                                     .arg(m_ctx.glViewport.height()));
+                ccHObject::Container clouds;
+                m_globalDBRoot->filterChildren(clouds, true,
+                                               CV_TYPES::POINT_CLOUD, true);
+                if (!clouds.empty()) {
+                    auto* cloud = static_cast<ccGenericPointCloud*>(clouds[0]);
+                    if (cloud->size() > 0) {
+                        const CCVector3* pt = cloud->getPoint(0);
+                        ren->SetWorldPoint(pt->x, pt->y, pt->z, 1.0);
+                        ren->WorldToDisplay();
+                        double* disp = ren->GetDisplayPoint();
+                        ccGLCameraParameters cam;
+                        getGLCameraParameters(cam);
+                        CCVector3d ourProj;
+                        cam.project(*pt, ourProj);
+                        CVLog::PrintDebug(QString("[VtkProjTest] pt=(%1,%2,%3) "
+                                            "VTK_disp=(%4,%5,%6) "
+                                            "Our_proj=(%7,%8,%9)")
+                                             .arg(pt->x,0,'g',6)
+                                             .arg(pt->y,0,'g',6)
+                                             .arg(pt->z,0,'g',6)
+                                             .arg(disp[0],0,'g',6)
+                                             .arg(disp[1],0,'g',6)
+                                             .arg(disp[2],0,'g',6)
+                                             .arg(ourProj.x,0,'g',6)
+                                             .arg(ourProj.y,0,'g',6)
+                                             .arg(ourProj.z,0,'g',6));
+                        ++s_vtkProjLogCount;
+                    }
+                }
+            }
+        }
+
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
     });
@@ -210,12 +259,17 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     syncVtkCameraToContext();
 
     // --- 3D pass ---
+    // CC_LIGHT_ENABLED is always set for VTK views because VTK handles
+    // lighting in its own pipeline. Without this flag, normals display
+    // is blocked by the MACRO_LightIsEnabled check in drawMeOnly.
     if (!only2D && m_globalDBRoot) {
-        context.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+        context.drawingFlags =
+                CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
         m_globalDBRoot->draw(context);
     }
     if (!only2D && m_winDBRoot) {
-        context.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+        context.drawingFlags =
+                CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
         m_winDBRoot->draw(context);
     }
 
@@ -341,7 +395,13 @@ bool ecvGLView::objectCenteredView() const {
     return m_ctx.viewportParams.objectCenteredView;
 }
 
-void ecvGLView::setSceneDB(ccHObject* root) { m_globalDBRoot = root; }
+void ecvGLView::setSceneDB(ccHObject* root) {
+    m_globalDBRoot = root;
+    auto& vm = ecvViewManager::instance();
+    if (!vm.globalDBRoot() && root) {
+        vm.setGlobalDBRoot(root);
+    }
+}
 
 ccHObject* ecvGLView::getSceneDB() { return m_globalDBRoot; }
 
@@ -396,25 +456,51 @@ void ecvGLView::syncVtkCameraToContext() {
     if (!m_visualizer3D) return;
     vtkCamera* cam = m_visualizer3D->getVtkCamera();
     if (!cam) return;
+    vtkRenderer* ren = m_visualizer3D->getCurrentRenderer();
+    if (!ren) return;
 
-    Eigen::Matrix4d viewMat;
-    m_visualizer3D->getModelViewTransformMatrix(viewMat);
-    std::memcpy(m_ctx.viewMatd.data(), viewMat.data(),
-                16 * sizeof(double));
+    // Use VTK's composite projection transform matrix with normalized depth
+    // range (-1, 1), which is exactly what VTK's WorldToDisplay() uses
+    // internally. This guarantees our projection matches VTK's rendering.
+    double aspect = ren->GetTiledAspectRatio();
+    vtkMatrix4x4* compositeMat =
+            cam->GetCompositeProjectionTransformMatrix(aspect, -1, 1);
+
+    // VTK stores row-major. Eigen interprets as column-major → transpose.
+    // Then transposeInPlace → back to VTK's row-major form.
+    // Our Project() treats matrices as column-major (OpenGL style), accessing
+    // m[col*4+row]. After the transpose dance, the Eigen data layout matches
+    // what VTK would produce for column-vector math.
+    Eigen::Matrix4d composite = Eigen::Matrix4d(compositeMat->GetData());
+    composite.transposeInPlace();
+
+    // Store composite as projection, identity as modelview.
+    // Project() computes: Proj * MV * P. With MV=I, result = Composite * P.
+    ccGLMatrixd identity;
+    identity.toIdentity();
+    std::memcpy(m_ctx.viewMatd.data(), identity.data(), 16 * sizeof(double));
+    std::memcpy(m_ctx.projMatd.data(), composite.data(), 16 * sizeof(double));
     m_ctx.validModelviewMatrix = true;
+    m_ctx.validProjectionMatrix = true;
 
-    if (m_vtkWidget) {
-        const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
-        int w = m_vtkWidget->width() * dpr;
-        int h = m_vtkWidget->height() * dpr;
-        m_ctx.glViewport = QRect(0, 0, w, h);
-
-        Eigen::Matrix4d projMat;
-        m_visualizer3D->getProjectionTransformMatrix(projMat);
-        std::memcpy(m_ctx.projMatd.data(), projMat.data(),
-                    16 * sizeof(double));
-        m_ctx.validProjectionMatrix = true;
+    // Sync perspective state
+    bool vtkParallel = (cam->GetParallelProjection() != 0);
+    m_ctx.viewportParams.perspectiveView = !vtkParallel;
+    if (vtkParallel) {
+        double ps = cam->GetParallelScale();
+        int h = ren->GetSize()[1];
+        if (h > 0) {
+            m_ctx.viewportParams.pixelSize =
+                    static_cast<float>(2.0 * ps / h);
+        }
+    } else {
+        m_ctx.viewportParams.fov_deg =
+                static_cast<float>(cam->GetViewAngle());
     }
+
+    // Viewport from renderer's actual size
+    const int* sz = ren->GetSize();
+    m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
 }
 
 void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {

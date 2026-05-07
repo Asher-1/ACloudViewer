@@ -83,7 +83,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     cc2DLabel* label = self->m_associatedLabel;
 
     ecvDisplayTools* tools = dynamic_cast<ecvDisplayTools*>(
-            ecvViewManager::instance().getPrimaryView());
+            ecvViewManager::instance().displayTools());
     if (!tools) {
         return;
     }

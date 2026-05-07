@@ -1758,13 +1758,23 @@ void VtkVis::updateNormals(const CC_DRAW_CONTEXT& context,
         const std::string normalID = viewID + "-normal";
         int normalDensity =
                 context.normalDensity > 20 ? context.normalDensity : 20;
-        float normalScale =
-                context.normalScale > 0.02f ? context.normalScale : 0.02f;
+
+        float normalScale = context.normalScale;
+        if (normalScale <= 0.02f) {
+            ccBBox bbox = cloud->getOwnBB();
+            if (bbox.isValid()) {
+                float diag = bbox.getDiagNorm();
+                normalScale = diag * 0.02f;
+            }
+            if (normalScale < 0.02f) {
+                normalScale = 0.02f;
+            }
+        }
+
         if (contains(normalID)) {
             removePointClouds(normalID, viewport);
         }
 
-        // Build normal lines directly as VTK polydata
         unsigned count = cloud->size();
         unsigned step = static_cast<unsigned>(normalDensity);
         auto pts = vtkSmartPointer<vtkPoints>::New();
@@ -1788,7 +1798,8 @@ void VtkVis::updateNormals(const CC_DRAW_CONTEXT& context,
 
         vtkSmartPointer<vtkLODActor> actor;
         VtkRendering::CreateActorFromVTKDataSet(pd, actor, false);
-        actor->GetProperty()->SetColor(0.0, 0.0, 1.0);
+        actor->GetProperty()->SetColor(1.0, 0.65, 0.0);
+        actor->GetProperty()->SetLineWidth(1.5);
         addActorToRenderer(actor, viewport);
         VtkRendering::CloudActor& ca = (*cloud_actor_map_)[normalID];
         ca.actor = actor;

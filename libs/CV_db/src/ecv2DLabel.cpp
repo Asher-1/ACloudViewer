@@ -7,11 +7,17 @@
 
 #include "ecv2DLabel.h"
 
+#include <QCoreApplication>
+#include <QThread>
+
 #include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
+#include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 
 #include "ecvBasicTypes.h"
+#include "ecvDisplayTools.h"
 #include "ecvFacet.h"
 #include "ecvGenericDisplayTools.h"
 #include "ecvGenericPointCloud.h"
@@ -37,21 +43,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include <algorithm>
 #include <algorithm>  // For std::max, std::min
 
 namespace {
 
-//! Route widget removal to the view that owns param.context.display, else
-//! effective view.
-inline void removeWidgetsDispatch(const WIDGETS_PARAMETER& param) {
-    if (ecvGenericGLDisplay* display = param.context.display) {
-        display->removeWidgets(param);
-    } else if (ecvGenericGLDisplay* ev =
-                       ecvViewManager::instance().getEffectiveView()) {
-        ev->removeWidgets(param);
-    }
-}
 
 static void mirrorUpdateScreenLikeDrawWidgetsSuffix() {
     if (QWidget* w = ecvViewManager::instance().activeWidget()) {
@@ -316,80 +311,127 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
     setVisible(false);
     setName("Label");
 
-    { ecvRedrawScope scope({this}); }
+    // THREAD-SAFETY: Do NOT remove the thread guard below.
+    // BinFilter::LoadFileV2 deserializes entities in a QtConcurrent worker
+    // thread.  When a cc2DLabel is created (ccHObject::New → constructor →
+    // clear()), ecvRedrawScope triggers vtkRenderWindow::Render() which
+    // requires the main/GUI thread for OpenGL context.  Calling Render()
+    // from a worker thread causes SIGABRT (Qt assertion).
+    // See: GDB backtrace — cc2DLabel::clear → ecvRedrawScope::~ecvRedrawScope
+    //      → ecvGLView::redraw → vtkGenericOpenGLRenderWindow::Render.
+    if (getDisplay() && QThread::currentThread() == QCoreApplication::instance()->thread()) {
+        ecvRedrawScope scope({this});
+    }
 }
 
 void cc2DLabel::clear3Dviews() {
-    auto makeParam = [this](WIDGETS_TYPE t, const QString& id) {
+    ecvGenericGLDisplay* disp = getDisplay();
+    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+
+    auto doRemoveOn = [](ecvGenericGLDisplay* d, WIDGETS_TYPE t,
+                         const QString& id) {
         WIDGETS_PARAMETER p(t, id);
-        p.context.display = getDisplay();
-        return p;
+        if (d) {
+            p.context.display = d;
+            d->removeWidgets(p);
+        } else {
+            ecvDisplayTools::RemoveWidgets(p);
+        }
     };
 
-    removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID));
+    // Remove from primary display.
+    auto doRemove = [&](WIDGETS_TYPE t, const QString& id) {
+        doRemoveOn(disp, t, id);
+    };
+
+    doRemove(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
 
     if (c_unitPointMarker) {
         for (int i = 0; i < 3; ++i) {
-            removeWidgetsDispatch(
-                    makeParam(WIDGETS_TYPE::WIDGET_POINT,
-                              QString::number(i) + m_sphereIdfix));
-            removeWidgetsDispatch(
-                    makeParam(WIDGETS_TYPE::WIDGET_SPHERE,
-                              QString::number(i) + m_sphereIdfix));
+            doRemove(WIDGETS_TYPE::WIDGET_POINT,
+                     QString::number(i) + m_sphereIdfix);
+            doRemove(WIDGETS_TYPE::WIDGET_SPHERE,
+                     QString::number(i) + m_sphereIdfix);
         }
     }
 
     if (c_unitTriMarker) {
-        removeWidgetsDispatch(
-                makeParam(WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix));
-        removeWidgetsDispatch(
-                makeParam(WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix));
+        doRemove(WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix);
+        doRemove(WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix);
+    }
+
+    // For unbound labels, also remove from all other views.
+    if (!getDisplay() && ecvViewManager::instance().viewCount() > 1) {
+        for (auto* view : ecvViewManager::instance().getAllViews()) {
+            if (!view || view == disp) continue;
+            doRemoveOn(view, WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
+            if (c_unitPointMarker) {
+                for (int i = 0; i < 3; ++i) {
+                    doRemoveOn(view, WIDGETS_TYPE::WIDGET_POINT,
+                               QString::number(i) + m_sphereIdfix);
+                    doRemoveOn(view, WIDGETS_TYPE::WIDGET_SPHERE,
+                               QString::number(i) + m_sphereIdfix);
+                }
+            }
+            if (c_unitTriMarker) {
+                doRemoveOn(view, WIDGETS_TYPE::WIDGET_POLYLINE,
+                           m_contourIdfix);
+                doRemoveOn(view, WIDGETS_TYPE::WIDGET_POLYGONMESH,
+                           m_surfaceIdfix);
+            }
+        }
     }
 }
 
 void cc2DLabel::clear2Dviews() {
-    auto makeParam = [this](WIDGETS_TYPE t, const QString& id) {
+    ecvGenericGLDisplay* disp = getDisplay();
+    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+
+    auto doRemove = [disp](WIDGETS_TYPE t, const QString& id) {
         WIDGETS_PARAMETER p(t, id);
-        p.context.display = getDisplay();
-        return p;
+        if (disp) {
+            p.context.display = disp;
+            disp->removeWidgets(p);
+        } else {
+            ecvDisplayTools::RemoveWidgets(p);
+        }
     };
 
     if (!m_historyMessage.isEmpty()) {
         for (const QString& text : m_historyMessage) {
-            removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_T2D, text));
-            removeWidgetsDispatch(
-                    makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text));
+            doRemove(WIDGETS_TYPE::WIDGET_T2D, text);
+            doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text);
         }
         m_historyMessage.clear();
     }
 
-    removeWidgetsDispatch(
-            makeParam(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
-    removeWidgetsDispatch(
-            makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
+    doRemove(WIDGETS_TYPE::WIDGET_T2D, this->getViewId());
+    doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId());
 
-    // Clean up legacy VTK legend text actors (now rendered by QPainter overlay)
     size_t count = m_pickedPoints.size();
     for (size_t j = 0; j < count; ++j) {
         QString legendId =
                 QString("%1_legend_%2").arg(this->getViewId()).arg(j);
-        removeWidgetsDispatch(makeParam(WIDGETS_TYPE::WIDGET_T2D, legendId));
-        removeWidgetsDispatch(
-                makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId));
+        doRemove(WIDGETS_TYPE::WIDGET_T2D, legendId);
+        doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId);
     }
 
-    // Clean up legacy VTK caption widget (now rendered by QPainter overlay)
-    removeWidgetsDispatch(
-            makeParam(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
+    doRemove(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
 }
 
 void cc2DLabel::clearLabel(bool ignoreCaption) {
     clear3Dviews();
     clear2Dviews();
     if (!ignoreCaption) {
+        ecvGenericGLDisplay* disp = getDisplay();
+        if (!disp) disp = ecvViewManager::instance().getEffectiveView();
         WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
-        p.context.display = getDisplay();
-        removeWidgetsDispatch(p);
+        if (disp) {
+            p.context.display = disp;
+            disp->removeWidgets(p);
+        } else {
+            ecvDisplayTools::RemoveWidgets(p);
+        }
     }
 }
 
@@ -962,9 +1004,41 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    ecvGenericGLDisplay* myDisp = getDisplay();
-    if (myDisp && context.display && myDisp != context.display) {
-        return;
+    // P5: Per-view label visibility via ecvViewRepresentation.
+    // In multi-view mode, labels use representation-based visibility
+    // instead of the legacy getDisplay() binding.  This allows the same
+    // label to have independent visibility per view (ParaView TextWidget
+    // model).
+    if (context.display && ecvViewManager::instance().viewCount() > 1) {
+        auto& repMgr = ecvRepresentationManager::instance();
+        auto* rep = repMgr.getRepresentation(
+                const_cast<cc2DLabel*>(this), context.display);
+        if (rep) {
+            if (rep->hasVisibilityOverride() && !rep->isVisible()) {
+                return;
+            }
+        } else {
+            // No representation yet for this (label, view) pair.
+            // Auto-create one: visible in the active view, hidden otherwise.
+            auto* activeView = ecvViewManager::instance().getActiveView();
+            bool isActiveView =
+                    (activeView && activeView == context.display);
+            if (isActiveView) {
+                auto* newRep = repMgr.ensureRepresentation(
+                        const_cast<cc2DLabel*>(this), context.display);
+                if (newRep && !newRep->hasVisibilityOverride()) {
+                    newRep->setVisible(true);
+                }
+            } else {
+                return;
+            }
+        }
+    } else if (context.display) {
+        // Single-view mode: use legacy getDisplay() binding.
+        ecvGenericGLDisplay* myDisp = getDisplay();
+        if (myDisp && myDisp != context.display) {
+            return;
+        }
     }
 
     if (MACRO_Draw3D(context)) {
@@ -1426,10 +1500,14 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     // Only display full panel when dispIn2D is set
     if (!m_dispIn2D) {
-        WIDGETS_PARAMETER capWp(WIDGETS_TYPE::WIDGET_CAPTION,
-                                this->getViewId());
-        capWp.context.display = context.display;
-        removeWidgetsDispatch(capWp);
+        WIDGETS_PARAMETER capP(WIDGETS_TYPE::WIDGET_CAPTION,
+                               this->getViewId());
+        capP.context.display = context.display;
+        if (context.display) {
+            context.display->removeWidgets(capP);
+        } else {
+            ecvDisplayTools::RemoveWidgets(capP);
+        }
         m_labelROI = QRect(0, 0, 0, 0);
         m_lastScreenPos[0] = m_lastScreenPos[1] = -1;
         return;

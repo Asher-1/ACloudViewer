@@ -523,39 +523,10 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
 }
 
 void ccPropertiesTreeDelegate::fillWithPerViewProperties() {
-    assert(m_model);
-    if (!m_currentObject) return;
-
-    auto* activeView = ecvViewManager::instance().getEffectiveView();
-    if (!activeView) return;
-
-    auto* rep = ecvRepresentationManager::instance().getRepresentation(
-            m_currentObject, activeView);
-    if (!rep) return;
-
-    addSeparator(tr("Display (Per-View Override)"));
-
-    // Per-view visibility
-    {
-        QStandardItem* nameItem = new QStandardItem(tr("Per-View Visible"));
-        nameItem->setFlags(Qt::ItemIsEnabled);
-        QStandardItem* valueItem = new QStandardItem();
-        valueItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
-        valueItem->setCheckState(rep->isVisible() ? Qt::Checked : Qt::Unchecked);
-        valueItem->setData(OBJECT_PERVIEW_VISIBILITY,
-                           Qt::UserRole);
-        appendRow(nameItem, valueItem);
-    }
-
-    // Per-view opacity
-    appendRow(ITEM(tr("Per-View Opacity")),
-              PERSISTENT_EDITOR(OBJECT_PERVIEW_OPACITY), true);
-
-    // Per-view point size (only for point clouds)
-    if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        appendRow(ITEM(tr("Per-View Point Size")),
-                  PERSISTENT_EDITOR(OBJECT_PERVIEW_POINT_SIZE), true);
-    }
+    // ParaView UX: no separate "per-view override" section.
+    // The main property controls (opacity, normals, etc.) implicitly
+    // read/write the active view's ecvViewRepresentation. This method
+    // is kept as a no-op for backward compatibility.
 }
 
 // Note: fillWithSelectionProperties, setSelectionToolsActive, and
@@ -585,10 +556,20 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
         appendRow(ITEM(tr("Visible")),
                   CHECKABLE_ITEM(_obj->isVisible(), OBJECT_VISIBILITY));
 
-    // normals
-    if (_obj->hasNormals())
+    // normals — per-view: read from active view's representation if present
+    if (_obj->hasNormals()) {
+        bool normShown = _obj->normalsShown();
+        auto* nView = ecvViewManager::instance().getEffectiveView();
+        if (nView) {
+            auto* nRep = ecvRepresentationManager::instance()
+                    .getRepresentation(_obj, nView);
+            if (nRep && nRep->properties().showNormals.has_value()) {
+                normShown = nRep->effectiveShowNormals();
+            }
+        }
         appendRow(ITEM(tr("Normals")),
-                  CHECKABLE_ITEM(_obj->normalsShown(), OBJECT_NORMALS_SHOWN));
+                  CHECKABLE_ITEM(normShown, OBJECT_NORMALS_SHOWN));
+    }
 
     // name in 3D
     appendRow(ITEM(tr("Show name (in 3D)")),
@@ -2446,14 +2427,20 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             QWidget* container = qobject_cast<QWidget*>(editor);
             if (!container) return;
 
-            // Find the slider and spinbox in the container
             QSlider* slider = container->findChild<QSlider*>();
             QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
 
-            // Get current opacity from the object [0.0, 1.0]
-            // For folders, calculate average opacity from all renderable
-            // children
+            // Per-view: use effective opacity from the active view's
+            // representation if one exists, otherwise fall back to global.
             float opacity = m_currentObject->getOpacity();
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (activeView) {
+                auto* rep = ecvRepresentationManager::instance()
+                        .getRepresentation(m_currentObject, activeView);
+                if (rep) {
+                    opacity = rep->effectiveOpacity();
+                }
+            }
 
             if (m_currentObject->getChildrenNumber() > 0) {
                 // This is a folder - calculate average opacity from renderable
@@ -2817,8 +2804,20 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             }
         } break;
         case OBJECT_NORMALS_SHOWN: {
-            m_currentObject->showNormals(item->checkState() == Qt::Checked);
+            bool showNorms = (item->checkState() == Qt::Checked);
+            m_currentObject->showNormals(showNorms);
             m_currentObject->setRedrawFlagRecursive(true);
+            // Per-view: also update active view's representation
+            auto* nActiveView = ecvViewManager::instance().getEffectiveView();
+            if (nActiveView) {
+                auto* nRep = ecvRepresentationManager::instance()
+                        .ensureRepresentation(m_currentObject, nActiveView);
+                if (nRep) {
+                    auto nProps = nRep->properties();
+                    nProps.showNormals = showNorms;
+                    nRep->setProperties(nProps);
+                }
+            }
         }
             redraw = true;
             break;
@@ -3547,11 +3546,11 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
     // Check if this is a folder with children
     if (m_currentObject->getChildrenNumber() > 0) {
         // For folders, apply opacity to all renderable children recursively
+        auto* folderView = ecvViewManager::instance().getEffectiveView();
         std::function<void(ccHObject*, float)> applyOpacityRecursive =
-                [&applyOpacityRecursive](ccHObject* obj, float op) {
+                [&applyOpacityRecursive, folderView](ccHObject* obj, float op) {
                     if (!obj || !obj->isEnabled()) return;
 
-                    // Check if this is a renderable object
                     bool isRenderable = (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
                                          obj->isKindOf(CV_TYPES::MESH) ||
                                          obj->isKindOf(CV_TYPES::PRIMITIVE) ||
@@ -3559,13 +3558,20 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                                          obj->isKindOf(CV_TYPES::FACET));
 
                     if (isRenderable) {
-                        // Check if opacity actually changed to avoid
-                        // unnecessary updates
                         if (std::abs(obj->getOpacity() - op) >= 0.001f) {
+                            // Per-view: also update the active view's rep
+                            if (folderView) {
+                                auto* rep = ecvRepresentationManager::instance()
+                                        .ensureRepresentation(obj, folderView);
+                                if (rep) {
+                                    auto props = rep->properties();
+                                    props.opacity = op;
+                                    rep->setProperties(props);
+                                }
+                            }
+
                             obj->setOpacity(op);
 
-                            // Determine entity type for proper property
-                            // application
                             ENTITY_TYPE entityType =
                                     ENTITY_TYPE::ECV_POINT_CLOUD;
                             if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
@@ -3579,22 +3585,17 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                                 entityType = ENTITY_TYPE::ECV_MESH;
                             }
 
-                            // Create property parameter and apply opacity
-                            // change
                             PROPERTY_PARAM param(obj, static_cast<double>(op));
                             param.entityType = entityType;
                             param.viewId = obj->getViewId();
                             param.viewport = 0;
 
-                            // Apply the opacity change to the effective view
-                            if (auto* view = ecvViewManager::instance()
-                                                     .getEffectiveView()) {
-                                view->changeEntityProperties(param);
+                            if (folderView) {
+                                folderView->changeEntityProperties(param);
                             }
                         }
                     }
 
-                    // Recursively process children
                     for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
                         applyOpacityRecursive(obj->getChild(i), op);
                     }
@@ -3609,17 +3610,26 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     } else {
-        // Single object - original behavior
-        // Check if opacity actually changed to avoid unnecessary updates
         if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
             return;
         }
 
-        // Store the new opacity in the object
+        // Per-view: store opacity in the active view's representation
+        // so different views can have different opacity for the same object.
+        auto* activeView = ecvViewManager::instance().getEffectiveView();
+        if (activeView) {
+            auto* rep = ecvRepresentationManager::instance()
+                    .ensureRepresentation(m_currentObject, activeView);
+            if (rep) {
+                auto props = rep->properties();
+                props.opacity = opacity;
+                rep->setProperties(props);
+            }
+        }
+
         m_currentObject->setOpacity(opacity);
 
-        // Determine entity type for proper property application
-        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
+        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
 
         if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
             entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
@@ -3632,7 +3642,6 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
             entityType = ENTITY_TYPE::ECV_MESH;
         }
 
-        // Create property parameter and apply opacity change
         PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
         param.entityType = entityType;
         param.viewId = m_currentObject->getViewId();

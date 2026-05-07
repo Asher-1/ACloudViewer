@@ -1968,6 +1968,16 @@ void cvRenderViewSelectionReaction::setupInteractorStyle() {
             setCursor(m_zoomCursor);
             auto zoomStyle =
                     vtkSmartPointer<vtkInteractorStyleRubberBandZoom>::New();
+            // ParaView alignment (vtkPVRenderView.cxx):
+            // Lock rubber-band box to viewport aspect ratio so the drawn
+            // rectangle exactly matches the resulting zoom region.
+            zoomStyle->SetLockAspectToViewport(true);
+            // Use focal-point + view-angle zoom instead of dolly for
+            // perspective projection, matching ParaView behavior.
+            zoomStyle->SetUseDollyForPerspectiveProjection(false);
+            if (m_renderer) {
+                zoomStyle->SetDefaultRenderer(m_renderer);
+            }
             m_selectionStyle = zoomStyle;
             m_interactor->SetInteractorStyle(zoomStyle);
             break;

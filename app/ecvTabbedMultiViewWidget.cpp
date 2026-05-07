@@ -126,8 +126,8 @@ int ecvTabbedMultiViewWidget::createTab() {
     while (usedNumbers.contains(nextNum)) ++nextNum;
     m_layoutCounter = qMax(m_layoutCounter, nextNum);
     layout->setName(tr("Layout #%1").arg(nextNum));
-    CVLog::Print("[Tab] createTab: name='%s' usedNumbers=%d nextNum=%d",
-                 qPrintable(layout->name()), usedNumbers.size(), nextNum);
+    CVLog::PrintDebug("[Tab] createTab: name='%s' usedNumbers=%d nextNum=%d",
+                      qPrintable(layout->name()), usedNumbers.size(), nextNum);
 
     ecvViewManager::instance().registerLayout(layout);
 
@@ -185,16 +185,16 @@ ecvMultiViewWidget* ecvTabbedMultiViewWidget::createMultiViewWidget(
 // ============================================================================
 
 void ecvTabbedMultiViewWidget::closeTab(int index) {
-    CVLog::Print("[Tab] closeTab: index=%d count=%d", index,
-                 m_tabWidget->count());
+    CVLog::PrintDebug("[Tab] closeTab: index=%d count=%d", index,
+                      m_tabWidget->count());
     if (index < 0 || index >= m_tabWidget->count()) return;
     if (m_tabWidget->widget(index) == m_newTabWidget) return;
 
     auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(index));
     if (!mvw) return;
 
-    CVLog::Print("[Tab] closeTab: closing '%s'",
-                 qPrintable(m_tabWidget->tabText(index)));
+    CVLog::PrintDebug("[Tab] closeTab: closing '%s'",
+                      qPrintable(m_tabWidget->tabText(index)));
 
     // Suppress auto-creation in onCurrentTabChanged while closing
     m_closingTab = true;
@@ -259,8 +259,9 @@ void ecvTabbedMultiViewWidget::setCurrentTab(int index) {
 void ecvTabbedMultiViewWidget::onCurrentTabChanged(int index) {
     if (index < 0) return;
 
-    CVLog::Print("[Tab] onCurrentTabChanged: index=%d closingTab=%d count=%d",
-                 index, m_closingTab, m_tabWidget->count());
+    CVLog::PrintDebug(
+            "[Tab] onCurrentTabChanged: index=%d closingTab=%d count=%d", index,
+            m_closingTab, m_tabWidget->count());
 
     // Don't auto-create a new tab when closing shifts selection to "+"
     if (m_closingTab) return;
@@ -368,8 +369,9 @@ bool ecvTabbedMultiViewWidget::eventFilter(QObject* obj, QEvent* evt) {
         if (me && me->button() == Qt::LeftButton) {
             int closeIdx = tabButtonIndex(qobject_cast<QWidget*>(obj),
                                           QTabBar::RightSide);
-            CVLog::Print("[Tab] eventFilter: close button click, closeIdx=%d",
-                         closeIdx);
+            CVLog::PrintDebug(
+                    "[Tab] eventFilter: close button click, closeIdx=%d",
+                    closeIdx);
             if (closeIdx != -1) {
                 closeTab(closeIdx);
                 return true;

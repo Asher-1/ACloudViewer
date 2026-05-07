@@ -79,6 +79,7 @@ void ccPickingHub::processPickedItem(ccHObject* entity,
         item.entity = entity;
         item.itemIndex = itemIndex;
         item.P3D = P3D;
+        item.pickView = ecvViewManager::instance().getActiveView();
     }
 
     // copy the list of listeners, in case the user call 'removeListener' in

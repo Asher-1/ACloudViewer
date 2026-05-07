@@ -53,6 +53,9 @@
 #include <ecvScalarFieldEditCommand.h>
 #include <ecvUndoManager.h>
 #include <ecvViewManager.h>
+#include <ecvRedrawScope.h>
+#include <ecvRepresentationManager.h>
+#include <ecvViewRepresentation.h>
 
 // common
 #include <ecvPickOneElementDlg.h>
@@ -384,6 +387,21 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     connect(m_ccPropDelegate,
             &ccPropertiesTreeDelegate::ccObjectAndChildrenAppearanceChanged,
             this, &ccDBRoot::redrawCCObjectAndChildren);
+
+    // Per-view visibility: refresh checkbox states when the active view
+    // changes so that checkboxes reflect the new view's visibility.
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::activeViewChanged, this,
+            [this](ecvGenericGLDisplay* /*newActive*/,
+                   ecvGenericGLDisplay* /*oldActive*/) {
+                // Refresh all rows (including nested children) so that
+                // CheckState/ForegroundRole/ToolTipRole reflect the new
+                // active view's per-view visibility.
+                emit layoutChanged();
+                // Also refresh the properties panel so per-view properties
+                // (opacity, normals, etc.) reflect the new active view.
+                updatePropertiesView();
+            });
 }
 
 ccDBRoot::~ccDBRoot() {
@@ -774,8 +792,6 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
         }
 
         case Qt::CheckStateRole: {
-            // Don't include checkboxes for hierarchy objects if they have no
-            // children or only contain hierarchy objects (recursively)
             if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
                 if (item->getChildrenNumber() == 0) {
                     return {};
@@ -792,10 +808,57 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
                 }
             }
 
-            if (item->isEnabled())
-                return Qt::Checked;
-            else
+            if (!item->isEnabled())
                 return Qt::Unchecked;
+
+            // Per-view visibility: reflect active view's representation state
+            auto* mItem = const_cast<ccHObject*>(item);
+            auto* activeView = ecvViewManager::instance().getActiveView();
+            if (activeView) {
+                auto* rep = ecvRepresentationManager::instance()
+                        .getRepresentation(mItem, activeView);
+                if (rep && rep->hasVisibilityOverride()) {
+                    return rep->isVisible() ? Qt::Checked : Qt::Unchecked;
+                }
+            }
+            return Qt::Checked;
+        }
+
+        case Qt::ForegroundRole: {
+            // Dim text for entities hidden in the active view via per-view
+            // override, providing a visual hint that the entity is visible
+            // in other views but not the current one.
+            auto* mutableItem = const_cast<ccHObject*>(item);
+            if (item->isEnabled()) {
+                auto* activeView = ecvViewManager::instance().getActiveView();
+                if (activeView) {
+                    auto* rep = ecvRepresentationManager::instance()
+                            .getRepresentation(mutableItem, activeView);
+                    if (rep && rep->hasVisibilityOverride() &&
+                        !rep->isVisible()) {
+                        return QColor(160, 160, 160);
+                    }
+                }
+            }
+            return {};
+        }
+
+        case Qt::ToolTipRole: {
+            auto* mutableItem = const_cast<ccHObject*>(item);
+            if (item->isEnabled() &&
+                ecvViewManager::instance().getAllViews().size() > 1) {
+                auto reps = ecvRepresentationManager::instance()
+                        .getRepresentationsForEntity(mutableItem);
+                int hiddenCount = 0;
+                for (auto* r : reps) {
+                    if (r && r->hasVisibilityOverride() && !r->isVisible())
+                        ++hiddenCount;
+                }
+                if (hiddenCount > 0) {
+                    return tr("Hidden in %1 view(s)").arg(hiddenCount);
+                }
+            }
+            return {};
         }
 
         default:
@@ -841,6 +904,25 @@ static void toggleFolderChildrenVisibility(ccHObject* parent,
 
         if (child->getChildrenNumber() > 0) {
             toggleFolderChildrenVisibility(child, childActive);
+        }
+    }
+}
+
+/// Recursively set per-view visibility for an entity and its children.
+/// Unlike global setEnabled(), this only affects the specified view.
+static void setPerViewVisibilityRecursive(ccHObject* entity,
+                                          ecvGenericGLDisplay* view,
+                                          bool visible) {
+    if (!entity || !view) return;
+    auto* rep = ecvRepresentationManager::instance()
+                        .ensureRepresentation(entity, view);
+    if (rep) {
+        rep->setVisible(visible);
+    }
+    for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+        ccHObject* child = entity->getChild(i);
+        if (child && child->isEnabled()) {
+            setPerViewVisibilityRecursive(child, view, visible);
         }
     }
 }
@@ -922,13 +1004,94 @@ bool ccDBRoot::setData(const QModelIndex& index,
         } else if (role == Qt::CheckStateRole) {
             ccHObject* item = static_cast<ccHObject*>(index.internalPointer());
             assert(item);
-            if (item) {
+            if (!item) return false;
+
+            bool newVal = (value == Qt::Checked);
+            auto& viewMgr = ecvViewManager::instance();
+            auto* activeView = viewMgr.getActiveView();
+            bool multiView = (viewMgr.getAllViews().size() > 1);
+
+            // ── Multi-view per-view visibility path ──
+            // When multiple views exist AND activeView is valid AND the
+            // entity is globally enabled, the checkbox controls the active
+            // view's per-view visibility via ecvViewRepresentation
+            // (ParaView-style).
+            if (multiView && activeView && item->isEnabled()) {
+                auto& repMgr = ecvRepresentationManager::instance();
+                auto* rep = repMgr.ensureRepresentation(item, activeView);
+                if (!rep) return false;
+
+                bool wasBefore = rep->isVisible();
+                if (wasBefore == newVal) return true;
+
+                rep->setVisible(newVal);
+
+                // Propagate to children
+                for (unsigned i = 0; i < item->getChildrenNumber(); ++i) {
+                    if (auto* child = item->getChild(i)) {
+                        setPerViewVisibilityRecursive(child, activeView, newVal);
+                    }
+                }
+
+                // Label-specific: clear 3D widgets when hiding
+                if (!newVal && item->isA(CV_TYPES::LABEL_2D)) {
+                    if (auto* label = ccHObjectCaster::To2DLabel(item)) {
+                        label->clearLabel(true);
+                    }
+                }
+
+                // Undo: validate view pointer before use to avoid dangling
+                // if the view was closed between the action and undo/redo.
+                auto* undoMgr = viewMgr.undoManager();
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(),
+                            QStringLiteral("perViewVisible"), wasBefore,
+                            newVal,
+                            [item, activeView](const bool& v) {
+                                auto& vm = ecvViewManager::instance();
+                                if (!vm.getAllViews().contains(activeView))
+                                    return;
+                                auto* r = ecvRepresentationManager::instance()
+                                        .ensureRepresentation(item, activeView);
+                                if (r) {
+                                    r->setVisible(v);
+                                    setPerViewVisibilityRecursive(
+                                            item, activeView, v);
+                                }
+                            },
+                            []() {
+                                MainWindow::TheInstance()->refreshAll();
+                            },
+                            tr("Toggle visibility '%1' in active view")
+                                    .arg(item->getName())));
+                }
+
+                // Children were updated recursively, so use layoutChanged
+                // to refresh the entire subtree (not just the toggled row).
+                emit layoutChanged();
+
+                // Per-view visibility is evaluated in ccHObject::draw()
+                // during redraw().  A plain updateScene() only re-renders
+                // existing VTK actor states; we need a full redraw so the
+                // draw pipeline re-evaluates viewRep->isVisible() and
+                // updates VTK actor visibility accordingly.
+                {
+                    ecvRedrawScope scope(false, true);
+                    scope.markDirty(item);
+                }
+
+                return true;
+            }
+
+            // ── Single-view / global-disable path ──
+            // When only one view exists, or the item is being globally
+            // disabled, use the legacy setEnabled() path.
+            {
                 bool wasBefore = item->isEnabled();
-                bool newVal = (value == Qt::Checked);
                 item->setEnabled(newVal);
 
-                auto* undoMgr =
-                        ecvViewManager::instance().undoManager();
+                auto* undoMgr = viewMgr.undoManager();
                 if (undoMgr && wasBefore != newVal) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
                             item->getUniqueID(),
@@ -943,7 +1106,6 @@ bool ccDBRoot::setData(const QModelIndex& index,
 
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
                     item->isKindOf(CV_TYPES::POINT_KDTREE)) {
-                    // rendering this item only
                     MainWindow::TheInstance()->refreshObject(item);
                 } else if (item->isA(CV_TYPES::LABEL_2D) ||
                            item->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
@@ -955,8 +1117,12 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         if (vpLabel) vpLabel->updateLabel();
                     } else {
                         hideShowObjectOnDisplays(item, false);
-                        if (auto* w = ecvViewManager::instance().activeWidget())
-                            w->update();
+                        cc2DLabel* label = ccHObjectCaster::To2DLabel(item);
+                        if (label) {
+                            label->clearLabel(true);
+                        }
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::SENSOR)) {
                     ccSensor* sensor = ccHObjectCaster::ToSensor(item);
@@ -964,18 +1130,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
                         sensor->hideShowDrawings(context);
-                        // for bbox
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
-                            // Check if Axes Grid is visible - if so, hide
-                            // BoundingBox
                             bool shouldShowBB = true;
                             ecvGenericGLDisplay* axesDisp =
                                     const_cast<ecvGenericGLDisplay*>(
                                             sensor->getDisplay());
                             if (!axesDisp) {
-                                axesDisp = ecvViewManager::instance()
-                                                   .getEffectiveView();
+                                axesDisp = viewMgr.getEffectiveView();
                             }
                             AxesGridProperties axesGridProps;
                             bool haveAxesProps = false;
@@ -995,8 +1157,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             sensor->hideBB(context);
                         }
-                        if (auto* w = ecvViewManager::instance().activeWidget())
-                            w->update();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
@@ -1025,8 +1187,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                                     const_cast<ecvGenericGLDisplay*>(
                                             prim->getDisplay());
                             if (!axesDisp) {
-                                axesDisp = ecvViewManager::instance()
-                                                   .getEffectiveView();
+                                axesDisp = viewMgr.getEffectiveView();
                             }
                             AxesGridProperties axesGridProps;
                             bool haveAxesProps = false;
@@ -1046,8 +1207,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             prim->hideBB(context);
                         }
-                        if (auto* w = ecvViewManager::instance().activeWidget())
-                            w->update();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else {
                     bool active = item->isEnabled();
@@ -1056,15 +1217,21 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, false);
                         }
-                        if (auto* w = ecvViewManager::instance().activeWidget())
-                            w->update();
+                        if (auto* disp = const_cast<ecvGenericGLDisplay*>(
+                                    item->getDisplay())) {
+                            disp->updateScene();
+                        } else {
+                            for (auto* view : viewMgr.getAllViews()) {
+                                if (view) view->updateScene();
+                            }
+                        }
                     } else {
                         item->toggleVisibility_recursive(true, false);
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, true);
                         }
                         item->setForceRedrawRecursive(true);
-                        ecvViewManager::instance().setRedrawRecursive(false);
+                        viewMgr.setRedrawRecursive(false);
                         redrawCCObjectAndChildren(item, false);
                     }
                 }
