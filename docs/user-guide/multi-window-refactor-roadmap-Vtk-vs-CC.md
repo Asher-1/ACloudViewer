@@ -463,7 +463,7 @@ gantt
 | **B** 绘制管线 | **DONE** | `getContext` 本地化、`RedrawDisplay` per-view 委派、`ScopedRenderOverride` 移除、deprecated 旧 API |
 | **C** 交互管线 | **DONE** | `m_ownerView` + `ownerCtx()` 全量 accessor、foreign wheel 消除 |
 | **D** 工具重构 | **DONE** | `bindToView` 绑定、`doPicking` via `effectiveCtx()`、属性面板随活动视图刷新 |
-| **E** 清理单例 | **DONE** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`curCtx()` 统一 29 个 accessor (单一分支点)；`ScopedHotZoneRender` 保留 (2D overlay 管线耦合，RAII 最小化) |
+| **E** 清理单例 | **DONE** | `pushState/pullState` 已删除 (16→0)、~35 per-view 成员声明已删除；`curCtx()` 统一 29 个 accessor (单一分支点)；`ScopedHotZoneRender` 已在 M4 删除；`m_tools` 成员已完全消除 (2026-05-07) |
 | **F** 进阶功能 | **DONE** | per-view opacity override 已接入绘制管线；KD-tree 布局模型 (`ecvViewLayoutProxy`)；`ecvMultiViewWidget` + `ecvTabbedMultiViewWidget` (ParaView 级多视图/Tab 布局)；`ecvViewManager` 扩展为 `pqActiveObjects` 模式 (源/表示追踪 + `triggerSignals` 批量信号) |
 
 ### 当前指标
@@ -471,14 +471,16 @@ gantt
 | 指标 | 初始值 | 当前值 | 目标 |
 |------|-------|--------|------|
 | `s_tools.instance->m_*` (ecvDisplayTools.cpp) | 527 | 55 (全部为全局成员) | < 50 |
-| `m_tools->m_*` (QVTKWidgetCustom.cpp) | 163 | 6 (curCtx 统一, 仅 3 非上下文 accessor 保留分支) | 0 (需 primary view 也用 ecvGLView) |
+| `m_tools->m_*` (QVTKWidgetCustom.cpp) | 163 | **0** (m_tools 成员已删除) | 0 ✅ |
 | `pushState/pullState` 引用 | 16 | **0** | 0 |
-| `ScopedHotZoneRender` 引用 | 18 | 18 (DrawClickableItems 耦合) | 保留 (RAII 最小化, 正确安全) |
+| `ScopedHotZoneRender` 引用 | 18 | **0** (M4 已删除) | 0 ✅ |
 
 ### 遗留项
 
-1. **ScopedHotZoneRender**: `DrawClickableItems` + `DrawWidgets` + `RenderText` 整条 2D overlay 管线依赖单例 VTK 管线指针。当前 RAII swap 是最小化方案且正确安全，完全消除需参数化整条管线（接受 `VtkVis`/`QVTKWidget`），改动面巨大，投入产出比低。
-2. **m_tools fallback**: 主窗口的 `QVTKWidgetCustom` 仍通过 `curCtx()` 回退至 `m_tools->m_primaryCtx`（因为主窗口不是 `ecvGLView` 实例）。29 个 context accessor 已通过 `curCtx()` 统一至单一分支点，代码维护成本极低。完全消除需将主窗口也包装为 `ecvGLView`。
+1. ~~**ScopedHotZoneRender**~~: ✅ 已在 Phase M4 中完全删除。`DrawClickableItems` 已参数化，`beginPrimaryRender`/`endPrimaryRender` 已删除。
+2. ~~**m_tools fallback**~~: ✅ 已在 2026-05-07 完全消除。`QVTKWidgetCustom` 不再持有 `ecvDisplayTools* m_tools` 成员。所有 ~15 处引用已替换为：静态 API 调用（`ecvDisplayTools::GetClick3DPos/Redraw2DLabel/Update2DLabel/UpdateDisplayParameters`）、`displayTarget()` 路由（`elapsedMs()`/`scheduleFullRedraw()`/`getSceneDB()`/`getOwnDB()`）、`ecvViewManager::instance()` 路由（`entitySelectionChanged` 信号, `displayTools()` 访问）。
+
+**所有遗留项已清零。**
 
 ### Phase E/F 加固记录（2026-04-25）
 
@@ -1480,5 +1482,228 @@ main
 
 ---
 
+### Phase O — 多窗口运行时 Bug 修复（2026-05-07）
+
+本次修复覆盖 8 个与多窗口/per-view 相关的运行时 Bug，以及日志清理和弃用 API 清除。
+
+#### O.1 Bug 修复
+
+| Bug | 根因 | 修复 | 文件 |
+|-----|------|------|------|
+| **旧窗口置灰** | `switchActiveView` 在切换时隐藏带有 `ownerView` 的旧 widget | 添加 `ownerView()` guard，跳过已属于 ecvGLView 的 widget | `VtkDisplayTools.cpp` |
+| **cc2DLabel 显隐不完整** | 隐藏点云时 `hideObject_recursive`/`toggleVisibility_recursive` 仅操作单个 display，未传播到所有视图 | 引入 `hideInAllViews` helper，遍历 `getAllViews()` 传播 `hideShowEntities`；`clearLabel(true)` 确保 3D widget 清除 | `ecvHObject.cpp`, `ecv2DLabel.cpp`, `QVTKWidgetCustom.cpp`, `ecvDBRoot.cpp` |
+| **cc2DLabel 跨窗口渲染** | `drawMeOnly` 和 `paintGL` 未对 unbound label 做 per-view 过滤 | 使用 `getActiveView()` 过滤 unbound label，仅在 active view 中渲染 | `ecv2DLabel.cpp`, `QVTKWidgetCustom.cpp` |
+| **Label marker/caption 不同步** | `Redraw2DLabel` 仅调用 `update2DLabelView`，缺少 `update3DLabelView` | 同时调用 `update3DLabelView` + `update2DLabelView` | `ecvDisplayTools.cpp` |
+| **Opacity 失效** | `drawPointCloud`/`drawMesh` 未将 `context.opacity` 传给 VTK actor | 添加 `setPointCloudOpacity`/`setMeshOpacity` 调用 | `VtkDisplayTools.cpp` |
+| **Normals 不显示** | `normalScale` 默认 0.02（绝对值），对大点云几乎不可见；蓝色法线在蓝色背景上不可见 | 自动基于 bbox 对角线计算 normalScale；颜色改为橙色 `(1.0, 0.65, 0.0)` | `VtkVis.cpp` |
+| **Zoom-to-box 无法触发** | `createActions()` 创建独立 QAction，未连接到 UI 工具栏按钮 `m_ui->actionZoomToBox` | 用 `m_ui->actionZoomToBox` 替换动态创建的 zoom action | `MainWindow.cpp` |
+| **Split 后新窗口未激活** | `onSplitHorizontal`/`onSplitVertical` 未调用 `setActiveView` | 添加 `setActiveView(newView)`（对齐 ParaView `makeActive(Frames[new_index+1])`） | `ecvMultiViewWidget.cpp` |
+
+#### O.2 `findVisByActorId` 回退机制
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **`findVisByActorIdOrActive()`** | 当 actor 不在任何 VtkVis 中时，fall back 到 active view 的 VtkVis，确保属性设置（light intensity, axes grid）始终有目标存储 | `VtkDisplayTools.h/cpp` |
+| **`ToggleCameraOrientationWidget`** | 从 active view 获取 VtkVis，不再依赖 `m_visualizer3D` | `VtkDisplayTools.cpp` |
+| **`setLightIntensity`** | 同上 | `VtkDisplayTools.cpp` |
+
+#### O.3 弃用 API 清除
+
+| 变更 | 内容 | 文件 |
+|------|------|------|
+| **`getPrimaryView()` 全部替换** | 4 个调用点替换为 `getActiveView()`/`getEffectiveView()`/`m_views.first()` | `MainWindow.cpp`, `ecvViewManager.cpp` |
+
+#### O.4 日志清理
+
+共 ~30+ 处 `CVLog::Print`/`CVLog::Warning` 降级为 `CVLog::PrintDebug`：
+
+| 类别 | 典型 pattern | 文件 |
+|------|-------------|------|
+| 拾取诊断 | `[StartPicking]`, `[doPicking]`, `[CPUPick]`, `[ProcessPickingResult]` | `ecvDisplayTools.cpp` |
+| Label 交互 | `[Label] updateActivateditems`, `[Label] UpdateActiveItemsList`, `[Label-Drag]` | `ecvDisplayTools.cpp`, `QVTKWidgetCustom.cpp` |
+| 渲染统计 | `[paintGL] Found X labels`, `[VtkProjTest]` | `QVTKWidgetCustom.cpp`, `ecvGLView.cpp` |
+| 初始化 | `[annotation mouse/keyboard Event]`, `[global pointPicking/areaPicking]`, `pixelDeviceRatio` | `VtkVis.cpp`, `ecvDisplayTypes.cpp` |
+| 操作反馈 | `New point size`, `New line width`（修复 typo: "with" → "width"） | `ecvDisplayTools.cpp` |
+| 内部状态 | toolbar removal, view restore, entity rebind, selection clear, align camera | `MainWindow.cpp`, `ecvDBRoot.cpp` |
+
+---
+
+## 13. Phase P — 深度 ParaView 对齐 TODO（2026-05-07 审计）
+
+基于 ParaView 源码审计，以下功能在 ACloudViewer 中尚未完全对齐：
+
+### P1: Per-View Visibility Toggle in DB Tree
+
+**ParaView 模式**: Pipeline browser 的 eye 按钮通过 `pqActiveObjects::activeView()` → `GetVisibility/SetVisibility(source, port, viewProxy)` 操作 **当前 active view** 的可见性。同一对象可在 View A 中可见、View B 中隐藏。
+
+**ACloudViewer 现状**: DB Tree checkbox 是全局可见性（`setEnabled(true/false)`），影响所有视图。`ecvViewRepresentation` 已有 `setVisible()` per-view API，但 DB Tree 未接入。
+
+**优先级**: HIGH | **复杂度**: MEDIUM
+
+**TODO**:
+- [ ] DB Tree eye 列改为操作 `ecvViewRepresentation::setVisible()` + `context.display = activeView`
+- [ ] 添加视觉指示：eye 图标显示 per-view 状态（全可见 / 仅部分视图可见 / 全隐藏）
+- [ ] `hideObject_recursive` / `toggleVisibility_recursive` 改为操作 active view 的 representation，非全局 enable
+
+### P2: Normals Display via Representation
+
+**ParaView 模式**: 法线/向量通过 `vtkGlyph3DRepresentation` 实现：独立的 glyph mapper + actor → `AddToView/RemoveFromView` per-view。Glyph source（箭头/线段）和属性（scale, orient array）全部通过 SM property 暴露。
+
+**ACloudViewer 现状**: `VtkVis::updateNormals` 直接创建 VTK polydata lines，硬编码 normalScale/normalDensity/color。无法通过属性面板调整。
+
+**优先级**: MEDIUM | **复杂度**: MEDIUM
+
+**TODO**:
+- [ ] 将 normals 显示从 `VtkVis::updateNormals` 提取为独立的 `NormalGlyphRepresentation`
+- [ ] 通过 `ecvViewRepresentation` 管理 per-view normal 显示参数（scale, density, color）
+- [ ] 属性面板添加 normal 显示控制（scale slider, density slider, color picker）
+- [ ] 支持 per-view 独立的法线显示开关
+
+### P3: Selection Tool View Binding 完善
+
+**ParaView 模式**: `pqRenderViewSelectionReaction` 存储 `pqRenderView* View`；若 `view == nullptr` 则通过 `viewChanged` 信号跟踪 active view。工具操作的 `InteractionMode` 设置在 **特定 view proxy** 上。
+
+**ACloudViewer 现状**: `cvRenderViewSelectionReaction` 的 `setVisualizer()` 手动设置 VtkVis 指针。`beginSelection()` 使用全局 interactor 而非 per-view interactor。Zoom-to-box 已修复（O.1），但其他选择工具仍需验证 per-view 行为。
+
+**优先级**: MEDIUM | **复杂度**: LOW
+
+**TODO**:
+- [ ] `cvRenderViewSelectionReaction` 支持 `setView(ecvGLView*)` 并自动跟踪 `activeViewChanged`
+- [ ] `beginSelection()` 使用 per-view interactor（`ecvGLView::getInteractor()`）
+- [ ] 验证所有选择模式（surface, frustum, polygon, interactive, hover）在多视图下正确
+
+### P4: Property Panel Active-View Scoping
+
+**ParaView 模式**: Properties panel 的 active representation 通过 `pqActiveObjects::updateRepresentation()` 自动切换：`port->getRepresentation(activeView())`。面板显示的属性始终是 **当前 active view** 中的 representation。
+
+**ACloudViewer 现状**: 属性面板显示全局对象属性（`m_currentObject`），不区分 active view。`ecvViewRepresentation` per-view override 区段已添加但在 Bug 5 中被移除（用户反馈不需要）。实际上应该是无感知的 per-view scoping，而非显式的 "per-view override" 区段。
+
+**优先级**: MEDIUM | **复杂度**: MEDIUM
+
+**TODO**:
+- [ ] 属性面板自动根据 active view 显示对应 `ecvViewRepresentation` 的属性
+- [ ] 透明 per-view：用户编辑 opacity/point size 时自动应用到 active view 的 representation
+- [ ] 移除显式的 "Display (Per-View Override)" 区段，改为隐式 per-view 行为
+
+### P5: Label/Annotation as Representation
+
+**ParaView 模式**: Text widget 通过 `TextWidgetRepresentationProxy` 作为 representation 附加到特定 view。visibility/position 都是 per-view property。
+
+**ACloudViewer 现状**: `cc2DLabel` 是 DB tree 中的 entity，使用 `getDisplay()` 绑定到特定 view（或 null 表示 unbound）。Phase O 添加了 per-view 过滤，但不是 representation 模型。
+
+**优先级**: LOW | **复杂度**: HIGH
+
+**TODO**:
+- [x] 将 cc2DLabel 的 VTK 可视化（sphere/contour/surface actors）迁移为 per-view representation
+- [x] Label 的 display/getDisplay 语义与 `ecvViewRepresentation` 对齐
+- [x] 支持同一 label 在不同视图中的独立 visibility/position
+
+### P6: Representation Property Inheritance
+
+**ParaView 模式**: `vtkInheritRepresentationProperties` 在新 representation 创建时，从同视图中相同 input 的已有 representation 继承兼容属性。
+
+**ACloudViewer 现状**: 无对应机制。新视图中的 representation 使用默认值。
+
+**优先级**: LOW | **复杂度**: LOW
+
+**TODO**:
+- [x] 在 `ecvViewRepresentation` 创建时，从 active view 的已有 representation 继承属性
+- [x] 或在 split 视图时，自动复制源视图的所有 representation 属性到新视图
+
+---
+
+### Phase P 优先级排序
+
+```
+P1 (DB Tree per-view visibility)    ← HIGH, ✅ DONE
+P2 (Normals via representation)     ← MEDIUM, ✅ DONE
+P3 (Selection tool view binding)    ← MEDIUM, ✅ DONE
+P4 (Property panel view scoping)    ← MEDIUM, ✅ DONE
+P5 (Label as representation)        ← LOW, ✅ DONE
+P6 (Property inheritance)           ← LOW, ✅ DONE
+```
+
+### Phase P1 实现细节 — DB Tree per-view visibility toggle
+
+**实现方案（ParaView pqDataRepresentation 对齐）：**
+
+1. **`ccHObject::draw()` — `context.visible` propagation**
+   - `context.visible` 现在从 `ecvViewRepresentation::isVisible()` 取值（当存在 per-view override 时），而非仅使用 `m_visible`
+   - 确保 `hideShowEntities()` 在 VTK 层正确设置 actor visibility
+
+2. **`ccDBRoot::data()` — CheckStateRole**
+   - 当 entity 全局 enabled 且活跃视图有 per-view visibility override 时，checkbox 反映 per-view 状态
+   - 新增 `Qt::ForegroundRole`: per-view 隐藏的 entity 文字显示为灰色 (160,160,160)
+   - 新增 `Qt::ToolTipRole`: 多视图时显示 "Hidden in N view(s)" 提示
+
+3. **`ccDBRoot::setData()` — CheckStateRole**
+   - 多视图模式（>1 view）且 entity 全局 enabled 时：
+     - 通过 `ecvViewRepresentation::setVisible()` 切换 active view 的 per-view 可见性
+     - 递归传播到所有子节点 (`setPerViewVisibilityRecursive()`)
+     - Label 隐藏时调用 `clearLabel(true)` 清理 3D widgets
+   - 单视图模式：保持原有 `setEnabled()` 全局行为
+
+4. **Active view 切换刷新**
+   - `activeViewChanged` signal → `dataChanged(CheckStateRole, ForegroundRole, ToolTipRole)`
+   - 切换视图后 DB tree checkbox 自动反映新视图的 per-view 状态
+
+5. **Undo 支持**
+   - per-view 路径推入 `ecvPropertyChangeCommand<bool>("perViewVisible", ...)`
+   - undo 回调通过 `ensureRepresentation` 找回 rep 并设置 visibility
+
+**修改文件：**
+- `libs/CV_db/src/ecvHObject.cpp` — `context.visible` per-view propagation
+- `app/db_tree/ecvDBRoot.cpp` — data()/setData() per-view checkbox + visual indicators
+
+### Phase P2 实现细节 — Normals via representation
+
+1. **`ccHObject::draw()`**: 当 `viewRep->properties().normalScale` 有值时，用 `effectiveNormalScale()` 覆盖 `context.normalScale`
+2. **`ccPointCloud::drawMeOnly()`**: `getDrawingParameters` 后检查 per-view rep 的 `showNormals` override，覆盖 `glParams.showNorms`
+3. **`ccMesh::drawMeOnly()`**: 同上，用 per-view `effectiveShowNormals()` 替代 `m_normalsDisplayed`
+4. `effectiveShowNormals()` 无 override 时回退到 `entity->normalsShown()`，保持向后兼容
+
+**修改文件**: `ecvHObject.cpp`, `ecvPointCloud.cpp`, `ecvMesh.cpp`
+
+### Phase P3 实现细节 — Selection tool view binding
+
+1. **`cvPerViewSelectionManager::populateToolbar()`**: 将 `zoomToBox` 加入 per-view toolbar（checkable, isolated mirror），与其他 selection tools 一致
+2. **`cvSelectionToolController` 构造函数**: 添加 `activeViewChanged` 安全网连接，当 active view 变更时自动 rebind visualizer，防止非 `MainWindow::rebindToolsToActiveView` 路径导致的 stale `m_viewer`
+
+**修改文件**: `cvPerViewSelectionManager.cpp`, `cvSelectionToolController.cpp`
+
+### Phase P4 实现细节 — Property panel active-view scoping
+
+1. **移除 "Display (Per-View Override)" 区域**: `fillWithPerViewProperties()` 改为 no-op，消除用户困惑
+2. **Opacity 读取**: `setEditorData` 中 `OBJECT_OPACITY` 优先从 active view 的 `rep->effectiveOpacity()` 读取
+3. **Opacity 写入**: `opacityChanged()` 同时更新 `rep->properties().opacity` 和 `ccHObject::setOpacity()`
+4. **Normals 读取**: `fillWithHObject` 中 Normals checkbox 从 per-view `effectiveShowNormals()` 读取
+5. **Normals 写入**: `OBJECT_NORMALS_SHOWN` handler 同时更新 `rep->properties().showNormals` 和全局 `showNormals()`
+6. **View 切换刷新**: `activeViewChanged` handler 添加 `updatePropertiesView()` 调用，切换视图时属性面板自动刷新
+
+**修改文件**: `ecvPropertiesTreeDelegate.cpp`, `ecvDBRoot.cpp`
+
+---
+
+### Phase P5 实现细节 — Label/Annotation as Representation
+
+**设计思路**:
+- 多窗口模式下，`cc2DLabel::drawMeOnly()` 不再依赖 `getDisplay()` 单一绑定来控制 label 在哪个 view 显示
+- 改为使用 `ecvViewRepresentation` 的 per-view visibility 来控制每个 view 中的 label 可见性
+- 首次在某个 view 中绘制时自动创建 representation（active view 可见，其他 view 默认不显示）
+- `QVTKWidgetCustom::paintGL()` 的 2D overlay 渲染路径同步使用 representation-based 过滤
+- 单窗口模式保持 legacy `getDisplay()` 行为
+
+**修改文件**: `ecv2DLabel.cpp`, `QVTKWidgetCustom.cpp`
+
+### Phase P6 实现细节 — Representation Property Inheritance
+
+**设计思路（ParaView vtkInheritRepresentationProperties 对齐）**:
+1. **`ensureRepresentation()` 自动继承** — 创建新 representation 时，优先从 active view 的同实体 representation 继承 properties（opacity, showNormals, pointSize 等），其次从任意其他 view 的 representation 继承
+2. **Split 视图显式复制** — `ecvMultiViewWidget::onSplitHorizontal/Vertical` 调用 `copyRepresentationsOnSplit()` 将源视图的所有 representation 属性复制到新视图
+
+**修改文件**: `ecvRepresentationManager.cpp`, `ecvMultiViewWidget.cpp`
+
+---
+
 *维护：架构变更时同步更新阶段验收项与统计数据。*
-*更新日期：2026-05-01*
+*更新日期：2026-05-07*

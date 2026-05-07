@@ -112,6 +112,10 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     ecvRepresentationManager::instance().setActorCleanupCallback(
             [this](ccHObject* entity, ecvGenericGLDisplay* view) {
                 if (!entity) return;
+                if (view) {
+                    auto* glView = dynamic_cast<ecvGLView*>(view);
+                    if (glView && !glView->getVisualizer3D()) return;
+                }
                 std::string viewID = CVTools::FromQString(entity->getViewId());
                 VtkVis* vis = resolveVisualizer(view);
                 if (vis && vis->contains(viewID)) {
@@ -123,11 +127,13 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
 }
 
 VtkDisplayTools::~VtkDisplayTools() {
-    // Cleanup is now handled in VtkVis destructor
-    if (this->m_vtkWidget) {
-        delete this->m_vtkWidget;
-        this->m_vtkWidget = nullptr;
+    ecvRepresentationManager::instance().setActorCleanupCallback(nullptr);
+
+    if (m_engineOwnedWidget) {
+        delete m_engineOwnedWidget;
+        m_engineOwnedWidget = nullptr;
     }
+    m_vtkWidget = nullptr;
 }
 
 void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
@@ -142,10 +148,24 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     connect(vis.get(), &ecvGenericVisualizer3D::interactorPointPickedEvent,
             this, &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
+    QVTKWidgetCustom* oldWidget = m_vtkWidget;
     m_visualizer3D = vis;
     m_vtkWidget = widget;
     SetCurrentScreen(widget);
     SetMainScreen(widget);
+
+    if (oldWidget && oldWidget != widget) {
+        // Per-view widgets (owned by an ecvGLView) must NOT be hidden or
+        // detached — they stay visible inside their own layout cell.
+        // Only hide/detach the legacy engine-owned singleton widget.
+        if (!oldWidget->ownerView()) {
+            oldWidget->hide();
+            oldWidget->setParent(nullptr);
+            if (!m_engineOwnedWidget) {
+                m_engineOwnedWidget = oldWidget;
+            }
+        }
+    }
 }
 
 // Phase M4: ScopedHotZoneRender deleted. ecvGLView now calls
@@ -163,8 +183,6 @@ VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
 }
 
 VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
-    // Phase M1.2: search all registered views first (including those that
-    // may share the engine's own pipeline), then fall back to engine's own.
     const auto& views = ecvViewManager::instance().getAllViews();
     for (auto* view : views) {
         auto* glView = dynamic_cast<ecvGLView*>(view);
@@ -179,6 +197,20 @@ VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
         return m_visualizer3D.get();
     }
     return nullptr;
+}
+
+VtkVis* VtkDisplayTools::findVisByActorIdOrActive(
+        const std::string& viewId) const {
+    VtkVis* vis = findVisByActorId(viewId);
+    if (vis) return vis;
+    auto* activeView = ecvViewManager::instance().getActiveView();
+    if (activeView) {
+        auto* glView = dynamic_cast<ecvGLView*>(activeView);
+        if (glView && glView->getVisualizer3D()) {
+            return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
+        }
+    }
+    return m_visualizer3D.get();
 }
 
 void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
@@ -346,6 +378,8 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                                        ecvCloud->pointGaussianShaderPreset(),
                                        ecvCloud->pointGaussianEmissive(),
                                        viewID, viewport);
+
+        vis->setPointCloudOpacity(context.opacity, viewID, viewport);
     }
 }
 
@@ -478,7 +512,7 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             vis->setPointCloudUniqueColor(meshColor.r, meshColor.g, meshColor.b,
                                           viewID, viewport);
         }
-        vis->setPointCloudOpacity(context.opacity, viewID, viewport);
+        vis->setMeshOpacity(context.opacity, viewID, viewport);
         vis->setMeshStippling(mesh->stipplingEnabled(), viewID, viewport);
         vis->setPointGaussianRendering(
                 mesh->pointGaussianEnabled(), mesh->pointGaussianRadius(),
@@ -918,6 +952,9 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
     }
 
     // Multi-window: propagate 3D scene entity removal to secondary views.
+    // Only propagate when context.display is NULL (global removal request).
+    // When context.display targets a specific view, the removal is intentionally
+    // scoped to that view only (e.g., per-view label markers).
     // 2D overlays (text, rectangles, images, etc.) are per-view and must NOT
     // be propagated — each view's ClearBubbleView handles its own cleanup.
     const bool is2DOverlay =
@@ -930,7 +967,9 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
             context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
             context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D;
 
-    if (!is2DOverlay) {
+    const bool targetedRemoval = (context.display != nullptr);
+
+    if (!is2DOverlay && !targetedRemoval) {
         const auto& views = ecvViewManager::instance().getAllViews();
         std::string removeId = CVTools::FromQString(context.removeViewID);
         for (auto* view : views) {
@@ -1091,16 +1130,6 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                     param.center.z, pxSize, param.color.r,
                                     param.color.g, param.color.b, viewID,
                                     viewport);
-            }
-            break;
-
-        case WIDGETS_TYPE::WIDGET_POINT:
-            if (!m_visualizer3D->contains(viewID)) {
-                float pxSize = param.pointSize > 0 ? param.pointSize : 10.0f;
-                m_visualizer3D->addPointSprite(param.center.x, param.center.y,
-                                               param.center.z, pxSize,
-                                               param.color.r, param.color.g,
-                                               param.color.b, viewID, viewport);
             }
             break;
 
@@ -1552,13 +1581,12 @@ void VtkDisplayTools::transformCameraProjection(const ccGLMatrixd& projMat) {
 // ============================================================================
 
 void VtkDisplayTools::ToggleCameraOrientationWidget(bool show) {
-    if (!m_visualizer3D) {
-        CVLog::Warning("[VtkDisplayTools] No 3D visualizer available");
-        return;
-    }
-
-    // Delegate to VtkVis
-    m_visualizer3D->ToggleCameraOrientationWidget(show);
+    auto* activeView = ecvViewManager::instance().getActiveView();
+    auto* glView = activeView ? dynamic_cast<ecvGLView*>(activeView) : nullptr;
+    auto* vis = glView ? dynamic_cast<VtkVis*>(glView->getVisualizer3D())
+                       : m_visualizer3D.get();
+    if (!vis) return;
+    vis->ToggleCameraOrientationWidget(show);
 }
 
 bool VtkDisplayTools::IsCameraOrientationWidgetShown() const {
@@ -1580,13 +1608,12 @@ bool VtkDisplayTools::isCameraOrientationWidgetShown() const {
 }
 
 void VtkDisplayTools::setLightIntensity(double intensity) {
-    if (!m_visualizer3D) {
-        CVLog::Warning("[VtkDisplayTools] No 3D visualizer available");
-        return;
-    }
-
-    // Delegate to VtkVis (global default)
-    m_visualizer3D->setLightIntensity(intensity);
+    auto* activeView = ecvViewManager::instance().getActiveView();
+    auto* glView = activeView ? dynamic_cast<ecvGLView*>(activeView) : nullptr;
+    auto* vis = glView ? dynamic_cast<VtkVis*>(glView->getVisualizer3D())
+                       : m_visualizer3D.get();
+    if (!vis) return;
+    vis->setLightIntensity(intensity);
 }
 
 double VtkDisplayTools::getLightIntensity() const {
@@ -1601,11 +1628,8 @@ double VtkDisplayTools::getLightIntensity() const {
 void VtkDisplayTools::setObjectLightIntensity(const QString& viewID,
                                               double intensity) {
     std::string id = CVTools::FromQString(viewID);
-    VtkVis* vis = findVisByActorId(id);
-    if (!vis) {
-        CVLog::Warning("[VtkDisplayTools] No 3D visualizer available");
-        return;
-    }
+    VtkVis* vis = findVisByActorIdOrActive(id);
+    if (!vis) return;
     vis->setObjectLightIntensity(id, intensity);
 }
 
@@ -1627,11 +1651,8 @@ void VtkDisplayTools::setDataAxesGridProperties(const QString& viewID,
                                                 const AxesGridProperties& props,
                                                 int viewport) {
     std::string id = CVTools::FromQString(viewID);
-    VtkVis* vis = findVisByActorId(id);
-    if (!vis) {
-        CVLog::Warning("[VtkDisplayTools] No 3D visualizer available");
-        return;
-    }
+    VtkVis* vis = findVisByActorIdOrActive(id);
+    if (!vis) return;
     vis->SetDataAxesGridProperties(id, props);
 }
 

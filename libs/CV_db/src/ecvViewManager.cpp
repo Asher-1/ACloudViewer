@@ -553,14 +553,14 @@ void ecvViewManager::reassignEntitiesFromView(ccHObject* root,
 
 QJsonObject ecvViewManager::saveLayout(GeometryProvider geometryOf) const {
     QJsonArray viewsArr;
-    auto* primary = getPrimaryView();
+    auto* firstView = m_views.isEmpty() ? nullptr : m_views.first();
 
     for (auto* view : m_views) {
         if (!view) continue;
         QJsonObject vObj;
         vObj["id"] = view->getUniqueID();
         vObj["title"] = view->getTitle();
-        vObj["is_primary"] = (view == primary);
+        vObj["is_primary"] = (view == firstView);
 
         if (geometryOf) {
             QJsonObject geom = geometryOf(view);

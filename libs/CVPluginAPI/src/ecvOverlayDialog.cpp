@@ -18,6 +18,9 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 
+// CV_DB_LIB
+#include <ecvViewManager.h>
+
 // system
 #include <cassert>
 
@@ -81,14 +84,40 @@ bool ccOverlayDialog::start() {
 
     m_processing = true;
 
+    // Auto-relink to the new active widget when the active view changes,
+    // so overlay dialogs (qCompass, etc.) follow the active split view.
+    // Also re-emit shown() to trigger repositionOverlayDialog so the
+    // toolbar moves to the correct corner of the NEW active pane.
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::activeViewChanged, this,
+            [this](ecvGenericGLDisplay* /*newActive*/,
+                   ecvGenericGLDisplay* /*oldActive*/) {
+                if (!m_processing) return;
+                auto* newWidget = ecvViewManager::instance().activeWidget();
+                if (newWidget && newWidget != m_associatedWin) {
+                    linkWith(newWidget);
+                    emit shown();
+                }
+            });
+
     // auto-show
     show();
+
+    // Trigger repositioning now that the dialog is visible.
+    // registerOverlayDialog hooks shown() → repositionOverlayDialog, but
+    // the initial reposition runs before show() (when isVisible()==false)
+    // and the event-filter-based shown() only fires from Show events on
+    // the ASSOCIATED widget, not the dialog itself.
+    emit shown();
 
     return true;
 }
 
 void ccOverlayDialog::stop(bool accepted) {
     m_processing = false;
+
+    disconnect(&ecvViewManager::instance(),
+               &ecvViewManager::activeViewChanged, this, nullptr);
 
     // auto-hide
     hide();

@@ -8,6 +8,7 @@
 #include "ecvMultiViewWidget.h"
 
 #include <ecvGLView.h>
+#include <ecvRepresentationManager.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
@@ -153,6 +154,25 @@ void ecvMultiViewWidget::reload() {
     } else if (isVisible()) {
         makeFrameActive();
     }
+
+    // After reparenting, every view needs a VTK render to refill its
+    // framebuffer.  rebindToolsToActiveView() only redraws the *active*
+    // view, leaving other visible panes blank/gray.  Schedule a
+    // deferred redraw for every view in this layout.
+    QTimer::singleShot(0, this, [this]() {
+        for (auto it = m_viewFrames.constBegin();
+             it != m_viewFrames.constEnd(); ++it) {
+            if (auto* display = it.key()) {
+                QWidget* vw = display->asWidget();
+                if (vw && vw->isVisible()) {
+                    auto* glView = dynamic_cast<ecvGLView*>(display);
+                    if (glView) {
+                        glView->redraw(false, true);
+                    }
+                }
+            }
+        }
+    });
 }
 
 QWidget* ecvMultiViewWidget::buildCell(int location) {
@@ -485,10 +505,31 @@ bool ecvMultiViewWidget::togglePopout() {
 // Split / Close / Maximize
 // ============================================================================
 
+// P6: Copy all per-view representations from sourceView to destView so the
+// newly split pane starts with the same visual state as the original.
+static void copyRepresentationsOnSplit(ecvGenericGLDisplay* sourceView,
+                                       ecvGenericGLDisplay* destView) {
+    if (!sourceView || !destView) return;
+    auto& repMgr = ecvRepresentationManager::instance();
+    auto reps = repMgr.getRepresentationsForView(sourceView);
+    for (auto* srcRep : reps) {
+        if (!srcRep || !srcRep->getEntity()) continue;
+        auto* dst = repMgr.ensureRepresentation(srcRep->getEntity(), destView);
+        if (dst) {
+            dst->setProperties(srcRep->properties());
+            if (srcRep->hasVisibilityOverride()) {
+                dst->setVisible(srcRep->isVisible());
+            }
+        }
+    }
+}
+
 void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
     if (!m_layout) return;
     int location = findLocationForFrame(frame);
     if (location < 0) return;
+
+    auto* sourceView = m_layout->getView(location);
 
     int child = m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
     if (child >= 0 && m_viewFactory) {
@@ -497,6 +538,8 @@ void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
             int newCell = ecvViewLayoutProxy::secondChild(
                     ecvViewLayoutProxy::parent(child));
             m_layout->assignView(newCell, newView);
+            copyRepresentationsOnSplit(sourceView, newView);
+            ecvViewManager::instance().setActiveView(newView);
         }
     }
 }
@@ -506,6 +549,8 @@ void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
+    auto* sourceView = m_layout->getView(location);
+
     int child = m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
     if (child >= 0 && m_viewFactory) {
         auto* newView = m_viewFactory();
@@ -513,6 +558,8 @@ void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
             int newCell = ecvViewLayoutProxy::secondChild(
                     ecvViewLayoutProxy::parent(child));
             m_layout->assignView(newCell, newView);
+            copyRepresentationsOnSplit(sourceView, newView);
+            ecvViewManager::instance().setActiveView(newView);
         }
     }
 }

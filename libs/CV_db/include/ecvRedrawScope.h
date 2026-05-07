@@ -10,12 +10,20 @@
 #include "ecvHObject.h"
 #include "ecvViewManager.h"
 
+#include <QCoreApplication>
+#include <QThread>
+
 // RAII guard for selective scene redraw.
 //
 // Resets all redraw flags on construction, allows marking specific objects
 // as needing redraw, and triggers a display refresh on destruction.
 // This replaces the error-prone manual pattern of:
 //   SetRedrawRecursive(false) -> mark dirty -> refreshAll()
+//
+// THREAD-SAFETY: The destructor calls view->redraw() which triggers
+// vtkRenderWindow::Render().  VTK/OpenGL rendering MUST happen on the
+// main/GUI thread.  If constructed from a worker thread the scope
+// auto-dismisses and skips the redraw to prevent SIGABRT.
 //
 // Usage:
 //   {
@@ -31,6 +39,7 @@ class CV_DB_LIB_API ecvRedrawScope final {
 public:
     explicit ecvRedrawScope(bool only2D = false, bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
+        if (!isMainThread()) { m_dismissed = true; return; }
         if (ecvViewManager::instance().hasAnyView()) {
             ecvViewManager::instance().setRedrawRecursive(false);
         }
@@ -40,6 +49,7 @@ public:
                             bool only2D = false,
                             bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
+        if (!isMainThread()) { m_dismissed = true; return; }
         if (ecvViewManager::instance().hasAnyView()) {
             ecvViewManager::instance().setRedrawRecursive(false);
         }
@@ -67,6 +77,11 @@ public:
     ecvRedrawScope& operator=(const ecvRedrawScope&) = delete;
 
 private:
+    static bool isMainThread() {
+        auto* app = QCoreApplication::instance();
+        return app && QThread::currentThread() == app->thread();
+    }
+
     bool m_only2D = false;
     bool m_forceRedraw = true;
     bool m_dismissed = false;

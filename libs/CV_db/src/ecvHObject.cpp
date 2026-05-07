@@ -147,6 +147,10 @@ ccHObject::ccHObject(const ccHObject& object)
 ccHObject::~ccHObject() {
     m_isDeleting = true;
 
+    // Clean up per-view representations so that the representation
+    // manager does not hold dangling entity pointers after deletion.
+    ecvRepresentationManager::instance().removeRepresentationsForEntity(this);
+
     // process dependencies
     for (std::map<ccHObject*, int>::const_iterator it = m_dependencies.begin();
          it != m_dependencies.end(); ++it) {
@@ -1579,7 +1583,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         drawInThisContext = viewRep->isVisible();
     }
 
-    context.visible = m_visible;
+    // Per-view visibility must propagate to context.visible so that
+    // hideShowEntities() sets VTK actor visibility correctly.
+    if (viewRep && viewRep->hasVisibilityOverride()) {
+        context.visible = viewRep->isVisible();
+    } else {
+        context.visible = m_visible;
+    }
     context.opacity = (viewRep && viewRep->properties().opacity.has_value())
                               ? viewRep->effectiveOpacity()
                               : getOpacity();
@@ -1599,6 +1609,9 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             context.meshRenderingMode =
                     static_cast<MESH_RENDERING_MODE>(static_cast<int>(rm));
         }
+    }
+    if (viewRep && viewRep->properties().normalScale.has_value()) {
+        context.normalScale = viewRep->effectiveNormalScale();
     }
 
     if (!isFixedId()) {
@@ -1851,18 +1864,32 @@ ccHObject::GlobalBoundingBox ccHObject::getGlobalBB_recursive(
 }
 
 void ccHObject::hideObject_recursive(bool recursive) {
-    // hide obj recursively.
     std::vector<hideInfo> hdInfos;
     CC_DRAW_CONTEXT context;
     getTypeID_recursive(hdInfos, recursive);
     context.visible = false;
     context.display = mergeDisplay(nullptr, this);
+
+    // Helper: propagate hideShowEntities to the primary display and, for
+    // unbound entities, to every registered view so actors don't remain
+    // visible in non-active windows.
+    auto hideInAllViews = [&](CC_DRAW_CONTEXT& ctx) {
+        if (ctx.display) ctx.display->hideShowEntities(ctx);
+        if (!getDisplay()) {
+            for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == ctx.display) continue;
+                CC_DRAW_CONTEXT vctx = ctx;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        }
+    };
+
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
 
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
-        // hide obj bbox
         hideBB(context);
         context.viewID = hdInfo.hideId;
 
@@ -1871,7 +1898,13 @@ void ccHObject::hideObject_recursive(bool recursive) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE ||
             hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
             context.viewID = hdInfo.hideId;
-            if (context.display) context.display->hideShowEntities(context);
+            hideInAllViews(context);
+            if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE) {
+                cc2DLabel* label = dynamic_cast<cc2DLabel*>(obj);
+                if (label) {
+                    label->clearLabel(true);
+                }
+            }
             continue;
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
@@ -1880,7 +1913,6 @@ void ccHObject::hideObject_recursive(bool recursive) {
                 continue;
             }
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH) {
-            // try hide primitives
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {
                 prim->hideShowDrawings(context);
@@ -1896,7 +1928,7 @@ void ccHObject::hideObject_recursive(bool recursive) {
         }
 
         context.viewID = hdInfo.hideId;
-        if (context.display) context.display->hideShowEntities(context);
+        hideInAllViews(context);
     }
 }
 
@@ -1905,12 +1937,21 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
     CC_DRAW_CONTEXT context;
     getTypeID_recursive(hdInfos, recursive);
     context.visible = visible;
-    context.display = const_cast<ecvGenericGLDisplay*>(getDisplay());
+    context.display = mergeDisplay(nullptr, this);
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
         if (context.display) context.display->hideShowEntities(context);
+        // Unbound entities: propagate to all registered views.
+        if (!getDisplay()) {
+            for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == context.display) continue;
+                CC_DRAW_CONTEXT vctx = context;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        }
 
         if (!visible) {
             hideBB(context);
@@ -1940,8 +1981,13 @@ void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
     if (m_currentDisplay) {
         m_currentDisplay->redraw(only2D, forceRedraw);
+        auto* effective = ecvViewManager::instance().getEffectiveView();
+        if (effective && effective != m_currentDisplay) {
+            ecvRedrawScope scope(only2D, forceRedraw);
+        }
+    } else {
+        ecvRedrawScope scope(only2D, forceRedraw);
     }
-    { ecvRedrawScope scope(only2D, forceRedraw); }
 }
 
 struct HObjectDisplayState : ccDrawableObject::DisplayState {
@@ -1991,17 +2037,12 @@ bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
     if (display == nullptr) return true;
 
     if (m_currentDisplay == nullptr) {
-        if (ecvViewManager::instance().viewCount() <= 1) {
-            return true;
-        }
-        // Unbound objects only render in the ACTIVE view (the one the user
-        // last clicked), not in whichever view happens to be redrawing.
-        // This prevents cross-window "pollution" where objects appear in
-        // all split windows. Use getActiveView() instead of
-        // getEffectiveView() to avoid ScopedRenderOverride side-effects.
-        const ecvGenericGLDisplay* active =
-                ecvViewManager::instance().getActiveView();
-        return (active == nullptr || display == active);
+        // Unbound objects (no setDisplay() called) render in ALL views.
+        // This is the standard multi-window behavior: point clouds, meshes,
+        // and other 3D objects should be visible across all split views.
+        // Per-view restriction is achieved by calling setDisplay() on
+        // objects that should only appear in one view (e.g., cc2DLabel).
+        return true;
     }
     return (m_currentDisplay == display);
 }

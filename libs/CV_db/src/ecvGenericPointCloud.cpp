@@ -272,7 +272,6 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
         }
 
         if (octree) {
-            // we can now use the octree to do faster point picking
 #ifdef QT_DEBUG
             cloudViewer::ScalarField* sf = nullptr;
             if (getClassID() == CV_TYPES::POINT_CLOUD) {
@@ -299,9 +298,14 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                 if (point.point) {
                     nearestPointIndex = point.pointIndex;
                     nearestSquareDist = point.squareDistd;
+                    CVLog::PrintDebug(QString("[pointPicking] Octree found pt idx=%1 dist=%2")
+                                         .arg(nearestPointIndex).arg(nearestSquareDist));
                     return true;
                 } else {
-                    // nothing found
+                    CVLog::Print(QString("[pointPicking] Octree: no point found "
+                                         "(pickWidth=%1 perspective=%2 pixelSize=%3)")
+                                         .arg(pickWidth).arg(camera.perspective)
+                                         .arg(camera.pixelSize));
                     return false;
                 }
             } else {
@@ -309,10 +313,15 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                         "[Point picking] Failed to use the octree. We'll fall "
                         "back to the slow process...");
             }
+        } else {
+            CVLog::Print(QString("[pointPicking] No octree, autoCompute=%1 size=%2")
+                                 .arg(autoComputeOctree).arg(size()));
         }
     }
 
     // otherwise we go 'brute force' (works quite well in fact?!)
+    CVLog::Print(QString("[pointPicking] Brute-force path, size=%1 pickW=%2 pickH=%3")
+                         .arg(size()).arg(pickWidth).arg(pickHeight));
     nearestPointIndex = -1;
     nearestSquareDist = -1.0;
     {
@@ -320,6 +329,7 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
         CCVector3d clickPosd(clickPos.x, clickPos.y, 0);
         CCVector3d X(0, 0, 0);
         if (!camera.unproject(clickPosd, X)) {
+            CVLog::Print("[pointPicking] Brute-force: unproject failed!");
             return false;
         }
 

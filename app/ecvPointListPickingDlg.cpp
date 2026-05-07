@@ -566,10 +566,11 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     newLabel->displayPointLegend(true);
     newLabel->setCollapsed(true);
     {
-        ecvGenericGLDisplay* activeView =
-                ecvViewManager::instance().getActiveView();
-        if (activeView) {
-            newLabel->setDisplay(activeView);
+        ecvGenericGLDisplay* pickView = picked.pickView;
+        if (!pickView)
+            pickView = ecvViewManager::instance().getActiveView();
+        if (pickView) {
+            newLabel->setDisplay(pickView);
         } else if (picked.entity && picked.entity->getDisplay()) {
             newLabel->setDisplay(picked.entity->getDisplay());
         }

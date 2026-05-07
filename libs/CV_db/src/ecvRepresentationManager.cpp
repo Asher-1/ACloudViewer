@@ -7,6 +7,7 @@
 
 #include "ecvRepresentationManager.h"
 
+#include "ecvViewManager.h"
 #include "ecvViewRepresentation.h"
 
 ecvRepresentationManager::ecvRepresentationManager() : QObject(nullptr) {}
@@ -36,15 +37,67 @@ ecvViewRepresentation* ecvRepresentationManager::ensureRepresentation(
         }
     }
 
-    QWriteLocker writeLock(&m_lock);
-    auto it = m_representations.find(Key(entity, view));
-    if (it != m_representations.end()) {
-        return it.value().get();
+    // P6: Inherit compatible properties from an existing representation
+    // of the same entity.  Prefer the active view's representation (most
+    // likely what the user sees / just edited).  ParaView equivalent:
+    // vtkInheritRepresentationProperties.
+    //
+    // Collect donor properties under the write lock, then apply them AFTER
+    // releasing the lock.  This prevents deadlock: setVisible()/setProperties()
+    // emit representationChanged → ecvGLView::redraw() → getRepresentation()
+    // would try to acquire a read lock on the same QReadWriteLock.
+    ecvViewRepresentation::Properties donorProps;
+    bool donorHasVisibility = false;
+    bool donorVisible = false;
+
+    ecvViewRepresentation* raw = nullptr;
+    {
+        QWriteLocker writeLock(&m_lock);
+        auto it = m_representations.find(Key(entity, view));
+        if (it != m_representations.end()) {
+            return it.value().get();
+        }
+
+        auto rep = std::make_shared<ecvViewRepresentation>(entity, view);
+        raw = rep.get();
+
+        ecvViewRepresentation* donor = nullptr;
+        auto* activeView = ecvViewManager::instance().getActiveView();
+        if (activeView && activeView != view) {
+            auto dIt = m_representations.find(Key(entity, activeView));
+            if (dIt != m_representations.end()) {
+                donor = dIt.value().get();
+            }
+        }
+        if (!donor) {
+            for (auto dIt = m_representations.begin();
+                 dIt != m_representations.end(); ++dIt) {
+                if (dIt.key().first == entity && dIt.key().second != view) {
+                    donor = dIt.value().get();
+                    break;
+                }
+            }
+        }
+        if (donor) {
+            donorProps = donor->properties();
+            donorHasVisibility = donor->hasVisibilityOverride();
+            donorVisible = donor->isVisible();
+        }
+
+        m_representations.insert(Key(entity, view), std::move(rep));
     }
 
-    auto rep = std::make_shared<ecvViewRepresentation>(entity, view);
-    ecvViewRepresentation* raw = rep.get();
-    m_representations.insert(Key(entity, view), std::move(rep));
+    // Apply inherited properties outside the lock — signal handlers can
+    // now safely acquire read locks without deadlock.
+    if (donorProps.opacity.has_value() || donorProps.showNormals.has_value() ||
+        donorProps.pointSize.has_value() || donorProps.lineWidth.has_value() ||
+        donorProps.renderMode.has_value()) {
+        raw->setProperties(donorProps);
+    }
+    if (donorHasVisibility) {
+        raw->setVisible(donorVisible);
+    }
+
     emit representationAdded(raw);
     return raw;
 }
@@ -78,49 +131,70 @@ ecvRepresentationManager::getRepresentationsForView(
 
 void ecvRepresentationManager::removeRepresentationsForEntity(
         ccHObject* entity) {
-    QWriteLocker writeLock(&m_lock);
-    auto it = m_representations.begin();
-    while (it != m_representations.end()) {
-        if (it.key().first == entity) {
-            ecvGenericGLDisplay* view = it.key().second;
-            if (m_actorCleanup) {
-                m_actorCleanup(entity, view);
+    // Collect removed (entity, view) pairs under the write lock, then run
+    // cleanup callbacks and emit signals AFTER releasing the lock.  This
+    // prevents deadlock: m_actorCleanup or a representationRemoved slot
+    // could indirectly call getRepresentation() which acquires a read lock
+    // on the same non-recursive QReadWriteLock.
+    QList<ecvGenericGLDisplay*> removedViews;
+    {
+        QWriteLocker writeLock(&m_lock);
+        auto it = m_representations.begin();
+        while (it != m_representations.end()) {
+            if (it.key().first == entity) {
+                removedViews.append(it.key().second);
+                it = m_representations.erase(it);
+            } else {
+                ++it;
             }
-            it = m_representations.erase(it);
-            emit representationRemoved(entity, view);
-        } else {
-            ++it;
         }
+    }
+    for (auto* view : removedViews) {
+        if (m_actorCleanup) {
+            m_actorCleanup(entity, view);
+        }
+        emit representationRemoved(entity, view);
     }
 }
 
 void ecvRepresentationManager::removeRepresentationsForView(
         ecvGenericGLDisplay* view) {
-    QWriteLocker writeLock(&m_lock);
-    auto it = m_representations.begin();
-    while (it != m_representations.end()) {
-        if (it.key().second == view) {
-            ccHObject* entity = it.key().first;
-            if (m_actorCleanup) {
-                m_actorCleanup(entity, view);
+    QList<ccHObject*> removedEntities;
+    {
+        QWriteLocker writeLock(&m_lock);
+        auto it = m_representations.begin();
+        while (it != m_representations.end()) {
+            if (it.key().second == view) {
+                removedEntities.append(it.key().first);
+                it = m_representations.erase(it);
+            } else {
+                ++it;
             }
-            it = m_representations.erase(it);
-            emit representationRemoved(entity, view);
-        } else {
-            ++it;
         }
+    }
+    for (auto* entity : removedEntities) {
+        if (m_actorCleanup) {
+            m_actorCleanup(entity, view);
+        }
+        emit representationRemoved(entity, view);
     }
 }
 
 void ecvRepresentationManager::removeRepresentation(ccHObject* entity,
                                                     ecvGenericGLDisplay* view) {
-    QWriteLocker writeLock(&m_lock);
-    auto it = m_representations.find(Key(entity, view));
-    if (it != m_representations.end()) {
+    bool removed = false;
+    {
+        QWriteLocker writeLock(&m_lock);
+        auto it = m_representations.find(Key(entity, view));
+        if (it != m_representations.end()) {
+            m_representations.erase(it);
+            removed = true;
+        }
+    }
+    if (removed) {
         if (m_actorCleanup) {
             m_actorCleanup(entity, view);
         }
-        m_representations.erase(it);
         emit representationRemoved(entity, view);
     }
 }
