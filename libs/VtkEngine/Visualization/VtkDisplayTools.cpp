@@ -945,6 +945,22 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                 }
             }
         }
+        if (context.removeEntityType == ENTITY_TYPE::ECV_2DLABLE ||
+            context.removeEntityType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
+            std::string viewId = CVTools::FromQString(context.removeViewID);
+            if (m_visualizer2D) {
+                m_visualizer2D->removeBySubstring(viewId);
+            }
+            if (context.display) {
+                auto* glView = dynamic_cast<ecvGLView*>(context.display);
+                if (glView) {
+                    auto imgVis = glView->getImageVis();
+                    if (imgVis) {
+                        imgVis->removeBySubstring(viewId);
+                    }
+                }
+            }
+        }
 
         if (vis && vis->removeEntities(context)) {
             vis->resetCameraClippingRange(context.defaultViewPort);

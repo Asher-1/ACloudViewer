@@ -618,21 +618,25 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
 
         case ClickableItem::INCREASE_POINT_SIZE: {
             SetPointSize(ctx.viewportParams.defaultPointSize + 1.0f);
+            RedrawDisplay();
         }
             return true;
 
         case ClickableItem::DECREASE_POINT_SIZE: {
             SetPointSize(ctx.viewportParams.defaultPointSize - 1.0f);
+            RedrawDisplay();
         }
             return true;
 
         case ClickableItem::INCREASE_LINE_WIDTH: {
             SetLineWidth(ctx.viewportParams.defaultLineWidth + 1.0f);
+            RedrawDisplay();
         }
             return true;
 
         case ClickableItem::DECREASE_LINE_WIDTH: {
             SetLineWidth(ctx.viewportParams.defaultLineWidth - 1.0f);
+            RedrawDisplay();
         }
             return true;
 
@@ -3509,6 +3513,7 @@ void ecvDisplayTools::drawTrihedron() {}
 
 void ecvDisplayTools::Draw3D(ecvViewContext& ctx,
                              CC_DRAW_CONTEXT& CONTEXT) {
+    CONTEXT.visible = true;
     CONTEXT.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
     if (ctx.interactionFlags & INTERACT_TRANSFORM_ENTITIES) {
         CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
@@ -3523,6 +3528,7 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx,
     }
 
     if (primaryDT()->m_winDBRoot) {
+        CONTEXT.visible = true;
         primaryDT()->m_winDBRoot->draw(CONTEXT);
     }
 
@@ -3672,6 +3678,7 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
     /****************************************/
 
     const auto& fgCtx = ecvViewManager::instance().resolveViewContext();
+    CONTEXT.visible = true;
     CONTEXT.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
     if (fgCtx.interactionFlags & INTERACT_TRANSFORM_ENTITIES) {
         CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
@@ -4240,11 +4247,6 @@ void ecvDisplayTools::DrawClickableItems(
                     textColor, CLICKED_ITEMS, display);
 
             xStart += hotZone->psi_labelRect.width() + hotZone->margin;
-#ifdef Q_OS_MAC
-            xStart += hotZone->margin * 4;
-#else
-            xStart -= iconSize;
-#endif
             //"minus" icon
             {
                 int x0 = xStart;
@@ -4300,11 +4302,6 @@ void ecvDisplayTools::DrawClickableItems(
                     textColor, CLICKED_ITEMS, display);
 
             xStart += hotZone->lsi_labelRect.width() + hotZone->margin;
-#ifdef Q_OS_MAC
-            xStart += hotZone->margin * 4;
-#else
-            xStart -= iconSize;
-#endif
             //"minus" icon
             {
                 int x0 = xStart;
@@ -4361,16 +4358,25 @@ void ecvDisplayTools::CheckIfRemove() {
     } else if (primaryDT()->m_removeFlag) {
         for (const removeInfo& rmInfo : primaryDT()->m_removeInfos) {
             if (rmInfo.removeType == ENTITY_TYPE::ECV_NONE) continue;
-            // octree and kdtree object has been deleted before
             if (rmInfo.removeType == ENTITY_TYPE::ECV_OCTREE) continue;
             if (rmInfo.removeType == ENTITY_TYPE::ECV_KDTREE) continue;
-            if (rmInfo.removeType == ENTITY_TYPE::ECV_2DLABLE) continue;
-            if (rmInfo.removeType == ENTITY_TYPE::ECV_SENSOR) continue;
 
             CC_DRAW_CONTEXT context;
             context.removeEntityType = rmInfo.removeType;
             context.removeViewID = rmInfo.removeId;
-            RemoveEntities(context);
+
+            auto* dt = ecvViewManager::instance().displayTools();
+            if (dt) {
+                for (auto* view :
+                     ecvViewManager::instance().getAllViews()) {
+                    CC_DRAW_CONTEXT viewCtx = context;
+                    viewCtx.display = view;
+                    dt->removeEntities(viewCtx);
+                }
+                if (ecvViewManager::instance().getAllViews().isEmpty()) {
+                    dt->removeEntities(context);
+                }
+            }
             RemoveBB(context);
         }
         primaryDT()->m_removeFlag = false;

@@ -276,9 +276,11 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
 }
 
 QVTKWidgetCustom::~QVTKWidgetCustom() {
-    // Detach per-widget HotZone from the owning display if it points to ours
-    if (curHotZone() == m_localHotZone) {
-        curHotZone() = nullptr;
+    m_ownerView = nullptr;
+    if (auto* dt = displayTarget()) {
+        if (dt->hotZonePtrRef() == m_localHotZone) {
+            dt->hotZonePtrRef() = nullptr;
+        }
     }
     delete m_localHotZone;
     m_localHotZone = nullptr;
@@ -607,6 +609,11 @@ double QVTKWidgetCustom::zMin() const { return d_ptr->bounds[4]; }
 double QVTKWidgetCustom::zMax() const { return d_ptr->bounds[5]; }
 
 void QVTKWidgetCustom::collectAllLabels(std::vector<ccHObject*>& labels) const {
+    unsigned gen = ecvViewManager::instance().labelCacheGeneration();
+    if (m_labelCacheGen == gen && !m_cachedLabels.empty()) {
+        labels = m_cachedLabels;
+        return;
+    }
     auto* disp = const_cast<QVTKWidgetCustom*>(this)->displayTarget();
     if (!disp) return;
     ccHObject* sceneDB = disp->getSceneDB();
@@ -615,6 +622,8 @@ void QVTKWidgetCustom::collectAllLabels(std::vector<ccHObject*>& labels) const {
         sceneDB->filterChildren(labels, true, CV_TYPES::LABEL_2D, false);
     if (ownDB)
         ownDB->filterChildren(labels, true, CV_TYPES::LABEL_2D, false);
+    m_cachedLabels = labels;
+    m_labelCacheGen = gen;
 }
 
 // event processing
@@ -761,6 +770,23 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     QVTKOpenGLNativeWidget::mouseDoubleClickEvent(event);
 }
 
+// Check whether an entity's ancestor chain is visible in a specific view
+// by inspecting per-view representations.  Returns false if any ancestor
+// has a per-view override that hides it in the given view.
+static bool isAncestorVisibleInView(ccHObject* entity,
+                                    ecvGenericGLDisplay* view) {
+    if (!view) return true;
+    auto& repMgr = ecvRepresentationManager::instance();
+    for (ccHObject* p = entity->getParent(); p; p = p->getParent()) {
+        if (!p->isEnabled()) return false;
+        auto* rep = repMgr.getRepresentation(p, view);
+        if (rep && rep->hasVisibilityOverride() && !rep->isVisible()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void QVTKWidgetCustom::paintGL() {
     QVTKOpenGLNativeWidget::paintGL();
 
@@ -775,13 +801,6 @@ void QVTKWidgetCustom::paintGL() {
     collectAllLabels(labels);
     if (labels.empty()) return;
 
-    static int s_labelLogCounter = 0;
-    if (++s_labelLogCounter <= 5) {
-        CVLog::PrintDebug(QString("[paintGL] Found %1 labels, ownerView=%2")
-                             .arg(labels.size())
-                             .arg(m_ownerView != nullptr));
-    }
-
     CC_DRAW_CONTEXT context;
     if (m_ownerView) {
         m_ownerView->syncVtkCameraToContext();
@@ -792,34 +811,28 @@ void QVTKWidgetCustom::paintGL() {
 
     ecvGenericGLDisplay* thisDisplay = resolveDisplay();
 
+    auto shouldSkipLabel = [&](cc2DLabel* label) -> bool {
+        if (!label->isBranchEnabled() || !label->isVisible()) return true;
+        if (thisDisplay) {
+            ecvGenericGLDisplay* labelDisp = label->getDisplay();
+            if (labelDisp && labelDisp != thisDisplay) return true;
+            if (!labelDisp) return true;
+        }
+        if (!isAncestorVisibleInView(label, thisDisplay)) return true;
+        return false;
+    };
+
     int validCount = 0;
     for (auto* obj : labels) {
         if (!obj->isA(CV_TYPES::LABEL_2D)) continue;
         auto* label = static_cast<cc2DLabel*>(obj);
-        if (!label->isBranchEnabled() || !label->isVisible()) {
-            ecvDisplayTools::HideShowEntities(label, false);
-            label->clearLabel(true);
+        if (shouldSkipLabel(label)) {
+            if (!label->isBranchEnabled() || !label->isVisible() ||
+                !isAncestorVisibleInView(label, thisDisplay)) {
+                ecvDisplayTools::HideShowEntities(label, false);
+                label->clearLabel(true);
+            }
             continue;
-        }
-        // P5: Per-view label filtering via ecvViewRepresentation.
-        if (thisDisplay && ecvViewManager::instance().viewCount() > 1) {
-            auto* rep = ecvRepresentationManager::instance().getRepresentation(
-                    const_cast<ccHObject*>(static_cast<ccHObject*>(label)),
-                    thisDisplay);
-            if (rep && rep->hasVisibilityOverride() && !rep->isVisible()) {
-                continue;
-            }
-            if (!rep) {
-                auto* activeView = ecvViewManager::instance().getActiveView();
-                if (!activeView || activeView != thisDisplay) {
-                    continue;
-                }
-            }
-        } else if (thisDisplay) {
-            ecvGenericGLDisplay* labelDisp = label->getDisplay();
-            if (labelDisp && labelDisp != thisDisplay) {
-                continue;
-            }
         }
         label->update2DLabelView(context, false);
         if (!label->overlayValid()) continue;
@@ -842,27 +855,7 @@ void QVTKWidgetCustom::paintGL() {
     for (auto* obj : labels) {
         if (!obj->isA(CV_TYPES::LABEL_2D)) continue;
         auto* label = static_cast<cc2DLabel*>(obj);
-        if (!label->isBranchEnabled() || !label->isVisible()) continue;
-        // P5: Per-view label filtering (mirrors first loop above)
-        if (thisDisplay && ecvViewManager::instance().viewCount() > 1) {
-            auto* rep = ecvRepresentationManager::instance().getRepresentation(
-                    const_cast<ccHObject*>(static_cast<ccHObject*>(label)),
-                    thisDisplay);
-            if (rep && rep->hasVisibilityOverride() && !rep->isVisible()) {
-                continue;
-            }
-            if (!rep) {
-                auto* activeView = ecvViewManager::instance().getActiveView();
-                if (!activeView || activeView != thisDisplay) {
-                    continue;
-                }
-            }
-        } else if (thisDisplay) {
-            ecvGenericGLDisplay* labelDisp = label->getDisplay();
-            if (labelDisp && labelDisp != thisDisplay) {
-                continue;
-            }
-        }
+        if (shouldSkipLabel(label)) continue;
         if (!label->overlayValid()) continue;
         label->paintOverlay(painter);
     }
@@ -1048,22 +1041,28 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
 
         // display the 3D coordinates of the pixel below the mouse cursor (if
-        // possible)
+        // possible), throttled to avoid excessive VTK ray-casts and redraws
         if (curShowCursorCoordinates()) {
-            CCVector3d P;
-            QString message = QString("2D (%1 ; %2)").arg(x).arg(y);
-            {
+            if (!m_cursorCoordTimerStarted) {
+                m_cursorCoordTimer.start();
+                m_cursorCoordTimerStarted = true;
+            }
+            if (m_cursorCoordTimer.elapsed() >= CURSOR_COORD_THROTTLE_MS) {
+                m_cursorCoordTimer.restart();
+                CCVector3d P;
+                QString message = QString("2D (%1 ; %2)").arg(x).arg(y);
                 if (displayTarget()->getClick3DPos(x, y, P)) {
                     message += QString(" --> 3D (%1 ; %2 ; %3)")
                                        .arg(P.x)
                                        .arg(P.y)
                                        .arg(P.z);
                 }
+                displayTarget()->displayNewMessage(
+                        message,
+                        ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false, 5,
+                        ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
+                displayTarget()->redraw(true);
             }
-            displayTarget()->displayNewMessage(
-                    message, ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false, 5,
-                    ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
-            displayTarget()->redraw(true);
         }
 
         // don't need to process any further

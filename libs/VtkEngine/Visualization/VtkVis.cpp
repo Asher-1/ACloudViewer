@@ -2689,6 +2689,38 @@ void VtkVis::hideShowActorsBySubstring(bool visibility,
     }
 }
 
+void VtkVis::removeBySubstring(const std::string& substring, int viewport) {
+    std::vector<std::string> toRemove;
+    for (auto& pair : *shape_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            toRemove.push_back(pair.first);
+        }
+    }
+    for (auto& id : toRemove) {
+        removeShape(id, viewport);
+    }
+
+    toRemove.clear();
+    for (auto& pair : *cloud_actor_map_) {
+        if (pair.first.find(substring) != std::string::npos) {
+            toRemove.push_back(pair.first);
+        }
+    }
+    for (auto& id : toRemove) {
+        removePointCloud(id, viewport);
+    }
+
+    toRemove.clear();
+    for (auto& pair : *getWidgetActorMap()) {
+        if (pair.first.find(substring) != std::string::npos) {
+            toRemove.push_back(pair.first);
+        }
+    }
+    for (auto& id : toRemove) {
+        removeWidgets(id, viewport);
+    }
+}
+
 void VtkVis::hideShowWidgets(bool visibility,
                              const std::string& viewID,
                              int viewport) {
@@ -2726,6 +2758,12 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
             removePointClouds(removeViewID, viewport);
             removeFlag = true;
         } break;
+        case ENTITY_TYPE::ECV_2DLABLE:
+        case ENTITY_TYPE::ECV_2DLABLE_VIEWPORT: {
+            removeBySubstring(removeViewID, viewport);
+            removeFlag = true;
+            break;
+        }
         case ENTITY_TYPE::ECV_TEXT3D: {
             removeText3D(removeViewID, viewport);
             removeFlag = true;

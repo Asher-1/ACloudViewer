@@ -8,6 +8,7 @@
 #include "ecvMultiViewWidget.h"
 
 #include <ecvGLView.h>
+#include <ecvHObject.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
@@ -19,6 +20,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
@@ -108,6 +110,15 @@ int ecvMultiViewWidget::activeFrameLocation() const {
 // ============================================================================
 
 void ecvMultiViewWidget::reload() {
+    // Suppress painting while tearing down and rebuilding the widget tree.
+    // Without this, the brief interval after hide() + reparent(nullptr) and
+    // before the new layout is composited shows a gray/white background
+    // (the naked container).  ParaView avoids this by rearranging in-place;
+    // setUpdatesEnabled achieves the same visual atomicity here.
+    if (m_contentContainer) {
+        m_contentContainer->setUpdatesEnabled(false);
+    }
+
     // Detach view widgets from their frame wrappers BEFORE deleting frames.
     // buildCell() reparents view->asWidget() into a frame; when that frame is
     // destroyed the view widget would be destroyed too.  Reparenting to nullptr
@@ -130,7 +141,10 @@ void ecvMultiViewWidget::reload() {
 
     auto* containerLayout =
             m_contentContainer ? m_contentContainer->layout() : nullptr;
-    if (!containerLayout) return;
+    if (!containerLayout) {
+        if (m_contentContainer) m_contentContainer->setUpdatesEnabled(true);
+        return;
+    }
 
     QLayoutItem* child;
     while ((child = containerLayout->takeAt(0)) != nullptr) {
@@ -141,7 +155,10 @@ void ecvMultiViewWidget::reload() {
         delete child;
     }
 
-    if (!m_layout) return;
+    if (!m_layout) {
+        if (m_contentContainer) m_contentContainer->setUpdatesEnabled(true);
+        return;
+    }
 
     QWidget* rootWidget = buildCell(0);
     if (rootWidget) {
@@ -153,6 +170,11 @@ void ecvMultiViewWidget::reload() {
         markActive(activeView);
     } else if (isVisible()) {
         makeFrameActive();
+    }
+
+    // Re-enable painting now that the new tree is assembled.
+    if (m_contentContainer) {
+        m_contentContainer->setUpdatesEnabled(true);
     }
 
     // After reparenting, every view needs a VTK render to refill its
@@ -299,57 +321,147 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
     return frame;
 }
 
+// P6: Copy all per-view representations from sourceView to destView so the
+// newly split pane starts with the same visual state as the original.
+// Exception: LABEL_2D entities are skipped because labels belong to their
+// original view — cc2DLabel::drawMeOnly() uses getDisplay() binding.
+// Cloning label reps would cause cross-window pollution.
+static void copyRepresentationsOnSplit(ecvGenericGLDisplay* sourceView,
+                                       ecvGenericGLDisplay* destView) {
+    if (!sourceView || !destView) return;
+    auto& repMgr = ecvRepresentationManager::instance();
+    auto reps = repMgr.getRepresentationsForView(sourceView);
+    for (auto* srcRep : reps) {
+        if (!srcRep || !srcRep->getEntity()) continue;
+        if (srcRep->getEntity()->isKindOf(CV_TYPES::LABEL_2D)) continue;
+        auto* dst = repMgr.ensureRepresentation(srcRep->getEntity(), destView);
+        if (dst) {
+            dst->setProperties(srcRep->properties());
+            if (srcRep->hasVisibilityOverride()) {
+                dst->setVisible(srcRep->isVisible());
+            }
+        }
+    }
+}
+
 // ============================================================================
 // Empty cell placeholder (ParaView pqEmptyView / "Create View" pattern)
 // ============================================================================
 
 QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     auto* frame = new QFrame(this);
-    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    frame->setFrameStyle(QFrame::NoFrame);
     frame->setMinimumSize(50, 50);
 
-    auto* layout = new QVBoxLayout(frame);
-    layout->setContentsMargins(20, 20, 20, 20);
+    auto* outerLayout = new QGridLayout(frame);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
 
-    layout->addStretch(1);
+    auto* scrollArea = new QScrollArea(frame);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
 
-    auto* icon = new QLabel(frame);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setText(QStringLiteral("\xF0\x9F\x96\xBC"));
-    icon->setStyleSheet(QStringLiteral("font-size: 32px;"));
-    layout->addWidget(icon);
+    auto* scrollContent = new QWidget(scrollArea);
+    auto* gridLayout = new QGridLayout(scrollContent);
 
-    auto* label = new QLabel(tr("No view created for this cell"), frame);
-    label->setAlignment(Qt::AlignCenter);
-    label->setWordWrap(true);
-    label->setStyleSheet(
-            QStringLiteral("color: palette(mid); font-size: 11pt;"));
-    layout->addWidget(label);
+    // Centered content with spacers (ParaView pqEmptyView.ui pattern)
+    gridLayout->addItem(
+            new QSpacerItem(20, 40, QSizePolicy::Minimum,
+                            QSizePolicy::Expanding),
+            0, 1);
+    gridLayout->addItem(
+            new QSpacerItem(40, 20, QSizePolicy::Expanding,
+                            QSizePolicy::Minimum),
+            1, 0);
+    gridLayout->addItem(
+            new QSpacerItem(40, 20, QSizePolicy::Expanding,
+                            QSizePolicy::Minimum),
+            1, 2);
+    gridLayout->addItem(
+            new QSpacerItem(20, 40, QSizePolicy::Minimum,
+                            QSizePolicy::Expanding),
+            2, 1);
 
-    layout->addSpacing(10);
+    auto* actionsFrame = new QFrame(scrollContent);
+    actionsFrame->setFrameShape(QFrame::NoFrame);
+    auto* btnLayout = new QVBoxLayout(actionsFrame);
+    btnLayout->setSpacing(2);
 
-    auto* btnRow = new QHBoxLayout();
-    btnRow->addStretch(1);
+    auto* title = new QLabel(
+            QStringLiteral("<b>Create View</b>"), actionsFrame);
+    title->setAlignment(Qt::AlignCenter);
+    btnLayout->addWidget(title);
 
-    auto* createBtn = new QPushButton(tr("Create Render View"), frame);
-    createBtn->setIcon(frame->style()->standardIcon(QStyle::SP_DesktopIcon));
-    createBtn->setIconSize(QSize(16, 16));
-    createBtn->setCursor(Qt::PointingHandCursor);
-    createBtn->setStyleSheet(QStringLiteral(
-            "QPushButton { padding: 6px 16px; font-weight: bold; }"));
+    // ParaView-style view type list (sorted alphabetically, Render View first)
+    struct ViewType {
+        QString label;
+        bool available;
+    };
+    QList<ViewType> viewTypes = {
+            {tr("Render View"), true},
+            {tr("Render View (Comparative)"), false},
+            {tr("Bar Chart View"), false},
+            {tr("Bar Chart View (Comparative)"), false},
+            {tr("Box Chart View"), false},
+            {tr("Eye Dome Lighting"), false},
+            {tr("Histogram View"), false},
+            {tr("Image Chart View"), false},
+            {tr("Line Chart View"), false},
+            {tr("Line Chart View (Comparative)"), false},
+            {tr("Orthographic Slice View"), false},
+            {tr("Parallel Coordinates View"), false},
+            {tr("Plot Matrix View"), false},
+            {tr("Point Chart View"), false},
+            {tr("Python View"), false},
+            {tr("Quartile Chart View"), false},
+            {tr("Slice View"), false},
+            {tr("SpreadSheet View"), false},
+    };
 
-    connect(createBtn, &QPushButton::clicked, this, [this, location]() {
+    auto createViewForCell = [this, location]() {
         if (!m_viewFactory || !m_layout) return;
         auto* newView = m_viewFactory();
         if (!newView) return;
+
+        ecvGenericGLDisplay* siblingView = nullptr;
+        int parentIdx = ecvViewLayoutProxy::parent(location);
+        if (parentIdx >= 0) {
+            int sibling = (location ==
+                           ecvViewLayoutProxy::firstChild(parentIdx))
+                                  ? ecvViewLayoutProxy::secondChild(parentIdx)
+                                  : ecvViewLayoutProxy::firstChild(parentIdx);
+            siblingView = m_layout->getView(sibling);
+        }
+        if (!siblingView) {
+            auto views = m_layout->getViews();
+            for (auto* v : views) {
+                if (v) {
+                    siblingView = v;
+                    break;
+                }
+            }
+        }
+
         m_layout->assignView(location, newView);
-    });
+        if (siblingView) {
+            copyRepresentationsOnSplit(siblingView, newView);
+        }
+        ecvViewManager::instance().setActiveView(newView);
+    };
 
-    btnRow->addWidget(createBtn);
-    btnRow->addStretch(1);
-    layout->addLayout(btnRow);
+    for (const auto& vt : viewTypes) {
+        auto* btn = new QPushButton(vt.label, actionsFrame);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setEnabled(vt.available);
+        if (vt.available) {
+            connect(btn, &QPushButton::clicked, this, createViewForCell);
+        }
+        btnLayout->addWidget(btn);
+    }
 
-    layout->addStretch(1);
+    gridLayout->addWidget(actionsFrame, 1, 1);
+
+    scrollArea->setWidget(scrollContent);
+    outerLayout->addWidget(scrollArea, 0, 0);
 
     return frame;
 }
@@ -426,6 +538,20 @@ void ecvMultiViewWidget::makeFrameActive() {
             return;
         }
     }
+}
+
+void ecvMultiViewWidget::redrawAllViews() {
+    QTimer::singleShot(0, this, [this]() {
+        for (auto it = m_viewFrames.constBegin();
+             it != m_viewFrames.constEnd(); ++it) {
+            if (auto* display = it.key()) {
+                auto* glView = dynamic_cast<ecvGLView*>(display);
+                if (glView) {
+                    glView->redraw(false, true);
+                }
+            }
+        }
+    });
 }
 
 void ecvMultiViewWidget::markActive(ecvGenericGLDisplay* view) {
@@ -505,43 +631,16 @@ bool ecvMultiViewWidget::togglePopout() {
 // Split / Close / Maximize
 // ============================================================================
 
-// P6: Copy all per-view representations from sourceView to destView so the
-// newly split pane starts with the same visual state as the original.
-static void copyRepresentationsOnSplit(ecvGenericGLDisplay* sourceView,
-                                       ecvGenericGLDisplay* destView) {
-    if (!sourceView || !destView) return;
-    auto& repMgr = ecvRepresentationManager::instance();
-    auto reps = repMgr.getRepresentationsForView(sourceView);
-    for (auto* srcRep : reps) {
-        if (!srcRep || !srcRep->getEntity()) continue;
-        auto* dst = repMgr.ensureRepresentation(srcRep->getEntity(), destView);
-        if (dst) {
-            dst->setProperties(srcRep->properties());
-            if (srcRep->hasVisibilityOverride()) {
-                dst->setVisible(srcRep->isVisible());
-            }
-        }
-    }
-}
-
 void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
     if (!m_layout) return;
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    auto* sourceView = m_layout->getView(location);
-
-    int child = m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
-    if (child >= 0 && m_viewFactory) {
-        auto* newView = m_viewFactory();
-        if (newView) {
-            int newCell = ecvViewLayoutProxy::secondChild(
-                    ecvViewLayoutProxy::parent(child));
-            m_layout->assignView(newCell, newView);
-            copyRepresentationsOnSplit(sourceView, newView);
-            ecvViewManager::instance().setActiveView(newView);
-        }
-    }
+    // ParaView alignment: split creates an empty cell with a "Create Render
+    // View" button (pqEmptyView pattern).  The user explicitly clicks the
+    // button to create a new view.  This avoids unnecessary view allocation
+    // and matches ParaView's workflow.
+    m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
 }
 
 void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
@@ -549,19 +648,7 @@ void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    auto* sourceView = m_layout->getView(location);
-
-    int child = m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
-    if (child >= 0 && m_viewFactory) {
-        auto* newView = m_viewFactory();
-        if (newView) {
-            int newCell = ecvViewLayoutProxy::secondChild(
-                    ecvViewLayoutProxy::parent(child));
-            m_layout->assignView(newCell, newView);
-            copyRepresentationsOnSplit(sourceView, newView);
-            ecvViewManager::instance().setActiveView(newView);
-        }
-    }
+    m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
 }
 
 void ecvMultiViewWidget::onCloseView(QWidget* frame) {

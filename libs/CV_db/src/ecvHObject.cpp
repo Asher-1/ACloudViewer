@@ -1560,7 +1560,6 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     if (!isEnabled() && !isKindOf(CV_TYPES::POINT_OCTREE) &&
         !isKindOf(CV_TYPES::POINT_KDTREE)) {
         hideObject_recursive(true);
-        // no need to do anything
         return;
     }
 
@@ -1569,10 +1568,9 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     bool drawInThisContext =
             ((m_visible || m_selected) && isDisplayedIn(context.display));
 
-    // Per-view representation (ParaView-style: ensure one exists for every
-    // drawn (entity, view) pair so per-view visibility/opacity overrides work).
     ecvViewRepresentation* viewRep = nullptr;
-    if (context.display && drawInThisContext && !isFixedId()) {
+    const bool isLabel2D = isKindOf(CV_TYPES::LABEL_2D);
+    if (context.display && drawInThisContext && !isFixedId() && !isLabel2D) {
         viewRep = ecvRepresentationManager::instance().ensureRepresentation(
                 const_cast<ccHObject*>(this), context.display);
     } else if (context.display) {
@@ -1583,13 +1581,20 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         drawInThisContext = viewRep->isVisible();
     }
 
-    // Per-view visibility must propagate to context.visible so that
-    // hideShowEntities() sets VTK actor visibility correctly.
+    const bool ancestorVisible = context.visible;
     if (viewRep && viewRep->hasVisibilityOverride()) {
-        context.visible = viewRep->isVisible();
+        context.visible = viewRep->isVisible() && ancestorVisible;
+    } else if (drawInThisContext) {
+        context.visible = m_visible && ancestorVisible;
     } else {
-        context.visible = m_visible;
+        // Container objects (folders, root "DB Tree") that have no
+        // representation in the current view should NOT block their
+        // children's visibility.  Only entities that actually draw
+        // (drawInThisContext == true) participate in the cascade.
+        context.visible = ancestorVisible;
     }
+    const bool cascadeVisible = context.visible;
+
     context.opacity = (viewRep && viewRep->properties().opacity.has_value())
                               ? viewRep->effectiveOpacity()
                               : getOpacity();
@@ -1720,6 +1725,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     // draw entity's children
     for (auto child : m_children) {
+        context.visible = cascadeVisible;
         child->draw(context);
     }
 

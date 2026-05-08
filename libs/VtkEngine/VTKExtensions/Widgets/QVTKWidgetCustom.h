@@ -15,6 +15,7 @@
 
 #include <vtkAutoInit.h>
 
+#include <QElapsedTimer>
 #include <QTimer>
 VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkRenderingContextOpenGL2);
@@ -368,5 +369,15 @@ protected:
     bool m_rightClickOnLabel = false;
 
     CCVector3d m_lastMouseOrientation;
+
+    // Label cache: avoids full DB-tree scan on every paintGL/mouse hit-test.
+    // Invalidated via ecvViewManager::invalidateLabelCache().
+    mutable std::vector<ccHObject*> m_cachedLabels;
+    mutable unsigned m_labelCacheGen = 0;
     void collectAllLabels(std::vector<ccHObject*>& labels) const;
+
+    // Throttle: min interval (ms) between cursor-coordinate redraws
+    static constexpr int CURSOR_COORD_THROTTLE_MS = 33;  // ~30 fps
+    QElapsedTimer m_cursorCoordTimer;
+    bool m_cursorCoordTimerStarted = false;
 };

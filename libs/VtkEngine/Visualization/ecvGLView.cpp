@@ -35,6 +35,7 @@
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
+#include "ImageVis.h"
 #include "VtkDisplayTools.h"
 #include "VtkVis.h"
 
@@ -124,6 +125,14 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget->setCustomInteractorStyle(
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
+
+    if (ecvDisplayTools::USE_2D) {
+        m_visualizer2D = std::make_shared<Visualization::ImageVis>(
+                m_title.toStdString() + "_2D", false);
+        m_visualizer2D->setRender(m_vtkWidget->getVtkRender());
+        m_visualizer2D->setupInteractor(m_vtkWidget->GetInteractor(),
+                                        m_vtkWidget->GetRenderWindow());
+    }
 
     connect(m_visualizer3D.get(),
             &ecvGenericVisualizer3D::interactorPointPickedEvent,
@@ -265,15 +274,21 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     if (!only2D && m_globalDBRoot) {
         context.drawingFlags =
                 CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
+        context.visible = true;
         m_globalDBRoot->draw(context);
     }
     if (!only2D && m_winDBRoot) {
         context.drawingFlags =
                 CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
+        context.visible = true;
         m_winDBRoot->draw(context);
     }
 
     // --- 2D foreground pass ---
+    // Reset context.visible: the 3D pass may leave it false (e.g. when the
+    // last traversed entity was hidden), which would cascade through the
+    // ancestorVisible logic and hide actors that were just shown in 3D.
+    context.visible = true;
     context.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
     if (m_ctx.interactionFlags &
         ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {

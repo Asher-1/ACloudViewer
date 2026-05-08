@@ -133,6 +133,11 @@ public:
     void setRemoveAllFlag(bool flag);
     void setRedrawRecursive(bool redraw);
 
+    /// Increment the label-cache generation counter so that all widgets
+    /// rescan the DB tree for labels on their next paint.
+    void invalidateLabelCache() { ++m_labelCacheGeneration; }
+    unsigned labelCacheGeneration() const { return m_labelCacheGeneration; }
+
     // ================================================================
     // Active-view dispatchers (Phase 4: replace ecvDisplayTools statics)
     // These dispatch to the effective view or all views as appropriate.
@@ -355,4 +360,5 @@ private:
     std::vector<removeInfo> m_removeInfos;
     ecvGui::ParamStruct m_overridenDisplayParameters;
     bool m_overridenDisplayParametersEnabled = false;
+    unsigned m_labelCacheGeneration = 0;
 };

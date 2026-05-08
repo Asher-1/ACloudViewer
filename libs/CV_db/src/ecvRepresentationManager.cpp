@@ -204,6 +204,11 @@ int ecvRepresentationManager::count() const {
     return m_representations.size();
 }
 
+void ecvRepresentationManager::clear() {
+    QWriteLocker writeLock(&m_lock);
+    m_representations.clear();
+}
+
 void ecvRepresentationManager::setActorCleanupCallback(CleanupCallback cb) {
     m_actorCleanup = std::move(cb);
 }

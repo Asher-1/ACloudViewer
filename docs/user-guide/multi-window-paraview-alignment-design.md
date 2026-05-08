@@ -104,6 +104,14 @@ ACloudViewer's multi-window rendering system has undergone an extensive refactor
 - `VtkVis.cpp`: `resetCameraClippingCached` / `resetCameraClippingRange` / `getReasonableClippingRange` / `getGLDepth` / `resetCameraViewpoint` / `setOrthoProjection` / `setPerspectiveProjection` / `pickActor` / `pickItem` — `getCurrentRenderer()` / `getRendererCollection()->GetFirstRenderer()` 返回 null 时的 guard (共 8 处)
 - 修复了两个启动阶段 segfault (EXC_BAD_ACCESS): 一个在 `MainWindow` 构造期间 `refreshAll` 触发的 null `ccHObject` 调用，另一个在初始 resize 事件触发 `resetCameraClippingCached` 时的 null renderer 访问
 
+**运行时稳定性修复 (2026-05-07)**:
+- **Zoom to Box 位置不一致**: 对齐 ParaView `vtkPVRenderView.cxx` 配置 — `SetLockAspectToViewport(true)` + `SetUseDollyForPerspectiveProjection(false)` + `SetDefaultRenderer(m_renderer)`
+- **Split 窗口卡死 (QReadWriteLock 死锁)**: `ecvRepresentationManager::ensureRepresentation()` 在写锁内调用 `setProperties()`/`setVisible()` → 信号同步触发 `redraw()` → `getRepresentation()` 尝试获取读锁 → 死锁。修复：收集 donor 属性在写锁内，释放写锁后再应用属性
+- **QReadWriteLock 全面审计**: 所有 `remove*` 方法同样存在写锁内发射信号/回调的风险 — 统一重构为"写锁内仅做数据结构变更，锁外执行回调+信号"的安全模式
+- **Split 灰色闪烁**: 一次 split 触发两次 `layoutChanged` → 两次完整 `reload()` + `hide()`。修复：`QSignalBlocker` 在 `split()` 期间抑制信号 + `setUpdatesEnabled(false/true)` 在 `reload()` 期间抑制绘制
+- **cc2DLabel 跨窗口渲染回归**: P6 属性继承 + `ccHObject::draw()` 的 `ensureRepresentation()` 为标签预创建 rep 导致 P5 懒加载逻辑被绕过。修复：(1) `ccHObject::draw()` 对 LABEL_2D 使用 `getRepresentation()` 而非 `ensureRepresentation()`; (2) `copyRepresentationsOnSplit()` 跳过 LABEL_2D; (3) `drawMeOnly()`/`paintGL()` 使用 `rep->isVisible()` 而非仅 `hasVisibilityOverride()`
+- **m_tools 成员彻底消除**: `QVTKWidgetCustom` 中 ~15 处 `m_tools` 引用全部替换为静态方法/`displayTarget()`/`ecvViewManager` 服务
+
 This document provides the comprehensive, actionable redesign plan and records the completion of Phase M–N–O.
 
 ---
@@ -1398,5 +1406,5 @@ GAP-T (Source Undo)    ────→  91/91 = 100.0% ✅ DONE — Full ParaVie
 ---
 
 *Maintained by: Architecture Team*
-*Last updated: 2026-05-04 (ecvDisplayTools singleton removal complete)*
+*Last updated: 2026-05-07 (runtime stability: zoom-to-box, split deadlock, QReadWriteLock audit, label cross-window regression, m_tools removal)*
 *Cross-references: `multi-window-refactor-roadmap-Vtk-vs-CC.md`, `singleton-removal-migration-plan.md`, `multi-window-views.md`, `multi-window-paradigms-CloudCompare-ParaView.md`*

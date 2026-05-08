@@ -269,6 +269,11 @@ void ecvTabbedMultiViewWidget::onCurrentTabChanged(int index) {
     QWidget* currentWidget = m_tabWidget->widget(index);
     if (auto* mvw = qobject_cast<ecvMultiViewWidget*>(currentWidget)) {
         mvw->makeFrameActive();
+        // QTabWidget hides non-current pages, which invalidates VTK
+        // framebuffers.  makeFrameActive() only redraws the active view.
+        // Schedule a deferred redraw for ALL views so non-active split
+        // panes also repaint their VTK content.
+        mvw->redrawAllViews();
     } else if (currentWidget == m_newTabWidget && m_tabWidget->count() > 1) {
         int newIdx = createTab();
         if (m_viewFactory) {

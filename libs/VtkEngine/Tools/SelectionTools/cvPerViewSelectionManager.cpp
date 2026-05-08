@@ -216,39 +216,9 @@ void cvPerViewSelectionManager::populateToolbar(
                 });
     }
 
-    // --- Zoom-to-box (checkable, isolated per view) ---
-    if (actions.zoomToBox) {
-        addSeparator();
-        QAction* zoomLocal =
-                mirrorIsolated(toolbar, actions.zoomToBox, viewWidget);
-        if (zoomLocal) {
-            addActionBtn(zoomLocal);
-            connect(zoomLocal, &QAction::toggled, this,
-                    [this, activateView, zoomLocal, toolbar,
-                     global = actions.zoomToBox, viewWidget,
-                     syncToGlobal](bool checked) {
-                        activateView();
-                        if (checked) {
-                            uncheckOtherViews(viewWidget,
-                                              global->toolTip());
-                            for (auto* btn :
-                                 toolbar->findChildren<QToolButton*>()) {
-                                auto* act = btn->defaultAction();
-                                if (!act || act == zoomLocal ||
-                                    !act->isCheckable())
-                                    continue;
-                                if (!act->property("viewWidget").isValid())
-                                    continue;
-                                if (act->isChecked()) {
-                                    QSignalBlocker blk(act);
-                                    act->setChecked(false);
-                                }
-                            }
-                        }
-                        syncToGlobal(zoomLocal, global, checked);
-                    });
-        }
-    }
+    // ParaView alignment: zoom-to-box lives on the main camera toolbar
+    // (pqCameraToolbar), NOT on per-view frame toolbars
+    // (pqStandardViewFrameActionsImplementation).  Removed from here.
 
     addSeparator();
 

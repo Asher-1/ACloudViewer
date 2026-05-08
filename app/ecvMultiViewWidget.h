@@ -106,6 +106,11 @@ public slots:
     /// Show/hide title bars and decorations.
     void setDecorationsVisibility(bool visible);
 
+    /// Schedule a deferred VTK redraw for every view in this layout.
+    /// Used after tab switches to repaint VTK framebuffers that were
+    /// invalidated while the tab was hidden.
+    void redrawAllViews();
+
     /// Lock all view sizes to the given dimension (empty = unlock).
     void lockViewSize(const QSize& size);
 
