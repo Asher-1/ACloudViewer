@@ -45,14 +45,20 @@
 
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>
+#include <VtkRendering/Core/VtkRenderingUtils.h>
 
 // VTK
+#include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkLODActor.h>
+#include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
 #include <vtkStringArray.h>
+#include <vtkUnsignedCharArray.h>
 
 // SYSTEM
 #include <assert.h>
@@ -842,14 +848,17 @@ void VtkDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
                          bbox->minCorner().y, bbox->maxCorner().y,
                          bbox->minCorner().z, bbox->maxCorner().z, colf.r,
                          colf.g, colf.b, bboxID, viewport);
-
-            vis->setShapeRenderingProperties(
-                    VtkVis::PCL_VISUALIZER_REPRESENTATION,
-                    VtkVis::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, bboxID,
-                    viewport);
             vis->setLineWidth(context.defaultLineWidth, bboxID, viewport);
             vis->setLightMode(bboxID, viewport);
         }
+
+        const int representation =
+                (context.meshRenderingMode ==
+                 MESH_RENDERING_MODE::ECV_SURFACE_MODE)
+                        ? VtkVis::PCL_VISUALIZER_REPRESENTATION_SURFACE
+                        : VtkVis::PCL_VISUALIZER_REPRESENTATION_WIREFRAME;
+        vis->setShapeRenderingProperties(VtkVis::PCL_VISUALIZER_REPRESENTATION,
+                                         representation, bboxID, viewport);
 
         vis->setShapeUniqueColor(colf.r, colf.g, colf.b, bboxID, viewport);
         vis->setLineWidth(context.defaultLineWidth, bboxID, viewport);
@@ -859,6 +868,124 @@ void VtkDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
                                              context.opacity, bboxID, viewport);
         }
     }
+}
+
+void VtkDisplayTools::drawBBoxBatch(const CC_DRAW_CONTEXT& context,
+                                    const std::vector<ccBBox>& boxes) {
+    VtkVis* vis = resolveVisualizer(context.display);
+    if (!vis || boxes.empty()) return;
+
+    std::string batchID = CVTools::FromQString(context.viewID);
+    int viewport = context.defaultViewPort;
+
+    if (vis->contains(batchID)) {
+        vis->removeShape(batchID);
+    }
+
+    const bool isSurface =
+            (context.meshRenderingMode == MESH_RENDERING_MODE::ECV_SURFACE_MODE);
+    const bool isPoints = (context.opacity == 1.0 && isSurface &&
+                           context.viewID.contains("points"));
+
+    auto points = vtkSmartPointer<vtkPoints>::New();
+    auto cells = vtkSmartPointer<vtkCellArray>::New();
+
+    if (isPoints) {
+        points->SetNumberOfPoints(static_cast<vtkIdType>(boxes.size()));
+        for (size_t i = 0; i < boxes.size(); ++i) {
+            CCVector3 center = boxes[i].getCenter();
+            points->SetPoint(static_cast<vtkIdType>(i), center.x, center.y,
+                             center.z);
+            vtkIdType pid = static_cast<vtkIdType>(i);
+            cells->InsertNextCell(1, &pid);
+        }
+    } else {
+        const int vertsPerBox = 8;
+        const int linesPerBox = 12;
+        const int quadsPerBox = 6;
+        vtkIdType numBoxes = static_cast<vtkIdType>(boxes.size());
+
+        if (isSurface) {
+            points->SetNumberOfPoints(numBoxes * vertsPerBox);
+            cells->Allocate(numBoxes * quadsPerBox);
+        } else {
+            points->SetNumberOfPoints(numBoxes * vertsPerBox);
+            cells->Allocate(numBoxes * linesPerBox);
+        }
+
+        for (vtkIdType b = 0; b < numBoxes; ++b) {
+            const auto& mn = boxes[b].minCorner();
+            const auto& mx = boxes[b].maxCorner();
+            vtkIdType base = b * vertsPerBox;
+            points->SetPoint(base + 0, mn.x, mn.y, mn.z);
+            points->SetPoint(base + 1, mx.x, mn.y, mn.z);
+            points->SetPoint(base + 2, mx.x, mx.y, mn.z);
+            points->SetPoint(base + 3, mn.x, mx.y, mn.z);
+            points->SetPoint(base + 4, mn.x, mn.y, mx.z);
+            points->SetPoint(base + 5, mx.x, mn.y, mx.z);
+            points->SetPoint(base + 6, mx.x, mx.y, mx.z);
+            points->SetPoint(base + 7, mn.x, mx.y, mx.z);
+
+            if (isSurface) {
+                vtkIdType q0[4] = {base, base + 3, base + 2, base + 1};
+                vtkIdType q1[4] = {base + 4, base + 5, base + 6, base + 7};
+                vtkIdType q2[4] = {base, base + 1, base + 5, base + 4};
+                vtkIdType q3[4] = {base + 2, base + 3, base + 7, base + 6};
+                vtkIdType q4[4] = {base, base + 4, base + 7, base + 3};
+                vtkIdType q5[4] = {base + 1, base + 2, base + 6, base + 5};
+                cells->InsertNextCell(4, q0);
+                cells->InsertNextCell(4, q1);
+                cells->InsertNextCell(4, q2);
+                cells->InsertNextCell(4, q3);
+                cells->InsertNextCell(4, q4);
+                cells->InsertNextCell(4, q5);
+            } else {
+                vtkIdType e[2];
+                auto addEdge = [&](vtkIdType a, vtkIdType b) {
+                    e[0] = base + a;
+                    e[1] = base + b;
+                    cells->InsertNextCell(2, e);
+                };
+                addEdge(0, 1); addEdge(1, 2); addEdge(2, 3); addEdge(3, 0);
+                addEdge(4, 5); addEdge(5, 6); addEdge(6, 7); addEdge(7, 4);
+                addEdge(0, 4); addEdge(1, 5); addEdge(2, 6); addEdge(3, 7);
+            }
+        }
+    }
+
+    auto polydata = vtkSmartPointer<vtkPolyData>::New();
+    polydata->SetPoints(points);
+    if (isPoints)
+        polydata->SetVerts(cells);
+    else if (isSurface)
+        polydata->SetPolys(cells);
+    else
+        polydata->SetLines(cells);
+
+    vtkSmartPointer<vtkLODActor> actor;
+    VtkRendering::CreateActorFromVTKDataSet(polydata, actor, false);
+    actor->PickableOff();
+
+    ecvColor::Rgbf colf = ecvTools::TransFormRGB(context.bbDefaultCol);
+    actor->GetProperty()->SetColor(colf.r, colf.g, colf.b);
+
+    if (isPoints) {
+        actor->GetProperty()->SetRepresentationToPoints();
+        actor->GetProperty()->SetPointSize(3.0);
+    } else if (isSurface) {
+        actor->GetProperty()->SetRepresentationToSurface();
+    } else {
+        actor->GetProperty()->SetRepresentationToWireframe();
+        actor->GetProperty()->SetLineWidth(
+                static_cast<float>(context.defaultLineWidth));
+    }
+
+    if (context.opacity >= 0.0 && context.opacity <= 1.0) {
+        actor->GetProperty()->SetOpacity(context.opacity);
+    }
+
+    vis->addActorToRenderer(actor, viewport);
+    (*vis->getShapeActorMap())[batchID] = actor;
 }
 
 void VtkDisplayTools::drawOrientedBBox(const CC_DRAW_CONTEXT& context,
@@ -969,10 +1096,10 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
 
     // Multi-window: propagate 3D scene entity removal to secondary views.
     // Only propagate when context.display is NULL (global removal request).
-    // When context.display targets a specific view, the removal is intentionally
-    // scoped to that view only (e.g., per-view label markers).
-    // 2D overlays (text, rectangles, images, etc.) are per-view and must NOT
-    // be propagated — each view's ClearBubbleView handles its own cleanup.
+    // When context.display targets a specific view, the removal is
+    // intentionally scoped to that view only (e.g., per-view label markers). 2D
+    // overlays (text, rectangles, images, etc.) are per-view and must NOT be
+    // propagated — each view's ClearBubbleView handles its own cleanup.
     const bool is2DOverlay =
             context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
             context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
@@ -1096,9 +1223,8 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             if (txtVis2D) {
                 std::string text = CVTools::FromQString(param.text);
                 txtVis2D->addText(param.rect.x(), param.rect.y(), text,
-                                  param.color.r, param.color.g,
-                                  param.color.b, viewID, param.color.a,
-                                  param.fontSize);
+                                  param.color.r, param.color.g, param.color.b,
+                                  viewID, param.color.a, param.fontSize);
             } else {
                 CC_DRAW_CONTEXT context = param.context;
                 ecvDisplayTools::GetContext(context);
@@ -1287,9 +1413,8 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             if (ptVis2D) {
                 Eigen::Array<unsigned char, 3, 1> color(
                         param.color.r, param.color.g, param.color.b);
-                ptVis2D->markPoint(param.rect.x(), param.rect.y(), color,
-                                   color, param.radius, viewID,
-                                   param.color.a);
+                ptVis2D->markPoint(param.rect.x(), param.rect.y(), color, color,
+                                   param.radius, viewID, param.color.a);
             }
         } break;
         case WIDGETS_TYPE::WIDGET_RECTANGLE_2D: {

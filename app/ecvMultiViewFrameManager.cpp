@@ -303,12 +303,10 @@ void ecvMultiViewFrameManager::addTitleBarAction(QWidget* frame,
                                                  bool withSeparator) {
     if (!frame || !action) return;
 
-    auto* toolbar =
-            frame->findChild<QWidget*>("ViewSelectionToolBar");
+    auto* toolbar = frame->findChild<QWidget*>("ViewSelectionToolBar");
     if (!toolbar) return;
 
-    auto* tbLayout =
-            qobject_cast<QHBoxLayout*>(toolbar->layout());
+    auto* tbLayout = qobject_cast<QHBoxLayout*>(toolbar->layout());
     if (!tbLayout) return;
 
     if (withSeparator) {

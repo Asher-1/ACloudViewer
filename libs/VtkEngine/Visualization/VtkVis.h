@@ -14,6 +14,7 @@
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
+#include <QJsonObject>
 #include <deque>
 #include <map>
 #include <mutex>
@@ -21,8 +22,6 @@
 
 #include "WidgetMap.h"
 #include "qVTK.h"
-
-#include <QJsonObject>
 
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>

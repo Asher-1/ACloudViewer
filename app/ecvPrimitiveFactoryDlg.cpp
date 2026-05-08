@@ -18,12 +18,12 @@
 // CV_DB_LIB
 #include <CVConst.h>
 #include <ecvBox.h>
-#include <ecvDisplayTools.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
 #include <ecvDisc.h>
 #include <ecvDish.h>
+#include <ecvDisplayTools.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvPlane.h>
 #include <ecvSphere.h>

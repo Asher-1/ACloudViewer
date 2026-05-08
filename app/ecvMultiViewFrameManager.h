@@ -63,9 +63,7 @@ public:
     void addTitleBarAction(QWidget* frame, QAction* action);
 
     /// Overload: insert with a leading separator.
-    void addTitleBarAction(QWidget* frame,
-                           QAction* action,
-                           bool addSeparator);
+    void addTitleBarAction(QWidget* frame, QAction* action, bool addSeparator);
 
     // -- Layout operations --
 

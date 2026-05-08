@@ -71,7 +71,12 @@ public:  // RENDERING
     //! Returns whether octree is visible or not
     bool isVisible() const { return m_visible; }
     //! Sets octree visibility
-    inline void setVisible(bool state) { m_visible = state; }
+    inline void setVisible(bool state) {
+        if (m_visible != state) {
+            m_visible = state;
+            m_displayNeedsRefresh = true;
+        }
+    }
 
     //! Octree displaying methods
     enum DisplayMode {
@@ -190,4 +195,21 @@ protected:  // MEMBERS
 
     //! For Octree Display
     bool m_visible;
+
+    //! Tracks whether VTK octree actors must be rebuilt/cleaned.
+    bool m_displayNeedsRefresh;
+
+    //! Last level that was actually drawn (for targeted cleanup).
+    int m_lastDrawnLevel = 0;
+
+    //! Last display mode that was drawn.
+    DisplayMode m_lastDrawnMode = WIRE;
+
+    //! viewID of the last batched actor (for cleanup).
+    QString m_lastBatchID;
+
+    static bool CollectCellBounds(
+            const cloudViewer::DgmOctree::octreeCell& cell,
+            void** additionalParameters,
+            cloudViewer::NormalizedProgress* nProgress = 0);
 };

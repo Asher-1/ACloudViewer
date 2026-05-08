@@ -75,7 +75,8 @@ public:
     /// Returns the rendering override if set, otherwise the UI-active view.
     ecvGenericGLDisplay* getEffectiveView() const;
 
-    /// Returns a guaranteed non-null view context: effective view -> active view -> first view.
+    /// Returns a guaranteed non-null view context: effective view -> active
+    /// view -> first view.
     ecvViewContext& resolveViewContext();
     const ecvViewContext& resolveViewContext() const;
 
@@ -213,7 +214,8 @@ public:
     /// Optional relay implementation (registered by VTK engine): typed
     /// QObject::connect from ecvGLView to ViewManager relay signals. Required
     /// for multi-window — CV_db cannot depend on ecvGLView headers.
-    /// When unset, registerView is registered without per-view relay connections.
+    /// When unset, registerView is registered without per-view relay
+    /// connections.
     using SingletonRelayHook = void (*)(ecvViewManager*, ecvGenericGLDisplay*);
     static void registerSingletonRelayHook(SingletonRelayHook hook);
 

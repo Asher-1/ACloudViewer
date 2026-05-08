@@ -25,17 +25,13 @@
 const QString AcvProjectFilter::ACV_MAGIC = QStringLiteral("ACV_PROJECT");
 
 AcvProjectFilter::AcvProjectFilter()
-    : FileIOFilter({"_ACloudViewer Project Filter",
-                    0.5f,
-                    QStringList{"acv"},
-                    "acv",
-                    QStringList{GetFileFilter()},
-                    QStringList{GetFileFilter()},
-                    Import | Export | BuiltIn}) {}
+    : FileIOFilter({"_ACloudViewer Project Filter", 0.5f, QStringList{"acv"},
+                    "acv", QStringList{GetFileFilter()},
+                    QStringList{GetFileFilter()}, Import | Export | BuiltIn}) {}
 
 bool AcvProjectFilter::canSave(CV_CLASS_ENUM type,
-                                bool& multiple,
-                                bool& exclusive) const {
+                               bool& multiple,
+                               bool& exclusive) const {
     if (type == CV_TYPES::HIERARCHY_OBJECT || type == CV_TYPES::POINT_CLOUD ||
         type == CV_TYPES::MESH || type == CV_TYPES::POLY_LINE ||
         type == CV_TYPES::FACET || type == CV_TYPES::SENSOR ||
@@ -51,8 +47,8 @@ bool AcvProjectFilter::canSave(CV_CLASS_ENUM type,
 }
 
 CC_FILE_ERROR AcvProjectFilter::saveToFile(ccHObject* entity,
-                                            const QString& filename,
-                                            const SaveParameters& parameters) {
+                                           const QString& filename,
+                                           const SaveParameters& parameters) {
     if (!entity) {
         return CC_FERR_BAD_ARGUMENT;
     }
@@ -84,8 +80,7 @@ CC_FILE_ERROR AcvProjectFilter::saveToFile(ccHObject* entity,
     manifest["format_version"] = static_cast<int>(ACV_FORMAT_VERSION);
     manifest["app_version"] = QStringLiteral("2.0");
     manifest["entity_count"] = static_cast<int>(entity->getChildrenNumber());
-    manifest["created"] =
-            QDateTime::currentDateTime().toString(Qt::ISODate);
+    manifest["created"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     metadata["manifest"] = manifest;
 
     // View/layout state from ecvViewManager
@@ -142,8 +137,8 @@ CC_FILE_ERROR AcvProjectFilter::saveToFile(ccHObject* entity,
 }
 
 CC_FILE_ERROR AcvProjectFilter::loadFile(const QString& filename,
-                                          ccHObject& container,
-                                          LoadParameters& parameters) {
+                                         ccHObject& container,
+                                         LoadParameters& parameters) {
     QFile inFile(filename);
     if (!inFile.open(QIODevice::ReadOnly)) {
         CVLog::Warning(
@@ -182,9 +177,8 @@ CC_FILE_ERROR AcvProjectFilter::loadFile(const QString& filename,
     QJsonParseError parseErr;
     QJsonDocument metaDoc = QJsonDocument::fromJson(metaBytes, &parseErr);
     if (metaDoc.isNull()) {
-        CVLog::Warning(
-                QStringLiteral("[AcvProject] Metadata parse error: %1")
-                        .arg(parseErr.errorString()));
+        CVLog::Warning(QStringLiteral("[AcvProject] Metadata parse error: %1")
+                               .arg(parseErr.errorString()));
         return CC_FERR_READING;
     }
     QJsonObject metadata = metaDoc.object();
@@ -209,8 +203,8 @@ CC_FILE_ERROR AcvProjectFilter::loadFile(const QString& filename,
     tempBin.flush();
     tempBin.seek(0);
 
-    CC_FILE_ERROR binResult = BinFilter::LoadFileV2(
-            tempBin, container, 0, true, parameters.parentWidget);
+    CC_FILE_ERROR binResult = BinFilter::LoadFileV2(tempBin, container, 0, true,
+                                                    parameters.parentWidget);
     tempBin.close();
 
     if (binResult != CC_FERR_NO_ERROR) {

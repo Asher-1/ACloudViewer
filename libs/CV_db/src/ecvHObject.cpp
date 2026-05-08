@@ -35,6 +35,8 @@
 #include "ecvImage.h"
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvKdTree.h"
+#include "ecvOctree.h"
+#include "ecvOctreeProxy.h"
 #include "ecvMaterialSet.h"
 #include "ecvMeshGroup.h"
 #include "ecvPlane.h"
@@ -1570,10 +1572,21 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     ecvViewRepresentation* viewRep = nullptr;
     const bool isLabel2D = isKindOf(CV_TYPES::LABEL_2D);
-    if (context.display && drawInThisContext && !isFixedId() && !isLabel2D) {
+    const bool isHierarchy = (getClassID() == CV_TYPES::HIERARCHY_OBJECT);
+    // Only ensure (create) a per-view representation for entities that are
+    // truly visible -- not for entities that are only drawn because they are
+    // selected.  ensureRepresentation() inherits donor visibility which can
+    // incorrectly cascade a "hidden" state from another view.
+    // HIERARCHY_OBJECT (folders) are pure containers with no VTK geometry;
+    // they must NOT get per-view reps or they will incorrectly block
+    // children's visibility through the cascade.
+    const bool trueVisible =
+            m_visible && isDisplayedIn(context.display);
+    if (context.display && trueVisible && !isFixedId() && !isLabel2D &&
+        !isHierarchy) {
         viewRep = ecvRepresentationManager::instance().ensureRepresentation(
                 const_cast<ccHObject*>(this), context.display);
-    } else if (context.display) {
+    } else if (context.display && !isHierarchy) {
         viewRep = ecvRepresentationManager::instance().getRepresentation(
                 const_cast<ccHObject*>(this), context.display);
     }
@@ -1582,15 +1595,15 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     }
 
     const bool ancestorVisible = context.visible;
-    if (viewRep && viewRep->hasVisibilityOverride()) {
+    if (isHierarchy) {
+        // Folders/containers always pass through parent visibility unchanged.
+        // They have no geometry of their own and must never block children.
+        context.visible = ancestorVisible;
+    } else if (viewRep && viewRep->hasVisibilityOverride()) {
         context.visible = viewRep->isVisible() && ancestorVisible;
     } else if (drawInThisContext) {
         context.visible = m_visible && ancestorVisible;
     } else {
-        // Container objects (folders, root "DB Tree") that have no
-        // representation in the current view should NOT block their
-        // children's visibility.  Only entities that actually draw
-        // (drawInThisContext == true) participate in the cascade.
         context.visible = ancestorVisible;
     }
     const bool cascadeVisible = context.visible;
@@ -1931,6 +1944,17 @@ void ccHObject::hideObject_recursive(bool recursive) {
                 }
             }
             if (prim) continue;
+        } else if (hdInfo.hideType == ENTITY_TYPE::ECV_OCTREE ||
+                   hdInfo.hideType == ENTITY_TYPE::ECV_KDTREE) {
+            ccOctreeProxy* proxy = ccHObjectCaster::ToOctreeProxy(obj);
+            if (proxy && proxy->getOctree()) {
+                proxy->setOctreeVisibale(false);
+                CC_DRAW_CONTEXT octCtx = context;
+                octCtx.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+                octCtx.forceRedraw = true;
+                proxy->getOctree()->draw(octCtx);
+            }
+            continue;
         }
 
         context.viewID = hdInfo.hideId;
@@ -1946,10 +1970,24 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
     context.display = mergeDisplay(nullptr, this);
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
+
+        if ((hdInfo.hideType == ENTITY_TYPE::ECV_OCTREE ||
+             hdInfo.hideType == ENTITY_TYPE::ECV_KDTREE)) {
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            ccOctreeProxy* proxy = ccHObjectCaster::ToOctreeProxy(obj);
+            if (proxy && proxy->getOctree()) {
+                proxy->setOctreeVisibale(visible);
+                CC_DRAW_CONTEXT octCtx = context;
+                octCtx.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+                octCtx.forceRedraw = true;
+                proxy->getOctree()->draw(octCtx);
+            }
+            continue;
+        }
+
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
         if (context.display) context.display->hideShowEntities(context);
-        // Unbound entities: propagate to all registered views.
         if (!getDisplay()) {
             for (auto* view : ecvViewManager::instance().getAllViews()) {
                 if (!view || view == context.display) continue;

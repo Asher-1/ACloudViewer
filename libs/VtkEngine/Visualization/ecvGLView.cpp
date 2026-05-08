@@ -12,8 +12,8 @@
 #include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
-#include <ecvGenericVisualizer3D.h>
 #include <ecvGenericPointCloud.h>
+#include <ecvGenericVisualizer3D.h>
 #include <ecvHObject.h>
 #include <ecvRenderingTools.h>
 #include <ecvRepresentationManager.h>
@@ -32,10 +32,10 @@
 #include <cmath>
 #include <cstring>
 
+#include "ImageVis.h"
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
-#include "ImageVis.h"
 #include "VtkDisplayTools.h"
 #include "VtkVis.h"
 
@@ -135,9 +135,8 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     }
 
     connect(m_visualizer3D.get(),
-            &ecvGenericVisualizer3D::interactorPointPickedEvent,
-            m_displayTools, &ecvDisplayTools::onPointPicking,
-            Qt::UniqueConnection);
+            &ecvGenericVisualizer3D::interactorPointPickedEvent, m_displayTools,
+            &ecvDisplayTools::onPointPicking, Qt::UniqueConnection);
 
     if (!m_hotZone && m_vtkWidget) {
         m_hotZone = new ecvHotZone(m_vtkWidget);
@@ -154,15 +153,19 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
             vtkRenderer* ren = m_visualizer3D->getCurrentRenderer();
             if (ren) {
                 const int* renSz = ren->GetSize();
-                CVLog::PrintDebug(QString("[VtkProjTest] RendererSize=(%1,%2) "
-                                    "WidgetSize=(%3,%4) DPR=%5 "
-                                    "glViewport=(%6,%7)")
-                                     .arg(renSz[0]).arg(renSz[1])
-                                     .arg(m_vtkWidget ? m_vtkWidget->width() : -1)
-                                     .arg(m_vtkWidget ? m_vtkWidget->height() : -1)
-                                     .arg(m_vtkWidget ? m_vtkWidget->devicePixelRatioF() : -1)
-                                     .arg(m_ctx.glViewport.width())
-                                     .arg(m_ctx.glViewport.height()));
+                CVLog::PrintDebug(
+                        QString("[VtkProjTest] RendererSize=(%1,%2) "
+                                "WidgetSize=(%3,%4) DPR=%5 "
+                                "glViewport=(%6,%7)")
+                                .arg(renSz[0])
+                                .arg(renSz[1])
+                                .arg(m_vtkWidget ? m_vtkWidget->width() : -1)
+                                .arg(m_vtkWidget ? m_vtkWidget->height() : -1)
+                                .arg(m_vtkWidget
+                                             ? m_vtkWidget->devicePixelRatioF()
+                                             : -1)
+                                .arg(m_ctx.glViewport.width())
+                                .arg(m_ctx.glViewport.height()));
                 ccHObject::Container clouds;
                 m_globalDBRoot->filterChildren(clouds, true,
                                                CV_TYPES::POINT_CLOUD, true);
@@ -178,17 +181,17 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
                         CCVector3d ourProj;
                         cam.project(*pt, ourProj);
                         CVLog::PrintDebug(QString("[VtkProjTest] pt=(%1,%2,%3) "
-                                            "VTK_disp=(%4,%5,%6) "
-                                            "Our_proj=(%7,%8,%9)")
-                                             .arg(pt->x,0,'g',6)
-                                             .arg(pt->y,0,'g',6)
-                                             .arg(pt->z,0,'g',6)
-                                             .arg(disp[0],0,'g',6)
-                                             .arg(disp[1],0,'g',6)
-                                             .arg(disp[2],0,'g',6)
-                                             .arg(ourProj.x,0,'g',6)
-                                             .arg(ourProj.y,0,'g',6)
-                                             .arg(ourProj.z,0,'g',6));
+                                                  "VTK_disp=(%4,%5,%6) "
+                                                  "Our_proj=(%7,%8,%9)")
+                                                  .arg(pt->x, 0, 'g', 6)
+                                                  .arg(pt->y, 0, 'g', 6)
+                                                  .arg(pt->z, 0, 'g', 6)
+                                                  .arg(disp[0], 0, 'g', 6)
+                                                  .arg(disp[1], 0, 'g', 6)
+                                                  .arg(disp[2], 0, 'g', 6)
+                                                  .arg(ourProj.x, 0, 'g', 6)
+                                                  .arg(ourProj.y, 0, 'g', 6)
+                                                  .arg(ourProj.z, 0, 'g', 6));
                         ++s_vtkProjLogCount;
                     }
                 }
@@ -205,7 +208,8 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
                 if (rep && rep->getView() == this) {
                     redraw(false, true);
                 }
-            });
+            },
+            Qt::QueuedConnection);
 }
 
 // ================================================================
@@ -214,6 +218,19 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
 
 void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     if (!m_visualizer3D || !m_vtkWidget) return;
+
+    // Prevent re-entrant redraws.  VTK's vtkRenderWindow::Render() is
+    // not re-entrant; calling it while already inside a render causes
+    // deadlocks or corrupted state.  This can happen when:
+    //   - ensureRepresentation() emits representationChanged during draw
+    //   - ecvRedrawScope destructor triggers redraw inside updateLabel()
+    //   - any signal handler calls redraw() during the draw pipeline
+    if (m_insideRedraw) {
+        CVLog::Warning("[ecvGLView::redraw] RE-ENTRANT redraw blocked (view %d)", m_uniqueID);
+        m_shouldBeRefreshed = true;
+        return;
+    }
+    m_insideRedraw = true;
 
     // Ensure effectiveCtx() resolves to THIS view's context for the
     // entire duration of drawing. Without this guard, any code calling
@@ -302,8 +319,7 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
 
     // --- Scale bar ---
     if (m_ctx.displayOverlayEntities && m_vtkWidget) {
-        m_vtkWidget->setScaleBarVisible(
-                !m_ctx.viewportParams.perspectiveView);
+        m_vtkWidget->setScaleBarVisible(!m_ctx.viewportParams.perspectiveView);
     }
 
     // --- Messages overlay (per-view) ---
@@ -334,10 +350,9 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
             for (const auto& message : m_messagesToDisplay) {
                 switch (message.position) {
                     case ecvGenericGLDisplay::LOWER_LEFT_MESSAGE: {
-                        ecvDisplayTools::RenderText(10, ll_currentHeight,
-                                                    message.message, font,
-                                                    ecvColor::defaultLabelBkgColor,
-                                                    "", this);
+                        ecvDisplayTools::RenderText(
+                                10, ll_currentHeight, message.message, font,
+                                ecvColor::defaultLabelBkgColor, "", this);
                         int messageHeight = fm.height();
                         ll_currentHeight -= (messageHeight + margin);
                     } break;
@@ -345,15 +360,15 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
                         QRect rect = fm.boundingRect(message.message);
                         int x = (m_ctx.glViewport.width() - rect.width()) / 2;
                         int y = uc_currentHeight + rect.height();
-                        ecvDisplayTools::RenderText(x, y, message.message,
-                                                    font,
-                                                    ecvColor::defaultLabelBkgColor,
-                                                    "", this);
+                        ecvDisplayTools::RenderText(
+                                x, y, message.message, font,
+                                ecvColor::defaultLabelBkgColor, "", this);
                         uc_currentHeight += (rect.height() + margin);
                     } break;
                     case ecvGenericGLDisplay::SCREEN_CENTER_MESSAGE: {
                         QFont newFont(font);
-                        int fontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+                        int fontSize =
+                                ecvDisplayTools::GetOptimizedFontSize(12);
                         newFont.setPointSize(fontSize);
                         QRect rect = QFontMetrics(newFont).boundingRect(
                                 message.message);
@@ -378,7 +393,18 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
 
     m_visualizer3D->getRenderWindow()->Render();
     if (m_vtkWidget) m_vtkWidget->update();
-    m_shouldBeRefreshed = false;
+
+    m_insideRedraw = false;
+
+    // If a redraw was requested while we were inside this redraw (e.g.
+    // from representationChanged or ecvRedrawScope during the draw pipeline),
+    // schedule it now via a queued single-shot so VTK finishes cleanly first.
+    if (m_shouldBeRefreshed) {
+        m_shouldBeRefreshed = false;
+        QTimer::singleShot(0, this, [this]() { redraw(false, true); });
+    } else {
+        m_shouldBeRefreshed = false;
+    }
 }
 
 void ecvGLView::refresh(bool only2D) {
@@ -429,11 +455,13 @@ void ecvGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     } else {
         m_winDBRoot->addChild(obj);
     }
+    ecvViewManager::instance().invalidateLabelCache();
 }
 
 void ecvGLView::removeFromOwnDB(ccHObject* obj) {
     if (m_winDBRoot) {
         m_winDBRoot->removeChild(obj);
+        ecvViewManager::instance().invalidateLabelCache();
     }
 }
 
@@ -505,12 +533,10 @@ void ecvGLView::syncVtkCameraToContext() {
         double ps = cam->GetParallelScale();
         int h = ren->GetSize()[1];
         if (h > 0) {
-            m_ctx.viewportParams.pixelSize =
-                    static_cast<float>(2.0 * ps / h);
+            m_ctx.viewportParams.pixelSize = static_cast<float>(2.0 * ps / h);
         }
     } else {
-        m_ctx.viewportParams.fov_deg =
-                static_cast<float>(cam->GetViewAngle());
+        m_ctx.viewportParams.fov_deg = static_cast<float>(cam->GetViewAngle());
     }
 
     // Viewport from renderer's actual size
@@ -557,7 +583,8 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
         m_ctx.autoPivotCandidate = center;
         if (m_visualizer3D) {
             m_visualizer3D->resetCamera(box);
-            if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+            if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
+                        m_visualizer3D.get())) {
                 vis->setCenterOfRotation(center.x, center.y, center.z);
             }
             m_visualizer3D->getRenderWindow()->Render();
@@ -690,8 +717,7 @@ void ecvGLView::displayNewMessage(const QString& message,
 
     ecvMessageToDisplay msg;
     msg.message = message;
-    msg.messageValidity_sec =
-            m_timer.elapsed() / 1000 + displayMaxDelay_sec;
+    msg.messageValidity_sec = m_timer.elapsed() / 1000 + displayMaxDelay_sec;
     msg.position = pos;
     msg.type = type;
     m_messagesToDisplay.push_back(msg);
@@ -709,7 +735,8 @@ void ecvGLView::zoomGlobal() {
         CCVector3d center = CCVector3d::fromArray(bbox.getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
         m_ctx.autoPivotCandidate = center;
-        if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+        if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
+                    m_visualizer3D.get())) {
             vis->setCenterOfRotation(center.x, center.y, center.z);
         }
     } else {
@@ -735,6 +762,11 @@ void ecvGLView::draw(const ccGLDrawContext& context, const ccHObject* obj) {
 
 void ecvGLView::drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) {
     if (m_displayTools) m_displayTools->drawBBox(context, bbox);
+}
+
+void ecvGLView::drawBBoxBatch(const ccGLDrawContext& context,
+                              const std::vector<ccBBox>& boxes) {
+    if (m_displayTools) m_displayTools->drawBBoxBatch(context, boxes);
 }
 
 void ecvGLView::drawOrientedBBox(const ccGLDrawContext& context,
@@ -810,8 +842,7 @@ QImage ecvGLView::renderToImage(int zoomFactor,
         return m_visualizer3D->renderToImage(zoomFactor, renderOverlayItems,
                                              silent, viewport);
     }
-    if (!silent)
-        CVLog::Error("[ecvGLView::renderToImage] No 3D visualizer");
+    if (!silent) CVLog::Error("[ecvGLView::renderToImage] No 3D visualizer");
     return {};
 }
 

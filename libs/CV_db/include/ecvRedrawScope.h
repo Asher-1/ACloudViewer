@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "ecvHObject.h"
-#include "ecvViewManager.h"
-
 #include <QCoreApplication>
 #include <QThread>
+
+#include "ecvHObject.h"
+#include "ecvViewManager.h"
 
 // RAII guard for selective scene redraw.
 //
@@ -39,7 +39,10 @@ class CV_DB_LIB_API ecvRedrawScope final {
 public:
     explicit ecvRedrawScope(bool only2D = false, bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (!isMainThread()) { m_dismissed = true; return; }
+        if (!isMainThread()) {
+            m_dismissed = true;
+            return;
+        }
         if (ecvViewManager::instance().hasAnyView()) {
             ecvViewManager::instance().setRedrawRecursive(false);
         }
@@ -49,7 +52,10 @@ public:
                             bool only2D = false,
                             bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (!isMainThread()) { m_dismissed = true; return; }
+        if (!isMainThread()) {
+            m_dismissed = true;
+            return;
+        }
         if (ecvViewManager::instance().hasAnyView()) {
             ecvViewManager::instance().setRedrawRecursive(false);
         }

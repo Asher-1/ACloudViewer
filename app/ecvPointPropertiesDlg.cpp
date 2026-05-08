@@ -202,9 +202,9 @@ void ccPointPropertiesDlg::exportCurrentLabel() {
                                : 0);
     } else {
         labelObject = (m_label && m_label->size() > 0 ? m_label : 0);
-        if (labelObject && !ecvViewManager::use2D()) {
-            m_label->setDisplayedIn2D(false);
-            m_label->displayPointLegend(true);
+        if (labelObject) {
+            m_label->setDisplayedIn2D(true);
+            m_label->displayPointLegend(m_label->size() == 3);
         }
     }
 
@@ -297,9 +297,20 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
     }
 
     m_label->setVisible(true);
+    m_label->setDisplayedIn2D(true);
     m_label->displayPointLegend(
             m_label->size() ==
             3);  // we need to display 'A', 'B' and 'C' for 3-points labels
+
+    {
+        ecvGenericGLDisplay* pickView =
+                picked.pickView ? picked.pickView
+                                : ecvViewManager::instance().getActiveView();
+        if (pickView && m_label->getDisplay() != pickView) {
+            m_label->setDisplay(pickView);
+        }
+    }
+
     if (m_label->size() == 1 && ecvViewManager::instance().activeWidget()) {
         if (auto* view = ecvViewManager::instance().getEffectiveView()) {
             const float gw = static_cast<float>(view->glWidth());

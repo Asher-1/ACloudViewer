@@ -54,6 +54,12 @@ void ccOctreeProxy::drawMeOnly(CC_DRAW_CONTEXT& context) {
         if (MACRO_FastEntityPicking(context)) return;
     }
 
-    setOctreeVisibale(isEnabled());
+    // Sync octree visibility: both enabled AND visible must be true.
+    // forceRedraw means "re-render already visible things", NOT
+    // "make invisible things visible".
+    bool shouldBeVisible = isEnabled() && isVisible();
+    setOctreeVisibale(shouldBeVisible);
+    // Always call draw() even when hiding — the octree draw code needs to run
+    // its cleanup path (removing VTK actors for previously visible cells).
     m_octree->draw(context);
 }

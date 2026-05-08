@@ -26,8 +26,8 @@
 #include <ecvViewManager.h>
 
 // VtkEngine
-#include "../../Visualization/ecvGLView.h"
 #include "../../Visualization/VtkVis.h"
+#include "../../Visualization/ecvGLView.h"
 
 // QT
 #include <QAction>
@@ -63,15 +63,14 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
     // Safety net: rebind to new view's visualizer whenever the active
     // view changes, in case any code path updates the active view without
     // going through MainWindow::rebindToolsToActiveView().
-    connect(&ecvViewManager::instance(),
-            &ecvViewManager::activeViewChanged, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
             [this](ecvGenericGLDisplay* newActive,
                    ecvGenericGLDisplay* /*oldActive*/) {
                 auto* glView = dynamic_cast<ecvGLView*>(newActive);
                 if (glView && glView->getVisualizer3D()) {
-                    setVisualizer(
-                            static_cast<ecvGenericVisualizer3D*>(
-                                    glView->getVisualizer3D()));
+                    setVisualizer(static_cast<ecvGenericVisualizer3D*>(
+                            glView->getVisualizer3D()));
                 }
             });
 

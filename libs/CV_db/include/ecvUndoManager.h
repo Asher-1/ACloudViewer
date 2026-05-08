@@ -1,10 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // libs/CV_db/include/ecvUndoManager.h
 #pragma once
 
-#include "CV_db.h"
-
 #include <QObject>
 #include <QUndoStack>
+
+#include "CV_db.h"
 
 class QAction;
 

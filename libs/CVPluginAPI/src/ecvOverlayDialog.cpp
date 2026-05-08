@@ -88,8 +88,8 @@ bool ccOverlayDialog::start() {
     // so overlay dialogs (qCompass, etc.) follow the active split view.
     // Also re-emit shown() to trigger repositionOverlayDialog so the
     // toolbar moves to the correct corner of the NEW active pane.
-    connect(&ecvViewManager::instance(),
-            &ecvViewManager::activeViewChanged, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
             [this](ecvGenericGLDisplay* /*newActive*/,
                    ecvGenericGLDisplay* /*oldActive*/) {
                 if (!m_processing) return;
@@ -116,8 +116,8 @@ bool ccOverlayDialog::start() {
 void ccOverlayDialog::stop(bool accepted) {
     m_processing = false;
 
-    disconnect(&ecvViewManager::instance(),
-               &ecvViewManager::activeViewChanged, this, nullptr);
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+               this, nullptr);
 
     // auto-hide
     hide();

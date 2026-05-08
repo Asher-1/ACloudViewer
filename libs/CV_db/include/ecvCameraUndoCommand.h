@@ -1,10 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // libs/CV_db/include/ecvCameraUndoCommand.h
 #pragma once
 
-#include "CV_db.h"
-
 #include <QUndoCommand>
 #include <functional>
+
+#include "CV_db.h"
 
 struct CV_DB_LIB_API ecvCameraState {
     double pos[3] = {0, 0, 0};
@@ -25,10 +32,10 @@ public:
                          ApplyFunc applyFunc,
                          const QString& label = QStringLiteral("Camera"),
                          QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent)
-        , m_before(before)
-        , m_after(after)
-        , m_apply(std::move(applyFunc)) {}
+        : QUndoCommand(label, parent),
+          m_before(before),
+          m_after(after),
+          m_apply(std::move(applyFunc)) {}
 
     void undo() override {
         if (m_apply) m_apply(m_before);

@@ -68,8 +68,8 @@ float ecvViewRepresentation::effectiveLineWidth() const {
     return 2.0f;
 }
 
-ecvViewRepresentation::RenderMode
-ecvViewRepresentation::effectiveRenderMode() const {
+ecvViewRepresentation::RenderMode ecvViewRepresentation::effectiveRenderMode()
+        const {
     if (m_properties.renderMode.has_value()) {
         return m_properties.renderMode.value();
     }

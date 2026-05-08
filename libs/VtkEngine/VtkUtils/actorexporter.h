@@ -10,9 +10,10 @@
 /// @file actorexporter.h
 /// @brief Exports VTK actor geometry to file (e.g. STL).
 
+#include <vtkSmartPointer.h>
+
 #include <QRunnable>
 #include <QString>
-#include <vtkSmartPointer.h>
 
 #include "qVTK.h"
 

@@ -23,6 +23,7 @@
 #include <CV_db/include/ecvDisplayTools.h>
 #include <CV_db/include/ecvHObjectCaster.h>
 #include <CV_db/include/ecvViewManager.h>
+
 #include "Visualization/ecvGLView.h"
 
 vtkStandardNewMacro(CustomVtkCaptionWidget);
@@ -94,8 +95,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
     // ProcessClickableItems returns false, and it would trigger doPicking()
     // which might clear our selection.
     if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        if (view->viewContext())
-            view->viewContext()->widgetClicked = true;
+        if (view->viewContext()) view->viewContext()->widgetClicked = true;
     }
 
     // Stop deferred picking timer immediately if already active

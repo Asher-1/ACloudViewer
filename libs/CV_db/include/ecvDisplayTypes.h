@@ -153,8 +153,7 @@ struct ecvPickingParameters {
 
 struct CV_DB_LIB_API AxesGridProperties {
     bool visible = false;
-    CCVector3 color =
-            CCVector3(255, 255, 255);
+    CCVector3 color = CCVector3(255, 255, 255);
     double lineWidth = 1.0;
     double spacing = 1.0;
     int subdivisions = 10;

@@ -129,6 +129,8 @@ public:
 
     void draw(const ccGLDrawContext& context, const ccHObject* obj) override;
     void drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) override;
+    void drawBBoxBatch(const ccGLDrawContext& context,
+                       const std::vector<ccBBox>& boxes) override;
     void drawOrientedBBox(const ccGLDrawContext& context,
                           const ecvOrientedBBox* obb) override;
     void updateMeshTextures(const ccGLDrawContext& context,
@@ -409,6 +411,7 @@ private:
 
     // -- Refresh / Timer (not pushed/pulled) --
     bool m_shouldBeRefreshed = false;
+    bool m_insideRedraw = false;
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;

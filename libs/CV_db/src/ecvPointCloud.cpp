@@ -36,9 +36,9 @@
 #include "ecvPointCloudLOD.h"
 #include "ecvPolyline.h"
 #include "ecvProgressDialog.h"
+#include "ecvRepresentationManager.h"
 #include "ecvScalarField.h"
 #include "ecvSensor.h"
-#include "ecvRepresentationManager.h"
 #include "ecvViewRepresentation.h"
 
 // Qt
@@ -2960,9 +2960,9 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         // Per-view normals override via ecvViewRepresentation
         if (context.display) {
-            auto* viewRep = ecvRepresentationManager::instance()
-                    .getRepresentation(const_cast<ccPointCloud*>(this),
-                                       context.display);
+            auto* viewRep =
+                    ecvRepresentationManager::instance().getRepresentation(
+                            const_cast<ccPointCloud*>(this), context.display);
             if (viewRep && viewRep->properties().showNormals.has_value()) {
                 glParams.showNorms = viewRep->effectiveShowNormals() &&
                                      hasNormals() &&

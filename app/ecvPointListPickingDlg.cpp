@@ -529,6 +529,7 @@ void ccPointListPickingDlg::updateList() {
 }
 
 void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
+    CVLog::PrintDebug("[PointPicking] processPickedPoint() ENTER");
     if (!picked.entity || picked.entity != m_associatedEntity ||
         !MainWindow::TheInstance())
         return;
@@ -567,17 +568,23 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     newLabel->setCollapsed(true);
     {
         ecvGenericGLDisplay* pickView = picked.pickView;
-        if (!pickView)
-            pickView = ecvViewManager::instance().getActiveView();
+        if (!pickView) pickView = ecvViewManager::instance().getActiveView();
         if (pickView) {
             newLabel->setDisplay(pickView);
         } else if (picked.entity && picked.entity->getDisplay()) {
             newLabel->setDisplay(picked.entity->getDisplay());
         }
     }
-    QSize size;
-    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+    QSize size(1, 1);
+    if (ecvGenericGLDisplay* labelDisplay = newLabel->getDisplay()) {
+        if (QWidget* labelWidget = labelDisplay->asWidget()) {
+            size = labelWidget->size();
+        }
+    } else if (QWidget* w = ecvViewManager::instance().activeWidget()) {
         size = w->size();
+    }
+    if (size.width() <= 0 || size.height() <= 0) {
+        size = QSize(1, 1);
     }
 
     newLabel->setPosition(
@@ -588,8 +595,14 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     if (!m_orderedLabelsContainer) {
         m_orderedLabelsContainer = new ccHObject(s_pickedPointContainerName);
         m_associatedEntity->addChild(m_orderedLabelsContainer);
+        m_orderedLabelsContainer->setDisplay(newLabel->getDisplay());
+        m_orderedLabelsContainer->setEnabled(true);
+        m_orderedLabelsContainer->setVisible(true);
         MainWindow::TheInstance()->addToDB(m_orderedLabelsContainer, false,
                                            true, false, false);
+    } else if (newLabel->getDisplay() &&
+               m_orderedLabelsContainer->getDisplay() != newLabel->getDisplay()) {
+        m_orderedLabelsContainer->setDisplay(newLabel->getDisplay());
     }
     assert(m_orderedLabelsContainer);
     m_orderedLabelsContainer->addChild(newLabel);

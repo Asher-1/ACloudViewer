@@ -1,12 +1,19 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "CV_db.h"
-#include "ecvPointCloud.h"
-#include "ecvScalarField.h"
+#pragma once
 
 #include <QUndoCommand>
 #include <functional>
 #include <vector>
+
+#include "CV_db.h"
+#include "ecvPointCloud.h"
+#include "ecvScalarField.h"
 
 class CV_DB_LIB_API ecvScalarFieldEditCommand : public QUndoCommand {
 public:
@@ -20,13 +27,13 @@ public:
                               RefreshFunc refreshFunc,
                               const QString& label,
                               QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent)
-        , m_cloud(cloud)
-        , m_sfIndex(sfIndex)
-        , m_startIndex(startIndex)
-        , m_beforeValues(beforeValues)
-        , m_afterValues(afterValues)
-        , m_refresh(std::move(refreshFunc)) {}
+        : QUndoCommand(label, parent),
+          m_cloud(cloud),
+          m_sfIndex(sfIndex),
+          m_startIndex(startIndex),
+          m_beforeValues(beforeValues),
+          m_afterValues(afterValues),
+          m_refresh(std::move(refreshFunc)) {}
 
     void undo() override {
         applyValues(m_beforeValues);
@@ -45,15 +52,16 @@ public:
     int id() const override { return 2004; }
 
     qint64 estimatedMemoryBytes() const {
-        return static_cast<qint64>((m_beforeValues.size() + m_afterValues.size())
-                                   * sizeof(ScalarType));
+        return static_cast<qint64>(
+                (m_beforeValues.size() + m_afterValues.size()) *
+                sizeof(ScalarType));
     }
 
 private:
     void applyValues(const std::vector<ScalarType>& values) {
         if (!m_cloud) return;
-        ccScalarField* sf = static_cast<ccScalarField*>(
-            m_cloud->getScalarField(m_sfIndex));
+        ccScalarField* sf =
+                static_cast<ccScalarField*>(m_cloud->getScalarField(m_sfIndex));
         if (!sf) return;
         for (size_t i = 0; i < values.size(); ++i) {
             sf->setValue(m_startIndex + static_cast<unsigned>(i), values[i]);

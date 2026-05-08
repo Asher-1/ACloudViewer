@@ -1,16 +1,24 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "CV_db.h"
-#include "ecvGLMatrix.h"
+#pragma once
 
 #include <QUndoCommand>
 #include <functional>
+
+#include "CV_db.h"
+#include "ecvGLMatrix.h"
 
 class ccHObject;
 
 class CV_DB_LIB_API ecvTransformCommand : public QUndoCommand {
 public:
-    using RestoreFunc = std::function<void(ccHObject*, const ccGLMatrix& transform)>;
+    using RestoreFunc =
+            std::function<void(ccHObject*, const ccGLMatrix& transform)>;
     using RefreshFunc = std::function<void()>;
 
     ecvTransformCommand(ccHObject* entity,
@@ -21,13 +29,13 @@ public:
                         RefreshFunc refreshFunc,
                         const QString& label = QStringLiteral("Transform"),
                         QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent)
-        , m_entity(entity)
-        , m_historyBefore(historyBefore)
-        , m_historyAfter(historyAfter)
-        , m_appliedTransform(appliedTransform)
-        , m_restore(std::move(restoreFunc))
-        , m_refresh(std::move(refreshFunc)) {}
+        : QUndoCommand(label, parent),
+          m_entity(entity),
+          m_historyBefore(historyBefore),
+          m_historyAfter(historyAfter),
+          m_appliedTransform(appliedTransform),
+          m_restore(std::move(restoreFunc)),
+          m_refresh(std::move(refreshFunc)) {}
 
     void undo() override {
         if (m_entity && m_restore) {

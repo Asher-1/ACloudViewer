@@ -183,7 +183,9 @@ public:
     static const ecvViewportParameters& GetViewportParameters(
             const ecvViewContext& ctx);
     static bool GetClick3DPos(const ecvViewContext& ctx,
-                              int x, int y, CCVector3d& P3D);
+                              int x,
+                              int y,
+                              CCVector3d& P3D);
 
     // ================================================================
     // Phase N2: Per-view context parameterized overloads (continued)
@@ -203,7 +205,8 @@ public:
     static CCVector3d GetRealCameraCenter(const ecvViewContext& ctx);
     static void SetCameraPos(ecvViewContext& ctx, const CCVector3d& P);
     static float ComputePerspectiveZoom(const ecvViewContext& ctx);
-    static void LockRotationAxis(ecvViewContext& ctx, bool state,
+    static void LockRotationAxis(ecvViewContext& ctx,
+                                 bool state,
                                  const CCVector3d& axis);
     static void ShowPivotSymbol(ecvViewContext& ctx, bool state);
 
@@ -252,7 +255,8 @@ public:
             bool withGLfeatures,
             ecvProjectionMetrics* metrics = nullptr,
             double* eyeOffset = nullptr);
-    static void SetPerspectiveState(ecvViewContext& ctx, bool state,
+    static void SetPerspectiveState(ecvViewContext& ctx,
+                                    bool state,
                                     bool objectCenteredView);
 
     // N5: Picking Pipeline
@@ -260,7 +264,8 @@ public:
                                           const ecvPickingParameters& params);
     static void DrawPivot(const ecvViewContext& ctx);
 
-    // -- ecvGenericGLDisplay implementation (shared display tools, managed by ecvViewManager) --
+    // -- ecvGenericGLDisplay implementation (shared display tools, managed by
+    // ecvViewManager) --
 
     int getUniqueID() const override { return m_uniqueID; }
     QString getTitle() const override { return QStringLiteral("RenderView1"); }
@@ -454,6 +459,12 @@ public:  // Main 3D layer drawing methods
                                 const ccBBox* bbox) {
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->drawBBox(context, bbox);
+    }
+
+    inline static void DrawBBoxBatch(const CC_DRAW_CONTEXT& context,
+                                     const std::vector<ccBBox>& boxes) {
+        if (auto* dt = ecvViewManager::instance().displayTools())
+            dt->drawBBoxBatch(context, boxes);
     }
 
     /**
@@ -1063,8 +1074,9 @@ public:  // Main interface accessors
                            av->getViewportParameters())
                     .viewMat;
         }
-        return ecvViewManager::instance().resolveViewContext().viewportParams
-                .viewMat;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .viewportParams.viewMat;
     }
 
     /**
@@ -1857,7 +1869,7 @@ public:  // visualization matrix transformation
                                        int viewport = 0) {
         if (auto* dt = ecvViewManager::instance().displayTools())
             return dt->renderToImage(zoomFactor, renderOverlayItems, silent,
-                                    viewport);
+                                     viewport);
         return QImage();
     }
     inline virtual QImage renderToImage(int zoomFactor = 1,
@@ -1885,10 +1897,12 @@ public:  // visualization matrix transformation
     static void DrawClickableItems(int xStart, int& yStart);
     //! Phase M4 parameterized overload: accepts explicit per-view state so
     //! callers (ecvGLView) can bypass ScopedHotZoneRender.
-    static void DrawClickableItems(int xStart, int& yStart,
-                                   HotZone*& hotZone,
-                                   std::vector<ecvClickableItem>& clickableItems,
-                                   ecvGenericGLDisplay* display);
+    static void DrawClickableItems(
+            int xStart,
+            int& yStart,
+            HotZone*& hotZone,
+            std::vector<ecvClickableItem>& clickableItems,
+            ecvGenericGLDisplay* display);
     static void RenderText(
             int x,
             int y,
@@ -1918,7 +1932,9 @@ public:  // visualization matrix transformation
 
     //! Returns whether the window is in exclusive full screen mode or not
     inline static bool ExclusiveFullScreen() {
-        return ecvViewManager::instance().resolveViewContext().exclusiveFullscreen;
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .exclusiveFullscreen;
     }
     inline static bool ExclusiveFullScreen(ecvGenericGLDisplay* view) {
         if (view && view->viewContext())
@@ -2089,7 +2105,8 @@ public:  // visualization matrix transformation
 
     //! Returns pivot visibility
     inline static PivotVisibility GetPivotVisibility() {
-        return GetPivotVisibility(ecvViewManager::instance().resolveViewContext());
+        return GetPivotVisibility(
+                ecvViewManager::instance().resolveViewContext());
     }
 
     //! Shows or hide the pivot symbol
@@ -2466,13 +2483,17 @@ public:  // event representation
         auto* av = ecvViewManager::instance().getEffectiveView();
         auto* dt = ecvViewManager::instance().displayTools();
         if (av && av != dt) return av->glWidth();
-        return ecvViewManager::instance().resolveViewContext().glViewport.width();
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .glViewport.width();
     }
     static int GlHeight() {
         auto* av = ecvViewManager::instance().getEffectiveView();
         auto* dt = ecvViewManager::instance().displayTools();
         if (av && av != dt) return av->glHeight();
-        return ecvViewManager::instance().resolveViewContext().glViewport.height();
+        return ecvViewManager::instance()
+                .resolveViewContext()
+                .glViewport.height();
     }
     static QSize GlSize() { return QSize(GlWidth(), GlHeight()); }
 
