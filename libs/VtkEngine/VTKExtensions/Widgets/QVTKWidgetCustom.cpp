@@ -620,8 +620,7 @@ void QVTKWidgetCustom::collectAllLabels(std::vector<ccHObject*>& labels) const {
     ccHObject* ownDB = disp->getOwnDB();
     if (sceneDB)
         sceneDB->filterChildren(labels, true, CV_TYPES::LABEL_2D, false);
-    if (ownDB)
-        ownDB->filterChildren(labels, true, CV_TYPES::LABEL_2D, false);
+    if (ownDB) ownDB->filterChildren(labels, true, CV_TYPES::LABEL_2D, false);
     m_cachedLabels = labels;
     m_labelCacheGen = gen;
 }
@@ -770,15 +769,17 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     QVTKOpenGLNativeWidget::mouseDoubleClickEvent(event);
 }
 
-// Check whether an entity's ancestor chain is visible in a specific view
-// by inspecting per-view representations.  Returns false if any ancestor
-// has a per-view override that hides it in the given view.
+// Check whether an entity's ancestor chain is visible in a specific view.
+// Returns false if any ancestor is globally disabled.
+// HIERARCHY_OBJECT (folders) are pure containers: their per-view reps must
+// NOT block children's visibility, so we skip them in the rep check.
 static bool isAncestorVisibleInView(ccHObject* entity,
                                     ecvGenericGLDisplay* view) {
     if (!view) return true;
     auto& repMgr = ecvRepresentationManager::instance();
     for (ccHObject* p = entity->getParent(); p; p = p->getParent()) {
         if (!p->isEnabled()) return false;
+        if (p->getClassID() == CV_TYPES::HIERARCHY_OBJECT) continue;
         auto* rep = repMgr.getRepresentation(p, view);
         if (rep && rep->hasVisibilityOverride() && !rep->isVisible()) {
             return false;
@@ -1058,9 +1059,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                        .arg(P.z);
                 }
                 displayTarget()->displayNewMessage(
-                        message,
-                        ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false, 5,
-                        ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
+                        message, ecvGenericGLDisplay::LOWER_LEFT_MESSAGE, false,
+                        5, ecvGenericGLDisplay::SCREEN_SIZE_MESSAGE);
                 displayTarget()->redraw(true);
             }
         }
@@ -1166,8 +1166,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                      QApplication::keyboardModifiers() ==
                              Qt::ControlModifier)) {
                     ecvDisplayTools::UpdateActiveItemsList(
-                            curLastMousePos().x(),
-                            curLastMousePos().y(), true);
+                            curLastMousePos().x(), curLastMousePos().y(), true);
                 }
             }
         } else if (!m_labelClickedOnPress) {
@@ -1612,16 +1611,19 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             auto* pickDt = displayTarget();
             qint64 elapsed = pickDt ? pickDt->elapsedMs() : 0;
             qint64 clickTime = curLastClickTime();
-            bool timeOk = elapsed < clickTime + CC_MAX_PICKING_CLICK_DURATION_MS;
-            CVLog::PrintDebug(QString("[mouseRelease] Pick check: "
-                                 "widgetClicked=%1 elapsed=%2 clickTime=%3 "
-                                 "threshold=%4 timeOk=%5 mouseHasMoved=%6")
-                                 .arg(curWidgetClicked())
-                                 .arg(elapsed).arg(clickTime)
-                                 .arg(CC_MAX_PICKING_CLICK_DURATION_MS)
-                                 .arg(timeOk).arg(mouseHasMoved));
-            if (!curWidgetClicked() && timeOk)
-            {
+            bool timeOk =
+                    elapsed < clickTime + CC_MAX_PICKING_CLICK_DURATION_MS;
+            CVLog::PrintDebug(
+                    QString("[mouseRelease] Pick check: "
+                            "widgetClicked=%1 elapsed=%2 clickTime=%3 "
+                            "threshold=%4 timeOk=%5 mouseHasMoved=%6")
+                            .arg(curWidgetClicked())
+                            .arg(elapsed)
+                            .arg(clickTime)
+                            .arg(CC_MAX_PICKING_CLICK_DURATION_MS)
+                            .arg(timeOk)
+                            .arg(mouseHasMoved));
+            if (!curWidgetClicked() && timeOk) {
                 int x = curLastMousePos().x();
                 int y = curLastMousePos().y();
 
@@ -1642,7 +1644,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                         QRect roi = l->getLabelROI();
                         if (roi.isValid() && roi.contains(x, y)) {
                             if (!l->isSelected()) {
-                                emit ecvViewManager::instance().entitySelectionChanged(l);
+                                emit ecvViewManager::instance()
+                                        .entitySelectionChanged(l);
                                 QApplication::processEvents();
                             }
                             labelPicked = true;
@@ -1657,16 +1660,17 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                     if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
                         curLastMousePos() = event->pos();
                         CVLog::PrintDebug(QString("[mouseRelease] Starting "
-                                            "deferred pick at (%1,%2) "
-                                            "ownerView=%3 pickMode=%4")
-                                             .arg(event->pos().x())
-                                             .arg(event->pos().y())
-                                             .arg(m_ownerView != nullptr)
-                                             .arg(static_cast<int>(
-                                                     curPickingMode())));
+                                                  "deferred pick at (%1,%2) "
+                                                  "ownerView=%3 pickMode=%4")
+                                                  .arg(event->pos().x())
+                                                  .arg(event->pos().y())
+                                                  .arg(m_ownerView != nullptr)
+                                                  .arg(static_cast<int>(
+                                                          curPickingMode())));
                         if (m_ownerView) {
                             m_ownerView->startDeferredPicking();
-                        } else if (auto* dtPick = ecvViewManager::instance().displayTools()) {
+                        } else if (auto* dtPick = ecvViewManager::instance()
+                                                          .displayTools()) {
                             dtPick->startDeferredPickingFor(resolveDisplay());
                         }
                     }
@@ -1697,7 +1701,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                     QRect roi = l->getLabelROI();
                     if (roi.isValid() && roi.contains(event->x(), event->y())) {
                         if (!l->isSelected()) {
-                            emit ecvViewManager::instance().entitySelectionChanged(l);
+                            emit ecvViewManager::instance()
+                                    .entitySelectionChanged(l);
                             QApplication::processEvents();
                         }
                         if (l->acceptClick(event->x(), event->y(),

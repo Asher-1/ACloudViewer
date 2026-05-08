@@ -1,10 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
-#include "CV_db.h"
-
-#include <QUndoCommand>
 #include <QString>
+#include <QUndoCommand>
 #include <functional>
+
+#include "CV_db.h"
 
 template <typename T>
 class ecvPropertyChangeCommand : public QUndoCommand {
@@ -20,14 +27,14 @@ public:
                              RefreshFunc refresh,
                              const QString& label,
                              QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent)
-        , m_entityId(entityId)
-        , m_propertyKey(propertyKey)
-        , m_before(before)
-        , m_after(after)
-        , m_setter(std::move(setter))
-        , m_refresh(std::move(refresh))
-        , m_mergeId(computeMergeId(entityId, propertyKey)) {}
+        : QUndoCommand(label, parent),
+          m_entityId(entityId),
+          m_propertyKey(propertyKey),
+          m_before(before),
+          m_after(after),
+          m_setter(std::move(setter)),
+          m_refresh(std::move(refresh)),
+          m_mergeId(computeMergeId(entityId, propertyKey)) {}
 
     void undo() override {
         if (m_setter) m_setter(m_before);

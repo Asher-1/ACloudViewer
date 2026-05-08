@@ -1,10 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // libs/CV_db/include/ecvLayoutUndoCommand.h
 #pragma once
 
-#include "CV_db.h"
-
 #include <QJsonObject>
 #include <QUndoCommand>
+
+#include "CV_db.h"
 
 class ecvViewLayoutProxy;
 
@@ -15,10 +22,10 @@ public:
                          const QJsonObject& afterState,
                          const QString& label,
                          QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent)
-        , m_layout(layout)
-        , m_before(beforeState)
-        , m_after(afterState) {}
+        : QUndoCommand(label, parent),
+          m_layout(layout),
+          m_before(beforeState),
+          m_after(afterState) {}
 
     void undo() override;
     void redo() override;

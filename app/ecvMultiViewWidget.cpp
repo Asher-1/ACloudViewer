@@ -7,6 +7,8 @@
 
 #include "ecvMultiViewWidget.h"
 
+#include "ecvSpreadSheetView.h"
+
 #include <ecvGLView.h>
 #include <ecvHObject.h>
 #include <ecvRepresentationManager.h>
@@ -182,8 +184,8 @@ void ecvMultiViewWidget::reload() {
     // view, leaving other visible panes blank/gray.  Schedule a
     // deferred redraw for every view in this layout.
     QTimer::singleShot(0, this, [this]() {
-        for (auto it = m_viewFrames.constBegin();
-             it != m_viewFrames.constEnd(); ++it) {
+        for (auto it = m_viewFrames.constBegin(); it != m_viewFrames.constEnd();
+             ++it) {
             if (auto* display = it.key()) {
                 QWidget* vw = display->asWidget();
                 if (vw && vw->isVisible()) {
@@ -364,30 +366,26 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     auto* gridLayout = new QGridLayout(scrollContent);
 
     // Centered content with spacers (ParaView pqEmptyView.ui pattern)
-    gridLayout->addItem(
-            new QSpacerItem(20, 40, QSizePolicy::Minimum,
-                            QSizePolicy::Expanding),
-            0, 1);
-    gridLayout->addItem(
-            new QSpacerItem(40, 20, QSizePolicy::Expanding,
-                            QSizePolicy::Minimum),
-            1, 0);
-    gridLayout->addItem(
-            new QSpacerItem(40, 20, QSizePolicy::Expanding,
-                            QSizePolicy::Minimum),
-            1, 2);
-    gridLayout->addItem(
-            new QSpacerItem(20, 40, QSizePolicy::Minimum,
-                            QSizePolicy::Expanding),
-            2, 1);
+    gridLayout->addItem(new QSpacerItem(20, 40, QSizePolicy::Minimum,
+                                        QSizePolicy::Expanding),
+                        0, 1);
+    gridLayout->addItem(new QSpacerItem(40, 20, QSizePolicy::Expanding,
+                                        QSizePolicy::Minimum),
+                        1, 0);
+    gridLayout->addItem(new QSpacerItem(40, 20, QSizePolicy::Expanding,
+                                        QSizePolicy::Minimum),
+                        1, 2);
+    gridLayout->addItem(new QSpacerItem(20, 40, QSizePolicy::Minimum,
+                                        QSizePolicy::Expanding),
+                        2, 1);
 
     auto* actionsFrame = new QFrame(scrollContent);
     actionsFrame->setFrameShape(QFrame::NoFrame);
     auto* btnLayout = new QVBoxLayout(actionsFrame);
     btnLayout->setSpacing(2);
 
-    auto* title = new QLabel(
-            QStringLiteral("<b>Create View</b>"), actionsFrame);
+    auto* title =
+            new QLabel(QStringLiteral("<b>Create View</b>"), actionsFrame);
     title->setAlignment(Qt::AlignCenter);
     btnLayout->addWidget(title);
 
@@ -398,6 +396,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     };
     QList<ViewType> viewTypes = {
             {tr("Render View"), true},
+            {tr("Render View (Orthographic)"), true},
             {tr("Render View (Comparative)"), false},
             {tr("Bar Chart View"), false},
             {tr("Bar Chart View (Comparative)"), false},
@@ -414,10 +413,10 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
             {tr("Python View"), false},
             {tr("Quartile Chart View"), false},
             {tr("Slice View"), false},
-            {tr("SpreadSheet View"), false},
+            {tr("SpreadSheet View"), true},
     };
 
-    auto createViewForCell = [this, location]() {
+    auto createRenderViewForCell = [this, location]() {
         if (!m_viewFactory || !m_layout) return;
         auto* newView = m_viewFactory();
         if (!newView) return;
@@ -425,10 +424,10 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         ecvGenericGLDisplay* siblingView = nullptr;
         int parentIdx = ecvViewLayoutProxy::parent(location);
         if (parentIdx >= 0) {
-            int sibling = (location ==
-                           ecvViewLayoutProxy::firstChild(parentIdx))
-                                  ? ecvViewLayoutProxy::secondChild(parentIdx)
-                                  : ecvViewLayoutProxy::firstChild(parentIdx);
+            int sibling =
+                    (location == ecvViewLayoutProxy::firstChild(parentIdx))
+                            ? ecvViewLayoutProxy::secondChild(parentIdx)
+                            : ecvViewLayoutProxy::firstChild(parentIdx);
             siblingView = m_layout->getView(sibling);
         }
         if (!siblingView) {
@@ -448,12 +447,62 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         ecvViewManager::instance().setActiveView(newView);
     };
 
+    auto createOrthoViewForCell = [this, location, createRenderViewForCell]() {
+        createRenderViewForCell();
+        auto* view =
+                dynamic_cast<ecvGLView*>(m_layout ? m_layout->getView(location)
+                                                  : nullptr);
+        if (view) {
+            view->setPerspectiveState(false, true);
+        }
+    };
+
+    auto createSpreadSheetForCell = [this, location, frame]() {
+        auto* spreadSheet = new ecvSpreadSheetView(frame);
+        auto* oldWidget = m_cellFrames.value(location);
+        if (oldWidget) {
+            oldWidget->setParent(nullptr);
+            oldWidget->deleteLater();
+        }
+
+        QWidget* wrapped = spreadSheet;
+        if (m_frameFactory) {
+            wrapped = m_frameFactory(spreadSheet,
+                                     spreadSheet->title());
+        }
+        if (wrapped) {
+            wrapped->setProperty("CELL_INDEX", location);
+            m_cellFrames[location] = wrapped;
+            if (auto* parentSplitter =
+                        qobject_cast<QSplitter*>(frame->parentWidget())) {
+                int idx = parentSplitter->indexOf(frame);
+                if (idx >= 0) {
+                    frame->setParent(nullptr);
+                    parentSplitter->insertWidget(idx, wrapped);
+                    frame->deleteLater();
+                }
+            }
+        }
+    };
+
     for (const auto& vt : viewTypes) {
         auto* btn = new QPushButton(vt.label, actionsFrame);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setEnabled(vt.available);
         if (vt.available) {
-            connect(btn, &QPushButton::clicked, this, createViewForCell);
+            if (vt.label == tr("Render View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        createRenderViewForCell);
+            } else if (vt.label == tr("Render View (Orthographic)")) {
+                connect(btn, &QPushButton::clicked, this,
+                        createOrthoViewForCell);
+            } else if (vt.label == tr("SpreadSheet View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        createSpreadSheetForCell);
+            } else {
+                connect(btn, &QPushButton::clicked, this,
+                        createRenderViewForCell);
+            }
         }
         btnLayout->addWidget(btn);
     }
@@ -542,8 +591,8 @@ void ecvMultiViewWidget::makeFrameActive() {
 
 void ecvMultiViewWidget::redrawAllViews() {
     QTimer::singleShot(0, this, [this]() {
-        for (auto it = m_viewFrames.constBegin();
-             it != m_viewFrames.constEnd(); ++it) {
+        for (auto it = m_viewFrames.constBegin(); it != m_viewFrames.constEnd();
+             ++it) {
             if (auto* display = it.key()) {
                 auto* glView = dynamic_cast<ecvGLView*>(display);
                 if (glView) {

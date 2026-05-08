@@ -11,11 +11,11 @@
 #include <QJsonObject>
 
 #include "ecvDisplayTools.h"
-#include "ecvUndoManager.h"
 #include "ecvDrawContext.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvHObject.h"
 #include "ecvRepresentationManager.h"
+#include "ecvUndoManager.h"
 #include "ecvViewLayoutProxy.h"
 #include "ecvViewRepresentation.h"
 
@@ -445,7 +445,8 @@ void ecvViewManager::initDisplayTools(ecvDisplayTools* tools,
 }
 
 const ecvGui::ParamStruct& ecvViewManager::overriddenDisplayParameters() const {
-    if (m_overridenDisplayParametersEnabled) return m_overridenDisplayParameters;
+    if (m_overridenDisplayParametersEnabled)
+        return m_overridenDisplayParameters;
     return ecvGui::Parameters();
 }
 
@@ -483,7 +484,7 @@ void ecvViewManager::associateToActiveView(ccHObject* obj) {
 }
 
 void ecvViewManager::forceAssociateToView(ccHObject* obj,
-                                           ecvGenericGLDisplay* view) {
+                                          ecvGenericGLDisplay* view) {
     if (!obj || !view) return;
     obj->setDisplay_recursive(view);
 }
@@ -601,9 +602,7 @@ void ecvViewManager::restoreLayout(const QJsonObject& layout,
     }
 }
 
-ecvUndoManager* ecvViewManager::undoManager() {
-    return m_undoManager;
-}
+ecvUndoManager* ecvViewManager::undoManager() { return m_undoManager; }
 
 const ecvUndoManager* ecvViewManager::undoManager() const {
     return m_undoManager;

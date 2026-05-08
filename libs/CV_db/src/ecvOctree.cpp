@@ -9,6 +9,7 @@
 
 #include "ecvBox.h"
 #include "ecvCameraSensor.h"
+#include "ecvDisplayTools.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvNormalVectors.h"
 #include "ecvPointCloud.h"
@@ -21,13 +22,16 @@
 #include <RayAndBox.h>
 #include <ScalarFieldTools.h>
 
+#include <algorithm>
+
 ccOctree::ccOctree(ccGenericPointCloud* aCloud)
     : cloudViewer::DgmOctree(aCloud),
       m_theAssociatedCloudAsGPC(aCloud),
       m_displayedLevel(1),
       m_displayMode(WIRE),
       m_visible(true),
-      m_frustumIntersector(nullptr) {}
+      m_frustumIntersector(nullptr),
+      m_displayNeedsRefresh(false) {}
 
 ccOctree::~ccOctree() {
     if (m_frustumIntersector) {
@@ -73,22 +77,24 @@ bool ccOctree::intersectWithFrustum(ccCameraSensor* sensor,
 }
 
 void ccOctree::setDisplayedLevel(int level) {
+    level = std::max(1, std::min(level, MAX_OCTREE_LEVEL));
     if (level != m_displayedLevel) {
         m_displayedLevel = level;
-        // m_glListIsDeprecated = true;
+        m_displayNeedsRefresh = true;
     }
 }
 
 void ccOctree::setDisplayMode(DisplayMode mode) {
     if (m_displayMode != mode) {
         m_displayMode = mode;
-        // m_glListIsDeprecated = true;
+        m_displayNeedsRefresh = true;
     }
 }
 
 void ccOctree::clear() {
     // warn the others that the octree organization is going to change
     emit updated();
+    m_displayNeedsRefresh = true;
 
     DgmOctree::clear();
 }
@@ -124,19 +130,99 @@ void ccOctree::draw(CC_DRAW_CONTEXT& context) {
 
     if (!ecvViewManager::instance().activeWidget()) return;
 
-    if (m_displayMode == WIRE) {
-        // this display mode is too heavy to be stored as a GL list
-        //(therefore we always render it dynamically)
+    ecvGenericGLDisplay* display = context.display;
+    if (!display) display = ecvViewManager::instance().getEffectiveView();
+    if (!display) return;
 
-        void* additionalParameters[] = {
-                reinterpret_cast<void*>(m_frustumIntersector),
-                reinterpret_cast<void*>(&m_visible)};
-        executeFunctionForAllCellsAtLevel(m_displayedLevel, &DrawCellAsABox,
-                                          additionalParameters);
-    } else {
-        glDrawParams glParams;
-        m_theAssociatedCloudAsGPC->getDrawingParameters(glParams);
+    QString batchID =
+            QString("Octree-batch-%1").arg(m_displayedLevel);
+
+    if (m_displayNeedsRefresh || m_lastDrawnLevel != m_displayedLevel ||
+        m_lastDrawnMode != m_displayMode) {
+        if (!m_lastBatchID.isEmpty()) {
+            CC_DRAW_CONTEXT rmCtx;
+            rmCtx.display = display;
+            rmCtx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+            rmCtx.removeViewID = m_lastBatchID;
+            display->removeEntities(rmCtx);
+        }
     }
+    m_displayNeedsRefresh = false;
+
+    if (!m_visible) {
+        m_lastBatchID = batchID;
+        m_lastDrawnLevel = m_displayedLevel;
+        m_lastDrawnMode = m_displayMode;
+        return;
+    }
+
+    std::vector<ccBBox> cellBoxes;
+    void* collectParams[] = {reinterpret_cast<void*>(&cellBoxes),
+                             reinterpret_cast<void*>(&m_displayMode)};
+    executeFunctionForAllCellsAtLevel(m_displayedLevel, &CollectCellBounds,
+                                     collectParams);
+
+    if (!cellBoxes.empty()) {
+        CC_DRAW_CONTEXT batchCtx;
+        batchCtx.display = display;
+        batchCtx.viewID = batchID;
+        batchCtx.bbDefaultCol = ecvColor::green;
+
+        switch (m_displayMode) {
+            case WIRE:
+                batchCtx.meshRenderingMode =
+                        MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
+                batchCtx.opacity = 1.0;
+                break;
+            case MEAN_POINTS:
+                batchCtx.meshRenderingMode =
+                        MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+                batchCtx.opacity = 1.0;
+                batchCtx.viewID = batchID + "-points";
+                break;
+            case MEAN_CUBES:
+                batchCtx.meshRenderingMode =
+                        MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+                batchCtx.opacity = 0.8;
+                break;
+        }
+
+        display->drawBBoxBatch(batchCtx, cellBoxes);
+    }
+
+    m_lastBatchID = (m_displayMode == MEAN_POINTS)
+                            ? batchID + "-points"
+                            : batchID;
+    m_lastDrawnLevel = m_displayedLevel;
+    m_lastDrawnMode = m_displayMode;
+}
+
+bool ccOctree::CollectCellBounds(
+        const cloudViewer::DgmOctree::octreeCell& cell,
+        void** additionalParameters,
+        cloudViewer::NormalizedProgress* nProgress /*=0*/) {
+    auto* cellBoxes =
+            static_cast<std::vector<ccBBox>*>(additionalParameters[0]);
+    auto* dispMode =
+            static_cast<DisplayMode*>(additionalParameters[1]);
+
+    CCVector3 bbMin, bbMax;
+    cell.parentOctree->computeCellLimits(cell.truncatedCode, cell.level, bbMin,
+                                         bbMax, true);
+
+    if (*dispMode == MEAN_POINTS) {
+        CCVector3 cellCenter;
+        cell.parentOctree->computeCellCenter(cell.truncatedCode, cell.level,
+                                             cellCenter, true);
+        PointCoordinateType halfMarker =
+                (bbMax.x - bbMin.x) * static_cast<PointCoordinateType>(0.08);
+        CCVector3 offset(halfMarker, halfMarker, halfMarker);
+        cellBoxes->emplace_back(cellCenter - offset, cellCenter + offset);
+    } else {
+        cellBoxes->emplace_back(bbMin, bbMax);
+    }
+
+    return true;
 }
 
 bool ccOctree::DrawCellAsABox(
@@ -146,6 +232,9 @@ bool ccOctree::DrawCellAsABox(
     ccOctreeFrustumIntersector* ofi =
             static_cast<ccOctreeFrustumIntersector*>(additionalParameters[0]);
     bool visible = *(static_cast<bool*>(additionalParameters[1]));
+    auto* display =
+            static_cast<ecvGenericGLDisplay*>(additionalParameters[2]);
+
     CCVector3 bbMin, bbMax;
     cell.parentOctree->computeCellLimits(cell.truncatedCode, cell.level, bbMin,
                                          bbMax, true);
@@ -154,30 +243,79 @@ bool ccOctree::DrawCellAsABox(
             ccOctreeFrustumIntersector::CELL_OUTSIDE_FRUSTUM;
     if (ofi) vis = ofi->positionFromFrustum(cell.truncatedCode, cell.level);
 
+    MESH_RENDERING_MODE renderMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
+    if (additionalParameters[3]) {
+        renderMode =
+                *(static_cast<MESH_RENDERING_MODE*>(additionalParameters[3]));
+    }
+
+    DisplayMode dispMode = WIRE;
+    if (additionalParameters[4]) {
+        dispMode = *(static_cast<DisplayMode*>(additionalParameters[4]));
+    }
+
+    // Encode cell level in the viewID to avoid ID collisions across levels.
     CC_DRAW_CONTEXT context;
-    context.viewID = QString("Octree-") + QString::number(cell.truncatedCode);
+    context.display = display;
+    context.viewID = QString("Octree-%1-%2")
+                             .arg(cell.level)
+                             .arg(cell.truncatedCode);
+    context.meshRenderingMode = renderMode;
+
+    switch (dispMode) {
+        case MEAN_POINTS:
+            context.opacity = 1.0;
+            context.meshRenderingMode = MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+            break;
+        case MEAN_CUBES:
+            context.opacity = 0.8;
+            context.meshRenderingMode = MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+            break;
+        default:
+            context.opacity = 1.0;
+            break;
+    }
 
     if (visible) {
-        // outside
         if (vis == ccOctreeFrustumIntersector::CELL_OUTSIDE_FRUSTUM) {
             context.bbDefaultCol = ecvColor::green;
         } else {
             context.defaultLineWidth = 2;
-            // inside
             if (vis == ccOctreeFrustumIntersector::CELL_INSIDE_FRUSTUM)
                 context.bbDefaultCol = ecvColor::magenta;
-            // intersecting
             else
                 context.bbDefaultCol = ecvColor::blue;
         }
 
-        context.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
-        ccBBox cellBox(bbMin, bbMax);
-        if (context.display) context.display->drawBBox(context, &cellBox);
+        if (dispMode == MEAN_POINTS) {
+            CCVector3 cellCenter;
+            cell.parentOctree->computeCellCenter(cell.truncatedCode,
+                                                 cell.level, cellCenter, true);
+            PointCoordinateType halfMarker =
+                    (bbMax.x - bbMin.x) * static_cast<PointCoordinateType>(0.08);
+            CCVector3 offset(halfMarker, halfMarker, halfMarker);
+            ccBBox cellBox(cellCenter - offset, cellCenter + offset);
+            if (display) {
+                display->drawBBox(context, &cellBox);
+            } else {
+                ecvDisplayTools::DrawBBox(context, &cellBox);
+            }
+        } else {
+            ccBBox cellBox(bbMin, bbMax);
+            if (display) {
+                display->drawBBox(context, &cellBox);
+            } else {
+                ecvDisplayTools::DrawBBox(context, &cellBox);
+            }
+        }
     } else {
         context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
         context.removeViewID = context.viewID;
-        if (context.display) context.display->removeEntities(context);
+        if (display) {
+            display->removeEntities(context);
+        } else {
+            ecvDisplayTools::RemoveEntities(context);
+        }
     }
 
     return true;

@@ -112,8 +112,8 @@
 #include <Visualization/ecvGLView.h>
 
 // CV_IO_LIB
-#include <AsciiFilter.h>
 #include <AcvProjectFilter.h>
+#include <AsciiFilter.h>
 #include <BinFilter.h>
 #include <DepthMapFileFilter.h>
 #include <ecvGlobalShiftManager.h>
@@ -310,7 +310,8 @@ QWidget* MainWindow::getActiveGLWidget() const {
 }
 
 static ecvGenericVisualizer3D* getActiveVisualizer3D() {
-    // Phase M3: all views are ecvGLView — direct cast, no displayTools fallback.
+    // Phase M3: all views are ecvGLView — direct cast, no displayTools
+    // fallback.
     auto* view = ecvViewManager::instance().getEffectiveView();
     auto* glView = dynamic_cast<ecvGLView*>(view);
     return glView ? glView->getVisualizer3D() : nullptr;
@@ -946,8 +947,7 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
             ecvViewManager::instance().setActiveView(survivor);
             rebindToolsToActiveView(survivor);
         } else {
-            CVLog::Warning(
-                    "[onViewClosingFromLayout] No surviving ecvGLView.");
+            CVLog::Warning("[onViewClosingFromLayout] No surviving ecvGLView.");
             rebindToolsToActiveView(nullptr);
         }
     }
@@ -1066,10 +1066,9 @@ void MainWindow::connectActions() {
         undoAction->setShortcut(QKeySequence::Undo);
         QAction* redoAction = mgr->createRedoAction(this, tr("&Redo"));
         redoAction->setShortcut(QKeySequence::Redo);
-        if (QAction* anchor =
-                    (!m_ui->menuEdit->actions().isEmpty()
-                             ? m_ui->menuEdit->actions().first()
-                             : nullptr)) {
+        if (QAction* anchor = (!m_ui->menuEdit->actions().isEmpty()
+                                       ? m_ui->menuEdit->actions().first()
+                                       : nullptr)) {
             m_ui->menuEdit->insertAction(anchor, redoAction);
             m_ui->menuEdit->insertAction(redoAction, undoAction);
             m_ui->menuEdit->insertSeparator(anchor);
@@ -1546,7 +1545,6 @@ void MainWindow::connectActions() {
             fsActiveAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
             fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
         }
-
     }
 
     // Lock View Size (ParaView-style: Tools → Lock View Size)
@@ -2558,9 +2556,10 @@ void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
     if (!primaryVis || !newVis || !newWidget) return;
 
     auto* sourceView = ecvViewManager::instance().getActiveView();
-    const ecvViewContext& srcCtx = (sourceView && sourceView->viewContext())
-        ? *sourceView->viewContext()
-        : ecvViewManager::instance().resolveViewContext();
+    const ecvViewContext& srcCtx =
+            (sourceView && sourceView->viewContext())
+                    ? *sourceView->viewContext()
+                    : ecvViewManager::instance().resolveViewContext();
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
@@ -2716,8 +2715,8 @@ void MainWindow::syncPivotButtonStates(ecvGenericGLDisplay* display) {
 
     auto* vis = glView->getVisualizer3D();
     if (vis) {
-        vis->setCenterAxesVisibility(
-                ctx.pivotVisibility != ecvGenericGLDisplay::PIVOT_HIDE);
+        vis->setCenterAxesVisibility(ctx.pivotVisibility !=
+                                     ecvGenericGLDisplay::PIVOT_HIDE);
     }
 }
 
@@ -2771,8 +2770,7 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
                 ecvViewManager::instance().setActiveView(survivor);
                 rebindToolsToActiveView(survivor);
             } else {
-                CVLog::Warning(
-                        "[prepareViewClose] No surviving ecvGLView.");
+                CVLog::Warning("[prepareViewClose] No surviving ecvGLView.");
                 rebindToolsToActiveView(nullptr);
             }
         }
@@ -3549,8 +3547,10 @@ void MainWindow::doActionOpenFile() {
 
     // Restore the target view — the modal dialog or subsequent event
     // processing may have shifted focus to a different view.
-    if (targetView && ecvViewManager::instance().getActiveView() != targetView) {
-        CVLog::PrintDebug("[doActionOpenFile] Restoring active view after dialog");
+    if (targetView &&
+        ecvViewManager::instance().getActiveView() != targetView) {
+        CVLog::PrintDebug(
+                "[doActionOpenFile] Restoring active view after dialog");
         ecvViewManager::instance().setActiveView(targetView);
     }
 
@@ -4514,9 +4514,8 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat) {
             };
             auto refreshFunc = [this]() { refreshSelected(); };
             undoMgr->push(new ecvTransformCommand(
-                entity, histBefore, histAfter, appliedMat,
-                restoreFunc, refreshFunc,
-                tr("Transform '%1'").arg(entity->getName())));
+                    entity, histBefore, histAfter, appliedMat, restoreFunc,
+                    refreshFunc, tr("Transform '%1'").arg(entity->getName())));
         }
     }
 
@@ -6166,7 +6165,8 @@ void MainWindow::zoomOnSelectedEntities() {
         auto* ownerView = vm.findViewForEntity(entity);
         if (!ownerView) ownerView = vm.getActiveView();
         if (!ownerView) continue;
-        viewBBoxes[ownerView] += entity->getDisplayBB_recursive(false, ownerView);
+        viewBBoxes[ownerView] +=
+                entity->getDisplayBB_recursive(false, ownerView);
     }
 
     if (viewBBoxes.isEmpty()) {
@@ -9205,8 +9205,8 @@ void MainWindow::doActionFastRegistration(FastRegistrationMode mode) {
             };
             auto refreshFunc = [this]() { refreshSelected(); };
             undoMgr->push(new ecvTransformCommand(
-                    entity, histBefore, histAfter, glTrans,
-                    restoreFunc, refreshFunc,
+                    entity, histBefore, histAfter, glTrans, restoreFunc,
+                    refreshFunc,
                     tr("Fast registration '%1'").arg(entity->getName())));
         }
     }
@@ -10203,8 +10203,8 @@ void MainWindow::doActionMatchBBCenters() {
             };
             auto refreshFunc = [this]() { refreshSelected(); };
             undoMgr->push(new ecvTransformCommand(
-                    entity, histBefore, histAfter, glTrans,
-                    restoreFunc, refreshFunc,
+                    entity, histBefore, histAfter, glTrans, restoreFunc,
+                    refreshFunc,
                     tr("Match BB center '%1'").arg(entity->getName())));
         }
     }

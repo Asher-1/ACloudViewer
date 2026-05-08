@@ -147,6 +147,8 @@ public:  // inherit from ecvDisplayTools
 
     virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                           const ccBBox* bbox) override;
+    virtual void drawBBoxBatch(const CC_DRAW_CONTEXT& context,
+                               const std::vector<ccBBox>& boxes) override;
 
     virtual void drawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                   const ecvOrientedBBox* obb) override;
@@ -455,7 +457,8 @@ public:
     // ===== Engine-to-view binding =====
 
     /// Bind the engine's active VTK pipeline to an ecvGLView's VtkVis + widget.
-    /// Called automatically when the active view changes (rebindToolsToActiveView).
+    /// Called automatically when the active view changes
+    /// (rebindToolsToActiveView).
     void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
 
     // ===== Category C: Per-view picking/rendering (MOVE to ecvGLView) =====

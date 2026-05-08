@@ -35,6 +35,7 @@
 #include <ecv2DViewportLabel.h>
 #include <ecvDisplayTools.h>
 #include <ecvDisplayTypes.h>
+#include <ecvEntityAddRemoveCommand.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericGLDisplay.h>
@@ -48,14 +49,13 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <ecvScalarField.h>
-#include <ecvEntityAddRemoveCommand.h>
 #include <ecvPropertyChangeCommand.h>
+#include <ecvRedrawScope.h>
+#include <ecvRepresentationManager.h>
+#include <ecvScalarField.h>
 #include <ecvScalarFieldEditCommand.h>
 #include <ecvUndoManager.h>
 #include <ecvViewManager.h>
-#include <ecvRedrawScope.h>
-#include <ecvRepresentationManager.h>
 #include <ecvViewRepresentation.h>
 
 // common
@@ -391,8 +391,8 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
 
     // Per-view visibility: refresh checkbox states when the active view
     // changes so that checkboxes reflect the new view's visibility.
-    connect(&ecvViewManager::instance(),
-            &ecvViewManager::activeViewChanged, this,
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
             [this](ecvGenericGLDisplay* /*newActive*/,
                    ecvGenericGLDisplay* /*oldActive*/) {
                 // Refresh all rows (including nested children) so that
@@ -720,10 +720,9 @@ void ccDBRoot::deleteSelectedEntities() {
                 MainWindow::TheInstance()->refreshAll();
             };
             undoMgr->push(new ecvEntityAddRemoveCommand(
-                object, parent,
-                ecvEntityAddRemoveCommand::Mode::Remove,
-                addFunc, removeFunc, refreshFunc,
-                tr("Delete '%1'").arg(object->getName())));
+                    object, parent, ecvEntityAddRemoveCommand::Mode::Remove,
+                    addFunc, removeFunc, refreshFunc,
+                    tr("Delete '%1'").arg(object->getName())));
         } else {
             delete object;
         }
@@ -816,8 +815,7 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
                 }
             }
 
-            if (!item->isEnabled())
-                return Qt::Unchecked;
+            if (!item->isEnabled()) return Qt::Unchecked;
 
             auto* mItem = const_cast<ccHObject*>(item);
             auto* activeView = ecvViewManager::instance().getActiveView();
@@ -827,8 +825,15 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
                     return item->isVisible() ? Qt::Checked : Qt::Unchecked;
                 }
 
-                auto* rep = ecvRepresentationManager::instance()
-                        .getRepresentation(mItem, activeView);
+                // Folders are pure containers — always show as checked
+                // when enabled.  They must not have per-view reps.
+                if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
+                    return Qt::Checked;
+                }
+
+                auto* rep =
+                        ecvRepresentationManager::instance().getRepresentation(
+                                mItem, activeView);
                 if (rep && rep->hasVisibilityOverride()) {
                     return rep->isVisible() ? Qt::Checked : Qt::Unchecked;
                 }
@@ -840,12 +845,15 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
             // Dim text for entities hidden in the active view via per-view
             // override, providing a visual hint that the entity is visible
             // in other views but not the current one.
+            // Folders are pure containers — never dim them.
+            if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) return {};
             auto* mutableItem = const_cast<ccHObject*>(item);
             if (item->isEnabled()) {
                 auto* activeView = ecvViewManager::instance().getActiveView();
                 if (activeView) {
-                    auto* rep = ecvRepresentationManager::instance()
-                            .getRepresentation(mutableItem, activeView);
+                    auto* rep =
+                            ecvRepresentationManager::instance()
+                                    .getRepresentation(mutableItem, activeView);
                     if (rep && rep->hasVisibilityOverride() &&
                         !rep->isVisible()) {
                         return QColor(160, 160, 160);
@@ -860,7 +868,7 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
             if (item->isEnabled() &&
                 ecvViewManager::instance().getAllViews().size() > 1) {
                 auto reps = ecvRepresentationManager::instance()
-                        .getRepresentationsForEntity(mutableItem);
+                                    .getRepresentationsForEntity(mutableItem);
                 int hiddenCount = 0;
                 for (auto* r : reps) {
                     if (r && r->hasVisibilityOverride() && !r->isVisible())
@@ -936,12 +944,16 @@ static void toggleFolderChildrenVisibility(ccHObject* parent,
 
 /// Recursively set per-view visibility for an entity and its children.
 /// Unlike global setEnabled(), this only affects the specified view.
+/// HIERARCHY_OBJECT (folders) are skipped — they are pure containers
+/// and must not get per-view reps that would block children's visibility.
 static void setPerViewVisibilityRecursive(ccHObject* entity,
                                           ecvGenericGLDisplay* view,
                                           bool visible) {
     if (!entity || !view) return;
 
-    if (entity->isKindOf(CV_TYPES::LABEL_2D)) {
+    if (entity->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
+        // Folder: recurse into children without creating a per-view rep
+    } else if (entity->isKindOf(CV_TYPES::LABEL_2D)) {
         entity->setVisible(visible);
         if (!visible) {
             if (auto* label = ccHObjectCaster::To2DLabel(entity)) {
@@ -949,8 +961,8 @@ static void setPerViewVisibilityRecursive(ccHObject* entity,
             }
         }
     } else {
-        auto* rep = ecvRepresentationManager::instance()
-                            .ensureRepresentation(entity, view);
+        auto* rep = ecvRepresentationManager::instance().ensureRepresentation(
+                entity, view);
         if (rep) {
             rep->setVisible(visible);
         }
@@ -1015,16 +1027,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     MainWindow::TheInstance()->refreshAll(true, false);
                 };
 
-                auto* undoMgr =
-                        ecvViewManager::instance().undoManager();
+                auto* undoMgr = ecvViewManager::instance().undoManager();
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<QString>(
-                            item->getUniqueID(),
-                            QStringLiteral("name"), oldName, newName,
+                            item->getUniqueID(), QStringLiteral("name"),
+                            oldName, newName,
                             [item](const QString& v) { item->setName(v); },
                             refreshAfter,
-                            tr("Rename '%1' to '%2'")
-                                    .arg(oldName, newName)));
+                            tr("Rename '%1' to '%2'").arg(oldName, newName)));
                 }
 
                 if (item->isEnabled() && item->isVisible()) {
@@ -1046,93 +1056,13 @@ bool ccDBRoot::setData(const QModelIndex& index,
             bool newVal = (value == Qt::Checked);
             auto& viewMgr = ecvViewManager::instance();
             auto* activeView = viewMgr.getActiveView();
-            bool multiView = (viewMgr.getAllViews().size() > 1);
 
-            if (multiView && activeView && item->isEnabled()) {
-                auto& repMgr = ecvRepresentationManager::instance();
-                bool isLabel = item->isKindOf(CV_TYPES::LABEL_2D);
-                bool wasBefore = true;
-
-                if (isLabel) {
-                    wasBefore = item->isVisible();
-                    if (wasBefore == newVal) return true;
-                    item->setVisible(newVal);
-                    if (!newVal) {
-                        if (auto* label = ccHObjectCaster::To2DLabel(item))
-                            label->clearLabel(true);
-                    }
-                } else {
-                    auto* rep =
-                            repMgr.ensureRepresentation(item, activeView);
-                    if (!rep) return false;
-
-                    wasBefore = rep->hasVisibilityOverride()
-                                        ? rep->isVisible()
-                                        : true;
-                    if (wasBefore == newVal) return true;
-
-                    rep->setVisible(newVal);
-                }
-
-                if (!newVal) {
-                    clearLabelsRecursive(item);
-                }
-
-                auto* undoMgr = viewMgr.undoManager();
-                if (undoMgr && wasBefore != newVal) {
-                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                            item->getUniqueID(),
-                            QStringLiteral("perViewVisible"), wasBefore,
-                            newVal,
-                            [item, activeView, isLabel](const bool& v) {
-                                auto& vm = ecvViewManager::instance();
-                                if (!vm.getAllViews().contains(activeView))
-                                    return;
-                                if (isLabel) {
-                                    item->setVisible(v);
-                                    if (!v) {
-                                        if (auto* lbl =
-                                                    ccHObjectCaster::To2DLabel(
-                                                            item))
-                                            lbl->clearLabel(true);
-                                    }
-                                } else {
-                                    auto* r =
-                                            ecvRepresentationManager::instance()
-                                                    .ensureRepresentation(
-                                                            item, activeView);
-                                    if (r) r->setVisible(v);
-                                }
-                            },
-                            []() {
-                                MainWindow::TheInstance()->refreshAll();
-                            },
-                            tr("Toggle visibility '%1' in active view")
-                                    .arg(item->getName())));
-                }
-
-                // Children were updated recursively, so use layoutChanged
-                // to refresh the entire subtree (not just the toggled row).
-                emit layoutChanged();
-
-                // Per-view visibility is evaluated in ccHObject::draw()
-                // during redraw().  A plain updateScene() only re-renders
-                // existing VTK actor states; we need a full redraw so the
-                // draw pipeline re-evaluates viewRep->isVisible() and
-                // updates VTK actor visibility accordingly.
-                {
-                    ecvRedrawScope scope(false, true);
-                    scope.markDirty(item);
-                }
-
-                return true;
-            }
-
-            // ── Single-view / global-disable path ──
-            // When only one view exists, or the item is being globally
-            // disabled, use the legacy setEnabled() path.
+            // Keep DB tree check behavior aligned with CloudCompare:
+            // checkbox toggles global enabled state of the entity subtree.
             {
                 bool wasBefore = item->isEnabled();
+                if (wasBefore == newVal) return true;
+
                 item->setEnabled(newVal);
 
                 // Bind unbound objects to the active view when re-enabling
@@ -1145,14 +1075,11 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 auto* undoMgr = viewMgr.undoManager();
                 if (undoMgr && wasBefore != newVal) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                            item->getUniqueID(),
-                            QStringLiteral("enabled"), wasBefore, newVal,
+                            item->getUniqueID(), QStringLiteral("enabled"),
+                            wasBefore, newVal,
                             [item](const bool& v) { item->setEnabled(v); },
-                            []() {
-                                MainWindow::TheInstance()->refreshAll();
-                            },
-                            tr("Toggle enable '%1'")
-                                    .arg(item->getName())));
+                            []() { MainWindow::TheInstance()->refreshAll(); },
+                            tr("Toggle enable '%1'").arg(item->getName())));
                 }
 
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
@@ -1288,9 +1215,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         redrawCCObjectAndChildren(item, false);
                     }
                 }
+                return true;
             }
-
-            return true;
         }
     }
 
@@ -2416,9 +2342,7 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
             continue;
         }
 
-        auto refreshAll = []() {
-            MainWindow::TheInstance()->refreshAll();
-        };
+        auto refreshAll = []() { MainWindow::TheInstance()->refreshAll(); };
 
         switch (prop) {
             case TG_ENABLE: {
@@ -2426,11 +2350,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->setEnabled(!wasBefore);
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("enabled"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) { item->setEnabled(v); },
-                        refreshAll,
-                        tr("Toggle enable '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("enabled"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->setEnabled(v); },
+                            refreshAll,
+                            tr("Toggle enable '%1'").arg(item->getName())));
                 }
             } break;
             case TG_VISIBLE: {
@@ -2439,14 +2363,14 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->setForceRedrawRecursive(true);
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("visible"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) {
-                            item->setVisible(v);
-                            item->setForceRedrawRecursive(true);
-                        },
-                        refreshAll,
-                        tr("Toggle visibility '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("visible"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) {
+                                item->setVisible(v);
+                                item->setForceRedrawRecursive(true);
+                            },
+                            refreshAll,
+                            tr("Toggle visibility '%1'").arg(item->getName())));
                 }
             } break;
             case TG_COLOR: {
@@ -2454,11 +2378,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->toggleColors();
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("colorsShown"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) { item->showColors(v); },
-                        refreshAll,
-                        tr("Toggle colors '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("colorsShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showColors(v); },
+                            refreshAll,
+                            tr("Toggle colors '%1'").arg(item->getName())));
                 }
             } break;
             case TG_NORMAL: {
@@ -2466,11 +2390,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->toggleNormals();
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("normalsShown"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) { item->showNormals(v); },
-                        refreshAll,
-                        tr("Toggle normals '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("normalsShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showNormals(v); },
+                            refreshAll,
+                            tr("Toggle normals '%1'").arg(item->getName())));
                 }
             } break;
             case TG_SF: {
@@ -2478,11 +2402,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->toggleSF();
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("sfShown"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) { item->showSF(v); },
-                        refreshAll,
-                        tr("Toggle SF '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("sfShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showSF(v); },
+                            refreshAll,
+                            tr("Toggle SF '%1'").arg(item->getName())));
                 }
             } break;
             case TG_3D_NAME: {
@@ -2490,11 +2414,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 item->toggleShowName();
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
-                        item->getUniqueID(), QStringLiteral("showNameIn3D"),
-                        wasBefore, !wasBefore,
-                        [item](const bool& v) { item->showNameIn3D(v); },
-                        refreshAll,
-                        tr("Toggle 3D name '%1'").arg(item->getName())));
+                            item->getUniqueID(), QStringLiteral("showNameIn3D"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showNameIn3D(v); },
+                            refreshAll,
+                            tr("Toggle 3D name '%1'").arg(item->getName())));
                 }
             } break;
         }
@@ -2597,10 +2521,11 @@ void ccDBRoot::editLabelScalarValue() {
             std::vector<ScalarType> afterVals = {newS};
             int sfIdx = pc->getScalarFieldIndexByName(sf->getName());
             undoMgr->push(new ecvScalarFieldEditCommand(
-                pc, sfIdx, P.index,
-                beforeVals, afterVals,
-                [pc]() { pc->redrawDisplay(); },
-                tr("Edit scalar value '%1'[%2]").arg(sf->getName()).arg(P.index)));
+                    pc, sfIdx, P.index, beforeVals, afterVals,
+                    [pc]() { pc->redrawDisplay(); },
+                    tr("Edit scalar value '%1'[%2]")
+                            .arg(sf->getName())
+                            .arg(P.index)));
         }
     }
 }

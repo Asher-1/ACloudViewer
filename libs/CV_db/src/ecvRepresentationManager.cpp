@@ -7,6 +7,7 @@
 
 #include "ecvRepresentationManager.h"
 
+#include "ecvHObject.h"
 #include "ecvViewManager.h"
 #include "ecvViewRepresentation.h"
 
@@ -87,8 +88,6 @@ ecvViewRepresentation* ecvRepresentationManager::ensureRepresentation(
         m_representations.insert(Key(entity, view), std::move(rep));
     }
 
-    // Apply inherited properties outside the lock — signal handlers can
-    // now safely acquire read locks without deadlock.
     if (donorProps.opacity.has_value() || donorProps.showNormals.has_value() ||
         donorProps.pointSize.has_value() || donorProps.lineWidth.has_value() ||
         donorProps.renderMode.has_value()) {

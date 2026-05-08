@@ -1,12 +1,19 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "CV_db.h"
-#include "ecvHObject.h"
+#pragma once
 
 #include <QTemporaryFile>
 #include <QUndoCommand>
 #include <functional>
 #include <memory>
+
+#include "CV_db.h"
+#include "ecvHObject.h"
 
 class CV_DB_LIB_API ecvEntityAddRemoveCommand : public QUndoCommand {
 public:

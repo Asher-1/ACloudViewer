@@ -1,13 +1,21 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // libs/CV_db/src/ecvUndoManager.cpp
 #include "ecvUndoManager.h"
+
+#include <CVLog.h>
+
+#include <algorithm>
+
 #include "ecvEntityAddRemoveCommand.h"
 #include "ecvScalarFieldEditCommand.h"
 
-#include <CVLog.h>
-#include <algorithm>
-
-ecvUndoManager::ecvUndoManager(QObject* parent)
-    : QObject(parent) {
+ecvUndoManager::ecvUndoManager(QObject* parent) : QObject(parent) {
     m_currentUndoLimit = 200;
     m_stack.setUndoLimit(m_currentUndoLimit);
 }
@@ -53,11 +61,11 @@ void ecvUndoManager::enforceMemoryBudget() {
         m_currentUndoLimit = newLimit;
         m_stack.setUndoLimit(m_currentUndoLimit);
         CVLog::Print(
-            QString("[UndoManager] Memory budget exceeded (%1 MB / %2 MB), "
-                    "reducing undo limit to %3")
-                .arg(m_estimatedMemory / (1024 * 1024))
-                .arg(m_memoryBudgetBytes / (1024 * 1024))
-                .arg(m_currentUndoLimit));
+                QString("[UndoManager] Memory budget exceeded (%1 MB / %2 MB), "
+                        "reducing undo limit to %3")
+                        .arg(m_estimatedMemory / (1024 * 1024))
+                        .arg(m_memoryBudgetBytes / (1024 * 1024))
+                        .arg(m_currentUndoLimit));
 
         m_estimatedMemory = 0;
         for (int i = 0; i < m_stack.count(); ++i) {

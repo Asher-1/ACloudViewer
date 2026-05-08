@@ -7,14 +7,14 @@
 
 #include "ecv2DLabel.h"
 
-#include <QCoreApplication>
-#include <QThread>
-
 #include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 #include <ecvViewRepresentation.h>
+
+#include <QCoreApplication>
+#include <QThread>
 
 #include "ecvBasicTypes.h"
 #include "ecvDisplayTools.h"
@@ -46,7 +46,6 @@
 #include <algorithm>  // For std::max, std::min
 
 namespace {
-
 
 static void mirrorUpdateScreenLikeDrawWidgetsSuffix() {
     if (QWidget* w = ecvViewManager::instance().activeWidget()) {
@@ -319,7 +318,8 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
     // from a worker thread causes SIGABRT (Qt assertion).
     // See: GDB backtrace — cc2DLabel::clear → ecvRedrawScope::~ecvRedrawScope
     //      → ecvGLView::redraw → vtkGenericOpenGLRenderWindow::Render.
-    if (getDisplay() && QThread::currentThread() == QCoreApplication::instance()->thread()) {
+    if (getDisplay() &&
+        QThread::currentThread() == QCoreApplication::instance()->thread()) {
         ecvRedrawScope scope({this});
     }
 }
@@ -1481,8 +1481,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     // Only display full panel when dispIn2D is set
     if (!m_dispIn2D) {
-        WIDGETS_PARAMETER capP(WIDGETS_TYPE::WIDGET_CAPTION,
-                               this->getViewId());
+        WIDGETS_PARAMETER capP(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
         capP.context.display = context.display;
         if (context.display) {
             context.display->removeWidgets(capP);

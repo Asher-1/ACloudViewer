@@ -30,13 +30,12 @@
 #include "VtkUtils/vtkutils.h"
 
 // SYSTEM
+#include <QJsonArray>
+#include <QJsonObject>
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <vector>
-
-#include <QJsonArray>
-#include <QJsonObject>
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -49,9 +48,9 @@
 #include <ecv2DLabel.h>
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
+#include <ecvCameraUndoCommand.h>
 #include <ecvColorScale.h>
 #include <ecvGBLSensor.h>
-#include <ecvCameraUndoCommand.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
@@ -866,11 +865,9 @@ void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
 
     // Give ourselves a little breathing room
     range[0] = 0.99 * range[0] -
-               (range[1] - range[0]) *
-                       ren->GetClippingRangeExpansion();
+               (range[1] - range[0]) * ren->GetClippingRangeExpansion();
     range[1] = 1.01 * range[1] +
-               (range[1] - range[0]) *
-                       ren->GetClippingRangeExpansion();
+               (range[1] - range[0]) * ren->GetClippingRangeExpansion();
 
     // Make sure near is not bigger than far
     range[0] = (range[0] >= range[1]) ? (0.01 * range[1]) : (range[0]);
@@ -891,10 +888,8 @@ void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
     // make sure the front clipping range is not too far from the far clippnig
     // range, this is to make sure that the zbuffer resolution is effectively
     // used
-    if (range[0] <
-        ren->GetNearClippingPlaneTolerance() * range[1]) {
-        range[0] = ren->GetNearClippingPlaneTolerance() *
-                   range[1];
+    if (range[0] < ren->GetNearClippingPlaneTolerance() * range[1]) {
+        range[0] = ren->GetNearClippingPlaneTolerance() * range[1];
     }
 }
 
@@ -3636,8 +3631,8 @@ VtkVis::CameraParams VtkVis::CameraParams::fromJson(const QJsonObject& obj) {
         p.fovy = obj[QStringLiteral("fovy")].toDouble(p.fovy);
     }
     if (obj.contains(QStringLiteral("parallelProjection"))) {
-        p.parallelProjection =
-                obj[QStringLiteral("parallelProjection")].toBool(p.parallelProjection);
+        p.parallelProjection = obj[QStringLiteral("parallelProjection")].toBool(
+                p.parallelProjection);
     }
     if (obj.contains(QStringLiteral("parallelScale"))) {
         p.parallelScale =
@@ -3698,9 +3693,7 @@ vtkSmartPointer<vtkCamera> VtkVis::getVtkCamera(int viewport) {
 // Camera undo / redo
 // ----------------------------------------------------------------
 
-void VtkVis::setUndoManager(ecvUndoManager* mgr) {
-    m_undoManager = mgr;
-}
+void VtkVis::setUndoManager(ecvUndoManager* mgr) { m_undoManager = mgr; }
 
 void VtkVis::applyCameraState(const ecvCameraState& state, int viewport) {
     vtkRenderer* ren = getCurrentRenderer(viewport);
@@ -3731,7 +3724,8 @@ inline ecvCameraState cameraParamsToUndoState(const VtkVis::CameraParams& p) {
     std::copy(p.view, p.view + 3, s.view);
     s.clip[0] = p.clip[0];
     s.clip[1] = p.clip[1];
-    // ecvCameraState::fovy is stored in degrees (matches vtkCamera SetViewAngle)
+    // ecvCameraState::fovy is stored in degrees (matches vtkCamera
+    // SetViewAngle)
     s.fovy = p.fovy * 180.0 / M_PI;
     s.parallelProjection = p.parallelProjection;
     s.parallelScale = p.parallelScale;
@@ -4491,8 +4485,7 @@ std::string VtkVis::pickItem(double x0 /* = -1*/,
 
     auto* firstRen = getRendererCollection()->GetFirstRenderer();
     if (!firstRen) return {};
-    m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1,
-                            firstRen);
+    m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1, firstRen);
     vtkActor* pickedActor = m_area_picker->GetActor();
     if (pickedActor) {
         return getIdByActor(pickedActor);

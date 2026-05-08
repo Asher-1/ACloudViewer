@@ -20,9 +20,9 @@
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
 #include "ecvProgressDialog.h"
+#include "ecvRepresentationManager.h"
 #include "ecvScalarField.h"
 #include "ecvSubMesh.h"
-#include "ecvRepresentationManager.h"
 #include "ecvViewRepresentation.h"
 
 // cloudViewer
@@ -2683,16 +2683,15 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
         // Per-view normals override
         bool perViewNorms = m_normalsDisplayed;
         if (context.display) {
-            auto* viewRep = ecvRepresentationManager::instance()
-                    .getRepresentation(const_cast<ccMesh*>(this),
-                                       context.display);
+            auto* viewRep =
+                    ecvRepresentationManager::instance().getRepresentation(
+                            const_cast<ccMesh*>(this), context.display);
             if (viewRep && viewRep->properties().showNormals.has_value()) {
                 perViewNorms = viewRep->effectiveShowNormals();
             }
         }
-        glParams.showNorms =
-                showTriNormals ||
-                (m_associatedCloud->hasNormals() && perViewNorms);
+        glParams.showNorms = showTriNormals ||
+                             (m_associatedCloud->hasNormals() && perViewNorms);
 
         // materials & textures
         bool applyMaterials = (hasMaterials() && materialsShown());

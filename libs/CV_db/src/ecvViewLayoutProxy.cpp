@@ -432,8 +432,8 @@ void ecvViewLayoutProxy::endUndoSet() {
     if (m_undoNesting == 0 && m_undoManager) {
         QJsonObject afterState = saveState();
         if (m_pendingBeforeState != afterState) {
-            m_undoManager->push(new ecvLayoutUndoCommand(this, m_pendingBeforeState,
-                                                         afterState, m_pendingLabel));
+            m_undoManager->push(new ecvLayoutUndoCommand(
+                    this, m_pendingBeforeState, afterState, m_pendingLabel));
         }
         m_pendingBeforeState = QJsonObject();
         m_pendingLabel.clear();

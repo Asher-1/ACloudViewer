@@ -46,8 +46,6 @@
 #include <ecvGuiParameters.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
-#include <ecvRepresentationManager.h>
-#include <ecvViewRepresentation.h>
 #include <ecvImage.h>
 #include <ecvIndexedTransformationBuffer.h>
 #include <ecvKdTree.h>
@@ -58,11 +56,13 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
 #include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 
 // Qt
 #include <QAbstractItemView>
@@ -561,8 +561,8 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
         bool normShown = _obj->normalsShown();
         auto* nView = ecvViewManager::instance().getEffectiveView();
         if (nView) {
-            auto* nRep = ecvRepresentationManager::instance()
-                    .getRepresentation(_obj, nView);
+            auto* nRep = ecvRepresentationManager::instance().getRepresentation(
+                    _obj, nView);
             if (nRep && nRep->properties().showNormals.has_value()) {
                 normShown = nRep->effectiveShowNormals();
             }
@@ -2435,8 +2435,9 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             float opacity = m_currentObject->getOpacity();
             auto* activeView = ecvViewManager::instance().getEffectiveView();
             if (activeView) {
-                auto* rep = ecvRepresentationManager::instance()
-                        .getRepresentation(m_currentObject, activeView);
+                auto* rep =
+                        ecvRepresentationManager::instance().getRepresentation(
+                                m_currentObject, activeView);
                 if (rep) {
                     opacity = rep->effectiveOpacity();
                 }
@@ -2590,8 +2591,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             auto* rep = ecvRepresentationManager::instance().getRepresentation(
                     m_currentObject, activeView);
             if (rep) {
-                spinBox->setValue(
-                        static_cast<int>(rep->effectivePointSize()));
+                spinBox->setValue(static_cast<int>(rep->effectivePointSize()));
             }
             break;
         }
@@ -2811,7 +2811,8 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             auto* nActiveView = ecvViewManager::instance().getEffectiveView();
             if (nActiveView) {
                 auto* nRep = ecvRepresentationManager::instance()
-                        .ensureRepresentation(m_currentObject, nActiveView);
+                                     .ensureRepresentation(m_currentObject,
+                                                           nActiveView);
                 if (nRep) {
                     auto nProps = nRep->properties();
                     nProps.showNormals = showNorms;
@@ -3078,6 +3079,15 @@ void ccPropertiesTreeDelegate::updateDisplay() {
         else if (object->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) {
             objectIsDisplayed = true;
         }
+        // Octree/KdTree proxies start with setVisible(false) but are drawn
+        // when enabled.  Property changes (display level, mode) must still
+        // trigger a redraw.
+        else if (object->isKindOf(CV_TYPES::POINT_OCTREE) ||
+                 object->isKindOf(CV_TYPES::POINT_KDTREE)) {
+            if (object->isEnabled()) {
+                objectIsDisplayed = true;
+            }
+        }
     }
 
     if (objectIsDisplayed) {
@@ -3335,10 +3345,12 @@ void ccPropertiesTreeDelegate::octreeDisplayModeChanged(int pos) {
         ccOctreeProxy* octreeProxy =
                 ccHObjectCaster::ToOctreeProxy(m_currentObject);
         if (octreeProxy) {
-            octreeProxy->setRedrawFlagRecursive(true);
+            octreeProxy->setForceRedrawRecursive(true);
         }
 
         updateDisplay();
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+        updateModel();
     }
 }
 
@@ -3352,7 +3364,16 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
     {
         octree->setDisplayedLevel(val);
 
-        updateCurrentEntity();
+        ccOctreeProxy* octreeProxy = ccHObjectCaster::ToOctreeProxy(m_currentObject);
+        if (octreeProxy) {
+            octreeProxy->setForceRedrawRecursive(true);
+        }
+
+        updateDisplay();
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_OCTREE_LEVEL;
 
         // we must also reset the properties display!
         updateModel();
@@ -3562,7 +3583,8 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                             // Per-view: also update the active view's rep
                             if (folderView) {
                                 auto* rep = ecvRepresentationManager::instance()
-                                        .ensureRepresentation(obj, folderView);
+                                                    .ensureRepresentation(
+                                                            obj, folderView);
                                 if (rep) {
                                     auto props = rep->properties();
                                     props.opacity = op;
@@ -3618,8 +3640,9 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
         // so different views can have different opacity for the same object.
         auto* activeView = ecvViewManager::instance().getEffectiveView();
         if (activeView) {
-            auto* rep = ecvRepresentationManager::instance()
-                    .ensureRepresentation(m_currentObject, activeView);
+            auto* rep =
+                    ecvRepresentationManager::instance().ensureRepresentation(
+                            m_currentObject, activeView);
             if (rep) {
                 auto props = rep->properties();
                 props.opacity = opacity;

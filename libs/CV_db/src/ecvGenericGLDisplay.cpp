@@ -55,7 +55,8 @@ int ecvGenericGLDisplay::getDevicePixelRatio() const {
 
 QJsonObject ecvGenericGLDisplay::saveLayoutCameraState() const { return {}; }
 
-void ecvGenericGLDisplay::loadLayoutCameraState(const QJsonObject& /*cameraJson*/) {}
+void ecvGenericGLDisplay::loadLayoutCameraState(
+        const QJsonObject& /*cameraJson*/) {}
 
 void ecvGenericGLDisplay::setInteractionMode(INTERACTION_FLAGS /*flags*/) {}
 

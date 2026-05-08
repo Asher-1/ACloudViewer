@@ -1,26 +1,32 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "ecvEntityAddRemoveCommand.h"
 
 #include <CVLog.h>
+
 #include <QDataStream>
 
-ecvEntityAddRemoveCommand::ecvEntityAddRemoveCommand(
-        ccHObject* entity,
-        ccHObject* parent,
-        Mode mode,
-        AddFunc addFunc,
-        RemoveFunc removeFunc,
-        RefreshFunc refreshFunc,
-        const QString& label,
-        QUndoCommand* parentCmd)
-    : QUndoCommand(label, parentCmd)
-    , m_entity(entity)
-    , m_parent(parent)
-    , m_mode(mode)
-    , m_ownsEntity(mode == Mode::Remove)
-    , m_addFunc(std::move(addFunc))
-    , m_removeFunc(std::move(removeFunc))
-    , m_refreshFunc(std::move(refreshFunc)) {
-}
+ecvEntityAddRemoveCommand::ecvEntityAddRemoveCommand(ccHObject* entity,
+                                                     ccHObject* parent,
+                                                     Mode mode,
+                                                     AddFunc addFunc,
+                                                     RemoveFunc removeFunc,
+                                                     RefreshFunc refreshFunc,
+                                                     const QString& label,
+                                                     QUndoCommand* parentCmd)
+    : QUndoCommand(label, parentCmd),
+      m_entity(entity),
+      m_parent(parent),
+      m_mode(mode),
+      m_ownsEntity(mode == Mode::Remove),
+      m_addFunc(std::move(addFunc)),
+      m_removeFunc(std::move(removeFunc)),
+      m_refreshFunc(std::move(refreshFunc)) {}
 
 ecvEntityAddRemoveCommand::~ecvEntityAddRemoveCommand() {
     if (m_ownsEntity && m_entity) {
@@ -74,14 +80,17 @@ void ecvEntityAddRemoveCommand::serializeToTemp() {
 
     m_tempFile = std::make_unique<QTemporaryFile>();
     if (!m_tempFile->open()) {
-        CVLog::Warning("[EntityUndoCommand] Failed to create temp file for serialization");
+        CVLog::Warning(
+                "[EntityUndoCommand] Failed to create temp file for "
+                "serialization");
         return;
     }
 
     if (m_entity->toFile(*m_tempFile, 0)) {
         m_serialized = true;
         m_estimatedBytes = m_tempFile->size();
-        CVLog::Print(QString("[EntityUndoCommand] Serialized entity '%1' to temp (%2 bytes)")
+        CVLog::Print(QString("[EntityUndoCommand] Serialized entity '%1' to "
+                             "temp (%2 bytes)")
                              .arg(m_entity->getName())
                              .arg(m_tempFile->size()));
     } else {
@@ -99,7 +108,8 @@ ccHObject* ecvEntityAddRemoveCommand::deserializeFromTemp() {
     ccHObject* restored = new ccHObject("restored");
 
     if (restored->fromFile(*m_tempFile, 0, 0, oldToNewIDMap)) {
-        CVLog::Print(QString("[EntityUndoCommand] Deserialized entity from temp"));
+        CVLog::Print(
+                QString("[EntityUndoCommand] Deserialized entity from temp"));
         return restored;
     }
 

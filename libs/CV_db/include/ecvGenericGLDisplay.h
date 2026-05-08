@@ -283,6 +283,11 @@ public:
         Q_UNUSED(context);
         Q_UNUSED(bbox);
     }
+    virtual void drawBBoxBatch(const ccGLDrawContext& context,
+                               const std::vector<ccBBox>& boxes) {
+        Q_UNUSED(context);
+        Q_UNUSED(boxes);
+    }
     virtual void drawOrientedBBox(const ccGLDrawContext& context,
                                   const ecvOrientedBBox* obb) {
         Q_UNUSED(context);
