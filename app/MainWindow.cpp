@@ -595,6 +595,21 @@ MainWindow::MainWindow()
 MainWindow::~MainWindow() {
     m_closing = true;
 
+    auto& vm = ecvViewManager::instance();
+    vm.blockSignals(true);
+    disconnect(&vm, nullptr, this, nullptr);
+
+    // Clear active source FIRST to avoid dangling pointer access when
+    // views are unregistered (which triggers updateActiveRepresentation).
+    vm.setActiveSource(nullptr);
+
+    for (auto* v : vm.getAllViews()) {
+        if (auto* obj = dynamic_cast<QObject*>(v)) {
+            obj->blockSignals(true);
+            disconnect(obj, nullptr, this, nullptr);
+        }
+    }
+
     destroyInputDevices();
 
     cancelPreviousPickingOperation(false);  // just in case
@@ -658,10 +673,20 @@ MainWindow::~MainWindow() {
         m_tabbedMultiView->reset();
     }
 
-    for (auto* v : ecvViewManager::instance().getAllViews()) {
+    vm.setActiveSource(nullptr);
+
+    for (auto* v : vm.getAllViews()) {
         if (v) v->setSceneDB(nullptr);
     }
-    ecvViewManager::instance().releaseDisplayTools();
+
+    ecvRepresentationManager::instance().clear();
+
+    while (!vm.getAllViews().isEmpty()) {
+        auto* v = vm.getAllViews().first();
+        vm.unregisterView(v);
+    }
+
+    vm.releaseDisplayTools();
 
     if (ccRoot) {
         delete ccRoot;
@@ -761,6 +786,8 @@ void MainWindow::initial() {
                 this,
                 [this](ecvGenericGLDisplay* newActive,
                        ecvGenericGLDisplay* /*oldActive*/) {
+                    if (m_closing) return;
+
                     rebindToolsToActiveView(newActive);
 
                     QWidget* viewWidget = getActiveGLWidget();
@@ -5189,6 +5216,8 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
 }
 
 void MainWindow::updateMenus() {
+    if (m_closing || !m_ui) return;
+
     QWidget* active3DView = getActiveWindow();
     bool hasMdiChild = (active3DView != nullptr);
     int mdiChildCount = getRenderWindowCount();

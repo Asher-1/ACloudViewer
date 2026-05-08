@@ -11,6 +11,9 @@
 #include "ecvFrustum.h"
 #include "ecvOctree.h"
 
+// STL
+#include <atomic>
+
 // Qt
 #include <QMutex>
 
@@ -58,12 +61,9 @@ public:
     //! Unlocks the structure
     inline void unlock() { m_mutex.unlock(); }
 
-    //! Returns the current state
-    inline State getState() {
-        lock();
-        State state = m_state;
-        unlock();
-        return state;
+    //! Returns the current state (lock-free atomic read)
+    inline State getState() const {
+        return m_state.load(std::memory_order_acquire);
     }
 
     //! Clears the structure
@@ -90,7 +90,7 @@ public:
     //! Returns the maximum accessible level
     inline unsigned char maxLevel() {
         QMutexLocker locker(&m_mutex);
-        return (m_state == INITIALIZED
+        return (m_state.load(std::memory_order_acquire) == INITIALIZED
                         ? static_cast<unsigned char>(
                                   std::max<size_t>(1, m_levels.size())) -
                                   1
@@ -181,11 +181,9 @@ protected:  // methods
     //! Reserves memory
     bool initInternal(ccOctree::Shared octree);
 
-    //! Sets the current state
+    //! Sets the current state (atomic write with release semantics)
     inline void setState(State state) {
-        lock();
-        m_state = state;
-        unlock();
+        m_state.store(state, std::memory_order_release);
     }
 
     //! Clears the structure (with more options)
@@ -265,8 +263,9 @@ protected:  // members
     //! For concurrent access
     QMutex m_mutex;
 
-    //! State
-    State m_state;
+    //! State — atomic to allow lock-free reads from the render thread
+    //! while the build thread writes under m_mutex.
+    std::atomic<State> m_state;
 };
 
 class PointCloudLODRenderer {

@@ -60,6 +60,7 @@ public:
     void removeRepresentation(ccHObject* entity, ecvGenericGLDisplay* view);
 
     int count() const;
+    void clear();
 
     // -- VTK actor cleanup callback --
     // Registered by VtkEngine layer at init time.

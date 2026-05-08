@@ -274,6 +274,27 @@ void ImageVis::removeAllLayers() {
     for (const auto& id : ids) removeLayer(id);
 }
 
+void ImageVis::removeBySubstring(const std::string& substring) {
+    std::vector<std::string> toRemove;
+    for (const auto& kv : m_imageInfoMap) {
+        if (kv.first.find(substring) != std::string::npos) {
+            toRemove.push_back(kv.first);
+        }
+    }
+    for (const auto& id : toRemove) {
+        removeLayer(id);
+    }
+    toRemove.clear();
+    for (const auto& layer : layer_map_) {
+        if (layer.layer_name.find(substring) != std::string::npos) {
+            toRemove.push_back(layer.layer_name);
+        }
+    }
+    for (const auto& id : toRemove) {
+        VtkRendering::ImageVisualizer::removeLayer(id);
+    }
+}
+
 void ImageVis::removeLayer(const std::string& layer_id) {
     bool isImageLayer = m_imageInfoMap.find(layer_id) != m_imageInfoMap.end();
 

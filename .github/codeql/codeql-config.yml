@@ -12,3 +12,4 @@ paths-ignore:
   - '**/3rdparty_downloads'
   - '**/third_party'
   - '**/thirdparty'
+  - 'plugins/core/Standard/qSIBR/3rdparty'

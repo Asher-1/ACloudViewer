@@ -325,9 +325,6 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
 }
 
 void cc2DLabel::clear3Dviews() {
-    ecvGenericGLDisplay* disp = getDisplay();
-    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
-
     auto doRemoveOn = [](ecvGenericGLDisplay* d, WIDGETS_TYPE t,
                          const QString& id) {
         WIDGETS_PARAMETER p(t, id);
@@ -339,97 +336,97 @@ void cc2DLabel::clear3Dviews() {
         }
     };
 
-    // Remove from primary display.
-    auto doRemove = [&](WIDGETS_TYPE t, const QString& id) {
-        doRemoveOn(disp, t, id);
+    auto removeAllWidgetsOn = [&](ecvGenericGLDisplay* d) {
+        doRemoveOn(d, WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
+        if (c_unitPointMarker) {
+            for (int i = 0; i < 3; ++i) {
+                doRemoveOn(d, WIDGETS_TYPE::WIDGET_POINT,
+                           QString::number(i) + m_sphereIdfix);
+                doRemoveOn(d, WIDGETS_TYPE::WIDGET_SPHERE,
+                           QString::number(i) + m_sphereIdfix);
+            }
+        }
+        if (c_unitTriMarker) {
+            doRemoveOn(d, WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix);
+            doRemoveOn(d, WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix);
+        }
     };
 
-    doRemove(WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
-
-    if (c_unitPointMarker) {
-        for (int i = 0; i < 3; ++i) {
-            doRemove(WIDGETS_TYPE::WIDGET_POINT,
-                     QString::number(i) + m_sphereIdfix);
-            doRemove(WIDGETS_TYPE::WIDGET_SPHERE,
-                     QString::number(i) + m_sphereIdfix);
-        }
+    // Remove from ALL registered views to guarantee actors are cleaned up
+    // regardless of which view originally rendered them.
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        if (view) removeAllWidgetsOn(view);
     }
 
-    if (c_unitTriMarker) {
-        doRemove(WIDGETS_TYPE::WIDGET_POLYLINE, m_contourIdfix);
-        doRemove(WIDGETS_TYPE::WIDGET_POLYGONMESH, m_surfaceIdfix);
-    }
-
-    // For unbound labels, also remove from all other views.
-    if (!getDisplay() && ecvViewManager::instance().viewCount() > 1) {
-        for (auto* view : ecvViewManager::instance().getAllViews()) {
-            if (!view || view == disp) continue;
-            doRemoveOn(view, WIDGETS_TYPE::WIDGET_LINE_3D, m_lineID);
-            if (c_unitPointMarker) {
-                for (int i = 0; i < 3; ++i) {
-                    doRemoveOn(view, WIDGETS_TYPE::WIDGET_POINT,
-                               QString::number(i) + m_sphereIdfix);
-                    doRemoveOn(view, WIDGETS_TYPE::WIDGET_SPHERE,
-                               QString::number(i) + m_sphereIdfix);
-                }
-            }
-            if (c_unitTriMarker) {
-                doRemoveOn(view, WIDGETS_TYPE::WIDGET_POLYLINE,
-                           m_contourIdfix);
-                doRemoveOn(view, WIDGETS_TYPE::WIDGET_POLYGONMESH,
-                           m_surfaceIdfix);
-            }
-        }
+    // Fallback: also remove via the static path (covers the primary VtkVis
+    // when no views are registered or the entity was drawn before any
+    // view was created).
+    if (views.isEmpty()) {
+        removeAllWidgetsOn(nullptr);
     }
 }
 
 void cc2DLabel::clear2Dviews() {
-    ecvGenericGLDisplay* disp = getDisplay();
-    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
-
-    auto doRemove = [disp](WIDGETS_TYPE t, const QString& id) {
+    auto doRemoveOn = [](ecvGenericGLDisplay* d, WIDGETS_TYPE t,
+                         const QString& id) {
         WIDGETS_PARAMETER p(t, id);
-        if (disp) {
-            p.context.display = disp;
-            disp->removeWidgets(p);
+        if (d) {
+            p.context.display = d;
+            d->removeWidgets(p);
         } else {
             ecvDisplayTools::RemoveWidgets(p);
         }
     };
 
-    if (!m_historyMessage.isEmpty()) {
-        for (const QString& text : m_historyMessage) {
-            doRemove(WIDGETS_TYPE::WIDGET_T2D, text);
-            doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text);
+    auto remove2DWidgetsOn = [&](ecvGenericGLDisplay* d) {
+        if (!m_historyMessage.isEmpty()) {
+            for (const QString& text : m_historyMessage) {
+                doRemoveOn(d, WIDGETS_TYPE::WIDGET_T2D, text);
+                doRemoveOn(d, WIDGETS_TYPE::WIDGET_RECTANGLE_2D, text);
+            }
         }
-        m_historyMessage.clear();
+
+        doRemoveOn(d, WIDGETS_TYPE::WIDGET_T2D, this->getViewId());
+        doRemoveOn(d, WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId());
+
+        size_t count = m_pickedPoints.size();
+        for (size_t j = 0; j < count; ++j) {
+            QString legendId =
+                    QString("%1_legend_%2").arg(this->getViewId()).arg(j);
+            doRemoveOn(d, WIDGETS_TYPE::WIDGET_T2D, legendId);
+            doRemoveOn(d, WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId);
+        }
+
+        doRemoveOn(d, WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
+    };
+
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        if (view) remove2DWidgetsOn(view);
+    }
+    if (views.isEmpty()) {
+        remove2DWidgetsOn(nullptr);
     }
 
-    doRemove(WIDGETS_TYPE::WIDGET_T2D, this->getViewId());
-    doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId());
-
-    size_t count = m_pickedPoints.size();
-    for (size_t j = 0; j < count; ++j) {
-        QString legendId =
-                QString("%1_legend_%2").arg(this->getViewId()).arg(j);
-        doRemove(WIDGETS_TYPE::WIDGET_T2D, legendId);
-        doRemove(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, legendId);
-    }
-
-    doRemove(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
+    m_historyMessage.clear();
 }
 
 void cc2DLabel::clearLabel(bool ignoreCaption) {
     clear3Dviews();
     clear2Dviews();
     if (!ignoreCaption) {
-        ecvGenericGLDisplay* disp = getDisplay();
-        if (!disp) disp = ecvViewManager::instance().getEffectiveView();
-        WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
-        if (disp) {
-            p.context.display = disp;
-            disp->removeWidgets(p);
-        } else {
+        const auto& views = ecvViewManager::instance().getAllViews();
+        for (auto* view : views) {
+            if (!view) continue;
+            WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION,
+                                this->getViewId());
+            p.context.display = view;
+            view->removeWidgets(p);
+        }
+        if (views.isEmpty()) {
+            WIDGETS_PARAMETER p(WIDGETS_TYPE::WIDGET_CAPTION,
+                                this->getViewId());
             ecvDisplayTools::RemoveWidgets(p);
         }
     }
@@ -1004,39 +1001,23 @@ void cc2DLabel::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    // P5: Per-view label visibility via ecvViewRepresentation.
-    // In multi-view mode, labels use representation-based visibility
-    // instead of the legacy getDisplay() binding.  This allows the same
-    // label to have independent visibility per view (ParaView TextWidget
-    // model).
-    if (context.display && ecvViewManager::instance().viewCount() > 1) {
-        auto& repMgr = ecvRepresentationManager::instance();
-        auto* rep = repMgr.getRepresentation(
-                const_cast<cc2DLabel*>(this), context.display);
-        if (rep) {
-            if (rep->hasVisibilityOverride() && !rep->isVisible()) {
-                return;
-            }
-        } else {
-            // No representation yet for this (label, view) pair.
-            // Auto-create one: visible in the active view, hidden otherwise.
+    // Labels are bound to exactly ONE display window via getDisplay().
+    // In multi-view mode, an unbound label (getDisplay() == nullptr) is
+    // auto-bound to the active view on first draw, then stays there
+    // permanently.  This is simpler than per-view representation logic
+    // and matches the expected UX: labels belong to the window where
+    // they were created, regardless of which window is currently active.
+    if (context.display) {
+        ecvGenericGLDisplay* myDisp = getDisplay();
+        if (!myDisp) {
+            // Unbound label: bind to current active view once.
             auto* activeView = ecvViewManager::instance().getActiveView();
-            bool isActiveView =
-                    (activeView && activeView == context.display);
-            if (isActiveView) {
-                auto* newRep = repMgr.ensureRepresentation(
-                        const_cast<cc2DLabel*>(this), context.display);
-                if (newRep && !newRep->hasVisibilityOverride()) {
-                    newRep->setVisible(true);
-                }
+            if (activeView && activeView == context.display) {
+                const_cast<cc2DLabel*>(this)->setDisplay(context.display);
             } else {
                 return;
             }
-        }
-    } else if (context.display) {
-        // Single-view mode: use legacy getDisplay() binding.
-        ecvGenericGLDisplay* myDisp = getDisplay();
-        if (myDisp && myDisp != context.display) {
+        } else if (myDisp != context.display) {
             return;
         }
     }

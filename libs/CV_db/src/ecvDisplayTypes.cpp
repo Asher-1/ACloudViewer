@@ -38,9 +38,9 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     lsi_labelRect = metrics.boundingRect(lsi_label);
 
     psi_totalWidth =
-            psi_labelRect.width() + margin + iconSize + margin + iconSize;
+            psi_labelRect.width() + margin + iconSize + margin * 2 + iconSize;
     lsi_totalWidth =
-            lsi_labelRect.width() + margin + iconSize + margin + iconSize;
+            lsi_labelRect.width() + margin + iconSize + margin * 2 + iconSize;
     bbv_totalWidth = bbv_labelRect.width() + margin + iconSize;
     fs_totalWidth = fs_labelRect.width() + margin + iconSize;
 

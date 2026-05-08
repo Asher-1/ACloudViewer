@@ -96,6 +96,7 @@ public:
     /** @param layer_id Layer ID to remove
      */
     void removeLayer(const std::string& layer_id);
+    void removeBySubstring(const std::string& substring);
 
     /** @param layer_id Unique layer identifier
      *  @param x,y,width,height Layer bounds in pixels

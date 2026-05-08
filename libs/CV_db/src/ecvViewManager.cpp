@@ -282,10 +282,11 @@ bool ecvViewManager::hasAnyView() const { return !m_views.isEmpty(); }
 
 void ecvViewManager::refreshAll(bool only2D) {
     for (auto* view : m_views) {
-        if (view) {
-            ScopedRenderOverride guard(view);
-            view->refresh(only2D);
-        }
+        if (!view) continue;
+        QWidget* w = view->asWidget();
+        if (w && !w->isVisible()) continue;
+        ScopedRenderOverride guard(view);
+        view->refresh(only2D);
     }
 }
 
@@ -294,6 +295,10 @@ void ecvViewManager::redrawAll(bool only2D,
                                bool /*includePrimary*/) {
     for (auto* view : m_views) {
         if (!view) continue;
+        // Skip views whose widget is hidden (e.g. inactive QTabWidget
+        // pages) — they will be redrawn when the tab is next shown.
+        QWidget* w = view->asWidget();
+        if (w && !w->isVisible()) continue;
         ScopedRenderOverride guard(view);
         view->redraw(only2D, forceRedraw);
     }
@@ -518,15 +523,7 @@ void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* closingView) {
     ccHObject* sceneDB = closingView->getSceneDB();
     if (!sceneDB) return;
 
-    ecvGenericGLDisplay* recipient = nullptr;
-    for (int i = m_views.size() - 1; i >= 0; --i) {
-        if (m_views[i] != closingView) {
-            recipient = m_views[i];
-            break;
-        }
-    }
-
-    reassignEntitiesFromView(sceneDB, closingView, recipient);
+    reassignEntitiesFromView(sceneDB, closingView, nullptr);
 }
 
 void ecvViewManager::reassignEntitiesFromView(ccHObject* root,
@@ -535,11 +532,12 @@ void ecvViewManager::reassignEntitiesFromView(ccHObject* root,
     if (!root) return;
 
     if (root->getDisplay() == fromView) {
-        if (toView) {
-            root->setDisplay(toView);
-        } else {
-            root->removeFromDisplay(fromView);
-        }
+        root->removeFromDisplay(fromView);
+        // ParaView-aligned: don't reassign to another view.  The entity
+        // becomes "unbound" and disabled so the DB tree checkbox reflects
+        // the hidden state.  Re-checking the checkbox later will bind the
+        // entity to the then-active view.
+        root->setEnabled(false);
     }
 
     for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
