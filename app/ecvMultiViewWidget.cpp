@@ -7,9 +7,12 @@
 
 #include "ecvMultiViewWidget.h"
 
+#include "MainWindow.h"
 #include "ecvSpreadSheetView.h"
 
-#include <ecvGLView.h>
+#include <VTKExtensions/Views/vtkChartView.h>
+
+#include <vtkGLView.h>
 #include <ecvHObject.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewLayoutProxy.h>
@@ -189,7 +192,7 @@ void ecvMultiViewWidget::reload() {
             if (auto* display = it.key()) {
                 QWidget* vw = display->asWidget();
                 if (vw && vw->isVisible()) {
-                    auto* glView = dynamic_cast<ecvGLView*>(display);
+                    auto* glView = dynamic_cast<vtkGLView*>(display);
                     if (glView) {
                         glView->redraw(false, true);
                     }
@@ -396,23 +399,22 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     };
     QList<ViewType> viewTypes = {
             {tr("Render View"), true},
-            {tr("Render View (Orthographic)"), true},
             {tr("Render View (Comparative)"), false},
-            {tr("Bar Chart View"), false},
+            {tr("Bar Chart View"), true},
             {tr("Bar Chart View (Comparative)"), false},
-            {tr("Box Chart View"), false},
-            {tr("Eye Dome Lighting"), false},
-            {tr("Histogram View"), false},
+            {tr("Box Chart View"), true},
+            {tr("Eye Dome Lighting"), true},
+            {tr("Histogram View"), true},
             {tr("Image Chart View"), false},
-            {tr("Line Chart View"), false},
+            {tr("Line Chart View"), true},
             {tr("Line Chart View (Comparative)"), false},
-            {tr("Orthographic Slice View"), false},
-            {tr("Parallel Coordinates View"), false},
-            {tr("Plot Matrix View"), false},
-            {tr("Point Chart View"), false},
+            {tr("Orthographic Slice View"), true},
+            {tr("Parallel Coordinates View"), true},
+            {tr("Plot Matrix View"), true},
+            {tr("Point Chart View"), true},
             {tr("Python View"), false},
             {tr("Quartile Chart View"), false},
-            {tr("Slice View"), false},
+            {tr("Slice View"), true},
             {tr("SpreadSheet View"), true},
     };
 
@@ -447,42 +449,125 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         ecvViewManager::instance().setActiveView(newView);
     };
 
-    auto createOrthoViewForCell = [this, location, createRenderViewForCell]() {
-        createRenderViewForCell();
-        auto* view =
-                dynamic_cast<ecvGLView*>(m_layout ? m_layout->getView(location)
-                                                  : nullptr);
-        if (view) {
-            view->setPerspectiveState(false, true);
-        }
-    };
-
     auto createSpreadSheetForCell = [this, location, frame]() {
-        auto* spreadSheet = new ecvSpreadSheetView(frame);
-        auto* oldWidget = m_cellFrames.value(location);
-        if (oldWidget) {
-            oldWidget->setParent(nullptr);
-            oldWidget->deleteLater();
+        QWidget* oldWidget = m_cellFrames.value(location);
+        QWidget* parentWidget = oldWidget ? oldWidget->parentWidget() : nullptr;
+        auto* parentSplitter = qobject_cast<QSplitter*>(parentWidget);
+        int splitterIdx = parentSplitter ? parentSplitter->indexOf(oldWidget)
+                                         : -1;
+
+        auto* spreadSheet = new ecvSpreadSheetView(this);
+        auto& sel = MainWindow::TheInstance()->getSelectedEntities();
+        if (!sel.empty()) {
+            spreadSheet->setEntity(sel.front());
         }
 
         QWidget* wrapped = spreadSheet;
         if (m_frameFactory) {
-            wrapped = m_frameFactory(spreadSheet,
-                                     spreadSheet->title());
+            wrapped = m_frameFactory(spreadSheet, spreadSheet->title());
         }
-        if (wrapped) {
-            wrapped->setProperty("CELL_INDEX", location);
-            m_cellFrames[location] = wrapped;
-            if (auto* parentSplitter =
-                        qobject_cast<QSplitter*>(frame->parentWidget())) {
-                int idx = parentSplitter->indexOf(frame);
-                if (idx >= 0) {
-                    frame->setParent(nullptr);
-                    parentSplitter->insertWidget(idx, wrapped);
-                    frame->deleteLater();
-                }
+        if (!wrapped) return;
+
+        wrapped->setProperty("CELL_INDEX", location);
+        m_cellFrames[location] = wrapped;
+
+        if (parentSplitter && splitterIdx >= 0) {
+            parentSplitter->insertWidget(splitterIdx, wrapped);
+        } else if (parentWidget && parentWidget->layout()) {
+            auto* lay = parentWidget->layout();
+            if (oldWidget) lay->replaceWidget(oldWidget, wrapped);
+            else lay->addWidget(wrapped);
+        }
+
+        if (oldWidget && oldWidget != wrapped) {
+            oldWidget->setParent(nullptr);
+            oldWidget->deleteLater();
+        }
+    };
+
+    auto createChartForCell = [this, location](vtkChartView::ChartType type) {
+        QWidget* oldWidget = m_cellFrames.value(location);
+        QWidget* parentWidget = oldWidget ? oldWidget->parentWidget() : nullptr;
+        auto* parentSplitter = qobject_cast<QSplitter*>(parentWidget);
+        int splitterIdx = parentSplitter ? parentSplitter->indexOf(oldWidget)
+                                         : -1;
+
+        auto* chartView = new vtkChartView(type, this);
+        auto& sel = MainWindow::TheInstance()->getSelectedEntities();
+        if (!sel.empty()) {
+            chartView->setEntity(sel.front());
+        }
+
+        QWidget* wrapped = chartView;
+        if (m_frameFactory) {
+            wrapped = m_frameFactory(chartView, chartView->title());
+        }
+        if (!wrapped) return;
+
+        wrapped->setProperty("CELL_INDEX", location);
+        m_cellFrames[location] = wrapped;
+
+        if (parentSplitter && splitterIdx >= 0) {
+            parentSplitter->insertWidget(splitterIdx, wrapped);
+        } else if (parentWidget && parentWidget->layout()) {
+            auto* lay = parentWidget->layout();
+            if (oldWidget) lay->replaceWidget(oldWidget, wrapped);
+            else lay->addWidget(wrapped);
+        }
+
+        if (oldWidget && oldWidget != wrapped) {
+            oldWidget->setParent(nullptr);
+            oldWidget->deleteLater();
+        }
+    };
+
+    auto createEDLViewForCell = [this, location, createRenderViewForCell]() {
+        createRenderViewForCell();
+        auto* view =
+                dynamic_cast<vtkGLView*>(m_layout ? m_layout->getView(location)
+                                                  : nullptr);
+        if (view) {
+            view->enableEDL(true);
+        }
+    };
+
+    auto createSliceViewForCell = [this, location, createRenderViewForCell]() {
+        createRenderViewForCell();
+        auto* view =
+                dynamic_cast<vtkGLView*>(m_layout ? m_layout->getView(location)
+                                                  : nullptr);
+        if (view) {
+            view->enableSliceMode(true);
+        }
+    };
+
+    auto createOrthoSliceForCell = [this, location]() {
+        if (!m_layout) return;
+        m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL, 0.5);
+        int left = ecvViewLayoutProxy::firstChild(location);
+        int right = ecvViewLayoutProxy::secondChild(location);
+        m_layout->split(left, ecvViewLayoutProxy::VERTICAL, 0.5);
+        m_layout->split(right, ecvViewLayoutProxy::VERTICAL, 0.5);
+
+        int cells[4] = {ecvViewLayoutProxy::firstChild(left),
+                         ecvViewLayoutProxy::secondChild(left),
+                         ecvViewLayoutProxy::firstChild(right),
+                         ecvViewLayoutProxy::secondChild(right)};
+
+        if (!m_viewFactory) return;
+        vtkGLView::OrthoAxis axes[] = {vtkGLView::AXIS_XY, vtkGLView::AXIS_XZ,
+                                        vtkGLView::AXIS_YZ};
+        for (int i = 0; i < 4; ++i) {
+            auto* newView = m_viewFactory();
+            if (!newView) continue;
+            m_layout->assignView(cells[i], newView);
+            if (i < 3) {
+                newView->setOrthoSliceCamera(axes[i]);
             }
         }
+        ecvViewManager::instance().setActiveView(
+                m_layout->getView(cells[3]));
+        reload();
     };
 
     for (const auto& vt : viewTypes) {
@@ -493,9 +578,51 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
             if (vt.label == tr("Render View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createRenderViewForCell);
-            } else if (vt.label == tr("Render View (Orthographic)")) {
+            } else if (vt.label == tr("Eye Dome Lighting")) {
                 connect(btn, &QPushButton::clicked, this,
-                        createOrthoViewForCell);
+                        createEDLViewForCell);
+            } else if (vt.label == tr("Line Chart View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::LINE_CHART);
+                        });
+            } else if (vt.label == tr("Bar Chart View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::BAR_CHART);
+                        });
+            } else if (vt.label == tr("Histogram View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::HISTOGRAM);
+                        });
+            } else if (vt.label == tr("Box Chart View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::BOX_CHART);
+                        });
+            } else if (vt.label == tr("Point Chart View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::POINT_CHART);
+                        });
+            } else if (vt.label == tr("Parallel Coordinates View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(
+                                    vtkChartView::PARALLEL_COORDINATES);
+                        });
+            } else if (vt.label == tr("Plot Matrix View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        [createChartForCell]() {
+                            createChartForCell(vtkChartView::PLOT_MATRIX);
+                        });
+            } else if (vt.label == tr("Slice View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        createSliceViewForCell);
+            } else if (vt.label == tr("Orthographic Slice View")) {
+                connect(btn, &QPushButton::clicked, this,
+                        createOrthoSliceForCell);
             } else if (vt.label == tr("SpreadSheet View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createSpreadSheetForCell);
@@ -594,7 +721,7 @@ void ecvMultiViewWidget::redrawAllViews() {
         for (auto it = m_viewFrames.constBegin(); it != m_viewFrames.constEnd();
              ++it) {
             if (auto* display = it.key()) {
-                auto* glView = dynamic_cast<ecvGLView*>(display);
+                auto* glView = dynamic_cast<vtkGLView*>(display);
                 if (glView) {
                     glView->redraw(false, true);
                 }
@@ -718,7 +845,7 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
     }
 
     if (view) {
-        auto* glView = dynamic_cast<ecvGLView*>(view);
+        auto* glView = dynamic_cast<vtkGLView*>(view);
         if (glView) {
             emit glView->aboutToClose(glView);
             QWidget* vw = glView->asWidget();
@@ -730,6 +857,17 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
                 glView->deleteLater();
                 if (vw) vw->deleteLater();
             });
+        }
+    } else {
+        // Non-GL view frame (chart, spreadsheet, etc.) — clean up the widget
+        m_cellFrames.remove(location);
+        if (frame) {
+            frame->setParent(nullptr);
+            frame->hide();
+            frame->deleteLater();
+        }
+        if (location == 0) {
+            reload();
         }
     }
 
@@ -785,8 +923,8 @@ void ecvMultiViewWidget::reset() {
     }
 }
 
-QList<ecvGLView*> ecvMultiViewWidget::destroyAllViews() {
-    QList<ecvGLView*> orphaned;
+QList<vtkGLView*> ecvMultiViewWidget::destroyAllViews() {
+    QList<vtkGLView*> orphaned;
     if (!m_layout) return orphaned;
 
     if (m_layout) {
@@ -798,12 +936,22 @@ QList<ecvGLView*> ecvMultiViewWidget::destroyAllViews() {
     for (auto* v : views) {
         emit viewClosing(v);
         m_layout->removeView(v);
-        auto* glView = dynamic_cast<ecvGLView*>(v);
+        auto* glView = dynamic_cast<vtkGLView*>(v);
         if (glView) {
             emit glView->aboutToClose(glView);
             orphaned.append(glView);
         }
     }
+
+    for (auto it = m_cellFrames.begin(); it != m_cellFrames.end(); ++it) {
+        QWidget* frame = it.value();
+        if (frame) {
+            frame->setParent(nullptr);
+            frame->hide();
+            frame->deleteLater();
+        }
+    }
+    m_cellFrames.clear();
 
     return orphaned;
 }

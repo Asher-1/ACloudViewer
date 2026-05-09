@@ -13,7 +13,7 @@
 
 #include "VtkDisplayTools.h"
 
-#include "ecvViewManagerSetupRelay.h"
+#include "vtkViewManagerSetupRelay.h"
 
 // PCLModules
 #include <Converters/Cc2Vtk.h>
@@ -41,7 +41,7 @@
 #include <ecvViewManager.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
-#include "ecvGLView.h"
+#include "vtkGLView.h"
 
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>
@@ -119,7 +119,7 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
             [this](ccHObject* entity, ecvGenericGLDisplay* view) {
                 if (!entity) return;
                 if (view) {
-                    auto* glView = dynamic_cast<ecvGLView*>(view);
+                    auto* glView = dynamic_cast<vtkGLView*>(view);
                     if (glView && !glView->getVisualizer3D()) return;
                 }
                 std::string viewID = CVTools::FromQString(entity->getViewId());
@@ -161,7 +161,7 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     SetMainScreen(widget);
 
     if (oldWidget && oldWidget != widget) {
-        // Per-view widgets (owned by an ecvGLView) must NOT be hidden or
+        // Per-view widgets (owned by an vtkGLView) must NOT be hidden or
         // detached — they stay visible inside their own layout cell.
         // Only hide/detach the legacy engine-owned singleton widget.
         if (!oldWidget->ownerView()) {
@@ -174,13 +174,13 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     }
 }
 
-// Phase M4: ScopedHotZoneRender deleted. ecvGLView now calls
+// Phase M4: ScopedHotZoneRender deleted. vtkGLView now calls
 // DrawClickableItems(xStart, yStart, hotZone, items, display) directly.
 
 VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
-    // Phase M3: prefer per-view pipeline from ecvGLView, fall back to engine.
+    // Phase M3: prefer per-view pipeline from vtkGLView, fall back to engine.
     if (display) {
-        auto* glView = dynamic_cast<ecvGLView*>(display);
+        auto* glView = dynamic_cast<vtkGLView*>(display);
         if (glView && glView->getVisualizer3D()) {
             return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
         }
@@ -191,7 +191,7 @@ VtkVis* VtkDisplayTools::resolveVisualizer(ecvGenericGLDisplay* display) const {
 VtkVis* VtkDisplayTools::findVisByActorId(const std::string& viewId) const {
     const auto& views = ecvViewManager::instance().getAllViews();
     for (auto* view : views) {
-        auto* glView = dynamic_cast<ecvGLView*>(view);
+        auto* glView = dynamic_cast<vtkGLView*>(view);
         if (glView && glView->getVisualizer3D()) {
             auto* vis = dynamic_cast<VtkVis*>(glView->getVisualizer3D());
             if (vis && vis->contains(viewId)) {
@@ -211,7 +211,7 @@ VtkVis* VtkDisplayTools::findVisByActorIdOrActive(
     if (vis) return vis;
     auto* activeView = ecvViewManager::instance().getActiveView();
     if (activeView) {
-        auto* glView = dynamic_cast<ecvGLView*>(activeView);
+        auto* glView = dynamic_cast<vtkGLView*>(activeView);
         if (glView && glView->getVisualizer3D()) {
             return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
         }
@@ -1028,7 +1028,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
             m_visualizer2D->removeAllLayers();
         }
         if (context.display) {
-            auto* glView = dynamic_cast<ecvGLView*>(context.display);
+            auto* glView = dynamic_cast<vtkGLView*>(context.display);
             if (glView) {
                 auto imgVis = glView->getImageVis();
                 if (imgVis) {
@@ -1047,7 +1047,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
             m_visualizer2D->removeLayer(viewId);
         }
         if (context.display) {
-            auto* glView = dynamic_cast<ecvGLView*>(context.display);
+            auto* glView = dynamic_cast<vtkGLView*>(context.display);
             if (glView) {
                 auto imgVis = glView->getImageVis();
                 if (imgVis && imgVis->contains(viewId)) {
@@ -1063,7 +1063,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                 m_visualizer2D->removeLayer(viewId);
             }
             if (context.display) {
-                auto* glView = dynamic_cast<ecvGLView*>(context.display);
+                auto* glView = dynamic_cast<vtkGLView*>(context.display);
                 if (glView) {
                     auto imgVis = glView->getImageVis();
                     if (imgVis && imgVis->contains(viewId)) {
@@ -1079,7 +1079,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                 m_visualizer2D->removeBySubstring(viewId);
             }
             if (context.display) {
-                auto* glView = dynamic_cast<ecvGLView*>(context.display);
+                auto* glView = dynamic_cast<vtkGLView*>(context.display);
                 if (glView) {
                     auto imgVis = glView->getImageVis();
                     if (imgVis) {
@@ -1117,7 +1117,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
         std::string removeId = CVTools::FromQString(context.removeViewID);
         for (auto* view : views) {
             if (!view || view == this) continue;
-            auto* glView = dynamic_cast<ecvGLView*>(view);
+            auto* glView = dynamic_cast<vtkGLView*>(view);
             if (!glView) continue;
 
             auto* viewVis = dynamic_cast<VtkVis*>(glView->getVisualizer3D());
@@ -1150,16 +1150,16 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         }
         return true;
     } else if (context.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
-               context.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
-               context.removeEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
-               context.removeEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
-               context.removeEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
-               context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
+               context.hideShowEntityType == ENTITY_TYPE::ECV_LINES_2D ||
+               context.hideShowEntityType == ENTITY_TYPE::ECV_CIRCLE_2D ||
+               context.hideShowEntityType == ENTITY_TYPE::ECV_TRIANGLE_2D ||
+               context.hideShowEntityType == ENTITY_TYPE::ECV_RECTANGLE_2D ||
+               context.hideShowEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
         if (!m_visualizer2D || !m_visualizer2D->contains(viewId)) return false;
 
         m_visualizer2D->hideShowActors(context.visible, viewId);
         return true;
-    } else if (context.removeEntityType == ENTITY_TYPE::ECV_CAPTION) {
+    } else if (context.hideShowEntityType == ENTITY_TYPE::ECV_CAPTION) {
         if (vis->containWidget(viewId)) {
             vis->hideShowWidgets(context.visible, viewId,
                                  context.defaultViewPort);
@@ -1167,8 +1167,8 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
     } else {
         bool found = false;
 
-        if (context.removeEntityType == ENTITY_TYPE::ECV_TEXT2D ||
-            context.removeEntityType == ENTITY_TYPE::ECV_POLYLINE_2D) {
+        if (context.hideShowEntityType == ENTITY_TYPE::ECV_TEXT2D ||
+            context.hideShowEntityType == ENTITY_TYPE::ECV_POLYLINE_2D) {
             if (m_visualizer2D && m_visualizer2D->contains(viewId)) {
                 m_visualizer2D->hideShowActors(context.visible, viewId);
                 found = true;
@@ -1215,7 +1215,7 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             Visualization::ImageVis* txtVis2D =
                     m_visualizer2D ? m_visualizer2D.get() : nullptr;
             if (isSecondaryT2D) {
-                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     txtVis2D = glView->getImageVis().get();
                 }
@@ -1403,7 +1403,7 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                          static_cast<ecvDisplayTools*>(this);
             Visualization::ImageVis* ptVis2D = nullptr;
             if (isSecondaryPt) {
-                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     ptVis2D = glView->getImageVis().get();
                 }
@@ -1423,7 +1423,7 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                            static_cast<ecvDisplayTools*>(this);
             Visualization::ImageVis* rectVis2D = nullptr;
             if (isSecondaryRect) {
-                auto* glView = dynamic_cast<ecvGLView*>(param.context.display);
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
                 if (glView && glView->getImageVis()) {
                     rectVis2D = glView->getImageVis().get();
                 }
@@ -1481,7 +1481,7 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
 
     if (isSecondaryView) {
         // Per-view text: always go through VtkVis (3D renderer's text actor).
-        // ecvGLView does not own an ImageVis, so falling back to the
+        // vtkGLView does not own an ImageVis, so falling back to the
         // singleton's m_visualizer2D would render on the wrong widget.
         if (vis) {
             vis->displayText(context);
@@ -1723,7 +1723,7 @@ void VtkDisplayTools::transformCameraProjection(const ccGLMatrixd& projMat) {
 
 void VtkDisplayTools::ToggleCameraOrientationWidget(bool show) {
     auto* activeView = ecvViewManager::instance().getActiveView();
-    auto* glView = activeView ? dynamic_cast<ecvGLView*>(activeView) : nullptr;
+    auto* glView = activeView ? dynamic_cast<vtkGLView*>(activeView) : nullptr;
     auto* vis = glView ? dynamic_cast<VtkVis*>(glView->getVisualizer3D())
                        : m_visualizer3D.get();
     if (!vis) return;
@@ -1750,7 +1750,7 @@ bool VtkDisplayTools::isCameraOrientationWidgetShown() const {
 
 void VtkDisplayTools::setLightIntensity(double intensity) {
     auto* activeView = ecvViewManager::instance().getActiveView();
-    auto* glView = activeView ? dynamic_cast<ecvGLView*>(activeView) : nullptr;
+    auto* glView = activeView ? dynamic_cast<vtkGLView*>(activeView) : nullptr;
     auto* vis = glView ? dynamic_cast<VtkVis*>(glView->getVisualizer3D())
                        : m_visualizer3D.get();
     if (!vis) return;

@@ -18,6 +18,10 @@
 #include <QFont>
 #include <QObject>
 #include <QPoint>
+
+#include <vtkSmartPointer.h>
+
+class vtkImplicitPlaneWidget2;
 #include <QPointer>
 #include <QTimer>
 #include <list>
@@ -56,13 +60,13 @@ using ImageVisPtr = std::shared_ptr<ImageVis>;
 ///   CloudCompare ccGLWindow / ccGLWindowInterface — per-window state
 ///   ParaView     pqRenderView                     — per-view vtkRenderWindow
 ///   MeshLab      GLArea                           — independent paintGL
-class QVTK_ENGINE_LIB_API ecvGLView : public QObject,
+class QVTK_ENGINE_LIB_API vtkGLView : public QObject,
                                       public ecvGenericGLDisplay {
     Q_OBJECT
 
 public:
-    static ecvGLView* Create(QMainWindow* parent, bool stereoMode = false);
-    ~ecvGLView() override;
+    static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
+    ~vtkGLView() override;
 
     // ================================================================
     // ecvGenericGLDisplay — core overrides
@@ -222,6 +226,15 @@ public:
     // VTK-specific accessors
     // ================================================================
 
+    void enableEDL(bool enable = true);
+    bool isEDLEnabled() const { return m_edlEnabled; }
+
+    void enableSliceMode(bool enable = true);
+    bool isSliceModeEnabled() const { return m_sliceMode; }
+
+    enum OrthoAxis { AXIS_XY, AXIS_XZ, AXIS_YZ };
+    void setOrthoSliceCamera(OrthoAxis axis);
+
     QVTKWidgetCustom* getVtkWidget() const;
     Visualization::VtkVis* getVisualizer3D() const;
     QJsonObject saveLayoutCameraState() const override;
@@ -309,8 +322,8 @@ public:
     bool bubbleViewModeEnabled() const { return m_ctx.bubbleViewModeEnabled; }
 
 signals:
-    void aboutToClose(ecvGLView* self);
-    void viewActivated(ecvGLView* self);
+    void aboutToClose(vtkGLView* self);
+    void viewActivated(vtkGLView* self);
 
     // -- Per-view picking signals (ParaView pqView pattern) --
     void itemPicked(ccHObject* entity,
@@ -361,7 +374,7 @@ signals:
     void entitiesSelectionChanged(std::unordered_set<int> entIDs);
 
 protected:
-    explicit ecvGLView(QMainWindow* parent);
+    explicit vtkGLView(QMainWindow* parent);
 
 private:
     void initVtkPipeline(QMainWindow* parent, bool stereoMode);
@@ -412,10 +425,13 @@ private:
     // -- Refresh / Timer (not pushed/pulled) --
     bool m_shouldBeRefreshed = false;
     bool m_insideRedraw = false;
+    bool m_edlEnabled = false;
+    bool m_sliceMode = false;
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
     QElapsedTimer m_timer;
+    vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;
 
     static int s_nextWindowID;
 };

@@ -200,7 +200,7 @@ public:
     // ================================================================
 
     /// Initialise the shared display tools instance.  Must be called once
-    /// during application startup, before any ecvGLView is created.
+    /// during application startup, before any vtkGLView is created.
     void initDisplayTools(ecvDisplayTools* tools,
                           QMainWindow* win,
                           bool stereoMode = false);
@@ -212,8 +212,8 @@ public:
     ecvDisplayTools* displayTools() const;
 
     /// Optional relay implementation (registered by VTK engine): typed
-    /// QObject::connect from ecvGLView to ViewManager relay signals. Required
-    /// for multi-window — CV_db cannot depend on ecvGLView headers.
+    /// QObject::connect from vtkGLView to ViewManager relay signals. Required
+    /// for multi-window — CV_db cannot depend on vtkGLView headers.
     /// When unset, registerView is registered without per-view relay
     /// connections.
     using SingletonRelayHook = void (*)(ecvViewManager*, ecvGenericGLDisplay*);

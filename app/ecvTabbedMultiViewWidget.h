@@ -18,7 +18,7 @@
 
 class ecvMultiViewWidget;
 class ecvViewLayoutProxy;
-class ecvGLView;
+class vtkGLView;
 class ecvGenericGLDisplay;
 /// Tabbed container for multiple layout widgets.
 ///
@@ -73,7 +73,7 @@ public:
     bool tabVisibility() const { return m_tabBarVisible; }
 
     /// Set the factory for creating new views.
-    using ViewFactory = std::function<ecvGLView*()>;
+    using ViewFactory = std::function<vtkGLView*()>;
     void setViewFactory(ViewFactory factory) { m_viewFactory = factory; }
 
     /// Set the factory for creating view frames.
@@ -116,7 +116,7 @@ public slots:
     int createTab();
 
     /// Create a new tab with a view already in it. Returns the tab index.
-    int createTabWithView(ecvGLView* view);
+    int createTabWithView(vtkGLView* view);
 
     /// Close a tab by index. If all real tabs are closed, a new one is
     /// automatically created (ParaView behavior).

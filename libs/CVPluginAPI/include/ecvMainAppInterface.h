@@ -404,7 +404,7 @@ public:
 
     /**
      * @brief Get the currently active GL display (multi-view aware).
-     * Correctly resolves to the focused ecvGLView even inside split layouts.
+     * Correctly resolves to the focused vtkGLView even inside split layouts.
      * @return Pointer to active GL display, or nullptr if none
      */
     virtual ecvGenericGLDisplay* getActiveGLDisplay() { return nullptr; }

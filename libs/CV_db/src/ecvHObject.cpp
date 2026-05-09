@@ -1596,8 +1596,6 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     const bool ancestorVisible = context.visible;
     if (isHierarchy) {
-        // Folders/containers always pass through parent visibility unchanged.
-        // They have no geometry of their own and must never block children.
         context.visible = ancestorVisible;
     } else if (viewRep && viewRep->hasVisibilityOverride()) {
         context.visible = viewRep->isVisible() && ancestorVisible;

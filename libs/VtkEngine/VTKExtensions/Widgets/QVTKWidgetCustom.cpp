@@ -57,7 +57,7 @@
 #include <ecvViewManager.h>
 #include <ecvViewRepresentation.h>
 
-#include "ecvGLView.h"
+#include "vtkGLView.h"
 
 // QT
 #include <ecv2DLabel.h>
@@ -836,7 +836,14 @@ void QVTKWidgetCustom::paintGL() {
             continue;
         }
         label->update2DLabelView(context, false);
-        if (!label->overlayValid()) continue;
+        if (!label->overlayValid()) {
+            CVLog::Warning("[paintGL] label '%s' overlay INVALID after "
+                           "update2DLabelView (dispIn2D=%d pts=%d)",
+                           qPrintable(label->getName()),
+                           label->isDisplayedIn2D(),
+                           static_cast<int>(label->size()));
+            continue;
+        }
         ++validCount;
     }
     if (validCount == 0) return;
@@ -846,6 +853,12 @@ void QVTKWidgetCustom::paintGL() {
         f->glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
         f->glDisable(GL_DEPTH_TEST);
         f->glDisable(GL_STENCIL_TEST);
+        f->glDisable(GL_SCISSOR_TEST);
+        f->glDisable(GL_BLEND);
+        f->glActiveTexture(GL_TEXTURE0);
+        f->glBindTexture(GL_TEXTURE_2D, 0);
+        f->glUseProgram(0);
+        f->glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     }
 
     QPainter painter(this);

@@ -138,7 +138,7 @@ public:
     /// Performs initialization (renderer, camera, etc.).
     void initialize();
 
-    /// Owning ecvGenericGLDisplay (e.g. ecvGLView); used instead of singletons.
+    /// Owning ecvGenericGLDisplay (e.g. vtkGLView); used instead of singletons.
     void setOwnerDisplay(ecvGenericGLDisplay* display) {
         m_ownerDisplay = display;
     }

@@ -22,7 +22,7 @@
 
 // VtkEngine
 #include <Visualization/VtkVis.h>
-#include <ecvGLView.h>
+#include <vtkGLView.h>
 
 // Qt
 #include <QApplication>
@@ -54,7 +54,7 @@ void rotateEffectiveViewWithAxis(const CCVector2i& pos,
         return;
     }
 
-    auto* glv = dynamic_cast<ecvGLView*>(eff);
+    auto* glv = dynamic_cast<vtkGLView*>(eff);
     if (glv && glv->getVisualizer3D()) {
         glv->getVisualizer3D()->rotateWithAxis(pos, axis, angle_deg, viewport);
     }

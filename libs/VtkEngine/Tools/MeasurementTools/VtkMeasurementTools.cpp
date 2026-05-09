@@ -14,7 +14,7 @@
 
 #include <CVLog.h>
 #include <Visualization/VtkVis.h>
-#include <Visualization/ecvGLView.h>
+#include <Visualization/vtkGLView.h>
 #include <ecvViewManager.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -28,7 +28,7 @@ namespace {
 ecvGenericVisualizer3D* visualizerFromEffectiveView() {
     ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
     if (!view) return nullptr;
-    if (auto* glv = dynamic_cast<ecvGLView*>(view)) {
+    if (auto* glv = dynamic_cast<vtkGLView*>(view)) {
         return glv->getVisualizer3D();
     }
     return nullptr;

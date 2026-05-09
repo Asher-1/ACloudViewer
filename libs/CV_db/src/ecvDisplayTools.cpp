@@ -379,7 +379,7 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
             &ecvDisplayTools::doPicking);
 
     // Phase M3: VtkDisplayTools is a pure engine service, NOT a view.
-    // The first ecvGLView is created by MainWindow and registered as the
+    // The first vtkGLView is created by MainWindow and registered as the
     // actual view. We no longer register VtkDisplayTools with ecvViewManager.
 }
 
@@ -459,7 +459,7 @@ void ecvDisplayTools::onPointPicking(const CCVector3& p,
 #endif  // !QDEBUG
 
     // Data stored. Processing is deferred to the per-view timer callback
-    // (ecvGLView::m_deferredPickingTimer) which sets m_pickingTargetView
+    // (vtkGLView::m_deferredPickingTimer) which sets m_pickingTargetView
     // correctly before calling doPicking(). Do NOT call doPicking() here
     // to avoid double-processing.
 }
@@ -3508,7 +3508,7 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
     // === Post-render housekeeping ===
     // Phase M4: the legacy draw path through ecvViewManager's primary
     // ecvDisplayTools (background, 3D, foreground,
-    // debug traces) has been removed.  Each ecvGLView::redraw() now contains
+    // debug traces) has been removed.  Each vtkGLView::redraw() now contains
     // the full pipeline including ColorRamp, Messages, ScaleBar, and the
     // parameterized DrawClickableItems.
 

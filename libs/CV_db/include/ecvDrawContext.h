@@ -598,10 +598,10 @@ struct ccGLDrawContext {
     unsigned char defaultPointSize;         ///< Default point size
     glDrawParams drawParam;                 ///< Draw parameters
     MESH_RENDERING_MODE meshRenderingMode;  ///< Mesh rendering mode
-    ENTITY_TYPE hideShowEntityType;         ///< Entity type for hide/show
+    ENTITY_TYPE hideShowEntityType = ENTITY_TYPE::ECV_NONE;  ///< Entity type for hide/show
 
-    QString removeViewID;          ///< View ID for entity removal
-    ENTITY_TYPE removeEntityType;  ///< Entity type for removal
+    QString removeViewID;                                    ///< View ID for entity removal
+    ENTITY_TYPE removeEntityType = ENTITY_TYPE::ECV_NONE;   ///< Entity type for removal
 
     bool clearDepthLayer;  ///< Clear depth buffer
     bool clearColorLayer;  ///< Clear color buffer
@@ -678,8 +678,9 @@ struct ccGLDrawContext {
           currentLineWidth(defaultLineWidth),
           defaultPointSize(1),
           meshRenderingMode(MESH_RENDERING_MODE::ECV_SURFACE_MODE),
+          hideShowEntityType(ENTITY_TYPE::ECV_NONE),
           removeViewID("unnamed"),
-          removeEntityType(ENTITY_TYPE::ECV_POINT_CLOUD),
+          removeEntityType(ENTITY_TYPE::ECV_NONE),
           clearDepthLayer(true),
           clearColorLayer(true),
           glW(0),

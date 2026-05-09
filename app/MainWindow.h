@@ -102,7 +102,7 @@ class QSplitter;
 class QTreeWidgetItem;
 class QUIWidget;
 class ecvGenericGLDisplay;
-class ecvGLView;
+class vtkGLView;
 class ecvMultiViewFrameManager;
 class ecvTabbedMultiViewWidget;
 class ecvMultiViewWidget;
@@ -210,14 +210,14 @@ public:
 
     // Multi-window support
     ecvGenericGLDisplay* getActiveGLView();
-    ecvGLView* new3DView();
+    vtkGLView* new3DView();
     void splitCurrentView(Qt::Orientation orientation);
     void splitViewFrame(QWidget* frameToSplit, Qt::Orientation orientation);
     void toggleMaximizeViewFrame(QWidget* frame, QToolButton* btn);
     void equalizeSplitter(QSplitter* splitter, bool horizontal, bool vertical);
     void swapViewFrames(QWidget* frameA, QWidget* frameB);
     void lockViewSize(const QSize& size);
-    void copyPrimaryViewConfig(ecvGLView* view);
+    void copyPrimaryViewConfig(vtkGLView* view);
     void rebindToolsToActiveView(ecvGenericGLDisplay* display);
     void syncPivotButtonStates(ecvGenericGLDisplay* display);
     void prepareViewClose(QWidget* viewFrame);
@@ -764,8 +764,8 @@ private:
 
     ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
 
-    // Phase M3: the first ecvGLView created at startup (sole view type)
-    ecvGLView* m_firstView = nullptr;
+    // Phase M3: the first vtkGLView created at startup (sole view type)
+    vtkGLView* m_firstView = nullptr;
 
     /******************************************/
     /*** ParaView-style multi-view (Phase G) **/

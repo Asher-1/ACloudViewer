@@ -5,69 +5,69 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ecvViewManagerSetupRelay.h"
+#include "vtkViewManagerSetupRelay.h"
 
 #include <ecvDisplayTools.h>
 #include <ecvViewManager.h>
 
-#include "ecvGLView.h"
+#include "vtkGLView.h"
 
 namespace Visualization {
 
 namespace {
 
-// Per-view relay: each ecvGLView's signals → ecvViewManager
+// Per-view relay: each vtkGLView's signals → ecvViewManager
 // (future path for true per-view signal attribution)
 static void typedSingletonRelay(ecvViewManager* mgr,
                                 ecvGenericGLDisplay* view) {
-    auto* glView = dynamic_cast<ecvGLView*>(view);
+    auto* glView = dynamic_cast<vtkGLView*>(view);
     if (!glView) return;
 
-    QObject::connect(glView, &ecvGLView::entitySelectionChanged, mgr,
+    QObject::connect(glView, &vtkGLView::entitySelectionChanged, mgr,
                      &ecvViewManager::entitySelectionChanged);
-    QObject::connect(glView, &ecvGLView::entitiesSelectionChanged, mgr,
+    QObject::connect(glView, &vtkGLView::entitiesSelectionChanged, mgr,
                      &ecvViewManager::entitiesSelectionChanged);
-    QObject::connect(glView, &ecvGLView::newLabel, mgr,
+    QObject::connect(glView, &vtkGLView::newLabel, mgr,
                      &ecvViewManager::newLabel);
-    QObject::connect(glView, &ecvGLView::filesDropped, mgr,
+    QObject::connect(glView, &vtkGLView::filesDropped, mgr,
                      &ecvViewManager::filesDropped);
-    QObject::connect(glView, &ecvGLView::cameraParamChanged, mgr,
+    QObject::connect(glView, &vtkGLView::cameraParamChanged, mgr,
                      &ecvViewManager::cameraParamChanged);
-    QObject::connect(glView, &ecvGLView::mousePosChanged, mgr,
+    QObject::connect(glView, &vtkGLView::mousePosChanged, mgr,
                      &ecvViewManager::mousePosChanged);
-    QObject::connect(glView, &ecvGLView::autoPickPivot, mgr,
+    QObject::connect(glView, &vtkGLView::autoPickPivot, mgr,
                      &ecvViewManager::autoPickPivot);
-    QObject::connect(glView, &ecvGLView::exclusiveFullScreenToggled, mgr,
+    QObject::connect(glView, &vtkGLView::exclusiveFullScreenToggled, mgr,
                      &ecvViewManager::exclusiveFullScreenToggled);
-    QObject::connect(glView, &ecvGLView::itemPicked, mgr,
+    QObject::connect(glView, &vtkGLView::itemPicked, mgr,
                      &ecvViewManager::itemPicked);
     QObject::connect(
             glView,
-            QOverload<int, int, Qt::MouseButtons>::of(&ecvGLView::mouseMoved),
+            QOverload<int, int, Qt::MouseButtons>::of(&vtkGLView::mouseMoved),
             mgr, &ecvViewManager::mouseMoved);
-    QObject::connect(glView, &ecvGLView::leftButtonClicked, mgr,
+    QObject::connect(glView, &vtkGLView::leftButtonClicked, mgr,
                      &ecvViewManager::leftButtonClicked);
-    QObject::connect(glView, &ecvGLView::rightButtonClicked, mgr,
+    QObject::connect(glView, &vtkGLView::rightButtonClicked, mgr,
                      &ecvViewManager::rightButtonClicked);
-    QObject::connect(glView, &ecvGLView::doubleButtonClicked, mgr,
+    QObject::connect(glView, &vtkGLView::doubleButtonClicked, mgr,
                      &ecvViewManager::doubleButtonClicked);
-    QObject::connect(glView, &ecvGLView::buttonReleased, mgr,
+    QObject::connect(glView, &vtkGLView::buttonReleased, mgr,
                      &ecvViewManager::buttonReleased);
-    QObject::connect(glView, &ecvGLView::labelmove2D, mgr,
+    QObject::connect(glView, &vtkGLView::labelmove2D, mgr,
                      &ecvViewManager::labelmove2D);
-    QObject::connect(glView, &ecvGLView::pivotPointChanged, mgr,
+    QObject::connect(glView, &vtkGLView::pivotPointChanged, mgr,
                      &ecvViewManager::pivotPointChanged);
-    QObject::connect(glView, &ecvGLView::perspectiveStateChanged, mgr,
+    QObject::connect(glView, &vtkGLView::perspectiveStateChanged, mgr,
                      &ecvViewManager::perspectiveStateChanged);
 }
 
 // Bridge: ecvDisplayTools "result" signals → ecvViewManager.
 // ecvDisplayTools emits picking results, camera-state changes, and
 // entity-selection changes via `emit primaryDT()->signal(...)`.
-// ecvGLView does NOT re-emit these, so without this bridge the
+// vtkGLView does NOT re-emit these, so without this bridge the
 // ecvViewManager consumers (MainWindow, ecvPickingHub, dialogs)
 // would never receive them.  UniqueConnection prevents duplicate
-// delivery if an ecvGLView relay fires the same signal in the future.
+// delivery if an vtkGLView relay fires the same signal in the future.
 static bool s_displayToolsBridgeInstalled = false;
 
 static void installDisplayToolsBridge(ecvViewManager* mgr) {

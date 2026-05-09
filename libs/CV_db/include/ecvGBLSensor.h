@@ -55,6 +55,15 @@ public:
     virtual void clearDrawings() override;
     virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
 
+    void setGraphicScale(PointCoordinateType scale) override {
+        ccSensor::setGraphicScale(scale);
+        m_geometryDirty = true;
+    }
+    void setFrameColor(ecvColor::Rgb color) override {
+        ccSensor::setFrameColor(color);
+        m_geometryDirty = true;
+    }
+
     // inherited from ccSensor
     bool applyViewport() override;
 
@@ -290,4 +299,7 @@ protected:
     ecvOrientedBBox m_obbHead;
     cloudViewer::geometry::LineSet m_leg;
     cloudViewer::geometry::LineSet m_axis;
+
+    bool m_geometryDirty{true};
+    double m_cachedTransformData[16]{};
 };

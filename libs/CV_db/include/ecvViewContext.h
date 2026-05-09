@@ -22,7 +22,7 @@
 ///
 /// Designed to be trivially copyable (memcpy-safe for POD sub-structs,
 /// value-semantics for Qt/C++ value types) so that push/pull between
-/// an ecvGLView and the ecvDisplayTools instance is a single
+/// an vtkGLView and the ecvDisplayTools instance is a single
 /// struct assignment.
 ///
 /// **Phase A deliverable.**  Later phases will make this the *only*
