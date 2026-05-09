@@ -45,6 +45,7 @@
 #include <vtkVertexGlyphFilter.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
+#include "VTKExtensions/Widgets/VtkShortcutRegistry.h"
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -57,7 +58,7 @@
 #include <ecvViewManager.h>
 #include <ecvViewRepresentation.h>
 
-#include "vtkGLView.h"
+#include <Visualization/vtkGLView.h>
 
 // QT
 #include <ecv2DLabel.h>
@@ -228,6 +229,21 @@ void VtkWidgetPrivate::init() { layoutRenderers(); }
 // Max click duration for enabling picking mode (in ms)
 // static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
+
+static QMap<QString, VtkShortcutDef> s_vtkShortcutMap;
+static bool s_vtkMapInitialized = false;
+
+void QVTKWidgetCustom::reloadVtkShortcutMap() {
+    s_vtkShortcutMap = buildVtkShortcutMap();
+    s_vtkMapInitialized = true;
+}
+
+static void ensureVtkShortcutMap() {
+    if (!s_vtkMapInitialized) {
+        s_vtkShortcutMap = buildVtkShortcutMap();
+        s_vtkMapInitialized = true;
+    }
+}
 QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
                                    ecvDisplayTools* /*tools*/,
                                    bool stereoMode)
@@ -1801,6 +1817,7 @@ static bool isVtkViewerShortcut(int key, Qt::KeyboardModifiers mods) {
             case Qt::Key_O:
             case Qt::Key_F:
             case Qt::Key_S:
+            case Qt::Key_M:
             case Qt::Key_Plus:
             case Qt::Key_Minus:
             case Qt::Key_Equal:
@@ -1808,16 +1825,15 @@ static bool isVtkViewerShortcut(int key, Qt::KeyboardModifiers mods) {
         }
     } else if (ctrl && shift && !alt) {
         switch (key) {
-            case Qt::Key_P:
+            case Qt::Key_D:
             case Qt::Key_W:
-            case Qt::Key_S:
+            case Qt::Key_F:
             case Qt::Key_Plus:
             case Qt::Key_Minus:
                 return true;
         }
     } else if (ctrl && !alt && !shift) {
         switch (key) {
-            case Qt::Key_S:
             case Qt::Key_R:
                 return true;
         }
@@ -1965,32 +1981,29 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 return true;
             }
 
-            // Handle VTK viewer shortcuts at Qt level before VTK processes
-            // them. Uses the stored m_customStyle which persists even when
-            // selection tools replace the active interactor style. Passes the
-            // interactor explicitly so handleShortcut works in detached state.
             if (m_customStyle && m_interactor) {
+                ensureVtkShortcutMap();
+
                 int qkey = keyEvent->key();
                 auto mods = keyEvent->modifiers();
-                bool ctrl = mods & Qt::ControlModifier;
-                bool alt = mods & Qt::AltModifier;
-                bool shift = mods & Qt::ShiftModifier;
+                if (qkey == Qt::Key_unknown || qkey == Qt::Key_Control ||
+                    qkey == Qt::Key_Shift || qkey == Qt::Key_Alt ||
+                    qkey == Qt::Key_Meta) {
+                    break;
+                }
 
-                if (ctrl || alt) {
-                    char key = 0;
-                    if (qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
-                        key = 'a' + static_cast<char>(qkey - Qt::Key_A);
-                    } else if (qkey == Qt::Key_Plus) {
-                        key = '+';
-                    } else if (qkey == Qt::Key_Minus) {
-                        key = '-';
-                    } else if (qkey == Qt::Key_Equal) {
-                        key = '=';
-                    }
+                int combo = qkey;
+                if (mods & Qt::ControlModifier) combo |= Qt::CTRL;
+                if (mods & Qt::AltModifier) combo |= Qt::ALT;
+                if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
+                QString seqStr = QKeySequence(combo).toString(
+                        QKeySequence::PortableText);
 
-                    if (key &&
-                        m_customStyle->handleShortcut(key, ctrl, alt, shift,
-                                                      m_interactor.Get())) {
+                auto it = s_vtkShortcutMap.find(seqStr);
+                if (it != s_vtkShortcutMap.end()) {
+                    if (m_customStyle->handleShortcut(
+                                it->vtkKey, it->vtkCtrl, it->vtkAlt,
+                                it->vtkShift, m_interactor.Get())) {
                         evt->accept();
                         return true;
                     }

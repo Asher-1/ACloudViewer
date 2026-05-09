@@ -1487,7 +1487,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Exclusive full screen (3D view)</string>
    </property>
    <property name="shortcut">
-    <string>F11</string>
+    <string>Shift+F11</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
@@ -3843,7 +3843,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Save viewport as object</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+V</string>
+    <string>Ctrl+Alt+V</string>
    </property>
    <property name="shortcutVisibleInContextMenu">
     <bool>true</bool>

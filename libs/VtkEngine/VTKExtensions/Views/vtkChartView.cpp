@@ -7,6 +7,8 @@
 
 #include "vtkChartView.h"
 
+static constexpr unsigned kDefaultMaxChartPoints = 10000;
+
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
@@ -14,22 +16,30 @@
 #include <ecvViewManager.h>
 
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTextStream>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
 
+#include <vtkAnnotationLink.h>
 #include <vtkAxis.h>
 #include <vtkChart.h>
+#include <vtkCommand.h>
+#include <vtkIdTypeArray.h>
 #include <vtkChartBox.h>
 #include <vtkChartParallelCoordinates.h>
 #include <vtkChartXY.h>
+#include <vtkTooltipItem.h>
 #include <vtkColorSeries.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
@@ -45,6 +55,8 @@
 #include <vtkPlotParallelCoordinates.h>
 #include <vtkPlotPoints.h>
 #include <vtkScatterPlotMatrix.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
 #include <vtkRenderer.h>
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
@@ -126,6 +138,155 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     m_exportCsvBtn->setToolTip(tr("Export chart data as CSV"));
     tbLayout->addWidget(m_exportCsvBtn);
 
+    tbLayout->addWidget(
+            new QLabel(QStringLiteral("|"), toolbar));
+
+    auto* titleLabel = new QLabel(tr("Title:"), toolbar);
+    titleLabel->setStyleSheet("QLabel { color: #ccc; }");
+    tbLayout->addWidget(titleLabel);
+
+    m_chartTitleEdit = new QLineEdit(toolbar);
+    m_chartTitleEdit->setPlaceholderText(tr("Chart title..."));
+    m_chartTitleEdit->setMaximumWidth(150);
+    m_chartTitleEdit->setStyleSheet(
+            "QLineEdit { background: #1e1e1e; color: #ddd; border: 1px "
+            "solid #555; border-radius: 3px; padding: 2px; }");
+    tbLayout->addWidget(m_chartTitleEdit);
+
+    m_legendCheck = new QCheckBox(tr("Legend"), toolbar);
+    m_legendCheck->setStyleSheet("QCheckBox { color: #ccc; }");
+    m_legendCheck->setChecked(true);
+    m_legendCheck->setToolTip(tr("Show/hide chart legend"));
+    tbLayout->addWidget(m_legendCheck);
+
+    m_gridCheck = new QCheckBox(tr("Grid"), toolbar);
+    m_gridCheck->setStyleSheet("QCheckBox { color: #ccc; }");
+    m_gridCheck->setChecked(true);
+    m_gridCheck->setToolTip(tr("Show/hide grid lines"));
+    tbLayout->addWidget(m_gridCheck);
+
+    auto comboSS = QStringLiteral(
+            "QComboBox { background: #1e1e1e; color: #ddd; border: 1px "
+            "solid #555; border-radius: 3px; padding: 1px 4px; "
+            "min-width: 50px; }"
+            "QComboBox::drop-down { border: none; }"
+            "QComboBox QAbstractItemView { background: #2d2d2d; "
+            "color: #ddd; }");
+    auto spinSS = QStringLiteral(
+            "QSpinBox { background: #1e1e1e; color: #ddd; border: 1px "
+            "solid #555; border-radius: 3px; padding: 1px 2px; }");
+    auto editSS = QStringLiteral(
+            "QLineEdit { background: #1e1e1e; color: #ddd; border: 1px "
+            "solid #555; border-radius: 3px; padding: 2px; }");
+    auto checkSS = QStringLiteral("QCheckBox { color: #ccc; }");
+
+    tbLayout->addWidget(new QLabel(QStringLiteral("|"), toolbar));
+
+    auto* axisLabel = new QLabel(tr("Axis:"), toolbar);
+    axisLabel->setStyleSheet("QLabel { color: #ccc; }");
+    tbLayout->addWidget(axisLabel);
+
+    m_axisSelectCombo = new QComboBox(toolbar);
+    m_axisSelectCombo->addItem(tr("Left"), vtkAxis::LEFT);
+    m_axisSelectCombo->addItem(tr("Bottom"), vtkAxis::BOTTOM);
+    m_axisSelectCombo->addItem(tr("Right"), vtkAxis::RIGHT);
+    m_axisSelectCombo->addItem(tr("Top"), vtkAxis::TOP);
+    m_axisSelectCombo->setStyleSheet(comboSS);
+    m_axisSelectCombo->setToolTip(
+            tr("Select axis to configure (ParaView 4-axis config)"));
+    tbLayout->addWidget(m_axisSelectCombo);
+
+    m_axisVisibleCheck = new QCheckBox(tr("Vis"), toolbar);
+    m_axisVisibleCheck->setStyleSheet(checkSS);
+    m_axisVisibleCheck->setChecked(true);
+    m_axisVisibleCheck->setToolTip(tr("Show/hide axis"));
+    tbLayout->addWidget(m_axisVisibleCheck);
+
+    m_axisTitleEdit = new QLineEdit(toolbar);
+    m_axisTitleEdit->setPlaceholderText(tr("Axis title..."));
+    m_axisTitleEdit->setMaximumWidth(100);
+    m_axisTitleEdit->setStyleSheet(editSS);
+    m_axisTitleEdit->setToolTip(tr("Axis title (ParaView AxisTitle)"));
+    tbLayout->addWidget(m_axisTitleEdit);
+
+    m_logScaleCheck = new QCheckBox(tr("Log"), toolbar);
+    m_logScaleCheck->setStyleSheet(checkSS);
+    m_logScaleCheck->setToolTip(tr("Logarithmic scale for selected axis"));
+    tbLayout->addWidget(m_logScaleCheck);
+
+    auto* notLabel = new QLabel(tr("Not:"), toolbar);
+    notLabel->setStyleSheet("QLabel { color: #ccc; }");
+    tbLayout->addWidget(notLabel);
+
+    m_notationCombo = new QComboBox(toolbar);
+    m_notationCombo->addItem(tr("Mixed"), 0);
+    m_notationCombo->addItem(tr("Scientific"), 1);
+    m_notationCombo->addItem(tr("Fixed"), 2);
+    m_notationCombo->setStyleSheet(comboSS);
+    m_notationCombo->setToolTip(tr("Axis label notation"));
+    tbLayout->addWidget(m_notationCombo);
+
+    auto* precLabel = new QLabel(tr("Prec:"), toolbar);
+    precLabel->setStyleSheet("QLabel { color: #ccc; }");
+    tbLayout->addWidget(precLabel);
+
+    m_axisPrecSpin = new QSpinBox(toolbar);
+    m_axisPrecSpin->setRange(0, 15);
+    m_axisPrecSpin->setValue(2);
+    m_axisPrecSpin->setStyleSheet(spinSS);
+    m_axisPrecSpin->setToolTip(tr("Axis label precision"));
+    tbLayout->addWidget(m_axisPrecSpin);
+
+    m_customRangeCheck = new QCheckBox(tr("Custom"), toolbar);
+    m_customRangeCheck->setStyleSheet(checkSS);
+    m_customRangeCheck->setToolTip(tr("Use custom range for selected axis"));
+    tbLayout->addWidget(m_customRangeCheck);
+
+    m_rangeMinSpin = new QDoubleSpinBox(toolbar);
+    m_rangeMinSpin->setRange(-1e12, 1e12);
+    m_rangeMinSpin->setDecimals(4);
+    m_rangeMinSpin->setValue(0.0);
+    m_rangeMinSpin->setEnabled(false);
+    m_rangeMinSpin->setMaximumWidth(80);
+    m_rangeMinSpin->setStyleSheet(
+            "QDoubleSpinBox { background: #1e1e1e; color: #ddd; border: "
+            "1px solid #555; border-radius: 3px; padding: 1px; }");
+    tbLayout->addWidget(m_rangeMinSpin);
+
+    m_rangeMaxSpin = new QDoubleSpinBox(toolbar);
+    m_rangeMaxSpin->setRange(-1e12, 1e12);
+    m_rangeMaxSpin->setDecimals(4);
+    m_rangeMaxSpin->setValue(10.0);
+    m_rangeMaxSpin->setEnabled(false);
+    m_rangeMaxSpin->setMaximumWidth(80);
+    m_rangeMaxSpin->setStyleSheet(
+            "QDoubleSpinBox { background: #1e1e1e; color: #ddd; border: "
+            "1px solid #555; border-radius: 3px; padding: 1px; }");
+    tbLayout->addWidget(m_rangeMaxSpin);
+
+    tbLayout->addWidget(new QLabel(QStringLiteral("|"), toolbar));
+
+    auto* tipLabel = new QLabel(tr("Tip:"), toolbar);
+    tipLabel->setStyleSheet("QLabel { color: #ccc; }");
+    tbLayout->addWidget(tipLabel);
+
+    m_tooltipNotationCombo = new QComboBox(toolbar);
+    m_tooltipNotationCombo->addItem(tr("Mixed"), 0);
+    m_tooltipNotationCombo->addItem(tr("Sci"), 1);
+    m_tooltipNotationCombo->addItem(tr("Fix"), 2);
+    m_tooltipNotationCombo->setStyleSheet(comboSS);
+    m_tooltipNotationCombo->setToolTip(
+            tr("Tooltip notation (ParaView TooltipNotation)"));
+    tbLayout->addWidget(m_tooltipNotationCombo);
+
+    m_tooltipPrecSpin = new QSpinBox(toolbar);
+    m_tooltipPrecSpin->setRange(0, 15);
+    m_tooltipPrecSpin->setValue(6);
+    m_tooltipPrecSpin->setStyleSheet(spinSS);
+    m_tooltipPrecSpin->setToolTip(
+            tr("Tooltip precision (ParaView TooltipPrecision)"));
+    tbLayout->addWidget(m_tooltipPrecSpin);
+
     layout->addWidget(toolbar);
 
     m_vtkWidget = new QVTKOpenGLNativeWidget(this);
@@ -199,6 +360,38 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
             &vtkChartView::onExportPNG);
     connect(m_exportCsvBtn, &QPushButton::clicked, this,
             &vtkChartView::onExportCSV);
+    connect(m_chartTitleEdit, &QLineEdit::textChanged, this,
+            &vtkChartView::onChartTitleChanged);
+    connect(m_legendCheck, &QCheckBox::toggled, this,
+            &vtkChartView::onToggleLegend);
+    connect(m_gridCheck, &QCheckBox::toggled, this,
+            &vtkChartView::onToggleGridLines);
+    connect(m_axisSelectCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &vtkChartView::onActiveAxisChanged);
+    connect(m_axisVisibleCheck, &QCheckBox::toggled, this,
+            &vtkChartView::onToggleAxisVisible);
+    connect(m_axisTitleEdit, &QLineEdit::textChanged, this,
+            &vtkChartView::onAxisTitleChanged);
+    connect(m_logScaleCheck, &QCheckBox::toggled, this,
+            &vtkChartView::onToggleLogScale);
+    connect(m_notationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &vtkChartView::onAxisNotationChanged);
+    connect(m_axisPrecSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &vtkChartView::onAxisPrecisionChanged);
+    connect(m_customRangeCheck, &QCheckBox::toggled, this,
+            &vtkChartView::onToggleCustomRange);
+    connect(m_rangeMinSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &vtkChartView::onAxisRangeChanged);
+    connect(m_rangeMaxSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &vtkChartView::onAxisRangeChanged);
+    connect(m_tooltipNotationCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &vtkChartView::onTooltipNotationChanged);
+    connect(m_tooltipPrecSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &vtkChartView::onTooltipPrecisionChanged);
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &vtkChartView::onEntitySelectionChanged);
@@ -237,6 +430,11 @@ QString vtkChartView::title() const {
             return tr("Quartile Chart View");
     }
     return tr("Chart View");
+}
+
+void vtkChartView::setMaxChartPoints(unsigned max) {
+    m_maxChartPoints = max > 0 ? max : kDefaultMaxChartPoints;
+    rebuildChart();
 }
 
 QColor vtkChartView::seriesColor(int index) const {
@@ -382,11 +580,226 @@ void vtkChartView::onResetZoom() {
     }
 }
 
+void vtkChartView::onChartTitleChanged(const QString& text) {
+    if (!m_chart) return;
+    m_chart->SetTitle(text.toStdString());
+    m_chart->SetShowLegend(m_chart->GetShowLegend());
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onToggleLegend(bool show) {
+    if (!m_chart) return;
+    m_chart->SetShowLegend(show);
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onToggleGridLines(bool show) {
+    if (!m_chart) return;
+    for (int i = 0; i < 2; ++i) {
+        auto* axis = m_chart->GetAxis(i);
+        if (axis) {
+            axis->SetGridVisible(show);
+        }
+    }
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onActiveAxisChanged(int /*index*/) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (!axis) return;
+
+    m_axisVisibleCheck->blockSignals(true);
+    m_axisVisibleCheck->setChecked(axis->GetVisible());
+    m_axisVisibleCheck->blockSignals(false);
+
+    m_axisTitleEdit->blockSignals(true);
+    m_axisTitleEdit->setText(QString::fromStdString(axis->GetTitle()));
+    m_axisTitleEdit->blockSignals(false);
+
+    m_logScaleCheck->blockSignals(true);
+    m_logScaleCheck->setChecked(axis->GetLogScale());
+    m_logScaleCheck->blockSignals(false);
+
+    m_notationCombo->blockSignals(true);
+    int notation = axis->GetNotation();
+    int notIdx = m_notationCombo->findData(notation);
+    m_notationCombo->setCurrentIndex(notIdx >= 0 ? notIdx : 0);
+    m_notationCombo->blockSignals(false);
+
+    m_axisPrecSpin->blockSignals(true);
+    m_axisPrecSpin->setValue(axis->GetPrecision());
+    m_axisPrecSpin->blockSignals(false);
+
+    bool isFixed = (axis->GetBehavior() == vtkAxis::FIXED);
+    m_customRangeCheck->blockSignals(true);
+    m_customRangeCheck->setChecked(isFixed);
+    m_customRangeCheck->blockSignals(false);
+    m_rangeMinSpin->setEnabled(isFixed);
+    m_rangeMaxSpin->setEnabled(isFixed);
+    if (isFixed) {
+        m_rangeMinSpin->blockSignals(true);
+        m_rangeMinSpin->setValue(axis->GetUnscaledMinimum());
+        m_rangeMinSpin->blockSignals(false);
+        m_rangeMaxSpin->blockSignals(true);
+        m_rangeMaxSpin->setValue(axis->GetUnscaledMaximum());
+        m_rangeMaxSpin->blockSignals(false);
+    }
+}
+
+void vtkChartView::onToggleAxisVisible(bool visible) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (axis) axis->SetVisible(visible);
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onAxisTitleChanged(const QString& text) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (axis) axis->SetTitle(text.toStdString());
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onToggleLogScale(bool log) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (axis) {
+        axis->SetLogScale(log);
+        if (log) axis->SetUnscaledMinimumLimit(1e-10);
+    }
+    m_chart->RecalculateBounds();
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onAxisNotationChanged(int index) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    int notation = m_notationCombo->itemData(index).toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (axis) axis->SetNotation(notation);
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onAxisPrecisionChanged(int prec) {
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (axis) axis->SetPrecision(prec);
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onToggleCustomRange(bool use) {
+    m_rangeMinSpin->setEnabled(use);
+    m_rangeMaxSpin->setEnabled(use);
+    if (!m_chart || !m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (!axis) return;
+    if (use) {
+        axis->SetBehavior(vtkAxis::FIXED);
+        axis->SetUnscaledMinimum(m_rangeMinSpin->value());
+        axis->SetUnscaledMaximum(m_rangeMaxSpin->value());
+    } else {
+        axis->SetBehavior(vtkAxis::AUTO);
+        m_chart->RecalculateBounds();
+    }
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onAxisRangeChanged() {
+    if (!m_chart || !m_customRangeCheck || !m_customRangeCheck->isChecked())
+        return;
+    if (!m_axisSelectCombo) return;
+    int axisId = m_axisSelectCombo->currentData().toInt();
+    auto* axis = m_chart->GetAxis(axisId);
+    if (!axis) return;
+    axis->SetUnscaledMinimum(m_rangeMinSpin->value());
+    axis->SetUnscaledMaximum(m_rangeMaxSpin->value());
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::onTooltipNotationChanged(int index) {
+    m_tooltipNotation = index;
+    applyTooltipFormat();
+}
+
+void vtkChartView::onTooltipPrecisionChanged(int prec) {
+    m_tooltipPrecision = prec;
+    applyTooltipFormat();
+}
+
+void vtkChartView::applyTooltipFormat() {
+    if (!m_chart) return;
+    auto* chartXY = vtkChartXY::SafeDownCast(m_chart);
+    if (!chartXY) return;
+
+    auto* tooltip = chartXY->GetTooltip();
+    if (!tooltip) return;
+
+    auto* textProp = tooltip->GetTextProperties();
+    if (textProp) {
+        textProp->SetFontSize(12);
+    }
+}
+
 void vtkChartView::setupChartSelectionCallback() {
     if (!m_chart || !m_cloud || !m_linkCheck || !m_linkCheck->isChecked())
         return;
 
     m_chart->SetSelectionMethod(vtkChart::SELECTION_ROWS);
+
+    auto* link = m_chart->GetAnnotationLink();
+    if (!link) return;
+
+    link->AddObserver(
+            vtkCommand::AnnotationChangedEvent, this,
+            &vtkChartView::onChartAnnotationChanged);
+}
+
+void vtkChartView::onChartAnnotationChanged() {
+    if (!m_chart || !m_cloud) return;
+
+    auto* link = m_chart->GetAnnotationLink();
+    if (!link) return;
+
+    auto* sel = link->GetCurrentSelection();
+    if (!sel || sel->GetNumberOfNodes() == 0) {
+        emit pointsHighlighted(m_cloud, {});
+        return;
+    }
+
+    QVector<unsigned> indices;
+    for (unsigned n = 0; n < sel->GetNumberOfNodes(); ++n) {
+        auto* node = sel->GetNode(n);
+        if (!node) continue;
+        auto* baseArr = node->GetSelectionList();
+        if (!baseArr) continue;
+        auto* arr = vtkIdTypeArray::SafeDownCast(baseArr);
+        if (!arr) continue;
+        for (vtkIdType i = 0; i < arr->GetNumberOfTuples(); ++i) {
+            vtkIdType row = arr->GetValue(i);
+            unsigned ptIdx =
+                    static_cast<unsigned>(row) * m_sampleStride;
+            if (ptIdx < m_cloud->size()) indices.append(ptIdx);
+        }
+    }
+
+    emit pointsHighlighted(m_cloud, indices);
 }
 
 void vtkChartView::rebuildChart() {
@@ -431,7 +844,8 @@ void vtkChartView::rebuildChart() {
     };
 
     m_sampleStride = 1;
-    if (pointCount > 10000) m_sampleStride = pointCount / 10000;
+    if (pointCount > m_maxChartPoints)
+        m_sampleStride = pointCount / m_maxChartPoints;
     unsigned sampleCount =
             (pointCount + m_sampleStride - 1) / m_sampleStride;
 
@@ -445,11 +859,44 @@ void vtkChartView::rebuildChart() {
     } else if (m_chartType == PARALLEL_COORDINATES) {
         rebuildParallelCoordinates(selectedFields, sampleCount, pointCount,
                                    getFieldValue);
+    } else if (m_chartType == IMAGE_CHART || m_chartType == QUARTILE_CHART) {
+        rebuildXYChart(selectedFields, sampleCount, pointCount, getFieldValue);
     } else {
         rebuildXYChart(selectedFields, sampleCount, pointCount, getFieldValue);
     }
 
-    if (m_chart) m_chart->RecalculateBounds();
+    if (m_chart) {
+        m_chart->RecalculateBounds();
+        if (m_chartTitleEdit && !m_chartTitleEdit->text().isEmpty())
+            m_chart->SetTitle(m_chartTitleEdit->text().toStdString());
+        if (m_legendCheck)
+            m_chart->SetShowLegend(m_legendCheck->isChecked());
+        for (int i = 0; i < 2; ++i) {
+            auto* axis = m_chart->GetAxis(i);
+            if (!axis) continue;
+            if (m_gridCheck) axis->SetGridVisible(m_gridCheck->isChecked());
+            if (m_notationCombo)
+                axis->SetNotation(
+                        m_notationCombo->currentData().toInt());
+            if (m_axisPrecSpin) axis->SetPrecision(m_axisPrecSpin->value());
+        }
+        if (m_logScaleCheck && m_logScaleCheck->isChecked()) {
+            auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
+            if (leftAxis) {
+                leftAxis->SetLogScale(true);
+                leftAxis->SetUnscaledMinimumLimit(1e-10);
+            }
+        }
+        if (m_customRangeCheck && m_customRangeCheck->isChecked()) {
+            auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
+            if (leftAxis) {
+                leftAxis->SetBehavior(vtkAxis::FIXED);
+                leftAxis->SetUnscaledMinimum(m_rangeMinSpin->value());
+                leftAxis->SetUnscaledMaximum(m_rangeMaxSpin->value());
+            }
+        }
+    }
+    setupChartSelectionCallback();
     m_vtkWidget->renderWindow()->Render();
 }
 
@@ -491,6 +938,9 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
                 break;
             case POINT_CHART:
                 plotType = vtkChart::POINTS;
+                break;
+            case QUARTILE_CHART:
+                plotType = vtkChart::AREA;
                 break;
             default:
                 plotType = vtkChart::LINE;

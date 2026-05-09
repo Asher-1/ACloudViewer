@@ -8,7 +8,7 @@
 #include "ecvTabbedMultiViewWidget.h"
 
 #include <CVLog.h>
-#include <vtkGLView.h>
+#include <Visualization/vtkGLView.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
@@ -93,6 +93,40 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
 
     addNewTabWidget();
 
+    {
+        auto* prevTab = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageUp),
+                                      this, nullptr, nullptr,
+                                      Qt::WindowShortcut);
+        connect(prevTab, &QShortcut::activated, this, [this]() {
+            int cur = m_tabWidget->currentIndex();
+            int count = tabCount();
+            if (count > 1 && cur > 0) setCurrentTab(cur - 1);
+        });
+
+        auto* nextTab = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageDown),
+                                      this, nullptr, nullptr,
+                                      Qt::WindowShortcut);
+        connect(nextTab, &QShortcut::activated, this, [this]() {
+            int cur = m_tabWidget->currentIndex();
+            int count = tabCount();
+            if (count > 1 && cur < count - 1) setCurrentTab(cur + 1);
+        });
+
+        auto* newTab =
+                new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T),
+                              this, nullptr, nullptr, Qt::WindowShortcut);
+        connect(newTab, &QShortcut::activated, this,
+                [this]() { createTab(); });
+
+        auto* closeCurrentTab =
+                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, nullptr,
+                              nullptr, Qt::WindowShortcut);
+        connect(closeCurrentTab, &QShortcut::activated, this, [this]() {
+            if (!m_readOnly && tabCount() > 0)
+                closeTab(m_tabWidget->currentIndex());
+        });
+    }
+
     connect(m_tabWidget, &QTabWidget::currentChanged, this,
             &ecvTabbedMultiViewWidget::onCurrentTabChanged);
 
@@ -113,7 +147,6 @@ ecvTabbedMultiViewWidget::~ecvTabbedMultiViewWidget() = default;
 int ecvTabbedMultiViewWidget::createTab() {
     auto* layout = new ecvViewLayoutProxy(this);
 
-    // ParaView-style: reuse the lowest available layout number
     QSet<int> usedNumbers;
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         QString text = m_tabWidget->tabText(i);
@@ -140,6 +173,15 @@ int ecvTabbedMultiViewWidget::createTab() {
     int idx = m_tabWidget->insertTab(insertPos, mvw, layout->name());
     setupTabButtons(idx);
     m_tabWidget->setCurrentIndex(idx);
+
+    if (m_viewFactory) {
+        auto* view = m_viewFactory();
+        if (view) {
+            layout->assignView(0, view);
+            ecvViewManager::instance().setActiveView(view);
+        }
+    }
+
     return idx;
 }
 
@@ -230,15 +272,7 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
     int realCount = tabCount();
     if (!m_readOnly && realCount == 0) {
         m_layoutCounter = 0;
-        int newIdx = createTab();
-        if (m_viewFactory) {
-            auto* mvw2 = qobject_cast<ecvMultiViewWidget*>(
-                    m_tabWidget->widget(newIdx));
-            if (mvw2 && mvw2->layoutManager()) {
-                auto* view = m_viewFactory();
-                if (view) mvw2->layoutManager()->assignView(0, view);
-            }
-        }
+        createTab();
     }
 
     if (!orphanedViews.isEmpty()) {
@@ -276,14 +310,6 @@ void ecvTabbedMultiViewWidget::onCurrentTabChanged(int index) {
         mvw->redrawAllViews();
     } else if (currentWidget == m_newTabWidget && m_tabWidget->count() > 1) {
         int newIdx = createTab();
-        if (m_viewFactory) {
-            auto* mvw2 = qobject_cast<ecvMultiViewWidget*>(
-                    m_tabWidget->widget(newIdx));
-            if (mvw2 && mvw2->layoutManager()) {
-                auto* view = m_viewFactory();
-                if (view) mvw2->layoutManager()->assignView(0, view);
-            }
-        }
         setCurrentTab(newIdx);
         return;
     }

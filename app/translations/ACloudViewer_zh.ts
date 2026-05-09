@@ -10721,7 +10721,7 @@ Parameter</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="1511"/>
-        <source>F11</source>
+        <source>Shift+F11</source>
         <translation>F11</translation>
     </message>
     <message>
@@ -13043,8 +13043,8 @@ Parameter</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="4284"/>
-        <source>Ctrl+V</source>
-        <translation>Ctrl+V</translation>
+        <source>Ctrl+Alt+V</source>
+        <translation>Ctrl+Alt+V</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="4296"/>
@@ -13173,6 +13173,210 @@ Parameter</translation>
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>Full Screen (Layout)</source>
+        <translation>全屏（布局）</translation>
+    </message>
+    <message>
+        <source>Full Screen (Active View)</source>
+        <translation>全屏（当前视图）</translation>
+    </message>
+    <message>
+        <source>Quick Create View</source>
+        <translation>快速创建视图</translation>
+    </message>
+    <message>
+        <source>SpreadSheet View</source>
+        <translation>电子表格视图</translation>
+    </message>
+    <message>
+        <source>Line Chart View</source>
+        <translation>折线图视图</translation>
+    </message>
+    <message>
+        <source>Bar Chart View</source>
+        <translation>柱状图视图</translation>
+    </message>
+    <message>
+        <source>Histogram View</source>
+        <translation>直方图视图</translation>
+    </message>
+    <message>
+        <source>Orthographic Slice View</source>
+        <translation>正交切片视图</translation>
+    </message>
+    <message>
+        <source>Python View</source>
+        <translation>Python 视图</translation>
+    </message>
+    <message>
+        <source>Toggle View Decorations</source>
+        <translation>切换视图装饰</translation>
+    </message>
+    <message>
+        <source>Link All Cameras</source>
+        <translation>链接所有相机</translation>
+    </message>
+    <message>
+        <source>Lock View Size (300x300)</source>
+        <translation>锁定视图尺寸（300x300）</translation>
+    </message>
+    <message>
+        <source>Lock View Size Custom...</source>
+        <translation>自定义锁定视图尺寸...</translation>
+    </message>
+    <message>
+        <source>Camera Undo</source>
+        <translation>相机撤销</translation>
+    </message>
+    <message>
+        <source>Camera Redo</source>
+        <translation>相机重做</translation>
+    </message>
+    <message>
+        <source>Capture Screenshot</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <source>Adjust Camera</source>
+        <translation>调整相机</translation>
+    </message>
+    <message>
+        <source>Split Left|Right</source>
+        <translation>左右分割</translation>
+    </message>
+    <message>
+        <source>Split Top|Bottom</source>
+        <translation>上下分割</translation>
+    </message>
+    <message>
+        <source>Close View</source>
+        <translation>关闭视图</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <source>Rename View</source>
+        <translation>重命名视图</translation>
+    </message>
+    <message>
+        <source>View name:</source>
+        <translation>视图名称:</translation>
+    </message>
+    <message>
+        <source>Convert To...</source>
+        <translation>转换为...</translation>
+    </message>
+    <message>
+        <source>Equalize Views</source>
+        <translation>均分视图</translation>
+    </message>
+    <message>
+        <source>Link Camera...</source>
+        <translation>链接相机...</translation>
+    </message>
+    <message>
+        <source>Link to:</source>
+        <translation>链接到:</translation>
+    </message>
+    <message>
+        <source>Unlink Camera</source>
+        <translation>取消链接相机</translation>
+    </message>
+    <message>
+        <source>View Properties</source>
+        <translation>视图属性</translation>
+    </message>
+    <message>
+        <source>Gradient Background</source>
+        <translation>渐变背景</translation>
+    </message>
+    <message>
+        <source>Orientation Axes</source>
+        <translation>方向轴</translation>
+    </message>
+    <message>
+        <source>Camera Orientation Widget</source>
+        <translation>相机方向部件</translation>
+    </message>
+    <message>
+        <source>Maximize</source>
+        <translation>最大化</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>还原</translation>
+    </message>
+    <message>
+        <source>3D View</source>
+        <translation>3D 视图</translation>
+    </message>
+    <message>
+        <source>Render View</source>
+        <translation>渲染视图</translation>
+    </message>
+    <message>
+        <source>Eye Dome Lighting</source>
+        <translation>眼穹灯光</translation>
+    </message>
+    <message>
+        <source>Slice View</source>
+        <translation>切片视图</translation>
+    </message>
+    <message>
+        <source>Box Chart View</source>
+        <translation>箱线图视图</translation>
+    </message>
+    <message>
+        <source>Point Chart View</source>
+        <translation>点图视图</translation>
+    </message>
+    <message>
+        <source>Parallel Coordinates View</source>
+        <translation>平行坐标视图</translation>
+    </message>
+    <message>
+        <source>Plot Matrix View</source>
+        <translation>散点矩阵视图</translation>
+    </message>
+    <message>
+        <source>Image Chart View</source>
+        <translation>图像图表视图</translation>
+    </message>
+    <message>
+        <source>Quartile Chart View</source>
+        <translation>四分位图视图</translation>
+    </message>
+    <message>
+        <source>Render View (Comparative)</source>
+        <translation>渲染视图（对比）</translation>
+    </message>
+    <message>
+        <source>Line Chart View (Comparative)</source>
+        <translation>折线图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Bar Chart View (Comparative)</source>
+        <translation>柱状图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Horizontally</source>
+        <translation>水平</translation>
+    </message>
+    <message>
+        <source>Vertically</source>
+        <translation>垂直</translation>
+    </message>
+    <message>
+        <source>Both</source>
+        <translation>两者</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
     <message>
         <location filename="../MainWindow.cpp" line="1449"/>
         <source>Ready</source>
@@ -32675,16 +32879,144 @@ Please check your expression syntax.</translation>
     </message>
 </context>
 <context>
+    <name>ecvTabbedMultiViewWidget</name>
+    <message>
+        <source>Rename Tab</source>
+        <translation>重命名标签页</translation>
+    </message>
+    <message>
+        <source>New name:</source>
+        <translation>新名称：</translation>
+    </message>
+    <message>
+        <source>Close Tab</source>
+        <translation>关闭标签页</translation>
+    </message>
+    <message>
+        <source>Equalize Views</source>
+        <translation>均分视图</translation>
+    </message>
+    <message>
+        <source>Horizontally</source>
+        <translation>水平</translation>
+    </message>
+    <message>
+        <source>Vertically</source>
+        <translation>垂直</translation>
+    </message>
+    <message>
+        <source>Both</source>
+        <translation>两者</translation>
+    </message>
+    <message>
+        <source>Convert To...</source>
+        <translation>转换为...</translation>
+    </message>
+</context>
+<context>
     <name>ecvShortcutDialog</name>
     <message>
-        <location filename="../ecvShortcutDialog.cpp" line="339"/>
-        <source>Shortcut conflict</source>
+        <source>All Categories</source>
+        <translation>所有分类</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>其他</translation>
+    </message>
+    <message>
+        <source>Shortcut Conflict</source>
         <translation>快捷键冲突</translation>
     </message>
     <message>
-        <location filename="../ecvShortcutDialog.cpp" line="340"/>
-        <source>The shortcut entered would conflict with the one for `%1`</source>
-        <translation>输入的快捷键与 `%1` 的快捷键冲突</translation>
+        <source>The shortcut &quot;%1&quot; conflicts with:
+%2
+
+Please choose a different shortcut.</source>
+        <translation>快捷键 &quot;%1&quot; 与以下项冲突：
+%2
+
+请选择其他快捷键。</translation>
+    </message>
+    <message>
+        <source>Reset Selected</source>
+        <translation>重置选中项</translation>
+    </message>
+    <message>
+        <source>Reset All Defaults</source>
+        <translation>全部恢复默认</translation>
+    </message>
+    <message>
+        <source>Export...</source>
+        <translation>导出...</translation>
+    </message>
+    <message>
+        <source>Import...</source>
+        <translation>导入...</translation>
+    </message>
+    <message>
+        <source>Export Shortcuts</source>
+        <translation>导出快捷键</translation>
+    </message>
+    <message>
+        <source>Import Shortcuts</source>
+        <translation>导入快捷键</translation>
+    </message>
+    <message>
+        <source>JSON (*.json)</source>
+        <translation>JSON (*.json)</translation>
+    </message>
+    <message>
+        <source>Exported %1 shortcuts to %2</source>
+        <translation>已将 %1 个快捷键导出至 %2</translation>
+    </message>
+    <message>
+        <source>Cannot open file: %1</source>
+        <translation>无法打开文件：%1</translation>
+    </message>
+    <message>
+        <source>Invalid JSON format.</source>
+        <translation>JSON 格式无效。</translation>
+    </message>
+    <message>
+        <source>Applied %1 shortcut(s) from %2</source>
+        <translation>已从 %2 导入 %1 个快捷键</translation>
+    </message>
+    <message>
+        <source>Reset Shortcut</source>
+        <translation>重置快捷键</translation>
+    </message>
+    <message>
+        <source>Please select one or more rows first.</source>
+        <translation>请先选择一行或多行。</translation>
+    </message>
+    <message>
+        <source>Reset All Shortcuts</source>
+        <translation>全部重置快捷键</translation>
+    </message>
+    <message>
+        <source>Reset all shortcuts to their default values?</source>
+        <translation>确定将所有快捷键恢复为默认值吗？</translation>
+    </message>
+    <message>
+        <source>%1 shortcut conflict(s) detected. Conflicting rows are highlighted in red.</source>
+        <translation>检测到 %1 处快捷键冲突，冲突行已标红高亮。</translation>
+    </message>
+    <message>
+        <source>No shortcut conflicts detected.</source>
+        <translation>未检测到快捷键冲突。</translation>
+    </message>
+</context>
+<context>
+    <name>vtkComparativeViewWidget</name>
+    <message>
+        <location filename="../../libs/VtkEngine/VTKExtensions/Views/vtkComparativeViewWidget.cpp" line="51"/>
+        <source>▶ Grid Settings</source>
+        <translation>▶ 网格设置</translation>
+    </message>
+    <message>
+        <location filename="../../libs/VtkEngine/VTKExtensions/Views/vtkComparativeViewWidget.cpp" line="66"/>
+        <source>▼ Grid Settings</source>
+        <translation>▼ 网格设置</translation>
     </message>
 </context>
 <context>
