@@ -55,7 +55,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 class QMainWindow;
 class ccPolyline;
-class ecvGLView;
+class vtkGLView;
 class ccHObject;
 class ecvDisplayTools;
 namespace Visualization {
@@ -208,9 +208,9 @@ public:
     void setLocalHotZone(ecvHotZone* hz) { m_localHotZone = hz; }
     bool localClickableItemsVisible() const { return m_localClickableVisible; }
 
-    /// Per-view owner.  Set to the ecvGLView that created this widget.
-    void setOwnerView(ecvGLView* view) { m_ownerView = view; }
-    ecvGLView* ownerView() const { return m_ownerView; }
+    /// Per-view owner.  Set to the vtkGLView that created this widget.
+    void setOwnerView(vtkGLView* view) { m_ownerView = view; }
+    vtkGLView* ownerView() const { return m_ownerView; }
 
     /// Resolve the ecvGenericGLDisplay associated with this widget.
     ecvGenericGLDisplay* resolveDisplay() const;
@@ -323,7 +323,7 @@ protected:
     bool m_useVBO = false;
     vtkRenderer* m_render;
     QMainWindow* m_win;
-    ecvGLView* m_ownerView = nullptr;
+    vtkGLView* m_ownerView = nullptr;
     ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;

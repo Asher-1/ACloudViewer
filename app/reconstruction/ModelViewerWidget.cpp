@@ -19,7 +19,7 @@
 
 // LOCAL
 #include <Visualization/VtkDisplayTools.h>
-#include <ecvGLView.h>
+#include <vtkGLView.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
@@ -50,8 +50,8 @@ Visualization::VtkDisplayTools* vtkPrimaryDisplayTools() {
     return nullptr;
 }
 
-inline ecvGLView* effectiveGLView() {
-    return dynamic_cast<ecvGLView*>(
+inline vtkGLView* effectiveGLView() {
+    return dynamic_cast<vtkGLView*>(
             ecvViewManager::instance().getEffectiveView());
 }
 

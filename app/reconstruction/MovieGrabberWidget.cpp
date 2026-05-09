@@ -9,7 +9,7 @@
 
 #include <Visualization/VtkVis.h>
 #include <ecv2DViewportObject.h>
-#include <ecvGLView.h>
+#include <vtkGLView.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvHObjectCaster.h>
 #include <ecvViewManager.h>
@@ -25,8 +25,8 @@ namespace cloudViewer {
 
 namespace {
 
-inline ecvGLView* mgEffectiveGLView() {
-    return dynamic_cast<ecvGLView*>(
+inline vtkGLView* mgEffectiveGLView() {
+    return dynamic_cast<vtkGLView*>(
             ecvViewManager::instance().getEffectiveView());
 }
 

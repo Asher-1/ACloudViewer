@@ -109,7 +109,7 @@
 
 // VtkEngine
 #include <Visualization/VtkVis.h>
-#include <Visualization/ecvGLView.h>
+#include <Visualization/vtkGLView.h>
 
 // CV_IO_LIB
 #include <AcvProjectFilter.h>
@@ -310,10 +310,10 @@ QWidget* MainWindow::getActiveGLWidget() const {
 }
 
 static ecvGenericVisualizer3D* getActiveVisualizer3D() {
-    // Phase M3: all views are ecvGLView — direct cast, no displayTools
+    // Phase M3: all views are vtkGLView — direct cast, no displayTools
     // fallback.
     auto* view = ecvViewManager::instance().getEffectiveView();
-    auto* glView = dynamic_cast<ecvGLView*>(view);
+    auto* glView = dynamic_cast<vtkGLView*>(view);
     return glView ? glView->getVisualizer3D() : nullptr;
 }
 
@@ -670,6 +670,8 @@ MainWindow::~MainWindow() {
         delete mdiDialog.dialog;
     }
 
+    Visualization::VtkCameraLink::instance().clear();
+
     if (m_tabbedMultiView) {
         m_tabbedMultiView->reset();
     }
@@ -743,9 +745,9 @@ void MainWindow::initial() {
     initReconstructions();
 #endif
 
-    // Phase M3: create the first ecvGLView as the primary view.
+    // Phase M3: create the first vtkGLView as the primary view.
     // VtkDisplayTools is a pure engine service, not a view.
-    m_firstView = ecvGLView::Create(this);
+    m_firstView = vtkGLView::Create(this);
     assert(m_firstView);
     m_firstView->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     ecvViewManager::instance().setActiveView(m_firstView);
@@ -769,8 +771,8 @@ void MainWindow::initial() {
     Visualization::VtkCameraLink::instance().addView(
             m_firstView->getVisualizer3D());
 
-    connect(m_firstView, &ecvGLView::aboutToClose, this,
-            [this](ecvGLView* closingView) {
+    connect(m_firstView, &vtkGLView::aboutToClose, this,
+            [this](vtkGLView* closingView) {
                 if (closingView && closingView->getVisualizer3D()) {
                     Visualization::VtkCameraLink::instance().removeView(
                             closingView->getVisualizer3D());
@@ -820,7 +822,7 @@ void MainWindow::initial() {
     }
     m_tabbedMultiView->installEventFilter(this);
 
-    // Phase M3: place the first ecvGLView in the first cell.
+    // Phase M3: place the first vtkGLView in the first cell.
     {
         auto* mvw = m_tabbedMultiView->currentMultiView();
         auto* layout = mvw ? mvw->layoutManager() : nullptr;
@@ -851,8 +853,8 @@ void MainWindow::initial() {
 void MainWindow::initParaViewLayoutSystem() {
     m_tabbedMultiView = new ecvTabbedMultiViewWidget(this);
 
-    auto viewFactory = [this]() -> ecvGLView* {
-        auto* view = ecvGLView::Create(this);
+    auto viewFactory = [this]() -> vtkGLView* {
+        auto* view = vtkGLView::Create(this);
         if (!view) return nullptr;
         view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
         copyPrimaryViewConfig(view);
@@ -860,8 +862,8 @@ void MainWindow::initParaViewLayoutSystem() {
                 view->getVisualizer3D());
         view->asWidget()->installEventFilter(this);
 
-        connect(view, &ecvGLView::aboutToClose, this,
-                [this](ecvGLView* closingView) {
+        connect(view, &vtkGLView::aboutToClose, this,
+                [this](vtkGLView* closingView) {
                     if (closingView && closingView->getVisualizer3D()) {
                         Visualization::VtkCameraLink::instance().removeView(
                                 closingView->getVisualizer3D());
@@ -921,21 +923,21 @@ QWidget* MainWindow::centralViewWidget() const { return m_tabbedMultiView; }
 void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
     if (!closingDisplay) return;
 
-    auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
+    auto* glView = dynamic_cast<vtkGLView*>(closingDisplay);
 
     ecvViewManager::instance().unregisterView(closingDisplay);
 
-    // Phase M3: all views are ecvGLView. When the active view closes,
-    // find a surviving ecvGLView and rebind the engine to it.
+    // Phase M3: all views are vtkGLView. When the active view closes,
+    // find a surviving vtkGLView and rebind the engine to it.
     bool closingActive =
             (closingDisplay == ecvViewManager::instance().getActiveView()) ||
             (glView && glView->asWidget() == getActiveGLWidget());
 
     if (closingActive) {
-        ecvGLView* survivor = nullptr;
+        vtkGLView* survivor = nullptr;
         const auto& views = ecvViewManager::instance().getAllViews();
         for (auto* v : views) {
-            auto* gv = dynamic_cast<ecvGLView*>(v);
+            auto* gv = dynamic_cast<vtkGLView*>(v);
             if (gv && gv != glView && gv->getVisualizer3D() &&
                 gv->getVtkWidget()) {
                 survivor = gv;
@@ -947,12 +949,12 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
             ecvViewManager::instance().setActiveView(survivor);
             rebindToolsToActiveView(survivor);
         } else {
-            CVLog::Warning("[onViewClosingFromLayout] No surviving ecvGLView.");
+            CVLog::Warning("[onViewClosingFromLayout] No surviving vtkGLView.");
             rebindToolsToActiveView(nullptr);
         }
     }
 
-    // Phase M3: all views are ecvGLView — remove from camera link.
+    // Phase M3: all views are vtkGLView — remove from camera link.
     if (glView && glView->getVisualizer3D()) {
         Visualization::VtkCameraLink::instance().removeView(
                 glView->getVisualizer3D());
@@ -1421,21 +1423,90 @@ void MainWindow::connectActions() {
 
     // Multi-window view arrangement actions
     if (auto* displayMenu = m_ui->menuDisplay) {
-        auto* linkCamerasAction = new QAction(tr("Link Cameras"), this);
+        auto* linkCamerasAction = new QAction(tr("Link All Cameras"), this);
         linkCamerasAction->setCheckable(true);
         linkCamerasAction->setChecked(false);
         linkCamerasAction->setToolTip(
-                tr("Synchronize camera orientation across all views "
+                tr("Link all render view cameras together "
                    "(ParaView-style Camera Link)"));
         linkCamerasAction->setIcon(QIcon(":/Resources/images/svg/pqLock.svg"));
         connect(linkCamerasAction, &QAction::toggled, this, [](bool checked) {
             Visualization::VtkCameraLink::instance().setEnabled(checked);
         });
 
-        // Also add to the ViewToolBar for easy access
+        auto* addCameraLinkAction =
+                new QAction(tr("Add Camera Link..."), this);
+        addCameraLinkAction->setToolTip(
+                tr("Link the active view's camera to another view"));
+        connect(addCameraLinkAction, &QAction::triggered, this, [this]() {
+            auto& cl = Visualization::VtkCameraLink::instance();
+            auto* activeDisplay = getActiveGLView();
+            auto* activeView = activeDisplay
+                                       ? dynamic_cast<vtkGLView*>(activeDisplay)
+                                       : nullptr;
+            if (!activeView || !activeView->getVisualizer3D()) return;
+
+            auto* srcVis = activeView->getVisualizer3D();
+            const auto& views = cl.registeredViews();
+            if (views.size() < 2) return;
+
+            QStringList targetNames;
+            QList<Visualization::VtkVis*> targets;
+            for (auto* v : views) {
+                if (v == srcVis) continue;
+                targets.append(v);
+                auto cam = v->getVtkCamera();
+                targetNames.append(
+                        tr("View %1").arg(targets.size()));
+            }
+
+            bool ok = false;
+            QString picked = QInputDialog::getItem(
+                    this, tr("Add Camera Link"),
+                    tr("Link active view to:"),
+                    targetNames, 0, false, &ok);
+            if (!ok || picked.isEmpty()) return;
+
+            int idx = targetNames.indexOf(picked);
+            if (idx < 0 || idx >= targets.size()) return;
+
+            cl.addLink(srcVis, targets[idx]);
+        });
+
+        auto* manageCameraLinksAction =
+                new QAction(tr("Manage Camera Links..."), this);
+        manageCameraLinksAction->setToolTip(
+                tr("View and remove active camera links"));
+        connect(manageCameraLinksAction, &QAction::triggered, this, [this]() {
+            auto& cl = Visualization::VtkCameraLink::instance();
+            auto names = cl.linkNames();
+            if (names.empty()) {
+                QMessageBox::information(
+                        this, tr("Camera Links"),
+                        tr("No camera links are active."));
+                return;
+            }
+
+            QStringList items;
+            for (const auto& n : names) {
+                items.append(QString::fromStdString(n));
+            }
+
+            bool ok = false;
+            QString picked = QInputDialog::getItem(
+                    this, tr("Remove Camera Link"),
+                    tr("Select a link to remove:"),
+                    items, 0, false, &ok);
+            if (!ok || picked.isEmpty()) return;
+
+            cl.removeLink(picked.toStdString());
+        });
+
         m_ui->ViewToolBar->addAction(linkCamerasAction);
         displayMenu->addSeparator();
         displayMenu->addAction(linkCamerasAction);
+        displayMenu->addAction(addCameraLinkAction);
+        displayMenu->addAction(manageCameraLinksAction);
 
         auto* eqMenu = displayMenu->addMenu(tr("Equalize Views"));
         eqMenu->addAction(tr("Horizontally"), [this]() {
@@ -2373,7 +2444,7 @@ void MainWindow::updateViewModePopUpMenu() {
 void MainWindow::addViewWidget(QWidget* viewWidget) {
     if (!m_tabbedMultiView || !viewWidget) return;
     auto* display = ecvGenericGLDisplay::FromWidget(viewWidget);
-    auto* glView = display ? dynamic_cast<ecvGLView*>(display) : nullptr;
+    auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr;
     if (glView) {
         m_tabbedMultiView->createTabWithView(glView);
     }
@@ -2543,7 +2614,7 @@ void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
     }
 }
 
-void MainWindow::copyPrimaryViewConfig(ecvGLView* view) {
+void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
     if (!view) return;
 
     auto* dt = ecvViewManager::instance().displayTools();
@@ -2603,9 +2674,9 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
             ecvViewManager::instance().displayTools());
     if (!engineDT) return;
 
-    auto* glView = dynamic_cast<ecvGLView*>(display);
+    auto* glView = dynamic_cast<vtkGLView*>(display);
     if (glView && glView->getVisualizer3D() && glView->getVtkWidget()) {
-        // Phase M3: all views are ecvGLView — bind the engine to the
+        // Phase M3: all views are vtkGLView — bind the engine to the
         // active view's VTK pipeline so static APIs route correctly.
         engineDT->switchActiveView(glView->getVisualizer3DSP(),
                                    glView->getVtkWidget());
@@ -2625,9 +2696,9 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
         }
 #endif
     } else {
-        // No valid ecvGLView — all views might be closed.
+        // No valid vtkGLView — all views might be closed.
         // Don't restore a "primary" pipeline; there's no primary anymore.
-        CVLog::Warning("[rebindToolsToActiveView] No active ecvGLView");
+        CVLog::Warning("[rebindToolsToActiveView] No active vtkGLView");
 #if defined(USE_VTK_BACKEND)
         if (m_selectionController) {
             ecvGenericVisualizer3D* viewer = getActiveVisualizer3D();
@@ -2698,7 +2769,7 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
 }
 
 void MainWindow::syncPivotButtonStates(ecvGenericGLDisplay* display) {
-    auto* glView = dynamic_cast<ecvGLView*>(display);
+    auto* glView = dynamic_cast<vtkGLView*>(display);
     if (!glView) return;
 
     const auto& ctx = glView->context();
@@ -2740,12 +2811,12 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
 
     if (viewsToClose.empty()) return;
 
-    // Phase M3: simplified — all views are ecvGLView, no primary fallback.
+    // Phase M3: simplified — all views are vtkGLView, no primary fallback.
     QWidget* activeScreen = getActiveGLWidget();
     bool activeHandled = false;
 
     for (auto* closingDisplay : viewsToClose) {
-        auto* glView = dynamic_cast<ecvGLView*>(closingDisplay);
+        auto* glView = dynamic_cast<vtkGLView*>(closingDisplay);
 
         ecvViewManager::instance().unregisterView(closingDisplay);
 
@@ -2755,10 +2826,10 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
 
         if (closingActive && !activeHandled) {
             activeHandled = true;
-            ecvGLView* survivor = nullptr;
+            vtkGLView* survivor = nullptr;
             const auto& views = ecvViewManager::instance().getAllViews();
             for (auto* v : views) {
-                auto* gv = dynamic_cast<ecvGLView*>(v);
+                auto* gv = dynamic_cast<vtkGLView*>(v);
                 if (gv && gv != glView && gv->getVisualizer3D() &&
                     gv->getVtkWidget()) {
                     survivor = gv;
@@ -2770,7 +2841,7 @@ void MainWindow::prepareViewClose(QWidget* viewFrame) {
                 ecvViewManager::instance().setActiveView(survivor);
                 rebindToolsToActiveView(survivor);
             } else {
-                CVLog::Warning("[prepareViewClose] No surviving ecvGLView.");
+                CVLog::Warning("[prepareViewClose] No surviving vtkGLView.");
                 rebindToolsToActiveView(nullptr);
             }
         }
@@ -2827,7 +2898,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
     auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
         auto* display = ecvGenericGLDisplay::FromWidget(w);
-        auto* glView = display ? dynamic_cast<ecvGLView*>(display) : nullptr;
+        auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr;
         return glView ? glView->getVisualizer3D() : nullptr;
     };
 
@@ -2975,7 +3046,18 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             makeSvgBtn(QStringLiteral(":/Resources/images/svg/pqCloseView.svg"),
                        tr("Close View"));
     connect(closeBtn, &QToolButton::clicked, this, [this, frame]() {
-        if (ecvViewManager::instance().viewCount() <= 1) return;
+        bool isGLViewFrame = (ecvGenericGLDisplay::FromWidget(frame) != nullptr);
+        if (!isGLViewFrame) {
+            for (auto* child : frame->findChildren<QWidget*>()) {
+                if (ecvGenericGLDisplay::FromWidget(child)) {
+                    isGLViewFrame = true;
+                    break;
+                }
+            }
+        }
+
+        if (isGLViewFrame && ecvViewManager::instance().viewCount() <= 1)
+            return;
 
         prepareViewClose(frame);
 
@@ -3054,6 +3136,76 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     }
                 });
 
+                auto* contextViewDisplay =
+                        [&]() -> ecvGenericGLDisplay* {
+                    auto* cFrame = frame->findChild<QWidget*>(
+                            "CentralWidgetFrame");
+                    if (!cFrame || !cFrame->layout()) return nullptr;
+                    for (int i = 0; i < cFrame->layout()->count(); ++i) {
+                        auto* item = cFrame->layout()->itemAt(i);
+                        if (item && item->widget()) {
+                            return ecvGenericGLDisplay::FromWidget(
+                                    item->widget());
+                        }
+                    }
+                    return nullptr;
+                }();
+
+                if (contextViewDisplay) {
+                    auto* ctxGlView =
+                            dynamic_cast<vtkGLView*>(contextViewDisplay);
+                    auto* ctxVis = ctxGlView
+                                           ? ctxGlView->getVisualizer3D()
+                                           : nullptr;
+                    if (ctxVis) {
+                        auto& cl =
+                                Visualization::VtkCameraLink::instance();
+                        menu.addAction(
+                                tr("Link Camera..."), [this, ctxVis]() {
+                                    auto& cl2 = Visualization::
+                                            VtkCameraLink::instance();
+                                    const auto& views =
+                                            cl2.registeredViews();
+                                    QStringList targetNames;
+                                    QList<Visualization::VtkVis*> targets;
+                                    int n = 0;
+                                    for (auto* v : views) {
+                                        if (v == ctxVis) continue;
+                                        targets.append(v);
+                                        targetNames.append(
+                                                tr("View %1").arg(++n));
+                                    }
+                                    if (targets.isEmpty()) return;
+
+                                    bool ok = false;
+                                    QString picked =
+                                            QInputDialog::getItem(
+                                                    this,
+                                                    tr("Link Camera"),
+                                                    tr("Link to:"),
+                                                    targetNames, 0,
+                                                    false, &ok);
+                                    if (!ok || picked.isEmpty()) return;
+                                    int idx =
+                                            targetNames.indexOf(picked);
+                                    if (idx >= 0 && idx < targets.size())
+                                        cl2.addLink(ctxVis,
+                                                    targets[idx]);
+                                });
+
+                        if (cl.isLinked(ctxVis)) {
+                            menu.addAction(
+                                    tr("Unlink Camera"),
+                                    [ctxVis]() {
+                                        Visualization::VtkCameraLink::
+                                                instance()
+                                                        .removeLinksForView(
+                                                                ctxVis);
+                                    });
+                        }
+                    }
+                }
+
                 menu.addSeparator();
 
                 auto* viewDisplay = [&]() -> ecvGenericGLDisplay* {
@@ -3072,7 +3224,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
                 if (viewDisplay) {
                     auto* viewMenu = menu.addMenu(tr("View Properties"));
-                    auto* glView = dynamic_cast<ecvGLView*>(viewDisplay);
+                    auto* glView = dynamic_cast<vtkGLView*>(viewDisplay);
 
                     auto* gradAct =
                             viewMenu->addAction(tr("Gradient Background"));
@@ -3118,16 +3270,31 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     menu.addSeparator();
                 }
 
-                auto* closeAct = menu.addAction(tr("Close"), [this, frame]() {
-                    if (ecvViewManager::instance().viewCount() <= 1) return;
-                    prepareViewClose(frame);
-                    if (m_tabbedMultiView) {
-                        auto* mvw = m_tabbedMultiView->currentMultiView();
-                        if (mvw) mvw->onCloseView(frame);
+                bool ctxIsGLFrame =
+                        (ecvGenericGLDisplay::FromWidget(frame) != nullptr);
+                if (!ctxIsGLFrame) {
+                    for (auto* child : frame->findChildren<QWidget*>()) {
+                        if (ecvGenericGLDisplay::FromWidget(child)) {
+                            ctxIsGLFrame = true;
+                            break;
+                        }
                     }
-                });
-                closeAct->setEnabled(ecvViewManager::instance().viewCount() >
-                                     1);
+                }
+                auto* closeAct = menu.addAction(
+                        tr("Close"), [this, frame, ctxIsGLFrame]() {
+                            if (ctxIsGLFrame &&
+                                ecvViewManager::instance().viewCount() <= 1)
+                                return;
+                            prepareViewClose(frame);
+                            if (m_tabbedMultiView) {
+                                auto* mvw =
+                                        m_tabbedMultiView->currentMultiView();
+                                if (mvw) mvw->onCloseView(frame);
+                            }
+                        });
+                closeAct->setEnabled(
+                        !ctxIsGLFrame ||
+                        ecvViewManager::instance().viewCount() > 1);
                 Q_UNUSED(splitH);
                 Q_UNUSED(splitV);
                 menu.exec(frame->findChild<QWidget*>("ViewTitleBar")
@@ -3232,7 +3399,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     return frame;
 }
 
-ecvGLView* MainWindow::new3DView() {
+vtkGLView* MainWindow::new3DView() {
     if (!m_tabbedMultiView) return nullptr;
     int tabIdx = m_tabbedMultiView->createTab();
     auto* mvw = qobject_cast<ecvMultiViewWidget*>(
@@ -3240,7 +3407,7 @@ ecvGLView* MainWindow::new3DView() {
     if (mvw && mvw->layoutManager()) {
         auto views = mvw->layoutManager()->getViews();
         for (auto* v : views) {
-            auto* glView = dynamic_cast<ecvGLView*>(v);
+            auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView) return glView;
         }
     }
@@ -3313,7 +3480,7 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     // with a 50/50 ratio, creating a nested QSplitter.
     if (!frameToSplit) return;
 
-    auto* view = ecvGLView::Create(this);
+    auto* view = vtkGLView::Create(this);
     if (!view) return;
 
     view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
@@ -3376,8 +3543,8 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     Visualization::VtkCameraLink::instance().addView(view->getVisualizer3D());
     view->asWidget()->installEventFilter(this);
 
-    connect(view, &ecvGLView::aboutToClose, this,
-            [this](ecvGLView* closingView) {
+    connect(view, &vtkGLView::aboutToClose, this,
+            [this](vtkGLView* closingView) {
                 if (closingView && closingView->getVisualizer3D()) {
                     Visualization::VtkCameraLink::instance().removeView(
                             closingView->getVisualizer3D());
@@ -3805,7 +3972,7 @@ void MainWindow::doActionEditCamera() {
 
 #ifdef USE_VTK_BACKEND
     ecvGenericVisualizer3D* activeVis = nullptr;
-    auto* activeView = dynamic_cast<ecvGLView*>(
+    auto* activeView = dynamic_cast<vtkGLView*>(
             ecvViewManager::instance().getActiveView());
     if (activeView) {
         activeVis = activeView->getVisualizer3D();
@@ -5447,7 +5614,7 @@ void MainWindow::toggle3DView(bool state) {
     ecvGenericGLDisplay* vtkTarget = display;
     if (!vtkTarget) vtkTarget = ecvViewManager::instance().getActiveView();
 
-    auto* glView = dynamic_cast<ecvGLView*>(vtkTarget);
+    auto* glView = dynamic_cast<vtkGLView*>(vtkTarget);
     auto* vis = glView ? glView->getVisualizer3D() : nullptr;
     if (vis) {
         vis->setInteractionMode(
@@ -6226,7 +6393,7 @@ void MainWindow::setGlobalZoom() {
 
         // Also zoom all secondary views
         for (auto* v : ecvViewManager::instance().getAllViews()) {
-            auto* glView = dynamic_cast<ecvGLView*>(v);
+            auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView) {
                 glView->zoomGlobal();
             }

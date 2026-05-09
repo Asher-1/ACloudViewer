@@ -8,7 +8,7 @@
 #include "ecvTabbedMultiViewWidget.h"
 
 #include <CVLog.h>
-#include <ecvGLView.h>
+#include <vtkGLView.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
@@ -143,7 +143,7 @@ int ecvTabbedMultiViewWidget::createTab() {
     return idx;
 }
 
-int ecvTabbedMultiViewWidget::createTabWithView(ecvGLView* view) {
+int ecvTabbedMultiViewWidget::createTabWithView(vtkGLView* view) {
     int idx = createTab();
     auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(idx));
     if (mvw && mvw->layoutManager() && view) {
@@ -199,7 +199,7 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
     // Suppress auto-creation in onCurrentTabChanged while closing
     m_closingTab = true;
 
-    QList<ecvGLView*> orphanedViews = mvw->destroyAllViews();
+    QList<vtkGLView*> orphanedViews = mvw->destroyAllViews();
 
     for (auto* glView : orphanedViews) {
         if (!glView) continue;

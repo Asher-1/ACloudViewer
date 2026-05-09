@@ -119,15 +119,15 @@ public:
     double getActiveIndex() const { return m_activeIndex; }
 
     //! Sets currently active index (displayed position, etc.)
-    void setActiveIndex(double index) { m_activeIndex = index; }
+    virtual void setActiveIndex(double index) { m_activeIndex = index; }
 
     //! Sets the sensor graphic representation scale
-    void setGraphicScale(PointCoordinateType scale) { m_scale = scale; }
+    virtual void setGraphicScale(PointCoordinateType scale) { m_scale = scale; }
 
     //! Returns the sensor graphic representation scale
     PointCoordinateType getGraphicScale() const { return m_scale; }
 
-    void setFrameColor(ecvColor::Rgb color) { m_color = color; }
+    virtual void setFrameColor(ecvColor::Rgb color) { m_color = color; }
     const ecvColor::Rgb& getFrameColor() const { return m_color; }
 
     //! Apply sensor 'viewport' to a 3D view

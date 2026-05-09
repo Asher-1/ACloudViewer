@@ -314,10 +314,11 @@ void ccPointPropertiesDlg::processPickedPoint(const PickedItem& picked) {
     if (m_label->size() == 1 && ecvViewManager::instance().activeWidget()) {
         if (auto* view = ecvViewManager::instance().getEffectiveView()) {
             const float gw = static_cast<float>(view->glWidth());
-            if (gw > 0.0f) {
+            const float gh = static_cast<float>(view->glHeight());
+            if (gw > 0.0f && gh > 0.0f) {
                 m_label->setPosition(
                         static_cast<float>(picked.clickPoint.x() + 20) / gw,
-                        static_cast<float>(picked.clickPoint.y() + 20) / gw);
+                        static_cast<float>(picked.clickPoint.y() + 20) / gh);
             }
         }
     }

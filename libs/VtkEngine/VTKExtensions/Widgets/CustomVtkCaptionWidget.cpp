@@ -24,7 +24,7 @@
 #include <CV_db/include/ecvHObjectCaster.h>
 #include <CV_db/include/ecvViewManager.h>
 
-#include "Visualization/ecvGLView.h"
+#include "Visualization/vtkGLView.h"
 
 vtkStandardNewMacro(CustomVtkCaptionWidget);
 
@@ -103,7 +103,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
         tools->m_deferredPickingTimer.stop();
     }
     for (auto* disp : ecvViewManager::instance().getAllViews()) {
-        if (auto* glv = dynamic_cast<ecvGLView*>(disp)) {
+        if (auto* glv = dynamic_cast<vtkGLView*>(disp)) {
             glv->deferredPickingTimer().stop();
         }
     }
@@ -121,7 +121,7 @@ void CustomVtkCaptionWidget::OnWidgetInteraction(vtkObject* caller,
             tools->m_deferredPickingTimer.stop();
         }
         for (auto* disp : ecvViewManager::instance().getAllViews()) {
-            if (auto* glv = dynamic_cast<ecvGLView*>(disp)) {
+            if (auto* glv = dynamic_cast<vtkGLView*>(disp)) {
                 glv->deferredPickingTimer().stop();
             }
         }

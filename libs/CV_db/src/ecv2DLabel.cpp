@@ -317,7 +317,7 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
     // requires the main/GUI thread for OpenGL context.  Calling Render()
     // from a worker thread causes SIGABRT (Qt assertion).
     // See: GDB backtrace — cc2DLabel::clear → ecvRedrawScope::~ecvRedrawScope
-    //      → ecvGLView::redraw → vtkGenericOpenGLRenderWindow::Render.
+    //      → vtkGLView::redraw → vtkGenericOpenGLRenderWindow::Render.
     if (getDisplay() &&
         QThread::currentThread() == QCoreApplication::instance()->thread()) {
         ecvRedrawScope scope({this});
@@ -711,9 +711,9 @@ void AddPointCoordinates(QStringList& body,
 
     QString coordStr;
     if (pp.mesh)
-        coordStr = QString("P@Tri#%0:").arg(pp.index);
+        coordStr = QString("P@Tri#%1:").arg(pp.index);
     else
-        coordStr = QString("P#%0:").arg(pp.index);
+        coordStr = QString("P#%1:").arg(pp.index);
     if (!pointName.isEmpty())
         coordStr = QString("%1 (%2)").arg(pointName, coordStr);
     if (isShifted) {

@@ -1088,11 +1088,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 } else if (item->isA(CV_TYPES::LABEL_2D) ||
                            item->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
                     if (item->isEnabled()) {
+                        item->setForceRedraw(true);
                         cc2DLabel* label = ccHObjectCaster::To2DLabel(item);
                         cc2DViewportLabel* vpLabel =
                                 ccHObjectCaster::To2DViewportLabel(item);
                         if (label) label->updateLabel();
                         if (vpLabel) vpLabel->updateLabel();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     } else {
                         hideShowObjectOnDisplays(item, false);
                         cc2DLabel* label = ccHObjectCaster::To2DLabel(item);

@@ -26,7 +26,7 @@ QMap<QWidget*, ecvGenericGLDisplay*> s_displayRegistry;
 
 // ================================================================
 // Default implementations for the new per-view virtual methods.
-// Concrete subclasses (ecvGLView) override these
+// Concrete subclasses (vtkGLView) override these
 // with real per-view logic.
 // ================================================================
 

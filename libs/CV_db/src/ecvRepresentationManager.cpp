@@ -45,7 +45,7 @@ ecvViewRepresentation* ecvRepresentationManager::ensureRepresentation(
     //
     // Collect donor properties under the write lock, then apply them AFTER
     // releasing the lock.  This prevents deadlock: setVisible()/setProperties()
-    // emit representationChanged → ecvGLView::redraw() → getRepresentation()
+    // emit representationChanged → vtkGLView::redraw() → getRepresentation()
     // would try to acquire a read lock on the same QReadWriteLock.
     ecvViewRepresentation::Properties donorProps;
     bool donorHasVisibility = false;

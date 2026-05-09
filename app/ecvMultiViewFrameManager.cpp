@@ -8,7 +8,7 @@
 #include "ecvMultiViewFrameManager.h"
 
 #include <CVLog.h>
-#include <ecvGLView.h>
+#include <vtkGLView.h>
 
 #include <QApplication>
 #include <QDrag>
@@ -328,7 +328,7 @@ void ecvMultiViewFrameManager::addTitleBarAction(QWidget* frame,
 void ecvMultiViewFrameManager::splitViewFrame(
         QWidget* frameToSplit,
         Qt::Orientation orientation,
-        std::function<ecvGLView*()> viewFactory) {
+        std::function<vtkGLView*()> viewFactory) {
     if (!m_mdiArea || !frameToSplit || !viewFactory) return;
 
     auto* view = viewFactory();

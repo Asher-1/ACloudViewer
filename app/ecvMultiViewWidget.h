@@ -15,7 +15,7 @@
 #include <functional>
 
 class ecvViewLayoutProxy;
-class ecvGLView;
+class vtkGLView;
 class ecvGenericGLDisplay;
 class QSplitter;
 class QFrame;
@@ -55,7 +55,7 @@ public:
     int activeFrameLocation() const;
 
     /// Set the factory used to create new views for split operations.
-    using ViewFactory = std::function<ecvGLView*()>;
+    using ViewFactory = std::function<vtkGLView*()>;
     void setViewFactory(ViewFactory factory) { m_viewFactory = factory; }
 
     /// Set the callback for creating the title-bar/frame wrapper.
@@ -81,9 +81,9 @@ public:
     /// Mirrors ParaView's pqMultiViewWidget::togglePopout().
     bool togglePopout();
 
-    /// Destroy all views in this layout.  Returns the list of ecvGLView
+    /// Destroy all views in this layout.  Returns the list of vtkGLView
     /// pointers that were detached (caller may schedule deletion).
-    QList<ecvGLView*> destroyAllViews();
+    QList<vtkGLView*> destroyAllViews();
 
 signals:
     /// Emitted when the active frame changes (click on a view).

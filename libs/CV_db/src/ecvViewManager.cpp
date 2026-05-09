@@ -33,7 +33,7 @@ void ecvViewManager::registerSingletonRelayHook(SingletonRelayHook hook) {
 
 void ecvViewManager::setupSingletonRelay(ecvGenericGLDisplay* view) {
     // Typed PMF connections are registered from the VTK layer
-    // (registerViewManagerTypedRelay) because CV_db cannot include ecvGLView.
+    // (registerViewManagerTypedRelay) because CV_db cannot include vtkGLView.
     if (s_singletonRelayHook) s_singletonRelayHook(this, view);
 }
 

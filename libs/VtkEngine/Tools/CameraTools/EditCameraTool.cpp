@@ -9,7 +9,7 @@
 
 // Local
 #include "Visualization/VtkVis.h"
-#include "Visualization/ecvGLView.h"
+#include "Visualization/vtkGLView.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -81,7 +81,7 @@ void RotateElevation(vtkCamera* camera, double angle) {
 static ecvGenericVisualizer3D* visualizerFromEffectiveView() {
     ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
     if (!view) return nullptr;
-    if (auto* glv = dynamic_cast<ecvGLView*>(view)) {
+    if (auto* glv = dynamic_cast<vtkGLView*>(view)) {
         return glv->getVisualizer3D();
     }
     return nullptr;

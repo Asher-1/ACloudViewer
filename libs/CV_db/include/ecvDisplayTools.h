@@ -98,7 +98,7 @@ public:
      */
     virtual ~ecvDisplayTools() override;
 
-    // Phase M4: beginPrimaryRender/endPrimaryRender removed. Each ecvGLView
+    // Phase M4: beginPrimaryRender/endPrimaryRender removed. Each vtkGLView
     // now does its own full rendering pipeline without ecvViewManager-wide
     // primary display-tools context swap.
 
@@ -106,7 +106,7 @@ public:
     // Per-view context
     //
     // VtkDisplayTools is an engine, not a view; per-view state lives on
-    // ecvGLView. Parameter-less static wrappers use
+    // vtkGLView. Parameter-less static wrappers use
     // ecvViewManager::instance().resolveViewContext().
     // ================================================================
 
@@ -833,7 +833,7 @@ private:
      * @brief Internal 3D drawing method
      * @param CONTEXT Drawing context
      */
-    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
+    [[deprecated("Phase B: use per-view vtkGLView::redraw()")]]
     static void Draw3D(CC_DRAW_CONTEXT& CONTEXT);
 
 public:  // Main interface accessors
@@ -1603,9 +1603,9 @@ public:  // Main interface accessors
     inline void removeEntities(
             const CC_DRAW_CONTEXT& CONTEXT) override { /* do nothing */ }
 
-    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
+    [[deprecated("Phase B: use per-view vtkGLView::redraw()")]]
     static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
-    [[deprecated("Phase B: use per-view ecvGLView::redraw()")]]
+    [[deprecated("Phase B: use per-view vtkGLView::redraw()")]]
     static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
     static void Update2DLabel(bool immediateUpdate = false);
     static void Pick2DLabel(int x, int y);
@@ -1896,7 +1896,7 @@ public:  // visualization matrix transformation
     //! button, etc.  Legacy wrapper using shared state (ecvViewManager).
     static void DrawClickableItems(int xStart, int& yStart);
     //! Phase M4 parameterized overload: accepts explicit per-view state so
-    //! callers (ecvGLView) can bypass ScopedHotZoneRender.
+    //! callers (vtkGLView) can bypass ScopedHotZoneRender.
     static void DrawClickableItems(
             int xStart,
             int& yStart,

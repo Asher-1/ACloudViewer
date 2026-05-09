@@ -26,8 +26,8 @@
 #include <ecvViewManager.h>
 
 // VtkEngine
-#include "../../Visualization/VtkVis.h"
-#include "../../Visualization/ecvGLView.h"
+#include "Visualization/VtkVis.h"
+#include "Visualization/vtkGLView.h"
 
 // QT
 #include <QAction>
@@ -67,7 +67,7 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
             this,
             [this](ecvGenericGLDisplay* newActive,
                    ecvGenericGLDisplay* /*oldActive*/) {
-                auto* glView = dynamic_cast<ecvGLView*>(newActive);
+                auto* glView = dynamic_cast<vtkGLView*>(newActive);
                 if (glView && glView->getVisualizer3D()) {
                     setVisualizer(static_cast<ecvGenericVisualizer3D*>(
                             glView->getVisualizer3D()));

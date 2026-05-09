@@ -9,7 +9,7 @@
 
 namespace Visualization {
 
-/// Registers ecvViewManager's typed per-view signal relay (ecvGLView /
+/// Registers ecvViewManager's typed per-view signal relay (vtkGLView /
 /// ecvDisplayTools PMF connections). Safe to call more than once.
 void registerViewManagerTypedRelay();
 

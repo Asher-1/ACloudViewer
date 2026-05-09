@@ -11,6 +11,10 @@
 #include <vtkCamera.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
+
+#include <algorithm>
+#include <sstream>
 
 #include "VtkVis.h"
 
@@ -23,117 +27,219 @@ VtkCameraLink& VtkCameraLink::instance() {
 
 VtkCameraLink::~VtkCameraLink() { clear(); }
 
-void VtkCameraLink::setEnabled(bool enabled) {
-    if (m_enabled == enabled) return;
-    m_enabled = enabled;
-
-    if (m_enabled) {
-        installObservers();
-    } else {
-        removeObservers();
+void VtkCameraLink::registerView(VtkVis* vis) {
+    if (!vis) return;
+    for (auto* v : m_registeredViews) {
+        if (v == vis) return;
     }
+    m_registeredViews.push_back(vis);
 }
 
-void VtkCameraLink::addView(VtkVis* vis) {
+void VtkCameraLink::unregisterView(VtkVis* vis) {
     if (!vis) return;
+    removeLinksForView(vis);
+    m_registeredViews.erase(
+            std::remove(m_registeredViews.begin(), m_registeredViews.end(), vis),
+            m_registeredViews.end());
+}
 
-    for (const auto& lv : m_views) {
-        if (lv.vis == vis) return;
-    }
+std::string VtkCameraLink::addLink(const std::string& name,
+                                   VtkVis* viewA, VtkVis* viewB) {
+    if (!viewA || !viewB || viewA == viewB) return {};
 
-    LinkedView lv;
-    lv.vis = vis;
-    m_views.push_back(lv);
-
-    if (m_enabled) {
-        auto& back = m_views.back();
-        auto cb = vtkSmartPointer<vtkCallbackCommand>::New();
-        cb->SetCallback(OnRenderEnd);
-        cb->SetClientData(this);
-        back.observer = cb;
-
-        auto rw = vis->getRenderWindow();
-        if (rw) {
-            back.observerTag = rw->AddObserver(vtkCommand::EndEvent, cb);
+    for (const auto& lp : m_links) {
+        if (lp.name == name) return name;
+        if ((lp.viewA == viewA && lp.viewB == viewB) ||
+            (lp.viewA == viewB && lp.viewB == viewA)) {
+            return lp.name;
         }
     }
+
+    CameraLinkPair lp;
+    lp.name = name;
+    lp.viewA = viewA;
+    lp.viewB = viewB;
+    m_links.push_back(std::move(lp));
+    installLinkObservers(static_cast<int>(m_links.size()) - 1);
+    return name;
 }
 
-void VtkCameraLink::removeView(VtkVis* vis) {
-    for (auto it = m_views.begin(); it != m_views.end(); ++it) {
-        if (it->vis == vis) {
-            if (it->observerTag != 0 && vis) {
-                auto rw = vis->getRenderWindow();
-                if (rw) {
-                    rw->RemoveObserver(it->observerTag);
-                }
-            }
-            m_views.erase(it);
+std::string VtkCameraLink::addLink(VtkVis* viewA, VtkVis* viewB) {
+    std::ostringstream oss;
+    oss << "CameraLink" << (++m_linkCounter);
+    return addLink(oss.str(), viewA, viewB);
+}
+
+void VtkCameraLink::removeLink(const std::string& name) {
+    for (int i = 0; i < static_cast<int>(m_links.size()); ++i) {
+        if (m_links[i].name == name) {
+            removeLinkObservers(i);
+            m_links.erase(m_links.begin() + i);
             return;
         }
     }
 }
 
+void VtkCameraLink::removeLinksForView(VtkVis* vis) {
+    if (!vis) return;
+    for (int i = static_cast<int>(m_links.size()) - 1; i >= 0; --i) {
+        if (m_links[i].viewA == vis || m_links[i].viewB == vis) {
+            removeLinkObservers(i);
+            m_links.erase(m_links.begin() + i);
+        }
+    }
+}
+
+std::vector<std::string> VtkCameraLink::linkNames() const {
+    std::vector<std::string> names;
+    names.reserve(m_links.size());
+    for (const auto& lp : m_links) {
+        names.push_back(lp.name);
+    }
+    return names;
+}
+
+bool VtkCameraLink::isLinked(VtkVis* vis) const {
+    for (const auto& lp : m_links) {
+        if (lp.viewA == vis || lp.viewB == vis) return true;
+    }
+    return false;
+}
+
+void VtkCameraLink::linkAll() {
+    for (size_t i = 0; i < m_registeredViews.size(); ++i) {
+        for (size_t j = i + 1; j < m_registeredViews.size(); ++j) {
+            addLink(m_registeredViews[i], m_registeredViews[j]);
+        }
+    }
+}
+
+void VtkCameraLink::unlinkAll() {
+    for (int i = static_cast<int>(m_links.size()) - 1; i >= 0; --i) {
+        removeLinkObservers(i);
+    }
+    m_links.clear();
+}
+
+void VtkCameraLink::setEnabled(bool enabled) {
+    if (enabled) {
+        linkAll();
+    } else {
+        unlinkAll();
+    }
+}
+
 void VtkCameraLink::clear() {
-    removeObservers();
-    m_views.clear();
+    unlinkAll();
+    m_registeredViews.clear();
 }
 
-void VtkCameraLink::installObservers() {
-    for (auto& lv : m_views) {
-        if (lv.observerTag != 0 || !lv.vis) continue;
+// --- Observer installation / removal ---
 
+static vtkRenderer* firstRenderer(VtkVis* vis) {
+    auto rc = vis ? vis->getRendererCollection() : nullptr;
+    return rc ? rc->GetFirstRenderer() : nullptr;
+}
+
+void VtkCameraLink::installLinkObservers(int idx) {
+    auto& lp = m_links[idx];
+
+    auto makeCb = [](void (*fn)(vtkObject*, unsigned long, void*, void*),
+                     void* data) {
         auto cb = vtkSmartPointer<vtkCallbackCommand>::New();
-        cb->SetCallback(OnRenderEnd);
-        cb->SetClientData(this);
-        lv.observer = cb;
+        cb->SetCallback(fn);
+        cb->SetClientData(data);
+        return cb;
+    };
 
-        auto rw = lv.vis->getRenderWindow();
-        if (rw) {
-            lv.observerTag = rw->AddObserver(vtkCommand::EndEvent, cb);
-        }
-    }
+    auto installForView =
+            [&](VtkVis* vis, ViewObservers& obs) {
+                obs.renderCb = makeCb(OnRenderEnd, this);
+                obs.resetCb = makeCb(OnResetCamera, this);
+
+                auto rw = vis->getRenderWindow();
+                if (rw) {
+                    obs.renderTag =
+                            rw->AddObserver(vtkCommand::EndEvent,
+                                            obs.renderCb);
+                }
+                auto* ren = firstRenderer(vis);
+                if (ren) {
+                    obs.resetTag =
+                            ren->AddObserver(vtkCommand::ResetCameraEvent,
+                                             obs.resetCb);
+                }
+            };
+
+    if (lp.viewA) installForView(lp.viewA, lp.obsA);
+    if (lp.viewB) installForView(lp.viewB, lp.obsB);
 }
 
-void VtkCameraLink::removeObservers() {
-    for (auto& lv : m_views) {
-        if (lv.observerTag != 0 && lv.vis) {
-            auto rw = lv.vis->getRenderWindow();
-            if (rw) {
-                rw->RemoveObserver(lv.observerTag);
-            }
-        }
-        lv.observerTag = 0;
-        lv.observer = nullptr;
-    }
+void VtkCameraLink::removeLinkObservers(int idx) {
+    auto& lp = m_links[idx];
+
+    auto removeForView =
+            [](VtkVis* vis, ViewObservers& obs) {
+                if (!vis) return;
+                if (obs.renderTag != 0) {
+                    auto rw = vis->getRenderWindow();
+                    if (rw) rw->RemoveObserver(obs.renderTag);
+                    obs.renderTag = 0;
+                }
+                if (obs.resetTag != 0) {
+                    auto* ren = firstRenderer(vis);
+                    if (ren) ren->RemoveObserver(obs.resetTag);
+                    obs.resetTag = 0;
+                }
+                obs.renderCb = nullptr;
+                obs.resetCb = nullptr;
+            };
+
+    removeForView(lp.viewA, lp.obsA);
+    removeForView(lp.viewB, lp.obsB);
 }
 
-// static
-void VtkCameraLink::OnRenderEnd(vtkObject* caller,
-                                unsigned long /*eid*/,
-                                void* clientData,
-                                void* /*callData*/) {
+// --- Callbacks ---
+
+void VtkCameraLink::OnRenderEnd(vtkObject* caller, unsigned long /*eid*/,
+                                void* clientData, void* /*callData*/) {
     auto* self = static_cast<VtkCameraLink*>(clientData);
-    if (!self || !self->m_enabled || self->m_updating) return;
+    if (!self || self->m_updating) return;
 
     auto* rw = vtkRenderWindow::SafeDownCast(caller);
     if (!rw) return;
 
-    VtkVis* source = nullptr;
-    for (const auto& lv : self->m_views) {
-        if (lv.vis && lv.vis->getRenderWindow().GetPointer() == rw) {
-            source = lv.vis;
-            break;
+    for (const auto& lp : self->m_links) {
+        if (lp.viewA && lp.viewA->getRenderWindow().GetPointer() == rw) {
+            self->syncCamerasFrom(lp.viewA, lp.viewB);
+        } else if (lp.viewB &&
+                   lp.viewB->getRenderWindow().GetPointer() == rw) {
+            self->syncCamerasFrom(lp.viewB, lp.viewA);
         }
-    }
-
-    if (source) {
-        self->syncCamerasFrom(source);
     }
 }
 
-void VtkCameraLink::syncCamerasFrom(VtkVis* source) {
-    if (!source || m_views.size() < 2) return;
+void VtkCameraLink::OnResetCamera(vtkObject* caller, unsigned long /*eid*/,
+                                  void* clientData, void* /*callData*/) {
+    auto* self = static_cast<VtkCameraLink*>(clientData);
+    if (!self || self->m_updating) return;
+
+    auto* ren = vtkRenderer::SafeDownCast(caller);
+    if (!ren) return;
+
+    for (const auto& lp : self->m_links) {
+        auto* renA = firstRenderer(lp.viewA);
+        auto* renB = firstRenderer(lp.viewB);
+        if (renA == ren && lp.viewB) {
+            self->syncCamerasFrom(lp.viewA, lp.viewB);
+        } else if (renB == ren && lp.viewA) {
+            self->syncCamerasFrom(lp.viewB, lp.viewA);
+        }
+    }
+}
+
+void VtkCameraLink::syncCamerasFrom(VtkVis* source, VtkVis* target) {
+    if (!source || !target) return;
 
     m_updating = true;
 
@@ -151,16 +257,14 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source) {
     double viewAngle = srcCam->GetViewAngle();
     double parallelScale = srcCam->GetParallelScale();
     int parallelProj = srcCam->GetParallelProjection();
+    double focalDisk = srcCam->GetFocalDisk();
+    double focalDistance = srcCam->GetFocalDistance();
 
     double cor[3];
     source->getCenterOfRotation(cor);
 
-    for (auto& lv : m_views) {
-        if (lv.vis == source || !lv.vis) continue;
-
-        auto dstCam = lv.vis->getVtkCamera();
-        if (!dstCam) continue;
-
+    auto dstCam = target->getVtkCamera();
+    if (dstCam) {
         dstCam->SetPosition(pos);
         dstCam->SetFocalPoint(foc);
         dstCam->SetViewUp(up);
@@ -168,13 +272,15 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source) {
         dstCam->SetViewAngle(viewAngle);
         dstCam->SetParallelScale(parallelScale);
         dstCam->SetParallelProjection(parallelProj);
+        dstCam->SetFocalDisk(focalDisk);
+        dstCam->SetFocalDistance(focalDistance);
+    }
 
-        lv.vis->setCenterOfRotation(cor);
+    target->setCenterOfRotation(cor);
 
-        auto targetRW = lv.vis->getRenderWindow();
-        if (targetRW) {
-            targetRW->Render();
-        }
+    auto targetRW = target->getRenderWindow();
+    if (targetRW) {
+        targetRW->Render();
     }
 
     m_updating = false;

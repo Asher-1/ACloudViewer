@@ -212,7 +212,7 @@ public:
 
     /// Access the per-view state container.
     /// Returns nullptr for generic stubs; ecvDisplayTools (VTK engine) returns
-    /// nullptr; ecvGLView overrides to return &m_ctx.
+    /// nullptr; vtkGLView overrides to return &m_ctx.
     virtual ecvViewContext* viewContext() { return nullptr; }
     virtual const ecvViewContext* viewContext() const { return nullptr; }
 
@@ -268,7 +268,7 @@ public:
     // Virtual methods for entity rendering, widget management, and
     // camera control.  Default implementations are empty stubs.
     // ecvDisplayTools (via VtkDisplayTools) provides shared implementations;
-    // ecvGLView overrides them for per-view behavior.
+    // vtkGLView overrides them for per-view behavior.
     // Call sites migrate from:
     //     ecvDisplayTools::DrawWidgets(param);
     // to:

@@ -20,7 +20,7 @@
 #include <QVBoxLayout>
 #include <functional>
 
-class ecvGLView;
+class vtkGLView;
 class ecvGenericGLDisplay;
 
 /// Multi-view frame manager — owns QMdiArea and all view-frame layout
@@ -69,7 +69,7 @@ public:
 
     void splitViewFrame(QWidget* frameToSplit,
                         Qt::Orientation orientation,
-                        std::function<ecvGLView*()> viewFactory);
+                        std::function<vtkGLView*()> viewFactory);
 
     void toggleMaximizeViewFrame(QWidget* frame, QToolButton* btn);
 
@@ -102,7 +102,7 @@ signals:
     void viewFrameCloseRequested(QWidget* frame);
 
     /// Emitted when a split creates a new view (the newFrame/view are ready).
-    void splitViewCreated(QWidget* newFrame, ecvGLView* newView);
+    void splitViewCreated(QWidget* newFrame, vtkGLView* newView);
 
     /// Emitted when the active frame highlight changes.
     void activeFrameChanged(QWidget* activeViewWidget);

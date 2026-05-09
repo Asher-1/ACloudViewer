@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ecvGLView.h"
+#include "vtkGLView.h"
 
 #include <CVLog.h>
 #include <ecvBBox.h>
@@ -21,6 +21,16 @@
 #include <ecvViewManager.h>
 #include <vtkActor.h>
 #include <vtkCamera.h>
+#include <vtkCameraPass.h>
+#include <vtkDefaultPass.h>
+#include <vtkEDLShading.h>
+#include <vtkImplicitPlaneRepresentation.h>
+#include <vtkImplicitPlaneWidget2.h>
+#include <vtkActorCollection.h>
+#include <vtkCallbackCommand.h>
+#include <vtkMapper.h>
+#include <vtkNew.h>
+#include <vtkPlane.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkMatrix4x4.h>
 #include <vtkRenderWindow.h>
@@ -39,9 +49,9 @@
 #include "VtkDisplayTools.h"
 #include "VtkVis.h"
 
-int ecvGLView::s_nextWindowID = 1000;
+int vtkGLView::s_nextWindowID = 1000;
 
-ecvGLView::ecvGLView(QMainWindow* parent) : QObject(parent) {
+vtkGLView::vtkGLView(QMainWindow* parent) : QObject(parent) {
     m_uniqueID = ++s_nextWindowID;
     m_title = QString("RenderView%1").arg(m_uniqueID);
     m_ctx.viewportParams.viewMat.toIdentity();
@@ -52,7 +62,7 @@ ecvGLView::ecvGLView(QMainWindow* parent) : QObject(parent) {
     m_timer.start();
 }
 
-ecvGLView::~ecvGLView() {
+vtkGLView::~vtkGLView() {
     emit aboutToClose(this);
 
     if (m_vtkWidget) {
@@ -82,8 +92,8 @@ ecvGLView::~ecvGLView() {
     }
 }
 
-ecvGLView* ecvGLView::Create(QMainWindow* parent, bool stereoMode) {
-    auto* view = new ecvGLView(parent);
+vtkGLView* vtkGLView::Create(QMainWindow* parent, bool stereoMode) {
+    auto* view = new vtkGLView(parent);
     view->initVtkPipeline(parent, stereoMode);
 
     view->m_winDBRoot =
@@ -99,7 +109,7 @@ ecvGLView* ecvGLView::Create(QMainWindow* parent, bool stereoMode) {
     return view;
 }
 
-void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
+void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_displayTools = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
     m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
@@ -216,7 +226,7 @@ void ecvGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
 // Core overrides (existing)
 // ================================================================
 
-void ecvGLView::redraw(bool only2D, bool forceRedraw) {
+void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     if (!m_visualizer3D || !m_vtkWidget) return;
 
     // Prevent re-entrant redraws.  VTK's vtkRenderWindow::Render() is
@@ -226,7 +236,7 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     //   - ecvRedrawScope destructor triggers redraw inside updateLabel()
     //   - any signal handler calls redraw() during the draw pipeline
     if (m_insideRedraw) {
-        CVLog::Warning("[ecvGLView::redraw] RE-ENTRANT redraw blocked (view %d)", m_uniqueID);
+        CVLog::Warning("[vtkGLView::redraw] RE-ENTRANT redraw blocked (view %d)", m_uniqueID);
         m_shouldBeRefreshed = true;
         return;
     }
@@ -407,36 +417,174 @@ void ecvGLView::redraw(bool only2D, bool forceRedraw) {
     }
 }
 
-void ecvGLView::refresh(bool only2D) {
+void vtkGLView::refresh(bool only2D) {
     if (m_shouldBeRefreshed) {
         redraw(only2D);
     }
 }
 
-void ecvGLView::toBeRefreshed() { m_shouldBeRefreshed = true; }
+void vtkGLView::toBeRefreshed() { m_shouldBeRefreshed = true; }
 
-const ecvViewportParameters& ecvGLView::getViewportParameters() const {
+const ecvViewportParameters& vtkGLView::getViewportParameters() const {
     return m_ctx.viewportParams;
 }
 
-void ecvGLView::setViewportParameters(const ecvViewportParameters& params) {
+void vtkGLView::setViewportParameters(const ecvViewportParameters& params) {
     m_ctx.viewportParams = params;
 }
 
-void ecvGLView::setPerspectiveState(bool state, bool objectCenteredView) {
+void vtkGLView::enableEDL(bool enable) {
+    if (m_edlEnabled == enable) return;
+    m_edlEnabled = enable;
+
+    if (!m_visualizer3D) return;
+    auto* renderer = m_visualizer3D->getCurrentRenderer();
+    if (!renderer) return;
+
+    if (enable) {
+        vtkNew<vtkEDLShading> edlPass;
+        vtkNew<vtkCameraPass> cameraPass;
+        vtkNew<vtkDefaultPass> defaultPass;
+        cameraPass->SetDelegatePass(defaultPass);
+        edlPass->SetDelegatePass(cameraPass);
+        renderer->SetPass(edlPass);
+    } else {
+        renderer->SetPass(nullptr);
+    }
+    updateScene();
+}
+
+static void SlicePlaneCallback(vtkObject* caller, unsigned long,
+                               void* clientData, void*) {
+    auto* widget = static_cast<vtkImplicitPlaneWidget2*>(caller);
+    auto* rep = static_cast<vtkImplicitPlaneRepresentation*>(
+            widget->GetRepresentation());
+    auto* renderer = static_cast<vtkRenderer*>(clientData);
+    if (!rep || !renderer) return;
+
+    vtkNew<vtkPlane> plane;
+    rep->GetPlane(plane);
+
+    auto* actors = renderer->GetActors();
+    actors->InitTraversal();
+    while (auto* actor = actors->GetNextActor()) {
+        if (auto* mapper = actor->GetMapper()) {
+            mapper->RemoveAllClippingPlanes();
+            mapper->AddClippingPlane(plane);
+        }
+    }
+    renderer->GetRenderWindow()->Render();
+}
+
+void vtkGLView::enableSliceMode(bool enable) {
+    if (m_sliceMode == enable) return;
+    m_sliceMode = enable;
+
+    if (!m_visualizer3D) return;
+    auto* renderer = m_visualizer3D->getCurrentRenderer();
+    if (!renderer) return;
+
+    if (enable) {
+        m_slicePlaneWidget = vtkSmartPointer<vtkImplicitPlaneWidget2>::New();
+        vtkNew<vtkImplicitPlaneRepresentation> rep;
+        rep->SetPlaceFactor(1.25);
+        rep->SetOutlineTranslation(false);
+
+        double bounds[6] = {-1, 1, -1, 1, -1, 1};
+        renderer->ComputeVisiblePropBounds(bounds);
+        if (bounds[0] > bounds[1]) {
+            bounds[0] = -1; bounds[1] = 1;
+            bounds[2] = -1; bounds[3] = 1;
+            bounds[4] = -1; bounds[5] = 1;
+        }
+        rep->PlaceWidget(bounds);
+        rep->SetNormal(0, 0, 1);
+
+        double origin[3] = {(bounds[0] + bounds[1]) / 2.0,
+                            (bounds[2] + bounds[3]) / 2.0,
+                            (bounds[4] + bounds[5]) / 2.0};
+        rep->SetOrigin(origin);
+
+        m_slicePlaneWidget->SetInteractor(
+                m_visualizer3D->getRenderWindow()->GetInteractor());
+        m_slicePlaneWidget->SetRepresentation(rep);
+
+        vtkNew<vtkCallbackCommand> callback;
+        callback->SetCallback(SlicePlaneCallback);
+        callback->SetClientData(renderer);
+        m_slicePlaneWidget->AddObserver(vtkCommand::InteractionEvent,
+                                        callback);
+        m_slicePlaneWidget->On();
+    } else {
+        if (m_slicePlaneWidget) {
+            m_slicePlaneWidget->Off();
+            m_slicePlaneWidget = nullptr;
+        }
+        auto* actors = renderer->GetActors();
+        actors->InitTraversal();
+        while (auto* actor = actors->GetNextActor()) {
+            if (auto* mapper = actor->GetMapper()) {
+                mapper->RemoveAllClippingPlanes();
+            }
+        }
+    }
+    updateScene();
+}
+
+void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
+    if (!m_visualizer3D) return;
+    auto* camera = m_visualizer3D->getCurrentRenderer()
+                           ? m_visualizer3D->getCurrentRenderer()->GetActiveCamera()
+                           : nullptr;
+    if (!camera) return;
+
+    setPerspectiveState(false, true);
+
+    double bounds[6] = {-1, 1, -1, 1, -1, 1};
+    m_visualizer3D->getCurrentRenderer()->ComputeVisiblePropBounds(bounds);
+    double cx = (bounds[0] + bounds[1]) / 2.0;
+    double cy = (bounds[2] + bounds[3]) / 2.0;
+    double cz = (bounds[4] + bounds[5]) / 2.0;
+    double dx = bounds[1] - bounds[0];
+    double dy = bounds[3] - bounds[2];
+    double dz = bounds[5] - bounds[4];
+    double maxDim = std::max({dx, dy, dz});
+    if (maxDim < 1e-6) maxDim = 2.0;
+
+    camera->SetFocalPoint(cx, cy, cz);
+    switch (axis) {
+        case AXIS_XY:
+            camera->SetPosition(cx, cy, cz + maxDim * 2);
+            camera->SetViewUp(0, 1, 0);
+            break;
+        case AXIS_XZ:
+            camera->SetPosition(cx, cy + maxDim * 2, cz);
+            camera->SetViewUp(0, 0, 1);
+            break;
+        case AXIS_YZ:
+            camera->SetPosition(cx + maxDim * 2, cy, cz);
+            camera->SetViewUp(0, 0, 1);
+            break;
+    }
+    camera->SetParallelScale(maxDim * 0.6);
+    m_visualizer3D->getCurrentRenderer()->ResetCameraClippingRange();
+    updateScene();
+}
+
+void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
     m_ctx.viewportParams.perspectiveView = state;
     m_ctx.viewportParams.objectCenteredView = objectCenteredView;
 }
 
-bool ecvGLView::perspectiveView() const {
+bool vtkGLView::perspectiveView() const {
     return m_ctx.viewportParams.perspectiveView;
 }
 
-bool ecvGLView::objectCenteredView() const {
+bool vtkGLView::objectCenteredView() const {
     return m_ctx.viewportParams.objectCenteredView;
 }
 
-void ecvGLView::setSceneDB(ccHObject* root) {
+void vtkGLView::setSceneDB(ccHObject* root) {
     m_globalDBRoot = root;
     auto& vm = ecvViewManager::instance();
     if (!vm.globalDBRoot() && root) {
@@ -444,11 +592,11 @@ void ecvGLView::setSceneDB(ccHObject* root) {
     }
 }
 
-ccHObject* ecvGLView::getSceneDB() { return m_globalDBRoot; }
+ccHObject* vtkGLView::getSceneDB() { return m_globalDBRoot; }
 
-ccHObject* ecvGLView::getOwnDB() { return m_winDBRoot; }
+ccHObject* vtkGLView::getOwnDB() { return m_winDBRoot; }
 
-void ecvGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
+void vtkGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     if (!obj || !m_winDBRoot) return;
     if (noDependency) {
         m_winDBRoot->addChild(obj, ccHObject::DP_NONE);
@@ -458,35 +606,35 @@ void ecvGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     ecvViewManager::instance().invalidateLabelCache();
 }
 
-void ecvGLView::removeFromOwnDB(ccHObject* obj) {
+void vtkGLView::removeFromOwnDB(ccHObject* obj) {
     if (m_winDBRoot) {
         m_winDBRoot->removeChild(obj);
         ecvViewManager::instance().invalidateLabelCache();
     }
 }
 
-QWidget* ecvGLView::asWidget() { return m_vtkWidget; }
+QWidget* vtkGLView::asWidget() { return m_vtkWidget; }
 
-const QWidget* ecvGLView::asWidget() const { return m_vtkWidget; }
+const QWidget* vtkGLView::asWidget() const { return m_vtkWidget; }
 
-bool ecvGLView::hasOverriddenDisplayParameters() const {
+bool vtkGLView::hasOverriddenDisplayParameters() const {
     return m_overriddenDisplayParametersEnabled;
 }
 
-void ecvGLView::aboutToBeRemoved(ccDrawableObject* obj) { Q_UNUSED(obj); }
+void vtkGLView::aboutToBeRemoved(ccDrawableObject* obj) { Q_UNUSED(obj); }
 
-QVTKWidgetCustom* ecvGLView::getVtkWidget() const { return m_vtkWidget.data(); }
+QVTKWidgetCustom* vtkGLView::getVtkWidget() const { return m_vtkWidget.data(); }
 
-Visualization::VtkVis* ecvGLView::getVisualizer3D() const {
+Visualization::VtkVis* vtkGLView::getVisualizer3D() const {
     return m_visualizer3D.get();
 }
 
-QJsonObject ecvGLView::saveLayoutCameraState() const {
+QJsonObject vtkGLView::saveLayoutCameraState() const {
     if (!m_visualizer3D) return {};
     return m_visualizer3D->saveCameraToJson(0);
 }
 
-void ecvGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
+void vtkGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
     if (!m_visualizer3D || cameraJson.isEmpty()) return;
     m_visualizer3D->loadCameraFromJson(cameraJson, 0);
 }
@@ -495,7 +643,7 @@ void ecvGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
 // New per-view overrides (Phase 1)
 // ================================================================
 
-void ecvGLView::syncVtkCameraToContext() {
+void vtkGLView::syncVtkCameraToContext() {
     if (!m_visualizer3D) return;
     vtkCamera* cam = m_visualizer3D->getVtkCamera();
     if (!cam) return;
@@ -544,12 +692,12 @@ void ecvGLView::syncVtkCameraToContext() {
     m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
 }
 
-void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
+void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     if (!m_vtkWidget) return;
 
     // If matrices haven't been synced yet, do a live sync from VTK camera.
     if (!m_ctx.validModelviewMatrix || !m_ctx.validProjectionMatrix) {
-        const_cast<ecvGLView*>(this)->syncVtkCameraToContext();
+        const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
     }
 
     const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
@@ -564,7 +712,7 @@ void ecvGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     params.projectionMat = m_ctx.projMatd;
 }
 
-void ecvGLView::getVisibleObjectsBB(ccBBox& box) const {
+void vtkGLView::getVisibleObjectsBB(ccBBox& box) const {
     if (m_globalDBRoot) {
         box = m_globalDBRoot->getDisplayBB_recursive(false, this);
     }
@@ -576,7 +724,7 @@ void ecvGLView::getVisibleObjectsBB(ccBBox& box) const {
     }
 }
 
-void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
+void vtkGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
     if (box && box->isValid()) {
         CCVector3d center = CCVector3d::fromArray(box->getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
@@ -595,7 +743,7 @@ void ecvGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
     }
 }
 
-QRect ecvGLView::getGLViewport() const {
+QRect vtkGLView::getGLViewport() const {
     return m_ctx.glViewport.isValid()
                    ? m_ctx.glViewport
                    : (m_vtkWidget ? QRect(0, 0, m_vtkWidget->width(),
@@ -603,35 +751,35 @@ QRect ecvGLView::getGLViewport() const {
                                   : QRect());
 }
 
-int ecvGLView::glWidth() const { return getGLViewport().width(); }
+int vtkGLView::glWidth() const { return getGLViewport().width(); }
 
-int ecvGLView::glHeight() const { return getGLViewport().height(); }
+int vtkGLView::glHeight() const { return getGLViewport().height(); }
 
-int ecvGLView::getDevicePixelRatio() const {
+int vtkGLView::getDevicePixelRatio() const {
     return m_vtkWidget ? static_cast<int>(m_vtkWidget->devicePixelRatio()) : 1;
 }
 
-void ecvGLView::setInteractionMode(INTERACTION_FLAGS flags) {
+void vtkGLView::setInteractionMode(INTERACTION_FLAGS flags) {
     m_ctx.interactionFlags = flags;
 }
 
-ecvGLView::INTERACTION_FLAGS ecvGLView::getInteractionMode() const {
+vtkGLView::INTERACTION_FLAGS vtkGLView::getInteractionMode() const {
     return m_ctx.interactionFlags;
 }
 
-void ecvGLView::setPickingMode(PICKING_MODE mode) {
+void vtkGLView::setPickingMode(PICKING_MODE mode) {
     if (!m_ctx.pickingModeLocked) {
         m_ctx.pickingMode = mode;
     }
 }
 
-ecvGLView::PICKING_MODE ecvGLView::getPickingMode() const {
+vtkGLView::PICKING_MODE vtkGLView::getPickingMode() const {
     return m_ctx.pickingMode;
 }
 
-void ecvGLView::getContext(ccGLDrawContext& context) const {
+void vtkGLView::getContext(ccGLDrawContext& context) const {
     ecvViewManager::instance().sharedGetContext(context, m_ctx);
-    context.display = const_cast<ecvGLView*>(this);
+    context.display = const_cast<vtkGLView*>(this);
     if (m_vtkWidget) {
         context.glW = m_vtkWidget->width();
         context.glH = m_vtkWidget->height();
@@ -640,14 +788,14 @@ void ecvGLView::getContext(ccGLDrawContext& context) const {
     }
 }
 
-const ecvGui::ParamStruct& ecvGLView::getDisplayParameters() const {
+const ecvGui::ParamStruct& vtkGLView::getDisplayParameters() const {
     if (m_overriddenDisplayParametersEnabled) {
         return m_overriddenDisplayParameters;
     }
     return ecvGui::Parameters();
 }
 
-void ecvGLView::setDisplayParameters(const ecvGui::ParamStruct& params,
+void vtkGLView::setDisplayParameters(const ecvGui::ParamStruct& params,
                                      bool thisWindowOnly) {
     if (thisWindowOnly) {
         m_overriddenDisplayParameters = params;
@@ -657,16 +805,16 @@ void ecvGLView::setDisplayParameters(const ecvGui::ParamStruct& params,
     }
 }
 
-void ecvGLView::drawClickableItems(int xStart, int& yStart) {
+void vtkGLView::drawClickableItems(int xStart, int& yStart) {
     Q_UNUSED(xStart);
     Q_UNUSED(yStart);
 }
 
-void ecvGLView::invalidateViewport() { m_ctx.validProjectionMatrix = false; }
+void vtkGLView::invalidateViewport() { m_ctx.validProjectionMatrix = false; }
 
-void ecvGLView::deprecate3DLayer() { m_shouldBeRefreshed = true; }
+void vtkGLView::deprecate3DLayer() { m_shouldBeRefreshed = true; }
 
-void ecvGLView::displayNewMessage(const QString& message,
+void vtkGLView::displayNewMessage(const QString& message,
                                   MessagePosition pos,
                                   bool append,
                                   int displayMaxDelay_sec,
@@ -724,7 +872,7 @@ void ecvGLView::displayNewMessage(const QString& message,
     toBeRefreshed();
 }
 
-void ecvGLView::zoomGlobal() {
+void vtkGLView::zoomGlobal() {
     if (!m_visualizer3D) return;
 
     ccBBox bbox;
@@ -756,75 +904,75 @@ void ecvGLView::zoomGlobal() {
 // these will call m_visualizer3D methods directly.
 // ================================================================
 
-void ecvGLView::draw(const ccGLDrawContext& context, const ccHObject* obj) {
+void vtkGLView::draw(const ccGLDrawContext& context, const ccHObject* obj) {
     if (m_displayTools) m_displayTools->draw(context, obj);
 }
 
-void ecvGLView::drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) {
+void vtkGLView::drawBBox(const ccGLDrawContext& context, const ccBBox* bbox) {
     if (m_displayTools) m_displayTools->drawBBox(context, bbox);
 }
 
-void ecvGLView::drawBBoxBatch(const ccGLDrawContext& context,
+void vtkGLView::drawBBoxBatch(const ccGLDrawContext& context,
                               const std::vector<ccBBox>& boxes) {
     if (m_displayTools) m_displayTools->drawBBoxBatch(context, boxes);
 }
 
-void ecvGLView::drawOrientedBBox(const ccGLDrawContext& context,
+void vtkGLView::drawOrientedBBox(const ccGLDrawContext& context,
                                  const ecvOrientedBBox* obb) {
     if (m_displayTools) m_displayTools->drawOrientedBBox(context, obb);
 }
 
-void ecvGLView::updateMeshTextures(const ccGLDrawContext& context,
+void vtkGLView::updateMeshTextures(const ccGLDrawContext& context,
                                    const ccGenericMesh* mesh) {
     if (m_displayTools) m_displayTools->updateMeshTextures(context, mesh);
 }
 
-void ecvGLView::drawWidgets(const WIDGETS_PARAMETER& param) {
+void vtkGLView::drawWidgets(const WIDGETS_PARAMETER& param) {
     if (m_displayTools) m_displayTools->drawWidgets(param);
 }
 
-void ecvGLView::removeWidgets(const WIDGETS_PARAMETER& param) {
+void vtkGLView::removeWidgets(const WIDGETS_PARAMETER& param) {
     if (m_displayTools) m_displayTools->removeWidgets(param);
 }
 
-bool ecvGLView::hideShowEntities(const ccGLDrawContext& context) {
+bool vtkGLView::hideShowEntities(const ccGLDrawContext& context) {
     if (m_displayTools) return m_displayTools->hideShowEntities(context);
     return true;
 }
 
-void ecvGLView::removeEntities(const ccGLDrawContext& context) {
+void vtkGLView::removeEntities(const ccGLDrawContext& context) {
     if (m_displayTools) m_displayTools->removeEntities(context);
 }
 
-void ecvGLView::changeEntityProperties(PROPERTY_PARAM& param) {
+void vtkGLView::changeEntityProperties(PROPERTY_PARAM& param) {
     if (m_displayTools) m_displayTools->changeEntityProperties(param);
 }
 
-void ecvGLView::updateCamera() {
+void vtkGLView::updateCamera() {
     if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
 }
 
-void ecvGLView::updateScene() {
+void vtkGLView::updateScene() {
     if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
 }
 
 // -- Phase M1.3: Per-view picking and rendering --
 
-QString ecvGLView::pick2DLabel(int x, int y) {
+QString vtkGLView::pick2DLabel(int x, int y) {
     if (m_visualizer2D) {
         return m_visualizer2D->pickItem(x, y).c_str();
     }
     return {};
 }
 
-QString ecvGLView::pick3DItem(int x, int y) {
+QString vtkGLView::pick3DItem(int x, int y) {
     if (m_visualizer3D) {
         return m_visualizer3D->pickItem(x, y).c_str();
     }
     return {};
 }
 
-QString ecvGLView::pickObject(double x, double y) {
+QString vtkGLView::pickObject(double x, double y) {
     if (m_visualizer3D) {
         vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
         if (pickedActor) {
@@ -834,7 +982,7 @@ QString ecvGLView::pickObject(double x, double y) {
     return QStringLiteral("-1");
 }
 
-QImage ecvGLView::renderToImage(int zoomFactor,
+QImage vtkGLView::renderToImage(int zoomFactor,
                                 bool renderOverlayItems,
                                 bool silent,
                                 int viewport) {
@@ -842,25 +990,25 @@ QImage ecvGLView::renderToImage(int zoomFactor,
         return m_visualizer3D->renderToImage(zoomFactor, renderOverlayItems,
                                              silent, viewport);
     }
-    if (!silent) CVLog::Error("[ecvGLView::renderToImage] No 3D visualizer");
+    if (!silent) CVLog::Error("[vtkGLView::renderToImage] No 3D visualizer");
     return {};
 }
 
-void ecvGLView::resetCamera(const ccBBox* bbox) {
+void vtkGLView::resetCamera(const ccBBox* bbox) {
     if (m_visualizer3D) {
         m_visualizer3D->resetCamera(bbox);
         m_visualizer3D->getRenderWindow()->Render();
     }
 }
 
-void ecvGLView::resetCamera() {
+void vtkGLView::resetCamera() {
     if (m_visualizer3D) {
         m_visualizer3D->resetCamera();
         m_visualizer3D->getRenderWindow()->Render();
     }
 }
 
-void ecvGLView::toggle2Dviewer(bool state) {
+void vtkGLView::toggle2Dviewer(bool state) {
     if (m_visualizer3D) {
         m_visualizer3D->setInteractionMode(
                 state ? Visualization::VtkVis::INTERACTION_MODE_2D
@@ -872,40 +1020,40 @@ void ecvGLView::toggle2Dviewer(bool state) {
 // Phase 7a wave 2: Additional per-view virtual overrides
 // ================================================================
 
-CCVector3d ecvGLView::toVtkCoordinates(int x, int y, int z) {
+CCVector3d vtkGLView::toVtkCoordinates(int x, int y, int z) {
     CCVector3d p(x * 1.0, y * 1.0, z * 1.0);
     p.y = glHeight() - p.y;
     p *= getDevicePixelRatio();
     return p;
 }
 
-bool ecvGLView::getClick3DPos(int x, int y, CCVector3d& pos) {
+bool vtkGLView::getClick3DPos(int x, int y, CCVector3d& pos) {
     return m_displayTools ? m_displayTools->getClick3DPos(x, y, pos) : false;
 }
 
-void ecvGLView::setView(CC_VIEW_ORIENTATION orientation) {
+void vtkGLView::setView(CC_VIEW_ORIENTATION orientation) {
     if (m_displayTools) m_displayTools->setView(orientation);
 }
 
-CCVector3d ecvGLView::getCurrentViewDir() const {
+CCVector3d vtkGLView::getCurrentViewDir() const {
     const double* M = m_ctx.viewportParams.viewMat.data();
     CCVector3d axis(-M[2], -M[6], -M[10]);
     axis.normalize();
     return axis;
 }
 
-void ecvGLView::setPivotPoint(const CCVector3d& P,
+void vtkGLView::setPivotPoint(const CCVector3d& P,
                               bool autoRedraw,
                               bool verbose) {
     if (m_displayTools) m_displayTools->setPivotPoint(P, autoRedraw, verbose);
 }
 
-void ecvGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
+void vtkGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
     m_ctx.pivotVisibility = vis;
     if (m_displayTools) m_displayTools->setPivotVisibility(vis);
 }
 
-void ecvGLView::setAutoPickPivotAtCenter(bool state) {
+void vtkGLView::setAutoPickPivotAtCenter(bool state) {
     if (m_ctx.autoPickPivotAtCenter != state) {
         m_ctx.autoPickPivotAtCenter = state;
         if (state) {
@@ -914,7 +1062,7 @@ void ecvGLView::setAutoPickPivotAtCenter(bool state) {
     }
 }
 
-void ecvGLView::resetCenterOfRotation(int viewport) {
+void vtkGLView::resetCenterOfRotation(int viewport) {
     if (!m_displayTools) return;
     m_displayTools->resetCenterOfRotation(viewport);
 
@@ -928,33 +1076,33 @@ void ecvGLView::resetCenterOfRotation(int viewport) {
     }
 }
 
-bool ecvGLView::isRotationAxisLocked() const {
+bool vtkGLView::isRotationAxisLocked() const {
     return m_ctx.rotationAxisLocked;
 }
 
-void ecvGLView::lockRotationAxis(bool state, const CCVector3d& axis) {
+void vtkGLView::lockRotationAxis(bool state, const CCVector3d& axis) {
     m_ctx.rotationAxisLocked = state;
     m_ctx.lockedRotationAxis = axis;
     m_ctx.lockedRotationAxis.normalize();
 }
 
-void ecvGLView::toggleCameraOrientationWidget(bool state) {
+void vtkGLView::toggleCameraOrientationWidget(bool state) {
     if (m_displayTools) m_displayTools->toggleCameraOrientationWidget(state);
 }
 
-void ecvGLView::toggleOrientationMarker(bool state) {
+void vtkGLView::toggleOrientationMarker(bool state) {
     if (m_displayTools) m_displayTools->toggleOrientationMarker(state);
 }
 
-void ecvGLView::toggleDebugTrace() {
+void vtkGLView::toggleDebugTrace() {
     m_ctx.showDebugTraces = !m_ctx.showDebugTraces;
 }
 
-void ecvGLView::update2DLabels(bool immediateUpdate) {
+void vtkGLView::update2DLabels(bool immediateUpdate) {
     if (m_displayTools) m_displayTools->update2DLabels(immediateUpdate);
 }
 
-bool ecvGLView::renderToFile(const QString& filename,
+bool vtkGLView::renderToFile(const QString& filename,
                              float zoomFactor,
                              bool dontScale) {
     return m_displayTools ? m_displayTools->renderToFile(filename, zoomFactor,
@@ -962,62 +1110,62 @@ bool ecvGLView::renderToFile(const QString& filename,
                           : false;
 }
 
-void ecvGLView::removeBB(const QString& viewId) {
+void vtkGLView::removeBB(const QString& viewId) {
     if (m_displayTools) m_displayTools->removeBB(viewId);
 }
 
-void ecvGLView::removeBB(const ccGLDrawContext& context) {
+void vtkGLView::removeBB(const ccGLDrawContext& context) {
     if (m_displayTools) m_displayTools->removeBB(context);
 }
 
-void ecvGLView::setExclusiveFullScreenFlag(bool state) {
+void vtkGLView::setExclusiveFullScreenFlag(bool state) {
     m_ctx.exclusiveFullscreen = state;
 }
 
-double ecvGLView::getObjectLightIntensity(const QString& viewID) const {
+double vtkGLView::getObjectLightIntensity(const QString& viewID) const {
     return m_displayTools ? m_displayTools->getObjectLightIntensity(viewID)
                           : 1.0;
 }
 
-void ecvGLView::setObjectLightIntensity(const QString& viewID,
+void vtkGLView::setObjectLightIntensity(const QString& viewID,
                                         double intensity) {
     if (m_displayTools)
         m_displayTools->setObjectLightIntensity(viewID, intensity);
 }
 
-double ecvGLView::getLightIntensity() const {
+double vtkGLView::getLightIntensity() const {
     return m_displayTools ? m_displayTools->getLightIntensity() : 1.0;
 }
 
-void ecvGLView::setLightIntensity(double intensity) {
+void vtkGLView::setLightIntensity(double intensity) {
     if (m_displayTools) m_displayTools->setLightIntensity(intensity);
 }
 
-void ecvGLView::getDataAxesGridProperties(const QString& viewID,
+void vtkGLView::getDataAxesGridProperties(const QString& viewID,
                                           AxesGridProperties& props,
                                           int viewport) const {
     if (m_displayTools)
         m_displayTools->getDataAxesGridProperties(viewID, props, viewport);
 }
 
-void ecvGLView::setDataAxesGridProperties(const QString& viewID,
+void vtkGLView::setDataAxesGridProperties(const QString& viewID,
                                           const AxesGridProperties& props,
                                           int viewport) {
     if (m_displayTools)
         m_displayTools->setDataAxesGridProperties(viewID, props, viewport);
 }
 
-void ecvGLView::filterByEntityType(std::vector<ccHObject*>& entities,
+void vtkGLView::filterByEntityType(std::vector<ccHObject*>& entities,
                                    CV_CLASS_ENUM type) {
     if (m_displayTools) m_displayTools->filterByEntityType(entities, type);
 }
 
-void ecvGLView::updateActiveItemsList(int x, int y, bool centerItems) {
+void vtkGLView::updateActiveItemsList(int x, int y, bool centerItems) {
     if (m_displayTools)
         m_displayTools->updateActiveItemsList(x, y, centerItems);
 }
 
-double ecvGLView::computeActualPixelSize() const {
+double vtkGLView::computeActualPixelSize() const {
     if (!m_ctx.viewportParams.perspectiveView) {
         return static_cast<double>(m_ctx.viewportParams.pixelSize /
                                    m_ctx.viewportParams.zoom);
@@ -1039,11 +1187,11 @@ double ecvGLView::computeActualPixelSize() const {
            minScreenDim;
 }
 
-void ecvGLView::updateNamePoseRecursive() {
+void vtkGLView::updateNamePoseRecursive() {
     if (m_displayTools) m_displayTools->updateNamePoseRecursive();
 }
 
-void ecvGLView::showPivotSymbol(bool state) {
+void vtkGLView::showPivotSymbol(bool state) {
     if (state && !m_ctx.pivotSymbolShown &&
         m_ctx.viewportParams.objectCenteredView &&
         m_ctx.pivotVisibility != PIVOT_HIDE) {
@@ -1053,69 +1201,69 @@ void ecvGLView::showPivotSymbol(bool state) {
     m_ctx.pivotSymbolShown = state;
 }
 
-bool ecvGLView::exclusiveFullScreen() const {
+bool vtkGLView::exclusiveFullScreen() const {
     return m_ctx.exclusiveFullscreen;
 }
 
-CCVector3d ecvGLView::convertMousePositionToOrientation(int x, int y) {
+CCVector3d vtkGLView::convertMousePositionToOrientation(int x, int y) {
     return m_displayTools
                    ? m_displayTools->convertMousePositionToOrientation(x, y)
                    : CCVector3d(0, 0, 0);
 }
 
-bool ecvGLView::processClickableItems(int x, int y) {
+bool vtkGLView::processClickableItems(int x, int y) {
     if (!m_displayTools) return false;
     return ecvDisplayTools::ProcessClickableItems(m_ctx, x, y);
 }
 
-void ecvGLView::updateZoom(float zoomFactor) {
+void vtkGLView::updateZoom(float zoomFactor) {
     if (m_displayTools) m_displayTools->updateZoom(zoomFactor);
 }
 
-void ecvGLView::resizeGL(int w, int h) {
+void vtkGLView::resizeGL(int w, int h) {
     if (m_displayTools) m_displayTools->resizeGL(w, h);
 }
 
-void ecvGLView::setViewportDefaultPointSize(float size) {
+void vtkGLView::setViewportDefaultPointSize(float size) {
     m_ctx.viewportParams.defaultPointSize = size;
 }
 
-void ecvGLView::setViewportDefaultLineWidth(float width) {
+void vtkGLView::setViewportDefaultLineWidth(float width) {
     m_ctx.viewportParams.defaultLineWidth = width;
 }
 
-void ecvGLView::setZNearCoef(double coef) {
+void vtkGLView::setZNearCoef(double coef) {
     if (m_displayTools) m_displayTools->setZNearCoef(coef);
 }
 
-void ecvGLView::setFov(float fov_deg) {
+void vtkGLView::setFov(float fov_deg) {
     if (m_displayTools) m_displayTools->setFov(fov_deg);
 }
 
-void ecvGLView::setPointSizeOnView(float size) {
+void vtkGLView::setPointSizeOnView(float size) {
     if (m_displayTools) m_displayTools->setPointSizeOnView(size);
 }
 
-void ecvGLView::rotateWithAxis(const CCVector2i& mousePos,
+void vtkGLView::rotateWithAxis(const CCVector2i& mousePos,
                                const CCVector3d& axis,
                                double angle_deg) {
     if (m_displayTools)
         m_displayTools->rotateWithAxis(mousePos, axis, angle_deg, 0);
 }
 
-void ecvGLView::startPicking(PICKING_MODE mode, int x, int y, int w, int h) {
+void vtkGLView::startPicking(PICKING_MODE mode, int x, int y, int w, int h) {
     if (m_displayTools) m_displayTools->startPicking(mode, x, y, w, h);
 }
 
-void ecvGLView::redraw2DLabel() {
+void vtkGLView::redraw2DLabel() {
     if (m_displayTools) m_displayTools->redraw2DLabel();
 }
 
-void ecvGLView::scheduleFullRedraw(int delayMs) {
+void vtkGLView::scheduleFullRedraw(int delayMs) {
     m_scheduledFullRedrawTime = m_timer.elapsed() + delayMs;
     if (!m_scheduleTimer.isActive()) {
         m_scheduleTimer.start(delayMs);
     }
 }
 
-void ecvGLView::startDeferredPicking() { m_deferredPickingTimer.start(); }
+void vtkGLView::startDeferredPicking() { m_deferredPickingTimer.start(); }
