@@ -201,6 +201,7 @@
 
 // QVTK_ENGINE_LIB
 #ifdef USE_VTK_BACKEND
+#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 #include <Tools/AnnotationTools/VtkAnnotationTool.h>
 #include <Tools/CameraTools/EditCameraTool.h>
 #include <Tools/FilterTools/VtkFiltersTool.h>
@@ -545,6 +546,15 @@ MainWindow::MainWindow()
 
         m_shortcutDlg = new ecvShortcutDialog(m_actions, this);
         m_shortcutDlg->restoreShortcutsFromQSettings();
+
+        m_shortcutDlg->registerStandaloneShortcut(
+                "Tab: Previous", QKeySequence("Ctrl+PgUp"));
+        m_shortcutDlg->registerStandaloneShortcut(
+                "Tab: Next", QKeySequence("Ctrl+PgDown"));
+        m_shortcutDlg->registerStandaloneShortcut(
+                "Tab: New", QKeySequence("Ctrl+Shift+T"));
+        m_shortcutDlg->registerStandaloneShortcut(
+                "Tab: Close", QKeySequence("Ctrl+W"));
 
         connect(m_ui->actionShortcutSettings, &QAction::triggered, this,
                 &MainWindow::showShortcutDialog);
@@ -1615,6 +1625,45 @@ void MainWindow::connectActions() {
                     });
             fsActiveAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
             fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
+        }
+
+        // Quick Create View shortcuts (Ctrl+Shift+1..6)
+        {
+            displayMenu->addSeparator();
+            auto* quickMenu = displayMenu->addMenu(tr("Quick Create View"));
+
+            auto addQuickCreate = [&](const QString& label,
+                                      const QKeySequence& key,
+                                      auto createFn) {
+                auto* act = quickMenu->addAction(label, this, createFn);
+                act->setShortcut(key);
+                act->setShortcutContext(Qt::ApplicationShortcut);
+            };
+
+            addQuickCreate(
+                    tr("SpreadSheet View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_1),
+                    [this]() { quickCreateViewInNewTab("SpreadSheet"); });
+            addQuickCreate(
+                    tr("Line Chart View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_2),
+                    [this]() { quickCreateViewInNewTab("LineChart"); });
+            addQuickCreate(
+                    tr("Bar Chart View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_3),
+                    [this]() { quickCreateViewInNewTab("BarChart"); });
+            addQuickCreate(
+                    tr("Histogram View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_4),
+                    [this]() { quickCreateViewInNewTab("Histogram"); });
+            addQuickCreate(
+                    tr("Orthographic Slice View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_5),
+                    [this]() { quickCreateViewInNewTab("OrthoSlice"); });
+            addQuickCreate(
+                    tr("Python View"),
+                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_6),
+                    [this]() { quickCreateViewInNewTab("PythonView"); });
         }
     }
 
@@ -3136,6 +3185,41 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     }
                 });
 
+                // "Convert To..." submenu (ParaView pqStandardViewFrameActionsImplementation)
+                auto* convertMenu = menu.addMenu(tr("Convert To..."));
+                auto addConvertAction = [this, frame,
+                                         convertMenu](const QString& label) {
+                    convertMenu->addAction(label, [this, frame, label]() {
+                        if (!m_tabbedMultiView) return;
+                        auto* mvw = m_tabbedMultiView->currentMultiView();
+                        if (!mvw || !mvw->layoutManager()) return;
+                        int location = frame->property("CELL_INDEX").toInt();
+                        mvw->onCloseView(frame);
+                        mvw->convertCell(location, label);
+                    });
+                };
+                addConvertAction(tr("Render View"));
+                addConvertAction(tr("SpreadSheet View"));
+                addConvertAction(tr("Python View"));
+#ifdef USE_VTK_BACKEND
+                convertMenu->addSeparator();
+                addConvertAction(tr("Eye Dome Lighting"));
+                addConvertAction(tr("Orthographic Slice View"));
+                addConvertAction(tr("Slice View"));
+                convertMenu->addSeparator();
+                addConvertAction(tr("Line Chart View"));
+                addConvertAction(tr("Bar Chart View"));
+                addConvertAction(tr("Histogram View"));
+                addConvertAction(tr("Box Chart View"));
+                addConvertAction(tr("Point Chart View"));
+                addConvertAction(tr("Parallel Coordinates View"));
+                addConvertAction(tr("Plot Matrix View"));
+                convertMenu->addSeparator();
+                addConvertAction(tr("Render View (Comparative)"));
+                addConvertAction(tr("Line Chart View (Comparative)"));
+                addConvertAction(tr("Bar Chart View (Comparative)"));
+#endif
+
                 auto* contextViewDisplay =
                         [&]() -> ecvGenericGLDisplay* {
                     auto* cFrame = frame->findChild<QWidget*>(
@@ -3347,10 +3431,18 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 if (de->source() != frame && de->mimeData()->hasText() &&
                     de->mimeData()->text() == dragMime) {
                     de->acceptProposedAction();
+                    titleBar->setStyleSheet(
+                            "QWidget#ViewTitleBar { "
+                            "background: palette(highlight); }");
                 }
                 return true;
             }
+            case QEvent::DragLeave: {
+                titleBar->setStyleSheet(QString());
+                return true;
+            }
             case QEvent::Drop: {
+                titleBar->setStyleSheet(QString());
                 auto* de = static_cast<QDropEvent*>(evt);
                 auto* sourceFrame = qobject_cast<QWidget*>(de->source());
                 if (sourceFrame && sourceFrame != frame &&
@@ -6549,6 +6641,23 @@ void MainWindow::initSelectionController() {
                 });
     }
 
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::pointIndicesSelected, this,
+            [this](ccHObject* /*entity*/, const QSet<unsigned>& indices) {
+                if (!m_selectionController ||
+                    !m_selectionController->highlighter())
+                    return;
+                QVector<qint64> ids;
+                ids.reserve(indices.size());
+                for (unsigned idx : indices) {
+                    ids.append(static_cast<qint64>(idx));
+                }
+                cvSelectionData selData(ids,
+                                        cvSelectionData::POINTS);
+                m_selectionController->highlighter()->highlightSelection(
+                        selData);
+            });
+
     // Connect zoom to box signal for notification (zoom is handled by
     // cvZoomToBoxTool)
     connect(m_selectionController,
@@ -6698,6 +6807,28 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
                                       : nullptr;
         if (highlighter) {
             highlighter->clearHighlights();
+        }
+    }
+
+    if (hasSelection) {
+        ccHObject::Container selected;
+        if (m_ccRoot) {
+            m_ccRoot->getSelectedEntities(selected);
+        }
+        ccHObject* activeEntity =
+                selected.empty() ? nullptr : selected.front();
+        if (activeEntity) {
+            QVector<qint64> rawIds = selectionData.ids();
+            QSet<unsigned> indices;
+            indices.reserve(rawIds.size());
+            for (qint64 id : rawIds) {
+                if (id >= 0)
+                    indices.insert(static_cast<unsigned>(id));
+            }
+            if (!indices.isEmpty()) {
+                emit ecvViewManager::instance().pointIndicesSelected(
+                        activeEntity, indices);
+            }
         }
     }
 
@@ -14506,6 +14637,53 @@ void MainWindow::populateActionList() {
 
 void MainWindow::showShortcutDialog() {
     if (m_shortcutDlg) {
+        m_shortcutDlg->syncModalShortcuts();
         m_shortcutDlg->exec();
+#ifdef USE_VTK_BACKEND
+        QVTKWidgetCustom::reloadVtkShortcutMap();
+#endif
     }
+}
+
+void MainWindow::quickCreateViewInNewTab(const QString& viewType) {
+    if (!m_tabbedMultiView) return;
+
+    auto* mvw = m_tabbedMultiView->currentMultiView();
+    if (!mvw || !mvw->layoutManager()) return;
+
+    int activeCell = mvw->activeFrameLocation();
+    if (activeCell < 0) activeCell = 0;
+
+    auto* layout = mvw->layoutManager();
+    auto* existingView = layout->getView(activeCell);
+    int targetCell = activeCell;
+
+    if (existingView) {
+        layout->split(activeCell, ecvViewLayoutProxy::HORIZONTAL);
+        targetCell = ecvViewLayoutProxy::secondChild(activeCell);
+    }
+
+    auto clickButton = [&](const QString& btnText) {
+        auto buttons = mvw->findChildren<QPushButton*>();
+        for (auto* btn : buttons) {
+            if (btn->text() == btnText && btn->isEnabled() && btn->isVisible()) {
+                btn->click();
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (viewType == "SpreadSheet")
+        clickButton(tr("SpreadSheet View"));
+    else if (viewType == "LineChart")
+        clickButton(tr("Line Chart View"));
+    else if (viewType == "BarChart")
+        clickButton(tr("Bar Chart View"));
+    else if (viewType == "Histogram")
+        clickButton(tr("Histogram View"));
+    else if (viewType == "OrthoSlice")
+        clickButton(tr("Orthographic Slice View"));
+    else if (viewType == "PythonView")
+        clickButton(tr("Python View"));
 }

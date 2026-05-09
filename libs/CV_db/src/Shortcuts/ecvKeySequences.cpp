@@ -184,6 +184,29 @@ void ecvKeySequences::dumpShortcuts(const QKeySequence& keySequence) const {
 }
 
 //-----------------------------------------------------------------------------
+QMap<QString, QStringList> ecvKeySequences::allRegisteredSequences() const {
+    QMap<QString, QStringList> result;
+    for (auto it = g_keys.Data.constBegin(); it != g_keys.Data.constEnd();
+         ++it) {
+        QStringList names;
+        for (auto* sibling : it.value().Siblings) {
+            if (!sibling) continue;
+            QString name;
+            if (sibling->parent()) {
+                auto* widget = qobject_cast<QWidget*>(sibling->parent());
+                if (widget && !widget->objectName().isEmpty())
+                    name = widget->objectName();
+            }
+            if (name.isEmpty()) name = sibling->objectName();
+            if (name.isEmpty()) name = QStringLiteral("modal");
+            names.append(name);
+        }
+        result[it.key().toString()] = names;
+    }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
 void ecvKeySequences::disableSiblings() {
     if (m_silence) {
         return;

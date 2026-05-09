@@ -22,7 +22,7 @@
 
 // VtkEngine
 #include <Visualization/VtkVis.h>
-#include <vtkGLView.h>
+#include <Visualization/vtkGLView.h>
 
 // Qt
 #include <QApplication>

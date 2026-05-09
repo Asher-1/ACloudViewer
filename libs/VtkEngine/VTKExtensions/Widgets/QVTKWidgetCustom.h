@@ -107,6 +107,10 @@ public:
         m_customStyle = style;
     }
 
+    /// Reload VTK shortcut mappings from QSettings.
+    /// Call after the user edits VTK shortcuts in the dialog.
+    static void reloadVtkShortcutMap();
+
     void setMultiViewports(bool multi = true);
     bool multiViewports() const;
 

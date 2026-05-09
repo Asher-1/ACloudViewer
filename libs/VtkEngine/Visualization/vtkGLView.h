@@ -21,12 +21,15 @@
 
 #include <vtkSmartPointer.h>
 
+class vtkActor;
 class vtkImplicitPlaneWidget2;
+class vtkCubeAxesActor;
 #include <QPointer>
 #include <QTimer>
 #include <list>
 #include <memory>
 #include <unordered_set>
+#include <vector>
 #include <vector>
 
 #include "qVTK.h"
@@ -232,6 +235,13 @@ public:
     void enableSliceMode(bool enable = true);
     bool isSliceModeEnabled() const { return m_sliceMode; }
 
+    void setMultiSlicePositions(int axis,
+                                const std::vector<double>& positions);
+    const std::vector<double>& getMultiSlicePositions(int axis) const;
+    void clearMultiSlicePositions();
+
+    void setOutlineVisible(bool visible);
+
     enum OrthoAxis { AXIS_XY, AXIS_XZ, AXIS_YZ };
     void setOrthoSliceCamera(OrthoAxis axis);
 
@@ -431,7 +441,10 @@ private:
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
     QElapsedTimer m_timer;
+    vtkSmartPointer<vtkCubeAxesActor> m_sliceCubeAxes;
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;
+    std::vector<double> m_multiSlicePos[3];
+    std::vector<vtkSmartPointer<vtkActor>> m_multiSliceActors;
 
     static int s_nextWindowID;
 };

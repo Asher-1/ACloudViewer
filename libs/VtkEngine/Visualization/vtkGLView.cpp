@@ -20,22 +20,37 @@
 #include <ecvUndoManager.h>
 #include <ecvViewManager.h>
 #include <vtkActor.h>
-#include <vtkCamera.h>
-#include <vtkCameraPass.h>
-#include <vtkDefaultPass.h>
-#include <vtkEDLShading.h>
-#include <vtkImplicitPlaneRepresentation.h>
-#include <vtkImplicitPlaneWidget2.h>
 #include <vtkActorCollection.h>
 #include <vtkCallbackCommand.h>
-#include <vtkMapper.h>
-#include <vtkNew.h>
-#include <vtkPlane.h>
+#include <vtkCamera.h>
+#include <vtkCameraPass.h>
+#include <vtkCubeAxesActor.h>
+#include <vtkCutter.h>
+#include <vtkDataSet.h>
+#include <vtkDefaultPass.h>
+#include <vtkEDLShading.h>
+#include <vtkOpenGLFXAAPass.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkImplicitPlaneRepresentation.h>
+#include <vtkImplicitPlaneWidget2.h>
+#include <vtkLightsPass.h>
+#include <vtkMapper.h>
 #include <vtkMatrix4x4.h>
+#include <vtkNew.h>
+#include <vtkOpaquePass.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkOverlayPass.h>
+#include <vtkPlane.h>
+#include <vtkRenderPassCollection.h>
+#include <vtkRenderStepsPass.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkSequencePass.h>
+#include <vtkTextProperty.h>
+#include <vtkTranslucentPass.h>
+#include <vtkVolumetricPass.h>
 
 #include <Eigen/Core>
 #include <algorithm>
@@ -212,7 +227,8 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
         m_displayTools->doPicking();
     });
 
-    connect(&ecvRepresentationManager::instance(),
+    connect(
+            &ecvRepresentationManager::instance(),
             &ecvRepresentationManager::representationChanged, this,
             [this](ecvViewRepresentation* rep) {
                 if (rep && rep->getView() == this) {
@@ -236,7 +252,9 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     //   - ecvRedrawScope destructor triggers redraw inside updateLabel()
     //   - any signal handler calls redraw() during the draw pipeline
     if (m_insideRedraw) {
-        CVLog::Warning("[vtkGLView::redraw] RE-ENTRANT redraw blocked (view %d)", m_uniqueID);
+        CVLog::Warning(
+                "[vtkGLView::redraw] RE-ENTRANT redraw blocked (view %d)",
+                m_uniqueID);
         m_shouldBeRefreshed = true;
         return;
     }
@@ -442,20 +460,27 @@ void vtkGLView::enableEDL(bool enable) {
     if (!renderer) return;
 
     if (enable) {
+        // ParaView vtkPVRenderViewWithEDL pattern:
+        //   FXAA → EDL → vtkRenderStepsPass (full geometry pipeline)
+        vtkNew<vtkRenderStepsPass> basicPasses;
+
         vtkNew<vtkEDLShading> edlPass;
-        vtkNew<vtkCameraPass> cameraPass;
-        vtkNew<vtkDefaultPass> defaultPass;
-        cameraPass->SetDelegatePass(defaultPass);
-        edlPass->SetDelegatePass(cameraPass);
-        renderer->SetPass(edlPass);
+        edlPass->SetDelegatePass(basicPasses);
+
+        vtkNew<vtkOpenGLFXAAPass> fxaaPass;
+        fxaaPass->SetDelegatePass(edlPass);
+
+        renderer->SetPass(fxaaPass);
     } else {
         renderer->SetPass(nullptr);
     }
     updateScene();
 }
 
-static void SlicePlaneCallback(vtkObject* caller, unsigned long,
-                               void* clientData, void*) {
+static void SlicePlaneCallback(vtkObject* caller,
+                               unsigned long,
+                               void* clientData,
+                               void*) {
     auto* widget = static_cast<vtkImplicitPlaneWidget2*>(caller);
     auto* rep = static_cast<vtkImplicitPlaneRepresentation*>(
             widget->GetRepresentation());
@@ -493,9 +518,12 @@ void vtkGLView::enableSliceMode(bool enable) {
         double bounds[6] = {-1, 1, -1, 1, -1, 1};
         renderer->ComputeVisiblePropBounds(bounds);
         if (bounds[0] > bounds[1]) {
-            bounds[0] = -1; bounds[1] = 1;
-            bounds[2] = -1; bounds[3] = 1;
-            bounds[4] = -1; bounds[5] = 1;
+            bounds[0] = -1;
+            bounds[1] = 1;
+            bounds[2] = -1;
+            bounds[3] = 1;
+            bounds[4] = -1;
+            bounds[5] = 1;
         }
         rep->PlaceWidget(bounds);
         rep->SetNormal(0, 0, 1);
@@ -512,13 +540,40 @@ void vtkGLView::enableSliceMode(bool enable) {
         vtkNew<vtkCallbackCommand> callback;
         callback->SetCallback(SlicePlaneCallback);
         callback->SetClientData(renderer);
-        m_slicePlaneWidget->AddObserver(vtkCommand::InteractionEvent,
-                                        callback);
+        m_slicePlaneWidget->AddObserver(vtkCommand::InteractionEvent, callback);
         m_slicePlaneWidget->On();
+
+        // ParaView Slice View alignment: add cube axes for axis labels
+        m_sliceCubeAxes = vtkSmartPointer<vtkCubeAxesActor>::New();
+        m_sliceCubeAxes->SetBounds(bounds);
+        m_sliceCubeAxes->SetCamera(renderer->GetActiveCamera());
+        m_sliceCubeAxes->SetFlyModeToOuterEdges();
+        m_sliceCubeAxes->SetGridLineLocation(
+                vtkCubeAxesActor::VTK_GRID_LINES_FURTHEST);
+        m_sliceCubeAxes->XAxisMinorTickVisibilityOff();
+        m_sliceCubeAxes->YAxisMinorTickVisibilityOff();
+        m_sliceCubeAxes->ZAxisMinorTickVisibilityOff();
+        m_sliceCubeAxes->DrawXGridlinesOn();
+        m_sliceCubeAxes->DrawYGridlinesOn();
+        m_sliceCubeAxes->DrawZGridlinesOff();
+        m_sliceCubeAxes->GetTitleTextProperty(0)->SetColor(1.0, 0.0, 0.0);
+        m_sliceCubeAxes->GetLabelTextProperty(0)->SetColor(0.8, 0.8, 0.8);
+        m_sliceCubeAxes->GetTitleTextProperty(1)->SetColor(0.0, 1.0, 0.0);
+        m_sliceCubeAxes->GetLabelTextProperty(1)->SetColor(0.8, 0.8, 0.8);
+        m_sliceCubeAxes->GetTitleTextProperty(2)->SetColor(0.0, 0.0, 1.0);
+        m_sliceCubeAxes->GetLabelTextProperty(2)->SetColor(0.8, 0.8, 0.8);
+        m_sliceCubeAxes->SetXTitle("Y");
+        m_sliceCubeAxes->SetYTitle("X");
+        m_sliceCubeAxes->SetZTitle("Z");
+        renderer->AddActor(m_sliceCubeAxes);
     } else {
         if (m_slicePlaneWidget) {
             m_slicePlaneWidget->Off();
             m_slicePlaneWidget = nullptr;
+        }
+        if (m_sliceCubeAxes) {
+            renderer->RemoveActor(m_sliceCubeAxes);
+            m_sliceCubeAxes = nullptr;
         }
         auto* actors = renderer->GetActors();
         actors->InitTraversal();
@@ -531,11 +586,105 @@ void vtkGLView::enableSliceMode(bool enable) {
     updateScene();
 }
 
+void vtkGLView::setMultiSlicePositions(int axis,
+                                       const std::vector<double>& positions) {
+    if (axis < 0 || axis > 2) return;
+    m_multiSlicePos[axis] = positions;
+
+    if (!m_visualizer3D) return;
+    auto* renderer = m_visualizer3D->getCurrentRenderer();
+    if (!renderer) return;
+
+    for (auto& a : m_multiSliceActors) {
+        if (a) renderer->RemoveActor(a);
+    }
+    m_multiSliceActors.clear();
+
+    double normal[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
+    auto* actors = renderer->GetActors();
+    vtkActor* firstActor = nullptr;
+    if (actors) {
+        actors->InitTraversal();
+        firstActor = actors->GetNextActor();
+    }
+    if (!firstActor || !firstActor->GetMapper() ||
+        !firstActor->GetMapper()->GetInput())
+        return;
+
+    vtkDataSet* inputData = firstActor->GetMapper()->GetInput();
+
+    for (int ax = 0; ax < 3; ++ax) {
+        for (double pos : m_multiSlicePos[ax]) {
+            vtkNew<vtkPlane> plane;
+            plane->SetNormal(normal[ax]);
+            double origin[3] = {0, 0, 0};
+            origin[ax] = pos;
+            plane->SetOrigin(origin);
+
+            vtkNew<vtkCutter> cutter;
+            cutter->SetCutFunction(plane);
+            cutter->SetInputData(inputData);
+            cutter->Update();
+
+            vtkNew<vtkPolyDataMapper> mapper;
+            mapper->SetInputConnection(cutter->GetOutputPort());
+
+            auto sliceActor = vtkSmartPointer<vtkActor>::New();
+            sliceActor->SetMapper(mapper);
+            double color[3] = {0.8, 0.8, 0.8};
+            color[ax] = 1.0;
+            sliceActor->GetProperty()->SetColor(color);
+            sliceActor->GetProperty()->SetLineWidth(2.0);
+
+            renderer->AddActor(sliceActor);
+            m_multiSliceActors.push_back(sliceActor);
+        }
+    }
+    renderer->GetRenderWindow()->Render();
+}
+
+const std::vector<double>& vtkGLView::getMultiSlicePositions(int axis) const {
+    static const std::vector<double> empty;
+    if (axis < 0 || axis > 2) return empty;
+    return m_multiSlicePos[axis];
+}
+
+void vtkGLView::clearMultiSlicePositions() {
+    if (!m_visualizer3D) return;
+    auto* renderer = m_visualizer3D->getCurrentRenderer();
+    for (auto& a : m_multiSliceActors) {
+        if (a && renderer) renderer->RemoveActor(a);
+    }
+    m_multiSliceActors.clear();
+    for (auto& v : m_multiSlicePos) v.clear();
+    if (renderer && renderer->GetRenderWindow())
+        renderer->GetRenderWindow()->Render();
+}
+
+void vtkGLView::setOutlineVisible(bool visible) {
+    if (!m_visualizer3D) return;
+    auto* renderer = m_visualizer3D->getCurrentRenderer();
+    if (!renderer) return;
+    auto* actors = renderer->GetActors();
+    if (!actors) return;
+    actors->InitTraversal();
+    while (auto* actor = actors->GetNextActor()) {
+        if (actor->GetProperty() &&
+            actor->GetProperty()->GetRepresentation() == VTK_WIREFRAME) {
+            actor->SetVisibility(visible ? 1 : 0);
+        }
+    }
+    if (renderer->GetRenderWindow())
+        renderer->GetRenderWindow()->Render();
+}
+
 void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
     if (!m_visualizer3D) return;
-    auto* camera = m_visualizer3D->getCurrentRenderer()
-                           ? m_visualizer3D->getCurrentRenderer()->GetActiveCamera()
-                           : nullptr;
+    auto* camera =
+            m_visualizer3D->getCurrentRenderer()
+                    ? m_visualizer3D->getCurrentRenderer()->GetActiveCamera()
+                    : nullptr;
     if (!camera) return;
 
     setPerspectiveState(false, true);

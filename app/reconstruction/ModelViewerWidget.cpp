@@ -19,7 +19,7 @@
 
 // LOCAL
 #include <Visualization/VtkDisplayTools.h>
-#include <vtkGLView.h>
+#include <Visualization/vtkGLView.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>

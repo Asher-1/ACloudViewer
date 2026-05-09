@@ -287,17 +287,19 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                         "window");
                 CVLog::Print("    Ctrl+Alt + +/-    : Zoom in/out");
                 CVLog::Print("  Display Controls:");
-                CVLog::Print("    Ctrl+Shift + P    : Point representation");
+                CVLog::Print("    Ctrl+Shift + D    : Point representation");
                 CVLog::Print(
                         "    Ctrl+Shift + W    : Wireframe representation");
-                CVLog::Print("    Ctrl+Shift + S    : Surface representation");
+                CVLog::Print(
+                        "    Ctrl+Shift + F    : Surface representation");
                 CVLog::Print(
                         "    Ctrl+Shift + +/-  : Increase/decrease point "
                         "size");
                 CVLog::Print("    Ctrl+Alt + G      : Toggle scale grid");
                 CVLog::Print("    Ctrl+Alt + K      : Toggle lookup table");
                 CVLog::Print("  Camera:");
-                CVLog::Print("    Ctrl + S          : Save camera parameters");
+                CVLog::Print(
+                        "    Ctrl+Alt + M      : Save camera parameters");
                 CVLog::Print(
                         "    Ctrl + R          : Restore camera parameters");
                 CVLog::Print("    Ctrl+Alt + C      : Print camera parameters");
@@ -1095,6 +1097,39 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                 iren->Render();
                 return true;
             }
+            case 'm': {
+                if (camera_file_.empty()) {
+                    vtkRenderer* ren = iren->GetRenderWindow()
+                                               ->GetRenderers()
+                                               ->GetFirstRenderer();
+                    if (ren) {
+                        vtkCamera* cam = ren->GetActiveCamera();
+                        if (cam) {
+                            cam->GetPosition(saved_cam_pos_);
+                            cam->GetFocalPoint(saved_cam_focal_);
+                            cam->GetViewUp(saved_cam_viewup_);
+                            cam->GetClippingRange(saved_cam_clip_);
+                            camera_saved_ = true;
+                            CVLog::Print(
+                                    "Camera parameters saved, you can press "
+                                    "CTRL + R to restore.");
+                        }
+                    }
+                } else {
+                    if (saveCameraParameters(camera_file_)) {
+                        CVLog::Print(
+                                "Save camera parameters to %s, you can press "
+                                "CTRL + R to restore.",
+                                camera_file_.c_str());
+                    } else {
+                        CVLog::Error(
+                                "[vtkCustomInteractorStyle] Can't save camera "
+                                "parameters to file: %s.",
+                                camera_file_.c_str());
+                    }
+                }
+                return true;
+            }
             case 's': {
                 int stereo = iren->GetRenderWindow()->GetStereoRender();
                 if (!stereo) {
@@ -1126,12 +1161,57 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
             iren->Render();
             return true;
         }
+
+        {
+            vtkSmartPointer<vtkCamera> cam =
+                    CurrentRenderer->GetActiveCamera();
+            bool viewSet = false;
+            if (lk == '1') {
+                cam->SetPosition(0, 0, 1);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 1, 0);
+                viewSet = true;
+            } else if (lk == '2') {
+                cam->SetPosition(0, 0, -1);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 1, 0);
+                viewSet = true;
+            } else if (lk == '3') {
+                cam->SetPosition(-1, 0, 0);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 1, 0);
+                viewSet = true;
+            } else if (lk == '4') {
+                cam->SetPosition(1, 0, 0);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 1, 0);
+                viewSet = true;
+            } else if (lk == '5') {
+                cam->SetPosition(0, 1, 0);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 0, -1);
+                viewSet = true;
+            } else if (lk == '6') {
+                cam->SetPosition(0, -1, 0);
+                cam->SetFocalPoint(0, 0, 0);
+                cam->SetViewUp(0, 0, 1);
+                viewSet = true;
+            }
+            if (viewSet) {
+                CurrentRenderer->ResetCamera();
+                CurrentRenderer->ResetCameraClippingRange();
+                rens_->Render();
+                iren->Render();
+                return true;
+            }
+        }
     }
 
     // Ctrl+Shift shortcuts
     if (ctrl && shift && !alt) {
         switch (lk) {
-            case 'p': {
+            case 'p':
+            case 'd': {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -1166,7 +1246,8 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                 iren->Render();
                 return true;
             }
-            case 's': {
+            case 's':
+            case 'f': {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -1230,39 +1311,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
     // Ctrl-only shortcuts (no Alt, no Shift)
     if (ctrl && !alt && !shift) {
         switch (lk) {
-            case 's': {
-                if (camera_file_.empty()) {
-                    vtkRenderer* ren = iren->GetRenderWindow()
-                                               ->GetRenderers()
-                                               ->GetFirstRenderer();
-                    if (ren) {
-                        vtkCamera* cam = ren->GetActiveCamera();
-                        if (cam) {
-                            cam->GetPosition(saved_cam_pos_);
-                            cam->GetFocalPoint(saved_cam_focal_);
-                            cam->GetViewUp(saved_cam_viewup_);
-                            cam->GetClippingRange(saved_cam_clip_);
-                            camera_saved_ = true;
-                            CVLog::Print(
-                                    "Camera parameters saved, you can press "
-                                    "CTRL + R to restore.");
-                        }
-                    }
-                } else {
-                    if (saveCameraParameters(camera_file_)) {
-                        CVLog::Print(
-                                "Save camera parameters to %s, you can press "
-                                "CTRL + R to restore.",
-                                camera_file_.c_str());
-                    } else {
-                        CVLog::Error(
-                                "[vtkCustomInteractorStyle] Can't save camera "
-                                "parameters to file: %s.",
-                                camera_file_.c_str());
-                    }
-                }
-                return true;
-            }
             case 'r': {
                 if (camera_file_.empty()) {
                     if (camera_saved_) {

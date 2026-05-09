@@ -8,7 +8,7 @@
 #include "ecvMultiViewFrameManager.h"
 
 #include <CVLog.h>
-#include <vtkGLView.h>
+#include <Visualization/vtkGLView.h>
 
 #include <QApplication>
 #include <QDrag>

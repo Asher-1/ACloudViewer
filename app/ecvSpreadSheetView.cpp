@@ -12,16 +12,19 @@
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvScalarField.h>
 #include <ecvViewManager.h>
 
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
+#include <QColor>
 #include <QComboBox>
 #include <QFileDialog>
 #include <QFont>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QItemSelectionModel>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
@@ -51,6 +54,7 @@ void ecvSpreadSheetModel::setEntity(ccHObject* entity) {
     m_pcCloud = nullptr;
     m_mesh = nullptr;
     m_columns.clear();
+    m_fieldRows.clear();
 
     if (entity) {
         m_cloud = ccHObjectCaster::ToGenericPointCloud(entity);
@@ -90,20 +94,112 @@ void ecvSpreadSheetModel::rebuildColumns() {
             m_columns.append({QStringLiteral("RGB"), ColumnDef::R, -1, true});
         }
     } else if (m_attributeType == CELL_DATA && m_mesh) {
-        unsigned triCount = m_mesh->size();
-        Q_UNUSED(triCount);
         m_columns.append({QStringLiteral("Cell ID"), ColumnDef::CELL_INDEX, -1, true});
         m_columns.append({QStringLiteral("Vertex 1"), ColumnDef::V1, -1, true});
         m_columns.append({QStringLiteral("Vertex 2"), ColumnDef::V2, -1, true});
         m_columns.append({QStringLiteral("Vertex 3"), ColumnDef::V3, -1, true});
+        if (m_cellConnectivity) {
+            m_columns.append({QStringLiteral("V1_X"), ColumnDef::V1_X, -1, true});
+            m_columns.append({QStringLiteral("V1_Y"), ColumnDef::V1_Y, -1, true});
+            m_columns.append({QStringLiteral("V1_Z"), ColumnDef::V1_Z, -1, true});
+            m_columns.append({QStringLiteral("V2_X"), ColumnDef::V2_X, -1, true});
+            m_columns.append({QStringLiteral("V2_Y"), ColumnDef::V2_Y, -1, true});
+            m_columns.append({QStringLiteral("V2_Z"), ColumnDef::V2_Z, -1, true});
+            m_columns.append({QStringLiteral("V3_X"), ColumnDef::V3_X, -1, true});
+            m_columns.append({QStringLiteral("V3_Y"), ColumnDef::V3_Y, -1, true});
+            m_columns.append({QStringLiteral("V3_Z"), ColumnDef::V3_Z, -1, true});
+        }
         if (m_mesh->hasMaterials()) {
             m_columns.append({QStringLiteral("Material"), ColumnDef::MAT_INDEX, -1, true});
         }
+    } else if (m_attributeType == FIELD_DATA) {
+        rebuildFieldData();
+    }
+    rebuildVisibleColMap();
+}
+
+void ecvSpreadSheetModel::rebuildFieldData() {
+    m_fieldRows.clear();
+
+    if (!m_entity) return;
+
+    auto addRow = [this](const QString& k, const QString& v) {
+        FieldRow r;
+        r.key = k;
+        r.value = v;
+        m_fieldRows.append(r);
+    };
+
+    addRow(tr("Name"), m_entity->getName());
+    QString typeName = tr("Object");
+    if (m_mesh)
+        typeName = tr("Mesh");
+    else if (m_pcCloud)
+        typeName = tr("Point Cloud");
+    else if (m_cloud)
+        typeName = tr("Generic Point Cloud");
+    addRow(tr("Type"), typeName);
+    addRow(tr("Enabled"),
+           m_entity->isEnabled() ? tr("Yes") : tr("No"));
+
+    if (m_cloud) {
+        addRow(tr("Number of Points"),
+               QString::number(m_cloud->size()));
+
+        CCVector3 bbMin, bbMax;
+        m_cloud->getBoundingBox(bbMin, bbMax);
+        addRow(tr("Bounds X"),
+               QStringLiteral("[%1, %2]")
+                       .arg(formatValue(bbMin.x))
+                       .arg(formatValue(bbMax.x)));
+        addRow(tr("Bounds Y"),
+               QStringLiteral("[%1, %2]")
+                       .arg(formatValue(bbMin.y))
+                       .arg(formatValue(bbMax.y)));
+        addRow(tr("Bounds Z"),
+               QStringLiteral("[%1, %2]")
+                       .arg(formatValue(bbMin.z))
+                       .arg(formatValue(bbMax.z)));
+
+        addRow(tr("Has Colors"),
+               m_cloud->hasColors() ? tr("Yes") : tr("No"));
+        addRow(tr("Has Normals"),
+               m_cloud->hasNormals() ? tr("Yes") : tr("No"));
+    }
+
+    if (m_pcCloud) {
+        unsigned sfCount = m_pcCloud->getNumberOfScalarFields();
+        addRow(tr("Scalar Fields"), QString::number(sfCount));
+
+        for (unsigned i = 0; i < sfCount; ++i) {
+            auto* sf = m_pcCloud->getScalarField(static_cast<int>(i));
+            if (!sf) continue;
+            sf->computeMinAndMax();
+            QString sfName = QString::fromUtf8(sf->getName());
+            addRow(tr("SF '%1' Range").arg(sfName),
+                   QStringLiteral("[%1, %2]")
+                           .arg(formatValue(sf->getMin()))
+                           .arg(formatValue(sf->getMax())));
+        }
+    }
+
+    if (m_mesh) {
+        addRow(tr("Number of Triangles"),
+               QString::number(m_mesh->size()));
+        addRow(tr("Has Materials"),
+               m_mesh->hasMaterials() ? tr("Yes") : tr("No"));
+        addRow(tr("Has Per-Triangle Normals"),
+               m_mesh->hasTriNormals() ? tr("Yes") : tr("No"));
     }
 }
 
 int ecvSpreadSheetModel::rowCount(const QModelIndex& parent) const {
     if (parent.isValid()) return 0;
+    if (m_attributeType == FIELD_DATA)
+        return m_fieldRows.size();
+    if (m_selectionOnly && !m_selectedIndices.isEmpty()) {
+        return m_selectedIndices.size();
+    }
     if (m_attributeType == POINT_DATA && m_cloud)
         return static_cast<int>(m_cloud->size());
     if (m_attributeType == CELL_DATA && m_mesh)
@@ -113,6 +209,8 @@ int ecvSpreadSheetModel::rowCount(const QModelIndex& parent) const {
 
 int ecvSpreadSheetModel::columnCount(const QModelIndex& parent) const {
     if (parent.isValid()) return 0;
+    if (m_attributeType == FIELD_DATA)
+        return m_fieldRows.isEmpty() ? 0 : 2;
     int count = 0;
     for (const auto& col : m_columns) {
         if (col.visible) ++count;
@@ -130,6 +228,7 @@ void ecvSpreadSheetModel::setColumnVisible(int col, bool visible) {
         m_columns[col].visible != visible) {
         beginResetModel();
         m_columns[col].visible = visible;
+        rebuildVisibleColMap();
         endResetModel();
     }
 }
@@ -160,6 +259,46 @@ void ecvSpreadSheetModel::setAttributeType(AttributeType type) {
     }
 }
 
+void ecvSpreadSheetModel::setSelectedIndices(const QSet<unsigned>& indices) {
+    if (m_selectedIndices != indices) {
+        if (m_selectionOnly) {
+            beginResetModel();
+            m_selectedIndices = indices;
+            rebuildSortedSelection();
+            endResetModel();
+        } else {
+            m_selectedIndices = indices;
+            rebuildSortedSelection();
+            if (rowCount() > 0)
+                emit dataChanged(index(0, 0),
+                                 index(rowCount() - 1, columnCount() - 1),
+                                 {Qt::BackgroundRole});
+        }
+    }
+}
+
+void ecvSpreadSheetModel::rebuildSortedSelection() {
+    m_sortedSelection = m_selectedIndices.values().toVector();
+    std::sort(m_sortedSelection.begin(), m_sortedSelection.end());
+}
+
+void ecvSpreadSheetModel::rebuildVisibleColMap() {
+    m_visibleColMap.clear();
+    for (int i = 0; i < m_columns.size(); ++i) {
+        if (m_columns[i].visible) {
+            m_visibleColMap.append(i);
+        }
+    }
+}
+
+void ecvSpreadSheetModel::setSelectionOnly(bool on) {
+    if (m_selectionOnly != on) {
+        beginResetModel();
+        m_selectionOnly = on;
+        endResetModel();
+    }
+}
+
 QString ecvSpreadSheetModel::formatValue(double val) const {
     if (std::isnan(val)) return QStringLiteral("nan");
     if (std::isinf(val)) return val > 0 ? QStringLiteral("inf") : QStringLiteral("-inf");
@@ -171,23 +310,35 @@ QString ecvSpreadSheetModel::formatValue(double val) const {
 
 QVariant ecvSpreadSheetModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid()) return {};
+
+    if (m_attributeType == FIELD_DATA) {
+        if (role != Qt::DisplayRole) return {};
+        int row = index.row();
+        if (row < 0 || row >= m_fieldRows.size()) return {};
+        if (index.column() == 0) return m_fieldRows[row].key;
+        if (index.column() == 1) return m_fieldRows[row].value;
+        return {};
+    }
+
+    if (role == Qt::BackgroundRole && !m_selectionOnly &&
+        !m_selectedIndices.isEmpty()) {
+        unsigned row = static_cast<unsigned>(index.row());
+        if (m_selectedIndices.contains(row))
+            return QColor(38, 79, 120);
+        return {};
+    }
     if (role != Qt::DisplayRole) return {};
 
     unsigned row = static_cast<unsigned>(index.row());
-
-    // Map visible column index to actual column
-    int visCol = index.column();
-    int actualCol = -1;
-    int seen = 0;
-    for (int i = 0; i < m_columns.size(); ++i) {
-        if (m_columns[i].visible) {
-            if (seen == visCol) {
-                actualCol = i;
-                break;
-            }
-            ++seen;
-        }
+    if (m_selectionOnly && !m_sortedSelection.isEmpty()) {
+        if (index.row() >= m_sortedSelection.size()) return {};
+        row = m_sortedSelection[index.row()];
     }
+
+    int visCol = index.column();
+    int actualCol = (visCol >= 0 && visCol < m_visibleColMap.size())
+                            ? m_visibleColMap[visCol]
+                            : -1;
     if (actualCol < 0) return {};
 
     const ColumnDef& col = m_columns[actualCol];
@@ -249,6 +400,24 @@ QVariant ecvSpreadSheetModel::data(const QModelIndex& index, int role) const {
             }
             case ColumnDef::MAT_INDEX:
                 return static_cast<int>(m_mesh->getTriangleMtlIndex(row));
+            case ColumnDef::V1_X: case ColumnDef::V1_Y: case ColumnDef::V1_Z:
+            case ColumnDef::V2_X: case ColumnDef::V2_Y: case ColumnDef::V2_Z:
+            case ColumnDef::V3_X: case ColumnDef::V3_Y: case ColumnDef::V3_Z: {
+                cloudViewer::VerticesIndexes* tri =
+                        m_mesh->getTriangleVertIndexes(row);
+                if (!tri || !m_cloud) return {};
+                unsigned vi = tri->i1;
+                if (col.type >= ColumnDef::V2_X && col.type <= ColumnDef::V2_Z)
+                    vi = tri->i2;
+                else if (col.type >= ColumnDef::V3_X)
+                    vi = tri->i3;
+                if (vi >= m_cloud->size()) return {};
+                const CCVector3* P = m_cloud->getPoint(vi);
+                if (!P) return {};
+                int comp = (static_cast<int>(col.type) -
+                            static_cast<int>(ColumnDef::V1_X)) % 3;
+                return formatValue(static_cast<double>(P->u[comp]));
+            }
             default:
                 break;
         }
@@ -262,6 +431,11 @@ QVariant ecvSpreadSheetModel::headerData(int section,
                                          int role) const {
     if (role != Qt::DisplayRole) return {};
     if (orientation == Qt::Horizontal) {
+        if (m_attributeType == FIELD_DATA) {
+            if (section == 0) return tr("Property");
+            if (section == 1) return tr("Value");
+            return {};
+        }
         int seen = 0;
         for (int i = 0; i < m_columns.size(); ++i) {
             if (m_columns[i].visible) {
@@ -387,11 +561,52 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     m_columnVisBtn->setStyleSheet(toolBtnSS);
     decLayout->addWidget(m_columnVisBtn);
 
+    m_selectionOnlyBtn = new QToolButton(decoratorBar);
+    m_selectionOnlyBtn->setText(tr("Selected"));
+    m_selectionOnlyBtn->setToolTip(
+            tr("Show only selected elements (ParaView SelectionOnly)"));
+    m_selectionOnlyBtn->setCheckable(true);
+    m_selectionOnlyBtn->setStyleSheet(toolBtnSS);
+    decLayout->addWidget(m_selectionOnlyBtn);
+
+    m_cellConnBtn = new QToolButton(decoratorBar);
+    m_cellConnBtn->setText(tr("Conn"));
+    m_cellConnBtn->setToolTip(
+            tr("Generate Cell Connectivity — show vertex coordinates in "
+               "Cell Data (ParaView GenerateCellConnectivity)"));
+    m_cellConnBtn->setCheckable(true);
+    m_cellConnBtn->setStyleSheet(toolBtnSS);
+    decLayout->addWidget(m_cellConnBtn);
+
     m_exportBtn = new QToolButton(decoratorBar);
     m_exportBtn->setText(tr("Export"));
     m_exportBtn->setToolTip(tr("Export spreadsheet to CSV"));
     m_exportBtn->setStyleSheet(toolBtnSS);
     decLayout->addWidget(m_exportBtn);
+
+    auto* cellFLabel = new QLabel(tr("Cell:"), decoratorBar);
+    cellFLabel->setStyleSheet(labelSS);
+    decLayout->addWidget(cellFLabel);
+
+    m_cellFontSizeSpin = new QSpinBox(decoratorBar);
+    m_cellFontSizeSpin->setRange(6, 24);
+    m_cellFontSizeSpin->setValue(11);
+    m_cellFontSizeSpin->setStyleSheet(spinSS);
+    m_cellFontSizeSpin->setToolTip(
+            tr("Cell font size (ParaView CellFontSize)"));
+    decLayout->addWidget(m_cellFontSizeSpin);
+
+    auto* hdrFLabel = new QLabel(tr("Hdr:"), decoratorBar);
+    hdrFLabel->setStyleSheet(labelSS);
+    decLayout->addWidget(hdrFLabel);
+
+    m_headerFontSizeSpin = new QSpinBox(decoratorBar);
+    m_headerFontSizeSpin->setRange(6, 24);
+    m_headerFontSizeSpin->setValue(11);
+    m_headerFontSizeSpin->setStyleSheet(spinSS);
+    m_headerFontSizeSpin->setToolTip(
+            tr("Header font size (ParaView HeaderFontSize)"));
+    decLayout->addWidget(m_headerFontSizeSpin);
 
     decLayout->addStretch(1);
     decoratorBar->setStyleSheet(
@@ -462,9 +677,29 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
             &ecvSpreadSheetView::onToggleFixed);
     connect(m_columnVisMenu, &QMenu::aboutToShow, this,
             &ecvSpreadSheetView::onColumnVisibilityMenuAboutToShow);
+    connect(m_selectionOnlyBtn, &QToolButton::toggled, this,
+            &ecvSpreadSheetView::onToggleSelectionOnly);
+    connect(m_cellConnBtn, &QToolButton::toggled, this,
+            &ecvSpreadSheetView::onToggleCellConnectivity);
+    connect(m_cellFontSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &ecvSpreadSheetView::onCellFontSizeChanged);
+    connect(m_headerFontSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &ecvSpreadSheetView::onHeaderFontSizeChanged);
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &ecvSpreadSheetView::onEntitySelectionChanged);
+
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::pointIndicesSelected, this,
+            [this](ccHObject* entity, const QSet<unsigned>& indices) {
+                if (entity && m_model->entity() == entity) {
+                    setSelectedPointIndices(indices);
+                }
+            });
+
+    connect(m_tableView->selectionModel(),
+            &QItemSelectionModel::selectionChanged, this,
+            &ecvSpreadSheetView::onTableSelectionChanged);
 
     installEventFilter(this);
 
@@ -537,6 +772,16 @@ void ecvSpreadSheetView::onToggleFixed(bool fixed) {
     m_model->setFixedRepresentation(fixed);
 }
 
+void ecvSpreadSheetView::onToggleSelectionOnly(bool checked) {
+    m_model->setSelectionOnly(checked);
+    if (checked) {
+        m_tableView->setSelectionMode(QAbstractItemView::NoSelection);
+    } else {
+        m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    }
+    updateStatusBar();
+}
+
 void ecvSpreadSheetView::onColumnVisibilityMenuAboutToShow() {
     m_columnVisMenu->clear();
 
@@ -586,10 +831,98 @@ void ecvSpreadSheetView::exportToCsv() {
 }
 
 void ecvSpreadSheetView::copyToClipboard() {
-    auto table = m_model->getRowsAsString();
-    if (!table.isEmpty()) {
-        QApplication::clipboard()->setText(table);
+    auto selModel = m_tableView->selectionModel();
+    QModelIndexList selectedRows = selModel->selectedRows();
+    if (selectedRows.isEmpty()) {
+        auto table = m_model->getRowsAsString();
+        if (!table.isEmpty()) {
+            QApplication::clipboard()->setText(table);
+        }
+        return;
     }
+
+    int cols = m_proxyModel->columnCount();
+    QString result;
+    for (int c = 0; c < cols; ++c) {
+        if (c > 0) result += '\t';
+        result += m_proxyModel->headerData(c, Qt::Horizontal).toString();
+    }
+    result += '\n';
+
+    std::sort(selectedRows.begin(), selectedRows.end(),
+              [](const QModelIndex& a, const QModelIndex& b) {
+                  return a.row() < b.row();
+              });
+    for (const auto& idx : selectedRows) {
+        for (int c = 0; c < cols; ++c) {
+            if (c > 0) result += '\t';
+            result += m_proxyModel->data(m_proxyModel->index(idx.row(), c))
+                              .toString();
+        }
+        result += '\n';
+    }
+    QApplication::clipboard()->setText(result);
+}
+
+void ecvSpreadSheetModel::setGenerateCellConnectivity(bool on) {
+    if (m_cellConnectivity == on) return;
+    beginResetModel();
+    m_cellConnectivity = on;
+    m_columns.clear();
+    rebuildColumns();
+    endResetModel();
+}
+
+void ecvSpreadSheetView::onToggleCellConnectivity(bool checked) {
+    m_model->setGenerateCellConnectivity(checked);
+    updateStatusBar();
+}
+
+void ecvSpreadSheetView::onCellFontSizeChanged(int size) {
+    QFont f = m_tableView->font();
+    f.setPointSize(size);
+    m_tableView->setFont(f);
+    m_tableView->verticalHeader()->setDefaultSectionSize(size + 9);
+}
+
+void ecvSpreadSheetView::onHeaderFontSizeChanged(int size) {
+    QFont f = m_tableView->horizontalHeader()->font();
+    f.setPointSize(size);
+    m_tableView->horizontalHeader()->setFont(f);
+    m_tableView->verticalHeader()->setFont(f);
+}
+
+void ecvSpreadSheetView::setSelectedPointIndices(
+        const QSet<unsigned>& indices) {
+    m_model->setSelectedIndices(indices);
+    if (!indices.isEmpty() && !m_model->selectionOnly()) {
+        QVector<unsigned> sorted(indices.begin(), indices.end());
+        std::sort(sorted.begin(), sorted.end());
+        int firstRow = static_cast<int>(sorted.first());
+        QModelIndex proxyIdx =
+                m_proxyModel->mapFromSource(m_model->index(firstRow, 0));
+        if (proxyIdx.isValid()) {
+            m_tableView->scrollTo(proxyIdx,
+                                  QAbstractItemView::PositionAtCenter);
+        }
+    }
+    updateStatusBar();
+}
+
+void ecvSpreadSheetView::onTableSelectionChanged() {
+    if (!m_model->entity()) return;
+
+    QModelIndexList selectedRows =
+            m_tableView->selectionModel()->selectedRows();
+    QVector<unsigned> indices;
+    indices.reserve(selectedRows.size());
+    for (const auto& proxyIdx : selectedRows) {
+        QModelIndex srcIdx = m_proxyModel->mapToSource(proxyIdx);
+        if (srcIdx.isValid()) {
+            indices.append(static_cast<unsigned>(srcIdx.row()));
+        }
+    }
+    emit tableSelectionChanged(m_model->entity(), indices);
 }
 
 bool ecvSpreadSheetView::eventFilter(QObject* obj, QEvent* event) {

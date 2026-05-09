@@ -380,6 +380,9 @@ private:
     //! Shows the shortcut settings dialog
     void showShortcutDialog();
 
+    //! Create a specific view type in a new tab.
+    void quickCreateViewInNewTab(const QString& viewType);
+
     void doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
     void createComponentsClouds(

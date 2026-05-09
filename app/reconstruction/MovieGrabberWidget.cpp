@@ -9,7 +9,7 @@
 
 #include <Visualization/VtkVis.h>
 #include <ecv2DViewportObject.h>
-#include <vtkGLView.h>
+#include <Visualization/vtkGLView.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvHObjectCaster.h>
 #include <ecvViewManager.h>
