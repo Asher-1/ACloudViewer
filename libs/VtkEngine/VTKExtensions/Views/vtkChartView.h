@@ -65,6 +65,9 @@ public:
     void setSelectionModifier(int modifier);
     void clearSelection();
 
+    void setYAxisScale(double factor);
+    void setPlotOpacity(double opacity);
+
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 

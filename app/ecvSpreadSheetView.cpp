@@ -89,31 +89,55 @@ void ecvSpreadSheetModel::computeVertexNormals() {
     bool cloudHasNormals = (m_pcCloud && m_pcCloud->hasNormals()) ||
                            m_cloud->hasNormals();
     if (cloudHasNormals) return;
-    if (!m_mesh->hasTriNormals()) return;
 
     unsigned numVerts = m_cloud->size();
+    unsigned numTris = m_mesh->size();
+    if (numTris == 0) return;
+
     m_computedNormals.resize(numVerts * 3);
     m_computedNormals.fill(0.0f);
     QVector<int> counts(numVerts, 0);
 
-    unsigned numTris = m_mesh->size();
+    bool hasExplicitTriNormals = m_mesh->hasTriNormals();
+
     for (unsigned t = 0; t < numTris; ++t) {
-        CCVector3 na, nb, nc;
-        if (!m_mesh->getTriangleNormals(t, na, nb, nc)) continue;
         auto* tri = m_mesh->getTriangleVertIndexes(t);
         if (!tri) continue;
-        auto accum = [&](unsigned vi, const CCVector3& n) {
+
+        CCVector3 faceNormal(0, 0, 0);
+        if (hasExplicitTriNormals) {
+            CCVector3 na, nb, nc;
+            if (m_mesh->getTriangleNormals(t, na, nb, nc)) {
+                faceNormal = (na + nb + nc);
+                float len = faceNormal.norm();
+                if (len > 1e-12f) faceNormal /= len;
+            }
+        }
+        if (faceNormal.norm2() < 1e-12f) {
+            const CCVector3* A = m_cloud->getPoint(tri->i1);
+            const CCVector3* B = m_cloud->getPoint(tri->i2);
+            const CCVector3* C = m_cloud->getPoint(tri->i3);
+            if (A && B && C) {
+                CCVector3 AB = *B - *A;
+                CCVector3 AC = *C - *A;
+                faceNormal = AB.cross(AC);
+                float len = faceNormal.norm();
+                if (len > 1e-12f) faceNormal /= len;
+            }
+        }
+
+        auto accum = [&](unsigned vi) {
             if (vi < numVerts) {
                 unsigned b = vi * 3;
-                m_computedNormals[b] += n.x;
-                m_computedNormals[b + 1] += n.y;
-                m_computedNormals[b + 2] += n.z;
+                m_computedNormals[b] += faceNormal.x;
+                m_computedNormals[b + 1] += faceNormal.y;
+                m_computedNormals[b + 2] += faceNormal.z;
                 counts[vi]++;
             }
         };
-        accum(tri->i1, na);
-        accum(tri->i2, nb);
-        accum(tri->i3, nc);
+        accum(tri->i1);
+        accum(tri->i2);
+        accum(tri->i3);
     }
 
     for (unsigned i = 0; i < numVerts; ++i) {

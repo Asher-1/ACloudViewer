@@ -484,17 +484,98 @@ void vtkComparativeViewWidget::onToggleOverlay(bool checked) {
     m_overlayMode = checked;
     if (m_subWidgets.size() <= 1) return;
 
-    if (checked) {
-        for (int i = 1; i < m_subWidgets.size(); ++i) {
-            m_subWidgets[i]->setVisible(false);
+    if (m_type == RENDER) {
+        auto* firstView = qobject_cast<vtkGLView*>(
+                m_subWidgets[0]->findChild<vtkGLView*>());
+        if (!firstView)
+            firstView = dynamic_cast<vtkGLView*>(
+                    static_cast<QObject*>(m_subWidgets[0]));
+
+        if (checked) {
+            for (int i = 1; i < m_subWidgets.size(); ++i) {
+                auto* view = qobject_cast<vtkGLView*>(
+                        m_subWidgets[i]->findChild<vtkGLView*>());
+                if (!view)
+                    view = dynamic_cast<vtkGLView*>(
+                            static_cast<QObject*>(m_subWidgets[i]));
+                if (!view || !firstView) continue;
+                if (view->getVisualizer3D() &&
+                    firstView->getVisualizer3D()) {
+                    auto srcRen =
+                            view->getVisualizer3D()->getRendererCollection();
+                    auto dstRen =
+                            firstView->getVisualizer3D()
+                                    ->getRendererCollection();
+                    if (srcRen && dstRen) {
+                        srcRen->InitTraversal();
+                        dstRen->InitTraversal();
+                        auto* src = srcRen->GetNextItem();
+                        auto* dst = dstRen->GetNextItem();
+                        if (src && dst) {
+                            auto* actors = src->GetActors();
+                            if (actors) {
+                                actors->InitTraversal();
+                                vtkActor* a = nullptr;
+                                while ((a = actors->GetNextActor()))
+                                    dst->AddActor(a);
+                            }
+                        }
+                    }
+                }
+                m_subWidgets[i]->setVisible(false);
+            }
+            m_gridLayout->setColumnStretch(0, 1);
+            m_gridLayout->setRowStretch(0, 1);
+        } else {
+            if (firstView && firstView->getVisualizer3D()) {
+                auto dstRen =
+                        firstView->getVisualizer3D()->getRendererCollection();
+                if (dstRen) {
+                    dstRen->InitTraversal();
+                    auto* dst = dstRen->GetNextItem();
+                    if (dst) {
+                        for (int i = 1; i < m_subWidgets.size(); ++i) {
+                            auto* view = qobject_cast<vtkGLView*>(
+                                    m_subWidgets[i]->findChild<vtkGLView*>());
+                            if (!view)
+                                view = dynamic_cast<vtkGLView*>(
+                                        static_cast<QObject*>(
+                                                m_subWidgets[i]));
+                            if (!view || !view->getVisualizer3D()) continue;
+                            auto srcRen =
+                                    view->getVisualizer3D()
+                                            ->getRendererCollection();
+                            if (!srcRen) continue;
+                            srcRen->InitTraversal();
+                            auto* src = srcRen->GetNextItem();
+                            if (!src) continue;
+                            auto* actors = src->GetActors();
+                            if (!actors) continue;
+                            actors->InitTraversal();
+                            vtkActor* a = nullptr;
+                            while ((a = actors->GetNextActor()))
+                                dst->RemoveActor(a);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < m_subWidgets.size(); ++i) {
+                m_subWidgets[i]->setVisible(true);
+            }
         }
-        m_gridLayout->setColumnStretch(0, 1);
-        m_gridLayout->setRowStretch(0, 1);
     } else {
-        for (int i = 0; i < m_subWidgets.size(); ++i) {
-            m_subWidgets[i]->setVisible(true);
+        if (checked) {
+            for (int i = 1; i < m_subWidgets.size(); ++i)
+                m_subWidgets[i]->setVisible(false);
+            m_gridLayout->setColumnStretch(0, 1);
+            m_gridLayout->setRowStretch(0, 1);
+        } else {
+            for (int i = 0; i < m_subWidgets.size(); ++i)
+                m_subWidgets[i]->setVisible(true);
         }
     }
+
+    forceRenderAllSubViews();
 
     if (m_statusLabel) {
         m_statusLabel->setText(checked ? tr("Overlay mode ON")
@@ -636,6 +717,47 @@ void vtkComparativeViewWidget::applyCueToSubViews() {
                     ++applied;
                 }
             }
+        }
+    }
+
+    if (m_type != RENDER) {
+        for (int idx = 0; idx < m_subWidgets.size(); ++idx) {
+            auto* chartView = qobject_cast<vtkChartView*>(m_subWidgets[idx]);
+            if (!chartView) continue;
+
+            int y = idx / dx;
+            int x = idx % dx;
+            double value = minVal;
+            switch (cueMode) {
+                case 0:
+                    value = (dx > 1) ? minVal + x * (maxVal - minVal) / (dx - 1) : minVal;
+                    break;
+                case 1:
+                    value = (dy > 1) ? minVal + y * (maxVal - minVal) / (dy - 1) : minVal;
+                    break;
+                case 2:
+                default:
+                    value = (dx * dy > 1)
+                            ? minVal + idx * (maxVal - minVal) / (dx * dy - 1)
+                            : minVal;
+                    break;
+            }
+            switch (cueParam) {
+                case 1:
+                case 2: {
+                    double scale = qBound(0.1, value / 45.0, 10.0);
+                    chartView->setYAxisScale(scale);
+                    break;
+                }
+                case 3: {
+                    double opacity = qBound(0.01, value / 100.0, 1.0);
+                    chartView->setPlotOpacity(opacity);
+                    break;
+                }
+                default:
+                    break;
+            }
+            ++applied;
         }
     }
 

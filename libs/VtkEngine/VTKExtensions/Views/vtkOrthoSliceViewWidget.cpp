@@ -9,11 +9,18 @@
 
 #include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
 
+#include <Converters/Cc2Vtk.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
+#include <vtkCutter.h>
+#include <vtkPlane.h>
+#include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -56,6 +63,10 @@ struct vtkOrthoSliceViewWidget::Impl {
     vtkSmartPointer<vtkTextActor> subAnnotations[4];
     vtkSmartPointer<VTKExtensions::vtkPVCenterAxesActor> sliceAxes2D[3];
     vtkSmartPointer<VTKExtensions::vtkPVCenterAxesActor> sliceAxes3D;
+    vtkSmartPointer<vtkPolyData> entityPolyData;
+    vtkSmartPointer<vtkPlane> slicePlanes[3];
+    vtkSmartPointer<vtkCutter> sliceCutters[3];
+    vtkSmartPointer<vtkActor> sliceActors[3];
     vtkSmartPointer<vtkCubeAxesActor> gridAxes[3];
     double slicePos[3] = {0.0, 0.0, 0.0};
     double geomBounds[6] = {-1, 1, -1, 1, -1, 1};
@@ -213,15 +224,21 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     m_coloringCombo->addItems({tr("Solid Color"), tr("Points"), tr("Normals"),
                                tr("TCoords")});
     colorLayout->addWidget(m_coloringCombo);
+    connect(m_coloringCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { applyDisplayProperties(); });
 
     colorLayout->addSpacing(8);
     m_mapScalarsCheck = new QCheckBox(tr("Map Scalars"), colorBar);
     m_mapScalarsCheck->setChecked(true);
     colorLayout->addWidget(m_mapScalarsCheck);
+    connect(m_mapScalarsCheck, &QCheckBox::toggled,
+            this, [this](bool) { applyDisplayProperties(); });
 
     m_interpScalarsCheck = new QCheckBox(tr("Interp Scalars"), colorBar);
     m_interpScalarsCheck->setChecked(true);
     colorLayout->addWidget(m_interpScalarsCheck);
+    connect(m_interpScalarsCheck, &QCheckBox::toggled,
+            this, [this](bool) { applyDisplayProperties(); });
 
     colorLayout->addStretch(1);
     layout->addWidget(colorBar);
@@ -480,6 +497,13 @@ void vtkOrthoSliceViewWidget::setSlicePosition(double x, double y, double z) {
     d->sliceAxes2D[FRONT_VIEW]->SetPosition(x, y, z + 0.01);
     d->sliceAxes3D->SetPosition(x, y, z);
 
+    if (d->slicePlanes[TOP_VIEW])
+        d->slicePlanes[TOP_VIEW]->SetOrigin(0, y, 0);
+    if (d->slicePlanes[SIDE_VIEW])
+        d->slicePlanes[SIDE_VIEW]->SetOrigin(x, 0, 0);
+    if (d->slicePlanes[FRONT_VIEW])
+        d->slicePlanes[FRONT_VIEW]->SetOrigin(0, 0, z);
+
     updateSliceSpinners();
     render();
 }
@@ -716,6 +740,10 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
     double specular = m_specularSlider ? m_specularSlider->value() / 100.0 : 0.0;
     int specPower = m_specPowerSpin ? m_specPowerSpin->value() : 100;
 
+    int colorIdx = m_coloringCombo ? m_coloringCombo->currentIndex() : 0;
+    bool mapScalars = m_mapScalarsCheck ? m_mapScalarsCheck->isChecked() : true;
+    bool interpScalars = m_interpScalarsCheck ? m_interpScalarsCheck->isChecked() : true;
+
     for (int v = 0; v < 4; ++v) {
         auto* actors = d->renderers[v]->GetActors();
         if (!actors) continue;
@@ -728,6 +756,49 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
             }
             if (a == d->sliceAxes3D.GetPointer()) isBuiltIn = true;
             if (isBuiltIn) continue;
+
+            auto* mapper = vtkPolyDataMapper::SafeDownCast(a->GetMapper());
+            if (mapper) {
+                if (colorIdx == 0) {
+                    mapper->ScalarVisibilityOff();
+                } else {
+                    mapper->ScalarVisibilityOn();
+                    mapper->SetScalarModeToUsePointFieldData();
+                    if (mapScalars) mapper->SetColorModeToMapScalars();
+                    else mapper->SetColorModeToDirectScalars();
+                    mapper->SetInterpolateScalarsBeforeMapping(interpScalars);
+
+                    QString colorName = m_coloringCombo
+                            ? m_coloringCombo->currentText() : QString();
+                    QByteArray nameBytes;
+                    const char* arrayName = nullptr;
+                    if (colorName == tr("Points")) {
+                        arrayName = nullptr;
+                        mapper->SetScalarModeToUsePointData();
+                    } else if (colorName == tr("Normals")) {
+                        arrayName = "Normals";
+                    } else if (colorName == tr("TCoords")) {
+                        arrayName = "TCoords";
+                    } else {
+                        nameBytes = colorName.toUtf8();
+                        arrayName = nameBytes.constData();
+                    }
+                    if (arrayName) {
+                        mapper->SelectColorArray(arrayName);
+                        auto* pd = vtkPolyData::SafeDownCast(
+                                mapper->GetInput());
+                        if (pd && pd->GetPointData()) {
+                            auto* arr = pd->GetPointData()->GetArray(
+                                    arrayName);
+                            if (arr) {
+                                double range[2];
+                                arr->GetRange(range, -1);
+                                mapper->SetScalarRange(range);
+                            }
+                        }
+                    }
+                }
+            }
 
             auto* prop = a->GetProperty();
             prop->SetOpacity(opacity);
@@ -855,6 +926,60 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         return;
     }
 
+    auto* pcCloud = ccHObjectCaster::ToPointCloud(entity);
+    if (!pcCloud && mesh) {
+        pcCloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
+    }
+
+    d->entityPolyData = nullptr;
+    for (int i = 0; i < 3; ++i) {
+        if (d->sliceActors[i]) {
+            d->renderers[i]->RemoveActor(d->sliceActors[i]);
+            d->sliceActors[i] = nullptr;
+        }
+        d->sliceCutters[i] = nullptr;
+        d->slicePlanes[i] = nullptr;
+    }
+
+    if (mesh && pcCloud) {
+        d->entityPolyData = Converters::Cc2Vtk::MeshToPolyData(pcCloud, mesh);
+    } else if (pcCloud) {
+        d->entityPolyData = Converters::Cc2Vtk::PointCloudToPolyData(pcCloud);
+    }
+
+    if (d->entityPolyData) {
+        {
+            vtkNew<vtkPolyDataMapper> mapper;
+            mapper->SetInputData(d->entityPolyData);
+            mapper->ScalarVisibilityOn();
+            vtkNew<vtkActor> actor;
+            actor->SetMapper(mapper);
+            actor->GetProperty()->SetRepresentationToSurface();
+            actor->GetProperty()->SetInterpolationToGouraud();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(actor);
+        }
+
+        const double normals[3][3] = {{0,1,0}, {1,0,0}, {0,0,1}};
+        for (int i = 0; i < 3; ++i) {
+            d->slicePlanes[i] = vtkSmartPointer<vtkPlane>::New();
+            d->slicePlanes[i]->SetNormal(normals[i]);
+            d->slicePlanes[i]->SetOrigin(0, 0, 0);
+
+            d->sliceCutters[i] = vtkSmartPointer<vtkCutter>::New();
+            d->sliceCutters[i]->SetCutFunction(d->slicePlanes[i]);
+            d->sliceCutters[i]->SetInputData(d->entityPolyData);
+
+            vtkNew<vtkPolyDataMapper> mapper;
+            mapper->SetInputConnection(d->sliceCutters[i]->GetOutputPort());
+            mapper->ScalarVisibilityOn();
+
+            d->sliceActors[i] = vtkSmartPointer<vtkActor>::New();
+            d->sliceActors[i]->SetMapper(mapper);
+            d->sliceActors[i]->GetProperty()->SetLineWidth(2.0);
+            d->renderers[i]->AddActor(d->sliceActors[i]);
+        }
+    }
+
     ccBBox box = entity->getOwnBB();
     if (box.isValid()) {
         double bounds[6] = {box.minCorner().x, box.maxCorner().x,
@@ -882,10 +1007,39 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         }
     }
 
+    if (m_coloringCombo && d->entityPolyData) {
+        m_coloringCombo->blockSignals(true);
+        int oldIdx = m_coloringCombo->currentIndex();
+        m_coloringCombo->clear();
+        m_coloringCombo->addItem(tr("Solid Color"));
+        auto* pd = d->entityPolyData->GetPointData();
+        if (pd) {
+            if (pd->GetScalars())
+                m_coloringCombo->addItem(tr("Points"));
+            if (pd->GetNormals())
+                m_coloringCombo->addItem(tr("Normals"));
+            if (pd->GetTCoords())
+                m_coloringCombo->addItem(tr("TCoords"));
+            for (int i = 0; i < pd->GetNumberOfArrays(); ++i) {
+                QString name = pd->GetArrayName(i);
+                if (name == "Normals" || name == "TCoords" || name.isEmpty())
+                    continue;
+                if (pd->GetScalars() &&
+                    QString(pd->GetScalars()->GetName()) == name)
+                    continue;
+                m_coloringCombo->addItem(name);
+            }
+        }
+        if (oldIdx >= 0 && oldIdx < m_coloringCombo->count())
+            m_coloringCombo->setCurrentIndex(oldIdx);
+        m_coloringCombo->blockSignals(false);
+    }
+
     if (m_statusLabel)
         m_statusLabel->setText(
                 tr("%1 (%2 pts)").arg(entity->getName()).arg(cloud->size()));
 
+    applyDisplayProperties();
     resetCameras();
 }
 

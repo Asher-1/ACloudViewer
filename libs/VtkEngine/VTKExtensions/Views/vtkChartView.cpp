@@ -103,6 +103,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     m_attributeCombo->addItem(tr("Point Data"), 0);
     m_attributeCombo->addItem(tr("Cell Data"), 1);
     decLayout->addWidget(m_attributeCombo);
+    connect(m_attributeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { rebuildChart(); });
 
     decLayout->addStretch(1);
     layout->addWidget(decoratorBar);
@@ -701,6 +703,35 @@ void vtkChartView::clearSelection() {
     if (m_vtkWidget) m_vtkWidget->renderWindow()->Render();
 }
 
+void vtkChartView::setYAxisScale(double factor) {
+    if (!m_chart) return;
+    auto* yAxis = m_chart->GetAxis(vtkAxis::LEFT);
+    if (!yAxis) return;
+    double range[2];
+    yAxis->GetRange(range);
+    double center = (range[0] + range[1]) * 0.5;
+    double halfSpan = (range[1] - range[0]) * 0.5 / factor;
+    yAxis->SetRange(center - halfSpan, center + halfSpan);
+    yAxis->RecalculateTickSpacing();
+    if (m_vtkWidget) m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::setPlotOpacity(double opacity) {
+    if (!m_chart) return;
+    for (int i = 0; i < m_chart->GetNumberOfPlots(); ++i) {
+        auto* plot = m_chart->GetPlot(i);
+        if (!plot) continue;
+        auto pen = plot->GetPen();
+        if (pen) {
+            unsigned char c[4];
+            pen->GetColor(c);
+            pen->SetColorF(c[0] / 255.0, c[1] / 255.0,
+                           c[2] / 255.0, opacity);
+        }
+    }
+    if (m_vtkWidget) m_vtkWidget->renderWindow()->Render();
+}
+
 QColor vtkChartView::seriesColor(int index) const {
     if (m_customSeriesColors.contains(index))
         return m_customSeriesColors[index];
@@ -711,31 +742,55 @@ void vtkChartView::computeVertexNormals() {
     m_computedNormals.clear();
     if (!m_mesh || !m_cloud) return;
     if (m_cloud->hasNormals()) return;
-    if (!m_mesh->hasTriNormals()) return;
 
     unsigned numVerts = m_cloud->size();
+    unsigned numTris = m_mesh->size();
+    if (numTris == 0) return;
+
     m_computedNormals.resize(numVerts * 3);
     m_computedNormals.fill(0.0f);
     QVector<int> counts(numVerts, 0);
 
-    unsigned numTris = m_mesh->size();
+    bool hasExplicitTriNormals = m_mesh->hasTriNormals();
+
     for (unsigned t = 0; t < numTris; ++t) {
-        CCVector3 na, nb, nc;
-        if (!m_mesh->getTriangleNormals(t, na, nb, nc)) continue;
         auto* tri = m_mesh->getTriangleVertIndexes(t);
         if (!tri) continue;
-        auto accum = [&](unsigned vi, const CCVector3& n) {
+
+        CCVector3 faceNormal(0, 0, 0);
+        if (hasExplicitTriNormals) {
+            CCVector3 na, nb, nc;
+            if (m_mesh->getTriangleNormals(t, na, nb, nc)) {
+                faceNormal = (na + nb + nc);
+                float len = faceNormal.norm();
+                if (len > 1e-12f) faceNormal /= len;
+            }
+        }
+        if (faceNormal.norm2() < 1e-12f) {
+            const CCVector3* A = m_cloud->getPoint(tri->i1);
+            const CCVector3* B = m_cloud->getPoint(tri->i2);
+            const CCVector3* C = m_cloud->getPoint(tri->i3);
+            if (A && B && C) {
+                CCVector3 AB = *B - *A;
+                CCVector3 AC = *C - *A;
+                faceNormal = AB.cross(AC);
+                float len = faceNormal.norm();
+                if (len > 1e-12f) faceNormal /= len;
+            }
+        }
+
+        auto accum = [&](unsigned vi) {
             if (vi < numVerts) {
                 unsigned b = vi * 3;
-                m_computedNormals[b] += n.x;
-                m_computedNormals[b + 1] += n.y;
-                m_computedNormals[b + 2] += n.z;
+                m_computedNormals[b] += faceNormal.x;
+                m_computedNormals[b + 1] += faceNormal.y;
+                m_computedNormals[b + 2] += faceNormal.z;
                 counts[vi]++;
             }
         };
-        accum(tri->i1, na);
-        accum(tri->i2, nb);
-        accum(tri->i3, nc);
+        accum(tri->i1);
+        accum(tri->i2);
+        accum(tri->i3);
     }
 
     for (unsigned i = 0; i < numVerts; ++i) {
@@ -1086,6 +1141,34 @@ void vtkChartView::onExportCSV() {
             if (ch == 1) return c.g;
             return c.b;
         }
+        if (fd.sfIndex == -40) {
+            const CCVector3* pt = m_cloud->getPoint(ptIdx);
+            if (!pt) return 0.0f;
+            return std::sqrt(pt->x * pt->x + pt->y * pt->y + pt->z * pt->z);
+        }
+        if (fd.sfIndex == -41) {
+            if (m_cloud->hasNormals()) {
+                const CCVector3& n = m_cloud->getPointNormal(ptIdx);
+                return std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
+            }
+            if (hasComputedNormals()) {
+                float nx = computedNormal(ptIdx, 0);
+                float ny = computedNormal(ptIdx, 1);
+                float nz = computedNormal(ptIdx, 2);
+                return std::sqrt(nx * nx + ny * ny + nz * nz);
+            }
+            return 0.0f;
+        }
+        if (fd.sfIndex >= -52 && fd.sfIndex <= -50 && m_mesh) {
+            auto* texTable = m_mesh->getTexCoordinatesTable();
+            if (texTable && ptIdx < texTable->size()) {
+                const TexCoords2D& tc = texTable->getValue(ptIdx);
+                if (fd.sfIndex == -50) return tc.tx;
+                if (fd.sfIndex == -51) return tc.ty;
+                return std::sqrt(tc.tx * tc.tx + tc.ty * tc.ty);
+            }
+            return 0.0f;
+        }
         return 0.0f;
     };
 
@@ -1111,14 +1194,24 @@ void vtkChartView::onExportCSV() {
 void vtkChartView::onResetZoom() {
     if (m_chart) {
         m_chart->RecalculateBounds();
-        m_vtkWidget->renderWindow()->Render();
+    } else if (m_chartType == PLOT_MATRIX && m_contextView) {
+        auto* spm = vtkScatterPlotMatrix::SafeDownCast(
+                m_contextView->GetScene()->GetItem(0));
+        if (spm) spm->Update();
     }
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
 }
 
 void vtkChartView::onChartTitleChanged(const QString& text) {
-    if (!m_chart) return;
-    m_chart->SetTitle(text.toStdString());
-    m_chart->SetShowLegend(m_chart->GetShowLegend());
+    if (m_chart) {
+        m_chart->SetTitle(text.toStdString());
+        m_chart->SetShowLegend(m_chart->GetShowLegend());
+    } else if (m_chartType == PLOT_MATRIX && m_contextView) {
+        auto* spm = vtkScatterPlotMatrix::SafeDownCast(
+                m_contextView->GetScene()->GetItem(0));
+        if (spm) spm->SetTitle(text.toStdString());
+    }
     if (m_vtkWidget && m_vtkWidget->renderWindow())
         m_vtkWidget->renderWindow()->Render();
 }
@@ -1206,11 +1299,46 @@ void vtkChartView::onAxisTitleChanged(const QString& text) {
 
 void vtkChartView::onToggleLogScale(bool log) {
     if (!m_chart) return;
-    auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
-    if (leftAxis) {
-        leftAxis->SetLogScale(log);
-        if (log) leftAxis->SetUnscaledMinimumLimit(1e-10);
+
+    if (m_chartType == PARALLEL_COORDINATES) {
+        auto* pcChart = vtkChartParallelCoordinates::SafeDownCast(m_chart);
+        if (pcChart) {
+            for (int i = 0; i < pcChart->GetNumberOfAxes(); ++i) {
+                auto* axis = pcChart->GetAxis(i);
+                if (!axis) continue;
+                axis->SetLogScale(log);
+                if (log) {
+                    axis->SetUnscaledMinimumLimit(1e-10);
+                } else {
+                    axis->SetUnscaledMinimumLimit(0.0);
+                }
+            }
+        }
+    } else {
+        auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
+        if (leftAxis) {
+            leftAxis->SetLogScale(log);
+            if (log) {
+                leftAxis->SetUnscaledMinimumLimit(
+                        m_chartType == HISTOGRAM ? 0.5 : 1e-10);
+                if (m_chartType == HISTOGRAM)
+                    leftAxis->SetMinimumLimit(0.5);
+            } else {
+                leftAxis->SetUnscaledMinimumLimit(0.0);
+                leftAxis->SetMinimumLimit(0.0);
+            }
+        }
+        auto* bottomAxis = m_chart->GetAxis(vtkAxis::BOTTOM);
+        if (bottomAxis && m_chartType != HISTOGRAM) {
+            bottomAxis->SetLogScale(log);
+            if (log) {
+                bottomAxis->SetUnscaledMinimumLimit(1e-10);
+            } else {
+                bottomAxis->SetUnscaledMinimumLimit(0.0);
+            }
+        }
     }
+
     m_chart->RecalculateBounds();
     if (m_vtkWidget && m_vtkWidget->renderWindow())
         m_vtkWidget->renderWindow()->Render();
@@ -1617,13 +1745,13 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
         binCenters->SetNumberOfTuples(numBins);
 
         QByteArray nameBytes = m_fields[fi].name.toUtf8();
-        vtkNew<vtkIntArray> counts;
+        vtkNew<vtkFloatArray> counts;
         counts->SetName(nameBytes.constData());
         counts->SetNumberOfTuples(numBins);
 
         for (int b = 0; b < numBins; ++b) {
             binCenters->SetValue(b, minVal + (b + 0.5f) * binWidth);
-            counts->SetValue(b, 0);
+            counts->SetValue(b, 0.0f);
         }
 
         for (unsigned i = 0; i < pointCount; ++i) {
@@ -1631,7 +1759,15 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
             int bin = static_cast<int>((v - minVal) / binWidth);
             if (bin >= numBins) bin = numBins - 1;
             if (bin < 0) bin = 0;
-            counts->SetValue(bin, counts->GetValue(bin) + 1);
+            counts->SetValue(bin, counts->GetValue(bin) + 1.0f);
+        }
+
+        bool isLog = m_logScaleCheck && m_logScaleCheck->isChecked();
+        if (isLog) {
+            for (int b = 0; b < numBins; ++b) {
+                if (counts->GetValue(b) < 0.5f)
+                    counts->SetValue(b, 0.5f);
+            }
         }
 
         table->AddColumn(binCenters);
