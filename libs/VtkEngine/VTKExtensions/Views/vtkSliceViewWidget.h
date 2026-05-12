@@ -15,6 +15,7 @@
 #include <QWidget>
 #include <vector>
 
+class QLabel;
 class vtkGLView;
 class vtkMultiSliceAxisWidget;
 
@@ -40,5 +41,6 @@ private:
     vtkMultiSliceAxisWidget* m_xAxis = nullptr;
     vtkMultiSliceAxisWidget* m_yAxis = nullptr;
     vtkMultiSliceAxisWidget* m_zAxis = nullptr;
+    QLabel* m_statusLabel = nullptr;
     bool m_outlineVisible = true;
 };

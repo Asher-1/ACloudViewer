@@ -255,7 +255,14 @@
         <file>Resources/images/svg/pqSelectPlus.svg</file>
         <file>Resources/images/svg/pqSelectMinus.svg</file>
         <file>Resources/images/svg/pqSelectToggle.svg</file>
+        <file>Resources/images/svg/pqSelectChart.svg</file>
         <file>Resources/images/svg/pqSelectChartPolygon.svg</file>
+        <file>Resources/images/svg/pqFixedRepr32.png</file>
+        <file>Resources/images/svg/pqSaveTable32.png</file>
+        <file>Resources/images/svg/pqRectilinearGrid16.png</file>
+        <file>Resources/images/svg/pqProgrammableFilter.svg</file>
+        <file>Resources/images/svg/pqGlobalData.svg</file>
+        <file>Resources/images/svg/pqSelect16.png</file>
         <file>Resources/images/svg/pqPlus.svg</file>
         <file>Resources/images/svg/pqMinus.svg</file>
         <file>Resources/images/svg/pqClearSort.svg</file>
@@ -313,7 +320,6 @@
         <file>Resources/images/svg/pqNodeMapData.png</file>
         <file>Resources/images/svg/pqInvert.png</file>
         <file>Resources/images/svg/pqSolidColor.png</file>
-        <file>Resources/images/svg/pqGlobalData.svg</file>
         <file>Resources/images/svg/pqAutoApply.svg</file>
         <file>Resources/images/svg/pqExtractSelection.svg</file>
         <file>Resources/images/svg/pqFindData.svg</file>

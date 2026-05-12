@@ -204,7 +204,6 @@ bool ecvViewLayoutProxy::setSplitFraction(int location, double fraction) {
     if (m_tree[location].direction == NONE) return false;
 
     m_tree[location].splitFraction = std::clamp(fraction, 0.0, 1.0);
-    notifyChanged();
     return true;
 }
 

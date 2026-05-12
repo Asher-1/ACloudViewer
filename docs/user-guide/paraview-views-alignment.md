@@ -774,8 +774,50 @@ These gaps are inherent to architectural differences between ParaView (client-se
   - Combined with text search for powerful shortcut lookup
 - **Create View Flow Improvement**:
   - New tabs auto-create a default Render View (no intermediate "Create View" panel)
-  - Comparative View grid toolbar hidden by default with collapsible "Grid Settings" toggle
+  - Comparative View grid settings accessible via right-click context menu (not inline toolbar)
   - Matches ParaView's behavior of immediately showing the render window
+- **Empty Cell Buttons (ParaView pqViewFrame alignment)**:
+  - Empty "Create View" cells now show Split H/V, Maximize, Close buttons in top-right corner
+  - Aligns with ParaView's `pqViewFrame` which wraps all cells (including empty ones) with standard buttons
+- **Non-GL View Activation**:
+  - Charts, SpreadSheet, Comparative, OrthoSlice views can now be activated by clicking
+  - Visual frame highlighting updates correctly for all view types (not just GL views)
+  - `makeActive()` calls `updateFrameHighlighting()` directly for non-GL views
+- **OrthoSlice View Improvement (ParaView vtkPVOrthographicSliceView alignment)**:
+  - Removed dense `vtkCubeAxesActor` grid overlay for clean ParaView-aligned appearance
+  - Crosshair colors: X=Red(1,0,0), Y=Yellow(1,1,0), Z=Blue(0,0,1) — matching `vtkPVCenterAxesActor` LUT
+  - Camera directions: Top=+Y, Side=+X, Front=+Z — matching ParaView's orthographic views
+  - Background: ortho panes (0.5, 0.5, 0.5) gray, 3D perspective (0.15, 0.15, 0.15) dark
+  - `populateFromRenderer()`: auto-copies actors from the active view's renderer into all 4 quadrants, sets geometry bounds, positions crosshairs at model center — shows actual model data immediately after creation
+- **Comparative View Improvement (ParaView pqComparativeRenderView alignment)**:
+  - Grid container background set to gray (128, 128, 128) matching ParaView separator styling
+  - Grid settings toolbar hidden by default, accessible via right-click context menu
+  - Camera sync via `syncCamerasFromFirst()` for consistent initial perspective
+  - Continuous camera linking via `QTimer`-based `onCameraLinkTick()` monitoring `vtkCamera::GetMTime()`
+  - Render comparative sub-views now auto-copy representations from active view via `copyRepresentationsOnSplit()`
+- **Slice View Data Population (ParaView pqMultiSliceView alignment)**:
+  - Slice view now copies representations from active view on creation via `copyRepresentationsOnSplit()`
+  - Model data visible immediately instead of empty slice view
+- **Slice View Background (ParaView pqMultiSliceView alignment)**:
+  - Container background set to white with `setAutoFillBackground(true)`, matching `pqMultiSliceView::createWidget()`
+- **Chart View UI Cleanup (ParaView pqContextView alignment)**:
+  - **No inline toolbar** — chart area is fully clean, matching ParaView's chart views
+  - All chart configuration (fields, axis, tooltip, export) accessible via right-click context menu
+  - Frame title bar provides: Capture Screenshot, Rectangle Selection (s), Polygon Selection (d) — matching ParaView's `addContextViewActions`
+  - Title label shows chart type + entity info centered above chart area
+- **Chart Selection Modifiers (ParaView pqChartSelectionReaction alignment)**:
+  - Add Selection (Ctrl), Subtract Selection (Shift), Toggle Selection (Ctrl+Shift) toolbar buttons
+  - Each modifier stores `vtkContextScene::SELECTION_*` enum value in `QAction::data()` and calls `vtkChart::SetSelectionMode()` — exactly matching ParaView's `pqChartSelectionReaction::getSelectionModifier` pattern
+  - Clear Selection: resets to PAN mode, clears modifier, removes annotation link selections, triggers re-render
+  - Rectangle and Polygon selection via `vtkChart::SetActionToButton()` — matching ParaView's chart action binding
+- **View-Type-Specific Frame Toolbar (ParaView pqStandardViewFrameActionsImplementation)**:
+  - Render views get full toolbar: Camera Undo/Redo, 3D Toggle, Adjust Camera, Selection tools
+  - Chart views get: Capture Screenshot + Add/Subtract/Toggle Modifiers + Rectangle/Polygon Selection + Clear (ParaView `addContextViewActions` + `addSelectionModifierActions`)
+  - Comparative/OrthoSlice/SpreadSheet views get minimal toolbar: Capture Screenshot only
+  - Matches ParaView's branching logic (`addRenderViewActions` vs `addContextViewActions` vs `addSpreadSheetViewActions`)
+- **Slice View Frame Integration**:
+  - Slice View now properly wrapped in frame factory with title bar and standard buttons
+  - Previously the frame was lost when wrapping with axis widgets
 - **View Frame Decorator (ParaView pqViewFrame alignment)**:
   - **Drag-and-drop swap**: Drag title bar to swap view positions; routes through `ecvViewLayoutProxy::swapCells()` for KD-tree consistency
   - **Visual drag feedback**: Title bar highlights with palette highlight color on drag-over, resets on leave/drop
@@ -799,6 +841,27 @@ The following gaps are **architectural** — they stem from the fundamental diff
 | Python View | ParaView: in-process `matplotlib.pyplot` via `vtkSMPythonViewProxy` | Architecture | ACV uses `QProcess` subprocess execution |
 | Camera Undo | ParaView: linked undo stacks across views via SM | Medium | ACV tracks per-view via `VtkVis` stacks |
 | Slice Pipeline | ParaView: `vtkSMMultiSliceViewProxy` drives representations | Architecture | ACV rebuilds cutters from first actor |
+| Frame Toolbar | ParaView: per-view-type icon set (render vs chart vs spreadsheet) | **Resolved** | ACV now branches by view type |
+| Chart Selection | ParaView: rectangle/polygon chart selection via `vtkContextInteractorStyle` | **Resolved** | ACV wires `vtkChart::SetActionToButton()` + `SetSelectionMode()` for full modifier+shape parity |
+| SpreadSheet FieldData | ParaView: `pqGlobalData.svg` toggle button for FieldData mode | **Resolved** | ACV adds FieldData toggle (`pqGlobalData.svg`) alongside existing attribute combo |
+| Convert To Menu | ParaView: lists all `availableViewTypes()` in Convert To submenu | **Resolved** | ACV now includes Image Chart View + Quartile Chart View in Convert To menu |
+| Convert To i18n | ParaView: proxy-name-driven (locale-independent) | **Resolved** | ACV now uses `VIEW_TYPE_ID` property matching instead of `btn->text()` for locale-safe Convert To |
+| View Registration | ParaView: dynamic view type registration from server XML | Low | ACV uses fixed `viewTypes` list |
+
+### Phase 15: i18n-Safe Convert To + Translation Completion
+
+- **Convert To Locale Safety**: `convertCell()` and `quickCreateViewInNewTab()` now use `VIEW_TYPE_ID` property matching instead of `btn->text()` string comparison
+  - Each Create View button stores its canonical English name in a `VIEW_TYPE_ID` Qt property
+  - Convert To menu passes canonical names (via `QStringLiteral`) — never translated labels
+  - Fixes: Convert To was broken in Chinese locale because `MainWindow::tr("Render View")` → "渲染视图" but `ecvMultiViewWidget::tr("Render View")` was untranslated (different Qt context)
+  - Pattern matches ParaView's proxy-name-driven approach (`availableViewTypes()` uses SM proxy names, not labels)
+- **ViewType struct refactored**: `{canonicalName, label, available}` triple replaces previous `{label, available}` pair
+  - `canonicalName` = `QStringLiteral` English name (never changes with locale)
+  - `label` = `tr()` translated display text (shown to user)
+  - All button connection logic uses `vt.canonicalName` comparisons instead of `vt.label == tr(...)`
+- **Translation completeness**: Added all 18 view type translations to `ecvMultiViewWidget` context in `ACloudViewer_zh.ts`
+  - Previously only `Split Left|Right`, `Split Top|Bottom`, `Maximize`, `Close View`, `Slice View` were translated
+  - Now covers all view types: Render View, Charts, Comparative, OrthoSlice, Python, SpreadSheet, EDL
 
 ### Summary
 

@@ -12,8 +12,11 @@
 
 #include <QWidget>
 
+#include <functional>
+
 class ccHObject;
 class ecvPythonCodeEditor;
+class QComboBox;
 class QCompleter;
 class QLabel;
 class QPlainTextEdit;
@@ -50,11 +53,24 @@ private:
     void setupCompleter();
     void insertCompletion(const QString& completion);
 
+    using EntityListProvider = std::function<QList<ccHObject*>()>;
+
+public:
+    void setEntityListProvider(EntityListProvider provider);
+
+private:
+    void refreshSourceCombo();
+    void onSourceComboChanged(int index);
+
+    QComboBox* m_sourceCombo = nullptr;
+    EntityListProvider m_entityListProvider;
     ecvPythonCodeEditor* m_scriptEditor = nullptr;
     QPlainTextEdit* m_outputPanel = nullptr;
+    QLabel* m_imageLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
     ecvPythonSyntaxHighlighter* m_highlighter = nullptr;
     QCompleter* m_completer = nullptr;
     ccHObject* m_entity = nullptr;
     QString m_lastExportPath;
+    QString m_lastImagePath;
 };

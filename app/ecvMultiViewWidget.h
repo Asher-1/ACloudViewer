@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QHash>
 #include <QMap>
 #include <QPointer>
 #include <QScopedPointer>
@@ -124,6 +125,9 @@ public slots:
     /// Update the visual "active" highlight.
     void markActive(ecvGenericGLDisplay* view);
 
+    /// Update all frame border highlighting based on m_activeFrame.
+    void updateFrameHighlighting();
+
     /// Handle standard buttons (split/close/maximize).
     void onSplitHorizontal(QWidget* frame);
     void onSplitVertical(QWidget* frame);
@@ -165,4 +169,6 @@ private:
 
     QMap<int, QWidget*> m_cellFrames;
     QMap<ecvGenericGLDisplay*, QWidget*> m_viewFrames;
+
+    QHash<int, QWidget*> m_preservedNonGLFrames;
 };
