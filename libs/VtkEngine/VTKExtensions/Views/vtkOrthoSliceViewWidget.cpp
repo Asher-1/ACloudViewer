@@ -18,6 +18,7 @@
 
 #include <vtkCutter.h>
 #include <vtkPlane.h>
+#include <vtkPlaneSource.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -67,6 +68,8 @@ struct vtkOrthoSliceViewWidget::Impl {
     vtkSmartPointer<vtkPlane> slicePlanes[3];
     vtkSmartPointer<vtkCutter> sliceCutters[3];
     vtkSmartPointer<vtkActor> sliceActors[3];
+    vtkSmartPointer<vtkActor> planeIndicators[3];
+    double planeInitCenter[3] = {0, 0, 0};
     vtkSmartPointer<vtkCubeAxesActor> gridAxes[3];
     double slicePos[3] = {0.0, 0.0, 0.0};
     double geomBounds[6] = {-1, 1, -1, 1, -1, 1};
@@ -503,6 +506,16 @@ void vtkOrthoSliceViewWidget::setSlicePosition(double x, double y, double z) {
         d->slicePlanes[SIDE_VIEW]->SetOrigin(x, 0, 0);
     if (d->slicePlanes[FRONT_VIEW])
         d->slicePlanes[FRONT_VIEW]->SetOrigin(0, 0, z);
+
+    if (d->planeIndicators[TOP_VIEW])
+        d->planeIndicators[TOP_VIEW]->SetPosition(
+                0, y - d->planeInitCenter[1], 0);
+    if (d->planeIndicators[SIDE_VIEW])
+        d->planeIndicators[SIDE_VIEW]->SetPosition(
+                x - d->planeInitCenter[0], 0, 0);
+    if (d->planeIndicators[FRONT_VIEW])
+        d->planeIndicators[FRONT_VIEW]->SetPosition(
+                0, 0, z - d->planeInitCenter[2]);
 
     updateSliceSpinners();
     render();
@@ -980,6 +993,13 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         }
     }
 
+    for (int i = 0; i < 3; ++i) {
+        if (d->planeIndicators[i]) {
+            d->renderers[PERSPECTIVE_VIEW]->RemoveActor(d->planeIndicators[i]);
+            d->planeIndicators[i] = nullptr;
+        }
+    }
+
     ccBBox box = entity->getOwnBB();
     if (box.isValid()) {
         double bounds[6] = {box.minCorner().x, box.maxCorner().x,
@@ -990,16 +1010,73 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         double cx = (bounds[0] + bounds[1]) * 0.5;
         double cy = (bounds[2] + bounds[3]) * 0.5;
         double cz = (bounds[4] + bounds[5]) * 0.5;
+        double sx = bounds[1] - bounds[0];
+        double sy = bounds[3] - bounds[2];
+        double sz = bounds[5] - bounds[4];
+        double pad = 0.05;
+        d->planeInitCenter[0] = cx;
+        d->planeInitCenter[1] = cy;
+        d->planeInitCenter[2] = cz;
+
+        double planeColors[3][3] = {
+                {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+
+        {
+            auto ps = vtkSmartPointer<vtkPlaneSource>::New();
+            ps->SetOrigin(bounds[0] - sx * pad, cy, bounds[4] - sz * pad);
+            ps->SetPoint1(bounds[1] + sx * pad, cy, bounds[4] - sz * pad);
+            ps->SetPoint2(bounds[0] - sx * pad, cy, bounds[5] + sz * pad);
+            ps->Update();
+            vtkNew<vtkPolyDataMapper> m;
+            m->SetInputData(ps->GetOutput());
+            d->planeIndicators[TOP_VIEW] = vtkSmartPointer<vtkActor>::New();
+            d->planeIndicators[TOP_VIEW]->SetMapper(m);
+            d->planeIndicators[TOP_VIEW]->GetProperty()->SetColor(planeColors[0]);
+            d->planeIndicators[TOP_VIEW]->GetProperty()->SetOpacity(0.15);
+            d->planeIndicators[TOP_VIEW]->GetProperty()->LightingOff();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->planeIndicators[TOP_VIEW]);
+        }
+        {
+            auto ps = vtkSmartPointer<vtkPlaneSource>::New();
+            ps->SetOrigin(cx, bounds[2] - sy * pad, bounds[4] - sz * pad);
+            ps->SetPoint1(cx, bounds[3] + sy * pad, bounds[4] - sz * pad);
+            ps->SetPoint2(cx, bounds[2] - sy * pad, bounds[5] + sz * pad);
+            ps->Update();
+            vtkNew<vtkPolyDataMapper> m;
+            m->SetInputData(ps->GetOutput());
+            d->planeIndicators[SIDE_VIEW] = vtkSmartPointer<vtkActor>::New();
+            d->planeIndicators[SIDE_VIEW]->SetMapper(m);
+            d->planeIndicators[SIDE_VIEW]->GetProperty()->SetColor(planeColors[1]);
+            d->planeIndicators[SIDE_VIEW]->GetProperty()->SetOpacity(0.15);
+            d->planeIndicators[SIDE_VIEW]->GetProperty()->LightingOff();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->planeIndicators[SIDE_VIEW]);
+        }
+        {
+            auto ps = vtkSmartPointer<vtkPlaneSource>::New();
+            ps->SetOrigin(bounds[0] - sx * pad, bounds[2] - sy * pad, cz);
+            ps->SetPoint1(bounds[1] + sx * pad, bounds[2] - sy * pad, cz);
+            ps->SetPoint2(bounds[0] - sx * pad, bounds[3] + sy * pad, cz);
+            ps->Update();
+            vtkNew<vtkPolyDataMapper> m;
+            m->SetInputData(ps->GetOutput());
+            d->planeIndicators[FRONT_VIEW] = vtkSmartPointer<vtkActor>::New();
+            d->planeIndicators[FRONT_VIEW]->SetMapper(m);
+            d->planeIndicators[FRONT_VIEW]->GetProperty()->SetColor(planeColors[2]);
+            d->planeIndicators[FRONT_VIEW]->GetProperty()->SetOpacity(0.15);
+            d->planeIndicators[FRONT_VIEW]->GetProperty()->LightingOff();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->planeIndicators[FRONT_VIEW]);
+        }
+
         setSlicePosition(cx, cy, cz);
 
-        double sx = (bounds[1] - bounds[0]) * 0.1;
-        double sy = (bounds[3] - bounds[2]) * 0.1;
-        double sz = (bounds[5] - bounds[4]) * 0.1;
-        double step = std::max({sx, sy, sz});
+        double stepX = sx * 0.1;
+        double stepY = sy * 0.1;
+        double stepZ = sz * 0.1;
+        double step = std::max({stepX, stepY, stepZ});
         if (step < 1e-6) step = 1.0;
-        m_sliceIncrements[0] = sx > 1e-6 ? sx : step;
-        m_sliceIncrements[1] = sy > 1e-6 ? sy : step;
-        m_sliceIncrements[2] = sz > 1e-6 ? sz : step;
+        m_sliceIncrements[0] = stepX > 1e-6 ? stepX : step;
+        m_sliceIncrements[1] = stepY > 1e-6 ? stepY : step;
+        m_sliceIncrements[2] = stepZ > 1e-6 ? stepZ : step;
         if (m_stepSpin) m_stepSpin->setValue(step);
         for (int i = 0; i < 3; ++i) {
             if (m_sliceSpin[i]) m_sliceSpin[i]->setSingleStep(
