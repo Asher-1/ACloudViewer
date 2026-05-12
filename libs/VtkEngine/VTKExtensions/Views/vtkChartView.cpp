@@ -348,6 +348,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     }
 
     m_linkCheck = new QCheckBox(this);
+    m_linkCheck->setChecked(true);
     m_linkCheck->hide();
 
     m_chartTitleEdit = new QLineEdit(this);
@@ -429,12 +430,12 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_chart->Delete();
         m_chart->SetShowLegend(true);
 
-        m_chart->SetActionToButton(vtkChart::PAN,
+        m_chart->SetActionToButton(vtkChart::SELECT,
                                    vtkContextMouseEvent::LEFT_BUTTON);
+        m_chart->SetActionToButton(vtkChart::PAN,
+                                   vtkContextMouseEvent::MIDDLE_BUTTON);
         m_chart->SetActionToButton(vtkChart::ZOOM_AXIS,
                                    vtkContextMouseEvent::RIGHT_BUTTON);
-        m_chart->SetActionToButton(vtkChart::ZOOM,
-                                   vtkContextMouseEvent::MIDDLE_BUTTON);
 
         for (int i = 0; i < 4; ++i) {
             auto* axis = m_chart->GetAxis(i);
@@ -1420,8 +1421,7 @@ void vtkChartView::applyTooltipFormat() {
 }
 
 void vtkChartView::setupChartSelectionCallback() {
-    if (!m_chart || !m_cloud || !m_linkCheck || !m_linkCheck->isChecked())
-        return;
+    if (!m_chart || !m_cloud) return;
 
     m_chart->SetSelectionMethod(vtkChart::SELECTION_ROWS);
 
@@ -1891,11 +1891,16 @@ void vtkChartView::rebuildParallelCoordinates(
     for (int i = 0; i < pcChart->GetNumberOfAxes(); ++i) {
         auto* axis = pcChart->GetAxis(i);
         if (!axis) continue;
+        if (i < nameStorage.size()) {
+            axis->SetTitle(nameStorage[i].constData());
+        }
         axis->GetLabelProperties()->SetColor(0.0, 0.0, 0.0);
         axis->GetLabelProperties()->SetFontSize(12);
+        axis->GetLabelProperties()->SetFontFamilyToArial();
         axis->GetTitleProperties()->SetColor(0.0, 0.0, 0.0);
         axis->GetTitleProperties()->SetFontSize(12);
         axis->GetTitleProperties()->SetBold(1);
+        axis->GetTitleProperties()->SetFontFamilyToArial();
         axis->GetPen()->SetColor(0, 0, 0);
         axis->GetPen()->SetWidth(1.0);
         axis->GetGridPen()->SetColorF(0.85, 0.85, 0.85);
@@ -1944,10 +1949,10 @@ void vtkChartView::rebuildPlotMatrix(const QList<int>& selectedFields,
 
     spm->SetPlotMarkerStyle(vtkScatterPlotMatrix::SCATTERPLOT,
                              vtkPlotPoints::CIRCLE);
-    spm->SetPlotMarkerSize(vtkScatterPlotMatrix::SCATTERPLOT, 2.0f);
+    spm->SetPlotMarkerSize(vtkScatterPlotMatrix::SCATTERPLOT, 3.0f);
     spm->SetPlotMarkerStyle(vtkScatterPlotMatrix::ACTIVEPLOT,
                              vtkPlotPoints::CIRCLE);
-    spm->SetPlotMarkerSize(vtkScatterPlotMatrix::ACTIVEPLOT, 4.0f);
+    spm->SetPlotMarkerSize(vtkScatterPlotMatrix::ACTIVEPLOT, 5.0f);
 
     spm->SetScatterPlotSelectedRowColumnColor(
             vtkColor4ub(255, 0, 0, 255));
@@ -1959,7 +1964,7 @@ void vtkChartView::rebuildPlotMatrix(const QList<int>& selectedFields,
     spm->SetPlotColor(vtkScatterPlotMatrix::ACTIVEPLOT,
                        vtkColor4ub(255, 0, 0, 255));
     spm->SetPlotColor(vtkScatterPlotMatrix::HISTOGRAM,
-                       vtkColor4ub(60, 60, 60, 255));
+                       vtkColor4ub(0, 0, 0, 255));
 
     spm->SetBackgroundColor(vtkScatterPlotMatrix::SCATTERPLOT,
                              vtkColor4ub(240, 240, 240, 255));

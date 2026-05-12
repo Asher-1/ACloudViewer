@@ -246,7 +246,7 @@ void vtkComparativeViewWidget::installCameraLink() {
     if (m_cameraLinkTimer || m_subViews.size() < 2) return;
 
     m_cameraLinkTimer = new QTimer(this);
-    m_cameraLinkTimer->setInterval(33);
+    m_cameraLinkTimer->setInterval(16);
     connect(m_cameraLinkTimer, &QTimer::timeout, this,
             &vtkComparativeViewWidget::onCameraLinkTick);
     m_cameraLinkTimer->start();

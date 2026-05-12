@@ -33335,6 +33335,118 @@ Please choose a different shortcut.</source>
         <source>Size:</source>
         <translation>大小:</translation>
     </message>
+    <message>
+        <source>Vis</source>
+        <translation>可见</translation>
+    </message>
+    <message>
+        <source>Variable</source>
+        <translation>变量</translation>
+    </message>
+    <message>
+        <source>Legend Name</source>
+        <translation>图例名称</translation>
+    </message>
+    <message>
+        <source>Select fields to plot (multi-select)</source>
+        <translation>选择绘图字段（多选）</translation>
+    </message>
+    <message>
+        <source>Marker size</source>
+        <translation>标记大小</translation>
+    </message>
+    <message>
+        <source>Select Histogram Color</source>
+        <translation>选择直方图颜色</translation>
+    </message>
+    <message>
+        <source>Export PNG</source>
+        <translation>导出 PNG</translation>
+    </message>
+    <message>
+        <source>Export CSV</source>
+        <translation>导出 CSV</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>实线</translation>
+    </message>
+    <message>
+        <source>Dash</source>
+        <translation>虚线</translation>
+    </message>
+    <message>
+        <source>Dot</source>
+        <translation>点线</translation>
+    </message>
+    <message>
+        <source>Dash-Dot</source>
+        <translation>点划线</translation>
+    </message>
+    <message>
+        <source>Square</source>
+        <translation>方形</translation>
+    </message>
+    <message>
+        <source>Width:</source>
+        <translation>宽度:</translation>
+    </message>
+    <message>
+        <source>Prec:</source>
+        <translation>精度:</translation>
+    </message>
+    <message>
+        <source>Bins:</source>
+        <translation>分箱:</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色:</translation>
+    </message>
+    <message>
+        <source>Use Index for X Axis</source>
+        <translation>X 轴使用索引</translation>
+    </message>
+    <message>
+        <source>X Array:</source>
+        <translation>X 数组:</translation>
+    </message>
+    <message>
+        <source>Line:</source>
+        <translation>线型:</translation>
+    </message>
+    <message>
+        <source>Log</source>
+        <translation>对数</translation>
+    </message>
+    <message>
+        <source>Legend</source>
+        <translation>图例</translation>
+    </message>
+    <message>
+        <source>Grid</source>
+        <translation>网格</translation>
+    </message>
+    <message>
+        <source>Showing</source>
+        <translation>显示</translation>
+    </message>
+    <message>
+        <source>Attribute:</source>
+        <translation>属性:</translation>
+    </message>
+    <message>
+        <source>Point Data</source>
+        <translation>点数据</translation>
+    </message>
+    <message>
+        <source>Cell Data</source>
+        <translation>单元数据</translation>
+    </message>
+    <message>
+        <source>No data</source>
+        <translation>无数据</translation>
+    </message>
 </context>
 <context>
     <name>vtkComparativeViewWidget</name>
