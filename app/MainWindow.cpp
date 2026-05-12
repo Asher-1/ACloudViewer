@@ -15,6 +15,7 @@
 #include "ecvTabbedMultiViewWidget.h"
 
 // Qt
+#include <QActionGroup>
 #include <QDrag>
 #include <QGuiApplication>
 #include <QJsonDocument>
@@ -109,6 +110,7 @@
 
 // VtkEngine
 #include <Visualization/VtkVis.h>
+#include <VTKExtensions/Views/vtkChartView.h>
 #include <Visualization/vtkGLView.h>
 
 // CV_IO_LIB
@@ -2933,6 +2935,12 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     viewToolBar->setMovable(false);
     viewToolBar->setFloatable(false);
 
+    // ParaView branches toolbar by view type:
+    // - Render views: camera undo/redo, 3D toggle, adjust camera, selection
+    // - Chart views: capture only (selection handled internally)
+    // - SpreadSheet: no toolbar actions (decorator handles UI)
+    bool isRenderView = (ecvGenericGLDisplay::FromWidget(innerWidget) != nullptr);
+
     auto activateViewAndDo = [this, innerWidget](auto slot) {
         return [this, innerWidget, slot]() {
             auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
@@ -2945,54 +2953,55 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         };
     };
 
-    auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
-        auto* display = ecvGenericGLDisplay::FromWidget(w);
-        auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr;
-        return glView ? glView->getVisualizer3D() : nullptr;
-    };
+    if (isRenderView) {
+        auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
+            auto* display = ecvGenericGLDisplay::FromWidget(w);
+            auto* glView =
+                    display ? dynamic_cast<vtkGLView*>(display) : nullptr;
+            return glView ? glView->getVisualizer3D() : nullptr;
+        };
 
-    // Camera Undo — per-view (ParaView pqCameraUndoRedoReaction)
-    auto* camUndoAct =
-            new QAction(QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
-                        tr("Camera Undo"), viewToolBar);
-    camUndoAct->setEnabled(false);
-    connect(camUndoAct, &QAction::triggered, this,
-            [getVtkVisForWidget, innerWidget]() {
-                auto* vis = getVtkVisForWidget(innerWidget);
-                if (vis) vis->cameraUndo();
-            });
-    viewToolBar->addAction(camUndoAct);
+        auto* camUndoAct =
+                new QAction(QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
+                            tr("Camera Undo"), viewToolBar);
+        camUndoAct->setEnabled(false);
+        connect(camUndoAct, &QAction::triggered, this,
+                [getVtkVisForWidget, innerWidget]() {
+                    auto* vis = getVtkVisForWidget(innerWidget);
+                    if (vis) vis->cameraUndo();
+                });
+        viewToolBar->addAction(camUndoAct);
 
-    // Camera Redo — per-view (ParaView pqCameraUndoRedoReaction)
-    auto* camRedoAct =
-            new QAction(QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
-                        tr("Camera Redo"), viewToolBar);
-    camRedoAct->setEnabled(false);
-    connect(camRedoAct, &QAction::triggered, this,
-            [getVtkVisForWidget, innerWidget]() {
-                auto* vis = getVtkVisForWidget(innerWidget);
-                if (vis) vis->cameraRedo();
-            });
-    viewToolBar->addAction(camRedoAct);
+        auto* camRedoAct =
+                new QAction(QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
+                            tr("Camera Redo"), viewToolBar);
+        camRedoAct->setEnabled(false);
+        connect(camRedoAct, &QAction::triggered, this,
+                [getVtkVisForWidget, innerWidget]() {
+                    auto* vis = getVtkVisForWidget(innerWidget);
+                    if (vis) vis->cameraRedo();
+                });
+        viewToolBar->addAction(camRedoAct);
 
-    auto* camTimer = new QTimer(viewToolBar);
-    camTimer->setInterval(500);
-    connect(camTimer, &QTimer::timeout, viewToolBar,
-            [getVtkVisForWidget, innerWidget, camUndoAct, camRedoAct]() {
-                auto* vis = getVtkVisForWidget(innerWidget);
-                if (vis) {
-                    camUndoAct->setEnabled(vis->canCameraUndo());
-                    camRedoAct->setEnabled(vis->canCameraRedo());
-                } else {
-                    camUndoAct->setEnabled(false);
-                    camRedoAct->setEnabled(false);
-                }
-            });
-    camTimer->start();
+        auto* camTimer = new QTimer(viewToolBar);
+        camTimer->setInterval(500);
+        connect(camTimer, &QTimer::timeout, viewToolBar,
+                [getVtkVisForWidget, innerWidget, camUndoAct, camRedoAct]() {
+                    auto* vis = getVtkVisForWidget(innerWidget);
+                    if (vis) {
+                        camUndoAct->setEnabled(vis->canCameraUndo());
+                        camRedoAct->setEnabled(vis->canCameraRedo());
+                    } else {
+                        camUndoAct->setEnabled(false);
+                        camRedoAct->setEnabled(false);
+                    }
+                });
+        camTimer->start();
 
-    viewToolBar->addSeparator();
+        viewToolBar->addSeparator();
+    }
 
-    // Capture screenshot — per-view (ParaView actionCaptureView)
+    // Capture screenshot — all view types (ParaView actionCaptureView)
     auto* captureAct =
             new QAction(QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
                         tr("Capture Screenshot"), viewToolBar);
@@ -3000,43 +3009,153 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             activateViewAndDo(&MainWindow::doActionScreenShot));
     viewToolBar->addAction(captureAct);
 
-    viewToolBar->addSeparator();
+    // ParaView addContextViewActions: chart views get selection tools in frame
+    vtkChartView* chartW = qobject_cast<vtkChartView*>(innerWidget);
+    if (!chartW && innerWidget)
+        chartW = innerWidget->findChild<vtkChartView*>();
+    if (chartW) {
+        viewToolBar->addSeparator();
 
-    // 3D/2D toggle — per-view (mirrors global action3DView)
-    auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
-                                  tr("3D View"), viewToolBar);
-    view3DAct->setCheckable(true);
-    view3DAct->setChecked(true);
-    connect(view3DAct, &QAction::toggled, this,
-            [this, innerWidget](bool state) {
-                auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
-                if (display) {
-                    auto& vm = ecvViewManager::instance();
-                    if (vm.getActiveView() != display) {
-                        vm.setActiveView(display);
-                        rebindToolsToActiveView(display);
-                        markActiveViewFrame(innerWidget);
+        // vtkContextScene::SELECTION_* enum values
+        static constexpr int SEL_DEFAULT = 0;
+        static constexpr int SEL_ADDITION = 1;
+        static constexpr int SEL_SUBTRACTION = 2;
+        static constexpr int SEL_TOGGLE = 3;
+
+        auto* addSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqSelectPlus.svg"),
+                tr("Add Selection (Ctrl)"), viewToolBar);
+        addSelAct->setCheckable(true);
+        addSelAct->setData(SEL_ADDITION);
+        viewToolBar->addAction(addSelAct);
+
+        auto* subSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqSelectMinus.svg"),
+                tr("Subtract Selection (Shift)"), viewToolBar);
+        subSelAct->setCheckable(true);
+        subSelAct->setData(SEL_SUBTRACTION);
+        viewToolBar->addAction(subSelAct);
+
+        auto* togSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqSelectToggle.svg"),
+                tr("Toggle Selection (Ctrl+Shift)"), viewToolBar);
+        togSelAct->setCheckable(true);
+        togSelAct->setData(SEL_TOGGLE);
+        viewToolBar->addAction(togSelAct);
+
+        auto* modGroup = new QActionGroup(viewToolBar);
+        modGroup->setExclusive(false);
+        modGroup->addAction(addSelAct);
+        modGroup->addAction(subSelAct);
+        modGroup->addAction(togSelAct);
+        connect(modGroup, &QActionGroup::triggered, this,
+                [chartW, modGroup](QAction* triggered) {
+                    for (auto* act : modGroup->actions()) {
+                        if (act != triggered) act->setChecked(false);
                     }
-                }
-                toggle3DView(state);
-            });
-    viewToolBar->addAction(view3DAct);
+                    int modifier = SEL_DEFAULT;
+                    if (triggered->isChecked() && triggered->data().isValid())
+                        modifier = triggered->data().toInt();
+                    chartW->setSelectionModifier(modifier);
+                });
 
-    // Edit camera — per-view (ParaView actionAdjustCamera)
-    auto* editCamAct =
-            new QAction(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
-                        tr("Adjust Camera"), viewToolBar);
-    connect(editCamAct, &QAction::triggered, this,
-            activateViewAndDo(&MainWindow::doActionEditCamera));
-    viewToolBar->addAction(editCamAct);
+        viewToolBar->addSeparator();
 
-    viewToolBar->addSeparator();
+        auto* polySelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqSelectChartPolygon.svg"),
+                tr("Polygon Selection (d)"), viewToolBar);
+        polySelAct->setCheckable(true);
+        polySelAct->setShortcut(QKeySequence(Qt::Key_D));
+        polySelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        viewToolBar->addAction(polySelAct);
 
-    if (m_perViewSelMgr && m_selectionController) {
-        const auto& acts = m_selectionController->getSelectionActions();
-        if (acts.selectSurfaceCells) {
-            m_perViewSelMgr->populateToolbar(viewToolBar, innerWidget, acts);
-            viewToolBar->setProperty("_selectionPopulated", true);
+        auto* rectSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqSelectChart.svg"),
+                tr("Rectangle Selection (s)"), viewToolBar);
+        rectSelAct->setCheckable(true);
+        rectSelAct->setShortcut(QKeySequence(Qt::Key_S));
+        rectSelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        viewToolBar->addAction(rectSelAct);
+
+        auto* clearSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pqCloseView.svg"),
+                tr("Clear Selection"), viewToolBar);
+        clearSelAct->setShortcut(QKeySequence(Qt::Key_Escape));
+        clearSelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        viewToolBar->addAction(clearSelAct);
+
+        auto* selGroup = new QActionGroup(viewToolBar);
+        selGroup->setExclusive(false);
+        selGroup->addAction(polySelAct);
+        selGroup->addAction(rectSelAct);
+        connect(selGroup, &QActionGroup::triggered, this,
+                [selGroup](QAction* triggered) {
+                    for (auto* act : selGroup->actions()) {
+                        if (act != triggered) act->setChecked(false);
+                    }
+                });
+
+        connect(rectSelAct, &QAction::toggled, chartW,
+                [chartW, polySelAct](bool checked) {
+                    if (checked) polySelAct->setChecked(false);
+                    chartW->setRectSelectionActive(checked);
+                });
+        connect(polySelAct, &QAction::toggled, chartW,
+                [chartW, rectSelAct](bool checked) {
+                    if (checked) rectSelAct->setChecked(false);
+                    chartW->setPolySelectionActive(checked);
+                });
+        connect(clearSelAct, &QAction::triggered, chartW,
+                [chartW, rectSelAct, polySelAct, addSelAct, subSelAct,
+                 togSelAct]() {
+                    rectSelAct->setChecked(false);
+                    polySelAct->setChecked(false);
+                    addSelAct->setChecked(false);
+                    subSelAct->setChecked(false);
+                    togSelAct->setChecked(false);
+                    chartW->clearSelection();
+                });
+    }
+
+    if (isRenderView) {
+        viewToolBar->addSeparator();
+
+        auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
+                                      tr("3D View"), viewToolBar);
+        view3DAct->setCheckable(true);
+        view3DAct->setChecked(true);
+        connect(view3DAct, &QAction::toggled, this,
+                [this, innerWidget](bool state) {
+                    auto* display =
+                            ecvGenericGLDisplay::FromWidget(innerWidget);
+                    if (display) {
+                        auto& vm = ecvViewManager::instance();
+                        if (vm.getActiveView() != display) {
+                            vm.setActiveView(display);
+                            rebindToolsToActiveView(display);
+                            markActiveViewFrame(innerWidget);
+                        }
+                    }
+                    toggle3DView(state);
+                });
+        viewToolBar->addAction(view3DAct);
+
+        auto* editCamAct = new QAction(
+                QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+                tr("Adjust Camera"), viewToolBar);
+        connect(editCamAct, &QAction::triggered, this,
+                activateViewAndDo(&MainWindow::doActionEditCamera));
+        viewToolBar->addAction(editCamAct);
+
+        viewToolBar->addSeparator();
+
+        if (m_perViewSelMgr && m_selectionController) {
+            const auto& acts = m_selectionController->getSelectionActions();
+            if (acts.selectSurfaceCells) {
+                m_perViewSelMgr->populateToolbar(viewToolBar, innerWidget,
+                                                 acts);
+                viewToolBar->setProperty("_selectionPopulated", true);
+            }
         }
     }
     titleLayout->addWidget(viewToolBar, 0);
@@ -3185,39 +3304,49 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     }
                 });
 
-                // "Convert To..." submenu (ParaView pqStandardViewFrameActionsImplementation)
                 auto* convertMenu = menu.addMenu(tr("Convert To..."));
-                auto addConvertAction = [this, frame,
-                                         convertMenu](const QString& label) {
-                    convertMenu->addAction(label, [this, frame, label]() {
-                        if (!m_tabbedMultiView) return;
-                        auto* mvw = m_tabbedMultiView->currentMultiView();
-                        if (!mvw || !mvw->layoutManager()) return;
-                        int location = frame->property("CELL_INDEX").toInt();
-                        mvw->onCloseView(frame);
-                        mvw->convertCell(location, label);
-                    });
-                };
-                addConvertAction(tr("Render View"));
-                addConvertAction(tr("SpreadSheet View"));
-                addConvertAction(tr("Python View"));
+                auto addConvertAction =
+                        [this, frame, convertMenu](
+                                const QString& canonicalName,
+                                const QString& displayLabel) {
+                            convertMenu->addAction(
+                                    displayLabel,
+                                    [this, frame, canonicalName]() {
+                                        if (!m_tabbedMultiView) return;
+                                        auto* mvw = m_tabbedMultiView
+                                                            ->currentMultiView();
+                                        if (!mvw || !mvw->layoutManager())
+                                            return;
+                                        int location =
+                                                frame->property("CELL_INDEX")
+                                                        .toInt();
+                                        mvw->onCloseView(frame);
+                                        mvw->convertCell(location,
+                                                         canonicalName);
+                                    });
+                        };
+                addConvertAction(QStringLiteral("Render View"), tr("Render View"));
+                addConvertAction(QStringLiteral("SpreadSheet View"), tr("SpreadSheet View"));
+                addConvertAction(QStringLiteral("Python View"), tr("Python View"));
 #ifdef USE_VTK_BACKEND
                 convertMenu->addSeparator();
-                addConvertAction(tr("Eye Dome Lighting"));
-                addConvertAction(tr("Orthographic Slice View"));
-                addConvertAction(tr("Slice View"));
+                addConvertAction(QStringLiteral("Eye Dome Lighting"), tr("Eye Dome Lighting"));
+                addConvertAction(QStringLiteral("Orthographic Slice View"), tr("Orthographic Slice View"));
+                addConvertAction(QStringLiteral("Slice View"), tr("Slice View"));
                 convertMenu->addSeparator();
-                addConvertAction(tr("Line Chart View"));
-                addConvertAction(tr("Bar Chart View"));
-                addConvertAction(tr("Histogram View"));
-                addConvertAction(tr("Box Chart View"));
-                addConvertAction(tr("Point Chart View"));
-                addConvertAction(tr("Parallel Coordinates View"));
-                addConvertAction(tr("Plot Matrix View"));
+                addConvertAction(QStringLiteral("Line Chart View"), tr("Line Chart View"));
+                addConvertAction(QStringLiteral("Bar Chart View"), tr("Bar Chart View"));
+                addConvertAction(QStringLiteral("Histogram View"), tr("Histogram View"));
+                addConvertAction(QStringLiteral("Box Chart View"), tr("Box Chart View"));
+                addConvertAction(QStringLiteral("Image Chart View"), tr("Image Chart View"));
+                addConvertAction(QStringLiteral("Point Chart View"), tr("Point Chart View"));
+                addConvertAction(QStringLiteral("Quartile Chart View"), tr("Quartile Chart View"));
+                addConvertAction(QStringLiteral("Parallel Coordinates View"), tr("Parallel Coordinates View"));
+                addConvertAction(QStringLiteral("Plot Matrix View"), tr("Plot Matrix View"));
                 convertMenu->addSeparator();
-                addConvertAction(tr("Render View (Comparative)"));
-                addConvertAction(tr("Line Chart View (Comparative)"));
-                addConvertAction(tr("Bar Chart View (Comparative)"));
+                addConvertAction(QStringLiteral("Render View (Comparative)"), tr("Render View (Comparative)"));
+                addConvertAction(QStringLiteral("Line Chart View (Comparative)"), tr("Line Chart View (Comparative)"));
+                addConvertAction(QStringLiteral("Bar Chart View (Comparative)"), tr("Bar Chart View (Comparative)"));
 #endif
 
                 auto* contextViewDisplay =
@@ -14663,10 +14792,11 @@ void MainWindow::quickCreateViewInNewTab(const QString& viewType) {
         targetCell = ecvViewLayoutProxy::secondChild(activeCell);
     }
 
-    auto clickButton = [&](const QString& btnText) {
+    auto clickButton = [&](const QString& canonicalName) {
         auto buttons = mvw->findChildren<QPushButton*>();
         for (auto* btn : buttons) {
-            if (btn->text() == btnText && btn->isEnabled() && btn->isVisible()) {
+            if (btn->property("VIEW_TYPE_ID").toString() == canonicalName &&
+                btn->isEnabled() && btn->isVisible()) {
                 btn->click();
                 return true;
             }
@@ -14675,15 +14805,15 @@ void MainWindow::quickCreateViewInNewTab(const QString& viewType) {
     };
 
     if (viewType == "SpreadSheet")
-        clickButton(tr("SpreadSheet View"));
+        clickButton(QStringLiteral("SpreadSheet View"));
     else if (viewType == "LineChart")
-        clickButton(tr("Line Chart View"));
+        clickButton(QStringLiteral("Line Chart View"));
     else if (viewType == "BarChart")
-        clickButton(tr("Bar Chart View"));
+        clickButton(QStringLiteral("Bar Chart View"));
     else if (viewType == "Histogram")
-        clickButton(tr("Histogram View"));
+        clickButton(QStringLiteral("Histogram View"));
     else if (viewType == "OrthoSlice")
-        clickButton(tr("Orthographic Slice View"));
+        clickButton(QStringLiteral("Orthographic Slice View"));
     else if (viewType == "PythonView")
-        clickButton(tr("Python View"));
+        clickButton(QStringLiteral("Python View"));
 }

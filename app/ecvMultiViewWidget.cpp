@@ -16,10 +16,19 @@
 #include <VTKExtensions/Views/vtkComparativeViewWidget.h>
 #include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
 #include <VTKExtensions/Views/vtkSliceViewWidget.h>
+#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 #include <Visualization/vtkGLView.h>
+#include <Visualization/VtkVis.h>
+#include <vtkActor.h>
+#include <vtkActorCollection.h>
+#include <vtkProp.h>
+#include <vtkPropCollection.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #endif
 
 #include <ecvHObject.h>
+#include <ecvHObjectCaster.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
@@ -35,11 +44,34 @@
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 namespace {
 constexpr int SPLITTER_GAP = 4;  // ParaView PARAVIEW_DEFAULT_LAYOUT_SPACING
+
+QList<ccHObject*> collectDisplayableEntities() {
+    QList<ccHObject*> result;
+    auto* mw = MainWindow::TheInstance();
+    if (!mw) return result;
+    ccHObject* root = mw->dbRootObject();
+    if (!root) return result;
+
+    ccHObject::Container clouds;
+    root->filterChildren(clouds, true, CV_TYPES::POINT_CLOUD, false);
+    for (auto* c : clouds) {
+        if (c && c->isEnabled()) result.append(c);
+    }
+
+    ccHObject::Container meshes;
+    root->filterChildren(meshes, true, CV_TYPES::MESH, false);
+    for (auto* m : meshes) {
+        if (m && m->isEnabled()) result.append(m);
+    }
+
+    return result;
 }
+}  // namespace
 
 ecvMultiViewWidget::ecvMultiViewWidget(QWidget* parent) : QWidget(parent) {
     auto* rootLayout = new QVBoxLayout(this);
@@ -146,6 +178,25 @@ void ecvMultiViewWidget::reload() {
         }
     }
 
+    // Preserve non-GL cell frames (charts, spreadsheets, comparatives) so
+    // they survive layout rebuilds triggered by split-fraction changes etc.
+    // These views are not registered in the layout proxy (no assignView),
+    // so buildCell() would otherwise replace them with empty "Create View".
+    QHash<int, QWidget*> preservedNonGLFrames;
+    for (auto it = m_cellFrames.constBegin(); it != m_cellFrames.constEnd();
+         ++it) {
+        int loc = it.key();
+        QWidget* frame = it.value();
+        if (!frame) continue;
+        bool isGLFrame = m_viewFrames.key(frame, nullptr) != nullptr;
+        if (!isGLFrame && m_layout && !m_layout->isSplitCell(loc) &&
+            !m_layout->getView(loc)) {
+            frame->setParent(nullptr);
+            frame->hide();
+            preservedNonGLFrames[loc] = frame;
+        }
+    }
+
     m_cellFrames.clear();
     m_viewFrames.clear();
     m_activeFrame = nullptr;
@@ -160,18 +211,29 @@ void ecvMultiViewWidget::reload() {
     QLayoutItem* child;
     while ((child = containerLayout->takeAt(0)) != nullptr) {
         if (child->widget()) {
-            child->widget()->setParent(nullptr);
-            child->widget()->deleteLater();
+            bool preserved = false;
+            for (auto& pf : preservedNonGLFrames) {
+                if (pf == child->widget()) { preserved = true; break; }
+            }
+            if (!preserved) {
+                child->widget()->setParent(nullptr);
+                child->widget()->deleteLater();
+            }
         }
         delete child;
     }
 
     if (!m_layout) {
+        for (auto* w : preservedNonGLFrames) {
+            if (w) w->deleteLater();
+        }
         if (m_contentContainer) m_contentContainer->setUpdatesEnabled(true);
         return;
     }
 
+    m_preservedNonGLFrames = std::move(preservedNonGLFrames);
     QWidget* rootWidget = buildCell(0);
+    m_preservedNonGLFrames.clear();
     if (rootWidget) {
         containerLayout->addWidget(rootWidget);
     }
@@ -316,6 +378,9 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         if (viewWidget && !viewWidget->isVisible()) {
             viewWidget->show();
         }
+    } else if (m_preservedNonGLFrames.contains(location)) {
+        frame = m_preservedNonGLFrames.take(location);
+        if (frame) frame->show();
     } else {
         frame = createEmptyCellWidget(location);
     }
@@ -366,8 +431,59 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     frame->setFrameStyle(QFrame::NoFrame);
     frame->setMinimumSize(50, 50);
 
-    auto* outerLayout = new QGridLayout(frame);
+    auto* outerLayout = new QVBoxLayout(frame);
     outerLayout->setContentsMargins(0, 0, 0, 0);
+    outerLayout->setSpacing(0);
+
+    // ParaView pqViewFrame-style header for empty cells: split H/V, maximize, close
+    auto* headerBar = new QWidget(frame);
+    headerBar->setObjectName("ViewTitleBar");
+    auto* headerLayout = new QHBoxLayout(headerBar);
+    headerLayout->setContentsMargins(0, 0, 0, 0);
+    headerLayout->setSpacing(1);
+    headerLayout->addStretch(1);
+
+    static constexpr int kBtnSize = 20;
+    auto makeBtn = [headerBar](const QIcon& icon, const QString& tip) {
+        auto* btn = new QToolButton(headerBar);
+        btn->setIcon(icon);
+        btn->setToolTip(tip);
+        btn->setAutoRaise(true);
+        btn->setIconSize(QSize(kBtnSize - 4, kBtnSize - 4));
+        btn->setFixedSize(kBtnSize, kBtnSize);
+        return btn;
+    };
+
+    auto* splitHBtn = makeBtn(
+            QIcon(":/Resources/images/svg/pqSplitHorizontal.svg"),
+            tr("Split Left|Right"));
+    connect(splitHBtn, &QToolButton::clicked, this,
+            [this, frame]() { onSplitHorizontal(frame); });
+    headerLayout->addWidget(splitHBtn);
+
+    auto* splitVBtn = makeBtn(
+            QIcon(":/Resources/images/svg/pqSplitVertical.svg"),
+            tr("Split Top|Bottom"));
+    connect(splitVBtn, &QToolButton::clicked, this,
+            [this, frame]() { onSplitVertical(frame); });
+    headerLayout->addWidget(splitVBtn);
+
+    auto* maxBtn = makeBtn(
+            headerBar->style()->standardIcon(QStyle::SP_TitleBarMaxButton),
+            tr("Maximize"));
+    connect(maxBtn, &QToolButton::clicked, this,
+            [this, frame]() { onMaximize(frame); });
+    headerLayout->addWidget(maxBtn);
+
+    auto* closeBtn = makeBtn(
+            QIcon(":/Resources/images/svg/pqCloseView.svg"),
+            tr("Close View"));
+    connect(closeBtn, &QToolButton::clicked, this,
+            [this, frame]() { onCloseView(frame); });
+    closeBtn->setEnabled(location != 0);
+    headerLayout->addWidget(closeBtn);
+
+    outerLayout->addWidget(headerBar);
 
     auto* scrollArea = new QScrollArea(frame);
     scrollArea->setWidgetResizable(true);
@@ -402,6 +518,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
     // ParaView-style view type list (sorted alphabetically, Render View first)
     struct ViewType {
+        QString canonicalName;
         QString label;
         bool available;
     };
@@ -411,24 +528,24 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     constexpr bool vtkAvail = false;
 #endif
     QList<ViewType> viewTypes = {
-            {tr("Render View"), true},
-            {tr("Render View (Comparative)"), vtkAvail},
-            {tr("Bar Chart View"), vtkAvail},
-            {tr("Bar Chart View (Comparative)"), vtkAvail},
-            {tr("Box Chart View"), vtkAvail},
-            {tr("Eye Dome Lighting"), vtkAvail},
-            {tr("Histogram View"), vtkAvail},
-            {tr("Image Chart View"), vtkAvail},
-            {tr("Line Chart View"), vtkAvail},
-            {tr("Line Chart View (Comparative)"), vtkAvail},
-            {tr("Orthographic Slice View"), vtkAvail},
-            {tr("Parallel Coordinates View"), vtkAvail},
-            {tr("Plot Matrix View"), vtkAvail},
-            {tr("Point Chart View"), vtkAvail},
-            {tr("Python View"), true},
-            {tr("Quartile Chart View"), vtkAvail},
-            {tr("Slice View"), vtkAvail},
-            {tr("SpreadSheet View"), true},
+            {QStringLiteral("Render View"), tr("Render View"), true},
+            {QStringLiteral("Render View (Comparative)"), tr("Render View (Comparative)"), vtkAvail},
+            {QStringLiteral("Bar Chart View"), tr("Bar Chart View"), vtkAvail},
+            {QStringLiteral("Bar Chart View (Comparative)"), tr("Bar Chart View (Comparative)"), vtkAvail},
+            {QStringLiteral("Box Chart View"), tr("Box Chart View"), vtkAvail},
+            {QStringLiteral("Eye Dome Lighting"), tr("Eye Dome Lighting"), vtkAvail},
+            {QStringLiteral("Histogram View"), tr("Histogram View"), vtkAvail},
+            {QStringLiteral("Image Chart View"), tr("Image Chart View"), vtkAvail},
+            {QStringLiteral("Line Chart View"), tr("Line Chart View"), vtkAvail},
+            {QStringLiteral("Line Chart View (Comparative)"), tr("Line Chart View (Comparative)"), vtkAvail},
+            {QStringLiteral("Orthographic Slice View"), tr("Orthographic Slice View"), vtkAvail},
+            {QStringLiteral("Parallel Coordinates View"), tr("Parallel Coordinates View"), vtkAvail},
+            {QStringLiteral("Plot Matrix View"), tr("Plot Matrix View"), vtkAvail},
+            {QStringLiteral("Point Chart View"), tr("Point Chart View"), vtkAvail},
+            {QStringLiteral("Python View"), tr("Python View"), true},
+            {QStringLiteral("Quartile Chart View"), tr("Quartile Chart View"), vtkAvail},
+            {QStringLiteral("Slice View"), tr("Slice View"), vtkAvail},
+            {QStringLiteral("SpreadSheet View"), tr("SpreadSheet View"), true},
     };
 
     auto createRenderViewForCell = [this, location]() {
@@ -470,6 +587,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                                          : -1;
 
         auto* spreadSheet = new ecvSpreadSheetView(this);
+        spreadSheet->setEntityListProvider(collectDisplayableEntities);
         auto& sel = MainWindow::TheInstance()->getSelectedEntities();
         if (!sel.empty()) {
             spreadSheet->setEntity(sel.front());
@@ -516,6 +634,20 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                                   : -1;
 
         auto* pyView = new ecvPythonView(this);
+        pyView->setEntityListProvider([]() -> QList<ccHObject*> {
+            QList<ccHObject*> result;
+            auto* mw = MainWindow::TheInstance();
+            if (!mw) return result;
+            ccHObject* dbRoot = mw->dbRootObject();
+            if (!dbRoot) return result;
+            ccHObject::Container clouds;
+            dbRoot->filterChildren(clouds, true, CV_TYPES::POINT_CLOUD, true);
+            for (auto* c : clouds) result.append(c);
+            ccHObject::Container meshes;
+            dbRoot->filterChildren(meshes, true, CV_TYPES::MESH, true);
+            for (auto* m : meshes) result.append(m);
+            return result;
+        });
         auto& sel = MainWindow::TheInstance()->getSelectedEntities();
         if (!sel.empty()) {
             pyView->setEntity(sel.front());
@@ -555,9 +687,20 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                                          : -1;
 
         auto* chartView = new vtkChartView(type, this);
+        chartView->setEntityListProvider(collectDisplayableEntities);
+        ccHObject* initEntity = nullptr;
         auto& sel = MainWindow::TheInstance()->getSelectedEntities();
         if (!sel.empty()) {
-            chartView->setEntity(sel.front());
+            initEntity = sel.front();
+        } else {
+            auto entities = collectDisplayableEntities();
+            if (!entities.empty()) initEntity = entities.front();
+        }
+        if (initEntity) {
+            QTimer::singleShot(0, chartView,
+                    [chartView, initEntity]() {
+                        chartView->setEntity(initEntity);
+                    });
         }
 
         QWidget* wrapped = chartView;
@@ -593,35 +736,79 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         }
     };
 
-    auto createSliceViewForCell = [this, location, createRenderViewForCell]() {
-        createRenderViewForCell();
-        auto* view =
-                dynamic_cast<vtkGLView*>(m_layout ? m_layout->getView(location)
-                                                  : nullptr);
-        if (view) {
-            view->enableSliceMode(true);
+    auto createSliceViewForCell = [this, location]() {
+        if (!m_viewFactory || !m_layout) return;
+        auto* view = m_viewFactory();
+        if (!view) return;
 
-            QWidget* cellWidget = m_cellFrames.value(location);
-            if (cellWidget) {
-                auto* parentWidget = cellWidget->parentWidget();
-                auto* parentSplitter =
-                        qobject_cast<QSplitter*>(parentWidget);
-
-                auto* sliceWrapper = new vtkSliceViewWidget(view, nullptr);
-                if (parentSplitter) {
-                    int idx = parentSplitter->indexOf(cellWidget);
-                    cellWidget->hide();
-                    cellWidget->setParent(nullptr);
-                    parentSplitter->insertWidget(idx, sliceWrapper);
-                } else if (parentWidget && parentWidget->layout()) {
-                    parentWidget->layout()->replaceWidget(cellWidget,
-                                                          sliceWrapper);
-                    cellWidget->hide();
-                    cellWidget->setParent(nullptr);
-                }
-                m_cellFrames[location] = sliceWrapper;
+        ecvGenericGLDisplay* siblingView =
+                ecvViewManager::instance().getActiveView();
+        if (!siblingView) {
+            auto views = m_layout->getViews();
+            for (auto* v : views) {
+                if (v) { siblingView = v; break; }
             }
         }
+
+        m_layout->assignView(location, view);
+        view->enableSliceMode(true);
+
+        if (siblingView && siblingView != view) {
+            copyRepresentationsOnSplit(siblingView, view);
+        }
+
+        QWidget* oldWidget = m_cellFrames.value(location);
+        QWidget* parentWidget = oldWidget ? oldWidget->parentWidget() : nullptr;
+        auto* parentSplitter = qobject_cast<QSplitter*>(parentWidget);
+        int splitterIdx =
+                parentSplitter ? parentSplitter->indexOf(oldWidget) : -1;
+
+        auto* sliceWrapper = new vtkSliceViewWidget(view, nullptr);
+
+        if (view->getVisualizer3D()) {
+            auto rens = view->getVisualizer3D()->getRendererCollection();
+            if (rens) {
+                rens->InitTraversal();
+                auto* ren = rens->GetNextItem();
+                if (ren) {
+                    double bounds[6];
+                    ren->ComputeVisiblePropBounds(bounds);
+                    if (bounds[0] <= bounds[1]) {
+                        sliceWrapper->setDataBounds(bounds);
+                    }
+                }
+            }
+        }
+
+        QWidget* wrapped = sliceWrapper;
+        if (m_frameFactory) {
+            wrapped = m_frameFactory(sliceWrapper, tr("Slice View"));
+        }
+        if (!wrapped) return;
+
+        wrapped->setProperty("CELL_INDEX", location);
+        m_cellFrames[location] = wrapped;
+        m_viewFrames[view] = wrapped;
+        if (m_frameWiredCallback) {
+            m_frameWiredCallback(wrapped, view);
+        }
+
+        if (parentSplitter && splitterIdx >= 0) {
+            parentSplitter->insertWidget(splitterIdx, wrapped);
+        } else if (parentWidget && parentWidget->layout()) {
+            auto* lay = parentWidget->layout();
+            if (oldWidget)
+                lay->replaceWidget(oldWidget, wrapped);
+            else
+                lay->addWidget(wrapped);
+        }
+
+        if (oldWidget && oldWidget != wrapped) {
+            oldWidget->setParent(nullptr);
+            oldWidget->deleteLater();
+        }
+
+        ecvViewManager::instance().setActiveView(view);
     };
 
     auto createComparativeForCell =
@@ -635,16 +822,86 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                         parentSplitter ? parentSplitter->indexOf(oldWidget)
                                        : -1;
 
+                auto* sourceViewGL = dynamic_cast<vtkGLView*>(
+                        ecvViewManager::instance().getActiveView());
+
                 auto* compView =
                         new vtkComparativeViewWidget(type, this);
                 if (type == vtkComparativeViewWidget::RENDER &&
                     m_viewFactory) {
+                    compView->setSubViewInitCallback(
+                            [sourceViewGL](vtkGLView* subView) {
+                                if (!subView) return;
+                                ecvGenericGLDisplay* src = sourceViewGL;
+                                if (!src) {
+                                    src = ecvViewManager::instance()
+                                                  .getActiveView();
+                                }
+                                if (src && src != subView) {
+                                    copyRepresentationsOnSplit(src, subView);
+                                }
+                                auto* srcGL =
+                                        dynamic_cast<vtkGLView*>(src);
+                                if (srcGL && srcGL->getVisualizer3D() &&
+                                    subView->getVisualizer3D()) {
+                                    auto srcRens = srcGL->getVisualizer3D()
+                                                           ->getRendererCollection();
+                                    auto dstRens = subView->getVisualizer3D()
+                                                           ->getRendererCollection();
+                                    if (srcRens && dstRens) {
+                                        srcRens->InitTraversal();
+                                        auto* srcRen = srcRens->GetNextItem();
+                                        dstRens->InitTraversal();
+                                        auto* dstRen = dstRens->GetNextItem();
+                                        if (srcRen && dstRen) {
+                                            double bg[3];
+                                            srcRen->GetBackground(bg);
+                                            dstRen->SetBackground(bg);
+                                            auto* actors = srcRen->GetActors();
+                                            if (actors) {
+                                                actors->InitTraversal();
+                                                vtkActor* actor = nullptr;
+                                                while ((actor = actors->GetNextActor())) {
+                                                    auto* copy = vtkActor::New();
+                                                    copy->ShallowCopy(actor);
+                                                    dstRen->AddActor(copy);
+                                                    copy->Delete();
+                                                }
+                                            }
+                                            auto* props = srcRen->GetViewProps();
+                                            if (props) {
+                                                props->InitTraversal();
+                                                vtkProp* prop = nullptr;
+                                                while ((prop = props->GetNextProp())) {
+                                                    if (!vtkActor::SafeDownCast(prop)) {
+                                                        dstRen->AddViewProp(prop);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
                     compView->setRenderViewFactory(
                             [this]() -> vtkGLView* {
                                 return m_viewFactory ? m_viewFactory()
                                                      : nullptr;
                             });
                 } else {
+                    compView->setEntityListProvider(
+                            collectDisplayableEntities);
+                    ccHObject* initEntity = nullptr;
+                    auto& sel2 =
+                            MainWindow::TheInstance()->getSelectedEntities();
+                    if (!sel2.empty()) {
+                        initEntity = sel2.front();
+                    } else {
+                        auto entities = collectDisplayableEntities();
+                        if (!entities.empty()) initEntity = entities.front();
+                    }
+                    if (initEntity) {
+                        compView->setInitialEntity(initEntity);
+                    }
                     compView->setupGrid();
                 }
 
@@ -681,6 +938,19 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                                          : -1;
 
         auto* orthoView = new vtkOrthoSliceViewWidget(this);
+        orthoView->setEntityListProvider(collectDisplayableEntities);
+
+        auto* activeView = dynamic_cast<vtkGLView*>(
+                ecvViewManager::instance().getActiveView());
+        if (activeView && activeView->getVtkWidget()) {
+            auto* rw = activeView->getVtkWidget()->renderWindow();
+            if (rw && rw->GetRenderers()) {
+                auto* srcRen = rw->GetRenderers()->GetFirstRenderer();
+                if (srcRen) {
+                    orthoView->populateFromRenderer(srcRen);
+                }
+            }
+        }
 
         QWidget* wrapped = orthoView;
         if (m_frameFactory) {
@@ -708,91 +978,92 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
     for (const auto& vt : viewTypes) {
         auto* btn = new QPushButton(vt.label, actionsFrame);
+        btn->setProperty("VIEW_TYPE_ID", vt.canonicalName);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setEnabled(vt.available);
         if (vt.available) {
-            if (vt.label == tr("Render View")) {
+            if (vt.canonicalName == QLatin1String("Render View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createRenderViewForCell);
-            } else if (vt.label == tr("SpreadSheet View")) {
+            } else if (vt.canonicalName == QLatin1String("SpreadSheet View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createSpreadSheetForCell);
-            } else if (vt.label == tr("Python View")) {
+            } else if (vt.canonicalName == QLatin1String("Python View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createPythonViewForCell);
 #ifdef USE_VTK_BACKEND
-            } else if (vt.label == tr("Render View (Comparative)")) {
+            } else if (vt.canonicalName == QLatin1String("Render View (Comparative)")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createComparativeForCell]() {
                             createComparativeForCell(
                                     vtkComparativeViewWidget::RENDER);
                         });
-            } else if (vt.label == tr("Eye Dome Lighting")) {
+            } else if (vt.canonicalName == QLatin1String("Eye Dome Lighting")) {
                 connect(btn, &QPushButton::clicked, this,
                         createEDLViewForCell);
-            } else if (vt.label == tr("Line Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Line Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::LINE_CHART);
                         });
-            } else if (vt.label == tr("Line Chart View (Comparative)")) {
+            } else if (vt.canonicalName == QLatin1String("Line Chart View (Comparative)")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createComparativeForCell]() {
                             createComparativeForCell(
                                     vtkComparativeViewWidget::LINE_CHART);
                         });
-            } else if (vt.label == tr("Bar Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Bar Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::BAR_CHART);
                         });
-            } else if (vt.label == tr("Bar Chart View (Comparative)")) {
+            } else if (vt.canonicalName == QLatin1String("Bar Chart View (Comparative)")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createComparativeForCell]() {
                             createComparativeForCell(
                                     vtkComparativeViewWidget::BAR_CHART);
                         });
-            } else if (vt.label == tr("Histogram View")) {
+            } else if (vt.canonicalName == QLatin1String("Histogram View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::HISTOGRAM);
                         });
-            } else if (vt.label == tr("Box Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Box Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::BOX_CHART);
                         });
-            } else if (vt.label == tr("Image Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Image Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::IMAGE_CHART);
                         });
-            } else if (vt.label == tr("Point Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Point Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::POINT_CHART);
                         });
-            } else if (vt.label == tr("Quartile Chart View")) {
+            } else if (vt.canonicalName == QLatin1String("Quartile Chart View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(
                                     vtkChartView::QUARTILE_CHART);
                         });
-            } else if (vt.label == tr("Parallel Coordinates View")) {
+            } else if (vt.canonicalName == QLatin1String("Parallel Coordinates View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(
                                     vtkChartView::PARALLEL_COORDINATES);
                         });
-            } else if (vt.label == tr("Plot Matrix View")) {
+            } else if (vt.canonicalName == QLatin1String("Plot Matrix View")) {
                 connect(btn, &QPushButton::clicked, this,
                         [createChartForCell]() {
                             createChartForCell(vtkChartView::PLOT_MATRIX);
                         });
-            } else if (vt.label == tr("Slice View")) {
+            } else if (vt.canonicalName == QLatin1String("Slice View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createSliceViewForCell);
-            } else if (vt.label == tr("Orthographic Slice View")) {
+            } else if (vt.canonicalName == QLatin1String("Orthographic Slice View")) {
                 connect(btn, &QPushButton::clicked, this,
                         createOrthoSliceForCell);
 #endif  // USE_VTK_BACKEND
@@ -807,7 +1078,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     gridLayout->addWidget(actionsFrame, 1, 1);
 
     scrollArea->setWidget(scrollContent);
-    outerLayout->addWidget(scrollArea, 0, 0);
+    outerLayout->addWidget(scrollArea, 1);
 
     return frame;
 }
@@ -856,6 +1127,8 @@ void ecvMultiViewWidget::makeActive(QWidget* frame) {
 
     if (view) {
         ecvViewManager::instance().setActiveView(view);
+    } else {
+        updateFrameHighlighting();
     }
 
     emit frameActivated();
@@ -907,7 +1180,10 @@ void ecvMultiViewWidget::markActive(ecvGenericGLDisplay* view) {
     if (frame) {
         m_activeFrame = frame;
     }
+    updateFrameHighlighting();
+}
 
+void ecvMultiViewWidget::updateFrameHighlighting() {
     QColor activeColor = palette().link().color();
     QString activeSS = QString("QFrame#CentralWidgetFrame "
                                "{ color: rgb(%1, %2, %3); }")
@@ -1136,19 +1412,21 @@ QList<vtkGLView*> ecvMultiViewWidget::destroyAllViews() {
 // Convert Cell (ParaView "Convert To..." pattern)
 // ============================================================================
 
-void ecvMultiViewWidget::convertCell(int location, const QString& label) {
+void ecvMultiViewWidget::convertCell(int location,
+                                     const QString& canonicalName) {
     if (!m_layout) return;
 
-    auto findBtn = [this, location, &label]() -> QPushButton* {
+    auto findBtn = [this, location, &canonicalName]() -> QPushButton* {
         QWidget* emptyWidget = m_cellFrames.value(location);
         if (!emptyWidget) return nullptr;
         for (auto* btn : emptyWidget->findChildren<QPushButton*>()) {
-            if (btn->text() == label) return btn;
+            if (btn->property("VIEW_TYPE_ID").toString() == canonicalName)
+                return btn;
         }
         return nullptr;
     };
 
-    QTimer::singleShot(0, this, [this, location, label, findBtn]() {
+    QTimer::singleShot(0, this, [this, location, canonicalName, findBtn]() {
         reload();
         QTimer::singleShot(50, this, [findBtn]() {
             auto* btn = findBtn();

@@ -7,6 +7,7 @@
 
 #include "ecvSpreadSheetView.h"
 
+#include <ecvAdvancedTypes.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
@@ -14,6 +15,8 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
+
+#include <cmath>
 
 #include <QApplication>
 #include <QCheckBox>
@@ -29,7 +32,11 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QPushButton>
+#include <QShortcut>
+#include <QTimer>
 #include <QSpinBox>
 #include <QStandardItemModel>
 #include <QTableView>
@@ -55,14 +62,77 @@ void ecvSpreadSheetModel::setEntity(ccHObject* entity) {
     m_mesh = nullptr;
     m_columns.clear();
     m_fieldRows.clear();
+    m_computedNormals.clear();
 
     if (entity) {
         m_cloud = ccHObjectCaster::ToGenericPointCloud(entity);
         m_pcCloud = ccHObjectCaster::ToPointCloud(entity);
         m_mesh = ccHObjectCaster::ToMesh(entity);
+        if (m_mesh && !m_cloud) {
+            m_cloud = ccHObjectCaster::ToGenericPointCloud(
+                    m_mesh->getAssociatedCloud());
+            if (!m_pcCloud) {
+                m_pcCloud = ccHObjectCaster::ToPointCloud(
+                        m_mesh->getAssociatedCloud());
+            }
+        }
+        computeVertexNormals();
         rebuildColumns();
     }
     endResetModel();
+}
+
+void ecvSpreadSheetModel::computeVertexNormals() {
+    m_computedNormals.clear();
+    if (!m_mesh || !m_cloud) return;
+
+    bool cloudHasNormals = (m_pcCloud && m_pcCloud->hasNormals()) ||
+                           m_cloud->hasNormals();
+    if (cloudHasNormals) return;
+    if (!m_mesh->hasTriNormals()) return;
+
+    unsigned numVerts = m_cloud->size();
+    m_computedNormals.resize(numVerts * 3);
+    m_computedNormals.fill(0.0f);
+    QVector<int> counts(numVerts, 0);
+
+    unsigned numTris = m_mesh->size();
+    for (unsigned t = 0; t < numTris; ++t) {
+        CCVector3 na, nb, nc;
+        if (!m_mesh->getTriangleNormals(t, na, nb, nc)) continue;
+        auto* tri = m_mesh->getTriangleVertIndexes(t);
+        if (!tri) continue;
+        auto accum = [&](unsigned vi, const CCVector3& n) {
+            if (vi < numVerts) {
+                unsigned b = vi * 3;
+                m_computedNormals[b] += n.x;
+                m_computedNormals[b + 1] += n.y;
+                m_computedNormals[b + 2] += n.z;
+                counts[vi]++;
+            }
+        };
+        accum(tri->i1, na);
+        accum(tri->i2, nb);
+        accum(tri->i3, nc);
+    }
+
+    for (unsigned i = 0; i < numVerts; ++i) {
+        if (counts[i] > 0) {
+            unsigned b = i * 3;
+            float inv = 1.0f / counts[i];
+            float nx = m_computedNormals[b] * inv;
+            float ny = m_computedNormals[b + 1] * inv;
+            float nz = m_computedNormals[b + 2] * inv;
+            float len = std::sqrt(nx * nx + ny * ny + nz * nz);
+            if (len > 1e-12f) {
+                float invL = 1.0f / len;
+                nx *= invL; ny *= invL; nz *= invL;
+            }
+            m_computedNormals[b] = nx;
+            m_computedNormals[b + 1] = ny;
+            m_computedNormals[b + 2] = nz;
+        }
+    }
 }
 
 void ecvSpreadSheetModel::rebuildColumns() {
@@ -70,14 +140,16 @@ void ecvSpreadSheetModel::rebuildColumns() {
         if (!m_cloud) return;
 
         m_columns.append({QStringLiteral("Point ID"), ColumnDef::INDEX, -1, true});
-        m_columns.append({QStringLiteral("Points_X"), ColumnDef::X, -1, true});
-        m_columns.append({QStringLiteral("Points_Y"), ColumnDef::Y, -1, true});
-        m_columns.append({QStringLiteral("Points_Z"), ColumnDef::Z, -1, true});
 
-        if (m_cloud->hasNormals()) {
-            m_columns.append({QStringLiteral("Normals_X"), ColumnDef::NX, -1, true});
-            m_columns.append({QStringLiteral("Normals_Y"), ColumnDef::NY, -1, true});
-            m_columns.append({QStringLiteral("Normals_Z"), ColumnDef::NZ, -1, true});
+        bool hasNorms = m_cloud->hasNormals();
+        if (!hasNorms && m_pcCloud) hasNorms = m_pcCloud->hasNormals();
+        if (!hasNorms && m_mesh) hasNorms = m_mesh->hasNormals();
+        if (!hasNorms && !m_computedNormals.isEmpty()) hasNorms = true;
+        if (hasNorms) {
+            m_columns.append({QStringLiteral("Normals"), ColumnDef::NX, -1, true});
+            m_columns.append({QString(), ColumnDef::NY, -1, true});
+            m_columns.append({QString(), ColumnDef::NZ, -1, true});
+            m_columns.append({QStringLiteral("Normals_Magnitude"), ColumnDef::NORMALS_MAG, -1, true});
         }
 
         if (m_pcCloud) {
@@ -90,8 +162,24 @@ void ecvSpreadSheetModel::rebuildColumns() {
             }
         }
 
+        m_columns.append({QStringLiteral("Points"), ColumnDef::X, -1, true});
+        m_columns.append({QString(), ColumnDef::Y, -1, true});
+        m_columns.append({QString(), ColumnDef::Z, -1, true});
+        m_columns.append({QStringLiteral("Points_Magnitude"), ColumnDef::POINTS_MAG, -1, true});
+
         if (m_cloud->hasColors()) {
-            m_columns.append({QStringLiteral("RGB"), ColumnDef::R, -1, true});
+            m_columns.append({QStringLiteral("Colors"), ColumnDef::R, -1, true});
+            m_columns.append({QString(), ColumnDef::G, -1, true});
+            m_columns.append({QString(), ColumnDef::B, -1, true});
+        }
+
+        if (m_mesh) {
+            auto* texTable = m_mesh->getTexCoordinatesTable();
+            if (texTable && texTable->size() > 0) {
+                m_columns.append({QStringLiteral("TCoords"), ColumnDef::TCOORDS_S, -1, true});
+                m_columns.append({QString(), ColumnDef::TCOORDS_T, -1, true});
+                m_columns.append({QStringLiteral("TCoords_Magnitude"), ColumnDef::TCOORDS_MAG, -1, true});
+            }
         }
     } else if (m_attributeType == CELL_DATA && m_mesh) {
         m_columns.append({QStringLiteral("Cell ID"), ColumnDef::CELL_INDEX, -1, true});
@@ -358,21 +446,72 @@ QVariant ecvSpreadSheetModel::data(const QModelIndex& index, int role) const {
                                                         : P->z;
                 return formatValue(v);
             }
-            case ColumnDef::R: {
-                const ecvColor::Rgb& c = m_cloud->getPointColor(row);
-                return QString("%1").arg(c.r | (c.g << 8) | (c.b << 16));
-            }
+            case ColumnDef::R:
             case ColumnDef::G:
-            case ColumnDef::B:
-                return {};
+            case ColumnDef::B: {
+                if (!m_cloud->hasColors()) return {};
+                const ecvColor::Rgb& c = m_cloud->getPointColor(row);
+                double v = (col.type == ColumnDef::R) ? c.r / 255.0
+                           : (col.type == ColumnDef::G) ? c.g / 255.0
+                                                        : c.b / 255.0;
+                return formatValue(v);
+            }
             case ColumnDef::NX:
             case ColumnDef::NY:
             case ColumnDef::NZ: {
-                const CCVector3& n = m_cloud->getPointNormal(row);
+                CCVector3 n(0, 0, 0);
+                if (m_pcCloud && m_pcCloud->hasNormals()) {
+                    n = m_pcCloud->getPointNormal(row);
+                } else if (m_cloud->hasNormals()) {
+                    n = m_cloud->getPointNormal(row);
+                } else if (hasComputedNormal(row)) {
+                    unsigned b = row * 3;
+                    n = CCVector3(m_computedNormals[b],
+                                  m_computedNormals[b + 1],
+                                  m_computedNormals[b + 2]);
+                } else {
+                    return {};
+                }
                 double v = (col.type == ColumnDef::NX)   ? n.x
                            : (col.type == ColumnDef::NY) ? n.y
                                                          : n.z;
                 return formatValue(v);
+            }
+            case ColumnDef::NORMALS_MAG: {
+                CCVector3 n(0, 0, 0);
+                if (m_pcCloud && m_pcCloud->hasNormals()) {
+                    n = m_pcCloud->getPointNormal(row);
+                } else if (m_cloud->hasNormals()) {
+                    n = m_cloud->getPointNormal(row);
+                } else if (hasComputedNormal(row)) {
+                    unsigned b = row * 3;
+                    n = CCVector3(m_computedNormals[b],
+                                  m_computedNormals[b + 1],
+                                  m_computedNormals[b + 2]);
+                } else {
+                    return {};
+                }
+                return formatValue(std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z));
+            }
+            case ColumnDef::POINTS_MAG: {
+                const CCVector3* P = m_cloud->getPoint(row);
+                if (!P) return {};
+                return formatValue(std::sqrt(P->x * P->x + P->y * P->y + P->z * P->z));
+            }
+            case ColumnDef::TCOORDS_S:
+            case ColumnDef::TCOORDS_T: {
+                if (!m_mesh) return {};
+                auto* texTable = m_mesh->getTexCoordinatesTable();
+                if (!texTable || row >= texTable->size()) return {};
+                const TexCoords2D& tc = texTable->at(row);
+                return formatValue(col.type == ColumnDef::TCOORDS_S ? tc.tx : tc.ty);
+            }
+            case ColumnDef::TCOORDS_MAG: {
+                if (!m_mesh) return {};
+                auto* texTable = m_mesh->getTexCoordinatesTable();
+                if (!texTable || row >= texTable->size()) return {};
+                const TexCoords2D& tc = texTable->at(row);
+                return formatValue(std::sqrt(tc.tx * tc.tx + tc.ty * tc.ty));
             }
             case ColumnDef::SCALAR: {
                 if (!m_pcCloud) return {};
@@ -454,6 +593,15 @@ QString ecvSpreadSheetModel::columnName(int col) const {
     return {};
 }
 
+QString ecvSpreadSheetModel::columnGroupName(int visibleCol) const {
+    if (visibleCol < 0 || visibleCol >= m_visibleColMap.size()) return {};
+    int actualCol = m_visibleColMap[visibleCol];
+    for (int i = actualCol; i >= 0; --i) {
+        if (!m_columns[i].name.isEmpty()) return m_columns[i].name;
+    }
+    return {};
+}
+
 QString ecvSpreadSheetModel::getRowsAsString() const {
     int rows = rowCount();
     int cols = columnCount();
@@ -479,6 +627,159 @@ QString ecvSpreadSheetModel::getRowsAsString() const {
 }
 
 // ============================================================================
+// Custom Header View (ParaView multi-span column groups)
+// ============================================================================
+
+ecvSpreadSheetHeaderView::ecvSpreadSheetHeaderView(Qt::Orientation orientation,
+                                                   QWidget* parent)
+    : QHeaderView(orientation, parent) {
+    setSectionsClickable(true);
+    setHighlightSections(true);
+    setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+}
+
+QSize ecvSpreadSheetHeaderView::sizeHint() const {
+    QSize sz = QHeaderView::sizeHint();
+    if (m_sourceModel && orientation() == Qt::Horizontal) {
+        sz.setHeight(sz.height() * 2);
+    }
+    return sz;
+}
+
+QVector<ecvSpreadSheetHeaderView::GroupInfo>
+ecvSpreadSheetHeaderView::collectGroups() const {
+    QVector<GroupInfo> groups;
+    if (!m_sourceModel) return groups;
+    int cnt = count();
+    for (int i = 0; i < cnt; ++i) {
+        QString headerText = m_sourceModel
+                                     ->headerData(i, Qt::Horizontal,
+                                                  Qt::DisplayRole)
+                                     .toString();
+        QString groupName = m_sourceModel->columnGroupName(i);
+        if (!headerText.isEmpty() && headerText == groupName) {
+            GroupInfo g;
+            g.name = groupName;
+            g.startSection = i;
+            g.endSection = i;
+            for (int j = i + 1; j < cnt; ++j) {
+                QString nh = m_sourceModel
+                                     ->headerData(j, Qt::Horizontal,
+                                                  Qt::DisplayRole)
+                                     .toString();
+                QString ng = m_sourceModel->columnGroupName(j);
+                if (nh.isEmpty() && ng == groupName) {
+                    g.endSection = j;
+                } else {
+                    break;
+                }
+            }
+            if (g.endSection > g.startSection) {
+                groups.append(g);
+            }
+        }
+    }
+    return groups;
+}
+
+void ecvSpreadSheetHeaderView::paintEvent(QPaintEvent* event) {
+    QHeaderView::paintEvent(event);
+
+    if (!m_sourceModel) return;
+
+    auto groups = collectGroups();
+    if (groups.isEmpty()) return;
+
+    QPainter painter(viewport());
+    painter.setClipping(false);
+
+    int totalH = height();
+    int topH = totalH / 2;
+    QPalette pal = palette();
+    QFont boldFont = painter.font();
+    boldFont.setBold(true);
+
+    for (const auto& grp : groups) {
+        int x1 = sectionViewportPosition(grp.startSection);
+        int x2 = sectionViewportPosition(grp.endSection) +
+                  sectionSize(grp.endSection);
+
+        QRect mergedTop(x1, 0, x2 - x1, topH);
+
+        painter.fillRect(mergedTop, pal.brush(QPalette::Button));
+
+        painter.setPen(pal.color(QPalette::Mid));
+        painter.drawRect(mergedTop.adjusted(0, 0, -1, -1));
+        painter.drawLine(mergedTop.bottomLeft(), mergedTop.bottomRight());
+
+        painter.setFont(boldFont);
+        painter.setPen(pal.color(QPalette::ButtonText));
+        painter.drawText(mergedTop.adjusted(4, 0, -4, 0),
+                         Qt::AlignCenter, grp.name);
+    }
+}
+
+void ecvSpreadSheetHeaderView::paintSection(QPainter* painter,
+                                            const QRect& rect,
+                                            int logicalIndex) const {
+    if (!painter || !m_sourceModel) {
+        QHeaderView::paintSection(painter, rect, logicalIndex);
+        return;
+    }
+
+    painter->save();
+
+    QString groupName = m_sourceModel->columnGroupName(logicalIndex);
+    QString headerText = m_sourceModel
+                                 ->headerData(logicalIndex, Qt::Horizontal,
+                                              Qt::DisplayRole)
+                                 .toString();
+
+    bool inGroup = false;
+    int compIdx = -1;
+    auto groups = collectGroups();
+    for (const auto& grp : groups) {
+        if (logicalIndex >= grp.startSection &&
+            logicalIndex <= grp.endSection) {
+            inGroup = true;
+            compIdx = logicalIndex - grp.startSection;
+            break;
+        }
+    }
+
+    int topH = rect.height() / 2;
+    int botH = rect.height() - topH;
+    QRect botRect(rect.x(), rect.y() + topH, rect.width(), botH);
+
+    QPalette pal = palette();
+    QFont normalFont = painter->font();
+    QFont boldFont = normalFont;
+    boldFont.setBold(true);
+
+    if (inGroup) {
+        painter->fillRect(botRect, pal.brush(QPalette::Button));
+        painter->setPen(pal.color(QPalette::Mid));
+        painter->drawRect(botRect.adjusted(0, 0, -1, -1));
+
+        painter->setPen(pal.color(QPalette::ButtonText));
+        painter->setFont(normalFont);
+        painter->drawText(botRect.adjusted(4, 0, -4, 0),
+                          Qt::AlignCenter, QString::number(compIdx));
+    } else {
+        painter->fillRect(rect, pal.brush(QPalette::Button));
+        painter->setPen(pal.color(QPalette::Mid));
+        painter->drawRect(rect.adjusted(0, 0, -1, -1));
+
+        painter->setFont(boldFont);
+        painter->setPen(pal.color(QPalette::ButtonText));
+        painter->drawText(rect.adjusted(4, 0, -4, 0),
+                          Qt::AlignLeft | Qt::AlignVCenter, headerText);
+    }
+
+    painter->restore();
+}
+
+// ============================================================================
 // View Widget (ParaView pqSpreadSheetView + pqSpreadSheetViewDecorator)
 // ============================================================================
 
@@ -488,145 +789,131 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     layout->setSpacing(0);
 
     // === Decorator toolbar (ParaView pqSpreadSheetViewDecorator pattern) ===
+    // Layout and widget order match pqSpreadSheetViewDecorator.ui exactly.
     auto* decoratorBar = new QWidget(this);
+    decoratorBar->setObjectName("DecoratorBar");
     auto* decLayout = new QHBoxLayout(decoratorBar);
-    decLayout->setContentsMargins(4, 2, 4, 2);
-    decLayout->setSpacing(2);
+    decLayout->setContentsMargins(0, 0, 0, 0);
+    decLayout->setSpacing(1);
 
-    const auto labelSS = QStringLiteral("QLabel { color: #ccc; }");
-    const auto comboSS = QStringLiteral(
-            "QComboBox { background: #1e1e1e; color: #ddd; border: 1px solid "
-            "#555; border-radius: 3px; padding: 1px 4px; min-width: 60px; }"
-            "QComboBox::drop-down { border: none; }"
-            "QComboBox QAbstractItemView { background: #2d2d2d; color: #ddd; "
-            "selection-background-color: #264f78; }");
-    const auto spinSS = QStringLiteral(
-            "QSpinBox { background: #1e1e1e; color: #ddd; border: 1px solid "
-            "#555; border-radius: 3px; padding: 1px 2px; }");
-    const auto toolBtnSS = QStringLiteral(
-            "QToolButton { background: transparent; color: #ccc; border: 1px "
-            "solid #555; border-radius: 3px; padding: 2px 6px; }"
-            "QToolButton:hover { background: #3a5f8f; }"
-            "QToolButton:checked { background: #264f78; border-color: "
-            "#4a7fbf; }");
-
-    m_showingLabel = new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
-    m_showingLabel->setStyleSheet(labelSS);
+    m_showingLabel = new QLabel(QStringLiteral("<b>Showing  </b>"), decoratorBar);
     decLayout->addWidget(m_showingLabel);
 
     m_sourceCombo = new QComboBox(decoratorBar);
-    m_sourceCombo->setStyleSheet(comboSS);
     m_sourceCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_sourceCombo->addItem(tr("None"));
     decLayout->addWidget(m_sourceCombo);
 
     auto* attrLabel =
-            new QLabel(QStringLiteral("<b>Attribute:</b>"), decoratorBar);
-    attrLabel->setStyleSheet(labelSS);
+            new QLabel(QStringLiteral("<b>   Attribute:</b>"), decoratorBar);
     decLayout->addWidget(attrLabel);
 
     m_attributeCombo = new QComboBox(decoratorBar);
-    m_attributeCombo->setStyleSheet(comboSS);
+    m_attributeCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     m_attributeCombo->addItem(tr("Point Data"), ecvSpreadSheetModel::POINT_DATA);
     m_attributeCombo->addItem(tr("Cell Data"), ecvSpreadSheetModel::CELL_DATA);
     m_attributeCombo->addItem(tr("Field Data"), ecvSpreadSheetModel::FIELD_DATA);
     decLayout->addWidget(m_attributeCombo);
 
     auto* precLabel = new QLabel(decoratorBar);
-    precLabel->setText(QStringLiteral("<b>Precision:</b>"));
-    precLabel->setStyleSheet(labelSS);
+    QFont precFont = precLabel->font();
+    precFont.setBold(true);
+    precLabel->setFont(precFont);
+    precLabel->setText(tr("Precision:"));
     decLayout->addWidget(precLabel);
 
     m_precisionSpin = new QSpinBox(decoratorBar);
     m_precisionSpin->setRange(1, 32);
     m_precisionSpin->setValue(6);
-    m_precisionSpin->setAlignment(Qt::AlignRight);
-    m_precisionSpin->setStyleSheet(spinSS);
+    m_precisionSpin->setAlignment(Qt::AlignRight | Qt::AlignTrailing |
+                                  Qt::AlignVCenter);
     decLayout->addWidget(m_precisionSpin);
 
     m_fixedRepBtn = new QToolButton(decoratorBar);
-    m_fixedRepBtn->setText(tr("Fixed"));
+    m_fixedRepBtn->setIcon(QIcon(":/Resources/images/svg/pqFixedRepr32.png"));
     m_fixedRepBtn->setToolTip(
-            tr("Toggle fixed-point representation (always show precision "
+            tr("Switches between scientific and fixed-point representation"));
+    m_fixedRepBtn->setStatusTip(
+            tr("Toggle fixed-point representation (always show #Precision "
                "digits)"));
     m_fixedRepBtn->setCheckable(true);
-    m_fixedRepBtn->setStyleSheet(toolBtnSS);
     decLayout->addWidget(m_fixedRepBtn);
+
+    m_selectionOnlyBtn = new QToolButton(decoratorBar);
+    m_selectionOnlyBtn->setIcon(
+            QIcon(":/Resources/images/svg/pqSelect16.png"));
+    m_selectionOnlyBtn->setToolTip(tr("Show only selected elements."));
+    m_selectionOnlyBtn->setCheckable(true);
+    m_selectionOnlyBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    decLayout->addWidget(m_selectionOnlyBtn);
 
     m_columnVisMenu = new QMenu(this);
     m_columnVisBtn = new QToolButton(decoratorBar);
-    m_columnVisBtn->setText(tr("Columns"));
+    m_columnVisBtn->setIcon(
+            QIcon(":/Resources/images/svg/pqRectilinearGrid16.png"));
     m_columnVisBtn->setToolTip(tr("Toggle column visibility"));
     m_columnVisBtn->setPopupMode(QToolButton::InstantPopup);
     m_columnVisBtn->setMenu(m_columnVisMenu);
-    m_columnVisBtn->setStyleSheet(toolBtnSS);
     decLayout->addWidget(m_columnVisBtn);
 
-    m_selectionOnlyBtn = new QToolButton(decoratorBar);
-    m_selectionOnlyBtn->setText(tr("Selected"));
-    m_selectionOnlyBtn->setToolTip(
-            tr("Show only selected elements (ParaView SelectionOnly)"));
-    m_selectionOnlyBtn->setCheckable(true);
-    m_selectionOnlyBtn->setStyleSheet(toolBtnSS);
-    decLayout->addWidget(m_selectionOnlyBtn);
-
     m_cellConnBtn = new QToolButton(decoratorBar);
-    m_cellConnBtn->setText(tr("Conn"));
-    m_cellConnBtn->setToolTip(
-            tr("Generate Cell Connectivity — show vertex coordinates in "
-               "Cell Data (ParaView GenerateCellConnectivity)"));
+    m_cellConnBtn->setIcon(
+            QIcon(":/Resources/images/svg/pqProgrammableFilter.svg"));
+    m_cellConnBtn->setToolTip(tr("Toggle cell connectivity visibility"));
     m_cellConnBtn->setCheckable(true);
-    m_cellConnBtn->setStyleSheet(toolBtnSS);
     decLayout->addWidget(m_cellConnBtn);
 
+    m_fieldDataBtn = new QToolButton(decoratorBar);
+    m_fieldDataBtn->setIcon(
+            QIcon(":/Resources/images/svg/pqGlobalData.svg"));
+    m_fieldDataBtn->setToolTip(tr("Toggle field data visibility"));
+    m_fieldDataBtn->setCheckable(true);
+    decLayout->addWidget(m_fieldDataBtn);
+
     m_exportBtn = new QToolButton(decoratorBar);
-    m_exportBtn->setText(tr("Export"));
-    m_exportBtn->setToolTip(tr("Export spreadsheet to CSV"));
-    m_exportBtn->setStyleSheet(toolBtnSS);
+    m_exportBtn->setIcon(
+            QIcon(":/Resources/images/svg/pqSaveTable32.png"));
+    m_exportBtn->setToolTip(tr("Export Spreadsheet"));
     decLayout->addWidget(m_exportBtn);
 
-    auto* cellFLabel = new QLabel(tr("Cell:"), decoratorBar);
-    cellFLabel->setStyleSheet(labelSS);
-    decLayout->addWidget(cellFLabel);
-
-    m_cellFontSizeSpin = new QSpinBox(decoratorBar);
-    m_cellFontSizeSpin->setRange(6, 24);
-    m_cellFontSizeSpin->setValue(11);
-    m_cellFontSizeSpin->setStyleSheet(spinSS);
-    m_cellFontSizeSpin->setToolTip(
-            tr("Cell font size (ParaView CellFontSize)"));
-    decLayout->addWidget(m_cellFontSizeSpin);
-
-    auto* hdrFLabel = new QLabel(tr("Hdr:"), decoratorBar);
-    hdrFLabel->setStyleSheet(labelSS);
-    decLayout->addWidget(hdrFLabel);
-
-    m_headerFontSizeSpin = new QSpinBox(decoratorBar);
-    m_headerFontSizeSpin->setRange(6, 24);
-    m_headerFontSizeSpin->setValue(11);
-    m_headerFontSizeSpin->setStyleSheet(spinSS);
-    m_headerFontSizeSpin->setToolTip(
-            tr("Header font size (ParaView HeaderFontSize)"));
-    decLayout->addWidget(m_headerFontSizeSpin);
-
     decLayout->addStretch(1);
-    decoratorBar->setStyleSheet(
-            QStringLiteral("QWidget#DecoratorBar { background: #2d2d2d; }"));
-    decoratorBar->setObjectName("DecoratorBar");
     layout->addWidget(decoratorBar);
+
+    // === Row 2: Font and display options (ParaView View properties) ===
+    auto* displayBar = new QWidget(this);
+    displayBar->setObjectName("SpreadDisplayBar");
+    auto* displayLayout = new QHBoxLayout(displayBar);
+    displayLayout->setContentsMargins(2, 1, 2, 1);
+    displayLayout->setSpacing(4);
+
+    auto* cfLabel = new QLabel(tr("Cell Font:"), displayBar);
+    displayLayout->addWidget(cfLabel);
+    m_cellFontSizeSpin = new QSpinBox(displayBar);
+    m_cellFontSizeSpin->setRange(6, 24);
+    m_cellFontSizeSpin->setValue(9);
+    m_cellFontSizeSpin->setFixedWidth(50);
+    displayLayout->addWidget(m_cellFontSizeSpin);
+
+    auto* hfLabel = new QLabel(tr("Header Font:"), displayBar);
+    displayLayout->addWidget(hfLabel);
+    m_headerFontSizeSpin = new QSpinBox(displayBar);
+    m_headerFontSizeSpin->setRange(6, 24);
+    m_headerFontSizeSpin->setValue(9);
+    m_headerFontSizeSpin->setFixedWidth(50);
+    displayLayout->addWidget(m_headerFontSizeSpin);
+
+    displayLayout->addStretch(1);
+    layout->addWidget(displayBar);
 
     // === Search bar ===
     auto* searchBar = new QWidget(this);
     auto* searchLayout = new QHBoxLayout(searchBar);
-    searchLayout->setContentsMargins(4, 2, 4, 2);
+    searchLayout->setContentsMargins(2, 1, 2, 1);
     searchLayout->setSpacing(4);
-    searchBar->setStyleSheet("QWidget { background: #333; }");
 
     m_searchEdit = new QLineEdit(searchBar);
     m_searchEdit->setPlaceholderText(tr("Filter rows..."));
     m_searchEdit->setClearButtonEnabled(true);
-    m_searchEdit->setStyleSheet(
-            "QLineEdit { background: #1e1e1e; color: #ddd; border: 1px solid "
-            "#555; border-radius: 3px; padding: 2px 4px; }");
     searchLayout->addWidget(m_searchEdit, 1);
     layout->addWidget(searchBar);
 
@@ -639,29 +926,23 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     m_proxyModel->setFilterKeyColumn(-1);
 
     m_tableView = new QTableView(this);
+    auto* customHeader = new ecvSpreadSheetHeaderView(Qt::Horizontal, m_tableView);
+    customHeader->setModel(m_model);
+    m_tableView->setHorizontalHeader(customHeader);
     m_tableView->setModel(m_proxyModel);
     m_tableView->setSortingEnabled(true);
     m_tableView->setAlternatingRowColors(true);
     m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_tableView->horizontalHeader()->setStretchLastSection(true);
-    m_tableView->horizontalHeader()->setSectionsClickable(true);
-    m_tableView->horizontalHeader()->setHighlightSections(false);
+    customHeader->setStretchLastSection(true);
+    customHeader->setSectionsClickable(true);
+    customHeader->setHighlightSections(false);
     m_tableView->verticalHeader()->setDefaultSectionSize(20);
-    m_tableView->setStyleSheet(
-            "QTableView { gridline-color: #444; background: #1e1e1e; color: "
-            "#ddd; }"
-            "QTableView::item:alternate { background: #252525; }"
-            "QTableView::item:selected { background: #264f78; }"
-            "QHeaderView::section { background: #2d2d2d; color: #ccc; "
-            "padding: 3px; border: 1px solid #444; }");
     layout->addWidget(m_tableView, 1);
 
     // === Status bar ===
     m_statusLabel = new QLabel(this);
-    m_statusLabel->setStyleSheet(
-            "QLabel { background: #2d2d2d; color: #999; padding: 2px 6px; "
-            "font-size: 11px; }");
+    m_statusLabel->setContentsMargins(4, 2, 4, 2);
     layout->addWidget(m_statusLabel);
 
     // === Connections ===
@@ -681,10 +962,32 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
             &ecvSpreadSheetView::onToggleSelectionOnly);
     connect(m_cellConnBtn, &QToolButton::toggled, this,
             &ecvSpreadSheetView::onToggleCellConnectivity);
+    connect(m_fieldDataBtn, &QToolButton::toggled, this,
+            [this](bool checked) {
+                if (checked) {
+                    m_prevAttributeBeforeFieldData =
+                            m_attributeCombo->currentIndex();
+                    m_attributeCombo->setCurrentIndex(
+                            static_cast<int>(
+                                    ecvSpreadSheetModel::FIELD_DATA));
+                } else {
+                    m_attributeCombo->setCurrentIndex(
+                            m_prevAttributeBeforeFieldData);
+                }
+            });
+    connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ecvSpreadSheetView::onSourceComboChanged);
+    m_sourceCombo->installEventFilter(this);
+
     connect(m_cellFontSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &ecvSpreadSheetView::onCellFontSizeChanged);
     connect(m_headerFontSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &ecvSpreadSheetView::onHeaderFontSizeChanged);
+
+    auto* copyShortcut = new QShortcut(QKeySequence::Copy, m_tableView);
+    connect(copyShortcut, &QShortcut::activated, this,
+            &ecvSpreadSheetView::copyToClipboard);
+
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &ecvSpreadSheetView::onEntitySelectionChanged);
@@ -715,40 +1018,111 @@ QString ecvSpreadSheetView::title() const {
 void ecvSpreadSheetView::setEntity(ccHObject* entity) {
     m_model->setEntity(entity);
 
-    m_sourceCombo->blockSignals(true);
-    m_sourceCombo->clear();
-    if (entity) {
-        m_sourceCombo->addItem(entity->getName());
-        auto* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
-        auto* mesh = ccHObjectCaster::ToMesh(entity);
+    auto* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
+    auto* mesh = ccHObjectCaster::ToMesh(entity);
+    if (mesh && !cloud) {
+        cloud = ccHObjectCaster::ToGenericPointCloud(
+                mesh->getAssociatedCloud());
+    }
 
-        bool hasCellData = (mesh != nullptr);
-        auto* itemModel = qobject_cast<QStandardItemModel*>(
-                m_attributeCombo->model());
-        if (itemModel) {
-            auto* item = itemModel->item(1);
-            if (item) {
-                item->setEnabled(hasCellData);
+    bool hasCellData = (mesh != nullptr);
+    auto* itemModel = qobject_cast<QStandardItemModel*>(
+            m_attributeCombo->model());
+    if (itemModel) {
+        auto* item = itemModel->item(1);
+        if (item) {
+            item->setEnabled(hasCellData);
+        }
+    }
+    if (!hasCellData && m_attributeCombo->currentIndex() == 1) {
+        m_attributeCombo->setCurrentIndex(0);
+    }
+
+    if (m_sourceCombo) {
+        m_sourceCombo->blockSignals(true);
+        for (int i = 0; i < m_sourceCombo->count(); ++i) {
+            auto* stored = reinterpret_cast<ccHObject*>(
+                    m_sourceCombo->itemData(i).value<quintptr>());
+            if (stored == entity) {
+                m_sourceCombo->setCurrentIndex(i);
+                break;
             }
         }
-        if (!hasCellData && m_attributeCombo->currentIndex() == 1) {
-            m_attributeCombo->setCurrentIndex(0);
+        if (!entity && m_sourceCombo->count() > 0) {
+            m_sourceCombo->setCurrentIndex(0);
         }
-
         unsigned pointCount = cloud ? cloud->size() : 0;
         m_sourceCombo->setToolTip(
-                tr("%1 (%2 points)")
-                        .arg(entity->getName())
-                        .arg(pointCount));
-    } else {
-        m_sourceCombo->addItem(tr("None"));
+                entity ? tr("%1 (%2 points)")
+                                 .arg(entity->getName())
+                                 .arg(pointCount)
+                       : QString());
+        m_sourceCombo->blockSignals(false);
     }
-    m_sourceCombo->blockSignals(false);
 
     updateStatusBar();
+
+    QTimer::singleShot(0, this, [this]() {
+        m_tableView->resizeColumnsToContents();
+        auto* header = m_tableView->horizontalHeader();
+        if (header) header->setStretchLastSection(true);
+    });
+}
+
+void ecvSpreadSheetView::setEntityListProvider(EntityListProvider provider) {
+    m_entityListProvider = std::move(provider);
+    refreshSourceCombo();
+}
+
+void ecvSpreadSheetView::refreshSourceCombo() {
+    if (!m_sourceCombo) return;
+
+    ccHObject* current = m_model->entity();
+
+    m_sourceCombo->blockSignals(true);
+    m_sourceCombo->clear();
+    m_sourceCombo->addItem(tr("None"), QVariant::fromValue<quintptr>(0));
+
+    if (m_entityListProvider) {
+        auto entities = m_entityListProvider();
+        int newIdx = 0;
+        for (int i = 0; i < entities.size(); ++i) {
+            ccHObject* e = entities[i];
+            if (!e) continue;
+            m_sourceCombo->addItem(
+                    e->getName(),
+                    QVariant::fromValue<quintptr>(
+                            reinterpret_cast<quintptr>(e)));
+            if (e == current) {
+                newIdx = m_sourceCombo->count() - 1;
+            }
+        }
+        m_sourceCombo->setCurrentIndex(newIdx);
+    } else if (current) {
+        m_sourceCombo->addItem(
+                current->getName(),
+                QVariant::fromValue<quintptr>(
+                        reinterpret_cast<quintptr>(current)));
+        m_sourceCombo->setCurrentIndex(1);
+    }
+
+    m_sourceCombo->blockSignals(false);
+}
+
+void ecvSpreadSheetView::onSourceComboChanged(int index) {
+    if (index < 0) return;
+    auto ptr = m_sourceCombo->itemData(index).value<quintptr>();
+    auto* entity = reinterpret_cast<ccHObject*>(ptr);
+    setEntity(entity);
+}
+
+void ecvSpreadSheetView::onSourceComboAboutToShow() {
+    refreshSourceCombo();
 }
 
 void ecvSpreadSheetView::onEntitySelectionChanged(ccHObject* entity) {
+    if (!entity) return;
+    refreshSourceCombo();
     setEntity(entity);
 }
 
@@ -926,6 +1300,9 @@ void ecvSpreadSheetView::onTableSelectionChanged() {
 }
 
 bool ecvSpreadSheetView::eventFilter(QObject* obj, QEvent* event) {
+    if (obj == m_sourceCombo && event->type() == QEvent::MouseButtonPress) {
+        refreshSourceCombo();
+    }
     if (event->type() == QEvent::KeyPress) {
         auto* kev = static_cast<QKeyEvent*>(event);
         if (kev->matches(QKeySequence::Copy)) {

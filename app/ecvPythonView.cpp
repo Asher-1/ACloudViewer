@@ -17,16 +17,19 @@
 #include <ecvViewManager.h>
 
 #include <QAbstractItemView>
+#include <QComboBox>
 #include <QCompleter>
 #include <QDir>
 #include <QKeyEvent>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QProcess>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QStringListModel>
 #include <QTemporaryDir>
@@ -38,20 +41,36 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
+    // === Row 1: Showing combo (ParaView-style) ===
+    auto* decoratorBar = new QWidget(this);
+    auto* decLayout = new QHBoxLayout(decoratorBar);
+    decLayout->setContentsMargins(2, 1, 2, 1);
+    decLayout->setSpacing(2);
+
+    auto* showingLabel = new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
+    decLayout->addWidget(showingLabel);
+
+    m_sourceCombo = new QComboBox(decoratorBar);
+    m_sourceCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_sourceCombo->addItem(tr("None"));
+    decLayout->addWidget(m_sourceCombo);
+    decLayout->addStretch(1);
+    layout->addWidget(decoratorBar);
+
+    connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ecvPythonView::onSourceComboChanged);
+
     auto btnSS = QStringLiteral(
             "QPushButton { background: #3a5f8f; color: #ddd; border: 1px "
             "solid #555; border-radius: 3px; padding: 2px 8px; }"
             "QPushButton:hover { background: #4a7fbf; }");
 
+    // === Row 2: Script toolbar ===
     auto* toolbar = new QWidget(this);
     auto* tbLayout = new QHBoxLayout(toolbar);
     tbLayout->setContentsMargins(4, 2, 4, 2);
     tbLayout->setSpacing(4);
     toolbar->setStyleSheet("QWidget { background: #333; }");
-
-    auto* titleLabel = new QLabel(tr("<b>Python View</b>"), toolbar);
-    titleLabel->setStyleSheet("QLabel { color: #ccc; }");
-    tbLayout->addWidget(titleLabel);
 
     auto* runBtn = new QPushButton(tr("Run"), toolbar);
     runBtn->setStyleSheet(btnSS);
@@ -89,17 +108,19 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
 
     m_scriptEditor = new ecvPythonCodeEditor(splitter);
     m_scriptEditor->setPlaceholderText(
-            tr("# Python View — with entity data access\n"
-               "# Click 'Export+Run' to auto-export the selected entity\n"
-               "# as CSV and set DATA_FILE environment variable.\n"
+            tr("# Python View — matplotlib rendering + entity data\n"
+               "# Click 'Export+Run' to export entity to CSV & run.\n"
+               "# Use plt.savefig(os.environ['PLOT_FILE']) to render inline.\n"
                "#\n"
                "# Example:\n"
-               "#   import os, numpy as np\n"
+               "#   import os, numpy as np, matplotlib\n"
+               "#   matplotlib.use('Agg')\n"
+               "#   import matplotlib.pyplot as plt\n"
                "#   data = np.loadtxt(os.environ['DATA_FILE'],\n"
                "#                     delimiter=',', skiprows=1)\n"
-               "#   print(f'Points: {len(data)}')\n"
-               "#   print(f'X range: [{data[:,0].min():.3f}, "
-               "{data[:,0].max():.3f}]')"));
+               "#   plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2])\n"
+               "#   plt.colorbar(); plt.title('XY colored by Z')\n"
+               "#   plt.savefig(os.environ['PLOT_FILE'], dpi=150)"));
     m_scriptEditor->setStyleSheet(
             "QPlainTextEdit { background: #1e1e1e; color: #d4d4d4; "
             "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
@@ -107,14 +128,28 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     m_scriptEditor->setTabStopDistance(32);
     splitter->addWidget(m_scriptEditor);
 
-    m_outputPanel = new QPlainTextEdit(splitter);
+    auto* outputSplitter = new QSplitter(Qt::Horizontal, splitter);
+
+    m_outputPanel = new QPlainTextEdit(outputSplitter);
     m_outputPanel->setReadOnly(true);
     m_outputPanel->setStyleSheet(
             "QPlainTextEdit { background: #1a1a1a; color: #b5cea8; "
             "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
             "font-size: 11px; border: none; }");
     m_outputPanel->setPlaceholderText(tr("Output will appear here..."));
-    splitter->addWidget(m_outputPanel);
+    outputSplitter->addWidget(m_outputPanel);
+
+    m_imageLabel = new QLabel(outputSplitter);
+    m_imageLabel->setAlignment(Qt::AlignCenter);
+    m_imageLabel->setStyleSheet("QLabel { background: white; }");
+    m_imageLabel->setText(tr("Plot output\n(use plt.savefig(os.environ['PLOT_FILE']))"));
+    m_imageLabel->setScaledContents(false);
+    m_imageLabel->setMinimumSize(100, 100);
+    outputSplitter->addWidget(m_imageLabel);
+
+    outputSplitter->setStretchFactor(0, 1);
+    outputSplitter->setStretchFactor(1, 2);
+    splitter->addWidget(outputSplitter);
 
     splitter->setStretchFactor(0, 2);
     splitter->setStretchFactor(1, 1);
@@ -141,6 +176,51 @@ ecvPythonView::~ecvPythonView() {
     if (!m_lastExportPath.isEmpty()) {
         QFile::remove(m_lastExportPath);
     }
+    if (!m_lastImagePath.isEmpty()) {
+        QFile::remove(m_lastImagePath);
+    }
+}
+
+void ecvPythonView::setEntityListProvider(EntityListProvider provider) {
+    m_entityListProvider = std::move(provider);
+    refreshSourceCombo();
+}
+
+void ecvPythonView::refreshSourceCombo() {
+    if (!m_sourceCombo) return;
+    QSignalBlocker blocker(m_sourceCombo);
+    m_sourceCombo->clear();
+    m_sourceCombo->addItem(tr("None"));
+
+    if (m_entityListProvider) {
+        auto entities = m_entityListProvider();
+        for (auto* e : entities) {
+            if (e) {
+                m_sourceCombo->addItem(e->getName(),
+                                       QVariant::fromValue(
+                                               reinterpret_cast<quintptr>(e)));
+            }
+        }
+    }
+
+    if (m_entity) {
+        for (int i = 1; i < m_sourceCombo->count(); ++i) {
+            auto ptr = m_sourceCombo->itemData(i).value<quintptr>();
+            if (reinterpret_cast<ccHObject*>(ptr) == m_entity) {
+                m_sourceCombo->setCurrentIndex(i);
+                return;
+            }
+        }
+    }
+}
+
+void ecvPythonView::onSourceComboChanged(int index) {
+    if (index <= 0) {
+        setEntity(nullptr);
+        return;
+    }
+    auto ptr = m_sourceCombo->itemData(index).value<quintptr>();
+    setEntity(reinterpret_cast<ccHObject*>(ptr));
 }
 
 void ecvPythonView::setEntity(ccHObject* entity) {
@@ -236,31 +316,35 @@ void ecvPythonView::onExportEntityAndRun() {
     m_outputPanel->appendPlainText(
             tr("DATA_FILE env variable set. Running script...\n"));
 
+    QString plotPath = QDir::tempPath() +
+                       QStringLiteral("/acv_plot_%1.png")
+                               .arg(reinterpret_cast<quintptr>(this), 0, 16);
+
     QString script = m_scriptEditor->toPlainText().trimmed();
     if (script.isEmpty()) {
         script = QStringLiteral(
-                "import os, sys\n"
+                "import os, numpy as np, matplotlib\n"
+                "matplotlib.use('Agg')\n"
+                "import matplotlib.pyplot as plt\n"
                 "path = os.environ.get('DATA_FILE', '')\n"
-                "print(f'DATA_FILE = {path}')\n"
-                "try:\n"
-                "    import numpy as np\n"
-                "    data = np.loadtxt(path, delimiter=',', skiprows=1)\n"
-                "    print(f'Shape: {data.shape}')\n"
-                "    print(f'X: [{data[:,0].min():.4f}, {data[:,0].max():.4f}]')\n"
-                "    print(f'Y: [{data[:,1].min():.4f}, {data[:,1].max():.4f}]')\n"
-                "    print(f'Z: [{data[:,2].min():.4f}, {data[:,2].max():.4f}]')\n"
-                "except ImportError:\n"
-                "    import csv\n"
-                "    with open(path) as f:\n"
-                "        reader = csv.reader(f)\n"
-                "        header = next(reader)\n"
-                "        print(f'Columns: {header}')\n"
-                "        rows = sum(1 for _ in reader)\n"
-                "        print(f'Rows: {rows}')\n");
+                "data = np.loadtxt(path, delimiter=',', skiprows=1)\n"
+                "print(f'Shape: {data.shape}')\n"
+                "print(f'X: [{data[:,0].min():.4f}, {data[:,0].max():.4f}]')\n"
+                "print(f'Y: [{data[:,1].min():.4f}, {data[:,1].max():.4f}]')\n"
+                "print(f'Z: [{data[:,2].min():.4f}, {data[:,2].max():.4f}]')\n"
+                "fig, ax = plt.subplots(figsize=(8, 6))\n"
+                "sc = ax.scatter(data[:,0], data[:,1], s=1, c=data[:,2], cmap='viridis')\n"
+                "plt.colorbar(sc); ax.set_xlabel('X'); ax.set_ylabel('Y')\n"
+                "ax.set_title(os.path.basename(path))\n"
+                "plt.tight_layout()\n"
+                "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n"
+                "print(f'Plot saved to {os.environ[\"PLOT_FILE\"]}')\n");
         m_scriptEditor->setPlainText(script);
     }
 
     m_statusLabel->setText(tr("Running..."));
+
+    QFile::remove(plotPath);
 
     QProcess proc;
     proc.setProgram("python3");
@@ -268,12 +352,13 @@ void ecvPythonView::onExportEntityAndRun() {
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("DATA_FILE", csvPath);
+    env.insert("PLOT_FILE", plotPath);
     proc.setProcessEnvironment(env);
     proc.start();
 
-    if (!proc.waitForFinished(30000)) {
+    if (!proc.waitForFinished(60000)) {
         m_outputPanel->appendPlainText(
-                tr("Error: Script timed out (30s limit)"));
+                tr("Error: Script timed out (60s limit)"));
         proc.kill();
         m_statusLabel->setText(tr("Timeout"));
         return;
@@ -292,6 +377,19 @@ void ecvPythonView::onExportEntityAndRun() {
 
     int exitCode = proc.exitCode();
     m_statusLabel->setText(tr("Exit code: %1").arg(exitCode));
+
+    if (QFile::exists(plotPath)) {
+        QPixmap pix(plotPath);
+        if (!pix.isNull() && m_imageLabel) {
+            m_imageLabel->setPixmap(pix.scaled(m_imageLabel->size(),
+                                               Qt::KeepAspectRatio,
+                                               Qt::SmoothTransformation));
+        }
+        if (!m_lastImagePath.isEmpty() && m_lastImagePath != plotPath) {
+            QFile::remove(m_lastImagePath);
+        }
+        m_lastImagePath = plotPath;
+    }
 }
 
 void ecvPythonView::onRunScript() {
@@ -301,6 +399,11 @@ void ecvPythonView::onRunScript() {
     m_outputPanel->clear();
     m_statusLabel->setText(tr("Running..."));
 
+    QString plotPath = QDir::tempPath() +
+                       QStringLiteral("/acv_plot_%1.png")
+                               .arg(reinterpret_cast<quintptr>(this), 0, 16);
+    QFile::remove(plotPath);
+
     QProcess proc;
     proc.setProgram("python3");
     proc.setArguments({"-c", script});
@@ -309,12 +412,13 @@ void ecvPythonView::onRunScript() {
     if (!m_lastExportPath.isEmpty()) {
         env.insert("DATA_FILE", m_lastExportPath);
     }
+    env.insert("PLOT_FILE", plotPath);
     proc.setProcessEnvironment(env);
     proc.start();
 
-    if (!proc.waitForFinished(30000)) {
+    if (!proc.waitForFinished(60000)) {
         m_outputPanel->appendPlainText(
-                tr("Error: Script timed out (30s limit)"));
+                tr("Error: Script timed out (60s limit)"));
         proc.kill();
         m_statusLabel->setText(tr("Timeout"));
         return;
@@ -333,6 +437,19 @@ void ecvPythonView::onRunScript() {
 
     int exitCode = proc.exitCode();
     m_statusLabel->setText(tr("Exit code: %1").arg(exitCode));
+
+    if (QFile::exists(plotPath)) {
+        QPixmap pix(plotPath);
+        if (!pix.isNull() && m_imageLabel) {
+            m_imageLabel->setPixmap(pix.scaled(m_imageLabel->size(),
+                                               Qt::KeepAspectRatio,
+                                               Qt::SmoothTransformation));
+        }
+        if (!m_lastImagePath.isEmpty() && m_lastImagePath != plotPath) {
+            QFile::remove(m_lastImagePath);
+        }
+        m_lastImagePath = plotPath;
+    }
 }
 
 void ecvPythonView::onClear() {

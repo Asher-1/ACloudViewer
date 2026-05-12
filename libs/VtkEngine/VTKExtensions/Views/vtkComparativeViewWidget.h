@@ -23,6 +23,8 @@ class QGridLayout;
 class QSpinBox;
 class QComboBox;
 class QLabel;
+class QTimer;
+class ccHObject;
 class vtkGLView;
 class vtkChartView;
 
@@ -46,6 +48,13 @@ public:
     using RenderViewFactory = std::function<vtkGLView*()>;
     void setRenderViewFactory(RenderViewFactory factory);
 
+    using SubViewInitCallback = std::function<void(vtkGLView*)>;
+    void setSubViewInitCallback(SubViewInitCallback cb);
+
+    using EntityListProvider = std::function<QList<ccHObject*>()>;
+    void setEntityListProvider(EntityListProvider provider);
+    void setInitialEntity(ccHObject* entity);
+
     int rows() const { return m_rows; }
     int cols() const { return m_cols; }
     void setDimensions(int rows, int cols);
@@ -53,8 +62,12 @@ public:
     int spacing() const { return m_spacing; }
 
     QList<QWidget*> subWidgets() const { return m_subWidgets; }
+    QList<vtkGLView*> subViews() const { return m_subViews; }
 
     void setupGrid();
+
+protected:
+    void showEvent(QShowEvent* event) override;
 
 signals:
     void subViewCreated(QWidget* subWidget);
@@ -71,6 +84,10 @@ private:
     void createChartSubViews();
     void buildToolbar();
     void applyCueToSubViews();
+    void syncCamerasFromFirst();
+    void installCameraLink();
+    void onCameraLinkTick();
+    void forceRenderAllSubViews();
 
     ComparativeType m_type;
     int m_rows = 2;
@@ -88,5 +105,13 @@ private:
     bool m_overlayMode = false;
     QGridLayout* m_gridLayout = nullptr;
     QList<QWidget*> m_subWidgets;
+    QList<vtkGLView*> m_subViews;
     RenderViewFactory m_renderFactory;
+    SubViewInitCallback m_subViewInitCb;
+    EntityListProvider m_entityListProvider;
+    ccHObject* m_initialEntity = nullptr;
+    QTimer* m_cameraLinkTimer = nullptr;
+    bool m_cameraLinkEnabled = true;
+    double m_lastCameraMTime = 0;
+    bool m_firstShowDone = false;
 };

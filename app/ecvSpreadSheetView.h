@@ -8,12 +8,14 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QHeaderView>
+#include <QList>
 #include <QSet>
 #include <QSortFilterProxyModel>
 #include <QWidget>
+#include <functional>
 
 class QTableView;
-class QHeaderView;
 class QLabel;
 class QLineEdit;
 class QPushButton;
@@ -45,6 +47,7 @@ public:
                         int role = Qt::DisplayRole) const override;
 
     QString columnName(int col) const;
+    QString columnGroupName(int visibleCol) const;
     int totalColumnCount() const { return m_columns.size(); }
     bool isColumnVisible(int col) const;
     void setColumnVisible(int col, bool visible);
@@ -91,6 +94,11 @@ private:
             NX,
             NY,
             NZ,
+            NORMALS_MAG,
+            POINTS_MAG,
+            TCOORDS_S,
+            TCOORDS_T,
+            TCOORDS_MAG,
             SCALAR,
             CELL_INDEX,
             V1,
@@ -120,9 +128,41 @@ private:
     QSet<unsigned> m_selectedIndices;
     QVector<unsigned> m_sortedSelection;
     QVector<int> m_visibleColMap;
+    QVector<float> m_computedNormals;
 
     void rebuildVisibleColMap();
     void rebuildSortedSelection();
+    void computeVertexNormals();
+
+    bool hasComputedNormal(unsigned row) const {
+        return (row * 3 + 2) < static_cast<unsigned>(m_computedNormals.size());
+    }
+};
+
+class QPainter;
+
+class ecvSpreadSheetHeaderView : public QHeaderView {
+    Q_OBJECT
+public:
+    explicit ecvSpreadSheetHeaderView(Qt::Orientation orientation,
+                                      QWidget* parent = nullptr);
+    void setModel(ecvSpreadSheetModel* model) { m_sourceModel = model; }
+
+protected:
+    QSize sizeHint() const override;
+    void paintEvent(QPaintEvent* event) override;
+    void paintSection(QPainter* painter, const QRect& rect,
+                      int logicalIndex) const override;
+
+private:
+    struct GroupInfo {
+        QString name;
+        int startSection = -1;
+        int endSection = -1;
+    };
+    QVector<GroupInfo> collectGroups() const;
+
+    ecvSpreadSheetModel* m_sourceModel = nullptr;
 };
 
 // ParaView-aligned SpreadSheet View with decorator toolbar.
@@ -137,6 +177,9 @@ public:
     QString title() const;
     ecvSpreadSheetModel* getModel() const { return m_model; }
 
+    using EntityListProvider = std::function<QList<ccHObject*>()>;
+    void setEntityListProvider(EntityListProvider provider);
+
 public slots:
     void setEntity(ccHObject* entity);
     void setSelectedPointIndices(const QSet<unsigned>& indices);
@@ -150,6 +193,8 @@ protected:
 
 private slots:
     void onEntitySelectionChanged(ccHObject* entity);
+    void onSourceComboChanged(int index);
+    void onSourceComboAboutToShow();
     void onSearchTextChanged(const QString& text);
     void onAttributeChanged(int index);
     void onPrecisionChanged(int precision);
@@ -166,6 +211,9 @@ private slots:
 private:
     void updateStatusBar();
     void updateColumnVisibility();
+    void refreshSourceCombo();
+
+    EntityListProvider m_entityListProvider;
 
     // Decorator toolbar widgets (ParaView pqSpreadSheetViewDecorator pattern)
     QLabel* m_showingLabel = nullptr;
@@ -176,6 +224,8 @@ private:
     QToolButton* m_columnVisBtn = nullptr;
     QToolButton* m_selectionOnlyBtn = nullptr;
     QToolButton* m_cellConnBtn = nullptr;
+    QToolButton* m_fieldDataBtn = nullptr;
+    int m_prevAttributeBeforeFieldData = 0;
     QSpinBox* m_cellFontSizeSpin = nullptr;
     QSpinBox* m_headerFontSizeSpin = nullptr;
     QToolButton* m_exportBtn = nullptr;

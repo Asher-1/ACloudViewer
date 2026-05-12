@@ -7,7 +7,9 @@
 
 #include "vtkComparativeViewWidget.h"
 
+#include <CVLog.h>
 #include <VTKExtensions/Views/vtkChartView.h>
+#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 #include <Visualization/vtkGLView.h>
 #include <Visualization/VtkVis.h>
 
@@ -17,10 +19,13 @@
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QShowEvent>
+#include <QMenu>
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <vtkActor.h>
@@ -31,7 +36,7 @@
 #include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
 
-static constexpr int COMPARATIVE_SPACING = 2;
+static constexpr int COMPARATIVE_SPACING = 1;
 
 vtkComparativeViewWidget::vtkComparativeViewWidget(ComparativeType type,
                                                    QWidget* parent)
@@ -41,37 +46,33 @@ vtkComparativeViewWidget::vtkComparativeViewWidget(ComparativeType type,
     mainLayout->setSpacing(0);
 
     buildToolbar();
-    m_toolbar->setVisible(false);
-
-    auto* toggleBar = new QWidget(this);
-    toggleBar->setStyleSheet("QWidget { background: #2a2a2a; }");
-    auto* toggleLay = new QHBoxLayout(toggleBar);
-    toggleLay->setContentsMargins(4, 1, 4, 1);
-    auto* toggleBtn = new QPushButton(
-            tr("\xe2\x96\xb6 Grid Settings"), toggleBar);
-    toggleBtn->setFlat(true);
-    toggleBtn->setCursor(Qt::PointingHandCursor);
-    toggleBtn->setStyleSheet(
-            "QPushButton { color: #aaa; font-size: 11px; border: none; }"
-            "QPushButton:hover { color: #fff; }");
-    toggleLay->addWidget(toggleBtn);
-    toggleLay->addStretch(1);
-    mainLayout->addWidget(toggleBar);
+    m_toolbar->setVisible(true);
     mainLayout->addWidget(m_toolbar);
-
-    connect(toggleBtn, &QPushButton::clicked, this,
-            [this, toggleBtn]() {
-                bool show = !m_toolbar->isVisible();
-                m_toolbar->setVisible(show);
-                toggleBtn->setText(show ? tr("\xe2\x96\xbc Grid Settings")
-                                       : tr("\xe2\x96\xb6 Grid Settings"));
-            });
 
     auto* gridContainer = new QWidget(this);
     m_gridLayout = new QGridLayout(gridContainer);
     m_gridLayout->setContentsMargins(0, 0, 0, 0);
     m_gridLayout->setSpacing(COMPARATIVE_SPACING);
     mainLayout->addWidget(gridContainer, 1);
+    setMinimumSize(100, 100);
+
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &QWidget::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
+                QMenu menu(this);
+                auto* toggleAct = menu.addAction(
+                        m_toolbar->isVisible()
+                                ? tr("Hide Grid Settings")
+                                : tr("Show Grid Settings"));
+                connect(toggleAct, &QAction::triggered, this, [this]() {
+                    m_toolbar->setVisible(!m_toolbar->isVisible());
+                });
+                menu.addSeparator();
+                auto* dimAct = menu.addAction(
+                        tr("Dimensions: %1 x %2").arg(m_rows).arg(m_cols));
+                dimAct->setEnabled(false);
+                menu.exec(mapToGlobal(pos));
+            });
 }
 
 vtkComparativeViewWidget::~vtkComparativeViewWidget() = default;
@@ -98,13 +99,13 @@ void vtkComparativeViewWidget::setSpacing(int spacing) {
 void vtkComparativeViewWidget::setDimensions(int rows, int cols) {
     if (rows < 1 || cols < 1 || (rows == m_rows && cols == m_cols)) return;
 
-    // Clear existing sub-views
     for (auto* w : m_subWidgets) {
         m_gridLayout->removeWidget(w);
         w->setParent(nullptr);
         w->deleteLater();
     }
     m_subWidgets.clear();
+    m_subViews.clear();
 
     m_rows = rows;
     m_cols = cols;
@@ -119,6 +120,10 @@ void vtkComparativeViewWidget::setRenderViewFactory(
     }
 }
 
+void vtkComparativeViewWidget::setSubViewInitCallback(SubViewInitCallback cb) {
+    m_subViewInitCb = std::move(cb);
+}
+
 void vtkComparativeViewWidget::setupGrid() {
     if (m_type == RENDER) {
         createRenderSubViews();
@@ -128,19 +133,176 @@ void vtkComparativeViewWidget::setupGrid() {
 }
 
 void vtkComparativeViewWidget::createRenderSubViews() {
-    if (!m_renderFactory) return;
+    if (!m_renderFactory) {
+        CVLog::Warning("[ComparativeView] No render factory set");
+        return;
+    }
 
+    vtkGLView* firstView = nullptr;
     for (int r = 0; r < m_rows; ++r) {
         for (int c = 0; c < m_cols; ++c) {
             auto* view = m_renderFactory();
-            if (!view) continue;
+            if (!view) {
+                CVLog::Warning("[ComparativeView] Factory returned null for "
+                               "cell (%d,%d)", r, c);
+                continue;
+            }
             QWidget* viewWidget = view->asWidget();
-            if (!viewWidget) continue;
+            if (!viewWidget) {
+                CVLog::Warning("[ComparativeView] View widget null for "
+                               "cell (%d,%d)", r, c);
+                continue;
+            }
+            viewWidget->setMinimumSize(50, 50);
+            viewWidget->setSizePolicy(QSizePolicy::Expanding,
+                                      QSizePolicy::Expanding);
             m_gridLayout->addWidget(viewWidget, r, c);
+            m_gridLayout->setRowStretch(r, 1);
+            m_gridLayout->setColumnStretch(c, 1);
             m_subWidgets.append(viewWidget);
+            m_subViews.append(view);
+            if (!firstView) firstView = view;
+            if (m_subViewInitCb) {
+                m_subViewInitCb(view);
+            }
             emit subViewCreated(viewWidget);
         }
     }
+
+    CVLog::Print("[ComparativeView] Created %d sub-views in %dx%d grid",
+                 m_subViews.size(), m_rows, m_cols);
+
+    if (firstView && m_subViews.size() > 1) {
+        syncCamerasFromFirst();
+    }
+
+    forceRenderAllSubViews();
+}
+
+void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+    if (!m_firstShowDone) {
+        m_firstShowDone = true;
+        QTimer::singleShot(100, this, [this]() {
+            forceRenderAllSubViews();
+        });
+    }
+}
+
+void vtkComparativeViewWidget::forceRenderAllSubViews() {
+    for (auto* view : m_subViews) {
+        if (!view) continue;
+        QWidget* w = view->asWidget();
+        if (w) {
+            w->show();
+            w->update();
+        }
+        if (view->getVtkWidget()) {
+            auto* rw = view->getVtkWidget()->renderWindow();
+            if (rw) {
+                rw->SetSwapBuffers(1);
+                auto* ren = rw->GetRenderers()
+                                    ? rw->GetRenderers()->GetFirstRenderer()
+                                    : nullptr;
+                if (ren) {
+                    ren->ResetCameraClippingRange();
+                }
+            }
+        }
+        view->zoomGlobal();
+        view->redraw(false, true);
+    }
+}
+
+void vtkComparativeViewWidget::syncCamerasFromFirst() {
+    if (m_subViews.size() < 2) return;
+    vtkGLView* first = m_subViews.first();
+    if (!first) return;
+
+    auto* srcCam = first->getVtkWidget()
+                           ? first->getVtkWidget()->renderWindow()
+                                     ->GetRenderers()
+                                     ->GetFirstRenderer()
+                                     ->GetActiveCamera()
+                           : nullptr;
+    if (!srcCam) return;
+
+    for (int i = 1; i < m_subViews.size(); ++i) {
+        auto* dstView = m_subViews[i];
+        if (!dstView || !dstView->getVtkWidget()) continue;
+        auto* dstRen = dstView->getVtkWidget()
+                               ->renderWindow()
+                               ->GetRenderers()
+                               ->GetFirstRenderer();
+        if (dstRen) {
+            dstRen->GetActiveCamera()->DeepCopy(srcCam);
+        }
+    }
+
+    installCameraLink();
+}
+
+void vtkComparativeViewWidget::installCameraLink() {
+    if (m_cameraLinkTimer || m_subViews.size() < 2) return;
+
+    m_cameraLinkTimer = new QTimer(this);
+    m_cameraLinkTimer->setInterval(33);
+    connect(m_cameraLinkTimer, &QTimer::timeout, this,
+            &vtkComparativeViewWidget::onCameraLinkTick);
+    m_cameraLinkTimer->start();
+}
+
+void vtkComparativeViewWidget::onCameraLinkTick() {
+    if (!m_cameraLinkEnabled || m_subViews.size() < 2) return;
+
+    vtkCamera* activeCam = nullptr;
+    int activeIdx = -1;
+    double maxMTime = m_lastCameraMTime;
+
+    for (int i = 0; i < m_subViews.size(); ++i) {
+        auto* view = m_subViews[i];
+        if (!view || !view->getVtkWidget()) continue;
+        auto* ren = view->getVtkWidget()
+                            ->renderWindow()
+                            ->GetRenderers()
+                            ->GetFirstRenderer();
+        if (!ren) continue;
+        auto* cam = ren->GetActiveCamera();
+        if (!cam) continue;
+        double mtime = cam->GetMTime();
+        if (mtime > maxMTime) {
+            maxMTime = mtime;
+            activeCam = cam;
+            activeIdx = i;
+        }
+    }
+
+    if (!activeCam || activeIdx < 0) return;
+    m_lastCameraMTime = maxMTime;
+
+    for (int i = 0; i < m_subViews.size(); ++i) {
+        if (i == activeIdx) continue;
+        auto* dstView = m_subViews[i];
+        if (!dstView || !dstView->getVtkWidget()) continue;
+        auto* dstRen = dstView->getVtkWidget()
+                               ->renderWindow()
+                               ->GetRenderers()
+                               ->GetFirstRenderer();
+        if (dstRen) {
+            dstRen->GetActiveCamera()->DeepCopy(activeCam);
+            dstRen->ResetCameraClippingRange();
+        }
+        dstView->getVtkWidget()->renderWindow()->Render();
+    }
+}
+
+void vtkComparativeViewWidget::setEntityListProvider(
+        EntityListProvider provider) {
+    m_entityListProvider = std::move(provider);
+}
+
+void vtkComparativeViewWidget::setInitialEntity(ccHObject* entity) {
+    m_initialEntity = entity;
 }
 
 void vtkComparativeViewWidget::createChartSubViews() {
@@ -151,7 +313,15 @@ void vtkComparativeViewWidget::createChartSubViews() {
     for (int r = 0; r < m_rows; ++r) {
         for (int c = 0; c < m_cols; ++c) {
             auto* chart = new vtkChartView(chartType, this);
+            if (m_entityListProvider) {
+                chart->setEntityListProvider(m_entityListProvider);
+            }
+            if (m_initialEntity) {
+                chart->setEntity(m_initialEntity);
+            }
             m_gridLayout->addWidget(chart, r, c);
+            m_gridLayout->setRowStretch(r, 1);
+            m_gridLayout->setColumnStretch(c, 1);
             m_subWidgets.append(chart);
             emit subViewCreated(chart);
         }
@@ -161,55 +331,33 @@ void vtkComparativeViewWidget::createChartSubViews() {
 void vtkComparativeViewWidget::buildToolbar() {
     m_toolbar = new QWidget(this);
     auto* lay = new QHBoxLayout(m_toolbar);
-    lay->setContentsMargins(4, 2, 4, 2);
-    lay->setSpacing(4);
-    m_toolbar->setStyleSheet("QWidget { background: #333; }");
-
-    auto labelSS = QStringLiteral("QLabel { color: #ccc; }");
-    auto spinSS = QStringLiteral(
-            "QSpinBox { background: #1e1e1e; color: #ddd; border: 1px solid "
-            "#555; border-radius: 3px; padding: 1px 2px; }");
-    auto comboSS = QStringLiteral(
-            "QComboBox { background: #1e1e1e; color: #ddd; border: 1px solid "
-            "#555; border-radius: 3px; padding: 1px 4px; min-width: 80px; }"
-            "QComboBox::drop-down { border: none; }"
-            "QComboBox QAbstractItemView { background: #2d2d2d; color: "
-            "#ddd; }");
-    auto btnSS = QStringLiteral(
-            "QPushButton { background: #3a5f8f; color: #ddd; border: 1px "
-            "solid #555; border-radius: 3px; padding: 2px 8px; }"
-            "QPushButton:hover { background: #4a7fbf; }");
+    lay->setContentsMargins(0, 0, 0, 0);
+    lay->setSpacing(2);
 
     auto* dimLabel = new QLabel(tr("<b>Grid:</b>"), m_toolbar);
-    dimLabel->setStyleSheet(labelSS);
     lay->addWidget(dimLabel);
 
     m_rowSpin = new QSpinBox(m_toolbar);
     m_rowSpin->setRange(1, 8);
     m_rowSpin->setValue(m_rows);
     m_rowSpin->setPrefix(tr("R:"));
-    m_rowSpin->setStyleSheet(spinSS);
     lay->addWidget(m_rowSpin);
 
     auto* xLabel = new QLabel(tr("x"), m_toolbar);
-    xLabel->setStyleSheet(labelSS);
     lay->addWidget(xLabel);
 
     m_colSpin = new QSpinBox(m_toolbar);
     m_colSpin->setRange(1, 8);
     m_colSpin->setValue(m_cols);
     m_colSpin->setPrefix(tr("C:"));
-    m_colSpin->setStyleSheet(spinSS);
     lay->addWidget(m_colSpin);
 
     auto* spLabel = new QLabel(tr("Sp:"), m_toolbar);
-    spLabel->setStyleSheet(labelSS);
     lay->addWidget(spLabel);
 
     auto* spacingSpin = new QSpinBox(m_toolbar);
     spacingSpin->setRange(0, 20);
     spacingSpin->setValue(m_spacing);
-    spacingSpin->setStyleSheet(spinSS);
     spacingSpin->setToolTip(tr("Grid spacing (ParaView Spacing property)"));
     lay->addWidget(spacingSpin);
 
@@ -219,12 +367,7 @@ void vtkComparativeViewWidget::buildToolbar() {
     lay->addWidget(new QLabel(QStringLiteral("|"), m_toolbar));
 
     auto* cueLabel = new QLabel(tr("<b>Cue:</b>"), m_toolbar);
-    cueLabel->setStyleSheet(labelSS);
     lay->addWidget(cueLabel);
-
-    auto dspinSS = QStringLiteral(
-            "QDoubleSpinBox { background: #1e1e1e; color: #ddd; border: 1px "
-            "solid #555; border-radius: 3px; padding: 1px 2px; }");
 
     m_cueParamCombo = new QComboBox(m_toolbar);
     m_cueParamCombo->addItem(tr("None"), 0);
@@ -232,7 +375,6 @@ void vtkComparativeViewWidget::buildToolbar() {
     m_cueParamCombo->addItem(tr("Elevation"), 2);
     m_cueParamCombo->addItem(tr("Opacity"), 3);
     m_cueParamCombo->addItem(tr("Zoom"), 4);
-    m_cueParamCombo->setStyleSheet(comboSS);
     m_cueParamCombo->setToolTip(
             tr("Parameter to sweep across sub-views "
                "(ParaView vtkPVComparativeAnimationCue)"));
@@ -242,14 +384,12 @@ void vtkComparativeViewWidget::buildToolbar() {
     m_cueModeCombo->addItem(tr("X-Range"), 0);
     m_cueModeCombo->addItem(tr("Y-Range"), 1);
     m_cueModeCombo->addItem(tr("T-Range"), 2);
-    m_cueModeCombo->setStyleSheet(comboSS);
     m_cueModeCombo->setToolTip(
             tr("Sweep mode: X=vary along columns, Y=vary along rows, "
                "T=vary across all (ParaView XRANGE/YRANGE/TRANGE)"));
     lay->addWidget(m_cueModeCombo);
 
     auto* minLabel = new QLabel(tr("Min:"), m_toolbar);
-    minLabel->setStyleSheet(labelSS);
     lay->addWidget(minLabel);
 
     m_cueMinSpin = new QDoubleSpinBox(m_toolbar);
@@ -257,11 +397,9 @@ void vtkComparativeViewWidget::buildToolbar() {
     m_cueMinSpin->setDecimals(1);
     m_cueMinSpin->setValue(0.0);
     m_cueMinSpin->setMaximumWidth(70);
-    m_cueMinSpin->setStyleSheet(dspinSS);
     lay->addWidget(m_cueMinSpin);
 
     auto* maxLabel = new QLabel(tr("Max:"), m_toolbar);
-    maxLabel->setStyleSheet(labelSS);
     lay->addWidget(maxLabel);
 
     m_cueMaxSpin = new QDoubleSpinBox(m_toolbar);
@@ -269,33 +407,46 @@ void vtkComparativeViewWidget::buildToolbar() {
     m_cueMaxSpin->setDecimals(1);
     m_cueMaxSpin->setValue(90.0);
     m_cueMaxSpin->setMaximumWidth(70);
-    m_cueMaxSpin->setStyleSheet(dspinSS);
     lay->addWidget(m_cueMaxSpin);
 
     auto* playBtn = new QPushButton(tr("Apply"), m_toolbar);
-    playBtn->setStyleSheet(btnSS);
     playBtn->setToolTip(tr("Apply parameter sweep to sub-views"));
     lay->addWidget(playBtn);
 
     lay->addWidget(new QLabel(QStringLiteral("|"), m_toolbar));
 
-    auto checkSS = QStringLiteral("QCheckBox { color: #ccc; }");
     m_overlayCheck = new QCheckBox(tr("Overlay"), m_toolbar);
-    m_overlayCheck->setStyleSheet(checkSS);
     m_overlayCheck->setToolTip(
             tr("Overlay all comparisons into first view "
                "(ParaView OverlayAllComparisons)"));
     lay->addWidget(m_overlayCheck);
 
+    auto* resetCamBtn = new QPushButton(tr("Reset"), m_toolbar);
+    resetCamBtn->setToolTip(tr("Reset camera for all sub-views"));
+    lay->addWidget(resetCamBtn);
+    connect(resetCamBtn, &QPushButton::clicked, this, [this]() {
+        for (auto* v : m_subViews) {
+            if (v) v->resetCamera();
+        }
+        forceRenderAllSubViews();
+    });
+
+    auto* syncCamCheck = new QCheckBox(tr("Sync"), m_toolbar);
+    syncCamCheck->setChecked(m_cameraLinkEnabled);
+    syncCamCheck->setToolTip(tr("Synchronize cameras across all sub-views"));
+    lay->addWidget(syncCamCheck);
+    connect(syncCamCheck, &QCheckBox::toggled, this, [this](bool on) {
+        m_cameraLinkEnabled = on;
+        if (on) syncCamerasFromFirst();
+    });
+
     auto* screenshotBtn = new QPushButton(tr("Screenshot"), m_toolbar);
-    screenshotBtn->setStyleSheet(btnSS);
     screenshotBtn->setToolTip(
             tr("Export stitched screenshot of all sub-views"));
     lay->addWidget(screenshotBtn);
 
     m_statusLabel = new QLabel(m_toolbar);
-    m_statusLabel->setStyleSheet(
-            "QLabel { color: #999; font-size: 11px; }");
+    m_statusLabel->setContentsMargins(4, 0, 4, 0);
     lay->addWidget(m_statusLabel);
     lay->addStretch(1);
 

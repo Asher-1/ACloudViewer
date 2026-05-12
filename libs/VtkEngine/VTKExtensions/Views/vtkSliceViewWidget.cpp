@@ -11,32 +11,69 @@
 #include <Visualization/vtkGLView.h>
 #include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 
+#include <QCheckBox>
 #include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QVBoxLayout>
 
 vtkSliceViewWidget::vtkSliceViewWidget(vtkGLView* view, QWidget* parent)
     : QWidget(parent), m_view(view) {
-    // ParaView Slice View layout:
-    //       [  Y-axis (top)  ]
-    // [X-axis] [  3D view  ] [Z-axis]
-    auto* grid = new QGridLayout(this);
+    setAutoFillBackground(true);
+
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    outerLayout->setSpacing(0);
+
+    auto* toolbar = new QWidget(this);
+    auto* tbLayout = new QHBoxLayout(toolbar);
+    tbLayout->setContentsMargins(2, 1, 2, 1);
+    tbLayout->setSpacing(4);
+
+    auto* outlineCheck = new QCheckBox(tr("Outline"), toolbar);
+    outlineCheck->setChecked(m_outlineVisible);
+    tbLayout->addWidget(outlineCheck);
+    connect(outlineCheck, &QCheckBox::toggled, this,
+            &vtkSliceViewWidget::setOutlineVisible);
+
+    auto* helpLabel = new QLabel(
+            tr("Double-click axis to add slice, drag to move, right-click to remove"),
+            toolbar);
+    helpLabel->setStyleSheet("color: gray; font-size: 9px;");
+    tbLayout->addWidget(helpLabel);
+    tbLayout->addStretch(1);
+
+    m_statusLabel = new QLabel(toolbar);
+    m_statusLabel->setContentsMargins(4, 0, 4, 0);
+    tbLayout->addWidget(m_statusLabel);
+
+    outerLayout->addWidget(toolbar);
+
+    auto* gridWidget = new QWidget(this);
+    auto* grid = new QGridLayout(gridWidget);
     grid->setContentsMargins(0, 0, 0, 0);
     grid->setSpacing(0);
 
     m_yAxis = new vtkMultiSliceAxisWidget(
-            vtkMultiSliceAxisWidget::Y_AXIS, this);
+            vtkMultiSliceAxisWidget::Y_AXIS, gridWidget);
     m_xAxis = new vtkMultiSliceAxisWidget(
-            vtkMultiSliceAxisWidget::X_AXIS, this);
+            vtkMultiSliceAxisWidget::X_AXIS, gridWidget);
     m_zAxis = new vtkMultiSliceAxisWidget(
-            vtkMultiSliceAxisWidget::Z_AXIS, this);
+            vtkMultiSliceAxisWidget::Z_AXIS, gridWidget);
 
-    grid->addWidget(m_yAxis, 0, 0, 1, 3);        // top row spans all
-    grid->addWidget(m_xAxis, 1, 0);               // left
-    grid->addWidget(view->getVtkWidget(), 1, 1);  // center
-    grid->addWidget(m_zAxis, 1, 2);               // right
+    m_xAxis->setAxisTitle(QStringLiteral("X"));
+    m_yAxis->setAxisTitle(QStringLiteral("Y"));
+    m_zAxis->setAxisTitle(QStringLiteral("Z"));
+
+    grid->addWidget(m_yAxis, 0, 0, 1, 3);
+    grid->addWidget(m_xAxis, 1, 0);
+    grid->addWidget(view->getVtkWidget(), 1, 1);
+    grid->addWidget(m_zAxis, 1, 2);
 
     grid->setColumnStretch(1, 1);
     grid->setRowStretch(1, 1);
+
+    outerLayout->addWidget(gridWidget, 1);
 
     connect(m_xAxis, &vtkMultiSliceAxisWidget::slicePositionsChanged, this,
             &vtkSliceViewWidget::onSlicePositionsChanged);
@@ -66,4 +103,16 @@ void vtkSliceViewWidget::onSlicePositionsChanged(
     if (!m_view) return;
     std::vector<double> vec(positions.begin(), positions.end());
     m_view->setMultiSlicePositions(axis, vec);
+
+    int total = m_xAxis->slicePositions().size()
+              + m_yAxis->slicePositions().size()
+              + m_zAxis->slicePositions().size();
+    if (m_statusLabel) {
+        const char* names[] = {"X", "Y", "Z"};
+        m_statusLabel->setText(
+                tr("%1 slice(s) - %2: %3")
+                        .arg(total)
+                        .arg(names[axis])
+                        .arg(positions.size()));
+    }
 }
