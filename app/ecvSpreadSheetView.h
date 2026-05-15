@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <CVGeom.h>
+
 #include <QAbstractTableModel>
 #include <QHeaderView>
 #include <QList>
@@ -24,6 +26,7 @@ class QSpinBox;
 class QToolButton;
 class QMenu;
 class ccHObject;
+class ccGenericMesh;
 class ccGenericPointCloud;
 class ccPointCloud;
 class ccMesh;
@@ -80,6 +83,7 @@ private:
     ccGenericPointCloud* m_cloud = nullptr;
     ccPointCloud* m_pcCloud = nullptr;
     ccMesh* m_mesh = nullptr;
+    ccGenericMesh* m_genericMesh = nullptr;
 
     struct ColumnDef {
         QString name;
@@ -137,6 +141,7 @@ private:
     bool hasComputedNormal(unsigned row) const {
         return (row * 3 + 2) < static_cast<unsigned>(m_computedNormals.size());
     }
+    CCVector3 getNormalFromMeshForVertex(unsigned vertIdx) const;
 };
 
 class QPainter;
@@ -205,7 +210,10 @@ private slots:
     void onCellFontSizeChanged(int size);
     void onHeaderFontSizeChanged(int size);
     void onToggleCellConnectivity(bool checked);
+    void onStatColumnSelected(int logicalIndex);
+    void onFilterColumnChanged(int index);
     void exportToCsv();
+    void exportSelectedRows();
     void copyToClipboard();
 
 private:
@@ -231,9 +239,11 @@ private:
     QToolButton* m_exportBtn = nullptr;
     QMenu* m_columnVisMenu = nullptr;
 
+    QComboBox* m_filterColumnCombo = nullptr;
     QLineEdit* m_searchEdit = nullptr;
     QTableView* m_tableView = nullptr;
     QLabel* m_statusLabel = nullptr;
+    QLabel* m_statsBar = nullptr;
     ecvSpreadSheetModel* m_model = nullptr;
     QSortFilterProxyModel* m_proxyModel = nullptr;
 };

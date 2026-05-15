@@ -2079,12 +2079,9 @@ bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
     if (display == nullptr) return true;
 
     if (m_currentDisplay == nullptr) {
-        // Unbound objects (no setDisplay() called) render in ALL views.
-        // This is the standard multi-window behavior: point clouds, meshes,
-        // and other 3D objects should be visible across all split views.
-        // Per-view restriction is achieved by calling setDisplay() on
-        // objects that should only appear in one view (e.g., cc2DLabel).
         return true;
     }
-    return (m_currentDisplay == display);
+    if (m_currentDisplay == display) return true;
+
+    return display->acceptsBoundEntitiesFrom(m_currentDisplay);
 }

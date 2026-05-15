@@ -14,6 +14,7 @@
 
 #include "qVTK.h"
 
+#include <QSet>
 #include <QWidget>
 #include <functional>
 
@@ -51,6 +52,9 @@ public:
     using SubViewInitCallback = std::function<void(vtkGLView*)>;
     void setSubViewInitCallback(SubViewInitCallback cb);
 
+    void refreshSubViews();
+    void setSourceView(vtkGLView* src) { m_sourceView = src; }
+
     using EntityListProvider = std::function<QList<ccHObject*>()>;
     void setEntityListProvider(EntityListProvider provider);
     void setInitialEntity(ccHObject* entity);
@@ -68,6 +72,7 @@ public:
 
 protected:
     void showEvent(QShowEvent* event) override;
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 signals:
     void subViewCreated(QWidget* subWidget);
@@ -83,8 +88,10 @@ private:
     void createRenderSubViews();
     void createChartSubViews();
     void buildToolbar();
+    void refreshEntityCombo();
     void applyCueToSubViews();
     void syncCamerasFromFirst();
+    void copyActorsAcrossSubViews();
     void installCameraLink();
     void onCameraLinkTick();
     void forceRenderAllSubViews();
@@ -102,6 +109,7 @@ private:
     QDoubleSpinBox* m_cueMaxSpin = nullptr;
     QLabel* m_statusLabel = nullptr;
     QCheckBox* m_overlayCheck = nullptr;
+    QComboBox* m_entityCombo = nullptr;
     bool m_overlayMode = false;
     QGridLayout* m_gridLayout = nullptr;
     QList<QWidget*> m_subWidgets;
@@ -110,8 +118,24 @@ private:
     SubViewInitCallback m_subViewInitCb;
     EntityListProvider m_entityListProvider;
     ccHObject* m_initialEntity = nullptr;
+    vtkGLView* m_sourceView = nullptr;
     QTimer* m_cameraLinkTimer = nullptr;
     bool m_cameraLinkEnabled = true;
+    bool m_syncingCameras = false;
     double m_lastCameraMTime = 0;
     bool m_firstShowDone = false;
+    QSet<QWidget*> m_pendingFirstResize;
+
+    struct CameraState {
+        double position[3] = {0,0,1};
+        double focalPoint[3] = {0,0,0};
+        double viewUp[3] = {0,1,0};
+        double viewAngle = 30;
+        double parallelScale = 1;
+        double clippingRange[2] = {0.01, 1000};
+        bool valid = false;
+    };
+    CameraState m_baselineCamera;
+    void saveBaselineCamera();
+    void restoreBaselineCamera(vtkGLView* view);
 };

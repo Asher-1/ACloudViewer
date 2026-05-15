@@ -8,6 +8,7 @@
 #include "ecvSpreadSheetView.h"
 
 #include <ecvAdvancedTypes.h>
+#include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
@@ -60,6 +61,7 @@ void ecvSpreadSheetModel::setEntity(ccHObject* entity) {
     m_cloud = nullptr;
     m_pcCloud = nullptr;
     m_mesh = nullptr;
+    m_genericMesh = nullptr;
     m_columns.clear();
     m_fieldRows.clear();
     m_computedNormals.clear();
@@ -67,47 +69,119 @@ void ecvSpreadSheetModel::setEntity(ccHObject* entity) {
     if (entity) {
         m_cloud = ccHObjectCaster::ToGenericPointCloud(entity);
         m_pcCloud = ccHObjectCaster::ToPointCloud(entity);
+        m_genericMesh = ccHObjectCaster::ToGenericMesh(entity);
         m_mesh = ccHObjectCaster::ToMesh(entity);
-        if (m_mesh && !m_cloud) {
+        if (!m_mesh && m_genericMesh)
+            m_mesh = ccHObjectCaster::ToMesh(m_genericMesh);
+
+        if (m_genericMesh && !m_cloud) {
             m_cloud = ccHObjectCaster::ToGenericPointCloud(
-                    m_mesh->getAssociatedCloud());
-            if (!m_pcCloud) {
-                m_pcCloud = ccHObjectCaster::ToPointCloud(
-                        m_mesh->getAssociatedCloud());
+                    m_genericMesh->getAssociatedCloud());
+        }
+        if (m_genericMesh && !m_pcCloud) {
+            m_pcCloud = ccHObjectCaster::ToPointCloud(
+                    m_genericMesh->getAssociatedCloud());
+        }
+        if (!m_cloud && !m_pcCloud) {
+            auto* gc = ccHObjectCaster::ToGenericPointCloud(entity);
+            if (gc) {
+                m_cloud = gc;
+                m_pcCloud = ccHObjectCaster::ToPointCloud(gc);
             }
         }
+        for (unsigned i = 0;
+             (!m_genericMesh || !m_cloud) && i < entity->getChildrenNumber();
+             ++i) {
+            auto* child = entity->getChild(i);
+            if (!m_genericMesh) {
+                m_genericMesh = ccHObjectCaster::ToGenericMesh(child);
+                if (!m_mesh)
+                    m_mesh = ccHObjectCaster::ToMesh(child);
+            }
+            if (!m_cloud) {
+                m_cloud = ccHObjectCaster::ToGenericPointCloud(child);
+                if (!m_pcCloud)
+                    m_pcCloud = ccHObjectCaster::ToPointCloud(child);
+            }
+        }
+        if (m_genericMesh && !m_cloud) {
+            m_cloud = ccHObjectCaster::ToGenericPointCloud(
+                    m_genericMesh->getAssociatedCloud());
+        }
+        if (m_genericMesh && !m_pcCloud) {
+            m_pcCloud = ccHObjectCaster::ToPointCloud(
+                    m_genericMesh->getAssociatedCloud());
+        }
+        if (!m_mesh && m_genericMesh)
+            m_mesh = ccHObjectCaster::ToMesh(m_genericMesh);
         computeVertexNormals();
         rebuildColumns();
     }
     endResetModel();
 }
 
+CCVector3 ecvSpreadSheetModel::getNormalFromMeshForVertex(unsigned vertIdx) const {
+    ccGenericMesh* meshSrc = m_genericMesh ? m_genericMesh : m_mesh;
+    if (!meshSrc || !meshSrc->hasTriNormals()) return CCVector3(0, 0, 0);
+    CCVector3 accum(0, 0, 0);
+    int count = 0;
+    unsigned numTris = meshSrc->size();
+    for (unsigned t = 0; t < numTris; ++t) {
+        auto* tri = meshSrc->getTriangleVertIndexes(t);
+        if (!tri) continue;
+        if (tri->i1 != vertIdx && tri->i2 != vertIdx && tri->i3 != vertIdx)
+            continue;
+        CCVector3 na, nb, nc;
+        if (meshSrc->getTriangleNormals(t, na, nb, nc)) {
+            CCVector3 vn = (tri->i1 == vertIdx) ? na
+                         : (tri->i2 == vertIdx) ? nb : nc;
+            accum += vn;
+            ++count;
+        }
+    }
+    if (count > 0) {
+        accum /= static_cast<float>(count);
+        float len = accum.norm();
+        if (len > 1e-12f) accum /= len;
+    }
+    return accum;
+}
+
 void ecvSpreadSheetModel::computeVertexNormals() {
     m_computedNormals.clear();
-    if (!m_mesh || !m_cloud) return;
+    ccGenericMesh* meshSrc = m_genericMesh ? m_genericMesh : m_mesh;
+    if (!meshSrc || !m_cloud) return;
 
     bool cloudHasNormals = (m_pcCloud && m_pcCloud->hasNormals()) ||
-                           m_cloud->hasNormals();
+                           (m_cloud && m_cloud->hasNormals());
     if (cloudHasNormals) return;
 
     unsigned numVerts = m_cloud->size();
-    unsigned numTris = m_mesh->size();
+    unsigned numTris = meshSrc->size();
     if (numTris == 0) return;
 
     m_computedNormals.resize(numVerts * 3);
     m_computedNormals.fill(0.0f);
     QVector<int> counts(numVerts, 0);
 
-    bool hasExplicitTriNormals = m_mesh->hasTriNormals();
+    bool hasExplicitTriNormals = false;
+    {
+        auto* cm = ccHObjectCaster::ToMesh(meshSrc);
+        if (cm) {
+            hasExplicitTriNormals = cm->hasTriNormals();
+        } else {
+            hasExplicitTriNormals = meshSrc->hasTriNormals();
+        }
+    }
 
     for (unsigned t = 0; t < numTris; ++t) {
-        auto* tri = m_mesh->getTriangleVertIndexes(t);
+        auto* tri = meshSrc->getTriangleVertIndexes(t);
         if (!tri) continue;
 
         CCVector3 faceNormal(0, 0, 0);
         if (hasExplicitTriNormals) {
             CCVector3 na, nb, nc;
-            if (m_mesh->getTriangleNormals(t, na, nb, nc)) {
+            if (meshSrc->getTriangleNormals(t, na, nb, nc)) {
                 faceNormal = (na + nb + nc);
                 float len = faceNormal.norm();
                 if (len > 1e-12f) faceNormal /= len;
@@ -167,23 +241,25 @@ void ecvSpreadSheetModel::rebuildColumns() {
 
         bool hasNorms = m_cloud->hasNormals();
         if (!hasNorms && m_pcCloud) hasNorms = m_pcCloud->hasNormals();
-        if (!hasNorms && m_mesh) hasNorms = m_mesh->hasNormals();
+        if (!hasNorms && m_mesh) {
+            hasNorms = m_mesh->hasNormals() || m_mesh->hasTriNormals();
+        }
+        if (!hasNorms && m_genericMesh) {
+            auto* cm = ccHObjectCaster::ToMesh(m_genericMesh);
+            if (cm) {
+                hasNorms = cm->hasNormals() || cm->hasTriNormals();
+            } else {
+                hasNorms = m_genericMesh->hasNormals() ||
+                           m_genericMesh->hasTriNormals();
+            }
+        }
         if (!hasNorms && !m_computedNormals.isEmpty()) hasNorms = true;
+
         if (hasNorms) {
             m_columns.append({QStringLiteral("Normals"), ColumnDef::NX, -1, true});
             m_columns.append({QString(), ColumnDef::NY, -1, true});
             m_columns.append({QString(), ColumnDef::NZ, -1, true});
             m_columns.append({QStringLiteral("Normals_Magnitude"), ColumnDef::NORMALS_MAG, -1, true});
-        }
-
-        if (m_pcCloud) {
-            unsigned sfCount = m_pcCloud->getNumberOfScalarFields();
-            for (unsigned i = 0; i < sfCount; ++i) {
-                const char* name =
-                        m_pcCloud->getScalarFieldName(static_cast<int>(i));
-                m_columns.append({QString::fromUtf8(name), ColumnDef::SCALAR,
-                                  static_cast<int>(i), true});
-            }
         }
 
         m_columns.append({QStringLiteral("Points"), ColumnDef::X, -1, true});
@@ -203,6 +279,16 @@ void ecvSpreadSheetModel::rebuildColumns() {
                 m_columns.append({QStringLiteral("TCoords"), ColumnDef::TCOORDS_S, -1, true});
                 m_columns.append({QString(), ColumnDef::TCOORDS_T, -1, true});
                 m_columns.append({QStringLiteral("TCoords_Magnitude"), ColumnDef::TCOORDS_MAG, -1, true});
+            }
+        }
+
+        if (m_pcCloud) {
+            unsigned sfCount = m_pcCloud->getNumberOfScalarFields();
+            for (unsigned i = 0; i < sfCount; ++i) {
+                const char* name =
+                        m_pcCloud->getScalarFieldName(static_cast<int>(i));
+                m_columns.append({QString::fromUtf8(name), ColumnDef::SCALAR,
+                                  static_cast<int>(i), true});
             }
         }
     } else if (m_attributeType == CELL_DATA && m_mesh) {
@@ -275,8 +361,11 @@ void ecvSpreadSheetModel::rebuildFieldData() {
 
         addRow(tr("Has Colors"),
                m_cloud->hasColors() ? tr("Yes") : tr("No"));
-        addRow(tr("Has Normals"),
-               m_cloud->hasNormals() ? tr("Yes") : tr("No"));
+        bool anyNormals = m_cloud->hasNormals() ||
+                          (m_genericMesh && m_genericMesh->hasNormals()) ||
+                          (m_mesh && m_mesh->hasNormals()) ||
+                          !m_computedNormals.isEmpty();
+        addRow(tr("Has Normals"), anyNormals ? tr("Yes") : tr("No"));
     }
 
     if (m_pcCloud) {
@@ -486,13 +575,16 @@ QVariant ecvSpreadSheetModel::data(const QModelIndex& index, int role) const {
                 CCVector3 n(0, 0, 0);
                 if (m_pcCloud && m_pcCloud->hasNormals()) {
                     n = m_pcCloud->getPointNormal(row);
-                } else if (m_cloud->hasNormals()) {
+                } else if (m_cloud && m_cloud->hasNormals()) {
                     n = m_cloud->getPointNormal(row);
                 } else if (hasComputedNormal(row)) {
                     unsigned b = row * 3;
                     n = CCVector3(m_computedNormals[b],
                                   m_computedNormals[b + 1],
                                   m_computedNormals[b + 2]);
+                } else if ((m_genericMesh && m_genericMesh->hasNormals()) ||
+                           (m_mesh && m_mesh->hasNormals())) {
+                    n = getNormalFromMeshForVertex(row);
                 } else {
                     return {};
                 }
@@ -505,13 +597,16 @@ QVariant ecvSpreadSheetModel::data(const QModelIndex& index, int role) const {
                 CCVector3 n(0, 0, 0);
                 if (m_pcCloud && m_pcCloud->hasNormals()) {
                     n = m_pcCloud->getPointNormal(row);
-                } else if (m_cloud->hasNormals()) {
+                } else if (m_cloud && m_cloud->hasNormals()) {
                     n = m_cloud->getPointNormal(row);
                 } else if (hasComputedNormal(row)) {
                     unsigned b = row * 3;
                     n = CCVector3(m_computedNormals[b],
                                   m_computedNormals[b + 1],
                                   m_computedNormals[b + 2]);
+                } else if ((m_genericMesh && m_genericMesh->hasNormals()) ||
+                           (m_mesh && m_mesh->hasNormals())) {
+                    n = getNormalFromMeshForVertex(row);
                 } else {
                     return {};
                 }
@@ -898,6 +993,15 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     m_exportBtn->setIcon(
             QIcon(":/Resources/images/svg/pqSaveTable32.png"));
     m_exportBtn->setToolTip(tr("Export Spreadsheet"));
+    {
+        auto* exportMenu = new QMenu(m_exportBtn);
+        exportMenu->addAction(tr("Export All to CSV"), this,
+                              &ecvSpreadSheetView::exportToCsv);
+        exportMenu->addAction(tr("Export Selected Rows to CSV"), this,
+                              &ecvSpreadSheetView::exportSelectedRows);
+        m_exportBtn->setPopupMode(QToolButton::MenuButtonPopup);
+        m_exportBtn->setMenu(exportMenu);
+    }
     decLayout->addWidget(m_exportBtn);
 
     decLayout->addStretch(1);
@@ -929,11 +1033,20 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     displayLayout->addStretch(1);
     layout->addWidget(displayBar);
 
-    // === Search bar ===
+    // === Search bar with column filter ===
     auto* searchBar = new QWidget(this);
     auto* searchLayout = new QHBoxLayout(searchBar);
     searchLayout->setContentsMargins(2, 1, 2, 1);
     searchLayout->setSpacing(4);
+
+    auto* filterLabel = new QLabel(tr("Filter:"), searchBar);
+    searchLayout->addWidget(filterLabel);
+
+    m_filterColumnCombo = new QComboBox(searchBar);
+    m_filterColumnCombo->addItem(tr("All Columns"), -1);
+    m_filterColumnCombo->setFixedWidth(130);
+    m_filterColumnCombo->setToolTip(tr("Filter by specific column"));
+    searchLayout->addWidget(m_filterColumnCombo);
 
     m_searchEdit = new QLineEdit(searchBar);
     m_searchEdit->setPlaceholderText(tr("Filter rows..."));
@@ -964,6 +1077,15 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     m_tableView->verticalHeader()->setDefaultSectionSize(20);
     layout->addWidget(m_tableView, 1);
 
+    // === Statistics bar (click column header to see stats) ===
+    m_statsBar = new QLabel(this);
+    m_statsBar->setContentsMargins(4, 2, 4, 2);
+    m_statsBar->setStyleSheet(
+            QStringLiteral("QLabel { background: #2b2b2b; color: #a9b7c6; "
+                           "font-family: monospace; font-size: 11px; }"));
+    m_statsBar->setVisible(false);
+    layout->addWidget(m_statsBar);
+
     // === Status bar ===
     m_statusLabel = new QLabel(this);
     m_statusLabel->setContentsMargins(4, 2, 4, 2);
@@ -972,6 +1094,10 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     // === Connections ===
     connect(m_searchEdit, &QLineEdit::textChanged, this,
             &ecvSpreadSheetView::onSearchTextChanged);
+    connect(m_filterColumnCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ecvSpreadSheetView::onFilterColumnChanged);
+    connect(customHeader, &QHeaderView::sectionClicked,
+            this, &ecvSpreadSheetView::onStatColumnSelected);
     connect(m_exportBtn, &QToolButton::clicked, this,
             &ecvSpreadSheetView::exportToCsv);
     connect(m_attributeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1184,8 +1310,17 @@ void ecvSpreadSheetView::onColumnVisibilityMenuAboutToShow() {
     m_columnVisMenu->clear();
 
     int totalCols = m_model->totalColumnCount();
+    QString lastGroupName;
+    int componentIdx = 0;
     for (int i = 0; i < totalCols; ++i) {
         QString name = m_model->columnName(i);
+        if (name.isEmpty()) {
+            ++componentIdx;
+            name = QStringLiteral("%1 (%2)").arg(lastGroupName).arg(componentIdx);
+        } else {
+            lastGroupName = name;
+            componentIdx = 0;
+        }
         auto* action = m_columnVisMenu->addAction(name);
         action->setCheckable(true);
         action->setChecked(m_model->isColumnVisible(i));
@@ -1337,6 +1472,109 @@ bool ecvSpreadSheetView::eventFilter(QObject* obj, QEvent* event) {
     return QWidget::eventFilter(obj, event);
 }
 
+void ecvSpreadSheetView::onFilterColumnChanged(int index) {
+    int colIdx = m_filterColumnCombo
+                         ? m_filterColumnCombo->itemData(index).toInt()
+                         : -1;
+    m_proxyModel->setFilterKeyColumn(colIdx);
+    m_proxyModel->setFilterFixedString(
+            m_searchEdit ? m_searchEdit->text() : QString());
+    updateStatusBar();
+}
+
+void ecvSpreadSheetView::onStatColumnSelected(int logicalIndex) {
+    if (!m_statsBar) return;
+
+    int rows = m_proxyModel->rowCount();
+    if (rows == 0) {
+        m_statsBar->setVisible(false);
+        return;
+    }
+
+    double minVal = std::numeric_limits<double>::max();
+    double maxVal = std::numeric_limits<double>::lowest();
+    double sum = 0;
+    double sumSq = 0;
+    int validCount = 0;
+
+    for (int r = 0; r < rows; ++r) {
+        QVariant val = m_proxyModel->data(m_proxyModel->index(r, logicalIndex));
+        bool ok = false;
+        double d = val.toDouble(&ok);
+        if (ok) {
+            if (d < minVal) minVal = d;
+            if (d > maxVal) maxVal = d;
+            sum += d;
+            sumSq += d * d;
+            ++validCount;
+        }
+    }
+
+    if (validCount == 0) {
+        m_statsBar->setText(
+                tr("Column %1: no numeric data").arg(logicalIndex));
+        m_statsBar->setVisible(true);
+        return;
+    }
+
+    double mean = sum / validCount;
+    double variance = (validCount > 1)
+                              ? (sumSq - sum * sum / validCount) / (validCount - 1)
+                              : 0.0;
+    double stddev = std::sqrt(std::max(0.0, variance));
+
+    QString header = m_proxyModel->headerData(logicalIndex, Qt::Horizontal)
+                             .toString();
+    m_statsBar->setText(
+            tr("[%1]  Count: %2  |  Min: %3  |  Max: %4  |  Mean: %5  |  StdDev: %6")
+                    .arg(header)
+                    .arg(validCount)
+                    .arg(minVal, 0, 'g', 6)
+                    .arg(maxVal, 0, 'g', 6)
+                    .arg(mean, 0, 'g', 6)
+                    .arg(stddev, 0, 'g', 6));
+    m_statsBar->setVisible(true);
+}
+
+void ecvSpreadSheetView::exportSelectedRows() {
+    auto selModel = m_tableView->selectionModel();
+    QModelIndexList selectedRows = selModel->selectedRows();
+    if (selectedRows.isEmpty()) {
+        exportToCsv();
+        return;
+    }
+
+    QString path = QFileDialog::getSaveFileName(
+            this, tr("Export Selected Rows to CSV"), QString(),
+            tr("CSV (*.csv)"));
+    if (path.isEmpty()) return;
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+
+    QTextStream out(&file);
+    int cols = m_model->columnCount();
+    for (int c = 0; c < cols; ++c) {
+        if (c > 0) out << ",";
+        out << m_model->headerData(c, Qt::Horizontal, Qt::DisplayRole)
+                       .toString();
+    }
+    out << "\n";
+
+    std::sort(selectedRows.begin(), selectedRows.end(),
+              [](const QModelIndex& a, const QModelIndex& b) {
+                  return a.row() < b.row();
+              });
+    for (const auto& idx : selectedRows) {
+        for (int c = 0; c < cols; ++c) {
+            if (c > 0) out << ",";
+            out << m_proxyModel->data(m_proxyModel->index(idx.row(), c))
+                           .toString();
+        }
+        out << "\n";
+    }
+}
+
 void ecvSpreadSheetView::updateStatusBar() {
     int totalRows = m_model->rowCount();
     int filteredRows = m_proxyModel->rowCount();
@@ -1361,5 +1599,23 @@ void ecvSpreadSheetView::updateStatusBar() {
                                        .arg(totalRows)
                                        .arg(cols)
                                        .arg(attrName));
+    }
+
+    if (m_filterColumnCombo) {
+        int prevIdx = m_filterColumnCombo->currentIndex();
+        m_filterColumnCombo->blockSignals(true);
+        m_filterColumnCombo->clear();
+        m_filterColumnCombo->addItem(tr("All Columns"), -1);
+        for (int c = 0; c < cols; ++c) {
+            QString hdr = m_model->headerData(c, Qt::Horizontal,
+                                              Qt::DisplayRole)
+                                  .toString();
+            if (!hdr.isEmpty()) {
+                m_filterColumnCombo->addItem(hdr, c);
+            }
+        }
+        if (prevIdx >= 0 && prevIdx < m_filterColumnCombo->count())
+            m_filterColumnCombo->setCurrentIndex(prevIdx);
+        m_filterColumnCombo->blockSignals(false);
     }
 }

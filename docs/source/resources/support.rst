@@ -144,7 +144,20 @@ ACloudViewer is an open-source project maintained by volunteers. If you find it 
 
    <div style="text-align: center; margin: 30px 0;">
       <p style="font-size: 16px; margin-bottom: 20px;">Scan the QR code below to donate via WeChat Pay:</p>
-      <img src="../_static/donation.png" alt="Donation QR Code" style="max-width: 300px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+         <div>
+            <img src="../_static/donation.png" alt="WeChat Pay QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <p style="font-size: 13px; color: #666; margin-top: 10px;">WeChat Pay</p>
+         </div>
+         <div>
+            <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl" target="_blank">
+               <img src="../_static/payoneer.png" alt="Payoneer QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            </a>
+            <p style="font-size: 13px; color: #666; margin-top: 10px;">
+               <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl" target="_blank" style="color: #FF4800;">Payoneer (International)</a>
+            </p>
+         </div>
+      </div>
       <p style="font-size: 14px; color: #666; margin-top: 15px; font-style: italic;">
          Thank you for your support! 🙏
       </p>

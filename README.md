@@ -296,7 +296,11 @@ If you find ACloudViewer useful, please consider supporting its development:
 
 <div align="center">
   <a href="https://asher-1.github.io/ACloudViewer/donation.html">
-    <img src="https://img.shields.io/badge/💝_Support_Development-Donate_Now-ff69b4?style=for-the-badge&logo=wechat" alt="Donate">
+    <img src="https://img.shields.io/badge/💝_WeChat_Pay-Donate-09BB07?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChat Pay">
+  </a>
+  &nbsp;
+  <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl">
+    <img src="https://img.shields.io/badge/💳_Payoneer-Pay_Now-FF4800?style=for-the-badge&logo=payoneer&logoColor=white" alt="Payoneer">
   </a>
   <p><em>Click to view donation options - Thank you for your support! 🙏</em></p>
 </div>

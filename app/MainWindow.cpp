@@ -108,11 +108,6 @@
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
-// VtkEngine
-#include <Visualization/VtkVis.h>
-#include <VTKExtensions/Views/vtkChartView.h>
-#include <Visualization/vtkGLView.h>
-
 // CV_IO_LIB
 #include <AcvProjectFilter.h>
 #include <AsciiFilter.h>
@@ -218,6 +213,11 @@
 #include <Tools/TransformTools/VtkTransformTool.h>
 #include <Visualization/VtkCameraLink.h>
 #include <Visualization/VtkDisplayTools.h>
+// VtkEngine
+#include <Visualization/VtkVis.h>
+#include <VTKExtensions/Views/vtkChartView.h>
+#include <VTKExtensions/Views/vtkComparativeViewWidget.h>
+#include <Visualization/vtkGLView.h>
 #endif
 
 // QPCL_PLUGIN_ALGORIGHM_LIB
@@ -2364,13 +2364,17 @@ void MainWindow::autoShowReconstructionToolBar(bool state) {
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
     if (auto* view = getActiveGLView()) {
-        view->setAutoPickPivotAtCenter(state);
-
-        // save the option
-        {
-            QSettings settings;
-            settings.setValue(ecvPS::AutoPickRotationCenter(), state);
+        if (state) {
+            view->resetCenterOfRotation();
+            view->setAutoPickPivotAtCenter(false);
+            m_ui->actionAutoPickPivot->blockSignals(true);
+            m_ui->actionAutoPickPivot->setChecked(false);
+            m_ui->actionAutoPickPivot->blockSignals(false);
+        } else {
+            view->setAutoPickPivotAtCenter(false);
         }
+        QSettings settings;
+        settings.setValue(ecvPS::AutoPickRotationCenter(), false);
     }
 }
 
@@ -2940,6 +2944,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     // - Chart views: capture only (selection handled internally)
     // - SpreadSheet: no toolbar actions (decorator handles UI)
     bool isRenderView = (ecvGenericGLDisplay::FromWidget(innerWidget) != nullptr);
+    auto* compView = qobject_cast<vtkComparativeViewWidget*>(innerWidget);
+    bool isComparativeRenderView = (compView &&
+            compView->comparativeType() == vtkComparativeViewWidget::RENDER);
 
     auto activateViewAndDo = [this, innerWidget](auto slot) {
         return [this, innerWidget, slot]() {
@@ -2953,9 +2960,14 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         };
     };
 
-    if (isRenderView) {
-        auto getVtkVisForWidget = [](QWidget* w) -> Visualization::VtkVis* {
+    if (isComparativeRenderView || isRenderView) {
+        auto getVtkVisForWidget = [compView](QWidget* w) -> Visualization::VtkVis* {
             auto* display = ecvGenericGLDisplay::FromWidget(w);
+            if (!display && compView) {
+                auto views = compView->subViews();
+                if (!views.isEmpty() && views.first())
+                    return views.first()->getVisualizer3D();
+            }
             auto* glView =
                     display ? dynamic_cast<vtkGLView*>(display) : nullptr;
             return glView ? glView->getVisualizer3D() : nullptr;
@@ -3117,7 +3129,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 });
     }
 
-    if (isRenderView) {
+    if (isComparativeRenderView || isRenderView) {
         viewToolBar->addSeparator();
 
         auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
@@ -3125,7 +3137,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         view3DAct->setCheckable(true);
         view3DAct->setChecked(true);
         connect(view3DAct, &QAction::toggled, this,
-                [this, innerWidget](bool state) {
+                [this, innerWidget, compView](bool state) {
                     auto* display =
                             ecvGenericGLDisplay::FromWidget(innerWidget);
                     if (display) {
@@ -3136,7 +3148,13 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                             markActiveViewFrame(innerWidget);
                         }
                     }
-                    toggle3DView(state);
+                    if (compView) {
+                        for (auto* sv : compView->subViews()) {
+                            if (sv) sv->setPerspectiveState(state, true);
+                        }
+                    } else {
+                        toggle3DView(state);
+                    }
                 });
         viewToolBar->addAction(view3DAct);
 
@@ -3150,9 +3168,14 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addSeparator();
 
         if (m_perViewSelMgr && m_selectionController) {
+            QWidget* selTarget = innerWidget;
+            if (compView && !compView->subViews().isEmpty()) {
+                auto* first = compView->subViews().first();
+                if (first) selTarget = first->asWidget();
+            }
             const auto& acts = m_selectionController->getSelectionActions();
             if (acts.selectSurfaceCells) {
-                m_perViewSelMgr->populateToolbar(viewToolBar, innerWidget,
+                m_perViewSelMgr->populateToolbar(viewToolBar, selTarget,
                                                  acts);
                 viewToolBar->setProperty("_selectionPopulated", true);
             }

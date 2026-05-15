@@ -34,6 +34,7 @@
 #include <ecvViewManager.h>
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -41,6 +42,8 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSet>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
@@ -52,22 +55,34 @@ constexpr int SPLITTER_GAP = 4;  // ParaView PARAVIEW_DEFAULT_LAYOUT_SPACING
 
 QList<ccHObject*> collectDisplayableEntities() {
     QList<ccHObject*> result;
+    QSet<ccHObject*> seen;
     auto* mw = MainWindow::TheInstance();
     if (!mw) return result;
     ccHObject* root = mw->dbRootObject();
     if (!root) return result;
 
+    auto addUnique = [&](ccHObject* obj) {
+        if (obj && obj->isEnabled() && !seen.contains(obj)) {
+            seen.insert(obj);
+            result.append(obj);
+        }
+    };
+
     ccHObject::Container clouds;
     root->filterChildren(clouds, true, CV_TYPES::POINT_CLOUD, false);
-    for (auto* c : clouds) {
-        if (c && c->isEnabled()) result.append(c);
-    }
+    for (auto* c : clouds) addUnique(c);
 
     ccHObject::Container meshes;
     root->filterChildren(meshes, true, CV_TYPES::MESH, false);
-    for (auto* m : meshes) {
-        if (m && m->isEnabled()) result.append(m);
-    }
+    for (auto* m : meshes) addUnique(m);
+
+    ccHObject::Container subMeshes;
+    root->filterChildren(subMeshes, true, CV_TYPES::SUB_MESH, false);
+    for (auto* sm : subMeshes) addUnique(sm);
+
+    ccHObject::Container facets;
+    root->filterChildren(facets, true, CV_TYPES::FACET, false);
+    for (auto* f : facets) addUnique(f);
 
     return result;
 }
@@ -688,6 +703,15 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         auto* chartView = new vtkChartView(type, this);
         chartView->setEntityListProvider(collectDisplayableEntities);
+
+        connect(chartView, &vtkChartView::pointsHighlighted,
+                this, [](ccHObject* entity, const QVector<unsigned>& indices) {
+                    if (!entity || indices.isEmpty()) return;
+                    QSet<unsigned> idxSet(indices.begin(), indices.end());
+                    emit ecvViewManager::instance().pointIndicesSelected(
+                            entity, idxSet);
+                });
+
         ccHObject* initEntity = nullptr;
         auto& sel = MainWindow::TheInstance()->getSelectedEntities();
         if (!sel.empty()) {
@@ -733,6 +757,57 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                                                   : nullptr);
         if (view) {
             view->enableEDL(true);
+
+            auto* wrapped = m_cellFrames.value(location);
+            if (wrapped) {
+                auto* edlBar = new QWidget(wrapped);
+                edlBar->setObjectName("EDLPropsBar");
+                auto* edlLayout = new QHBoxLayout(edlBar);
+                edlLayout->setContentsMargins(4, 2, 4, 2);
+                edlLayout->setSpacing(6);
+
+                edlLayout->addWidget(
+                        new QLabel(QStringLiteral("<b>EDL</b>"), edlBar));
+
+                auto* radiusLabel = new QLabel(tr("Radius:"), edlBar);
+                edlLayout->addWidget(radiusLabel);
+                auto* radiusSpin = new QSpinBox(edlBar);
+                radiusSpin->setRange(1, 16);
+                radiusSpin->setValue(view->edlLowResFactor());
+                radiusSpin->setToolTip(tr("EDL low-resolution sampling factor (higher = wider radius)"));
+                radiusSpin->setFixedWidth(50);
+                edlLayout->addWidget(radiusSpin);
+                connect(radiusSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+                        view, &vtkGLView::setEDLLowResFactor);
+
+                auto* fxaaCheck = new QCheckBox(tr("FXAA"), edlBar);
+                fxaaCheck->setChecked(view->isEDLFXAAEnabled());
+                fxaaCheck->setToolTip(tr("Enable FXAA anti-aliasing on top of EDL"));
+                edlLayout->addWidget(fxaaCheck);
+                connect(fxaaCheck, &QCheckBox::toggled,
+                        view, &vtkGLView::setEDLFXAAEnabled);
+
+                edlLayout->addStretch(1);
+
+                auto* frameLayout = qobject_cast<QVBoxLayout*>(wrapped->layout());
+                if (frameLayout) {
+                    int insertIdx = 1;
+                    for (int i = 0; i < frameLayout->count(); ++i) {
+                        auto* item = frameLayout->itemAt(i);
+                        if (item && item->widget() &&
+                            item->widget()->objectName() == QLatin1String("ViewTitleBar")) {
+                            insertIdx = i + 1;
+                            break;
+                        }
+                    }
+                    frameLayout->insertWidget(insertIdx, edlBar);
+                } else {
+                    edlBar->raise();
+                    edlBar->move(4, 26);
+                    edlBar->adjustSize();
+                    edlBar->show();
+                }
+            }
         }
     };
 
@@ -827,59 +902,33 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
                 auto* compView =
                         new vtkComparativeViewWidget(type, this);
+                if (sourceViewGL)
+                    compView->setSourceView(sourceViewGL);
                 if (type == vtkComparativeViewWidget::RENDER &&
                     m_viewFactory) {
                     compView->setSubViewInitCallback(
                             [sourceViewGL](vtkGLView* subView) {
                                 if (!subView) return;
+
+                                auto params = subView->getDisplayParameters();
+                                params.drawBackgroundGradient = false;
+                                params.backgroundCol = ecvColor::Rgbub(82, 82, 82);
+                                subView->setDisplayParameters(params, true);
+
                                 ecvGenericGLDisplay* src = sourceViewGL;
                                 if (!src) {
                                     src = ecvViewManager::instance()
                                                   .getActiveView();
                                 }
+                                if (!src) {
+                                    auto views = ecvViewManager::instance()
+                                                         .getAllViews();
+                                    for (auto* v : views) {
+                                        if (v && v != subView) { src = v; break; }
+                                    }
+                                }
                                 if (src && src != subView) {
                                     copyRepresentationsOnSplit(src, subView);
-                                }
-                                auto* srcGL =
-                                        dynamic_cast<vtkGLView*>(src);
-                                if (srcGL && srcGL->getVisualizer3D() &&
-                                    subView->getVisualizer3D()) {
-                                    auto srcRens = srcGL->getVisualizer3D()
-                                                           ->getRendererCollection();
-                                    auto dstRens = subView->getVisualizer3D()
-                                                           ->getRendererCollection();
-                                    if (srcRens && dstRens) {
-                                        srcRens->InitTraversal();
-                                        auto* srcRen = srcRens->GetNextItem();
-                                        dstRens->InitTraversal();
-                                        auto* dstRen = dstRens->GetNextItem();
-                                        if (srcRen && dstRen) {
-                                            double bg[3];
-                                            srcRen->GetBackground(bg);
-                                            dstRen->SetBackground(bg);
-                                            auto* actors = srcRen->GetActors();
-                                            if (actors) {
-                                                actors->InitTraversal();
-                                                vtkActor* actor = nullptr;
-                                                while ((actor = actors->GetNextActor())) {
-                                                    auto* copy = vtkActor::New();
-                                                    copy->ShallowCopy(actor);
-                                                    dstRen->AddActor(copy);
-                                                    copy->Delete();
-                                                }
-                                            }
-                                            auto* props = srcRen->GetViewProps();
-                                            if (props) {
-                                                props->InitTraversal();
-                                                vtkProp* prop = nullptr;
-                                                while ((prop = props->GetNextProp())) {
-                                                    if (!vtkActor::SafeDownCast(prop)) {
-                                                        dstRen->AddViewProp(prop);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
                             });
                     compView->setRenderViewFactory(
@@ -1296,12 +1345,16 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
 #ifdef USE_VTK_BACKEND
         auto* glView = dynamic_cast<vtkGLView*>(view);
         if (glView) {
+            glView->setSceneDB(nullptr);
             emit glView->aboutToClose(glView);
+            glView->disconnect();
             QWidget* vw = glView->asWidget();
             if (vw) {
                 vw->setParent(nullptr);
                 vw->hide();
             }
+            m_cellFrames.remove(location);
+            m_viewFrames.remove(view);
             QTimer::singleShot(0, this, [glView, vw]() {
                 glView->deleteLater();
                 if (vw) vw->deleteLater();

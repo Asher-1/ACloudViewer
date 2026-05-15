@@ -108,6 +108,16 @@ private:
     bool m_annotationsVisible = true;
     bool m_updatingSpinners = false;
 
+    bool m_draggingSlice = false;
+    int m_dragViewIdx = -1;
+    int m_lastActiveQuadrant = -1;
+    bool m_panning2D = false;
+    bool m_zooming2D = false;
+    int m_zoomViewIdx = -1;
+    QPoint m_panLastPos;
+    QPoint m_dragLastPos;
+    QPoint m_zoomLastPos;
+
     QComboBox* m_reprCombo = nullptr;
     QSlider* m_opacitySlider = nullptr;
     QLabel* m_opacityLabel = nullptr;
@@ -117,6 +127,9 @@ private:
     QComboBox* m_coloringCombo = nullptr;
     QCheckBox* m_mapScalarsCheck = nullptr;
     QCheckBox* m_interpScalarsCheck = nullptr;
+    QCheckBox* m_renderTubesCheck = nullptr;
+    QCheckBox* m_renderSpheresCheck = nullptr;
+    QCheckBox* m_showOutlineCheck = nullptr;
     QCheckBox* m_disableLightingCheck = nullptr;
     QSlider* m_diffuseSlider = nullptr;
     QLabel* m_diffuseLabel = nullptr;
@@ -124,4 +137,7 @@ private:
     QSlider* m_specularSlider = nullptr;
     QLabel* m_specularLabel = nullptr;
     QSpinBox* m_specPowerSpin = nullptr;
+    QDoubleSpinBox* m_luminositySpin = nullptr;
+    QCheckBox* m_specColorCheck = nullptr;
+    QCheckBox* m_useNanColorCheck = nullptr;
 };

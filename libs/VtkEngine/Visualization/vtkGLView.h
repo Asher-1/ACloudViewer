@@ -24,6 +24,7 @@
 class vtkActor;
 class vtkImplicitPlaneWidget2;
 class vtkCubeAxesActor;
+class vtkRenderPass;
 #include <QPointer>
 #include <QTimer>
 #include <list>
@@ -231,6 +232,10 @@ public:
 
     void enableEDL(bool enable = true);
     bool isEDLEnabled() const { return m_edlEnabled; }
+    void setEDLLowResFactor(int factor);
+    int edlLowResFactor() const { return m_edlLowResFactor; }
+    void setEDLFXAAEnabled(bool enable);
+    bool isEDLFXAAEnabled() const { return m_edlFXAAEnabled; }
 
     void enableSliceMode(bool enable = true);
     bool isSliceModeEnabled() const { return m_sliceMode; }
@@ -255,6 +260,14 @@ public:
     Visualization::ImageVisPtr getImageVis() const { return m_visualizer2D; }
 
     void zoomGlobal();
+
+    void setEntityBindingSource(ecvGenericGLDisplay* src) {
+        m_entityBindingSource = src;
+    }
+    bool acceptsBoundEntitiesFrom(
+            const ecvGenericGLDisplay* primaryView) const override {
+        return primaryView && primaryView == m_entityBindingSource;
+    }
 
     // ================================================================
     // Per-view timer & scheduling (replaces singleton m_timer)
@@ -436,6 +449,9 @@ private:
     bool m_shouldBeRefreshed = false;
     bool m_insideRedraw = false;
     bool m_edlEnabled = false;
+    bool m_edlFXAAEnabled = true;
+    int m_edlLowResFactor = 4;
+    vtkSmartPointer<vtkRenderPass> m_edlPass;
     bool m_sliceMode = false;
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
@@ -445,6 +461,8 @@ private:
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;
     std::vector<double> m_multiSlicePos[3];
     std::vector<vtkSmartPointer<vtkActor>> m_multiSliceActors;
+
+    ecvGenericGLDisplay* m_entityBindingSource = nullptr;
 
     static int s_nextWindowID;
 };
