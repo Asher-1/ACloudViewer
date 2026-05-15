@@ -65,7 +65,7 @@ vtkSliceViewWidget::vtkSliceViewWidget(vtkGLView* view, QWidget* parent)
     m_yAxis->setAxisTitle(QStringLiteral("Y"));
     m_zAxis->setAxisTitle(QStringLiteral("Z"));
 
-    grid->addWidget(m_yAxis, 0, 0, 1, 3);
+    grid->addWidget(m_yAxis, 0, 1);
     grid->addWidget(m_xAxis, 1, 0);
     grid->addWidget(view->getVtkWidget(), 1, 1);
     grid->addWidget(m_zAxis, 1, 2);
@@ -89,6 +89,20 @@ void vtkSliceViewWidget::setDataBounds(const double bounds[6]) {
     m_xAxis->setDataRange(bounds[0], bounds[1]);
     m_yAxis->setDataRange(bounds[2], bounds[3]);
     m_zAxis->setDataRange(bounds[4], bounds[5]);
+
+    if (m_xAxis->slicePositions().isEmpty() &&
+        m_yAxis->slicePositions().isEmpty() &&
+        m_zAxis->slicePositions().isEmpty()) {
+        double cx = (bounds[0] + bounds[1]) * 0.5;
+        double cy = (bounds[2] + bounds[3]) * 0.5;
+        double cz = (bounds[4] + bounds[5]) * 0.5;
+        m_xAxis->setSlicePositions({cx});
+        m_yAxis->setSlicePositions({cy});
+        m_zAxis->setSlicePositions({cz});
+        onSlicePositionsChanged(0, m_xAxis->slicePositions());
+        onSlicePositionsChanged(1, m_yAxis->slicePositions());
+        onSlicePositionsChanged(2, m_zAxis->slicePositions());
+    }
 }
 
 void vtkSliceViewWidget::setOutlineVisible(bool visible) {

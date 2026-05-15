@@ -1345,20 +1345,27 @@
                         </div>
                     </div>
 
-                    <!-- Alipay -->
-                    <div class="donation-card">
+                    <!-- Payoneer -->
+                    <div class="donation-card featured">
                         <div class="donation-header">
-                            <div class="donation-icon" style="color: #1678FF;">
-                                <i class="fab fa-alipay"></i>
+                            <div class="donation-icon" style="color: #FF4800;">
+                                <i class="fas fa-globe"></i>
                             </div>
-                            <h3 class="donation-title" data-i18n="payment.alipay">Alipay</h3>
-                            <p class="donation-desc" data-i18n="payment.alipay.desc">
-                                Support via Alipay (Coming Soon)
+                            <h3 class="donation-title" data-i18n="payment.payoneer">Payoneer</h3>
+                            <p class="donation-desc" data-i18n="payment.payoneer.desc">
+                                International payments via Payoneer
                             </p>
                         </div>
-                        <button class="donation-btn" disabled style="opacity: 0.6;">
-                            <span data-i18n="payment.comingsoon">Coming Soon</span>
-                        </button>
+                        <div class="qr-code-container">
+                            <img src="images/payoneer.png" alt="Payoneer QR Code" class="qr-code">
+                            <p style="margin-top: 1rem; color: #6c757d; font-size: 0.9rem;" data-i18n="payment.payoneer.scan">
+                                Scan or click to pay via Payoneer
+                            </p>
+                        </div>
+                        <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl" target="_blank" class="donation-btn secondary">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span data-i18n="payment.payoneer.btn">Pay with Payoneer</span>
+                        </a>
                     </div>
 
                     <!-- PayPal -->
@@ -1807,8 +1814,10 @@
                 'onetime.subtitle': 'Support us with a one-time contribution via your preferred payment method',
                 'payment.wechat': 'WeChat Pay',
                 'payment.wechat.desc': 'Scan QR code to donate via WeChat',
-                'payment.alipay': 'Alipay',
-                'payment.alipay.desc': 'Support via Alipay (Coming Soon)',
+                'payment.payoneer': 'Payoneer',
+                'payment.payoneer.desc': 'International payments via Payoneer',
+                'payment.payoneer.scan': 'Scan or click to pay via Payoneer',
+                'payment.payoneer.btn': 'Pay with Payoneer',
                 'payment.paypal': 'PayPal',
                 'payment.paypal.desc': 'International payments via PayPal',
                 'payment.scan': 'Scan with WeChat',
@@ -1933,8 +1942,10 @@
                 'onetime.subtitle': '通过您喜欢的支付方式为我们提供一次性捐助',
                 'payment.wechat': '微信支付',
                 'payment.wechat.desc': '扫描二维码通过微信捐赠',
-                'payment.alipay': '支付宝',
-                'payment.alipay.desc': '通过支付宝支持（即将推出）',
+                'payment.payoneer': 'Payoneer 派安盈',
+                'payment.payoneer.desc': '通过 Payoneer 进行国际支付',
+                'payment.payoneer.scan': '扫码或点击通过 Payoneer 支付',
+                'payment.payoneer.btn': '通过 Payoneer 支付',
                 'payment.paypal': 'PayPal',
                 'payment.paypal.desc': '国际支付通过 PayPal',
                 'payment.scan': '微信扫一扫',

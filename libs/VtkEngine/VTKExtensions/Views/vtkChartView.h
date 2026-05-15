@@ -26,6 +26,7 @@ class QTableWidget;
 class QPushButton;
 class QToolButton;
 class ccHObject;
+class ccGenericMesh;
 class ccMesh;
 class ccPointCloud;
 
@@ -60,16 +61,20 @@ public:
     using EntityListProvider = std::function<QList<ccHObject*>()>;
     void setEntityListProvider(EntityListProvider provider);
 
+    void setCompactMode(bool compact);
+
     void setRectSelectionActive(bool active);
     void setPolySelectionActive(bool active);
     void setSelectionModifier(int modifier);
     void clearSelection();
 
+    void setXAxisScale(double factor);
     void setYAxisScale(double factor);
     void setPlotOpacity(double opacity);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 public slots:
     void setEntity(ccHObject* entity);
@@ -120,6 +125,12 @@ private:
     void rebuildPlotMatrix(const QList<int>& selectedFields,
                            unsigned sampleCount, unsigned pointCount,
                            const FieldValueFn& getFieldValue);
+    void rebuildQuartileChart(const QList<int>& selectedFields,
+                              unsigned sampleCount, unsigned pointCount,
+                              const FieldValueFn& getFieldValue);
+    void rebuildImageChart(const QList<int>& selectedFields,
+                           unsigned sampleCount, unsigned pointCount,
+                           const FieldValueFn& getFieldValue);
     void setupChartSelectionCallback();
     void onChartAnnotationChanged();
     QColor seriesColor(int index) const;
@@ -140,6 +151,7 @@ private:
     QSpinBox* m_binSpin = nullptr;
     QToolButton* m_histColorBtn = nullptr;
     QColor m_histColor{0, 0, 255};
+    QCheckBox* m_histOutlineCheck = nullptr;
     QPushButton* m_resetZoomBtn = nullptr;
     QPushButton* m_exportPngBtn = nullptr;
     QPushButton* m_exportCsvBtn = nullptr;
@@ -167,6 +179,9 @@ private:
     QSpinBox* m_tooltipPrecSpin = nullptr;
     int m_tooltipNotation = 0;
     int m_tooltipPrecision = 6;
+    bool m_compactMode = false;
+    bool m_useCellData = false;
+    QList<QWidget*> m_chromeBars;
     bool m_selectRectActive = false;
     bool m_selectPolyActive = false;
     void applyTooltipFormat();
@@ -177,12 +192,23 @@ private:
 
     QTableWidget* m_seriesTable = nullptr;
     QMap<int, QColor> m_customSeriesColors;
+    struct SeriesProps {
+        float lineThickness = 2.0f;
+        int lineStyle = 1;
+        int markerStyle = 0;
+        float markerSize = 4.0f;
+        QString legendName;
+    };
+    QMap<int, SeriesProps> m_seriesProps;
     QVTKOpenGLNativeWidget* m_vtkWidget = nullptr;
     vtkContextView* m_contextView = nullptr;
     vtkChart* m_chart = nullptr;
 
+    ccHObject* m_currentEntity = nullptr;
+    ccHObject* currentEntity() const { return m_currentEntity; }
     ccPointCloud* m_cloud = nullptr;
     ccMesh* m_mesh = nullptr;
+    ccGenericMesh* m_genericMesh = nullptr;
     QVector<FieldDef> m_fields;
     QVector<float> m_computedNormals;
     unsigned m_sampleStride = 1;
@@ -196,4 +222,5 @@ private:
             return m_computedNormals[base + axis];
         return 0.0f;
     }
+    float getNormalComponent(unsigned vertIdx, int axis) const;
 };

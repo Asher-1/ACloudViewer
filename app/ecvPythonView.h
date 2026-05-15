@@ -19,9 +19,12 @@ class ecvPythonCodeEditor;
 class QComboBox;
 class QCompleter;
 class QLabel;
+class QMenu;
 class QPlainTextEdit;
 class QPushButton;
 class QSplitter;
+class QTableWidget;
+class QToolButton;
 class ecvPythonSyntaxHighlighter;
 
 class ecvPythonView : public QWidget {
@@ -46,12 +49,17 @@ private slots:
     void onSaveScript();
     void onExportEntityAndRun();
     void onEntitySelectionChanged(ccHObject* entity);
+    void showSnippetMenu();
+    void insertSnippet(const QString& code);
 
 private:
     QString exportEntityToTempCsv();
 
     void setupCompleter();
     void insertCompletion(const QString& completion);
+    void inspectVariables();
+    void highlightErrorLine(const QString& stderr);
+    void clearErrorHighlights();
 
     using EntityListProvider = std::function<QList<ccHObject*>()>;
 
@@ -68,9 +76,16 @@ private:
     QPlainTextEdit* m_outputPanel = nullptr;
     QLabel* m_imageLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
+    QTableWidget* m_variableTable = nullptr;
+    QToolButton* m_snippetBtn = nullptr;
     ecvPythonSyntaxHighlighter* m_highlighter = nullptr;
     QCompleter* m_completer = nullptr;
     ccHObject* m_entity = nullptr;
     QString m_lastExportPath;
     QString m_lastImagePath;
+    QString m_pythonBin;
+    bool m_pythonChecked = false;
+
+    QString findPythonBinary();
+    void checkPythonEnvironment();
 };

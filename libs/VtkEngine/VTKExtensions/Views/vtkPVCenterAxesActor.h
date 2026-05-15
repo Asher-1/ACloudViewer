@@ -13,6 +13,8 @@
  */
 
 #include "qVTK.h"  // needed for export macro
+#include "vtkLookupTable.h"
+#include "vtkNew.h"
 #include "vtkOpenGLActor.h"
 
 class vtkAxes;
@@ -23,6 +25,7 @@ namespace VTKExtensions {
 /**
  * @class vtkPVCenterAxesActor
  * @brief OpenGL actor for XYZ axes at center with symmetric and normal options.
+ * Uses a LUT to color axes: X=red, Y=yellow, Z=blue (matching ParaView).
  */
 class QVTK_ENGINE_LIB_API vtkPVCenterAxesActor : public vtkOpenGLActor {
 public:
@@ -30,17 +33,12 @@ public:
     vtkTypeMacro(vtkPVCenterAxesActor, vtkOpenGLActor);
     void PrintSelf(ostream& os, vtkIndent indent) override;
 
-    /**
-     * If Symmetric is on, the axis continues to negative values.
-     * @param val Non-zero to enable symmetric axes
-     */
     void SetSymmetric(int);
-
-    /**
-     * Option for computing normals. By default they are computed.
-     * @param val Non-zero to enable normal computation
-     */
     void SetComputeNormals(int);
+
+    void SetXAxisColor(double r, double g, double b);
+    void SetYAxisColor(double r, double g, double b);
+    void SetZAxisColor(double r, double g, double b);
 
 protected:
     vtkPVCenterAxesActor();
@@ -48,10 +46,13 @@ protected:
 
     vtkAxes* Axes;
     vtkPolyDataMapper* Mapper;
+    vtkNew<vtkLookupTable> LUT;
 
 private:
     vtkPVCenterAxesActor(const vtkPVCenterAxesActor&) = delete;
     void operator=(const vtkPVCenterAxesActor&) = delete;
+
+    void SetAxisColor(int axis, double r, double g, double b);
 };
 
 }  // namespace VTKExtensions

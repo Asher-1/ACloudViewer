@@ -20,20 +20,26 @@
 #include <QComboBox>
 #include <QCompleter>
 #include <QDir>
+#include <QHeaderView>
 #include <QKeyEvent>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QProcess>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSplitter>
 #include <QStringListModel>
+#include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTextStream>
+#include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
@@ -61,16 +67,19 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
             this, &ecvPythonView::onSourceComboChanged);
 
     auto btnSS = QStringLiteral(
-            "QPushButton { background: #3a5f8f; color: #ddd; border: 1px "
-            "solid #555; border-radius: 3px; padding: 2px 8px; }"
-            "QPushButton:hover { background: #4a7fbf; }");
+            "QPushButton { background: #4a86c8; color: #ffffff; border: 1px "
+            "solid #3a6fa8; border-radius: 3px; padding: 2px 8px; "
+            "font-weight: bold; }"
+            "QPushButton:hover { background: #5a96d8; }"
+            "QPushButton:pressed { background: #3a76b8; }");
 
     // === Row 2: Script toolbar ===
     auto* toolbar = new QWidget(this);
     auto* tbLayout = new QHBoxLayout(toolbar);
     tbLayout->setContentsMargins(4, 2, 4, 2);
     tbLayout->setSpacing(4);
-    toolbar->setStyleSheet("QWidget { background: #333; }");
+    toolbar->setStyleSheet(
+            "QWidget { background: #2b2b2b; }");
 
     auto* runBtn = new QPushButton(tr("Run"), toolbar);
     runBtn->setStyleSheet(btnSS);
@@ -97,6 +106,84 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     saveBtn->setStyleSheet(btnSS);
     tbLayout->addWidget(saveBtn);
 
+    m_snippetBtn = new QToolButton(toolbar);
+    m_snippetBtn->setText(tr("Snippets"));
+    m_snippetBtn->setStyleSheet(
+            QStringLiteral("QToolButton { background: #4a86c8; color: #ffffff; "
+                           "border: 1px solid #3a6fa8; border-radius: 3px; "
+                           "padding: 2px 8px; font-weight: bold; }"
+                           "QToolButton:hover { background: #5a96d8; }"
+                           "QToolButton:pressed { background: #3a76b8; }"
+                           "QToolButton::menu-indicator { image: none; }"));
+    m_snippetBtn->setToolTip(tr("Insert common code snippets"));
+    m_snippetBtn->setPopupMode(QToolButton::InstantPopup);
+    {
+        auto* menu = new QMenu(m_snippetBtn);
+        menu->addAction(tr("Basic Plot"), this, [this]() {
+            insertSnippet(
+                    "import matplotlib\nmatplotlib.use('Agg')\n"
+                    "import matplotlib.pyplot as plt\nimport numpy as np\n\n"
+                    "x = np.linspace(0, 2*np.pi, 100)\n"
+                    "plt.plot(x, np.sin(x), label='sin')\n"
+                    "plt.legend(); plt.grid(True)\n"
+                    "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
+        });
+        menu->addAction(tr("Scatter Plot"), this, [this]() {
+            insertSnippet(
+                    "import os, numpy as np, matplotlib\n"
+                    "matplotlib.use('Agg')\n"
+                    "import matplotlib.pyplot as plt\n\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2], cmap='viridis')\n"
+                    "plt.colorbar(); plt.tight_layout()\n"
+                    "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
+        });
+        menu->addAction(tr("Histogram"), this, [this]() {
+            insertSnippet(
+                    "import os, numpy as np, matplotlib\n"
+                    "matplotlib.use('Agg')\n"
+                    "import matplotlib.pyplot as plt\n\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "plt.hist(data[:,2], bins=50, edgecolor='black')\n"
+                    "plt.xlabel('Z'); plt.ylabel('Count')\n"
+                    "plt.tight_layout()\n"
+                    "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
+        });
+        menu->addAction(tr("3D Surface"), this, [this]() {
+            insertSnippet(
+                    "import os, numpy as np, matplotlib\n"
+                    "matplotlib.use('Agg')\n"
+                    "import matplotlib.pyplot as plt\n"
+                    "from mpl_toolkits.mplot3d import Axes3D\n\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "fig = plt.figure(figsize=(10,8))\n"
+                    "ax = fig.add_subplot(111, projection='3d')\n"
+                    "ax.scatter(data[:,0], data[:,1], data[:,2], s=0.5)\n"
+                    "ax.set_xlabel('X'); ax.set_ylabel('Y'); ax.set_zlabel('Z')\n"
+                    "plt.tight_layout()\n"
+                    "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
+        });
+        menu->addAction(tr("Statistical Summary"), this, [this]() {
+            insertSnippet(
+                    "import os, numpy as np, matplotlib\n"
+                    "matplotlib.use('Agg')\n"
+                    "import matplotlib.pyplot as plt\n\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "print(f'Shape: {data.shape}')\n"
+                    "for i, name in enumerate(['X','Y','Z']):\n"
+                    "    col = data[:,i]\n"
+                    "    print(f'{name}: min={col.min():.4f} max={col.max():.4f} "
+                    "mean={col.mean():.4f} std={col.std():.4f}')\n"
+                    "fig, axes = plt.subplots(1, 3, figsize=(12,4))\n"
+                    "for i, (ax, name) in enumerate(zip(axes, ['X','Y','Z'])):\n"
+                    "    ax.hist(data[:,i], bins=50); ax.set_title(name)\n"
+                    "plt.tight_layout()\n"
+                    "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
+        });
+        m_snippetBtn->setMenu(menu);
+    }
+    tbLayout->addWidget(m_snippetBtn);
+
     m_statusLabel = new QLabel(toolbar);
     m_statusLabel->setStyleSheet("QLabel { color: #999; font-size: 11px; }");
     tbLayout->addWidget(m_statusLabel);
@@ -107,20 +194,30 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     auto* splitter = new QSplitter(Qt::Vertical, this);
 
     m_scriptEditor = new ecvPythonCodeEditor(splitter);
-    m_scriptEditor->setPlaceholderText(
-            tr("# Python View — matplotlib rendering + entity data\n"
+    m_scriptEditor->setPlainText(
+            QStringLiteral(
+               "import os, numpy as np, matplotlib\n"
+               "matplotlib.use('Agg')\n"
+               "import matplotlib.pyplot as plt\n"
+               "\n"
                "# Click 'Export+Run' to export entity to CSV & run.\n"
                "# Use plt.savefig(os.environ['PLOT_FILE']) to render inline.\n"
-               "#\n"
-               "# Example:\n"
-               "#   import os, numpy as np, matplotlib\n"
-               "#   matplotlib.use('Agg')\n"
-               "#   import matplotlib.pyplot as plt\n"
-               "#   data = np.loadtxt(os.environ['DATA_FILE'],\n"
-               "#                     delimiter=',', skiprows=1)\n"
-               "#   plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2])\n"
-               "#   plt.colorbar(); plt.title('XY colored by Z')\n"
-               "#   plt.savefig(os.environ['PLOT_FILE'], dpi=150)"));
+               "\n"
+               "data_file = os.environ.get('DATA_FILE', '')\n"
+               "if data_file and os.path.exists(data_file):\n"
+               "    data = np.loadtxt(data_file, delimiter=',', skiprows=1)\n"
+               "    plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2])\n"
+               "    plt.colorbar(); plt.title('XY colored by Z')\n"
+               "else:\n"
+               "    x = np.linspace(0, 4*np.pi, 200)\n"
+               "    plt.plot(x, np.sin(x), label='sin(x)')\n"
+               "    plt.plot(x, np.cos(x), label='cos(x)')\n"
+               "    plt.legend(); plt.title('Demo: sin & cos')\n"
+               "    plt.grid(True)\n"
+               "\n"
+               "plt.tight_layout()\n"
+               "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n"
+               "print('Plot saved successfully.')\n"));
     m_scriptEditor->setStyleSheet(
             "QPlainTextEdit { background: #1e1e1e; color: #d4d4d4; "
             "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
@@ -151,8 +248,30 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     outputSplitter->setStretchFactor(1, 2);
     splitter->addWidget(outputSplitter);
 
-    splitter->setStretchFactor(0, 2);
+    // === Variable Explorer ===
+    m_variableTable = new QTableWidget(0, 4, splitter);
+    m_variableTable->setHorizontalHeaderLabels(
+            {tr("Name"), tr("Type"), tr("Shape/Size"), tr("Value")});
+    m_variableTable->horizontalHeader()->setStretchLastSection(true);
+    m_variableTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_variableTable->setAlternatingRowColors(true);
+    m_variableTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_variableTable->setMaximumHeight(150);
+    m_variableTable->setStyleSheet(
+            "QTableWidget { background: #252526; color: #d4d4d4; "
+            "font-family: monospace; font-size: 11px; "
+            "alternate-background-color: #2d2d30; "
+            "selection-background-color: #264f78; "
+            "selection-color: #ffffff; gridline-color: #3e3e42; }"
+            "QHeaderView::section { background: #3c3c3c; color: #e0e0e0; "
+            "border: 1px solid #555; padding: 2px; font-weight: bold; }");
+    m_variableTable->verticalHeader()->setDefaultSectionSize(20);
+    m_variableTable->setVisible(false);
+    splitter->addWidget(m_variableTable);
+
+    splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 1);
+    splitter->setStretchFactor(2, 0);
     layout->addWidget(splitter, 1);
 
     connect(runBtn, &QPushButton::clicked, this, &ecvPythonView::onRunScript);
@@ -170,6 +289,8 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &ecvPythonView::onEntitySelectionChanged);
+
+    QTimer::singleShot(500, this, &ecvPythonView::checkPythonEnvironment);
 }
 
 ecvPythonView::~ecvPythonView() {
@@ -181,9 +302,83 @@ ecvPythonView::~ecvPythonView() {
     }
 }
 
+QString ecvPythonView::findPythonBinary() {
+    if (!m_pythonBin.isEmpty()) return m_pythonBin;
+
+    for (const auto& candidate : {QStringLiteral("python3"),
+                                   QStringLiteral("python")}) {
+        QProcess test;
+        test.setProgram(candidate);
+        test.setArguments({"--version"});
+        test.start();
+        if (test.waitForFinished(3000) && test.exitCode() == 0) {
+            m_pythonBin = candidate;
+            return m_pythonBin;
+        }
+    }
+    return {};
+}
+
+void ecvPythonView::checkPythonEnvironment() {
+    if (m_pythonChecked) return;
+    m_pythonChecked = true;
+
+    QString pyBin = findPythonBinary();
+    if (pyBin.isEmpty()) {
+        m_statusLabel->setText(tr("Python not found"));
+        m_outputPanel->setPlainText(
+                tr("Warning: Python interpreter not found in PATH.\n"
+                   "Install python3 to use this view.\n"
+                   "Tip: sudo apt install python3 python3-matplotlib python3-numpy"));
+        return;
+    }
+
+    QProcess check;
+    check.setProgram(pyBin);
+    check.setArguments({"-c",
+        "import sys; v=sys.version_info; print(f'Python {v.major}.{v.minor}.{v.micro}')\n"
+        "try:\n"
+        "  import numpy; print(f'numpy {numpy.__version__}')\n"
+        "except Exception as e: print(f'numpy: ERROR ({e})')\n"
+        "try:\n"
+        "  import matplotlib; print(f'matplotlib {matplotlib.__version__}')\n"
+        "except Exception as e: print(f'matplotlib: ERROR ({e})')\n"});
+    check.start();
+    if (check.waitForFinished(5000)) {
+        QString out = QString::fromUtf8(check.readAllStandardOutput()).trimmed();
+        QString err = QString::fromUtf8(check.readAllStandardError()).trimmed();
+        if (!out.isEmpty()) {
+            m_statusLabel->setText(out.section('\n', 0, 0));
+        }
+        bool hasMissing = out.contains("NOT INSTALLED") || out.contains("ERROR");
+        bool hasNumpyConflict = err.contains("_ARRAY_API") ||
+                                err.contains("numpy.core.multiarray");
+        if (hasNumpyConflict) {
+            m_outputPanel->appendPlainText(
+                    tr("Warning: numpy/matplotlib version conflict detected.\n"
+                       "Fix with: pip3 install --upgrade numpy matplotlib\n"
+                       "Or: pip3 install 'numpy<2' matplotlib"));
+        } else if (hasMissing) {
+            m_outputPanel->appendPlainText(
+                    tr("Warning: Missing packages detected.\n%1\n"
+                       "Install with: pip3 install numpy matplotlib")
+                            .arg(out));
+        }
+        if (!err.isEmpty() && !hasNumpyConflict) {
+            m_outputPanel->appendPlainText(err);
+        }
+    }
+}
+
 void ecvPythonView::setEntityListProvider(EntityListProvider provider) {
     m_entityListProvider = std::move(provider);
     refreshSourceCombo();
+    if (!m_entity && m_entityListProvider) {
+        auto entities = m_entityListProvider();
+        if (!entities.isEmpty()) {
+            setEntity(entities.first());
+        }
+    }
 }
 
 void ecvPythonView::refreshSourceCombo() {
@@ -303,6 +498,8 @@ QString ecvPythonView::exportEntityToTempCsv() {
 }
 
 void ecvPythonView::onExportEntityAndRun() {
+    clearErrorHighlights();
+
     QString csvPath = exportEntityToTempCsv();
     if (csvPath.isEmpty()) {
         m_outputPanel->appendPlainText(
@@ -342,12 +539,19 @@ void ecvPythonView::onExportEntityAndRun() {
         m_scriptEditor->setPlainText(script);
     }
 
-    m_statusLabel->setText(tr("Running..."));
+    QString pyBin = findPythonBinary();
+    if (pyBin.isEmpty()) {
+        m_outputPanel->appendPlainText(
+                tr("Error: Python not found. Install python3."));
+        m_statusLabel->setText(tr("Python not found"));
+        return;
+    }
 
+    m_statusLabel->setText(tr("Running..."));
     QFile::remove(plotPath);
 
     QProcess proc;
-    proc.setProgram("python3");
+    proc.setProgram(pyBin);
     proc.setArguments({"-c", script});
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -355,6 +559,13 @@ void ecvPythonView::onExportEntityAndRun() {
     env.insert("PLOT_FILE", plotPath);
     proc.setProcessEnvironment(env);
     proc.start();
+
+    if (!proc.waitForStarted(5000)) {
+        m_outputPanel->appendPlainText(
+                tr("Error: Could not start %1.").arg(pyBin));
+        m_statusLabel->setText(tr("Start failed"));
+        return;
+    }
 
     if (!proc.waitForFinished(60000)) {
         m_outputPanel->appendPlainText(
@@ -376,7 +587,11 @@ void ecvPythonView::onExportEntityAndRun() {
     }
 
     int exitCode = proc.exitCode();
-    m_statusLabel->setText(tr("Exit code: %1").arg(exitCode));
+    m_statusLabel->setText(exitCode == 0 ? tr("OK") : tr("Exit: %1").arg(exitCode));
+
+    if (exitCode != 0 && !stdErr.isEmpty()) {
+        highlightErrorLine(stdErr);
+    }
 
     if (QFile::exists(plotPath)) {
         QPixmap pix(plotPath);
@@ -390,11 +605,51 @@ void ecvPythonView::onExportEntityAndRun() {
         }
         m_lastImagePath = plotPath;
     }
+
+    if (exitCode == 0) {
+        inspectVariables();
+    }
 }
 
 void ecvPythonView::onRunScript() {
+    clearErrorHighlights();
+
     QString script = m_scriptEditor->toPlainText().trimmed();
-    if (script.isEmpty()) return;
+    if (script.isEmpty()) {
+        m_outputPanel->clear();
+        m_outputPanel->appendPlainText(
+                tr("No script to run. Write or load a Python script first.\n"
+                   "Tip: Click 'Export+Run' to export entity data to CSV and "
+                   "auto-generate a plot script."));
+        m_statusLabel->setText(tr("Empty script"));
+        return;
+    }
+    bool hasCode = false;
+    for (const auto& line : script.split('\n')) {
+        QString trimmed = line.trimmed();
+        if (!trimmed.isEmpty() && !trimmed.startsWith('#')) {
+            hasCode = true;
+            break;
+        }
+    }
+    if (!hasCode) {
+        m_outputPanel->clear();
+        m_outputPanel->appendPlainText(
+                tr("Script contains only comments.\n"
+                   "Uncomment the example code or write new code to run."));
+        m_statusLabel->setText(tr("No executable code"));
+        return;
+    }
+
+    QString pyBin = findPythonBinary();
+    if (pyBin.isEmpty()) {
+        m_outputPanel->clear();
+        m_outputPanel->appendPlainText(
+                tr("Error: Python not found. Install python3 and ensure it is "
+                   "in your PATH.\nTip: sudo apt install python3"));
+        m_statusLabel->setText(tr("Python not found"));
+        return;
+    }
 
     m_outputPanel->clear();
     m_statusLabel->setText(tr("Running..."));
@@ -405,7 +660,7 @@ void ecvPythonView::onRunScript() {
     QFile::remove(plotPath);
 
     QProcess proc;
-    proc.setProgram("python3");
+    proc.setProgram(pyBin);
     proc.setArguments({"-c", script});
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -415,6 +670,13 @@ void ecvPythonView::onRunScript() {
     env.insert("PLOT_FILE", plotPath);
     proc.setProcessEnvironment(env);
     proc.start();
+
+    if (!proc.waitForStarted(5000)) {
+        m_outputPanel->appendPlainText(
+                tr("Error: Could not start %1.").arg(pyBin));
+        m_statusLabel->setText(tr("Start failed"));
+        return;
+    }
 
     if (!proc.waitForFinished(60000)) {
         m_outputPanel->appendPlainText(
@@ -436,7 +698,11 @@ void ecvPythonView::onRunScript() {
     }
 
     int exitCode = proc.exitCode();
-    m_statusLabel->setText(tr("Exit code: %1").arg(exitCode));
+    m_statusLabel->setText(exitCode == 0 ? tr("OK") : tr("Exit: %1").arg(exitCode));
+
+    if (exitCode != 0 && !stdErr.isEmpty()) {
+        highlightErrorLine(stdErr);
+    }
 
     if (QFile::exists(plotPath)) {
         QPixmap pix(plotPath);
@@ -450,11 +716,17 @@ void ecvPythonView::onRunScript() {
         }
         m_lastImagePath = plotPath;
     }
+
+    if (exitCode == 0) {
+        inspectVariables();
+    }
 }
 
 void ecvPythonView::onClear() {
     m_outputPanel->clear();
     m_statusLabel->clear();
+    clearErrorHighlights();
+    if (m_variableTable) m_variableTable->setVisible(false);
 }
 
 void ecvPythonView::onLoadScript() {
@@ -542,6 +814,125 @@ bool ecvPythonView::eventFilter(QObject* obj, QEvent* event) {
         return true;
     }
     return QWidget::eventFilter(obj, event);
+}
+
+void ecvPythonView::insertSnippet(const QString& code) {
+    if (!m_scriptEditor) return;
+    m_scriptEditor->selectAll();
+    m_scriptEditor->insertPlainText(code);
+}
+
+void ecvPythonView::showSnippetMenu() {
+    if (m_snippetBtn && m_snippetBtn->menu()) {
+        m_snippetBtn->showMenu();
+    }
+}
+
+void ecvPythonView::inspectVariables() {
+    QString pyBin = findPythonBinary();
+    if (pyBin.isEmpty() || !m_variableTable) return;
+
+    QString script = m_scriptEditor->toPlainText().trimmed();
+    if (script.isEmpty()) return;
+
+    QString inspectScript = script + QStringLiteral(
+            "\n\nimport sys as __sys\n"
+            "__result = []\n"
+            "for __name, __val in dict(locals()).items():\n"
+            "    if __name.startswith('_'): continue\n"
+            "    __tp = type(__val).__name__\n"
+            "    __sh = ''\n"
+            "    __vl = ''\n"
+            "    try:\n"
+            "        if hasattr(__val, 'shape'): __sh = str(__val.shape)\n"
+            "        elif hasattr(__val, '__len__'): __sh = str(len(__val))\n"
+            "    except: pass\n"
+            "    try:\n"
+            "        __vr = repr(__val)\n"
+            "        __vl = __vr[:80] + ('...' if len(__vr)>80 else '')\n"
+            "    except: __vl = '<error>'\n"
+            "    __result.append(f'{__name}\\t{__tp}\\t{__sh}\\t{__vl}')\n"
+            "print('__VARS_START__')\n"
+            "for __r in __result: print(__r)\n"
+            "print('__VARS_END__')\n");
+
+    QProcess proc;
+    proc.setProgram(pyBin);
+    proc.setArguments({"-c", inspectScript});
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    if (!m_lastExportPath.isEmpty())
+        env.insert("DATA_FILE", m_lastExportPath);
+    QString plotPath = QDir::tempPath() +
+                       QStringLiteral("/acv_varinspect_%1.png")
+                               .arg(reinterpret_cast<quintptr>(this), 0, 16);
+    env.insert("PLOT_FILE", plotPath);
+    proc.setProcessEnvironment(env);
+    proc.start();
+
+    if (!proc.waitForFinished(15000)) {
+        proc.kill();
+        return;
+    }
+
+    QString out = QString::fromUtf8(proc.readAllStandardOutput());
+    int startIdx = out.indexOf("__VARS_START__");
+    int endIdx = out.indexOf("__VARS_END__");
+    if (startIdx < 0 || endIdx < 0) {
+        m_variableTable->setVisible(false);
+        return;
+    }
+
+    QString varBlock = out.mid(startIdx + 15, endIdx - startIdx - 15).trimmed();
+    QStringList lines = varBlock.split('\n', Qt::SkipEmptyParts);
+
+    m_variableTable->setRowCount(0);
+    for (const auto& line : lines) {
+        QStringList parts = line.split('\t');
+        if (parts.size() < 4) continue;
+        int row = m_variableTable->rowCount();
+        m_variableTable->insertRow(row);
+        for (int c = 0; c < 4; ++c) {
+            m_variableTable->setItem(row, c,
+                                     new QTableWidgetItem(parts.value(c)));
+        }
+    }
+
+    m_variableTable->setVisible(m_variableTable->rowCount() > 0);
+    m_variableTable->resizeColumnsToContents();
+    QFile::remove(plotPath);
+}
+
+void ecvPythonView::highlightErrorLine(const QString& stderrText) {
+    if (!m_scriptEditor || stderrText.isEmpty()) return;
+
+    static const QRegularExpression lineRx(
+            QStringLiteral("line (\\d+)"), QRegularExpression::CaseInsensitiveOption);
+    auto match = lineRx.match(stderrText);
+    if (!match.hasMatch()) return;
+
+    int lineNum = match.captured(1).toInt();
+    if (lineNum <= 0) return;
+
+    QTextCursor cursor(m_scriptEditor->document()->findBlockByLineNumber(lineNum - 1));
+    if (cursor.isNull()) return;
+
+    QList<QTextEdit::ExtraSelection> selections;
+    QTextEdit::ExtraSelection sel;
+    sel.format.setBackground(QColor(80, 30, 30));
+    sel.format.setProperty(QTextFormat::FullWidthSelection, true);
+    sel.cursor = cursor;
+    sel.cursor.clearSelection();
+    selections.append(sel);
+    m_scriptEditor->setExtraSelections(selections);
+
+    m_scriptEditor->setTextCursor(cursor);
+}
+
+void ecvPythonView::clearErrorHighlights() {
+    if (m_scriptEditor) {
+        m_scriptEditor->setExtraSelections({});
+    }
 }
 
 void ecvPythonView::setupCompleter() {

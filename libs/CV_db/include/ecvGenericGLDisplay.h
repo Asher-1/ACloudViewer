@@ -498,6 +498,11 @@ public:
 
     virtual void aboutToBeRemoved(ccDrawableObject* /*obj*/) {}
 
+    virtual bool acceptsBoundEntitiesFrom(
+            const ecvGenericGLDisplay* /*primaryView*/) const {
+        return false;
+    }
+
     // ================================================================
     // Static registry: QWidget* -> ecvGenericGLDisplay*
     // ================================================================

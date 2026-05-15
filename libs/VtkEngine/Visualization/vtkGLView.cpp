@@ -29,6 +29,22 @@
 #include <vtkDataSet.h>
 #include <vtkDefaultPass.h>
 #include <vtkEDLShading.h>
+
+class vtkEDLShadingCustom : public vtkEDLShading {
+public:
+    static vtkEDLShadingCustom* New() {
+        auto* p = new vtkEDLShadingCustom;
+        p->InitializeObjectBase();
+        return p;
+    }
+    vtkTypeMacro(vtkEDLShadingCustom, vtkEDLShading);
+
+    void SetLowResFactor(int f) {
+        EDLLowResFactor = (f < 1) ? 1 : f;
+        this->Modified();
+    }
+    int GetLowResFactor() const { return EDLLowResFactor; }
+};
 #include <vtkOpenGLFXAAPass.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImplicitPlaneRepresentation.h>
@@ -460,21 +476,44 @@ void vtkGLView::enableEDL(bool enable) {
     if (!renderer) return;
 
     if (enable) {
-        // ParaView vtkPVRenderViewWithEDL pattern:
-        //   FXAA → EDL → vtkRenderStepsPass (full geometry pipeline)
         vtkNew<vtkRenderStepsPass> basicPasses;
 
-        vtkNew<vtkEDLShading> edlPass;
+        auto* edlPass = vtkEDLShadingCustom::New();
         edlPass->SetDelegatePass(basicPasses);
+        edlPass->SetLowResFactor(m_edlLowResFactor);
+        m_edlPass = edlPass;
+        edlPass->Delete();
 
-        vtkNew<vtkOpenGLFXAAPass> fxaaPass;
-        fxaaPass->SetDelegatePass(edlPass);
-
-        renderer->SetPass(fxaaPass);
+        if (m_edlFXAAEnabled) {
+            vtkNew<vtkOpenGLFXAAPass> fxaaPass;
+            fxaaPass->SetDelegatePass(m_edlPass);
+            renderer->SetPass(fxaaPass);
+        } else {
+            renderer->SetPass(m_edlPass);
+        }
     } else {
         renderer->SetPass(nullptr);
+        m_edlPass = nullptr;
     }
     updateScene();
+}
+
+void vtkGLView::setEDLLowResFactor(int factor) {
+    m_edlLowResFactor = (factor < 1) ? 1 : factor;
+    auto* edl = vtkEDLShadingCustom::SafeDownCast(m_edlPass);
+    if (edl) {
+        edl->SetLowResFactor(m_edlLowResFactor);
+        updateScene();
+    }
+}
+
+void vtkGLView::setEDLFXAAEnabled(bool enable) {
+    if (m_edlFXAAEnabled == enable) return;
+    m_edlFXAAEnabled = enable;
+    if (m_edlEnabled) {
+        m_edlEnabled = false;
+        enableEDL(true);
+    }
 }
 
 static void SlicePlaneCallback(vtkObject* caller,
