@@ -75,6 +75,7 @@ public:
     /// Set the factory for creating new views.
     using ViewFactory = std::function<vtkGLView*()>;
     void setViewFactory(ViewFactory factory) { m_viewFactory = factory; }
+    ViewFactory viewFactory() const { return m_viewFactory; }
 
     /// Set the factory for creating view frames.
     using FrameFactory =

@@ -204,8 +204,9 @@ void ecvMultiViewWidget::reload() {
         QWidget* frame = it.value();
         if (!frame) continue;
         bool isGLFrame = m_viewFrames.key(frame, nullptr) != nullptr;
-        if (!isGLFrame && m_layout && !m_layout->isSplitCell(loc) &&
-            !m_layout->getView(loc)) {
+        bool isEmptyCell = frame->property("IS_EMPTY_CELL").toBool();
+        if (!isGLFrame && !isEmptyCell && m_layout &&
+            !m_layout->isSplitCell(loc) && !m_layout->getView(loc)) {
             frame->setParent(nullptr);
             frame->hide();
             preservedNonGLFrames[loc] = frame;
@@ -445,6 +446,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     auto* frame = new QFrame(this);
     frame->setFrameStyle(QFrame::NoFrame);
     frame->setMinimumSize(50, 50);
+    frame->setProperty("IS_EMPTY_CELL", true);
 
     auto* outerLayout = new QVBoxLayout(frame);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -1309,11 +1311,28 @@ void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    // ParaView alignment: split creates an empty cell with a "Create Render
-    // View" button (pqEmptyView pattern).  The user explicitly clicks the
-    // button to create a new view.  This avoids unnecessary view allocation
-    // and matches ParaView's workflow.
-    m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
+    QWidget* cellFrame = m_cellFrames.value(location);
+    bool isEmptyCell = cellFrame && cellFrame->property("IS_EMPTY_CELL").toBool();
+    bool hasNonGLFrame = cellFrame && !isEmptyCell &&
+                         (m_viewFrames.key(cellFrame, nullptr) == nullptr);
+
+    if (hasNonGLFrame) {
+        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+                   &ecvMultiViewWidget::reload);
+    }
+
+    int child = m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
+
+    if (hasNonGLFrame && child >= 0) {
+        QWidget* nonGLFrame = m_cellFrames.take(location);
+        if (nonGLFrame) {
+            m_cellFrames[child] = nonGLFrame;
+            nonGLFrame->setProperty("CELL_INDEX", child);
+        }
+        connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+                &ecvMultiViewWidget::reload);
+        reload();
+    }
 }
 
 void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
@@ -1321,7 +1340,28 @@ void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
     int location = findLocationForFrame(frame);
     if (location < 0) return;
 
-    m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
+    QWidget* cellFrame = m_cellFrames.value(location);
+    bool isEmptyCell = cellFrame && cellFrame->property("IS_EMPTY_CELL").toBool();
+    bool hasNonGLFrame = cellFrame && !isEmptyCell &&
+                         (m_viewFrames.key(cellFrame, nullptr) == nullptr);
+
+    if (hasNonGLFrame) {
+        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+                   &ecvMultiViewWidget::reload);
+    }
+
+    int child = m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
+
+    if (hasNonGLFrame && child >= 0) {
+        QWidget* nonGLFrame = m_cellFrames.take(location);
+        if (nonGLFrame) {
+            m_cellFrames[child] = nonGLFrame;
+            nonGLFrame->setProperty("CELL_INDEX", child);
+        }
+        connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+                &ecvMultiViewWidget::reload);
+        reload();
+    }
 }
 
 void ecvMultiViewWidget::onCloseView(QWidget* frame) {
@@ -1335,11 +1375,31 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
         emit viewClosing(view);
     }
 
+    disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+               &ecvMultiViewWidget::reload);
+
     m_layout->removeViewAt(location);
 
-    if (location != 0) {
+    if (location != 0 && location > 0) {
+        int par = ecvViewLayoutProxy::parent(location);
+        int sibling = (location == ecvViewLayoutProxy::firstChild(par))
+                              ? ecvViewLayoutProxy::secondChild(par)
+                              : ecvViewLayoutProxy::firstChild(par);
+
+        QWidget* sibFrame = m_cellFrames.value(sibling);
+        bool sibIsEmpty = sibFrame &&
+                          sibFrame->property("IS_EMPTY_CELL").toBool();
+        if (sibFrame && !sibIsEmpty && !m_cellFrames.contains(par)) {
+            m_cellFrames.take(sibling);
+            m_cellFrames[par] = sibFrame;
+            sibFrame->setProperty("CELL_INDEX", par);
+        }
+
         m_layout->collapse(location);
     }
+
+    connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+            &ecvMultiViewWidget::reload);
 
     if (view) {
 #ifdef USE_VTK_BACKEND
@@ -1362,18 +1422,15 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
         }
 #endif
     } else {
-        // Non-GL view frame (chart, spreadsheet, etc.) — clean up the widget
         m_cellFrames.remove(location);
         if (frame) {
             frame->setParent(nullptr);
             frame->hide();
             frame->deleteLater();
         }
-        if (location == 0) {
-            reload();
-        }
     }
 
+    reload();
     makeFrameActive();
 }
 

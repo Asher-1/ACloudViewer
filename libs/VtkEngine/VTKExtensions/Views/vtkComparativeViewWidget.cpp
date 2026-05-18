@@ -47,6 +47,20 @@
 
 static constexpr int COMPARATIVE_SPACING = 1;
 
+static void enforceSubViewBackground(vtkGLView* view) {
+    if (!view) return;
+    auto* vtkW = view->getVtkWidget();
+    if (!vtkW || !vtkW->renderWindow()) return;
+    auto* ren = vtkW->renderWindow()->GetRenderers()
+            ? vtkW->renderWindow()->GetRenderers()->GetFirstRenderer()
+            : nullptr;
+    if (ren) {
+        ren->SetBackground(0.32, 0.32, 0.32);
+        ren->SetBackground2(0.32, 0.32, 0.32);
+        ren->SetGradientBackground(false);
+    }
+}
+
 vtkComparativeViewWidget::vtkComparativeViewWidget(ComparativeType type,
                                                    QWidget* parent)
     : QWidget(parent), m_type(type) {
@@ -158,6 +172,10 @@ void vtkComparativeViewWidget::createRenderSubViews() {
                                "cell (%d,%d)", r, c);
                 continue;
             }
+
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+
             QWidget* viewWidget = view->asWidget();
             if (!viewWidget) {
                 CVLog::Warning("[ComparativeView] View widget null for "
@@ -177,6 +195,19 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             if (m_subViewInitCb) {
                 m_subViewInitCb(view);
             }
+
+            auto* vtkW = view->getVtkWidget();
+            if (vtkW && vtkW->renderWindow()) {
+                auto* ren = vtkW->renderWindow()->GetRenderers()
+                        ? vtkW->renderWindow()->GetRenderers()->GetFirstRenderer()
+                        : nullptr;
+                if (ren) {
+                    ren->SetBackground(0.32, 0.32, 0.32);
+                    ren->SetBackground2(0.32, 0.32, 0.32);
+                    ren->SetGradientBackground(false);
+                }
+            }
+
             m_pendingFirstResize.insert(viewWidget);
             viewWidget->installEventFilter(this);
             emit subViewCreated(viewWidget);
@@ -241,6 +272,22 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             forceRenderAllSubViews();
         });
     }
+
+    connect(&ecvViewManager::instance(),
+            &ecvViewManager::pointIndicesSelected, this,
+            [this](ccHObject*, const QSet<unsigned>&) {
+                QTimer::singleShot(100, this, [this]() {
+                    copyActorsAcrossSubViews();
+                    forceRenderAllSubViews();
+                });
+            });
+
+    if (m_sourceView) {
+        connect(m_sourceView, &vtkGLView::interactionModeChanged, this,
+                &vtkComparativeViewWidget::syncInteractionModeToSubViews);
+        connect(m_sourceView, &vtkGLView::pickingModeChanged, this,
+                &vtkComparativeViewWidget::syncPickingModeToSubViews);
+    }
 }
 
 void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
@@ -255,15 +302,24 @@ void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
                     ccHObject* root = view->getSceneDB();
                     if (root) root->setRedrawFlagRecursive(true);
                     view->redraw(false, true);
+                    enforceSubViewBackground(view);
                 }
                 copyActorsAcrossSubViews();
                 if (m_subViews.size() > 1) syncCamerasFromFirst();
                 for (auto* view : m_subViews) {
                     if (!view) continue;
-                    view->zoomGlobal();
-                    auto* w = view->getVtkWidget();
-                    if (w && w->renderWindow())
-                        w->renderWindow()->Render();
+                    auto* vtkW = view->getVtkWidget();
+                    if (vtkW && vtkW->renderWindow()) {
+                        auto* ren = vtkW->renderWindow()->GetRenderers()
+                                ? vtkW->renderWindow()->GetRenderers()
+                                          ->GetFirstRenderer()
+                                : nullptr;
+                        if (ren) {
+                            ren->ResetCamera();
+                            ren->ResetCameraClippingRange();
+                        }
+                        vtkW->renderWindow()->Render();
+                    }
                 }
             });
         }
@@ -284,7 +340,19 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
                         ccHObject* root = view->getSceneDB();
                         if (root) root->setRedrawFlagRecursive(true);
                         view->redraw(false, true);
-                        view->zoomGlobal();
+                        enforceSubViewBackground(view);
+                        auto* vtkW = view->getVtkWidget();
+                        if (vtkW && vtkW->renderWindow()) {
+                            auto* ren = vtkW->renderWindow()->GetRenderers()
+                                    ? vtkW->renderWindow()->GetRenderers()
+                                              ->GetFirstRenderer()
+                                    : nullptr;
+                            if (ren) {
+                                ren->ResetCamera();
+                                ren->ResetCameraClippingRange();
+                            }
+                            vtkW->renderWindow()->Render();
+                        }
                         break;
                     }
                 });
@@ -310,7 +378,7 @@ void vtkComparativeViewWidget::forceRenderAllSubViews() {
             root->setRedrawFlagRecursive(true);
         }
         view->redraw(false, true);
-        view->zoomGlobal();
+        enforceSubViewBackground(view);
 
         auto* vtkW = view->getVtkWidget();
         if (vtkW && vtkW->renderWindow()) {
@@ -318,6 +386,8 @@ void vtkComparativeViewWidget::forceRenderAllSubViews() {
                                 ? vtkW->renderWindow()->GetRenderers()->GetFirstRenderer()
                                 : nullptr;
             if (ren) {
+                ren->ResetCamera();
+                ren->ResetCameraClippingRange();
                 double bounds[6];
                 ren->ComputeVisiblePropBounds(bounds);
                 if (bounds[0] <= bounds[1]) {
@@ -327,11 +397,32 @@ void vtkComparativeViewWidget::forceRenderAllSubViews() {
                     CCVector3d pivot(cx, cy, cz);
                     view->setPivotPoint(pivot, false, false);
                 }
+                vtkW->renderWindow()->Render();
             }
         }
     }
 
     copyActorsAcrossSubViews();
+}
+
+void vtkComparativeViewWidget::syncInteractionModeToSubViews() {
+    if (!m_sourceView || m_subViews.isEmpty()) return;
+    auto flags = m_sourceView->getInteractionMode();
+    for (auto* view : m_subViews) {
+        if (view && view != m_sourceView) {
+            view->setInteractionMode(flags);
+        }
+    }
+}
+
+void vtkComparativeViewWidget::syncPickingModeToSubViews() {
+    if (!m_sourceView || m_subViews.isEmpty()) return;
+    auto mode = m_sourceView->getPickingMode();
+    for (auto* view : m_subViews) {
+        if (view && view != m_sourceView) {
+            view->setPickingMode(mode);
+        }
+    }
 }
 
 void vtkComparativeViewWidget::copyActorsAcrossSubViews() {
@@ -372,6 +463,7 @@ void vtkComparativeViewWidget::copyActorsAcrossSubViews() {
     if (srcActorList.isEmpty()) {
         for (auto* v : m_subViews) {
             v->redraw(false, true);
+            enforceSubViewBackground(v);
             auto* ren = getRenderer(v);
             auto actors = collectMeshActors(ren);
             if (actors.size() > srcActorList.size()) {
@@ -545,14 +637,23 @@ void vtkComparativeViewWidget::refreshSubViews() {
         ccHObject* root = view->getSceneDB();
         if (root) root->setRedrawFlagRecursive(true);
         view->redraw(false, true);
+        enforceSubViewBackground(view);
     }
     copyActorsAcrossSubViews();
     if (m_subViews.size() > 1) syncCamerasFromFirst();
     for (auto* view : m_subViews) {
         if (!view) continue;
-        view->zoomGlobal();
-        auto* w = view->getVtkWidget();
-        if (w && w->renderWindow()) w->renderWindow()->Render();
+        auto* vtkW = view->getVtkWidget();
+        if (vtkW && vtkW->renderWindow()) {
+            auto* ren = vtkW->renderWindow()->GetRenderers()
+                                ? vtkW->renderWindow()->GetRenderers()->GetFirstRenderer()
+                                : nullptr;
+            if (ren) {
+                ren->ResetCamera();
+                ren->ResetCameraClippingRange();
+            }
+            vtkW->renderWindow()->Render();
+        }
     }
 }
 
@@ -804,6 +905,15 @@ void vtkComparativeViewWidget::buildToolbar() {
     connect(m_cueParamCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &vtkComparativeViewWidget::onCueParameterChanged);
+    connect(m_cueModeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) { applyCueToSubViews(); });
+    connect(m_cueMinSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double) { applyCueToSubViews(); });
+    connect(m_cueMaxSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double) { applyCueToSubViews(); });
     connect(playBtn, &QPushButton::clicked, this,
             &vtkComparativeViewWidget::onPlayCue);
     connect(m_overlayCheck, &QCheckBox::toggled, this,
@@ -871,85 +981,54 @@ void vtkComparativeViewWidget::onCueParameterChanged(int index) {
         m_statusLabel->setText(
                 tr("Cue: %1").arg(m_cueParamCombo->itemText(index)));
     }
+
+    applyCueToSubViews();
 }
 
 void vtkComparativeViewWidget::onToggleOverlay(bool checked) {
     m_overlayMode = checked;
     if (m_subWidgets.size() <= 1) return;
 
-    if (m_type == RENDER) {
-        auto* firstView = qobject_cast<vtkGLView*>(
-                m_subWidgets[0]->findChild<vtkGLView*>());
-        if (!firstView)
-            firstView = dynamic_cast<vtkGLView*>(
-                    static_cast<QObject*>(m_subWidgets[0]));
+    if (m_type == RENDER && m_subViews.size() > 1) {
+        vtkGLView* firstView = m_subViews.first();
+
+        auto getFirstRenderer = [](vtkGLView* v) -> vtkRenderer* {
+            if (!v || !v->getVtkWidget()) return nullptr;
+            auto* rw = v->getVtkWidget()->renderWindow();
+            if (!rw || !rw->GetRenderers()) return nullptr;
+            return rw->GetRenderers()->GetFirstRenderer();
+        };
 
         if (checked) {
-            for (int i = 1; i < m_subWidgets.size(); ++i) {
-                auto* view = qobject_cast<vtkGLView*>(
-                        m_subWidgets[i]->findChild<vtkGLView*>());
-                if (!view)
-                    view = dynamic_cast<vtkGLView*>(
-                            static_cast<QObject*>(m_subWidgets[i]));
-                if (!view || !firstView) continue;
-                if (view->getVisualizer3D() &&
-                    firstView->getVisualizer3D()) {
-                    auto srcRen =
-                            view->getVisualizer3D()->getRendererCollection();
-                    auto dstRen =
-                            firstView->getVisualizer3D()
-                                    ->getRendererCollection();
-                    if (srcRen && dstRen) {
-                        srcRen->InitTraversal();
-                        dstRen->InitTraversal();
-                        auto* src = srcRen->GetNextItem();
-                        auto* dst = dstRen->GetNextItem();
-                        if (src && dst) {
-                            auto* actors = src->GetActors();
-                            if (actors) {
-                                actors->InitTraversal();
-                                vtkActor* a = nullptr;
-                                while ((a = actors->GetNextActor()))
-                                    dst->AddActor(a);
-                            }
-                        }
+            auto* dstRen = getFirstRenderer(firstView);
+            for (int i = 1; i < m_subViews.size(); ++i) {
+                auto* srcRen = getFirstRenderer(m_subViews[i]);
+                if (srcRen && dstRen) {
+                    auto* actors = srcRen->GetActors();
+                    if (actors) {
+                        actors->InitTraversal();
+                        vtkActor* a = nullptr;
+                        while ((a = actors->GetNextActor()))
+                            dstRen->AddActor(a);
                     }
                 }
-                m_subWidgets[i]->setVisible(false);
+                if (i < m_subWidgets.size())
+                    m_subWidgets[i]->setVisible(false);
             }
             m_gridLayout->setColumnStretch(0, 1);
             m_gridLayout->setRowStretch(0, 1);
         } else {
-            if (firstView && firstView->getVisualizer3D()) {
-                auto dstRen =
-                        firstView->getVisualizer3D()->getRendererCollection();
-                if (dstRen) {
-                    dstRen->InitTraversal();
-                    auto* dst = dstRen->GetNextItem();
-                    if (dst) {
-                        for (int i = 1; i < m_subWidgets.size(); ++i) {
-                            auto* view = qobject_cast<vtkGLView*>(
-                                    m_subWidgets[i]->findChild<vtkGLView*>());
-                            if (!view)
-                                view = dynamic_cast<vtkGLView*>(
-                                        static_cast<QObject*>(
-                                                m_subWidgets[i]));
-                            if (!view || !view->getVisualizer3D()) continue;
-                            auto srcRen =
-                                    view->getVisualizer3D()
-                                            ->getRendererCollection();
-                            if (!srcRen) continue;
-                            srcRen->InitTraversal();
-                            auto* src = srcRen->GetNextItem();
-                            if (!src) continue;
-                            auto* actors = src->GetActors();
-                            if (!actors) continue;
-                            actors->InitTraversal();
-                            vtkActor* a = nullptr;
-                            while ((a = actors->GetNextActor()))
-                                dst->RemoveActor(a);
-                        }
-                    }
+            auto* dstRen = getFirstRenderer(firstView);
+            if (dstRen) {
+                for (int i = 1; i < m_subViews.size(); ++i) {
+                    auto* srcRen = getFirstRenderer(m_subViews[i]);
+                    if (!srcRen) continue;
+                    auto* actors = srcRen->GetActors();
+                    if (!actors) continue;
+                    actors->InitTraversal();
+                    vtkActor* a = nullptr;
+                    while ((a = actors->GetNextActor()))
+                        dstRen->RemoveActor(a);
                 }
             }
             for (int i = 0; i < m_subWidgets.size(); ++i) {

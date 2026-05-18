@@ -174,14 +174,6 @@ int ecvTabbedMultiViewWidget::createTab() {
     setupTabButtons(idx);
     m_tabWidget->setCurrentIndex(idx);
 
-    if (m_viewFactory) {
-        auto* view = m_viewFactory();
-        if (view) {
-            layout->assignView(0, view);
-            ecvViewManager::instance().setActiveView(view);
-        }
-    }
-
     return idx;
 }
 

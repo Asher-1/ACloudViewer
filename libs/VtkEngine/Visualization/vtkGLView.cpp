@@ -948,7 +948,10 @@ int vtkGLView::getDevicePixelRatio() const {
 }
 
 void vtkGLView::setInteractionMode(INTERACTION_FLAGS flags) {
-    m_ctx.interactionFlags = flags;
+    if (m_ctx.interactionFlags != flags) {
+        m_ctx.interactionFlags = flags;
+        emit interactionModeChanged(flags);
+    }
 }
 
 vtkGLView::INTERACTION_FLAGS vtkGLView::getInteractionMode() const {
@@ -956,8 +959,9 @@ vtkGLView::INTERACTION_FLAGS vtkGLView::getInteractionMode() const {
 }
 
 void vtkGLView::setPickingMode(PICKING_MODE mode) {
-    if (!m_ctx.pickingModeLocked) {
+    if (!m_ctx.pickingModeLocked && m_ctx.pickingMode != mode) {
         m_ctx.pickingMode = mode;
+        emit pickingModeChanged(mode);
     }
 }
 
