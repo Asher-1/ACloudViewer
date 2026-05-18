@@ -40,6 +40,7 @@
 #include <QResizeEvent>
 #include <QSlider>
 #include <QSpinBox>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
 #include <QWheelEvent>
@@ -89,6 +90,13 @@ struct vtkOrthoSliceViewWidget::Impl {
     double geomBounds[6] = {-1, 1, -1, 1, -1, 1};
     bool hasMeshCells = false;
     vtkSmartPointer<vtkOrientationMarkerWidget> orientWidget;
+
+    struct ExtraSliceData {
+        vtkSmartPointer<vtkPlane> planes[3];
+        vtkSmartPointer<vtkCutter> cutters2D[3];
+        vtkSmartPointer<vtkCutter> cutters3D[3];
+    };
+    QList<ExtraSliceData> extraSlices;
 };
 
 vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
@@ -96,6 +104,70 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+
+    auto* selToolbar = new QWidget(this);
+    selToolbar->setObjectName("OrthoSelectionBar");
+    auto* selLayout = new QHBoxLayout(selToolbar);
+    selLayout->setContentsMargins(2, 1, 2, 1);
+    selLayout->setSpacing(2);
+    selToolbar->setStyleSheet(
+            "QWidget#OrthoSelectionBar { background: #2b2b2b; }"
+            "QToolButton { border: 1px solid transparent; padding: 2px; }"
+            "QToolButton:checked { background: #4a86c8; border: 1px solid "
+            "#6aa6e8; }");
+
+    static constexpr int kSelBtnSize = 20;
+    auto makeSelBtn = [selToolbar](const QString& text, const QString& tip,
+                                   bool checkable = true) {
+        auto* btn = new QToolButton(selToolbar);
+        btn->setText(text);
+        btn->setToolTip(tip);
+        btn->setCheckable(checkable);
+        btn->setAutoRaise(true);
+        btn->setFixedSize(kSelBtnSize + 16, kSelBtnSize);
+        btn->setStyleSheet(
+                "QToolButton { font-size: 10px; padding: 1px 3px; }");
+        return btn;
+    };
+
+    auto* selLabel = new QLabel(QStringLiteral("<b>Selection:</b>"), selToolbar);
+    selLabel->setStyleSheet("QLabel { color: #ccc; font-size: 10px; }");
+    selLayout->addWidget(selLabel);
+
+    auto* selPointsBtn = makeSelBtn(tr("Pts"), tr("Select Points"));
+    auto* selCellsBtn = makeSelBtn(tr("Cells"), tr("Select Cells"));
+    auto* selNoneBtn = makeSelBtn(tr("Off"), tr("Disable Selection"), true);
+    selNoneBtn->setChecked(true);
+
+    selLayout->addWidget(selPointsBtn);
+    selLayout->addWidget(selCellsBtn);
+    selLayout->addWidget(selNoneBtn);
+    selLayout->addStretch(1);
+    layout->addWidget(selToolbar);
+
+    auto clearSelChecks = [selPointsBtn, selCellsBtn, selNoneBtn]() {
+        selPointsBtn->setChecked(false);
+        selCellsBtn->setChecked(false);
+        selNoneBtn->setChecked(false);
+    };
+    connect(selPointsBtn, &QToolButton::clicked, this,
+            [this, clearSelChecks, selPointsBtn]() {
+                clearSelChecks();
+                selPointsBtn->setChecked(true);
+                m_selectionMode = SEL_POINTS;
+            });
+    connect(selCellsBtn, &QToolButton::clicked, this,
+            [this, clearSelChecks, selCellsBtn]() {
+                clearSelChecks();
+                selCellsBtn->setChecked(true);
+                m_selectionMode = SEL_CELLS;
+            });
+    connect(selNoneBtn, &QToolButton::clicked, this,
+            [this, clearSelChecks, selNoneBtn]() {
+                clearSelChecks();
+                selNoneBtn->setChecked(true);
+                m_selectionMode = SEL_NONE;
+            });
 
     auto* decoratorBar = new QWidget(this);
     decoratorBar->setObjectName("OrthoDecoratorBar");
@@ -571,12 +643,17 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
                 auto axes = vtkSmartPointer<vtkAxesActor>::New();
                 axes->SetShaftTypeToCylinder();
                 axes->SetTotalLength(1.0, 1.0, 1.0);
+                axes->SetXAxisLabelText("X");
+                axes->SetYAxisLabelText("Y");
+                axes->SetZAxisLabelText("Z");
                 d->orientWidget =
                         vtkSmartPointer<vtkOrientationMarkerWidget>::New();
                 d->orientWidget->SetOutlineColor(0.2, 0.2, 0.2);
                 d->orientWidget->SetOrientationMarker(axes);
                 d->orientWidget->SetInteractor(interactor);
-                d->orientWidget->SetViewport(0.82, 0.0, 1.0, 0.18);
+                d->orientWidget->SetCurrentRenderer(
+                        d->renderers[PERSPECTIVE_VIEW]);
+                d->orientWidget->SetViewport(0.85, 0.0, 1.0, 0.15);
                 d->orientWidget->SetEnabled(true);
                 d->orientWidget->InteractiveOff();
             }
@@ -665,24 +742,6 @@ void vtkOrthoSliceViewWidget::setSlicePosition(double x, double y, double z) {
     d->slicePos[1] = y;
     d->slicePos[2] = z;
 
-    for (int i = 0; i < 3; ++i) {
-        auto* cam = d->renderers[i]->GetActiveCamera();
-        double fp[3], pos[3];
-        cam->GetFocalPoint(fp);
-        cam->GetPosition(pos);
-        double dir[3] = {pos[0] - fp[0], pos[1] - fp[1], pos[2] - fp[2]};
-        double len = std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] +
-                               dir[2] * dir[2]);
-        if (len < 1e-10) len = 1.0;
-        dir[0] /= len;
-        dir[1] /= len;
-        dir[2] /= len;
-
-        cam->SetFocalPoint(x, y, z);
-        cam->SetPosition(x + dir[0] * len, y + dir[1] * len,
-                         z + dir[2] * len);
-    }
-
     char buf[128];
     snprintf(buf, sizeof(buf), "Top View (Y=%.5g)", d->slicePos[1]);
     d->annotations[TOP_VIEW]->SetInput(buf);
@@ -724,6 +783,20 @@ void vtkOrthoSliceViewWidget::setSlicePosition(double x, double y, double z) {
         if (d->sliceCutters3D[i]) {
             d->sliceCutters3D[i]->Modified();
             d->sliceCutters3D[i]->Update();
+        }
+    }
+
+    for (auto& extra : d->extraSlices) {
+        for (int i = 0; i < 3; ++i) {
+            if (extra.planes[i]) extra.planes[i]->SetOrigin(x, y, z);
+            if (extra.cutters2D[i]) {
+                extra.cutters2D[i]->Modified();
+                extra.cutters2D[i]->Update();
+            }
+            if (extra.cutters3D[i]) {
+                extra.cutters3D[i]->Modified();
+                extra.cutters3D[i]->Update();
+            }
         }
     }
 
@@ -990,56 +1063,30 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
 
                 int w = d->vtkWidget->width();
                 int h = d->vtkWidget->height();
+                if (w <= 0 || h <= 0) return false;
 
-                double vp[4];
-                ren->GetViewport(vp);
+                double dpr = d->vtkWidget->devicePixelRatioF();
+                double dispX = me->pos().x() * dpr;
+                double dispY = (h - 1 - me->pos().y()) * dpr;
 
-                double normX = static_cast<double>(me->pos().x()) / w;
-                double normY =
-                        1.0 - static_cast<double>(me->pos().y()) / h;
-
-                double localX = (normX - vp[0]) / (vp[2] - vp[0]);
-                double localY = (normY - vp[1]) / (vp[3] - vp[1]);
-
-                if (localX < 0 || localX > 1 || localY < 0 || localY > 1)
-                    return false;
+                ren->SetDisplayPoint(dispX, dispY, 0.0);
+                ren->DisplayToWorld();
 
                 double worldPt[4];
-                ren->SetDisplayPoint(
-                        localX * (vp[2] - vp[0]) * w,
-                        localY * (vp[3] - vp[1]) * h, 0.0);
-                ren->DisplayToWorld();
                 ren->GetWorldPoint(worldPt);
-
                 if (std::abs(worldPt[3]) > 1e-10) {
                     worldPt[0] /= worldPt[3];
                     worldPt[1] /= worldPt[3];
                     worldPt[2] /= worldPt[3];
                 }
 
-                double x = d->slicePos[0];
-                double y = d->slicePos[1];
-                double z = d->slicePos[2];
+                double newPos[3] = {worldPt[0], worldPt[1], worldPt[2]};
 
-                switch (viewIdx) {
-                    case TOP_VIEW:
-                        x = worldPt[0];
-                        z = worldPt[2];
-                        break;
-                    case SIDE_VIEW:
-                        y = worldPt[1];
-                        z = worldPt[2];
-                        break;
-                    case FRONT_VIEW:
-                        x = worldPt[0];
-                        y = worldPt[1];
-                        break;
-                    default:
-                        break;
-                }
+                int axisMap[3] = {1, 0, 2};
+                newPos[axisMap[viewIdx]] = d->slicePos[axisMap[viewIdx]];
 
-                setSlicePosition(x, y, z);
-                emit slicePositionChanged(x, y, z);
+                setSlicePosition(newPos[0], newPos[1], newPos[2]);
+                emit slicePositionChanged(newPos[0], newPos[1], newPos[2]);
                 return true;
             }
         } else if (event->type() == QEvent::KeyPress) {
@@ -1114,26 +1161,6 @@ void vtkOrthoSliceViewWidget::setAnnotationsVisible(bool visible) {
 void vtkOrthoSliceViewWidget::populateFromRenderer(vtkRenderer* sourceRenderer) {
     if (!sourceRenderer) return;
 
-    auto* actors = sourceRenderer->GetActors();
-    if (!actors) return;
-
-    actors->InitTraversal();
-    vtkActor* actor = nullptr;
-    while ((actor = actors->GetNextActor())) {
-        addActorToAll(actor);
-    }
-
-    auto* props = sourceRenderer->GetViewProps();
-    if (props) {
-        props->InitTraversal();
-        vtkProp* prop = nullptr;
-        while ((prop = props->GetNextProp())) {
-            if (!vtkActor::SafeDownCast(prop)) {
-                d->renderers[PERSPECTIVE_VIEW]->AddViewProp(prop);
-            }
-        }
-    }
-
     double bounds[6];
     sourceRenderer->ComputeVisiblePropBounds(bounds);
     bool hasBounds = (bounds[0] <= bounds[1] && bounds[2] <= bounds[3] &&
@@ -1145,6 +1172,7 @@ void vtkOrthoSliceViewWidget::populateFromRenderer(vtkRenderer* sourceRenderer) 
         double cz = (bounds[4] + bounds[5]) * 0.5;
         setSlicePosition(cx, cy, cz);
     }
+
     resetCameras();
 }
 
@@ -1325,6 +1353,9 @@ void vtkOrthoSliceViewWidget::refreshSourceCombo() {
     m_sourceCombo->addItem(tr("None"), QVariant::fromValue<quintptr>(0));
 
     auto entities = m_entityListProvider();
+    if (entities.size() > 1) {
+        m_sourceCombo->addItem(tr("All"), QVariant::fromValue<quintptr>(1));
+    }
     int newIdx = 0;
     for (int i = 0; i < entities.size(); ++i) {
         ccHObject* e = entities[i];
@@ -1343,11 +1374,17 @@ void vtkOrthoSliceViewWidget::refreshSourceCombo() {
 void vtkOrthoSliceViewWidget::onSourceComboChanged(int index) {
     if (index < 0) return;
     quintptr ptr = m_sourceCombo->itemData(index).value<quintptr>();
-    auto* entity = reinterpret_cast<ccHObject*>(ptr);
-    loadEntityIntoView(entity);
+    if (ptr == 1 && m_entityListProvider) {
+        auto entities = m_entityListProvider();
+        loadEntitiesIntoView(entities);
+    } else {
+        auto* entity = reinterpret_cast<ccHObject*>(ptr);
+        loadEntityIntoView(entity);
+    }
 }
 
 void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
+    d->extraSlices.clear();
     for (int i = 0; i < 4; ++i) {
         auto* actors = d->renderers[i]->GetActors();
         if (!actors) continue;
@@ -1493,12 +1530,27 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
             mapper->Update();
             d->fullModelActor = vtkSmartPointer<vtkActor>::New();
             d->fullModelActor->SetMapper(mapper);
-            d->fullModelActor->GetProperty()->SetRepresentationToWireframe();
-            d->fullModelActor->GetProperty()->SetColor(0.3, 0.3, 0.3);
-            d->fullModelActor->GetProperty()->SetAmbient(1.0);
-            d->fullModelActor->GetProperty()->SetDiffuse(0.0);
-            d->fullModelActor->GetProperty()->SetLineWidth(1.0);
-            d->fullModelActor->GetProperty()->LightingOff();
+            bool hasScalars = d->entityPolyData->GetPointData() &&
+                              d->entityPolyData->GetPointData()->GetScalars();
+            if (d->hasMeshCells) {
+                d->fullModelActor->GetProperty()->SetRepresentationToSurface();
+                d->fullModelActor->GetProperty()->SetAmbient(0.2);
+                d->fullModelActor->GetProperty()->SetDiffuse(0.8);
+                d->fullModelActor->GetProperty()->LightingOn();
+                d->fullModelActor->GetProperty()->SetInterpolationToPhong();
+                if (!hasScalars) {
+                    d->fullModelActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
+                }
+            } else {
+                d->fullModelActor->GetProperty()->SetRepresentationToPoints();
+                d->fullModelActor->GetProperty()->SetPointSize(2.0);
+                d->fullModelActor->GetProperty()->SetAmbient(1.0);
+                d->fullModelActor->GetProperty()->SetDiffuse(0.0);
+                d->fullModelActor->GetProperty()->LightingOff();
+                if (!hasScalars) {
+                    d->fullModelActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
+                }
+            }
             d->fullModelActor->SetVisibility(1);
             d->renderers[PERSPECTIVE_VIEW]->AddActor(d->fullModelActor);
             CVLog::Print("[OrthoSlice] 3D model actor added: %lld pts, "
@@ -1737,6 +1789,157 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         resetCameras();
         render();
     });
+}
+
+void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
+        const QList<ccHObject*>& entities) {
+    if (entities.isEmpty()) {
+        loadEntityIntoView(nullptr);
+        return;
+    }
+    if (entities.size() == 1) {
+        loadEntityIntoView(entities.first());
+        return;
+    }
+
+    loadEntityIntoView(entities.first());
+    d->extraSlices.clear();
+
+    for (int ei = 1; ei < entities.size(); ++ei) {
+        ccHObject* entity = entities[ei];
+        if (!entity) continue;
+
+        auto* mesh = ccHObjectCaster::ToMesh(entity);
+        auto* genericMesh = ccHObjectCaster::ToGenericMesh(entity);
+        auto* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
+        if (!cloud && genericMesh)
+            cloud = ccHObjectCaster::ToGenericPointCloud(
+                    genericMesh->getAssociatedCloud());
+        for (unsigned ci = 0;
+             (!genericMesh || !cloud) && ci < entity->getChildrenNumber();
+             ++ci) {
+            auto* child = entity->getChild(ci);
+            if (!genericMesh) {
+                genericMesh = ccHObjectCaster::ToGenericMesh(child);
+                if (!mesh) mesh = ccHObjectCaster::ToMesh(child);
+            }
+            if (!cloud) cloud = ccHObjectCaster::ToGenericPointCloud(child);
+        }
+        if (genericMesh && !cloud)
+            cloud = ccHObjectCaster::ToGenericPointCloud(
+                    genericMesh->getAssociatedCloud());
+        if (!mesh && genericMesh)
+            mesh = ccHObjectCaster::ToMesh(genericMesh);
+        if (!cloud) continue;
+
+        auto* pcCloud = ccHObjectCaster::ToPointCloud(entity);
+        if (!pcCloud && genericMesh)
+            pcCloud = ccHObjectCaster::ToPointCloud(
+                    genericMesh->getAssociatedCloud());
+        if (!pcCloud && mesh)
+            pcCloud = ccHObjectCaster::ToPointCloud(
+                    mesh->getAssociatedCloud());
+        if (!pcCloud) pcCloud = ccHObjectCaster::ToPointCloud(cloud);
+
+        vtkSmartPointer<vtkPolyData> polyData;
+        ccGenericMesh* meshForConvert = genericMesh ? genericMesh : mesh;
+        if (meshForConvert && pcCloud)
+            polyData = Converters::Cc2Vtk::MeshToPolyData(pcCloud,
+                                                          meshForConvert);
+        if (polyData && polyData->GetNumberOfPoints() == 0)
+            polyData = nullptr;
+        if (!polyData && pcCloud)
+            polyData = Converters::Cc2Vtk::PointCloudToPolyData(pcCloud);
+        if (!polyData) continue;
+
+        bool hasMesh = (polyData->GetNumberOfCells() > 0 &&
+                        polyData->GetNumberOfPolys() > 0);
+
+        {
+            vtkNew<vtkPolyDataMapper> modelMapper;
+            modelMapper->SetInputData(polyData);
+            modelMapper->ScalarVisibilityOff();
+            modelMapper->Update();
+            auto actor = vtkSmartPointer<vtkActor>::New();
+            actor->SetMapper(modelMapper);
+            actor->GetProperty()->SetRepresentationToWireframe();
+            actor->GetProperty()->SetColor(0.3, 0.3, 0.3);
+            actor->GetProperty()->SetAmbient(1.0);
+            actor->GetProperty()->SetDiffuse(0.0);
+            actor->GetProperty()->LightingOff();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(actor);
+        }
+
+        const double normals[3][3] = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
+        double origin[3] = {d->slicePos[0], d->slicePos[1], d->slicePos[2]};
+        Impl::ExtraSliceData extraData;
+        for (int i = 0; i < 3; ++i) {
+            auto plane = vtkSmartPointer<vtkPlane>::New();
+            plane->SetNormal(normals[i]);
+            plane->SetOrigin(origin);
+            extraData.planes[i] = plane;
+
+            auto cutter2D = vtkSmartPointer<vtkCutter>::New();
+            cutter2D->SetCutFunction(plane);
+            cutter2D->SetInputData(polyData);
+            cutter2D->Update();
+            extraData.cutters2D[i] = cutter2D;
+
+            vtkNew<vtkPolyDataMapper> mapper;
+            bool cutOk = cutter2D->GetOutput() &&
+                         cutter2D->GetOutput()->GetNumberOfPoints() > 0;
+            if (hasMesh && cutOk)
+                mapper->SetInputConnection(cutter2D->GetOutputPort());
+            else
+                mapper->SetInputData(polyData);
+            mapper->ScalarVisibilityOn();
+
+            auto actor = vtkSmartPointer<vtkActor>::New();
+            actor->SetMapper(mapper);
+            if (hasMesh && cutOk) {
+                actor->GetProperty()->SetLineWidth(3.0);
+                actor->GetProperty()->SetAmbient(1.0);
+                actor->GetProperty()->SetDiffuse(0.0);
+                actor->GetProperty()->LightingOff();
+            } else {
+                actor->GetProperty()->SetPointSize(3);
+                actor->GetProperty()->SetRepresentationToPoints();
+                actor->GetProperty()->LightingOff();
+            }
+            d->renderers[i]->AddActor(actor);
+
+            auto cutter3D = vtkSmartPointer<vtkCutter>::New();
+            cutter3D->SetCutFunction(plane);
+            cutter3D->SetInputData(polyData);
+            cutter3D->Update();
+            extraData.cutters3D[i] = cutter3D;
+
+            double contourColors[3][3] = {
+                    {1.0, 0.0, 0.0}, {0.0, 0.8, 0.0}, {0.0, 0.0, 1.0}};
+            vtkNew<vtkPolyDataMapper> mapper3D;
+            bool cut3dOk = cutter3D->GetOutput() &&
+                           cutter3D->GetOutput()->GetNumberOfPoints() > 0;
+            if (hasMesh && cut3dOk)
+                mapper3D->SetInputConnection(cutter3D->GetOutputPort());
+            else
+                mapper3D->SetInputData(polyData);
+            mapper3D->ScalarVisibilityOn();
+
+            auto actor3D = vtkSmartPointer<vtkActor>::New();
+            actor3D->SetMapper(mapper3D);
+            actor3D->GetProperty()->SetColor(contourColors[i]);
+            actor3D->GetProperty()->SetLineWidth(2.0);
+            actor3D->GetProperty()->SetAmbient(1.0);
+            actor3D->GetProperty()->SetDiffuse(0.0);
+            actor3D->GetProperty()->LightingOff();
+            d->renderers[PERSPECTIVE_VIEW]->AddActor(actor3D);
+        }
+        d->extraSlices.append(std::move(extraData));
+    }
+
+    if (m_statusLabel)
+        m_statusLabel->setText(tr("All (%1 objects)").arg(entities.size()));
+    render();
 }
 
 void vtkOrthoSliceViewWidget::onSourceComboAboutToShow() {

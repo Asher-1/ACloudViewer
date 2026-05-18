@@ -93,6 +93,7 @@ private:
     struct Impl;
     Impl* d;
     void loadEntityIntoView(ccHObject* entity);
+    void loadEntitiesIntoView(const QList<ccHObject*>& entities);
     void updateSliceSpinners();
 
     void applyDisplayProperties();
@@ -117,6 +118,9 @@ private:
     QPoint m_panLastPos;
     QPoint m_dragLastPos;
     QPoint m_zoomLastPos;
+
+    enum SelectionMode { SEL_NONE = 0, SEL_POINTS, SEL_CELLS };
+    SelectionMode m_selectionMode = SEL_NONE;
 
     QComboBox* m_reprCombo = nullptr;
     QSlider* m_opacitySlider = nullptr;

@@ -95,6 +95,8 @@ private:
     void installCameraLink();
     void onCameraLinkTick();
     void forceRenderAllSubViews();
+    void syncInteractionModeToSubViews();
+    void syncPickingModeToSubViews();
 
     ComparativeType m_type;
     int m_rows = 2;

@@ -347,6 +347,8 @@ public:
 signals:
     void aboutToClose(vtkGLView* self);
     void viewActivated(vtkGLView* self);
+    void interactionModeChanged(ecvGenericGLDisplay::INTERACTION_FLAGS flags);
+    void pickingModeChanged(ecvGenericGLDisplay::PICKING_MODE mode);
 
     // -- Per-view picking signals (ParaView pqView pattern) --
     void itemPicked(ccHObject* entity,

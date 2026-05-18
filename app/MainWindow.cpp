@@ -927,6 +927,13 @@ void MainWindow::initParaViewLayoutSystem() {
             m_tabbedMultiView->tabWidget()->widget(firstTab));
     if (firstMvw && firstMvw->layoutManager()) {
         ecvViewManager::instance().registerLayout(firstMvw->layoutManager());
+        if (m_tabbedMultiView->viewFactory()) {
+            auto* view = m_tabbedMultiView->viewFactory()();
+            if (view) {
+                firstMvw->layoutManager()->assignView(0, view);
+                ecvViewManager::instance().setActiveView(view);
+            }
+        }
     }
 }
 
@@ -6635,13 +6642,33 @@ void MainWindow::setGlobalZoom() {
             v->updateConstellationCenterAndZoom();
         }
 
-        // Also zoom all secondary views
+#ifdef USE_VTK_BACKEND
+        auto compViews = findChildren<vtkComparativeViewWidget*>();
+        QSet<vtkGLView*> comparativeSubViews;
+        for (auto* comp : compViews) {
+            for (auto* sv : comp->subViews()) {
+                comparativeSubViews.insert(sv);
+            }
+        }
+
+        for (auto* v : ecvViewManager::instance().getAllViews()) {
+            auto* glView = dynamic_cast<vtkGLView*>(v);
+            if (glView && !comparativeSubViews.contains(glView)) {
+                glView->zoomGlobal();
+            }
+        }
+
+        for (auto* comp : compViews) {
+            comp->refreshSubViews();
+        }
+#else
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView) {
                 glView->zoomGlobal();
             }
         }
+#endif
     }
 }
 
