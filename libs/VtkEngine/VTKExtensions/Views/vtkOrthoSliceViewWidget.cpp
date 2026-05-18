@@ -23,6 +23,8 @@
 #include <vtkPlane.h>
 #include <vtkPlaneSource.h>
 #include <vtkPointData.h>
+#include <vtkCellArray.h>
+#include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkLookupTable.h>
@@ -47,6 +49,8 @@
 
 #include <vtkActor.h>
 #include <vtkActorCollection.h>
+#include <vtkCellPicker.h>
+#include <vtkPointPicker.h>
 #include <vtkProperty.h>
 #include <vtkCamera.h>
 #include <vtkCubeAxesActor.h>
@@ -97,6 +101,7 @@ struct vtkOrthoSliceViewWidget::Impl {
         vtkSmartPointer<vtkCutter> cutters3D[3];
     };
     QList<ExtraSliceData> extraSlices;
+    vtkSmartPointer<vtkActor> selectionHighlightActor;
 };
 
 vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
@@ -957,6 +962,121 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                     m_dragLastPos = me->pos();
                     return true;
                 }
+            }
+            if (me->button() == Qt::LeftButton && viewIdx == PERSPECTIVE_VIEW &&
+                m_selectionMode != SEL_NONE) {
+                double dpr = d->vtkWidget->devicePixelRatioF();
+                int px = static_cast<int>(me->pos().x() * dpr);
+                int py = static_cast<int>(
+                        (d->vtkWidget->height() - 1 - me->pos().y()) * dpr);
+
+                auto* ren = d->renderers[PERSPECTIVE_VIEW].GetPointer();
+                if (ren && d->fullModelActor) {
+                    if (d->selectionHighlightActor) {
+                        d->renderers[PERSPECTIVE_VIEW]->RemoveActor(
+                                d->selectionHighlightActor);
+                        d->selectionHighlightActor = nullptr;
+                    }
+
+                    if (m_selectionMode == SEL_CELLS) {
+                        vtkNew<vtkCellPicker> picker;
+                        picker->SetTolerance(0.005);
+                        picker->AddPickList(d->fullModelActor);
+                        picker->PickFromListOn();
+                        if (picker->Pick(px, py, 0, ren)) {
+                            vtkIdType cellId = picker->GetCellId();
+                            if (cellId >= 0 && d->entityPolyData) {
+                                auto sel =
+                                        vtkSmartPointer<vtkPolyData>::New();
+                                auto cells =
+                                        vtkSmartPointer<vtkCellArray>::New();
+                                auto pts =
+                                        vtkSmartPointer<vtkPoints>::New();
+                                vtkIdType npts;
+                                const vtkIdType* ptIds;
+                                d->entityPolyData->GetCellPoints(cellId,
+                                                                 npts, ptIds);
+                                for (vtkIdType i = 0; i < npts; ++i) {
+                                    double p[3];
+                                    d->entityPolyData->GetPoint(ptIds[i], p);
+                                    pts->InsertNextPoint(p);
+                                }
+                                vtkIdType newIds[16];
+                                for (vtkIdType i = 0; i < npts && i < 16;
+                                     ++i)
+                                    newIds[i] = i;
+                                cells->InsertNextCell(npts, newIds);
+                                sel->SetPoints(pts);
+                                sel->SetPolys(cells);
+
+                                vtkNew<vtkPolyDataMapper> selMapper;
+                                selMapper->SetInputData(sel);
+                                d->selectionHighlightActor =
+                                        vtkSmartPointer<vtkActor>::New();
+                                d->selectionHighlightActor->SetMapper(
+                                        selMapper);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetColor(1.0, 0.4, 0.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetLineWidth(3.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetPointSize(8.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetRepresentationToSurface();
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetAmbient(1.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->LightingOff();
+                                d->renderers[PERSPECTIVE_VIEW]->AddActor(
+                                        d->selectionHighlightActor);
+                            }
+                        }
+                    } else {
+                        vtkNew<vtkPointPicker> picker;
+                        picker->SetTolerance(0.02);
+                        picker->AddPickList(d->fullModelActor);
+                        picker->PickFromListOn();
+                        if (picker->Pick(px, py, 0, ren)) {
+                            vtkIdType ptId = picker->GetPointId();
+                            if (ptId >= 0 && d->entityPolyData) {
+                                double p[3];
+                                d->entityPolyData->GetPoint(ptId, p);
+
+                                auto sphere =
+                                        vtkSmartPointer<vtkPolyData>::New();
+                                auto spts =
+                                        vtkSmartPointer<vtkPoints>::New();
+                                auto verts =
+                                        vtkSmartPointer<vtkCellArray>::New();
+                                vtkIdType id = spts->InsertNextPoint(p);
+                                verts->InsertNextCell(1, &id);
+                                sphere->SetPoints(spts);
+                                sphere->SetVerts(verts);
+
+                                vtkNew<vtkPolyDataMapper> selMapper;
+                                selMapper->SetInputData(sphere);
+                                d->selectionHighlightActor =
+                                        vtkSmartPointer<vtkActor>::New();
+                                d->selectionHighlightActor->SetMapper(
+                                        selMapper);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetColor(1.0, 0.2, 0.2);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetPointSize(12.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetRepresentationToPoints();
+                                d->selectionHighlightActor->GetProperty()
+                                        ->SetAmbient(1.0);
+                                d->selectionHighlightActor->GetProperty()
+                                        ->LightingOff();
+                                d->renderers[PERSPECTIVE_VIEW]->AddActor(
+                                        d->selectionHighlightActor);
+                            }
+                        }
+                    }
+                    d->renderWindow->Render();
+                }
+                return true;
             }
             if (me->button() == Qt::LeftButton && viewIdx >= 0 && viewIdx < 3) {
                 m_panning2D = true;

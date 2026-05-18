@@ -245,22 +245,27 @@ void vtkComparativeViewWidget::createRenderSubViews() {
         }
     }
 
+    auto onRepChanged = [this](ecvViewRepresentation* rep) {
+        if (!rep || m_subViews.isEmpty()) return;
+        ecvGenericGLDisplay* repView =
+                const_cast<ecvGenericGLDisplay*>(rep->getView());
+        bool isOurView = false;
+        for (auto* sv : m_subViews) {
+            if (sv == repView) { isOurView = true; break; }
+        }
+        if (repView == m_sourceView) isOurView = true;
+        if (!isOurView) return;
+        QTimer::singleShot(50, this, [this]() {
+            copyActorsAcrossSubViews();
+            forceRenderAllSubViews();
+        });
+    };
+
     connect(&ecvRepresentationManager::instance(),
-            &ecvRepresentationManager::representationAdded, this,
-            [this](ecvViewRepresentation* rep) {
-                if (!rep || m_subViews.isEmpty()) return;
-                ecvGenericGLDisplay* repView =
-                        const_cast<ecvGenericGLDisplay*>(rep->getView());
-                bool isOurView = false;
-                for (auto* sv : m_subViews) {
-                    if (sv == repView) { isOurView = true; break; }
-                }
-                if (repView == m_sourceView) isOurView = true;
-                if (!isOurView) return;
-                QTimer::singleShot(50, this, [this]() {
-                    forceRenderAllSubViews();
-                });
-            });
+            &ecvRepresentationManager::representationAdded, this, onRepChanged);
+    connect(&ecvRepresentationManager::instance(),
+            &ecvRepresentationManager::representationChanged, this,
+            onRepChanged);
 
     forceRenderAllSubViews();
 
