@@ -76,6 +76,7 @@ protected:
 
 signals:
     void subViewCreated(QWidget* subWidget);
+    void clicked();
 
 private slots:
     void onDimensionChanged();
@@ -126,6 +127,7 @@ private:
     bool m_syncingCameras = false;
     double m_lastCameraMTime = 0;
     bool m_firstShowDone = false;
+    bool m_closing = false;
     QSet<QWidget*> m_pendingFirstResize;
 
     struct CameraState {

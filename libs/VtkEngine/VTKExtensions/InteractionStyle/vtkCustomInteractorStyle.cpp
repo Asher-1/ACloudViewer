@@ -180,8 +180,24 @@ void vtkCustomInteractorStyle::OnChar() {
             break;
         }
         case 's':
-        case 'S': {
-            if (!keymod) vtkInteractorStyleRubberBandPick::OnChar();
+        case 'S':
+        case 'd':
+        case 'D':
+        case 'b':
+        case 'B':
+        case 'n':
+        case 'N':
+        case 'e':
+        case 'E':
+        case 'u':
+        case 'U':
+        case 'w':
+        case 'W':
+        case 'v':
+        case 'V':
+        case '3':
+        case 't':
+        case 'T': {
             break;
         }
         default: {
