@@ -322,6 +322,9 @@
         <file>Resources/images/svg/pqSolidColor.png</file>
         <file>Resources/images/svg/pqAutoApply.svg</file>
         <file>Resources/images/svg/pqExtractSelection.svg</file>
+        <file>Resources/images/svg/pqPlotSelectionOverTime.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionCellDataInteractive.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionPointDataInteractive.svg</file>
         <file>Resources/images/svg/pqFindData.svg</file>
         <file>Resources/images/svg/pqLock.svg</file>
         <file>Resources/images/font/pqBold24.png</file>

@@ -19,6 +19,8 @@
 #include "qVTK.h"
 
 #include <QList>
+#include <QRubberBand>
+#include <QSet>
 #include <QWidget>
 #include <functional>
 
@@ -67,6 +69,11 @@ public:
     void setSliceStep(double step) { m_sliceStep = step; }
     double sliceStep() const { return m_sliceStep; }
 
+    void set3DProjection(bool perspective);
+    void zoomToFit();
+    void setViewPreset(int presetIndex);
+    void setSelectionMode(int mode);
+
     void setSliceIncrement(int axis, double step);
     double sliceIncrement(int axis) const;
 
@@ -77,6 +84,7 @@ public:
 
 signals:
     void slicePositionChanged(double x, double y, double z);
+    void clicked();
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -97,6 +105,7 @@ private:
     void updateSliceSpinners();
 
     void applyDisplayProperties();
+    void performRubberBandSelection();
 
     QComboBox* m_sourceCombo = nullptr;
     QDoubleSpinBox* m_sliceSpin[3] = {nullptr, nullptr, nullptr};
@@ -113,14 +122,28 @@ private:
     int m_dragViewIdx = -1;
     int m_lastActiveQuadrant = -1;
     bool m_panning2D = false;
+    bool m_panPending = false;
     bool m_zooming2D = false;
     int m_zoomViewIdx = -1;
+    QPoint m_panPressPos;
     QPoint m_panLastPos;
     QPoint m_dragLastPos;
     QPoint m_zoomLastPos;
 
-    enum SelectionMode { SEL_NONE = 0, SEL_POINTS, SEL_CELLS };
+    enum SelectionMode {
+        SEL_NONE = 0,
+        SEL_POINTS,
+        SEL_CELLS,
+        SEL_RUBBER_POINTS,
+        SEL_RUBBER_CELLS
+    };
     SelectionMode m_selectionMode = SEL_NONE;
+
+    bool m_rubberBandActive = false;
+    QPoint m_rubberBandStart;
+    QPoint m_rubberBandEnd;
+    QSet<unsigned> m_selectedIndices;
+    QRubberBand* m_rubberBandWidget = nullptr;
 
     QComboBox* m_reprCombo = nullptr;
     QSlider* m_opacitySlider = nullptr;

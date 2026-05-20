@@ -2008,6 +2008,13 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                         return true;
                     }
                 }
+
+                bool noMods = !(mods & (Qt::ControlModifier |
+                                        Qt::AltModifier | Qt::MetaModifier));
+                if (noMods && qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
+                    evt->ignore();
+                    return false;
+                }
             }
         } break;
 

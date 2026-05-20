@@ -965,6 +965,9 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 wrapped->setProperty("CELL_INDEX", location);
                 m_cellFrames[location] = wrapped;
 
+                connect(compView, &vtkComparativeViewWidget::clicked, this,
+                        [this, wrapped]() { makeActive(wrapped); });
+
                 if (parentSplitter && splitterIdx >= 0) {
                     parentSplitter->insertWidget(splitterIdx, wrapped);
                 } else if (parentWidget && parentWidget->layout()) {
@@ -1011,6 +1014,9 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+
+        connect(orthoView, &vtkOrthoSliceViewWidget::clicked, this,
+                [this, wrapped]() { makeActive(wrapped); });
 
         if (parentSplitter && splitterIdx >= 0) {
             parentSplitter->insertWidget(splitterIdx, wrapped);
@@ -1306,7 +1312,7 @@ bool ecvMultiViewWidget::togglePopout() {
 // Split / Close / Maximize
 // ============================================================================
 
-void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
+void ecvMultiViewWidget::splitImpl(QWidget* frame, int dir) {
     if (!m_layout) return;
     int location = findLocationForFrame(frame);
     if (location < 0) return;
@@ -1315,53 +1321,38 @@ void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
     bool isEmptyCell = cellFrame && cellFrame->property("IS_EMPTY_CELL").toBool();
     bool hasNonGLFrame = cellFrame && !isEmptyCell &&
                          (m_viewFrames.key(cellFrame, nullptr) == nullptr);
+    ecvGenericGLDisplay* origView = m_layout->getView(location);
 
-    if (hasNonGLFrame) {
-        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
-                   &ecvMultiViewWidget::reload);
-    }
+    disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+               &ecvMultiViewWidget::reload);
 
-    int child = m_layout->split(location, ecvViewLayoutProxy::HORIZONTAL);
-
-    if (hasNonGLFrame && child >= 0) {
-        QWidget* nonGLFrame = m_cellFrames.take(location);
-        if (nonGLFrame) {
-            m_cellFrames[child] = nonGLFrame;
-            nonGLFrame->setProperty("CELL_INDEX", child);
-        }
+    int child1 = m_layout->split(location,
+                                  static_cast<ecvViewLayoutProxy::Direction>(dir));
+    if (child1 < 0) {
         connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
                 &ecvMultiViewWidget::reload);
-        reload();
+        return;
     }
+
+    if (hasNonGLFrame) {
+        QWidget* nonGLFrame = m_cellFrames.take(location);
+        if (nonGLFrame) {
+            m_cellFrames[child1] = nonGLFrame;
+            nonGLFrame->setProperty("CELL_INDEX", child1);
+        }
+    }
+
+    connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
+            &ecvMultiViewWidget::reload);
+    reload();
+}
+
+void ecvMultiViewWidget::onSplitHorizontal(QWidget* frame) {
+    splitImpl(frame, static_cast<int>(ecvViewLayoutProxy::HORIZONTAL));
 }
 
 void ecvMultiViewWidget::onSplitVertical(QWidget* frame) {
-    if (!m_layout) return;
-    int location = findLocationForFrame(frame);
-    if (location < 0) return;
-
-    QWidget* cellFrame = m_cellFrames.value(location);
-    bool isEmptyCell = cellFrame && cellFrame->property("IS_EMPTY_CELL").toBool();
-    bool hasNonGLFrame = cellFrame && !isEmptyCell &&
-                         (m_viewFrames.key(cellFrame, nullptr) == nullptr);
-
-    if (hasNonGLFrame) {
-        disconnect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
-                   &ecvMultiViewWidget::reload);
-    }
-
-    int child = m_layout->split(location, ecvViewLayoutProxy::VERTICAL);
-
-    if (hasNonGLFrame && child >= 0) {
-        QWidget* nonGLFrame = m_cellFrames.take(location);
-        if (nonGLFrame) {
-            m_cellFrames[child] = nonGLFrame;
-            nonGLFrame->setProperty("CELL_INDEX", child);
-        }
-        connect(m_layout, &ecvViewLayoutProxy::layoutChanged, this,
-                &ecvMultiViewWidget::reload);
-        reload();
-    }
+    splitImpl(frame, static_cast<int>(ecvViewLayoutProxy::VERTICAL));
 }
 
 void ecvMultiViewWidget::onCloseView(QWidget* frame) {
@@ -1380,19 +1371,20 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
 
     m_layout->removeViewAt(location);
 
-    if (location != 0 && location > 0) {
-        int par = ecvViewLayoutProxy::parent(location);
-        int sibling = (location == ecvViewLayoutProxy::firstChild(par))
-                              ? ecvViewLayoutProxy::secondChild(par)
-                              : ecvViewLayoutProxy::firstChild(par);
+    int parentLocation = -1;
+    if (location != 0) {
+        parentLocation = ecvViewLayoutProxy::parent(location);
+        int sibling = (location == ecvViewLayoutProxy::firstChild(parentLocation))
+                              ? ecvViewLayoutProxy::secondChild(parentLocation)
+                              : ecvViewLayoutProxy::firstChild(parentLocation);
 
         QWidget* sibFrame = m_cellFrames.value(sibling);
-        bool sibIsEmpty = sibFrame &&
-                          sibFrame->property("IS_EMPTY_CELL").toBool();
-        if (sibFrame && !sibIsEmpty && !m_cellFrames.contains(par)) {
+        bool sibIsEmptyCell = sibFrame &&
+                              sibFrame->property("IS_EMPTY_CELL").toBool();
+        if (sibFrame && !sibIsEmptyCell && !m_cellFrames.contains(parentLocation)) {
             m_cellFrames.take(sibling);
-            m_cellFrames[par] = sibFrame;
-            sibFrame->setProperty("CELL_INDEX", par);
+            m_cellFrames[parentLocation] = sibFrame;
+            sibFrame->setProperty("CELL_INDEX", parentLocation);
         }
 
         m_layout->collapse(location);
@@ -1422,6 +1414,32 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
         }
 #endif
     } else {
+#ifdef USE_VTK_BACKEND
+        auto* compView = frame
+                ? frame->findChild<vtkComparativeViewWidget*>()
+                : nullptr;
+        if (!compView && frame)
+            compView = qobject_cast<vtkComparativeViewWidget*>(frame);
+        if (compView) {
+            if (auto* timer = compView->findChild<QTimer*>())
+                timer->stop();
+            for (auto* sv : compView->subViews()) {
+                if (!sv) continue;
+                sv->setSceneDB(nullptr);
+                emit sv->aboutToClose(sv);
+                sv->disconnect();
+                ecvViewManager::instance().unregisterView(sv);
+            }
+            compView->disconnect();
+        }
+
+        auto* orthoView = frame
+                ? frame->findChild<vtkOrthoSliceViewWidget*>()
+                : nullptr;
+        if (!orthoView && frame)
+            orthoView = qobject_cast<vtkOrthoSliceViewWidget*>(frame);
+        if (orthoView) orthoView->disconnect();
+#endif
         m_cellFrames.remove(location);
         if (frame) {
             frame->setParent(nullptr);

@@ -107,6 +107,8 @@
 #include <ecvUndoManager.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
+#include <Shortcuts/ecvKeySequences.h>
+#include <Shortcuts/ecvModalShortcut.h>
 
 // CV_IO_LIB
 #include <AcvProjectFilter.h>
@@ -217,6 +219,7 @@
 #include <Visualization/VtkVis.h>
 #include <VTKExtensions/Views/vtkChartView.h>
 #include <VTKExtensions/Views/vtkComparativeViewWidget.h>
+#include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
 #include <Visualization/vtkGLView.h>
 #endif
 
@@ -2941,6 +2944,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* viewToolBar = new QToolBar(titleBar);
     viewToolBar->setObjectName("ViewSelectionToolBar");
     viewToolBar->setIconSize(QSize(PV_ICON_SIZE, PV_ICON_SIZE));
+    viewToolBar->setToolButtonStyle(Qt::ToolButtonFollowStyle);
     viewToolBar->layout()->setSpacing(0);
     viewToolBar->layout()->setContentsMargins(0, 0, 0, 0);
     viewToolBar->setMovable(false);
@@ -2954,6 +2958,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* compView = qobject_cast<vtkComparativeViewWidget*>(innerWidget);
     bool isComparativeRenderView = (compView &&
             compView->comparativeType() == vtkComparativeViewWidget::RENDER);
+    auto* orthoView = qobject_cast<vtkOrthoSliceViewWidget*>(innerWidget);
+    bool isOrthoSliceView = (orthoView != nullptr);
 
     auto activateViewAndDo = [this, innerWidget](auto slot) {
         return [this, innerWidget, slot]() {
@@ -2967,7 +2973,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         };
     };
 
-    if (isComparativeRenderView || isRenderView) {
+    if (isComparativeRenderView || isRenderView || isOrthoSliceView) {
         auto getVtkVisForWidget = [compView](QWidget* w) -> Visualization::VtkVis* {
             auto* display = ecvGenericGLDisplay::FromWidget(w);
             if (!display && compView) {
@@ -3028,6 +3034,56 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             activateViewAndDo(&MainWindow::doActionScreenShot));
     viewToolBar->addAction(captureAct);
 
+    // --- OrthoSlice-specific toolbar (ParaView OrthographicSliceView) ---
+    if (isOrthoSliceView && orthoView) {
+        viewToolBar->addSeparator();
+
+        auto* toggle3DAct = new QAction(
+                QIcon(":/Resources/images/svg/pqInteractionMode3D.svg"),
+                tr("3D"), viewToolBar);
+        toggle3DAct->setCheckable(true);
+        toggle3DAct->setChecked(true);
+        connect(toggle3DAct, &QAction::toggled, orthoView,
+                [orthoView](bool on) { orthoView->set3DProjection(on); });
+        viewToolBar->addAction(toggle3DAct);
+
+        auto* editCamAct = new QAction(
+                QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+                tr("Adjust Camera"), viewToolBar);
+        connect(editCamAct, &QAction::triggered, this,
+                activateViewAndDo(&MainWindow::doActionEditCamera));
+        viewToolBar->addAction(editCamAct);
+
+        viewToolBar->addSeparator();
+
+        auto* resetCamAct = new QAction(
+                QIcon(":/Resources/images/svg/pqReset.svg"),
+                tr("Reset Camera"), viewToolBar);
+        connect(resetCamAct, &QAction::triggered, orthoView,
+                &vtkOrthoSliceViewWidget::resetCameras);
+        viewToolBar->addAction(resetCamAct);
+
+        auto* zoomFitAct = new QAction(
+                QIcon(":/Resources/images/svg/pqZoomToSelectedData.svg"),
+                tr("Zoom to Fit"), viewToolBar);
+        connect(zoomFitAct, &QAction::triggered, orthoView,
+                [orthoView]() { orthoView->zoomToFit(); });
+        viewToolBar->addAction(zoomFitAct);
+
+    }
+
+    // --- OrthoSlice selection tools — reuse populateToolbar (matches RenderView) ---
+    if (isOrthoSliceView && orthoView) {
+        viewToolBar->addSeparator();
+        if (m_perViewSelMgr && m_selectionController) {
+            const auto& acts = m_selectionController->getSelectionActions();
+            if (acts.selectSurfaceCells) {
+                m_perViewSelMgr->populateToolbar(viewToolBar, orthoView, acts);
+                viewToolBar->setProperty("_selectionPopulated", true);
+            }
+        }
+    }
+
     // ParaView addContextViewActions: chart views get selection tools in frame
     vtkChartView* chartW = qobject_cast<vtkChartView*>(innerWidget);
     if (!chartW && innerWidget)
@@ -3080,28 +3136,27 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
         viewToolBar->addSeparator();
 
+        auto& chartKs = ecvKeySequences::instance();
+
         auto* polySelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqSelectChartPolygon.svg"),
                 tr("Polygon Selection (d)"), viewToolBar);
         polySelAct->setCheckable(true);
-        polySelAct->setShortcut(QKeySequence(Qt::Key_D));
-        polySelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
         viewToolBar->addAction(polySelAct);
+        chartKs.addModalShortcut(QKeySequence(Qt::Key_D), polySelAct, frame);
 
         auto* rectSelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqSelectChart.svg"),
                 tr("Rectangle Selection (s)"), viewToolBar);
         rectSelAct->setCheckable(true);
-        rectSelAct->setShortcut(QKeySequence(Qt::Key_S));
-        rectSelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
         viewToolBar->addAction(rectSelAct);
+        chartKs.addModalShortcut(QKeySequence(Qt::Key_S), rectSelAct, frame);
 
         auto* clearSelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqCloseView.svg"),
                 tr("Clear Selection"), viewToolBar);
-        clearSelAct->setShortcut(QKeySequence(Qt::Key_Escape));
-        clearSelAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
         viewToolBar->addAction(clearSelAct);
+        chartKs.addModalShortcut(QKeySequence(Qt::Key_Escape), clearSelAct, frame);
 
         auto* selGroup = new QActionGroup(viewToolBar);
         selGroup->setExclusive(false);
@@ -3220,7 +3275,12 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             tr("Split Left|Right"));
     splitLRBtn->setObjectName("btnSplitHorizontal");
     connect(splitLRBtn, &QToolButton::clicked, this,
-            [this, frame]() { splitViewFrame(frame, Qt::Horizontal); });
+            [this, frame]() {
+                auto* mvw = m_tabbedMultiView
+                                    ? m_tabbedMultiView->currentMultiView()
+                                    : nullptr;
+                if (mvw) mvw->onSplitHorizontal(frame);
+            });
     titleLayout->addWidget(splitLRBtn);
 
     auto* splitTBBtn = makeSvgBtn(
@@ -3228,7 +3288,12 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             tr("Split Top|Bottom"));
     splitTBBtn->setObjectName("btnSplitVertical");
     connect(splitTBBtn, &QToolButton::clicked, this,
-            [this, frame]() { splitViewFrame(frame, Qt::Vertical); });
+            [this, frame]() {
+                auto* mvw = m_tabbedMultiView
+                                    ? m_tabbedMultiView->currentMultiView()
+                                    : nullptr;
+                if (mvw) mvw->onSplitVertical(frame);
+            });
     titleLayout->addWidget(splitTBBtn);
 
     auto* maxBtn = makeSvgBtn(QString(), tr("Maximize"));
@@ -3244,7 +3309,15 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             makeSvgBtn(QStringLiteral(":/Resources/images/svg/pqCloseView.svg"),
                        tr("Close View"));
     connect(closeBtn, &QToolButton::clicked, this, [this, frame]() {
-        bool isGLViewFrame = (ecvGenericGLDisplay::FromWidget(frame) != nullptr);
+        auto* mvw = m_tabbedMultiView
+                            ? m_tabbedMultiView->currentMultiView()
+                            : nullptr;
+        if (!mvw) return;
+
+        int location = mvw->findLocationForFrame(frame);
+        bool isInSplit = (location > 0);
+        bool isGLViewFrame =
+                (ecvGenericGLDisplay::FromWidget(frame) != nullptr);
         if (!isGLViewFrame) {
             for (auto* child : frame->findChildren<QWidget*>()) {
                 if (ecvGenericGLDisplay::FromWidget(child)) {
@@ -3258,11 +3331,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             return;
 
         prepareViewClose(frame);
-
-        if (m_tabbedMultiView) {
-            auto* mvw = m_tabbedMultiView->currentMultiView();
-            if (mvw) mvw->onCloseView(frame);
-        }
+        mvw->onCloseView(frame);
 
         QTimer::singleShot(0, this, [this]() {
             ecvViewManager::instance().invalidateActiveViewport();
@@ -3525,19 +3594,25 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 }
                 auto* closeAct = menu.addAction(
                         tr("Close"), [this, frame, ctxIsGLFrame]() {
+                            auto* mvw = m_tabbedMultiView
+                                                ? m_tabbedMultiView
+                                                          ->currentMultiView()
+                                                : nullptr;
+                            if (!mvw) return;
                             if (ctxIsGLFrame &&
                                 ecvViewManager::instance().viewCount() <= 1)
                                 return;
                             prepareViewClose(frame);
-                            if (m_tabbedMultiView) {
-                                auto* mvw =
-                                        m_tabbedMultiView->currentMultiView();
-                                if (mvw) mvw->onCloseView(frame);
-                            }
+                            mvw->onCloseView(frame);
                         });
-                closeAct->setEnabled(
-                        !ctxIsGLFrame ||
-                        ecvViewManager::instance().viewCount() > 1);
+                {
+                    auto* mvw2 = m_tabbedMultiView
+                                         ? m_tabbedMultiView->currentMultiView()
+                                         : nullptr;
+                    closeAct->setEnabled(
+                            !ctxIsGLFrame ||
+                            ecvViewManager::instance().viewCount() > 1);
+                }
                 Q_UNUSED(splitH);
                 Q_UNUSED(splitV);
                 menu.exec(frame->findChild<QWidget*>("ViewTitleBar")
@@ -6735,14 +6810,15 @@ void MainWindow::initSelectionController() {
             {"actionGrowSelection", QKeySequence(Qt::Key_Plus)},
             {"actionShrinkSelection", QKeySequence(Qt::Key_Minus)},
     };
+    auto& selKs = ecvKeySequences::instance();
     for (const auto& sc : scEntries) {
+        auto* globalAct = this->findChild<QAction*>(sc.actionName);
         auto* shortcut = new QShortcut(sc.key, this);
         connect(shortcut, &QShortcut::activated, this,
                 [findActiveAction, name = sc.actionName, this]() {
                     QAction* local = findActiveAction(name);
                     QAction* target = local ? local : nullptr;
                     if (!target) {
-                        // Fallback: trigger global action directly
                         auto* ga = this->findChild<QAction*>(name);
                         if (ga) target = ga;
                     }
@@ -6753,6 +6829,7 @@ void MainWindow::initSelectionController() {
                         target->trigger();
                     }
                 });
+        selKs.addModalShortcut(sc.key, globalAct, this);
     }
 
     // ESC key deactivates the currently active selection tool (ParaView-style).
@@ -6764,6 +6841,8 @@ void MainWindow::initSelectionController() {
         }
         m_selectionEscShortcut->setEnabled(false);
     });
+    ecvKeySequences::instance().addModalShortcut(
+            QKeySequence(Qt::Key_Escape), nullptr, this);
     connect(m_selectionController,
             &cvSelectionToolController::selectionToolStateChanged, this,
             [this](bool active) {

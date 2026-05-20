@@ -64,6 +64,14 @@
 #include <vtkSmartPointer.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
+#include <vtkAreaPicker.h>
+#include <vtkExtractSelectedFrustum.h>
+#include <vtkExtractCells.h>
+#include <vtkGeometryFilter.h>
+#include <vtkCellData.h>
+#include <vtkDataSet.h>
+#include <vtkIdList.h>
+#include <vtkPlanes.h>
 
 #include <cmath>
 #include <cstdio>
@@ -89,7 +97,7 @@ struct vtkOrthoSliceViewWidget::Impl {
     vtkSmartPointer<vtkActor> outlineActor;
     vtkSmartPointer<vtkActor> planeIndicators[3];
     double planeInitCenter[3] = {0, 0, 0};
-    vtkSmartPointer<vtkCubeAxesActor> gridAxes[3];
+    vtkSmartPointer<vtkCubeAxesActor> gridAxes[4];
     double slicePos[3] = {0.0, 0.0, 0.0};
     double geomBounds[6] = {-1, 1, -1, 1, -1, 1};
     bool hasMeshCells = false;
@@ -110,70 +118,6 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    auto* selToolbar = new QWidget(this);
-    selToolbar->setObjectName("OrthoSelectionBar");
-    auto* selLayout = new QHBoxLayout(selToolbar);
-    selLayout->setContentsMargins(2, 1, 2, 1);
-    selLayout->setSpacing(2);
-    selToolbar->setStyleSheet(
-            "QWidget#OrthoSelectionBar { background: #2b2b2b; }"
-            "QToolButton { border: 1px solid transparent; padding: 2px; }"
-            "QToolButton:checked { background: #4a86c8; border: 1px solid "
-            "#6aa6e8; }");
-
-    static constexpr int kSelBtnSize = 20;
-    auto makeSelBtn = [selToolbar](const QString& text, const QString& tip,
-                                   bool checkable = true) {
-        auto* btn = new QToolButton(selToolbar);
-        btn->setText(text);
-        btn->setToolTip(tip);
-        btn->setCheckable(checkable);
-        btn->setAutoRaise(true);
-        btn->setFixedSize(kSelBtnSize + 16, kSelBtnSize);
-        btn->setStyleSheet(
-                "QToolButton { font-size: 10px; padding: 1px 3px; }");
-        return btn;
-    };
-
-    auto* selLabel = new QLabel(QStringLiteral("<b>Selection:</b>"), selToolbar);
-    selLabel->setStyleSheet("QLabel { color: #ccc; font-size: 10px; }");
-    selLayout->addWidget(selLabel);
-
-    auto* selPointsBtn = makeSelBtn(tr("Pts"), tr("Select Points"));
-    auto* selCellsBtn = makeSelBtn(tr("Cells"), tr("Select Cells"));
-    auto* selNoneBtn = makeSelBtn(tr("Off"), tr("Disable Selection"), true);
-    selNoneBtn->setChecked(true);
-
-    selLayout->addWidget(selPointsBtn);
-    selLayout->addWidget(selCellsBtn);
-    selLayout->addWidget(selNoneBtn);
-    selLayout->addStretch(1);
-    layout->addWidget(selToolbar);
-
-    auto clearSelChecks = [selPointsBtn, selCellsBtn, selNoneBtn]() {
-        selPointsBtn->setChecked(false);
-        selCellsBtn->setChecked(false);
-        selNoneBtn->setChecked(false);
-    };
-    connect(selPointsBtn, &QToolButton::clicked, this,
-            [this, clearSelChecks, selPointsBtn]() {
-                clearSelChecks();
-                selPointsBtn->setChecked(true);
-                m_selectionMode = SEL_POINTS;
-            });
-    connect(selCellsBtn, &QToolButton::clicked, this,
-            [this, clearSelChecks, selCellsBtn]() {
-                clearSelChecks();
-                selCellsBtn->setChecked(true);
-                m_selectionMode = SEL_CELLS;
-            });
-    connect(selNoneBtn, &QToolButton::clicked, this,
-            [this, clearSelChecks, selNoneBtn]() {
-                clearSelChecks();
-                selNoneBtn->setChecked(true);
-                m_selectionMode = SEL_NONE;
-            });
-
     auto* decoratorBar = new QWidget(this);
     decoratorBar->setObjectName("OrthoDecoratorBar");
     auto* decLayout = new QHBoxLayout(decoratorBar);
@@ -185,7 +129,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
 
     m_sourceCombo = new QComboBox(decoratorBar);
     m_sourceCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    m_sourceCombo->addItem(tr("None"));
+    m_sourceCombo->addItem(tr("None"), QVariant::fromValue<quintptr>(0));
     decLayout->addWidget(m_sourceCombo, 1);
     decLayout->addStretch(1);
     layout->addWidget(decoratorBar);
@@ -258,11 +202,23 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     axesGridCheck->setToolTip(tr("Show/hide axes grid in slice views"));
     sliceLayout->addWidget(axesGridCheck);
     connect(axesGridCheck, &QCheckBox::toggled, this, [this](bool visible) {
-        for (int i = 0; i < 3; ++i) {
-            if (!d->gridAxes[i]) continue;
-            d->gridAxes[i]->SetBounds(d->geomBounds);
+        double padBounds[6];
+        for (int k = 0; k < 6; ++k) padBounds[k] = d->geomBounds[k];
+        for (int k = 0; k < 3; ++k) {
+            double w = padBounds[2*k+1] - padBounds[2*k];
+            if (w < 1e-6) {
+                double c = (padBounds[2*k] + padBounds[2*k+1]) * 0.5;
+                padBounds[2*k] = c - 0.5;
+                padBounds[2*k+1] = c + 0.5;
+            }
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            if (!d->gridAxes[i] || !d->renderers[i]) continue;
+
+            d->gridAxes[i]->SetBounds(padBounds);
             d->gridAxes[i]->SetCamera(d->renderers[i]->GetActiveCamera());
-            d->gridAxes[i]->SetVisibility(visible ? 1 : 0);
+
             d->gridAxes[i]->XAxisVisibilityOff();
             d->gridAxes[i]->YAxisVisibilityOff();
             d->gridAxes[i]->ZAxisVisibilityOff();
@@ -285,8 +241,17 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
                     d->gridAxes[i]->YAxisVisibilityOn();
                     d->gridAxes[i]->DrawXGridlinesOn();
                     d->gridAxes[i]->DrawYGridlinesOn();
+                } else {
+                    d->gridAxes[i]->XAxisVisibilityOn();
+                    d->gridAxes[i]->YAxisVisibilityOn();
+                    d->gridAxes[i]->ZAxisVisibilityOn();
+                    d->gridAxes[i]->DrawXGridlinesOn();
+                    d->gridAxes[i]->DrawYGridlinesOn();
+                    d->gridAxes[i]->DrawZGridlinesOn();
                 }
             }
+            d->gridAxes[i]->SetVisibility(visible ? 1 : 0);
+            d->gridAxes[i]->Modified();
             d->renderers[i]->ResetCameraClippingRange();
         }
         render();
@@ -330,7 +295,8 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     dispLayout->addWidget(new QLabel(tr("Repr:"), dispBar));
     m_reprCombo = new QComboBox(dispBar);
     m_reprCombo->addItems({tr("Slices"), tr("Surface"), tr("Wireframe"),
-                           tr("Points"), tr("Surface With Edges")});
+                           tr("Points"), tr("Surface With Edges"),
+                           tr("Feature Edges")});
     m_reprCombo->setCurrentIndex(0);
     dispLayout->addWidget(m_reprCombo);
     connect(m_reprCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -515,8 +481,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
 
     lightLayout->addStretch(1);
     layout->addWidget(lightBar);
-    dispBar->setVisible(false);
-    dispBar->setMaximumHeight(0);
+    dispBar->setVisible(true);
     colorBar->setVisible(false);
     colorBar->setMaximumHeight(0);
     lightBar->setVisible(false);
@@ -599,7 +564,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
             vtkSmartPointer<VTKExtensions::vtkPVCenterAxesActor>::New();
     d->sliceAxes3D->SetComputeNormals(0);
     d->sliceAxes3D->SetPickable(0);
-    d->sliceAxes3D->SetUseBounds(true);
+    d->sliceAxes3D->SetUseBounds(false);
     d->sliceAxes3D->SetScale(10, 10, 10);
     d->renderers[PERSPECTIVE_VIEW]->AddActor(d->sliceAxes3D);
 
@@ -612,29 +577,52 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
             {"X", "Z", ""},
             {"Y", "Z", ""},
             {"X", "Y", ""}};
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         d->gridAxes[i] = vtkSmartPointer<vtkCubeAxesActor>::New();
         d->gridAxes[i]->SetBounds(d->geomBounds);
         d->gridAxes[i]->SetCamera(d->renderers[i]->GetActiveCamera());
         d->gridAxes[i]->SetFlyModeToClosestTriad();
-        d->gridAxes[i]->SetUse2DMode(true);
         d->gridAxes[i]->SetGridLineLocation(
                 vtkCubeAxesActor::VTK_GRID_LINES_ALL);
-        d->gridAxes[i]->GetTitleTextProperty(0)->SetFontSize(10);
-        d->gridAxes[i]->GetTitleTextProperty(1)->SetFontSize(10);
-        d->gridAxes[i]->GetTitleTextProperty(2)->SetFontSize(10);
-        d->gridAxes[i]->GetLabelTextProperty(0)->SetFontSize(8);
-        d->gridAxes[i]->GetLabelTextProperty(1)->SetFontSize(8);
-        d->gridAxes[i]->GetLabelTextProperty(2)->SetFontSize(8);
-        d->gridAxes[i]->GetXAxesGridlinesProperty()->SetColor(0.5, 0.5, 0.5);
-        d->gridAxes[i]->GetYAxesGridlinesProperty()->SetColor(0.5, 0.5, 0.5);
-        d->gridAxes[i]->GetZAxesGridlinesProperty()->SetColor(0.5, 0.5, 0.5);
-        d->gridAxes[i]->DrawXGridlinesOff();
-        d->gridAxes[i]->DrawYGridlinesOff();
-        d->gridAxes[i]->DrawZGridlinesOff();
+        d->gridAxes[i]->SetUseBounds(false);
+        d->gridAxes[i]->SetScreenSize(10.0);
+        d->gridAxes[i]->SetLabelOffset(5);
+        double titleOff[2] = {12, 12};
+        d->gridAxes[i]->SetTitleOffset(titleOff);
+        for (int ax = 0; ax < 3; ++ax) {
+            d->gridAxes[i]->GetTitleTextProperty(ax)->SetFontSize(12);
+            d->gridAxes[i]->GetTitleTextProperty(ax)->SetColor(0.1, 0.1, 0.1);
+            d->gridAxes[i]->GetTitleTextProperty(ax)->SetBold(1);
+            d->gridAxes[i]->GetLabelTextProperty(ax)->SetFontSize(10);
+            d->gridAxes[i]->GetLabelTextProperty(ax)->SetColor(0.2, 0.2, 0.2);
+        }
+        d->gridAxes[i]->GetXAxesGridlinesProperty()->SetColor(0.35, 0.35, 0.35);
+        d->gridAxes[i]->GetYAxesGridlinesProperty()->SetColor(0.35, 0.35, 0.35);
+        d->gridAxes[i]->GetZAxesGridlinesProperty()->SetColor(0.35, 0.35, 0.35);
+        d->gridAxes[i]->GetXAxesGridlinesProperty()->SetLineWidth(1.0);
+        d->gridAxes[i]->GetYAxesGridlinesProperty()->SetLineWidth(1.0);
+        d->gridAxes[i]->GetZAxesGridlinesProperty()->SetLineWidth(1.0);
+        d->gridAxes[i]->GetXAxesLinesProperty()->SetColor(0.15, 0.15, 0.15);
+        d->gridAxes[i]->GetYAxesLinesProperty()->SetColor(0.15, 0.15, 0.15);
+        d->gridAxes[i]->GetZAxesLinesProperty()->SetColor(0.15, 0.15, 0.15);
+        d->gridAxes[i]->GetXAxesLinesProperty()->SetLineWidth(2.0);
+        d->gridAxes[i]->GetYAxesLinesProperty()->SetLineWidth(2.0);
+        d->gridAxes[i]->GetZAxesLinesProperty()->SetLineWidth(2.0);
+        if (i < 3) {
+            d->gridAxes[i]->SetXTitle(axisLabels[i][0]);
+            d->gridAxes[i]->SetYTitle(axisLabels[i][1]);
+            d->gridAxes[i]->SetZTitle("");
+        } else {
+            d->gridAxes[i]->SetXTitle("X Axis");
+            d->gridAxes[i]->SetYTitle("Y Axis");
+            d->gridAxes[i]->SetZTitle("Z Axis");
+        }
         d->gridAxes[i]->XAxisVisibilityOff();
         d->gridAxes[i]->YAxisVisibilityOff();
         d->gridAxes[i]->ZAxisVisibilityOff();
+        d->gridAxes[i]->DrawXGridlinesOff();
+        d->gridAxes[i]->DrawYGridlinesOff();
+        d->gridAxes[i]->DrawZGridlinesOff();
         d->gridAxes[i]->SetVisibility(0);
         d->renderers[i]->AddActor(d->gridAxes[i]);
     }
@@ -712,6 +700,8 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
             });
 
     d->vtkWidget->installEventFilter(this);
+
+    m_rubberBandWidget = new QRubberBand(QRubberBand::Rectangle, d->vtkWidget);
 }
 
 vtkOrthoSliceViewWidget::~vtkOrthoSliceViewWidget() {
@@ -848,10 +838,22 @@ void vtkOrthoSliceViewWidget::resetCameras() {
         }
     }
 
-    if (d->fullModelActor) {
-        d->renderers[PERSPECTIVE_VIEW]->ResetCamera();
+    double perspBounds[6];
+    bool hasGeom = false;
+    if (d->fullModelActor && d->fullModelActor->GetVisibility()) {
+        d->fullModelActor->GetBounds(perspBounds);
+        hasGeom = (perspBounds[0] <= perspBounds[1]);
+    }
+    if (!hasGeom) {
+        for (int k = 0; k < 6; ++k) perspBounds[k] = d->geomBounds[k];
+        hasGeom = (perspBounds[0] <= perspBounds[1]);
+    }
+    if (hasGeom) {
+        d->renderers[PERSPECTIVE_VIEW]->ResetCamera(perspBounds);
+        auto* cam = d->renderers[PERSPECTIVE_VIEW]->GetActiveCamera();
+        if (cam) cam->Zoom(1.6);
     } else {
-        d->renderers[PERSPECTIVE_VIEW]->ResetCamera(d->geomBounds);
+        d->renderers[PERSPECTIVE_VIEW]->ResetCamera();
     }
     d->renderers[PERSPECTIVE_VIEW]->ResetCameraClippingRange();
     render();
@@ -865,7 +867,7 @@ void vtkOrthoSliceViewWidget::render() {
 
 void vtkOrthoSliceViewWidget::setGeometryBounds(const double bounds[6]) {
     for (int i = 0; i < 6; ++i) d->geomBounds[i] = bounds[i];
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         if (d->gridAxes[i]) d->gridAxes[i]->SetBounds(bounds);
     }
     double widths[3] = {bounds[1] - bounds[0], bounds[3] - bounds[2],
@@ -911,6 +913,9 @@ int vtkOrthoSliceViewWidget::hitTestViewIndex(const QPoint& pos) const {
 bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
     if (obj == m_sourceCombo && event->type() == QEvent::MouseButtonPress) {
         refreshSourceCombo();
+    }
+    if (obj == d->vtkWidget && event->type() == QEvent::MouseButtonPress) {
+        emit clicked();
     }
     if (obj == d->vtkWidget) {
         if (event->type() == QEvent::Wheel) {
@@ -962,6 +967,19 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                     m_dragLastPos = me->pos();
                     return true;
                 }
+            }
+            if (me->button() == Qt::LeftButton && viewIdx == PERSPECTIVE_VIEW &&
+                (m_selectionMode == SEL_RUBBER_POINTS ||
+                 m_selectionMode == SEL_RUBBER_CELLS)) {
+                m_rubberBandActive = true;
+                m_rubberBandStart = me->pos();
+                m_rubberBandEnd = me->pos();
+                if (m_rubberBandWidget) {
+                    m_rubberBandWidget->setGeometry(
+                            QRect(m_rubberBandStart, QSize()));
+                    m_rubberBandWidget->show();
+                }
+                return true;
             }
             if (me->button() == Qt::LeftButton && viewIdx == PERSPECTIVE_VIEW &&
                 m_selectionMode != SEL_NONE) {
@@ -1079,7 +1097,9 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 return true;
             }
             if (me->button() == Qt::LeftButton && viewIdx >= 0 && viewIdx < 3) {
-                m_panning2D = true;
+                m_panPending = true;
+                m_panning2D = false;
+                m_panPressPos = me->pos();
                 m_panLastPos = me->pos();
                 return true;
             }
@@ -1089,7 +1109,23 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 m_zoomLastPos = me->pos();
                 return true;
             }
-        } else if (event->type() == QEvent::MouseMove && m_panning2D) {
+        } else if (event->type() == QEvent::MouseMove && m_rubberBandActive) {
+            auto* me = static_cast<QMouseEvent*>(event);
+            m_rubberBandEnd = me->pos();
+            if (m_rubberBandWidget) {
+                m_rubberBandWidget->setGeometry(
+                        QRect(m_rubberBandStart, m_rubberBandEnd).normalized());
+            }
+            return true;
+        } else if (event->type() == QEvent::MouseMove && (m_panning2D || m_panPending)) {
+            if (m_panPending && !m_panning2D) {
+                auto* me2 = static_cast<QMouseEvent*>(event);
+                QPoint delta = me2->pos() - m_panPressPos;
+                if (delta.manhattanLength() < 4) return true;
+                m_panPending = false;
+                m_panning2D = true;
+                m_panLastPos = me2->pos();
+            }
             auto* me = static_cast<QMouseEvent*>(event);
             int viewIdx = hitTestViewIndex(me->pos());
             if (viewIdx < 0 || viewIdx > 3) viewIdx = m_lastActiveQuadrant;
@@ -1100,8 +1136,11 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                     QPoint delta = me->pos() - m_panLastPos;
                     m_panLastPos = me->pos();
                     double scale = cam->GetParallelScale();
-                    int h = d->vtkWidget->height();
-                    double factor = 2.0 * scale / (h > 1 ? h : 1);
+                    double vp[4];
+                    ren->GetViewport(vp);
+                    int widgetH = d->vtkWidget->height();
+                    double rendererH = (vp[3] - vp[1]) * widgetH;
+                    double factor = 2.0 * scale / (rendererH > 1 ? rendererH : 1);
                     double fp[3], pos[3];
                     cam->GetFocalPoint(fp);
                     cam->GetPosition(pos);
@@ -1160,8 +1199,17 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
             emit slicePositionChanged(x, y, z);
             return true;
         } else if (event->type() == QEvent::MouseButtonRelease) {
-            if (m_panning2D) {
+            if (m_rubberBandActive) {
+                m_rubberBandActive = false;
+                auto* me = static_cast<QMouseEvent*>(event);
+                m_rubberBandEnd = me->pos();
+                if (m_rubberBandWidget) m_rubberBandWidget->hide();
+                performRubberBandSelection();
+                return true;
+            }
+            if (m_panning2D || m_panPending) {
                 m_panning2D = false;
+                m_panPending = false;
                 return true;
             }
             if (m_zooming2D) {
@@ -1175,19 +1223,20 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 return true;
             }
         } else if (event->type() == QEvent::MouseButtonDblClick) {
+            m_panPending = false;
+            m_panning2D = false;
             auto* me = static_cast<QMouseEvent*>(event);
             int viewIdx = hitTestViewIndex(me->pos());
             if (viewIdx >= 0 && viewIdx < 3) {
                 auto* ren = d->renderers[viewIdx].GetPointer();
                 if (!ren) return false;
 
-                int w = d->vtkWidget->width();
-                int h = d->vtkWidget->height();
-                if (w <= 0 || h <= 0) return false;
-
                 double dpr = d->vtkWidget->devicePixelRatioF();
+                int physH = static_cast<int>(d->vtkWidget->height() * dpr);
+                if (physH <= 0) return false;
+
                 double dispX = me->pos().x() * dpr;
-                double dispY = (h - 1 - me->pos().y()) * dpr;
+                double dispY = physH - 1.0 - me->pos().y() * dpr;
 
                 ren->SetDisplayPoint(dispX, dispY, 0.0);
                 ren->DisplayToWorld();
@@ -1202,8 +1251,9 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
 
                 double newPos[3] = {worldPt[0], worldPt[1], worldPt[2]};
 
-                int axisMap[3] = {1, 0, 2};
-                newPos[axisMap[viewIdx]] = d->slicePos[axisMap[viewIdx]];
+                static constexpr int kPerpendicularAxis[3] = {1, 0, 2};
+                int keepAxis = kPerpendicularAxis[viewIdx];
+                newPos[keepAxis] = d->slicePos[keepAxis];
 
                 setSlicePosition(newPos[0], newPos[1], newPos[2]);
                 emit slicePositionChanged(newPos[0], newPos[1], newPos[2]);
@@ -1409,6 +1459,10 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
             }
             if (a == d->sliceAxes3D.GetPointer()) isBuiltIn = true;
             if (a == d->outlineActor.GetPointer()) isBuiltIn = true;
+            for (int k = 0; k < 4; ++k) {
+                if (d->gridAxes[k] && a == d->gridAxes[k].GetPointer())
+                    isBuiltIn = true;
+            }
             if (isBuiltIn) continue;
 
             auto* pdMapper = vtkPolyDataMapper::SafeDownCast(a->GetMapper());
@@ -1433,18 +1487,24 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
                         case 2: prop->SetRepresentationToWireframe(); break;
                         case 3: prop->SetRepresentationToPoints(); break;
                         case 4: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOn(); break;
+                        case 5: prop->SetRepresentationToWireframe(); prop->EdgeVisibilityOn(); break;
                     }
                     applyLighting(prop);
                 }
             } else {
-                switch (reprIdx) {
-                    case 0:
-                    case 1: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOff(); break;
-                    case 2: prop->SetRepresentationToWireframe(); break;
-                    case 3: prop->SetRepresentationToPoints(); break;
-                    case 4: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOn(); break;
+                if (reprIdx == 0) {
+                    a->SetVisibility(0);
+                } else {
+                    a->SetVisibility(1);
+                    switch (reprIdx) {
+                        case 1: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOff(); break;
+                        case 2: prop->SetRepresentationToWireframe(); break;
+                        case 3: prop->SetRepresentationToPoints(); break;
+                        case 4: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOn(); break;
+                        case 5: prop->SetRepresentationToWireframe(); prop->EdgeVisibilityOn(); break;
+                    }
+                    applyLighting(prop);
                 }
-                applyLighting(prop);
             }
         }
     }
@@ -1489,6 +1549,124 @@ void vtkOrthoSliceViewWidget::refreshSourceCombo() {
     }
     m_sourceCombo->setCurrentIndex(newIdx);
     m_sourceCombo->blockSignals(false);
+}
+
+void vtkOrthoSliceViewWidget::performRubberBandSelection() {
+    if (!d->fullModelActor || !d->renderWindow) return;
+    auto* ren = d->renderers[PERSPECTIVE_VIEW].GetPointer();
+    if (!ren) return;
+
+    double dpr = d->vtkWidget->devicePixelRatioF();
+    int x0 = static_cast<int>(std::min(m_rubberBandStart.x(),
+                                        m_rubberBandEnd.x()) * dpr);
+    int y0 = static_cast<int>(
+            (d->vtkWidget->height() - 1 -
+             std::max(m_rubberBandStart.y(), m_rubberBandEnd.y())) * dpr);
+    int x1 = static_cast<int>(std::max(m_rubberBandStart.x(),
+                                        m_rubberBandEnd.x()) * dpr);
+    int y1 = static_cast<int>(
+            (d->vtkWidget->height() - 1 -
+             std::min(m_rubberBandStart.y(), m_rubberBandEnd.y())) * dpr);
+
+    if (std::abs(x1 - x0) < 4 && std::abs(y1 - y0) < 4) return;
+
+    vtkNew<vtkAreaPicker> areaPicker;
+    areaPicker->AreaPick(x0, y0, x1, y1, ren);
+
+    auto* frustum = areaPicker->GetFrustum();
+    if (!frustum || !d->entityPolyData) return;
+
+    vtkNew<vtkExtractSelectedFrustum> extractor;
+    extractor->SetInputData(d->entityPolyData);
+    extractor->SetFrustum(frustum);
+    extractor->Update();
+
+    auto* rawOutput = extractor->GetOutput();
+    auto* output = vtkDataSet::SafeDownCast(rawOutput);
+    if (!output) return;
+
+    auto* origIds = output->GetPointData()
+            ? output->GetPointData()->GetArray("vtkOriginalPointIds")
+            : nullptr;
+    auto* origCellIds = output->GetCellData()
+            ? output->GetCellData()->GetArray("vtkOriginalCellIds")
+            : nullptr;
+
+    if (d->selectionHighlightActor) {
+        d->renderers[PERSPECTIVE_VIEW]->RemoveActor(
+                d->selectionHighlightActor);
+        d->selectionHighlightActor = nullptr;
+    }
+
+    m_selectedIndices.clear();
+
+    bool pickPoints = (m_selectionMode == SEL_RUBBER_POINTS);
+    vtkDataArray* ids = pickPoints ? origIds : origCellIds;
+    if (!ids || ids->GetNumberOfTuples() == 0) {
+        d->renderWindow->Render();
+        return;
+    }
+
+    for (vtkIdType i = 0; i < ids->GetNumberOfTuples(); ++i) {
+        m_selectedIndices.insert(
+                static_cast<unsigned>(ids->GetTuple1(i)));
+    }
+
+    if (pickPoints && origIds) {
+        vtkNew<vtkPoints> pts;
+        vtkNew<vtkPolyData> hlPoly;
+        for (vtkIdType i = 0; i < origIds->GetNumberOfTuples(); ++i) {
+            vtkIdType ptId = static_cast<vtkIdType>(origIds->GetTuple1(i));
+            if (ptId >= 0 && ptId < d->entityPolyData->GetNumberOfPoints()) {
+                double p[3];
+                d->entityPolyData->GetPoint(ptId, p);
+                pts->InsertNextPoint(p);
+            }
+        }
+        hlPoly->SetPoints(pts);
+        vtkNew<vtkPolyDataMapper> hlMapper;
+        hlMapper->SetInputData(hlPoly);
+        d->selectionHighlightActor = vtkSmartPointer<vtkActor>::New();
+        d->selectionHighlightActor->SetMapper(hlMapper);
+        d->selectionHighlightActor->GetProperty()->SetColor(1.0, 0.2, 0.2);
+        d->selectionHighlightActor->GetProperty()->SetPointSize(8.0);
+        d->selectionHighlightActor->GetProperty()->SetRepresentationToPoints();
+        d->selectionHighlightActor->GetProperty()->SetAmbient(1.0);
+        d->selectionHighlightActor->GetProperty()->LightingOff();
+        d->renderers[PERSPECTIVE_VIEW]->AddActor(d->selectionHighlightActor);
+    } else if (!pickPoints && origCellIds) {
+        vtkNew<vtkExtractCells> cellExtract;
+        cellExtract->SetInputData(d->entityPolyData);
+        vtkNew<vtkIdList> cellIds;
+        for (vtkIdType i = 0; i < origCellIds->GetNumberOfTuples(); ++i) {
+            cellIds->InsertNextId(
+                    static_cast<vtkIdType>(origCellIds->GetTuple1(i)));
+        }
+        cellExtract->SetCellList(cellIds);
+        cellExtract->Update();
+        vtkNew<vtkPolyDataMapper> hlMapper;
+        vtkNew<vtkGeometryFilter> geomFilter;
+        geomFilter->SetInputConnection(cellExtract->GetOutputPort());
+        geomFilter->Update();
+        hlMapper->SetInputData(geomFilter->GetOutput());
+        d->selectionHighlightActor = vtkSmartPointer<vtkActor>::New();
+        d->selectionHighlightActor->SetMapper(hlMapper);
+        d->selectionHighlightActor->GetProperty()->SetColor(0.2, 0.8, 0.2);
+        d->selectionHighlightActor->GetProperty()->SetAmbient(1.0);
+        d->selectionHighlightActor->GetProperty()->LightingOff();
+        d->renderers[PERSPECTIVE_VIEW]->AddActor(d->selectionHighlightActor);
+    }
+
+    d->renderWindow->Render();
+
+    if (!m_selectedIndices.isEmpty()) {
+        if (m_statusLabel) {
+            m_statusLabel->setText(
+                    tr("Selected %1 %2")
+                            .arg(m_selectedIndices.size())
+                            .arg(pickPoints ? tr("points") : tr("cells")));
+        }
+    }
 }
 
 void vtkOrthoSliceViewWidget::onSourceComboChanged(int index) {
@@ -1596,26 +1774,10 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
         d->slicePlanes[i] = nullptr;
     }
 
-    CVLog::Print("[OrthoSlice] Loading entity: mesh=%p genericMesh=%p "
-                 "pcCloud=%p cloud=%p",
-                 mesh, genericMesh, pcCloud, cloud);
-
     ccGenericMesh* meshForConvert = genericMesh ? genericMesh : mesh;
     if (meshForConvert && pcCloud) {
         d->entityPolyData =
                 Converters::Cc2Vtk::MeshToPolyData(pcCloud, meshForConvert);
-        CVLog::Print("[OrthoSlice] MeshToPolyData: polydata=%p pts=%lld "
-                     "cells=%lld polys=%lld",
-                     d->entityPolyData.GetPointer(),
-                     d->entityPolyData
-                             ? d->entityPolyData->GetNumberOfPoints()
-                             : 0,
-                     d->entityPolyData
-                             ? d->entityPolyData->GetNumberOfCells()
-                             : 0,
-                     d->entityPolyData
-                             ? d->entityPolyData->GetNumberOfPolys()
-                             : 0);
     }
     if (d->entityPolyData &&
         d->entityPolyData->GetNumberOfPoints() == 0 && pcCloud) {
@@ -1673,16 +1835,6 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
             }
             d->fullModelActor->SetVisibility(1);
             d->renderers[PERSPECTIVE_VIEW]->AddActor(d->fullModelActor);
-            CVLog::Print("[OrthoSlice] 3D model actor added: %lld pts, "
-                         "%lld polys, bounds=[%.3f,%.3f,%.3f,%.3f,%.3f,%.3f]",
-                         d->entityPolyData->GetNumberOfPoints(),
-                         d->entityPolyData->GetNumberOfPolys(),
-                         d->entityPolyData->GetBounds()[0],
-                         d->entityPolyData->GetBounds()[1],
-                         d->entityPolyData->GetBounds()[2],
-                         d->entityPolyData->GetBounds()[3],
-                         d->entityPolyData->GetBounds()[4],
-                         d->entityPolyData->GetBounds()[5]);
 
             vtkNew<vtkOutlineFilter> outline;
             outline->SetInputData(d->entityPolyData);
@@ -1982,11 +2134,10 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
             modelMapper->Update();
             auto actor = vtkSmartPointer<vtkActor>::New();
             actor->SetMapper(modelMapper);
-            actor->GetProperty()->SetRepresentationToWireframe();
-            actor->GetProperty()->SetColor(0.3, 0.3, 0.3);
-            actor->GetProperty()->SetAmbient(1.0);
-            actor->GetProperty()->SetDiffuse(0.0);
-            actor->GetProperty()->LightingOff();
+            actor->GetProperty()->SetRepresentationToSurface();
+            actor->GetProperty()->SetColor(0.85, 0.85, 0.85);
+            actor->GetProperty()->SetAmbient(0.2);
+            actor->GetProperty()->SetDiffuse(0.8);
             d->renderers[PERSPECTIVE_VIEW]->AddActor(actor);
         }
 
@@ -2059,9 +2210,64 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
 
     if (m_statusLabel)
         m_statusLabel->setText(tr("All (%1 objects)").arg(entities.size()));
-    render();
+    applyDisplayProperties();
+    resetCameras();
 }
 
 void vtkOrthoSliceViewWidget::onSourceComboAboutToShow() {
     refreshSourceCombo();
+}
+
+void vtkOrthoSliceViewWidget::set3DProjection(bool perspective) {
+    vtkRenderer* ren = d->renderers[PERSPECTIVE_VIEW];
+    if (!ren) return;
+    ren->GetActiveCamera()->SetParallelProjection(!perspective);
+    ren->ResetCamera();
+    render();
+}
+
+void vtkOrthoSliceViewWidget::zoomToFit() {
+    for (int i = 0; i < 4; ++i) {
+        vtkRenderer* ren = d->renderers[i];
+        if (ren) {
+            ren->ResetCamera();
+            ren->ResetCameraClippingRange();
+        }
+    }
+    render();
+}
+
+void vtkOrthoSliceViewWidget::setViewPreset(int presetIndex) {
+    static const double kPresets[][6] = {
+            { 1,  0,  0,  0, 0, 1},
+            {-1,  0,  0,  0, 0, 1},
+            { 0,  1,  0,  0, 0, 1},
+            { 0, -1,  0,  0, 0, 1},
+            { 0,  0,  1,  0, 1, 0},
+            { 0,  0, -1,  0, 1, 0},
+    };
+    if (presetIndex < 0 || presetIndex > 5) return;
+    vtkRenderer* ren = d->renderers[PERSPECTIVE_VIEW];
+    if (!ren) return;
+    auto* cam = ren->GetActiveCamera();
+    double fp[3];
+    cam->GetFocalPoint(fp);
+    double dist = cam->GetDistance();
+    const double* p = kPresets[presetIndex];
+    cam->SetPosition(fp[0] + p[0] * dist,
+                     fp[1] + p[1] * dist,
+                     fp[2] + p[2] * dist);
+    cam->SetViewUp(p[3], p[4], p[5]);
+    ren->ResetCameraClippingRange();
+    render();
+}
+
+void vtkOrthoSliceViewWidget::setSelectionMode(int mode) {
+    switch (mode) {
+        case 0: m_selectionMode = SEL_CELLS; break;
+        case 1: m_selectionMode = SEL_POINTS; break;
+        case 2: m_selectionMode = SEL_RUBBER_CELLS; break;
+        case 3: m_selectionMode = SEL_RUBBER_POINTS; break;
+        default: m_selectionMode = SEL_NONE; break;
+    }
 }

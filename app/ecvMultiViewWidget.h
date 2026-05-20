@@ -71,6 +71,9 @@ public:
         m_frameWiredCallback = cb;
     }
 
+    /// Find the cell index for a given frame widget.
+    int findLocationForFrame(QWidget* frame) const;
+
     /// Whether view frame decorations (title bar) are visible.
     bool decorationsVisibility() const { return m_decorationsVisible; }
 
@@ -141,6 +144,9 @@ protected:
     bool eventFilter(QObject* caller, QEvent* evt) override;
 
 private:
+    /// Common logic for horizontal/vertical split (auto-creates second view).
+    void splitImpl(QWidget* frame, int dir);
+
     /// Recursively build the splitter tree for a KD-tree cell.
     QWidget* buildCell(int location);
 
@@ -150,9 +156,6 @@ private:
 
     /// Find the frame for a given view.
     QWidget* findFrameForView(ecvGenericGLDisplay* view) const;
-
-    /// Find the cell index for a given frame widget.
-    int findLocationForFrame(QWidget* frame) const;
 
     ecvViewLayoutProxy* m_layout = nullptr;
     QWidget* m_activeFrame = nullptr;
