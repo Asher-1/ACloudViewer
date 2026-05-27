@@ -29,7 +29,7 @@
 #include <vtkCellArray.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLegendScaleActor.h>
 #include <vtkLight.h>
 #include <vtkLightCollection.h>

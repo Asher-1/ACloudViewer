@@ -14,9 +14,11 @@
 
 #include "qVTK.h"
 
+#include <QPointer>
 #include <QSet>
 #include <QWidget>
 #include <functional>
+#include <vector>
 
 class QCheckBox;
 class QDoubleSpinBox;
@@ -24,10 +26,11 @@ class QGridLayout;
 class QSpinBox;
 class QComboBox;
 class QLabel;
-class QTimer;
 class ccHObject;
 class vtkGLView;
 class vtkChartView;
+class vtkCallbackCommand;
+class vtkObject;
 
 class QVTK_ENGINE_LIB_API vtkComparativeViewWidget : public QWidget {
     Q_OBJECT
@@ -53,7 +56,8 @@ public:
     void setSubViewInitCallback(SubViewInitCallback cb);
 
     void refreshSubViews();
-    void setSourceView(vtkGLView* src) { m_sourceView = src; }
+    void setSourceView(vtkGLView* src);
+    void connectExternalHighlighter(QObject* highlighter);
 
     using EntityListProvider = std::function<QList<ccHObject*>()>;
     void setEntityListProvider(EntityListProvider provider);
@@ -72,6 +76,7 @@ public:
 
 protected:
     void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
     bool eventFilter(QObject* obj, QEvent* event) override;
 
 signals:
@@ -94,7 +99,10 @@ private:
     void syncCamerasFromFirst();
     void copyActorsAcrossSubViews();
     void installCameraLink();
-    void onCameraLinkTick();
+    void removeCameraLink();
+    void onSubViewInteraction(int viewIdx);
+    static void interactionCallback(
+            vtkObject* caller, unsigned long eid, void* clientData, void*);
     void forceRenderAllSubViews();
     void syncInteractionModeToSubViews();
     void syncPickingModeToSubViews();
@@ -121,14 +129,18 @@ private:
     SubViewInitCallback m_subViewInitCb;
     EntityListProvider m_entityListProvider;
     ccHObject* m_initialEntity = nullptr;
-    vtkGLView* m_sourceView = nullptr;
-    QTimer* m_cameraLinkTimer = nullptr;
+    QPointer<vtkGLView> m_sourceView;
     bool m_cameraLinkEnabled = true;
     bool m_syncingCameras = false;
-    double m_lastCameraMTime = 0;
     bool m_firstShowDone = false;
     bool m_closing = false;
     QSet<QWidget*> m_pendingFirstResize;
+
+    struct InteractorObserver {
+        vtkObject* observed = nullptr;
+        unsigned long tag = 0;
+    };
+    std::vector<InteractorObserver> m_cameraObservers;
 
     struct CameraState {
         double position[3] = {0,0,1};

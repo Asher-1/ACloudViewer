@@ -28,6 +28,9 @@
 #include <FileIOFilter.h>
 #include <ecvGlobalShiftManager.h>
 
+// VTK
+#include <vtkLogger.h>
+
 // QT
 #include <QDir>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -583,6 +586,9 @@ int main(int argc, char* argv[]) {
 #endif
 
     ecvApplication app(argc, argv, commandLine);
+
+    // Suppress verbose VTK log output (e.g. vtkPolyDataPlaneCutter INFO)
+    vtkLogger::SetStderrVerbosity(vtkLogger::VERBOSITY_WARNING);
 
     // Set UTF-8 encoding for QString conversion from/to std::string
     // This ensures proper handling of Chinese and other Unicode characters

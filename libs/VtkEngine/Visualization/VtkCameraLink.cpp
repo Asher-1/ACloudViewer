@@ -17,6 +17,9 @@
 #include <sstream>
 
 #include "VtkVis.h"
+#include "vtkGLView.h"
+#include <ecvViewManager.h>
+#include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 
 namespace Visualization {
 
@@ -278,9 +281,13 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source, VtkVis* target) {
 
     target->setCenterOfRotation(cor);
 
-    auto targetRW = target->getRenderWindow();
-    if (targetRW) {
-        targetRW->Render();
+    for (auto* view : ecvViewManager::instance().getAllViews()) {
+        auto* glView = dynamic_cast<vtkGLView*>(view);
+        if (glView && glView->getVisualizer3D() == target) {
+            auto* w = glView->getVtkWidget();
+            if (w) w->update();
+            break;
+        }
     }
 
     m_updating = false;

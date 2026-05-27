@@ -84,6 +84,7 @@ class cvSelectionHighlighter;
 class cvSelectionToolController;
 class cvPerViewSelectionManager;
 class cvFindDataDockWidget;
+class vtkOrthoSliceViewWidget;
 #endif
 
 class ecvUpdateDlg;
@@ -302,6 +303,9 @@ public:  // inherited from ecvMainAppInterface
 #ifdef USE_VTK_BACKEND
     //! Get the selection manager instance
     cvViewSelectionManager* getSelectionManager() const;
+
+    //! Active Orthographic Slice View in the current multi-view frame (if any)
+    vtkOrthoSliceViewWidget* activeOrthoSliceView() const;
 
     //! Get the selection tool controller instance
     cvSelectionToolController* getSelectionController() const {
@@ -830,7 +834,7 @@ private:
     //! This is a singleton, but we keep a pointer for convenience
     cvSelectionToolController* m_selectionController;
     cvPerViewSelectionManager* m_perViewSelMgr = nullptr;
-    QShortcut* m_selectionEscShortcut = nullptr;
+    // Escape shortcut is now managed through ecvModalShortcut (see setupSelectionToolShortcuts)
 
     //! Find Data dock widget (ParaView-style selection properties panel)
     //! This is a standalone dock that can be shown/hidden independently of

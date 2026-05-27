@@ -15,6 +15,7 @@
 #endif
 
 #include <QJsonObject>
+#include <QMouseEvent>
 #include <deque>
 #include <map>
 #include <mutex>
@@ -46,7 +47,7 @@ class ecvGenericGLDisplay;
 #include <vtkBoundingBox.h>  // needed for iVar
 #include <vtkCellArray.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -64,7 +65,7 @@ class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkMatrix4x4;
 class vtkLightKit;
-class vtkCubeAxesActor;
+class vtkGridAxesActor3D;
 class vtkCameraOrientationWidget;
 class vtkOrientationMarkerWidget;
 class vtkPolyData;
@@ -1082,7 +1083,7 @@ public:
      * @brief Set Data Axes Grid properties (Unified Interface)
      *
      * Data Axes Grid shows axes and grid lines around the data bounds.
-     * Uses vtkCubeAxesActor with FlyModeToOuterEdges.
+     * Uses vtkGridAxesActor3D (ParaView enhanced) with FaceMask control.
      * Each ccHObject has its own Data Axes Grid bound to its viewID.
      *
      * @param viewID The view ID of the ccHObject to bind the axes grid to
@@ -1122,7 +1123,12 @@ public:
      */
     bool IsCameraOrientationWidgetShown() const;
 
-public:
+    /// Hit-test the Camera Orientation Widget in widget pixel coordinates.
+    bool IsMouseOverCameraOrientationWidget(int qtX, int qtY) const;
+
+    /// Forward a Qt mouse event to the VTK interactor for widget interaction.
+    bool ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
+                                                 QEvent::Type eventType);
     // ---------- Methods formerly inherited from PCLVisualizer ----------
 
     /// Check if a cloud, shape, or coordinate with the given id exists.
@@ -1352,7 +1358,7 @@ protected:
     // Axes Grid actors (ParaView-style)
     // Data Axes Grid: one per object (viewID -> actor mapping)
     // Data Axes Grid: per-object, bound to viewID
-    std::map<std::string, vtkSmartPointer<vtkCubeAxesActor>> m_dataAxesGridMap;
+    std::map<std::string, vtkSmartPointer<vtkGridAxesActor3D>> m_dataAxesGridMap;
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;

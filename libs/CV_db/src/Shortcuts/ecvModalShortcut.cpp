@@ -24,11 +24,9 @@ ecvModalShortcut::ecvModalShortcut(const QKeySequence& key,
     // in setContextWidget() if needed
     m_shortcut = new QShortcut(key, parent);
 
-    // Connect shortcut activation to our signal
     QObject::connect(m_shortcut, &QShortcut::activated, this,
-                     &ecvModalShortcut::activated);
+                     [this]() { Q_EMIT activated(); });
 
-    // If an action is provided, trigger it when activated
     if (m_action) {
         QObject::connect(m_shortcut, &QShortcut::activated, m_action,
                          &QAction::trigger);

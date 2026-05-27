@@ -35,26 +35,65 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
         return image;
     }
 
+    if (inTextureIndex >= inScene->mNumTextures) {
+        CVLog::Warning(
+                QStringLiteral("[qMeshIO] Embedded texture index %1 out of "
+                               "range (numTextures=%2)")
+                        .arg(inTextureIndex)
+                        .arg(inScene->mNumTextures));
+        return image;
+    }
+
     auto texture = inScene->mTextures[inTextureIndex];
 
     // From assimp: "If mHeight is zero the texture is compressed"
     bool isCompressed = (texture->mHeight == 0);
 
-    if (!isCompressed) {
-        CVLog::Warning(
-                QStringLiteral("[qMeshIO] Uncompressed embedded textures not "
-                               "yet implemented"));
+    if (isCompressed) {
+        // mWidth = byte length of pcData for compressed textures
+        auto dataSize = static_cast<int32_t>(texture->mWidth);
+        const QByteArray imageDataByteArray(
+                reinterpret_cast<const char *>(texture->pcData), dataSize);
+
+        image = QImage::fromData(imageDataByteArray);
+        if (image.isNull() && texture->achFormatHint[0] != '\0') {
+            QString hint = QString::fromLatin1(texture->achFormatHint).trimmed();
+            if (hint.startsWith('.')) hint = hint.mid(1);
+            if (!hint.isEmpty()) {
+                image = QImage::fromData(imageDataByteArray,
+                                         hint.toLatin1().constData());
+            }
+        }
+        if (image.isNull()) {
+            CVLog::Warning(
+                    QStringLiteral("[qMeshIO] Failed to decode embedded "
+                                   "texture %1 (hint=%2, bytes=%3)")
+                            .arg(inTextureIndex)
+                            .arg(QString::fromLatin1(texture->achFormatHint))
+                            .arg(dataSize));
+        }
         return image;
     }
 
-    // From assimp: "mWidth specifies the size of the memory area pcData is
-    // pointing to, in bytes"
-    auto dataSize = static_cast<const int32_t>(texture->mWidth);
+    // Uncompressed embedded texture: BGRA8 pixels (mWidth x mHeight)
+    if (texture->mWidth == 0 || texture->mHeight == 0 || !texture->pcData) {
+        CVLog::Warning(QStringLiteral(
+                "[qMeshIO] Invalid uncompressed embedded texture %1")
+                               .arg(inTextureIndex));
+        return image;
+    }
 
-    const QByteArray imageDataByteArray(
-            reinterpret_cast<const char *>(texture->pcData), dataSize);
-
-    return QImage::fromData(imageDataByteArray);
+    image = QImage(static_cast<int>(texture->mWidth),
+                   static_cast<int>(texture->mHeight), QImage::Format_ARGB32);
+    for (unsigned y = 0; y < texture->mHeight; ++y) {
+        auto *scanLine = reinterpret_cast<QRgb *>(image.scanLine(
+                static_cast<int>(texture->mHeight - 1 - y)));
+        const aiTexel *src = texture->pcData + y * texture->mWidth;
+        for (unsigned x = 0; x < texture->mWidth; ++x) {
+            scanLine[x] = qRgba(src[x].r, src[x].g, src[x].b, src[x].a);
+        }
+    }
+    return image;
 }
 
 QImage _getTextureFromFile(const QString &inPath,
@@ -178,18 +217,31 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                 }
 
                 if (!image.isNull()) {
-                    // Use new multi-texture API
-                    if (newMaterial->loadAndSetTextureMap(ccType, path)) {
+                    QString storagePath =
+                            CVTools::ToNativeSeparators(QStringLiteral("%1/%2")
+                                                                .arg(inPath,
+                                                                     texturePath
+                                                                             .C_Str()));
+                    if (match.hasMatch()) {
+                        // glTF/GLB embedded textures use Assimp paths like "*0".
+                        storagePath = CVTools::ToNativeSeparators(
+                                QStringLiteral("%1/#embedded/%2")
+                                        .arg(inPath, match.captured("index")));
+                        ccMaterial::AddTexture(image, storagePath);
+                    } else if (!QFile::exists(storagePath)) {
+                        ccMaterial::AddTexture(image, storagePath);
+                    }
+
+                    if (newMaterial->loadAndSetTextureMap(ccType,
+                                                            storagePath)) {
                         CVLog::PrintDebug(
                                 QStringLiteral(
                                         "[qMeshIO] Loaded %1 texture: %2")
-                                        .arg(typeName, path));
+                                        .arg(typeName, storagePath));
                     }
 
-                    // For diffuse, also set legacy texture for backward
-                    // compatibility
                     if (ccType == ccMaterial::TextureMapType::DIFFUSE) {
-                        newMaterial->setTexture(image, path, false);
+                        newMaterial->setTexture(image, storagePath, false);
                     }
                 } else {
                     CVLog::Warning(

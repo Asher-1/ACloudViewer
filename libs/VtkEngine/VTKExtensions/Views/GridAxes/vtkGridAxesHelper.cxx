@@ -12,6 +12,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkRenderer.h"
 #include "vtkVector.h"
+#include "vtkVectorCompat.h"
 
 #include <algorithm>
 

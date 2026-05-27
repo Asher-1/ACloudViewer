@@ -14,7 +14,7 @@
 #include <vtkCellData.h>
 #include <vtkContourFilter.h>
 #include <vtkDataSet.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>

@@ -299,8 +299,8 @@ If you find ACloudViewer useful, please consider supporting its development:
     <img src="https://img.shields.io/badge/💝_WeChat_Pay-Donate-09BB07?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChat Pay">
   </a>
   &nbsp;
-  <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl">
-    <img src="https://img.shields.io/badge/💳_Payoneer-Pay_Now-FF4800?style=for-the-badge&logo=payoneer&logoColor=white" alt="Payoneer">
+  <a href="https://www.paypal.com/ncp/payment/EHLN9HQV9U39J">
+    <img src="https://img.shields.io/badge/💳_PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal">
   </a>
   <p><em>Click to view donation options - Thank you for your support! 🙏</em></p>
 </div>

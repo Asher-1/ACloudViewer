@@ -12,6 +12,7 @@
  */
 
 #include "VtkRenderingUtils.h"
+#include "VtkLODHelper.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -41,7 +42,7 @@
 #include <vtkActor.h>
 #include <vtkAnnotatedCubeActor.h>
 #include <vtkAppendPolyData.h>
-#include <vtkAxesActor.h>
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkCellData.h>
 #include <vtkCubeSource.h>
@@ -63,9 +64,9 @@ namespace VtkRendering {
 // =====================================================================
 
 void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
-                               vtkSmartPointer<vtkLODActor>& actor,
+                               vtkSmartPointer<vtkPVLODActor>& actor,
                                bool use_scalars) {
-    if (!actor) actor = vtkSmartPointer<vtkLODActor>::New();
+    if (!actor) actor = vtkSmartPointer<vtkPVLODActor>::New();
 
     auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
     mapper->SetInputData(data);
@@ -86,10 +87,9 @@ void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
         }
     }
 
-    actor->SetNumberOfCloudPoints(static_cast<int>(
-            std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
     actor->GetProperty()->SetInterpolationToFlat();
     actor->SetMapper(mapper);
+    BuildAndAttachLODMapper(actor, data);
 }
 
 void CreateActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
@@ -426,13 +426,13 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength,
                                                   const std::string& yMinus,
                                                   const std::string& zPlus,
                                                   const std::string& zMinus) {
-    vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+    vtkSmartPointer<vtkPVAxesActor> axes = vtkSmartPointer<vtkPVAxesActor>::New();
     axes->SetXAxisLabelText(xLabel.c_str());
     axes->SetYAxisLabelText(yLabel.c_str());
     axes->SetZAxisLabelText(zLabel.c_str());
 
-    axes->SetNormalizedShaftLength(0.85, 0.85, 0.85);
-    axes->SetNormalizedTipLength(0.15, 0.15, 0.15);
+    axes->SetNormalizedShaftLength(0.85f, 0.85f, 0.85f);
+    axes->SetNormalizedTipLength(0.15f, 0.15f, 0.15f);
     axes->SetShaftTypeToLine();
 
     axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
@@ -442,7 +442,7 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength,
     axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
     axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 1.0);
 
-    axes->SetTotalLength(axesLength, axesLength, axesLength);
+    axes->SetTotalLength(static_cast<float>(axesLength), static_cast<float>(axesLength), static_cast<float>(axesLength));
 
     vtkSmartPointer<vtkAnnotatedCubeActor> cube =
             vtkSmartPointer<vtkAnnotatedCubeActor>::New();
@@ -476,32 +476,9 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength,
     cube->GetZMinusFaceProperty()->SetColor(0.0, 0.0, 1.0);
     cube->GetZMinusFaceProperty()->SetInterpolationToFlat();
 
-    vtkSmartPointer<vtkTextProperty> tpropX =
-            vtkSmartPointer<vtkTextProperty>::New();
-    tpropX->ShadowOn();
-    tpropX->SetFontFamilyToArial();
-    tpropX->BoldOn();
-    tpropX->SetFontSize(14);
-    tpropX->SetColor(1.0, 0.0, 0.0);
-    axes->GetXAxisCaptionActor2D()->SetCaptionTextProperty(tpropX);
-
-    vtkSmartPointer<vtkTextProperty> tpropY =
-            vtkSmartPointer<vtkTextProperty>::New();
-    tpropY->ShadowOn();
-    tpropY->SetFontFamilyToArial();
-    tpropY->BoldOn();
-    tpropY->SetFontSize(14);
-    tpropY->SetColor(0.0, 1.0, 0.0);
-    axes->GetYAxisCaptionActor2D()->SetCaptionTextProperty(tpropY);
-
-    vtkSmartPointer<vtkTextProperty> tpropZ =
-            vtkSmartPointer<vtkTextProperty>::New();
-    tpropZ->ShadowOn();
-    tpropZ->SetFontFamilyToArial();
-    tpropZ->BoldOn();
-    tpropZ->SetFontSize(14);
-    tpropZ->SetColor(0.0, 0.0, 1.0);
-    axes->GetZAxisCaptionActor2D()->SetCaptionTextProperty(tpropZ);
+    axes->GetXAxisLabelProperty()->SetColor(1.0, 0.0, 0.0);
+    axes->GetYAxisLabelProperty()->SetColor(0.0, 1.0, 0.0);
+    axes->GetZAxisLabelProperty()->SetColor(0.0, 0.0, 1.0);
 
     vtkSmartPointer<vtkPropAssembly> assembly =
             vtkSmartPointer<vtkPropAssembly>::New();

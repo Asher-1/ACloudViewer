@@ -415,6 +415,10 @@ signals:
      */
     void propertiesChanged();
 
+    void highlightActorAdded(vtkActor* actor);
+    void highlightActorRemoved(vtkActor* actor);
+    void highlightsCleared();
+
 private:
     /**
      * @brief Create selection highlight actor

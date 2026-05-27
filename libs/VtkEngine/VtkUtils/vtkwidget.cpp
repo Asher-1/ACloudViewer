@@ -11,10 +11,10 @@
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkActor.h>
-#include <vtkAxesActor.h>
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkDataObject.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>
@@ -157,10 +157,10 @@ int getDefaultScalarInterpolationForDataSet(vtkDataSet* data) {
 
 void VtkWidget::createActorFromVTKDataSet(
         const vtkSmartPointer<vtkDataSet>& data,
-        vtkSmartPointer<vtkLODActor>& actor,
+        vtkSmartPointer<vtkPVLODActor>& actor,
         bool use_scalars) {
     // If actor is not initialized, initialize it here
-    if (!actor) actor = vtkSmartPointer<vtkLODActor>::New();
+    if (!actor) actor = vtkSmartPointer<vtkPVLODActor>::New();
 
     {
         vtkSmartPointer<vtkDataSetMapper> mapper =
@@ -187,8 +187,6 @@ void VtkWidget::createActorFromVTKDataSet(
         }
         // mapper->ImmediateModeRenderingOff();
 
-        actor->SetNumberOfCloudPoints(
-                int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
         actor->GetProperty()->SetInterpolationToFlat();
 
         /// FIXME disabling backface culling due to known VTK bug: vtkTextActors
@@ -325,7 +323,7 @@ bool VtkWidget::defaultRendererTaken() const {
 
 void VtkWidget::showOrientationMarker(bool show) {
     if (!d_ptr->orientationMarkerWidget) {
-        VTK_CREATE(vtkAxesActor, axes);
+        VTK_CREATE(vtkPVAxesActor, axes);
         axes->SetShaftTypeToCylinder();
 
         d_ptr->orientationMarkerWidget = vtkOrientationMarkerWidget::New();

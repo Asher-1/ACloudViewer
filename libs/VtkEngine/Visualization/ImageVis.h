@@ -45,6 +45,7 @@ public:
      *  @param autoInit Whether to auto-initialize
      */
     ImageVis(const std::string& viewerName, bool autoInit = false);
+    ~ImageVis() override;
 
     /** @param interactor VTK render window interactor
      *  @param win VTK render window
@@ -250,6 +251,7 @@ private:
         vtkSmartPointer<vtkImageSliceMapper> imageMapper;
     };
     std::map<std::string, ImageInfo> m_imageInfoMap;
+    bool m_disposed = false;
 };
 
 typedef std::shared_ptr<ImageVis> ImageVisPtr;

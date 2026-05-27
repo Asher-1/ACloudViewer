@@ -12,9 +12,19 @@
 
 // CV_DB_LIB
 #include <ecvGenericVisualizer3D.h>
+#include <ecvViewManager.h>
+
+// LOCAL
+#include "Visualization/vtkGLView.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
+
+// Qt
+#include <QTimer>
+#include <QWidget>
+
+#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 
 // VTK
 #include <vtkAbstractArray.h>
@@ -45,6 +55,18 @@
 #include <vtkTextProperty.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
+
+static void scheduleAllViewsUpdate() {
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        auto* glView = dynamic_cast<vtkGLView*>(view);
+        if (!glView) continue;
+        auto* w = glView->getVtkWidget();
+        if (w && w->isVisible() && w->width() >= 2 && w->height() >= 2) {
+            w->update();
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 cvSelectionHighlighter::cvSelectionHighlighter()
@@ -144,16 +166,8 @@ void cvSelectionHighlighter::setHighlightColor(double r,
         // Update existing actor's color immediately for real-time preview
         if (actor && *actor) {
             (*actor)->GetProperty()->SetColor(r, g, b);
-            (*actor)->Modified();  // Mark actor as modified for VTK pipeline
-
-            // Trigger immediate render to show color change
-            Visualization::VtkVis* pclVis = getVtkVis();
-            if (pclVis) {
-                vtkRenderWindow* renWin = pclVis->getRenderWindow();
-                if (renWin) {
-                    renWin->Render();
-                }
-            }
+            (*actor)->Modified();
+            scheduleAllViewsUpdate();
         }
 
         // Emit signals for property change notification
@@ -206,14 +220,7 @@ void cvSelectionHighlighter::setHighlightOpacity(double opacity,
         (*actor)->GetProperty()->SetOpacity(opacity);
         (*actor)->Modified();  // Mark actor as modified for VTK pipeline
 
-        // Trigger immediate render to show opacity change
-        Visualization::VtkVis* pclVis = getVtkVis();
-        if (pclVis) {
-            vtkRenderWindow* renWin = pclVis->getRenderWindow();
-            if (renWin) {
-                renWin->Render();
-            }
-        }
+        scheduleAllViewsUpdate();
     }
 
     // Emit signals for property change notification
@@ -641,14 +648,8 @@ void cvSelectionHighlighter::clearHighlights() {
     m_selectedActor = nullptr;
     m_boundaryActor = nullptr;
 
-    // Force render to show changes immediately
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (pclVis) {
-        vtkRenderWindow* renWin = pclVis->getRenderWindow();
-        if (renWin) {
-            renWin->Render();
-        }
-    }
+    emit highlightsCleared();
+    scheduleAllViewsUpdate();
 }
 
 //-----------------------------------------------------------------------------
@@ -672,13 +673,7 @@ void cvSelectionHighlighter::clearHighlight(HighlightMode mode) {
             break;
     }
 
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (pclVis) {
-        vtkRenderWindow* renWin = pclVis->getRenderWindow();
-        if (renWin) {
-            renWin->Render();
-        }
-    }
+    scheduleAllViewsUpdate();
 }
 
 //-----------------------------------------------------------------------------
@@ -689,10 +684,6 @@ void cvSelectionHighlighter::clearHoverHighlight() {
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setHighlightsVisible(bool visible) {
-    // Set visibility of all highlight actors
-    // Used to temporarily hide highlights during hardware selection
-    // to prevent depth buffer occlusion issues with subtract selection
-
     if (m_hoverActor) {
         m_hoverActor->SetVisibility(visible ? 1 : 0);
     }
@@ -706,14 +697,7 @@ void cvSelectionHighlighter::setHighlightsVisible(bool visible) {
         m_boundaryActor->SetVisibility(visible ? 1 : 0);
     }
 
-    // Force render update
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (pclVis) {
-        vtkRenderWindow* renWin = pclVis->getRenderWindow();
-        if (renWin) {
-            renWin->Render();
-        }
-    }
+    scheduleAllViewsUpdate();
 }
 
 //-----------------------------------------------------------------------------
@@ -936,7 +920,6 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
         return;
     }
 
-    // Get VtkVis for VTK operations
     Visualization::VtkVis* pclVis = getVtkVis();
     if (!pclVis) {
         CVLog::Error(
@@ -945,37 +928,37 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
         return;
     }
 
-    // Get current renderer
-    vtkRenderer* renderer = pclVis->getCurrentRenderer();
-    if (!renderer) {
-        CVLog::Error(
-                "[cvSelectionHighlighter::addActorToVisualizer] No renderer!");
-        return;
-    }
-
-    // CRITICAL: Configure mapper to render highlights ON TOP of main cloud
-    // This prevents Z-fighting and ensures highlights are always visible
     vtkMapper* mapper = actor->GetMapper();
     if (mapper) {
-        // Use polygon offset to push highlights slightly forward
         mapper->SetResolveCoincidentTopologyToPolygonOffset();
         mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1.0,
                                                                      -1.0);
         mapper->SetResolveCoincidentTopologyPolygonOffsetFaces(1);
     }
 
-    // Add actor to renderer
-    renderer->AddActor(actor);
-    actor->SetVisibility(1);  // Ensure visibility is on
-
-    // Trigger immediate render update (ParaView-style)
-    vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
-    if (renderWindow) {
-        renderWindow->Render();
-        CVLog::PrintVerbose("[cvSelectionHighlighter] Triggered render update");
-    } else {
-        CVLog::Warning("[cvSelectionHighlighter] No render window to update!");
+    vtkRenderer* primaryRenderer = pclVis->getCurrentRenderer();
+    if (primaryRenderer) {
+        primaryRenderer->AddActor(actor);
+        actor->SetVisibility(1);
     }
+
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        auto* glView = dynamic_cast<vtkGLView*>(view);
+        if (!glView) continue;
+        QWidget* w = glView->asWidget();
+        if (!w || !w->isVisible() || w->width() < 2 || w->height() < 2)
+            continue;
+        auto* vis = glView->getVisualizer3D();
+        if (!vis || vis == pclVis) continue;
+        vtkRenderer* ren = vis->getCurrentRenderer();
+        if (ren) {
+            ren->AddActor(actor);
+        }
+    }
+
+    emit highlightActorAdded(actor);
+    scheduleAllViewsUpdate();
 }
 
 //-----------------------------------------------------------------------------
@@ -984,18 +967,6 @@ void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
         return;
     }
 
-    // Get VtkVis for VTK operations
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (!pclVis) {
-        return;
-    }
-
-    vtkRenderer* renderer = pclVis->getCurrentRenderer();
-    if (!renderer) {
-        return;
-    }
-
-    // Remove corresponding actor (ParaView-style multi-level)
     vtkActor* actor = nullptr;
     if (id == m_hoverActorId && m_hoverActor) {
         actor = m_hoverActor;
@@ -1007,19 +978,34 @@ void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
         actor = m_boundaryActor;
     }
 
-    if (actor) {
-        renderer->RemoveActor(actor);
+    if (!actor) return;
 
-        // Trigger immediate render update (ParaView-style)
-        vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
-        if (renderWindow) {
-            renderWindow->Render();
+    Visualization::VtkVis* pclVis = getVtkVis();
+    if (pclVis) {
+        vtkRenderer* renderer = pclVis->getCurrentRenderer();
+        if (renderer) {
+            renderer->RemoveActor(actor);
         }
-
-        CVLog::PrintVerbose(
-                QString("[cvSelectionHighlighter] Removed highlight actor: %1")
-                        .arg(id));
     }
+
+    const auto& views = ecvViewManager::instance().getAllViews();
+    for (auto* view : views) {
+        auto* glView = dynamic_cast<vtkGLView*>(view);
+        if (!glView) continue;
+        auto* vis = glView->getVisualizer3D();
+        if (!vis || vis == pclVis) continue;
+        vtkRenderer* ren = vis->getCurrentRenderer();
+        if (ren) {
+            ren->RemoveActor(actor);
+        }
+    }
+
+    emit highlightActorRemoved(actor);
+    scheduleAllViewsUpdate();
+
+    CVLog::PrintVerbose(
+            QString("[cvSelectionHighlighter] Removed highlight actor: %1")
+                    .arg(id));
 }
 
 //-----------------------------------------------------------------------------
@@ -1282,10 +1268,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
                 QString("[cvSelectionHighlighter] Clearing %1 labels")
                         .arg(isPointLabels ? "point" : "cell"));
         // Force render to update the view
-        if (pclVis->getRenderWindow()) {
-            pclVis->getRenderWindow()->Modified();
-            pclVis->getRenderWindow()->Render();
-        }
+        scheduleAllViewsUpdate();
         return;
     }
 
@@ -1439,10 +1422,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
                     .arg(isPointLabels ? "point" : "cell")
                     .arg(arrayName));
 
-    // Refresh view
-    if (pclVis->getRenderWindow()) {
-        pclVis->getRenderWindow()->Render();
-    }
+    scheduleAllViewsUpdate();
 }
 
 //-----------------------------------------------------------------------------

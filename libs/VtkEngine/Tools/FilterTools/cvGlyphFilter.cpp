@@ -16,7 +16,7 @@
 #include <vtkConeSource.h>
 #include <vtkCylinderSource.h>
 #include <vtkGlyph3D.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLabeledDataMapper.h>
 #include <vtkLineSource.h>
 #include <vtkPlaneSource.h>

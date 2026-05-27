@@ -15,6 +15,7 @@
 #include "vtkRenderer.h"
 #include "vtkStringArray.h"
 #include "vtkTextProperty.h"
+#include "vtkVectorCompat.h"
 
 #include <algorithm>
 #include <vector>

@@ -17,9 +17,10 @@
 #include <CVTools.h>
 
 // VTK
+#include <vtkLogger.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAngleRepresentation2D.h>
-#include <vtkAxesActor.h>
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkCamera.h>
 #include <vtkClipPolyData.h>
 #include <vtkColorTransferFunction.h>
@@ -46,6 +47,8 @@
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/Widgets/VtkShortcutRegistry.h"
+#include "Visualization/VtkVis.h"
+#include "Visualization/vtkGLView.h"
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -86,12 +89,15 @@
 
 #include <ecv2DLabel.h>
 #include <ecvHObjectCaster.h>
+#include <Shortcuts/ecvKeySequences.h>
 
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QPainter>
 
 #include "ScaleBarWidget.h"
+
+#include <mutex>
 
 // macroes
 #ifndef VTK_CREATE
@@ -288,6 +294,10 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
     hide();
 
     vtkObject::GlobalWarningDisplayOff();
+    static std::once_flag s_loggerInit;
+    std::call_once(s_loggerInit, []() {
+        vtkLogger::SetStderrVerbosity(vtkLogger::VERBOSITY_WARNING);
+    });
     d_ptr = new VtkWidgetPrivate(this);
 }
 
@@ -641,6 +651,30 @@ void QVTKWidgetCustom::collectAllLabels(std::vector<ccHObject*>& labels) const {
     m_labelCacheGen = gen;
 }
 
+static Visualization::VtkVis* vtkVisForWidget(QVTKWidgetCustom* widget) {
+    if (!widget) return nullptr;
+    auto* display = ecvGenericGLDisplay::FromWidget(widget);
+    auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr;
+    return glView ? dynamic_cast<Visualization::VtkVis*>(glView->getVisualizer3D())
+                  : nullptr;
+}
+
+bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
+                                                    QEvent::Type eventType) {
+    auto* vis = vtkVisForWidget(this);
+    if (!vis) return false;
+
+    const bool overWidget =
+            vis->IsMouseOverCameraOrientationWidget(event->x(), event->y());
+    if (eventType == QEvent::MouseButtonPress && overWidget)
+        m_cameraOrientMouseActive = true;
+    if (eventType == QEvent::MouseButtonRelease)
+        m_cameraOrientMouseActive = false;
+    if (!overWidget && !m_cameraOrientMouseActive) return false;
+
+    return vis->ForwardMouseToCameraOrientationWidget(event, eventType);
+}
+
 // event processing
 void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     // Activate the view on click (ParaView-style): the render view becomes
@@ -658,6 +692,11 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curMouseButtonPressed() = true;
     curIgnoreMouseReleaseEvent() = false;
     curLastMousePos() = event->pos();
+
+    if (handleCameraOrientationMouse(event, QEvent::MouseButtonPress)) {
+        event->accept();
+        return;
+    }
 
     curLastPointIndex() = -1;
     curLastPickedId() = QString();
@@ -976,6 +1015,11 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 }
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
+    if (handleCameraOrientationMouse(event, QEvent::MouseMove)) {
+        event->accept();
+        return;
+    }
+
     // Do NOT call setActiveView here: ParaView-style UX activates a render view
     // on click (see mousePressEvent), not when the cursor merely moves across a
     // split window. Activating on every mouseMove caused the wrong view to
@@ -1543,6 +1587,11 @@ void QVTKWidgetCustom::updateActivateditems(
 }
 
 void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
+    if (handleCameraOrientationMouse(event, QEvent::MouseButtonRelease)) {
+        event->accept();
+        return;
+    }
+
     if (m_ownerView) {
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->setPickingTargetView(m_ownerView);
@@ -1845,11 +1894,29 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
     switch (evt->type()) {
         case QEvent::ShortcutOverride: {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
+            int qkey = keyEvent->key();
+            if (qkey != Qt::Key_unknown && qkey != Qt::Key_Control &&
+                qkey != Qt::Key_Shift && qkey != Qt::Key_Alt &&
+                qkey != Qt::Key_Meta) {
+                auto mods = keyEvent->modifiers();
+                int combo = qkey;
+                if (mods & Qt::ControlModifier) combo |= Qt::CTRL;
+                if (mods & Qt::AltModifier) combo |= Qt::ALT;
+                if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
+                QKeySequence seq(combo);
+                auto* activeMs = ecvKeySequences::instance().active(seq);
+                if (activeMs) {
+                    evt->ignore();
+                    return false;
+                }
+            }
             if (isVtkViewerShortcut(keyEvent->key(), keyEvent->modifiers())) {
                 evt->accept();
                 return true;
             }
-        } break;
+            evt->ignore();
+            return false;
+        }
 
         case QEvent::MouseButtonPress: {
             QMouseEvent* me = static_cast<QMouseEvent*>(evt);
@@ -1965,9 +2032,6 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
 
             if (keyEvent->key() == Qt::Key_Escape) {
-                CVLog::Print(
-                        "[QVTKWidgetCustom] ESC key pressed, forwarding to "
-                        "MainWindow");
                 if (m_ownerView)
                     emit m_ownerView->exclusiveFullScreenToggled(false);
                 emit exclusiveFullScreenToggled(false);
@@ -1981,9 +2045,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 return true;
             }
 
-            if (m_customStyle && m_interactor) {
-                ensureVtkShortcutMap();
-
+            {
                 int qkey = keyEvent->key();
                 auto mods = keyEvent->modifiers();
                 if (qkey == Qt::Key_unknown || qkey == Qt::Key_Control ||
@@ -1996,24 +2058,38 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 if (mods & Qt::ControlModifier) combo |= Qt::CTRL;
                 if (mods & Qt::AltModifier) combo |= Qt::ALT;
                 if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
-                QString seqStr = QKeySequence(combo).toString(
-                        QKeySequence::PortableText);
+                QKeySequence seq(combo);
 
-                auto it = s_vtkShortcutMap.find(seqStr);
-                if (it != s_vtkShortcutMap.end()) {
-                    if (m_customStyle->handleShortcut(
-                                it->vtkKey, it->vtkCtrl, it->vtkAlt,
-                                it->vtkShift, m_interactor.Get())) {
-                        evt->accept();
-                        return true;
-                    }
-                }
-
-                bool noMods = !(mods & (Qt::ControlModifier |
-                                        Qt::AltModifier | Qt::MetaModifier));
-                if (noMods && qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
+                auto* modalShortcut =
+                        ecvKeySequences::instance().active(seq);
+                if (modalShortcut) {
                     evt->ignore();
                     return false;
+                }
+
+                if (m_customStyle && m_interactor) {
+                    ensureVtkShortcutMap();
+
+                    QString seqStr = seq.toString(
+                            QKeySequence::PortableText);
+
+                    auto it = s_vtkShortcutMap.find(seqStr);
+                    if (it != s_vtkShortcutMap.end()) {
+                        if (m_customStyle->handleShortcut(
+                                    it->vtkKey, it->vtkCtrl, it->vtkAlt,
+                                    it->vtkShift, m_interactor.Get())) {
+                            evt->accept();
+                            return true;
+                        }
+                    }
+
+                    bool noMods = !(mods & (Qt::ControlModifier |
+                                            Qt::AltModifier |
+                                            Qt::MetaModifier));
+                    if (noMods && qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
+                        evt->ignore();
+                        return false;
+                    }
                 }
             }
         } break;

@@ -16,7 +16,7 @@
 #include <vector>
 
 // Forward declarations
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkPolyData;
 class vtkRenderer;
 class vtkRenderWindow;
@@ -45,7 +45,7 @@ public:
      * @return true on success
      */
     static bool ApplyTexturesFromCCMesh(
-            vtkLODActor* actor,
+            vtkPVLODActor* actor,
             ccGenericMesh* mesh,  // Non-const because getTriangleVertIndexes is
                                   // non-const
             vtkPolyData* polydata,
@@ -63,7 +63,7 @@ public:
      * @return true on success
      */
     static bool ApplyTexturesFromMaterialSet(
-            vtkLODActor* actor,
+            vtkPVLODActor* actor,
             const ccMaterialSet* materials,
             const std::vector<std::vector<Eigen::Vector2f>>& tex_coordinates,
             vtkPolyData* polydata,

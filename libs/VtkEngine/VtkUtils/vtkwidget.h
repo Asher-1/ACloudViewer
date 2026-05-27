@@ -35,7 +35,7 @@
 
 class vtkActor;
 class vtkProp;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkDataSet;
 namespace VtkUtils {
 
@@ -50,7 +50,7 @@ public:
     bool multiViewports() const;
 
     void createActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
-                                   vtkSmartPointer<vtkLODActor>& actor,
+                                   vtkSmartPointer<vtkPVLODActor>& actor,
                                    bool use_scalars = true);
 
     void addActor(vtkProp* actor, const QColor& clr = Qt::black);

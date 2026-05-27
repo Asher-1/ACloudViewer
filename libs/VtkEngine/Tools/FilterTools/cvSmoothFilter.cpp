@@ -11,7 +11,7 @@
 #include <VtkUtils/vtkutils.h>
 #include <vtkActor.h>
 #include <vtkDecimatePro.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
 #include <vtkSmoothPolyDataFilter.h>

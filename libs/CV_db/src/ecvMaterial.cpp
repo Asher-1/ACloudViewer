@@ -204,7 +204,7 @@ bool ccMaterial::hasTexture() const {
 }
 
 QImage ccMaterial::GetTexture(const QString& absoluteFilename) {
-    return s_textureDB[absoluteFilename];
+    return s_textureDB.value(CVTools::ToNativeSeparators(absoluteFilename));
 }
 
 void ccMaterial::AddTexture(const QImage& image,
