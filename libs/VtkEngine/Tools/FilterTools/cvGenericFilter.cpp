@@ -36,11 +36,11 @@
 // VTK
 #include <vtk3DWidget.h>
 #include <vtkActor.h>
-#include <vtkAxesActor.h>
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkDataArray.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkOutlineFilter.h>
 #include <vtkPolyDataMapper.h>
@@ -451,12 +451,9 @@ void cvGenericFilter::createActorFromData(vtkDataObject* dataObj) {
     mapper->Update();
 
     //	VtkUtils::vtkInitOnce(m_modelActor);
-    m_modelActor = vtkSmartPointer<vtkLODActor>::New();
+    m_modelActor = vtkSmartPointer<vtkPVLODActor>::New();
     m_modelActor->SetMapper(mapper);
 
-    static_cast<vtkSmartPointer<vtkLODActor>>(m_modelActor)
-            ->SetNumberOfCloudPoints(int(
-                    std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
     m_modelActor->GetProperty()->SetInterpolationToFlat();
 
     addActor(m_modelActor);

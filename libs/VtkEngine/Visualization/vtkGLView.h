@@ -23,7 +23,7 @@
 
 class vtkActor;
 class vtkImplicitPlaneWidget2;
-class vtkCubeAxesActor;
+class vtkGridAxesActor3D;
 class vtkRenderPass;
 #include <QPointer>
 #include <QTimer>
@@ -117,6 +117,7 @@ public:
     const ecvGui::ParamStruct& getDisplayParameters() const override;
     void setDisplayParameters(const ecvGui::ParamStruct& params,
                               bool thisWindowOnly = false) override;
+    void clearDisplayParametersOverride();
     void drawClickableItems(int xStart, int& yStart) override;
     void invalidateViewport() override;
     void deprecate3DLayer() override;
@@ -258,6 +259,9 @@ public:
         return m_visualizer3D;
     }
     Visualization::ImageVisPtr getImageVis() const { return m_visualizer2D; }
+
+    void disableContext2DOverlay();
+    void disableOverlayEntities();
 
     void zoomGlobal();
 
@@ -459,7 +463,7 @@ private:
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
     QElapsedTimer m_timer;
-    vtkSmartPointer<vtkCubeAxesActor> m_sliceCubeAxes;
+    vtkSmartPointer<vtkGridAxesActor3D> m_sliceCubeAxes;
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;
     std::vector<double> m_multiSlicePos[3];
     std::vector<vtkSmartPointer<vtkActor>> m_multiSliceActors;

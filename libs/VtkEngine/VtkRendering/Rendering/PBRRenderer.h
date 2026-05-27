@@ -42,7 +42,7 @@ public:
 
     RenderingMode GetMode() const override;
 
-    bool Apply(vtkLODActor* actor,
+    bool Apply(vtkPVLODActor* actor,
                const class ccMaterialSet* materials,
                vtkPolyData* polydata,
                vtkRenderer* renderer) override;

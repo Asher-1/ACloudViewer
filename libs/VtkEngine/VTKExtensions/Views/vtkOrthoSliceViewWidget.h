@@ -22,19 +22,24 @@
 #include <QRubberBand>
 #include <QSet>
 #include <QWidget>
+#include <QEvent>
 #include <functional>
 
 class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
+class QMouseEvent;
 class QSlider;
 class QSpinBox;
 class QVTKOpenGLNativeWidget;
 class vtkRenderer;
 class vtkGenericOpenGLRenderWindow;
 class vtkProp;
+class vtkCameraOrientationWidget;
 class ccHObject;
+class vtkPlaneSource;
+class vtkPlane;
 
 class QVTK_ENGINE_LIB_API vtkOrthoSliceViewWidget : public QWidget {
     Q_OBJECT
@@ -82,6 +87,13 @@ public:
 
     void populateFromRenderer(vtkRenderer* sourceRenderer);
 
+    void connectExternalHighlighter(QObject* highlighter);
+
+    void setOrientationMarkerVisible(bool visible);
+    bool orientationMarkerVisible() const;
+    void toggleCameraOrientationWidget(bool visible);
+    bool isCameraOrientationWidgetShown() const;
+
 signals:
     void slicePositionChanged(double x, double y, double z);
     void clicked();
@@ -106,7 +118,24 @@ private:
 
     void applyDisplayProperties();
     void performRubberBandSelection();
+    void updateOrientationWidgetViewport();
+    void ensureOrientationWidgetsInitialized();
+    void clearEntityDisplay();
+    void setupDecoratorBarContextMenu();
+    void activate3DInteractor();
+    bool forwardMouseToInteractor(QMouseEvent* me, QEvent::Type eventType);
+    bool isInCameraOrientationWidget(const QPoint& pos) const;
+    void mapWidgetToRendererDisplay(const QPoint& pos, vtkRenderer* ren,
+                                    double outXY[2]) const;
+    void createPlaneIndicators(const double bounds[6]);
+    void updatePlaneIndicatorFromSlice(int viewIdx, vtkPlane* plane,
+                                       vtkPlaneSource* ps,
+                                       const double bounds[6]);
 
+    QWidget* m_decoratorBar = nullptr;
+    QWidget* m_dispBar = nullptr;
+    QWidget* m_colorBar = nullptr;
+    QWidget* m_lightBar = nullptr;
     QComboBox* m_sourceCombo = nullptr;
     QDoubleSpinBox* m_sliceSpin[3] = {nullptr, nullptr, nullptr};
     QDoubleSpinBox* m_stepSpin = nullptr;
@@ -116,19 +145,29 @@ private:
     double m_sliceStep = 1.0;
     double m_sliceIncrements[3] = {1.0, 1.0, 1.0};
     bool m_annotationsVisible = true;
+    bool m_axesGridVisible = false;
     bool m_updatingSpinners = false;
 
     bool m_draggingSlice = false;
     int m_dragViewIdx = -1;
     int m_lastActiveQuadrant = -1;
+    int m_interactionOriginView = -1;
+    bool m_rotating3D = false;
     bool m_panning2D = false;
     bool m_panPending = false;
     bool m_zooming2D = false;
     int m_zoomViewIdx = -1;
+    bool m_interactorDisabledFor2D = false;
+    bool m_cameraWidgetCapturing = false;
+    bool m_rolling2D = false;
+    int m_rollViewIdx = -1;
+    QPoint m_rollLastPos;
     QPoint m_panPressPos;
     QPoint m_panLastPos;
     QPoint m_dragLastPos;
     QPoint m_zoomLastPos;
+    double m_zoomAnchorDisplay[2] = {0.0, 0.0};
+    double m_zoomScale2D = 0.0;
 
     enum SelectionMode {
         SEL_NONE = 0,

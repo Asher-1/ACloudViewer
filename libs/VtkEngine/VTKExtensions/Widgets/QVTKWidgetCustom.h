@@ -34,7 +34,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // #include <QVTKWidget.h>
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkDataSet.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPlanes.h>
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
@@ -330,13 +330,14 @@ protected:
     vtkGLView* m_ownerView = nullptr;
     ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
+    bool m_cameraOrientMouseActive = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
     float m_localDefaultPointSize = 1.0f;
     float m_localDefaultLineWidth = 2.0f;
 
     vtkDataObject* m_dataObject;
     vtkActor* m_modelActor = nullptr;
-    vtkLODActor* m_filterActor = nullptr;
+    vtkPVLODActor* m_filterActor = nullptr;
 
     QColor m_color1 = Qt::blue;
     QColor m_color2 = Qt::red;
@@ -379,6 +380,8 @@ protected:
     mutable std::vector<ccHObject*> m_cachedLabels;
     mutable unsigned m_labelCacheGen = 0;
     void collectAllLabels(std::vector<ccHObject*>& labels) const;
+    bool handleCameraOrientationMouse(QMouseEvent* event,
+                                      QEvent::Type eventType);
 
     // Throttle: min interval (ms) between cursor-coordinate redraws
     static constexpr int CURSOR_COORD_THROTTLE_MS = 33;  // ~30 fps

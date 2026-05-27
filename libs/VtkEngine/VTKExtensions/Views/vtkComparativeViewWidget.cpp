@@ -8,6 +8,7 @@
 #include "vtkComparativeViewWidget.h"
 
 #include <CVLog.h>
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
 #include <VTKExtensions/Views/vtkChartView.h>
 #include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 #include <Visualization/vtkGLView.h>
@@ -32,6 +33,11 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <vtkCallbackCommand.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkSmartPointer.h>
+#include <vtkInteractorObserver.h>
+
 #include <cmath>
 
 #include <vtkActor.h>
@@ -44,18 +50,23 @@
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
+#include <vtkTexture.h>
 
 static constexpr int COMPARATIVE_SPACING = 1;
 
-static bool safeRenderWindow(vtkGLView* view) {
+static bool safeRenderWindow(vtkGLView* view, bool immediate = false) {
     if (!view) return false;
     auto* w = view->getVtkWidget();
     if (!w || !w->isVisible() || w->width() < 2 || w->height() < 2)
         return false;
-    auto* rw = w->renderWindow();
-    if (!rw) return false;
-    rw->MakeCurrent();
-    rw->Render();
+    if (immediate) {
+        auto* rw = w->renderWindow();
+        if (rw) {
+            rw->Render();
+            return true;
+        }
+    }
+    w->update();
     return true;
 }
 
@@ -66,24 +77,30 @@ static void safeRedraw(vtkGLView* view) {
     view->redraw(false, true);
 }
 
-static void enforceSubViewBackground(vtkGLView* view) {
+static void syncSubViewBackgroundFromGlobal(vtkGLView* view) {
     if (!view) return;
+    // Follow global Display Settings — do not lock per-window overrides.
+    view->clearDisplayParametersOverride();
+    view->redraw(false, true);
+}
 
-    auto params = view->getDisplayParameters();
-    params.drawBackgroundGradient = false;
-    params.backgroundCol = ecvColor::Rgbub(82, 82, 82);
-    params.textDefaultCol = ecvColor::Rgbub(255, 255, 255);
-    view->setDisplayParameters(params, true);
+static ecvGenericGLDisplay::INTERACTION_FLAGS stripClickableItems(
+        ecvGenericGLDisplay::INTERACTION_FLAGS flags) {
+    return static_cast<ecvGenericGLDisplay::INTERACTION_FLAGS>(
+            flags & ~ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS);
+}
 
-    auto* vtkW = view->getVtkWidget();
-    if (!vtkW || !vtkW->renderWindow()) return;
-    auto* ren = vtkW->renderWindow()->GetRenderers()
-            ? vtkW->renderWindow()->GetRenderers()->GetFirstRenderer()
-            : nullptr;
-    if (ren) {
-        ren->SetBackground(0.32, 0.32, 0.32);
-        ren->SetBackground2(0.32, 0.32, 0.32);
-        ren->SetGradientBackground(false);
+// Comparative sub-views use small viewports where bubble-view / hot-zone
+// overlay text does not render correctly — disable entirely (ParaView-style).
+static void disableBubbleViewForSubView(vtkGLView* view) {
+    if (!view) return;
+    view->disableOverlayEntities();
+    view->context().bubbleViewModeEnabled = false;
+    view->setClickableItemsVisible(false);
+    view->setInteractionMode(stripClickableItems(view->getInteractionMode()));
+    if (QWidget* w = view->asWidget()) {
+        w->setMouseTracking(view->getInteractionMode() &
+                            ecvGenericGLDisplay::INTERACT_SIG_MOUSE_MOVED);
     }
 }
 
@@ -106,37 +123,27 @@ vtkComparativeViewWidget::vtkComparativeViewWidget(ComparativeType type,
     m_gridLayout->setSpacing(COMPARATIVE_SPACING);
     mainLayout->addWidget(gridContainer, 1);
     setMinimumSize(100, 100);
-
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &QWidget::customContextMenuRequested, this,
-            [this](const QPoint& pos) {
-                QMenu menu(this);
-                auto* toggleAct = menu.addAction(
-                        m_toolbar->isVisible()
-                                ? tr("Hide Grid Settings")
-                                : tr("Show Grid Settings"));
-                connect(toggleAct, &QAction::triggered, this, [this]() {
-                    m_toolbar->setVisible(!m_toolbar->isVisible());
-                });
-                menu.addSeparator();
-                auto* dimAct = menu.addAction(
-                        tr("Dimensions: %1 x %2").arg(m_rows).arg(m_cols));
-                dimAct->setEnabled(false);
-                menu.exec(mapToGlobal(pos));
-            });
+    setContextMenuPolicy(Qt::NoContextMenu);
 }
 
 vtkComparativeViewWidget::~vtkComparativeViewWidget() {
     m_closing = true;
-    if (m_cameraLinkTimer) m_cameraLinkTimer->stop();
+    removeCameraLink();
+    disconnect(&ecvRepresentationManager::instance(), nullptr, this, nullptr);
+    disconnect(&ecvViewManager::instance(), nullptr, this, nullptr);
     for (auto* sv : m_subViews) {
         if (!sv) continue;
+        QWidget* w = sv->asWidget();
+        if (w) w->removeEventFilter(this);
         sv->setSceneDB(nullptr);
         sv->disconnect();
     }
     m_subViews.clear();
     for (auto* w : m_subWidgets) {
-        if (w) w->hide();
+        if (w) {
+            w->removeEventFilter(this);
+            w->hide();
+        }
     }
     m_subWidgets.clear();
 }
@@ -224,6 +231,7 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             viewWidget->setMinimumSize(50, 50);
             viewWidget->setSizePolicy(QSizePolicy::Expanding,
                                       QSizePolicy::Expanding);
+            viewWidget->setContextMenuPolicy(Qt::NoContextMenu);
             m_gridLayout->addWidget(viewWidget, r, c);
             m_gridLayout->setRowStretch(r, 1);
             m_gridLayout->setColumnStretch(c, 1);
@@ -232,7 +240,9 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             m_subViews.append(view);
             if (!firstView) firstView = view;
 
-            enforceSubViewBackground(view);
+            syncSubViewBackgroundFromGlobal(view);
+            view->disableContext2DOverlay();
+            disableBubbleViewForSubView(view);
 
             if (m_subViewInitCb) {
                 m_subViewInitCb(view);
@@ -283,7 +293,7 @@ void vtkComparativeViewWidget::createRenderSubViews() {
         if (repView == m_sourceView) isOurView = true;
         if (!isOurView) return;
         QTimer::singleShot(50, this, [this]() {
-            if (m_closing) return;
+            if (m_closing || !isVisible()) return;
             copyActorsAcrossSubViews();
             forceRenderAllSubViews();
         });
@@ -300,7 +310,7 @@ void vtkComparativeViewWidget::createRenderSubViews() {
     static const int kRetryDelays[] = {200, 500, 1000, 2000, 4000};
     for (int d : kRetryDelays) {
         QTimer::singleShot(d, this, [this]() {
-            if (m_closing) return;
+            if (m_closing || !isVisible()) return;
             copyActorsAcrossSubViews();
             if (m_subViews.size() > 1) syncCamerasFromFirst();
             forceRenderAllSubViews();
@@ -311,7 +321,7 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             &ecvViewManager::pointIndicesSelected, this,
             [this](ccHObject*, const QSet<unsigned>&) {
                 QTimer::singleShot(100, this, [this]() {
-                    if (m_closing) return;
+                    if (m_closing || !isVisible()) return;
                     copyActorsAcrossSubViews();
                     forceRenderAllSubViews();
                 });
@@ -325,6 +335,10 @@ void vtkComparativeViewWidget::createRenderSubViews() {
     }
 }
 
+void vtkComparativeViewWidget::setSourceView(vtkGLView* src) {
+    m_sourceView = src;
+}
+
 void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
     if (!m_firstShowDone) {
@@ -332,10 +346,10 @@ void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
         static const int kDelays[] = {100, 300, 600, 1500, 3000};
         for (int d : kDelays) {
             QTimer::singleShot(d, this, [this]() {
-                if (m_closing) return;
+                if (m_closing || !isVisible()) return;
                 for (auto* view : m_subViews) {
                     if (!view) continue;
-                    enforceSubViewBackground(view);
+                    syncSubViewBackgroundFromGlobal(view);
                     ccHObject* root = view->getSceneDB();
                     if (root) root->setRedrawFlagRecursive(true);
                     safeRedraw(view);
@@ -357,8 +371,7 @@ void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
                         ren->ResetCamera();
                         ren->ResetCameraClippingRange();
                     }
-                    rw->MakeCurrent();
-                    rw->Render();
+                    vtkW->update();
                 }
             });
         }
@@ -366,7 +379,12 @@ void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
     }
 }
 
+void vtkComparativeViewWidget::hideEvent(QHideEvent* event) {
+    QWidget::hideEvent(event);
+}
+
 bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
+    if (event->type() == QEvent::ContextMenu) return true;
     if (event->type() == QEvent::MouseButtonPress) {
         emit clicked();
     }
@@ -377,9 +395,10 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
             if (re->size().width() > 10 && re->size().height() > 10) {
                 m_pendingFirstResize.remove(w);
                 QTimer::singleShot(50, this, [this, w]() {
+                    if (m_closing || !isVisible()) return;
                     for (auto* view : m_subViews) {
                         if (!view || view->asWidget() != w) continue;
-                        enforceSubViewBackground(view);
+                        syncSubViewBackgroundFromGlobal(view);
                         ccHObject* root = view->getSceneDB();
                         if (root) root->setRedrawFlagRecursive(true);
                         safeRedraw(view);
@@ -396,8 +415,7 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
                             ren->ResetCamera();
                             ren->ResetCameraClippingRange();
                         }
-                        rw->MakeCurrent();
-                        rw->Render();
+                        vtkW->update();
                         break;
                     }
                 });
@@ -408,22 +426,22 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
 }
 
 void vtkComparativeViewWidget::forceRenderAllSubViews() {
-    if (m_closing) return;
+    if (m_closing || !isVisible()) return;
     for (auto* view : m_subViews) {
         if (!view) continue;
         QWidget* w = view->asWidget();
-        if (w) {
+        if (w && isVisible()) {
             w->show();
             w->update();
         }
         view->setAutoPickPivotAtCenter(false);
-        enforceSubViewBackground(view);
+        syncSubViewBackgroundFromGlobal(view);
         ccHObject* root = view->getSceneDB();
         if (root) root->setRedrawFlagRecursive(true);
     }
 
     QTimer::singleShot(100, this, [this]() {
-        if (m_closing) return;
+        if (m_closing || !isVisible()) return;
         for (auto* view : m_subViews) safeRedraw(view);
 
         copyActorsAcrossSubViews();
@@ -449,8 +467,7 @@ void vtkComparativeViewWidget::forceRenderAllSubViews() {
                                 CCVector3d pivot(cx, cy, cz);
                                 first->setPivotPoint(pivot, false, false);
                             }
-                            rw->MakeCurrent();
-                            rw->Render();
+                            vtkW->update();
                         }
                     }
                 }
@@ -465,10 +482,11 @@ void vtkComparativeViewWidget::forceRenderAllSubViews() {
 
 void vtkComparativeViewWidget::syncInteractionModeToSubViews() {
     if (!m_sourceView || m_subViews.isEmpty()) return;
-    auto flags = m_sourceView->getInteractionMode();
+    auto flags = stripClickableItems(m_sourceView->getInteractionMode());
     for (auto* view : m_subViews) {
         if (view && view != m_sourceView) {
             view->setInteractionMode(flags);
+            disableBubbleViewForSubView(view);
         }
     }
 }
@@ -486,119 +504,38 @@ void vtkComparativeViewWidget::syncPickingModeToSubViews() {
 void vtkComparativeViewWidget::copyActorsAcrossSubViews() {
     if (m_closing || m_subViews.isEmpty()) return;
 
-    auto collectMeshActors = [](vtkRenderer* ren) -> QList<vtkActor*> {
-        QList<vtkActor*> result;
-        if (!ren || !ren->GetActors()) return result;
-        auto* actors = ren->GetActors();
-        actors->InitTraversal();
-        vtkActor* a = nullptr;
-        while ((a = actors->GetNextActor())) {
-            if (a->GetMapper()) result.append(a);
-        }
-        return result;
-    };
-
-    auto getRenderer = [](vtkGLView* v) -> vtkRenderer* {
-        if (!v || !v->getVtkWidget()) return nullptr;
-        auto* rw = v->getVtkWidget()->renderWindow();
-        if (!rw || !rw->GetRenderers()) return nullptr;
-        return rw->GetRenderers()->GetFirstRenderer();
-    };
-
-    vtkRenderer* srcRen = nullptr;
-    QList<vtkActor*> srcActorList;
-
-    if (m_sourceView) {
-        safeRedraw(m_sourceView);
-        auto* ren = getRenderer(m_sourceView);
-        auto actors = collectMeshActors(ren);
-        if (!actors.isEmpty()) {
-            srcRen = ren;
-            srcActorList = actors;
-        }
+    // Each sub-view must render entities through its own VtkVis / OpenGL context.
+    // GL textures cannot be shared by cloning actors from another viewport.
+    for (auto* view : m_subViews) {
+        if (!view) continue;
+        ccHObject* root = view->getSceneDB();
+        if (root) root->setRedrawFlagRecursive(true);
+        safeRedraw(view);
     }
 
-    if (srcActorList.isEmpty()) {
-        for (auto* v : m_subViews) {
-            enforceSubViewBackground(v);
-            safeRedraw(v);
-            auto* ren = getRenderer(v);
-            auto actors = collectMeshActors(ren);
-            if (actors.size() > srcActorList.size()) {
-                srcRen = ren;
-                srcActorList = actors;
-            }
-        }
-    }
-    if (!srcRen || srcActorList.isEmpty()) return;
-
-    QSet<vtkMapper*> srcMapperSet;
-    for (auto* a : srcActorList) srcMapperSet.insert(a->GetMapper());
-
-    for (auto* v : m_subViews) {
-        auto* dstRen = getRenderer(v);
-        if (!dstRen || dstRen == srcRen) continue;
-
-        QSet<vtkMapper*> existingMappers;
-        for (auto* ea : collectMeshActors(dstRen))
-            existingMappers.insert(ea->GetMapper());
-
-        bool added = false;
-        for (auto* actor : srcActorList) {
-            if (existingMappers.contains(actor->GetMapper())) continue;
-            auto* newActor = vtkActor::New();
-            newActor->ShallowCopy(actor);
-
-            auto* srcPdMapper =
-                    vtkPolyDataMapper::SafeDownCast(actor->GetMapper());
-            if (srcPdMapper && srcPdMapper->GetInput()) {
-                auto* cloned = vtkPolyDataMapper::New();
-                cloned->SetInputData(srcPdMapper->GetInput());
-                cloned->SetScalarVisibility(
-                        srcPdMapper->GetScalarVisibility());
-                cloned->SetScalarRange(srcPdMapper->GetScalarRange());
-                cloned->SetColorMode(srcPdMapper->GetColorMode());
-                cloned->SetScalarMode(srcPdMapper->GetScalarMode());
-                cloned->SetLookupTable(srcPdMapper->GetLookupTable());
-                cloned->Update();
-                newActor->SetMapper(cloned);
-                cloned->Delete();
-            } else {
-                newActor->SetMapper(actor->GetMapper());
-            }
-            dstRen->AddActor(newActor);
-            newActor->Delete();
-            added = true;
-        }
-        if (added) {
-            dstRen->ResetCamera();
-            dstRen->ResetCameraClippingRange();
-            safeRenderWindow(v);
-        }
-    }
+    // Each sub-view owns a separate OpenGL context. Overlays (selection
+    // highlights, etc.) must be created per view via safeRedraw — never
+    // share vtkMapper / vtkTexture pointers across contexts (GPU crash).
 }
 
 void vtkComparativeViewWidget::syncCamerasFromFirst() {
     if (m_closing || m_subViews.size() < 2) return;
     vtkGLView* first = m_subViews.first();
-    if (!first) return;
-
-    auto* srcCam = first->getVtkWidget()
-                           ? first->getVtkWidget()->renderWindow()
-                                     ->GetRenderers()
-                                     ->GetFirstRenderer()
-                                     ->GetActiveCamera()
-                           : nullptr;
+    if (!first || !first->getVtkWidget()) return;
+    auto* srcRw = first->getVtkWidget()->renderWindow();
+    if (!srcRw || !srcRw->GetRenderers()) return;
+    auto* srcRen = srcRw->GetRenderers()->GetFirstRenderer();
+    if (!srcRen) return;
+    auto* srcCam = srcRen->GetActiveCamera();
     if (!srcCam) return;
 
     for (int i = 1; i < m_subViews.size(); ++i) {
         auto* dstView = m_subViews[i];
         if (!dstView || !dstView->getVtkWidget()) continue;
-        auto* dstRen = dstView->getVtkWidget()
-                               ->renderWindow()
-                               ->GetRenderers()
-                               ->GetFirstRenderer();
-        if (dstRen) {
+        auto* dstRw = dstView->getVtkWidget()->renderWindow();
+        if (!dstRw || !dstRw->GetRenderers()) continue;
+        auto* dstRen = dstRw->GetRenderers()->GetFirstRenderer();
+        if (dstRen && dstRen->GetActiveCamera()) {
             dstRen->GetActiveCamera()->DeepCopy(srcCam);
         }
     }
@@ -607,46 +544,71 @@ void vtkComparativeViewWidget::syncCamerasFromFirst() {
 }
 
 void vtkComparativeViewWidget::installCameraLink() {
-    if (m_cameraLinkTimer || m_subViews.size() < 2) return;
-
-    m_cameraLinkTimer = new QTimer(this);
-    m_cameraLinkTimer->setInterval(16);
-    connect(m_cameraLinkTimer, &QTimer::timeout, this,
-            &vtkComparativeViewWidget::onCameraLinkTick);
-    m_cameraLinkTimer->start();
-}
-
-void vtkComparativeViewWidget::onCameraLinkTick() {
-    if (!m_cameraLinkEnabled || m_subViews.size() < 2) return;
-    if (m_syncingCameras) return;
-
-    vtkCamera* activeCam = nullptr;
-    int activeIdx = -1;
-    double maxMTime = m_lastCameraMTime;
+    if (!m_cameraObservers.empty() || m_subViews.size() < 2) return;
 
     for (int i = 0; i < m_subViews.size(); ++i) {
         auto* view = m_subViews[i];
         if (!view || !view->getVtkWidget()) continue;
         auto* rw = view->getVtkWidget()->renderWindow();
-        if (!rw || !rw->GetRenderers()) continue;
-        auto* ren = rw->GetRenderers()->GetFirstRenderer();
-        if (!ren) continue;
-        auto* cam = ren->GetActiveCamera();
-        if (!cam) continue;
-        double mtime = static_cast<double>(cam->GetMTime());
-        if (mtime > maxMTime) {
-            maxMTime = mtime;
-            activeCam = cam;
-            activeIdx = i;
+        if (!rw) continue;
+        auto* interactor = rw->GetInteractor();
+        if (!interactor) continue;
+        auto* style = interactor->GetInteractorStyle();
+        if (!style) continue;
+
+        auto cb = vtkSmartPointer<vtkCallbackCommand>::New();
+        cb->SetClientData(this);
+        cb->SetCallback(&vtkComparativeViewWidget::interactionCallback);
+
+        unsigned long tag =
+                style->AddObserver(vtkCommand::EndInteractionEvent, cb);
+        m_cameraObservers.push_back({style, tag});
+    }
+}
+
+void vtkComparativeViewWidget::removeCameraLink() {
+    for (auto& obs : m_cameraObservers) {
+        if (obs.observed) obs.observed->RemoveObserver(obs.tag);
+    }
+    m_cameraObservers.clear();
+}
+
+void vtkComparativeViewWidget::interactionCallback(
+        vtkObject* caller, unsigned long eid, void* clientData, void*) {
+    if (eid != vtkCommand::EndInteractionEvent) return;
+    auto* self = static_cast<vtkComparativeViewWidget*>(clientData);
+    if (!self || self->m_closing || self->m_syncingCameras ||
+        !self->m_cameraLinkEnabled)
+        return;
+
+    for (int i = 0; i < self->m_subViews.size(); ++i) {
+        auto* view = self->m_subViews[i];
+        if (!view || !view->getVtkWidget()) continue;
+        auto* rw = view->getVtkWidget()->renderWindow();
+        if (!rw || !rw->GetInteractor()) continue;
+        if (rw->GetInteractor()->GetInteractorStyle() == caller) {
+            self->onSubViewInteraction(i);
+            return;
         }
     }
+}
 
-    if (!activeCam || activeIdx < 0) return;
-    m_lastCameraMTime = maxMTime;
+void vtkComparativeViewWidget::onSubViewInteraction(int viewIdx) {
+    if (m_syncingCameras || m_closing || !isVisible()) return;
+    if (viewIdx < 0 || viewIdx >= m_subViews.size()) return;
+
+    auto* srcView = m_subViews[viewIdx];
+    if (!srcView || !srcView->getVtkWidget()) return;
+    auto* srcRw = srcView->getVtkWidget()->renderWindow();
+    if (!srcRw || !srcRw->GetRenderers()) return;
+    auto* srcRen = srcRw->GetRenderers()->GetFirstRenderer();
+    if (!srcRen) return;
+    auto* srcCam = srcRen->GetActiveCamera();
+    if (!srcCam) return;
 
     m_syncingCameras = true;
     for (int i = 0; i < m_subViews.size(); ++i) {
-        if (i == activeIdx) continue;
+        if (i == viewIdx) continue;
         auto* dstView = m_subViews[i];
         if (!dstView || !dstView->getVtkWidget()) continue;
         auto* rw = dstView->getVtkWidget()->renderWindow();
@@ -655,17 +617,29 @@ void vtkComparativeViewWidget::onCameraLinkTick() {
         if (!dstRen) continue;
         auto* dstCam = dstRen->GetActiveCamera();
         if (!dstCam) continue;
-        dstCam->DeepCopy(activeCam);
+        dstCam->DeepCopy(srcCam);
         dstRen->ResetCameraClippingRange();
-    }
-
-    for (int i = 0; i < m_subViews.size(); ++i) {
-        if (i == activeIdx) continue;
-        auto* dstView = m_subViews[i];
-        if (!dstView || !dstView->getVtkWidget()) continue;
-        safeRenderWindow(dstView);
+        safeRenderWindow(dstView, true);
     }
     m_syncingCameras = false;
+}
+
+void vtkComparativeViewWidget::connectExternalHighlighter(
+        QObject* highlighter) {
+    auto* hl = qobject_cast<cvSelectionHighlighter*>(highlighter);
+    if (!hl) return;
+
+    auto syncLater = [this]() {
+        QTimer::singleShot(50, this, [this]() {
+            if (m_closing || !isVisible()) return;
+            copyActorsAcrossSubViews();
+            forceRenderAllSubViews();
+        });
+    };
+
+    connect(hl, &cvSelectionHighlighter::highlightActorAdded, this, syncLater);
+    connect(hl, &cvSelectionHighlighter::highlightActorRemoved, this, syncLater);
+    connect(hl, &cvSelectionHighlighter::highlightsCleared, this, syncLater);
 }
 
 void vtkComparativeViewWidget::refreshSubViews() {
@@ -681,7 +655,7 @@ void vtkComparativeViewWidget::refreshSubViews() {
     }
     for (auto* view : m_subViews) {
         if (!view) continue;
-        enforceSubViewBackground(view);
+        syncSubViewBackgroundFromGlobal(view);
         ccHObject* root = view->getSceneDB();
         if (root) root->setRedrawFlagRecursive(true);
         safeRedraw(view);
@@ -700,8 +674,7 @@ void vtkComparativeViewWidget::refreshSubViews() {
                         ren->ResetCamera();
                         ren->ResetCameraClippingRange();
                     }
-                    rw->MakeCurrent();
-                    rw->Render();
+                    vtkW->update();
                 }
             }
         }
@@ -710,8 +683,7 @@ void vtkComparativeViewWidget::refreshSubViews() {
     if (m_subViews.size() > 1) syncCamerasFromFirst();
 
     for (int i = 1; i < m_subViews.size(); ++i) {
-        auto* view = m_subViews[i];
-        safeRenderWindow(view);
+        safeRenderWindow(m_subViews[i]);
     }
 }
 
@@ -1355,9 +1327,7 @@ void vtkComparativeViewWidget::applyCueToSubViews() {
     }
 
     for (auto* v : m_subViews) {
-        if (!v || !v->getVtkWidget()) continue;
-        auto* rw = v->getVtkWidget()->renderWindow();
-        if (rw) rw->Render();
+        safeRenderWindow(v);
     }
 
     Q_UNUSED(isCameraCue);

@@ -17,7 +17,7 @@
 #include <vtkActor.h>
 #include <vtkBoxWidget.h>
 #include <vtkImplicitPlaneWidget.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLineWidget.h>
 #include <vtkPlane.h>
 #include <vtkPlaneSource.h>

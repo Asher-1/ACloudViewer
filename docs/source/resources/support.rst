@@ -150,11 +150,11 @@ ACloudViewer is an open-source project maintained by volunteers. If you find it 
             <p style="font-size: 13px; color: #666; margin-top: 10px;">WeChat Pay</p>
          </div>
          <div>
-            <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl" target="_blank">
-               <img src="../_static/payoneer.png" alt="Payoneer QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <a href="https://www.paypal.com/ncp/payment/EHLN9HQV9U39J" target="_blank" style="display:inline-block;padding:18px 28px;background:#00457C;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+               <i class="fab fa-paypal"></i> PayPal Donate
             </a>
             <p style="font-size: 13px; color: #666; margin-top: 10px;">
-               <a href="https://link.payoneer.com/Token?t=2AF50286F11E443EB42144A516C3688F&src=pl" target="_blank" style="color: #FF4800;">Payoneer (International)</a>
+               <a href="https://www.paypal.com/ncp/payment/EHLN9HQV9U39J" target="_blank" style="color: #00457C;">PayPal (International)</a>
             </p>
          </div>
       </div>

@@ -22,7 +22,7 @@
 
 // VTK
 #include <vtkActor.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPolyData.h>
 #include <vtkRenderer.h>
 
@@ -161,7 +161,7 @@ bool TextureRenderManager::HasAnyTextureFiles(
     return false;  // No texture files found
 }
 
-bool TextureRenderManager::Apply(vtkLODActor* actor,
+bool TextureRenderManager::Apply(vtkPVLODActor* actor,
                                  const ccMaterialSet* materials,
                                  vtkPolyData* polydata,
                                  vtkRenderer* renderer) {

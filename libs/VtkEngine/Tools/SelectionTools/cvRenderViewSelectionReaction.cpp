@@ -1069,13 +1069,8 @@ void cvRenderViewSelectionReaction::preSelection() {
         }
     }
 
-    // ParaView-style: Trigger render after selection update
-    // Reference: pqRenderViewSelectionReaction::fastPreSelection() line 871
-    if (m_interactor) {
-        vtkRenderWindow* renWin = m_interactor->GetRenderWindow();
-        if (renWin) {
-            renWin->Render();
-        }
+    if (Visualization::VtkVis* pclVis = getVtkVis()) {
+        pclVis->UpdateScreen();
     }
 
     updateTooltip();

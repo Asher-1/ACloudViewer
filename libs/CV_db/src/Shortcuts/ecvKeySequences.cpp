@@ -72,8 +72,7 @@ ecvModalShortcut* ecvKeySequences::active(
 
     for (auto& sibling : iter->Siblings) {
         if (sibling && sibling->isEnabled()) {
-            active = sibling;
-            break;
+            if (!active) active = sibling;
         }
     }
     return active;

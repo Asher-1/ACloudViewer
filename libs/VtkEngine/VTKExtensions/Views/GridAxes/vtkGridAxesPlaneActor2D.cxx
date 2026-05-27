@@ -16,6 +16,7 @@
 #include "vtkProperty.h"
 #include "vtkRenderer.h"
 #include "vtkWindow.h"
+#include "vtkVectorCompat.h"
 
 #include <algorithm>
 #include <cassert>

@@ -21,7 +21,7 @@
 
 // VTK
 #include <vtkActor.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
@@ -50,7 +50,7 @@ bool PBRRenderer::CanHandle(size_t material_count,
 
 RenderingMode PBRRenderer::GetMode() const { return RenderingMode::PBR; }
 
-bool PBRRenderer::Apply(vtkLODActor* actor,
+bool PBRRenderer::Apply(vtkPVLODActor* actor,
                         const ccMaterialSet* materials,
                         vtkPolyData* polydata,
                         vtkRenderer* renderer) {
@@ -106,10 +106,10 @@ bool PBRRenderer::Update(vtkActor* actor,
         return false;
     }
 
-    vtkLODActor* lod_actor = vtkLODActor::SafeDownCast(actor);
+    vtkPVLODActor* lod_actor = vtkPVLODActor::SafeDownCast(actor);
     if (!lod_actor) {
         CVLog::Warning(
-                "[PBRRenderer::Update] Actor is not a vtkLODActor, cannot "
+                "[PBRRenderer::Update] Actor is not a vtkPVLODActor, cannot "
                 "apply PBR");
         return false;
     }

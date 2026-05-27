@@ -10,6 +10,7 @@
 static constexpr unsigned kDefaultMaxChartPoints = 10000;
 
 #include <CVLog.h>
+#include <Shortcuts/ecvKeySequences.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
@@ -24,6 +25,7 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QEvent>
+#include <QKeyEvent>
 #include <QFileDialog>
 #include <QShowEvent>
 #include <QHBoxLayout>
@@ -497,6 +499,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
 
     m_vtkWidget = new QVTKOpenGLNativeWidget(this);
     m_vtkWidget->setMinimumSize(50, 50);
+    m_vtkWidget->installEventFilter(this);
     vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
     m_vtkWidget->setRenderWindow(renderWindow);
     layout->addWidget(m_vtkWidget, 1);
@@ -1402,6 +1405,16 @@ void vtkChartView::onSourceComboAboutToShow() {
 bool vtkChartView::eventFilter(QObject* obj, QEvent* event) {
     if (obj == m_sourceCombo && event->type() == QEvent::MouseButtonPress) {
         refreshSourceCombo();
+    }
+    if (obj == m_vtkWidget && event->type() == QEvent::ShortcutOverride) {
+        auto* keyEvent = static_cast<QKeyEvent*>(event);
+        int qkey = keyEvent->key();
+        if (qkey != Qt::Key_unknown && qkey != Qt::Key_Control &&
+            qkey != Qt::Key_Shift && qkey != Qt::Key_Alt &&
+            qkey != Qt::Key_Meta) {
+            event->ignore();
+            return true;
+        }
     }
     return QWidget::eventFilter(obj, event);
 }

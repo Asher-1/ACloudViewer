@@ -13,7 +13,7 @@
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkDataSet.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLineSource.h>
 #include <vtkLineWidget.h>
 #include <vtkPointSource.h>

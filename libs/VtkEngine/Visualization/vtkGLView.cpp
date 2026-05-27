@@ -24,7 +24,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkCameraPass.h>
-#include <vtkCubeAxesActor.h>
+#include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <vtkCutter.h>
 #include <vtkDataSet.h>
 #include <vtkDefaultPass.h>
@@ -435,8 +435,12 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
                                             m_clickableItems, this);
     }
 
-    m_visualizer3D->getRenderWindow()->Render();
-    if (m_vtkWidget) m_vtkWidget->update();
+    if (m_vtkWidget) {
+        if (auto* rw = m_vtkWidget->GetRenderWindow()) {
+            rw->Render();
+        }
+        m_vtkWidget->update();
+    }
 
     m_insideRedraw = false;
 
@@ -582,36 +586,43 @@ void vtkGLView::enableSliceMode(bool enable) {
         m_slicePlaneWidget->AddObserver(vtkCommand::InteractionEvent, callback);
         m_slicePlaneWidget->On();
 
-        // ParaView Slice View alignment: add cube axes for axis labels
-        m_sliceCubeAxes = vtkSmartPointer<vtkCubeAxesActor>::New();
-        m_sliceCubeAxes->SetBounds(bounds);
-        m_sliceCubeAxes->SetCamera(renderer->GetActiveCamera());
-        m_sliceCubeAxes->SetFlyModeToOuterEdges();
-        m_sliceCubeAxes->SetGridLineLocation(
-                vtkCubeAxesActor::VTK_GRID_LINES_FURTHEST);
-        m_sliceCubeAxes->XAxisMinorTickVisibilityOff();
-        m_sliceCubeAxes->YAxisMinorTickVisibilityOff();
-        m_sliceCubeAxes->ZAxisMinorTickVisibilityOff();
-        m_sliceCubeAxes->DrawXGridlinesOn();
-        m_sliceCubeAxes->DrawYGridlinesOn();
-        m_sliceCubeAxes->DrawZGridlinesOff();
-        m_sliceCubeAxes->GetTitleTextProperty(0)->SetColor(1.0, 0.0, 0.0);
-        m_sliceCubeAxes->GetLabelTextProperty(0)->SetColor(0.8, 0.8, 0.8);
-        m_sliceCubeAxes->GetTitleTextProperty(1)->SetColor(0.0, 1.0, 0.0);
-        m_sliceCubeAxes->GetLabelTextProperty(1)->SetColor(0.8, 0.8, 0.8);
-        m_sliceCubeAxes->GetTitleTextProperty(2)->SetColor(0.0, 0.0, 1.0);
-        m_sliceCubeAxes->GetLabelTextProperty(2)->SetColor(0.8, 0.8, 0.8);
+        m_sliceCubeAxes = vtkSmartPointer<vtkGridAxesActor3D>::New();
+        m_sliceCubeAxes->SetGridBounds(bounds);
+        m_sliceCubeAxes->SetFaceMask(0xff);
+        m_sliceCubeAxes->SetLabelMask(0xff);
+        m_sliceCubeAxes->SetGenerateGrid(true);
+        m_sliceCubeAxes->SetGenerateEdges(true);
+        m_sliceCubeAxes->SetGenerateTicks(true);
+        m_sliceCubeAxes->SetForceOpaque(true);
+        if (auto* tp0 = m_sliceCubeAxes->GetTitleTextProperty(0)) {
+            tp0->SetColor(1.0, 0.0, 0.0);
+        }
+        if (auto* lp0 = m_sliceCubeAxes->GetLabelTextProperty(0)) {
+            lp0->SetColor(0.8, 0.8, 0.8);
+        }
+        if (auto* tp1 = m_sliceCubeAxes->GetTitleTextProperty(1)) {
+            tp1->SetColor(0.0, 1.0, 0.0);
+        }
+        if (auto* lp1 = m_sliceCubeAxes->GetLabelTextProperty(1)) {
+            lp1->SetColor(0.8, 0.8, 0.8);
+        }
+        if (auto* tp2 = m_sliceCubeAxes->GetTitleTextProperty(2)) {
+            tp2->SetColor(0.0, 0.0, 1.0);
+        }
+        if (auto* lp2 = m_sliceCubeAxes->GetLabelTextProperty(2)) {
+            lp2->SetColor(0.8, 0.8, 0.8);
+        }
         m_sliceCubeAxes->SetXTitle("Y");
         m_sliceCubeAxes->SetYTitle("X");
         m_sliceCubeAxes->SetZTitle("Z");
-        renderer->AddActor(m_sliceCubeAxes);
+        renderer->AddViewProp(m_sliceCubeAxes);
     } else {
         if (m_slicePlaneWidget) {
             m_slicePlaneWidget->Off();
             m_slicePlaneWidget = nullptr;
         }
         if (m_sliceCubeAxes) {
-            renderer->RemoveActor(m_sliceCubeAxes);
+            renderer->RemoveViewProp(m_sliceCubeAxes);
             m_sliceCubeAxes = nullptr;
         }
         auto* actors = renderer->GetActors();
@@ -923,8 +934,10 @@ void vtkGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
                         m_visualizer3D.get())) {
                 vis->setCenterOfRotation(center.x, center.y, center.z);
             }
-            m_visualizer3D->getRenderWindow()->Render();
-            if (m_vtkWidget) m_vtkWidget->update();
+            if (m_vtkWidget) {
+                if (auto* rw = m_vtkWidget->GetRenderWindow()) rw->Render();
+                m_vtkWidget->update();
+            }
         }
     } else {
         zoomGlobal();
@@ -995,6 +1008,10 @@ void vtkGLView::setDisplayParameters(const ecvGui::ParamStruct& params,
     } else {
         ecvGui::Set(params);
     }
+}
+
+void vtkGLView::clearDisplayParametersOverride() {
+    m_overriddenDisplayParametersEnabled = false;
 }
 
 void vtkGLView::drawClickableItems(int xStart, int& yStart) {
@@ -1083,8 +1100,10 @@ void vtkGLView::zoomGlobal() {
         m_visualizer3D->resetCamera();
     }
 
-    m_visualizer3D->getRenderWindow()->Render();
-    if (m_vtkWidget) m_vtkWidget->update();
+    if (m_vtkWidget) {
+        if (auto* rw = m_vtkWidget->GetRenderWindow()) rw->Render();
+        m_vtkWidget->update();
+    }
 }
 
 // ================================================================
@@ -1141,11 +1160,11 @@ void vtkGLView::changeEntityProperties(PROPERTY_PARAM& param) {
 }
 
 void vtkGLView::updateCamera() {
-    if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
+    if (m_vtkWidget) m_vtkWidget->update();
 }
 
 void vtkGLView::updateScene() {
-    if (m_visualizer3D) m_visualizer3D->getRenderWindow()->Render();
+    if (m_vtkWidget) m_vtkWidget->update();
 }
 
 // -- Phase M1.3: Per-view picking and rendering --
@@ -1189,14 +1208,14 @@ QImage vtkGLView::renderToImage(int zoomFactor,
 void vtkGLView::resetCamera(const ccBBox* bbox) {
     if (m_visualizer3D) {
         m_visualizer3D->resetCamera(bbox);
-        m_visualizer3D->getRenderWindow()->Render();
+        if (m_vtkWidget) m_vtkWidget->update();
     }
 }
 
 void vtkGLView::resetCamera() {
     if (m_visualizer3D) {
         m_visualizer3D->resetCamera();
-        m_visualizer3D->getRenderWindow()->Render();
+        if (m_vtkWidget) m_vtkWidget->update();
     }
 }
 
@@ -1283,7 +1302,29 @@ void vtkGLView::toggleCameraOrientationWidget(bool state) {
 }
 
 void vtkGLView::toggleOrientationMarker(bool state) {
-    if (m_displayTools) m_displayTools->toggleOrientationMarker(state);
+    // Route directly to per-view VtkVis to avoid the VtkDisplayTools singleton
+    // always operating on the primary visualizer's marker widget.
+    if (m_visualizer3D) {
+        if (state) {
+            m_visualizer3D->showPclMarkerAxes(
+                    m_visualizer3D->getRenderWindowInteractor());
+        } else {
+            m_visualizer3D->hidePclMarkerAxes();
+        }
+    }
+}
+
+void vtkGLView::disableContext2DOverlay() {
+    if (m_visualizer2D) {
+        m_visualizer2D->removeAllLayers();
+        m_visualizer2D.reset();
+    }
+}
+
+void vtkGLView::disableOverlayEntities() {
+    m_ctx.displayOverlayEntities = false;
+    delete m_hotZone;
+    m_hotZone = nullptr;
 }
 
 void vtkGLView::toggleDebugTrace() {

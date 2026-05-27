@@ -837,32 +837,14 @@ void MainWindow::initial() {
     }
     m_tabbedMultiView->installEventFilter(this);
 
-    // Phase M3: place the first vtkGLView in the first cell.
-    {
-        auto* mvw = m_tabbedMultiView->currentMultiView();
-        auto* layout = mvw ? mvw->layoutManager() : nullptr;
-        if (m_firstView && layout) {
-            layout->assignView(0, m_firstView);
-        }
+    // Reuse m_firstView (RenderView1001) — do not create a second view via factory.
+    const int firstTab = m_tabbedMultiView->createTabWithView(m_firstView);
+    auto* firstMvw = qobject_cast<ecvMultiViewWidget*>(
+            m_tabbedMultiView->tabWidget()->widget(firstTab));
+    if (firstMvw && firstMvw->layoutManager()) {
+        ecvViewManager::instance().registerLayout(firstMvw->layoutManager());
     }
-
-    QTimer::singleShot(0, this, [this]() {
-        ecvViewManager::instance().invalidateActiveViewport();
-        if (auto* v = getActiveGLView()) {
-            v->invalidateViewport();
-            v->deprecate3DLayer();
-        }
-        ecvViewManager::instance().deprecateActive3DLayer();
-        refreshAll();
-    });
-
-#if defined(USE_VTK_BACKEND)
-    if (m_perViewSelMgr) {
-        m_perViewSelMgr->setViewRoot(m_tabbedMultiView);
-    }
-#endif
-
-    update3DViewsMenu();
+    ecvViewManager::instance().setActiveView(m_firstView);
 }
 
 void MainWindow::initParaViewLayoutSystem() {
@@ -924,20 +906,6 @@ void MainWindow::initParaViewLayoutSystem() {
 
     connect(m_tabbedMultiView, &ecvTabbedMultiViewWidget::viewClosing, this,
             &MainWindow::onViewClosingFromLayout);
-
-    int firstTab = m_tabbedMultiView->createTab();
-    auto* firstMvw = qobject_cast<ecvMultiViewWidget*>(
-            m_tabbedMultiView->tabWidget()->widget(firstTab));
-    if (firstMvw && firstMvw->layoutManager()) {
-        ecvViewManager::instance().registerLayout(firstMvw->layoutManager());
-        if (m_tabbedMultiView->viewFactory()) {
-            auto* view = m_tabbedMultiView->viewFactory()();
-            if (view) {
-                firstMvw->layoutManager()->assignView(0, view);
-                ecvViewManager::instance().setActiveView(view);
-            }
-        }
-    }
 }
 
 QWidget* MainWindow::centralViewWidget() const { return m_tabbedMultiView; }
@@ -2411,6 +2379,14 @@ void MainWindow::toggleRotationCenterVisibility(bool state) {
 }
 
 void MainWindow::doActionToggleCameraOrientationWidget(bool state) {
+    if (auto* orthoView = activeOrthoSliceView()) {
+        orthoView->toggleCameraOrientationWidget(state);
+        QSettings settings;
+        settings.setValue("CameraOrientationWidget/Visible", state);
+        CVLog::Print(QString("[MainWindow] Camera Orientation Widget: %1")
+                             .arg(state ? "ON" : "OFF"));
+        return;
+    }
     // ParaView-style Camera Orientation Widget control
     if (auto* view = getActiveGLView()) {
         view->toggleCameraOrientationWidget(state);
@@ -2650,13 +2626,24 @@ ecvGenericGLDisplay* MainWindow::getActiveGLView() {
     return display ? display : ecvViewManager::instance().getEffectiveView();
 }
 
+vtkOrthoSliceViewWidget* MainWindow::activeOrthoSliceView() const {
+    if (!m_tabbedMultiView) return nullptr;
+    ecvMultiViewWidget* mvw = m_tabbedMultiView->currentMultiView();
+    if (!mvw) return nullptr;
+    QWidget* frame = mvw->activeFrame();
+    if (!frame) return nullptr;
+    if (auto* ortho = frame->findChild<vtkOrthoSliceViewWidget*>())
+        return ortho;
+    return qobject_cast<vtkOrthoSliceViewWidget*>(frame);
+}
+
 void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
     QWidget* searchRoot = centralViewWidget();
     if (!searchRoot) return;
 
     QColor activeColor = palette().link().color();
     QString activeSS = QString("QFrame#CentralWidgetFrame "
-                               "{ color: rgb(%1, %2, %3); }")
+                               "{ border: 2px solid rgb(%1, %2, %3); }")
                                .arg(activeColor.red())
                                .arg(activeColor.green())
                                .arg(activeColor.blue());
@@ -3136,27 +3123,25 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
         viewToolBar->addSeparator();
 
-        auto& chartKs = ecvKeySequences::instance();
-
         auto* polySelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqSelectChartPolygon.svg"),
                 tr("Polygon Selection (d)"), viewToolBar);
+        polySelAct->setObjectName("actionChartSelectPolygon");
         polySelAct->setCheckable(true);
         viewToolBar->addAction(polySelAct);
-        chartKs.addModalShortcut(QKeySequence(Qt::Key_D), polySelAct, frame);
 
         auto* rectSelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqSelectChart.svg"),
                 tr("Rectangle Selection (s)"), viewToolBar);
+        rectSelAct->setObjectName("actionChartSelectRectangle");
         rectSelAct->setCheckable(true);
         viewToolBar->addAction(rectSelAct);
-        chartKs.addModalShortcut(QKeySequence(Qt::Key_S), rectSelAct, frame);
 
         auto* clearSelAct = new QAction(
                 QIcon(":/Resources/images/svg/pqCloseView.svg"),
                 tr("Clear Selection"), viewToolBar);
+        clearSelAct->setObjectName("actionChartClearSelection");
         viewToolBar->addAction(clearSelAct);
-        chartKs.addModalShortcut(QKeySequence(Qt::Key_Escape), clearSelAct, frame);
 
         auto* selGroup = new QActionGroup(viewToolBar);
         selGroup->setExclusive(false);
@@ -4416,6 +4401,12 @@ void MainWindow::doActionScreenShot() {
 }
 
 void MainWindow::doActionToggleOrientationMarker(bool state) {
+    if (auto* orthoView = activeOrthoSliceView()) {
+        orthoView->setOrientationMarkerVisible(state);
+        QSettings settings;
+        settings.setValue("OrientationMarker/Visible", state);
+        return;
+    }
     if (auto* view = ecvViewManager::instance().getEffectiveView()) {
         view->toggleOrientationMarker(state);
     }
@@ -6774,21 +6765,12 @@ void MainWindow::initSelectionController() {
     actions.zoomToBox = m_ui->actionZoomToBox;
     m_selectionController->setupActions(actions);
 
-    // ParaView-style shortcut dispatch: each QShortcut looks up the active
-    // view's local mirror action by objectName and toggles/triggers that
-    // action instead of the shared global one.
-    auto findActiveAction = [this](const QString& objName) -> QAction* {
-        auto* activeDisplay = ecvViewManager::instance().getActiveView();
-        if (!activeDisplay) return nullptr;
-        QWidget* viewWidget = activeDisplay->asWidget();
-        if (!viewWidget) return nullptr;
-        QWidget* frame = viewWidget;
-        while (frame && frame->objectName() != "CentralWidgetFrame")
-            frame = frame->parentWidget();
-        if (!frame) frame = viewWidget;
-        QWidget* parentFrame = frame->parentWidget();
-        if (!parentFrame) return nullptr;
-        auto* tb = parentFrame->findChild<QWidget*>("ViewSelectionToolBar");
+    // ParaView-style: global QShortcuts on MainWindow dispatch based on
+    // active view type (chart view vs render view). Selection tool shortcuts
+    // are NOT registered through ecvKeySequences/ecvModalShortcut.
+    auto findActionOnFrame = [](QWidget* frame, const QString& objName) -> QAction* {
+        if (!frame) return nullptr;
+        auto* tb = frame->findChild<QWidget*>("ViewSelectionToolBar");
         if (!tb) return nullptr;
         for (auto* btn : tb->findChildren<QToolButton*>()) {
             auto* act = btn->defaultAction();
@@ -6797,59 +6779,89 @@ void MainWindow::initSelectionController() {
         return nullptr;
     };
 
+    auto getActiveViewFrame = [this]() -> QWidget* {
+        auto* activeDisplay = ecvViewManager::instance().getActiveView();
+        if (!activeDisplay) return nullptr;
+        QWidget* viewWidget = activeDisplay->asWidget();
+        if (!viewWidget) return nullptr;
+        QWidget* frame = viewWidget;
+        while (frame && frame->objectName() != "CentralWidgetFrame")
+            frame = frame->parentWidget();
+        if (!frame) frame = viewWidget;
+        return frame->parentWidget();
+    };
+
+    auto isChartViewActive = [this, findActionOnFrame]() -> bool {
+        auto* activeDisplay = ecvViewManager::instance().getActiveView();
+        if (!activeDisplay) return false;
+        QWidget* viewWidget = activeDisplay->asWidget();
+        if (!viewWidget) return false;
+        QWidget* frame = viewWidget;
+        while (frame && frame->objectName() != "CentralWidgetFrame")
+            frame = frame->parentWidget();
+        if (!frame) frame = viewWidget;
+        auto* parentFrame = frame->parentWidget();
+        if (!parentFrame) return false;
+        return findActionOnFrame(parentFrame, "actionChartSelectRectangle") != nullptr;
+    };
+
     struct ShortcutEntry {
-        QString actionName;
+        QString renderAction;
+        QString chartAction;
         QKeySequence key;
     };
     const ShortcutEntry scEntries[] = {
-            {"actionSelectSurfaceCells", QKeySequence(Qt::Key_S)},
-            {"actionSelectSurfacePoints", QKeySequence(Qt::Key_D)},
-            {"actionSelectFrustumCells", QKeySequence(Qt::Key_F)},
-            {"actionSelectFrustumPoints", QKeySequence(Qt::Key_G)},
-            {"actionSelectBlocks", QKeySequence(Qt::Key_B)},
-            {"actionGrowSelection", QKeySequence(Qt::Key_Plus)},
-            {"actionShrinkSelection", QKeySequence(Qt::Key_Minus)},
+        {"actionSelectSurfaceCells", "actionChartSelectRectangle", QKeySequence(Qt::Key_S)},
+        {"actionSelectSurfacePoints", "actionChartSelectPolygon", QKeySequence(Qt::Key_D)},
+        {"actionSelectFrustumCells", "", QKeySequence(Qt::Key_F)},
+        {"actionSelectFrustumPoints", "", QKeySequence(Qt::Key_G)},
+        {"actionSelectBlocks", "", QKeySequence(Qt::Key_B)},
+        {"actionGrowSelection", "", QKeySequence(Qt::Key_Plus)},
+        {"actionShrinkSelection", "", QKeySequence(Qt::Key_Minus)},
     };
-    auto& selKs = ecvKeySequences::instance();
     for (const auto& sc : scEntries) {
-        auto* globalAct = this->findChild<QAction*>(sc.actionName);
         auto* shortcut = new QShortcut(sc.key, this);
+        shortcut->setContext(Qt::WindowShortcut);
         connect(shortcut, &QShortcut::activated, this,
-                [findActiveAction, name = sc.actionName, this]() {
-                    QAction* local = findActiveAction(name);
-                    QAction* target = local ? local : nullptr;
-                    if (!target) {
-                        auto* ga = this->findChild<QAction*>(name);
-                        if (ga) target = ga;
+                [findActionOnFrame, getActiveViewFrame, isChartViewActive,
+                 renderName = sc.renderAction, chartName = sc.chartAction,
+                 this]() {
+                    QWidget* frame = getActiveViewFrame();
+                    QAction* target = nullptr;
+                    if (!chartName.isEmpty() && isChartViewActive()) {
+                        target = findActionOnFrame(frame, chartName);
                     }
-                    if (!target) return;
+                    if (!target) {
+                        target = findActionOnFrame(frame, renderName);
+                    }
+                    if (!target) {
+                        target = this->findChild<QAction*>(renderName);
+                    }
+                    if (!target) {
+                        return;
+                    }
                     if (target->isCheckable()) {
                         target->toggle();
                     } else {
                         target->trigger();
                     }
                 });
-        selKs.addModalShortcut(sc.key, globalAct, this);
     }
 
-    // ESC key deactivates the currently active selection tool (ParaView-style).
-    m_selectionEscShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
-    m_selectionEscShortcut->setEnabled(false);
-    connect(m_selectionEscShortcut, &QShortcut::activated, this, [this]() {
+    auto* escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escShortcut, &QShortcut::activated, this, [this, findActionOnFrame, getActiveViewFrame, isChartViewActive]() {
+        if (isChartViewActive()) {
+            QWidget* frame = getActiveViewFrame();
+            auto* clearAct = findActionOnFrame(frame, "actionChartClearSelection");
+            if (clearAct) {
+                clearAct->trigger();
+                return;
+            }
+        }
         if (m_selectionController) {
             m_selectionController->disableAllTools(nullptr);
         }
-        m_selectionEscShortcut->setEnabled(false);
     });
-    ecvKeySequences::instance().addModalShortcut(
-            QKeySequence(Qt::Key_Escape), nullptr, this);
-    connect(m_selectionController,
-            &cvSelectionToolController::selectionToolStateChanged, this,
-            [this](bool active) {
-                if (m_selectionEscShortcut) {
-                    m_selectionEscShortcut->setEnabled(active);
-                }
-            });
 
     // Connect controller signals to MainWindow slots
     connect(m_selectionController,

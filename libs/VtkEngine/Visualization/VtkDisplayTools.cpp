@@ -52,12 +52,14 @@
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkStringArray.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 #include <vtkUnsignedCharArray.h>
 
 // SYSTEM
@@ -962,7 +964,7 @@ void VtkDisplayTools::drawBBoxBatch(const CC_DRAW_CONTEXT& context,
     else
         polydata->SetLines(cells);
 
-    vtkSmartPointer<vtkLODActor> actor;
+    vtkSmartPointer<vtkPVLODActor> actor;
     VtkRendering::CreateActorFromVTKDataSet(polydata, actor, false);
     actor->PickableOff();
 
@@ -1062,12 +1064,26 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
             if (m_visualizer2D && m_visualizer2D->contains(viewId)) {
                 m_visualizer2D->removeLayer(viewId);
             }
+            bool isSecondaryView =
+                    context.display &&
+                    context.display != static_cast<ecvDisplayTools*>(this);
             if (context.display) {
                 auto* glView = dynamic_cast<vtkGLView*>(context.display);
                 if (glView) {
                     auto imgVis = glView->getImageVis();
                     if (imgVis && imgVis->contains(viewId)) {
                         imgVis->removeLayer(viewId);
+                    }
+                    // For secondary views, text is rendered via vtkTextActor
+                    // with composite IDs "groupID#text". Remove all actors
+                    // whose ID starts with the group prefix.
+                    if (isSecondaryView) {
+                        auto* subVis = glView->getVisualizer3D();
+                        if (subVis) {
+                            std::string prefix = viewId + "#";
+                            subVis->removeBySubstring(prefix,
+                                    context.defaultViewPort);
+                        }
                     }
                 }
             }
@@ -1212,35 +1228,58 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             bool isSecondaryT2D = param.context.display &&
                                   param.context.display !=
                                           static_cast<ecvDisplayTools*>(this);
-            Visualization::ImageVis* txtVis2D =
-                    m_visualizer2D ? m_visualizer2D.get() : nullptr;
-            if (isSecondaryT2D) {
-                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
-                if (glView && glView->getImageVis()) {
-                    txtVis2D = glView->getImageVis().get();
+            if (isSecondaryT2D && vis) {
+                std::string text = CVTools::FromQString(param.text);
+                std::string actorID = viewID + "#" + text;
+                int fontSize = param.fontSize > 0
+                        ? param.fontSize
+                        : ecvDisplayTools::GetLabelDisplayFont().pointSize();
+                ecvColor::Rgbf textColor =
+                        ecvColor::Rgbf(param.color.r, param.color.g,
+                                       param.color.b);
+                if (!vis->updateText(text, param.rect.x(), param.rect.y(),
+                                     actorID)) {
+                    vis->addText(text, param.rect.x(), param.rect.y(),
+                                 fontSize, textColor.r, textColor.g,
+                                 textColor.b, actorID, param.viewport);
+                }
+                auto smap = vis->getShapeActorMap();
+                auto it = smap->find(actorID);
+                if (it != smap->end()) {
+                    auto ta = vtkTextActor::SafeDownCast(it->second);
+                    if (ta) {
+                        auto tp = ta->GetTextProperty();
+                        tp->SetBackgroundColor(0.15, 0.15, 0.15);
+                        tp->SetBackgroundOpacity(0.7);
+                        tp->ShadowOn();
+                    }
+                }
+            } else {
+                Visualization::ImageVis* txtVis2D =
+                        m_visualizer2D ? m_visualizer2D.get() : nullptr;
+                if (txtVis2D) {
+                    std::string text = CVTools::FromQString(param.text);
+                    txtVis2D->addText(param.rect.x(), param.rect.y(), text,
+                                      param.color.r, param.color.g, param.color.b,
+                                      viewID, param.color.a, param.fontSize);
+                } else {
+                    CC_DRAW_CONTEXT context = param.context;
+                    ecvDisplayTools::GetContext(context);
+                    ecvTextParam tParam;
+                    tParam.display3D = false;
+                    tParam.font = ecvDisplayTools::GetLabelDisplayFont();
+                    tParam.opacity = param.color.a;
+                    tParam.text = param.text;
+                    tParam.textPos =
+                            CCVector3d(param.rect.x(), param.rect.y(), 0.0);
+                    context.textDefaultCol =
+                            ecvColor::FromRgbafToRgb(param.color);
+                    context.textParam = tParam;
+                    context.viewID = tParam.text;
+                    if (vis) vis->displayText(context);
                 }
             }
-            if (txtVis2D) {
-                std::string text = CVTools::FromQString(param.text);
-                txtVis2D->addText(param.rect.x(), param.rect.y(), text,
-                                  param.color.r, param.color.g, param.color.b,
-                                  viewID, param.color.a, param.fontSize);
-            } else {
-                CC_DRAW_CONTEXT context = param.context;
-                ecvDisplayTools::GetContext(context);
-                ecvTextParam tParam;
-                tParam.display3D = false;
-                tParam.font = ecvDisplayTools::GetLabelDisplayFont();
-                tParam.opacity = param.color.a;
-                tParam.text = param.text;
-                tParam.textPos =
-                        CCVector3d(param.rect.x(), param.rect.y(), 0.0);
-                context.textDefaultCol = ecvColor::FromRgbafToRgb(param.color);
-                context.textParam = tParam;
-                context.viewID = tParam.text;
-                vis->displayText(context);
-            }
-        }
+        } break;
 
         case WIDGETS_TYPE::WIDGET_LINE_3D:
             if (param.lineWidget.valid && !vis->contains(viewID)) {
@@ -1479,31 +1518,61 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
             context.display &&
             context.display != static_cast<ecvDisplayTools*>(this);
 
-    if (isSecondaryView) {
-        // Per-view text: always go through VtkVis (3D renderer's text actor).
-        // vtkGLView does not own an ImageVis, so falling back to the
-        // singleton's m_visualizer2D would render on the wrong widget.
-        if (vis) {
-            vis->displayText(context);
-        }
-        return;
-    }
-
-    // Singleton path (primary view or no per-view display)
-    Visualization::ImageVis* txtVis2D =
-            m_visualizer2D ? m_visualizer2D.get() : nullptr;
-    if (txtVis2D) {
+    if (isSecondaryView && vis) {
+        // For secondary views (e.g. Comparative sub-views), use vtkTextActor
+        // via VtkVis instead of ImageVis (vtkContext2D). The vtkContext2D text
+        // path shares a font texture atlas (vtkFreeTypeTools singleton) across
+        // render windows, which causes garbled text when multiple windows exist.
+        // vtkTextActor manages textures per-renderer and avoids this issue.
         ecvTextParam textParam = context.textParam;
-        std::string viewID = CVTools::FromQString(context.viewID);
         std::string text = CVTools::FromQString(textParam.text);
+        std::string groupID = CVTools::FromQString(context.viewID);
+        std::string actorID = groupID + "#" + text;
+        int xPos = static_cast<int>(textParam.textPos.x);
+        int yPos = static_cast<int>(textParam.textPos.y);
         ecvColor::Rgbf textColor =
                 ecvTools::TransFormRGB(context.textDefaultCol);
-        txtVis2D->addText(textParam.textPos.x, textParam.textPos.y, text,
-                          textColor.r, textColor.g, textColor.b, viewID,
-                          textParam.opacity, textParam.font.pointSize(),
-                          textParam.font.bold());
-    } else if (vis) {
-        vis->displayText(context);
+        int viewport = context.defaultViewPort;
+
+        if (!vis->updateText(text, xPos, yPos, actorID)) {
+            vis->addText(text, xPos, yPos, textParam.font.pointSize(),
+                         textColor.r, textColor.g, textColor.b, actorID,
+                         viewport);
+        }
+        auto smap = vis->getShapeActorMap();
+        auto it = smap->find(actorID);
+        if (it != smap->end()) {
+            auto textActor = vtkTextActor::SafeDownCast(it->second);
+            if (textActor) {
+                auto tp = textActor->GetTextProperty();
+                if (textParam.bkgAlpha > 0) {
+                    tp->SetBackgroundColor(textParam.bkgColor[0],
+                                           textParam.bkgColor[1],
+                                           textParam.bkgColor[2]);
+                    tp->SetBackgroundOpacity(textParam.bkgAlpha);
+                } else {
+                    tp->SetBackgroundColor(0.15, 0.15, 0.15);
+                    tp->SetBackgroundOpacity(0.7);
+                }
+                tp->ShadowOn();
+            }
+        }
+    } else {
+        Visualization::ImageVis* txtVis2D =
+                m_visualizer2D ? m_visualizer2D.get() : nullptr;
+        if (txtVis2D) {
+            ecvTextParam textParam = context.textParam;
+            std::string viewID = CVTools::FromQString(context.viewID);
+            std::string text = CVTools::FromQString(textParam.text);
+            ecvColor::Rgbf textColor =
+                    ecvTools::TransFormRGB(context.textDefaultCol);
+            txtVis2D->addText(textParam.textPos.x, textParam.textPos.y, text,
+                              textColor.r, textColor.g, textColor.b, viewID,
+                              textParam.opacity, textParam.font.pointSize(),
+                              textParam.font.bold());
+        } else if (vis) {
+            vis->displayText(context);
+        }
     }
 }
 

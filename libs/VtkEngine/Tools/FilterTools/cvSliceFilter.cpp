@@ -13,7 +13,7 @@
 #include <vtkBox.h>
 #include <vtkCutter.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPlane.h>
 #include <vtkPlanes.h>

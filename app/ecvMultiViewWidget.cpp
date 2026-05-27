@@ -17,6 +17,8 @@
 #include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
 #include <VTKExtensions/Views/vtkSliceViewWidget.h>
 #include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Tools/SelectionTools/cvSelectionToolController.h>
 #include <Visualization/vtkGLView.h>
 #include <Visualization/VtkVis.h>
 #include <vtkActor.h>
@@ -906,16 +908,17 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                         new vtkComparativeViewWidget(type, this);
                 if (sourceViewGL)
                     compView->setSourceView(sourceViewGL);
+
+                auto* selCtrl2 = cvSelectionToolController::instance();
+                if (selCtrl2 && selCtrl2->highlighter()) {
+                    compView->connectExternalHighlighter(
+                            selCtrl2->highlighter());
+                }
                 if (type == vtkComparativeViewWidget::RENDER &&
                     m_viewFactory) {
                     compView->setSubViewInitCallback(
                             [sourceViewGL](vtkGLView* subView) {
                                 if (!subView) return;
-
-                                auto params = subView->getDisplayParameters();
-                                params.drawBackgroundGradient = false;
-                                params.backgroundCol = ecvColor::Rgbub(82, 82, 82);
-                                subView->setDisplayParameters(params, true);
 
                                 ecvGenericGLDisplay* src = sourceViewGL;
                                 if (!src) {
@@ -993,6 +996,11 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         auto* orthoView = new vtkOrthoSliceViewWidget(this);
         orthoView->setEntityListProvider(collectDisplayableEntities);
+
+        auto* selCtrl = cvSelectionToolController::instance();
+        if (selCtrl && selCtrl->highlighter()) {
+            orthoView->connectExternalHighlighter(selCtrl->highlighter());
+        }
 
         auto* activeView = dynamic_cast<vtkGLView*>(
                 ecvViewManager::instance().getActiveView());
@@ -1243,7 +1251,7 @@ void ecvMultiViewWidget::markActive(ecvGenericGLDisplay* view) {
 void ecvMultiViewWidget::updateFrameHighlighting() {
     QColor activeColor = palette().link().color();
     QString activeSS = QString("QFrame#CentralWidgetFrame "
-                               "{ color: rgb(%1, %2, %3); }")
+                               "{ border: 2px solid rgb(%1, %2, %3); }")
                                .arg(activeColor.red())
                                .arg(activeColor.green())
                                .arg(activeColor.blue());

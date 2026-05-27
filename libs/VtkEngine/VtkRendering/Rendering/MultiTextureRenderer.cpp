@@ -32,7 +32,7 @@
 #include <vtkBMPReader.h>
 #include <vtkDataArray.h>
 #include <vtkJPEGReader.h>
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkPNGReader.h>
 #include <vtkPNMReader.h>
@@ -70,7 +70,7 @@ RenderingMode MultiTextureRenderer::GetMode() const {
     return RenderingMode::MULTI_TEXTURE;
 }
 
-bool MultiTextureRenderer::Apply(vtkLODActor* actor,
+bool MultiTextureRenderer::Apply(vtkPVLODActor* actor,
                                  const ccMaterialSet* materials,
                                  vtkPolyData* polydata,
                                  vtkRenderer* renderer) {
@@ -439,10 +439,10 @@ bool MultiTextureRenderer::Update(vtkActor* actor,
         return false;
     }
 
-    vtkLODActor* lod_actor = vtkLODActor::SafeDownCast(actor);
+    vtkPVLODActor* lod_actor = vtkPVLODActor::SafeDownCast(actor);
     if (!lod_actor) {
         CVLog::Warning(
-                "[MultiTextureRenderer::Update] Actor is not a vtkLODActor");
+                "[MultiTextureRenderer::Update] Actor is not a vtkPVLODActor");
         return false;
     }
 

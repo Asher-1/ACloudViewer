@@ -525,7 +525,7 @@ void ecvMultiViewFrameManager::markActiveViewFrame(QWidget* activeViewWidget) {
 
     QColor activeColor = m_parentWidget->palette().link().color();
     QString activeSS = QString("QFrame#CentralWidgetFrame "
-                               "{ color: rgb(%1, %2, %3); }")
+                               "{ border: 2px solid rgb(%1, %2, %3); }")
                                .arg(activeColor.red())
                                .arg(activeColor.green())
                                .arg(activeColor.blue());

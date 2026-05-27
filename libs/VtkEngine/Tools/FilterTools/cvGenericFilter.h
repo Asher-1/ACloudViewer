@@ -38,7 +38,7 @@ class vtkDataSet;
 class vtkDataObject;
 class vtkDataArray;
 class vtkScalarBarActor;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtk3DWidget;
 class vtkLookupTable;
 class vtkRenderWindowInteractor;
@@ -194,7 +194,7 @@ protected:
     vtkRenderWindowInteractor* m_interactor = nullptr;
 
     vtkSmartPointer<vtkActor> m_modelActor;
-    vtkSmartPointer<vtkLODActor> m_filterActor;
+    vtkSmartPointer<vtkPVLODActor> m_filterActor;
     vtkSmartPointer<vtkScalarBarActor> m_scalarBar;
     vtkSmartPointer<vtkActor> m_outlineActor;
 
