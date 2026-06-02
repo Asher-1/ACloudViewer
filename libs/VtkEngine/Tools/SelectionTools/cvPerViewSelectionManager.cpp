@@ -7,8 +7,11 @@
 
 #include "cvPerViewSelectionManager.h"
 
+#include "cvViewSelectionManager.h"
+
 #include <ecvGenericGLDisplay.h>
 
+#include <QSignalBlocker>
 #include <QToolBar>
 
 cvPerViewSelectionManager::cvPerViewSelectionManager(QObject* parent)
@@ -140,15 +143,8 @@ void cvPerViewSelectionManager::populateToolbar(
         if (m_activateViewFn && display) m_activateViewFn(display);
     };
 
-    auto syncToGlobal = [](QAction*, QAction* global, bool checked) {
-        if (global->isChecked() != checked) {
-            QSignalBlocker blk(global);
-            global->setChecked(checked);
-        }
-        emit global->triggered(checked);
-    };
-
     // --- Modifier actions (shared state) ---
+    // Local mirrors trigger global actions which handle mutual exclusivity
     QAction* modifiers[] = {
             mirrorSimple(toolbar, actions.addSelection),
             mirrorSimple(toolbar, actions.subtractSelection),
@@ -160,13 +156,16 @@ void cvPerViewSelectionManager::populateToolbar(
             actions.toggleSelection,
     };
     for (int i = 0; i < 3; ++i) {
-        if (!modifiers[i]) continue;
+        if (!modifiers[i] || !globals[i]) continue;
         addActionBtn(modifiers[i]);
-        connect(modifiers[i], &QAction::toggled, this,
-                [activateView, local = modifiers[i], g = globals[i],
-                 syncToGlobal](bool c) {
+        // Sync local toolbar state to global modifier actions (ParaView pattern).
+        // Do NOT call QAction::trigger() — it toggles off when already checked.
+        connect(modifiers[i], &QAction::triggered, this,
+                [activateView, local = modifiers[i], g = globals[i]]() {
                     activateView();
-                    syncToGlobal(local, g, c);
+                    if (g->isChecked() != local->isChecked()) {
+                        g->setChecked(local->isChecked());
+                    }
                 });
     }
 
@@ -194,8 +193,8 @@ void cvPerViewSelectionManager::populateToolbar(
         if (!local) continue;
         addActionBtn(local);
         connect(local, &QAction::toggled, this,
-                [this, activateView, local, toolbar, global, viewWidget,
-                 syncToGlobal](bool checked) {
+                [this, activateView, local, toolbar, global, viewWidget](
+                        bool checked) {
                     activateView();
                     if (checked) {
                         uncheckOtherViews(viewWidget, global->toolTip());
@@ -212,7 +211,13 @@ void cvPerViewSelectionManager::populateToolbar(
                             }
                         }
                     }
-                    syncToGlobal(local, global, checked);
+                    if (global->isChecked() != checked) {
+                        QSignalBlocker blk(global);
+                        global->setChecked(checked);
+                    }
+                    if (checked) {
+                        emit global->triggered(checked);
+                    }
                 });
     }
 

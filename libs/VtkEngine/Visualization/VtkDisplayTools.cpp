@@ -162,6 +162,12 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     SetCurrentScreen(widget);
     SetMainScreen(widget);
 
+    if (m_visualizer2D && widget) {
+        m_visualizer2D->setRender(widget->getVtkRender());
+        m_visualizer2D->setupInteractor(widget->GetInteractor(),
+                                        widget->GetRenderWindow());
+    }
+
     if (oldWidget && oldWidget != widget) {
         // Per-view widgets (owned by an vtkGLView) must NOT be hidden or
         // detached — they stay visible inside their own layout cell.
@@ -1296,6 +1302,33 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 vis->setLineWidth(lineWidth, viewID, viewport);
             }
             break;
+        case WIDGETS_TYPE::WIDGET_POLYLINE: {
+            ccPolyline* poly = param.entity
+                                      ? ccHObjectCaster::ToPolyline(param.entity)
+                                      : nullptr;
+            if (!poly || poly->size() < 2) break;
+
+            CC_DRAW_CONTEXT ctx;
+            ecvDisplayTools::GetContext(ctx);
+            ctx.display = param.context.display;
+            if (!ctx.display) {
+                ctx.display = ecvViewManager::instance().getEffectiveView();
+            }
+            ctx.defaultViewPort = viewport;
+            ctx.viewID = poly->getViewId();
+            ctx.drawingFlags = poly->is2DMode()
+                                       ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
+                                       : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
+            if (poly->isColorOverridden()) {
+                ctx.defaultPolylineColor = poly->getTempColor();
+            } else if (poly->colorsShown()) {
+                ctx.defaultPolylineColor = poly->getColor();
+            }
+            if (poly->getWidth() != 0) {
+                ctx.currentLineWidth = poly->getWidth();
+            }
+            drawPolygon(ctx, poly);
+        } break;
         case WIDGETS_TYPE::WIDGET_SPHERE:
             if (!vis->contains(viewID)) {
                 vis->addSphere(param.center.x, param.center.y, param.center.z,

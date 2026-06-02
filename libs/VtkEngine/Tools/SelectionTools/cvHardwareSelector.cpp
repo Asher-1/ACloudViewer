@@ -101,7 +101,7 @@ bool cvHardwareSelector::PrepareSelect() {
 vtkSelection* cvHardwareSelector::Select(int region[4]) {
     // Reference: vtkPVHardwareSelector::Select() lines 105-131
     if (!this->PrepareSelect()) {
-        CVLog::Error("[cvHardwareSelector::Select] PrepareSelect failed!");
+        CVLog::Print("[cvHardwareSelector::Select] PrepareSelect failed");
         return nullptr;
     }
 

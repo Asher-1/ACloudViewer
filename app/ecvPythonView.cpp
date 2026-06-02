@@ -7,6 +7,8 @@
 
 #include "ecvPythonView.h"
 
+#include <ecvViewTitleRegistry.h>
+
 #include "ecvPythonCodeEditor.h"
 #include "ecvPythonSyntaxHighlighter.h"
 
@@ -43,6 +45,9 @@
 #include <QVBoxLayout>
 
 ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
+    m_viewTypeKey = QStringLiteral("Python View");
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -294,6 +299,9 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
 }
 
 ecvPythonView::~ecvPythonView() {
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
     if (!m_lastExportPath.isEmpty()) {
         QFile::remove(m_lastExportPath);
     }

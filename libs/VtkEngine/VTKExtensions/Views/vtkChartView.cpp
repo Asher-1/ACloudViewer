@@ -19,6 +19,7 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
+#include <ecvViewTitleRegistry.h>
 
 #include <QCheckBox>
 #include <QColorDialog>
@@ -84,6 +85,30 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <cmath>
 #include <limits>
 
+static QString chartViewTypeKey(vtkChartView::ChartType type) {
+    switch (type) {
+        case vtkChartView::LINE_CHART:
+            return QStringLiteral("Line Chart View");
+        case vtkChartView::BAR_CHART:
+            return QStringLiteral("Bar Chart View");
+        case vtkChartView::HISTOGRAM:
+            return QStringLiteral("Histogram View");
+        case vtkChartView::BOX_CHART:
+            return QStringLiteral("Box Chart View");
+        case vtkChartView::POINT_CHART:
+            return QStringLiteral("Point Chart View");
+        case vtkChartView::PARALLEL_COORDINATES:
+            return QStringLiteral("Parallel Coordinates View");
+        case vtkChartView::PLOT_MATRIX:
+            return QStringLiteral("Plot Matrix View");
+        case vtkChartView::IMAGE_CHART:
+            return QStringLiteral("Image Chart View");
+        case vtkChartView::QUARTILE_CHART:
+            return QStringLiteral("Quartile Chart View");
+    }
+    return QStringLiteral("Chart View");
+}
+
 static const QColor kPalette[] = {
         {0, 0, 0},       {230, 25, 75},  {60, 180, 75},   {0, 130, 200},
         {245, 130, 48},  {145, 30, 180}, {70, 240, 240},   {240, 50, 230},
@@ -93,6 +118,9 @@ static const QColor kPalette[] = {
 
 vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     : QWidget(parent), m_chartType(type) {
+    m_viewTypeKey = chartViewTypeKey(type);
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -757,6 +785,9 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
 }
 
 vtkChartView::~vtkChartView() {
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
     disconnect(&ecvViewManager::instance(), nullptr, this, nullptr);
     m_chart = nullptr;
     if (m_contextView) {
@@ -767,29 +798,7 @@ vtkChartView::~vtkChartView() {
     }
 }
 
-QString vtkChartView::title() const {
-    switch (m_chartType) {
-        case LINE_CHART:
-            return tr("Line Chart View");
-        case BAR_CHART:
-            return tr("Bar Chart View");
-        case HISTOGRAM:
-            return tr("Histogram View");
-        case BOX_CHART:
-            return tr("Box Chart View");
-        case POINT_CHART:
-            return tr("Point Chart View");
-        case PARALLEL_COORDINATES:
-            return tr("Parallel Coordinates View");
-        case PLOT_MATRIX:
-            return tr("Plot Matrix View");
-        case IMAGE_CHART:
-            return tr("Image Chart View");
-        case QUARTILE_CHART:
-            return tr("Quartile Chart View");
-    }
-    return tr("Chart View");
-}
+QString vtkChartView::title() const { return m_title; }
 
 void vtkChartView::setMaxChartPoints(unsigned max) {
     m_maxChartPoints = max > 0 ? max : kDefaultMaxChartPoints;

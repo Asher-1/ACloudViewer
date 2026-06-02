@@ -34,7 +34,7 @@ public:
     explicit ecvPythonView(QWidget* parent = nullptr);
     ~ecvPythonView() override;
 
-    QString title() const { return tr("Python View"); }
+    QString title() const { return m_title; }
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -85,6 +85,9 @@ private:
     QString m_lastImagePath;
     QString m_pythonBin;
     bool m_pythonChecked = false;
+
+    QString m_viewTypeKey;
+    QString m_title;
 
     QString findPythonBinary();
     void checkPythonEnvironment();

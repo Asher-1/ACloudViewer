@@ -246,4 +246,7 @@ private:
     QLabel* m_statsBar = nullptr;
     ecvSpreadSheetModel* m_model = nullptr;
     QSortFilterProxyModel* m_proxyModel = nullptr;
+
+    QString m_viewTypeKey;
+    QString m_title;
 };

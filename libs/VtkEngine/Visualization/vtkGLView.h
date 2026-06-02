@@ -72,6 +72,9 @@ public:
     static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
     ~vtkGLView() override;
 
+    /// Reassign ParaView XML label and registration name (e.g. Slice / EDL views).
+    void setViewXmlLabel(const QString& xmlLabel);
+
     // ================================================================
     // ecvGenericGLDisplay — core overrides
     // ================================================================
@@ -410,6 +413,7 @@ private:
 
     // -- Identification --
     int m_uniqueID;
+    QString m_viewTypeKey;
     QString m_title;
 
     // -- VTK pipeline (per-view, not part of context) --

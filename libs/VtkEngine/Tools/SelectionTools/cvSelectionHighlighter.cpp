@@ -7,8 +7,15 @@
 
 #include "cvSelectionHighlighter.h"
 
+#include "cvSelectionPipeline.h"
+#include "cvViewSelectionManager.h"
+
 // LOCAL
 #include "Visualization/VtkVis.h"
+
+#include <QVector>
+
+#include <vector>
 
 // CV_DB_LIB
 #include <ecvGenericVisualizer3D.h>
@@ -21,17 +28,23 @@
 #include <CVLog.h>
 
 // Qt
+#include <QCoreApplication>
 #include <QTimer>
 #include <QWidget>
 
 #include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <VtkRendering/Core/VtkLODHelper.h>
+#include <VtkRendering/Core/VtkRenderingUtils.h>
 
 // VTK
 #include <vtkAbstractArray.h>
 #include <vtkActor.h>
 #include <vtkActor2D.h>
 #include <vtkAppendFilter.h>
+#include <vtkCellArray.h>
 #include <vtkCellCenters.h>
+#include <vtkPoints.h>
 #include <vtkCellData.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetAttributes.h>
@@ -55,17 +68,430 @@
 #include <vtkTextProperty.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkGeometryFilter.h>
+#include <vtkLinearTransform.h>
+#include <vtkTransform.h>
 
-static void scheduleAllViewsUpdate() {
+static vtkSmartPointer<vtkActor> cloneHighlightActor(vtkActor* source) {
+    if (!source) return nullptr;
+    vtkSmartPointer<vtkActor> clone;
+    if (auto* srcLod = vtkPVLODActor::SafeDownCast(source)) {
+        auto lodClone = vtkSmartPointer<vtkPVLODActor>::New();
+        lodClone->ShallowCopy(srcLod);
+        if (auto* srcMapper =
+                    vtkDataSetMapper::SafeDownCast(srcLod->GetMapper())) {
+            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+            mapper->ShallowCopy(srcMapper);
+            lodClone->SetMapper(mapper);
+        }
+        clone = lodClone;
+    } else {
+        clone = vtkSmartPointer<vtkActor>::New();
+        clone->ShallowCopy(source);
+        if (auto* srcMapper =
+                    vtkDataSetMapper::SafeDownCast(source->GetMapper())) {
+            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+            mapper->ShallowCopy(srcMapper);
+            clone->SetMapper(mapper);
+        }
+    }
+    clone->SetPickable(0);
+    return clone;
+}
+
+void cvSelectionHighlighter::prepareForShutdown() {
+    if (m_shuttingDown) return;
+    m_shuttingDown = true;
+    m_highlightInstances.clear();
+    m_hoverActor = nullptr;
+    m_preselectedActor = nullptr;
+    m_selectedActor = nullptr;
+    m_boundaryActor = nullptr;
+    setVisualizer(nullptr);
+}
+
+void cvSelectionHighlighter::scheduleAllViewsUpdate() const {
+    if (m_shuttingDown) return;
+    if (!QCoreApplication::instance()) return;
+
+    Visualization::VtkVis* vis = getVtkVis();
     const auto& views = ecvViewManager::instance().getAllViews();
     for (auto* view : views) {
         auto* glView = dynamic_cast<vtkGLView*>(view);
         if (!glView) continue;
-        auto* w = glView->getVtkWidget();
-        if (w && w->isVisible() && w->width() >= 2 && w->height() >= 2) {
-            w->update();
+        if (vis && glView->getVisualizer3D() != vis) continue;
+        glView->toBeRefreshed();
+        glView->redraw(false, true);
+        return;
+    }
+
+    if (vis) vis->UpdateScreen();
+}
+
+// Template highlight actors must never stay in any renderer (breaks HW selection
+// when the same vtkActor was attached to multiple GL contexts / renderers).
+static void stripActorFromRenderWindow(vtkActor* actor, vtkRenderWindow* rw) {
+    if (!actor || !rw) return;
+    vtkRendererCollection* rens = rw->GetRenderers();
+    if (!rens) return;
+    rens->InitTraversal();
+    while (vtkRenderer* ren = rens->GetNextItem()) {
+        ren->RemoveViewProp(actor);
+    }
+}
+
+static void stripHighlightTemplatesFromVisualizer(
+        Visualization::VtkVis* vis,
+        const vtkSmartPointer<vtkActor>& hover,
+        const vtkSmartPointer<vtkActor>& preselected,
+        const vtkSmartPointer<vtkActor>& selected,
+        const vtkSmartPointer<vtkActor>& boundary) {
+    if (!vis) return;
+    vtkRenderWindow* rw = vis->getRenderWindow();
+    if (!rw) return;
+    stripActorFromRenderWindow(hover, rw);
+    stripActorFromRenderWindow(preselected, rw);
+    stripActorFromRenderWindow(selected, rw);
+    stripActorFromRenderWindow(boundary, rw);
+}
+
+// Remove layer-1 overlay renderers created by earlier selection experiments.
+// Sharing the scene camera on a full-window layer-1 renderer breaks
+// vtkOrientationMarkerWidget (axes scale with wheel zoom).
+static const char* kSelectionOverlayId = "__highlight_selected_overlay__";
+static const char* kHoverOverlayId = "__highlight_hover_overlay__";
+static const char* kPreselectOverlayId = "__highlight_preselect_overlay__";
+
+static const char* overlayIdForMode(cvSelectionHighlighter::HighlightMode mode) {
+    switch (mode) {
+        case cvSelectionHighlighter::HOVER:
+            return kHoverOverlayId;
+        case cvSelectionHighlighter::PRESELECTED:
+            return kPreselectOverlayId;
+        case cvSelectionHighlighter::SELECTED:
+        default:
+            return kSelectionOverlayId;
+    }
+}
+
+static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
+        vtkPolyData* polyData,
+        vtkIdTypeArray* selection,
+        int fieldAssociation) {
+    if (!polyData || !selection ||
+        selection->GetNumberOfTuples() == 0) {
+        return nullptr;
+    }
+
+    const bool isPointSelection = (fieldAssociation != 0);
+    const vtkIdType maxValidId = isPointSelection ? polyData->GetNumberOfPoints()
+                                                  : polyData->GetNumberOfCells();
+
+    vtkSmartPointer<vtkIdTypeArray> validSelection =
+            vtkSmartPointer<vtkIdTypeArray>::New();
+    for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
+        const vtkIdType id = selection->GetValue(i);
+        if (id >= 0 && id < maxValidId) {
+            validSelection->InsertNextValue(id);
         }
     }
+    if (validSelection->GetNumberOfTuples() == 0) {
+        return nullptr;
+    }
+
+    vtkSmartPointer<vtkSelectionNode> selectionNode =
+            vtkSmartPointer<vtkSelectionNode>::New();
+    selectionNode->SetContentType(vtkSelectionNode::INDICES);
+    selectionNode->SetFieldType(isPointSelection ? vtkSelectionNode::POINT
+                                                 : vtkSelectionNode::CELL);
+    selectionNode->SetSelectionList(validSelection);
+
+    vtkSmartPointer<vtkSelection> vtkSel = vtkSmartPointer<vtkSelection>::New();
+    vtkSel->AddNode(selectionNode);
+
+    vtkSmartPointer<vtkExtractSelection> extractor =
+            vtkSmartPointer<vtkExtractSelection>::New();
+    extractor->SetInputData(0, polyData);
+    extractor->SetInputData(1, vtkSel);
+    extractor->Update();
+
+    vtkDataSet* extracted =
+            vtkDataSet::SafeDownCast(extractor->GetOutputDataObject(0));
+    if (!extracted) return nullptr;
+
+    auto result = vtkSmartPointer<vtkPolyData>::New();
+    if (auto* poly = vtkPolyData::SafeDownCast(extracted)) {
+        result->ShallowCopy(poly);
+    } else {
+        vtkNew<vtkGeometryFilter> geom;
+        geom->SetInputData(extracted);
+        geom->Update();
+        result->ShallowCopy(geom->GetOutput());
+    }
+    if (result->GetNumberOfCells() == 0 &&
+        result->GetNumberOfPoints() == 0) {
+        return nullptr;
+    }
+    return result;
+}
+
+static vtkSmartPointer<vtkPolyData> buildSelectionMarkerPolyData(
+        vtkPolyData* polyData,
+        vtkIdTypeArray* selection,
+        int fieldAssociation) {
+    if (!polyData || !selection ||
+        selection->GetNumberOfTuples() == 0) {
+        return nullptr;
+    }
+
+    const bool isPointSelection = (fieldAssociation != 0);
+    vtkSmartPointer<vtkPolyData> marker = vtkSmartPointer<vtkPolyData>::New();
+    vtkNew<vtkPoints> pts;
+    vtkNew<vtkCellArray> verts;
+
+    if (isPointSelection) {
+        for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
+            const vtkIdType pid = selection->GetValue(i);
+            if (pid < 0 || pid >= polyData->GetNumberOfPoints()) continue;
+            double p[3];
+            polyData->GetPoint(pid, p);
+            const vtkIdType newId = pts->InsertNextPoint(p);
+            verts->InsertNextCell(1);
+            verts->InsertCellPoint(newId);
+        }
+    } else {
+        vtkNew<vtkCellCenters> centers;
+        centers->SetInputData(polyData);
+        centers->VertexCellsOn();
+        centers->Update();
+        auto* centersPoly = centers->GetOutput();
+        if (!centersPoly) return nullptr;
+        for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
+            const vtkIdType cid = selection->GetValue(i);
+            if (cid < 0 || cid >= centersPoly->GetNumberOfPoints()) continue;
+            double p[3];
+            centersPoly->GetPoint(cid, p);
+            const vtkIdType newId = pts->InsertNextPoint(p);
+            verts->InsertNextCell(1);
+            verts->InsertCellPoint(newId);
+        }
+    }
+
+    if (pts->GetNumberOfPoints() == 0) return nullptr;
+    marker->SetPoints(pts);
+    marker->SetVerts(verts);
+    return marker;
+}
+
+void cvSelectionHighlighter::clearSelectionOverlay(Visualization::VtkVis* vis,
+                                                   const char* overlayId) {
+    if (!vis) return;
+    const char* id = overlayId ? overlayId : kSelectionOverlayId;
+    if (vis->contains(id)) {
+        vis->removePointCloud(id);
+    }
+}
+
+void cvSelectionHighlighter::clearAllSelectionOverlays(Visualization::VtkVis* vis) {
+    if (!vis) return;
+    clearSelectionOverlay(vis, kSelectionOverlayId);
+    clearSelectionOverlay(vis, kHoverOverlayId);
+    clearSelectionOverlay(vis, kPreselectOverlayId);
+}
+
+void cvSelectionHighlighter::styleSelectionOverlayProperty(
+        vtkProperty* prop, SelectionOverlayKind kind) {
+    if (!prop) return;
+    prop->SetColor(1.0, 0.0, 1.0);
+    prop->SetOpacity(1.0);
+    prop->SetAmbient(1.0);
+    prop->SetDiffuse(0.0);
+    prop->SetSpecular(0.0);
+    prop->LightingOff();
+    prop->SetRenderLinesAsTubes(false);
+    prop->SetRenderPointsAsSpheres(false);
+    if (kind == SelectionOverlayPoints) {
+        prop->SetRepresentationToPoints();
+        prop->SetPointSize(5.0f);
+        prop->EdgeVisibilityOff();
+    } else if (kind == SelectionOverlaySurface) {
+        prop->SetRepresentationToWireframe();
+        prop->EdgeVisibilityOff();
+        prop->SetLineWidth(2.0f);
+    }
+}
+
+vtkSmartPointer<vtkActor> cvSelectionHighlighter::createSelectionOverlayActor(
+        vtkPolyData* poly, SelectionOverlayKind kind) {
+    if (!poly) return nullptr;
+
+    if (kind == SelectionOverlayPoints) {
+        if (poly->GetNumberOfPoints() == 0) return nullptr;
+        auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+        mapper->SetInputData(poly);
+        mapper->ScalarVisibilityOff();
+        auto actor = vtkSmartPointer<vtkActor>::New();
+        actor->SetMapper(mapper);
+        styleSelectionOverlayProperty(actor->GetProperty(), kind);
+        actor->SetPickable(0);
+        return actor;
+    }
+
+    if (kind == SelectionOverlaySurface) {
+        if (poly->GetNumberOfCells() == 0) return nullptr;
+        vtkSmartPointer<vtkPVLODActor> actor;
+        VtkRendering::CreateActorFromVTKDataSet(poly, actor);
+        if (!actor) return nullptr;
+        if (auto* mapper = vtkDataSetMapper::SafeDownCast(actor->GetMapper())) {
+            mapper->ScalarVisibilityOff();
+            mapper->SetResolveCoincidentTopologyToPolygonOffset();
+            mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1, -1);
+        }
+        styleSelectionOverlayProperty(actor->GetProperty(), kind);
+        actor->SetPickable(0);
+        return actor;
+    }
+
+    return nullptr;
+}
+
+void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
+                                                   vtkPolyData* poly,
+                                                   SelectionOverlayKind kind,
+                                                   const char* overlayId,
+                                                   bool interactiveColor) {
+    if (!vis || !poly) return;
+    const char* id = overlayId ? overlayId : kSelectionOverlayId;
+    clearSelectionOverlay(vis, id);
+
+    const double cr = interactiveColor ? 0.5 : 1.0;
+    const double cg = 0.0;
+    const double cb = 1.0;
+
+    if (kind == SelectionOverlayPoints) {
+        if (!vis->addPointCloud(poly, id)) {
+            CVLog::Warning(
+                    "[cvSelectionHighlighter] Failed to add point selection "
+                    "overlay");
+            return;
+        }
+        vis->setPointCloudUniqueColor(cr, cg, cb, id);
+        vis->setPointCloudRenderingProperties(
+                Visualization::VtkVis::PCL_VISUALIZER_POINT_SIZE, 5.0, id);
+        vis->setPointCloudRenderingProperties(
+                Visualization::VtkVis::PCL_VISUALIZER_REPRESENTATION,
+                Visualization::VtkVis::PCL_VISUALIZER_REPRESENTATION_POINTS,
+                id);
+        if (vtkActor* a = vis->getActorById(id)) {
+            styleSelectionOverlayProperty(a->GetProperty(),
+                                          SelectionOverlayPoints);
+            a->GetProperty()->SetColor(cr, cg, cb);
+            a->SetPickable(0);
+        }
+        CVLog::Print(QString("[cvSelectionHighlighter] ParaView point overlay: "
+                             "%1 pts")
+                             .arg(poly->GetNumberOfPoints()));
+        return;
+    }
+
+    if (kind == SelectionOverlaySurface) {
+        if (!vis->addSelectionHighlightSurface(poly, id)) {
+            CVLog::Warning(
+                    "[cvSelectionHighlighter] Failed to add cell selection "
+                    "surface overlay");
+            return;
+        }
+        CVLog::Print(
+                QString("[cvSelectionHighlighter] ParaView cell overlay: %1 "
+                        "cells %2 pts")
+                        .arg(poly->GetNumberOfCells())
+                        .arg(poly->GetNumberOfPoints()));
+    }
+}
+
+static cvSelectionHighlighter::SelectionOverlayKind
+upsertParaViewSelectionOverlay(Visualization::VtkVis* vis,
+                               vtkPolyData* polyData,
+                               vtkIdTypeArray* selection,
+                               int fieldAssociation,
+                               vtkSmartPointer<vtkPolyData>& outPoly,
+                               const char* overlayId = kSelectionOverlayId,
+                               bool interactiveColor = false) {
+    outPoly = nullptr;
+    if (!vis) return cvSelectionHighlighter::SelectionOverlayNone;
+
+    const bool isPointSelection = (fieldAssociation != 0);
+    if (isPointSelection) {
+        outPoly = buildSelectionMarkerPolyData(polyData, selection,
+                                               fieldAssociation);
+        if (!outPoly) return cvSelectionHighlighter::SelectionOverlayNone;
+        cvSelectionHighlighter::applySelectionOverlay(
+                vis, outPoly, cvSelectionHighlighter::SelectionOverlayPoints,
+                overlayId, interactiveColor);
+        return cvSelectionHighlighter::SelectionOverlayPoints;
+    }
+
+    outPoly = extractSelectionPolyData(polyData, selection, fieldAssociation);
+    if (!outPoly) return cvSelectionHighlighter::SelectionOverlayNone;
+    cvSelectionHighlighter::applySelectionOverlay(
+            vis, outPoly, cvSelectionHighlighter::SelectionOverlaySurface,
+            overlayId, interactiveColor);
+    return cvSelectionHighlighter::SelectionOverlaySurface;
+}
+
+static void pruneSelectionOverlayRenderers(vtkRenderer* sceneRenderer) {
+    if (!sceneRenderer) return;
+    vtkRenderWindow* rw = sceneRenderer->GetRenderWindow();
+    if (!rw) return;
+
+    std::vector<vtkRenderer*> toRemove;
+    if (vtkRendererCollection* rens = rw->GetRenderers()) {
+        rens->InitTraversal();
+        while (vtkRenderer* ren = rens->GetNextItem()) {
+            if (ren != sceneRenderer && ren->GetLayer() == 1 &&
+                !ren->GetInteractive()) {
+                toRemove.push_back(ren);
+            }
+        }
+    }
+    for (vtkRenderer* ren : toRemove) {
+        rw->RemoveRenderer(ren);
+    }
+    if (rw->GetNumberOfLayers() > 1 && toRemove.size() > 0) {
+        rw->SetNumberOfLayers(1);
+    }
+}
+
+vtkActor* cvSelectionHighlighter::resolveRegisteredMeshActor(
+        Visualization::VtkVis* vis, vtkActor* picked) {
+    if (!vis || !picked) return picked;
+    // Do not call getIdByActor(picked): HW-picked props may belong to another
+    // VtkVis/render view and can crash or return stale ids.
+
+    vtkPolyData* pickedPoly = nullptr;
+    if (picked->GetMapper()) {
+        pickedPoly =
+                vtkPolyData::SafeDownCast(picked->GetMapper()->GetInput());
+    }
+    if (!pickedPoly) return picked;
+
+    for (const auto& kv : *vis->getCloudActorMap()) {
+        vtkActor* reg = vtkActor::SafeDownCast(kv.second.actor);
+        if (!reg || !reg->GetMapper()) continue;
+        if (vtkPolyData::SafeDownCast(reg->GetMapper()->GetInput()) ==
+            pickedPoly) {
+            return reg;
+        }
+    }
+    for (const auto& kv : *vis->getShapeActorMap()) {
+        vtkActor* reg = vtkActor::SafeDownCast(kv.second);
+        if (!reg || !reg->GetMapper()) continue;
+        if (vtkPolyData::SafeDownCast(reg->GetMapper()->GetInput()) ==
+            pickedPoly) {
+            return reg;
+        }
+    }
+    return picked;
 }
 
 //-----------------------------------------------------------------------------
@@ -82,7 +508,7 @@ cvSelectionHighlighter::cvSelectionHighlighter()
       m_boundaryPointSize(5),     // ParaView default: 5 for boundary
       m_hoverLineWidth(2),
       m_preselectedLineWidth(2),
-      m_selectedLineWidth(2),
+      m_selectedLineWidth(8),
       m_boundaryLineWidth(2),
       m_enabled(true),
       m_pointLabelVisible(false),
@@ -124,9 +550,17 @@ cvSelectionHighlighter::cvSelectionHighlighter()
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionHighlighter::~cvSelectionHighlighter() { clearHighlights(); }
+cvSelectionHighlighter::~cvSelectionHighlighter() {
+    m_shuttingDown = true;
+    clearHighlights();
+}
 
-// setVisualizer is inherited from cvGenericSelectionTool
+//-----------------------------------------------------------------------------
+void cvSelectionHighlighter::setVisualizer(ecvGenericVisualizer3D* viewer) {
+    cvGenericSelectionTool::setVisualizer(viewer);
+    pruneSelectionOverlayRenderers(
+            getVtkVis() ? getVtkVis()->getCurrentRenderer() : nullptr);
+}
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setHighlightColor(double r,
@@ -296,11 +730,17 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    // Get polyData using centralized ParaView-style method
-    // Note: In ParaView, the highlighter would get data from the
-    // representation, but here we use the getPolyDataForSelection() which
-    // handles the priority logic.
-    vtkPolyData* polyData = getPolyDataForSelection();
+    vtkPolyData* polyData = nullptr;
+    cvViewSelectionManager* mgr = cvViewSelectionManager::instance();
+    if (mgr) {
+        const cvSelectionData current = mgr->currentSelection();
+        if (!current.isEmpty()) {
+            polyData = getPolyDataForSelection(&current);
+        }
+    }
+    if (!polyData) {
+        polyData = getPolyDataForSelection();
+    }
     if (!polyData) {
         CVLog::Error(
                 "[cvSelectionHighlighter::highlightSelection] No polyData "
@@ -370,7 +810,37 @@ bool cvSelectionHighlighter::highlightSelection(
             break;
     }
 
-    addActorToVisualizer(actor, actorId);
+    if (mode == SELECTED) {
+        // ParaView: visible highlight is the VtkVis overlay (wireframe/points).
+        vtkSmartPointer<vtkPolyData> overlayPoly;
+        int overlayKind = cvSelectionHighlighter::SelectionOverlayNone;
+        Visualization::VtkVis* vis = getVtkVis();
+        if (vis) {
+            overlayKind = static_cast<int>(upsertParaViewSelectionOverlay(
+                    vis, polyData, selection, fieldAssociation, overlayPoly,
+                    kSelectionOverlayId, false));
+        }
+        if (!m_shuttingDown) {
+            emit selectionOverlayUpdated(overlayPoly, overlayKind);
+            scheduleAllViewsUpdate();
+        }
+    } else if (mode == HOVER || mode == PRESELECTED) {
+        // Hover/preselect: per-view overlay only (never addActorToVisualizer).
+        removeActorFromVisualizer(actorId);
+        Visualization::VtkVis* vis = getVtkVis();
+        if (vis) {
+            vtkSmartPointer<vtkPolyData> overlayPoly;
+            const bool interactive = (mode == HOVER || mode == PRESELECTED);
+            upsertParaViewSelectionOverlay(
+                    vis, polyData, selection, fieldAssociation, overlayPoly,
+                    overlayIdForMode(mode), interactive);
+            vis->UpdateScreen();
+            scheduleAllViewsUpdate();
+        }
+    } else {
+        addActorToVisualizer(actor, actorId);
+    }
+
     return true;
 }
 
@@ -391,15 +861,35 @@ bool cvSelectionHighlighter::highlightSelection(
                     .arg(selectionData.fieldTypeString())
                     .arg(mode));
 
-    // Delegate to the VTK-level implementation
-    bool success = highlightSelection(selectionData.vtkArray(),
-                                      selectionData.fieldAssociation(), mode);
-
-    if (!success) {
-        CVLog::Error("[cvSelectionHighlighter] Failed to highlight selection");
+    vtkPolyData* polyData = getPolyDataForSelection(&selectionData);
+    if (!polyData && selectionData.primaryActor()) {
+        if (auto* mapper = selectionData.primaryActor()->GetMapper()) {
+            polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+        }
+    }
+    if (!polyData) {
+        CVLog::Print(
+                "[cvSelectionHighlighter] No polyData for selection highlight "
+                "(hasActorInfo="
+                + QString(selectionData.hasActorInfo() ? "yes" : "no") + ")");
+        return false;
     }
 
-    return success;
+    Visualization::VtkVis* vis = getVtkVis();
+    m_highlightSourceActor =
+            resolveRegisteredMeshActor(vis, selectionData.primaryActor());
+
+    const bool ok = highlightSelection(
+            polyData, selectionData.vtkArray(),
+            static_cast<int>(selectionData.fieldAssociation()), mode);
+    m_highlightSourceActor = nullptr;
+    CVLog::Print(
+            QString("[cvSelectionHighlighter] highlightSelection(%1 ids) -> %2 "
+                    "polyCells=%3")
+                    .arg(selectionData.count())
+                    .arg(ok ? "OK" : "FAIL")
+                    .arg(polyData->GetNumberOfCells()));
+    return ok;
 }
 
 //-----------------------------------------------------------------------------
@@ -638,18 +1128,41 @@ bool cvSelectionHighlighter::highlightElement(vtkPolyData* polyData,
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::clearHighlights() {
+    if (m_shuttingDown) {
+        m_hoverActor = nullptr;
+        m_preselectedActor = nullptr;
+        m_selectedActor = nullptr;
+        m_boundaryActor = nullptr;
+        m_highlightInstances.clear();
+        return;
+    }
+
+    pruneSelectionOverlayRenderers(
+            getVtkVis() ? getVtkVis()->getCurrentRenderer() : nullptr);
+
+    if (Visualization::VtkVis* vis = getVtkVis()) {
+        clearAllSelectionOverlays(vis);
+    }
+
     removeActorFromVisualizer(m_hoverActorId);
     removeActorFromVisualizer(m_preselectedActorId);
     removeActorFromVisualizer(m_selectedActorId);
     removeActorFromVisualizer(m_boundaryActorId);
+
+    stripHighlightTemplatesFromVisualizer(getVtkVis(), m_hoverActor,
+                                          m_preselectedActor, m_selectedActor,
+                                          m_boundaryActor);
 
     m_hoverActor = nullptr;
     m_preselectedActor = nullptr;
     m_selectedActor = nullptr;
     m_boundaryActor = nullptr;
 
-    emit highlightsCleared();
-    scheduleAllViewsUpdate();
+    if (!m_shuttingDown) {
+        emit selectionOverlayUpdated(nullptr, SelectionOverlayNone);
+        emit highlightsCleared();
+        scheduleAllViewsUpdate();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -680,24 +1193,104 @@ void cvSelectionHighlighter::clearHighlight(HighlightMode mode) {
 void cvSelectionHighlighter::clearHoverHighlight() {
     removeActorFromVisualizer(m_hoverActorId);
     m_hoverActor = nullptr;
+    if (Visualization::VtkVis* vis = getVtkVis()) {
+        clearSelectionOverlay(vis, kHoverOverlayId);
+        vis->UpdateScreen();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setHighlightsVisible(bool visible) {
-    if (m_hoverActor) {
-        m_hoverActor->SetVisibility(visible ? 1 : 0);
-    }
-    if (m_preselectedActor) {
-        m_preselectedActor->SetVisibility(visible ? 1 : 0);
-    }
-    if (m_selectedActor) {
-        m_selectedActor->SetVisibility(visible ? 1 : 0);
-    }
-    if (m_boundaryActor) {
-        m_boundaryActor->SetVisibility(visible ? 1 : 0);
+    auto setVis = [visible](const QString& id,
+                            QHash<QString, QVector<HighlightActorInstance>>&
+                                    instances) {
+        auto it = instances.find(id);
+        if (it == instances.end()) return;
+        for (const auto& inst : it.value()) {
+            if (inst.actor) inst.actor->SetVisibility(visible ? 1 : 0);
+        }
+    };
+    setVis(m_hoverActorId, m_highlightInstances);
+    setVis(m_preselectedActorId, m_highlightInstances);
+    setVis(m_selectedActorId, m_highlightInstances);
+    setVis(m_boundaryActorId, m_highlightInstances);
+
+    if (!visible) {
+        stripHighlightTemplatesFromVisualizer(getVtkVis(), m_hoverActor,
+                                              m_preselectedActor,
+                                              m_selectedActor, m_boundaryActor);
+        if (cvViewSelectionManager* mgr = cvViewSelectionManager::instance()) {
+            if (cvSelectionPipeline* pipeline = mgr->getPipeline()) {
+                pipeline->invalidateCachedSelection();
+            }
+        }
     }
 
     scheduleAllViewsUpdate();
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionHighlighter::applyParaViewHighlightStyle(
+        vtkProperty* prop, int fieldAssociation, HighlightMode mode,
+        bool applySolidColor) const {
+    if (!prop) return;
+
+    const double* color = m_selectedColor;
+    float lineWidth = static_cast<float>(m_selectedLineWidth);
+    float pointSize = static_cast<float>(m_selectedPointSize);
+    double opacity = m_selectedOpacity;
+
+    switch (mode) {
+        case HOVER:
+            color = m_hoverColor;
+            lineWidth = static_cast<float>(m_hoverLineWidth);
+            pointSize = static_cast<float>(m_hoverPointSize);
+            opacity = m_hoverOpacity;
+            break;
+        case PRESELECTED:
+            color = m_preselectedColor;
+            lineWidth = static_cast<float>(m_preselectedLineWidth);
+            pointSize = static_cast<float>(m_preselectedPointSize);
+            opacity = m_preselectedOpacity;
+            break;
+        case SELECTED:
+            color = m_selectedColor;
+            lineWidth = static_cast<float>(m_selectedLineWidth);
+            pointSize = static_cast<float>(m_selectedPointSize);
+            opacity = m_selectedOpacity;
+            break;
+        case BOUNDARY:
+            color = m_boundaryColor;
+            lineWidth = static_cast<float>(m_boundaryLineWidth);
+            pointSize = static_cast<float>(m_boundaryPointSize);
+            opacity = m_boundaryOpacity;
+            break;
+    }
+
+    if (applySolidColor) {
+        prop->SetColor(color[0], color[1], color[2]);
+    }
+    prop->SetOpacity(opacity);
+    prop->SetLineWidth(lineWidth);
+    prop->SetPointSize(pointSize);
+    prop->SetAmbient(1.0);
+    prop->SetDiffuse(0.0);
+    prop->SetSpecular(0.0);
+    prop->SetSpecularPower(1.0);
+    prop->SetRenderLinesAsTubes(false);
+    prop->SetRenderPointsAsSpheres(false);
+
+    prop->LightingOff();
+    prop->BackfaceCullingOff();
+
+    if (fieldAssociation == 0) {
+        // ParaView Render View: cell selections are a colored wireframe.
+        prop->SetRepresentationToWireframe();
+        prop->EdgeVisibilityOff();
+    } else {
+        prop->EdgeVisibilityOff();
+        prop->SetRepresentationToPoints();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -762,9 +1355,8 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
 
     extractor->Update();
 
-    vtkUnstructuredGrid* extracted =
-            vtkUnstructuredGrid::SafeDownCast(extractor->GetOutput());
-
+    vtkDataSet* extracted =
+            vtkDataSet::SafeDownCast(extractor->GetOutputDataObject(0));
     if (!extracted) {
         CVLog::Error(
                 "[cvSelectionHighlighter::createHighlightActor] Extraction "
@@ -772,104 +1364,43 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         return nullptr;
     }
 
-    vtkIdType numCells = extracted->GetNumberOfCells();
-    vtkIdType numPoints = extracted->GetNumberOfPoints();
+    vtkSmartPointer<vtkPolyData> highlightPoly =
+            vtkSmartPointer<vtkPolyData>::New();
+    if (auto* poly = vtkPolyData::SafeDownCast(extracted)) {
+        highlightPoly->ShallowCopy(poly);
+    } else {
+        auto geom = vtkSmartPointer<vtkGeometryFilter>::New();
+        geom->SetInputData(extracted);
+        geom->Update();
+        highlightPoly->ShallowCopy(geom->GetOutput());
+    }
 
-    // After validating IDs upfront, this should rarely happen, but if it does,
-    // it's still a normal case (e.g., degenerate geometry) - not an error
-    if (numCells == 0 && numPoints == 0) {
-        CVLog::PrintVerbose(
-                "[cvSelectionHighlighter::createHighlightActor] Extraction "
-                "resulted in 0 cells and 0 points (normal case, e.g., "
-                "degenerate geometry)");
+    if (highlightPoly->GetNumberOfCells() == 0 &&
+        highlightPoly->GetNumberOfPoints() == 0) {
+        CVLog::Print(
+                "[cvSelectionHighlighter::createHighlightActor] extract empty");
         return nullptr;
     }
 
-    // Create mapper
+    CVLog::Print(
+            QString("[cvSelectionHighlighter] extract geometry: cells=%1 "
+                      "points=%2")
+                    .arg(highlightPoly->GetNumberOfCells())
+                    .arg(highlightPoly->GetNumberOfPoints()));
+
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputData(extracted);
-    mapper->ScalarVisibilityOff();  // Don't use scalar colors
+    mapper->SetInputData(highlightPoly);
+    mapper->ScalarVisibilityOff();
 
-    // Create actor (use smart pointer to prevent leaks)
-    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    vtkSmartPointer<vtkPVLODActor> actor =
+            vtkSmartPointer<vtkPVLODActor>::New();
     actor->SetMapper(mapper);
-
-    // Set properties based on mode (ParaView-style)
-    vtkProperty* prop = actor->GetProperty();
-    double* color = nullptr;
-    double opacity = 1.0;
-
-    switch (mode) {
-        case HOVER:
-            // Hover feedback (ParaView-style)
-            color = m_hoverColor;
-            opacity = m_hoverOpacity;
-            prop->SetLineWidth(static_cast<float>(m_hoverLineWidth));
-            prop->SetPointSize(static_cast<float>(m_hoverPointSize));
-            prop->SetRenderLinesAsTubes(true);
-            break;
-
-        case PRESELECTED:
-            // Preselect feedback (ParaView-style)
-            color = m_preselectedColor;
-            opacity = m_preselectedOpacity;
-            prop->SetLineWidth(static_cast<float>(m_preselectedLineWidth));
-            prop->SetPointSize(static_cast<float>(m_preselectedPointSize));
-            prop->SetRenderLinesAsTubes(true);
-            break;
-
-        case SELECTED:
-            // Final selection (ParaView-style)
-            color = m_selectedColor;
-            opacity = m_selectedOpacity;
-            prop->SetLineWidth(static_cast<float>(m_selectedLineWidth));
-            prop->SetPointSize(static_cast<float>(m_selectedPointSize));
-            prop->SetRenderLinesAsTubes(true);
-            break;
-
-        case BOUNDARY:
-            // Boundary highlight (ParaView-style)
-            color = m_boundaryColor;
-            opacity = m_boundaryOpacity;
-            prop->SetLineWidth(static_cast<float>(m_boundaryLineWidth));
-            prop->SetPointSize(static_cast<float>(m_boundaryPointSize));
-            prop->SetRenderLinesAsTubes(true);
-            break;
-    }
-
-    if (color) {
-        prop->SetColor(color[0], color[1], color[2]);
-    }
-    prop->SetOpacity(opacity);
-
-    // Enhanced rendering properties for maximum visibility
-    prop->SetAmbient(0.6);   // Increased ambient light for brighter appearance
-    prop->SetDiffuse(0.8);   // Increased diffuse for better color saturation
-    prop->SetSpecular(0.5);  // Increased specular for more shine/visibility
-    prop->SetSpecularPower(
-            30.0);  // Higher specular power for sharper highlights
-    prop->SetRenderLinesAsTubes(true);     // Render lines as 3D tubes
-    prop->SetRenderPointsAsSpheres(true);  // Render points as 3D spheres
-
-    // Additional enhancement: edge visibility
-    prop->EdgeVisibilityOn();           // Show edges for better definition
-    prop->SetEdgeColor(1.0, 1.0, 1.0);  // White edges for contrast
-
-    // Set representation mode based on field association (enhanced for
-    // visibility) 0 = CELLS: show as wireframe (edges only) 1 = POINTS: show as
-    // points
-    if (fieldAssociation == 0) {
-        // CELLS: Render as wireframe (edges only)
-        prop->SetRepresentationToWireframe();
-        // Use the configured line width for the current mode (consistent with
-        // hover) Line width is already set above based on mode
-        // (hover/preselected/selected/boundary) No need to override it here -
-        // keep it consistent
-    } else {
-        // POINTS: Render as points with enhanced visibility
-        prop->SetRepresentationToPoints();
-        // Point size is already set above based on mode, ensure it's visible
+    VtkRendering::BuildAndAttachLODMapper(actor, highlightPoly);
+    applyParaViewHighlightStyle(actor->GetProperty(), fieldAssociation, mode);
+    if (fieldAssociation == 0 && mode == SELECTED) {
+        mapper->SetResolveCoincidentTopologyToPolygonOffset();
+        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-2, -2);
     }
 
     // CRITICAL: Set highlight actor as NOT pickable!
@@ -905,6 +1436,23 @@ vtkSmartPointer<vtkSelectionNode> cvSelectionHighlighter::createSelectionNode(
     return node;
 }
 
+// Match primary mesh actor transform so highlight geometry aligns in world space.
+static void syncHighlightActorTransform(vtkActor* highlight,
+                                      vtkActor* source) {
+    if (!highlight || !source) return;
+    highlight->SetPosition(source->GetPosition());
+    highlight->SetOrientation(source->GetOrientation());
+    highlight->SetScale(source->GetScale());
+    highlight->SetOrigin(source->GetOrigin());
+    if (vtkLinearTransform* linear = source->GetUserTransform()) {
+        auto copy = vtkSmartPointer<vtkTransform>::New();
+        copy->SetMatrix(linear->GetMatrix());
+        highlight->SetUserTransform(copy);
+    } else {
+        highlight->SetUserTransform(nullptr);
+    }
+}
+
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
                                                   const QString& id) {
@@ -928,41 +1476,74 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
         return;
     }
 
-    vtkMapper* mapper = actor->GetMapper();
-    if (mapper) {
-        mapper->SetResolveCoincidentTopologyToPolygonOffset();
-        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1.0,
-                                                                     -1.0);
-        mapper->SetResolveCoincidentTopologyPolygonOffsetFaces(1);
-    }
+    vtkActor* sourceActor = m_highlightSourceActor;
+    // Never resolve mgr->currentSelection().primaryActor() here — it may
+    // belong to a different render view and caused SIGSEGV in getIdByActor.
 
-    vtkRenderer* primaryRenderer = pclVis->getCurrentRenderer();
-    if (primaryRenderer) {
-        primaryRenderer->AddActor(actor);
-        actor->SetVisibility(1);
-    }
+    QVector<HighlightActorInstance> instances;
 
-    const auto& views = ecvViewManager::instance().getAllViews();
-    for (auto* view : views) {
-        auto* glView = dynamic_cast<vtkGLView*>(view);
-        if (!glView) continue;
-        QWidget* w = glView->asWidget();
-        if (!w || !w->isVisible() || w->width() < 2 || w->height() < 2)
-            continue;
-        auto* vis = glView->getVisualizer3D();
-        if (!vis || vis == pclVis) continue;
-        vtkRenderer* ren = vis->getCurrentRenderer();
-        if (ren) {
-            ren->AddActor(actor);
+    vtkRenderer* sceneRenderer = pclVis->getCurrentRenderer();
+    pruneSelectionOverlayRenderers(sceneRenderer);
+
+    if (sceneRenderer) {
+        HighlightActorInstance inst;
+        inst.renderer = sceneRenderer;
+        inst.actor = cloneHighlightActor(actor);
+        if (inst.actor) {
+            syncHighlightActorTransform(inst.actor, sourceActor);
+            inst.actor->ForceOpaqueOn();
+            inst.actor->ForceTranslucentOff();
+            sceneRenderer->AddActor(inst.actor);
+            inst.actor->SetVisibility(1);
+            instances.append(inst);
+            double b[6] = {0, 0, 0, 0, 0, 0};
+            inst.actor->GetBounds(b);
+            CVLog::Print(
+                    QString("[cvSelectionHighlighter] Added highlight to scene "
+                            "(layer=0) id=%1 bounds=[%2,%3,%4,%5,%6,%7] "
+                            "rendererActors=%8")
+                            .arg(id)
+                            .arg(b[0])
+                            .arg(b[1])
+                            .arg(b[2])
+                            .arg(b[3])
+                            .arg(b[4])
+                            .arg(b[5])
+                            .arg(sceneRenderer->GetActors()
+                                         ? sceneRenderer->GetActors()
+                                                   ->GetNumberOfItems()
+                                         : 0));
         }
     }
 
-    emit highlightActorAdded(actor);
-    scheduleAllViewsUpdate();
+    stripHighlightTemplatesFromVisualizer(pclVis, actor, nullptr, nullptr,
+                                          nullptr);
+
+    m_highlightInstances[id] = instances;
+    if (instances.isEmpty()) {
+        CVLog::Warning(
+                QString("[cvSelectionHighlighter] No renderer accepted "
+                        "highlight clone for id=%1")
+                        .arg(id));
+    }
+
+    if (!m_shuttingDown) {
+        emit highlightActorAdded(actor);
+        scheduleAllViewsUpdate();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
+    if (m_shuttingDown) {
+        m_highlightInstances.remove(id);
+        if (id == m_hoverActorId) m_hoverActor = nullptr;
+        else if (id == m_preselectedActorId) m_preselectedActor = nullptr;
+        else if (id == m_selectedActorId) m_selectedActor = nullptr;
+        else if (id == m_boundaryActorId) m_boundaryActor = nullptr;
+        return;
+    }
+
     if (!m_viewer) {
         return;
     }
@@ -978,30 +1559,29 @@ void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
         actor = m_boundaryActor;
     }
 
+    auto it = m_highlightInstances.find(id);
+    if (it != m_highlightInstances.end()) {
+        for (const auto& inst : it.value()) {
+            if (inst.renderer && inst.actor) {
+                inst.renderer->RemoveActor(inst.actor);
+            }
+        }
+        m_highlightInstances.remove(id);
+    }
+
     if (!actor) return;
 
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (pclVis) {
-        vtkRenderer* renderer = pclVis->getCurrentRenderer();
-        if (renderer) {
-            renderer->RemoveActor(actor);
+    if (id == m_selectedActorId) {
+        clearSelectionOverlay(getVtkVis());
+        if (!m_shuttingDown) {
+            emit selectionOverlayUpdated(nullptr, SelectionOverlayNone);
         }
     }
 
-    const auto& views = ecvViewManager::instance().getAllViews();
-    for (auto* view : views) {
-        auto* glView = dynamic_cast<vtkGLView*>(view);
-        if (!glView) continue;
-        auto* vis = glView->getVisualizer3D();
-        if (!vis || vis == pclVis) continue;
-        vtkRenderer* ren = vis->getCurrentRenderer();
-        if (ren) {
-            ren->RemoveActor(actor);
-        }
+    if (!m_shuttingDown) {
+        emit highlightActorRemoved(actor);
+        scheduleAllViewsUpdate();
     }
-
-    emit highlightActorRemoved(actor);
-    scheduleAllViewsUpdate();
 
     CVLog::PrintVerbose(
             QString("[cvSelectionHighlighter] Removed highlight actor: %1")

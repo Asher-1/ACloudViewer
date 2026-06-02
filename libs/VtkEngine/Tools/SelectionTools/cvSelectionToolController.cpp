@@ -32,6 +32,8 @@
 // QT
 #include <QAction>
 #include <QActionGroup>
+#include <QKeySequence>
+#include <QShortcut>
 #include <QWidget>
 
 //-----------------------------------------------------------------------------
@@ -91,8 +93,32 @@ cvSelectionToolController::~cvSelectionToolController() {
 }
 
 //-----------------------------------------------------------------------------
+void cvSelectionToolController::installModifierShortcuts() {
+    auto bind = [this](QAction* action, const QKeySequence& seq) {
+        if (!action || !m_parentWidget) return;
+        action->setShortcut(seq);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        auto* shortcut = new QShortcut(seq, m_parentWidget);
+        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        QObject::connect(shortcut, &QShortcut::activated, action,
+                         &QAction::trigger);
+        m_modifierShortcuts.push_back(shortcut);
+    };
+
+    for (QShortcut* s : m_modifierShortcuts) {
+        delete s;
+    }
+    m_modifierShortcuts.clear();
+
+    bind(m_addAction, QKeySequence(Qt::CTRL));
+    bind(m_subtractAction, QKeySequence(Qt::SHIFT));
+    bind(m_toggleAction, QKeySequence(Qt::CTRL | Qt::SHIFT));
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
+    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Initialized with parent widget");
@@ -233,6 +259,26 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     // Reference: pqStandardViewFrameActionsImplementation.cxx lines 284-285
     connect(m_modifierGroup, &QActionGroup::triggered, this,
             &cvSelectionToolController::onModifierChanged);
+    for (QAction* modAction : m_modifierGroup->actions()) {
+        connect(modAction, &QAction::toggled, this, [this, modAction](bool on) {
+            if (on) {
+                onModifierChanged(modAction);
+            } else if (m_modifierGroup) {
+                bool anyChecked = false;
+                for (QAction* a : m_modifierGroup->actions()) {
+                    if (a->isChecked()) {
+                        anyChecked = true;
+                        break;
+                    }
+                }
+                if (!anyChecked) {
+                    onModifierChanged(modAction);
+                }
+            }
+        });
+    }
+
+    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Registered modifier actions");
@@ -424,30 +470,17 @@ void cvSelectionToolController::onSelectionFinished(
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onModifierChanged(QAction* action) {
-    // Reference:
-    // pqStandardViewFrameActionsImplementation::manageGroupExclusivity() lines
-    // 851-866
-    if (!action) {
+    // Reference: pqStandardViewFrameActionsImplementation::manageGroupExclusivity
+    if (!action || !action->isCheckable() || !action->isChecked()) {
         return;
     }
 
-    // Handle non-checkable actions (shouldn't happen but be safe)
-    if (!action->isCheckable()) {
-        return;
-    }
-
-    // Implement ParaView-style group exclusivity management
-    // When an action is checked, uncheck all others in the group
-    // When an action is unchecked (by clicking it again), revert to default
-    if (action->isChecked()) {
-        // Manually uncheck other actions in the group
-        // This is the key to ParaView's "manageGroupExclusivity" behavior
+    // Manually uncheck other actions in the group (ParaView manageGroupExclusivity).
+        // Do not blockSignals: per-view mirror actions must receive toggled updates.
         if (m_modifierGroup) {
             for (QAction* groupAction : m_modifierGroup->actions()) {
                 if (groupAction != action && groupAction->isChecked()) {
-                    groupAction->blockSignals(true);
                     groupAction->setChecked(false);
-                    groupAction->blockSignals(false);
                 }
             }
         }
@@ -482,15 +515,6 @@ void cvSelectionToolController::onModifierChanged(QAction* action) {
                                 .arg(modeName));
             }
         }
-    } else {
-        // Action was unchecked - revert to default
-        if (m_manager) {
-            m_manager->setSelectionModifier(
-                    SelectionModifier::SELECTION_DEFAULT);
-            CVLog::PrintVerbose(
-                    "[cvSelectionToolController] Selection modifier: DEFAULT");
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------

@@ -11,9 +11,11 @@
 #include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
 
 #include <CVLog.h>
+#include <ecvViewTitleRegistry.h>
 #include <Converters/Cc2Vtk.h>
 #include <Shortcuts/ecvKeySequences.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Visualization/VtkVis.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
@@ -22,7 +24,7 @@
 #include <ecvPointCloud.h>
 
 #include <vtkCutter.h>
-#include <vtkOutlineFilter.h>
+#include <vtkOutlineSource.h>
 #include <vtkPlane.h>
 #include <vtkPlaneSource.h>
 #include <vtkPointData.h>
@@ -68,7 +70,6 @@
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesHelper.h>
 #include <vtkInteractorStyle.h>
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkPointGaussianMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkNew.h>
 #include <vtkProp.h>
@@ -88,14 +89,12 @@
 #include <vtkPlanes.h>
 #include <memory>
 #include <vtkPolyDataPlaneClipper.h>
-#include <vtkPointGaussianMapper.h>
 #include <vtkDataSetMapper.h>
 #include <vtkWeakPointer.h>
 #include <vtkAlgorithmOutput.h>
 
 #include <algorithm>
 #include <cmath>
-#include <unordered_map>
 #include <cstdio>
 
 static const char* kViewLabels[] = {"Top View", "Right Side View",
@@ -243,120 +242,6 @@ static void configureCameraOrientationRepresentation(
     rep->Modified();
 }
 
-namespace {
-
-constexpr float kPGTriangleScale = 3.0f;
-
-struct PointGaussianRestoreInfo {
-    vtkAlgorithmOutput* origConn = nullptr;
-    vtkSmartPointer<vtkPolyData> origPd;
-};
-
-std::unordered_map<vtkActor*, PointGaussianRestoreInfo> g_pgRestoreInfo;
-
-static vtkPolyData* resolveMapperPolyData(vtkMapper* mapper,
-                                          vtkAlgorithmOutput* conn) {
-    if (auto* pd = vtkPolyData::SafeDownCast(mapper->GetInput()))
-        return pd;
-    if (!conn) return nullptr;
-    auto* producer = conn->GetProducer();
-    if (!producer) return nullptr;
-    producer->Update();
-    return vtkPolyData::SafeDownCast(producer->GetOutputDataObject(0));
-}
-
-static vtkAlgorithmOutput* pointGaussianDisplayPort(vtkMapper* mapper,
-                                                      vtkPolyData*& sourcePd) {
-    sourcePd = nullptr;
-    if (!mapper) return nullptr;
-    vtkAlgorithmOutput* conn = mapper->GetInputConnection(0, 0);
-    sourcePd = resolveMapperPolyData(mapper, conn);
-    return conn;
-}
-
-static void configurePointGaussianMapper(vtkPointGaussianMapper* pgMapper,
-                                         double gaussianRadius) {
-    if (!pgMapper) return;
-    pgMapper->SetScaleFactor(gaussianRadius);
-    pgMapper->SetSplatShaderCode(nullptr);
-    pgMapper->SetTriangleScale(kPGTriangleScale);
-    pgMapper->EmissiveOff();
-    pgMapper->SetStatic(true);
-}
-
-static void clearPointGaussianCaches() {
-    g_pgRestoreInfo.clear();
-}
-
-}  // namespace
-
-static void applyPointGaussianMapper(vtkActor* actor, bool enable,
-                                     double gaussianRadius) {
-    if (!actor) return;
-    auto* mapper = actor->GetMapper();
-    if (!mapper) return;
-
-    if (enable) {
-        if (auto* existingPG = vtkPointGaussianMapper::SafeDownCast(mapper)) {
-            configurePointGaussianMapper(existingPG, gaussianRadius);
-            existingPG->Modified();
-            return;
-        }
-
-        vtkPolyData* sourcePd = nullptr;
-        vtkAlgorithmOutput* displayPort =
-                pointGaussianDisplayPort(mapper, sourcePd);
-        vtkAlgorithmOutput* conn = mapper->GetInputConnection(0, 0);
-
-        auto pgMapper = vtkSmartPointer<vtkPointGaussianMapper>::New();
-        if (displayPort)
-            pgMapper->SetInputConnection(displayPort);
-        else if (conn)
-            pgMapper->SetInputConnection(conn);
-        else if (sourcePd)
-            pgMapper->SetInputData(sourcePd);
-        else
-            return;
-
-        configurePointGaussianMapper(pgMapper, gaussianRadius);
-        pgMapper->SetScalarVisibility(mapper->GetScalarVisibility());
-        pgMapper->SetScalarMode(mapper->GetScalarMode());
-        if (mapper->GetLookupTable())
-            pgMapper->SetLookupTable(mapper->GetLookupTable());
-
-        PointGaussianRestoreInfo restore;
-        restore.origConn = conn;
-        if (!conn && sourcePd)
-            restore.origPd = sourcePd;
-        g_pgRestoreInfo[actor] = restore;
-
-        actor->SetMapper(pgMapper);
-    } else if (auto* pgMapper = vtkPointGaussianMapper::SafeDownCast(mapper)) {
-        auto stdMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        stdMapper->SetScalarVisibility(pgMapper->GetScalarVisibility());
-        stdMapper->SetScalarMode(pgMapper->GetScalarMode());
-        if (pgMapper->GetLookupTable())
-            stdMapper->SetLookupTable(pgMapper->GetLookupTable());
-
-        auto restoreIt = g_pgRestoreInfo.find(actor);
-        if (restoreIt != g_pgRestoreInfo.end()) {
-            if (restoreIt->second.origConn)
-                stdMapper->SetInputConnection(restoreIt->second.origConn);
-            else if (restoreIt->second.origPd)
-                stdMapper->SetInputData(restoreIt->second.origPd);
-            g_pgRestoreInfo.erase(restoreIt);
-        } else {
-            vtkAlgorithmOutput* conn = pgMapper->GetInputConnection(0, 0);
-            vtkPolyData* pd = vtkPolyData::SafeDownCast(pgMapper->GetInput());
-            if (conn)
-                stdMapper->SetInputConnection(conn);
-            else if (pd)
-                stdMapper->SetInputData(pd);
-        }
-        actor->SetMapper(stdMapper);
-    }
-}
-
 struct vtkOrthoSliceViewWidget::Impl {
     QVTKOpenGLNativeWidget* vtkWidget = nullptr;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
@@ -373,6 +258,7 @@ struct vtkOrthoSliceViewWidget::Impl {
     vtkSmartPointer<vtkActor> sliceActors3D[3];
     vtkSmartPointer<vtkActor> fullModelActor;
     vtkSmartPointer<vtkActor> outlineActor;
+    vtkSmartPointer<vtkOutlineSource> outlineSource;
     vtkSmartPointer<vtkActor> planeIndicators[3];
     vtkSmartPointer<vtkPlaneSource> planeSources[3];
     double planeInitCenter[3] = {0, 0, 0};
@@ -397,6 +283,9 @@ struct vtkOrthoSliceViewWidget::Impl {
 
 vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     : QWidget(parent), d(new Impl) {
+    m_viewTypeKey = QStringLiteral("Orthographic Slice View");
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -541,8 +430,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     m_reprCombo = new QComboBox(dispBar);
     m_reprCombo->addItems({tr("Slices"), tr("Surface"), tr("Wireframe"),
                            tr("Points"), tr("Surface With Edges"),
-                           tr("Feature Edges"), tr("Outline"),
-                           tr("Point Gaussian")});
+                           tr("Feature Edges"), tr("Outline")});
     m_reprCombo->setCurrentIndex(0);
     dispLayout->addWidget(m_reprCombo);
     connect(m_reprCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -807,6 +695,10 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     d->renderers[SIDE_VIEW]->SetViewport(0.5, 0.5, 1.0, 1.0);
     d->renderers[FRONT_VIEW]->SetViewport(0.0, 0.0, 0.5, 0.5);
     d->renderers[PERSPECTIVE_VIEW]->SetViewport(0.5, 0.0, 1.0, 0.5);
+    // ParaView vtkPVRenderView: scene on layer 0, orientation widgets on layer 1.
+    for (int i = 0; i < 4; ++i) {
+        d->renderers[i]->SetLayer(0);
+    }
 
     if (auto* iren = d->renderWindow->GetInteractor()) {
         auto style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
@@ -905,6 +797,10 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
 }
 
 vtkOrthoSliceViewWidget::~vtkOrthoSliceViewWidget() {
+    disconnectExternalHighlighter();
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
     if (d->cameraOrientWidget) {
         d->cameraOrientWidget->SetEnabled(0);
         d->cameraOrientWidget->SetInteractor(nullptr);
@@ -1180,13 +1076,16 @@ bool vtkOrthoSliceViewWidget::forwardMouseToInteractor(QMouseEvent* me,
     double dispXY[2];
     mapWidgetToRendererDisplay(me->pos(), ren, dispXY);
     const int evtX = static_cast<int>(dispXY[0]);
-    const int evtY =
-            static_cast<int>(winSize[1] - dispXY[1] - 1.0);
+    const int evtY = static_cast<int>(dispXY[1]);
 
-    auto* oldStyle = iren->GetInteractorStyle();
-    if (oldStyle) oldStyle->SetCurrentRenderer(ren);
+    // ParaView / VtkVis: disable interactor style so vtkCameraOrientationWidget
+    // receives press/move/release instead of trackball rotation.
+    vtkInteractorObserver* oldStyle = iren->GetInteractorStyle();
+    if (oldStyle) {
+        oldStyle->SetCurrentRenderer(ren);
+    }
     iren->SetInteractorStyle(nullptr);
-    iren->SetEventInformationFlipY(
+    iren->SetEventInformation(
             evtX, evtY, me->modifiers() & Qt::ControlModifier,
             me->modifiers() & Qt::ShiftModifier);
 
@@ -1215,7 +1114,14 @@ bool vtkOrthoSliceViewWidget::forwardMouseToInteractor(QMouseEvent* me,
             return false;
     }
     iren->SetInteractorStyle(oldStyle);
-    render();
+
+    if (d->cameraOrientWidget && d->cameraOrientWidget->GetEnabled()) {
+        d->cameraOrientWidget->Render();
+    }
+    if (d->vtkWidget)
+        d->vtkWidget->update();
+    else
+        render();
     return true;
 }
 
@@ -1245,8 +1151,10 @@ bool vtkOrthoSliceViewWidget::isInCameraOrientationWidget(
     const double renY1 = vp[3] * winSize[1];
     const double x0 = renX1 - size[0];
     const double y0 = renY1 - size[1];
-    return dispXY[0] >= x0 && dispXY[0] <= renX1 && dispXY[1] >= y0 &&
-           dispXY[1] <= renY1;
+    // Slightly inflate hit box (ParaView uses padding on the representation).
+    const double pad = std::max(8.0, static_cast<double>(size[0]) * 0.15);
+    return dispXY[0] >= x0 - pad && dispXY[0] <= renX1 + pad &&
+           dispXY[1] >= y0 - pad && dispXY[1] <= renY1 + pad;
 }
 
 void vtkOrthoSliceViewWidget::ensureOrientationWidgetsInitialized() {
@@ -1316,6 +1224,7 @@ void vtkOrthoSliceViewWidget::render() {
 
 void vtkOrthoSliceViewWidget::setGeometryBounds(const double bounds[6]) {
     for (int i = 0; i < 6; ++i) d->geomBounds[i] = bounds[i];
+    updateOutlineBounds();
     for (int i = 0; i < 4; ++i) {
         if (d->gridAxes[i]) {
             d->gridAxes[i]->SetGridBounds(bounds);
@@ -1334,6 +1243,43 @@ void vtkOrthoSliceViewWidget::setGeometryBounds(const double bounds[6]) {
     if (d->sliceAxes3D) d->sliceAxes3D->SetScale(sw);
 }
 
+void vtkOrthoSliceViewWidget::updateOutlineBounds() {
+    if (!d->outlineSource) return;
+    d->outlineSource->SetBounds(d->geomBounds);
+    d->outlineSource->Update();
+}
+
+void vtkOrthoSliceViewWidget::createOutlineActor() {
+    auto* perspectiveRen = d->renderers[PERSPECTIVE_VIEW].GetPointer();
+    if (!perspectiveRen) return;
+
+    if (d->outlineActor) {
+        perspectiveRen->RemoveActor(d->outlineActor);
+        d->outlineActor = nullptr;
+    }
+    d->outlineSource = nullptr;
+
+    d->outlineSource = vtkSmartPointer<vtkOutlineSource>::New();
+    d->outlineSource->SetBounds(d->geomBounds);
+
+    vtkNew<vtkPolyDataMapper> outMapper;
+    outMapper->SetInputConnection(d->outlineSource->GetOutputPort());
+
+    d->outlineActor = vtkSmartPointer<vtkActor>::New();
+    d->outlineActor->SetMapper(outMapper);
+    d->outlineActor->SetUseBounds(false);
+    d->outlineActor->GetProperty()->SetColor(1.0, 1.0, 1.0);
+    d->outlineActor->GetProperty()->SetLineWidth(1.0);
+    d->outlineActor->GetProperty()->SetRepresentationToWireframe();
+    d->outlineActor->GetProperty()->LightingOff();
+    d->outlineActor->GetProperty()->SetAmbient(1.0);
+    d->outlineActor->GetProperty()->SetDiffuse(0.0);
+    const bool showOutline =
+            m_showOutlineCheck && m_showOutlineCheck->isChecked();
+    d->outlineActor->SetVisibility(showOutline ? 1 : 0);
+    perspectiveRen->AddActor(d->outlineActor);
+}
+
 void vtkOrthoSliceViewWidget::addActorToAll(vtkProp* actor) {
     if (!actor) return;
     for (int i = 0; i < 4; ++i) {
@@ -1341,36 +1287,125 @@ void vtkOrthoSliceViewWidget::addActorToAll(vtkProp* actor) {
     }
 }
 
+void vtkOrthoSliceViewWidget::disconnectExternalHighlighter() {
+    m_externalHighlighterLinked = false;
+    QObject::disconnect(m_hlActorAddedConn);
+    QObject::disconnect(m_hlActorRemovedConn);
+    QObject::disconnect(m_hlClearedConn);
+    QObject::disconnect(m_hlOverlayConn);
+    m_hlActorAddedConn = {};
+    m_hlActorRemovedConn = {};
+    m_hlClearedConn = {};
+    m_hlOverlayConn = {};
+
+    auto* ren3D = d->renderers[PERSPECTIVE_VIEW].GetPointer();
+    for (auto it = m_externalHighlightClones.begin();
+         it != m_externalHighlightClones.end(); ++it) {
+        if (it.value() && ren3D) ren3D->RemoveActor(it.value());
+    }
+    m_externalHighlightClones.clear();
+}
+
 void vtkOrthoSliceViewWidget::connectExternalHighlighter(
         QObject* highlighter) {
+    disconnectExternalHighlighter();
+
     auto* hl = qobject_cast<cvSelectionHighlighter*>(highlighter);
     if (!hl) return;
+    m_externalHighlighterLinked = true;
     auto* ren3D = d->renderers[PERSPECTIVE_VIEW].GetPointer();
+
+    auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
+        if (!src) return nullptr;
+        auto clone = vtkSmartPointer<vtkActor>::New();
+        clone->ShallowCopy(src);
+        if (auto* srcMapper =
+                    vtkDataSetMapper::SafeDownCast(src->GetMapper())) {
+            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+            mapper->ShallowCopy(srcMapper);
+            clone->SetMapper(mapper);
+        }
+        clone->SetPickable(0);
+        return clone;
+    };
+
     auto safeUpdate = [this]() {
         if (d->vtkWidget && d->vtkWidget->isVisible()) d->vtkWidget->update();
     };
-    connect(hl, &cvSelectionHighlighter::highlightActorAdded, this,
-            [this, ren3D, safeUpdate](vtkActor* actor) {
-                if (actor && ren3D) {
-                    ren3D->AddActor(actor);
-                    applyDisplayProperties();
-                    safeUpdate();
-                }
+
+    auto removeClone = [this, ren3D](vtkActor* source) {
+        if (!source || !ren3D) return;
+        auto it = m_externalHighlightClones.find(source);
+        if (it == m_externalHighlightClones.end()) return;
+        if (it.value()) ren3D->RemoveActor(it.value());
+        m_externalHighlightClones.erase(it);
+    };
+
+    // SELECTED: selectionOverlayUpdated drives d->selectionHighlightActor.
+    m_hlActorAddedConn = connect(
+            hl, &cvSelectionHighlighter::highlightActorAdded, this,
+            [this, ren3D, cloneHighlightActor, safeUpdate,
+             removeClone](vtkActor* actor) {
+                if (!actor || !ren3D) return;
+                removeClone(actor);
+                auto clone = cloneHighlightActor(actor);
+                if (!clone) return;
+                ren3D->AddActor(clone);
+                m_externalHighlightClones.insert(actor, clone);
+                applyDisplayProperties();
+                safeUpdate();
             });
-    connect(hl, &cvSelectionHighlighter::highlightActorRemoved, this,
-            [this, ren3D, safeUpdate](vtkActor* actor) {
-                if (actor && ren3D) {
-                    ren3D->RemoveActor(actor);
-                    applyDisplayProperties();
-                    safeUpdate();
-                }
+    m_hlActorRemovedConn = connect(
+            hl, &cvSelectionHighlighter::highlightActorRemoved, this,
+            [this, removeClone, safeUpdate](vtkActor* actor) {
+                removeClone(actor);
+                applyDisplayProperties();
+                safeUpdate();
             });
-    connect(hl, &cvSelectionHighlighter::highlightsCleared, this,
-            [ren3D, safeUpdate, this]() {
+    m_hlClearedConn = connect(hl, &cvSelectionHighlighter::highlightsCleared,
+                              this, [this, ren3D, safeUpdate]() {
+                                  for (auto it = m_externalHighlightClones.begin();
+                                       it != m_externalHighlightClones.end();
+                                       ++it) {
+                                      if (it.value() && ren3D)
+                                          ren3D->RemoveActor(it.value());
+                                  }
+                                  m_externalHighlightClones.clear();
+                                  if (d->selectionHighlightActor && ren3D) {
+                                      ren3D->RemoveActor(
+                                              d->selectionHighlightActor);
+                                      d->selectionHighlightActor = nullptr;
+                                  }
+                                  safeUpdate();
+                              });
+
+    m_hlOverlayConn = connect(
+            hl, &cvSelectionHighlighter::selectionOverlayUpdated, this,
+            [this, ren3D, safeUpdate](vtkPolyData* poly, int kind) {
+                m_selectionOverlayKind = kind;
                 if (d->selectionHighlightActor && ren3D) {
                     ren3D->RemoveActor(d->selectionHighlightActor);
                     d->selectionHighlightActor = nullptr;
                 }
+                if (kind != cvSelectionHighlighter::SelectionOverlayNone &&
+                    ren3D) {
+                    d->selectionHighlightActor =
+                            cvSelectionHighlighter::createSelectionOverlayActor(
+                                    poly,
+                                    static_cast<cvSelectionHighlighter::
+                                                        SelectionOverlayKind>(
+                                            kind));
+                    if (d->selectionHighlightActor) {
+                        ren3D->AddActor(d->selectionHighlightActor);
+                    }
+                }
+                if (d->selectionHighlightActor) {
+                    cvSelectionHighlighter::styleSelectionOverlayProperty(
+                            d->selectionHighlightActor->GetProperty(),
+                            static_cast<cvSelectionHighlighter::
+                                                SelectionOverlayKind>(kind));
+                }
+                if (d->renderWindow) d->renderWindow->Render();
                 safeUpdate();
             });
 }
@@ -1425,15 +1460,16 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
              eventType == QEvent::MouseButtonRelease ||
              eventType == QEvent::MouseMove)) {
             auto* me = static_cast<QMouseEvent*>(event);
-            if (hitTestViewIndex(me->pos()) == PERSPECTIVE_VIEW &&
-                (isInCameraOrientationWidget(me->pos()) ||
-                 m_cameraWidgetCapturing)) {
-                if (eventType == QEvent::MouseButtonPress &&
-                    isInCameraOrientationWidget(me->pos()))
+            if (hitTestViewIndex(me->pos()) == PERSPECTIVE_VIEW) {
+                const bool overWidget =
+                        isInCameraOrientationWidget(me->pos());
+                if (eventType == QEvent::MouseButtonPress && overWidget)
                     m_cameraWidgetCapturing = true;
                 if (eventType == QEvent::MouseButtonRelease)
                     m_cameraWidgetCapturing = false;
-                return forwardMouseToInteractor(me, eventType);
+                if (overWidget || m_cameraWidgetCapturing) {
+                    return forwardMouseToInteractor(me, eventType);
+                }
             }
         }
         if (eventType == QEvent::MouseButtonPress ||
@@ -1441,7 +1477,8 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
             eventType == QEvent::MouseMove) {
             auto* me = static_cast<QMouseEvent*>(event);
             const int viewIdx = hitTestViewIndex(me->pos());
-            if (viewIdx == PERSPECTIVE_VIEW && orientationMarkerVisible()) {
+            if (viewIdx == PERSPECTIVE_VIEW && orientationMarkerVisible() &&
+                !isCameraOrientationWidgetShown()) {
                 activate3DInteractor();
                 return false;
             }
@@ -1543,7 +1580,7 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                         (d->vtkWidget->height() - 1 - me->pos().y()) * dpr);
 
                 auto* ren = d->renderers[PERSPECTIVE_VIEW].GetPointer();
-                if (ren && d->fullModelActor) {
+                if (ren && d->fullModelActor && !m_externalHighlighterLinked) {
                     if (d->selectionHighlightActor) {
                         d->renderers[PERSPECTIVE_VIEW]->RemoveActor(
                                 d->selectionHighlightActor);
@@ -1651,8 +1688,9 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 return true;
             }
             if (me->button() == Qt::LeftButton && viewIdx == PERSPECTIVE_VIEW &&
-                m_selectionMode == SEL_NONE &&
-                !isCameraOrientationWidgetShown()) {
+                m_selectionMode == SEL_NONE && !m_cameraWidgetCapturing &&
+                !isCameraOrientationWidgetShown() &&
+                !isInCameraOrientationWidget(me->pos())) {
                 m_rotating3D = true;
             }
             if (me->button() == Qt::RightButton && viewIdx >= 0 && viewIdx < 3) {
@@ -1911,6 +1949,8 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
     int ptSize = m_pointSizeSpin ? m_pointSizeSpin->value() : 2;
     double lineW = m_lineWidthSpin ? m_lineWidthSpin->value() : 1.0;
     int reprIdx = m_reprCombo ? m_reprCombo->currentIndex() : 0;
+    const bool reprChanged = (reprIdx != m_lastAppliedReprIdx);
+    m_lastAppliedReprIdx = reprIdx;
     bool noLight = m_disableLightingCheck && m_disableLightingCheck->isChecked();
     double diffuse = m_diffuseSlider ? m_diffuseSlider->value() / 100.0 : 1.0;
     int interpIdx = m_interpCombo ? m_interpCombo->currentIndex() : 1;
@@ -2123,7 +2163,6 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
             case 4: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOn(); break;
             case 5: prop->SetRepresentationToWireframe(); prop->EdgeVisibilityOn(); break;
             case 6: prop->SetRepresentationToWireframe(); prop->EdgeVisibilityOff(); break;
-            case 7: prop->SetRepresentationToPoints(); break;
             default: prop->SetRepresentationToSurface(); prop->EdgeVisibilityOff(); break;
         }
         applyLighting(prop);
@@ -2138,9 +2177,8 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
     };
 
     const bool showSlices = (reprIdx == 0);
-    const bool showSurface = (reprIdx >= 1 && reprIdx <= 5) || reprIdx == 7;
+    const bool showSurface = (reprIdx >= 1 && reprIdx <= 5);
     const bool showOutlineRepr = (reprIdx == 6);
-    const double pgRadius = std::max(1.0, static_cast<double>(ptSize));
 
     for (int v = 0; v < 4; ++v) {
         auto* actors = d->renderers[v]->GetActors();
@@ -2165,6 +2203,10 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
                     isBuiltIn = true;
             }
             if (isBuiltIn) continue;
+            if (d->selectionHighlightActor &&
+                a == d->selectionHighlightActor.GetPointer()) {
+                continue;
+            }
 
             if (v != PERSPECTIVE_VIEW) {
                 if (!isSliceActor2D(a)) continue;
@@ -2183,25 +2225,16 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
 
             if (isSurfaceModel3D(a)) {
                 a->SetVisibility(showSurface ? 1 : 0);
-                if (!showSurface) {
-                    applyPointGaussianMapper(a, false, pgRadius);
-                    continue;
-                }
+                if (!showSurface) continue;
 
                 auto* pdMapper = vtkPolyDataMapper::SafeDownCast(a->GetMapper());
                 applyColorToMapper(pdMapper, a);
                 applyNanColor(pdMapper);
-                applyPointGaussianMapper(a, reprIdx == 7, pgRadius);
                 auto* prop = a->GetProperty();
                 prop->SetOpacity(opacity);
                 prop->SetPointSize(ptSize);
                 prop->SetLineWidth(lineW);
-                if (reprIdx != 7) {
-                    applySurfaceRepr(prop);
-                } else {
-                    prop->SetRepresentationToPoints();
-                    applyLighting(prop);
-                }
+                applySurfaceRepr(prop);
                 continue;
             }
 
@@ -2245,14 +2278,12 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
         auto* prop = outline->GetProperty();
         prop->SetOpacity(opacity);
         prop->SetLineWidth(lineW > 0.0 ? lineW : 1.0);
+        prop->SetColor(1.0, 1.0, 1.0);
         prop->SetRepresentationToWireframe();
-        if (noLight) {
-            prop->LightingOff();
-            prop->SetAmbient(1.0);
-            prop->SetDiffuse(0.0);
-        } else {
-            applyLighting(prop);
-        }
+        prop->LightingOff();
+        prop->SetAmbient(1.0);
+        prop->SetDiffuse(0.0);
+        outline->SetUseBounds(false);
     };
     if (showOutlineRepr) {
         styleOutlineActor(d->outlineActor);
@@ -2260,19 +2291,9 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
             styleOutlineActor(rep->outlineActor3D());
     }
 
-    if (d->fullModelActor) {
-        d->fullModelActor->SetVisibility(showSurface ? 1 : 0);
-        applyPointGaussianMapper(d->fullModelActor, showSurface && reprIdx == 7,
-                                 pgRadius);
-    }
     if (d->outlineActor)
         d->outlineActor->SetVisibility(showOutlineRepr ? 1 : (showOutline ? 1 : 0));
     for (const auto& rep : d->sliceRepresentations) {
-        if (auto* surface = rep->surfaceActor3D()) {
-            surface->SetVisibility(showSurface ? 1 : 0);
-            applyPointGaussianMapper(surface, showSurface && reprIdx == 7,
-                                     pgRadius);
-        }
         if (auto* outline = rep->outlineActor3D())
             outline->SetVisibility(showOutlineRepr ? 1 : 0);
     }
@@ -2452,7 +2473,6 @@ void vtkOrthoSliceViewWidget::onSourceComboChanged(int index) {
 }
 
 void vtkOrthoSliceViewWidget::clearEntityDisplay() {
-    clearPointGaussianCaches();
     d->extraSlices.clear();
     d->sliceRepresentations.clear();
 
@@ -2488,6 +2508,7 @@ void vtkOrthoSliceViewWidget::clearEntityDisplay() {
     if (d->outlineActor) {
         d->renderers[PERSPECTIVE_VIEW]->RemoveActor(d->outlineActor);
         d->outlineActor = nullptr;
+        d->outlineSource = nullptr;
     }
     for (int i = 0; i < 3; ++i) {
         if (d->sliceActors[i]) {
@@ -2622,19 +2643,7 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
             d->fullModelActor->SetVisibility(1);
             d->renderers[PERSPECTIVE_VIEW]->AddActor(d->fullModelActor);
 
-            vtkNew<vtkOutlineFilter> outline;
-            outline->SetInputData(d->entityPolyData);
-            outline->Update();
-            vtkNew<vtkPolyDataMapper> outMapper;
-            outMapper->SetInputConnection(outline->GetOutputPort());
-            d->outlineActor = vtkSmartPointer<vtkActor>::New();
-            d->outlineActor->SetMapper(outMapper);
-            d->outlineActor->GetProperty()->SetColor(0.7, 0.7, 0.7);
-            d->outlineActor->GetProperty()->SetLineWidth(1.0);
-            bool showOutline = m_showOutlineCheck &&
-                               m_showOutlineCheck->isChecked();
-            d->outlineActor->SetVisibility(showOutline);
-            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->outlineActor);
+            createOutlineActor();
         }
 
         const double normals[3][3] = {{0,1,0}, {1,0,0}, {0,0,1}};
@@ -3089,6 +3098,7 @@ void vtkOrthoSliceViewWidget::toggleCameraOrientationWidget(bool visible) {
     if (!d->cameraOrientWidget) {
         d->cameraOrientWidget =
                 vtkSmartPointer<vtkCameraOrientationWidget>::New();
+        renderer->SetLayer(0);
         d->cameraOrientWidget->SetParentRenderer(renderer);
         d->cameraOrientWidget->SetInteractor(interactor);
         d->cameraOrientWidget->SetAnimate(false);
@@ -3100,11 +3110,13 @@ void vtkOrthoSliceViewWidget::toggleCameraOrientationWidget(bool visible) {
         }
     }
 
-    if (auto* rep = d->cameraOrientWidget->GetRepresentation())
-        rep->SetVisibility(visible ? 1 : 0);
-    d->cameraOrientWidget->SetEnabled(visible ? 1 : 0);
-    d->cameraOrientWidget->SetProcessEvents(visible ? 1 : 0);
-    if (visible) interactor->Enable();
+    // ParaView vtkPVRenderView uses CameraOrientationWidget->On()/Off().
+    if (visible) {
+        d->cameraOrientWidget->On();
+        interactor->Enable();
+    } else {
+        d->cameraOrientWidget->Off();
+    }
     activate3DInteractor();
     updateOrientationWidgetViewport();
     render();

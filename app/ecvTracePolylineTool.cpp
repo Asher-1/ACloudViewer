@@ -20,6 +20,8 @@
 
 // CV_DB_LIB
 #include <ecv2DViewportObject.h>
+#include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObjectCaster.h>
@@ -38,7 +40,42 @@
 // System
 #include <assert.h>
 
-#include <iostream>
+#ifdef USE_VTK_BACKEND
+#include <Visualization/vtkGLView.h>
+#endif
+
+namespace {
+
+ecvGenericGLDisplay* viewFromWidget(QWidget* win) {
+    return win ? ecvGenericGLDisplay::FromWidget(win) : nullptr;
+}
+
+ecvGenericGLDisplay* effectiveView() {
+    return ecvViewManager::instance().getEffectiveView();
+}
+
+ecvDisplayTools* displayTools() {
+    return ecvViewManager::instance().displayTools();
+}
+
+CCVector3 mouseToVtk2D(ecvGenericGLDisplay* view, int x, int y) {
+    if (!view) return CCVector3(0, 0, 0);
+    CCVector3d pos2D = view->toVtkCoordinates(x, y);
+    return CCVector3(static_cast<PointCoordinateType>(pos2D.x),
+                     static_cast<PointCoordinateType>(pos2D.y), 0);
+}
+
+CCVector3 point3DToVtk2D(ecvGenericGLDisplay* view, const CCVector3& P3D) {
+    if (!view) return CCVector3(0, 0, 0);
+    ccGLCameraParameters camera;
+    view->getGLCameraParameters(camera);
+    CCVector3d A2D;
+    camera.project(P3D, A2D);
+    return CCVector3(static_cast<PointCoordinateType>(A2D.x),
+                     static_cast<PointCoordinateType>(A2D.y), 0);
+}
+
+}  // namespace
 
 ccTracePolylineTool::SegmentGLParams::SegmentGLParams(int x, int y) {
     auto* view = ecvViewManager::instance().getEffectiveView();
@@ -267,15 +304,52 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
     assert(m_polyTip);
     assert(!m_poly3D);
 
+    ecvGenericGLDisplay* oldView = viewFromWidget(m_associatedWin);
+
     if (!ccOverlayDialog::linkWith(win)) {
         return false;
     }
 
+    if (oldView) {
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                  m_polyTip->getViewId()));
+#ifdef USE_VTK_BACKEND
+        if (auto* oldGlView = dynamic_cast<vtkGLView*>(oldView)) {
+            QObject::disconnect(oldGlView, nullptr, this, nullptr);
+        }
+#endif
+        if (m_polyTip) m_polyTip->setDisplay(nullptr);
+    }
+
+    ecvGenericGLDisplay* newView = viewFromWidget(win);
     ecvViewManager& vm = ecvViewManager::instance();
     connect(&vm, &ecvViewManager::rightButtonClicked, this,
-            &ccTracePolylineTool::closePolyLine, Qt::UniqueConnection);
+            [this](int x, int y) { closePolyLine(x, y); },
+            Qt::UniqueConnection);
     connect(&vm, &ecvViewManager::mouseMoved, this,
-            &ccTracePolylineTool::updatePolyLineTip, Qt::UniqueConnection);
+            [this](int x, int y, Qt::MouseButtons buttons) {
+                updatePolyLineTip(x, y, buttons);
+            },
+            Qt::UniqueConnection);
+
+#ifdef USE_VTK_BACKEND
+    auto bindGlView = [this](vtkGLView* glView) {
+        if (!glView) return;
+        QObject::connect(glView, SIGNAL(rightButtonClicked(int, int)), this,
+                         SLOT(closePolyLine(int, int)),
+                         Qt::UniqueConnection);
+        QObject::connect(glView, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
+                         this, SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)),
+                         Qt::UniqueConnection);
+    };
+    if (auto* glView = dynamic_cast<vtkGLView*>(newView)) {
+        bindGlView(glView);
+    }
+    if (auto* active = dynamic_cast<vtkGLView*>(vm.getActiveView())) {
+        if (active != dynamic_cast<vtkGLView*>(newView)) bindGlView(active);
+    }
+#endif
 
     return true;
 }
@@ -292,6 +366,18 @@ bool ccTracePolylineTool::start() {
         return false;
     }
 
+#ifdef USE_VTK_BACKEND
+    if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
+        QObject::connect(glView, SIGNAL(rightButtonClicked(int, int)), this,
+                         SLOT(closePolyLine(int, int)),
+                         Qt::UniqueConnection);
+        QObject::connect(glView, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
+                         this,
+                         SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)),
+                         Qt::UniqueConnection);
+    }
+#endif
+
     if (m_pickingHub) {
         m_pickingHub->removeListener(this);
     }
@@ -301,6 +387,18 @@ bool ccTracePolylineTool::start() {
                              ecvGenericGLDisplay::INTERACT_CTRL_PAN |
                              ecvGenericGLDisplay::INTERACT_SIG_MOUSE_MOVED);
     view->asWidget()->setCursor(Qt::CrossCursor);
+    view->asWidget()->setMouseTracking(true);
+
+    m_savedPivot = view->getViewportParameters().getPivotPoint();
+    if (const ecvViewContext* ctx = view->viewContext()) {
+        m_savedAutoPickPivot = ctx->autoPickPivotAtCenter;
+    } else {
+        m_savedAutoPickPivot = false;
+    }
+    m_hasSavedViewState = true;
+    view->setAutoPickPivotAtCenter(false);
+
+    m_polyTip->setDisplay(displayTools());
 
     snapSizeSpinBox->blockSignals(true);
     snapSizeSpinBox->setValue(s_defaultPickingRadius);
@@ -322,17 +420,44 @@ void ccTracePolylineTool::stop(bool accepted) {
         m_pickingHub->removeListener(this);
     }
 
-    auto* stopView = ecvViewManager::instance().getEffectiveView();
+    ecvViewManager& vm = ecvViewManager::instance();
+    QObject::disconnect(&vm, nullptr, this, nullptr);
+#ifdef USE_VTK_BACKEND
+    if (auto* glView = dynamic_cast<vtkGLView*>(vm.getActiveView())) {
+        QObject::disconnect(glView, nullptr, this, nullptr);
+    }
+    if (auto* effView = dynamic_cast<vtkGLView*>(vm.getEffectiveView())) {
+        if (effView != dynamic_cast<vtkGLView*>(vm.getActiveView())) {
+            QObject::disconnect(effView, nullptr, this, nullptr);
+        }
+    }
+#endif
+
+    auto* stopView = vm.getEffectiveView();
     if (stopView && stopView->asWidget()) {
-        ecvViewManager::instance().displayMessageOnActiveView(
+        vm.displayMessageOnActiveView(
                 "Polyline tracing [OFF]",
                 ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 2,
                 ecvGenericGLDisplay::MANUAL_SEGMENTATION_MESSAGE);
 
-        resetTip();
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                  m_polyTip->getViewId()));
+        if (m_poly3D) stopView->removeFromOwnDB(m_poly3D);
+
         stopView->setInteractionMode(
                 ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        stopView->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
         stopView->asWidget()->setCursor(Qt::ArrowCursor);
+        stopView->asWidget()->setMouseTracking(false);
+
+        if (m_hasSavedViewState) {
+            stopView->setAutoPickPivotAtCenter(m_savedAutoPickPivot);
+            stopView->setPivotPoint(m_savedPivot, true, false);
+            m_hasSavedViewState = false;
+        }
+
+        stopView->redraw(true, false);
     }
 
     s_defaultPickingRadius = snapSizeSpinBox->value();
@@ -344,113 +469,89 @@ void ccTracePolylineTool::stop(bool accepted) {
 void ccTracePolylineTool::updatePolyLineTip(int x,
                                             int y,
                                             Qt::MouseButtons buttons) {
-    if (!ecvViewManager::instance().activeWidget()) {
-        assert(false);
+    auto* view = effectiveView();
+    if (!view) {
         return;
     }
 
     if (buttons != Qt::NoButton) {
-        // nothing to do (just hide the tip)
         if (m_polyTip->isEnabled()) {
             m_polyTip->setEnabled(false);
-            updateTip();
+            ecvDisplayTools::RemoveWidgets(
+                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                      m_polyTip->getViewId()));
+            ecvDisplayTools::UpdateScreen();
         }
         return;
     }
 
     if (!m_poly3DVertices || m_poly3DVertices->size() == 0) {
-        // there should be at least one point already picked!
         return;
     }
 
     if (m_done) {
-        // when it is done do nothing
         return;
     }
 
     assert(m_polyTip && m_polyTipVertices && m_polyTipVertices->size() == 2);
 
-    // we replace the last point by the new one
-    {
-        CCVector3d pos2D(0, 0, 0);
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            pos2D = v->toVtkCoordinates(x, y);
-        }
-        CCVector3 P2D(static_cast<PointCoordinateType>(pos2D.x),
-                      static_cast<PointCoordinateType>(pos2D.y), 0);
+    CCVector3* lastP = const_cast<CCVector3*>(
+            m_polyTipVertices->getPointPersistentPtr(1));
+    *lastP = mouseToVtk2D(view, x, y);
 
-        CCVector3* lastP = const_cast<CCVector3*>(
-                m_polyTipVertices->getPointPersistentPtr(1));
-        *lastP = P2D;
-    }
-
-    // just in case (e.g. if the view has been rotated or zoomed)
-    // we also update the first vertex position!
-    {
-        const CCVector3* P3D =
-                m_poly3DVertices->getPoint(m_poly3DVertices->size() - 1);
-
-        ccGLCameraParameters camera;
-        if (auto* v = ecvViewManager::instance().getEffectiveView())
-            v->getGLCameraParameters(camera);
-
-        CCVector3d A2D;
-        camera.project(*P3D, A2D);
-
-        CCVector3* firstP = const_cast<CCVector3*>(
-                m_polyTipVertices->getPointPersistentPtr(0));
-        *firstP = CCVector3(
-                static_cast<PointCoordinateType>(
-                        A2D.x),  // we convert A2D to centered coordinates (no
-                                 // need to apply high DPI scale or anything!)
-                static_cast<PointCoordinateType>(A2D.y), 0);
-    }
+    const CCVector3* P3D =
+            m_poly3DVertices->getPoint(m_poly3DVertices->size() - 1);
+    CCVector3* firstP = const_cast<CCVector3*>(
+            m_polyTipVertices->getPointPersistentPtr(0));
+    *firstP = point3DToVtk2D(view, *P3D);
 
     m_polyTip->setEnabled(true);
-
-    updateTip();
+    ecvDisplayTools::RemoveWidgets(
+            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                              m_polyTip->getViewId()));
+    ecvDisplayTools::DrawWidgets(
+            WIDGETS_PARAMETER(m_polyTip, WIDGETS_TYPE::WIDGET_POLYLINE_2D),
+            false);
+    view->redraw(true, false);
 }
 
 void ccTracePolylineTool::onItemPicked(const PickedItem& pi) {
-    if (!ecvViewManager::instance().activeWidget()) {
+    auto* view = pi.pickView;
+    if (!view) view = ecvViewManager::instance().getActiveView();
+    if (!view) view = ecvViewManager::instance().getEffectiveView();
+    if (!view) {
         assert(false);
         return;
     }
 
     if (!pi.entity) {
-        // means that the mouse has been clicked but no point was found!
         return;
-    } else {
-        // avoid rendering this entity again.
-        pi.entity->setRedraw(false);
     }
 
-    // if the 3D polyline doesn't exist yet, we create it
     if (!m_poly3D || !m_poly3DVertices) {
         m_poly3DVertices = new ccPointCloud("Vertices");
         m_poly3DVertices->setEnabled(false);
+        m_poly3DVertices->setDisplay(view);
 
         m_poly3D = new ccPolyline(m_poly3DVertices);
         m_poly3D->setTempColor(ecvColor::green);
         m_poly3D->set2DMode(false);
         m_poly3D->addChild(m_poly3DVertices);
+        m_poly3D->setDisplay(view);
         m_poly3D->setWidth(
                 widthSpinBox->value() < 2
                         ? 0
-                        : widthSpinBox->value());  //'1' is equivalent to the
-                                                   // default line size
+                        : widthSpinBox->value());
 
         ccGenericPointCloud* cloud =
                 ccHObjectCaster::ToGenericPointCloud(pi.entity);
         if (cloud) {
-            // copy the first clicked entity's global shift & scale
             m_poly3D->setGlobalShift(cloud->getGlobalShift());
             m_poly3D->setGlobalScale(cloud->getGlobalScale());
         }
 
-        m_segmentParams.resize(0);  // just in case
-
-        // effective view: getEffectiveView()->addToOwnDB(m_poly3D);
+        m_segmentParams.resize(0);
+        view->addToOwnDB(m_poly3D);
     }
 
     // try to add one more point
@@ -471,22 +572,21 @@ void ccTracePolylineTool::onItemPicked(const PickedItem& pi) {
     m_poly3D->addPointIndex(m_poly3DVertices->size() - 1);
     m_segmentParams.emplace_back(pi.clickPoint.x(), pi.clickPoint.y());
 
-    // we replace the first point of the tip by this new point
-    {
-        CCVector3d pos2D(0, 0, 0);
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            pos2D = v->toVtkCoordinates(pi.clickPoint.x(), pi.clickPoint.y());
-        }
-        CCVector3 P2D(static_cast<PointCoordinateType>(pos2D.x),
-                      static_cast<PointCoordinateType>(pos2D.y), 0);
+    CCVector3* firstTipPoint = const_cast<CCVector3*>(
+            m_polyTipVertices->getPointPersistentPtr(0));
+    *firstTipPoint =
+            mouseToVtk2D(view, pi.clickPoint.x(), pi.clickPoint.y());
+    m_polyTip->setEnabled(false);
+    ecvDisplayTools::RemoveWidgets(
+            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                              m_polyTip->getViewId()));
 
-        CCVector3* firstTipPoint = const_cast<CCVector3*>(
-                m_polyTipVertices->getPointPersistentPtr(0));
-        *firstTipPoint = P2D;
-        m_polyTip->setEnabled(false);  // don't need to display it for now
+    view->redraw(false, true);
+
+    if (m_poly3D && m_poly3D->size() >= 2 && !m_done) {
+        saveToolButton->setEnabled(true);
+        resetToolButton->setEnabled(true);
     }
-
-    updatePoly3D();
 }
 
 void ccTracePolylineTool::closePolyLine(int, int) {
@@ -501,11 +601,9 @@ void ccTracePolylineTool::closePolyLine(int, int) {
         // discard this polyline
         resetLine();
     } else {
-        // hide the tip
         if (m_polyTip) {
             m_polyTip->setEnabled(false);
         }
-        // update the GUI
         validButton->setEnabled(true);
         saveToolButton->setEnabled(true);
         resetToolButton->setEnabled(true);
@@ -513,39 +611,41 @@ void ccTracePolylineTool::closePolyLine(int, int) {
         if (m_pickingHub) {
             m_pickingHub->removeListener(this);
         }
-        if (auto* v = ecvViewManager::instance().getEffectiveView())
+        auto* v = effectiveView();
+        if (v) {
             v->setPickingMode(ecvGenericGLDisplay::NO_PICKING);
+        }
         m_done = true;
 
-        updateTip();
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                  m_polyTip->getViewId()));
+        if (v) v->redraw(true, false);
     }
 }
 
 void ccTracePolylineTool::restart(bool reset) {
+    auto* view = effectiveView();
     if (m_poly3D) {
         if (reset) {
-            // discard this polyline
-            resetPoly3D();
+            if (view) view->removeFromOwnDB(m_poly3D);
 
             if (m_polyTip) {
-                // hide the tip
                 m_polyTip->setEnabled(false);
+                ecvDisplayTools::RemoveWidgets(
+                        WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                          m_polyTip->getViewId()));
             }
 
             delete m_poly3D;
             m_segmentParams.resize(0);
-            // delete m_poly3DVertices;
             m_poly3D = nullptr;
             m_poly3DVertices = nullptr;
-        } else {
-            if (m_polyTip) {
-                // show the tip
-                m_polyTip->setEnabled(true);
-            }
+        } else if (m_polyTip) {
+            m_polyTip->setEnabled(true);
         }
     }
 
-    // enable picking
     if (m_pickingHub &&
         !m_pickingHub->addListener(
                 this, true /*, true, ecvGenericGLDisplay::POINT_PICKING*/)) {
@@ -554,9 +654,7 @@ void ccTracePolylineTool::restart(bool reset) {
                 "it first.");
     }
 
-    if (m_polyTip) {
-        updateTip();
-    }
+    if (view) view->redraw(false, false);
 
     validButton->setEnabled(false);
     saveToolButton->setEnabled(false);
@@ -570,12 +668,13 @@ void ccTracePolylineTool::exportLine() {
         return;
     }
 
+    auto* view = effectiveView();
+    if (view) view->removeFromOwnDB(m_poly3D);
+
     unsigned overSampling = static_cast<unsigned>(oversampleSpinBox->value());
     if (overSampling > 1) {
         ccPolyline* poly = polylineOverSampling(overSampling);
         if (poly) {
-            resetPoly3D();
-
             delete m_poly3D;
             m_segmentParams.resize(0);
             m_poly3DVertices = nullptr;
@@ -585,6 +684,7 @@ void ccTracePolylineTool::exportLine() {
 
     m_poly3D->setTempColor(ecvColor::green);
     m_poly3D->setColor(ecvColor::green);
+    if (view) m_poly3D->setDisplay(view);
     if (MainWindow::TheInstance()) {
         MainWindow::TheInstance()->addToDB(m_poly3D);
     } else {
@@ -595,7 +695,7 @@ void ccTracePolylineTool::exportLine() {
     m_segmentParams.resize(0);
     m_poly3DVertices = nullptr;
 
-    resetLine();  // to update the GUI
+    resetLine();
 }
 
 void ccTracePolylineTool::apply() {
@@ -616,53 +716,39 @@ void ccTracePolylineTool::onWidthSizeChanged(int width) {
     if (m_polyTip) {
         m_polyTip->setWidth(width);
     }
-
-    if (ecvViewManager::instance().activeWidget()) {
-        if (m_poly3D) {
-            updatePoly3D();
-        }
-        if (m_polyTip) {
-            updateTip();
-        }
+    if (auto* v = effectiveView()) {
+        v->redraw(m_poly3D == nullptr, false);
     }
 }
 
 void ccTracePolylineTool::resetPoly3D() {
-    if (ecvViewManager::instance().activeWidget()) {
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            v->removeWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE,
-                                               m_poly3D->getViewId()));
-            v->refresh();
-        }
+    if (auto* v = effectiveView()) {
+        if (m_poly3D) v->removeFromOwnDB(m_poly3D);
     }
 }
 
 void ccTracePolylineTool::updatePoly3D() {
-    if (ecvViewManager::instance().activeWidget()) {
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            v->drawWidgets(
-                    WIDGETS_PARAMETER(m_poly3D, WIDGETS_TYPE::WIDGET_POLYLINE));
-            v->refresh();
-        }
-    }
+    if (auto* v = effectiveView()) v->redraw(false, false);
 }
 
 void ccTracePolylineTool::resetTip() {
-    if (ecvViewManager::instance().activeWidget()) {
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            v->removeWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE,
-                                               m_polyTip->getViewId()));
-            v->refresh();
-        }
-    }
+    ecvDisplayTools::RemoveWidgets(
+            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                              m_polyTip->getViewId()));
 }
 
 void ccTracePolylineTool::updateTip() {
-    if (ecvViewManager::instance().activeWidget()) {
-        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-            v->drawWidgets(WIDGETS_PARAMETER(m_polyTip,
-                                             WIDGETS_TYPE::WIDGET_POLYLINE));
-            v->refresh();
-        }
+    if (m_polyTip && m_polyTip->isEnabled()) {
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                  m_polyTip->getViewId()));
+        ecvDisplayTools::DrawWidgets(
+                WIDGETS_PARAMETER(m_polyTip, WIDGETS_TYPE::WIDGET_POLYLINE_2D),
+                true);
+    } else {
+        ecvDisplayTools::RemoveWidgets(
+                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
+                                  m_polyTip->getViewId()));
+        ecvDisplayTools::UpdateScreen();
     }
 }

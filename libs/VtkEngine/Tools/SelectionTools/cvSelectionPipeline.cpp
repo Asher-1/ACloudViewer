@@ -60,11 +60,50 @@
 #include <QMap>
 
 //-----------------------------------------------------------------------------
+namespace {
+
+// Expand thin/single-pixel rubber bands so HW selection captures sub-pixel points.
+void normalizeSelectionRegion(int region[4], bool forPoints,
+                              unsigned int pointPickingRadius) {
+    int x0 = std::min(region[0], region[2]);
+    int x1 = std::max(region[0], region[2]);
+    int y0 = std::min(region[1], region[3]);
+    int y1 = std::max(region[1], region[3]);
+
+    constexpr int kMinSpan = 2;
+    if (x1 - x0 < kMinSpan) {
+        const int cx = (x0 + x1) / 2;
+        x0 = cx - kMinSpan / 2;
+        x1 = cx + kMinSpan / 2;
+    }
+    if (y1 - y0 < kMinSpan) {
+        const int cy = (y0 + y1) / 2;
+        y0 = cy - kMinSpan / 2;
+        y1 = cy + kMinSpan / 2;
+    }
+
+    if (forPoints && pointPickingRadius > 0) {
+        int pad = static_cast<int>(pointPickingRadius / 8);
+        pad = std::max(1, std::min(pad, 8));
+        x0 -= pad;
+        y0 -= pad;
+        x1 += pad;
+        y1 += pad;
+    }
+
+    region[0] = x0;
+    region[1] = y0;
+    region[2] = x1;
+    region[3] = y1;
+}
+
+}  // namespace
+
 cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
     : QObject(parent),
       m_viewer(nullptr),
       m_renderer(nullptr),
-      m_cachingEnabled(true),
+      m_cachingEnabled(false),
       m_cacheHits(0),
       m_cacheMisses(0) {
     // CVLog::PrintVerbose("[cvSelectionPipeline] Created");
@@ -196,6 +235,15 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         return nullptr;
     }
 
+    FieldAssociation fieldAssoc = getFieldAssociation(type);
+    int bbox[4] = {minX, minY, maxX, maxY};
+    normalizeSelectionRegion(
+            bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS, m_pointPickingRadius);
+    minX = bbox[0];
+    minY = bbox[1];
+    maxX = bbox[2];
+    maxY = bbox[3];
+
     // Step 2: Get render window
     vtkRenderWindow* renderWindow = m_viewer->getRenderWindow();
     if (!renderWindow) {
@@ -214,7 +262,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     m_hardwareSelector->SetArea(minX, minY, maxX, maxY);
 
     // Set field association
-    FieldAssociation fieldAssoc = getFieldAssociation(type);
     if (fieldAssoc == FIELD_ASSOCIATION_CELLS) {
         m_hardwareSelector->SetFieldAssociation(
                 vtkDataObject::FIELD_ASSOCIATION_CELLS);
@@ -330,6 +377,13 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
     }
 
     if (merged->GetNumberOfTuples() == 0) {
+        CVLog::Print(
+                QString("[cvSelectionPipeline] %1 selection nodes but 0 IDs "
+                        "for field=%2 (check field association)")
+                        .arg(numNodes)
+                        .arg(targetFieldType == vtkSelectionNode::CELL
+                                     ? "CELL"
+                                     : "POINT"));
         return nullptr;
     }
 
@@ -574,6 +628,9 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     }
 
     if (!m_viewer || !m_renderer) {
+        CVLog::Print(
+                "[cvSelectionPipeline] performHardwareSelection: no "
+                "viewer/renderer");
         return nullptr;
     }
 
@@ -588,12 +645,10 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // origin at bottom-left, Y increases upward.
     // NO coordinate conversion needed here!
 
-    // Ensure region is properly ordered (x1 <= x2, y1 <= y2)
-    int vtk_region[4];
-    vtk_region[0] = std::min(region[0], region[2]);  // X1
-    vtk_region[1] = std::min(region[1], region[3]);  // Y1
-    vtk_region[2] = std::max(region[0], region[2]);  // X2
-    vtk_region[3] = std::max(region[1], region[3]);  // Y2
+    int vtk_region[4] = {region[0], region[1], region[2], region[3]};
+    normalizeSelectionRegion(
+            vtk_region,
+            fieldAssociation == FIELD_ASSOCIATION_POINTS, m_pointPickingRadius);
 
     CVLog::PrintVerbose(QString("[cvSelectionPipeline] Selection region: "
                                 "Input[%1,%2,%3,%4] -> Normalized[%5,%6,%7,%8]")
@@ -626,6 +681,10 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // Configure selector
     m_hardwareSelector->SetRenderer(m_renderer);
 
+    // ParaView vtkPVRenderView::PrepareSelect: render full scene before HW pick
+    m_hardwareSelector->Modified();
+    m_viewer->UpdateScreen();
+
     // Set field association
     if (fieldAssociation == FIELD_ASSOCIATION_CELLS) {
         m_hardwareSelector->SetFieldAssociation(
@@ -656,9 +715,42 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     renderWindow->SetSwapBuffers(previousSwapBuffers);
 
     if (!selection) {
-        CVLog::Warning(
+        CVLog::Print(
                 "[cvSelectionPipeline] cvHardwareSelector returned null");
         return nullptr;
+    }
+
+    if (selection->GetNumberOfNodes() == 0) {
+        int pickableActors = 0;
+        if (m_renderer) {
+            vtkPropCollection* props = m_renderer->GetViewProps();
+            if (props) {
+                props->InitTraversal();
+                while (vtkProp* prop = props->GetNextProp()) {
+                    auto* actor = vtkActor::SafeDownCast(prop);
+                    if (actor && actor->GetVisibility() && actor->GetPickable())
+                        ++pickableActors;
+                }
+            }
+        }
+        int* renSize = m_renderer ? m_renderer->GetSize() : nullptr;
+        int* renOrigin = m_renderer ? m_renderer->GetOrigin() : nullptr;
+        CVLog::Print(
+                QString("[cvSelectionPipeline] HW selection empty: region=[%1,%2,"
+                        "%3,%4] renSize=%5x%6 origin=(%7,%8) pickableActors=%9 "
+                        "field=%10")
+                        .arg(vtk_region[0])
+                        .arg(vtk_region[1])
+                        .arg(vtk_region[2])
+                        .arg(vtk_region[3])
+                        .arg(renSize ? renSize[0] : -1)
+                        .arg(renSize ? renSize[1] : -1)
+                        .arg(renOrigin ? renOrigin[0] : -1)
+                        .arg(renOrigin ? renOrigin[1] : -1)
+                        .arg(pickableActors)
+                        .arg(fieldAssociation == FIELD_ASSOCIATION_CELLS
+                                     ? "CELLS"
+                                     : "POINTS"));
     }
 
     // Log result (debug level - this is called frequently during hover)
@@ -666,9 +758,13 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
         vtkSelectionNode* node = selection->GetNode(0);
         if (node && node->GetSelectionList()) {
             vtkIdType numIds = node->GetSelectionList()->GetNumberOfTuples();
-            CVLog::PrintVerbose(
-                    QString("[cvSelectionPipeline] Selection completed: %1 IDs")
-                            .arg(numIds));
+            CVLog::Print(
+                    QString("[cvSelectionPipeline] HW selection OK: %1 IDs "
+                            "field=%2")
+                            .arg(numIds)
+                            .arg(fieldAssociation == FIELD_ASSOCIATION_CELLS
+                                         ? "CELLS"
+                                         : "POINTS"));
         }
     }
 
@@ -1100,21 +1196,42 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
 //-----------------------------------------------------------------------------
 
 cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
+    CVLog::Print(
+            QString("[cvSelectionPipeline] selectCellsOnSurface region=[%1,%2,"
+                      "%3,%4]")
+                    .arg(region[0])
+                    .arg(region[1])
+                    .arg(region[2])
+                    .arg(region[3]));
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_CELLS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_CELLS,
-                                  "selectCellsOnSurface");
+    cvSelectionData result = convertSelectionToData(
+            vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsOnSurface");
+    CVLog::Print(QString("[cvSelectionPipeline] selectCellsOnSurface -> %1 ids")
+                         .arg(result.count()));
+    return result;
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
         const int region[4]) {
+    CVLog::Print(
+            QString("[cvSelectionPipeline] selectPointsOnSurface region=[%1,%2,"
+                      "%3,%4]")
+                    .arg(region[0])
+                    .arg(region[1])
+                    .arg(region[2])
+                    .arg(region[3]));
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_POINTS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS,
-                                  "selectPointsOnSurface");
+    cvSelectionData result = convertSelectionToData(
+            vtkSel, FIELD_ASSOCIATION_POINTS, "selectPointsOnSurface");
+    CVLog::Print(
+            QString("[cvSelectionPipeline] selectPointsOnSurface -> %1 ids")
+                    .arg(result.count()));
+    return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -1245,7 +1362,7 @@ cvSelectionData cvSelectionPipeline::combineSelections(
     }
 
     if (sel1.isEmpty()) {
-        // ParaView: when first selection is empty, result is second selection
+        // ParaView vtkSMSelectionHelper::CombineSelection: empty sel1 → sel2
         return sel2;
     }
 
