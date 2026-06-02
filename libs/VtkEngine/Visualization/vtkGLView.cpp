@@ -77,6 +77,8 @@ public:
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
+#include <ecvViewTitleRegistry.h>
+
 #include "VtkDisplayTools.h"
 #include "VtkVis.h"
 
@@ -84,7 +86,8 @@ int vtkGLView::s_nextWindowID = 1000;
 
 vtkGLView::vtkGLView(QMainWindow* parent) : QObject(parent) {
     m_uniqueID = ++s_nextWindowID;
-    m_title = QString("RenderView%1").arg(m_uniqueID);
+    m_viewTypeKey = QStringLiteral("Render View");
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
     m_ctx.viewportParams.viewMat.toIdentity();
     m_ctx.viewportParams.setCameraCenter(CCVector3d(0.0, 0.0, 1.0));
 
@@ -93,7 +96,19 @@ vtkGLView::vtkGLView(QMainWindow* parent) : QObject(parent) {
     m_timer.start();
 }
 
+void vtkGLView::setViewXmlLabel(const QString& xmlLabel) {
+    if (xmlLabel.isEmpty() || xmlLabel == m_viewTypeKey) return;
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
+    m_viewTypeKey = xmlLabel;
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
+}
+
 vtkGLView::~vtkGLView() {
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
     emit aboutToClose(this);
 
     if (m_vtkWidget) {
@@ -109,6 +124,9 @@ vtkGLView::~vtkGLView() {
 
     if (m_vtkWidget) {
         ecvGenericGLDisplay::UnregisterGLDisplay(m_vtkWidget);
+        m_vtkWidget->setParent(nullptr);
+        m_vtkWidget->deleteLater();
+        m_vtkWidget = nullptr;
     }
 
     delete m_hotZone;
@@ -146,6 +164,8 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
     m_vtkWidget->setOwnerView(this);
     m_vtkWidget->connectSignalsTo(m_displayTools);
+    connect(m_vtkWidget, &QObject::destroyed, this,
+            [this]() { m_vtkWidget = nullptr; });
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
     auto renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -187,57 +207,6 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
         syncVtkCameraToContext();
-
-        // Diagnostic: compare VTK's projection with ours
-        static int s_vtkProjLogCount = 0;
-        if (s_vtkProjLogCount < 3 && m_visualizer3D && m_globalDBRoot) {
-            vtkRenderer* ren = m_visualizer3D->getCurrentRenderer();
-            if (ren) {
-                const int* renSz = ren->GetSize();
-                CVLog::PrintDebug(
-                        QString("[VtkProjTest] RendererSize=(%1,%2) "
-                                "WidgetSize=(%3,%4) DPR=%5 "
-                                "glViewport=(%6,%7)")
-                                .arg(renSz[0])
-                                .arg(renSz[1])
-                                .arg(m_vtkWidget ? m_vtkWidget->width() : -1)
-                                .arg(m_vtkWidget ? m_vtkWidget->height() : -1)
-                                .arg(m_vtkWidget
-                                             ? m_vtkWidget->devicePixelRatioF()
-                                             : -1)
-                                .arg(m_ctx.glViewport.width())
-                                .arg(m_ctx.glViewport.height()));
-                ccHObject::Container clouds;
-                m_globalDBRoot->filterChildren(clouds, true,
-                                               CV_TYPES::POINT_CLOUD, true);
-                if (!clouds.empty()) {
-                    auto* cloud = static_cast<ccGenericPointCloud*>(clouds[0]);
-                    if (cloud->size() > 0) {
-                        const CCVector3* pt = cloud->getPoint(0);
-                        ren->SetWorldPoint(pt->x, pt->y, pt->z, 1.0);
-                        ren->WorldToDisplay();
-                        double* disp = ren->GetDisplayPoint();
-                        ccGLCameraParameters cam;
-                        getGLCameraParameters(cam);
-                        CCVector3d ourProj;
-                        cam.project(*pt, ourProj);
-                        CVLog::PrintDebug(QString("[VtkProjTest] pt=(%1,%2,%3) "
-                                                  "VTK_disp=(%4,%5,%6) "
-                                                  "Our_proj=(%7,%8,%9)")
-                                                  .arg(pt->x, 0, 'g', 6)
-                                                  .arg(pt->y, 0, 'g', 6)
-                                                  .arg(pt->z, 0, 'g', 6)
-                                                  .arg(disp[0], 0, 'g', 6)
-                                                  .arg(disp[1], 0, 'g', 6)
-                                                  .arg(disp[2], 0, 'g', 6)
-                                                  .arg(ourProj.x, 0, 'g', 6)
-                                                  .arg(ourProj.y, 0, 'g', 6)
-                                                  .arg(ourProj.z, 0, 'g', 6));
-                        ++s_vtkProjLogCount;
-                    }
-                }
-            }
-        }
 
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
@@ -436,6 +405,7 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     }
 
     if (m_vtkWidget) {
+        m_vtkWidget->makeCurrent();
         if (auto* rw = m_vtkWidget->GetRenderWindow()) {
             rw->Render();
         }
@@ -1256,7 +1226,15 @@ CCVector3d vtkGLView::getCurrentViewDir() const {
 void vtkGLView::setPivotPoint(const CCVector3d& P,
                               bool autoRedraw,
                               bool verbose) {
-    if (m_displayTools) m_displayTools->setPivotPoint(P, autoRedraw, verbose);
+    Q_UNUSED(verbose);
+    m_ctx.viewportParams.setPivotPoint(P, true);
+    m_ctx.autoPivotCandidate = P;
+    if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+        vis->setCenterOfRotation(P.x, P.y, P.z);
+    }
+    if (autoRedraw) {
+        redraw(false, false);
+    }
 }
 
 void vtkGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {

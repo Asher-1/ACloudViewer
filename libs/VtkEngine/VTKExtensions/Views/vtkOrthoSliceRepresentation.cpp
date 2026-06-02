@@ -15,7 +15,7 @@
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkNew.h>
-#include <vtkOutlineFilter.h>
+#include <vtkOutlineSource.h>
 #include <vtkTriangleFilter.h>
 
 namespace {
@@ -80,6 +80,7 @@ struct vtkOrthoSliceRepresentation::Impl {
     vtkSmartPointer<vtkActor> actors3D[3];
     vtkSmartPointer<vtkActor> surfaceActor3D;
     vtkSmartPointer<vtkActor> outlineActor3D;
+    vtkSmartPointer<vtkOutlineSource> outlineSource;
     double sliceOrigin[3] = {0, 0, 0};
 
     static const double kNormals[3][3];
@@ -96,6 +97,7 @@ void vtkOrthoSliceRepresentation::setInputPolyData(vtkPolyData* input) {
     d->input = input;
     d->surfaceActor3D = nullptr;
     d->outlineActor3D = nullptr;
+    d->outlineSource = nullptr;
 }
 
 void vtkOrthoSliceRepresentation::ensureSurfaceActor() {
@@ -137,17 +139,23 @@ void vtkOrthoSliceRepresentation::ensureOutlineActor() {
     if (!d->input || d->input->GetNumberOfPoints() == 0) return;
     if (d->outlineActor3D) return;
 
-    vtkNew<vtkOutlineFilter> outline;
-    outline->SetInputData(d->input);
-    outline->Update();
+    double bounds[6];
+    d->input->GetBounds(bounds);
+
+    d->outlineSource = vtkSmartPointer<vtkOutlineSource>::New();
+    d->outlineSource->SetBounds(bounds);
+
     vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputConnection(outline->GetOutputPort());
+    mapper->SetInputConnection(d->outlineSource->GetOutputPort());
     d->outlineActor3D = vtkSmartPointer<vtkActor>::New();
     d->outlineActor3D->SetMapper(mapper);
-    d->outlineActor3D->GetProperty()->SetColor(0.7, 0.7, 0.7);
+    d->outlineActor3D->SetUseBounds(false);
+    d->outlineActor3D->GetProperty()->SetColor(1.0, 1.0, 1.0);
     d->outlineActor3D->GetProperty()->SetLineWidth(1.0);
     d->outlineActor3D->GetProperty()->SetRepresentationToWireframe();
     d->outlineActor3D->GetProperty()->LightingOff();
+    d->outlineActor3D->GetProperty()->SetAmbient(1.0);
+    d->outlineActor3D->GetProperty()->SetDiffuse(0.0);
     d->outlineActor3D->SetVisibility(0);
 }
 

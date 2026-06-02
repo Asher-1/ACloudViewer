@@ -754,14 +754,40 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         }
     };
 
-    auto createEDLViewForCell = [this, location, createRenderViewForCell]() {
-        createRenderViewForCell();
-        auto* view =
-                dynamic_cast<vtkGLView*>(m_layout ? m_layout->getView(location)
-                                                  : nullptr);
-        if (view) {
-            view->enableEDL(true);
+    auto createEDLViewForCell = [this, location]() {
+        if (!m_viewFactory || !m_layout) return;
+        auto* view = m_viewFactory();
+        if (!view) return;
 
+        view->setViewXmlLabel(QStringLiteral("Eye Dome Lighting"));
+
+        ecvGenericGLDisplay* siblingView = nullptr;
+        int parentIdx = ecvViewLayoutProxy::parent(location);
+        if (parentIdx >= 0) {
+            int sibling =
+                    (location == ecvViewLayoutProxy::firstChild(parentIdx))
+                            ? ecvViewLayoutProxy::secondChild(parentIdx)
+                            : ecvViewLayoutProxy::firstChild(parentIdx);
+            siblingView = m_layout->getView(sibling);
+        }
+        if (!siblingView) {
+            auto views = m_layout->getViews();
+            for (auto* v : views) {
+                if (v) {
+                    siblingView = v;
+                    break;
+                }
+            }
+        }
+
+        m_layout->assignView(location, view);
+        if (siblingView) {
+            copyRepresentationsOnSplit(siblingView, view);
+        }
+        ecvViewManager::instance().setActiveView(view);
+        view->enableEDL(true);
+
+        {
             auto* wrapped = m_cellFrames.value(location);
             if (wrapped) {
                 auto* edlBar = new QWidget(wrapped);
@@ -812,6 +838,12 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                     edlBar->show();
                 }
             }
+            auto* titleLabel = wrapped->findChild<QLabel*>("ViewTitleLabel");
+            if (titleLabel) {
+                const QString t = view->getTitle();
+                titleLabel->setProperty("plainTitle", t);
+                titleLabel->setText(t);
+            }
         }
     };
 
@@ -819,6 +851,8 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         if (!m_viewFactory || !m_layout) return;
         auto* view = m_viewFactory();
         if (!view) return;
+
+        view->setViewXmlLabel(QStringLiteral("Slice View"));
 
         ecvGenericGLDisplay* siblingView =
                 ecvViewManager::instance().getActiveView();
@@ -861,7 +895,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         QWidget* wrapped = sliceWrapper;
         if (m_frameFactory) {
-            wrapped = m_frameFactory(sliceWrapper, tr("Slice View"));
+            wrapped = m_frameFactory(sliceWrapper, view->getTitle());
         }
         if (!wrapped) return;
 
@@ -916,6 +950,14 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 }
                 if (type == vtkComparativeViewWidget::RENDER &&
                     m_viewFactory) {
+                    compView->setSubViewShutdownHook([](vtkGLView* subView) {
+                        if (!subView) return;
+                        QWidget* w = subView->asWidget();
+                        if (!w) return;
+                        if (auto* mw = MainWindow::TheInstance()) {
+                            mw->removeEventFilter(w);
+                        }
+                    });
                     compView->setSubViewInitCallback(
                             [sourceViewGL](vtkGLView* subView) {
                                 if (!subView) return;
@@ -1193,7 +1235,21 @@ void ecvMultiViewWidget::makeActive(QWidget* frame) {
     if (view) {
         ecvViewManager::instance().setActiveView(view);
     } else {
-        updateFrameHighlighting();
+#ifdef USE_VTK_BACKEND
+        auto* compView = frame
+                ? frame->findChild<vtkComparativeViewWidget*>()
+                : nullptr;
+        if (!compView && frame)
+            compView = qobject_cast<vtkComparativeViewWidget*>(frame);
+        if (compView) {
+            if (vtkGLView* sub = compView->activeSubView()) {
+                ecvViewManager::instance().setActiveView(sub);
+            }
+        } else
+#endif
+        {
+            updateFrameHighlighting();
+        }
     }
 
     emit frameActivated();
@@ -1429,15 +1485,22 @@ void ecvMultiViewWidget::onCloseView(QWidget* frame) {
         if (!compView && frame)
             compView = qobject_cast<vtkComparativeViewWidget*>(frame);
         if (compView) {
-            if (auto* timer = compView->findChild<QTimer*>())
-                timer->stop();
-            for (auto* sv : compView->subViews()) {
-                if (!sv) continue;
-                sv->setSceneDB(nullptr);
-                emit sv->aboutToClose(sv);
-                sv->disconnect();
-                ecvViewManager::instance().unregisterView(sv);
+#ifdef USE_VTK_BACKEND
+            if (auto* selCtrl = cvSelectionToolController::instance()) {
+                compView->disconnectExternalHighlighter();
+                if (auto* hl = selCtrl->highlighter()) {
+                    auto* activeVis =
+                            dynamic_cast<Visualization::VtkVis*>(hl->getVisualizer());
+                    for (auto* sv : compView->subViews()) {
+                        if (sv && sv->getVisualizer3D() == activeVis) {
+                            selCtrl->setVisualizer(nullptr);
+                            break;
+                        }
+                    }
+                }
             }
+#endif
+            compView->shutdown();
             compView->disconnect();
         }
 
@@ -1534,6 +1597,12 @@ QList<vtkGLView*> ecvMultiViewWidget::destroyAllViews() {
     for (auto it = m_cellFrames.begin(); it != m_cellFrames.end(); ++it) {
         QWidget* frame = it.value();
         if (frame) {
+#ifdef USE_VTK_BACKEND
+            auto* compView = frame->findChild<vtkComparativeViewWidget*>();
+            if (!compView)
+                compView = qobject_cast<vtkComparativeViewWidget*>(frame);
+            if (compView) compView->shutdown();
+#endif
             frame->setParent(nullptr);
             frame->hide();
             frame->deleteLater();

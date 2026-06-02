@@ -434,6 +434,11 @@ protected:
     virtual void cleanupObservers();
 
     /**
+     * @brief Hide highlights, invalidate HW buffers, sync render before pick
+     */
+    void prepareHardwareSelectionPick();
+
+    /**
      * @brief Uncheck selection modifier buttons
      */
     void uncheckSelectionModifiers();

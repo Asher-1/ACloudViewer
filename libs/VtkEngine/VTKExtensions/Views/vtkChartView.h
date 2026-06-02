@@ -143,6 +143,8 @@ private:
     void refreshSourceCombo();
 
     ChartType m_chartType;
+    QString m_viewTypeKey;
+    QString m_title;
     QComboBox* m_sourceCombo = nullptr;
     QComboBox* m_attributeCombo = nullptr;
     EntityListProvider m_entityListProvider;

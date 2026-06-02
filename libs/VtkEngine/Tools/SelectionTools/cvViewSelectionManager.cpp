@@ -80,8 +80,11 @@ cvViewSelectionManager::~cvViewSelectionManager() {
     m_currentSelection = nullptr;
 
     // Clean up highlighter (not a QObject, so manual cleanup)
-    delete m_highlighter;
-    m_highlighter = nullptr;
+    if (m_highlighter) {
+        m_highlighter->prepareForShutdown();
+        delete m_highlighter;
+        m_highlighter = nullptr;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -355,24 +358,25 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
 //-----------------------------------------------------------------------------
 const cvSelectionData& cvViewSelectionManager::currentSelection() const {
     static cvSelectionData emptySelection;
-    if (!m_currentSelection) {
+    if (!m_currentSelection || m_currentSelection->GetNumberOfTuples() == 0) {
         return emptySelection;
     }
-
-    // Create a temporary cvSelectionData from current VTK array
-    static thread_local cvSelectionData cachedSelection;
-    cachedSelection = cvSelectionData(m_currentSelection,
-                                      m_currentSelectionFieldAssociation);
-    return cachedSelection;
+    return m_storedSelectionData;
 }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setCurrentSelection(
         const cvSelectionData& selectionData, bool resetLayers) {
+    m_storedSelectionData = selectionData;
+
     // Convert cvSelectionData to VTK array for internal storage
     setCurrentSelection(selectionData.vtkArray(),
                         static_cast<int>(selectionData.fieldAssociation()),
                         resetLayers);
+
+    // setCurrentSelection(array) may rebuild m_storedSelectionData without
+    // actors when IDs are unchanged; restore full metadata.
+    m_storedSelectionData = selectionData;
 
     // Store as original selection if this is a new selection (resetLayers=true)
     // ParaView-style: Original selection is the base for all grow/shrink
@@ -495,14 +499,17 @@ void cvViewSelectionManager::setCurrentSelection(
         m_currentSelectionFieldAssociation = 0;
     }
 
-    // Create selection data object
-    cvSelectionData selectionData(m_currentSelection,
-                                  m_currentSelectionFieldAssociation);
+    if (m_currentSelection && newCount > 0) {
+        m_storedSelectionData = cvSelectionData(
+                m_currentSelection, m_currentSelectionFieldAssociation);
+    } else {
+        m_storedSelectionData = cvSelectionData();
+    }
 
     // History removed - UI not implemented
 
     // Emit both new and legacy signals
-    emit selectionChanged(selectionData);
+    emit selectionChanged(m_storedSelectionData);
     emit selectionChanged();  // Legacy signal
 }
 
@@ -612,6 +619,7 @@ void cvViewSelectionManager::clearCurrentSelection() {
     }
 
     m_currentSelectionFieldAssociation = -1;
+    m_storedSelectionData = cvSelectionData();
 
     // Clear source object reference
     m_sourceObject = nullptr;

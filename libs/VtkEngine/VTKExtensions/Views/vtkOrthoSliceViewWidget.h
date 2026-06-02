@@ -18,8 +18,14 @@
 
 #include "qVTK.h"
 
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
+
+#include <QHash>
 #include <QList>
 #include <QRubberBand>
+
+#include <vtkActor.h>
+#include <vtkSmartPointer.h>
 #include <QSet>
 #include <QWidget>
 #include <QEvent>
@@ -48,7 +54,7 @@ public:
     explicit vtkOrthoSliceViewWidget(QWidget* parent = nullptr);
     ~vtkOrthoSliceViewWidget() override;
 
-    QString title() const { return tr("Orthographic Slice View"); }
+    QString title() const { return m_title; }
 
     using EntityListProvider = std::function<QList<ccHObject*>()>;
     void setEntityListProvider(EntityListProvider provider);
@@ -131,6 +137,9 @@ private:
     void updatePlaneIndicatorFromSlice(int viewIdx, vtkPlane* plane,
                                        vtkPlaneSource* ps,
                                        const double bounds[6]);
+    void updateOutlineBounds();
+    void createOutlineActor();
+    void disconnectExternalHighlighter();
 
     QWidget* m_decoratorBar = nullptr;
     QWidget* m_dispBar = nullptr;
@@ -196,6 +205,7 @@ private:
     QCheckBox* m_renderTubesCheck = nullptr;
     QCheckBox* m_renderSpheresCheck = nullptr;
     QCheckBox* m_showOutlineCheck = nullptr;
+    int m_lastAppliedReprIdx = -1;
     QCheckBox* m_disableLightingCheck = nullptr;
     QSlider* m_diffuseSlider = nullptr;
     QLabel* m_diffuseLabel = nullptr;
@@ -206,4 +216,18 @@ private:
     QDoubleSpinBox* m_luminositySpin = nullptr;
     QCheckBox* m_specColorCheck = nullptr;
     QCheckBox* m_useNanColorCheck = nullptr;
+
+    QString m_viewTypeKey;
+    QString m_title;
+
+    QHash<vtkActor*, vtkSmartPointer<vtkActor>> m_externalHighlightClones;
+
+    QMetaObject::Connection m_hlActorAddedConn;
+    QMetaObject::Connection m_hlActorRemovedConn;
+    QMetaObject::Connection m_hlClearedConn;
+    QMetaObject::Connection m_hlOverlayConn;
+
+    bool m_externalHighlighterLinked = false;
+    int m_selectionOverlayKind =
+            cvSelectionHighlighter::SelectionOverlayNone;
 };

@@ -854,6 +854,8 @@ public:
      *  @return View ID string or empty if not found
      */
     std::string getIdByActor(vtkProp* actor);
+    /** Resolve cloud id when HW pick prop differs from registered actor pointer. */
+    std::string getIdByPolyData(vtkPolyData* polyData);
     /** @param viewId Widget view ID
      *  @return VTK abstract widget or nullptr
      */
@@ -1197,6 +1199,11 @@ public:
     bool addPointCloud(vtkSmartPointer<vtkPolyData> polydata,
                        const std::string& id = "cloud",
                        int viewport = 0);
+
+    /// ParaView-style cell selection overlay (magenta surface + edges).
+    bool addSelectionHighlightSurface(vtkSmartPointer<vtkPolyData> polydata,
+                                      const std::string& id,
+                                      int viewport = 0);
 
     /// Update an existing point cloud actor with new polydata.
     bool updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,

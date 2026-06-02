@@ -685,6 +685,18 @@ MainWindow::~MainWindow() {
         delete mdiDialog.dialog;
     }
 
+#ifdef USE_VTK_BACKEND
+    if (auto* selCtrl = cvSelectionToolController::instance()) {
+        if (auto* hl = selCtrl->highlighter()) {
+            hl->prepareForShutdown();
+        }
+        selCtrl->setVisualizer(nullptr);
+    }
+    for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
+        if (compView) compView->shutdown();
+    }
+#endif
+
     Visualization::VtkCameraLink::instance().clear();
 
     if (m_tabbedMultiView) {

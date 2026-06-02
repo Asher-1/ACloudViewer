@@ -7,6 +7,8 @@
 
 #include "ecvSpreadSheetView.h"
 
+#include <ecvViewTitleRegistry.h>
+
 #include <ecvAdvancedTypes.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
@@ -903,6 +905,9 @@ void ecvSpreadSheetHeaderView::paintSection(QPainter* painter,
 // ============================================================================
 
 ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
+    m_viewTypeKey = QStringLiteral("SpreadSheet View");
+    m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -1159,11 +1164,13 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     updateStatusBar();
 }
 
-ecvSpreadSheetView::~ecvSpreadSheetView() = default;
-
-QString ecvSpreadSheetView::title() const {
-    return tr("SpreadSheet View");
+ecvSpreadSheetView::~ecvSpreadSheetView() {
+    if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
+        ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
+    }
 }
+
+QString ecvSpreadSheetView::title() const { return m_title; }
 
 void ecvSpreadSheetView::setEntity(ccHObject* entity) {
     m_model->setEntity(entity);

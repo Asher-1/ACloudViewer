@@ -268,7 +268,7 @@ public:
      * @brief Set the point picking radius (in pixels)
      * @param radius Radius in pixels (0 = disabled)
      *
-     * Default is 5 pixels. Set to 0 to disable radius-based picking.
+     * Default is 50 pixels (ParaView settings). Set to 0 to disable.
      */
     void setPointPickingRadius(unsigned int radius);
 

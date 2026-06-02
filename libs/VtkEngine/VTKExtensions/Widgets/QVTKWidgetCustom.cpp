@@ -844,6 +844,25 @@ static bool isAncestorVisibleInView(ccHObject* entity,
 }
 
 void QVTKWidgetCustom::paintGL() {
+    if (property("_compViewDiag").toBool() && m_render &&
+        m_render->GetActiveCamera()) {
+        int cnt = property("_paintCnt").toInt();
+        if (cnt < 20) {
+            setProperty("_paintCnt", cnt + 1);
+            double* p = m_render->GetActiveCamera()->GetPosition();
+            auto* rw = this->renderWindow();
+            int rwW = 0, rwH = 0;
+            if (rw) { int* sz = rw->GetSize(); rwW = sz[0]; rwH = sz[1]; }
+            int nRen = (rw && rw->GetRenderers())
+                               ? rw->GetRenderers()->GetNumberOfItems()
+                               : 0;
+            CVLog::Print("[paintGL] widget=%p wSz=%dx%d rwSz=%dx%d nRen=%d "
+                         "cam=(%.2f,%.2f,%.2f) ps=%.3f",
+                         static_cast<void*>(this), width(), height(),
+                         rwW, rwH, nRen, p[0], p[1], p[2],
+                         m_render->GetActiveCamera()->GetParallelScale());
+        }
+    }
     QVTKOpenGLNativeWidget::paintGL();
 
     if (!displayTarget()) return;
@@ -1335,10 +1354,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             // standard rotation around the current pivot
             else if (curInteractionFlags() &
                      ecvGenericGLDisplay::INTERACT_ROTATE) {
-                CVLog::PrintDebug(
-                        "[Camera-Rot] CC rotation code ENTERED! "
-                        "labelClicked=%d activeItems=%zu",
-                        m_labelClickedOnPress, curActiveItems().size());
                 // choose the right rotation mode
                 enum RotationMode {
                     StandardMode,
@@ -1540,11 +1555,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
 void QVTKWidgetCustom::updateActivateditems(
         int x, int y, int dx, int dy, bool updatePosition) {
-    CVLog::PrintDebug(
-            "[Label] updateActivateditems: pos(%d,%d) delta(%d,%d) "
-            "updatePos=%d activeItems=%zu labelDrag=%d",
-            x, y, dx, dy, updatePosition, curActiveItems().size(),
-            m_labelClickedOnPress);
     bool movedAs2D = false;
     if (updatePosition) {
         double pixSize = ecvDisplayTools::ComputeActualPixelSize();
@@ -1601,10 +1611,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
         !m_labelClickedOnPress) {
         QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
     } else if (m_labelClickedOnPress) {
-        CVLog::PrintDebug(
-                "[Label-Drag] BLOCKED VTK mouseRelease, "
-                "labelClicked=%d",
-                m_labelClickedOnPress);
+        // Block VTK default mouse release while dragging a label.
     }
 
     if (curIgnoreMouseReleaseEvent()) {
@@ -1691,16 +1698,6 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             qint64 clickTime = curLastClickTime();
             bool timeOk =
                     elapsed < clickTime + CC_MAX_PICKING_CLICK_DURATION_MS;
-            CVLog::PrintDebug(
-                    QString("[mouseRelease] Pick check: "
-                            "widgetClicked=%1 elapsed=%2 clickTime=%3 "
-                            "threshold=%4 timeOk=%5 mouseHasMoved=%6")
-                            .arg(curWidgetClicked())
-                            .arg(elapsed)
-                            .arg(clickTime)
-                            .arg(CC_MAX_PICKING_CLICK_DURATION_MS)
-                            .arg(timeOk)
-                            .arg(mouseHasMoved));
             if (!curWidgetClicked() && timeOk) {
                 int x = curLastMousePos().x();
                 int y = curLastMousePos().y();
@@ -1737,14 +1734,6 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                     // item on the screen
                     if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
                         curLastMousePos() = event->pos();
-                        CVLog::PrintDebug(QString("[mouseRelease] Starting "
-                                                  "deferred pick at (%1,%2) "
-                                                  "ownerView=%3 pickMode=%4")
-                                                  .arg(event->pos().x())
-                                                  .arg(event->pos().y())
-                                                  .arg(m_ownerView != nullptr)
-                                                  .arg(static_cast<int>(
-                                                          curPickingMode())));
                         if (m_ownerView) {
                             m_ownerView->startDeferredPicking();
                         } else if (auto* dtPick = ecvViewManager::instance()
@@ -1965,9 +1954,6 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             touchEvent->accept();
             curTouchInProgress() = (evt->type() == QEvent::TouchBegin);
             curTouchBaseDist() = 0.0;
-            CVLog::PrintDebug(
-                    QString("Touch event %1")
-                            .arg(curTouchInProgress() ? "begins" : "ends"));
         } break;
 
         case QEvent::Close: {

@@ -26,6 +26,7 @@
 #include <ecvScalarField.h>
 
 #include "Tools/Common/ecvTools.h"
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
 #include <ecvViewManager.h>
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 #include <QMouseEvent>
@@ -1128,6 +1129,36 @@ bool VtkVis::addPointCloud(vtkSmartPointer<vtkPolyData> polydata,
     return true;
 }
 
+bool VtkVis::addSelectionHighlightSurface(vtkSmartPointer<vtkPolyData> polydata,
+                                          const std::string& id,
+                                          int viewport) {
+    if (!polydata || polydata->GetNumberOfCells() == 0) return false;
+
+    if (contains(id)) {
+        removePointCloud(id, viewport);
+    }
+
+    vtkSmartPointer<vtkPVLODActor> actor;
+    VtkRendering::CreateActorFromVTKDataSet(polydata, actor);
+    if (!actor) return false;
+
+    auto* mapper = vtkDataSetMapper::SafeDownCast(actor->GetMapper());
+    if (mapper) {
+        mapper->ScalarVisibilityOff();
+        mapper->SetResolveCoincidentTopologyToPolygonOffset();
+        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1, -1);
+    }
+
+    cvSelectionHighlighter::styleSelectionOverlayProperty(
+            actor->GetProperty(),
+            cvSelectionHighlighter::SelectionOverlaySurface);
+
+    actor->SetPickable(0);
+    addActorToRenderer(actor, viewport);
+    (*cloud_actor_map_)[id].actor = actor;
+    return true;
+}
+
 bool VtkVis::updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,
                               const std::string& id) {
     auto it = cloud_actor_map_->find(id);
@@ -2162,13 +2193,24 @@ bool VtkVis::addPolyline(vtkSmartPointer<vtkPolyData> polydata,
 
     vtkSmartPointer<vtkPVLODActor> actor;
     VtkRendering::CreateActorFromVTKDataSet(polydata, actor, false);
-    actor->GetProperty()->SetRepresentationToSurface();
-    actor->GetProperty()->SetLineWidth(width);
+    actor->GetProperty()->SetRepresentationToWireframe();
+    actor->GetProperty()->SetLineWidth(std::max(2.0f, width));
     actor->GetProperty()->SetColor(r, g, b);
+    actor->GetProperty()->LightingOff();
+    actor->GetProperty()->SetAmbient(1.0);
+    actor->GetProperty()->SetDiffuse(0.0);
     addActorToRenderer(actor, viewport);
 
     (*getShapeActorMap())[id] = actor;
     applyLightPropertiesToActor(actor, id);
+    CVLog::Print(QString("[VtkVis::addPolyline] Added polyline '%1' with %2 "
+                         "points, lineWidth=%3, color=(%4,%5,%6)")
+                         .arg(QString::fromStdString(id))
+                         .arg(polydata->GetNumberOfPoints())
+                         .arg(width)
+                         .arg(r)
+                         .arg(g)
+                         .arg(b));
     return true;
 }
 
@@ -4132,28 +4174,69 @@ vtkAbstractWidget* VtkVis::getWidgetById(const std::string& viewId) {
     return wa_it->second.widget;
 }
 
+std::string VtkVis::getIdByPolyData(vtkPolyData* polyData) {
+    if (!polyData) return std::string();
+
+    auto matchPoly = [polyData](vtkPolyData* candidate) {
+        if (!candidate) return false;
+        if (candidate == polyData) return true;
+        return candidate->GetNumberOfCells() == polyData->GetNumberOfCells() &&
+               candidate->GetNumberOfPoints() == polyData->GetNumberOfPoints();
+    };
+
+    for (const auto& kv : *getCloudActorMap()) {
+        vtkActor* reg = vtkActor::SafeDownCast(kv.second.actor);
+        if (!reg || !reg->GetMapper()) continue;
+        auto* poly = vtkPolyData::SafeDownCast(reg->GetMapper()->GetInput());
+        if (matchPoly(poly)) return kv.first;
+    }
+    for (const auto& kv : *getShapeActorMap()) {
+        vtkActor* reg = vtkActor::SafeDownCast(kv.second);
+        if (!reg || !reg->GetMapper()) continue;
+        auto* poly = vtkPolyData::SafeDownCast(reg->GetMapper()->GetInput());
+        if (matchPoly(poly)) return kv.first;
+    }
+    return std::string();
+}
+
 std::string VtkVis::getIdByActor(vtkProp* actor) {
-    // Check to see if this ID entry already exists (has it been already added
-    // to the visualizer?) Check to see if the given ID entry exists
-    VtkRendering::CloudActorMap::iterator cloudIt = getCloudActorMap()->begin();
-    // Extra step: check if there is a cloud with the same ID
-    VtkRendering::ShapeActorMap::iterator shapeIt = getShapeActorMap()->begin();
+    if (!actor) {
+        return std::string();
+    }
 
-    for (; cloudIt != getCloudActorMap()->end(); cloudIt++) {
-        vtkActor* tempActor = vtkPVLODActor::SafeDownCast(cloudIt->second.actor);
-        if (tempActor && tempActor == actor) {
-            return cloudIt->first;
+    auto cloudMap = getCloudActorMap();
+    if (cloudMap) {
+        for (const auto& kv : *cloudMap) {
+            vtkProp* prop = kv.second.actor;
+            if (prop && prop == actor) {
+                return kv.first;
+            }
         }
     }
 
-    for (; shapeIt != getShapeActorMap()->end(); shapeIt++) {
-        vtkActor* tempActor = vtkPVLODActor::SafeDownCast(shapeIt->second);
-        if (tempActor && tempActor == actor) {
-            return shapeIt->first;
+    auto shapeMap = getShapeActorMap();
+    if (shapeMap) {
+        for (const auto& kv : *shapeMap) {
+            vtkProp* prop = kv.second;
+            if (prop && prop == actor) {
+                return kv.first;
+            }
         }
     }
 
-    return std::string("");
+    // HW selection may return a different vtkProp wrapper for the same dataset.
+    vtkActor* pickedActor = vtkActor::SafeDownCast(actor);
+    vtkPolyData* pickedPoly = nullptr;
+    if (pickedActor && pickedActor->GetMapper()) {
+        pickedPoly =
+                vtkPolyData::SafeDownCast(pickedActor->GetMapper()->GetInput());
+    }
+    if (pickedPoly) {
+        const std::string byPoly = getIdByPolyData(pickedPoly);
+        if (!byPoly.empty()) return byPoly;
+    }
+
+    return std::string();
 }
 
 bool VtkVis::removeActorFromRenderer(const vtkSmartPointer<vtkProp>& actor,
