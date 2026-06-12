@@ -90,6 +90,27 @@ public:
 
     void setupGrid();
 
+    void syncCamerasFromFirst();
+    void forceRenderAllSubViews();
+
+    // 相机链接管理（供 MainWindow 等外部调用）
+    void removeCameraLink();
+    void installCameraLink();
+    void setCameraLinkEnabled(bool enabled) { m_cameraLinkEnabled = enabled; }
+    bool isCameraLinkEnabled() const { return m_cameraLinkEnabled; }
+
+    // 获取场景 renderer（静态方法，供外部使用）
+    static vtkRenderer* getSceneRenderer(vtkGLView* view);
+
+    // 获取 source view（供外部信号阻塞使用）
+    vtkGLView* sourceView() const { return m_sourceView; }
+
+    // 检查是否正在关闭（供外部使用）
+    bool isClosing() const { return m_closing; }
+
+    // 清除 camera reset 待处理标志（供外部在手动设置相机后调用）
+    void clearNeedsCameraReset() { m_needsCameraReset = false; }
+
 protected:
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
@@ -98,6 +119,7 @@ protected:
 signals:
     void subViewCreated(QWidget* subWidget);
     void clicked();
+    void requestToolRebind(vtkGLView* activeView);
 
 private slots:
     void onDimensionChanged();
@@ -105,6 +127,7 @@ private slots:
     void onPlayCue();
     void onToggleOverlay(bool checked);
     void onExportScreenshot();
+    void captureScreenshotsAsync(const QString& path);
 
 private:
     void createRenderSubViews();
@@ -112,21 +135,17 @@ private:
     void buildToolbar();
     void refreshEntityCombo();
     void applyCueToSubViews();
-    void syncCamerasFromFirst();
     void syncPivotFromFirst();
     void syncPivotFromView(int srcIdx);
     void syncRepresentationsFromFirst();
     void copyActorsAcrossSubViews();
     void scheduleSubViewRefresh(bool forceSceneDirty = false);
     void performSubViewRefresh();
-    void installCameraLink();
-    void removeCameraLink();
     void onSubViewInteraction(int viewIdx, bool renderOthers = true);
     static void interactionCallback(
             vtkObject* caller, unsigned long eid, void* clientData, void*);
     static void renderEndCallback(
             vtkObject* caller, unsigned long eid, void* clientData, void*);
-    void forceRenderAllSubViews();
     void startInteractionTimer();
     void stopInteractionTimer();
     void scheduleCameraSyncRender();
@@ -135,6 +154,8 @@ private:
     void syncInteractionModeToSubViews();
     void syncPickingModeToSubViews();
     void syncCameraFromSourceView();
+    void syncAllPropertiesFromFirst();
+    void syncViewPropertiesFromSource(vtkGLView* source, vtkGLView* target);
     void clearHighlightClones();
 
     ComparativeType m_type;

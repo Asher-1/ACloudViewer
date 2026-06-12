@@ -17,10 +17,9 @@
 #include <CVTools.h>
 
 // VTK
-#include <vtkLogger.h>
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAngleRepresentation2D.h>
-#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkCamera.h>
 #include <vtkClipPolyData.h>
 #include <vtkColorTransferFunction.h>
@@ -29,6 +28,7 @@
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkIdFilter.h>
 #include <vtkImageData.h>
+#include <vtkLogger.h>
 #include <vtkLogoRepresentation.h>
 #include <vtkLogoWidget.h>
 #include <vtkLookupTable.h>
@@ -51,6 +51,7 @@
 #include "Visualization/vtkGLView.h"
 
 // CV_DB_LIB
+#include <Visualization/vtkGLView.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
@@ -60,8 +61,6 @@
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 #include <ecvViewRepresentation.h>
-
-#include <Visualization/vtkGLView.h>
 
 // QT
 #include <ecv2DLabel.h>
@@ -87,17 +86,16 @@
 #include <vld.h>
 #endif
 
+#include <Shortcuts/ecvKeySequences.h>
 #include <ecv2DLabel.h>
 #include <ecvHObjectCaster.h>
-#include <Shortcuts/ecvKeySequences.h>
 
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QPainter>
+#include <mutex>
 
 #include "ScaleBarWidget.h"
-
-#include <mutex>
 
 // macroes
 #ifndef VTK_CREATE
@@ -655,7 +653,8 @@ static Visualization::VtkVis* vtkVisForWidget(QVTKWidgetCustom* widget) {
     if (!widget) return nullptr;
     auto* display = ecvGenericGLDisplay::FromWidget(widget);
     auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr;
-    return glView ? dynamic_cast<Visualization::VtkVis*>(glView->getVisualizer3D())
+    return glView ? dynamic_cast<Visualization::VtkVis*>(
+                            glView->getVisualizer3D())
                   : nullptr;
 }
 
@@ -852,15 +851,20 @@ void QVTKWidgetCustom::paintGL() {
             double* p = m_render->GetActiveCamera()->GetPosition();
             auto* rw = this->renderWindow();
             int rwW = 0, rwH = 0;
-            if (rw) { int* sz = rw->GetSize(); rwW = sz[0]; rwH = sz[1]; }
+            if (rw) {
+                int* sz = rw->GetSize();
+                rwW = sz[0];
+                rwH = sz[1];
+            }
             int nRen = (rw && rw->GetRenderers())
                                ? rw->GetRenderers()->GetNumberOfItems()
                                : 0;
-            CVLog::Print("[paintGL] widget=%p wSz=%dx%d rwSz=%dx%d nRen=%d "
-                         "cam=(%.2f,%.2f,%.2f) ps=%.3f",
-                         static_cast<void*>(this), width(), height(),
-                         rwW, rwH, nRen, p[0], p[1], p[2],
-                         m_render->GetActiveCamera()->GetParallelScale());
+            CVLog::PrintVerbose(
+                    "[paintGL] widget=%p wSz=%dx%d rwSz=%dx%d nRen=%d "
+                    "cam=(%.2f,%.2f,%.2f) ps=%.3f",
+                    static_cast<void*>(this), width(), height(), rwW, rwH, nRen,
+                    p[0], p[1], p[2],
+                    m_render->GetActiveCamera()->GetParallelScale());
         }
     }
     QVTKOpenGLNativeWidget::paintGL();
@@ -911,11 +915,11 @@ void QVTKWidgetCustom::paintGL() {
         }
         label->update2DLabelView(context, false);
         if (!label->overlayValid()) {
-            CVLog::Warning("[paintGL] label '%s' overlay INVALID after "
-                           "update2DLabelView (dispIn2D=%d pts=%d)",
-                           qPrintable(label->getName()),
-                           label->isDisplayedIn2D(),
-                           static_cast<int>(label->size()));
+            CVLog::Warning(
+                    "[paintGL] label '%s' overlay INVALID after "
+                    "update2DLabelView (dispIn2D=%d pts=%d)",
+                    qPrintable(label->getName()), label->isDisplayedIn2D(),
+                    static_cast<int>(label->size()));
             continue;
         }
         ++validCount;
@@ -2046,8 +2050,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
                 QKeySequence seq(combo);
 
-                auto* modalShortcut =
-                        ecvKeySequences::instance().active(seq);
+                auto* modalShortcut = ecvKeySequences::instance().active(seq);
                 if (modalShortcut) {
                     evt->ignore();
                     return false;
@@ -2056,8 +2059,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 if (m_customStyle && m_interactor) {
                     ensureVtkShortcutMap();
 
-                    QString seqStr = seq.toString(
-                            QKeySequence::PortableText);
+                    QString seqStr = seq.toString(QKeySequence::PortableText);
 
                     auto it = s_vtkShortcutMap.find(seqStr);
                     if (it != s_vtkShortcutMap.end()) {
@@ -2069,9 +2071,9 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                         }
                     }
 
-                    bool noMods = !(mods & (Qt::ControlModifier |
-                                            Qt::AltModifier |
-                                            Qt::MetaModifier));
+                    bool noMods =
+                            !(mods & (Qt::ControlModifier | Qt::AltModifier |
+                                      Qt::MetaModifier));
                     if (noMods && qkey >= Qt::Key_A && qkey <= Qt::Key_Z) {
                         evt->ignore();
                         return false;

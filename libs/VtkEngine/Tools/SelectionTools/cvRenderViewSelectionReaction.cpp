@@ -1576,7 +1576,7 @@ void cvRenderViewSelectionReaction::selectPointsOnSurface(
         highlighter->setHighlightsVisible(true);
     }
 
-    CVLog::Print(QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
+    CVLog::PrintVerbose(QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
                          "count=%1 modifier=%2")
                          .arg(selection.count())
                          .arg(selectionModifier));

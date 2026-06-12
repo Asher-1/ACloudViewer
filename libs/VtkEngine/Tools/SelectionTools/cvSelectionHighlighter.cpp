@@ -11,11 +11,10 @@
 #include "cvViewSelectionManager.h"
 
 // LOCAL
-#include "Visualization/VtkVis.h"
-
 #include <QVector>
-
 #include <vector>
+
+#include "Visualization/VtkVis.h"
 
 // CV_DB_LIB
 #include <ecvGenericVisualizer3D.h>
@@ -28,14 +27,14 @@
 #include <CVLog.h>
 
 // Qt
+#include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
+#include <VtkRendering/Core/VtkLODHelper.h>
+#include <VtkRendering/Core/VtkRenderingUtils.h>
+
 #include <QCoreApplication>
 #include <QTimer>
 #include <QWidget>
-
-#include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
-#include <VtkRendering/Core/VtkLODHelper.h>
-#include <VtkRendering/Core/VtkRenderingUtils.h>
 
 // VTK
 #include <vtkAbstractArray.h>
@@ -44,17 +43,19 @@
 #include <vtkAppendFilter.h>
 #include <vtkCellArray.h>
 #include <vtkCellCenters.h>
-#include <vtkPoints.h>
 #include <vtkCellData.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkDataSetMapper.h>
 #include <vtkExtractSelection.h>
+#include <vtkGeometryFilter.h>
 #include <vtkIdTypeArray.h>
 #include <vtkLabeledDataMapper.h>
+#include <vtkLinearTransform.h>
 #include <vtkMapper.h>
 #include <vtkMaskPoints.h>
 #include <vtkPointData.h>
+#include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProp.h>
@@ -66,11 +67,9 @@
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
 #include <vtkTextProperty.h>
+#include <vtkTransform.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkGeometryFilter.h>
-#include <vtkLinearTransform.h>
-#include <vtkTransform.h>
 
 static vtkSmartPointer<vtkActor> cloneHighlightActor(vtkActor* source) {
     if (!source) return nullptr;
@@ -128,8 +127,9 @@ void cvSelectionHighlighter::scheduleAllViewsUpdate() const {
     if (vis) vis->UpdateScreen();
 }
 
-// Template highlight actors must never stay in any renderer (breaks HW selection
-// when the same vtkActor was attached to multiple GL contexts / renderers).
+// Template highlight actors must never stay in any renderer (breaks HW
+// selection when the same vtkActor was attached to multiple GL contexts /
+// renderers).
 static void stripActorFromRenderWindow(vtkActor* actor, vtkRenderWindow* rw) {
     if (!actor || !rw) return;
     vtkRendererCollection* rens = rw->GetRenderers();
@@ -162,7 +162,8 @@ static const char* kSelectionOverlayId = "__highlight_selected_overlay__";
 static const char* kHoverOverlayId = "__highlight_hover_overlay__";
 static const char* kPreselectOverlayId = "__highlight_preselect_overlay__";
 
-static const char* overlayIdForMode(cvSelectionHighlighter::HighlightMode mode) {
+static const char* overlayIdForMode(
+        cvSelectionHighlighter::HighlightMode mode) {
     switch (mode) {
         case cvSelectionHighlighter::HOVER:
             return kHoverOverlayId;
@@ -178,14 +179,14 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
         vtkPolyData* polyData,
         vtkIdTypeArray* selection,
         int fieldAssociation) {
-    if (!polyData || !selection ||
-        selection->GetNumberOfTuples() == 0) {
+    if (!polyData || !selection || selection->GetNumberOfTuples() == 0) {
         return nullptr;
     }
 
     const bool isPointSelection = (fieldAssociation != 0);
-    const vtkIdType maxValidId = isPointSelection ? polyData->GetNumberOfPoints()
-                                                  : polyData->GetNumberOfCells();
+    const vtkIdType maxValidId = isPointSelection
+                                         ? polyData->GetNumberOfPoints()
+                                         : polyData->GetNumberOfCells();
 
     vtkSmartPointer<vtkIdTypeArray> validSelection =
             vtkSmartPointer<vtkIdTypeArray>::New();
@@ -228,8 +229,7 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
         geom->Update();
         result->ShallowCopy(geom->GetOutput());
     }
-    if (result->GetNumberOfCells() == 0 &&
-        result->GetNumberOfPoints() == 0) {
+    if (result->GetNumberOfCells() == 0 && result->GetNumberOfPoints() == 0) {
         return nullptr;
     }
     return result;
@@ -239,8 +239,7 @@ static vtkSmartPointer<vtkPolyData> buildSelectionMarkerPolyData(
         vtkPolyData* polyData,
         vtkIdTypeArray* selection,
         int fieldAssociation) {
-    if (!polyData || !selection ||
-        selection->GetNumberOfTuples() == 0) {
+    if (!polyData || !selection || selection->GetNumberOfTuples() == 0) {
         return nullptr;
     }
 
@@ -292,7 +291,8 @@ void cvSelectionHighlighter::clearSelectionOverlay(Visualization::VtkVis* vis,
     }
 }
 
-void cvSelectionHighlighter::clearAllSelectionOverlays(Visualization::VtkVis* vis) {
+void cvSelectionHighlighter::clearAllSelectionOverlays(
+        Visualization::VtkVis* vis) {
     if (!vis) return;
     clearSelectionOverlay(vis, kSelectionOverlayId);
     clearSelectionOverlay(vis, kHoverOverlayId);
@@ -345,7 +345,8 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createSelectionOverlayActor(
         if (auto* mapper = vtkDataSetMapper::SafeDownCast(actor->GetMapper())) {
             mapper->ScalarVisibilityOff();
             mapper->SetResolveCoincidentTopologyToPolygonOffset();
-            mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1, -1);
+            mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1,
+                                                                         -1);
         }
         styleSelectionOverlayProperty(actor->GetProperty(), kind);
         actor->SetPickable(0);
@@ -388,9 +389,10 @@ void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
             a->GetProperty()->SetColor(cr, cg, cb);
             a->SetPickable(0);
         }
-        CVLog::Print(QString("[cvSelectionHighlighter] ParaView point overlay: "
-                             "%1 pts")
-                             .arg(poly->GetNumberOfPoints()));
+        CVLog::PrintVerbose(
+                QString("[cvSelectionHighlighter] ParaView point overlay: "
+                        "%1 pts")
+                        .arg(poly->GetNumberOfPoints()));
         return;
     }
 
@@ -470,8 +472,7 @@ vtkActor* cvSelectionHighlighter::resolveRegisteredMeshActor(
 
     vtkPolyData* pickedPoly = nullptr;
     if (picked->GetMapper()) {
-        pickedPoly =
-                vtkPolyData::SafeDownCast(picked->GetMapper()->GetInput());
+        pickedPoly = vtkPolyData::SafeDownCast(picked->GetMapper()->GetInput());
     }
     if (!pickedPoly) return picked;
 
@@ -831,9 +832,9 @@ bool cvSelectionHighlighter::highlightSelection(
         if (vis) {
             vtkSmartPointer<vtkPolyData> overlayPoly;
             const bool interactive = (mode == HOVER || mode == PRESELECTED);
-            upsertParaViewSelectionOverlay(
-                    vis, polyData, selection, fieldAssociation, overlayPoly,
-                    overlayIdForMode(mode), interactive);
+            upsertParaViewSelectionOverlay(vis, polyData, selection,
+                                           fieldAssociation, overlayPoly,
+                                           overlayIdForMode(mode), interactive);
             vis->UpdateScreen();
             scheduleAllViewsUpdate();
         }
@@ -870,8 +871,8 @@ bool cvSelectionHighlighter::highlightSelection(
     if (!polyData) {
         CVLog::Print(
                 "[cvSelectionHighlighter] No polyData for selection highlight "
-                "(hasActorInfo="
-                + QString(selectionData.hasActorInfo() ? "yes" : "no") + ")");
+                "(hasActorInfo=" +
+                QString(selectionData.hasActorInfo() ? "yes" : "no") + ")");
         return false;
     }
 
@@ -1082,7 +1083,7 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
     addActorToVisualizer(actor, actorId);
 
-    CVLog::Print(QString("[cvSelectionHighlighter] Multi-color highlight: %1 "
+    CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Multi-color highlight: %1 "
                          "sub-selections in mode %2")
                          .arg(selectionsWithColors.size())
                          .arg(mode));
@@ -1231,7 +1232,9 @@ void cvSelectionHighlighter::setHighlightsVisible(bool visible) {
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::applyParaViewHighlightStyle(
-        vtkProperty* prop, int fieldAssociation, HighlightMode mode,
+        vtkProperty* prop,
+        int fieldAssociation,
+        HighlightMode mode,
         bool applySolidColor) const {
     if (!prop) return;
 
@@ -1382,9 +1385,9 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         return nullptr;
     }
 
-    CVLog::Print(
+    CVLog::PrintVerbose(
             QString("[cvSelectionHighlighter] extract geometry: cells=%1 "
-                      "points=%2")
+                    "points=%2")
                     .arg(highlightPoly->GetNumberOfCells())
                     .arg(highlightPoly->GetNumberOfPoints()));
 
@@ -1436,9 +1439,9 @@ vtkSmartPointer<vtkSelectionNode> cvSelectionHighlighter::createSelectionNode(
     return node;
 }
 
-// Match primary mesh actor transform so highlight geometry aligns in world space.
-static void syncHighlightActorTransform(vtkActor* highlight,
-                                      vtkActor* source) {
+// Match primary mesh actor transform so highlight geometry aligns in world
+// space.
+static void syncHighlightActorTransform(vtkActor* highlight, vtkActor* source) {
     if (!highlight || !source) return;
     highlight->SetPosition(source->GetPosition());
     highlight->SetOrientation(source->GetOrientation());
@@ -1521,10 +1524,9 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
 
     m_highlightInstances[id] = instances;
     if (instances.isEmpty()) {
-        CVLog::Warning(
-                QString("[cvSelectionHighlighter] No renderer accepted "
-                        "highlight clone for id=%1")
-                        .arg(id));
+        CVLog::Warning(QString("[cvSelectionHighlighter] No renderer accepted "
+                               "highlight clone for id=%1")
+                               .arg(id));
     }
 
     if (!m_shuttingDown) {
@@ -1537,10 +1539,14 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
 void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
     if (m_shuttingDown) {
         m_highlightInstances.remove(id);
-        if (id == m_hoverActorId) m_hoverActor = nullptr;
-        else if (id == m_preselectedActorId) m_preselectedActor = nullptr;
-        else if (id == m_selectedActorId) m_selectedActor = nullptr;
-        else if (id == m_boundaryActorId) m_boundaryActor = nullptr;
+        if (id == m_hoverActorId)
+            m_hoverActor = nullptr;
+        else if (id == m_preselectedActorId)
+            m_preselectedActor = nullptr;
+        else if (id == m_selectedActorId)
+            m_selectedActor = nullptr;
+        else if (id == m_boundaryActorId)
+            m_boundaryActor = nullptr;
         return;
     }
 

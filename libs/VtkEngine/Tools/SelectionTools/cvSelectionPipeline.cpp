@@ -1208,7 +1208,7 @@ cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
 
     cvSelectionData result = convertSelectionToData(
             vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsOnSurface");
-    CVLog::Print(QString("[cvSelectionPipeline] selectCellsOnSurface -> %1 ids")
+    CVLog::PrintVerbose(QString("[cvSelectionPipeline] selectCellsOnSurface -> %1 ids")
                          .arg(result.count()));
     return result;
 }
