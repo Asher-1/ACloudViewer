@@ -958,31 +958,18 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                             mw->removeEventFilter(w);
                         }
                     });
-                    compView->setSubViewInitCallback(
-                            [sourceViewGL](vtkGLView* subView) {
-                                if (!subView) return;
-
-                                ecvGenericGLDisplay* src = sourceViewGL;
-                                if (!src) {
-                                    src = ecvViewManager::instance()
-                                                  .getActiveView();
-                                }
-                                if (!src) {
-                                    auto views = ecvViewManager::instance()
-                                                         .getAllViews();
-                                    for (auto* v : views) {
-                                        if (v && v != subView) { src = v; break; }
-                                    }
-                                }
-                                if (src && src != subView) {
-                                    copyRepresentationsOnSplit(src, subView);
-                                }
-                            });
+                    // ParaView模式: 不自动复制表示，保持空视窗
+                    compView->setSubViewInitCallback([](vtkGLView* /*subView*/) {
+                        // 不再自动复制，用户通过Showing下拉框选择实体
+                    });
                     compView->setRenderViewFactory(
                             [this]() -> vtkGLView* {
                                 return m_viewFactory ? m_viewFactory()
                                                      : nullptr;
                             });
+                    // ✅ 为RENDER类型也设置EntityListProvider
+                    compView->setEntityListProvider(
+                            collectDisplayableEntities);
                 } else {
                     compView->setEntityListProvider(
                             collectDisplayableEntities);
@@ -1012,6 +999,16 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
                 connect(compView, &vtkComparativeViewWidget::clicked, this,
                         [this, wrapped]() { makeActive(wrapped); });
+
+                connect(compView, &vtkComparativeViewWidget::requestToolRebind, this,
+                        [this](vtkGLView* view) {
+                            if (view) {
+                                ecvViewManager::instance().setActiveView(view);
+                                if (auto* mw = MainWindow::TheInstance()) {
+                                    mw->rebindToolsToActiveView(view);
+                                }
+                            }
+                        });
 
                 if (parentSplitter && splitterIdx >= 0) {
                     parentSplitter->insertWidget(splitterIdx, wrapped);

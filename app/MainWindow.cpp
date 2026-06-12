@@ -2960,9 +2960,19 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* orthoView = qobject_cast<vtkOrthoSliceViewWidget*>(innerWidget);
     bool isOrthoSliceView = (orthoView != nullptr);
 
-    auto activateViewAndDo = [this, innerWidget](auto slot) {
-        return [this, innerWidget, slot]() {
+    auto activateViewAndDo = [this, innerWidget, compView](auto slot) {
+        return [this, innerWidget, compView, slot]() {
             auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
+
+            // If this is a Comparative Widget and display cannot be obtained directly,
+            // try getting it from the activeSubView
+            if (!display && compView) {
+                auto* activeSub = compView->activeSubView();
+                if (activeSub) {
+                    display = dynamic_cast<ecvGenericGLDisplay*>(activeSub);
+                }
+            }
+
             if (display) {
                 ecvViewManager::instance().setActiveView(display);
                 rebindToolsToActiveView(display);
@@ -2990,9 +3000,16 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                             tr("Camera Undo"), viewToolBar);
         camUndoAct->setEnabled(false);
         connect(camUndoAct, &QAction::triggered, this,
-                [getVtkVisForWidget, innerWidget]() {
-                    auto* vis = getVtkVisForWidget(innerWidget);
-                    if (vis) vis->cameraUndo();
+                [getVtkVisForWidget, compView, innerWidget]() {
+                    if (compView) {
+                        for (auto* sv : compView->subViews()) {
+                            auto* vis = sv ? sv->getVisualizer3D() : nullptr;
+                            if (vis) vis->cameraUndo();
+                        }
+                    } else {
+                        auto* vis = getVtkVisForWidget(innerWidget);
+                        if (vis) vis->cameraUndo();
+                    }
                 });
         viewToolBar->addAction(camUndoAct);
 
@@ -3001,23 +3018,43 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                             tr("Camera Redo"), viewToolBar);
         camRedoAct->setEnabled(false);
         connect(camRedoAct, &QAction::triggered, this,
-                [getVtkVisForWidget, innerWidget]() {
-                    auto* vis = getVtkVisForWidget(innerWidget);
-                    if (vis) vis->cameraRedo();
+                [getVtkVisForWidget, compView, innerWidget]() {
+                    if (compView) {
+                        for (auto* sv : compView->subViews()) {
+                            auto* vis = sv ? sv->getVisualizer3D() : nullptr;
+                            if (vis) vis->cameraRedo();
+                        }
+                    } else {
+                        auto* vis = getVtkVisForWidget(innerWidget);
+                        if (vis) vis->cameraRedo();
+                    }
                 });
         viewToolBar->addAction(camRedoAct);
 
         auto* camTimer = new QTimer(viewToolBar);
         camTimer->setInterval(500);
         connect(camTimer, &QTimer::timeout, viewToolBar,
-                [getVtkVisForWidget, innerWidget, camUndoAct, camRedoAct]() {
-                    auto* vis = getVtkVisForWidget(innerWidget);
-                    if (vis) {
-                        camUndoAct->setEnabled(vis->canCameraUndo());
-                        camRedoAct->setEnabled(vis->canCameraRedo());
+                [getVtkVisForWidget, compView, innerWidget, camUndoAct, camRedoAct]() {
+                    if (compView) {
+                        bool canUndo = false, canRedo = false;
+                        for (auto* sv : compView->subViews()) {
+                            auto* vis = sv ? sv->getVisualizer3D() : nullptr;
+                            if (vis) {
+                                canUndo = canUndo || vis->canCameraUndo();
+                                canRedo = canRedo || vis->canCameraRedo();
+                            }
+                        }
+                        camUndoAct->setEnabled(canUndo);
+                        camRedoAct->setEnabled(canRedo);
                     } else {
-                        camUndoAct->setEnabled(false);
-                        camRedoAct->setEnabled(false);
+                        auto* vis = getVtkVisForWidget(innerWidget);
+                        if (vis) {
+                            camUndoAct->setEnabled(vis->canCameraUndo());
+                            camRedoAct->setEnabled(vis->canCameraRedo());
+                        } else {
+                            camUndoAct->setEnabled(false);
+                            camRedoAct->setEnabled(false);
+                        }
                     }
                 });
         camTimer->start();
@@ -3209,8 +3246,12 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     }
                     if (compView) {
                         for (auto* sv : compView->subViews()) {
-                            if (sv) sv->setPerspectiveState(state, true);
+                            if (sv) {
+                                sv->setPerspectiveState(state, true);
+                                sv->refresh();
+                            }
                         }
+                        compView->syncCamerasFromFirst();
                     } else {
                         toggle3DView(state);
                     }
@@ -3221,22 +3262,167 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 QIcon(":/Resources/images/svg/pqEditCamera.svg"),
                 tr("Adjust Camera"), viewToolBar);
         connect(editCamAct, &QAction::triggered, this,
-                activateViewAndDo(&MainWindow::doActionEditCamera));
+                [this, innerWidget, compView]() {
+                    if (compView && !compView->subViews().isEmpty()) {
+                        auto* first = compView->subViews().first();
+                        if (first) {
+                            ecvViewManager::instance().setActiveView(first);
+                            rebindToolsToActiveView(first);
+                        }
+                    }
+                    doActionEditCamera();
+                });
         viewToolBar->addAction(editCamAct);
+
+        auto* resetCamAct = new QAction(
+                QIcon(":/Resources/images/svg/pqReset.svg"),
+                tr("Reset Camera"), viewToolBar);
+        connect(resetCamAct, &QAction::triggered, this,
+                [compView, innerWidget]() {
+                    if (compView) {
+                        if (!compView->subViews().isEmpty()) {
+                            auto* first = compView->subViews().first();
+                            if (first) {
+                                auto* ren = vtkComparativeViewWidget::getSceneRenderer(first);
+                                double savedParallelScale = 0.0;
+                                double savedDistance = 0.0;
+                                bool isParallel = false;
+                                if (ren && ren->GetActiveCamera()) {
+                                    auto* cam = ren->GetActiveCamera();
+                                    savedParallelScale = cam->GetParallelScale();
+                                    savedDistance = cam->GetDistance();
+                                    isParallel = cam->GetParallelProjection();
+                                }
+
+                                first->resetCamera();
+
+                                if (ren && ren->GetActiveCamera() && savedParallelScale > 0) {
+                                    auto* cam = ren->GetActiveCamera();
+                                    cam->SetParallelScale(savedParallelScale);
+                                    if (!isParallel) {
+                                        double focal[3];
+                                        cam->GetFocalPoint(focal);
+                                        cam->SetPosition(
+                                            focal[0],
+                                            focal[1],
+                                            focal[2] + savedDistance
+                                        );
+                                    }
+                                    ren->ResetCameraClippingRange();
+                                }
+                            }
+                        }
+                        compView->syncCamerasFromFirst();
+                        compView->forceRenderAllSubViews();
+                    } else {
+                        auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
+                        if (auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr) {
+                            glView->resetCamera();
+                        }
+                    }
+                });
+        viewToolBar->addAction(resetCamAct);
+
+        auto* zoomFitAct = new QAction(
+                QIcon(":/Resources/images/svg/pqZoomToSelectedData.svg"),
+                tr("Zoom to Data"), viewToolBar);
+        zoomFitAct->setToolTip(tr("Adjust camera so that all visible data "
+                                  "fits in the view (Zoom to Fit)"));
+        connect(zoomFitAct, &QAction::triggered, this,
+                [compView, innerWidget]() {
+                    if (compView) {
+                        compView->removeCameraLink();
+                        compView->setCameraLinkEnabled(false);
+
+                        // Step 1: ResetCamera on each sub-view independently (based on its viewport size)
+                        for (auto* sv : compView->subViews()) {
+                            if (!sv) continue;
+
+                            auto* ren = vtkComparativeViewWidget::getSceneRenderer(sv);
+                            if (ren && ren->GetActiveCamera()) {
+                                double bounds[6];
+                                ren->ComputeVisiblePropBounds(bounds);
+                                if (bounds[0] <= bounds[1]) {
+                                    ren->ResetCamera(bounds);
+                                } else {
+                                    ren->ResetCamera();
+                                }
+                                ren->ResetCameraClippingRange();
+                            }
+
+                            if (auto* w = sv->getVtkWidget()) {
+                                if (auto* rw = w->renderWindow()) rw->Modified();
+                                w->update();
+                            }
+                        }
+
+                        // Step 2: Unify cameras from the first sub-view (ensure consistent zoom)
+                        auto* first = compView->subViews().first();
+                        auto* firstRen = vtkComparativeViewWidget::getSceneRenderer(first);
+                        if (firstRen && firstRen->GetActiveCamera()) {
+                            for (int i = 1; i < compView->subViews().size(); ++i) {
+                                auto* sv = compView->subViews()[i];
+                                if (!sv) continue;
+                                auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
+                                if (!svRen || !svRen->GetActiveCamera()) continue;
+
+                                auto* srcCam = firstRen->GetActiveCamera();
+                                auto* dstCam = svRen->GetActiveCamera();
+
+                                dstCam->SetPosition(srcCam->GetPosition());
+                                dstCam->SetFocalPoint(srcCam->GetFocalPoint());
+                                dstCam->SetViewUp(srcCam->GetViewUp());
+                                dstCam->SetParallelProjection(srcCam->GetParallelProjection());
+                                dstCam->SetParallelScale(srcCam->GetParallelScale());
+                                dstCam->SetViewAngle(srcCam->GetViewAngle());
+                                dstCam->SetClippingRange(srcCam->GetClippingRange());
+
+                                svRen->ResetCameraClippingRange();
+
+                                if (auto* w = sv->getVtkWidget()) {
+                                    if (auto* rw = w->renderWindow()) rw->Modified();
+                                    w->update();
+                                }
+                            }
+                        }
+
+                        QTimer::singleShot(200, [compView]() {
+                            if (!compView->isClosing()) {
+                                compView->setCameraLinkEnabled(true);
+                                compView->installCameraLink();
+                            }
+                        });
+                        compView->forceRenderAllSubViews();
+
+                        // 【关键修复】防止 performSubViewRefresh() 覆盖相机
+                        compView->clearNeedsCameraReset();
+                    } else {
+                        auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
+                        if (auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr) {
+                            glView->zoomGlobal();
+                        }
+                    }
+                });
+        viewToolBar->addAction(zoomFitAct);
 
         viewToolBar->addSeparator();
 
         if (m_perViewSelMgr && m_selectionController) {
-            QWidget* selTarget = innerWidget;
+            QList<QWidget*> selTargets;
             if (compView && !compView->subViews().isEmpty()) {
-                auto* first = compView->subViews().first();
-                if (first) selTarget = first->asWidget();
+                for (auto* sv : compView->subViews()) {
+                    if (sv) selTargets.append(sv->asWidget());
+                }
+            } else {
+                selTargets.append(innerWidget);
             }
             const auto& acts = m_selectionController->getSelectionActions();
             if (acts.selectSurfaceCells) {
-                m_perViewSelMgr->populateToolbar(viewToolBar, selTarget,
+                QWidget* primaryTarget = selTargets.isEmpty() ? innerWidget : selTargets.first();
+                m_perViewSelMgr->populateToolbar(viewToolBar, primaryTarget,
                                                  acts);
                 viewToolBar->setProperty("_selectionPopulated", true);
+                viewToolBar->setProperty("_compSelTargets", QVariant::fromValue(selTargets));
             }
         }
     }
@@ -4419,9 +4605,28 @@ void MainWindow::doActionToggleOrientationMarker(bool state) {
         settings.setValue("OrientationMarker/Visible", state);
         return;
     }
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+
+    // 检查是否在 Comparative View 中
+    auto* activeGlView = dynamic_cast<vtkGLView*>(getActiveGLView());
+    vtkComparativeViewWidget* activeComp = nullptr;
+    for (auto* comp : findChildren<vtkComparativeViewWidget*>()) {
+        if (comp->subViews().contains(activeGlView)) {
+            activeComp = comp;
+            break;
+        }
+    }
+
+    if (activeComp) {
+        // 对 Comparative 的所有子视窗都设置 orientation marker
+        for (auto* sv : activeComp->subViews()) {
+            if (sv) sv->toggleOrientationMarker(state);
+        }
+    } else if (auto* view = ecvViewManager::instance().getEffectiveView()) {
         view->toggleOrientationMarker(state);
     }
+
+    QSettings settings;
+    settings.setValue("OrientationMarker/Visible", state);
 }
 
 void MainWindow::doActionSaveFile() {
@@ -5706,7 +5911,81 @@ void MainWindow::zoomOn(ccHObject* object) {
 
 void MainWindow::setView(CC_VIEW_ORIENTATION view) {
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+
+#ifdef USE_VTK_BACKEND
+        // 检查是否在 Comparative View 中
+        vtkComparativeViewWidget* targetComp = nullptr;
+        if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
+            for (auto* comp : findChildren<vtkComparativeViewWidget*>()) {
+                if (comp->subViews().contains(glView)) {
+                    targetComp = comp;
+                    break;
+                }
+            }
+        }
+
+        if (targetComp) {
+            // Comparative 模式：ParaView 标准流程 = SetDirection + ResetCamera + CameraLink传播
+            targetComp->removeCameraLink();
+
+            {
+                QSignalBlocker blocker(targetComp->sourceView());
+
+                auto subViews = targetComp->subViews();
+                if (!subViews.isEmpty()) {
+                    // Step 1: 在第一个视窗上设方向
+                    auto* first = subViews.first();
+                    first->setView(view);
+
+                    // Step 2: 关键！调用 ResetCamera 重新拟合数据（ParaView黄金法则）
+                    auto* firstRen = vtkComparativeViewWidget::getSceneRenderer(first);
+                    if (firstRen) {
+                        firstRen->ResetCamera();
+                        firstRen->ResetCameraClippingRange();
+                    }
+
+                    // Step 3: 将正确拟合后的相机同步到其他子视窗
+                    if (firstRen && firstRen->GetActiveCamera()) {
+                        auto* srcCam = firstRen->GetActiveCamera();
+                        for (int i = 1; i < subViews.size(); ++i) {
+                            auto* sv = subViews[i];
+                            if (!sv) continue;
+                            auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
+                            if (!svRen || !svRen->GetActiveCamera()) continue;
+
+                            auto* dstCam = svRen->GetActiveCamera();
+
+                            dstCam->SetPosition(srcCam->GetPosition());
+                            dstCam->SetFocalPoint(srcCam->GetFocalPoint());
+                            dstCam->SetViewUp(srcCam->GetViewUp());
+                            dstCam->SetParallelProjection(srcCam->GetParallelProjection());
+                            dstCam->SetParallelScale(srcCam->GetParallelScale());
+                            dstCam->SetViewAngle(srcCam->GetViewAngle());
+                            dstCam->SetClippingRange(srcCam->GetClippingRange());
+
+                            svRen->ResetCameraClippingRange();
+
+                            if (auto* w = sv->getVtkWidget()) {
+                                if (auto* rw = w->renderWindow()) rw->Modified();
+                                w->update();
+                            }
+                        }
+                    }
+                }
+            }
+
+            targetComp->installCameraLink();
+            targetComp->forceRenderAllSubViews();
+
+            // 【关键修复】防止 performSubViewRefresh() 覆盖相机
+            targetComp->clearNeedsCameraReset();
+        } else {
+            // 普通（非Comparative）模式：原始逻辑
+            v->setView(view);
+        }
+#else
         v->setView(view);
+#endif
     }
 }
 
@@ -6729,6 +7008,7 @@ void MainWindow::setGlobalZoom() {
             }
         }
 
+        // 对普通视图执行 zoomGlobal（排除Comparative子视窗）
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView && !comparativeSubViews.contains(glView)) {
@@ -6736,8 +7016,81 @@ void MainWindow::setGlobalZoom() {
             }
         }
 
+        // Comparative views: copy camera from a non-comparative view
+        // (zoomGlobal() on sub-views calculates ParallelScale based on their small
+        //  viewport, causing objects to fill the screen)
         for (auto* comp : compViews) {
-            comp->refreshSubViews();
+            if (comp->subViews().isEmpty()) continue;
+
+            comp->removeCameraLink();
+            comp->setCameraLinkEnabled(false);
+
+            // Find a non-comparative view that already has the correct camera
+            vtkCamera* srcCam = nullptr;
+            for (auto* v : ecvViewManager::instance().getAllViews()) {
+                auto* glView = dynamic_cast<vtkGLView*>(v);
+                if (glView && !comparativeSubViews.contains(glView)) {
+                    auto* ren = vtkComparativeViewWidget::getSceneRenderer(glView);
+                    if (ren && ren->GetActiveCamera()) {
+                        srcCam = ren->GetActiveCamera();
+                        break;
+                    }
+                }
+            }
+
+            if (srcCam) {
+                for (auto* sv : comp->subViews()) {
+                    if (!sv) continue;
+                    auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
+                    if (!svRen || !svRen->GetActiveCamera()) continue;
+
+                    svRen->GetActiveCamera()->DeepCopy(srcCam);
+                    svRen->ResetCameraClippingRange();
+
+                    if (auto* w = sv->getVtkWidget()) {
+                        if (auto* rw = w->renderWindow()) rw->Modified();
+                        w->update();
+                    }
+                }
+            } else {
+                // Fallback: compute camera from first sub-view's VTK bounds
+                auto* first = comp->subViews().first();
+                auto* firstRen = vtkComparativeViewWidget::getSceneRenderer(first);
+                if (firstRen) {
+                    double bounds[6];
+                    firstRen->ComputeVisiblePropBounds(bounds);
+                    if (bounds[0] <= bounds[1]) {
+                        firstRen->ResetCamera(bounds);
+                    } else {
+                        firstRen->ResetCamera();
+                    }
+                    firstRen->ResetCameraClippingRange();
+
+                    auto* firstCam = firstRen->GetActiveCamera();
+                    for (int i = 1; i < comp->subViews().size(); ++i) {
+                        auto* sv = comp->subViews()[i];
+                        if (!sv) continue;
+                        auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
+                        if (!svRen || !svRen->GetActiveCamera()) continue;
+                        svRen->GetActiveCamera()->DeepCopy(firstCam);
+                        svRen->ResetCameraClippingRange();
+                        if (auto* w = sv->getVtkWidget()) {
+                            if (auto* rw = w->renderWindow()) rw->Modified();
+                            w->update();
+                        }
+                    }
+                }
+            }
+
+            comp->forceRenderAllSubViews();
+            comp->clearNeedsCameraReset();
+
+            QTimer::singleShot(200, [comp]() {
+                if (!comp->isClosing()) {
+                    comp->setCameraLinkEnabled(true);
+                    comp->installCameraLink();
+                }
+            });
         }
 #else
         for (auto* v : ecvViewManager::instance().getAllViews()) {

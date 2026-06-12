@@ -3981,24 +3981,24 @@ void VtkVis::hideOrientationMarkerWidgetAxes() {
 void VtkVis::showOrientationMarkerWidgetAxes(
         vtkRenderWindowInteractor* interactor) {
     if (!m_axes_widget) {
-        // Professional 3D system style with intuitive direction labels
-        // Using standard directional terms instead of medical anatomy terms
         vtkSmartPointer<vtkPropAssembly> assembly =
                 VtkRendering::CreateCoordinate(
                         1.8, "X", "Y", "Z", "+X",
-                        "-X",         // X axis: positive/negative
-                        "+Y", "-Y",   // Y axis: positive/negative
-                        "+Z", "-Z");  // Z axis: positive/negative
+                        "-X",
+                        "+Y", "-Y",
+                        "+Z", "-Z");
         m_axes_widget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
-        m_axes_widget->SetOutlineColor(0.9300, 0.5700, 0.1300);
-        m_axes_widget->SetOutlineColor(0.2, 0.2, 0.2);  // Subtle dark outline
+        m_axes_widget->SetOutlineColor(0.2, 0.2, 0.2);
         m_axes_widget->SetOrientationMarker(assembly);
         m_axes_widget->SetInteractor(interactor);
-        m_axes_widget->SetViewport(0.8, 0.0, 1.0, 0.2);
-        // Larger viewport for better visibility, position in lower-left
+        // Fixed viewport in lower-left corner (25% x 25% of the render window)
+        // This ensures the orientation marker stays the same size regardless of zoom
         m_axes_widget->SetViewport(0.0, 0.0, 0.2, 0.2);
         m_axes_widget->SetEnabled(true);
         m_axes_widget->InteractiveOff();
+        // Zoom=1.0 ensures the marker fills its viewport at a fixed scale,
+        // independent of the main camera's ParallelScale / zoom level
+        m_axes_widget->SetZoom(1.0);
     } else {
         m_axes_widget->SetEnabled(true);
         CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
@@ -5096,9 +5096,9 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
         auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
                 m_cameraOrientationWidget->GetRepresentation());
         if (rep) {
-            // CameraOrientationWidgetSize default = 100
-            rep->SetSize(100, 100);
-            // CameraOrientationWidgetAnchor default = 3 (Top Right)
+            // Fixed pixel size for the camera orientation widget
+            // (independent of viewport/zoom changes)
+            rep->SetSize(80, 80);
             rep->AnchorToUpperRight();
             if (auto* orientRep = vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
                 vtkTextProperty* labels[] = {orientRep->GetXPlusLabelProperty(),
@@ -5109,7 +5109,7 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
                                              orientRep->GetZMinusLabelProperty()};
                 for (auto* tp : labels) {
                     if (!tp) continue;
-                    tp->SetFontSize(128);
+                    tp->SetFontSize(10);
                     tp->SetFontFamilyToArial();
                     tp->BoldOn();
                     tp->SetJustificationToCentered();
