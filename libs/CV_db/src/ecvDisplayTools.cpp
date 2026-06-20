@@ -37,6 +37,7 @@
 #include "ecvViewManager.h"
 
 // STD
+#include <cmath>
 #include <cstring>
 #include <limits>
 
@@ -312,6 +313,9 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
     ctx.ignoreMouseReleaseEvent = false;
     ctx.rotationAxisLocked = false;
     ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
+    ctx.lockedRotationBaseMat.toIdentity();
+    ctx.lockedRotationAngle_rad = 0.0;
+    ctx.lockedRotationOrthoAngle_rad = 0.0;
 
     // GL window own DB
     m_winDBRoot = new ccHObject(QString("DB.3DView_%1").arg(m_uniqueID));
@@ -2680,8 +2684,27 @@ void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx,
                                        bool state,
                                        const CCVector3d& axis) {
     ctx.rotationAxisLocked = state;
+    if (!state) {
+        return;
+    }
+
     ctx.lockedRotationAxis = axis;
-    ctx.lockedRotationAxis.normalize();
+    const double norm = ctx.lockedRotationAxis.norm();
+    if (norm <= 1.0e-12 || !std::isfinite(norm)) {
+        ctx.rotationAxisLocked = false;
+        ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
+        CVLog::Warning("[3D view] Ignoring invalid zero-length rotation lock axis");
+        return;
+    }
+
+    ctx.lockedRotationAxis /= norm;
+    ctx.lockedRotationAngle_rad = 0.0;
+    ctx.lockedRotationOrthoAngle_rad = 0.0;
+    ctx.lockedRotationBaseMat = ccGLMatrixd::FromViewDirAndUpDir(
+            ctx.lockedRotationAxis.orthogonal(), ctx.lockedRotationAxis);
+
+    ccGLMatrixd baseMat = ctx.lockedRotationBaseMat;
+    SetBaseViewMat(ctx, baseMat);
 }
 
 void ecvDisplayTools::LockRotationAxis(bool state, const CCVector3d& axis) {

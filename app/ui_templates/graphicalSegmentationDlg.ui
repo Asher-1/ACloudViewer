@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>273</width>
+    <width>366</width>
     <height>30</height>
    </rect>
   </property>
@@ -143,6 +143,57 @@
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
        <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="addClassToolButton">
+     <property name="toolTip">
+      <string>Set the class of points</string>
+     </property>
+     <property name="statusTip">
+      <string>Set the Classification scalar field for points inside the current selection</string>
+     </property>
+     <property name="text">
+      <string>class</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/hashtag.png</normaloff>:/Resources/images/hashtag.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="exportSelectionButton">
+     <property name="toolTip">
+      <string>Export selection</string>
+     </property>
+     <property name="statusTip">
+      <string>Export the points inside the current selection as a new entity</string>
+     </property>
+     <property name="text">
+      <string>export</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/exportIcon.png</normaloff>:/Resources/images/exportIcon.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="optionsButton">
+     <property name="toolTip">
+      <string>Segmentation options</string>
+     </property>
+     <property name="statusTip">
+      <string>Open segmentation options</string>
+     </property>
+     <property name="text">
+      <string>options</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/ccGear.png</normaloff>:/Resources/images/ccGear.png</iconset>
      </property>
     </widget>
    </item>

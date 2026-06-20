@@ -174,6 +174,11 @@ public:
     void resetCenterOfRotation(int viewport = 0) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;
+    bool rotateLockedCamera(int mouseDeltaX,
+                            int mouseDeltaY,
+                            int viewWidth,
+                            int viewHeight,
+                            const CCVector2i& mousePos);
     void toggleCameraOrientationWidget(bool state) override;
     void toggleOrientationMarker(bool state) override;
     void toggleDebugTrace() override;

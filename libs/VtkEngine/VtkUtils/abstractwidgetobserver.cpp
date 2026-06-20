@@ -20,7 +20,9 @@ void AbstractWidgetObserver::attach(vtkInteractorObserver *widget) {
     if (widget && widget != m_widget) {
         m_widget = widget;
 
-        // we only care about this specific event
+        // Keep tools responsive while handles are dragged, and also emit the
+        // final state when the interaction ends.
+        m_widget->AddObserver(vtkCommand::InteractionEvent, this);
         m_widget->AddObserver(vtkCommand::EndInteractionEvent, this);
     }
 }

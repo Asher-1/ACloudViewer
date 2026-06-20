@@ -31,6 +31,7 @@ namespace Visualization {
 class VtkVis;
 }
 class ecvGenericVisualizer3D;
+class ecvGenericGLDisplay;
 
 class vtkActor;
 class vtkProp;
@@ -118,6 +119,9 @@ protected:
     void UpdateScalarRange();
 
     void applyDisplayEffect();
+    void scheduleDisplayEffectRefresh();
+    void hideInputEntityForOpaquePreview(bool hide);
+    void restoreInputEntityVisibility();
     void setScalarBarColors(const QColor& clr1, const QColor& clr2);
     QColor color1() const;
     QColor color2() const;
@@ -188,6 +192,10 @@ protected:
     bool m_negative;
     bool m_meshMode;
     bool m_preview;
+    bool m_entityVisibilityOverridden = false;
+    bool m_entityOriginalVisibility = true;
+    bool m_entityHadVisibilityOverride = false;
+    ecvGenericGLDisplay* m_entityVisibilityView = nullptr;
     std::string m_id;
     ccHObject* m_entity = nullptr;
     Visualization::VtkVis* m_viewer = nullptr;

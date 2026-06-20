@@ -40,6 +40,7 @@
 #include "ecvConsole.h"
 #include "ecvCropTool.h"
 #include "ecvFilterTool.h"
+#include "ecvGraphicalSegmentationOptionsDlg.h"
 #include "ecvGraphicalSegmentationTool.h"
 #include "ecvGraphicalTransformationTool.h"
 #include "ecvHistogramWindow.h"
@@ -137,6 +138,35 @@
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
+
+namespace {
+
+QString segmentationOptionSuffix(bool segmented) {
+    QSettings settings;
+    settings.sync();
+    settings.beginGroup(
+            ccGraphicalSegmentationOptionsDlg::SegmentationToolOptionsKey());
+    const QString suffix =
+            settings.value(segmented
+                                   ? ccGraphicalSegmentationOptionsDlg::
+                                             SegmentedSuffixKey()
+                                   : ccGraphicalSegmentationOptionsDlg::
+                                             RemainingSuffixKey(),
+                           segmented ? ".segmented" : ".remaining")
+                    .toString();
+    settings.endGroup();
+    return suffix;
+}
+
+QString withSegmentationOptionSuffix(const QString& baseName,
+                                     const QString& suffix) {
+    if (suffix.isEmpty() || baseName.endsWith(suffix)) {
+        return baseName;
+    }
+    return baseName + suffix;
+}
+
+}  // namespace
 
 // dialogs
 #include "ecvAboutDialog.h"
@@ -3280,40 +3310,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         connect(resetCamAct, &QAction::triggered, this,
                 [compView, innerWidget]() {
                     if (compView) {
-                        if (!compView->subViews().isEmpty()) {
-                            auto* first = compView->subViews().first();
-                            if (first) {
-                                auto* ren = vtkComparativeViewWidget::getSceneRenderer(first);
-                                double savedParallelScale = 0.0;
-                                double savedDistance = 0.0;
-                                bool isParallel = false;
-                                if (ren && ren->GetActiveCamera()) {
-                                    auto* cam = ren->GetActiveCamera();
-                                    savedParallelScale = cam->GetParallelScale();
-                                    savedDistance = cam->GetDistance();
-                                    isParallel = cam->GetParallelProjection();
-                                }
-
-                                first->resetCamera();
-
-                                if (ren && ren->GetActiveCamera() && savedParallelScale > 0) {
-                                    auto* cam = ren->GetActiveCamera();
-                                    cam->SetParallelScale(savedParallelScale);
-                                    if (!isParallel) {
-                                        double focal[3];
-                                        cam->GetFocalPoint(focal);
-                                        cam->SetPosition(
-                                            focal[0],
-                                            focal[1],
-                                            focal[2] + savedDistance
-                                        );
-                                    }
-                                    ren->ResetCameraClippingRange();
-                                }
-                            }
-                        }
-                        compView->syncCamerasFromFirst();
-                        compView->forceRenderAllSubViews();
+                        compView->zoomToData();
                     } else {
                         auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
                         if (auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr) {
@@ -3331,71 +3328,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         connect(zoomFitAct, &QAction::triggered, this,
                 [compView, innerWidget]() {
                     if (compView) {
-                        compView->removeCameraLink();
-                        compView->setCameraLinkEnabled(false);
-
-                        // Step 1: ResetCamera on each sub-view independently (based on its viewport size)
-                        for (auto* sv : compView->subViews()) {
-                            if (!sv) continue;
-
-                            auto* ren = vtkComparativeViewWidget::getSceneRenderer(sv);
-                            if (ren && ren->GetActiveCamera()) {
-                                double bounds[6];
-                                ren->ComputeVisiblePropBounds(bounds);
-                                if (bounds[0] <= bounds[1]) {
-                                    ren->ResetCamera(bounds);
-                                } else {
-                                    ren->ResetCamera();
-                                }
-                                ren->ResetCameraClippingRange();
-                            }
-
-                            if (auto* w = sv->getVtkWidget()) {
-                                if (auto* rw = w->renderWindow()) rw->Modified();
-                                w->update();
-                            }
-                        }
-
-                        // Step 2: Unify cameras from the first sub-view (ensure consistent zoom)
-                        auto* first = compView->subViews().first();
-                        auto* firstRen = vtkComparativeViewWidget::getSceneRenderer(first);
-                        if (firstRen && firstRen->GetActiveCamera()) {
-                            for (int i = 1; i < compView->subViews().size(); ++i) {
-                                auto* sv = compView->subViews()[i];
-                                if (!sv) continue;
-                                auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
-                                if (!svRen || !svRen->GetActiveCamera()) continue;
-
-                                auto* srcCam = firstRen->GetActiveCamera();
-                                auto* dstCam = svRen->GetActiveCamera();
-
-                                dstCam->SetPosition(srcCam->GetPosition());
-                                dstCam->SetFocalPoint(srcCam->GetFocalPoint());
-                                dstCam->SetViewUp(srcCam->GetViewUp());
-                                dstCam->SetParallelProjection(srcCam->GetParallelProjection());
-                                dstCam->SetParallelScale(srcCam->GetParallelScale());
-                                dstCam->SetViewAngle(srcCam->GetViewAngle());
-                                dstCam->SetClippingRange(srcCam->GetClippingRange());
-
-                                svRen->ResetCameraClippingRange();
-
-                                if (auto* w = sv->getVtkWidget()) {
-                                    if (auto* rw = w->renderWindow()) rw->Modified();
-                                    w->update();
-                                }
-                            }
-                        }
-
-                        QTimer::singleShot(200, [compView]() {
-                            if (!compView->isClosing()) {
-                                compView->setCameraLinkEnabled(true);
-                                compView->installCameraLink();
-                            }
-                        });
-                        compView->forceRenderAllSubViews();
-
-                        // 【关键修复】防止 performSubViewRefresh() 覆盖相机
-                        compView->clearNeedsCameraReset();
+                        compView->zoomToData();
                     } else {
                         auto* display = ecvGenericGLDisplay::FromWidget(innerWidget);
                         if (auto* glView = display ? dynamic_cast<vtkGLView*>(display) : nullptr) {
@@ -4545,8 +4478,15 @@ void MainWindow::toggleLockRotationAxis() {
             s_lastAxis.x = axisDlg.doubleSpinBox1->value();
             s_lastAxis.y = axisDlg.doubleSpinBox2->value();
             s_lastAxis.z = axisDlg.doubleSpinBox3->value();
+            if (s_lastAxis.norm() <= 1.0e-12) {
+                QMessageBox::warning(this,
+                                     tr("Invalid rotation axis"),
+                                     tr("The rotation axis cannot be zero."));
+                return;
+            }
         }
         displayView->lockRotationAxis(isLocked, s_lastAxis);
+        isLocked = displayView->isRotationAxisLocked();
 
         m_ui->actionLockRotationAxis->blockSignals(true);
         m_ui->actionLockRotationAxis->setChecked(isLocked);
@@ -6995,9 +6935,6 @@ void MainWindow::setGlobalZoom() {
     if (getActiveGLWidget()) {
         ecvRedrawScope scope;
         scope.dismiss();
-        if (auto* v = getActiveGLView()) {
-            v->updateConstellationCenterAndZoom();
-        }
 
 #ifdef USE_VTK_BACKEND
         auto compViews = findChildren<vtkComparativeViewWidget*>();
@@ -7008,6 +6945,13 @@ void MainWindow::setGlobalZoom() {
             }
         }
 
+        auto* activeView = dynamic_cast<vtkGLView*>(getActiveGLView());
+        const bool activeIsComparative =
+                activeView && comparativeSubViews.contains(activeView);
+        if (activeView && !activeIsComparative) {
+            activeView->updateConstellationCenterAndZoom();
+        }
+
         // 对普通视图执行 zoomGlobal（排除Comparative子视窗）
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
@@ -7016,83 +6960,15 @@ void MainWindow::setGlobalZoom() {
             }
         }
 
-        // Comparative views: copy camera from a non-comparative view
-        // (zoomGlobal() on sub-views calculates ParallelScale based on their small
-        //  viewport, causing objects to fill the screen)
+        // Comparative views have their own sub-render-windows.  Reset them
+        // through the widget so all entry points use the same 2/3 framing.
         for (auto* comp : compViews) {
-            if (comp->subViews().isEmpty()) continue;
-
-            comp->removeCameraLink();
-            comp->setCameraLinkEnabled(false);
-
-            // Find a non-comparative view that already has the correct camera
-            vtkCamera* srcCam = nullptr;
-            for (auto* v : ecvViewManager::instance().getAllViews()) {
-                auto* glView = dynamic_cast<vtkGLView*>(v);
-                if (glView && !comparativeSubViews.contains(glView)) {
-                    auto* ren = vtkComparativeViewWidget::getSceneRenderer(glView);
-                    if (ren && ren->GetActiveCamera()) {
-                        srcCam = ren->GetActiveCamera();
-                        break;
-                    }
-                }
-            }
-
-            if (srcCam) {
-                for (auto* sv : comp->subViews()) {
-                    if (!sv) continue;
-                    auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
-                    if (!svRen || !svRen->GetActiveCamera()) continue;
-
-                    svRen->GetActiveCamera()->DeepCopy(srcCam);
-                    svRen->ResetCameraClippingRange();
-
-                    if (auto* w = sv->getVtkWidget()) {
-                        if (auto* rw = w->renderWindow()) rw->Modified();
-                        w->update();
-                    }
-                }
-            } else {
-                // Fallback: compute camera from first sub-view's VTK bounds
-                auto* first = comp->subViews().first();
-                auto* firstRen = vtkComparativeViewWidget::getSceneRenderer(first);
-                if (firstRen) {
-                    double bounds[6];
-                    firstRen->ComputeVisiblePropBounds(bounds);
-                    if (bounds[0] <= bounds[1]) {
-                        firstRen->ResetCamera(bounds);
-                    } else {
-                        firstRen->ResetCamera();
-                    }
-                    firstRen->ResetCameraClippingRange();
-
-                    auto* firstCam = firstRen->GetActiveCamera();
-                    for (int i = 1; i < comp->subViews().size(); ++i) {
-                        auto* sv = comp->subViews()[i];
-                        if (!sv) continue;
-                        auto* svRen = vtkComparativeViewWidget::getSceneRenderer(sv);
-                        if (!svRen || !svRen->GetActiveCamera()) continue;
-                        svRen->GetActiveCamera()->DeepCopy(firstCam);
-                        svRen->ResetCameraClippingRange();
-                        if (auto* w = sv->getVtkWidget()) {
-                            if (auto* rw = w->renderWindow()) rw->Modified();
-                            w->update();
-                        }
-                    }
-                }
-            }
-
-            comp->forceRenderAllSubViews();
-            comp->clearNeedsCameraReset();
-
-            QTimer::singleShot(200, [comp]() {
-                if (!comp->isClosing()) {
-                    comp->setCameraLinkEnabled(true);
-                    comp->installCameraLink();
-                }
-            });
+            if (comp) comp->zoomToData();
         }
 #else
+        if (auto* v = getActiveGLView()) {
+            v->updateConstellationCenterAndZoom();
+        }
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView) {
@@ -13490,6 +13366,10 @@ void MainWindow::activateSegmentationMode() {
         m_gsTool = new ccGraphicalSegmentationTool(this);
         connect(m_gsTool, &ccOverlayDialog::processFinished, this,
                 &MainWindow::deactivateSegmentationMode);
+        connect(m_gsTool,
+                &ccGraphicalSegmentationTool::currentScalarFieldUpdated,
+                this,
+                &MainWindow::updatePropertiesView);
         registerOverlayDialog(m_gsTool, Qt::TopRightCorner);
     }
 
@@ -13640,26 +13520,57 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                 if (segmentationResult) {
                     assert(cloud);
 
+                    const QString segmentedSuffix =
+                            segmentationOptionSuffix(true);
+                    segmentationResult->setName(withSegmentationOptionSuffix(
+                            entity->getName(), segmentedSuffix));
+                    if (entity->isKindOf(CV_TYPES::MESH) &&
+                        segmentationResult->isKindOf(CV_TYPES::MESH)) {
+                        ccGenericMesh* meshEntity =
+                                ccHObjectCaster::ToGenericMesh(entity);
+                        ccGenericMesh* resultMesh =
+                                ccHObjectCaster::ToGenericMesh(
+                                        segmentationResult);
+                        if (meshEntity && resultMesh) {
+                            resultMesh->getAssociatedCloud()->setName(
+                                    withSegmentationOptionSuffix(
+                                            meshEntity->getAssociatedCloud()
+                                                    ->getName(),
+                                            segmentedSuffix));
+                        }
+                    }
+
                     // we must take care of the remaining part
                     if (!deleteHiddenParts) {
                         // no need to put back the entity in DB if we delete it
                         // afterwards!
                         if (!deleteOriginalEntity) {
-                            entity->setName(entity->getName() +
-                                            QString(".remaining"));
+                            const QString remainingSuffix =
+                                    segmentationOptionSuffix(false);
+                            entity->setName(withSegmentationOptionSuffix(
+                                    entity->getName(), remainingSuffix));
+                            if (entity->isKindOf(CV_TYPES::MESH)) {
+                                ccGenericMesh* meshEntity =
+                                        ccHObjectCaster::ToGenericMesh(entity);
+                                if (meshEntity) {
+                                    meshEntity->getAssociatedCloud()->setName(
+                                            withSegmentationOptionSuffix(
+                                                    meshEntity
+                                                            ->getAssociatedCloud()
+                                                            ->getName(),
+                                                    remainingSuffix));
+                                }
+                            }
                             putObjectBackIntoDBTree(entity, objContext);
                         }
                     } else {
-                        // keep original name(s)
-                        segmentationResult->setName(entity->getName());
+                        // The original entity will be removed below; keep the
+                        // result as a proper segmented output with the configured
+                        // suffix instead of reusing the source name verbatim.
                         if (entity->isKindOf(CV_TYPES::MESH) &&
                             segmentationResult->isKindOf(CV_TYPES::MESH)) {
                             ccGenericMesh* meshEntity =
                                     ccHObjectCaster::ToGenericMesh(entity);
-                            ccHObjectCaster::ToGenericMesh(segmentationResult)
-                                    ->getAssociatedCloud()
-                                    ->setName(meshEntity->getAssociatedCloud()
-                                                      ->getName());
 
                             // specific case: if the sub mesh is deleted
                             // afterwards (see below) then its associated

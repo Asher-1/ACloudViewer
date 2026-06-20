@@ -44,6 +44,7 @@
 
 cvCutFilter::cvCutFilter(QWidget* parent) : cvGenericFilter(parent) {
     setWindowTitle(tr("Cut"));
+    m_planes = vtkSmartPointer<vtkPlanes>::New();
     createUi();
 }
 
@@ -178,6 +179,7 @@ void cvCutFilter::shift(const CCVector3d& v) {
                 trans->Translate(v.u);
                 m_boxWidget->SetTransform(trans);
                 apply();
+                scheduleDisplayEffectRefresh();
             }
             break;
         case cvCutFilter::Plane:
@@ -307,9 +309,9 @@ void cvCutFilter::setNormal(double normal[3]) {
 }
 
 void cvCutFilter::setOrigin(double origin[3]) {
-    if (Utils::ArrayComparator<double>()(origin, m_normal)) return;
+    if (Utils::ArrayComparator<double>()(origin, m_origin)) return;
 
-    Utils::ArrayAssigner<double>()(m_normal, origin);
+    Utils::ArrayAssigner<double>()(m_origin, origin);
     apply();
 }
 
@@ -349,6 +351,7 @@ void cvCutFilter::onOriginChanged(double* origin) {
     m_configUi->originZSpinBox->setValue(origin[2]);
 
     apply();
+    scheduleDisplayEffectRefresh();
 }
 
 void cvCutFilter::onNormalChanged(double* normal) {
@@ -365,6 +368,7 @@ void cvCutFilter::onNormalChanged(double* normal) {
     m_configUi->normalZSpinBox->setValue(normal[2]);
 
     apply();
+    scheduleDisplayEffectRefresh();
 }
 
 void cvCutFilter::onCenterChanged(double* center) {
@@ -381,6 +385,7 @@ void cvCutFilter::onCenterChanged(double* center) {
     m_configUi->centerZSpinBox->setValue(center[2]);
 
     apply();
+    scheduleDisplayEffectRefresh();
 }
 
 void cvCutFilter::onRadiusChanged(double radius) {
@@ -392,11 +397,19 @@ void cvCutFilter::onRadiusChanged(double radius) {
 
     m_configUi->radiusSpinBox->setValue(radius);
     apply();
+    scheduleDisplayEffectRefresh();
 }
 
 void cvCutFilter::onPlanesChanged(vtkPlanes* planes) {
-    m_planes = planes;
+    if (!planes) return;
+    if (!m_planes) {
+        m_planes = vtkSmartPointer<vtkPlanes>::New();
+    }
+    m_planes->SetPoints(planes->GetPoints());
+    m_planes->SetNormals(planes->GetNormals());
+    m_planes->Modified();
     apply();
+    scheduleDisplayEffectRefresh();
 }
 
 void cvCutFilter::showContourLines(bool show) {
@@ -681,6 +694,9 @@ void cvCutFilter::resetBoxWidget() {
         dataSet->GetBounds(bounds);
     }
     cvGenericFilter::UpdateScalarRange();
+    if (!m_planes) {
+        m_planes = vtkSmartPointer<vtkPlanes>::New();
+    }
     m_boxWidget->PlaceWidget(bounds);
     m_boxWidget->GetPlanes(m_planes);
     onPlanesChanged(m_planes);

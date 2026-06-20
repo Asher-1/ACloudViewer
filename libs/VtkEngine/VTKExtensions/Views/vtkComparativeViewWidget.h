@@ -38,6 +38,7 @@ class vtkGLView;
 class vtkChartView;
 class vtkCallbackCommand;
 class vtkObject;
+class vtkRenderWindow;
 
 class QVTK_ENGINE_LIB_API vtkComparativeViewWidget : public QWidget {
     Q_OBJECT
@@ -92,6 +93,7 @@ public:
 
     void syncCamerasFromFirst();
     void forceRenderAllSubViews();
+    void zoomToData();
 
     // 相机链接管理（供 MainWindow 等外部调用）
     void removeCameraLink();
@@ -146,8 +148,9 @@ private:
             vtkObject* caller, unsigned long eid, void* clientData, void*);
     static void renderEndCallback(
             vtkObject* caller, unsigned long eid, void* clientData, void*);
-    void startInteractionTimer();
     void stopInteractionTimer();
+    void restartInteractionEndTimer();
+    void onInteractionEndTimer();
     void scheduleCameraSyncRender();
     void performCameraSyncRender();
     void setInteractiveLOD(bool enable);
@@ -157,6 +160,12 @@ private:
     void syncAllPropertiesFromFirst();
     void syncViewPropertiesFromSource(vtkGLView* source, vtkGLView* target);
     void clearHighlightClones();
+    bool activateSubViewForWidget(QWidget* widget, Qt::FocusReason reason);
+    void applyShowingSelection(bool resetCamera = true);
+    void applySelectedEntitiesToRenderViews(bool resetCamera);
+    void applySelectedEntitiesToChartViews();
+    QSet<ccHObject*> selectedEntitiesFromCombo() const;
+    void updateShowingComboText();
 
     ComparativeType m_type;
     QString m_viewTypeKey;
@@ -175,6 +184,10 @@ private:
     QCheckBox* m_overlayCheck = nullptr;
     QCheckBox* m_syncCamCheck = nullptr;
     QComboBox* m_entityCombo = nullptr;
+    bool m_updatingShowingCombo = false;
+    bool m_applyingShowingSelection = false;
+    QSet<ccHObject*> m_selectedEntities;
+    QHash<vtkGLView*, QSet<ccHObject*>> m_showingEntitiesByView;
     bool m_overlayMode = false;
     QGridLayout* m_gridLayout = nullptr;
     QList<QWidget*> m_subWidgets;
@@ -196,8 +209,10 @@ private:
     bool m_interacting = false;
     int m_interactionSourceIdx = -1;
     QTimer* m_cameraSyncRenderTimer = nullptr;
+    QTimer* m_interactionEndTimer = nullptr;
     bool m_needsCameraReset = false;
     int m_cameraSyncSourceIdx = 0;
+    QSet<vtkRenderWindow*> m_ignoredRenderEndWindows;
 
     struct InteractorObserver {
         vtkObject* observed = nullptr;

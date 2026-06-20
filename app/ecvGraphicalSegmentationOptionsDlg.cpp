@@ -37,6 +37,7 @@ void ccGraphicalSegmentationOptionsDlg::accept() {
     settings.setValue(RemainingSuffixKey(), remainingTextLineEdit->text());
     settings.setValue(SegmentedSuffixKey(), segmentedTextLineEdit->text());
     settings.endGroup();
+    settings.sync();
 
     QDialog::accept();
 }
