@@ -35,25 +35,31 @@ void cvClipFilter::apply() {
 
     if (!m_preview) {
         if (isValidPolyData()) {
-            VTK_CREATE(vtkPolyDataMapper, mapper);
+            if (!m_filterActor) {
+                VtkUtils::vtkInitOnce(m_filterActor);
+                addActor(m_filterActor);
+            }
+            vtkPolyDataMapper* mapper =
+                    vtkPolyDataMapper::SafeDownCast(m_filterActor->GetMapper());
+            if (!mapper) {
+                auto newMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+                m_filterActor->SetMapper(newMapper);
+                mapper = newMapper;
+            }
             mapper->SetInputData(vtkPolyData::SafeDownCast(m_dataObject));
-            if (!m_filterActor) {
-                VtkUtils::vtkInitOnce(m_filterActor);
-                m_filterActor->SetMapper(mapper);
-                addActor(m_filterActor);
-            } else {
-                m_filterActor->SetMapper(mapper);
-            }
         } else if (isValidDataSet()) {
-            VTK_CREATE(vtkDataSetMapper, mapper);
-            mapper->SetInputData(vtkDataSet::SafeDownCast(m_dataObject));
             if (!m_filterActor) {
                 VtkUtils::vtkInitOnce(m_filterActor);
-                m_filterActor->SetMapper(mapper);
                 addActor(m_filterActor);
-            } else {
-                m_filterActor->SetMapper(mapper);
             }
+            vtkDataSetMapper* mapper =
+                    vtkDataSetMapper::SafeDownCast(m_filterActor->GetMapper());
+            if (!mapper) {
+                auto newMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+                m_filterActor->SetMapper(newMapper);
+                mapper = newMapper;
+            }
+            mapper->SetInputData(vtkDataSet::SafeDownCast(m_dataObject));
         }
         applyDisplayEffect();
 
@@ -87,16 +93,22 @@ void cvClipFilter::apply() {
         m_negative ? m_PolyClip->InsideOutOn() : m_PolyClip->InsideOutOff();
         m_PolyClip->Update();
 
+        const bool addFilterActor = !m_filterActor;
         if (!m_filterActor) {
             VtkUtils::vtkInitOnce(m_filterActor);
-            VTK_CREATE(vtkPolyDataMapper, mapper);
+        }
+        vtkPolyDataMapper* mapper =
+                vtkPolyDataMapper::SafeDownCast(m_filterActor->GetMapper());
+        if (!mapper) {
+            auto newMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+            m_filterActor->SetMapper(newMapper);
+            mapper = newMapper;
+        }
+        if (mapper->GetInputConnection(0, 0) != m_PolyClip->GetOutputPort()) {
             mapper->SetInputConnection(m_PolyClip->GetOutputPort());
-            m_filterActor->SetMapper(mapper);
+        }
+        if (addFilterActor) {
             addActor(m_filterActor);
-        } else {
-            VTK_CREATE(vtkPolyDataMapper, mapper);
-            mapper->SetInputConnection(m_PolyClip->GetOutputPort());
-            m_filterActor->SetMapper(mapper);
         }
     } else if (isValidDataSet()) {
         VtkUtils::vtkInitOnce(m_DataSetClip);
@@ -111,7 +123,7 @@ void cvClipFilter::apply() {
             } break;
 
             case cvCutFilter::Box: {
-                VTK_CREATE(vtkBox, box);
+                m_DataSetClip->SetClipFunction(m_planes);
             } break;
 
             case cvCutFilter::Sphere: {
@@ -126,16 +138,22 @@ void cvClipFilter::apply() {
                    : m_DataSetClip->InsideOutOff();
         m_DataSetClip->Update();
 
+        const bool addFilterActor = !m_filterActor;
         if (!m_filterActor) {
             VtkUtils::vtkInitOnce(m_filterActor);
-            VTK_CREATE(vtkDataSetMapper, mapper);
+        }
+        vtkDataSetMapper* mapper =
+                vtkDataSetMapper::SafeDownCast(m_filterActor->GetMapper());
+        if (!mapper) {
+            auto newMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+            m_filterActor->SetMapper(newMapper);
+            mapper = newMapper;
+        }
+        if (mapper->GetInputConnection(0, 0) != m_DataSetClip->GetOutputPort()) {
             mapper->SetInputConnection(m_DataSetClip->GetOutputPort());
-            m_filterActor->SetMapper(mapper);
+        }
+        if (addFilterActor) {
             addActor(m_filterActor);
-        } else {
-            VTK_CREATE(vtkDataSetMapper, mapper);
-            mapper->SetInputConnection(m_DataSetClip->GetOutputPort());
-            m_filterActor->SetMapper(mapper);
         }
     }
 

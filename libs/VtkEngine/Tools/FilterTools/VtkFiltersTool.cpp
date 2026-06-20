@@ -127,12 +127,13 @@ void VtkFiltersTool::setVisualizer(ecvGenericVisualizer3D* viewer) {
 void VtkFiltersTool::showInteractor(bool state) {
     if (!m_filter) return;
     m_filter->showInteractor(state);
-    update();
+    m_filter->update();
 }
 
 void VtkFiltersTool::showOutline(bool state) {
     if (!m_filter) return;
     m_filter->showOutline(state);
+    m_filter->update();
 }
 
 ccHObject* VtkFiltersTool::getOutput() const {
@@ -167,6 +168,7 @@ void VtkFiltersTool::shift(const CCVector3& v) {
     if (!m_filter) return;
 
     m_filter->shift(CCVector3d::fromArray(v.u));
+    m_filter->update();
 }
 
 void VtkFiltersTool::set(const ccBBox& extents,
@@ -268,15 +270,18 @@ void VtkFiltersTool::setPointSize(const std::string& viewID, int viewport) {
 void VtkFiltersTool::reset() {
     if (!m_filter) return;
     m_filter->reset();
+    m_filter->update();
 }
 
 void VtkFiltersTool::restore() {
     if (!m_filter) return;
     m_filter->restoreOrigin();
+    m_filter->update();
 }
 
 void VtkFiltersTool::clear() {
     if (m_filter) {
         m_filter->clearAllActor();
+        m_filter->update();
     }
 }

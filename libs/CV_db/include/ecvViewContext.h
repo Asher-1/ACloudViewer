@@ -113,6 +113,9 @@ struct CV_DB_LIB_API ecvViewContext {
 
     bool rotationAxisLocked = false;
     CCVector3d lockedRotationAxis{0, 0, 1};
+    ccGLMatrixd lockedRotationBaseMat;
+    double lockedRotationAngle_rad = 0.0;
+    double lockedRotationOrthoAngle_rad = 0.0;
 
     // ================================================================
     // Light

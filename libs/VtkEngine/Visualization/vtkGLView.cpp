@@ -90,6 +90,7 @@ vtkGLView::vtkGLView(QMainWindow* parent) : QObject(parent) {
     m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
     m_ctx.viewportParams.viewMat.toIdentity();
     m_ctx.viewportParams.setCameraCenter(CCVector3d(0.0, 0.0, 1.0));
+    m_ctx.lockedRotationBaseMat.toIdentity();
 
     m_ctx.viewMatd.toIdentity();
     m_ctx.projMatd.toIdentity();
@@ -1271,12 +1272,139 @@ bool vtkGLView::isRotationAxisLocked() const {
 
 void vtkGLView::lockRotationAxis(bool state, const CCVector3d& axis) {
     m_ctx.rotationAxisLocked = state;
+    if (!state) {
+        return;
+    }
+
     m_ctx.lockedRotationAxis = axis;
-    m_ctx.lockedRotationAxis.normalize();
+    const double norm = m_ctx.lockedRotationAxis.norm();
+    if (norm <= 1.0e-12 || !std::isfinite(norm)) {
+        m_ctx.rotationAxisLocked = false;
+        m_ctx.lockedRotationAxis = CCVector3d(0.0, 0.0, 1.0);
+        CVLog::Warning("[vtkGLView] Ignoring invalid zero-length rotation lock axis");
+        return;
+    }
+    m_ctx.lockedRotationAxis /= norm;
+    m_ctx.lockedRotationAngle_rad = 0.0;
+    m_ctx.lockedRotationOrthoAngle_rad = 0.0;
+
+    // VTK views are driven by vtkCamera, not by the CloudCompare OpenGL
+    // viewMat.  Keep the current camera framing when enabling the lock and
+    // apply constrained VTK camera rotations during mouse drag.
+    syncVtkCameraToContext();
+    emit cameraParamChanged();
+}
+
+bool vtkGLView::rotateLockedCamera(int mouseDeltaX,
+                                   int mouseDeltaY,
+                                   int viewWidth,
+                                   int viewHeight,
+                                   const CCVector2i& mousePos) {
+    if (!m_ctx.rotationAxisLocked || !m_visualizer3D) return false;
+
+    vtkRenderer* renderer = m_visualizer3D->getCurrentRenderer();
+    vtkCamera* camera = renderer ? renderer->GetActiveCamera() : nullptr;
+    if (!renderer || !camera) return false;
+
+    CCVector3d axis = m_ctx.lockedRotationAxis;
+    const double axisNorm = axis.norm();
+    if (axisNorm <= 1.0e-12 || !std::isfinite(axisNorm)) return false;
+    axis /= axisNorm;
+
+    constexpr double PI = 3.14159265358979323846;
+    constexpr double TWO_PI = 2.0 * PI;
+    constexpr double HALF_PI = 0.5 * PI;
+    const double w = std::max(1, viewWidth);
+    const double h = std::max(1, viewHeight);
+
+    const double horizDeltaRad = static_cast<double>(mouseDeltaX) * (TWO_PI / w);
+    const double oldOrthoRad = m_ctx.lockedRotationOrthoAngle_rad;
+    const double requestedOrthoRad =
+            oldOrthoRad + static_cast<double>(mouseDeltaY) * (PI / h);
+    const double newOrthoRad =
+            std::min(HALF_PI, std::max(-HALF_PI, requestedOrthoRad));
+    const double orthoDeltaRad = newOrthoRad - oldOrthoRad;
+
+    if (std::abs(horizDeltaRad) <= 1.0e-12 &&
+        std::abs(orthoDeltaRad) <= 1.0e-12) {
+        return true;
+    }
+
+    m_ctx.lockedRotationAngle_rad += horizDeltaRad;
+    while (m_ctx.lockedRotationAngle_rad < -PI) {
+        m_ctx.lockedRotationAngle_rad += TWO_PI;
+    }
+    while (m_ctx.lockedRotationAngle_rad > PI) {
+        m_ctx.lockedRotationAngle_rad -= TWO_PI;
+    }
+    m_ctx.lockedRotationOrthoAngle_rad = newOrthoRad;
+
+    if (std::abs(horizDeltaRad) > 1.0e-12) {
+        m_visualizer3D->rotateWithAxis(
+                mousePos, axis, horizDeltaRad * 180.0 / PI, 0);
+    }
+
+    if (std::abs(orthoDeltaRad) > 1.0e-12) {
+        double pos[3] = {0.0, 0.0, 0.0};
+        double focal[3] = {0.0, 0.0, 0.0};
+        camera->GetPosition(pos);
+        camera->GetFocalPoint(focal);
+        CCVector3d viewDir(focal[0] - pos[0], focal[1] - pos[1],
+                           focal[2] - pos[2]);
+        const double viewNorm = viewDir.norm();
+        if (viewNorm > 1.0e-12 && std::isfinite(viewNorm)) {
+            viewDir /= viewNorm;
+            CCVector3d right = viewDir.cross(axis);
+            double rightNorm = right.norm();
+            if (rightNorm <= 1.0e-12 || !std::isfinite(rightNorm)) {
+                double up[3] = {0.0, 0.0, 1.0};
+                camera->GetViewUp(up);
+                right = CCVector3d(up[0], up[1], up[2]).cross(viewDir);
+                rightNorm = right.norm();
+            }
+            if (rightNorm > 1.0e-12 && std::isfinite(rightNorm)) {
+                right /= rightNorm;
+                m_visualizer3D->rotateWithAxis(
+                        mousePos, right, orthoDeltaRad * 180.0 / PI, 0);
+            }
+        }
+    }
+
+    double pos[3] = {0.0, 0.0, 0.0};
+    double focal[3] = {0.0, 0.0, 0.0};
+    camera->GetPosition(pos);
+    camera->GetFocalPoint(focal);
+    CCVector3d viewDir(focal[0] - pos[0], focal[1] - pos[1],
+                       focal[2] - pos[2]);
+    const double viewNorm = viewDir.norm();
+    if (viewNorm > 1.0e-12 && std::isfinite(viewNorm)) {
+        viewDir /= viewNorm;
+        CCVector3d up = axis - viewDir * axis.dot(viewDir);
+        const double upNorm = up.norm();
+        if (upNorm > 1.0e-12 && std::isfinite(upNorm)) {
+            up /= upNorm;
+            camera->SetViewUp(up.x, up.y, up.z);
+        }
+    }
+
+    camera->OrthogonalizeViewUp();
+    camera->Modified();
+    renderer->ResetCameraClippingRange();
+    renderer->Modified();
+    if (auto* rw = m_vtkWidget ? m_vtkWidget->renderWindow() : nullptr) {
+        rw->Render();
+    }
+    syncVtkCameraToContext();
+    emit cameraParamChanged();
+    if (m_vtkWidget) m_vtkWidget->update();
+    return true;
 }
 
 void vtkGLView::toggleCameraOrientationWidget(bool state) {
-    if (m_displayTools) m_displayTools->toggleCameraOrientationWidget(state);
+    // Route directly to this view's VtkVis. Comparative sub-views each own an
+    // interactor, so using the global display tools can bind the camera widget
+    // to the wrong render window.
+    if (m_visualizer3D) m_visualizer3D->ToggleCameraOrientationWidget(state);
 }
 
 void vtkGLView::toggleOrientationMarker(bool state) {
@@ -1458,8 +1586,11 @@ void vtkGLView::setPointSizeOnView(float size) {
 void vtkGLView::rotateWithAxis(const CCVector2i& mousePos,
                                const CCVector3d& axis,
                                double angle_deg) {
-    if (m_displayTools)
+    if (m_visualizer3D) {
+        m_visualizer3D->rotateWithAxis(mousePos, axis, angle_deg, 0);
+    } else if (m_displayTools) {
         m_displayTools->rotateWithAxis(mousePos, axis, angle_deg, 0);
+    }
 }
 
 void vtkGLView::startPicking(PICKING_MODE mode, int x, int y, int w, int h) {

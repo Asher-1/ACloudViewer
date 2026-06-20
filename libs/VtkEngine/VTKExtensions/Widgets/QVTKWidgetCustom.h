@@ -216,6 +216,12 @@ public:
     void setOwnerView(vtkGLView* view) { m_ownerView = view; }
     vtkGLView* ownerView() const { return m_ownerView; }
 
+    /// Use direct VTK camera wheel zoom for embedded per-view widgets.
+    void setDirectCameraWheelZoom(bool enabled) {
+        m_directCameraWheelZoom = enabled;
+    }
+    bool directCameraWheelZoom() const { return m_directCameraWheelZoom; }
+
     /// Resolve the ecvGenericGLDisplay associated with this widget.
     ecvGenericGLDisplay* resolveDisplay() const;
 
@@ -293,6 +299,12 @@ public:
     float* curCustomLightPos() { return curCtx().customLightPos; }
     bool& curRotationAxisLocked() { return curCtx().rotationAxisLocked; }
     CCVector3d& curLockedRotationAxis() { return curCtx().lockedRotationAxis; }
+    double& curLockedRotationAngleRad() {
+        return curCtx().lockedRotationAngle_rad;
+    }
+    double& curLockedRotationOrthoAngleRad() {
+        return curCtx().lockedRotationOrthoAngle_rad;
+    }
     ecvGenericGLDisplay::PivotVisibility& curPivotVisibility() {
         return curCtx().pivotVisibility;
     }
@@ -331,6 +343,7 @@ protected:
     ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
     bool m_cameraOrientMouseActive = false;
+    bool m_directCameraWheelZoom = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
     float m_localDefaultPointSize = 1.0f;
     float m_localDefaultLineWidth = 2.0f;

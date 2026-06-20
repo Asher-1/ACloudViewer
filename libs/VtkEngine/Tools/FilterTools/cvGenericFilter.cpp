@@ -31,7 +31,9 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 
 // VTK
 #include <vtk3DWidget.h>
@@ -46,11 +48,13 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkProp.h>
 #include <vtkProperty.h>
+#include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkScalarBarActor.h>
 #include <vtkTextProperty.h>
 #include <vtkUnstructuredGrid.h>
+#include <QTimer>
 
 cvGenericFilter::cvGenericFilter(QWidget* parent)
     : QWidget(parent),
@@ -65,6 +69,7 @@ cvGenericFilter::cvGenericFilter(QWidget* parent)
 }
 
 cvGenericFilter::~cvGenericFilter() {
+    restoreInputEntityVisibility();
     VtkUtils::vtkSafeDelete(m_dataObject);
     delete m_ui;
 }
@@ -87,6 +92,7 @@ void cvGenericFilter::start() {
 }
 
 bool cvGenericFilter::setInput(ccHObject* obj) {
+    restoreInputEntityVisibility();
     m_entity = obj;
     m_id = m_entity->getViewId().toStdString();
 
@@ -211,6 +217,13 @@ void cvGenericFilter::update() {
     if (auto* w = ecvViewManager::instance().activeWidget()) {
         w->update();
     }
+    if (m_viewer) {
+        if (auto rw = m_viewer->getRenderWindow()) {
+            rw->Render();
+        }
+    } else if (m_interactor) {
+        m_interactor->Render();
+    }
 }
 
 void cvGenericFilter::reset() {
@@ -259,25 +272,90 @@ void cvGenericFilter::UpdateScalarRange() {
     setScalarRange(scalarRange[0], scalarRange[1]);
 }
 
+void cvGenericFilter::hideInputEntityForOpaquePreview(bool hide) {
+    if (!m_entity) return;
+
+    if (hide) {
+        auto* view = ecvViewManager::instance().getEffectiveView();
+        if (!view) return;
+
+        auto& repMgr = ecvRepresentationManager::instance();
+        auto* rep = repMgr.ensureRepresentation(m_entity, view);
+        if (!rep) return;
+
+        if (!m_entityVisibilityOverridden || m_entityVisibilityView != view) {
+            if (m_entityVisibilityOverridden) {
+                restoreInputEntityVisibility();
+            }
+            m_entityHadVisibilityOverride = rep->hasVisibilityOverride();
+            m_entityOriginalVisibility = rep->isVisible();
+            m_entityVisibilityView = view;
+            m_entityVisibilityOverridden = true;
+        }
+
+        rep->setVisible(false);
+        if (m_modelActor) {
+            m_modelActor->SetVisibility(0);
+        }
+        return;
+    }
+
+    restoreInputEntityVisibility();
+}
+
+void cvGenericFilter::restoreInputEntityVisibility() {
+    if (m_entityVisibilityOverridden && m_entity && m_entityVisibilityView) {
+        auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                m_entity, m_entityVisibilityView);
+        if (rep) {
+            if (m_entityHadVisibilityOverride) {
+                rep->setVisible(m_entityOriginalVisibility);
+            } else {
+                rep->clearVisibilityOverride();
+            }
+        }
+    }
+    m_entityVisibilityOverridden = false;
+    m_entityHadVisibilityOverride = false;
+    m_entityVisibilityView = nullptr;
+}
+
 void cvGenericFilter::applyDisplayEffect() {
+    if (m_viewer && !m_id.empty()) {
+        if (vtkActor* actor = m_viewer->getActorById(m_id)) {
+            m_modelActor = actor;
+        }
+    }
+
+    if (m_displayEffect != Opaque) {
+        hideInputEntityForOpaquePreview(false);
+    }
+
     if (m_modelActor) {
         switch (m_displayEffect) {
             case Transparent:
+                hideInputEntityForOpaquePreview(false);
                 m_modelActor->GetProperty()->SetOpacity(0.3);
                 m_modelActor->SetVisibility(1);
                 m_modelActor->GetProperty()->SetRepresentationToSurface();
                 break;
 
             case Opaque:
+                m_modelActor->GetProperty()->SetOpacity(1.0);
                 m_modelActor->SetVisibility(0);
+                hideInputEntityForOpaquePreview(true);
                 break;
 
             case Points:
+                hideInputEntityForOpaquePreview(false);
+                m_modelActor->GetProperty()->SetOpacity(1.0);
                 m_modelActor->SetVisibility(1);
                 m_modelActor->GetProperty()->SetRepresentationToPoints();
                 break;
 
             case Wireframe:
+                hideInputEntityForOpaquePreview(false);
+                m_modelActor->GetProperty()->SetOpacity(1.0);
                 m_modelActor->SetVisibility(1);
                 m_modelActor->GetProperty()->SetRepresentationToWireframe();
                 break;
@@ -286,8 +364,27 @@ void cvGenericFilter::applyDisplayEffect() {
         vtkSmartPointer<vtkLookupTable> lut =
                 createLookupTable(m_scalarMin, m_scalarMax);
         m_modelActor->GetMapper()->SetLookupTable(lut);
-        update();
     }
+
+    if (m_filterActor) {
+        m_filterActor->SetVisibility(1);
+        m_filterActor->GetProperty()->SetOpacity(1.0);
+        m_filterActor->GetProperty()->SetRepresentationToSurface();
+        if (auto* mapper = m_filterActor->GetMapper()) {
+            vtkSmartPointer<vtkLookupTable> lut =
+                    createLookupTable(m_scalarMin, m_scalarMax);
+            mapper->SetLookupTable(lut);
+            mapper->SetScalarRange(m_scalarMin, m_scalarMax);
+            mapper->Update();
+        }
+    }
+
+    update();
+}
+
+void cvGenericFilter::scheduleDisplayEffectRefresh() {
+    QTimer::singleShot(0, this, [this]() { applyDisplayEffect(); });
+    QTimer::singleShot(30, this, [this]() { applyDisplayEffect(); });
 }
 
 void cvGenericFilter::showScalarBar(bool show) {
@@ -410,6 +507,8 @@ void cvGenericFilter::removeActor(const vtkSmartPointer<vtkProp> actor) {
 }
 
 void cvGenericFilter::clearAllActor() {
+    restoreInputEntityVisibility();
+
     if (!m_viewer) return;
 
     if (m_modelActor) {
@@ -469,6 +568,7 @@ void cvGenericFilter::setInteractor(vtkRenderWindowInteractor* interactor) {
 
 void cvGenericFilter::setResultData(vtkSmartPointer<vtkDataObject> data) {
     m_resultData->DeepCopy(data);
+    scheduleDisplayEffectRefresh();
 }
 
 vtkSmartPointer<vtkDataObject> cvGenericFilter::resultData() const {

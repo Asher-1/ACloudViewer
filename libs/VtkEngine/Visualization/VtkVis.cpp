@@ -81,6 +81,8 @@
 #include <vtkCameraOrientationRepresentation.h>
 #include <vtkCameraOrientationWidget.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
+#include <VTKExtensions/Views/GridAxes/vtkGridAxesHelper.h>
+#include <VTKExtensions/Views/GridAxes/vtkPVGridAxes3DActor.h>
 #include <vtkLightKit.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
@@ -107,9 +109,12 @@
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
+#include <vtkInteractorObserver.h>
 #include <vtkJPEGReader.h>
 #include <vtkLineSource.h>
 #include <vtkLookupTable.h>
+#include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
@@ -338,6 +343,14 @@ void VtkVis::rotateWithAxis(const CCVector2i& pos,
         return;
     }
 
+    CCVector3d normalizedAxis = axis;
+    const double axisNorm = normalizedAxis.norm();
+    if (axisNorm <= 1.0e-12 || !std::isfinite(axisNorm) ||
+        !std::isfinite(angle) || std::abs(angle) <= 1.0e-12) {
+        return;
+    }
+    normalizedAxis /= axisNorm;
+
     vtkTransform* transform = vtkTransform::New();
     vtkCamera* camera = ren->GetActiveCamera();
 
@@ -356,21 +369,17 @@ void VtkVis::rotateWithAxis(const CCVector2i& pos,
     // translate to center
     transform->Identity();
 
-    vtkCameraManipulator* currentRotateManipulator =
-            this->get3DInteractorStyle()->FindManipulator(1, 0, 0);
-    if (!currentRotateManipulator) {
-        return;
-    }
-
-    double center[3];
-    currentRotateManipulator->GetCenter(center);
-    double rotationFactor = currentRotateManipulator->GetRotationFactor();
+    double center[3] = {0.0, 0.0, 0.0};
+    getCenterOfRotation(center);
     transform->Translate(center[0] / scale, center[1] / scale,
                          center[2] / scale);
 
     camera->OrthogonalizeViewUp();
 
-    transform->RotateWXYZ(angle, axis[0], axis[1], axis[2]);
+    transform->RotateWXYZ(angle,
+                          normalizedAxis.x,
+                          normalizedAxis.y,
+                          normalizedAxis.z);
 
     // translate back
     transform->Translate(-center[0] / scale, -center[1] / scale,
@@ -385,6 +394,9 @@ void VtkVis::rotateWithAxis(const CCVector2i& pos,
     temp = camera->GetPosition();
     camera->SetPosition(temp[0] * scale, temp[1] * scale, temp[2] * scale);
 
+    camera->Modified();
+    ren->ResetCameraClippingRange();
+    ren->Modified();
     rwi->SetLastEventPosition(pos.x, pos.y);
     rwi->Render();
     transform->Delete();
@@ -3567,6 +3579,7 @@ void VtkVis::setPointGaussianRendering(bool enabled,
                 existingPG->EmissiveOff();
             }
             existingPG->Modified();
+            applyLightPropertiesToActor(actor, viewID);
             return;
         }
         if (!polyInput && !inputConn) return;
@@ -3592,7 +3605,10 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         pgMapper->SetScalarMode(currentMapper->GetScalarMode());
         actor->SetMapper(pgMapper);
     } else {
-        if (!vtkPointGaussianMapper::SafeDownCast(currentMapper)) return;
+        if (!vtkPointGaussianMapper::SafeDownCast(currentMapper)) {
+            applyLightPropertiesToActor(actor, viewID);
+            return;
+        }
         auto stdMapper = vtkSmartPointer<vtkDataSetMapper>::New();
         if (inputConn) {
             stdMapper->SetInputConnection(inputConn);
@@ -3606,6 +3622,7 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         stdMapper->SetScalarMode(currentMapper->GetScalarMode());
         actor->SetMapper(stdMapper);
     }
+    applyLightPropertiesToActor(actor, viewID);
     actor->Modified();
 }
 
@@ -3965,12 +3982,17 @@ bool VtkVis::pclMarkerAxesShown() {
 
 void VtkVis::hideOrientationMarkerWidgetAxes() {
     if (m_axes_widget) {
-        if (m_axes_widget->GetEnabled())
+        if (m_axes_widget->GetEnabled()) {
             m_axes_widget->SetEnabled(false);
-        else
+            if (auto rw = getRenderWindow()) {
+                rw->Render();
+            }
+            UpdateScreen();
+        } else {
             CVLog::Warning(
                     "Orientation Widget Axes was already disabled, doing "
                     "nothing.");
+        }
     } else {
         CVLog::Warning(
                 "Attempted to delete Orientation Widget Axes which does not "
@@ -4000,9 +4022,14 @@ void VtkVis::showOrientationMarkerWidgetAxes(
         // independent of the main camera's ParallelScale / zoom level
         m_axes_widget->SetZoom(1.0);
     } else {
+        m_axes_widget->SetInteractor(interactor);
         m_axes_widget->SetEnabled(true);
         CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
     }
+    if (auto rw = getRenderWindow()) {
+        rw->Render();
+    }
+    UpdateScreen();
 }
 
 void VtkVis::toggleOrientationMarkerWidgetAxes() {
@@ -4012,6 +4039,10 @@ void VtkVis::toggleOrientationMarkerWidgetAxes() {
         } else {
             m_axes_widget->SetEnabled(true);
         }
+        if (auto rw = getRenderWindow()) {
+            rw->Render();
+        }
+        UpdateScreen();
     } else {
         CVLog::Warning(
                 "Attempted to delete Orientation Widget Axes which does not "
@@ -4784,6 +4815,9 @@ void VtkVis::setObjectLightIntensity(const std::string& viewID,
     }
 
     UpdateScreen();
+    if (auto rw = getRenderWindow()) {
+        rw->Render();
+    }
 }
 
 double VtkVis::getObjectLightIntensity(const std::string& viewID) const {
@@ -4840,7 +4874,25 @@ void VtkVis::setLightIntensity(double intensity) {
     headlight->SetIntensity(m_lightIntensity);
     renderer->LightFollowCameraOn();
 
+    if (cloud_actor_map_) {
+        for (auto& kv : *cloud_actor_map_) {
+            if (auto* actor = vtkActor::SafeDownCast(kv.second.actor)) {
+                applyLightPropertiesToActor(actor, kv.first);
+            }
+        }
+    }
+    if (shape_actor_map_) {
+        for (auto& kv : *shape_actor_map_) {
+            if (auto* actor = vtkActor::SafeDownCast(kv.second)) {
+                applyLightPropertiesToActor(actor, kv.first);
+            }
+        }
+    }
+
     UpdateScreen();
+    if (auto rw = getRenderWindow()) {
+        rw->Render();
+    }
 }
 
 double VtkVis::getLightIntensity() const { return m_lightIntensity; }
@@ -4848,6 +4900,43 @@ double VtkVis::getLightIntensity() const { return m_lightIntensity; }
 // ============================================================================
 // Axes Grid and Camera Orientation Widget (ParaView-compatible)
 // ============================================================================
+
+namespace {
+
+void SetGridAxesActorBounds(vtkGridAxesActor3D* actor,
+                            double bounds[6],
+                            bool customBounds) {
+    if (!actor) return;
+
+    if (auto* pvActor = vtkPVGridAxes3DActor::SafeDownCast(actor)) {
+        pvActor->SetUseModelTransform(false);
+        if (customBounds) {
+            pvActor->SetUseCustomTransformedBounds(true);
+            pvActor->SetCustomTransformedBounds(bounds);
+        } else {
+            pvActor->SetUseCustomTransformedBounds(false);
+            pvActor->SetTransformedBounds(bounds);
+        }
+    }
+
+    actor->SetGridBounds(bounds);
+}
+
+void GetGridAxesActorBounds(vtkGridAxesActor3D* actor, double bounds[6]) {
+    if (!actor) return;
+
+    if (auto* pvActor = vtkPVGridAxes3DActor::SafeDownCast(actor)) {
+        double* source = pvActor->GetUseCustomTransformedBounds()
+                                 ? pvActor->GetCustomTransformedBounds()
+                                 : pvActor->GetTransformedBounds();
+        std::copy(source, source + 6, bounds);
+        return;
+    }
+
+    actor->GetGridBounds(bounds);
+}
+
+}  // namespace
 
 void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
                                        const AxesGridProperties& props) {
@@ -4860,13 +4949,24 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     vtkSmartPointer<vtkGridAxesActor3D>& dataAxesGrid = m_dataAxesGridMap[viewID];
 
     if (!dataAxesGrid) {
-        dataAxesGrid = vtkSmartPointer<vtkGridAxesActor3D>::New();
-        dataAxesGrid->SetFaceMask(0xff);
+        dataAxesGrid = vtkSmartPointer<vtkPVGridAxes3DActor>::New();
+        dataAxesGrid->SetFaceMask(vtkGridAxesHelper::MIN_YZ |
+                                  vtkGridAxesHelper::MIN_ZX |
+                                  vtkGridAxesHelper::MIN_XY |
+                                  vtkGridAxesHelper::MAX_YZ |
+                                  vtkGridAxesHelper::MAX_ZX |
+                                  vtkGridAxesHelper::MAX_XY);
         dataAxesGrid->SetLabelMask(0xff);
         dataAxesGrid->SetGenerateGrid(true);
         dataAxesGrid->SetGenerateEdges(true);
         dataAxesGrid->SetGenerateTicks(true);
         dataAxesGrid->SetForceOpaque(true);
+
+        vtkNew<vtkProperty> gridProperty;
+        gridProperty->SetRepresentationToWireframe();
+        gridProperty->SetBackfaceCulling(false);
+        gridProperty->SetFrontfaceCulling(true);
+        dataAxesGrid->SetProperty(gridProperty);
 
         for (int i = 0; i < 3; i++) {
             if (auto* titleProp = dataAxesGrid->GetTitleTextProperty(i)) {
@@ -4898,27 +4998,43 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     dataAxesGrid->SetYTitle(props.yTitle.toStdString().c_str());
     dataAxesGrid->SetZTitle(props.zTitle.toStdString().c_str());
 
-    // 3. Colors and line width via vtkProperty
-    if (auto* prop = dataAxesGrid->GetProperty()) {
-        double colorR = props.color.x / 255.0;
-        double colorG = props.color.y / 255.0;
-        double colorB = props.color.z / 255.0;
-        prop->SetColor(colorR, colorG, colorB);
-        prop->SetLineWidth(props.lineWidth);
-        prop->SetOpacity(props.opacity);
+    // 3. Colors and line width via one shared vtkProperty on all 6 faces.
+    // vtkGridAxesActor3D::GetProperty() returns face 0's property; mutating it
+    // alone leaves the remaining face actors with stale colors.
+    vtkNew<vtkProperty> gridProperty;
+    if (auto* currentProp = dataAxesGrid->GetProperty()) {
+        gridProperty->DeepCopy(currentProp);
     }
+    double colorR = props.color.x / 255.0;
+    double colorG = props.color.y / 255.0;
+    double colorB = props.color.z / 255.0;
+    gridProperty->SetColor(colorR, colorG, colorB);
+    gridProperty->SetLineWidth(props.lineWidth);
+    gridProperty->SetOpacity(props.opacity);
+    gridProperty->SetRepresentationToWireframe();
+    gridProperty->SetBackfaceCulling(false);
+    gridProperty->SetFrontfaceCulling(true);
+    dataAxesGrid->SetProperty(gridProperty);
 
     // 4. Labels visibility via LabelMask
     dataAxesGrid->SetLabelMask(props.showLabels ? 0xff : 0);
 
     // 5. Grid lines visibility
+    dataAxesGrid->SetFaceMask(vtkGridAxesHelper::MIN_YZ |
+                              vtkGridAxesHelper::MIN_ZX |
+                              vtkGridAxesHelper::MIN_XY |
+                              vtkGridAxesHelper::MAX_YZ |
+                              vtkGridAxesHelper::MAX_ZX |
+                              vtkGridAxesHelper::MAX_XY);
     dataAxesGrid->SetGenerateGrid(props.showGrid);
+    dataAxesGrid->SetGenerateEdges(true);
+    dataAxesGrid->SetGenerateTicks(props.showLabels);
 
     // 6. Bounds (custom or from actor or from ccHObject)
     if (props.useCustomBounds) {
         double bounds[6] = {props.xMin, props.xMax, props.yMin, props.yMax,
                             props.zMin, props.zMax};
-        dataAxesGrid->SetGridBounds(bounds);
+        SetGridAxesActorBounds(dataAxesGrid, bounds, true);
     } else {
         // Get bounds from the specific actor associated with this viewID
         vtkActor* actor = getActorById(viewID);
@@ -4927,7 +5043,7 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
             actor->GetBounds(bounds);
             if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
                 bounds[5] > bounds[4]) {
-                dataAxesGrid->SetGridBounds(bounds);
+                SetGridAxesActorBounds(dataAxesGrid, bounds, false);
             } else {
                 CVLog::Warning(
                         "[VtkVis] Invalid bounds for Data Axes Grid, axes may "
@@ -4976,7 +5092,7 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
                                         maxCorner.y, minCorner.z, maxCorner.z};
                     if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
                         bounds[5] > bounds[4]) {
-                        dataAxesGrid->SetGridBounds(bounds);
+                        SetGridAxesActorBounds(dataAxesGrid, bounds, false);
                         CVLog::PrintVerbose(
                                 QString("[VtkVis] Set axes grid bounds from "
                                         "ccHObject '%1' (viewID: %2): "
@@ -5011,6 +5127,9 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     }
 
     UpdateScreen();
+    if (auto rw = getRenderWindow()) {
+        rw->Render();
+    }
 }
 
 void VtkVis::GetDataAxesGridProperties(const std::string& viewID,
@@ -5049,15 +5168,20 @@ void VtkVis::GetDataAxesGridProperties(const std::string& viewID,
     props.yUseCustomLabels = false;
     props.zUseCustomLabels = false;
 
+    if (auto* pvActor = vtkPVGridAxes3DActor::SafeDownCast(dataAxesGrid)) {
+        props.useCustomBounds = pvActor->GetUseCustomTransformedBounds();
+    } else {
+        props.useCustomBounds = false;
+    }
+
     double bounds[6];
-    dataAxesGrid->GetGridBounds(bounds);
+    GetGridAxesActorBounds(dataAxesGrid, bounds);
     props.xMin = bounds[0];
     props.xMax = bounds[1];
     props.yMin = bounds[2];
     props.yMax = bounds[3];
     props.zMin = bounds[4];
     props.zMax = bounds[5];
-    props.useCustomBounds = false;
 }
 
 // ============================================================================
@@ -5085,6 +5209,7 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
 
         // Set interactor for event handling
         m_cameraOrientationWidget->SetInteractor(interactor);
+        m_cameraOrientationWidget->SetPriority(1.0);
 
         // ParaView disables animation when using QVTKOpenGLWidget
         m_cameraOrientationWidget->SetAnimate(false);
@@ -5124,28 +5249,42 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
     } else {
         m_cameraOrientationWidget->SetParentRenderer(renderer);
         m_cameraOrientationWidget->SetInteractor(interactor);
+        m_cameraOrientationWidget->SetPriority(1.0);
         if (show) {
             if (auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
                         m_cameraOrientationWidget->GetRepresentation())) {
+                rep->SetSize(80, 80);
                 rep->AnchorToUpperRight();
             }
             m_cameraOrientationWidget->SquareResize();
         }
     }
 
-    // Update visibility and enabled state (ParaView behavior)
+    // Update visibility and observer state.  vtkCameraOrientationWidget wires
+    // its picking/event observers in On()/Off(); changing the representation
+    // visibility alone leaves the corner marker visible but non-interactive.
     auto* rep = m_cameraOrientationWidget->GetRepresentation();
     if (rep) {
         rep->SetVisibility(show);
+    }
 
-        // ParaView: if we have interactor, also update enabled state
-        if (interactor) {
-            m_cameraOrientationWidget->SetEnabled(show ? 1 : 0);
-            m_cameraOrientationWidget->SetProcessEvents(show ? 1 : 0);
+    if (show) {
+        interactor->Enable();
+        m_cameraOrientationWidget->SetProcessEvents(true);
+        m_cameraOrientationWidget->On();
+        m_cameraOrientationWidget->SquareResize();
+    } else {
+        m_cameraOrientationWidget->Off();
+        m_cameraOrientationWidget->SetProcessEvents(false);
+        if (rep) {
+            rep->SetVisibility(false);
         }
     }
 
     UpdateScreen();
+    if (auto rw = getRenderWindow()) {
+        rw->Render();
+    }
 
     CVLog::PrintDebug(QString("[VtkVis] Camera Orientation Widget: %1")
                               .arg(show ? "ON" : "OFF"));
@@ -5181,6 +5320,14 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     const double dispX = qtX * dpr;
     const double dispY = winSize[1] - 1.0 - qtY * dpr;
 
+    auto* widget = const_cast<vtkCameraOrientationWidget*>(
+            m_cameraOrientationWidget.GetPointer());
+    if (widget && widget->GetDefaultRenderer() &&
+        widget->GetDefaultRenderer()->IsInViewport(static_cast<int>(dispX),
+                                                   static_cast<int>(dispY))) {
+        return true;
+    }
+
     int size[2] = {100, 100};
     rep->GetSize(size);
 
@@ -5190,7 +5337,9 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     const double renY1 = vp[3] * winSize[1];
     const double x0 = renX1 - size[0];
     const double y0 = renY1 - size[1];
-    return dispX >= x0 && dispX <= renX1 && dispY >= y0 && dispY <= renY1;
+    const double pad = std::max(8.0, static_cast<double>(size[0]) * 0.15);
+    return dispX >= x0 - pad && dispX <= renX1 + pad &&
+           dispY >= y0 - pad && dispY <= renY1 + pad;
 }
 
 bool VtkVis::ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
@@ -5207,15 +5356,21 @@ bool VtkVis::ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
     const int x = static_cast<int>(event->x() * dpr);
     const int y = static_cast<int>(event->y() * dpr);
 
-    auto* oldStyle = interactor_->GetInteractorStyle();
-    if (oldStyle) oldStyle->SetCurrentRenderer(ren);
-    interactor_->SetInteractorStyle(nullptr);
+    if (auto* style = interactor_->GetInteractorStyle()) {
+        style->SetCurrentRenderer(ren);
+    }
+
     interactor_->SetEventInformationFlipY(
             x, y, event->modifiers() & Qt::ControlModifier,
             event->modifiers() & Qt::ShiftModifier);
 
     switch (eventType) {
         case QEvent::MouseButtonPress:
+            // vtkCameraOrientationWidget only accepts Select when its
+            // representation is already hot.  Comparative sub-views do not
+            // necessarily receive hover moves, so prime the widget state at
+            // the press position before forwarding the button event.
+            interactor_->MouseMoveEvent();
             if (event->button() == Qt::LeftButton)
                 interactor_->LeftButtonPressEvent();
             else if (event->button() == Qt::MiddleButton)
@@ -5235,11 +5390,12 @@ bool VtkVis::ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
             interactor_->MouseMoveEvent();
             break;
         default:
-            interactor_->SetInteractorStyle(oldStyle);
             return false;
     }
-    interactor_->SetInteractorStyle(oldStyle);
 
+    if (m_cameraOrientationWidget && m_cameraOrientationWidget->GetEnabled()) {
+        m_cameraOrientationWidget->Render();
+    }
     UpdateScreen();
     return true;
 }
