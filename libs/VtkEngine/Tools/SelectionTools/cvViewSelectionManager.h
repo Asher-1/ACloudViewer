@@ -458,6 +458,8 @@ private:
     // Consider migrating to cvSelectionData in future major version
     vtkSmartPointer<vtkIdTypeArray> m_currentSelection;
     int m_currentSelectionFieldAssociation;  // 0=cells, 1=points
+    /// Full selection including actor/representation info (ParaView-style).
+    cvSelectionData m_storedSelectionData;
 
     //-------------------------------------------------------------------------
     // Utility modules (ParaView-style architecture)

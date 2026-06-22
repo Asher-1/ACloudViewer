@@ -10,11 +10,16 @@
 // LOCAL
 #include <ecvOverlayDialog.h>
 
+// CV_CORE_LIB
+#include <ScalarField.h>
+
 // CV_DB_LIB
+#include <ecvGenericGLDisplay.h>
 #include <ecvHObject.h>
 
 // QT
 #include <QSet>
+#include <set>
 
 // GUI
 #include <ui_graphicalSegmentationDlg.h>
@@ -75,7 +80,8 @@ protected slots:
 
     void segmentIn();
     void segmentOut();
-    void segment(bool);
+    void exportSelection();
+    void setClassificationValue();
     void reset();
     void apply();
     void applyAndDelete();
@@ -87,6 +93,8 @@ protected slots:
     void updateSegmentation();
     void closeRectangle();
     void updatePolyLine(int x, int y, Qt::MouseButtons buttons);
+    void run();
+    void stopRunning();
     void pauseSegmentationMode(bool state, bool only2D = true);
     inline void pauseSegmentation(bool state) { pauseSegmentationMode(state); }
     void resetSegmentation();
@@ -105,8 +113,19 @@ protected slots:
     //! Whether to allow or not to exort the current segmentation polyline
     void allowPolylineExport(bool state);
 
+signals:
+    void currentScalarFieldUpdated();
+
 protected:
     void setDrawFlag(bool state = true);
+
+    //! Segments currently selected entities with the segmentation polyline
+    void segment(bool keepPointsInside,
+                 ScalarType classificationValue = NAN_VALUE,
+                 bool exportSelection = false);
+
+    //! Opens segmentation options
+    void options();
 
     //! Set of entities to be segmented
     QSet<ccHObject*> m_toSegment;
@@ -139,4 +158,16 @@ protected:
 
     //! Whether to delete hidden parts after segmentation
     bool m_deleteHiddenParts;
+
+    //! Entities created by export-selection mode, enabled when the tool closes
+    std::set<ccHObject*> m_enableOnClose;
+
+    //! Source entities hidden when export-selection mode closes
+    std::set<ccHObject*> m_disableOnClose;
+
+    //! Saved view state (restored on stop or pause)
+    ecvGenericGLDisplay::INTERACTION_FLAGS m_savedInteractionMode =
+            ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA;
+    bool m_savedPerspectiveState = true;
+    bool m_savedObjectCenteredView = true;
 };

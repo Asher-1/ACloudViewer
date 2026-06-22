@@ -10,8 +10,8 @@
 /// @file WidgetMap.h
 /// @brief Maps view IDs to VTK actors and widgets for the PCL visualizer.
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkAbstractWidget.h>
-#include <vtkLODActor.h>
 #include <vtkSmartPointer.h>
 
 #include <map>
@@ -21,7 +21,7 @@
 
 template <typename T>
 class vtkSmartPointer;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkProp;
 
 namespace Visualization {
@@ -34,7 +34,7 @@ public:
     virtual ~WidgetMap() {}
 
     /// VTK actor holding the data to render
-    vtkSmartPointer<vtkLODActor> actor;
+    vtkSmartPointer<vtkPVLODActor> actor;
     /// Optional VTK widget (e.g., for interactive elements)
     vtkSmartPointer<vtkAbstractWidget> widget;
 };

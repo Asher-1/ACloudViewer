@@ -42,7 +42,7 @@ class qTreeIso : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qTreeISO" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qTreeISO" FILE
                           "../info.json")
 
 public:

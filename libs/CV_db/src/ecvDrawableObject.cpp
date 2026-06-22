@@ -7,8 +7,6 @@
 
 #include "ecvDrawableObject.h"
 
-#include "ecvDisplayTools.h"
-
 ccDrawableObject::ccDrawableObject() {
     setOpacity(1.0);
     setFixedId(false);
@@ -31,7 +29,8 @@ ccDrawableObject::ccDrawableObject() {
 }
 
 ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
-    : m_fixedId(object.m_fixedId),
+    : m_currentDisplay(object.m_currentDisplay),
+      m_fixedId(object.m_fixedId),
       m_modelRedraw(object.m_modelRedraw),
       m_forceRedraw(object.m_forceRedraw),
       m_opacity(object.m_opacity),
@@ -51,12 +50,21 @@ ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
       m_pointGaussianShaderPreset(object.m_pointGaussianShaderPreset),
       m_pointGaussianEmissive(object.m_pointGaussianEmissive) {}
 
+void ccDrawableObject::setDisplay(ecvGenericGLDisplay* display) {
+    if (m_currentDisplay == display) return;
+    m_currentDisplay = display;
+    setRedraw(true);
+}
+
+void ccDrawableObject::removeFromDisplay(const ecvGenericGLDisplay* display) {
+    if (m_currentDisplay == display) {
+        m_currentDisplay = nullptr;
+        setRedraw(true);
+    }
+}
+
 void ccDrawableObject::enableGLTransformation(bool state) {
     m_glTransEnabled = state;
-    // if (ecvDisplayTools::GetCurrentScreen())
-    //{
-    //	ecvDisplayTools::Deprecate3DLayer();
-    // }
 }
 
 void ccDrawableObject::setGLTransformation(const ccGLMatrix& trans) {

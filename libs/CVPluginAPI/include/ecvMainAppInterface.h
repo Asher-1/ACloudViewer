@@ -19,6 +19,7 @@ class QWidget;
 class ccColorScalesManager;
 class ccOverlayDialog;
 class ccPickingHub;
+class ecvGenericGLDisplay;
 
 /**
  * @class ecvMainAppInterface
@@ -390,16 +391,23 @@ public:
     virtual void decreasePointSize() = 0;
 
     /**
-     * @brief Add widget to MDI area
-     * @param viewWidget Widget to add
+     * @brief Add a view widget to the central multi-view area.
+     * @param viewWidget Widget to add as a new tab/view
      */
-    virtual void addWidgetToQMdiArea(QWidget* viewWidget) = 0;
+    virtual void addViewWidget(QWidget* viewWidget) = 0;
 
     /**
      * @brief Get currently active display window
      * @return Pointer to active window widget
      */
     virtual QWidget* getActiveWindow() = 0;
+
+    /**
+     * @brief Get the currently active GL display (multi-view aware).
+     * Correctly resolves to the focused vtkGLView even inside split layouts.
+     * @return Pointer to active GL display, or nullptr if none
+     */
+    virtual ecvGenericGLDisplay* getActiveGLDisplay() { return nullptr; }
 
     /**
      * @brief Toggle exclusive fullscreen mode

@@ -19,7 +19,7 @@ class BasePclModule;
 class qPCL : public QObject, public ccPclPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccPclPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qPCL" FILE "../info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qPCL" FILE "../info.json")
 
 public:
     //! Default constructor

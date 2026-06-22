@@ -23,6 +23,7 @@ class QStandardItemModel;
 
 class ccPropertiesTreeDelegate;
 class ccHObject;
+class ecvGenericGLDisplay;
 
 //! Precise statistics about current selection
 struct dbTreeSelectionInfo {
@@ -272,6 +273,9 @@ protected:
 
     //! Expands or collapses hovered item
     void expandOrCollapseHoveredBranch(bool expand);
+
+    void moveSelectedToView(ecvGenericGLDisplay* view,
+                            const QModelIndexList& indexes);
 
     //! Selects objects by type and/or name
     void selectChildrenByTypeAndName(CV_CLASS_ENUM type,

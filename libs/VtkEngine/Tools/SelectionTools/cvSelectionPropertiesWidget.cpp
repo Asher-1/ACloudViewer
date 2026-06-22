@@ -19,7 +19,6 @@
 #include "cvViewSelectionManager.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>

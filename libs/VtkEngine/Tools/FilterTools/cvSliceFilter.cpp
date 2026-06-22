@@ -8,12 +8,12 @@
 #include "cvSliceFilter.h"
 
 #include <Converters/Vtk2Cc.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkBox.h>
 #include <vtkCutter.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPlane.h>
 #include <vtkPlanes.h>

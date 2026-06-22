@@ -263,3 +263,5 @@ docs-output/
 *.c text eol=lf
 *.cu text eol=lf
 agent-integration/examples/test_data
+.trae/
+AGENTS.md

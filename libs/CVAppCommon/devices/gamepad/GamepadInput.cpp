@@ -8,7 +8,9 @@
 #include "GamepadInput.h"
 
 // Qt
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 #include <QGamepadManager>
 #include <QMainWindow>
@@ -37,13 +39,17 @@ void GamepadInput::update(QMainWindow* win) {
         return;
     }
 
-    // rotation
-    if (m_hasRotation) {
-        ecvDisplayTools::RotateBaseViewMat(m_rotation);
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) {
+        return;
     }
 
-    const ecvViewportParameters& viewParams =
-            ecvDisplayTools::GetViewportParameters();
+    // rotation
+    if (m_hasRotation) {
+        view->rotateBaseViewMat(m_rotation);
+    }
+
+    const ecvViewportParameters& viewParams = view->getViewportParameters();
 
     // panning
     if (m_hasPanning) {
@@ -53,9 +59,8 @@ void GamepadInput::update(QMainWindow* win) {
         }
         CCVector3d v(-m_panning.x * screenWidth3D, -m_panning.y * screenWidth3D,
                      0);
-        ecvDisplayTools::MoveCamera(static_cast<float>(v.x),
-                                    static_cast<float>(v.y),
-                                    static_cast<float>(v.z));
+        view->moveCamera(static_cast<float>(v.x), static_cast<float>(v.y),
+                         static_cast<float>(v.z));
     }
 
     // zoom
@@ -67,21 +72,19 @@ void GamepadInput::update(QMainWindow* win) {
         if (cloudViewer::GreaterThanEpsilon(std::abs(X)) ||
             cloudViewer::GreaterThanEpsilon(std::abs(Z))) {
             if (viewParams.perspectiveView) {
-                X *= ecvDisplayTools::GetViewportParameters()
-                             .computeDistanceToHalfWidthRatio();
+                X *= viewParams.computeDistanceToHalfWidthRatio();
             }
             double screenWidth3D = viewParams.computeWidthAtFocalDist();
             if (!viewParams.objectCenteredView) {
                 screenWidth3D = -screenWidth3D;
             }
             CCVector3d v(-X * screenWidth3D, 0, -Z * screenWidth3D);
-            ecvDisplayTools::MoveCamera(static_cast<float>(v.x),
-                                        static_cast<float>(v.y),
-                                        static_cast<float>(v.z));
+            view->moveCamera(static_cast<float>(v.x), static_cast<float>(v.y),
+                             static_cast<float>(v.z));
         }
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope redraw; }
 }
 
 static double s_gamepadSpeed = 0.005;

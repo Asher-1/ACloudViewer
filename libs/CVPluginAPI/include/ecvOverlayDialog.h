@@ -13,6 +13,8 @@
 #include <QDialog>
 #include <QList>
 
+class ecvGenericGLDisplay;
+
 //! Generic overlay dialog interface
 class CVPLUGIN_LIB_API ccOverlayDialog : public QDialog {
     Q_OBJECT
@@ -31,6 +33,14 @@ public:
     running! \return success
     **/
     virtual bool linkWith(QWidget* win);
+
+    //! Bind this dialog to a specific view.
+    //! When bound, the dialog operates on the given view regardless of which
+    //! view is UI-active.  Pass nullptr to unbind (returns to active-follows).
+    void bindToView(ecvGenericGLDisplay* view);
+
+    //! Returns the explicitly bound view, or nullptr (active-follows mode).
+    ecvGenericGLDisplay* getBoundView() const { return m_boundView; }
 
     //! Starts process
     /** \return success
@@ -55,6 +65,9 @@ public:
 
     //! Returns whether the tool is currently started or not
     bool started() const { return m_processing; }
+
+    //! Returns the associated window widget (may be null)
+    QWidget* getAssociatedWindow() const { return m_associatedWin; }
 
 signals:
 
@@ -82,6 +95,9 @@ protected:
 
     //! Associated (MDI) window
     QWidget* m_associatedWin;
+
+    //! Explicitly bound view (Phase D).  nullptr = follow active view.
+    ecvGenericGLDisplay* m_boundView = nullptr;
 
     //! Running/processing state
     bool m_processing;

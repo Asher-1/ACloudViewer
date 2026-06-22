@@ -21,11 +21,13 @@
 
 // CV_DB_LIB
 #include <ecv2DLabel.h>
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // qCC_io
 #include <AsciiFilter.h>
@@ -158,13 +160,13 @@ void ccPointListPickingDlg::linkWithEntity(ccHObject* entity) {
                 }
             }
             if (!rmInfos.empty()) {
-                ecvDisplayTools::SetRemoveViewIDs(rmInfos);
+                ecvViewManager::instance().setRemoveViewIds(rmInfos);
             }
         }
         m_toBeDeleted.resize(0);
         m_toBeAdded.resize(0);
         m_orderedLabelsContainer = nullptr;
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
     }
 
     m_associatedEntity = entity;
@@ -334,7 +336,7 @@ void ccPointListPickingDlg::removeLastEntry() {
 
     updateList();
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void ccPointListPickingDlg::clearLastLabel(ccHObject* lastVisibleLabel) {
@@ -365,20 +367,22 @@ void ccPointListPickingDlg::startIndexChanged(int value) {
 
         updateList();
 
-        ecvDisplayTools::RedrawDisplay(true, false);
+        { ecvRedrawScope scope(true, false); }
     }
 }
 
 void ccPointListPickingDlg::markerSizeChanged(int size) {
     if (size < 1) return;
 
-    // display parameters
-    ecvGui::ParamStruct guiParams = ecvDisplayTools::GetDisplayParameters();
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
+
+    ecvGui::ParamStruct guiParams = view->getDisplayParameters();
 
     if (guiParams.labelMarkerSize != static_cast<unsigned>(size)) {
         guiParams.labelMarkerSize = static_cast<unsigned>(size);
-        ecvDisplayTools::SetDisplayParameters(guiParams);
-        ecvDisplayTools::RedrawDisplay();
+        view->setDisplayParameters(guiParams, true);
+        { ecvRedrawScope scope; }
     }
 }
 
@@ -484,10 +488,12 @@ void ccPointListPickingDlg::updateList() {
 
     // starting index
     int startIndex = startIndexSpinBox->value();
-    int precision = ecvDisplayTools::GetCurrentScreen()
-                            ? ecvDisplayTools::GetDisplayParameters()
-                                      .displayedNumPrecision
-                            : 6;
+    int precision = 6;
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* effView = ecvViewManager::instance().getEffectiveView()) {
+            precision = effView->getDisplayParameters().displayedNumPrecision;
+        }
+    }
 
     bool showAbsolute = showGlobalCoordsCheckBox->isEnabled() &&
                         showGlobalCoordsCheckBox->isChecked();
@@ -523,6 +529,7 @@ void ccPointListPickingDlg::updateList() {
 }
 
 void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
+    CVLog::PrintDebug("[PointPicking] processPickedPoint() ENTER");
     if (!picked.entity || picked.entity != m_associatedEntity ||
         !MainWindow::TheInstance())
         return;
@@ -559,7 +566,27 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     newLabel->setDisplayedIn2D(false);
     newLabel->displayPointLegend(true);
     newLabel->setCollapsed(true);
-    QSize size = ecvDisplayTools::GetScreenSize();
+    {
+        ecvGenericGLDisplay* pickView = picked.pickView;
+        if (!pickView) pickView = ecvViewManager::instance().getActiveView();
+        if (pickView) {
+            newLabel->setDisplay(pickView);
+        } else if (picked.entity && picked.entity->getDisplay()) {
+            newLabel->setDisplay(picked.entity->getDisplay());
+        }
+    }
+    QSize size(1, 1);
+    if (ecvGenericGLDisplay* labelDisplay = newLabel->getDisplay()) {
+        if (QWidget* labelWidget = labelDisplay->asWidget()) {
+            size = labelWidget->size();
+        }
+    } else if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        size = w->size();
+    }
+    if (size.width() <= 0 || size.height() <= 0) {
+        size = QSize(1, 1);
+    }
+
     newLabel->setPosition(
             static_cast<float>(picked.clickPoint.x() + 20) / size.width(),
             static_cast<float>(picked.clickPoint.y() + 20) / size.height());
@@ -568,8 +595,15 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     if (!m_orderedLabelsContainer) {
         m_orderedLabelsContainer = new ccHObject(s_pickedPointContainerName);
         m_associatedEntity->addChild(m_orderedLabelsContainer);
+        m_orderedLabelsContainer->setDisplay(newLabel->getDisplay());
+        m_orderedLabelsContainer->setEnabled(true);
+        m_orderedLabelsContainer->setVisible(true);
         MainWindow::TheInstance()->addToDB(m_orderedLabelsContainer, false,
                                            true, false, false);
+    } else if (newLabel->getDisplay() &&
+               m_orderedLabelsContainer->getDisplay() !=
+                       newLabel->getDisplay()) {
+        m_orderedLabelsContainer->setDisplay(newLabel->getDisplay());
     }
     assert(m_orderedLabelsContainer);
     m_orderedLabelsContainer->addChild(newLabel);
@@ -580,10 +614,13 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     QClipboard* clipboard = QApplication::clipboard();
     if (clipboard) {
         CCVector3 P = newLabel->getPickedPoint(0).getPointPosition();
-        int precision = ecvDisplayTools::GetCurrentScreen()
-                                ? ecvDisplayTools::GetDisplayParameters()
-                                          .displayedNumPrecision
-                                : 6;
+        int precision = 6;
+        if (ecvViewManager::instance().activeWidget()) {
+            if (auto* effView = ecvViewManager::instance().getEffectiveView()) {
+                precision =
+                        effView->getDisplayParameters().displayedNumPrecision;
+            }
+        }
         int indexInList =
                 startIndexSpinBox->value() +
                 static_cast<int>(
@@ -601,6 +638,6 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
     if (newLabel) {
         newLabel->setRedraw(true);
         newLabel->updateLabel();
-        ecvDisplayTools::RedrawDisplay(false, true);
+        { ecvRedrawScope scope(false, true); }
     }
 }

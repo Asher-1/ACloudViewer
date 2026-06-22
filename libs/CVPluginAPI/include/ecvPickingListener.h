@@ -16,6 +16,7 @@
 #include <QPoint>
 
 class ccHObject;
+class ecvGenericGLDisplay;
 
 //! Point/triangle picking listener interface
 class CVPLUGIN_LIB_API ccPickingListener {
@@ -24,7 +25,11 @@ public:
 
     //! Picked item
     struct PickedItem {
-        PickedItem() : entity(nullptr), itemIndex(0), entityCenter(false) {}
+        PickedItem()
+            : entity(nullptr),
+              itemIndex(0),
+              entityCenter(false),
+              pickView(nullptr) {}
 
         QPoint clickPoint;   // position of the user click
         ccHObject* entity;   // picked entity (if any)
@@ -34,6 +39,7 @@ public:
                          // triangle)
         bool entityCenter;  // the point doesn't correspond to a real 'item' but
                             // to the entity center
+        ecvGenericGLDisplay* pickView;  // the view where the pick occurred
     };
 
     //! Method called whenever an item is picked

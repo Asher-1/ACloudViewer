@@ -9,6 +9,8 @@
 
 #include <CVLog.h>
 #include <ecvColorTypes.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 ccFitPlaneTool::ccFitPlaneTool() : ccTool() {}
 
@@ -23,11 +25,15 @@ ccFitPlaneTool::~ccFitPlaneTool() {
 
 // called when the tool is set to active (for initialization)
 void ccFitPlaneTool::toolActivated() {
-    m_mouseCircle = new ccMouseCircle(ecvDisplayTools::GetCurrentScreen());
+    m_mouseCircle =
+            new ccMouseCircle(ecvViewManager::instance().activeWidget());
     m_mouseCircle->setVisible(true);
 
     // set orthographic view (as this tool doesn't work in perspective mode)
-    ecvDisplayTools::SetPerspectiveState(false, true);
+    if (ecvGenericGLDisplay* eff =
+                ecvViewManager::instance().getEffectiveView()) {
+        eff->setPerspectiveState(false, true);
+    }
 }
 
 // called when the tool is set to disactive (for cleanup)
@@ -76,13 +82,14 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
     if (pPlane) {
         pPlane->copyGlobalShiftAndScale(*cloud);
 
-        const ecvViewportParameters& viewportParams =
-                ecvDisplayTools::GetViewportParameters();
-        CCVector3d viewDir = viewportParams.getViewDir();
-        CCVector3d planeN = pPlane->getNormal().toDouble();
-        double dotProduct = planeN.dot(viewDir);
-        if (dotProduct > 0) {
-            pPlane->flip();
+        if (ecvGenericGLDisplay* effView =
+                    ecvViewManager::instance().getEffectiveView()) {
+            CCVector3d viewDir = effView->getViewportParameters().getViewDir();
+            CCVector3d planeN = pPlane->getNormal().toDouble();
+            double dotProduct = planeN.dot(viewDir);
+            if (dotProduct > 0) {
+                pPlane->flip();
+            }
         }
 
         pPlane->updateAttributes(rms, r);
@@ -103,7 +110,7 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
         for (ccHObject* p = pPlane->getParent(); p; p = p->getParent()) {
             p->notifyGeometryUpdate();
         }
-        ecvDisplayTools::RedrawDisplay();
+        { ecvRedrawScope scope; }
 
         m_app->dispToConsole(
                 QString("[ccCompass] Surface orientation estimate = " +

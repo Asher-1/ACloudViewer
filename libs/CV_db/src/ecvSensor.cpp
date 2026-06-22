@@ -7,7 +7,24 @@
 
 #include "ecvSensor.h"
 
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
+#include "ecvViewManager.h"
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->removeEntities(context);
+}
+
+}  // namespace
 
 ccSensor::ccSensor(QString name)
     : ccHObject(name),
@@ -51,11 +68,11 @@ bool ccSensor::addPosition(ccGLMatrix& trans, double index) {
     return true;
 }
 
-void ccSensor::clearDrawings() { ecvDisplayTools::RemoveEntities(this); }
+void ccSensor::clearDrawings() { removeObjectFromDisplays(this); }
 
 void ccSensor::hideShowDrawings(CC_DRAW_CONTEXT& context) {
     context.viewID = this->getViewId();
-    ecvDisplayTools::HideShowEntities(context);
+    if (context.display) context.display->hideShowEntities(context);
 }
 
 void ccSensor::applyGLTransformation(const ccGLMatrix& trans) {

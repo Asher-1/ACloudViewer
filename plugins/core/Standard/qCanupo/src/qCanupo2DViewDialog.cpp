@@ -11,11 +11,15 @@
 #include "qCanupoTools.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <CVMath.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvRedrawScope.h>
 #include <ecvSphere.h>
+#include <ecvViewManager.h>
+#include <ecvViewportParameters.h>
 
 // Qt
 #include <QApplication>
@@ -29,7 +33,32 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
+
+namespace {
+
+//! Per-view equivalent of ComputeActualPixelSize().
+double computeActualPixelSize(ecvGenericGLDisplay* ev) {
+    if (!ev) return 1.0;
+    const ecvViewportParameters& vp = ev->getViewportParameters();
+    const QRect glVp = ev->getGLViewport();
+    if (!vp.perspectiveView) {
+        return static_cast<double>(vp.pixelSize / vp.zoom);
+    }
+    const int minScreenDim = std::min(glVp.width(), glVp.height());
+    if (minScreenDim <= 0) return 1.0;
+    const double zoomEquivalentDist =
+            (vp.getCameraCenter() - vp.getPivotPoint()).norm();
+    const double currentFov_deg = static_cast<double>(vp.fov_deg);
+    return zoomEquivalentDist *
+           std::tan(cloudViewer::DegreesToRadians(
+                   std::min(currentFov_deg, 75.0))) /
+           minScreenDim;
+}
+
+}  // namespace
 
 static bool s_firstDisplay = true;
 
@@ -74,30 +103,37 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
         // m_app->createGLWindow(m_glWindow, glWidget);
         // assert(m_glWindow && glWidget);
 
-        // ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-        // params.backgroundCol = ecvColor::white;
-        // params.textDefaultCol = ecvColor::black;
-        // params.pointsDefaultCol = ecvColor::black;
-        // params.drawBackgroundGradient = false;
-        // params.displayCross = false;
-        // ecvDisplayTools::SetDisplayParameters(params);
-        // ecvDisplayTools::SetPerspectiveState(false,true);
-        // ecvDisplayTools::SetInteractionMode(ecvDisplayTools::PAN_ONLY() |
-        // ecvDisplayTools::INTERACT_SEND_ALL_SIGNALS);
-        // ecvDisplayTools::SetPickingMode(ecvDisplayTools::NO_PICKING);
-        // ecvDisplayTools::DisplayOverlayEntities(false);
+        // if (auto* evSetup = ecvViewManager::instance().getEffectiveView()) {
+        //     ecvGui::ParamStruct params = evSetup->getDisplayParameters();
+        //     params.backgroundCol = ecvColor::white;
+        //     params.textDefaultCol = ecvColor::black;
+        //     params.pointsDefaultCol = ecvColor::black;
+        //     params.drawBackgroundGradient = false;
+        //     params.displayCross = false;
+        //     evSetup->setDisplayParameters(params);
+        //     evSetup->setPerspectiveState(false, true);
+        //     evSetup->setInteractionMode(
+        //             ecvGenericGLDisplay::MODE_PAN_ONLY |
+        //             ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+        //     evSetup->setPickingMode(ecvGenericGLDisplay::NO_PICKING);
+        // }
         // add window to the dedicated layout
         viewFrame->setLayout(new QHBoxLayout());
-        /*viewFrame->layout()->addWidget(ecvDisplayTools::GetCurrentScreen());
+        /*viewFrame->layout()->addWidget(
+                ecvViewManager::instance().activeWidget());
 
-        connect(ecvDisplayTools::TheInstance(), SIGNAL(leftButtonClicked(int,
-        int)),			this, SLOT(addOrSelectPoint(int, int)));
-        connect(ecvDisplayTools::TheInstance(), SIGNAL(rightButtonClicked(int,
-        int)),			this, SLOT(removePoint(int, int)));
-        connect(ecvDisplayTools::TheInstance(), SIGNAL(mouseMoved(int, int,
-        Qt::MouseButtons)),	this, SLOT(moveSelectedPoint(int, int,
-        Qt::MouseButtons))); connect(ecvDisplayTools::TheInstance(),
-        SIGNAL(buttonReleased()), this, SLOT(deselectPoint()));*/
+        // Non-relayed per-view mouse signals: prefer
+        dynamic_cast<ecvDisplayTools*>(
+        //     ecvViewManager::instance().getEffectiveView()) as sender.
+        ecvDisplayTools* dt = dynamic_cast<ecvDisplayTools*>(
+                ecvViewManager::instance().getEffectiveView());
+        connect(dt, SIGNAL(leftButtonClicked(int, int)), this,
+                SLOT(addOrSelectPoint(int, int)));
+        connect(dt, SIGNAL(rightButtonClicked(int, int)), this,
+                SLOT(removePoint(int, int)));
+        connect(dt, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)), this,
+                SLOT(moveSelectedPoint(int, int, Qt::MouseButtons)));
+        connect(dt, SIGNAL(buttonReleased()), this, SLOT(deselectPoint()));*/
     }
 
     updateScalesList(true);
@@ -117,7 +153,7 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
 qCanupo2DViewDialog::~qCanupo2DViewDialog() {
     reset();
 
-    if (m_app && ecvDisplayTools::GetCurrentScreen()) {
+    if (m_app && ecvViewManager::instance().activeWidget()) {
         // m_app->destroyGLWindow(m_glWindow);
     }
 }
@@ -145,8 +181,10 @@ void qCanupo2DViewDialog::updateScalesList(bool firstTime) {
 }
 
 void qCanupo2DViewDialog::reset() {
-    // if (ecvDisplayTools::GetCurrentScreen())
-    //	ecvDisplayTools::GetOwnDB()->removeAllChildren();
+    // if (auto* w = ecvViewManager::instance().activeWidget()) {
+    //     if (auto* ev = ecvViewManager::instance().getEffectiveView())
+    //         if (ccHObject* own = ev->getOwnDB()) own->removeAllChildren();
+    // }
 
     if (m_poly) delete m_poly;
     m_poly = 0;
@@ -306,10 +344,13 @@ void qCanupo2DViewDialog::computeStatistics() {
 }
 
 void qCanupo2DViewDialog::setPointSize(int value) {
-    // if (ecvDisplayTools::GetCurrentScreen())
-    //{
-    //	ecvDisplayTools::SetPointSize(static_cast<float>(value));
-    //	ecvDisplayTools::RedrawDisplay();
+    // if (ecvViewManager::instance().activeWidget()) {
+    //     if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+    //         ecvGui::ParamStruct p = ev->getDisplayParameters();
+    //         p.defaultPointSize = static_cast<float>(value);
+    //         ev->setDisplayParameters(p);
+    //     }
+    //     { ecvRedrawScope scope; }
     // }
 }
 
@@ -327,7 +368,7 @@ void qCanupo2DViewDialog::checkBeforeAccept() {
 }
 
 void qCanupo2DViewDialog::resetBoundary() {
-    assert(ecvDisplayTools::GetCurrentScreen());
+    assert(ecvViewManager::instance().activeWidget());
 
     if (!m_poly) {
         assert(!m_polyVertices);
@@ -359,7 +400,7 @@ void qCanupo2DViewDialog::resetBoundary() {
         m_poly->addPointIndex(0, pathLength);
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void qCanupo2DViewDialog::saveClassifier() {
@@ -409,13 +450,16 @@ void qCanupo2DViewDialog::updateClassifierPath(Classifier& classifier) const {
 void qCanupo2DViewDialog::addObject(ccHObject* obj) {
     if (!obj) return;
     obj->setVisible(true);
-    // ecvDisplayTools::AddToOwnDB(obj);
+    // if (auto* ev = ecvViewManager::instance().getEffectiveView())
+    //     ev->addToOwnDB(obj);
 }
 
 void qCanupo2DViewDialog::updateZoom() {
-    ccBBox box = ecvDisplayTools::GetOwnDB()->getDisplayBB_recursive(false);
-    ecvDisplayTools::UpdateConstellationCenterAndZoom(&box);
-    ecvDisplayTools::RedrawDisplay();
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev || !ev->getOwnDB()) return;
+    ccBBox box = ev->getOwnDB()->getDisplayBB_recursive(false);
+    ev->updateConstellationCenterAndZoom(&box);
+    { ecvRedrawScope scope; }
 }
 
 void qCanupo2DViewDialog::setPickingRadius(int radius) {
@@ -423,16 +467,22 @@ void qCanupo2DViewDialog::setPickingRadius(int radius) {
 }
 
 CCVector3 qCanupo2DViewDialog::getClickPos(int x, int y) const {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!ecvViewManager::instance().activeWidget()) {
+        assert(false);
+        return CCVector3(0, 0, 0);
+    }
+
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) {
         assert(false);
         return CCVector3(0, 0, 0);
     }
 
     // we must convert the mouse click to the polyline coordinate system
     ccGLCameraParameters camera;
-    ecvDisplayTools::GetGLCameraParameters(camera);
+    ev->getGLCameraParameters(camera);
 
-    CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
+    CCVector3d pos2D = ev->toVtkCoordinates(x, y);
     CCVector3 P2D(pos2D.x, pos2D.y, 0);
 
     CCVector3d P3D;
@@ -445,7 +495,7 @@ CCVector3 qCanupo2DViewDialog::getClickPos(int x, int y) const {
 }
 
 int qCanupo2DViewDialog::getClosestVertex(int x, int y, CCVector3& P) const {
-    if (!m_poly || !ecvDisplayTools::GetCurrentScreen()) return -1;
+    if (!m_poly || !ecvViewManager::instance().activeWidget()) return -1;
 
     P = getClickPos(x, y);
 
@@ -464,7 +514,7 @@ int qCanupo2DViewDialog::getClosestVertex(int x, int y, CCVector3& P) const {
 }
 
 void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
-    if (!m_poly || !ecvDisplayTools::GetCurrentScreen()) return;
+    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
 
     CCVector3 P;
     int closeIndex = getClosestVertex(x, y, P);
@@ -472,13 +522,16 @@ void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
     // B = closest vertex
     const CCVector3* B = (closeIndex >= 0 ? m_poly->getPoint(closeIndex) : 0);
 
+    ecvGenericGLDisplay* ev = ecvViewManager::instance().getEffectiveView();
+
     // picking radius
-    double maxPickingDist = static_cast<double>(m_pickingRadius) *
-                            ecvDisplayTools::ComputeActualPixelSize();
+    double maxPickingDist =
+            static_cast<double>(m_pickingRadius) * computeActualPixelSize(ev);
 
     // to allow 'mouse move" tracking event
-    ecvDisplayTools::SetInteractionMode(
-            ecvDisplayTools::INTERACT_SEND_ALL_SIGNALS);
+    if (ev) {
+        ev->setInteractionMode(ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
 
     // is the closest point close enough?
     if (closeIndex >= 0) {
@@ -561,11 +614,11 @@ void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
         ++newIndexInPoly;
     }
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void qCanupo2DViewDialog::removePoint(int x, int y) {
-    if (!m_poly || !ecvDisplayTools::GetCurrentScreen()) return;
+    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
 
     // we can't accept less than 2 vertices!
     unsigned polySize = m_poly->size();
@@ -578,8 +631,10 @@ void qCanupo2DViewDialog::removePoint(int x, int y) {
     if (closeIndex < 0) return;
 
     // picking radius
-    double maxPickingDist = static_cast<double>(m_pickingRadius) *
-                            ecvDisplayTools::ComputeActualPixelSize();
+    double maxPickingDist =
+            static_cast<double>(m_pickingRadius) *
+            computeActualPixelSize(
+                    ecvViewManager::instance().getEffectiveView());
 
     // B = closest vertex
     const CCVector3* B = (closeIndex >= 0 ? m_poly->getPoint(closeIndex) : 0);
@@ -594,7 +649,7 @@ void qCanupo2DViewDialog::removePoint(int x, int y) {
         m_poly->setPointIndex(i, m_poly->getPointGlobalIndex(i + 1));
     m_poly->resize(polySize - 1);
 
-    // ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void qCanupo2DViewDialog::moveSelectedPoint(int x,
@@ -602,7 +657,7 @@ void qCanupo2DViewDialog::moveSelectedPoint(int x,
                                             Qt::MouseButtons buttons) {
     if (buttons != Qt::LeftButton) return;
     if (m_selectedPointIndex < 0) return;
-    if (!m_poly || !ecvDisplayTools::GetCurrentScreen()) return;
+    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
 
     CCVector3 newP = getClickPos(x, y);
 
@@ -614,14 +669,15 @@ void qCanupo2DViewDialog::moveSelectedPoint(int x,
     // TODO: in theory we should update the vertices cloud bounding-box
     //(but we as never use it...)
 
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 void qCanupo2DViewDialog::deselectPoint() {
     // to disable 'mouse move' event tracking
-    ecvDisplayTools::SetInteractionMode(
-            ecvDisplayTools::PAN_ONLY() |
-            ecvDisplayTools::INTERACT_SEND_ALL_SIGNALS);
+    if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+        ev->setInteractionMode(ecvGenericGLDisplay::MODE_PAN_ONLY |
+                               ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
 
     m_selectedPointIndex = -1;
 }

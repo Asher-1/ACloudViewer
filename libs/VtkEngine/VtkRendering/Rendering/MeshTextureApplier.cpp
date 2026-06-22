@@ -21,9 +21,9 @@
 #include "TextureRenderManager.h"
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkDataObject.h>
 #include <vtkFloatArray.h>
-#include <vtkLODActor.h>
 #include <vtkMatrix4x4.h>
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkPointData.h>
@@ -40,7 +40,7 @@ namespace Visualization {
 namespace renders {
 
 bool MeshTextureApplier::ApplyTexturesFromCCMesh(
-        vtkLODActor* actor,
+        vtkPVLODActor* actor,
         ccGenericMesh*
                 mesh,  // Non-const because getTriangleVertIndexes is non-const
         vtkPolyData* polydata,
@@ -101,7 +101,7 @@ bool MeshTextureApplier::ApplyTexturesFromCCMesh(
 }
 
 bool MeshTextureApplier::ApplyTexturesFromMaterialSet(
-        vtkLODActor* actor,
+        vtkPVLODActor* actor,
         const ccMaterialSet* materials,
         const std::vector<std::vector<Eigen::Vector2f>>& tex_coordinates,
         vtkPolyData* polydata,

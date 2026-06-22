@@ -39,6 +39,7 @@ set(pycc_db_sources
     ${CMAKE_CURRENT_LIST_DIR}/ccSphere.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccSubMesh.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccTorus.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/ccViewManager.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccViewportObject.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccViewPortParameters.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccWaveform.cpp

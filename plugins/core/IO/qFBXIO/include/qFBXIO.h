@@ -30,7 +30,7 @@ class qFBXIO : public QObject, public ccIOPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qFBXIO" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qFBXIO" FILE
                           "../info.json")
 
 public:

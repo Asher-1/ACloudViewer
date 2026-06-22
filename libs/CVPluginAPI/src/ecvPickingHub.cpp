@@ -8,11 +8,10 @@
 #include "ecvPickingHub.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
 
 // Qt
-#include <QMdiSubWindow>
-
 // Plugins
 #include <ecvMainAppInterface.h>
 
@@ -20,7 +19,7 @@ ccPickingHub::ccPickingHub(ecvMainAppInterface* app, QObject* parent /*=0*/)
     : QObject(parent),
       m_app(app),
       m_activeWindow(nullptr),
-      m_pickingMode(ecvDisplayTools::POINT_OR_TRIANGLE_PICKING),
+      m_pickingMode(ecvGenericGLDisplay::POINT_OR_TRIANGLE_PICKING),
       m_autoEnableOnActivatedWindow(true),
       m_exclusive(false) {}
 
@@ -29,46 +28,38 @@ void ccPickingHub::togglePickingMode(bool state) {
     // + " --> " + (m_activeGLWindow ? QString("View ") +
     // QString::number(m_activeGLWindow->getUniqueID()) : QString("no view")));
     if (m_activeWindow) {
-        ecvDisplayTools::SetPickingMode(
-                state ? m_pickingMode : ecvDisplayTools::DEFAULT_PICKING);
-    }
-}
-
-void ccPickingHub::onActiveWindowChanged(QMdiSubWindow* mdiSubWindow) {
-    QWidget* window = (mdiSubWindow ? mdiSubWindow->widget() : nullptr);
-    // if (glWindow)
-    //	CVLog::Warning("New active GL window: " + glWindow->getViewId());
-    // else
-    //	CVLog::Warning("No more active GL window");
-
-    if (m_activeWindow == window) {
-        // nothing to do
-        return;
-    }
-
-    if (m_activeWindow) {
-        // take care of the previously linked window
-        togglePickingMode(false);
-        disconnect(m_activeWindow);
-        m_activeWindow = nullptr;
-    }
-
-    if (window) {
-        // link this new window
-        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked,
-                this, &ccPickingHub::processPickedItem, Qt::UniqueConnection);
-        connect(ecvDisplayTools::TheInstance(), &QObject::destroyed, this,
-                &ccPickingHub::onActiveWindowDeleted);
-        m_activeWindow = window;
-
-        if (m_autoEnableOnActivatedWindow && !m_listeners.empty()) {
-            togglePickingMode(true);
+        ecvGenericGLDisplay* view =
+                ecvGenericGLDisplay::FromWidget(m_activeWindow.data());
+        if (view) {
+            view->setPickingMode(state ? m_pickingMode
+                                       : ecvGenericGLDisplay::DEFAULT_PICKING);
         }
     }
 }
 
+void ccPickingHub::onActiveViewWidgetChanged(QWidget* viewWidget) {
+    if (!viewWidget || m_activeWindow == viewWidget) return;
+
+    if (m_activeWindow) {
+        togglePickingMode(false);
+        disconnect(m_activeWindow.data(), &QObject::destroyed, this,
+                   &ccPickingHub::onActiveWindowDeleted);
+        m_activeWindow = nullptr;
+    }
+
+    connect(&ecvViewManager::instance(), &ecvViewManager::itemPicked, this,
+            &ccPickingHub::processPickedItem, Qt::UniqueConnection);
+    connect(viewWidget, &QObject::destroyed, this,
+            &ccPickingHub::onActiveWindowDeleted);
+    m_activeWindow = viewWidget;
+
+    if (m_autoEnableOnActivatedWindow && !m_listeners.empty()) {
+        togglePickingMode(true);
+    }
+}
+
 void ccPickingHub::onActiveWindowDeleted(QObject* obj) {
-    if (obj == m_activeWindow) {
+    if (obj == m_activeWindow.data()) {
         m_activeWindow = nullptr;
     }
 }
@@ -88,6 +79,7 @@ void ccPickingHub::processPickedItem(ccHObject* entity,
         item.entity = entity;
         item.itemIndex = itemIndex;
         item.P3D = P3D;
+        item.pickView = ecvViewManager::instance().getActiveView();
     }
 
     // copy the list of listeners, in case the user call 'removeListener' in
@@ -105,7 +97,7 @@ bool ccPickingHub::addListener(
         ccPickingListener* listener,
         bool exclusive /*=false*/,
         bool autoStartPicking /*=true*/,
-        ecvDisplayTools::PICKING_MODE mode /*=POINT_OR_TRIANGLE_PICKING*/) {
+        ecvGenericGLDisplay::PICKING_MODE mode /*=POINT_OR_TRIANGLE_PICKING*/) {
     if (!listener) {
         assert(false);
         return false;

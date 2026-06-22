@@ -31,7 +31,7 @@ class qRDBIO : public QObject, public ccIOPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qRDBIO" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qRDBIO" FILE
                           "../info.json")
 
 public:

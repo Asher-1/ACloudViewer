@@ -8,9 +8,39 @@
 #include "ecvCoordinateSystem.h"
 
 // CV_DB_LIB
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvPlane.h"
 #include "ecvPointCloud.h"
+#include "ecvViewManager.h"
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->removeEntities(context);
+}
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.visible = visible;
+    context.viewID = obj->getViewId();
+    context.hideShowEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->hideShowEntities(context);
+}
+
+}  // namespace
 
 ccCoordinateSystem::ccCoordinateSystem(
         PointCoordinateType displayScale,
@@ -91,14 +121,12 @@ std::shared_ptr<ccPlane> ccCoordinateSystem::getZXplane() const {
 
 void ccCoordinateSystem::clearDrawings() {
     ccGenericPrimitive::clearDrawings();
-    ecvDisplayTools::RemoveEntities(&m_axis);
+    removeObjectFromDisplays(&m_axis);
 }
 
 void ccCoordinateSystem::hideShowDrawings(CC_DRAW_CONTEXT& context) {
-    ecvDisplayTools::HideShowEntities(this,
-                                      context.visible && m_showAxisPlanes);
-    ecvDisplayTools::HideShowEntities(&m_axis,
-                                      context.visible && m_showAxisLines);
+    hideShowObjectOnDisplays(this, context.visible && m_showAxisPlanes);
+    hideShowObjectOnDisplays(&m_axis, context.visible && m_showAxisLines);
 }
 
 ccPlane ccCoordinateSystem::createXYplane(const ccGLMatrix* transMat) const {
@@ -224,7 +252,7 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context) {
     // show axis
     if (MACRO_Draw3D(context)) {
         if (m_showAxisLines) {
-            if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
+            if (ecvViewManager::instance().activeWidget() == nullptr) return;
 
             // build-up the normal representation own 'context'
             CC_DRAW_CONTEXT tempContext = context;
@@ -264,9 +292,10 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context) {
             }
 
             tempContext.viewID = m_axis.getViewId();
-            ecvDisplayTools::Draw(tempContext, &m_axis);
+            if (tempContext.display)
+                tempContext.display->draw(tempContext, &m_axis);
         } else {
-            ecvDisplayTools::RemoveEntities(&m_axis);
+            removeObjectFromDisplays(&m_axis);
         }
     }
 }

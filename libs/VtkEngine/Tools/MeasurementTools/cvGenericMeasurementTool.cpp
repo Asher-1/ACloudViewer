@@ -21,7 +21,6 @@
 #include <CVLog.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>

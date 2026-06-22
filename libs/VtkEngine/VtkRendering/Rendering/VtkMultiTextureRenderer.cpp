@@ -18,13 +18,13 @@
 #include <sstream>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkActor.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkImageResize.h>
-#include <vtkLODActor.h>
 #include <vtkLight.h>
 #include <vtkLightCollection.h>
 #include <vtkOpenGLRenderWindow.h>
@@ -484,61 +484,23 @@ bool VtkMultiTextureRenderer::ApplyPBRRendering(
             material.baseColor[0], material.baseColor[1], material.baseColor[2],
             metallic, roughness, ao);
 
-    // 3. Load BaseColor texture (Albedo)
+    // 3. Load BaseColor texture (Albedo) — memory DB first (embedded glTF/GLB),
+    // then fall back to on-disk files via LoadTexture cache.
     if (!material.baseColorTexture.empty()) {
-        // Check if file exists
-        if (!cloudViewer::utility::filesystem::FileExists(
-                    material.baseColorTexture)) {
-            CVLog::Warning(
-                    "[VtkMultiTextureRenderer::ApplyPBRMaterial] BaseColor "
-                    "texture file not found: %s",
+        vtkSmartPointer<vtkTexture> tex =
+                LoadTexture(material.baseColorTexture, default_options_);
+        if (tex) {
+            tex->UseSRGBColorSpaceOn();
+            property->SetBaseColorTexture(tex);
+            CVLog::PrintDebug(
+                    "[VtkMultiTextureRenderer::ApplyPBRMaterial] Applied "
+                    "BaseColor texture: %s",
                     material.baseColorTexture.c_str());
         } else {
-            QImage albedo_img =
-                    ccMaterial::GetTexture(material.baseColorTexture.c_str());
-            if (!albedo_img.isNull()) {
-                // Validate image dimensions
-                if (albedo_img.width() <= 0 || albedo_img.height() <= 0) {
-                    CVLog::Error(
-                            "[VtkMultiTextureRenderer::ApplyPBRMaterial] "
-                            "Invalid BaseColor texture dimensions: %dx%d",
-                            albedo_img.width(), albedo_img.height());
-                } else {
-                    // Convert to RGB888 format (sRGB)
-                    if (albedo_img.format() != QImage::Format_RGB888) {
-                        albedo_img = albedo_img.convertToFormat(
-                                QImage::Format_RGB888);
-                    }
-
-                    vtkSmartPointer<vtkImageData> image_data =
-                            impl_->QImageToVtkImage(albedo_img);
-                    if (image_data) {
-                        vtkSmartPointer<vtkTexture> tex =
-                                vtkSmartPointer<vtkTexture>::New();
-                        tex->SetInputData(image_data);
-                        tex->SetInterpolate(1);
-                        tex->MipmapOn();
-                        tex->UseSRGBColorSpaceOn();  // Filament uses sRGB color
-                                                     // space
-
-                        property->SetBaseColorTexture(tex);
-                        CVLog::PrintDebug(
-                                "[VtkMultiTextureRenderer::ApplyPBRMaterial] "
-                                "Applied BaseColor texture: %dx%d",
-                                albedo_img.width(), albedo_img.height());
-                    } else {
-                        CVLog::Warning(
-                                "[VtkMultiTextureRenderer::ApplyPBRMaterial] "
-                                "Failed to convert BaseColor image to VTK "
-                                "format");
-                    }
-                }
-            } else {
-                CVLog::Warning(
-                        "[VtkMultiTextureRenderer::ApplyPBRMaterial] Failed to "
-                        "load BaseColor texture: %s",
-                        material.baseColorTexture.c_str());
-            }
+            CVLog::Warning(
+                    "[VtkMultiTextureRenderer::ApplyPBRMaterial] BaseColor "
+                    "texture not found: %s",
+                    material.baseColorTexture.c_str());
         }
     } else {
         CVLog::Print(

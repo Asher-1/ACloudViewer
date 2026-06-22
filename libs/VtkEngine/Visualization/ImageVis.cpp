@@ -80,6 +80,14 @@ ImageVis::ImageVis(const string& viewerName, bool /*autoInit*/)
     m_originalCameraParams.clippingRange[1] = 1000.0;
 }
 
+ImageVis::~ImageVis() {
+    m_disposed = true;
+    if (win_ && m_windowResizeCallback) {
+        win_->RemoveObserver(m_windowResizeCallback);
+    }
+    m_windowResizeCallback = nullptr;
+}
+
 vtkSmartPointer<vtkRenderWindow> ImageVis::getRenderWindow() {
     return this->win_;
 }
@@ -92,31 +100,6 @@ void ImageVis::setupInteractor(
     }
     setRenderWindow(win);
     setRenderWindowInteractor(interactor);
-    getRenderWindow()->Render();
-}
-
-void ImageVis::enable2Dviewer(bool state) {
-#ifdef CV_LINUX
-    CVLog::Warning(
-            "[ImageVis::enable2Dviewer] Do not support 2D viewer on Linux or "
-            "Mac platform now!");
-    return;
-#endif
-    if (state) {
-        m_mainInteractor = getRenderWindowInteractor();
-        setRenderWindowInteractor(
-                vtkSmartPointer<vtkRenderWindowInteractor>::Take(
-                        vtkRenderWindowInteractorFixNew()));
-        getRenderWindow()->SetInteractor(getRenderWindowInteractor());
-        getRenderWindowInteractor()->SetRenderWindow(getRenderWindow());
-        m_mouseConnection =
-                registerMouseCallback(&ImageVis::mouseEventProcess, *this);
-    } else {
-        setupInteractor(m_mainInteractor, getRenderWindow());
-        getRenderWindow()->SetInteractor(getRenderWindowInteractor());
-        getRenderWindowInteractor()->SetRenderWindow(getRenderWindow());
-        m_mouseConnection.disconnect();
-    }
 }
 
 void ImageVis::mouseEventProcess(const VtkRendering::MouseEvent& event,
@@ -275,10 +258,6 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
                 "[ImageVis::changeOpacity] Set opacity to %f using "
                 "vtkImageSlice::GetProperty()->SetOpacity()",
                 opacity);
-
-        if (win_) {
-            win_->Render();
-        }
         return;
     }
 
@@ -286,9 +265,6 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
     if (layer) {
         layer->actor->SetVisibility(opacity > 0.0 ? 1 : 0);
         layer->actor->Modified();
-        if (win_) {
-            win_->Render();
-        }
     }
 }
 
@@ -296,6 +272,27 @@ void ImageVis::removeAllLayers() {
     std::vector<std::string> ids;
     for (const auto& kv : m_imageInfoMap) ids.push_back(kv.first);
     for (const auto& id : ids) removeLayer(id);
+}
+
+void ImageVis::removeBySubstring(const std::string& substring) {
+    std::vector<std::string> toRemove;
+    for (const auto& kv : m_imageInfoMap) {
+        if (kv.first.find(substring) != std::string::npos) {
+            toRemove.push_back(kv.first);
+        }
+    }
+    for (const auto& id : toRemove) {
+        removeLayer(id);
+    }
+    toRemove.clear();
+    for (const auto& layer : layer_map_) {
+        if (layer.layer_name.find(substring) != std::string::npos) {
+            toRemove.push_back(layer.layer_name);
+        }
+    }
+    for (const auto& id : toRemove) {
+        VtkRendering::ImageVisualizer::removeLayer(id);
+    }
 }
 
 void ImageVis::removeLayer(const std::string& layer_id) {
@@ -424,10 +421,6 @@ void ImageVis::addRGBImage(const QImage& qimage,
     }
 
     updateImageSliceTransform(imageSlice, width, height);
-
-    if (win_) {
-        win_->Render();
-    }
 
     ImageInfo info;
     info.originalWidth = width;
@@ -612,20 +605,18 @@ void ImageVis::WindowResizeCallback(vtkObject* /*caller*/,
                                     void* clientData,
                                     void* /*callData*/) {
     ImageVis* self = static_cast<ImageVis*>(clientData);
-    if (self) {
+    if (self && !self->m_disposed) {
         self->onWindowResize();
     }
 }
 
 void ImageVis::onWindowResize() {
+    if (m_disposed) return;
     updateImageScales();
-    if (win_) {
-        win_->Render();
-    }
 }
 
 void ImageVis::updateImageScales() {
-    if (!win_) {
+    if (m_disposed || !win_ || !ren_) {
         return;
     }
 
@@ -633,6 +624,7 @@ void ImageVis::updateImageScales() {
     if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) {
         return;
     }
+    if (m_imageInfoMap.empty()) return;
 
     for (auto& pair : m_imageInfoMap) {
         if (pair.second.imageSlice && pair.second.originalWidth > 0 &&

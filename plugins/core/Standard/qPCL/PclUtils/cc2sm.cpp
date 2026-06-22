@@ -16,6 +16,7 @@
 #include <PclUtils/PCLConv.h>
 #include <PclUtils/my_point_types.h>
 #include <Visualization/VtkDisplayTools.h>
+#include <ecvViewManager.h>
 
 // PCL
 #include <pcl/common/io.h>
@@ -1553,8 +1554,9 @@ PCLPolygon::Ptr cc2smReader::getPclPolygon(ccPolyline* polyline) const {
         const CCVector3* pp = polyline->getPoint(i);
         CCVector3d output3D;
         if (polyline->is2DMode()) {
-            Visualization::VtkDisplayTools::TheInstance()->toWorldPoint(
-                    *pp, output3D);
+            auto* dt = static_cast<Visualization::VtkDisplayTools*>(
+                    ecvViewManager::instance().displayTools());
+            if (dt) dt->toWorldPoint(*pp, output3D);
         } else {
             output3D = CCVector3d::fromArray(pp->u);
         }

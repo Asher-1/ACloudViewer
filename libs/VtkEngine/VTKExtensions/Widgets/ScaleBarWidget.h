@@ -43,6 +43,11 @@ public:
     /// @param visible Whether to show the scale bar
     void setVisible(bool visible);
 
+    /// Mark that the Qt layout has positioned the widget.
+    /// Scale bar actors stay hidden until this is called.
+    void notifyLayoutReady() { layoutReady = true; }
+    bool isLayoutReady() const { return layoutReady; }
+
 private:
     vtkSmartPointer<vtkActor2D> lineActor;
     vtkSmartPointer<vtkTextActor> textActor;
@@ -50,6 +55,8 @@ private:
     vtkSmartPointer<vtkActor2D> rightTickActor;  // Right tick mark
     double lastLength = 0.0;
     bool visible = true;
+    bool layoutReady = false;
+    bool actorsRegistered = false;
     double dpiScale = 1.0;
 
     // DPI retrieval method compatible with different Qt versions

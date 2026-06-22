@@ -10,13 +10,14 @@
 // local
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvHObjectCaster.h"
 #include "ecvMaterialSet.h"
 #include "ecvNormalVectors.h"
 #include "ecvPointCloud.h"
 #include "ecvScalarField.h"
+#include "ecvViewManager.h"
 
 // cloudViewer
 #include <CVPointCloud.h>
@@ -142,7 +143,7 @@ void ccGenericMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     handleColorRamp(context);
 
-    if (!ecvDisplayTools::GetMainWindow()) return;
+    if (!ecvViewManager::instance().getEffectiveView()) return;
 
     // 3D pass
     if (MACRO_Draw3D(context)) {
@@ -247,7 +248,7 @@ void ccGenericMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         context.drawParam = glParams;
 
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
     }
 }
 
@@ -780,7 +781,10 @@ bool ccGenericMesh::updateTextures(
 
         CC_DRAW_CONTEXT context;
         context.viewID = getViewId();
-        ecvDisplayTools::UpdateMeshTextures(context, this);
+        context.display = ecvViewManager::instance().getEffectiveView();
+        if (context.display) {
+            context.display->updateMeshTextures(context, this);
+        }
         return true;
     } else {
         return false;

@@ -1,6 +1,7 @@
 
 target_sources( ${PROJECT_NAME}
 	PRIVATE
+		${CMAKE_CURRENT_LIST_DIR}/AcvProjectFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiOpenDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiSaveDlg.cpp

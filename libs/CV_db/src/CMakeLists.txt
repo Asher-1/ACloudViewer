@@ -20,6 +20,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDish.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisc.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTypes.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExtru.cpp
@@ -30,6 +31,14 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericAnnotationTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericGLDisplay.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewLayoutProxy.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewManager.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewTitleRegistry.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvUndoManager.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvEntityAddRemoveCommand.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewRepresentation.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvRepresentationManager.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.cpp

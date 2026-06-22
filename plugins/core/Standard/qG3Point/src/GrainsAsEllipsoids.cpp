@@ -1114,7 +1114,7 @@ void GrainsAsEllipsoids::draw(CC_DRAW_CONTEXT& context) {
     //
     // Our child objects (meshes, linesets, point clouds) added via addChild()
     // will have their draw() method called, which in turn calls their
-    // drawMeOnly() method, which calls ecvDisplayTools::Draw(context, this)
+    // child->draw(context) ... drawMeOnly() ... uses the active GL display
     // to perform the actual rendering.
     //
     // This ensures all child objects are rendered automatically.

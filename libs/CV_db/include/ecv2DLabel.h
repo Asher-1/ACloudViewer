@@ -13,14 +13,91 @@
 #include "ecvInteractor.h"
 
 // Qt
+#include <QColor>
+#include <QFont>
+#include <QPointF>
+#include <QPolygonF>
 #include <QRect>
+#include <QRectF>
+#include <QStringList>
+#include <QVector>
 
+class QPainter;
 class ccGenericMesh;
 class ccGenericPointCloud;
 
 //! 2D label (typically attached to points)
 class CV_DB_LIB_API cc2DLabel : public ccHObject, public ccInteractor {
 public:
+    //! QPainter overlay rendering data (computed during drawMeOnly2D, painted
+    //! in QVTKWidgetCustom::paintGL after VTK render).
+    struct LabelOverlayData {
+        bool valid = false;
+
+        QRectF panelRect;
+        QColor bkgColor;
+        QColor borderColor;
+        QColor textColor;
+        bool highlighted = false;
+
+        QString title;
+        QStringList bodyLines;
+        QFont titleFont;
+        QFont bodyFont;
+        int titleHeight = 0;
+        int rowHeight = 0;
+        int margin = 0;
+        int tabMarginX = 0;
+        int tabMarginY = 0;
+
+        struct TabColumn {
+            int xOffset = 0;
+            int width = 0;
+            bool isLabel = false;
+        };
+        QVector<TabColumn> columns;
+        QVector<QVector<QString>> tabCells;
+        int tabRowCount = 0;
+
+        QPolygonF arrowPolygon;
+
+        struct Legend {
+            QString text;
+            QPointF pos;
+            QFont font;
+            QColor color;
+        };
+        QVector<Legend> legends;
+
+        struct Segment2D {
+            QPointF from, to;
+        };
+        QVector<Segment2D> segments;
+
+        QColor segmentColor;
+
+        void clear() {
+            valid = false;
+            panelRect = QRectF();
+            title.clear();
+            bodyLines.clear();
+            legends.clear();
+            arrowPolygon.clear();
+            segments.clear();
+            columns.clear();
+            tabCells.clear();
+            tabRowCount = 0;
+        }
+    };
+
+    //! Paint 2D overlay labels using QPainter (called from
+    //! QVTKWidgetCustom::paintGL after VTK blit).
+    void paintOverlay(QPainter& painter) const;
+
+    //! Whether this label has valid overlay data for painting
+    bool overlayValid() const { return m_overlayData.valid; }
+    const LabelOverlayData& overlayData() const { return m_overlayData; }
+
     //! Default constructor
     cc2DLabel(QString name = QString("label"));
 
@@ -61,6 +138,12 @@ public:
 
     //! Returns relative position
     inline const float* getPosition() const { return m_screenPos; }
+
+    //! Returns the label ROI (absolute screen coords, Qt Y-down)
+    inline const QRect& getLabelROI() const { return m_labelROI; }
+
+    //! Returns the last screen position (absolute, Qt Y-down)
+    inline const int* getLastScreenPos() const { return m_lastScreenPos; }
 
     //! Clears label
     void clear(bool ignoreDependencies = false, bool ignoreCaption = true);
@@ -351,6 +434,9 @@ protected:
 
     //! Relative marker scale
     float m_relMarkerScale;
+
+    //! Overlay data for QPainter rendering (populated in drawMeOnly2D)
+    mutable LabelOverlayData m_overlayData;
 
     QString m_sphereIdfix;
     QString m_surfaceIdfix;

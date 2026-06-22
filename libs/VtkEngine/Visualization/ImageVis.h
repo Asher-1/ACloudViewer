@@ -45,6 +45,7 @@ public:
      *  @param autoInit Whether to auto-initialize
      */
     ImageVis(const std::string& viewerName, bool autoInit = false);
+    ~ImageVis() override;
 
     /** @param interactor VTK render window interactor
      *  @param win VTK render window
@@ -96,6 +97,7 @@ public:
     /** @param layer_id Layer ID to remove
      */
     void removeLayer(const std::string& layer_id);
+    void removeBySubstring(const std::string& substring);
 
     /** @param layer_id Unique layer identifier
      *  @param x,y,width,height Layer bounds in pixels
@@ -205,10 +207,6 @@ public:
                  bool bold = false);
 
 public:
-    /** @param state true to enable 2D viewer mode
-     */
-    void enable2Dviewer(bool state);
-
     /** @param x,y Screen coordinates
      *  @return Picked layer/item ID or empty string
      */
@@ -253,6 +251,7 @@ private:
         vtkSmartPointer<vtkImageSliceMapper> imageMapper;
     };
     std::map<std::string, ImageInfo> m_imageInfoMap;
+    bool m_disposed = false;
 };
 
 typedef std::shared_ptr<ImageVis> ImageVisPtr;

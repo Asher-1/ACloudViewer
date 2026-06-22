@@ -149,5 +149,11 @@
 	"python.languageServer": "None",
 	"python-envs.defaultEnvManager": "ms-python.python:conda",
 	"python-envs.defaultPackageManager": "ms-python.python:conda",
-	"python-envs.pythonProjects": []
+	"python-envs.terminal.autoActivationType": "off",
+	"python-envs.pythonProjects": [],
+	"files.watcherExclude": {
+		"**/build_app/**": true,
+		"**/build/**": true
+	},
+	"python.terminal.activateEnvironment": false
 }

@@ -19,7 +19,7 @@ class q3DMASCPlugin : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.q3DMASC" FILE "info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.q3DMASC" FILE "info.json")
 
 public:
     //! Default constructor

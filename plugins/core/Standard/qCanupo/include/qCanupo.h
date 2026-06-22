@@ -21,7 +21,7 @@ Brodu, D. Lague, 2012, Computer Vision and Pattern Recognition
 class qCanupoPlugin : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qCanupo" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qCanupo" FILE
                           "../info.json")
 
 public:

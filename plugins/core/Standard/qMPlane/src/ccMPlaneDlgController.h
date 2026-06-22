@@ -11,6 +11,7 @@
 #include <memory>
 
 // Qt
+#include <QSet>
 #include <QtGui>
 
 // CC
@@ -65,4 +66,5 @@ private:
 
     bool m_signedMeasurement = false;
     bool m_showNormal = false;
+    QSet<QWidget *> m_filteredWindows;
 };

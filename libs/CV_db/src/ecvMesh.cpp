@@ -11,7 +11,7 @@
 #include "ecvBBox.h"
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvHObjectCaster.h"
 #include "ecvMaterialSet.h"
@@ -20,8 +20,10 @@
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
 #include "ecvProgressDialog.h"
+#include "ecvRepresentationManager.h"
 #include "ecvScalarField.h"
 #include "ecvSubMesh.h"
+#include "ecvViewRepresentation.h"
 
 // cloudViewer
 #include <Delaunay2dMesh.h>
@@ -2637,7 +2639,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     handleColorRamp(context);
 
-    if (!ecvDisplayTools::GetMainWindow()) return;
+    if (!context.display) return;
 
     // 3D pass
     if (MACRO_Draw3D(context)) {
@@ -2677,10 +2679,19 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         // per-triangle normals?
         bool showTriNormals = (hasTriNormals() && triNormsShown());
-        // fix 'showNorms'
-        glParams.showNorms =
-                showTriNormals ||
-                (m_associatedCloud->hasNormals() && m_normalsDisplayed);
+
+        // Per-view normals override
+        bool perViewNorms = m_normalsDisplayed;
+        if (context.display) {
+            auto* viewRep =
+                    ecvRepresentationManager::instance().getRepresentation(
+                            const_cast<ccMesh*>(this), context.display);
+            if (viewRep && viewRep->properties().showNormals.has_value()) {
+                perViewNorms = viewRep->effectiveShowNormals();
+            }
+        }
+        glParams.showNorms = showTriNormals ||
+                             (m_associatedCloud->hasNormals() && perViewNorms);
 
         // materials & textures
         bool applyMaterials = (hasMaterials() && materialsShown());
@@ -2740,7 +2751,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
         bool visFiltering =
                 (verticesVisibility.size() >= m_associatedCloud->size());
         context.visFiltering = visFiltering;
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
     }
 }
 

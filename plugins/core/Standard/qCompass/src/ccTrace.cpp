@@ -8,7 +8,8 @@
 #include "ccTrace.h"
 
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
+#include <ecvViewportParameters.h>
 
 #include <bitset>
 #include <queue>
@@ -78,22 +79,34 @@ ccTrace::~ccTrace() {
 }
 
 void ccTrace::removeSegmentActors() {
+    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
+    if (!eff) return;
     for (const QString& viewId : m_segmentViewIds) {
         CC_DRAW_CONTEXT ctx;
+        ctx.display = eff;
+        ctx.defaultViewPort = 0;
         ctx.removeViewID = viewId;
         ctx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
-        ecvDisplayTools::RemoveEntities(ctx);
+        if (ctx.display) ctx.display->removeEntities(ctx);
     }
     m_segmentViewIds.clear();
 }
 
 void ccTrace::removeMarkerActors() {
-    auto removeList = [](QStringList& ids, ENTITY_TYPE type) {
+    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
+    if (!eff) {
+        m_waypointViewIds.clear();
+        m_tracePointViewIds.clear();
+        return;
+    }
+    auto removeList = [eff](QStringList& ids, ENTITY_TYPE type) {
         for (const QString& viewId : ids) {
             CC_DRAW_CONTEXT ctx;
+            ctx.display = eff;
+            ctx.defaultViewPort = 0;
             ctx.removeViewID = viewId;
             ctx.removeEntityType = type;
-            ecvDisplayTools::RemoveEntities(ctx);
+            if (ctx.display) ctx.display->removeEntities(ctx);
         }
         ids.clear();
     };
@@ -102,13 +115,18 @@ void ccTrace::removeMarkerActors() {
 }
 
 void ccTrace::hideShowTraceActors(bool visible) {
-    auto hideShowList = [visible](const QStringList& ids, ENTITY_TYPE type) {
+    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
+    if (!eff) return;
+    auto hideShowList = [eff, visible](const QStringList& ids,
+                                       ENTITY_TYPE type) {
         for (const QString& viewId : ids) {
             CC_DRAW_CONTEXT ctx;
             ctx.visible = visible;
+            ctx.display = eff;
+            ctx.defaultViewPort = 0;
             ctx.viewID = viewId;
             ctx.hideShowEntityType = type;
-            ecvDisplayTools::HideShowEntities(ctx);
+            if (ctx.display) ctx.display->hideShowEntities(ctx);
         }
     };
     hideShowList(m_segmentViewIds, ENTITY_TYPE::ECV_SHAPE);
@@ -1052,8 +1070,14 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
+        if (ecvViewManager::instance().activeWidget() == nullptr) {
             assert(false);
+            return;
+        }
+
+        ecvGenericGLDisplay* effView =
+                ecvViewManager::instance().getEffectiveView();
+        if (!effView) {
             return;
         }
 
@@ -1074,9 +1098,9 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
         markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
         ccGLCameraParameters camera;
-        ecvDisplayTools::GetGLCameraParameters(camera);
+        effView->getGLCameraParameters(camera);
         const ecvViewportParameters& viewportParams =
-                ecvDisplayTools::GetViewportParameters();
+                effView->getViewportParameters();
 
         bool entityPickingMode = MACRO_EntityPicking(context);
         if (entityPickingMode) {

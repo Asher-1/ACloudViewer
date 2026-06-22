@@ -31,7 +31,7 @@ class ccCloudLayersDlg;
 class qCloudLayers : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qCloudLayers" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qCloudLayers" FILE
                           "../info.json")
 
 public:

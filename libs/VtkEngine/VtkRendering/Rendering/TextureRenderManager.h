@@ -18,7 +18,7 @@
 #include "TextureRendererBase.h"
 
 class vtkActor;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkPolyData;
 class vtkRenderer;
 class ccMaterialSet;
@@ -47,7 +47,7 @@ public:
      * @param renderer VTK renderer (for lighting setup)
      * @return true on success
      */
-    bool Apply(vtkLODActor* actor,
+    bool Apply(vtkPVLODActor* actor,
                const ccMaterialSet* materials,
                vtkPolyData* polydata,
                vtkRenderer* renderer);

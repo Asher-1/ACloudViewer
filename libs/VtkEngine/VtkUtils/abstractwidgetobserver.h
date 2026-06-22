@@ -20,8 +20,8 @@ class vtkInteractorObserver;
 namespace VtkUtils {
 
 /// @class AbstractWidgetObserver
-/// @brief Base observer for VTK interactor widgets; observes
-/// EndInteractionEvent and emits Qt signals.
+/// @brief Base observer for VTK interactor widgets; observes both live
+/// InteractionEvent and final EndInteractionEvent and emits Qt signals.
 class QVTK_ENGINE_LIB_API AbstractWidgetObserver : public QObject,
                                                    public vtkCommand {
     Q_OBJECT

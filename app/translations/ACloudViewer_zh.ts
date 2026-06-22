@@ -10721,7 +10721,7 @@ Parameter</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="1511"/>
-        <source>F11</source>
+        <source>Shift+F11</source>
         <translation>F11</translation>
     </message>
     <message>
@@ -13043,8 +13043,8 @@ Parameter</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="4284"/>
-        <source>Ctrl+V</source>
-        <translation>Ctrl+V</translation>
+        <source>Ctrl+Alt+V</source>
+        <translation>Ctrl+Alt+V</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="4296"/>
@@ -13173,6 +13173,210 @@ Parameter</translation>
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>Full Screen (Layout)</source>
+        <translation>全屏（布局）</translation>
+    </message>
+    <message>
+        <source>Full Screen (Active View)</source>
+        <translation>全屏（当前视图）</translation>
+    </message>
+    <message>
+        <source>Quick Create View</source>
+        <translation>快速创建视图</translation>
+    </message>
+    <message>
+        <source>SpreadSheet View</source>
+        <translation>电子表格视图</translation>
+    </message>
+    <message>
+        <source>Line Chart View</source>
+        <translation>折线图视图</translation>
+    </message>
+    <message>
+        <source>Bar Chart View</source>
+        <translation>柱状图视图</translation>
+    </message>
+    <message>
+        <source>Histogram View</source>
+        <translation>直方图视图</translation>
+    </message>
+    <message>
+        <source>Orthographic Slice View</source>
+        <translation>正交切片视图</translation>
+    </message>
+    <message>
+        <source>Python View</source>
+        <translation>Python 视图</translation>
+    </message>
+    <message>
+        <source>Toggle View Decorations</source>
+        <translation>切换视图装饰</translation>
+    </message>
+    <message>
+        <source>Link All Cameras</source>
+        <translation>链接所有相机</translation>
+    </message>
+    <message>
+        <source>Lock View Size (300x300)</source>
+        <translation>锁定视图尺寸（300x300）</translation>
+    </message>
+    <message>
+        <source>Lock View Size Custom...</source>
+        <translation>自定义锁定视图尺寸...</translation>
+    </message>
+    <message>
+        <source>Camera Undo</source>
+        <translation>相机撤销</translation>
+    </message>
+    <message>
+        <source>Camera Redo</source>
+        <translation>相机重做</translation>
+    </message>
+    <message>
+        <source>Capture Screenshot</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <source>Adjust Camera</source>
+        <translation>调整相机</translation>
+    </message>
+    <message>
+        <source>Split Left|Right</source>
+        <translation>左右分割</translation>
+    </message>
+    <message>
+        <source>Split Top|Bottom</source>
+        <translation>上下分割</translation>
+    </message>
+    <message>
+        <source>Close View</source>
+        <translation>关闭视图</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <source>Rename View</source>
+        <translation>重命名视图</translation>
+    </message>
+    <message>
+        <source>View name:</source>
+        <translation>视图名称:</translation>
+    </message>
+    <message>
+        <source>Convert To...</source>
+        <translation>转换为...</translation>
+    </message>
+    <message>
+        <source>Equalize Views</source>
+        <translation>均分视图</translation>
+    </message>
+    <message>
+        <source>Link Camera...</source>
+        <translation>链接相机...</translation>
+    </message>
+    <message>
+        <source>Link to:</source>
+        <translation>链接到:</translation>
+    </message>
+    <message>
+        <source>Unlink Camera</source>
+        <translation>取消链接相机</translation>
+    </message>
+    <message>
+        <source>View Properties</source>
+        <translation>视图属性</translation>
+    </message>
+    <message>
+        <source>Gradient Background</source>
+        <translation>渐变背景</translation>
+    </message>
+    <message>
+        <source>Orientation Axes</source>
+        <translation>方向轴</translation>
+    </message>
+    <message>
+        <source>Camera Orientation Widget</source>
+        <translation>相机方向部件</translation>
+    </message>
+    <message>
+        <source>Maximize</source>
+        <translation>最大化</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>还原</translation>
+    </message>
+    <message>
+        <source>3D View</source>
+        <translation>3D 视图</translation>
+    </message>
+    <message>
+        <source>Render View</source>
+        <translation>渲染视图</translation>
+    </message>
+    <message>
+        <source>Eye Dome Lighting</source>
+        <translation>眼穹灯光</translation>
+    </message>
+    <message>
+        <source>Slice View</source>
+        <translation>切片视图</translation>
+    </message>
+    <message>
+        <source>Box Chart View</source>
+        <translation>箱线图视图</translation>
+    </message>
+    <message>
+        <source>Point Chart View</source>
+        <translation>点图视图</translation>
+    </message>
+    <message>
+        <source>Parallel Coordinates View</source>
+        <translation>平行坐标视图</translation>
+    </message>
+    <message>
+        <source>Plot Matrix View</source>
+        <translation>散点矩阵视图</translation>
+    </message>
+    <message>
+        <source>Image Chart View</source>
+        <translation>图像图表视图</translation>
+    </message>
+    <message>
+        <source>Quartile Chart View</source>
+        <translation>四分位图视图</translation>
+    </message>
+    <message>
+        <source>Render View (Comparative)</source>
+        <translation>渲染视图（对比）</translation>
+    </message>
+    <message>
+        <source>Line Chart View (Comparative)</source>
+        <translation>折线图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Bar Chart View (Comparative)</source>
+        <translation>柱状图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Horizontally</source>
+        <translation>水平</translation>
+    </message>
+    <message>
+        <source>Vertically</source>
+        <translation>垂直</translation>
+    </message>
+    <message>
+        <source>Both</source>
+        <translation>两者</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
     <message>
         <location filename="../MainWindow.cpp" line="1449"/>
         <source>Ready</source>
@@ -27740,6 +27944,30 @@ p, li { white-space: pre-wrap; }
         <source>Viewport &apos;%1&apos; has been updated</source>
         <translation>视口 &apos;%1&apos; 已更新</translation>
     </message>
+    <message>
+        <source>Add Selection (Ctrl)</source>
+        <translation>添加选择 (Ctrl)</translation>
+    </message>
+    <message>
+        <source>Subtract Selection (Shift)</source>
+        <translation>减去选择 (Shift)</translation>
+    </message>
+    <message>
+        <source>Toggle Selection (Ctrl+Shift)</source>
+        <translation>切换选择 (Ctrl+Shift)</translation>
+    </message>
+    <message>
+        <source>Polygon Selection (d)</source>
+        <translation>多边形选择 (d)</translation>
+    </message>
+    <message>
+        <source>Rectangle Selection (s)</source>
+        <translation>矩形选择 (s)</translation>
+    </message>
+    <message>
+        <source>Clear Selection</source>
+        <translation>清除选择</translation>
+    </message>
 </context>
 <context>
     <name>ccRasterizeTool</name>
@@ -32675,16 +32903,1120 @@ Please check your expression syntax.</translation>
     </message>
 </context>
 <context>
+    <name>ecvTabbedMultiViewWidget</name>
+    <message>
+        <source>Rename Tab</source>
+        <translation>重命名标签页</translation>
+    </message>
+    <message>
+        <source>New name:</source>
+        <translation>新名称：</translation>
+    </message>
+    <message>
+        <source>Close Tab</source>
+        <translation>关闭标签页</translation>
+    </message>
+    <message>
+        <source>Equalize Views</source>
+        <translation>均分视图</translation>
+    </message>
+    <message>
+        <source>Horizontally</source>
+        <translation>水平</translation>
+    </message>
+    <message>
+        <source>Vertically</source>
+        <translation>垂直</translation>
+    </message>
+    <message>
+        <source>Both</source>
+        <translation>两者</translation>
+    </message>
+    <message>
+        <source>Convert To...</source>
+        <translation>转换为...</translation>
+    </message>
+</context>
+<context>
     <name>ecvShortcutDialog</name>
     <message>
-        <location filename="../ecvShortcutDialog.cpp" line="339"/>
-        <source>Shortcut conflict</source>
+        <source>All Categories</source>
+        <translation>所有分类</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>其他</translation>
+    </message>
+    <message>
+        <source>Shortcut Conflict</source>
         <translation>快捷键冲突</translation>
     </message>
     <message>
-        <location filename="../ecvShortcutDialog.cpp" line="340"/>
-        <source>The shortcut entered would conflict with the one for `%1`</source>
-        <translation>输入的快捷键与 `%1` 的快捷键冲突</translation>
+        <source>The shortcut &quot;%1&quot; conflicts with:
+%2
+
+Please choose a different shortcut.</source>
+        <translation>快捷键 &quot;%1&quot; 与以下项冲突：
+%2
+
+请选择其他快捷键。</translation>
+    </message>
+    <message>
+        <source>Reset Selected</source>
+        <translation>重置选中项</translation>
+    </message>
+    <message>
+        <source>Reset All Defaults</source>
+        <translation>全部恢复默认</translation>
+    </message>
+    <message>
+        <source>Export...</source>
+        <translation>导出...</translation>
+    </message>
+    <message>
+        <source>Import...</source>
+        <translation>导入...</translation>
+    </message>
+    <message>
+        <source>Export Shortcuts</source>
+        <translation>导出快捷键</translation>
+    </message>
+    <message>
+        <source>Import Shortcuts</source>
+        <translation>导入快捷键</translation>
+    </message>
+    <message>
+        <source>JSON (*.json)</source>
+        <translation>JSON (*.json)</translation>
+    </message>
+    <message>
+        <source>Exported %1 shortcuts to %2</source>
+        <translation>已将 %1 个快捷键导出至 %2</translation>
+    </message>
+    <message>
+        <source>Cannot open file: %1</source>
+        <translation>无法打开文件：%1</translation>
+    </message>
+    <message>
+        <source>Invalid JSON format.</source>
+        <translation>JSON 格式无效。</translation>
+    </message>
+    <message>
+        <source>Applied %1 shortcut(s) from %2</source>
+        <translation>已从 %2 导入 %1 个快捷键</translation>
+    </message>
+    <message>
+        <source>Reset Shortcut</source>
+        <translation>重置快捷键</translation>
+    </message>
+    <message>
+        <source>Please select one or more rows first.</source>
+        <translation>请先选择一行或多行。</translation>
+    </message>
+    <message>
+        <source>Reset All Shortcuts</source>
+        <translation>全部重置快捷键</translation>
+    </message>
+    <message>
+        <source>Reset all shortcuts to their default values?</source>
+        <translation>确定将所有快捷键恢复为默认值吗？</translation>
+    </message>
+    <message>
+        <source>%1 shortcut conflict(s) detected. Conflicting rows are highlighted in red.</source>
+        <translation>检测到 %1 处快捷键冲突，冲突行已标红高亮。</translation>
+    </message>
+    <message>
+        <source>No shortcut conflicts detected.</source>
+        <translation>未检测到快捷键冲突。</translation>
+    </message>
+</context>
+<context>
+    <name>vtkOrthoSliceViewWidget</name>
+    <message>
+        <source>Orthographic Slice View</source>
+        <translation>正交切片视图</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Repr:</source>
+        <translation>表示:</translation>
+    </message>
+    <message>
+        <source>Slices</source>
+        <translation>切片</translation>
+    </message>
+    <message>
+        <source>Surface</source>
+        <translation>表面</translation>
+    </message>
+    <message>
+        <source>Wireframe</source>
+        <translation>线框</translation>
+    </message>
+    <message>
+        <source>Points</source>
+        <translation>点</translation>
+    </message>
+    <message>
+        <source>Surface With Edges</source>
+        <translation>带边表面</translation>
+    </message>
+    <message>
+        <source>Opacity:</source>
+        <translation>不透明度:</translation>
+    </message>
+    <message>
+        <source>Pt Size:</source>
+        <translation>点大小:</translation>
+    </message>
+    <message>
+        <source>Line W:</source>
+        <translation>线宽:</translation>
+    </message>
+    <message>
+        <source>Coloring:</source>
+        <translation>着色:</translation>
+    </message>
+    <message>
+        <source>Solid Color</source>
+        <translation>纯色</translation>
+    </message>
+    <message>
+        <source>Normals</source>
+        <translation>法线</translation>
+    </message>
+    <message>
+        <source>TCoords</source>
+        <translation>纹理坐标</translation>
+    </message>
+    <message>
+        <source>Map Scalars</source>
+        <translation>映射标量</translation>
+    </message>
+    <message>
+        <source>Interp Scalars</source>
+        <translation>插值标量</translation>
+    </message>
+    <message>
+        <source>No Light</source>
+        <translation>禁用光照</translation>
+    </message>
+    <message>
+        <source>Diffuse:</source>
+        <translation>漫反射:</translation>
+    </message>
+    <message>
+        <source>Interp:</source>
+        <translation>插值:</translation>
+    </message>
+    <message>
+        <source>Flat</source>
+        <translation>平坦</translation>
+    </message>
+    <message>
+        <source>Gouraud</source>
+        <translation>高洛德</translation>
+    </message>
+    <message>
+        <source>Phong</source>
+        <translation>冯氏</translation>
+    </message>
+    <message>
+        <source>Spec:</source>
+        <translation>镜面反射:</translation>
+    </message>
+    <message>
+        <source>Power:</source>
+        <translation>光泽度:</translation>
+    </message>
+    <message>
+        <source>No data</source>
+        <translation>无数据</translation>
+    </message>
+    <message>
+        <source>%1 - no point data</source>
+        <translation>%1 - 无点数据</translation>
+    </message>
+    <message>
+        <source>%1 (%2 pts)</source>
+        <translation>%1 (%2 点)</translation>
+    </message>
+</context>
+<context>
+    <name>vtkChartView</name>
+    <message>
+        <source>Fields</source>
+        <translation>字段</translation>
+    </message>
+    <message>
+        <source>Bins: %1</source>
+        <translation>分箱: %1</translation>
+    </message>
+    <message>
+        <source>Show Legend</source>
+        <translation>显示图例</translation>
+    </message>
+    <message>
+        <source>Show Grid</source>
+        <translation>显示网格</translation>
+    </message>
+    <message>
+        <source>Link to 3D Selection</source>
+        <translation>联动3D选择</translation>
+    </message>
+    <message>
+        <source>Rectangle Selection (s)</source>
+        <translation>矩形选择 (s)</translation>
+    </message>
+    <message>
+        <source>Polygon Selection (d)</source>
+        <translation>多边形选择 (d)</translation>
+    </message>
+    <message>
+        <source>Reset Zoom</source>
+        <translation>重置缩放</translation>
+    </message>
+    <message>
+        <source>Export as PNG...</source>
+        <translation>导出为 PNG...</translation>
+    </message>
+    <message>
+        <source>Export as CSV...</source>
+        <translation>导出为 CSV...</translation>
+    </message>
+    <message>
+        <source>Export Chart as PNG</source>
+        <translation>导出图表为 PNG</translation>
+    </message>
+    <message>
+        <source>PNG (*.png)</source>
+        <translation>PNG (*.png)</translation>
+    </message>
+    <message>
+        <source>Export Chart Data as CSV</source>
+        <translation>导出图表数据为 CSV</translation>
+    </message>
+    <message>
+        <source>CSV (*.csv)</source>
+        <translation>CSV (*.csv)</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation>左</translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <translation>底</translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation>右</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>顶</translation>
+    </message>
+    <message>
+        <source>Mixed</source>
+        <translation>混合</translation>
+    </message>
+    <message>
+        <source>Scientific</source>
+        <translation>科学</translation>
+    </message>
+    <message>
+        <source>Fixed</source>
+        <translation>固定</translation>
+    </message>
+    <message>
+        <source>Sci</source>
+        <translation>科学</translation>
+    </message>
+    <message>
+        <source>Fix</source>
+        <translation>固定</translation>
+    </message>
+    <message>
+        <source>Line Chart View</source>
+        <translation>折线图视图</translation>
+    </message>
+    <message>
+        <source>Bar Chart View</source>
+        <translation>柱状图视图</translation>
+    </message>
+    <message>
+        <source>Histogram View</source>
+        <translation>直方图视图</translation>
+    </message>
+    <message>
+        <source>Box Chart View</source>
+        <translation>箱线图视图</translation>
+    </message>
+    <message>
+        <source>Point Chart View</source>
+        <translation>散点图视图</translation>
+    </message>
+    <message>
+        <source>Parallel Coordinates View</source>
+        <translation>平行坐标视图</translation>
+    </message>
+    <message>
+        <source>Plot Matrix View</source>
+        <translation>散点矩阵视图</translation>
+    </message>
+    <message>
+        <source>Image Chart View</source>
+        <translation>图像图表视图</translation>
+    </message>
+    <message>
+        <source>Quartile Chart View</source>
+        <translation>四分位图视图</translation>
+    </message>
+    <message>
+        <source>Chart View</source>
+        <translation>图表视图</translation>
+    </message>
+    <message>
+        <source>Color (R)</source>
+        <translation>颜色 (R)</translation>
+    </message>
+    <message>
+        <source>Color (G)</source>
+        <translation>颜色 (G)</translation>
+    </message>
+    <message>
+        <source>Color (B)</source>
+        <translation>颜色 (B)</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>颜色</translation>
+    </message>
+    <message>
+        <source>Histogram bar color</source>
+        <translation>直方图柱颜色</translation>
+    </message>
+    <message>
+        <source>Pick Histogram Color</source>
+        <translation>选择直方图颜色</translation>
+    </message>
+    <message>
+        <source>Opacity:</source>
+        <translation>不透明度:</translation>
+    </message>
+    <message>
+        <source>Marker:</source>
+        <translation>标记:</translation>
+    </message>
+    <message>
+        <source>Circle</source>
+        <translation>圆形</translation>
+    </message>
+    <message>
+        <source>Plus</source>
+        <translation>十字</translation>
+    </message>
+    <message>
+        <source>Cross</source>
+        <translation>叉号</translation>
+    </message>
+    <message>
+        <source>Diamond</source>
+        <translation>菱形</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>大小:</translation>
+    </message>
+    <message>
+        <source>Vis</source>
+        <translation>可见</translation>
+    </message>
+    <message>
+        <source>Variable</source>
+        <translation>变量</translation>
+    </message>
+    <message>
+        <source>Legend Name</source>
+        <translation>图例名称</translation>
+    </message>
+    <message>
+        <source>Select fields to plot (multi-select)</source>
+        <translation>选择绘图字段（多选）</translation>
+    </message>
+    <message>
+        <source>Marker size</source>
+        <translation>标记大小</translation>
+    </message>
+    <message>
+        <source>Select Histogram Color</source>
+        <translation>选择直方图颜色</translation>
+    </message>
+    <message>
+        <source>Export PNG</source>
+        <translation>导出 PNG</translation>
+    </message>
+    <message>
+        <source>Export CSV</source>
+        <translation>导出 CSV</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>实线</translation>
+    </message>
+    <message>
+        <source>Dash</source>
+        <translation>虚线</translation>
+    </message>
+    <message>
+        <source>Dot</source>
+        <translation>点线</translation>
+    </message>
+    <message>
+        <source>Dash-Dot</source>
+        <translation>点划线</translation>
+    </message>
+    <message>
+        <source>Square</source>
+        <translation>方形</translation>
+    </message>
+    <message>
+        <source>Width:</source>
+        <translation>宽度:</translation>
+    </message>
+    <message>
+        <source>Prec:</source>
+        <translation>精度:</translation>
+    </message>
+    <message>
+        <source>Bins:</source>
+        <translation>分箱:</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色:</translation>
+    </message>
+    <message>
+        <source>Use Index for X Axis</source>
+        <translation>X 轴使用索引</translation>
+    </message>
+    <message>
+        <source>X Array:</source>
+        <translation>X 数组:</translation>
+    </message>
+    <message>
+        <source>Line:</source>
+        <translation>线型:</translation>
+    </message>
+    <message>
+        <source>Log</source>
+        <translation>对数</translation>
+    </message>
+    <message>
+        <source>Legend</source>
+        <translation>图例</translation>
+    </message>
+    <message>
+        <source>Grid</source>
+        <translation>网格</translation>
+    </message>
+    <message>
+        <source>Showing</source>
+        <translation>显示</translation>
+    </message>
+    <message>
+        <source>Attribute:</source>
+        <translation>属性:</translation>
+    </message>
+    <message>
+        <source>Point Data</source>
+        <translation>点数据</translation>
+    </message>
+    <message>
+        <source>Cell Data</source>
+        <translation>单元数据</translation>
+    </message>
+    <message>
+        <source>No data</source>
+        <translation>无数据</translation>
+    </message>
+</context>
+<context>
+    <name>vtkComparativeViewWidget</name>
+    <message>
+        <source>Hide Grid Settings</source>
+        <translation>隐藏网格设置</translation>
+    </message>
+    <message>
+        <source>Show Grid Settings</source>
+        <translation>显示网格设置</translation>
+    </message>
+    <message>
+        <source>Dimensions: %1 x %2</source>
+        <translation>尺寸: %1 x %2</translation>
+    </message>
+    <message>
+        <source>Render View (Comparative)</source>
+        <translation>渲染视图（对比）</translation>
+    </message>
+    <message>
+        <source>Line Chart View (Comparative)</source>
+        <translation>折线图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Bar Chart View (Comparative)</source>
+        <translation>柱状图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Comparative View</source>
+        <translation>对比视图</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Azimuth</source>
+        <translation>方位角</translation>
+    </message>
+    <message>
+        <source>Elevation</source>
+        <translation>仰角</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>不透明度</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation>缩放</translation>
+    </message>
+    <message>
+        <source>X-Range</source>
+        <translation>X 范围</translation>
+    </message>
+    <message>
+        <source>Y-Range</source>
+        <translation>Y 范围</translation>
+    </message>
+    <message>
+        <source>T-Range</source>
+        <translation>T 范围</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>应用</translation>
+    </message>
+    <message>
+        <source>Apply parameter sweep to sub-views</source>
+        <translation>将参数扫描应用到子视图</translation>
+    </message>
+    <message>
+        <source>Overlay</source>
+        <translation>叠加</translation>
+    </message>
+    <message>
+        <source>Screenshot</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <source>Save Comparative Screenshot</source>
+        <translation>保存对比截图</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>重置</translation>
+    </message>
+    <message>
+        <source>Reset camera for all sub-views</source>
+        <translation>重置所有子视图相机</translation>
+    </message>
+    <message>
+        <source>Sync</source>
+        <translation>同步</translation>
+    </message>
+    <message>
+        <source>Synchronize cameras across all sub-views</source>
+        <translation>同步所有子视图相机</translation>
+    </message>
+    <message>
+        <source>Grid spacing (ParaView Spacing property)</source>
+        <translation>网格间距</translation>
+    </message>
+    <message>
+        <source>Parameter to sweep across sub-views (ParaView vtkPVComparativeAnimationCue)</source>
+        <translation>跨子视图扫描的参数</translation>
+    </message>
+    <message>
+        <source>Sweep mode: X=vary along columns, Y=vary along rows, T=vary across all (ParaView XRANGE/YRANGE/TRANGE)</source>
+        <translation>扫描模式: X=按列变化, Y=按行变化, T=全部变化</translation>
+    </message>
+    <message>
+        <source>Overlay all comparisons into first view (ParaView OverlayAllComparisons)</source>
+        <translation>将所有对比叠加到首视图</translation>
+    </message>
+    <message>
+        <source>Export stitched screenshot of all sub-views</source>
+        <translation>导出所有子视图的拼接截图</translation>
+    </message>
+    <message>
+        <source>%1x%2 = %3 views</source>
+        <translation>%1x%2 = %3 个视图</translation>
+    </message>
+    <message>
+        <source>Cue: %1</source>
+        <translation>线索: %1</translation>
+    </message>
+    <message>
+        <source>Overlay mode ON</source>
+        <translation>叠加模式 开</translation>
+    </message>
+    <message>
+        <source>Overlay mode OFF</source>
+        <translation>叠加模式 关</translation>
+    </message>
+    <message>
+        <source>PNG (*.png);;JPEG (*.jpg)</source>
+        <translation>PNG (*.png);;JPEG (*.jpg)</translation>
+    </message>
+    <message>
+        <source>Saved: %1</source>
+        <translation>已保存: %1</translation>
+    </message>
+    <message>
+        <source>Applied %1 [%2..%3] to %4/%5 views</source>
+        <translation>已将 %1 [%2..%3] 应用到 %4/%5 个视图</translation>
+    </message>
+    <message>
+        <source>R:</source>
+        <translation>行:</translation>
+    </message>
+    <message>
+        <source>C:</source>
+        <translation>列:</translation>
+    </message>
+    <message>
+        <source>Sp:</source>
+        <translation>间距:</translation>
+    </message>
+    <message>
+        <source>Min:</source>
+        <translation>最小:</translation>
+    </message>
+    <message>
+        <source>Max:</source>
+        <translation>最大:</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Grid:&lt;/b&gt;</source>
+        <translation>&lt;b&gt;网格:&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>x</source>
+        <translation>x</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Cue:&lt;/b&gt;</source>
+        <translation>&lt;b&gt;线索:&lt;/b&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>ecvMultiViewWidget</name>
+    <message>
+        <source>Split Left|Right</source>
+        <translation>左右分割</translation>
+    </message>
+    <message>
+        <source>Split Top|Bottom</source>
+        <translation>上下分割</translation>
+    </message>
+    <message>
+        <source>Maximize</source>
+        <translation>最大化</translation>
+    </message>
+    <message>
+        <source>Close View</source>
+        <translation>关闭视图</translation>
+    </message>
+    <message>
+        <source>Render View</source>
+        <translation>渲染视图</translation>
+    </message>
+    <message>
+        <source>Render View (Comparative)</source>
+        <translation>渲染视图（对比）</translation>
+    </message>
+    <message>
+        <source>Bar Chart View</source>
+        <translation>柱状图视图</translation>
+    </message>
+    <message>
+        <source>Bar Chart View (Comparative)</source>
+        <translation>柱状图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Box Chart View</source>
+        <translation>箱线图视图</translation>
+    </message>
+    <message>
+        <source>Eye Dome Lighting</source>
+        <translation>眼穹灯光</translation>
+    </message>
+    <message>
+        <source>Histogram View</source>
+        <translation>直方图视图</translation>
+    </message>
+    <message>
+        <source>Image Chart View</source>
+        <translation>图像图表视图</translation>
+    </message>
+    <message>
+        <source>Line Chart View</source>
+        <translation>折线图视图</translation>
+    </message>
+    <message>
+        <source>Line Chart View (Comparative)</source>
+        <translation>折线图视图（对比）</translation>
+    </message>
+    <message>
+        <source>Orthographic Slice View</source>
+        <translation>正交切片视图</translation>
+    </message>
+    <message>
+        <source>Parallel Coordinates View</source>
+        <translation>平行坐标视图</translation>
+    </message>
+    <message>
+        <source>Plot Matrix View</source>
+        <translation>散点矩阵视图</translation>
+    </message>
+    <message>
+        <source>Point Chart View</source>
+        <translation>散点图视图</translation>
+    </message>
+    <message>
+        <source>Python View</source>
+        <translation>Python 视图</translation>
+    </message>
+    <message>
+        <source>Quartile Chart View</source>
+        <translation>四分位图视图</translation>
+    </message>
+    <message>
+        <source>Slice View</source>
+        <translation>切片视图</translation>
+    </message>
+    <message>
+        <source>SpreadSheet View</source>
+        <translation>电子表格视图</translation>
+    </message>
+    <message>
+        <source>Layout shown in separate window</source>
+        <translation>布局已在单独窗口中显示</translation>
+    </message>
+    <message>
+        <source>Click to restore</source>
+        <translation>点击恢复</translation>
+    </message>
+    <message>
+        <source>Layout</source>
+        <translation>布局</translation>
+    </message>
+</context>
+<context>
+    <name>ecvSpreadSheetModel</name>
+    <message>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <source>Object</source>
+        <translation>对象</translation>
+    </message>
+    <message>
+        <source>Mesh</source>
+        <translation>网格</translation>
+    </message>
+    <message>
+        <source>Point Cloud</source>
+        <translation>点云</translation>
+    </message>
+    <message>
+        <source>Generic Point Cloud</source>
+        <translation>通用点云</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation>已启用</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>是</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>否</translation>
+    </message>
+    <message>
+        <source>Number of Points</source>
+        <translation>点数</translation>
+    </message>
+    <message>
+        <source>Bounds X</source>
+        <translation>X 范围</translation>
+    </message>
+    <message>
+        <source>Bounds Y</source>
+        <translation>Y 范围</translation>
+    </message>
+    <message>
+        <source>Bounds Z</source>
+        <translation>Z 范围</translation>
+    </message>
+    <message>
+        <source>Has Colors</source>
+        <translation>含颜色</translation>
+    </message>
+    <message>
+        <source>Has Normals</source>
+        <translation>含法线</translation>
+    </message>
+    <message>
+        <source>Scalar Fields</source>
+        <translation>标量字段</translation>
+    </message>
+    <message>
+        <source>SF &apos;%1&apos; Range</source>
+        <translation>标量字段 &apos;%1&apos; 范围</translation>
+    </message>
+    <message>
+        <source>Number of Triangles</source>
+        <translation>三角面数</translation>
+    </message>
+    <message>
+        <source>Has Materials</source>
+        <translation>含材质</translation>
+    </message>
+    <message>
+        <source>Has Per-Triangle Normals</source>
+        <translation>含逐三角面法线</translation>
+    </message>
+    <message>
+        <source>Property</source>
+        <translation>属性</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>值</translation>
+    </message>
+</context>
+<context>
+    <name>ecvSpreadSheetView</name>
+    <message>
+        <source>Point Data</source>
+        <translation>点数据</translation>
+    </message>
+    <message>
+        <source>Cell Data</source>
+        <translation>单元数据</translation>
+    </message>
+    <message>
+        <source>Field Data</source>
+        <translation>字段数据</translation>
+    </message>
+    <message>
+        <source>Precision:</source>
+        <translation>精度:</translation>
+    </message>
+    <message>
+        <source>Switches between scientific and fixed-point representation</source>
+        <translation>切换科学计数法与定点表示</translation>
+    </message>
+    <message>
+        <source>Toggle fixed-point representation (always show #Precision digits)</source>
+        <translation>切换定点表示（始终显示精度位数）</translation>
+    </message>
+    <message>
+        <source>Show only selected elements.</source>
+        <translation>仅显示选中元素。</translation>
+    </message>
+    <message>
+        <source>Toggle column visibility</source>
+        <translation>切换列可见性</translation>
+    </message>
+    <message>
+        <source>Toggle cell connectivity visibility</source>
+        <translation>切换单元连接性可见性</translation>
+    </message>
+    <message>
+        <source>Toggle field data visibility</source>
+        <translation>切换字段数据可见性</translation>
+    </message>
+    <message>
+        <source>Export Spreadsheet</source>
+        <translation>导出电子表格</translation>
+    </message>
+    <message>
+        <source>%1 (%2 points)</source>
+        <translation>%1 (%2 个点)</translation>
+    </message>
+    <message>
+        <source>Filter rows...</source>
+        <translation>过滤行...</translation>
+    </message>
+    <message>
+        <source>SpreadSheet View</source>
+        <translation>电子表格视图</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Export SpreadSheet to CSV</source>
+        <translation>导出电子表格为 CSV</translation>
+    </message>
+    <message>
+        <source>CSV (*.csv)</source>
+        <translation>CSV (*.csv)</translation>
+    </message>
+    <message>
+        <source>No data loaded</source>
+        <translation>未加载数据</translation>
+    </message>
+    <message>
+        <source>Showing %1 of %2 rows, %3 columns (%4)</source>
+        <translation>显示 %1 / %2 行, %3 列 (%4)</translation>
+    </message>
+    <message>
+        <source>%1 rows, %2 columns (%3)</source>
+        <translation>%1 行, %2 列 (%3)</translation>
+    </message>
+</context>
+<context>
+    <name>ecvPythonView</name>
+    <message>
+        <source>Python View</source>
+        <translation>Python 视图</translation>
+    </message>
+    <message>
+        <source>Run</source>
+        <translation>运行</translation>
+    </message>
+    <message>
+        <source>Execute Python script (Ctrl+Enter)</source>
+        <translation>执行 Python 脚本 (Ctrl+Enter)</translation>
+    </message>
+    <message>
+        <source>Export+Run</source>
+        <translation>导出并运行</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <source>Load</source>
+        <translation>加载</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>保存</translation>
+    </message>
+    <message>
+        <source>Output will appear here...</source>
+        <translation>输出将显示在此处...</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>No entity</source>
+        <translation>无实体</translation>
+    </message>
+    <message>
+        <source>Running...</source>
+        <translation>运行中...</translation>
+    </message>
+    <message>
+        <source>Timeout</source>
+        <translation>超时</translation>
+    </message>
+    <message>
+        <source>Plot output
+(use plt.savefig(os.environ['PLOT_FILE']))</source>
+        <translation>绘图输出
+(使用 plt.savefig(os.environ['PLOT_FILE']))</translation>
+    </message>
+    <message>
+        <source>Entity: %1</source>
+        <translation>实体: %1</translation>
+    </message>
+    <message>
+        <source>Exit code: %1</source>
+        <translation>退出码: %1</translation>
+    </message>
+    <message>
+        <source>Error: No entity selected or entity has no point data.</source>
+        <translation>错误: 未选择实体或实体没有点数据。</translation>
+    </message>
+    <message>
+        <source>Exported entity to: %1</source>
+        <translation>已导出实体到: %1</translation>
+    </message>
+    <message>
+        <source>DATA_FILE env variable set. Running script...
+</source>
+        <translation>已设置 DATA_FILE 环境变量。正在运行脚本...
+</translation>
+    </message>
+    <message>
+        <source>Error: Script timed out (60s limit)</source>
+        <translation>错误: 脚本超时 (60秒限制)</translation>
+    </message>
+    <message>
+        <source>--- stderr ---</source>
+        <translation>--- 标准错误 ---</translation>
+    </message>
+    <message>
+        <source>Export selected entity to CSV, set DATA_FILE env var, then run script</source>
+        <translation>导出选中实体为CSV，设置DATA_FILE环境变量，然后运行脚本</translation>
+    </message>
+    <message>
+        <source>Load Python Script</source>
+        <translation>加载 Python 脚本</translation>
+    </message>
+    <message>
+        <source>Python (*.py);;All files (*)</source>
+        <translation>Python (*.py);;所有文件 (*)</translation>
+    </message>
+    <message>
+        <source>Save Python Script</source>
+        <translation>保存 Python 脚本</translation>
+    </message>
+    <message>
+        <source>Python (*.py)</source>
+        <translation>Python (*.py)</translation>
+    </message>
+    <message>
+        <source>Loaded: %1</source>
+        <translation>已加载: %1</translation>
+    </message>
+    <message>
+        <source>Saved: %1</source>
+        <translation>已保存: %1</translation>
     </message>
 </context>
 <context>

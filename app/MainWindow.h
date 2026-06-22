@@ -35,6 +35,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSet>
+#include <QShortcut>
 #include <QStatusBar>
 #include <QString>
 #include <QTextEdit>
@@ -44,6 +45,7 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <functional>
 
 // system
 #include <algorithm>
@@ -80,7 +82,10 @@ class cvViewSelectionManager;
 class cvSelectionData;
 class cvSelectionHighlighter;
 class cvSelectionToolController;
+class cvPerViewSelectionManager;
 class cvFindDataDockWidget;
+class vtkOrthoSliceViewWidget;
+class vtkComparativeViewWidget;
 #endif
 
 class ecvUpdateDlg;
@@ -95,10 +100,15 @@ class ecvPrimitiveFactoryDlg;
 class ccPointPairRegistrationDlg;
 class ecvShortcutDialog;
 
-class QMdiArea;
-class QMdiSubWindow;
+class QSplitter;
 class QTreeWidgetItem;
 class QUIWidget;
+class ecvGenericGLDisplay;
+class vtkGLView;
+class ecvMultiViewFrameManager;
+class ecvTabbedMultiViewWidget;
+class ecvMultiViewWidget;
+class ecvViewLayoutProxy;
 
 struct dbTreeSelectionInfo;
 
@@ -195,15 +205,35 @@ public:
     //! Returns the number of 3D views
     int getRenderWindowCount() const;
 
-    //! Returns MDI area subwindow corresponding to a given 3D view
-    QMdiSubWindow* getMDISubWindow(QWidget* win);
     QWidget* getActiveWindow() override;
+    ecvGenericGLDisplay* getActiveGLDisplay() override;
     QWidget* getWindow(int index) const;
     void update3DViewsMenu();
 
+    // Multi-window support
+    ecvGenericGLDisplay* getActiveGLView();
+    vtkGLView* new3DView();
+    void splitCurrentView(Qt::Orientation orientation);
+    void splitViewFrame(QWidget* frameToSplit, Qt::Orientation orientation);
+    void toggleMaximizeViewFrame(QWidget* frame, QToolButton* btn);
+    void equalizeSplitter(QSplitter* splitter, bool horizontal, bool vertical);
+    void swapViewFrames(QWidget* frameA, QWidget* frameB);
+    void lockViewSize(const QSize& size);
+    void copyPrimaryViewConfig(vtkGLView* view);
+    void rebindToolsToActiveView(ecvGenericGLDisplay* display);
+    void syncPivotButtonStates(ecvGenericGLDisplay* display);
+    void prepareViewClose(QWidget* viewFrame);
+    QWidget* createViewFrame(QWidget* innerWidget, const QString& title);
+    int getGLViewCount() const;
+    void refreshAllViews(bool only2D = false);
+
 public:
+    QWidget* getActiveGLWidget() const;
+
     //! Flag: first time the window is made visible
     bool m_FirstShow;
+    //! Flag: MainWindow is being destroyed — suppresses stale signal handlers
+    bool m_closing = false;
     static bool s_autoSaveGuiElementPos;
 
 public:  // inherited from ecvMainAppInterface
@@ -261,7 +291,7 @@ public:  // inherited from ecvMainAppInterface
             ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
     ccUniqueIDGenerator::Shared getUniqueIDGenerator() override;
 
-    void addWidgetToQMdiArea(QWidget* widget) override;
+    void addViewWidget(QWidget* widget) override;
 
     void increasePointSize() override;
     void decreasePointSize() override;
@@ -274,6 +304,12 @@ public:  // inherited from ecvMainAppInterface
 #ifdef USE_VTK_BACKEND
     //! Get the selection manager instance
     cvViewSelectionManager* getSelectionManager() const;
+
+    //! Active Orthographic Slice View in the current multi-view frame (if any)
+    vtkOrthoSliceViewWidget* activeOrthoSliceView() const;
+
+    //! Active Comparative View in the current tab/frame (if any)
+    vtkComparativeViewWidget* activeComparativeView() const;
 
     //! Get the selection tool controller instance
     cvSelectionToolController* getSelectionController() const {
@@ -288,6 +324,16 @@ private:
     void initLanguages();
     void initApplicationUpdate();
     void initial();
+    void initParaViewLayoutSystem();
+
+    /// Returns the ecvTabbedMultiViewWidget used as the central view area.
+    QWidget* centralViewWidget() const;
+
+    /// Cleanup handler invoked when a view is being removed from the layout.
+    /// Performs ecvViewManager unregistration, primary-view adoption, and
+    /// camera-link removal.
+    void onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay);
+
     void initStatusBar();
     void initDBRoot();
     void initConsole();
@@ -309,6 +355,9 @@ private:
     //! \param except Pointer to the tool that should NOT be disabled (nullptr
     //! to disable all)
     void disableAllSelectionTools(void* except = nullptr);
+    //! Highlight the active view frame (ParaView-style border + bold label).
+    //! Works for both MDI-level and QSplitter-level views.
+    void markActiveViewFrame(QWidget* activeViewWidget);
 #endif
 
     //! Adds the "Edit Plane" action to the given menu.
@@ -338,6 +387,9 @@ private:
 
     //! Shows the shortcut settings dialog
     void showShortcutDialog();
+
+    //! Create a specific view type in a new tab.
+    void quickCreateViewInNewTab(const QString& viewType);
 
     void doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
@@ -470,6 +522,8 @@ private slots:
     void toggleFullScreen(bool state);
     //! Slot called when the exclusive full screen mode is toggled on a window
     void onExclusiveFullScreenToggled(bool);
+    //! Show/hide all view title bars and the tab bar (ParaView-style)
+    void setViewDecorationsVisible(bool visible);
     void showDisplayOptions();
 
     void toggleActiveWindowAutoPickRotCenter(bool state);
@@ -504,7 +558,6 @@ private slots:
     void deactivateTranslateRotateMode(bool state);
 
     void updateMenus();
-    void on3DViewActivated(QMdiSubWindow*);
 
     //! Handles new label
     void handleNewLabel(ccHObject*);
@@ -714,9 +767,21 @@ private:
     ccPickingHub* m_pickingHub;
 
     /******************************/
-    /***        MDI AREA        ***/
+    /***     VIEW LAYOUT       ***/
     /******************************/
-    QMdiArea* m_mdiArea;
+    int m_layoutCounter = 0;
+    bool m_creatingView = false;
+    QSize m_lockedViewSize;
+
+    ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
+
+    // Phase M3: the first vtkGLView created at startup (sole view type)
+    vtkGLView* m_firstView = nullptr;
+
+    /******************************************/
+    /*** ParaView-style multi-view (Phase G) **/
+    /******************************************/
+    ecvTabbedMultiViewWidget* m_tabbedMultiView = nullptr;
 
     //! CloudViewer MDI area overlay dialogs
     struct ccMDIDialogs {
@@ -772,6 +837,9 @@ private:
     //! Selection tool controller (manages all selection tools, ParaView-style)
     //! This is a singleton, but we keep a pointer for convenience
     cvSelectionToolController* m_selectionController;
+    cvPerViewSelectionManager* m_perViewSelMgr = nullptr;
+    // Escape shortcut is now managed through ecvModalShortcut (see
+    // setupSelectionToolShortcuts)
 
     //! Find Data dock widget (ParaView-style selection properties panel)
     //! This is a standalone dock that can be shown/hidden independently of

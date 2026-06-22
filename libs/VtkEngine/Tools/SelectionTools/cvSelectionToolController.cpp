@@ -12,6 +12,7 @@
 
 #include "cvSelectionToolController.h"
 
+#include "cvPerViewSelectionManager.h"
 #include "cvRenderViewSelectionReaction.h"
 #include "cvSelectionData.h"
 #include "cvSelectionHighlighter.h"
@@ -21,9 +22,18 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
+// CV_DB_LIB
+#include <ecvViewManager.h>
+
+// VtkEngine
+#include "Visualization/VtkVis.h"
+#include "Visualization/vtkGLView.h"
+
 // QT
 #include <QAction>
 #include <QActionGroup>
+#include <QKeySequence>
+#include <QShortcut>
 #include <QWidget>
 
 //-----------------------------------------------------------------------------
@@ -52,6 +62,20 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
             QOverload<>::of(&cvViewSelectionManager::selectionChanged), this,
             &cvSelectionToolController::selectionHistoryChanged);
 
+    // Safety net: rebind to new view's visualizer whenever the active
+    // view changes, in case any code path updates the active view without
+    // going through MainWindow::rebindToolsToActiveView().
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
+            [this](ecvGenericGLDisplay* newActive,
+                   ecvGenericGLDisplay* /*oldActive*/) {
+                auto* glView = dynamic_cast<vtkGLView*>(newActive);
+                if (glView && glView->getVisualizer3D()) {
+                    setVisualizer(static_cast<ecvGenericVisualizer3D*>(
+                            glView->getVisualizer3D()));
+                }
+            });
+
     CVLog::PrintVerbose("[cvSelectionToolController] Initialized");
 }
 
@@ -69,8 +93,32 @@ cvSelectionToolController::~cvSelectionToolController() {
 }
 
 //-----------------------------------------------------------------------------
+void cvSelectionToolController::installModifierShortcuts() {
+    auto bind = [this](QAction* action, const QKeySequence& seq) {
+        if (!action || !m_parentWidget) return;
+        action->setShortcut(seq);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        auto* shortcut = new QShortcut(seq, m_parentWidget);
+        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        QObject::connect(shortcut, &QShortcut::activated, action,
+                         &QAction::trigger);
+        m_modifierShortcuts.push_back(shortcut);
+    };
+
+    for (QShortcut* s : m_modifierShortcuts) {
+        delete s;
+    }
+    m_modifierShortcuts.clear();
+
+    bind(m_addAction, QKeySequence(Qt::CTRL));
+    bind(m_subtractAction, QKeySequence(Qt::SHIFT));
+    bind(m_toggleAction, QKeySequence(Qt::CTRL | Qt::SHIFT));
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
+    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Initialized with parent widget");
@@ -211,6 +259,26 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     // Reference: pqStandardViewFrameActionsImplementation.cxx lines 284-285
     connect(m_modifierGroup, &QActionGroup::triggered, this,
             &cvSelectionToolController::onModifierChanged);
+    for (QAction* modAction : m_modifierGroup->actions()) {
+        connect(modAction, &QAction::toggled, this, [this, modAction](bool on) {
+            if (on) {
+                onModifierChanged(modAction);
+            } else if (m_modifierGroup) {
+                bool anyChecked = false;
+                for (QAction* a : m_modifierGroup->actions()) {
+                    if (a->isChecked()) {
+                        anyChecked = true;
+                        break;
+                    }
+                }
+                if (!anyChecked) {
+                    onModifierChanged(modAction);
+                }
+            }
+        });
+    }
+
+    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Registered modifier actions");
@@ -259,6 +327,12 @@ void cvSelectionToolController::disableAllTools(
     // End any active reaction
     cvRenderViewSelectionReaction::endActiveSelection();
 
+    // Uncheck per-view mirror actions (signals were blocked above,
+    // so the mirror connections did not fire)
+    if (m_perViewSelMgr) {
+        m_perViewSelMgr->uncheckAllMirrors();
+    }
+
     // Update selection properties panel
     if (except == nullptr) {
         setSelectionPropertiesActive(false);
@@ -283,14 +357,15 @@ cvSelectionToolController::currentMode() const {
 
 //-----------------------------------------------------------------------------
 bool cvSelectionToolController::handleEscapeKey() {
-    if (!isAnyToolActive()) {
-        return false;
-    }
+    // Check both the reaction system AND visual button state —
+    // per-view mirror buttons may still be checked even when the
+    // reaction has already ended.
+    bool hadActiveReaction = isAnyToolActive();
 
     // Disable all selection tools via the reaction system
     disableAllTools(nullptr);
 
-    // Also explicitly uncheck all actions to keep UI synchronized
+    // Also explicitly uncheck all global actions to keep UI synchronized
     auto uncheckAction = [](QAction* action) {
         if (action && action->isCheckable() && action->isChecked()) {
             action->blockSignals(true);
@@ -299,19 +374,32 @@ bool cvSelectionToolController::handleEscapeKey() {
         }
     };
 
-    uncheckAction(m_actions.selectSurfaceCells);
-    uncheckAction(m_actions.selectSurfacePoints);
-    uncheckAction(m_actions.selectFrustumCells);
-    uncheckAction(m_actions.selectFrustumPoints);
-    uncheckAction(m_actions.selectPolygonCells);
-    uncheckAction(m_actions.selectPolygonPoints);
-    uncheckAction(m_actions.selectBlocks);
-    uncheckAction(m_actions.selectFrustumBlocks);
-    uncheckAction(m_actions.interactiveSelectCells);
-    uncheckAction(m_actions.interactiveSelectPoints);
-    uncheckAction(m_actions.hoverCells);
-    uncheckAction(m_actions.hoverPoints);
-    uncheckAction(m_actions.zoomToBox);
+    bool hadCheckedAction = false;
+    QAction* allActions[] = {
+            m_actions.selectSurfaceCells,
+            m_actions.selectSurfacePoints,
+            m_actions.selectFrustumCells,
+            m_actions.selectFrustumPoints,
+            m_actions.selectPolygonCells,
+            m_actions.selectPolygonPoints,
+            m_actions.selectBlocks,
+            m_actions.selectFrustumBlocks,
+            m_actions.interactiveSelectCells,
+            m_actions.interactiveSelectPoints,
+            m_actions.hoverCells,
+            m_actions.hoverPoints,
+            m_actions.zoomToBox,
+    };
+    for (auto* a : allActions) {
+        if (a && a->isCheckable() && a->isChecked()) hadCheckedAction = true;
+        uncheckAction(a);
+    }
+
+    // uncheckAllMirrors is already called by disableAllTools above
+
+    if (!hadActiveReaction && !hadCheckedAction) {
+        return false;
+    }
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] ESC key handled - disabled all "
@@ -383,70 +471,47 @@ void cvSelectionToolController::onSelectionFinished(
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onModifierChanged(QAction* action) {
     // Reference:
-    // pqStandardViewFrameActionsImplementation::manageGroupExclusivity() lines
-    // 851-866
-    if (!action) {
+    // pqStandardViewFrameActionsImplementation::manageGroupExclusivity
+    if (!action || !action->isCheckable() || !action->isChecked()) {
         return;
     }
 
-    // Handle non-checkable actions (shouldn't happen but be safe)
-    if (!action->isCheckable()) {
-        return;
+    // Manually uncheck other actions in the group (ParaView
+    // manageGroupExclusivity). Do not blockSignals: per-view mirror actions
+    // must receive toggled updates.
+    if (m_modifierGroup) {
+        for (QAction* groupAction : m_modifierGroup->actions()) {
+            if (groupAction != action && groupAction->isChecked()) {
+                groupAction->setChecked(false);
+            }
+        }
     }
 
-    // Implement ParaView-style group exclusivity management
-    // When an action is checked, uncheck all others in the group
-    // When an action is unchecked (by clicking it again), revert to default
-    if (action->isChecked()) {
-        // Manually uncheck other actions in the group
-        // This is the key to ParaView's "manageGroupExclusivity" behavior
-        if (m_modifierGroup) {
-            for (QAction* groupAction : m_modifierGroup->actions()) {
-                if (groupAction != action && groupAction->isChecked()) {
-                    groupAction->blockSignals(true);
-                    groupAction->setChecked(false);
-                    groupAction->blockSignals(false);
-                }
-            }
-        }
-
-        // Set the modifier
-        if (m_manager) {
-            QVariant data = action->data();
-            if (data.isValid()) {
-                m_manager->setSelectionModifier(
-                        static_cast<SelectionModifier>(data.toInt()));
-
-                QString modeName;
-                switch (data.toInt()) {
-                    case static_cast<int>(
-                            SelectionModifier::SELECTION_ADDITION):
-                        modeName = "ADD (Ctrl)";
-                        break;
-                    case static_cast<int>(
-                            SelectionModifier::SELECTION_SUBTRACTION):
-                        modeName = "SUBTRACT (Shift)";
-                        break;
-                    case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
-                        modeName = "TOGGLE (Ctrl+Shift)";
-                        break;
-                    default:
-                        modeName = "DEFAULT";
-                        break;
-                }
-                CVLog::PrintVerbose(
-                        QString("[cvSelectionToolController] Selection "
-                                "modifier: %1")
-                                .arg(modeName));
-            }
-        }
-    } else {
-        // Action was unchecked - revert to default
-        if (m_manager) {
+    // Set the modifier
+    if (m_manager) {
+        QVariant data = action->data();
+        if (data.isValid()) {
             m_manager->setSelectionModifier(
-                    SelectionModifier::SELECTION_DEFAULT);
-            CVLog::PrintVerbose(
-                    "[cvSelectionToolController] Selection modifier: DEFAULT");
+                    static_cast<SelectionModifier>(data.toInt()));
+
+            QString modeName;
+            switch (data.toInt()) {
+                case static_cast<int>(SelectionModifier::SELECTION_ADDITION):
+                    modeName = "ADD (Ctrl)";
+                    break;
+                case static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION):
+                    modeName = "SUBTRACT (Shift)";
+                    break;
+                case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
+                    modeName = "TOGGLE (Ctrl+Shift)";
+                    break;
+                default:
+                    modeName = "DEFAULT";
+                    break;
+            }
+            CVLog::PrintVerbose(QString("[cvSelectionToolController] Selection "
+                                        "modifier: %1")
+                                        .arg(modeName));
         }
     }
 }
@@ -462,6 +527,118 @@ bool cvSelectionToolController::isPCLBackendAvailable() {
 #else
     return false;
 #endif
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionToolController::SelectionActions
+cvSelectionToolController::createActions(QWidget* parent) {
+    auto make = [parent](const QString& name, const QString& icon,
+                         const QString& text, const QString& tip,
+                         bool checkable) -> QAction* {
+        auto* a = new QAction(QIcon(icon), text, parent);
+        a->setObjectName(name);
+        a->setToolTip(tip);
+        a->setCheckable(checkable);
+        return a;
+    };
+
+    SelectionActions a;
+    a.selectSurfaceCells =
+            make("actionSelectSurfaceCells",
+                 ":/Resources/images/svg/pqSurfaceSelectionCell.svg",
+                 QObject::tr("Select Cells On (s)"),
+                 QObject::tr("Select Cells On (s)"), true);
+    a.selectSurfacePoints =
+            make("actionSelectSurfacePoints",
+                 ":/Resources/images/svg/pqSurfaceSelectionPoint.svg",
+                 QObject::tr("Select Points On (d)"),
+                 QObject::tr("Select Points On (d)"), true);
+    a.selectFrustumCells =
+            make("actionSelectFrustumCells",
+                 ":/Resources/images/svg/pqFrustumSelectionCell.svg",
+                 QObject::tr("Select Cells Through (f)"),
+                 QObject::tr("Select Cells Through (f)"), true);
+    a.selectFrustumPoints =
+            make("actionSelectFrustumPoints",
+                 ":/Resources/images/svg/pqFrustumSelectionPoint.svg",
+                 QObject::tr("Select Points Through (g)"),
+                 QObject::tr("Select Points Through (g)"), true);
+    a.selectPolygonCells =
+            make("actionSelectPolygonCells",
+                 ":/Resources/images/svg/pqPolygonSelectSurfaceCell.svg",
+                 QObject::tr("Select Cells With Polygon"),
+                 QObject::tr("Select Cells With Polygon"), true);
+    a.selectPolygonPoints =
+            make("actionSelectPolygonPoints",
+                 ":/Resources/images/svg/pqPolygonSelectSurfacePoint.svg",
+                 QObject::tr("Select Points With Polygon"),
+                 QObject::tr("Select Points With Polygon"), true);
+    a.selectBlocks = make("actionSelectBlocks",
+                          ":/Resources/images/svg/pqSelectBlock.svg",
+                          QObject::tr("Select Block (b)"),
+                          QObject::tr("Select Block (b)"), true);
+    a.selectFrustumBlocks =
+            make("actionSelectFrustumBlocks",
+                 ":/Resources/images/svg/pqFrustumSelectionBlock.svg",
+                 QObject::tr("Select Blocks Through (n)"),
+                 QObject::tr("Select Blocks Through (n)"), true);
+    a.interactiveSelectCells =
+            make("actionInteractiveSelectCells",
+                 ":/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg",
+                 QObject::tr("Interactive Select Cells On"),
+                 QObject::tr("Interactive Select Cells On"), true);
+    a.interactiveSelectPoints = make(
+            "actionInteractiveSelectPoints",
+            ":/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg",
+            QObject::tr("Interactive Select Points On"),
+            QObject::tr("Interactive Select Points On"), true);
+    a.hoverCells =
+            make("actionHoverCells",
+                 ":/Resources/images/svg/pqSurfaceHoveringCell.svg",
+                 QObject::tr("Hover Cells On"),
+                 QObject::tr("Hover Cells On. Use Ctrl-C/Cmd-C to copy the "
+                             "content to clipboard."),
+                 true);
+    a.hoverPoints =
+            make("actionHoverPoints",
+                 ":/Resources/images/svg/pqSurfaceHoveringPoint.svg",
+                 QObject::tr("Hover Points On"),
+                 QObject::tr("Hover Points On. Use Ctrl-C/Cmd-C to copy the "
+                             "content to clipboard."),
+                 true);
+
+    a.addSelection = make("actionAddSelection",
+                          ":/Resources/images/svg/pqSelectPlus.svg",
+                          QObject::tr("Add Selection"),
+                          QObject::tr("Add selection (Ctrl)"), true);
+    a.subtractSelection = make("actionSubtractSelection",
+                               ":/Resources/images/svg/pqSelectMinus.svg",
+                               QObject::tr("Subtract Selection"),
+                               QObject::tr("Subtract selection (Shift)"), true);
+    a.toggleSelection =
+            make("actionToggleSelection",
+                 ":/Resources/images/svg/pqSelectToggle.svg",
+                 QObject::tr("Toggle Selection"),
+                 QObject::tr("Toggle selection (Ctrl+Shift)"), true);
+
+    a.growSelection =
+            make("actionGrowSelection", ":/Resources/images/svg/pqPlus.svg",
+                 QObject::tr("Grow Selection"),
+                 QObject::tr("Grow selection (+)"), false);
+    a.shrinkSelection =
+            make("actionShrinkSelection", ":/Resources/images/svg/pqMinus.svg",
+                 QObject::tr("Shrink Selection"),
+                 QObject::tr("Shrink selection (-)"), false);
+    a.clearSelection = make("actionClearSelection",
+                            ":/Resources/images/svg/pqClearSort.svg",
+                            QObject::tr("Clear Selection"),
+                            QObject::tr("Clear selection (Esc)"), false);
+
+    a.zoomToBox = make("actionZoomToBox",
+                       ":/Resources/images/svg/pqZoomToSelection.svg",
+                       QObject::tr("Zoom to Box"),
+                       QObject::tr("Zoom to selection"), false);
+    return a;
 }
 
 //-----------------------------------------------------------------------------

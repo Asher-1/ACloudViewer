@@ -18,7 +18,7 @@
 #include <vector>
 
 class vtkActor;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkPolyData;
 class vtkRenderer;
 class vtkRenderWindow;
@@ -79,7 +79,7 @@ public:
      * @param renderer VTK renderer (for lighting setup)
      * @return true on success
      */
-    virtual bool Apply(vtkLODActor* actor,
+    virtual bool Apply(vtkPVLODActor* actor,
                        const class ccMaterialSet* materials,
                        vtkPolyData* polydata,
                        vtkRenderer* renderer) = 0;

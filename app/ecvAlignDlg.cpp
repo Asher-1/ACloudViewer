@@ -21,9 +21,9 @@
 #include <ReferenceCloud.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 
 ccAlignDlg::ccAlignDlg(ccGenericPointCloud* data,
                        ccGenericPointCloud* model,
@@ -209,7 +209,7 @@ void ccAlignDlg::setColorsAndLabels() {
     dataObject->setVisible(true);
     dataObject->setTempColor(ecvColor::yellow);
 
-    ecvDisplayTools::RedrawDisplay(false);
+    { ecvRedrawScope scope(false); }
 }
 
 // SLOTS

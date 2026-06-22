@@ -9,10 +9,11 @@
 
 // CV_DB_LIB
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
 #include "ecvGBLSensor.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvScalarField.h"
+#include "ecvViewManager.h"
 
 // Qt
 #include <QDialog>
@@ -190,8 +191,12 @@ void ConvertToLogScale(ScalarType& dispMin, ScalarType& dispMax) {
 
 void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context) {
     const ccScalarField* sf = context.sfColorScaleToDisplay;
-    QWidget* display =
-            static_cast<QWidget*>(ecvDisplayTools::GetCurrentScreen());
+    QWidget* display = nullptr;
+    if (context.display) {
+        display = context.display->asWidget();
+    } else if (auto* aw = ecvViewManager::instance().activeWidget()) {
+        display = aw;
+    }
 
     DrawColorRamp(context, sf, display, context.glW, context.glH,
                   context.renderZoom);
@@ -208,9 +213,10 @@ void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context,
     params.context.viewID = "vtkBlockColors";
 
     if (!sf || !sf->getColorScale() || !win) {
-        ecvDisplayTools::RemoveWidgets(params);
+        if (params.context.display)
+            params.context.display->removeWidgets(params);
         return;
     }
 
-    ecvDisplayTools::DrawWidgets(params);
+    if (params.context.display) params.context.display->drawWidgets(params);
 }

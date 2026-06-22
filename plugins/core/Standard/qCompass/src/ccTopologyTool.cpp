@@ -7,6 +7,9 @@
 
 #include "ccTopologyTool.h"
 
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
+
 #include "ccCompass.h"
 
 int ccTopologyTool::RELATIONSHIP = ccTopologyRelation::YOUNGER_THAN;
@@ -30,9 +33,9 @@ void ccTopologyTool::onNewSelection(
             m_firstPick = o->getUniqueID();
 
             // write instructions to screen
-            ecvDisplayTools::DisplayNewMessage(
+            ecvViewManager::instance().displayMessageOnActiveView(
                     "Select second (younger) GeoObject.",
-                    ecvDisplayTools::LOWER_LEFT_MESSAGE);
+                    ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
         } else  // yes.. this is the second pick
         {
             ccGeoObject* g1 = static_cast<ccGeoObject*>(
@@ -54,8 +57,9 @@ void ccTopologyTool::onNewSelection(
 // called when the tool is set to active (for initialization)
 void ccTopologyTool::toolActivated() {
     // display instructions
-    ecvDisplayTools::DisplayNewMessage("Select first (older) GeoObject.",
-                                       ecvDisplayTools::LOWER_LEFT_MESSAGE);
+    ecvViewManager::instance().displayMessageOnActiveView(
+            "Select first (older) GeoObject.",
+            ecvGenericGLDisplay::LOWER_LEFT_MESSAGE);
 }
 
 // called when the tool is set to disactive (for cleanup)

@@ -54,7 +54,7 @@ public:
     /// @param polydata Polygon data
     /// @param renderer VTK renderer
     /// @return true on success
-    bool Apply(vtkLODActor* actor,
+    bool Apply(vtkPVLODActor* actor,
                const class ccMaterialSet* materials,
                vtkPolyData* polydata,
                vtkRenderer* renderer) override;

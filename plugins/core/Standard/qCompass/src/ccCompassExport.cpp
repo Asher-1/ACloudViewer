@@ -8,7 +8,7 @@
 #include "ccCompassExport.h"
 
 #include <QtCompat.h>
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 #include <QBuffer>
 #include <QFileInfo>
@@ -765,7 +765,9 @@ void saveSVG(ecvMainAppInterface* app, const QString& filename, float zoom) {
     QString pngFile = QString("%1/%2.png")
                               .arg(fileInfo.absolutePath())
                               .arg(fileInfo.baseName());
-    ecvDisplayTools::RenderToFile(pngFile, zoom);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->renderToFile(pngFile, zoom);
+    }
 
     // restore visibility
     for (ccHObject* o : hidden) {
@@ -795,10 +797,14 @@ void saveSVG(ecvMainAppInterface* app, const QString& filename, float zoom) {
         svg_stream.setRealNumberPrecision(12);
 
         // GlWidth and GlHeight are negative on some machines??
-        int width =
-                std::abs(static_cast<int>(ecvDisplayTools::GlWidth() * zoom));
-        int height =
-                std::abs(static_cast<int>(ecvDisplayTools::GlHeight() * zoom));
+        ecvGenericGLDisplay* svgView =
+                ecvViewManager::instance().getEffectiveView();
+        int width = 0;
+        int height = 0;
+        if (svgView) {
+            width = std::abs(static_cast<int>(svgView->glWidth() * zoom));
+            height = std::abs(static_cast<int>(svgView->glHeight() * zoom));
+        }
 
         // write svg header
         svg_stream << QString::asprintf("<svg width=\"%d\" height=\"%d\">",
@@ -814,11 +820,12 @@ void saveSVG(ecvMainAppInterface* app, const QString& filename, float zoom) {
 
         // recursively write traces
         ccGLCameraParameters params;
-        ecvDisplayTools::GetGLCameraParameters(params);
-        if (params.perspective) {
-            ecvDisplayTools::SetPerspectiveState(false, true);
-            ecvDisplayTools::GetGLCameraParameters(
-                    params);  // get updated params
+        if (svgView) {
+            svgView->getGLCameraParameters(params);
+            if (params.perspective) {
+                svgView->setPerspectiveState(false, true);
+                svgView->getGLCameraParameters(params);  // get updated params
+            }
         }
 
         int count = _writeTracesSVG(params, app->dbRootObject(), &svg_stream,

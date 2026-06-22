@@ -15,13 +15,15 @@
 #include "ecvPersistentSettings.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // CV_CORE_LIB
 #include <Delaunay2dMesh.h>
@@ -140,11 +142,11 @@ ccVolumeCalcTool::ccVolumeCalcTool(ccGenericPointCloud* cloud1,
 
     // add window
     create2DView(mapFrame);
-    if (ecvDisplayTools::GetMainWindow()) {
-        ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        ecvGui::ParamStruct params = view->getDisplayParameters();
         params.colorScaleShowHistogram = false;
         params.displayedNumPrecision = precisionSpinBox->value();
-        ecvDisplayTools::SetDisplayParameters(params);
+        view->setDisplayParameters(params, true);
     }
 
     loadSettings();
@@ -158,11 +160,11 @@ ccVolumeCalcTool::~ccVolumeCalcTool() {}
 
 void ccVolumeCalcTool::setDisplayedNumberPrecision(int precision) {
     // update window
-    if (ecvDisplayTools::GetMainWindow()) {
-        ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        ecvGui::ParamStruct params = view->getDisplayParameters();
         params.displayedNumPrecision = precision;
-        ecvDisplayTools::SetDisplayParameters(params);
-        ecvDisplayTools::RedrawDisplay(true);
+        view->setDisplayParameters(params, true);
+        { ecvRedrawScope scope(true); }
     }
 
     // update report
@@ -426,22 +428,23 @@ ccPointCloud* ccVolumeCalcTool::convertGridToCloud(
 
 void ccVolumeCalcTool::updateGridAndDisplay() {
     bool success = updateGrid();
-    if (success && ecvDisplayTools::GetMainWindow()) {
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (success && view) {
         // convert grid to point cloud
         if (m_rasterCloud) {
-            ecvDisplayTools::RemoveFromOwnDB(m_rasterCloud);
+            view->removeFromOwnDB(m_rasterCloud);
             delete m_rasterCloud;
             m_rasterCloud = 0;
         }
 
         m_rasterCloud = convertGridToCloud(false);
         if (m_rasterCloud) {
-            ecvDisplayTools::AddToOwnDB(m_rasterCloud);
+            view->addToOwnDB(m_rasterCloud);
             ccBBox box = m_rasterCloud->getDisplayBB_recursive(false);
             update2DDisplayZoom(box);
         } else {
             CVLog::Error("Not enough memory!");
-            ecvDisplayTools::RedrawDisplay();
+            { ecvRedrawScope scope; }
         }
     }
 

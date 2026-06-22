@@ -7,14 +7,12 @@
 
 #include "ecvGenericDisplayTools.h"
 
-static ecvGenericDisplayTools* s_genericTools = nullptr;
+#include "ecvDisplayTools.h"
+#include "ecvViewManager.h"
 
 ecvGenericDisplayTools::ecvGenericDisplayTools() {}
 
-void ecvGenericDisplayTools::SetInstance(ecvGenericDisplayTools* tool) {
-    s_genericTools = tool;
-}
-
 ecvGenericDisplayTools* ecvGenericDisplayTools::GetInstance() {
-    return s_genericTools;
+    return static_cast<ecvGenericDisplayTools*>(
+            ecvViewManager::instance().displayTools());
 }

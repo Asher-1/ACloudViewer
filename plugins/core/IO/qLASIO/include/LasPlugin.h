@@ -32,7 +32,7 @@ class LasPlugin : public QObject
 	Q_OBJECT
 	Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
 
-	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.LASIO" FILE "../info.json")
+	Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.LASIO" FILE "../info.json")
 
   public:
 	explicit LasPlugin(QObject* parent = nullptr);

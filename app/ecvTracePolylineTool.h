@@ -69,13 +69,17 @@ protected:
     //! Restarts the edition mode
     void restart(bool reset);
 
-    void resetTip();
-    void updateTip();
-    void resetPoly3D();
-    void updatePoly3D();
-
     //! Oversamples the active 3D polyline
     ccPolyline* polylineOverSampling(unsigned steps) const;
+
+    //! Removes the 3D polyline from display
+    void resetPoly3D();
+    //! Redraws the 3D polyline
+    void updatePoly3D();
+    //! Removes the 2D tip polyline from display
+    void resetTip();
+    //! Redraws the 2D tip polyline
+    void updateTip();
 
     //! Viewport parameters (used for picking)
     struct SegmentGLParams {
@@ -103,4 +107,9 @@ protected:
 
     //! Picking hub
     ccPickingHub* m_pickingHub;
+
+    //! Saved view state (restored on stop)
+    CCVector3d m_savedPivot;
+    bool m_savedAutoPickPivot = false;
+    bool m_hasSavedViewState = false;
 };

@@ -28,6 +28,7 @@
 #include <ecvPlane.h>
 #include <ecvSphere.h>
 #include <ecvTorus.h>
+#include <ecvViewManager.h>
 
 // system
 #include <assert.h>
@@ -161,7 +162,10 @@ void ecvPrimitiveFactoryDlg::createPrimitive() {
 
     if (primitive) {
         m_win->addToDB(primitive, true, true, true);
-        ecvDisplayTools::ResetCameraClippingRange();
+        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+            if (auto* inst = dynamic_cast<ecvDisplayTools*>(v))
+                inst->resetCameraClippingRange();
+        }
     }
 }
 

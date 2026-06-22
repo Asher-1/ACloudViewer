@@ -9,8 +9,8 @@
 
 // LOCAL
 #include "ecvBasicTypes.h"
-#include "ecvDisplayTools.h"
 #include "ecvSingleton.h"
+#include "ecvViewManager.h"
 
 // Qt
 #include <QSettings>
@@ -85,11 +85,10 @@ void ecvGui::ParamStruct::reset() {
 
 #ifdef Q_OS_MAC
     defaultFontSize = 12;
-    labelFontSize = 24;  // Increased to 1.5x (16 * 1.5) for better visibility
-                         // on macOS, especially Retina displays
+    labelFontSize = 24;
 #else
-    defaultFontSize = 10;
-    labelFontSize = 8;
+    defaultFontSize = 12;
+    labelFontSize = 14;
 #endif
 
     displayedNumPrecision = 6;
@@ -102,13 +101,11 @@ void ecvGui::ParamStruct::reset() {
 
 void ecvGui::ParamStruct::initFontSizesIfNeeded() {
     // 只有在QApplication已初始化后才调用
-    defaultFontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+    defaultFontSize = ecvViewManager::sharedGetOptimizedFontSize(12);
 #ifdef Q_OS_MAC
-    labelFontSize = ecvDisplayTools::GetOptimizedFontSize(
-            24);  // Increased to 1.5x (16 * 1.5) for better visibility on
-                  // macOS, especially Retina displays
+    labelFontSize = ecvViewManager::sharedGetOptimizedFontSize(24);
 #else
-    labelFontSize = ecvDisplayTools::GetOptimizedFontSize(10);
+    labelFontSize = ecvViewManager::sharedGetOptimizedFontSize(10);
 #endif
 }
 

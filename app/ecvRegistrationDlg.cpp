@@ -20,7 +20,6 @@
 #include <ReferenceCloud.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvRedrawScope.h>
 

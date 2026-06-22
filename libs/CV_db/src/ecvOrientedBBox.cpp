@@ -7,8 +7,8 @@
 
 #include "ecvOrientedBBox.h"
 
-#include "ecvDisplayTools.h"
 #include "ecvGLMatrix.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
 #include "ecvQhull.h"
@@ -28,13 +28,13 @@ void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context) {
 }
 
 void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
-    if (!ecvDisplayTools::GetMainWindow()) {
+    if (!context.display) {
         return;
     }
 
     context.viewID = QString("BBox-") + context.viewID;
     SetColor(ecvColor::Rgb::ToEigen(col));
-    ecvDisplayTools::DrawOrientedBBox(context, this);
+    context.display->drawOrientedBBox(context, this);
 }
 
 Eigen::Vector3d ecvOrientedBBox::GetMinBound() const {

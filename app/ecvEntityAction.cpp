@@ -19,8 +19,9 @@
 
 // CV_DB_LIB
 #include <ecvColorScalesManager.h>
-#include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvFacet.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvGuiParameters.h>
 #include <ecvOctreeProxy.h>
@@ -29,6 +30,7 @@
 #include <ecvPolyline.h>
 #include <ecvRedrawScope.h>
 #include <ecvSensor.h>
+#include <ecvViewManager.h>
 
 // common
 #include <ecvPickOneElementDlg.h>
@@ -66,6 +68,21 @@
 #include <algorithm>
 
 namespace ccEntityAction {
+namespace {
+void changeEntityPropertiesOnDisplays(PROPERTY_PARAM& params) {
+    ecvGenericGLDisplay* v = nullptr;
+    if (params.entity) {
+        v = const_cast<ecvGenericGLDisplay*>(params.entity->getDisplay());
+    }
+    if (!v) {
+        v = ecvViewManager::instance().getEffectiveView();
+    }
+    if (v) {
+        v->changeEntityProperties(params);
+    }
+}
+}  // namespace
+
 static QString GetFirstAvailableSFName(const ccPointCloud* cloud,
                                        const QString& baseName) {
     if (cloud == nullptr) {
@@ -140,7 +157,7 @@ bool setColor(ccHObject::Container selectedEntities,
             }
 
             PROPERTY_PARAM params(ent, ecvColor::FromQColor(colour));
-            ecvDisplayTools::ChangeEntityProperties(params);
+            changeEntityPropertiesOnDisplays(params);
         } else if (ent->isKindOf(CV_TYPES::PRIMITIVE)) {
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(ent);
             ecvColor::Rgb col(static_cast<ColorCompType>(colour.red()),
@@ -150,25 +167,27 @@ bool setColor(ccHObject::Container selectedEntities,
             ent->showColors(true);
             ent->showSF(false);  // just in case
             PROPERTY_PARAM params(ent, col);
-            ecvDisplayTools::ChangeEntityProperties(params);
+            changeEntityPropertiesOnDisplays(params);
         } else if (ent->isA(CV_TYPES::POLY_LINE)) {
             ccPolyline* poly = ccHObjectCaster::ToPolyline(ent);
             poly->setColor(ecvColor::FromQColor(colour));
             ent->showColors(true);
             ent->showSF(false);  // just in case
             if (!poly->isClosed()) {
-                ecvDisplayTools::RedrawObject(poly);
+                {
+                    ecvRedrawScope scope({poly});
+                }
 
             } else {
                 PROPERTY_PARAM params(ent, poly->getColor());
-                ecvDisplayTools::ChangeEntityProperties(params);
+                changeEntityPropertiesOnDisplays(params);
             }
         } else if (ent->isA(CV_TYPES::FACET)) {
             ccFacet* facet = ccHObjectCaster::ToFacet(ent);
             facet->setColor(ecvColor::FromQColor(colour));
             ent->showColors(true);
             ent->showSF(false);  // just in case
-            ecvDisplayTools::RedrawObject(facet);
+            { ecvRedrawScope scope({facet}); }
         } else {
             CVLog::Warning(
                     QString("[SetColor] Can't change color of entity '%1'")
@@ -339,7 +358,7 @@ bool interpolateColors(const ccHObject::Container& selectedEntities,
                                                                 &pDlg)) {
         ent2->showColors(true);
         ent2->showSF(false);  // just in case
-        ecvDisplayTools::RedrawObject(ent2);
+        { ecvRedrawScope scope({ent2}); }
     } else {
         ecvConsole::Error("An error occurred! (see console)");
     }
@@ -456,7 +475,7 @@ bool interpolateSFs(const ccHObject::Container& selectedEntities,
                                           dest->getNumberOfScalarFields())) -
                 1);
         dest->showSF(true);
-        ecvDisplayTools::RedrawObject(dest);
+        { ecvRedrawScope scope({dest}); }
     } else {
         ecvConsole::Error("An error occurred! (see console)");
     }

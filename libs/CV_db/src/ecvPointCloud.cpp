@@ -20,10 +20,10 @@
 #include "ecv2DLabel.h"
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvDisplayTools.h"
 #include "ecvFastMarchingForNormsDirection.h"
 #include "ecvFrustum.h"
 #include "ecvGBLSensor.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericMesh.h"
 #include "ecvHObjectCaster.h"
 #include "ecvImage.h"
@@ -36,8 +36,10 @@
 #include "ecvPointCloudLOD.h"
 #include "ecvPolyline.h"
 #include "ecvProgressDialog.h"
+#include "ecvRepresentationManager.h"
 #include "ecvScalarField.h"
 #include "ecvSensor.h"
+#include "ecvViewRepresentation.h"
 
 // Qt
 #include <QCoreApplication>
@@ -2955,7 +2957,19 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         // we get display parameters
         glDrawParams glParams;
         getDrawingParameters(glParams);
-        // no normals shading without light!
+
+        // Per-view normals override via ecvViewRepresentation
+        if (context.display) {
+            auto* viewRep =
+                    ecvRepresentationManager::instance().getRepresentation(
+                            const_cast<ccPointCloud*>(this), context.display);
+            if (viewRep && viewRep->properties().showNormals.has_value()) {
+                glParams.showNorms = viewRep->effectiveShowNormals() &&
+                                     hasNormals() &&
+                                     normals()->currentSize() >= size();
+            }
+        }
+
         if (!MACRO_LightIsEnabled(context)) {
             glParams.showNorms = false;
         }
@@ -3004,7 +3018,7 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         }
 
         // main display procedure
-        ecvDisplayTools::Draw(context, this);
+        if (context.display) context.display->draw(context, this);
     } else if (MACRO_Draw2D(context)) {
         if (MACRO_Foreground(context) && !context.sfColorScaleToDisplay) {
             if (sfColorScaleShown() && sfShown()) {

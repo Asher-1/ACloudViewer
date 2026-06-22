@@ -10,26 +10,35 @@
 /// @file actorexporter.h
 /// @brief Exports VTK actor geometry to file (e.g. STL).
 
+#include <vtkSmartPointer.h>
+
 #include <QRunnable>
 #include <QString>
 
 #include "qVTK.h"
 
 class vtkActor;
+class vtkPolyData;
+class vtkProperty;
+
 namespace VtkUtils {
 
 /// @class ActorExporter
 /// @brief QRunnable that exports a vtkActor to a file.
+///
+/// Deep-copies the actor's geometry on construction (GUI thread) so the
+/// export runs on a pool thread without sharing VTK objects across threads.
 class QVTK_ENGINE_LIB_API ActorExporter : public QRunnable {
 public:
-    /// @param actor VTK actor to export
+    /// @param actor VTK actor to export (geometry is deep-copied immediately)
     /// @param file Output file path
     ActorExporter(vtkActor* actor, const QString& file);
 
     void run();
 
 protected:
-    vtkActor* m_actor = nullptr;
+    vtkSmartPointer<vtkPolyData> m_polyData;
+    vtkSmartPointer<vtkProperty> m_property;
     QString m_exportFile;
 };
 
