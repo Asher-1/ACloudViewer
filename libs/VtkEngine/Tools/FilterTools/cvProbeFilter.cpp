@@ -7,6 +7,7 @@
 
 #include "cvProbeFilter.h"
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/colorseries.h>
 #include <VtkUtils/implicitplanewidgetobserver.h>
 #include <VtkUtils/linewidgetobserver.h>
@@ -17,7 +18,6 @@
 #include <vtkActor.h>
 #include <vtkBoxWidget.h>
 #include <vtkImplicitPlaneWidget.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLineWidget.h>
 #include <vtkPlane.h>
 #include <vtkPlaneSource.h>

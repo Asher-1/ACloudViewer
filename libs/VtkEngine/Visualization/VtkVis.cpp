@@ -19,21 +19,22 @@
 #include <VtkRendering/Core/VtkRenderingUtils.h>
 
 // ECV_DB
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
 #include <ecvMesh.h>
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
+
+#include <QMouseEvent>
 
 #include "Tools/Common/ecvTools.h"
-#include <Tools/SelectionTools/cvSelectionHighlighter.h>
-#include <ecvViewManager.h>
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
-#include <QMouseEvent>
-#include "vtkGLView.h"
 #include "VtkRendering/Rendering/MeshTextureApplier.h"
 #include "VtkRendering/Rendering/TextureRenderManager.h"
 #include "VtkUtils/vtkutils.h"
+#include "vtkGLView.h"
 
 // SYSTEM
 #include <QJsonArray>
@@ -78,11 +79,11 @@
 #include <vtkLightCollection.h>
 
 // VTK for View Properties
-#include <vtkCameraOrientationRepresentation.h>
-#include <vtkCameraOrientationWidget.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesHelper.h>
 #include <VTKExtensions/Views/GridAxes/vtkPVGridAxes3DActor.h>
+#include <vtkCameraOrientationRepresentation.h>
+#include <vtkCameraOrientationWidget.h>
 #include <vtkLightKit.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
@@ -94,9 +95,9 @@
 #include "VTKExtensions/InteractionStyle/vtkTrackballPan.h"
 
 // VTK
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAreaPicker.h>
 #include <vtkAxes.h>
-#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkBMPReader.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
@@ -376,9 +377,7 @@ void VtkVis::rotateWithAxis(const CCVector2i& pos,
 
     camera->OrthogonalizeViewUp();
 
-    transform->RotateWXYZ(angle,
-                          normalizedAxis.x,
-                          normalizedAxis.y,
+    transform->RotateWXYZ(angle, normalizedAxis.x, normalizedAxis.y,
                           normalizedAxis.z);
 
     // translate back
@@ -1555,15 +1554,6 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
                    cloud->getCurrentDisplayedScalarFieldIndex() >= 0;
     bool show_colors = context.drawParam.showColors || show_sf;
 
-    CVLog::PrintDebug(
-            "[VtkVis::drawPointCloud] id=%s showSF=%d showColors=%d "
-            "sfShown=%d hasDisplayedSF=%d sfIdx=%d hasColors=%d lw=%d",
-            viewID.c_str(), context.drawParam.showSF,
-            context.drawParam.showColors, cloud->sfShown() ? 1 : 0,
-            cloud->hasDisplayedScalarField() ? 1 : 0,
-            cloud->getCurrentDisplayedScalarFieldIndex(),
-            cloud->hasColors() ? 1 : 0, lightweight ? 1 : 0);
-
     vtkSmartPointer<vtkPolyData> polydata;
     if (show_colors) {
         polydata = Converters::Cc2Vtk::PointCloudToPolyData(
@@ -2272,10 +2262,6 @@ void VtkVis::displayText(const CC_DRAW_CONTEXT& context) {
 
 bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
                            const ccMaterialSet* materials) {
-    CVLog::PrintDebug("[VtkVis::updateTexture] ENTRY: viewID=%s, materials=%zu",
-                      CVTools::FromQString(context.viewID).c_str(),
-                      materials ? materials->size() : 0);
-
     std::string viewID = CVTools::FromQString(context.viewID);
     if (!contains(viewID)) return false;
     auto actor = getActorById(viewID);
@@ -2309,10 +2295,6 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
 bool VtkVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
                                       const std::string& id,
                                       int viewport) {
-    CVLog::PrintDebug(
-            "[VtkVis::addTextureMeshFromCCMesh] ENTRY: id=%s, viewport=%d",
-            id.c_str(), viewport);
-
     if (!mesh) {
         CVLog::Error("[VtkVis::addTextureMeshFromCCMesh] Mesh is null!");
         return false;
@@ -2323,10 +2305,6 @@ bool VtkVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
     // materials/textures checkbox is toggled)
     VtkRendering::CloudActorMap::iterator am_it = getCloudActorMap()->find(id);
     if (am_it != getCloudActorMap()->end()) {
-        CVLog::PrintDebug(
-                "[VtkVis::addTextureMeshFromCCMesh] Actor with id <%s> already "
-                "exists, removing old actor before adding new one",
-                id.c_str());
         vtkActor* oldActor = am_it->second.actor;
         if (oldActor) {
             removeActorFromRenderer(oldActor, viewport);
@@ -2370,7 +2348,8 @@ bool VtkVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
             vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(polydata);
 
-    vtkSmartPointer<vtkPVLODActor> actor = vtkSmartPointer<vtkPVLODActor>::New();
+    vtkSmartPointer<vtkPVLODActor> actor =
+            vtkSmartPointer<vtkPVLODActor>::New();
     actor->SetMapper(mapper);
     VtkRendering::BuildAndAttachLODMapper(actor, polydata);
     addActorToRenderer(actor, viewport);
@@ -3076,13 +3055,8 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
     vtkPointData* pointData = polyData->GetPointData();
     vtkDataArray* activeScalars = pointData->GetScalars();
 
-    // Check if the correct array already exists
     vtkDataArray* existingArray = pointData->GetArray(scalarFieldName.c_str());
     if (existingArray && existingArray->GetNumberOfComponents() == 1) {
-        // Correct 1-component array already exists, no need to update
-        CVLog::PrintDebug(QString("[VtkVis::addScalarFieldToVTK] Scalar array "
-                                  "'%1' already exists, skipping")
-                                  .arg(sfName));
         return;
     }
 
@@ -3107,10 +3081,6 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
     // work here.
     unsigned cloudSize = cloud->size();
     if (static_cast<vtkIdType>(cloudSize) != numPoints) {
-        CVLog::PrintDebug(QString("[VtkVis::addScalarFieldToVTK] Skipping: "
-                                  "ccCloud=%1 vs VTK=%2 (SF hiding active)")
-                                  .arg(cloudSize)
-                                  .arg(numPoints));
         return;
     }
 
@@ -3147,17 +3117,7 @@ void VtkVis::addScalarFieldToVTK(const std::string& viewID,
             datasetNameArray->SetValue(0, cloudName.toStdString());
             fieldData->AddArray(datasetNameArray);
             datasetNameArray->Delete();
-
-            CVLog::PrintDebug(QString("[VtkVis::addScalarFieldToVTK] Added "
-                                      "DatasetName: %1")
-                                      .arg(cloudName));
         }
-
-        CVLog::PrintDebug(
-                QString("[VtkVis::addScalarFieldToVTK] Added scalar array "
-                        "'%1' with %2 values to VTK polydata")
-                        .arg(sfName)
-                        .arg(numPoints));
     }
 }
 
@@ -3173,11 +3133,6 @@ void VtkVis::syncAllScalarFieldsToVTK(const std::string& viewID,
         return;
     }
 
-    CVLog::PrintDebug(
-            QString("[VtkVis::syncAllScalarFieldsToVTK] Syncing %1 scalar "
-                    "fields from ccPointCloud to VTK")
-                    .arg(sfCount));
-
     // Sync each scalar field
     for (unsigned i = 0; i < sfCount; ++i) {
         addScalarFieldToVTK(viewID, cloud, static_cast<int>(i), viewport);
@@ -3187,12 +3142,6 @@ void VtkVis::syncAllScalarFieldsToVTK(const std::string& viewID,
 void VtkVis::setCurrentSourceObject(ccHObject* obj, const std::string& viewID) {
     if (obj) {
         m_sourceObjectMap[viewID] = obj;
-
-        CVLog::PrintDebug(QString("[VtkVis::setCurrentSourceObject] Set source "
-                                  "object: '%1' (type=%2, viewID='%3')")
-                                  .arg(obj->getName())
-                                  .arg(obj->getClassID())
-                                  .arg(QString::fromStdString(viewID)));
 
         // If it's a point cloud, automatically sync all scalar fields to VTK
         ccPointCloud* cloud = getSourceCloud(viewID);
@@ -3278,23 +3227,7 @@ void VtkVis::setScalarFieldName(const std::string& viewID,
     vtkDataArray* scalarArray = pointData->GetArray(scalarName.c_str());
 
     if (scalarArray) {
-        // Found the scalar array, make it the active scalars for tooltip
         pointData->SetActiveScalars(scalarName.c_str());
-        CVLog::PrintDebug(QString("[VtkVis::setScalarFieldName] Set active "
-                                  "scalars to '%1' (%2 components, %3 tuples)")
-                                  .arg(QString::fromStdString(scalarName))
-                                  .arg(scalarArray->GetNumberOfComponents())
-                                  .arg(scalarArray->GetNumberOfTuples()));
-    } else {
-        // Scalar array not found, try to set name on default scalars as
-        // fallback
-        vtkDataArray* defaultScalars = pointData->GetScalars();
-        if (defaultScalars) {
-            CVLog::PrintDebug(
-                    QString("[VtkVis::setScalarFieldName] Scalar array '%1' "
-                            "not found, using default scalars")
-                            .arg(QString::fromStdString(scalarName)));
-        }
     }
 }
 
@@ -4000,22 +3933,58 @@ void VtkVis::hideOrientationMarkerWidgetAxes() {
     }
 }
 
+static int cameraOrientationWidgetPixelSize(int /*winW*/,
+                                            int /*winH*/,
+                                            double devicePixelRatio = 1.0) {
+    // Fixed logical size (120px) scaled by DPI. This ensures consistent widget
+    // size across normal views and comparative sub-views regardless of viewport
+    // dimensions. ParaView uses a similar fixed-size approach.
+    const double dpr = std::max(1.0, devicePixelRatio);
+    return std::max(64, static_cast<int>(std::round(120.0 * dpr)));
+}
+
+static void applyOrientationMarkerViewport(vtkOrientationMarkerWidget* widget,
+                                           int winW,
+                                           int winH,
+                                           double dpr = 1.0) {
+    if (!widget || winW < 2 || winH < 2) return;
+    const int markerPx = cameraOrientationWidgetPixelSize(winW, winH, dpr) + 40;
+    const double vx = std::min(0.35, static_cast<double>(markerPx) / winW);
+    const double vy = std::min(0.35, static_cast<double>(markerPx) / winH);
+    widget->SetViewport(0.0, 0.0, vx, vy);
+}
+
+void VtkVis::UpdateOrientationMarkerLayout() {
+    if (!m_axes_widget) return;
+    auto rw = getRenderWindow();
+    if (!rw) return;
+    int* winSize = rw->GetSize();
+    if (!winSize) return;
+    const double dpr = (m_ownerDisplay && m_ownerDisplay->asWidget())
+                               ? m_ownerDisplay->asWidget()->devicePixelRatioF()
+                               : 1.0;
+    applyOrientationMarkerViewport(m_axes_widget, winSize[0], winSize[1], dpr);
+}
+
 void VtkVis::showOrientationMarkerWidgetAxes(
         vtkRenderWindowInteractor* interactor) {
     if (!m_axes_widget) {
         vtkSmartPointer<vtkPropAssembly> assembly =
-                VtkRendering::CreateCoordinate(
-                        1.8, "X", "Y", "Z", "+X",
-                        "-X",
-                        "+Y", "-Y",
-                        "+Z", "-Z");
+                VtkRendering::CreateCoordinate(1.8, "X", "Y", "Z", "+X", "-X",
+                                               "+Y", "-Y", "+Z", "-Z");
         m_axes_widget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
         m_axes_widget->SetOutlineColor(0.2, 0.2, 0.2);
         m_axes_widget->SetOrientationMarker(assembly);
         m_axes_widget->SetInteractor(interactor);
-        // Fixed viewport in lower-left corner (25% x 25% of the render window)
-        // This ensures the orientation marker stays the same size regardless of zoom
-        m_axes_widget->SetViewport(0.0, 0.0, 0.2, 0.2);
+        int winW = 800;
+        int winH = 600;
+        if (auto rw = getRenderWindow()) {
+            if (int* winSize = rw->GetSize()) {
+                winW = winSize[0];
+                winH = winSize[1];
+            }
+        }
+        applyOrientationMarkerViewport(m_axes_widget, winW, winH);
         m_axes_widget->SetEnabled(true);
         m_axes_widget->InteractiveOff();
         // Zoom=1.0 ensures the marker fills its viewport at a fixed scale,
@@ -4023,6 +3992,7 @@ void VtkVis::showOrientationMarkerWidgetAxes(
         m_axes_widget->SetZoom(1.0);
     } else {
         m_axes_widget->SetInteractor(interactor);
+        UpdateOrientationMarkerLayout();
         m_axes_widget->SetEnabled(true);
         CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
     }
@@ -4946,16 +4916,15 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
         return;
     }
 
-    vtkSmartPointer<vtkGridAxesActor3D>& dataAxesGrid = m_dataAxesGridMap[viewID];
+    vtkSmartPointer<vtkGridAxesActor3D>& dataAxesGrid =
+            m_dataAxesGridMap[viewID];
 
     if (!dataAxesGrid) {
         dataAxesGrid = vtkSmartPointer<vtkPVGridAxes3DActor>::New();
-        dataAxesGrid->SetFaceMask(vtkGridAxesHelper::MIN_YZ |
-                                  vtkGridAxesHelper::MIN_ZX |
-                                  vtkGridAxesHelper::MIN_XY |
-                                  vtkGridAxesHelper::MAX_YZ |
-                                  vtkGridAxesHelper::MAX_ZX |
-                                  vtkGridAxesHelper::MAX_XY);
+        dataAxesGrid->SetFaceMask(
+                vtkGridAxesHelper::MIN_YZ | vtkGridAxesHelper::MIN_ZX |
+                vtkGridAxesHelper::MIN_XY | vtkGridAxesHelper::MAX_YZ |
+                vtkGridAxesHelper::MAX_ZX | vtkGridAxesHelper::MAX_XY);
         dataAxesGrid->SetLabelMask(0xff);
         dataAxesGrid->SetGenerateGrid(true);
         dataAxesGrid->SetGenerateEdges(true);
@@ -5020,20 +4989,18 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     dataAxesGrid->SetLabelMask(props.showLabels ? 0xff : 0);
 
     // 5. Grid lines visibility
-    dataAxesGrid->SetFaceMask(vtkGridAxesHelper::MIN_YZ |
-                              vtkGridAxesHelper::MIN_ZX |
-                              vtkGridAxesHelper::MIN_XY |
-                              vtkGridAxesHelper::MAX_YZ |
-                              vtkGridAxesHelper::MAX_ZX |
-                              vtkGridAxesHelper::MAX_XY);
+    dataAxesGrid->SetFaceMask(
+            vtkGridAxesHelper::MIN_YZ | vtkGridAxesHelper::MIN_ZX |
+            vtkGridAxesHelper::MIN_XY | vtkGridAxesHelper::MAX_YZ |
+            vtkGridAxesHelper::MAX_ZX | vtkGridAxesHelper::MAX_XY);
     dataAxesGrid->SetGenerateGrid(props.showGrid);
     dataAxesGrid->SetGenerateEdges(true);
     dataAxesGrid->SetGenerateTicks(props.showLabels);
 
     // 6. Bounds (custom or from actor or from ccHObject)
     if (props.useCustomBounds) {
-        double bounds[6] = {props.xMin, props.xMax, props.yMin, props.yMax,
-                            props.zMin, props.zMax};
+        double bounds[6] = {props.xMin, props.xMax, props.yMin,
+                            props.yMax, props.zMin, props.zMax};
         SetGridAxesActorBounds(dataAxesGrid, bounds, true);
     } else {
         // Get bounds from the specific actor associated with this viewID
@@ -5199,6 +5166,16 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
         return;
     }
 
+    // vtkCameraOrientationWidget uses an internal renderer at layer 1; the
+    // orientation marker may also use layer 1. ParaView vtkPVRenderView sets
+    // NumberOfLayers to 3 before enabling overlay widgets.
+    if (auto renderWindow = getRenderWindow()) {
+        constexpr int minLayers = 3;
+        if (renderWindow->GetNumberOfLayers() < minLayers) {
+            renderWindow->SetNumberOfLayers(minLayers);
+        }
+    }
+
     // Create Camera Orientation Widget if it doesn't exist (ParaView-style)
     if (!m_cameraOrientationWidget) {
         m_cameraOrientationWidget =
@@ -5217,24 +5194,40 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
         // Create default representation if not already created
         m_cameraOrientationWidget->CreateDefaultRepresentation();
 
-        // Configure representation (ParaView defaults from views_remotingviews.xml)
+        // Configure representation (ParaView defaults from
+        // views_remotingviews.xml)
         auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
                 m_cameraOrientationWidget->GetRepresentation());
         if (rep) {
-            // Fixed pixel size for the camera orientation widget
-            // (independent of viewport/zoom changes)
-            rep->SetSize(80, 80);
+            int winW = 800;
+            int winH = 600;
+            if (auto rw = getRenderWindow()) {
+                if (int* winSize = rw->GetSize()) {
+                    winW = winSize[0];
+                    winH = winSize[1];
+                }
+            }
+            const double dpr =
+                    (m_ownerDisplay && m_ownerDisplay->asWidget())
+                            ? m_ownerDisplay->asWidget()->devicePixelRatioF()
+                            : 1.0;
+            const int widgetSize =
+                    cameraOrientationWidgetPixelSize(winW, winH, dpr);
+            rep->SetSize(widgetSize, widgetSize);
             rep->AnchorToUpperRight();
-            if (auto* orientRep = vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
-                vtkTextProperty* labels[] = {orientRep->GetXPlusLabelProperty(),
-                                             orientRep->GetYPlusLabelProperty(),
-                                             orientRep->GetZPlusLabelProperty(),
-                                             orientRep->GetXMinusLabelProperty(),
-                                             orientRep->GetYMinusLabelProperty(),
-                                             orientRep->GetZMinusLabelProperty()};
+            if (auto* orientRep =
+                        vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
+                const int fontSize = std::max(10, static_cast<int>(10 * dpr));
+                vtkTextProperty* labels[] = {
+                        orientRep->GetXPlusLabelProperty(),
+                        orientRep->GetYPlusLabelProperty(),
+                        orientRep->GetZPlusLabelProperty(),
+                        orientRep->GetXMinusLabelProperty(),
+                        orientRep->GetYMinusLabelProperty(),
+                        orientRep->GetZMinusLabelProperty()};
                 for (auto* tp : labels) {
                     if (!tp) continue;
-                    tp->SetFontSize(10);
+                    tp->SetFontSize(fontSize);
                     tp->SetFontFamilyToArial();
                     tp->BoldOn();
                     tp->SetJustificationToCentered();
@@ -5253,7 +5246,22 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
         if (show) {
             if (auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
                         m_cameraOrientationWidget->GetRepresentation())) {
-                rep->SetSize(80, 80);
+                int winW = 800;
+                int winH = 600;
+                if (auto rw = getRenderWindow()) {
+                    if (int* winSize = rw->GetSize()) {
+                        winW = winSize[0];
+                        winH = winSize[1];
+                    }
+                }
+                const double dpr =
+                        (m_ownerDisplay && m_ownerDisplay->asWidget())
+                                ? m_ownerDisplay->asWidget()
+                                          ->devicePixelRatioF()
+                                : 1.0;
+                const int widgetSize =
+                        cameraOrientationWidgetPixelSize(winW, winH, dpr);
+                rep->SetSize(widgetSize, widgetSize);
                 rep->AnchorToUpperRight();
             }
             m_cameraOrientationWidget->SquareResize();
@@ -5268,9 +5276,17 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
         rep->SetVisibility(show);
     }
 
+    // Guard against re-enabling the interactor while the owning view is in
+    // signal-only mode (e.g. segment tool active).
+    const bool signalOnly =
+            m_ownerDisplay && (m_ownerDisplay->getInteractionMode() ==
+                               ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+
     if (show) {
-        interactor->Enable();
-        m_cameraOrientationWidget->SetProcessEvents(true);
+        if (!signalOnly) {
+            interactor->Enable();
+        }
+        m_cameraOrientationWidget->SetProcessEvents(!signalOnly);
         m_cameraOrientationWidget->On();
         m_cameraOrientationWidget->SquareResize();
     } else {
@@ -5285,9 +5301,65 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
     if (auto rw = getRenderWindow()) {
         rw->Render();
     }
+}
 
-    CVLog::PrintDebug(QString("[VtkVis] Camera Orientation Widget: %1")
-                              .arg(show ? "ON" : "OFF"));
+void VtkVis::RefreshOverlayWidgets() {
+    vtkRenderer* renderer = getCurrentRenderer();
+    vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
+    auto rw = getRenderWindow();
+    if (!renderer || !interactor || !rw) return;
+
+    constexpr int minLayers = 3;
+    if (rw->GetNumberOfLayers() < minLayers) {
+        rw->SetNumberOfLayers(minLayers);
+    }
+
+    if (m_cameraOrientationWidget) {
+        auto* rep = m_cameraOrientationWidget->GetRepresentation();
+        const bool shouldShow = rep && rep->GetVisibility();
+        m_cameraOrientationWidget->SetParentRenderer(renderer);
+        m_cameraOrientationWidget->SetInteractor(interactor);
+        if (shouldShow) {
+            if (auto* orientRep =
+                        vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
+                int winW = 800;
+                int winH = 600;
+                if (int* winSize = rw->GetSize()) {
+                    winW = winSize[0];
+                    winH = winSize[1];
+                }
+                const double dpr =
+                        (m_ownerDisplay && m_ownerDisplay->asWidget())
+                                ? m_ownerDisplay->asWidget()
+                                          ->devicePixelRatioF()
+                                : 1.0;
+                const int widgetSize =
+                        cameraOrientationWidgetPixelSize(winW, winH, dpr);
+                orientRep->SetSize(widgetSize, widgetSize);
+                orientRep->AnchorToUpperRight();
+                orientRep->Modified();
+            }
+            const bool signalOnly =
+                    m_ownerDisplay &&
+                    (m_ownerDisplay->getInteractionMode() ==
+                     ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+            if (!signalOnly) {
+                interactor->Enable();
+            }
+            m_cameraOrientationWidget->SetProcessEvents(!signalOnly);
+            m_cameraOrientationWidget->On();
+            m_cameraOrientationWidget->SquareResize();
+        }
+    }
+
+    if (m_axes_widget && m_axes_widget->GetEnabled()) {
+        m_axes_widget->SetInteractor(interactor);
+        UpdateOrientationMarkerLayout();
+        m_axes_widget->SetEnabled(true);
+    }
+
+    rw->Modified();
+    UpdateScreen();
 }
 
 bool VtkVis::IsCameraOrientationWidgetShown() const {
@@ -5297,6 +5369,84 @@ bool VtkVis::IsCameraOrientationWidgetShown() const {
 
     auto* rep = m_cameraOrientationWidget->GetRepresentation();
     return rep ? (rep->GetVisibility() != 0) : false;
+}
+
+void VtkVis::EnsureCameraOrientationWidgetProcessEvents() {
+    if (!m_cameraOrientationWidget || !IsCameraOrientationWidgetShown()) return;
+
+    vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
+    if (!interactor) return;
+
+    if (m_cameraOrientationWidget->GetInteractor() != interactor) {
+        m_cameraOrientationWidget->SetInteractor(interactor);
+    }
+    if (!m_cameraOrientationWidget->GetEnabled()) {
+        m_cameraOrientationWidget->On();
+    }
+    m_cameraOrientationWidget->SetProcessEvents(true);
+}
+
+bool VtkVis::EnsureCameraOrientationWidgetInteractive() {
+    if (!m_cameraOrientationWidget || !IsCameraOrientationWidgetShown())
+        return false;
+
+    vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
+    vtkRenderer* renderer = getCurrentRenderer();
+    auto rw = getRenderWindow();
+    if (!interactor || !renderer || !rw) return false;
+
+    int* winSize = rw->GetSize();
+    if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) return false;
+
+    constexpr int minLayers = 3;
+    if (rw->GetNumberOfLayers() < minLayers) {
+        rw->SetNumberOfLayers(minLayers);
+    }
+
+    m_cameraOrientationWidget->SetParentRenderer(renderer);
+
+    if (m_cameraOrientationWidget->GetInteractor() != interactor) {
+        m_cameraOrientationWidget->SetInteractor(interactor);
+    }
+
+    // If the widget's renderer was disconnected from the render window
+    // (e.g. by stripExtraRenderers), force a full re-enable cycle.
+    auto* widgetRen = m_cameraOrientationWidget->GetDefaultRenderer();
+    if (widgetRen) {
+        auto* coll = rw->GetRenderers();
+        bool found = false;
+        if (coll) {
+            coll->InitTraversal();
+            while (auto* r = coll->GetNextItem()) {
+                if (r == widgetRen) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            m_cameraOrientationWidget->Off();
+        }
+    }
+
+    if (!m_cameraOrientationWidget->GetEnabled()) {
+        m_cameraOrientationWidget->On();
+    }
+    m_cameraOrientationWidget->SetProcessEvents(true);
+
+    if (auto* orientRep = vtkCameraOrientationRepresentation::SafeDownCast(
+                m_cameraOrientationWidget->GetRepresentation())) {
+        const double dpr =
+                (m_ownerDisplay && m_ownerDisplay->asWidget())
+                        ? m_ownerDisplay->asWidget()->devicePixelRatioF()
+                        : 1.0;
+        const int widgetSize =
+                cameraOrientationWidgetPixelSize(winSize[0], winSize[1], dpr);
+        orientRep->SetSize(widgetSize, widgetSize);
+        orientRep->AnchorToUpperRight();
+    }
+    m_cameraOrientationWidget->SquareResize();
+    return true;
 }
 
 bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
@@ -5313,10 +5463,9 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     int* winSize = rw->GetSize();
     if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) return false;
 
-    const double dpr =
-            m_ownerDisplay && m_ownerDisplay->asWidget()
-                    ? m_ownerDisplay->asWidget()->devicePixelRatioF()
-                    : 1.0;
+    const double dpr = m_ownerDisplay && m_ownerDisplay->asWidget()
+                               ? m_ownerDisplay->asWidget()->devicePixelRatioF()
+                               : 1.0;
     const double dispX = qtX * dpr;
     const double dispY = winSize[1] - 1.0 - qtY * dpr;
 
@@ -5338,66 +5487,8 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     const double x0 = renX1 - size[0];
     const double y0 = renY1 - size[1];
     const double pad = std::max(8.0, static_cast<double>(size[0]) * 0.15);
-    return dispX >= x0 - pad && dispX <= renX1 + pad &&
-           dispY >= y0 - pad && dispY <= renY1 + pad;
-}
-
-bool VtkVis::ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
-                                                   QEvent::Type eventType) {
-    if (!event || !interactor_) return false;
-
-    auto* ren = getCurrentRenderer();
-    if (!ren) return false;
-
-    const double dpr =
-            m_ownerDisplay && m_ownerDisplay->asWidget()
-                    ? m_ownerDisplay->asWidget()->devicePixelRatioF()
-                    : 1.0;
-    const int x = static_cast<int>(event->x() * dpr);
-    const int y = static_cast<int>(event->y() * dpr);
-
-    if (auto* style = interactor_->GetInteractorStyle()) {
-        style->SetCurrentRenderer(ren);
-    }
-
-    interactor_->SetEventInformationFlipY(
-            x, y, event->modifiers() & Qt::ControlModifier,
-            event->modifiers() & Qt::ShiftModifier);
-
-    switch (eventType) {
-        case QEvent::MouseButtonPress:
-            // vtkCameraOrientationWidget only accepts Select when its
-            // representation is already hot.  Comparative sub-views do not
-            // necessarily receive hover moves, so prime the widget state at
-            // the press position before forwarding the button event.
-            interactor_->MouseMoveEvent();
-            if (event->button() == Qt::LeftButton)
-                interactor_->LeftButtonPressEvent();
-            else if (event->button() == Qt::MiddleButton)
-                interactor_->MiddleButtonPressEvent();
-            else if (event->button() == Qt::RightButton)
-                interactor_->RightButtonPressEvent();
-            break;
-        case QEvent::MouseButtonRelease:
-            if (event->button() == Qt::LeftButton)
-                interactor_->LeftButtonReleaseEvent();
-            else if (event->button() == Qt::MiddleButton)
-                interactor_->MiddleButtonReleaseEvent();
-            else if (event->button() == Qt::RightButton)
-                interactor_->RightButtonReleaseEvent();
-            break;
-        case QEvent::MouseMove:
-            interactor_->MouseMoveEvent();
-            break;
-        default:
-            return false;
-    }
-
-    if (m_cameraOrientationWidget && m_cameraOrientationWidget->GetEnabled()) {
-        m_cameraOrientationWidget->Render();
-    }
-    UpdateScreen();
-    return true;
+    return dispX >= x0 - pad && dispX <= renX1 + pad && dispY >= y0 - pad &&
+           dispY <= renY1 + pad;
 }
 
 void VtkVis::RemoveDataAxesGrid(const std::string& viewID) {

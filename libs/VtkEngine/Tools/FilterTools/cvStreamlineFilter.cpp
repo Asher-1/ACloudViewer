@@ -7,13 +7,13 @@
 
 #include "cvStreamlineFilter.h"
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/linewidgetobserver.h>
 #include <VtkUtils/pointwidgetobserver.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkDataSet.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLineSource.h>
 #include <vtkLineWidget.h>
 #include <vtkPointSource.h>

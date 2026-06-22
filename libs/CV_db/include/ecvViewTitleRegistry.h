@@ -7,16 +7,16 @@
 
 #pragma once
 
-#include "CV_db.h"
-
 #include <QHash>
 #include <QSet>
 #include <QString>
 
+#include "CV_db.h"
+
 /// ParaView Server Manager registration names for views (vtkSMCoreUtilities::
 /// SanitizeName + vtkSMSessionProxyManager::GetUniqueProxyName).
-/// First view of a type: "RenderView"; additional: "RenderView1", "RenderView2".
-/// Serials are recycled when views are destroyed.
+/// First view of a type: "RenderView"; additional: "RenderView1",
+/// "RenderView2". Serials are recycled when views are destroyed.
 class CV_DB_LIB_API ecvViewTitleRegistry {
 public:
     static ecvViewTitleRegistry& instance();

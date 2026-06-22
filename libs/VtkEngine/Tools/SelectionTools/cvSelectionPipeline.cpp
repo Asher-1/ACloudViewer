@@ -62,8 +62,10 @@
 //-----------------------------------------------------------------------------
 namespace {
 
-// Expand thin/single-pixel rubber bands so HW selection captures sub-pixel points.
-void normalizeSelectionRegion(int region[4], bool forPoints,
+// Expand thin/single-pixel rubber bands so HW selection captures sub-pixel
+// points.
+void normalizeSelectionRegion(int region[4],
+                              bool forPoints,
                               unsigned int pointPickingRadius) {
     int x0 = std::min(region[0], region[2]);
     int x1 = std::max(region[0], region[2]);
@@ -237,8 +239,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     FieldAssociation fieldAssoc = getFieldAssociation(type);
     int bbox[4] = {minX, minY, maxX, maxY};
-    normalizeSelectionRegion(
-            bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS, m_pointPickingRadius);
+    normalizeSelectionRegion(bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS,
+                             m_pointPickingRadius);
     minX = bbox[0];
     minY = bbox[1];
     maxX = bbox[2];
@@ -646,9 +648,9 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // NO coordinate conversion needed here!
 
     int vtk_region[4] = {region[0], region[1], region[2], region[3]};
-    normalizeSelectionRegion(
-            vtk_region,
-            fieldAssociation == FIELD_ASSOCIATION_POINTS, m_pointPickingRadius);
+    normalizeSelectionRegion(vtk_region,
+                             fieldAssociation == FIELD_ASSOCIATION_POINTS,
+                             m_pointPickingRadius);
 
     CVLog::PrintVerbose(QString("[cvSelectionPipeline] Selection region: "
                                 "Input[%1,%2,%3,%4] -> Normalized[%5,%6,%7,%8]")
@@ -715,8 +717,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     renderWindow->SetSwapBuffers(previousSwapBuffers);
 
     if (!selection) {
-        CVLog::Print(
-                "[cvSelectionPipeline] cvHardwareSelector returned null");
+        CVLog::Print("[cvSelectionPipeline] cvHardwareSelector returned null");
         return nullptr;
     }
 
@@ -736,7 +737,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
         int* renSize = m_renderer ? m_renderer->GetSize() : nullptr;
         int* renOrigin = m_renderer ? m_renderer->GetOrigin() : nullptr;
         CVLog::Print(
-                QString("[cvSelectionPipeline] HW selection empty: region=[%1,%2,"
+                QString("[cvSelectionPipeline] HW selection empty: "
+                        "region=[%1,%2,"
                         "%3,%4] renSize=%5x%6 origin=(%7,%8) pickableActors=%9 "
                         "field=%10")
                         .arg(vtk_region[0])
@@ -1198,7 +1200,7 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
 cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
     CVLog::Print(
             QString("[cvSelectionPipeline] selectCellsOnSurface region=[%1,%2,"
-                      "%3,%4]")
+                    "%3,%4]")
                     .arg(region[0])
                     .arg(region[1])
                     .arg(region[2])
@@ -1208,8 +1210,9 @@ cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
 
     cvSelectionData result = convertSelectionToData(
             vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsOnSurface");
-    CVLog::PrintVerbose(QString("[cvSelectionPipeline] selectCellsOnSurface -> %1 ids")
-                         .arg(result.count()));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPipeline] selectCellsOnSurface -> %1 ids")
+                    .arg(result.count()));
     return result;
 }
 
@@ -1218,7 +1221,7 @@ cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
         const int region[4]) {
     CVLog::Print(
             QString("[cvSelectionPipeline] selectPointsOnSurface region=[%1,%2,"
-                      "%3,%4]")
+                    "%3,%4]")
                     .arg(region[0])
                     .arg(region[1])
                     .arg(region[2])

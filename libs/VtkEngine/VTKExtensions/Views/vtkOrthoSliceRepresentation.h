@@ -1,13 +1,15 @@
 // ----------------------------------------------------------------------------
-// Orthographic slice representation — ParaView vtkGeometrySliceRepresentation
-// equivalent for a single mesh/point-cloud entity.
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "qVTK.h"
-
 #include <vtkSmartPointer.h>
+
+#include "qVTK.h"
 
 class vtkActor;
 class vtkPolyData;

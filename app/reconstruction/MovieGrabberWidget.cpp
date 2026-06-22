@@ -8,8 +8,8 @@
 #include "MovieGrabberWidget.h"
 
 #include <Visualization/VtkVis.h>
-#include <ecv2DViewportObject.h>
 #include <Visualization/vtkGLView.h>
+#include <ecv2DViewportObject.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvHObjectCaster.h>
 #include <ecvViewManager.h>

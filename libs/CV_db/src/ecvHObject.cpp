@@ -35,10 +35,10 @@
 #include "ecvImage.h"
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvKdTree.h"
-#include "ecvOctree.h"
-#include "ecvOctreeProxy.h"
 #include "ecvMaterialSet.h"
 #include "ecvMeshGroup.h"
+#include "ecvOctree.h"
+#include "ecvOctreeProxy.h"
 #include "ecvPlane.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
@@ -1580,8 +1580,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // HIERARCHY_OBJECT (folders) are pure containers with no VTK geometry;
     // they must NOT get per-view reps or they will incorrectly block
     // children's visibility through the cascade.
-    const bool trueVisible =
-            m_visible && isDisplayedIn(context.display);
+    const bool trueVisible = m_visible && isDisplayedIn(context.display);
     if (context.display && trueVisible && !isFixedId() && !isLabel2D &&
         !isHierarchy) {
         viewRep = ecvRepresentationManager::instance().ensureRepresentation(

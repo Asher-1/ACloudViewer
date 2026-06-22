@@ -7,25 +7,21 @@
 
 #include "ecvPythonView.h"
 
-#include <ecvViewTitleRegistry.h>
-
-#include "ecvPythonCodeEditor.h"
-#include "ecvPythonSyntaxHighlighter.h"
-
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvViewManager.h>
+#include <ecvViewTitleRegistry.h>
 
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QCompleter>
 #include <QDir>
-#include <QHeaderView>
-#include <QKeyEvent>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QHeaderView>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QMenu>
 #include <QPixmap>
@@ -44,6 +40,9 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include "ecvPythonCodeEditor.h"
+#include "ecvPythonSyntaxHighlighter.h"
+
 ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     m_viewTypeKey = QStringLiteral("Python View");
     m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
@@ -58,7 +57,8 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     decLayout->setContentsMargins(2, 1, 2, 1);
     decLayout->setSpacing(2);
 
-    auto* showingLabel = new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
+    auto* showingLabel =
+            new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
     decLayout->addWidget(showingLabel);
 
     m_sourceCombo = new QComboBox(decoratorBar);
@@ -83,8 +83,7 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     auto* tbLayout = new QHBoxLayout(toolbar);
     tbLayout->setContentsMargins(4, 2, 4, 2);
     tbLayout->setSpacing(4);
-    toolbar->setStyleSheet(
-            "QWidget { background: #2b2b2b; }");
+    toolbar->setStyleSheet("QWidget { background: #2b2b2b; }");
 
     auto* runBtn = new QPushButton(tr("Run"), toolbar);
     runBtn->setStyleSheet(btnSS);
@@ -138,8 +137,10 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
                     "import os, numpy as np, matplotlib\n"
                     "matplotlib.use('Agg')\n"
                     "import matplotlib.pyplot as plt\n\n"
-                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
-                    "plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2], cmap='viridis')\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', "
+                    "skiprows=1)\n"
+                    "plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2], "
+                    "cmap='viridis')\n"
                     "plt.colorbar(); plt.tight_layout()\n"
                     "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
         });
@@ -148,7 +149,8 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
                     "import os, numpy as np, matplotlib\n"
                     "matplotlib.use('Agg')\n"
                     "import matplotlib.pyplot as plt\n\n"
-                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', "
+                    "skiprows=1)\n"
                     "plt.hist(data[:,2], bins=50, edgecolor='black')\n"
                     "plt.xlabel('Z'); plt.ylabel('Count')\n"
                     "plt.tight_layout()\n"
@@ -160,11 +162,13 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
                     "matplotlib.use('Agg')\n"
                     "import matplotlib.pyplot as plt\n"
                     "from mpl_toolkits.mplot3d import Axes3D\n\n"
-                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', "
+                    "skiprows=1)\n"
                     "fig = plt.figure(figsize=(10,8))\n"
                     "ax = fig.add_subplot(111, projection='3d')\n"
                     "ax.scatter(data[:,0], data[:,1], data[:,2], s=0.5)\n"
-                    "ax.set_xlabel('X'); ax.set_ylabel('Y'); ax.set_zlabel('Z')\n"
+                    "ax.set_xlabel('X'); ax.set_ylabel('Y'); "
+                    "ax.set_zlabel('Z')\n"
                     "plt.tight_layout()\n"
                     "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
         });
@@ -173,14 +177,17 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
                     "import os, numpy as np, matplotlib\n"
                     "matplotlib.use('Agg')\n"
                     "import matplotlib.pyplot as plt\n\n"
-                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', skiprows=1)\n"
+                    "data = np.loadtxt(os.environ['DATA_FILE'], delimiter=',', "
+                    "skiprows=1)\n"
                     "print(f'Shape: {data.shape}')\n"
                     "for i, name in enumerate(['X','Y','Z']):\n"
                     "    col = data[:,i]\n"
-                    "    print(f'{name}: min={col.min():.4f} max={col.max():.4f} "
+                    "    print(f'{name}: min={col.min():.4f} "
+                    "max={col.max():.4f} "
                     "mean={col.mean():.4f} std={col.std():.4f}')\n"
                     "fig, axes = plt.subplots(1, 3, figsize=(12,4))\n"
-                    "for i, (ax, name) in enumerate(zip(axes, ['X','Y','Z'])):\n"
+                    "for i, (ax, name) in enumerate(zip(axes, "
+                    "['X','Y','Z'])):\n"
                     "    ax.hist(data[:,i], bins=50); ax.set_title(name)\n"
                     "plt.tight_layout()\n"
                     "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n");
@@ -199,30 +206,29 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     auto* splitter = new QSplitter(Qt::Vertical, this);
 
     m_scriptEditor = new ecvPythonCodeEditor(splitter);
-    m_scriptEditor->setPlainText(
-            QStringLiteral(
-               "import os, numpy as np, matplotlib\n"
-               "matplotlib.use('Agg')\n"
-               "import matplotlib.pyplot as plt\n"
-               "\n"
-               "# Click 'Export+Run' to export entity to CSV & run.\n"
-               "# Use plt.savefig(os.environ['PLOT_FILE']) to render inline.\n"
-               "\n"
-               "data_file = os.environ.get('DATA_FILE', '')\n"
-               "if data_file and os.path.exists(data_file):\n"
-               "    data = np.loadtxt(data_file, delimiter=',', skiprows=1)\n"
-               "    plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2])\n"
-               "    plt.colorbar(); plt.title('XY colored by Z')\n"
-               "else:\n"
-               "    x = np.linspace(0, 4*np.pi, 200)\n"
-               "    plt.plot(x, np.sin(x), label='sin(x)')\n"
-               "    plt.plot(x, np.cos(x), label='cos(x)')\n"
-               "    plt.legend(); plt.title('Demo: sin & cos')\n"
-               "    plt.grid(True)\n"
-               "\n"
-               "plt.tight_layout()\n"
-               "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n"
-               "print('Plot saved successfully.')\n"));
+    m_scriptEditor->setPlainText(QStringLiteral(
+            "import os, numpy as np, matplotlib\n"
+            "matplotlib.use('Agg')\n"
+            "import matplotlib.pyplot as plt\n"
+            "\n"
+            "# Click 'Export+Run' to export entity to CSV & run.\n"
+            "# Use plt.savefig(os.environ['PLOT_FILE']) to render inline.\n"
+            "\n"
+            "data_file = os.environ.get('DATA_FILE', '')\n"
+            "if data_file and os.path.exists(data_file):\n"
+            "    data = np.loadtxt(data_file, delimiter=',', skiprows=1)\n"
+            "    plt.scatter(data[:,0], data[:,1], s=1, c=data[:,2])\n"
+            "    plt.colorbar(); plt.title('XY colored by Z')\n"
+            "else:\n"
+            "    x = np.linspace(0, 4*np.pi, 200)\n"
+            "    plt.plot(x, np.sin(x), label='sin(x)')\n"
+            "    plt.plot(x, np.cos(x), label='cos(x)')\n"
+            "    plt.legend(); plt.title('Demo: sin & cos')\n"
+            "    plt.grid(True)\n"
+            "\n"
+            "plt.tight_layout()\n"
+            "plt.savefig(os.environ['PLOT_FILE'], dpi=150)\n"
+            "print('Plot saved successfully.')\n"));
     m_scriptEditor->setStyleSheet(
             "QPlainTextEdit { background: #1e1e1e; color: #d4d4d4; "
             "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
@@ -244,7 +250,8 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     m_imageLabel = new QLabel(outputSplitter);
     m_imageLabel->setAlignment(Qt::AlignCenter);
     m_imageLabel->setStyleSheet("QLabel { background: white; }");
-    m_imageLabel->setText(tr("Plot output\n(use plt.savefig(os.environ['PLOT_FILE']))"));
+    m_imageLabel->setText(
+            tr("Plot output\n(use plt.savefig(os.environ['PLOT_FILE']))"));
     m_imageLabel->setScaledContents(false);
     m_imageLabel->setMinimumSize(100, 100);
     outputSplitter->addWidget(m_imageLabel);
@@ -286,8 +293,7 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     connect(loadBtn, &QPushButton::clicked, this, &ecvPythonView::onLoadScript);
     connect(saveBtn, &QPushButton::clicked, this, &ecvPythonView::onSaveScript);
 
-    m_highlighter =
-            new ecvPythonSyntaxHighlighter(m_scriptEditor->document());
+    m_highlighter = new ecvPythonSyntaxHighlighter(m_scriptEditor->document());
 
     setupCompleter();
 
@@ -313,8 +319,8 @@ ecvPythonView::~ecvPythonView() {
 QString ecvPythonView::findPythonBinary() {
     if (!m_pythonBin.isEmpty()) return m_pythonBin;
 
-    for (const auto& candidate : {QStringLiteral("python3"),
-                                   QStringLiteral("python")}) {
+    for (const auto& candidate :
+         {QStringLiteral("python3"), QStringLiteral("python")}) {
         QProcess test;
         test.setProgram(candidate);
         test.setArguments({"--version"});
@@ -337,28 +343,34 @@ void ecvPythonView::checkPythonEnvironment() {
         m_outputPanel->setPlainText(
                 tr("Warning: Python interpreter not found in PATH.\n"
                    "Install python3 to use this view.\n"
-                   "Tip: sudo apt install python3 python3-matplotlib python3-numpy"));
+                   "Tip: sudo apt install python3 python3-matplotlib "
+                   "python3-numpy"));
         return;
     }
 
     QProcess check;
     check.setProgram(pyBin);
-    check.setArguments({"-c",
-        "import sys; v=sys.version_info; print(f'Python {v.major}.{v.minor}.{v.micro}')\n"
-        "try:\n"
-        "  import numpy; print(f'numpy {numpy.__version__}')\n"
-        "except Exception as e: print(f'numpy: ERROR ({e})')\n"
-        "try:\n"
-        "  import matplotlib; print(f'matplotlib {matplotlib.__version__}')\n"
-        "except Exception as e: print(f'matplotlib: ERROR ({e})')\n"});
+    check.setArguments(
+            {"-c",
+             "import sys; v=sys.version_info; print(f'Python "
+             "{v.major}.{v.minor}.{v.micro}')\n"
+             "try:\n"
+             "  import numpy; print(f'numpy {numpy.__version__}')\n"
+             "except Exception as e: print(f'numpy: ERROR ({e})')\n"
+             "try:\n"
+             "  import matplotlib; print(f'matplotlib "
+             "{matplotlib.__version__}')\n"
+             "except Exception as e: print(f'matplotlib: ERROR ({e})')\n"});
     check.start();
     if (check.waitForFinished(5000)) {
-        QString out = QString::fromUtf8(check.readAllStandardOutput()).trimmed();
+        QString out =
+                QString::fromUtf8(check.readAllStandardOutput()).trimmed();
         QString err = QString::fromUtf8(check.readAllStandardError()).trimmed();
         if (!out.isEmpty()) {
             m_statusLabel->setText(out.section('\n', 0, 0));
         }
-        bool hasMissing = out.contains("NOT INSTALLED") || out.contains("ERROR");
+        bool hasMissing =
+                out.contains("NOT INSTALLED") || out.contains("ERROR");
         bool hasNumpyConflict = err.contains("_ARRAY_API") ||
                                 err.contains("numpy.core.multiarray");
         if (hasNumpyConflict) {
@@ -399,9 +411,9 @@ void ecvPythonView::refreshSourceCombo() {
         auto entities = m_entityListProvider();
         for (auto* e : entities) {
             if (e) {
-                m_sourceCombo->addItem(e->getName(),
-                                       QVariant::fromValue(
-                                               reinterpret_cast<quintptr>(e)));
+                m_sourceCombo->addItem(
+                        e->getName(),
+                        QVariant::fromValue(reinterpret_cast<quintptr>(e)));
             }
         }
     }
@@ -429,8 +441,7 @@ void ecvPythonView::onSourceComboChanged(int index) {
 void ecvPythonView::setEntity(ccHObject* entity) {
     m_entity = entity;
     if (entity) {
-        m_statusLabel->setText(
-                tr("Entity: %1").arg(entity->getName()));
+        m_statusLabel->setText(tr("Entity: %1").arg(entity->getName()));
     } else {
         m_statusLabel->setText(tr("No entity"));
     }
@@ -449,7 +460,8 @@ QString ecvPythonView::exportEntityToTempCsv() {
     auto* pc = ccHObjectCaster::ToPointCloud(m_entity);
 
     QString tempDir = QDir::tempPath();
-    QString csvPath = tempDir + QStringLiteral("/acv_entity_%1.csv")
+    QString csvPath =
+            tempDir + QStringLiteral("/acv_entity_%1.csv")
                               .arg(reinterpret_cast<quintptr>(m_entity), 0, 16);
 
     QFile file(csvPath);
@@ -516,8 +528,7 @@ void ecvPythonView::onExportEntityAndRun() {
     }
 
     m_outputPanel->clear();
-    m_outputPanel->appendPlainText(
-            tr("Exported entity to: %1").arg(csvPath));
+    m_outputPanel->appendPlainText(tr("Exported entity to: %1").arg(csvPath));
     m_outputPanel->appendPlainText(
             tr("DATA_FILE env variable set. Running script...\n"));
 
@@ -538,7 +549,8 @@ void ecvPythonView::onExportEntityAndRun() {
                 "print(f'Y: [{data[:,1].min():.4f}, {data[:,1].max():.4f}]')\n"
                 "print(f'Z: [{data[:,2].min():.4f}, {data[:,2].max():.4f}]')\n"
                 "fig, ax = plt.subplots(figsize=(8, 6))\n"
-                "sc = ax.scatter(data[:,0], data[:,1], s=1, c=data[:,2], cmap='viridis')\n"
+                "sc = ax.scatter(data[:,0], data[:,1], s=1, c=data[:,2], "
+                "cmap='viridis')\n"
                 "plt.colorbar(sc); ax.set_xlabel('X'); ax.set_ylabel('Y')\n"
                 "ax.set_title(os.path.basename(path))\n"
                 "plt.tight_layout()\n"
@@ -595,7 +607,8 @@ void ecvPythonView::onExportEntityAndRun() {
     }
 
     int exitCode = proc.exitCode();
-    m_statusLabel->setText(exitCode == 0 ? tr("OK") : tr("Exit: %1").arg(exitCode));
+    m_statusLabel->setText(exitCode == 0 ? tr("OK")
+                                         : tr("Exit: %1").arg(exitCode));
 
     if (exitCode != 0 && !stdErr.isEmpty()) {
         highlightErrorLine(stdErr);
@@ -706,7 +719,8 @@ void ecvPythonView::onRunScript() {
     }
 
     int exitCode = proc.exitCode();
-    m_statusLabel->setText(exitCode == 0 ? tr("OK") : tr("Exit: %1").arg(exitCode));
+    m_statusLabel->setText(exitCode == 0 ? tr("OK")
+                                         : tr("Exit: %1").arg(exitCode));
 
     if (exitCode != 0 && !stdErr.isEmpty()) {
         highlightErrorLine(stdErr);
@@ -751,9 +765,8 @@ void ecvPythonView::onLoadScript() {
 }
 
 void ecvPythonView::onSaveScript() {
-    QString path = QFileDialog::getSaveFileName(
-            this, tr("Save Python Script"), QString(),
-            tr("Python (*.py)"));
+    QString path = QFileDialog::getSaveFileName(this, tr("Save Python Script"),
+                                                QString(), tr("Python (*.py)"));
     if (path.isEmpty()) return;
 
     QFile file(path);
@@ -781,8 +794,8 @@ bool ecvPythonView::eventFilter(QObject* obj, QEvent* event) {
             }
         }
 
-        bool isShortcut =
-                (ke->modifiers() & Qt::ControlModifier) && ke->key() == Qt::Key_Space;
+        bool isShortcut = (ke->modifiers() & Qt::ControlModifier) &&
+                          ke->key() == Qt::Key_Space;
 
         if (!isShortcut) {
             QWidget::eventFilter(obj, event);
@@ -791,15 +804,14 @@ bool ecvPythonView::eventFilter(QObject* obj, QEvent* event) {
         if (m_completer) {
             static const QString eow =
                     QStringLiteral("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
-            bool hasModifier = (ke->modifiers() != Qt::NoModifier) &&
-                               !isShortcut;
+            bool hasModifier =
+                    (ke->modifiers() != Qt::NoModifier) && !isShortcut;
             QTextCursor tc = m_scriptEditor->textCursor();
             tc.select(QTextCursor::WordUnderCursor);
             QString prefix = tc.selectedText();
 
             if (!isShortcut &&
-                (hasModifier || ke->text().isEmpty() ||
-                 prefix.length() < 2 ||
+                (hasModifier || ke->text().isEmpty() || prefix.length() < 2 ||
                  eow.contains(ke->text().right(1)))) {
                 m_completer->popup()->hide();
             } else {
@@ -843,34 +855,39 @@ void ecvPythonView::inspectVariables() {
     QString script = m_scriptEditor->toPlainText().trimmed();
     if (script.isEmpty()) return;
 
-    QString inspectScript = script + QStringLiteral(
-            "\n\nimport sys as __sys\n"
-            "__result = []\n"
-            "for __name, __val in dict(locals()).items():\n"
-            "    if __name.startswith('_'): continue\n"
-            "    __tp = type(__val).__name__\n"
-            "    __sh = ''\n"
-            "    __vl = ''\n"
-            "    try:\n"
-            "        if hasattr(__val, 'shape'): __sh = str(__val.shape)\n"
-            "        elif hasattr(__val, '__len__'): __sh = str(len(__val))\n"
-            "    except: pass\n"
-            "    try:\n"
-            "        __vr = repr(__val)\n"
-            "        __vl = __vr[:80] + ('...' if len(__vr)>80 else '')\n"
-            "    except: __vl = '<error>'\n"
-            "    __result.append(f'{__name}\\t{__tp}\\t{__sh}\\t{__vl}')\n"
-            "print('__VARS_START__')\n"
-            "for __r in __result: print(__r)\n"
-            "print('__VARS_END__')\n");
+    QString inspectScript =
+            script +
+            QStringLiteral(
+                    "\n\nimport sys as __sys\n"
+                    "__result = []\n"
+                    "for __name, __val in dict(locals()).items():\n"
+                    "    if __name.startswith('_'): continue\n"
+                    "    __tp = type(__val).__name__\n"
+                    "    __sh = ''\n"
+                    "    __vl = ''\n"
+                    "    try:\n"
+                    "        if hasattr(__val, 'shape'): __sh = "
+                    "str(__val.shape)\n"
+                    "        elif hasattr(__val, '__len__'): __sh = "
+                    "str(len(__val))\n"
+                    "    except: pass\n"
+                    "    try:\n"
+                    "        __vr = repr(__val)\n"
+                    "        __vl = __vr[:80] + ('...' if len(__vr)>80 else "
+                    "'')\n"
+                    "    except: __vl = '<error>'\n"
+                    "    "
+                    "__result.append(f'{__name}\\t{__tp}\\t{__sh}\\t{__vl}')\n"
+                    "print('__VARS_START__')\n"
+                    "for __r in __result: print(__r)\n"
+                    "print('__VARS_END__')\n");
 
     QProcess proc;
     proc.setProgram(pyBin);
     proc.setArguments({"-c", inspectScript});
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if (!m_lastExportPath.isEmpty())
-        env.insert("DATA_FILE", m_lastExportPath);
+    if (!m_lastExportPath.isEmpty()) env.insert("DATA_FILE", m_lastExportPath);
     QString plotPath = QDir::tempPath() +
                        QStringLiteral("/acv_varinspect_%1.png")
                                .arg(reinterpret_cast<quintptr>(this), 0, 16);
@@ -915,14 +932,16 @@ void ecvPythonView::highlightErrorLine(const QString& stderrText) {
     if (!m_scriptEditor || stderrText.isEmpty()) return;
 
     static const QRegularExpression lineRx(
-            QStringLiteral("line (\\d+)"), QRegularExpression::CaseInsensitiveOption);
+            QStringLiteral("line (\\d+)"),
+            QRegularExpression::CaseInsensitiveOption);
     auto match = lineRx.match(stderrText);
     if (!match.hasMatch()) return;
 
     int lineNum = match.captured(1).toInt();
     if (lineNum <= 0) return;
 
-    QTextCursor cursor(m_scriptEditor->document()->findBlockByLineNumber(lineNum - 1));
+    QTextCursor cursor(
+            m_scriptEditor->document()->findBlockByLineNumber(lineNum - 1));
     if (cursor.isNull()) return;
 
     QList<QTextEdit::ExtraSelection> selections;
@@ -946,40 +965,146 @@ void ecvPythonView::clearErrorHighlights() {
 void ecvPythonView::setupCompleter() {
     QStringList words = {
             // Python keywords
-            "False",    "None",      "True",      "and",       "as",
-            "assert",   "async",     "await",     "break",     "class",
-            "continue", "def",       "del",       "elif",      "else",
-            "except",   "finally",   "for",       "from",      "global",
-            "if",       "import",    "in",        "is",        "lambda",
-            "nonlocal", "not",       "or",        "pass",      "raise",
-            "return",   "try",       "while",     "with",      "yield",
+            "False",
+            "None",
+            "True",
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "finally",
+            "for",
+            "from",
+            "global",
+            "if",
+            "import",
+            "in",
+            "is",
+            "lambda",
+            "nonlocal",
+            "not",
+            "or",
+            "pass",
+            "raise",
+            "return",
+            "try",
+            "while",
+            "with",
+            "yield",
             // Built-in functions
-            "abs",      "all",       "any",       "bin",       "bool",
-            "bytes",    "callable",  "chr",       "dict",      "dir",
-            "enumerate","eval",      "exec",      "filter",    "float",
-            "format",   "getattr",   "globals",   "hasattr",   "hash",
-            "help",     "hex",       "id",        "input",     "int",
-            "isinstance","issubclass","iter",     "len",       "list",
-            "locals",   "map",       "max",       "min",       "next",
-            "object",   "oct",       "open",      "ord",       "pow",
-            "print",    "property",  "range",     "repr",      "reversed",
-            "round",    "set",       "setattr",   "slice",     "sorted",
-            "staticmethod","str",    "sum",       "super",     "tuple",
-            "type",     "vars",      "zip",
+            "abs",
+            "all",
+            "any",
+            "bin",
+            "bool",
+            "bytes",
+            "callable",
+            "chr",
+            "dict",
+            "dir",
+            "enumerate",
+            "eval",
+            "exec",
+            "filter",
+            "float",
+            "format",
+            "getattr",
+            "globals",
+            "hasattr",
+            "hash",
+            "help",
+            "hex",
+            "id",
+            "input",
+            "int",
+            "isinstance",
+            "issubclass",
+            "iter",
+            "len",
+            "list",
+            "locals",
+            "map",
+            "max",
+            "min",
+            "next",
+            "object",
+            "oct",
+            "open",
+            "ord",
+            "pow",
+            "print",
+            "property",
+            "range",
+            "repr",
+            "reversed",
+            "round",
+            "set",
+            "setattr",
+            "slice",
+            "sorted",
+            "staticmethod",
+            "str",
+            "sum",
+            "super",
+            "tuple",
+            "type",
+            "vars",
+            "zip",
             // Common modules
-            "os",       "sys",       "numpy",     "np",        "matplotlib",
-            "plt",      "pandas",    "pd",        "math",      "json",
-            "csv",      "pathlib",   "Path",      "collections",
+            "os",
+            "sys",
+            "numpy",
+            "np",
+            "matplotlib",
+            "plt",
+            "pandas",
+            "pd",
+            "math",
+            "json",
+            "csv",
+            "pathlib",
+            "Path",
+            "collections",
             // numpy common
-            "np.array", "np.zeros",  "np.ones",   "np.linspace",
-            "np.arange","np.loadtxt","np.savetxt","np.mean",
-            "np.std",   "np.max",    "np.min",    "np.sum",
+            "np.array",
+            "np.zeros",
+            "np.ones",
+            "np.linspace",
+            "np.arange",
+            "np.loadtxt",
+            "np.savetxt",
+            "np.mean",
+            "np.std",
+            "np.max",
+            "np.min",
+            "np.sum",
             // matplotlib common
-            "plt.plot", "plt.scatter","plt.hist", "plt.bar",
-            "plt.figure","plt.savefig","plt.show","plt.xlabel",
-            "plt.ylabel","plt.title","plt.legend","plt.grid",
+            "plt.plot",
+            "plt.scatter",
+            "plt.hist",
+            "plt.bar",
+            "plt.figure",
+            "plt.savefig",
+            "plt.show",
+            "plt.xlabel",
+            "plt.ylabel",
+            "plt.title",
+            "plt.legend",
+            "plt.grid",
             // os/env
-            "os.environ","os.path",  "os.getcwd", "os.listdir",
+            "os.environ",
+            "os.path",
+            "os.getcwd",
+            "os.listdir",
     };
     words.sort(Qt::CaseInsensitive);
     words.removeDuplicates();
@@ -988,12 +1113,10 @@ void ecvPythonView::setupCompleter() {
     m_completer->setWidget(m_scriptEditor);
     m_completer->setCompletionMode(QCompleter::PopupCompletion);
     m_completer->setCaseSensitivity(Qt::CaseInsensitive);
-    m_completer->setModelSorting(
-            QCompleter::CaseInsensitivelySortedModel);
+    m_completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
 
-    connect(m_completer,
-            QOverload<const QString&>::of(&QCompleter::activated), this,
-            &ecvPythonView::insertCompletion);
+    connect(m_completer, QOverload<const QString&>::of(&QCompleter::activated),
+            this, &ecvPythonView::insertCompletion);
 
     m_scriptEditor->installEventFilter(this);
 }

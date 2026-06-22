@@ -1527,9 +1527,8 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    bool transformChanged =
-            std::memcmp(m_cachedTransformData, sensorPos.data(),
-                        16 * sizeof(double)) != 0;
+    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
+                                        16 * sizeof(double)) != 0;
 
     if (m_geometryDirty || transformChanged) {
         updateData();
@@ -1548,9 +1547,9 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
                     }
 
                     const int base = 5;
-                    const int faces[6][4] = {
-                            {0, 1, 3, 2}, {2, 3, 5, 4}, {4, 5, 7, 6},
-                            {6, 7, 1, 0}, {6, 0, 2, 4}, {1, 7, 5, 3}};
+                    const int faces[6][4] = {{0, 1, 3, 2}, {2, 3, 5, 4},
+                                             {4, 5, 7, 6}, {6, 7, 1, 0},
+                                             {6, 0, 2, 4}, {1, 7, 5, 3}};
                     for (const auto& f : faces) {
                         m_sideLines.lines_.push_back(
                                 Eigen::Vector2i(base + f[0], base + f[1]));
@@ -1587,8 +1586,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
             }
         }
 
-        Eigen::Matrix4d transformation =
-                ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
         m_nearPlane.Transform(transformation);
         m_sideLines.Transform(transformation);
         m_arrow.Transform(transformation);

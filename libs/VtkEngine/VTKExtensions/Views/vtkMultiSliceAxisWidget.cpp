@@ -15,17 +15,23 @@
 #include <QPainter>
 
 static const QColor kAxisColors[] = {
-        QColor(220, 60, 60),   // X — red
-        QColor(60, 180, 60),   // Y — green
-        QColor(60, 60, 220),   // Z — blue
+        QColor(220, 60, 60),  // X — red
+        QColor(60, 180, 60),  // Y — green
+        QColor(60, 60, 220),  // Z — blue
 };
 
 vtkMultiSliceAxisWidget::vtkMultiSliceAxisWidget(Axis axis, QWidget* parent)
     : QWidget(parent), m_axis(axis) {
     switch (axis) {
-        case X_AXIS: m_title = tr("X"); break;
-        case Y_AXIS: m_title = tr("Y"); break;
-        case Z_AXIS: m_title = tr("Z"); break;
+        case X_AXIS:
+            m_title = tr("X");
+            break;
+        case Y_AXIS:
+            m_title = tr("Y");
+            break;
+        case Z_AXIS:
+            m_title = tr("Z");
+            break;
     }
     setMouseTracking(true);
     setCursor(Qt::CrossCursor);
@@ -87,8 +93,7 @@ int vtkMultiSliceAxisWidget::valueToPos(double value) const {
 int vtkMultiSliceAxisWidget::hitMarker(const QPoint& pos) const {
     for (int i = 0; i < m_positions.size(); ++i) {
         int mp = valueToPos(m_positions[i]);
-        int d = (m_axis == X_AXIS) ? qAbs(pos.x() - mp)
-                                   : qAbs(pos.y() - mp);
+        int d = (m_axis == X_AXIS) ? qAbs(pos.x() - mp) : qAbs(pos.y() - mp);
         if (d <= kMarkerHalf + 2) return i;
     }
     return -1;

@@ -7,8 +7,6 @@
 
 #include "ecvShortcutDialog.h"
 
-#include "ecvPersistentSettings.h"
-
 #include <Shortcuts/ecvKeySequences.h>
 #include <VTKExtensions/Widgets/VtkShortcutRegistry.h>
 
@@ -31,6 +29,8 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
+
+#include "ecvPersistentSettings.h"
 
 constexpr int ACTION_NAME_COLUMN = 0;
 constexpr int KEY_SEQUENCE_COLUMN = 1;
@@ -149,8 +149,7 @@ QKeySequence ecvShortcutEditDialog::keySequence() const {
     return m_ui->keySequenceEdit->keySequence();
 }
 
-void ecvShortcutEditDialog::setKeySequence(
-        const QKeySequence& sequence) const {
+void ecvShortcutEditDialog::setKeySequence(const QKeySequence& sequence) const {
     m_ui->keySequenceEdit->setKeySequence(sequence);
 }
 
@@ -197,8 +196,9 @@ ecvShortcutDialog::ecvShortcutDialog(const QList<QAction*>& actions,
             &ecvShortcutDialog::handleDoubleClick);
     connect(m_ui->searchLineEdit, &QLineEdit::textChanged, this,
             &ecvShortcutDialog::filterActions);
-    connect(m_categoryCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ecvShortcutDialog::onCategoryChanged);
+    connect(m_categoryCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &ecvShortcutDialog::onCategoryChanged);
 
     QSet<QString> categories;
     int row = 0;
@@ -354,8 +354,7 @@ void ecvShortcutDialog::restoreShortcutsFromQSettings() const {
         if (key.isEmpty()) continue;
 
         if (settings.contains(key)) {
-            const auto sequence =
-                    settings.value(key).value<QKeySequence>();
+            const auto sequence = settings.value(key).value<QKeySequence>();
             item->setText(sequence.toString());
             action->setShortcut(sequence);
         } else if (settings.contains(action->text())) {
@@ -369,7 +368,7 @@ void ecvShortcutDialog::restoreShortcutsFromQSettings() const {
 }
 
 void ecvShortcutDialog::registerStandaloneShortcut(const QString& name,
-                                                    const QKeySequence& seq) {
+                                                   const QKeySequence& seq) {
     m_standaloneShortcuts[name] = seq;
 }
 
@@ -455,8 +454,7 @@ QStringList ecvShortcutDialog::detectAllConflicts() const {
                     QStringLiteral("[VTK] ") +
                     item->data(Qt::UserRole + 6).toString());
         } else {
-            const auto* action =
-                    item->data(Qt::UserRole).value<QAction*>();
+            const auto* action = item->data(Qt::UserRole).value<QAction*>();
             if (!action || action->shortcut().isEmpty()) continue;
             QString name = action->text();
             name.remove('&');
@@ -474,16 +472,14 @@ QStringList ecvShortcutDialog::detectAllConflicts() const {
     for (auto it = m_modalShortcuts.constBegin();
          it != m_modalShortcuts.constEnd(); ++it) {
         if (it.value().isEmpty()) continue;
-        seqToNames[it.value().toString()].append(
-                QStringLiteral("[Modal] ") + it.key());
+        seqToNames[it.value().toString()].append(QStringLiteral("[Modal] ") +
+                                                 it.key());
     }
 
-    for (auto it = seqToNames.constBegin(); it != seqToNames.constEnd();
-         ++it) {
+    for (auto it = seqToNames.constBegin(); it != seqToNames.constEnd(); ++it) {
         if (it.value().size() > 1) {
-            result.append(QStringLiteral("%1: %2")
-                                  .arg(it.key())
-                                  .arg(it.value().join(", ")));
+            result.append(QStringLiteral("%1: %2").arg(it.key()).arg(
+                    it.value().join(", ")));
         }
     }
 
@@ -503,8 +499,7 @@ void ecvShortcutDialog::refreshConflictHighlighting() {
             if (seq.isEmpty()) continue;
             seqToRows[seq.toString()].append(i);
         } else {
-            const auto* action =
-                    item->data(Qt::UserRole).value<QAction*>();
+            const auto* action = item->data(Qt::UserRole).value<QAction*>();
             if (!action || action->shortcut().isEmpty()) continue;
             seqToRows[action->shortcut().toString()].append(i);
         }
@@ -689,10 +684,10 @@ void ecvShortcutDialog::onResetSelected() {
 }
 
 void ecvShortcutDialog::onResetAll() {
-    if (QMessageBox::question(this, tr("Reset All Shortcuts"),
-                              tr("Reset all shortcuts to their default values?"),
-                              QMessageBox::Yes | QMessageBox::No) !=
-        QMessageBox::Yes) {
+    if (QMessageBox::question(
+                this, tr("Reset All Shortcuts"),
+                tr("Reset all shortcuts to their default values?"),
+                QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
 
@@ -731,8 +726,8 @@ void ecvShortcutDialog::onResetAll() {
 }
 
 void ecvShortcutDialog::onExportShortcuts() {
-    QString path = QFileDialog::getSaveFileName(
-            this, tr("Export Shortcuts"), QString(), tr("JSON (*.json)"));
+    QString path = QFileDialog::getSaveFileName(this, tr("Export Shortcuts"),
+                                                QString(), tr("JSON (*.json)"));
     if (path.isEmpty()) return;
 
     QJsonObject root;
@@ -765,8 +760,8 @@ void ecvShortcutDialog::onExportShortcuts() {
 }
 
 void ecvShortcutDialog::onImportShortcuts() {
-    QString path = QFileDialog::getOpenFileName(
-            this, tr("Import Shortcuts"), QString(), tr("JSON (*.json)"));
+    QString path = QFileDialog::getOpenFileName(this, tr("Import Shortcuts"),
+                                                QString(), tr("JSON (*.json)"));
     if (path.isEmpty()) return;
 
     QFile file(path);
@@ -849,35 +844,33 @@ void ecvShortcutDialog::applyFilters() {
                 m_ui->tableWidget->item(row, ACTION_NAME_COLUMN);
         if (!item) continue;
 
-        bool catMatch = selectedCategory.isEmpty() ||
-                        item->data(Qt::UserRole + 4).toString() ==
-                                selectedCategory;
+        bool catMatch =
+                selectedCategory.isEmpty() ||
+                item->data(Qt::UserRole + 4).toString() == selectedCategory;
 
         bool textMatch = true;
         if (!searchLower.isEmpty()) {
             textMatch = item->text().toLower().contains(searchLower);
             if (!textMatch) {
-                textMatch =
-                        item->data(Qt::UserRole + 1)
-                                .toString()
-                                .toLower()
-                                .contains(searchLower) ||
-                        item->data(Qt::UserRole + 2)
-                                .toString()
-                                .toLower()
-                                .contains(searchLower) ||
-                        item->data(Qt::UserRole + 3)
-                                .toString()
-                                .toLower()
-                                .contains(searchLower);
+                textMatch = item->data(Qt::UserRole + 1)
+                                    .toString()
+                                    .toLower()
+                                    .contains(searchLower) ||
+                            item->data(Qt::UserRole + 2)
+                                    .toString()
+                                    .toLower()
+                                    .contains(searchLower) ||
+                            item->data(Qt::UserRole + 3)
+                                    .toString()
+                                    .toLower()
+                                    .contains(searchLower);
             }
             if (!textMatch) {
                 auto* shortcutItem =
                         m_ui->tableWidget->item(row, KEY_SEQUENCE_COLUMN);
                 if (shortcutItem) {
-                    textMatch = shortcutItem->text()
-                                        .toLower()
-                                        .contains(searchLower);
+                    textMatch = shortcutItem->text().toLower().contains(
+                            searchLower);
                 }
             }
         }

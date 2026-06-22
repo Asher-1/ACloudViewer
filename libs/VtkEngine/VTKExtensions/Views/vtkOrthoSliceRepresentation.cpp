@@ -1,4 +1,11 @@
 // ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
 // Orthographic slice representation
 // ----------------------------------------------------------------------------
 
@@ -7,6 +14,8 @@
 #include <vtkActor.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCutter.h>
+#include <vtkNew.h>
+#include <vtkOutlineSource.h>
 #include <vtkPlane.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -14,8 +23,6 @@
 #include <vtkPolyDataPlaneClipper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
-#include <vtkNew.h>
-#include <vtkOutlineSource.h>
 #include <vtkTriangleFilter.h>
 
 namespace {

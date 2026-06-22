@@ -48,11 +48,11 @@
 #include <VtkRendering/Core/VtkRenderingUtils.h>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -504,6 +504,11 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                         }
                     }
                 } else {
+                    // Geometry is unchanged (checkEntityNeedUpdate == false)
+                    // and no colors/materials to update. Use non-destructive
+                    // path to avoid recreating the actor (which would reset
+                    // properties set by active filter tools).
+                    context.visFiltering = false;
                     vis->drawMesh(context, mesh);
                 }
             }
@@ -890,8 +895,8 @@ void VtkDisplayTools::drawBBoxBatch(const CC_DRAW_CONTEXT& context,
         vis->removeShape(batchID);
     }
 
-    const bool isSurface =
-            (context.meshRenderingMode == MESH_RENDERING_MODE::ECV_SURFACE_MODE);
+    const bool isSurface = (context.meshRenderingMode ==
+                            MESH_RENDERING_MODE::ECV_SURFACE_MODE);
     const bool isPoints = (context.opacity == 1.0 && isSurface &&
                            context.viewID.contains("points"));
 
@@ -954,9 +959,18 @@ void VtkDisplayTools::drawBBoxBatch(const CC_DRAW_CONTEXT& context,
                     e[1] = base + b;
                     cells->InsertNextCell(2, e);
                 };
-                addEdge(0, 1); addEdge(1, 2); addEdge(2, 3); addEdge(3, 0);
-                addEdge(4, 5); addEdge(5, 6); addEdge(6, 7); addEdge(7, 4);
-                addEdge(0, 4); addEdge(1, 5); addEdge(2, 6); addEdge(3, 7);
+                addEdge(0, 1);
+                addEdge(1, 2);
+                addEdge(2, 3);
+                addEdge(3, 0);
+                addEdge(4, 5);
+                addEdge(5, 6);
+                addEdge(6, 7);
+                addEdge(7, 4);
+                addEdge(0, 4);
+                addEdge(1, 5);
+                addEdge(2, 6);
+                addEdge(3, 7);
             }
         }
     }
@@ -1088,7 +1102,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                         if (subVis) {
                             std::string prefix = viewId + "#";
                             subVis->removeBySubstring(prefix,
-                                    context.defaultViewPort);
+                                                      context.defaultViewPort);
                         }
                     }
                 }
@@ -1238,16 +1252,16 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 std::string text = CVTools::FromQString(param.text);
                 std::string actorID = viewID + "#" + text;
                 int fontSize = param.fontSize > 0
-                        ? param.fontSize
-                        : ecvDisplayTools::GetLabelDisplayFont().pointSize();
-                ecvColor::Rgbf textColor =
-                        ecvColor::Rgbf(param.color.r, param.color.g,
-                                       param.color.b);
+                                       ? param.fontSize
+                                       : ecvDisplayTools::GetLabelDisplayFont()
+                                                 .pointSize();
+                ecvColor::Rgbf textColor = ecvColor::Rgbf(
+                        param.color.r, param.color.g, param.color.b);
                 if (!vis->updateText(text, param.rect.x(), param.rect.y(),
                                      actorID)) {
-                    vis->addText(text, param.rect.x(), param.rect.y(),
-                                 fontSize, textColor.r, textColor.g,
-                                 textColor.b, actorID, param.viewport);
+                    vis->addText(text, param.rect.x(), param.rect.y(), fontSize,
+                                 textColor.r, textColor.g, textColor.b, actorID,
+                                 param.viewport);
                 }
                 auto smap = vis->getShapeActorMap();
                 auto it = smap->find(actorID);
@@ -1266,8 +1280,9 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 if (txtVis2D) {
                     std::string text = CVTools::FromQString(param.text);
                     txtVis2D->addText(param.rect.x(), param.rect.y(), text,
-                                      param.color.r, param.color.g, param.color.b,
-                                      viewID, param.color.a, param.fontSize);
+                                      param.color.r, param.color.g,
+                                      param.color.b, viewID, param.color.a,
+                                      param.fontSize);
                 } else {
                     CC_DRAW_CONTEXT context = param.context;
                     ecvDisplayTools::GetContext(context);
@@ -1303,9 +1318,9 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             }
             break;
         case WIDGETS_TYPE::WIDGET_POLYLINE: {
-            ccPolyline* poly = param.entity
-                                      ? ccHObjectCaster::ToPolyline(param.entity)
-                                      : nullptr;
+            ccPolyline* poly =
+                    param.entity ? ccHObjectCaster::ToPolyline(param.entity)
+                                 : nullptr;
             if (!poly || poly->size() < 2) break;
 
             CC_DRAW_CONTEXT ctx;
@@ -1555,8 +1570,9 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
         // For secondary views (e.g. Comparative sub-views), use vtkTextActor
         // via VtkVis instead of ImageVis (vtkContext2D). The vtkContext2D text
         // path shares a font texture atlas (vtkFreeTypeTools singleton) across
-        // render windows, which causes garbled text when multiple windows exist.
-        // vtkTextActor manages textures per-renderer and avoids this issue.
+        // render windows, which causes garbled text when multiple windows
+        // exist. vtkTextActor manages textures per-renderer and avoids this
+        // issue.
         ecvTextParam textParam = context.textParam;
         std::string text = CVTools::FromQString(textParam.text);
         std::string groupID = CVTools::FromQString(context.viewID);

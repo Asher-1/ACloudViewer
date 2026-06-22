@@ -79,6 +79,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSettings>
 #include <QThread>
 #include <QTimer>
@@ -122,13 +123,22 @@ static bool isVtkToolInteractorStyle(vtkRenderWindowInteractor* interactor) {
     }
 
     const char* className = style->GetClassName();
-    return className && std::string(className).find("DrawPolygon") !=
-                                std::string::npos;
+    return className &&
+           std::string(className).find("DrawPolygon") != std::string::npos;
+}
+
+static bool isSignalOnlyInteraction(
+        ecvGenericGLDisplay::INTERACTION_FLAGS flags) {
+    return flags == ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS;
 }
 
 static bool shouldForwardMouseToVtk(
         vtkRenderWindowInteractor* interactor,
         ecvGenericGLDisplay::INTERACTION_FLAGS flags) {
+    if (isSignalOnlyInteraction(flags)) {
+        return false;
+    }
+
     const auto cameraFlags = ecvGenericGLDisplay::INTERACT_ROTATE |
                              ecvGenericGLDisplay::INTERACT_PAN |
                              ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA;
@@ -140,24 +150,17 @@ static bool shouldForwardMouseToVtk(
            isVtkToolInteractorStyle(interactor);
 }
 
-static bool isSignalOnlyInteraction(
-        ecvGenericGLDisplay::INTERACTION_FLAGS flags) {
-    return flags == ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS;
-}
+static bool shouldForwardMouseEventToVtk(
+        vtkRenderWindowInteractor* interactor,
+        ecvGenericGLDisplay::INTERACTION_FLAGS flags,
+        bool /*rotationAxisLocked*/,
+        const QMouseEvent* /*event*/,
+        QEvent::Type /*eventType*/) {
+    if (!shouldForwardMouseToVtk(interactor, flags)) {
+        return false;
+    }
 
-static ccGLMatrixd generateLockedRotationViewMat(const CCVector3d& axis,
-                                                 double angleRad,
-                                                 double orthoAngleRad) {
-    ccGLMatrixd verticalRotation;
-    verticalRotation.initFromParameters(angleRad, axis, CCVector3d(0, 0, 0));
-
-    ccGLMatrixd horizontalRotation;
-    horizontalRotation.initFromParameters(orthoAngleRad, CCVector3d(1, 0, 0),
-                                          CCVector3d(0, 0, 0));
-
-    return horizontalRotation *
-           ccGLMatrixd::FromViewDirAndUpDir(axis.orthogonal(), axis) *
-           verticalRotation;
+    return true;
 }
 
 ecvViewContext& QVTKWidgetCustom::curCtx() {
@@ -744,23 +747,33 @@ static bool applyDirectCameraWheelZoom(QVTKWidgetCustom* widget,
 
 bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
                                                     QEvent::Type eventType) {
+    if (isSignalOnlyInteraction(curInteractionFlags())) return false;
+
     auto* vis = vtkVisForWidget(this);
-    if (!vis) return false;
+    if (!vis || !vis->IsCameraOrientationWidgetShown()) return false;
+
+    // Lightweight fix-up: ensure ProcessEvents is on without resizing/resetting
+    // the widget (heavy EnsureCameraOrientationWidgetInteractive resets
+    // representation state and breaks the hover→click axis-pick flow).
+    vis->EnsureCameraOrientationWidgetProcessEvents();
 
     const bool overWidget =
             vis->IsMouseOverCameraOrientationWidget(event->x(), event->y());
-    const bool wasActive = m_cameraOrientMouseActive;
-    if (eventType == QEvent::MouseButtonPress && overWidget)
+    if (eventType == QEvent::MouseButtonPress && overWidget) {
         m_cameraOrientMouseActive = true;
+        curWidgetClicked() = true;
+    }
 
-    if (!overWidget && !wasActive && !m_cameraOrientMouseActive) return false;
+    if (!overWidget && !m_cameraOrientMouseActive) return false;
 
+    // Forward events through the full Qt→VTK pipeline. The widget registers
+    // at priority 1.0 and calls AbortFlagOn() which prevents the interactor
+    // style from also handling the event (no camera rotation).
     bool handled = true;
     switch (eventType) {
         case QEvent::MouseButtonPress:
-            // vtkCameraOrientationWidget internally tracks hover state before it
-            // accepts Select events. Feed the normal VTK path instead of
-            // temporarily removing the interactor style.
+            // Fire a move first so the widget's representation enters "Hot"
+            // state before receiving the press (required for axis picking).
             QVTKOpenGLNativeWidget::mouseMoveEvent(event);
             QVTKOpenGLNativeWidget::mousePressEvent(event);
             break;
@@ -775,17 +788,19 @@ bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
             break;
     }
 
-    if (eventType == QEvent::MouseButtonRelease)
-        m_cameraOrientMouseActive = false;
+    if (!handled) return false;
 
-    if (handled &&
-        (eventType == QEvent::MouseMove ||
-         eventType == QEvent::MouseButtonRelease)) {
+    if (eventType == QEvent::MouseButtonRelease) {
+        m_cameraOrientMouseActive = false;
+    }
+
+    if (eventType == QEvent::MouseMove ||
+        eventType == QEvent::MouseButtonRelease) {
         if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit cameraParamChanged();
     }
 
-    return handled;
+    return true;
 }
 
 // event processing
@@ -806,14 +821,29 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curIgnoreMouseReleaseEvent() = false;
     curLastMousePos() = event->pos();
 
-    if (!isSignalOnlyInteraction(curInteractionFlags()) &&
-        handleCameraOrientationMouse(event, QEvent::MouseButtonPress)) {
+    if (handleCameraOrientationMouse(event, QEvent::MouseButtonPress)) {
         event->accept();
         return;
     }
 
     curLastPointIndex() = -1;
     curLastPickedId() = QString();
+
+    // Signal-only mode (e.g., segment tool active): emit signals but do NOT
+    // process camera manipulation or forward to VTK.
+    if (isSignalOnlyInteraction(curInteractionFlags())) {
+        if (event->buttons() & Qt::LeftButton) {
+            if (m_ownerView)
+                emit m_ownerView->leftButtonClicked(event->x(), event->y());
+            emit leftButtonClicked(event->x(), event->y());
+        } else if (event->buttons() & Qt::RightButton) {
+            if (m_ownerView)
+                emit m_ownerView->rightButtonClicked(event->x(), event->y());
+            emit rightButtonClicked(event->x(), event->y());
+        }
+        event->accept();
+        return;
+    }
 
     if ((event->buttons() & Qt::RightButton)) {
         m_rightClickOnLabel = false;
@@ -911,7 +941,9 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 
     if (m_labelClickedOnPress || m_rightClickOnLabel) {
         event->accept();
-    } else if (shouldForwardMouseToVtk(m_interactor, curInteractionFlags())) {
+    } else if (shouldForwardMouseEventToVtk(m_interactor, curInteractionFlags(),
+                                            curRotationAxisLocked(), event,
+                                            QEvent::MouseButtonPress)) {
         QVTKOpenGLNativeWidget::mousePressEvent(event);
         event->accept();
     } else {
@@ -928,6 +960,11 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
         if (vm.getActiveView() != display) {
             vm.setActiveView(display);
         }
+    }
+
+    if (isSignalOnlyInteraction(curInteractionFlags())) {
+        event->accept();
+        return;
     }
 
     displayTarget()->stopDeferredPicking();
@@ -964,6 +1001,19 @@ static bool isAncestorVisibleInView(ccHObject* entity,
         }
     }
     return true;
+}
+
+void QVTKWidgetCustom::resizeEvent(QResizeEvent* event) {
+    QVTKOpenGLNativeWidget::resizeEvent(event);
+    // Refresh overlay widgets (camera orientation widget, orientation marker)
+    // after resize so their DPI-scaled sizes are computed against the actual
+    // window dimensions rather than the potentially-incorrect initial size.
+    if (m_ownerView) {
+        if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
+                    m_ownerView->getVisualizer3D())) {
+            vis->RefreshOverlayWidgets();
+        }
+    }
 }
 
 void QVTKWidgetCustom::paintGL() {
@@ -1092,8 +1142,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
         return;
     }
 
-    if (!(curInteractionFlags() &
-          ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA)) {
+    if (!(curInteractionFlags() & ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA)) {
         event->accept();
         return;
     }
@@ -1180,8 +1229,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 }
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
-    if (!isSignalOnlyInteraction(curInteractionFlags()) &&
-        handleCameraOrientationMouse(event, QEvent::MouseMove)) {
+    if (handleCameraOrientationMouse(event, QEvent::MouseMove)) {
         event->accept();
         return;
     }
@@ -1192,7 +1240,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     // become "current" during passive hover.
     const bool vtkToolStyle =
             isVtkToolInteractorStyle(m_interactor) &&
-            shouldForwardMouseToVtk(m_interactor, curInteractionFlags());
+            shouldForwardMouseEventToVtk(m_interactor, curInteractionFlags(),
+                                         curRotationAxisLocked(), event,
+                                         QEvent::MouseMove);
     if (vtkToolStyle && !m_labelClickedOnPress) {
         QVTKOpenGLNativeWidget::mouseMoveEvent(event);
         if (event->buttons() != Qt::NoButton) {
@@ -1208,23 +1258,18 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
            ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES))) {
         if ((curInteractionFlags() &
              ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA)) {
-            // lock axis
-            if ((curInteractionFlags() &
-                 ecvGenericGLDisplay::INTERACT_ROTATE) &&
-                (curInteractionFlags() &
-                 ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) !=
-                        ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES &&
-                (event->buttons() & Qt::LeftButton) &&
-                curRotationAxisLocked()) {
-                event->accept();
-            } else if (event->buttons() & Qt::MiddleButton) {
+            if (event->buttons() & Qt::MiddleButton) {
                 if (m_ownerView) {
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
                 } else {
                     event->accept();
                 }
-            } else {  // normal
-                if (!m_labelClickedOnPress && curActiveItems().empty()) {
+            } else {
+                if (!m_labelClickedOnPress && curActiveItems().empty() &&
+                    shouldForwardMouseEventToVtk(m_interactor,
+                                                 curInteractionFlags(),
+                                                 curRotationAxisLocked(), event,
+                                                 QEvent::MouseMove)) {
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
                     ecvDisplayTools::UpdateDisplayParameters();
                 }
@@ -1521,19 +1566,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             else if (curInteractionFlags() &
                      ecvGenericGLDisplay::INTERACT_ROTATE) {
                 // choose the right rotation mode
-                enum RotationMode {
-                    StandardMode,
-                    BubbleViewMode,
-                    LockedAxisMode
-                };
+                enum RotationMode { StandardMode, BubbleViewMode };
                 RotationMode rotationMode = StandardMode;
                 if ((curInteractionFlags() &
                      ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) !=
                     ecvGenericGLDisplay::INTERACT_TRANSFORM_ENTITIES) {
                     if (curBubbleViewModeEnabled())
                         rotationMode = BubbleViewMode;
-                    else if (curRotationAxisLocked())
-                        rotationMode = LockedAxisMode;
                 }
 
                 ccGLMatrixd rotMat;
@@ -1591,60 +1630,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                         m_lastMouseOrientation = currentMouseOrientation;
                     } break;
 
-                    case LockedAxisMode: {
-                        constexpr double PI = 3.14159265358979323846;
-                        constexpr double TWO_PI = 2.0 * PI;
-                        constexpr double HALF_PI = 0.5 * PI;
-
-                        const int mouseDeltaX = event->x() - curLastMousePos().x();
-                        const int mouseDeltaY = event->y() - curLastMousePos().y();
-                        if (auto* vtkView =
-                                    dynamic_cast<vtkGLView*>(displayTarget())) {
-                            if (vtkView->rotateLockedCamera(
-                                        mouseDeltaX, mouseDeltaY, width(),
-                                        height(), CCVector2i(event->x(),
-                                                            event->y()))) {
-                                directCameraRotationApplied = true;
-                            }
-                            break;
-                        }
-
-                        CCVector3d worldAxis = curLockedRotationAxis();
-                        const double axisNorm = worldAxis.norm();
-                        if (axisNorm <= 1.0e-12 || !std::isfinite(axisNorm)) {
-                            break;
-                        }
-                        worldAxis /= axisNorm;
-
-                        const double w = std::max(1, width());
-                        const double h = std::max(1, height());
-
-                        curLockedRotationAngleRad() +=
-                                static_cast<double>(mouseDeltaX) * (TWO_PI / w);
-                        while (curLockedRotationAngleRad() < -PI) {
-                            curLockedRotationAngleRad() += TWO_PI;
-                        }
-                        while (curLockedRotationAngleRad() > PI) {
-                            curLockedRotationAngleRad() -= TWO_PI;
-                        }
-
-                        curLockedRotationOrthoAngleRad() +=
-                                static_cast<double>(mouseDeltaY) * (PI / h);
-                        curLockedRotationOrthoAngleRad() = std::min(
-                                HALF_PI,
-                                std::max(-HALF_PI,
-                                         curLockedRotationOrthoAngleRad()));
-
-                        curViewportParams().viewMat.toIdentity();
-                        rotMat = generateLockedRotationViewMat(
-                                worldAxis, curLockedRotationAngleRad(),
-                                curLockedRotationOrthoAngleRad());
-                        displayTarget()->rotateBaseViewMat(rotMat);
-                        directCameraRotationApplied = true;
-                    } break;
-
                     default:
-                        assert(false);
                         break;
                 }
 
@@ -1724,8 +1710,7 @@ void QVTKWidgetCustom::updateActivateditems(
 }
 
 void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
-    if (!isSignalOnlyInteraction(curInteractionFlags()) &&
-        handleCameraOrientationMouse(event, QEvent::MouseButtonRelease)) {
+    if (handleCameraOrientationMouse(event, QEvent::MouseButtonRelease)) {
         event->accept();
         return;
     }
@@ -1750,7 +1735,9 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
         return;
     }
 
-    if (shouldForwardMouseToVtk(m_interactor, curInteractionFlags()) &&
+    if (shouldForwardMouseEventToVtk(m_interactor, curInteractionFlags(),
+                                     curRotationAxisLocked(), event,
+                                     QEvent::MouseButtonRelease) &&
         isVtkToolInteractorStyle(m_interactor) && !m_labelClickedOnPress) {
         QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
         curMouseButtonPressed() = false;
@@ -1760,7 +1747,9 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
         return;
     }
 
-    if (shouldForwardMouseToVtk(m_interactor, curInteractionFlags()) &&
+    if (shouldForwardMouseEventToVtk(m_interactor, curInteractionFlags(),
+                                     curRotationAxisLocked(), event,
+                                     QEvent::MouseButtonRelease) &&
         !m_labelClickedOnPress) {
         QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
     } else if (m_labelClickedOnPress) {

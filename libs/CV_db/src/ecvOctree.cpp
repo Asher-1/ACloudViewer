@@ -134,8 +134,7 @@ void ccOctree::draw(CC_DRAW_CONTEXT& context) {
     if (!display) display = ecvViewManager::instance().getEffectiveView();
     if (!display) return;
 
-    QString batchID =
-            QString("Octree-batch-%1").arg(m_displayedLevel);
+    QString batchID = QString("Octree-batch-%1").arg(m_displayedLevel);
 
     if (m_displayNeedsRefresh || m_lastDrawnLevel != m_displayedLevel ||
         m_lastDrawnMode != m_displayMode) {
@@ -160,7 +159,7 @@ void ccOctree::draw(CC_DRAW_CONTEXT& context) {
     void* collectParams[] = {reinterpret_cast<void*>(&cellBoxes),
                              reinterpret_cast<void*>(&m_displayMode)};
     executeFunctionForAllCellsAtLevel(m_displayedLevel, &CollectCellBounds,
-                                     collectParams);
+                                      collectParams);
 
     if (!cellBoxes.empty()) {
         CC_DRAW_CONTEXT batchCtx;
@@ -190,9 +189,8 @@ void ccOctree::draw(CC_DRAW_CONTEXT& context) {
         display->drawBBoxBatch(batchCtx, cellBoxes);
     }
 
-    m_lastBatchID = (m_displayMode == MEAN_POINTS)
-                            ? batchID + "-points"
-                            : batchID;
+    m_lastBatchID =
+            (m_displayMode == MEAN_POINTS) ? batchID + "-points" : batchID;
     m_lastDrawnLevel = m_displayedLevel;
     m_lastDrawnMode = m_displayMode;
 }
@@ -203,8 +201,7 @@ bool ccOctree::CollectCellBounds(
         cloudViewer::NormalizedProgress* nProgress /*=0*/) {
     auto* cellBoxes =
             static_cast<std::vector<ccBBox>*>(additionalParameters[0]);
-    auto* dispMode =
-            static_cast<DisplayMode*>(additionalParameters[1]);
+    auto* dispMode = static_cast<DisplayMode*>(additionalParameters[1]);
 
     CCVector3 bbMin, bbMax;
     cell.parentOctree->computeCellLimits(cell.truncatedCode, cell.level, bbMin,
@@ -232,8 +229,7 @@ bool ccOctree::DrawCellAsABox(
     ccOctreeFrustumIntersector* ofi =
             static_cast<ccOctreeFrustumIntersector*>(additionalParameters[0]);
     bool visible = *(static_cast<bool*>(additionalParameters[1]));
-    auto* display =
-            static_cast<ecvGenericGLDisplay*>(additionalParameters[2]);
+    auto* display = static_cast<ecvGenericGLDisplay*>(additionalParameters[2]);
 
     CCVector3 bbMin, bbMax;
     cell.parentOctree->computeCellLimits(cell.truncatedCode, cell.level, bbMin,
@@ -257,9 +253,8 @@ bool ccOctree::DrawCellAsABox(
     // Encode cell level in the viewID to avoid ID collisions across levels.
     CC_DRAW_CONTEXT context;
     context.display = display;
-    context.viewID = QString("Octree-%1-%2")
-                             .arg(cell.level)
-                             .arg(cell.truncatedCode);
+    context.viewID =
+            QString("Octree-%1-%2").arg(cell.level).arg(cell.truncatedCode);
     context.meshRenderingMode = renderMode;
 
     switch (dispMode) {
@@ -289,10 +284,11 @@ bool ccOctree::DrawCellAsABox(
 
         if (dispMode == MEAN_POINTS) {
             CCVector3 cellCenter;
-            cell.parentOctree->computeCellCenter(cell.truncatedCode,
-                                                 cell.level, cellCenter, true);
+            cell.parentOctree->computeCellCenter(cell.truncatedCode, cell.level,
+                                                 cellCenter, true);
             PointCoordinateType halfMarker =
-                    (bbMax.x - bbMin.x) * static_cast<PointCoordinateType>(0.08);
+                    (bbMax.x - bbMin.x) *
+                    static_cast<PointCoordinateType>(0.08);
             CCVector3 offset(halfMarker, halfMarker, halfMarker);
             ccBBox cellBox(cellCenter - offset, cellCenter + offset);
             if (display) {

@@ -7,6 +7,7 @@
 
 #include "cvGlyphFilter.h"
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/colorpushbutton.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/utils.h>
@@ -16,7 +17,6 @@
 #include <vtkConeSource.h>
 #include <vtkCylinderSource.h>
 #include <vtkGlyph3D.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLabeledDataMapper.h>
 #include <vtkLineSource.h>
 #include <vtkPlaneSource.h>

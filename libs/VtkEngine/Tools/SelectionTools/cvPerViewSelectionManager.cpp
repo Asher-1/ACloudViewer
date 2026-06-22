@@ -7,12 +7,12 @@
 
 #include "cvPerViewSelectionManager.h"
 
-#include "cvViewSelectionManager.h"
-
 #include <ecvGenericGLDisplay.h>
 
 #include <QSignalBlocker>
 #include <QToolBar>
+
+#include "cvViewSelectionManager.h"
 
 cvPerViewSelectionManager::cvPerViewSelectionManager(QObject* parent)
     : QObject(parent) {}
@@ -158,8 +158,9 @@ void cvPerViewSelectionManager::populateToolbar(
     for (int i = 0; i < 3; ++i) {
         if (!modifiers[i] || !globals[i]) continue;
         addActionBtn(modifiers[i]);
-        // Sync local toolbar state to global modifier actions (ParaView pattern).
-        // Do NOT call QAction::trigger() — it toggles off when already checked.
+        // Sync local toolbar state to global modifier actions (ParaView
+        // pattern). Do NOT call QAction::trigger() — it toggles off when
+        // already checked.
         connect(modifiers[i], &QAction::triggered, this,
                 [activateView, local = modifiers[i], g = globals[i]]() {
                     activateView();
@@ -193,8 +194,8 @@ void cvPerViewSelectionManager::populateToolbar(
         if (!local) continue;
         addActionBtn(local);
         connect(local, &QAction::toggled, this,
-                [this, activateView, local, toolbar, global, viewWidget](
-                        bool checked) {
+                [this, activateView, local, toolbar, global,
+                 viewWidget](bool checked) {
                     activateView();
                     if (checked) {
                         uncheckOtherViews(viewWidget, global->toolTip());

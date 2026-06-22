@@ -7,14 +7,14 @@
 
 #include "vtkwidget.h"
 
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/rendererslayoutalgo.h>
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkActor.h>
-#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkDataObject.h>
 #include <vtkDataSetMapper.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>

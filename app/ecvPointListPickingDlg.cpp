@@ -601,7 +601,8 @@ void ccPointListPickingDlg::processPickedPoint(const PickedItem& picked) {
         MainWindow::TheInstance()->addToDB(m_orderedLabelsContainer, false,
                                            true, false, false);
     } else if (newLabel->getDisplay() &&
-               m_orderedLabelsContainer->getDisplay() != newLabel->getDisplay()) {
+               m_orderedLabelsContainer->getDisplay() !=
+                       newLabel->getDisplay()) {
         m_orderedLabelsContainer->setDisplay(newLabel->getDisplay());
     }
     assert(m_orderedLabelsContainer);

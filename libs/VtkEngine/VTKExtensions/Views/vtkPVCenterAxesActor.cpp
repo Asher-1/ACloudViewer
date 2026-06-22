@@ -65,8 +65,10 @@ void vtkPVCenterAxesActor::SetZAxisColor(double r, double g, double b) {
 }
 
 //----------------------------------------------------------------------------
-void vtkPVCenterAxesActor::SetAxisColor(int axis, double r, double g,
-                                         double b) {
+void vtkPVCenterAxesActor::SetAxisColor(int axis,
+                                        double r,
+                                        double g,
+                                        double b) {
     double cur[4];
     this->LUT->GetTableValue(axis, cur);
     if (cur[0] != r || cur[1] != g || cur[2] != b) {

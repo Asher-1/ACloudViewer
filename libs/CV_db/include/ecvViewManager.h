@@ -309,8 +309,7 @@ signals:
                     int x,
                     int y,
                     const CCVector3& P);
-    void pointIndicesSelected(ccHObject* entity,
-                              const QSet<unsigned>& indices);
+    void pointIndicesSelected(ccHObject* entity, const QSet<unsigned>& indices);
     void mouseMoved(int x, int y, Qt::MouseButtons buttons);
     void leftButtonClicked(int x, int y);
     void rightButtonClicked(int x, int y);

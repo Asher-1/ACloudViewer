@@ -46,7 +46,8 @@ public:
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index,
                   int role = Qt::DisplayRole) const override;
-    QVariant headerData(int section, Qt::Orientation orientation,
+    QVariant headerData(int section,
+                        Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
 
     QString columnName(int col) const;
@@ -109,9 +110,15 @@ private:
             V2,
             V3,
             MAT_INDEX,
-            V1_X, V1_Y, V1_Z,
-            V2_X, V2_Y, V2_Z,
-            V3_X, V3_Y, V3_Z
+            V1_X,
+            V1_Y,
+            V1_Z,
+            V2_X,
+            V2_Y,
+            V2_Z,
+            V3_X,
+            V3_Y,
+            V3_Z
         } type;
         int sfIndex = -1;
         bool visible = true;
@@ -156,7 +163,8 @@ public:
 protected:
     QSize sizeHint() const override;
     void paintEvent(QPaintEvent* event) override;
-    void paintSection(QPainter* painter, const QRect& rect,
+    void paintSection(QPainter* painter,
+                      const QRect& rect,
                       int logicalIndex) const override;
 
 private:

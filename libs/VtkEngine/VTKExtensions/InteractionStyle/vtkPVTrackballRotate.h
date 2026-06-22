@@ -66,11 +66,22 @@ public:
      */
     vtkGetMacro(KeyCode, char);
 
+    /**
+     * Lock/unlock rotation to an arbitrary world-space axis.
+     * When locked, all rotation is constrained around LockedAxis.
+     */
+    void SetLockedAxis(double x, double y, double z);
+    void ClearLockedAxis();
+    vtkGetMacro(AxisLocked, bool);
+
 protected:
     vtkPVTrackballRotate();
     ~vtkPVTrackballRotate() override;
 
     char KeyCode;
+    bool AxisLocked;
+    double LockedAxis[3];
+
     vtkPVTrackballRotate(const vtkPVTrackballRotate&) = delete;
     void operator=(const vtkPVTrackballRotate&) = delete;
 };

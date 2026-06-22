@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <QMap>
+
 #include "ui_shorcutSettings.h"
 #include "ui_shortcutEditDialog.h"
-
-#include <QMap>
 
 class QComboBox;
 class QLabel;
@@ -32,7 +32,8 @@ private:
 
 //! Shortcut management dialog with conflict detection.
 //! Supports editing, resetting to defaults, and persistence via QSettings.
-//! Also tracks standalone QShortcuts and modal shortcuts for conflict awareness.
+//! Also tracks standalone QShortcuts and modal shortcuts for conflict
+//! awareness.
 class ecvShortcutDialog final : public QDialog {
     Q_OBJECT
 public:

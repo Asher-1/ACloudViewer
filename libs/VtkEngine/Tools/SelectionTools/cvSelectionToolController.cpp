@@ -470,51 +470,50 @@ void cvSelectionToolController::onSelectionFinished(
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onModifierChanged(QAction* action) {
-    // Reference: pqStandardViewFrameActionsImplementation::manageGroupExclusivity
+    // Reference:
+    // pqStandardViewFrameActionsImplementation::manageGroupExclusivity
     if (!action || !action->isCheckable() || !action->isChecked()) {
         return;
     }
 
-    // Manually uncheck other actions in the group (ParaView manageGroupExclusivity).
-        // Do not blockSignals: per-view mirror actions must receive toggled updates.
-        if (m_modifierGroup) {
-            for (QAction* groupAction : m_modifierGroup->actions()) {
-                if (groupAction != action && groupAction->isChecked()) {
-                    groupAction->setChecked(false);
-                }
+    // Manually uncheck other actions in the group (ParaView
+    // manageGroupExclusivity). Do not blockSignals: per-view mirror actions
+    // must receive toggled updates.
+    if (m_modifierGroup) {
+        for (QAction* groupAction : m_modifierGroup->actions()) {
+            if (groupAction != action && groupAction->isChecked()) {
+                groupAction->setChecked(false);
             }
         }
+    }
 
-        // Set the modifier
-        if (m_manager) {
-            QVariant data = action->data();
-            if (data.isValid()) {
-                m_manager->setSelectionModifier(
-                        static_cast<SelectionModifier>(data.toInt()));
+    // Set the modifier
+    if (m_manager) {
+        QVariant data = action->data();
+        if (data.isValid()) {
+            m_manager->setSelectionModifier(
+                    static_cast<SelectionModifier>(data.toInt()));
 
-                QString modeName;
-                switch (data.toInt()) {
-                    case static_cast<int>(
-                            SelectionModifier::SELECTION_ADDITION):
-                        modeName = "ADD (Ctrl)";
-                        break;
-                    case static_cast<int>(
-                            SelectionModifier::SELECTION_SUBTRACTION):
-                        modeName = "SUBTRACT (Shift)";
-                        break;
-                    case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
-                        modeName = "TOGGLE (Ctrl+Shift)";
-                        break;
-                    default:
-                        modeName = "DEFAULT";
-                        break;
-                }
-                CVLog::PrintVerbose(
-                        QString("[cvSelectionToolController] Selection "
-                                "modifier: %1")
-                                .arg(modeName));
+            QString modeName;
+            switch (data.toInt()) {
+                case static_cast<int>(SelectionModifier::SELECTION_ADDITION):
+                    modeName = "ADD (Ctrl)";
+                    break;
+                case static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION):
+                    modeName = "SUBTRACT (Shift)";
+                    break;
+                case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
+                    modeName = "TOGGLE (Ctrl+Shift)";
+                    break;
+                default:
+                    modeName = "DEFAULT";
+                    break;
             }
+            CVLog::PrintVerbose(QString("[cvSelectionToolController] Selection "
+                                        "modifier: %1")
+                                        .arg(modeName));
         }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -554,16 +553,16 @@ cvSelectionToolController::createActions(QWidget* parent) {
                  ":/Resources/images/svg/pqSurfaceSelectionPoint.svg",
                  QObject::tr("Select Points On (d)"),
                  QObject::tr("Select Points On (d)"), true);
-    a.selectFrustumCells = make(
-            "actionSelectFrustumCells",
-            ":/Resources/images/svg/pqFrustumSelectionCell.svg",
-            QObject::tr("Select Cells Through (f)"),
-            QObject::tr("Select Cells Through (f)"), true);
-    a.selectFrustumPoints = make(
-            "actionSelectFrustumPoints",
-            ":/Resources/images/svg/pqFrustumSelectionPoint.svg",
-            QObject::tr("Select Points Through (g)"),
-            QObject::tr("Select Points Through (g)"), true);
+    a.selectFrustumCells =
+            make("actionSelectFrustumCells",
+                 ":/Resources/images/svg/pqFrustumSelectionCell.svg",
+                 QObject::tr("Select Cells Through (f)"),
+                 QObject::tr("Select Cells Through (f)"), true);
+    a.selectFrustumPoints =
+            make("actionSelectFrustumPoints",
+                 ":/Resources/images/svg/pqFrustumSelectionPoint.svg",
+                 QObject::tr("Select Points Through (g)"),
+                 QObject::tr("Select Points Through (g)"), true);
     a.selectPolygonCells =
             make("actionSelectPolygonCells",
                  ":/Resources/images/svg/pqPolygonSelectSurfaceCell.svg",
@@ -578,17 +577,16 @@ cvSelectionToolController::createActions(QWidget* parent) {
                           ":/Resources/images/svg/pqSelectBlock.svg",
                           QObject::tr("Select Block (b)"),
                           QObject::tr("Select Block (b)"), true);
-    a.selectFrustumBlocks = make(
-            "actionSelectFrustumBlocks",
-            ":/Resources/images/svg/pqFrustumSelectionBlock.svg",
-            QObject::tr("Select Blocks Through (n)"),
-            QObject::tr("Select Blocks Through (n)"), true);
+    a.selectFrustumBlocks =
+            make("actionSelectFrustumBlocks",
+                 ":/Resources/images/svg/pqFrustumSelectionBlock.svg",
+                 QObject::tr("Select Blocks Through (n)"),
+                 QObject::tr("Select Blocks Through (n)"), true);
     a.interactiveSelectCells =
             make("actionInteractiveSelectCells",
                  ":/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg",
                  QObject::tr("Interactive Select Cells On"),
-                 QObject::tr("Interactive Select Cells On"),
-                 true);
+                 QObject::tr("Interactive Select Cells On"), true);
     a.interactiveSelectPoints = make(
             "actionInteractiveSelectPoints",
             ":/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg",
@@ -601,13 +599,13 @@ cvSelectionToolController::createActions(QWidget* parent) {
                  QObject::tr("Hover Cells On. Use Ctrl-C/Cmd-C to copy the "
                              "content to clipboard."),
                  true);
-    a.hoverPoints = make(
-            "actionHoverPoints",
-            ":/Resources/images/svg/pqSurfaceHoveringPoint.svg",
-            QObject::tr("Hover Points On"),
-            QObject::tr("Hover Points On. Use Ctrl-C/Cmd-C to copy the "
-                        "content to clipboard."),
-            true);
+    a.hoverPoints =
+            make("actionHoverPoints",
+                 ":/Resources/images/svg/pqSurfaceHoveringPoint.svg",
+                 QObject::tr("Hover Points On"),
+                 QObject::tr("Hover Points On. Use Ctrl-C/Cmd-C to copy the "
+                             "content to clipboard."),
+                 true);
 
     a.addSelection = make("actionAddSelection",
                           ":/Resources/images/svg/pqSelectPlus.svg",

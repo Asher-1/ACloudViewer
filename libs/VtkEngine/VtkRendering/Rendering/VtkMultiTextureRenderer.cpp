@@ -18,13 +18,13 @@
 #include <sstream>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkActor.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkImageResize.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLight.h>
 #include <vtkLightCollection.h>
 #include <vtkOpenGLRenderWindow.h>

@@ -733,9 +733,8 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    bool transformChanged =
-            std::memcmp(m_cachedTransformData, sensorPos.data(),
-                        16 * sizeof(double)) != 0;
+    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
+                                        16 * sizeof(double)) != 0;
 
     if (m_geometryDirty || transformChanged) {
         const double halfHeadSize = 0.3;
@@ -745,17 +744,13 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
             double axisLength = halfHeadSize * scale;
             m_axis.clear();
             m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-            m_axis.points_.push_back(
-                    Eigen::Vector3d(axisLength, 0.0, 0.0));
-            m_axis.points_.push_back(
-                    Eigen::Vector3d(0.0, axisLength, 0.0));
-            m_axis.points_.push_back(
-                    Eigen::Vector3d(0.0, 0.0, axisLength));
+            m_axis.points_.push_back(Eigen::Vector3d(axisLength, 0.0, 0.0));
+            m_axis.points_.push_back(Eigen::Vector3d(0.0, axisLength, 0.0));
+            m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, axisLength));
             m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
             m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
             m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
-            m_axis.colors_.push_back(
-                    ecvColor::Rgb::ToEigen(ecvColor::yellow));
+            m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
             m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
             m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
         }
@@ -766,8 +761,7 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
             Eigen::Vector3d maxC(halfHeadSize * scale, halfHeadSize * scale,
                                  halfHeadSize * scale);
             ccBBox bbox(minC, maxC);
-            m_obbHead =
-                    ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
+            m_obbHead = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
             m_obbHead.SetColor(ecvColor::Rgb::ToEigen(m_color));
         }
 
@@ -786,8 +780,7 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
             m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
         }
 
-        Eigen::Matrix4d transformation =
-                ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
         m_obbHead.Transform(transformation);
         m_leg.Transform(transformation);
         m_axis.Transform(transformation);

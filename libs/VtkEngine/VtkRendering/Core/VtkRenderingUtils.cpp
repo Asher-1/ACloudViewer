@@ -12,6 +12,7 @@
  */
 
 #include "VtkRenderingUtils.h"
+
 #include "VtkLODHelper.h"
 
 // CV_CORE_LIB
@@ -38,11 +39,11 @@
 #include "VtkUtils/vtkutils.h"
 
 // VTK
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAbstractWidget.h>
 #include <vtkActor.h>
 #include <vtkAnnotatedCubeActor.h>
 #include <vtkAppendPolyData.h>
-#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkCellData.h>
 #include <vtkCubeSource.h>
@@ -426,7 +427,8 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength,
                                                   const std::string& yMinus,
                                                   const std::string& zPlus,
                                                   const std::string& zMinus) {
-    vtkSmartPointer<vtkPVAxesActor> axes = vtkSmartPointer<vtkPVAxesActor>::New();
+    vtkSmartPointer<vtkPVAxesActor> axes =
+            vtkSmartPointer<vtkPVAxesActor>::New();
     axes->SetXAxisLabelText(xLabel.c_str());
     axes->SetYAxisLabelText(yLabel.c_str());
     axes->SetZAxisLabelText(zLabel.c_str());
@@ -442,7 +444,9 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength,
     axes->GetZAxisTipProperty()->SetColor(0.0, 0.0, 1.0);
     axes->GetZAxisShaftProperty()->SetColor(0.0, 0.0, 1.0);
 
-    axes->SetTotalLength(static_cast<float>(axesLength), static_cast<float>(axesLength), static_cast<float>(axesLength));
+    axes->SetTotalLength(static_cast<float>(axesLength),
+                         static_cast<float>(axesLength),
+                         static_cast<float>(axesLength));
 
     vtkSmartPointer<vtkAnnotatedCubeActor> cube =
             vtkSmartPointer<vtkAnnotatedCubeActor>::New();

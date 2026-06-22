@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include "qVTK.h"
-
 #include <QList>
 #include <QMap>
 #include <QWidget>
 #include <functional>
+
+#include "qVTK.h"
 
 class QCheckBox;
 class QComboBox;
@@ -110,26 +110,32 @@ private:
     using FieldValueFn = std::function<float(int fieldIdx, unsigned ptIdx)>;
 
     void rebuildChart();
-    void rebuildXYChart(const QList<int>& selectedFields, unsigned sampleCount,
-                        unsigned pointCount, const FieldValueFn& getFieldValue);
+    void rebuildXYChart(const QList<int>& selectedFields,
+                        unsigned sampleCount,
+                        unsigned pointCount,
+                        const FieldValueFn& getFieldValue);
     void rebuildHistogram(const QList<int>& selectedFields,
                           unsigned pointCount,
                           const FieldValueFn& getFieldValue);
     void rebuildBoxChart(const QList<int>& selectedFields,
-                         unsigned sampleCount, unsigned pointCount,
+                         unsigned sampleCount,
+                         unsigned pointCount,
                          const FieldValueFn& getFieldValue);
     void rebuildParallelCoordinates(const QList<int>& selectedFields,
                                     unsigned sampleCount,
                                     unsigned pointCount,
                                     const FieldValueFn& getFieldValue);
     void rebuildPlotMatrix(const QList<int>& selectedFields,
-                           unsigned sampleCount, unsigned pointCount,
+                           unsigned sampleCount,
+                           unsigned pointCount,
                            const FieldValueFn& getFieldValue);
     void rebuildQuartileChart(const QList<int>& selectedFields,
-                              unsigned sampleCount, unsigned pointCount,
+                              unsigned sampleCount,
+                              unsigned pointCount,
                               const FieldValueFn& getFieldValue);
     void rebuildImageChart(const QList<int>& selectedFields,
-                           unsigned sampleCount, unsigned pointCount,
+                           unsigned sampleCount,
+                           unsigned pointCount,
                            const FieldValueFn& getFieldValue);
     void setupChartSelectionCallback();
     void onChartAnnotationChanged();
