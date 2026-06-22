@@ -16,6 +16,7 @@
 
 // Qt
 #include <QDataStream>
+#include <QDateTime>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
