@@ -16,6 +16,7 @@
 
 class vtkClipPolyData;
 class vtkClipDataSet;
+class vtkMapper;
 
 /**
  * @class cvClipFilter
@@ -35,6 +36,12 @@ public:
     virtual void clearAllActor() override;
 
 protected:
+    bool useMapperClippingPreview() const;
+    void applyMapperClippingPreview();
+    void runGeometryClip();
+    void updateFilterActorMapperClipping(vtkMapper* mapper);
+    static void clearMapperClipping(vtkMapper* mapper);
+
     vtkSmartPointer<vtkClipPolyData> m_PolyClip;
     vtkSmartPointer<vtkClipDataSet> m_DataSetClip;
 };

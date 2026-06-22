@@ -9,7 +9,7 @@
 
 // Local
 #include "ecvBBox.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvPointCloud.h"
 #include "ecvScalarField.h"
@@ -109,12 +109,13 @@ public:
                 CONTEXT.bbDefaultCol = ecvColor::green;
                 CONTEXT.meshRenderingMode =
                         MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
-                ecvDisplayTools::DrawBBox(CONTEXT, &m_drawCellBBox);
+                if (CONTEXT.display)
+                    CONTEXT.display->drawBBox(CONTEXT, &m_drawCellBBox);
                 // m_drawCellBBox.draw(CONTEXT, ecvColor::green);
             } else {
                 CONTEXT.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
                 CONTEXT.removeViewID = CONTEXT.viewID;
-                ecvDisplayTools::RemoveEntities(CONTEXT);
+                if (CONTEXT.display) CONTEXT.display->removeEntities(CONTEXT);
             }
         }
     }
@@ -129,7 +130,7 @@ void ccKdTree::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     if (!MACRO_Draw3D(context)) return;
 
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
+    if (!context.display) return;
 
     bool entityPickingMode = MACRO_EntityPicking(context);
 

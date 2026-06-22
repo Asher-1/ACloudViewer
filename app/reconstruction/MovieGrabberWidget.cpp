@@ -7,9 +7,12 @@
 
 #include "MovieGrabberWidget.h"
 
+#include <Visualization/VtkVis.h>
+#include <Visualization/vtkGLView.h>
 #include <ecv2DViewportObject.h>
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvHObjectCaster.h>
+#include <ecvViewManager.h>
 
 #include "ModelViewerWidget.h"
 #include "base/pose.h"
@@ -19,6 +22,24 @@
 #include "ui/render_options.h"
 
 namespace cloudViewer {
+
+namespace {
+
+inline vtkGLView* mgEffectiveGLView() {
+    return dynamic_cast<vtkGLView*>(
+            ecvViewManager::instance().getEffectiveView());
+}
+
+void mgRefreshActiveDisplayLikeUpdateScreen() {
+    if (auto* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}
+
+}  // namespace
 
 using namespace colmap;
 
@@ -109,7 +130,14 @@ void MovieGrabberWidget::AddFromSelected() {
     }
 
     ccHObject::Container objects;
-    ecvDisplayTools::FilterByEntityType(objects, CV_TYPES::VIEWPORT_2D_OBJECT);
+    if (auto* eff = ecvViewManager::instance().getEffectiveView()) {
+        if (ccHObject* scene = eff->getSceneDB()) {
+            scene->filterChildren(objects, true, CV_TYPES::VIEWPORT_2D_OBJECT);
+        }
+        if (ccHObject* own = eff->getOwnDB()) {
+            own->filterChildren(objects, true, CV_TYPES::VIEWPORT_2D_OBJECT);
+        }
+    }
 
     std::vector<cc2DViewportObject*> selected_viewports;
     for (const auto& obj : objects) {
@@ -169,7 +197,9 @@ void MovieGrabberWidget::Add() {
 
     // Save size state of current viewpoint.
     MovieGrabberWidget::ViewData view_data;
-    view_data.viewportParams = ecvDisplayTools::GetViewportParameters();
+    if (auto* eff = ecvViewManager::instance().getEffectiveView()) {
+        view_data.viewportParams = eff->getViewportParameters();
+    }
     view_data.model_view_matrix = matrix;
     view_data.point_size = model_viewer_widget_->PointSize();
     view_data.image_size = model_viewer_widget_->ImageSize();
@@ -249,17 +279,27 @@ void MovieGrabberWidget::Assemble() {
     // Make sure we do not render movie grabber path.
     views.clear();
     model_viewer_widget_->UpdateMovieGrabber();
+    auto* assembleGlv = mgEffectiveGLView();
+    Visualization::VtkVis* assembleVis =
+            assembleGlv && assembleGlv->getVisualizer3D()
+                    ? assembleGlv->getVisualizer3D()
+                    : nullptr;
+
     bool coords_changed = false;
     bool lengend_changed = false;
-    bool coords_shown = ecvDisplayTools::OrientationMarkerShown();
-    bool lengend_shown = ecvDisplayTools::OverlayEntitiesAreDisplayed();
-    if (lengend_shown) {
-        ecvDisplayTools::DisplayOverlayEntities(false);
+    bool coords_shown = assembleVis ? assembleVis->pclMarkerAxesShown() : false;
+    bool lengend_shown =
+            assembleGlv ? assembleGlv->context().displayOverlayEntities : false;
+    if (lengend_shown && assembleGlv) {
+        assembleGlv->context().displayOverlayEntities = false;
         lengend_changed = true;
     }
-    if (coords_shown) {
-        ecvDisplayTools::ToggleOrientationMarker(false);
+    if (coords_shown && assembleVis) {
+        assembleVis->hidePclMarkerAxes();
         coords_changed = true;
+    }
+    if (coords_changed || lengend_changed) {
+        mgRefreshActiveDisplayLikeUpdateScreen();
     }
 
     const float frame_rate = frame_rate_sb_->value();
@@ -334,7 +374,9 @@ void MovieGrabberWidget::Assemble() {
                     prev_view_data.point_size + dpoint_size * tt, false);
             model_viewer_widget_->SetImageSize(
                     prev_view_data.image_size + dimage_size * tt, false);
-            ecvDisplayTools::SetViewportParameters(currentViewport);
+            if (auto* eff = ecvViewManager::instance().getEffectiveView()) {
+                eff->setViewportParameters(currentViewport);
+            }
             model_viewer_widget_->EndRender();
             model_viewer_widget_->update();
 
@@ -356,14 +398,22 @@ void MovieGrabberWidget::Assemble() {
     model_viewer_widget_->SetPointSize(point_size_cached);
     model_viewer_widget_->SetImageSize(image_size_cached);
     model_viewer_widget_->UpdateMovieGrabber();
-    if (lengend_changed) {
-        ecvDisplayTools::DisplayOverlayEntities(lengend_shown);
+    if (lengend_changed && assembleGlv) {
+        assembleGlv->context().displayOverlayEntities = lengend_shown;
     }
-    if (coords_changed) {
-        ecvDisplayTools::ToggleOrientationMarker(coords_shown);
+    if (coords_changed && assembleVis) {
+        if (coords_shown) {
+            vtkRenderWindowInteractor* iren =
+                    assembleVis->getRenderWindowInteractor().Get();
+            assembleVis->showPclMarkerAxes(iren);
+        } else {
+            assembleVis->hidePclMarkerAxes();
+        }
     }
-    ecvDisplayTools::SetViewportParameters(firstViewport);
-    ecvDisplayTools::UpdateScreen();
+    if (assembleGlv) {
+        assembleGlv->setViewportParameters(firstViewport);
+    }
+    mgRefreshActiveDisplayLikeUpdateScreen();
 }
 
 void MovieGrabberWidget::TimeChanged(QTableWidgetItem* item) {

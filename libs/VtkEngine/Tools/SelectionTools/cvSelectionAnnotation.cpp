@@ -594,11 +594,7 @@ void cvSelectionAnnotationManager::createTextActor(
     renderer->AddActor2D(textActor);
     m_textActors[annotation.id] = textActor;
 
-    // Render
-    vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
-    if (renderWindow) {
-        renderWindow->Render();
-    }
+    if (m_viewer) m_viewer->UpdateScreen();
 }
 
 //-----------------------------------------------------------------------------
@@ -651,13 +647,7 @@ void cvSelectionAnnotationManager::updateTextActor(const QString& id) {
 
     // Force render window update to ensure changes are visible immediately
     if (m_viewer) {
-        vtkRenderer* renderer = m_viewer->getCurrentRenderer();
-        if (renderer) {
-            vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
-            if (renderWindow) {
-                renderWindow->Render();
-            }
-        }
+        m_viewer->UpdateScreen();
     }
 }
 
@@ -673,11 +663,6 @@ void cvSelectionAnnotationManager::removeTextActor(const QString& id) {
         vtkRenderer* renderer = m_viewer->getCurrentRenderer();
         if (renderer) {
             renderer->RemoveActor2D(textActor);
-
-            vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
-            if (renderWindow) {
-                renderWindow->Render();
-            }
         }
     }
 

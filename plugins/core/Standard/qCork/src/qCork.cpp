@@ -13,9 +13,9 @@
 #include "qCorkInternal.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvRedrawScope.h>
 
 // dialog
 #include "ccCorkDlg.h"
@@ -435,7 +435,7 @@ void qCork::doAction() {
         meshA->showNormals(hasNormals && meshA->normalsShown());
 
         m_app->addToDB(result);
-        ecvDisplayTools::RedrawObject(result);
+        { ecvRedrawScope scope({result}); }
     }
 }
 

@@ -11,10 +11,10 @@
 #include <CVPlatform.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 
 // app
 #include <ecvMainAppInterface.h>
@@ -130,7 +130,14 @@ int BasePclModule::performAction() {
                     cloud->applyGLTransformation_recursive();
                     m_app->putObjectBackIntoDBTree(cloud, objContext);
                     scope.markDirty(cloud);
-                    ecvDisplayTools::RemoveBB(cloud->getViewId());
+                    CC_DRAW_CONTEXT bbCtx;
+                    bbCtx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+                    bbCtx.removeViewID = QString("BBox-") + cloud->getViewId();
+                    if (auto* eff =
+                                ecvViewManager::instance().getEffectiveView()) {
+                        bbCtx.display = eff;
+                        eff->removeEntities(bbCtx);
+                    }
                 }
             }
         }

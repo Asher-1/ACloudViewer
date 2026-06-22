@@ -13,9 +13,9 @@
 
 // qCC_db
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 
 #include <QMutex>
@@ -276,7 +276,9 @@ bool Classifier::classify(const Feature::Source::Set& featureSources,
     }
 
     if (parentWidget) {
-        ecvDisplayTools::RedrawObject(cloud, false, true);
+        {
+            ecvRedrawScope scope({cloud}, false, true);
+        }
         QCoreApplication::processEvents();
     }
 
@@ -496,7 +498,9 @@ bool Classifier::evaluate(const Feature::Source::Set& featureSources,
     }
 
     if (parentWidget) {
-        ecvDisplayTools::RedrawObject(testCloud, false, true);
+        {
+            ecvRedrawScope scope({testCloud}, false, true);
+        }
         QCoreApplication::processEvents();
     }
 

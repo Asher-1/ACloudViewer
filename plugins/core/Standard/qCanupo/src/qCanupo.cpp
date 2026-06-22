@@ -23,12 +23,12 @@
 #include <ReferenceCloud.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvOctree.h>
 #include <ecvOctreeProxy.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 #include <ecvSphere.h>
 
@@ -238,7 +238,7 @@ void qCanupoPlugin::doClassifyAction() {
                                  corePointsDescriptors, realCorePoints, m_app,
                                  m_app->getActiveWindow())) {
         // cloud->prepareDisplayForRefresh();
-        ecvDisplayTools::RedrawObject(cloud);
+        { ecvRedrawScope scope({cloud}); }
         m_app->updateUI();
     }
 

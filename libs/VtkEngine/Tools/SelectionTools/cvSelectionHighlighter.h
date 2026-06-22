@@ -21,6 +21,7 @@
 
 // Qt
 #include <QColor>
+#include <QHash>
 #include <QObject>
 #include <QPair>
 #include <QString>
@@ -141,6 +142,37 @@ public:
      * @brief Destructor
      */
     ~cvSelectionHighlighter();
+
+    /** Stop view refresh / signal side effects during app teardown. */
+    void prepareForShutdown();
+
+    void setVisualizer(ecvGenericVisualizer3D* viewer) override;
+
+    /** Map HW-picked prop to registered cloud/mesh actor in VtkVis. */
+    static vtkActor* resolveRegisteredMeshActor(Visualization::VtkVis* vis,
+                                                vtkActor* picked);
+
+    /** ParaView-style overlay drawn via VtkVis (same path as scene mesh). */
+    enum SelectionOverlayKind {
+        SelectionOverlayNone = 0,
+        SelectionOverlayPoints = 1,
+        SelectionOverlaySurface = 2,
+    };
+
+    static void applySelectionOverlay(Visualization::VtkVis* vis,
+                                      vtkPolyData* poly,
+                                      SelectionOverlayKind kind,
+                                      const char* overlayId = nullptr,
+                                      bool interactiveColor = false);
+    static void clearSelectionOverlay(Visualization::VtkVis* vis,
+                                      const char* overlayId = nullptr);
+    static void clearAllSelectionOverlays(Visualization::VtkVis* vis);
+    /** Standalone VTK renderer (e.g. OrthoSlice) without VtkVis. */
+    static vtkSmartPointer<vtkActor> createSelectionOverlayActor(
+            vtkPolyData* poly, SelectionOverlayKind kind);
+    /** ParaView selection display on an existing actor property. */
+    static void styleSelectionOverlayProperty(vtkProperty* prop,
+                                              SelectionOverlayKind kind);
 
     /**
      * @brief Highlight selected elements (automatically gets polyData from
@@ -415,6 +447,12 @@ signals:
      */
     void propertiesChanged();
 
+    void highlightActorAdded(vtkActor* actor);
+    void highlightActorRemoved(vtkActor* actor);
+    void highlightsCleared();
+    /** Replicate main-view VtkVis selection overlay on linked sub-views. */
+    void selectionOverlayUpdated(vtkPolyData* poly, int kind);
+
 private:
     /**
      * @brief Create selection highlight actor
@@ -432,6 +470,11 @@ private:
     vtkSmartPointer<vtkSelectionNode> createSelectionNode(
             vtkIdTypeArray* selection, int fieldAssociation);
 
+    void applyParaViewHighlightStyle(vtkProperty* prop,
+                                     int fieldAssociation,
+                                     HighlightMode mode,
+                                     bool applySolidColor = true) const;
+
     /**
      * @brief Add actor to visualizer
      */
@@ -441,6 +484,8 @@ private:
      * @brief Remove actor from visualizer
      */
     void removeActorFromVisualizer(const QString& id);
+
+    void scheduleAllViewsUpdate() const;
 
     /**
      * @brief Update label actor for point or cell labels
@@ -486,10 +531,19 @@ private:
     int m_boundaryLineWidth;
 
     bool m_enabled;
+    bool m_shuttingDown = false;
+    /// Registered mesh actor for transform sync (HW pick prop may differ).
+    vtkActor* m_highlightSourceActor = nullptr;
     QString m_hoverActorId;
     QString m_preselectedActorId;
     QString m_selectedActorId;
     QString m_boundaryActorId;
+
+    struct HighlightActorInstance {
+        vtkSmartPointer<vtkActor> actor;
+        vtkRenderer* renderer = nullptr;
+    };
+    QHash<QString, QVector<HighlightActorInstance>> m_highlightInstances;
 
     // Label properties (single source of truth)
     SelectionLabelProperties m_labelProperties;  ///< For SELECTED mode

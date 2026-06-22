@@ -23,7 +23,6 @@
 #include <ecvColorScaleEditorDlg.h>
 #include <ecvColorScaleSelector.h>
 #include <ecvColorScalesManager.h>
-#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvProgressDialog.h>
 #include <ecvRedrawScope.h>

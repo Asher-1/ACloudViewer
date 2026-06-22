@@ -13,7 +13,7 @@
 #include "ecvSettingManager.h"
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 #ifdef USE_VTK_BACKEND
 #include <Tools/CameraTools/EditCameraTool.h>
@@ -45,7 +45,7 @@ void ecvCustomViewpointsToolbar::constructor() {
 
     this->setWindowTitle(tr("Custom Viewpoints Toolbar"));
     this->updateCustomViewpointActions();
-    this->connect(ecvDisplayTools::TheInstance(), SIGNAL(cameraParamChanged()),
+    this->connect(&ecvViewManager::instance(), SIGNAL(cameraParamChanged()),
                   SLOT(updateEnabledState()));
     ecvSettingManager* settings = ecvSettingManager::TheInstance();
     this->connect(settings, SIGNAL(modified()),
@@ -54,7 +54,7 @@ void ecvCustomViewpointsToolbar::constructor() {
 
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::updateEnabledState() {
-    this->setEnabled(ecvDisplayTools::GetCurrentScreen() != nullptr);
+    this->setEnabled(ecvViewManager::instance().activeWidget() != nullptr);
     auto actions = this->actions();
     actions[actions.size() - 2]->setEnabled(
             actions.size() <
@@ -126,7 +126,7 @@ void ecvCustomViewpointsToolbar::ConfigureCustomViewpoints() {
 
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::SetToCurrentViewpoint() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         int customViewpointIndex;
         QAction* action = qobject_cast<QAction*>(this->sender());
         if (!action) {
@@ -136,14 +136,16 @@ void ecvCustomViewpointsToolbar::SetToCurrentViewpoint() {
         customViewpointIndex = action->data().toInt();
         if (ecvCameraParamEditDlg::SetToCurrentViewpoint(
                     customViewpointIndex)) {
-            ecvDisplayTools::UpdateScreen();
+            if (auto* w = ecvViewManager::instance().activeWidget()) {
+                w->update();
+            }
         }
     }
 }
 
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::DeleteCustomViewpoint() {
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         int customViewpointIndex;
         QAction* action = qobject_cast<QAction*>(this->sender());
         if (!action) {
@@ -153,7 +155,9 @@ void ecvCustomViewpointsToolbar::DeleteCustomViewpoint() {
         customViewpointIndex = action->data().toInt();
         if (ecvCameraParamEditDlg::DeleteCustomViewpoint(
                     customViewpointIndex)) {
-            ecvDisplayTools::UpdateScreen();
+            if (auto* w = ecvViewManager::instance().activeWidget()) {
+                w->update();
+            }
         }
     }
 }
@@ -170,7 +174,7 @@ void ecvCustomViewpointsToolbar::addCurrentViewpointToCustomViewpoints() {
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::ApplyCustomViewpoint() {
 #ifdef USE_VTK_BACKEND
-    if (ecvDisplayTools::GetCurrentScreen()) {
+    if (ecvViewManager::instance().activeWidget()) {
         int customViewpointIndex;
         QAction* action = qobject_cast<QAction*>(this->sender());
         if (!action) {

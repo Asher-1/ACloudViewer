@@ -8,10 +8,10 @@
 #include "cvThresholdFilter.h"
 
 #include <CVLog.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkActor.h>
 #include <vtkDataSetSurfaceFilter.h>
-#include <vtkLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>

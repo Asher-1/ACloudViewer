@@ -11,8 +11,8 @@
  *  @brief Actor and widget map types for VTK cloud/shape/coordinate rendering
  */
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkIdTypeArray.h>
-#include <vtkLODActor.h>
 #include <vtkMatrix4x4.h>
 #include <vtkSmartPointer.h>
 
@@ -33,7 +33,7 @@ struct CloudActor {
     CloudActor() = default;
     ~CloudActor() = default;
 
-    vtkSmartPointer<vtkLODActor> actor;
+    vtkSmartPointer<vtkPVLODActor> actor;
     vtkSmartPointer<vtkMatrix4x4> viewpoint_transformation;
     vtkSmartPointer<vtkIdTypeArray> cells;
 };
@@ -45,7 +45,7 @@ struct WidgetActor {
     WidgetActor() = default;
     ~WidgetActor() = default;
 
-    vtkSmartPointer<vtkLODActor> actor;
+    vtkSmartPointer<vtkPVLODActor> actor;
     vtkSmartPointer<vtkAbstractWidget> widget;
 };
 

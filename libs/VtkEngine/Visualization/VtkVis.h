@@ -14,6 +14,9 @@
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
+#include <QJsonObject>
+#include <QMouseEvent>
+#include <deque>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -31,18 +34,20 @@ class TextureRenderManager;
 }
 }  // namespace Visualization
 
+class ecvGenericGLDisplay;
+
 // CV_DB_LIB
 #include <ecvColorTypes.h>
-#include <ecvDisplayTools.h>  // For AxesGridProperties
+#include <ecvDisplayTypes.h>  // For AxesGridProperties
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvHObject.h>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkBoundingBox.h>  // needed for iVar
 #include <vtkCellArray.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -60,7 +65,7 @@ class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkMatrix4x4;
 class vtkLightKit;
-class vtkCubeAxesActor;
+class vtkGridAxesActor3D;
 class vtkCameraOrientationWidget;
 class vtkOrientationMarkerWidget;
 class vtkPolyData;
@@ -87,6 +92,9 @@ namespace VTKExtensions {
 class vtkPVCenterAxesActor;
 class vtkCustomInteractorStyle;
 }  // namespace VTKExtensions
+
+class ecvUndoManager;
+struct ecvCameraState;
 
 namespace Visualization {
 
@@ -130,6 +138,12 @@ public:
 
     /// Performs initialization (renderer, camera, etc.).
     void initialize();
+
+    /// Owning ecvGenericGLDisplay (e.g. vtkGLView); used instead of singletons.
+    void setOwnerDisplay(ecvGenericGLDisplay* display) {
+        m_ownerDisplay = display;
+    }
+    ecvGenericGLDisplay* ownerDisplay() const { return m_ownerDisplay; }
 
     /// Configures the center axes actor.
     void configCenterAxes();
@@ -202,7 +216,15 @@ public:
         double fovy = 0.8575;
         double window_size[2] = {0, 0};
         double window_pos[2] = {0, 0};
+        bool parallelProjection = false;
+        double parallelScale = 1.0;
+
+        static QJsonObject toJson(const CameraParams& p);
+        static CameraParams fromJson(const QJsonObject& obj);
     };
+
+    QJsonObject saveCameraToJson(int viewport = 0);
+    bool loadCameraFromJson(const QJsonObject& obj, int viewport = 0);
 
     /** @param viewport Viewport ID (default 0)
      *  @return Camera parameters (position, focal, view, etc.)
@@ -445,6 +467,7 @@ public:
     void hideShowActorsBySubstring(bool visibility,
                                    const std::string& substring,
                                    int viewport = 0);
+    void removeBySubstring(const std::string& substring, int viewport = 0);
 
     /** @param context Draw context
      *  @return true on success
@@ -620,9 +643,22 @@ public:
                    const std::string& id = "sphere",
                    int viewport = 0);
 
+    /// Add a screen-space point sprite (fixed pixel size, rendered as sphere).
+    bool addPointSprite(double cx,
+                        double cy,
+                        double cz,
+                        float pointSizePixels,
+                        double r,
+                        double g,
+                        double b,
+                        const std::string& id = "point_sprite",
+                        int viewport = 0);
+
     void displayText(const CC_DRAW_CONTEXT& context);
 
 private:
+    ecvGenericGLDisplay* m_ownerDisplay = nullptr;
+
     // Texture rendering manager
     std::unique_ptr<renders::TextureRenderManager> texture_render_manager_;
 
@@ -818,6 +854,9 @@ public:
      *  @return View ID string or empty if not found
      */
     std::string getIdByActor(vtkProp* actor);
+    /** Resolve cloud id when HW pick prop differs from registered actor
+     * pointer. */
+    std::string getIdByPolyData(vtkPolyData* polyData);
     /** @param viewId Widget view ID
      *  @return VTK abstract widget or nullptr
      */
@@ -858,7 +897,23 @@ public:
         return ThreeDInteractorStyle;
     }
 
+    enum InteractionMode {
+        INTERACTION_MODE_3D = 0,
+        INTERACTION_MODE_2D = 1,
+    };
+
+    /** Switch between 3D and 2D interaction modes (ParaView-style).
+     *  Swaps the interactor style and sets parallel projection for 2D.
+     */
+    void setInteractionMode(int mode);
+
+    /** @return Current interaction mode (INTERACTION_MODE_3D or _2D). */
+    int getInteractionMode() const { return m_interactionMode; }
+
 protected:
+    int m_interactionMode = INTERACTION_MODE_3D;
+    int m_savedParallelProjection = 0;
+
     /** \brief Internal list with actor pointers and name IDs for widgets. */
     WidgetActorMapPtr m_widget_map;
 
@@ -1031,7 +1086,7 @@ public:
      * @brief Set Data Axes Grid properties (Unified Interface)
      *
      * Data Axes Grid shows axes and grid lines around the data bounds.
-     * Uses vtkCubeAxesActor with FlyModeToOuterEdges.
+     * Uses vtkGridAxesActor3D (ParaView enhanced) with FaceMask control.
      * Each ccHObject has its own Data Axes Grid bound to its viewID.
      *
      * @param viewID The view ID of the ccHObject to bind the axes grid to
@@ -1071,7 +1126,27 @@ public:
      */
     bool IsCameraOrientationWidgetShown() const;
 
-public:
+    /// Hit-test the Camera Orientation Widget in widget pixel coordinates.
+    bool IsMouseOverCameraOrientationWidget(int qtX, int qtY) const;
+
+    /// Ensure the camera orientation widget is ready for interaction.
+    /// Re-validates interactor binding, ProcessEvents, and viewport sizing.
+    /// Returns true if the widget is ready.
+    /// NOTE: Do NOT call this during mouse event processing -- it resets
+    /// representation state and breaks the hover→click axis-pick flow.
+    bool EnsureCameraOrientationWidgetInteractive();
+
+    /// Lightweight version: only ensures ProcessEvents is on and interactor
+    /// is bound, without resizing or resetting the representation.
+    /// Safe to call on every mouse event.
+    void EnsureCameraOrientationWidgetProcessEvents();
+
+    /// Re-bind overlay widgets after camera sync / renderer changes
+    /// (comparative sub-views).
+    void RefreshOverlayWidgets();
+
+    /// Update orientation-marker viewport from render-window pixel size.
+    void UpdateOrientationMarkerLayout();
     // ---------- Methods formerly inherited from PCLVisualizer ----------
 
     /// Check if a cloud, shape, or coordinate with the given id exists.
@@ -1140,6 +1215,11 @@ public:
     bool addPointCloud(vtkSmartPointer<vtkPolyData> polydata,
                        const std::string& id = "cloud",
                        int viewport = 0);
+
+    /// ParaView-style cell selection overlay (magenta surface + edges).
+    bool addSelectionHighlightSurface(vtkSmartPointer<vtkPolyData> polydata,
+                                      const std::string& id,
+                                      int viewport = 0);
 
     /// Update an existing point cloud actor with new polydata.
     bool updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,
@@ -1212,6 +1292,19 @@ public:
     /// Save screenshot to file.
     void saveScreenshot(const std::string& file);
 
+    // ----------------------------------------------------------------
+    // Camera undo / redo  (mirrors ParaView pqRenderView camera stack)
+    // ----------------------------------------------------------------
+
+    bool canCameraUndo() const;
+    bool canCameraRedo() const;
+    void cameraUndo();
+    void cameraRedo();
+    void pushCameraState();
+
+    void setUndoManager(ecvUndoManager* mgr);
+    void applyCameraState(const ecvCameraState& state, int viewport = 0);
+
     /// Save/load camera parameters.
     void saveCameraParameters(const std::string& file);
     void loadCameraParameters(const std::string& file);
@@ -1222,8 +1315,18 @@ public:
     /// Set lookup table ID.
     void setLookUpTableID(const std::string& id);
 
-    /// Set background color.
+    /// Set background color (solid).
     void setBackgroundColor(double r, double g, double b, int viewport = 0);
+
+    /// Set background color with gradient support.
+    void setBackgroundColor(double r1,
+                            double g1,
+                            double b1,
+                            double r2,
+                            double g2,
+                            double b2,
+                            bool gradient,
+                            int viewport = 0);
 
     /// Rendering property constants (replaces pcl::visualization:: enums)
     enum RenderingProperties {
@@ -1278,10 +1381,19 @@ protected:
     // Axes Grid actors (ParaView-style)
     // Data Axes Grid: one per object (viewID -> actor mapping)
     // Data Axes Grid: per-object, bound to viewID
-    std::map<std::string, vtkSmartPointer<vtkCubeAxesActor>> m_dataAxesGridMap;
+    std::map<std::string, vtkSmartPointer<vtkGridAxesActor3D>>
+            m_dataAxesGridMap;
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;
+
+    // Camera undo / redo stack
+    static constexpr int CAMERA_STACK_DEPTH = 20;
+    std::deque<CameraParams> m_cameraUndoStack;
+    std::deque<CameraParams> m_cameraRedoStack;
+    bool m_inCameraUndoRedo = false;
+
+    ecvUndoManager* m_undoManager = nullptr;
 };
 
 typedef std::shared_ptr<VtkVis> VtkVisPtr;

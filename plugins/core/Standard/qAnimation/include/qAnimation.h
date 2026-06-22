@@ -18,7 +18,7 @@ class qAnimation : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
 
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qAnimation" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qAnimation" FILE
                           "../info.json")
 
 public:

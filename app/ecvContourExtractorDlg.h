@@ -13,7 +13,9 @@
 
 // CV_DB_LIB
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
+
+// LOCAL
+#include "MainWindow.h"
 
 // GUI
 #include <ui_contourExtractorDlg.h>
@@ -39,7 +41,7 @@ public:
     void waitForUser(unsigned defaultDelay_ms = 100);
 
     //! Returns associated GL window
-    inline QMainWindow* win() { return ecvDisplayTools::GetMainWindow(); }
+    inline QMainWindow* win() { return MainWindow::TheInstance(); }
 
     //! Zooms on a given 2D region (3D bouding-box considered in 2D only)
     void zoomOn(const ccBBox& bbox);

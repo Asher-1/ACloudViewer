@@ -18,7 +18,7 @@
 #include <ecvPickingHub.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvPointCloud.h>
 
 ccPointPickingGenericInterface::ccPointPickingGenericInterface(
@@ -28,17 +28,21 @@ ccPointPickingGenericInterface::ccPointPickingGenericInterface(
 }
 
 bool ccPointPickingGenericInterface::linkWith(QWidget* win) {
-    // just in case
-    if (m_pickingHub) {
-        m_pickingHub->removeListener(this);
+    if (m_associatedWin == win) {
+        return true;
     }
+
+    bool wasProcessing = m_processing;
 
     if (!ccOverlayDialog::linkWith(win)) {
         return false;
     }
 
-    // if the dialog is already linked to a window, we must disconnect the
-    // 'point picked' signal
+    if (wasProcessing && win && m_pickingHub) {
+        m_pickingHub->addListener(this, true, true,
+                                  ecvGenericGLDisplay::POINT_PICKING);
+    }
+
     return true;
 }
 
@@ -50,7 +54,7 @@ bool ccPointPickingGenericInterface::start() {
 
     // activate "point picking mode" in associated GL window
     if (!m_pickingHub->addListener(this, true, true,
-                                   ecvDisplayTools::POINT_PICKING)) {
+                                   ecvGenericGLDisplay::POINT_PICKING)) {
         CVLog::Error(
                 "Picking mechanism already in use. Close the tool using it "
                 "first.");

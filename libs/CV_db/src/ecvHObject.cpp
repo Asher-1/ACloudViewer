@@ -10,6 +10,12 @@
 #include "ecvBBox.h"
 
 // Objects handled by factory
+#include <ecvDisplayTypes.h>
+#include <ecvGenericDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
+
 #include "ecv2DLabel.h"
 #include "ecv2DViewportLabel.h"
 #include "ecvBox.h"
@@ -20,7 +26,6 @@
 #include "ecvCylinder.h"
 #include "ecvDisc.h"
 #include "ecvDish.h"
-#include "ecvDisplayTools.h"
 #include "ecvExternalFactory.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
@@ -32,24 +37,94 @@
 #include "ecvKdTree.h"
 #include "ecvMaterialSet.h"
 #include "ecvMeshGroup.h"
+#include "ecvOctree.h"
+#include "ecvOctreeProxy.h"
 #include "ecvPlane.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"
 #include "ecvQuadric.h"
+#include "ecvRepresentationManager.h"
 #include "ecvSphere.h"
 #include "ecvSubMesh.h"
 #include "ecvTorus.h"
+#include "ecvViewRepresentation.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>
 #include <Eigen.h>
 #include <Logging.h>
 
+#include <QApplication>
+
+namespace {
+ENTITY_TYPE convertClassToEntityType(CV_CLASS_ENUM type) {
+    switch (type) {
+        case CV_TYPES::HIERARCHY_OBJECT:
+            return ENTITY_TYPE::ECV_HIERARCHY_OBJECT;
+        case CV_TYPES::POINT_CLOUD:
+            return ENTITY_TYPE::ECV_POINT_CLOUD;
+        case CV_TYPES::POLY_LINE:
+        case CV_TYPES::LINESET:
+        case (CV_TYPES::CUSTOM_H_OBJECT | CV_TYPES::POLY_LINE):
+            return ENTITY_TYPE::ECV_SHAPE;
+        case CV_TYPES::LABEL_2D:
+            return ENTITY_TYPE::ECV_2DLABLE;
+        case CV_TYPES::VIEWPORT_2D_LABEL:
+            return ENTITY_TYPE::ECV_2DLABLE_VIEWPORT;
+        case CV_TYPES::POINT_OCTREE:
+            return ENTITY_TYPE::ECV_OCTREE;
+        case CV_TYPES::POINT_KDTREE:
+            return ENTITY_TYPE::ECV_KDTREE;
+        case CV_TYPES::FACET:
+        case CV_TYPES::PRIMITIVE:
+        case CV_TYPES::MESH:
+        case CV_TYPES::SUB_MESH:
+        case CV_TYPES::SPHERE:
+        case CV_TYPES::CONE:
+        case CV_TYPES::PLANE:
+        case CV_TYPES::CYLINDER:
+        case CV_TYPES::TORUS:
+        case CV_TYPES::EXTRU:
+        case CV_TYPES::DISH:
+        case CV_TYPES::DISC:
+        case CV_TYPES::BOX:
+        case CV_TYPES::COORDINATESYSTEM:
+        case CV_TYPES::QUADRIC:
+            return ENTITY_TYPE::ECV_MESH;
+        case CV_TYPES::IMAGE:
+            return ENTITY_TYPE::ECV_IMAGE;
+        case CV_TYPES::SENSOR:
+        case CV_TYPES::GBL_SENSOR:
+        case CV_TYPES::CAMERA_SENSOR:
+            return ENTITY_TYPE::ECV_SENSOR;
+        default:
+            return ENTITY_TYPE::ECV_NONE;
+    }
+}
+}  // namespace
+
 #include <Eigen/Dense>
 #include <numeric>
 
 // Qt
 #include <QIcon>
+
+namespace {
+
+/// Prefer the draw context display, otherwise the object's view, otherwise
+/// ecvViewManager::getEffectiveView().
+ecvGenericGLDisplay* mergeDisplay(ecvGenericGLDisplay* ctxDisp,
+                                  const ccHObject* obj) {
+    if (ctxDisp) return ctxDisp;
+    ecvGenericGLDisplay* v =
+            obj ? const_cast<ecvGenericGLDisplay*>(obj->getDisplay()) : nullptr;
+    if (!v) {
+        v = ecvViewManager::instance().getEffectiveView();
+    }
+    return v;
+}
+
+}  // namespace
 
 ccHObject::ccHObject(QString name /*=QString()*/)
     : ccObject(name),
@@ -73,6 +148,10 @@ ccHObject::ccHObject(const ccHObject& object)
 
 ccHObject::~ccHObject() {
     m_isDeleting = true;
+
+    // Clean up per-view representations so that the representation
+    // manager does not hold dangling entity pointers after deletion.
+    ecvRepresentationManager::instance().removeRepresentationsForEntity(this);
 
     // process dependencies
     for (std::map<ccHObject*, int>::const_iterator it = m_dependencies.begin();
@@ -102,15 +181,16 @@ ccHObject::~ccHObject() {
 }
 
 void ccHObject::notifyGeometryUpdate() {
-    // the associated display bounding-box is (potentially) deprecated!!!
-    if (!ecvDisplayTools::HasInstance()) {
-        return;
-    }
-
-    if (ecvDisplayTools::GetCurrentScreen()) {
-        ecvDisplayTools::InvalidateViewport();
-        ecvDisplayTools::Deprecate3DLayer();
-        ecvDisplayTools::RemoveBB(getViewId());
+    ecvGenericGLDisplay* disp = getDisplay();
+    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+    if (disp) {
+        disp->invalidateViewport();
+        disp->deprecate3DLayer();
+        CC_DRAW_CONTEXT bbCtx;
+        bbCtx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+        bbCtx.removeViewID = QString("BBox-") + getViewId();
+        bbCtx.display = disp;
+        if (bbCtx.display) bbCtx.display->removeEntities(bbCtx);
     }
 
     // process dependencies
@@ -710,7 +790,8 @@ void ccHObject::removeFromRenderScreen(bool recursive) {
     CC_DRAW_CONTEXT context;
     context.removeViewID = getViewId();
     context.removeEntityType = getEntityType();
-    ecvDisplayTools::RemoveEntities(context);
+    context.display = mergeDisplay(nullptr, this);
+    if (context.display) context.display->removeEntities(context);
 
     if (this->isKindOf(CV_TYPES::FACET) || this->isKindOf(CV_TYPES::PLANE)) {
         ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(this);
@@ -814,13 +895,19 @@ void ccHObject::setLineWidthRecursive(PointCoordinateType with) {
     }
 }
 
-ccBBox ccHObject::getDisplayBB_recursive(bool relative) {
+ccBBox ccHObject::getDisplayBB_recursive(bool relative,
+                                         const ecvGenericGLDisplay* display) {
     ccBBox box;
-    box = getOwnBB(true);
+    // Only include this node's own BB if it belongs to the requested display
+    // (or no display filter is set, or entity is unbound to any display).
+    if (!display || m_currentDisplay == nullptr ||
+        m_currentDisplay == display) {
+        box = getOwnBB(true);
+    }
 
     for (auto child : m_children) {
         if (child->isEnabled()) {
-            ccBBox childBox = child->getDisplayBB_recursive(true);
+            ccBBox childBox = child->getDisplayBB_recursive(true, display);
             if (child->isGLTransEnabled()) {
                 childBox = childBox * child->getGLTransformation();
             }
@@ -829,7 +916,6 @@ ccBBox ccHObject::getDisplayBB_recursive(bool relative) {
     }
 
     if (!relative && box.isValid()) {
-        // get absolute bounding-box?
         ccGLMatrix trans;
         getAbsoluteGLTransformation(trans);
         box = box * trans;
@@ -905,8 +991,9 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo>& rmInfos,
     // need to remove 3D name if shown
     if (nameShownIn3D()) {
         showNameIn3D(false);
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
+        WIDGETS_PARAMETER wp(WIDGETS_TYPE::WIDGET_T2D, getName());
+        wp.context.display = mergeDisplay(nullptr, this);
+        if (wp.context.display) wp.context.display->removeWidgets(wp);
     }
     rmInfos.push_back(rminfo);
 
@@ -1012,7 +1099,7 @@ ccBBox ccHObject::getOwnFitBB(ccGLMatrix& trans) {
 }
 
 void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
-    if (!ecvDisplayTools::GetMainWindow()) {
+    if (!ecvViewManager::instance().activeWidget()) {
         return;
     }
 
@@ -1426,13 +1513,37 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
 }
 
 void ccHObject::drawNameIn3D() {
-    QFont font = ecvDisplayTools::GetTextDisplayFont();  // takes rendering zoom
-                                                         // into account!
-    ecvDisplayTools::DisplayText(
-            getName(), static_cast<int>(m_nameIn3DPos.x),
-            static_cast<int>(m_nameIn3DPos.y),
-            ecvDisplayTools::ALIGN_HMIDDLE | ecvDisplayTools::ALIGN_VMIDDLE,
-            0.75f, nullptr, &font);
+    ecvGenericGLDisplay* disp = mergeDisplay(nullptr, this);
+    QFont font = QApplication::font();
+    const ecvGui::ParamStruct* fontParams = nullptr;
+    if (disp) {
+        fontParams = &disp->getDisplayParameters();
+    } else if (ecvGenericGLDisplay* ev =
+                       ecvViewManager::instance().getEffectiveView()) {
+        fontParams = &ev->getDisplayParameters();
+    }
+    if (fontParams) {
+        font.setPointSize(static_cast<int>(fontParams->defaultFontSize));
+    } else {
+        font.setPointSize(
+                static_cast<int>(ecvGui::Parameters().defaultFontSize));
+    }
+    if (disp) {
+        disp->display2DText(getName(), static_cast<int>(m_nameIn3DPos.x),
+                            static_cast<int>(m_nameIn3DPos.y),
+                            static_cast<unsigned char>(
+                                    ecvGenericDisplayTools::ALIGN_HMIDDLE |
+                                    ecvGenericDisplayTools::ALIGN_VMIDDLE),
+                            0.75f, nullptr, &font, getViewId());
+    } else if (ecvGenericGLDisplay* ev =
+                       ecvViewManager::instance().getEffectiveView()) {
+        ev->display2DText(getName(), static_cast<int>(m_nameIn3DPos.x),
+                          static_cast<int>(m_nameIn3DPos.y),
+                          static_cast<unsigned char>(
+                                  ecvGenericDisplayTools::ALIGN_HMIDDLE |
+                                  ecvGenericDisplayTools::ALIGN_VMIDDLE),
+                          0.75f, nullptr, &font, getViewId());
+    }
 }
 
 void ccHObject::draw(CC_DRAW_CONTEXT& context) {
@@ -1440,7 +1551,8 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     if (getRemoveFlag()) {
         setRemoveType(context);
         context.removeViewID = getViewId();
-        ecvDisplayTools::RemoveEntities(context);
+        context.display = mergeDisplay(context.display, this);
+        if (context.display) context.display->removeEntities(context);
         return;
     }
 
@@ -1450,15 +1562,72 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     if (!isEnabled() && !isKindOf(CV_TYPES::POINT_OCTREE) &&
         !isKindOf(CV_TYPES::POINT_KDTREE)) {
         hideObject_recursive(true);
-        // no need to do anything
         return;
     }
 
     // the entity must be either visible or selected, and of course it should be
     // displayed in this context
-    bool drawInThisContext = ((m_visible || m_selected));
-    context.visible = m_visible;
-    context.opacity = getOpacity();
+    bool drawInThisContext =
+            ((m_visible || m_selected) && isDisplayedIn(context.display));
+
+    ecvViewRepresentation* viewRep = nullptr;
+    const bool isLabel2D = isKindOf(CV_TYPES::LABEL_2D);
+    const bool isHierarchy = (getClassID() == CV_TYPES::HIERARCHY_OBJECT);
+    // Only ensure (create) a per-view representation for entities that are
+    // truly visible -- not for entities that are only drawn because they are
+    // selected.  ensureRepresentation() inherits donor visibility which can
+    // incorrectly cascade a "hidden" state from another view.
+    // HIERARCHY_OBJECT (folders) are pure containers with no VTK geometry;
+    // they must NOT get per-view reps or they will incorrectly block
+    // children's visibility through the cascade.
+    const bool trueVisible = m_visible && isDisplayedIn(context.display);
+    if (context.display && trueVisible && !isFixedId() && !isLabel2D &&
+        !isHierarchy) {
+        viewRep = ecvRepresentationManager::instance().ensureRepresentation(
+                const_cast<ccHObject*>(this), context.display);
+    } else if (context.display && !isHierarchy) {
+        viewRep = ecvRepresentationManager::instance().getRepresentation(
+                const_cast<ccHObject*>(this), context.display);
+    }
+    if (drawInThisContext && viewRep && viewRep->hasVisibilityOverride()) {
+        drawInThisContext = viewRep->isVisible();
+    }
+
+    const bool ancestorVisible = context.visible;
+    if (isHierarchy) {
+        context.visible = ancestorVisible;
+    } else if (viewRep && viewRep->hasVisibilityOverride()) {
+        context.visible = viewRep->isVisible() && ancestorVisible;
+    } else if (drawInThisContext) {
+        context.visible = m_visible && ancestorVisible;
+    } else {
+        context.visible = ancestorVisible;
+    }
+    const bool cascadeVisible = context.visible;
+
+    context.opacity = (viewRep && viewRep->properties().opacity.has_value())
+                              ? viewRep->effectiveOpacity()
+                              : getOpacity();
+
+    if (viewRep && viewRep->properties().pointSize.has_value()) {
+        context.defaultPointSize =
+                static_cast<unsigned char>(viewRep->effectivePointSize());
+    }
+    if (viewRep && viewRep->properties().lineWidth.has_value()) {
+        context.defaultLineWidth =
+                static_cast<unsigned char>(viewRep->effectiveLineWidth());
+        context.currentLineWidth = context.defaultLineWidth;
+    }
+    if (viewRep && viewRep->properties().renderMode.has_value()) {
+        auto rm = viewRep->effectiveRenderMode();
+        if (rm != ecvViewRepresentation::RenderMode::Inherit) {
+            context.meshRenderingMode =
+                    static_cast<MESH_RENDERING_MODE>(static_cast<int>(rm));
+        }
+    }
+    if (viewRep && viewRep->properties().normalScale.has_value()) {
+        context.normalScale = viewRep->effectiveNormalScale();
+    }
 
     if (!isFixedId()) {
         context.viewID = getViewId();
@@ -1489,6 +1658,10 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
             drawMeOnly(context);
 
+            if (viewRep && viewRep->isDirty()) {
+                viewRep->setDirty(false);
+            }
+
             // disable clipping planes (if any)
             if (useClipPlanes) {
                 toggleClipPlanes(context, false);
@@ -1499,7 +1672,11 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // hide or show entities
     {
         setHideShowType(context);
-        bool hasExist = ecvDisplayTools::HideShowEntities(context);
+        context.display = mergeDisplay(context.display, this);
+        bool hasExist = true;
+        if (context.display) {
+            hasExist = context.display->hideShowEntities(context);
+        }
         if (!context.forceRedraw && m_forceRedraw && !hasExist) {
             if (!isA(CV_TYPES::OBJECT) && !isA(CV_TYPES::HIERARCHY_OBJECT) &&
                 !isA(CV_TYPES::TRANS_BUFFER)) {
@@ -1512,36 +1689,53 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         }
     }
 
-    // draw name - container objects are not visible but can still show a name
-    if (m_showNameIn3D && !MACRO_EntityPicking(context)) {
+    // draw name - only when the object (or its parent hierarchy) is actually
+    // visible/enabled.  Container objects (folders) that are enabled but not
+    // "visible" in the geometric sense can still show a name, but objects
+    // whose visibility checkbox is unchecked, or whose parent folder is
+    // disabled, must not draw names.
+    // Guard with isDisplayedIn() to prevent accessing the wrong VTK pipeline
+    // when the object belongs to a secondary view but the primary redraws.
+    bool shouldDrawName = m_showNameIn3D && !MACRO_EntityPicking(context) &&
+                          isDisplayedIn(context.display) &&
+                          (m_visible || m_selected);
+    if (shouldDrawName) {
         if (MACRO_Draw3D(context)) {
-            // we have to comute the 2D position during the 3D pass!
-            ccBBox bBox = getBB_recursive(
-                    true);  // DGM: take the OpenGL features into account (as
-                            // some entities are purely 'GL'!)
+            ccBBox bBox = getBB_recursive(true);
             if (bBox.isValid()) {
                 ccGLCameraParameters camera;
-                ecvDisplayTools::GetGLCameraParameters(camera);
+                ecvGenericGLDisplay* camDisp =
+                        mergeDisplay(context.display, this);
+                if (camDisp) {
+                    camDisp->getGLCameraParameters(camera);
+                } else if (auto* ev = ecvViewManager::instance()
+                                              .getEffectiveView()) {
+                    ev->getGLCameraParameters(camera);
+                }
 
                 CCVector3 C = bBox.getCenter();
                 camera.project(C, m_nameIn3DPos);
             }
         } else if (MACRO_Draw2D(context) && MACRO_Foreground(context)) {
-            // then we can display the name during the 2D pass
             drawNameIn3D();
         }
-    } else {
-        // label2d name have been managed by itself
+    } else if (!shouldDrawName && isDisplayedIn(context.display)) {
         if (!isKindOf(CV_TYPES::LABEL_2D)) {
-            ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
-            ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                    WIDGETS_TYPE::WIDGET_RECTANGLE_2D, getName()));
+            WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getName());
+            wpTxt.context.display = mergeDisplay(context.display, this);
+            if (wpTxt.context.display)
+                wpTxt.context.display->removeWidgets(wpTxt);
+            WIDGETS_PARAMETER wpRect(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
+                                     getName());
+            wpRect.context.display = mergeDisplay(context.display, this);
+            if (wpRect.context.display)
+                wpRect.context.display->removeWidgets(wpRect);
         }
     }
 
     // draw entity's children
     for (auto child : m_children) {
+        context.visible = cascadeVisible;
         child->draw(context);
     }
 
@@ -1554,10 +1748,10 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
         // Check if Axes Grid is visible - if so, ALWAYS hide BoundingBox
         // (unconditionally, regardless of showBBOnSelected setting)
-        if (ecvDisplayTools::HasInstance()) {
+        if (ecvGenericGLDisplay* axesDisp =
+                    mergeDisplay(context.display, this)) {
             AxesGridProperties axesGridProps;
-            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
-                    context.viewID, axesGridProps);
+            axesDisp->getDataAxesGridProperties(context.viewID, axesGridProps);
             if (axesGridProps.visible) {
                 shouldShowBB =
                         false;  // Force hide BBox when axes grid is visible
@@ -1598,22 +1792,26 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 }
 
 void ccHObject::updateNameIn3DRecursive() {
-    if (nameShownIn3D()) {
-        ccBBox bBox = getBB_recursive(
-                true);  // DGM: take the OpenGL features into account (as some
-                        // entities are purely 'GL'!)
+    if (nameShownIn3D() && isEnabled() && (isVisible() || isSelected())) {
+        ecvGenericGLDisplay* disp = mergeDisplay(nullptr, this);
+
+        ccBBox bBox = getBB_recursive(true);
         if (bBox.isValid()) {
             ccGLCameraParameters camera;
-            ecvDisplayTools::GetGLCameraParameters(camera);
+            if (disp) {
+                disp->getGLCameraParameters(camera);
+            } else if (auto* ev =
+                               ecvViewManager::instance().getEffectiveView()) {
+                ev->getGLCameraParameters(camera);
+            }
 
             CCVector3 C = bBox.getCenter();
             camera.project(C, m_nameIn3DPos);
 
-            // clear history name 3D
-            ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, getName()));
+            WIDGETS_PARAMETER wp(WIDGETS_TYPE::WIDGET_T2D, getViewId());
+            wp.context.display = disp;
+            if (wp.context.display) wp.context.display->removeWidgets(wp);
 
-            // draw name in 3D
             drawNameIn3D();
         }
     }
@@ -1624,31 +1822,31 @@ void ccHObject::updateNameIn3DRecursive() {
 }
 
 void ccHObject::setHideShowType(CC_DRAW_CONTEXT& context) {
-    context.hideShowEntityType =
-            ecvDisplayTools::ConvertToEntityType(getClassID());
+    context.hideShowEntityType = convertClassToEntityType(getClassID());
 }
 
 ENTITY_TYPE ccHObject::getEntityType() const {
-    return ecvDisplayTools::ConvertToEntityType(getClassID());
+    return convertClassToEntityType(getClassID());
 }
 
 void ccHObject::setRemoveType(CC_DRAW_CONTEXT& context) {
-    context.removeEntityType =
-            ecvDisplayTools::ConvertToEntityType(getClassID());
+    context.removeEntityType = convertClassToEntityType(getClassID());
 }
 
 void ccHObject::hideBB(CC_DRAW_CONTEXT context) {
     context.hideShowEntityType = ENTITY_TYPE::ECV_SHAPE;
     context.viewID = QString("BBox-") + context.viewID;
     context.visible = false;
-    ecvDisplayTools::HideShowEntities(context);
+    context.display = mergeDisplay(context.display, this);
+    if (context.display) context.display->hideShowEntities(context);
 }
 
 void ccHObject::showBB(CC_DRAW_CONTEXT context) {
     context.hideShowEntityType = ENTITY_TYPE::ECV_SHAPE;
     context.viewID = QString("BBox-") + context.viewID;
     context.visible = true;
-    ecvDisplayTools::HideShowEntities(context);
+    context.display = mergeDisplay(context.display, this);
+    if (context.display) context.display->hideShowEntities(context);
 }
 
 ccHObject::GlobalBoundingBox ccHObject::getOwnGlobalBB(
@@ -1682,17 +1880,32 @@ ccHObject::GlobalBoundingBox ccHObject::getGlobalBB_recursive(
 }
 
 void ccHObject::hideObject_recursive(bool recursive) {
-    // hide obj recursively.
     std::vector<hideInfo> hdInfos;
     CC_DRAW_CONTEXT context;
     getTypeID_recursive(hdInfos, recursive);
     context.visible = false;
+    context.display = mergeDisplay(nullptr, this);
+
+    // Helper: propagate hideShowEntities to the primary display and, for
+    // unbound entities, to every registered view so actors don't remain
+    // visible in non-active windows.
+    auto hideInAllViews = [&](CC_DRAW_CONTEXT& ctx) {
+        if (ctx.display) ctx.display->hideShowEntities(ctx);
+        if (!getDisplay()) {
+            for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == ctx.display) continue;
+                CC_DRAW_CONTEXT vctx = ctx;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        }
+    };
+
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
 
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
-        // hide obj bbox
         hideBB(context);
         context.viewID = hdInfo.hideId;
 
@@ -1701,7 +1914,13 @@ void ccHObject::hideObject_recursive(bool recursive) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE ||
             hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
             context.viewID = hdInfo.hideId;
-            ecvDisplayTools::HideShowEntities(context);
+            hideInAllViews(context);
+            if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE) {
+                cc2DLabel* label = dynamic_cast<cc2DLabel*>(obj);
+                if (label) {
+                    label->clearLabel(true);
+                }
+            }
             continue;
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
@@ -1710,7 +1929,6 @@ void ccHObject::hideObject_recursive(bool recursive) {
                 continue;
             }
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH) {
-            // try hide primitives
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {
                 prim->hideShowDrawings(context);
@@ -1723,10 +1941,21 @@ void ccHObject::hideObject_recursive(bool recursive) {
                 }
             }
             if (prim) continue;
+        } else if (hdInfo.hideType == ENTITY_TYPE::ECV_OCTREE ||
+                   hdInfo.hideType == ENTITY_TYPE::ECV_KDTREE) {
+            ccOctreeProxy* proxy = ccHObjectCaster::ToOctreeProxy(obj);
+            if (proxy && proxy->getOctree()) {
+                proxy->setOctreeVisibale(false);
+                CC_DRAW_CONTEXT octCtx = context;
+                octCtx.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+                octCtx.forceRedraw = true;
+                proxy->getOctree()->draw(octCtx);
+            }
+            continue;
         }
 
         context.viewID = hdInfo.hideId;
-        ecvDisplayTools::HideShowEntities(context);
+        hideInAllViews(context);
     }
 }
 
@@ -1735,11 +1964,35 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
     CC_DRAW_CONTEXT context;
     getTypeID_recursive(hdInfos, recursive);
     context.visible = visible;
+    context.display = mergeDisplay(nullptr, this);
     for (const hideInfo& hdInfo : hdInfos) {
         if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
+
+        if ((hdInfo.hideType == ENTITY_TYPE::ECV_OCTREE ||
+             hdInfo.hideType == ENTITY_TYPE::ECV_KDTREE)) {
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            ccOctreeProxy* proxy = ccHObjectCaster::ToOctreeProxy(obj);
+            if (proxy && proxy->getOctree()) {
+                proxy->setOctreeVisibale(visible);
+                CC_DRAW_CONTEXT octCtx = context;
+                octCtx.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND;
+                octCtx.forceRedraw = true;
+                proxy->getOctree()->draw(octCtx);
+            }
+            continue;
+        }
+
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
-        ecvDisplayTools::HideShowEntities(context);
+        if (context.display) context.display->hideShowEntities(context);
+        if (!getDisplay()) {
+            for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == context.display) continue;
+                CC_DRAW_CONTEXT vctx = context;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        }
 
         if (!visible) {
             hideBB(context);
@@ -1767,7 +2020,15 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
 
 void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
-    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+    if (m_currentDisplay) {
+        m_currentDisplay->redraw(only2D, forceRedraw);
+        auto* effective = ecvViewManager::instance().getEffectiveView();
+        if (effective && effective != m_currentDisplay) {
+            ecvRedrawScope scope(only2D, forceRedraw);
+        }
+    } else {
+        ecvRedrawScope scope(only2D, forceRedraw);
+    }
 }
 
 struct HObjectDisplayState : ccDrawableObject::DisplayState {
@@ -1803,4 +2064,23 @@ void ccHObject::popDisplayState(bool apply /*=true*/) {
         }
         m_displayStateStack.pop_back();
     }
+}
+
+void ccHObject::removeFromDisplay_recursive(
+        const ecvGenericGLDisplay* display) {
+    removeFromDisplay(display);
+    for (auto child : m_children) {
+        child->removeFromDisplay_recursive(display);
+    }
+}
+
+bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
+    if (display == nullptr) return true;
+
+    if (m_currentDisplay == nullptr) {
+        return true;
+    }
+    if (m_currentDisplay == display) return true;
+
+    return display->acceptsBoundEntitiesFrom(m_currentDisplay);
 }

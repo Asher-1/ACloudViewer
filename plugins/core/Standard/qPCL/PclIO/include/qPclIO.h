@@ -16,7 +16,7 @@
 class qPclIO : public QObject, public ccIOPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qPclIO" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qPclIO" FILE
                           "../info.json")
 
 public:

@@ -26,7 +26,8 @@
  *
  * Provides a comprehensive set of tools for 3D rendering, including
  * coordinate transformations, projection matrices, and text rendering.
- * This class uses the singleton pattern for global access.
+ * This class provides shared math and projection helpers; the live instance
+ * is owned by ecvViewManager (see GetInstance()).
  */
 class CV_DB_LIB_API ecvGenericDisplayTools : public cloudViewer::CVToolbox {
 public:
@@ -36,16 +37,9 @@ public:
     virtual ~ecvGenericDisplayTools() {}
 
     /**
-     * @brief Get the singleton instance
-     * @return Pointer to the singleton instance
+     * @brief Active display tools base (same as ecvViewManager::displayTools())
      */
     static ecvGenericDisplayTools* GetInstance();
-
-    /**
-     * @brief Set the singleton instance
-     * @param tool Pointer to the display tools instance
-     */
-    static void SetInstance(ecvGenericDisplayTools* tool);
 
 public:
     /**
@@ -455,10 +449,9 @@ public:  // GLU equivalent methods
                         const int* viewport,
                         Vector3Tpl<oType>& output2D,
                         bool* inFrustum = nullptr) {
-        if (GetInstance() && !GetPerspectiveState()) {
-            ToDisplayPoint<iType, oType>(input3D, output2D);
-            return true;
-        }
+        // Always use matrix math for multi-view correctness.
+        // The old ToDisplayPoint shortcut for orthographic mode used
+        // the singleton renderer which is wrong in multi-window setups.
 
         // Modelview transform
         Tuple4Tpl<oType> Pm;
@@ -683,10 +676,9 @@ public:  // GLU equivalent methods
                           const oType* projection,
                           const int* viewport,
                           Vector3Tpl<oType>& output3D) {
-        if (GetInstance() && !GetPerspectiveState()) {
-            ToWorldPoint<iType, oType>(input2D, output3D);
-            return true;
-        }
+        // Always use matrix math for multi-view correctness.
+        // The old ToWorldPoint shortcut for orthographic mode used
+        // the singleton renderer which is wrong in multi-window setups.
 
         // compute projection x modelview
         ccGLMatrixTpl<oType> A = ccGLMatrixTpl<oType>(projection) *

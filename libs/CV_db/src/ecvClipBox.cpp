@@ -9,10 +9,11 @@
 
 #include "ecvCone.h"
 #include "ecvCylinder.h"
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
 #include "ecvHObjectCaster.h"
 #include "ecvSphere.h"
 #include "ecvTorus.h"
+#include "ecvViewManager.h"
 
 // system
 #include <cassert>
@@ -321,15 +322,31 @@ void ccClipBox::releaseAllInterators() {
     QStringList removeViewIds;
     getInteractorIds(removeViewIds);
 
-    ecvDisplayTools::RemoveEntities(removeViewIds, ENTITY_TYPE::ECV_MESH);
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.display = view;
+    ctx.removeEntityType = ENTITY_TYPE::ECV_MESH;
+    for (const QString& id : removeViewIds) {
+        ctx.removeViewID = id;
+        view->removeEntities(ctx);
+    }
 }
 
 void ccClipBox::hideShowAllInterators(bool visibility) {
     QStringList removeViewIds;
     getInteractorIds(removeViewIds);
 
-    ecvDisplayTools::HideShowEntities(removeViewIds, ENTITY_TYPE::ECV_MESH,
-                                      visibility);
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.display = view;
+    ctx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
+    ctx.visible = visibility;
+    for (const QString& id : removeViewIds) {
+        ctx.viewID = id;
+        view->hideShowEntities(ctx);
+    }
 }
 
 void ccClipBox::getInteractorIds(QStringList& removeViewIds) {
@@ -728,7 +745,7 @@ void ccClipBox::drawMeOnly(CC_DRAW_CONTEXT& context) {
         context.viewID = this->getViewId();
         context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
         context.removeViewID = QString("BBox-") + context.viewID;
-        ecvDisplayTools::RemoveEntities(context);
+        if (context.display) context.display->removeEntities(context);
     }
 
     if (!m_selected) {

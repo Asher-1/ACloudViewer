@@ -8,12 +8,15 @@
 #include "ecvCameraSensor.h"
 
 #include <cmath>
+#include <cstring>
 
 // LOCAL
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvImage.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
+#include "ecvRedrawScope.h"
+#include "ecvViewManager.h"
 
 // CV_CORE_LIB
 #include <ConjugateGradient.h>
@@ -23,6 +26,39 @@
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
+
+#include "ecvGenericGLDisplay.h"
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+
+    for (auto* view : ecvViewManager::instance().getAllViews()) {
+        if (!view) continue;
+        context.display = view;
+        view->removeEntities(context);
+    }
+}
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj) return;
+    CC_DRAW_CONTEXT context;
+    context.visible = visible;
+    context.viewID = obj->getViewId();
+    context.hideShowEntityType = obj->getEntityType();
+
+    for (auto* view : ecvViewManager::instance().getAllViews()) {
+        if (!view) continue;
+        context.display = view;
+        view->hideShowEntities(context);
+    }
+}
+
+}  // namespace
 
 ccCameraSensor::IntrinsicParameters::IntrinsicParameters()
     : vertFocal_pix(1.0f),
@@ -309,27 +345,28 @@ void ccCameraSensor::setVertFocal_pix(float vertFocal_pix) {
     assert(vertFocal_pix > 0);
     m_intrinsicParams.vertFocal_pix = vertFocal_pix;
 
-    // old frustum is not valid anymore!
     m_frustumInfos.isComputed = false;
-    // same thing for the projection matrix
     m_projectionMatrixIsValid = false;
+    m_geometryDirty = true;
 }
 
 void ccCameraSensor::setVerticalFov_rad(float fov_rad) {
     assert(fov_rad > 0);
     m_intrinsicParams.vFOV_rad = fov_rad;
+    m_geometryDirty = true;
 }
 
 void ccCameraSensor::setIntrinsicParameters(const IntrinsicParameters& params) {
     m_intrinsicParams = params;
-    // old frustum is not valid anymore!
     m_frustumInfos.isComputed = false;
-    // same thing for the projection matrix
     m_projectionMatrixIsValid = false;
+    m_geometryDirty = true;
 }
 
 bool ccCameraSensor::applyViewport() {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    ecvGenericGLDisplay* view = getDisplay();
+    if (!view) view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !view->asWidget()) {
         CVLog::Warning(
                 "[ccCameraSensor::applyViewport] No associated display!");
         return false;
@@ -347,7 +384,7 @@ bool ccCameraSensor::applyViewport() {
 
     float fov_deg = cloudViewer::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
 
-    ecvViewportParameters viewParams = ecvDisplayTools::GetViewportParameters();
+    ecvViewportParameters viewParams = view->getViewportParameters();
     viewParams.fov_deg = fov_deg;
     viewParams.zFar = static_cast<double>(m_intrinsicParams.zFar_mm);
     viewParams.zNear = static_cast<double>(m_intrinsicParams.zNear_mm);
@@ -382,8 +419,8 @@ bool ccCameraSensor::applyViewport() {
     viewParams.focal = CCVector3d::fromArray(focal3D);
     viewParams.setPivotPoint(viewParams.focal, true);
 
-    ecvDisplayTools::SetViewportParameters(viewParams);
-    ecvDisplayTools::UpdateScreen();
+    view->setViewportParameters(viewParams);
+    { ecvRedrawScope scope; }
 
     return true;
 }
@@ -1474,152 +1511,107 @@ void ccCameraSensor::updateData() {
 void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!MACRO_Draw3D(context)) return;
 
-    // we draw a little 3d representation of the sensor and some of its
-    // attributes
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!context.display || !context.display->asWidget()) {
         return;
     }
 
-    // build-up the normal representation own 'context'
     CC_DRAW_CONTEXT cameraContext = context;
-    // we must remove the 'push name flag' so that the primitives don't push
-    // their own!
     cameraContext.drawingFlags &= (~CC_ENTITY_PICKING);
     cameraContext.currentLineWidth = 1;
     cameraContext.defaultPolylineColor = getFrameColor();
     cameraContext.defaultMeshColor = getPlaneColor();
     cameraContext.opacity = 0.2f;
+
     ccIndexedTransformation sensorPos;
     if (!getAbsoluteTransformation(sensorPos, getActiveIndex())) {
-        // no visible position for this index!
         return;
     }
 
-    // update drawing data
-    updateData();
+    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
+                                        16 * sizeof(double)) != 0;
 
-    // frustum
-    if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes) {
-        // always compute corners
-        computeFrustumCorners();
+    if (m_geometryDirty || transformChanged) {
+        updateData();
 
-        if (m_frustumInfos.frustumCorners &&
-            m_frustumInfos.frustumCorners->size() >= 8) {
-            // frustum area (lines)
-            if (m_frustumInfos.drawFrustum) {
-                const CCVector3* P0 =
-                        m_frustumInfos.frustumCorners->getPoint(0);
-                const CCVector3* P1 =
-                        m_frustumInfos.frustumCorners->getPoint(1);
-                const CCVector3* P2 =
-                        m_frustumInfos.frustumCorners->getPoint(2);
-                const CCVector3* P3 =
-                        m_frustumInfos.frustumCorners->getPoint(3);
-                const CCVector3* P4 =
-                        m_frustumInfos.frustumCorners->getPoint(4);
-                const CCVector3* P5 =
-                        m_frustumInfos.frustumCorners->getPoint(5);
-                const CCVector3* P6 =
-                        m_frustumInfos.frustumCorners->getPoint(6);
-                const CCVector3* P7 =
-                        m_frustumInfos.frustumCorners->getPoint(7);
+        if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes) {
+            computeFrustumCorners();
 
-                cameraContext.currentLineWidth = 2;
+            if (m_frustumInfos.frustumCorners &&
+                m_frustumInfos.frustumCorners->size() >= 8) {
+                if (m_frustumInfos.drawFrustum) {
+                    cameraContext.currentLineWidth = 2;
 
-                m_sideLines.points_.push_back(CCVector3d::fromArray(*P0));  // 5
-                m_sideLines.points_.push_back(CCVector3d::fromArray(*P1));  // 6
-                m_sideLines.points_.push_back(CCVector3d::fromArray(*P2));  // 7
-                m_sideLines.points_.push_back(CCVector3d::fromArray(*P3));  // 8
-                m_sideLines.points_.push_back(CCVector3d::fromArray(*P4));  // 9
-                m_sideLines.points_.push_back(
-                        CCVector3d::fromArray(*P5));  // 10
-                m_sideLines.points_.push_back(
-                        CCVector3d::fromArray(*P6));  // 11
-                m_sideLines.points_.push_back(
-                        CCVector3d::fromArray(*P7));  // 12
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 6));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 8));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 7));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 5));
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 8));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 10));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 9));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 7));
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 10));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 12));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 11));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 9));
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 12));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 6));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 5));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 11));
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 5));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 7));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 9));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 11));
-
-                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 12));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 10));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 8));
-                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 6));
-            }
-
-            // frustum area (planes)
-            if (m_frustumInfos.drawSidePlanes) {
-                if (!m_frustumInfos.frustumHull &&
-                    m_frustumInfos.initFrustumHull()) {
-                    if (m_frustumInfos.isComputed) {
-                        m_frustumInfos.frustumCorners->applyRigidTransformation(
-                                sensorPos);
+                    for (unsigned i = 0; i < 8; ++i) {
+                        m_sideLines.points_.push_back(CCVector3d::fromArray(
+                                *m_frustumInfos.frustumCorners->getPoint(i)));
                     }
 
-                    // set the rigth display (just to be sure)
-                    m_frustumInfos.frustumHull->setTempColor(m_color);
-                    m_frustumInfos.frustumHull->showWired(false);
-                    m_frustumInfos.frustumHull->enableStippling(true);
-                    m_frustumInfos.frustumHull->setOpacity(
-                            cameraContext.opacity);
-                    cameraContext.defaultMeshColor = m_color;
-                    cameraContext.meshRenderingMode =
-                            MESH_RENDERING_MODE::ECV_SURFACE_MODE;
-                    cameraContext.viewID =
-                            m_frustumInfos.frustumHull->getViewId();
-                    ecvDisplayTools::Draw(cameraContext,
-                                          m_frustumInfos.frustumHull);
+                    const int base = 5;
+                    const int faces[6][4] = {{0, 1, 3, 2}, {2, 3, 5, 4},
+                                             {4, 5, 7, 6}, {6, 7, 1, 0},
+                                             {6, 0, 2, 4}, {1, 7, 5, 3}};
+                    for (const auto& f : faces) {
+                        m_sideLines.lines_.push_back(
+                                Eigen::Vector2i(base + f[0], base + f[1]));
+                        m_sideLines.lines_.push_back(
+                                Eigen::Vector2i(base + f[1], base + f[2]));
+                        m_sideLines.lines_.push_back(
+                                Eigen::Vector2i(base + f[2], base + f[3]));
+                        m_sideLines.lines_.push_back(
+                                Eigen::Vector2i(base + f[3], base + f[0]));
+                    }
+                }
+
+                if (m_frustumInfos.drawSidePlanes) {
+                    if (!m_frustumInfos.frustumHull &&
+                        m_frustumInfos.initFrustumHull()) {
+                        if (m_frustumInfos.isComputed) {
+                            m_frustumInfos.frustumCorners
+                                    ->applyRigidTransformation(sensorPos);
+                        }
+                        m_frustumInfos.frustumHull->setTempColor(m_color);
+                        m_frustumInfos.frustumHull->showWired(false);
+                        m_frustumInfos.frustumHull->enableStippling(true);
+                        m_frustumInfos.frustumHull->setOpacity(
+                                cameraContext.opacity);
+                        cameraContext.defaultMeshColor = m_color;
+                        cameraContext.meshRenderingMode =
+                                MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+                        cameraContext.viewID =
+                                m_frustumInfos.frustumHull->getViewId();
+                        context.display->draw(cameraContext,
+                                              m_frustumInfos.frustumHull);
+                    }
                 }
             }
         }
+
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        m_nearPlane.Transform(transformation);
+        m_sideLines.Transform(transformation);
+        m_arrow.Transform(transformation);
+        m_axis.Transform(transformation);
+
+        std::memcpy(m_cachedTransformData, sensorPos.data(),
+                    16 * sizeof(double));
+        m_geometryDirty = false;
     }
 
-    // frustum area (planes)
+    m_nearPlane.setTempColor(getPlaneColor());
+    m_sideLines.setTempColor(getFrameColor());
+    m_arrow.setTempColor(getFrameColor());
+
     if (m_frustumInfos.frustumHull) {
         cameraContext.visible =
                 context.visible && m_frustumInfos.drawSidePlanes;
         cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
-        ecvDisplayTools::HideShowEntities(cameraContext);
-    }
-
-    // tranformation
-    {
-        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
-        m_nearPlane.Transform(transformation);
-        m_nearPlane.setTempColor(getPlaneColor());
-        m_sideLines.Transform(transformation);
-        m_sideLines.setTempColor(getFrameColor());
-        m_arrow.Transform(transformation);
-        m_arrow.setTempColor(getFrameColor());
-        m_axis.Transform(transformation);
+        context.display->hideShowEntities(cameraContext);
     }
 
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
     cameraContext.defaultMeshColor = getPlaneColor();
-    ecvDisplayTools::Draw(cameraContext, this);
+    context.display->draw(cameraContext, this);
 }
 
 void ccCameraSensor::clearDrawings() {
@@ -1627,17 +1619,18 @@ void ccCameraSensor::clearDrawings() {
         CC_DRAW_CONTEXT context;
         context.removeEntityType = ENTITY_TYPE::ECV_MESH;
         context.removeViewID = m_frustumInfos.frustumHull->getViewId();
-        ecvDisplayTools::RemoveEntities(context);
+        context.display = const_cast<ecvGenericGLDisplay*>(getDisplay());
+        if (context.display) context.display->removeEntities(context);
     }
-    ecvDisplayTools::RemoveEntities(this);
+    removeObjectFromDisplays(this);
 }
 
 void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context) {
     context.viewID = this->getViewId();
-    ecvDisplayTools::HideShowEntities(context);
+    if (context.display) context.display->hideShowEntities(context);
 
     if (m_frustumInfos.frustumHull) {
-        ecvDisplayTools::HideShowEntities(
+        hideShowObjectOnDisplays(
                 m_frustumInfos.frustumHull,
                 context.visible && m_frustumInfos.drawSidePlanes);
     }

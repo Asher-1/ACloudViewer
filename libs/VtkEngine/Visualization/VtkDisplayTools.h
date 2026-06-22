@@ -36,6 +36,7 @@ class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
 class QMainWindow;
+class vtkGLView;
 
 namespace cloudViewer {
 namespace geometry {
@@ -48,6 +49,16 @@ namespace Visualization {
 /// @class VtkDisplayTools
 /// @brief Display tools bridging CloudViewer (CC) entities to VTK 3D and 2D
 /// viewers. Manages QVTKWidget, VtkVis (3D), and ImageVis (2D) visualizers.
+///
+/// Phase M classification (2026-04-30):
+///   Category A — Primary-view-only (ELIMINATE: used only because this class
+///                doubles as the "primary view"; migrate to per-view vtkGLView)
+///   Category B — Shared engine service (KEEP: CC→VTK translation, actor
+///                lookup; parameterize to accept explicit VtkVis/Widget args)
+///   Category C — Per-view functionality (MOVE to vtkGLView: methods that
+///                operate on a single view's pipeline)
+///
+/// See docs/user-guide/multi-window-refactor-roadmap-Vtk-vs-CC.md §10
 class QVTK_ENGINE_LIB_API VtkDisplayTools : public ecvDisplayTools {
 public:
     VtkDisplayTools() = default;
@@ -55,6 +66,9 @@ public:
     virtual ~VtkDisplayTools() override;
 
 public:  // inherit from ecvDisplayTools
+    // ===== Category C: Per-view accessors (MOVE to vtkGLView) =====
+
+    /// [C] In Phase M, each vtkGLView returns its own VtkVis/ImageVis.
     inline virtual ecvGenericVisualizer3D* getVisualizer3D() override {
         return get3DViewer();
     }
@@ -62,8 +76,7 @@ public:  // inherit from ecvDisplayTools
         return get2DViewer();
     }
 
-    /** @return Pointer to the QVTK widget
-     */
+    /// [C] Active widget accessor.
     inline QVTKWidgetCustom* getQVtkWidget() { return this->m_vtkWidget; }
 
     /** @param input2D 2D display coordinates
@@ -128,10 +141,14 @@ public:  // inherit from ecvDisplayTools
      *  @param obj Entity to check
      *  @return true if entity needs redraw
      */
-    bool checkEntityNeedUpdate(std::string& viewID, const ccHObject* obj);
+    bool checkEntityNeedUpdate(VtkVis* vis,
+                               std::string& viewID,
+                               const ccHObject* obj);
 
     virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                           const ccBBox* bbox) override;
+    virtual void drawBBoxBatch(const CC_DRAW_CONTEXT& context,
+                               const std::vector<ccBBox>& boxes) override;
 
     virtual void drawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                   const ecvOrientedBBox* obb) override;
@@ -164,7 +181,8 @@ public:  // inherit from ecvDisplayTools
 
     inline virtual void resetCameraViewpoint(
             const std::string& viewID) override {
-        m_visualizer3D->resetCameraViewpoint(viewID);
+        VtkVis* vis = findVisByActorId(viewID);
+        if (vis) vis->resetCameraViewpoint(viewID);
     }
 
     inline virtual void setBackgroundColor(
@@ -189,7 +207,7 @@ public:  // inherit from ecvDisplayTools
     inline virtual void rotateWithAxis(const CCVector2i& pos,
                                        const CCVector3d& axis,
                                        double angle,
-                                       int viewport = 0) override {
+                                       int viewport) override {
         m_visualizer3D->rotateWithAxis(pos, axis, angle, viewport);
     }
 
@@ -436,11 +454,24 @@ public:
     inline VtkVis* get3DViewer() { return m_visualizer3D.get(); }
     inline ImageVis* get2DViewer() { return m_visualizer2D.get(); }
 
+    // ===== Engine-to-view binding =====
+
+    /// Bind the engine's active VTK pipeline to an vtkGLView's VtkVis + widget.
+    /// Called automatically when the active view changes
+    /// (rebindToolsToActiveView).
+    void switchActiveView(VtkVisPtr vis, QVTKWidgetCustom* widget);
+
+    // ===== Category C: Per-view picking/rendering (MOVE to vtkGLView) =====
+
+    /// [C] 2D label picking — needs that view's widget.
     virtual QString pick2DLabel(int x, int y) override;
 
+    /// [C] 3D item picking — needs that view's VtkVis.
     virtual QString pick3DItem(int x = -1, int y = -1) override;
+    /// [C] Object picking — needs that view's VtkVis.
     virtual QString pickObject(double x = -1, double y = -1) override;
 
+    /// [C] Render to image — needs that view's pipeline.
     virtual QImage renderToImage(int zoomFactor = 1,
                                  bool renderOverlayItems = false,
                                  bool silent = false,
@@ -562,26 +593,73 @@ public:
                                    int viewport = 0) const override;
 
 private:
+    // ===== Category B: Shared engine service (KEEP, parameterize) =====
+
+    /// [B] CC→VTK draw methods. Already accept CC_DRAW_CONTEXT with
+    /// context.display for resolveVisualizer. Parameterize to accept
+    /// explicit VtkVis* in Phase M1.2.
     void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud* ecvCloud);
     void drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);
     void drawPolygon(const CC_DRAW_CONTEXT& context, ccPolyline* polyline);
     void drawLines(const CC_DRAW_CONTEXT& context,
                    cloudViewer::geometry::LineSet* lineset);
-    void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
     void drawSensor(const CC_DRAW_CONTEXT& context, ccSensor* sensor);
 
+    /// [B] VTK actor color update.
     bool updateEntityColor(const CC_DRAW_CONTEXT& context, ccHObject* ent);
 
+    /// [B→simplify] Resolve VtkVis for a display context. In Phase M,
+    /// simplify to always require a valid vtkGLView* (no null/this fallback).
+    VtkVis* resolveVisualizer(ecvGenericGLDisplay* display) const;
+
+    /// [B] Cross-view actor lookup. Move to ecvViewManager or standalone.
+    VtkVis* findVisByActorId(const std::string& viewId) const;
+
+    /// Like findVisByActorId but falls back to the active view's VtkVis
+    /// so property-setting calls always have a target to store values.
+    VtkVis* findVisByActorIdOrActive(const std::string& viewId) const;
+
+    // ===== Category C: Per-view (MOVE to vtkGLView in Phase M1.3) =====
+
+    /// [C] 2D image drawing — needs that view's ImageVis.
+    void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
+
+    // ===== Category A: Primary render guards (ELIMINATE) =====
+
+    /// [A] Temporarily swap singleton pipeline to primary for legacy
+    // Phase M4: beginPrimaryRender/endPrimaryRender removed (were no-ops).
+
 protected:
+    // ===== Current pipeline pointers (Category B/C in Phase M) =====
+
+    /// [B→C] Active VTK widget. In Phase M, each vtkGLView owns its own.
+    /// This becomes the "engine's current target" until M3 removes it.
     QVTKWidgetCustom* m_vtkWidget = nullptr;
 
+    /// The original widget created in registerVisualizer(), orphaned after
+    /// switchActiveView(). Stored for proper cleanup in the destructor.
+    QVTKWidgetCustom* m_engineOwnedWidget = nullptr;
+
+    /// [B→C] 2D viewer. In Phase M, per-view ImageVis on vtkGLView.
     ImageVisPtr m_visualizer2D = nullptr;
 
+    /// [B→C] 3D viewer. In Phase M, per-view VtkVis on vtkGLView.
     VtkVisPtr m_visualizer3D = nullptr;
 
-    /** @param widget Main window for VTK widget
-     *  @param stereoMode Whether to enable stereo rendering
-     */
+    // ===== Category A: Primary-view-only members (ELIMINATE) =====
+
+    // Phase M3: m_renderGuard* members removed (beginPrimaryRender is no-op)
+    // Phase M4: m_scopedVisSwapDepth removed (ScopedHotZoneRender deleted)
+
+    /// [A] Pending text background for scoped rendering.
+    struct PendingTextBg {
+        bool valid = false;
+        double r = 0, g = 0, b = 0, a = 0;
+    } m_pendingTextBg;
+
+    /// Creates the engine's base QVTKWidgetCustom + VtkVis infrastructure.
+    /// In M3, vtkGLView creates its own per-view pipeline; this provides
+    /// the shared engine foundation.
     virtual void registerVisualizer(QMainWindow* widget,
                                     bool stereoMode = false) override;
 };

@@ -80,8 +80,8 @@ public:
     ccIndexedTransformation inverse() const;
 
     // inherited from ccGLMatrix
-    virtual bool toAsciiFile(QString filename, int precision = 12) const;
-    virtual bool fromAsciiFile(QString filename);
+    bool toAsciiFile(QString filename, int precision = 12) const override;
+    bool fromAsciiFile(QString filename) override;
 
     // inherited from ccSerializableObject
     bool isSerializable() const override { return true; }

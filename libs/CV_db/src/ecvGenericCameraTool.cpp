@@ -7,7 +7,8 @@
 
 #include "ecvGenericCameraTool.h"
 
-#include "ecvDisplayTools.h"
+#include "ecvGenericGLDisplay.h"
+#include "ecvViewManager.h"
 
 // Qt includes.
 #include <QDebug>
@@ -33,7 +34,10 @@ ecvGenericCameraTool::~ecvGenericCameraTool() {}
 
 //-----------------------------------------------------------------------------
 void ecvGenericCameraTool::setAutoPickPivotAtCenter(bool state) {
-    ecvDisplayTools::SetAutoPickPivotAtCenter(state);
+    if (ecvGenericGLDisplay* v =
+                ecvViewManager::instance().getEffectiveView()) {
+        v->setAutoPickPivotAtCenter(state);
+    }
 }
 
 //-----------------------------------------------------------------------------

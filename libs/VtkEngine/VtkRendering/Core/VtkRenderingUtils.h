@@ -11,10 +11,10 @@
  *  @brief VTK actor creation, geometric primitives, and poly data utilities
  */
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkCellArray.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
-#include <vtkLODActor.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>
@@ -53,7 +53,7 @@ namespace VtkRendering {
 /// @param use_scalars Use scalar colors if present
 QVTK_ENGINE_LIB_API void CreateActorFromVTKDataSet(
         const vtkSmartPointer<vtkDataSet>& data,
-        vtkSmartPointer<vtkLODActor>& actor,
+        vtkSmartPointer<vtkPVLODActor>& actor,
         bool use_scalars = true);
 
 /// @param data Input VTK dataset

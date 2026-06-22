@@ -14,7 +14,8 @@
 
 #include <CVLog.h>
 #include <Visualization/VtkVis.h>
-#include <ecvDisplayTools.h>
+#include <Visualization/vtkGLView.h>
+#include <ecvViewManager.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 
@@ -22,6 +23,17 @@
 #include "cvDistanceTool.h"
 #include "cvGenericMeasurementTool.h"
 #include "cvProtractorTool.h"
+
+namespace {
+ecvGenericVisualizer3D* visualizerFromEffectiveView() {
+    ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) return nullptr;
+    if (auto* glv = dynamic_cast<vtkGLView*>(view)) {
+        return glv->getVisualizer3D();
+    }
+    return nullptr;
+}
+}  // namespace
 
 VtkMeasurementTools::VtkMeasurementTools(MeasurementType type)
     : ecvGenericMeasurementTools(type), m_viewer(nullptr), m_tool(nullptr) {
@@ -99,8 +111,7 @@ void VtkMeasurementTools::setVisualizer(ecvGenericVisualizer3D* viewer) {
 bool VtkMeasurementTools::setInputData(ccHObject* entity) {
     m_associatedEntity = entity;
     if (!m_viewer) {
-        // Try to get viewer from display tools
-        ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+        ecvGenericVisualizer3D* viewer = visualizerFromEffectiveView();
         if (viewer) {
             setVisualizer(viewer);
         }
@@ -113,8 +124,7 @@ bool VtkMeasurementTools::setInputData(ccHObject* entity) {
 
 bool VtkMeasurementTools::start() {
     if (!m_viewer) {
-        // Try to get viewer from display tools
-        ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+        ecvGenericVisualizer3D* viewer = visualizerFromEffectiveView();
         if (viewer) {
             setVisualizer(viewer);
         }

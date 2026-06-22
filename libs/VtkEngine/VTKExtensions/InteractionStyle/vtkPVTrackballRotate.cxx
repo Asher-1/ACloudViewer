@@ -22,6 +22,7 @@
 #include "vtkRenderer.h"
 #include "vtkTransform.h"
 
+#include <cmath>
 #include <cstdlib>
 
 vtkStandardNewMacro(vtkPVTrackballRotate);
@@ -30,6 +31,10 @@ vtkStandardNewMacro(vtkPVTrackballRotate);
 vtkPVTrackballRotate::vtkPVTrackballRotate()
 {
   this->KeyCode = 0;
+  this->AxisLocked = false;
+  this->LockedAxis[0] = 0.0;
+  this->LockedAxis[1] = 0.0;
+  this->LockedAxis[2] = 1.0;
 }
 
 //-------------------------------------------------------------------------
@@ -85,7 +90,13 @@ void vtkPVTrackballRotate::OnMouseMove(
   camera->OrthogonalizeViewUp();
   int* size = ren->GetSize();
 
-  if (this->GetKeyCode() == 'x' || this->GetKeyCode() == 'y' || this->GetKeyCode() == 'z' ||
+  if (this->AxisLocked)
+  {
+    bool use_dx = std::abs(dx) > std::abs(dy);
+    double delta = 360 * this->RotationFactor * (use_dx ? dx * 1.0 / size[0] : dy * -1.0 / size[1]);
+    transform->RotateWXYZ(delta, this->LockedAxis[0], this->LockedAxis[1], this->LockedAxis[2]);
+  }
+  else if (this->GetKeyCode() == 'x' || this->GetKeyCode() == 'y' || this->GetKeyCode() == 'z' ||
     this->GetKeyCode() == 'X' || this->GetKeyCode() == 'Y' || this->GetKeyCode() == 'Z')
   {
     bool use_dx = std::abs(dx) > std::abs(dy);
@@ -158,9 +169,37 @@ void vtkPVTrackballRotate::OnKeyDown(vtkRenderWindowInteractor* iren)
 }
 
 //-------------------------------------------------------------------------
+void vtkPVTrackballRotate::SetLockedAxis(double x, double y, double z)
+{
+  double norm = std::sqrt(x*x + y*y + z*z);
+  if (norm < 1.0e-12)
+  {
+    return;
+  }
+  this->LockedAxis[0] = x / norm;
+  this->LockedAxis[1] = y / norm;
+  this->LockedAxis[2] = z / norm;
+  this->AxisLocked = true;
+  this->Modified();
+}
+
+//-------------------------------------------------------------------------
+void vtkPVTrackballRotate::ClearLockedAxis()
+{
+  this->AxisLocked = false;
+  this->Modified();
+}
+
+//-------------------------------------------------------------------------
 void vtkPVTrackballRotate::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Center: " << this->Center[0] << ", " << this->Center[1] << ", "
      << this->Center[2] << endl;
+  os << indent << "AxisLocked: " << this->AxisLocked << endl;
+  if (this->AxisLocked)
+  {
+    os << indent << "LockedAxis: " << this->LockedAxis[0] << ", "
+       << this->LockedAxis[1] << ", " << this->LockedAxis[2] << endl;
+  }
 }

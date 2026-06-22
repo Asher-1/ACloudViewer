@@ -10,8 +10,15 @@
 // CV_CORE_LIB
 #include <CVPlatform.h>
 
+// CV_DB_LIB
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
+#include <ecvViewportParameters.h>
+
 // Qt
 #include <QCoreApplication>
+#include <QRect>
 
 // system
 #include <assert.h>
@@ -43,37 +50,50 @@ void ccContourExtractorDlg::init() {
         // CreateGLWindow(m_glWindow, glWidget, false, true);
         // assert(m_glWindow && glWidget);
 
-        ecvGui::ParamStruct params = ecvDisplayTools::GetDisplayParameters();
-        // black (text) & white (background) display by default
-        params.backgroundCol = ecvColor::white;
-        params.textDefaultCol = ecvColor::black;
-        params.pointsDefaultCol = ecvColor::black;
-        params.drawBackgroundGradient = false;
-        params.decimateMeshOnMove = false;
-        params.displayCross = false;
-        params.colorScaleUseShader = false;
-        ecvDisplayTools::SetDisplayParameters(params);
-        ecvDisplayTools::SetPerspectiveState(false, true);
-        ecvDisplayTools::SetInteractionMode(
-                ecvDisplayTools::INTERACT_PAN |
-                ecvDisplayTools::INTERACT_ZOOM_CAMERA |
-                ecvDisplayTools::INTERACT_CLICKABLE_ITEMS);
-        ecvDisplayTools::SetPickingMode(ecvDisplayTools::NO_PICKING);
-        ecvDisplayTools::DisplayOverlayEntities(true);
-        viewFrame->setLayout(new QHBoxLayout);
-        viewFrame->layout()->addWidget(ecvDisplayTools::GetMainWindow());
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            ecvGui::ParamStruct params = view->getDisplayParameters();
+            // black (text) & white (background) display by default
+            params.backgroundCol = ecvColor::white;
+            params.textDefaultCol = ecvColor::black;
+            params.pointsDefaultCol = ecvColor::black;
+            params.drawBackgroundGradient = false;
+            params.decimateMeshOnMove = false;
+            params.displayCross = false;
+            params.colorScaleUseShader = false;
+            view->setDisplayParameters(params);
+            view->setPerspectiveState(false, true);
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::INTERACT_PAN |
+                    ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA |
+                    ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS);
+            view->setPickingMode(ecvGenericGLDisplay::NO_PICKING);
+            if (auto* ctx = view->viewContext())
+                ctx->displayOverlayEntities = true;
+            viewFrame->setLayout(new QHBoxLayout);
+            viewFrame->layout()->addWidget(MainWindow::TheInstance());
+        }
     }
 }
 
 void ccContourExtractorDlg::zoomOn(const ccBBox& box) {
-    float pixSize = std::max(
-            box.getDiagVec().x /
-                    std::max(20, ecvDisplayTools::GetScreenRect().width() - 20),
-            box.getDiagVec().y /
-                    std::max(20,
-                             ecvDisplayTools::GetScreenRect().height() - 20));
-    ecvDisplayTools::SetPixelSize(pixSize);
-    ecvDisplayTools::SetCameraPos(CCVector3d::fromArray(box.getCenter().u));
+    QRect screenRect;
+    if (auto* w = ecvViewManager::instance().activeWidget()) {
+        screenRect = w->geometry();
+        const QPoint gp = w->mapToGlobal(screenRect.topLeft());
+        screenRect.setTopLeft(gp);
+    }
+    const float pixSize = std::max(
+            box.getDiagVec().x / std::max(20, screenRect.width() - 20),
+            box.getDiagVec().y / std::max(20, screenRect.height() - 20));
+
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        ecvViewportParameters params = view->getViewportParameters();
+        params.pixelSize = pixSize;
+        params.setCameraCenter(CCVector3d::fromArray(box.getCenter().u), true);
+        view->setViewportParameters(params);
+        view->invalidateViewport();
+        view->deprecate3DLayer();
+    }
 }
 
 bool ccContourExtractorDlg::isSkipped() const {
@@ -83,19 +103,21 @@ bool ccContourExtractorDlg::isSkipped() const {
 void ccContourExtractorDlg::addToDisplay(ccHObject* obj,
                                          bool noDependency /*=true*/) {
     if (obj) {
-        ecvDisplayTools::AddToOwnDB(obj, noDependency);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->addToOwnDB(obj, noDependency);
     }
 }
 
 void ccContourExtractorDlg::removFromDisplay(ccHObject* obj) {
     if (obj) {
-        ecvDisplayTools::RemoveFromOwnDB(obj);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->removeFromOwnDB(obj);
     }
 }
 
 void ccContourExtractorDlg::refresh() {
     if (m_skipped) return;
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
     QCoreApplication::processEvents();
 }
 

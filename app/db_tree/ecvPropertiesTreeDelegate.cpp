@@ -26,6 +26,7 @@
 // the properties tree delegate.
 
 // CV_DB_LIB
+#include <CVLog.h>
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
@@ -36,10 +37,11 @@
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
 #include <ecvDisc.h>
-#include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvGuiParameters.h>
 #include <ecvHObject.h>
@@ -54,11 +56,13 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <ecvRedrawScope.h>
+#include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
+#include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 
 // Qt
 #include <QAbstractItemView>
@@ -86,8 +90,31 @@
 
 // System
 #include <assert.h>
+#include <ecvRedrawScope.h>
 
 #include <cmath>
+
+namespace {
+
+void refreshActiveDisplayLikeUpdateScreen() {
+    if (QWidget* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->updateScene();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}
+
+void fillDrawContextFromEffectiveView(CC_DRAW_CONTEXT& context) {
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->getContext(context);
+    }
+}
+
+}  // namespace
 
 // Default 'None' string
 const char* ccPropertiesTreeDelegate::s_noneString = QT_TR_NOOP("None");
@@ -247,6 +274,9 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
                                                    // kind of info for viewport
                                                    // labels!
             fillWithHObject(m_currentObject);
+
+    // Per-view representation overrides
+    fillWithPerViewProperties();
 
     // View properties (ParaView-style) - added right after ECV Object section
     if (m_currentObject->getViewId().length() > 0) {
@@ -478,8 +508,9 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
             // Get current visibility from backend
             QString viewID = m_currentObject->getViewId();
             AxesGridProperties props;
-            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
-                                                                      props);
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->getDataAxesGridProperties(viewID, props);
+            }
 
             // ParaView-style: Checkbox and Edit button in same row (like
             // Opacity's slider+spinbox) We create a custom editor that combines
@@ -489,6 +520,13 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
                       true);
         }
     }
+}
+
+void ccPropertiesTreeDelegate::fillWithPerViewProperties() {
+    // ParaView UX: no separate "per-view override" section.
+    // The main property controls (opacity, normals, etc.) implicitly
+    // read/write the active view's ecvViewRepresentation. This method
+    // is kept as a no-op for backward compatibility.
 }
 
 // Note: fillWithSelectionProperties, setSelectionToolsActive, and
@@ -518,10 +556,20 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
         appendRow(ITEM(tr("Visible")),
                   CHECKABLE_ITEM(_obj->isVisible(), OBJECT_VISIBILITY));
 
-    // normals
-    if (_obj->hasNormals())
+    // normals — per-view: read from active view's representation if present
+    if (_obj->hasNormals()) {
+        bool normShown = _obj->normalsShown();
+        auto* nView = ecvViewManager::instance().getEffectiveView();
+        if (nView) {
+            auto* nRep = ecvRepresentationManager::instance().getRepresentation(
+                    _obj, nView);
+            if (nRep && nRep->properties().showNormals.has_value()) {
+                normShown = nRep->effectiveShowNormals();
+            }
+        }
         appendRow(ITEM(tr("Normals")),
-                  CHECKABLE_ITEM(_obj->normalsShown(), OBJECT_NORMALS_SHOWN));
+                  CHECKABLE_ITEM(normShown, OBJECT_NORMALS_SHOWN));
+    }
 
     // name in 3D
     appendRow(ITEM(tr("Show name (in 3D)")),
@@ -1348,14 +1396,15 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
     switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
-
-            comboBox->addItem(s_noneString);
-
+            const auto& views = ecvViewManager::instance().getAllViews();
+            for (auto* view : views) {
+                if (view) {
+                    comboBox->addItem(view->getTitle(), view->getUniqueID());
+                }
+            }
             connect(comboBox,
-                    static_cast<void (QComboBox::*)(const QString&)>(
-                            &QComboBox::currentTextChanged),
-                    this, &ccPropertiesTreeDelegate::objectDisplayChanged);
-
+                    QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                    &ccPropertiesTreeDelegate::objectDisplayIndexChanged);
             outputWidget = comboBox;
         } break;
         case OBJECT_CURRENT_SCALAR_FIELD: {
@@ -1982,6 +2031,22 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             button->setMaximumWidth(80);
             outputWidget = button;
         } break;
+        case OBJECT_PERVIEW_OPACITY: {
+            QSlider* slider = new QSlider(Qt::Horizontal, parent);
+            slider->setRange(0, 100);
+            slider->setSingleStep(1);
+            connect(slider, &QAbstractSlider::valueChanged, this,
+                    &ccPropertiesTreeDelegate::perViewOpacityChanged);
+            outputWidget = slider;
+        } break;
+        case OBJECT_PERVIEW_POINT_SIZE: {
+            QSpinBox* spinBox = new QSpinBox(parent);
+            spinBox->setRange(1, 16);
+            spinBox->setSingleStep(1);
+            connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+                    &ccPropertiesTreeDelegate::perViewPointSizeChanged);
+            outputWidget = spinBox;
+        } break;
         // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
         // properties are now in standalone cvFindDataDockWidget
         default:
@@ -2078,10 +2143,13 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 assert(false);
                 return;
             }
-
-            int pos = comboBox->findText(Settings::APP_TITLE);
-
-            comboBox->setCurrentIndex(std::max(pos, 0));  // 0 = "NONE"
+            auto* display = m_currentObject->getDisplay();
+            int pos = 0;
+            if (display) {
+                pos = comboBox->findData(display->getUniqueID());
+                if (pos < 0) pos = 0;
+            }
+            comboBox->setCurrentIndex(pos);
             break;
         }
         case OBJECT_CURRENT_SCALAR_FIELD: {
@@ -2335,14 +2403,14 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
 
             // Get per-object light intensity (falls back to global default)
             double intensity = 1.0;
-            if (ecvDisplayTools::TheInstance() && m_currentObject) {
-                QString viewID = m_currentObject->getViewId();
-                if (!viewID.isEmpty()) {
-                    intensity =
-                            ecvDisplayTools::GetObjectLightIntensity(viewID);
-                } else {
-                    intensity =
-                            ecvDisplayTools::TheInstance()->getLightIntensity();
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                if (m_currentObject) {
+                    QString viewID = m_currentObject->getViewId();
+                    if (!viewID.isEmpty()) {
+                        intensity = view->getObjectLightIntensity(viewID);
+                    } else {
+                        intensity = view->getLightIntensity();
+                    }
                 }
             }
 
@@ -2359,14 +2427,21 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             QWidget* container = qobject_cast<QWidget*>(editor);
             if (!container) return;
 
-            // Find the slider and spinbox in the container
             QSlider* slider = container->findChild<QSlider*>();
             QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
 
-            // Get current opacity from the object [0.0, 1.0]
-            // For folders, calculate average opacity from all renderable
-            // children
+            // Per-view: use effective opacity from the active view's
+            // representation if one exists, otherwise fall back to global.
             float opacity = m_currentObject->getOpacity();
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (activeView) {
+                auto* rep =
+                        ecvRepresentationManager::instance().getRepresentation(
+                                m_currentObject, activeView);
+                if (rep) {
+                    opacity = rep->effectiveOpacity();
+                }
+            }
 
             if (m_currentObject->getChildrenNumber() > 0) {
                 // This is a folder - calculate average opacity from renderable
@@ -2424,8 +2499,9 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             // Get current visibility from backend
             QString viewID = m_currentObject->getViewId();
             AxesGridProperties props;
-            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
-                                                                      props);
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->getDataAxesGridProperties(viewID, props);
+            }
 
             // Set checkbox state
             checkbox->setChecked(props.visible);
@@ -2434,13 +2510,14 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             // avoid duplicates)
             disconnect(checkbox, nullptr, this, nullptr);
             connect(checkbox, &QCheckBox::toggled, this,
-                    [this, viewID](bool checked) {
-                        if (!ecvDisplayTools::HasInstance()) return;
+                    [this, viewID, obj = m_currentObject](bool checked) {
+                        auto* view =
+                                ecvViewManager::instance().getEffectiveView();
+                        if (!view) return;
 
                         // Get current properties using struct-based interface
                         AxesGridProperties props;
-                        ecvDisplayTools::TheInstance()
-                                ->getDataAxesGridProperties(viewID, props);
+                        view->getDataAxesGridProperties(viewID, props);
 
                         // Update visibility
                         props.visible = checked;
@@ -2450,8 +2527,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                         // For parent nodes/folders, bounds will be calculated
                         // from getDisplayBB_recursive(false) which includes all
                         // children
-                        ecvDisplayTools::TheInstance()
-                                ->setDataAxesGridProperties(viewID, props);
+                        view->setDataAxesGridProperties(viewID, props);
 
                         // Immediately update bbox visibility for all selected
                         // objects that use this viewID
@@ -2484,8 +2560,39 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             }
                         }
 
-                        ecvDisplayTools::UpdateScreen();
+                        if (obj) {
+                            {
+                                ecvRedrawScope rs({obj});
+                            }
+                        } else {
+                            refreshActiveDisplayLikeUpdateScreen();
+                        }
                     });
+            break;
+        }
+        case OBJECT_PERVIEW_OPACITY: {
+            QSlider* slider = qobject_cast<QSlider*>(editor);
+            if (!slider || !m_currentObject) return;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) return;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                slider->setValue(
+                        static_cast<int>(rep->effectiveOpacity() * 100.0f));
+            }
+            break;
+        }
+        case OBJECT_PERVIEW_POINT_SIZE: {
+            QSpinBox* spinBox = qobject_cast<QSpinBox*>(editor);
+            if (!spinBox || !m_currentObject) return;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) return;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                spinBox->setValue(static_cast<int>(rep->effectivePointSize()));
+            }
             break;
         }
         case OBJECT_SENSOR_INDEX: {
@@ -2612,7 +2719,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 assert(plane);
                 if (plane) {
                     plane->showNormalVector(item->checkState() == Qt::Checked);
-                    ecvDisplayTools::RedrawObject(m_currentObject);
+                    { ecvRedrawScope rs({m_currentObject}); }
                     break;
                 }
             } else if (m_currentObject->isKindOf(CV_TYPES::SENSOR)) {
@@ -2629,11 +2736,11 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                         // Check if Axes Grid is visible - if so, hide
                         // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::HasInstance()) {
+                        if (auto* view = ecvViewManager::instance()
+                                                 .getEffectiveView()) {
                             AxesGridProperties axesGridProps;
-                            ecvDisplayTools::TheInstance()
-                                    ->getDataAxesGridProperties(context.viewID,
-                                                                axesGridProps);
+                            view->getDataAxesGridProperties(context.viewID,
+                                                            axesGridProps);
                             if (axesGridProps.visible) {
                                 shouldShowBB = false;
                             }
@@ -2646,7 +2753,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     } else {
                         sensor->hideBB(context);
                     }
-                    ecvDisplayTools::UpdateScreen();
+                    { ecvRedrawScope rs({sensor}); }
                     break;
                 }
             } else if (m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
@@ -2660,14 +2767,12 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     // for bbox
                     context.viewID = prim->getViewId();
                     if (prim->isSelected() && prim->isEnabled()) {
-                        // Check if Axes Grid is visible - if so, hide
-                        // BoundingBox
                         bool shouldShowBB = true;
-                        if (ecvDisplayTools::HasInstance()) {
+                        if (auto* view = ecvViewManager::instance()
+                                                 .getEffectiveView()) {
                             AxesGridProperties axesGridProps;
-                            ecvDisplayTools::TheInstance()
-                                    ->getDataAxesGridProperties(context.viewID,
-                                                                axesGridProps);
+                            view->getDataAxesGridProperties(context.viewID,
+                                                            axesGridProps);
                             if (axesGridProps.visible) {
                                 shouldShowBB = false;
                             }
@@ -2680,14 +2785,14 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     } else {
                         prim->hideBB(context);
                     }
-                    ecvDisplayTools::UpdateScreen();
+                    { ecvRedrawScope rs({prim}); }
                     break;
                 }
             } else {
                 m_currentObject->setVisible(item->checkState() == Qt::Checked);
             }
 
-            m_currentObject->setForceRedrawRecursive(true);
+            m_currentObject->setRedrawFlagRecursive(true);
 
             bool objectIsDisplayed = m_currentObject->isDisplayed();
             if (objectWasDisplayed != objectIsDisplayed) {
@@ -2699,11 +2804,20 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             }
         } break;
         case OBJECT_NORMALS_SHOWN: {
-            m_currentObject->showNormals(item->checkState() == Qt::Checked);
-            if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(m_currentObject);
+            bool showNorms = (item->checkState() == Qt::Checked);
+            m_currentObject->showNormals(showNorms);
+            m_currentObject->setRedrawFlagRecursive(true);
+            // Per-view: also update active view's representation
+            auto* nActiveView = ecvViewManager::instance().getEffectiveView();
+            if (nActiveView) {
+                auto* nRep = ecvRepresentationManager::instance()
+                                     .ensureRepresentation(m_currentObject,
+                                                           nActiveView);
+                if (nRep) {
+                    auto nProps = nRep->properties();
+                    nProps.showNormals = showNorms;
+                    nRep->setProperties(nProps);
+                }
             }
         }
             redraw = true;
@@ -2713,9 +2827,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showMaterials(item->checkState() == Qt::Checked);
-            ecvRedrawScope scope;
-            scope.dismiss();
-            scope.markDirty(mesh);
+            mesh->setRedrawFlagRecursive(true);
         }
             redraw = true;
             break;
@@ -2724,7 +2836,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToPointCloud(m_currentObject);
             assert(cloud);
             cloud->showSFColorsScale(item->checkState() == Qt::Checked);
-            ecvDisplayTools::RedrawObject(cloud, true);
+            { ecvRedrawScope rs({cloud}, true); }
         }
             redraw = false;
             break;
@@ -2736,7 +2848,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 CC_DRAW_CONTEXT context;
                 context.visible = cs->isVisible();
                 cs->hideShowDrawings(context);
-                ecvDisplayTools::UpdateScreen();
+                { ecvRedrawScope rs({cs}); }
             }
         }
             redraw = false;
@@ -2746,9 +2858,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToCoordinateSystem(m_currentObject);
             if (cs) {
                 cs->ShowAxisPlanes(item->checkState() == Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(cs);
+                cs->setRedrawFlagRecursive(true);
             }
         }
             redraw = true;
@@ -2759,8 +2869,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             if (facet && facet->getContour()) {
                 facet->getContour()->setVisible(item->checkState() ==
                                                 Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
             }
         }
             redraw = true;
@@ -2771,8 +2879,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             if (facet && facet->getPolygon()) {
                 facet->getPolygon()->setVisible(item->checkState() ==
                                                 Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
             }
         }
             redraw = true;
@@ -2783,9 +2889,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(plane);
             if (plane) {
                 plane->showNormalVector(item->checkState() == Qt::Checked);
-                ecvRedrawScope scope;
-                scope.dismiss();
-                scope.markDirty(m_currentObject);
+                m_currentObject->setRedrawFlagRecursive(true);
             }
         }
             redraw = true;
@@ -2795,10 +2899,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showWired(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
 
             // unchecked points frame mode
             if (mesh->isShownAsWire()) {
@@ -2817,10 +2917,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showPoints(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
 
             // unchecked wired frame mode
             if (mesh->isShownAsPoints()) {
@@ -2838,10 +2934,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->enableStippling(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
@@ -2849,20 +2941,12 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             bool pgEnabled = item->checkState() == Qt::Checked;
             m_currentObject->setPointGaussianEnabled(pgEnabled);
             setPointGaussianSubPropsEnabled(pgEnabled);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
         case OBJECT_CLOUD_POINT_GAUSSIAN_EMISSIVE: {
             m_currentObject->setPointGaussianEmissive(item->checkState() ==
                                                       Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
         }
             redraw = true;
             break;
@@ -2871,8 +2955,9 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(label);
             label->setDisplayedIn2D(item->checkState() == Qt::Checked);
             CC_DRAW_CONTEXT context;
-            ecvDisplayTools::GetContext(context);
+            fillDrawContextFromEffectiveView(context);
             label->update2DLabelView(context);
+            // label->update2DLabelView(context, true);
         }
             redraw = false;
             break;
@@ -2881,17 +2966,14 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(label);
             label->displayPointLegend(item->checkState() == Qt::Checked);
             CC_DRAW_CONTEXT context;
-            ecvDisplayTools::GetContext(context);
+            fillDrawContextFromEffectiveView(context);
             label->update2DLabelView(context);
         }
             redraw = false;
             break;
         case OBJECT_NAME_IN_3D: {
             m_currentObject->showNameIn3D(item->checkState() == Qt::Checked);
-            {
-                ecvRedrawScope scope;
-                scope.dismiss();
-            }
+            m_currentObject->setRedrawFlagRecursive(true);
         }
             redraw = true;
             break;
@@ -2915,7 +2997,7 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             ccCameraSensor* sensor =
                     ccHObjectCaster::ToCameraSensor(m_currentObject);
             sensor->drawFrustum(item->checkState() == Qt::Checked);
-            ecvDisplayTools::RedrawObject(sensor);
+            { ecvRedrawScope rs({sensor}); }
         }
             redraw = false;
             break;
@@ -2923,14 +3005,16 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             ccCameraSensor* sensor =
                     ccHObjectCaster::ToCameraSensor(m_currentObject);
             sensor->drawFrustumPlanes(item->checkState() == Qt::Checked);
-            ecvDisplayTools::RedrawObject(sensor);
+            { ecvRedrawScope rs({sensor}); }
         }
             redraw = false;
             break;
         // ParaView-style View Properties handlers
         case OBJECT_VIEW_CAMERA_ORIENTATION_WIDGET: {
             bool visible = (item->checkState() == Qt::Checked);
-            ecvDisplayTools::ToggleCameraOrientationWidget(visible);
+            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+                view->toggleCameraOrientationWidget(visible);
+            }
             CVLog::Print(
                     QString("[View Properties] Camera Orientation Widget: %1")
                             .arg(visible ? "ON" : "OFF"));
@@ -2948,6 +3032,22 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             // ParaView-style: handled in setEditorData (persistent editor)
             // No action needed here in updateItem
         }
+            redraw = false;
+            break;
+        case OBJECT_PERVIEW_VISIBILITY: {
+            if (!m_currentObject) break;
+            auto* activeView = ecvViewManager::instance().getEffectiveView();
+            if (!activeView) break;
+            auto* rep = ecvRepresentationManager::instance().getRepresentation(
+                    m_currentObject, activeView);
+            if (rep) {
+                bool visible = (item->checkState() == Qt::Checked);
+                rep->setVisible(visible);
+            }
+        } break;
+        case OBJECT_PERVIEW_OPACITY:
+        case OBJECT_PERVIEW_POINT_SIZE:
+            // Handled by slot connections
             redraw = false;
             break;
     }
@@ -2978,6 +3078,15 @@ void ccPropertiesTreeDelegate::updateDisplay() {
         // screen
         else if (object->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) {
             objectIsDisplayed = true;
+        }
+        // Octree/KdTree proxies start with setVisible(false) but are drawn
+        // when enabled.  Property changes (display level, mode) must still
+        // trigger a redraw.
+        else if (object->isKindOf(CV_TYPES::POINT_OCTREE) ||
+                 object->isKindOf(CV_TYPES::POINT_KDTREE)) {
+            if (object->isEnabled()) {
+                objectIsDisplayed = true;
+            }
         }
     }
 
@@ -3117,7 +3226,7 @@ void ccPropertiesTreeDelegate::spawnColorRampEditor() {
         ccColorScaleEditorDialog* editorDialog = new ccColorScaleEditorDialog(
                 ccColorScalesManager::GetUniqueInstance(),
                 MainWindow::TheInstance(), sf->getColorScale(),
-                ecvDisplayTools::GetMainWindow());
+                MainWindow::TheInstance());
         editorDialog->setAssociatedScalarField(sf);
         if (editorDialog->exec()) {
             if (editorDialog->getActiveScale()) {
@@ -3168,7 +3277,7 @@ void ccPropertiesTreeDelegate::textureFileChanged(int pos) {
                     "Update Textures failed, please toggle shown material "
                     "first!");
         } else {
-            ecvDisplayTools::UpdateScreen();
+            { ecvRedrawScope rs({m_currentObject}); }
         }
 
         updateModel();
@@ -3235,13 +3344,13 @@ void ccPropertiesTreeDelegate::octreeDisplayModeChanged(int pos) {
 
         ccOctreeProxy* octreeProxy =
                 ccHObjectCaster::ToOctreeProxy(m_currentObject);
-        {
-            ecvRedrawScope scope;
-            scope.dismiss();
-            scope.markDirty(octreeProxy);
+        if (octreeProxy) {
+            octreeProxy->setForceRedrawRecursive(true);
         }
 
         updateDisplay();
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+        updateModel();
     }
 }
 
@@ -3255,7 +3364,17 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
     {
         octree->setDisplayedLevel(val);
 
-        updateCurrentEntity();
+        ccOctreeProxy* octreeProxy =
+                ccHObjectCaster::ToOctreeProxy(m_currentObject);
+        if (octreeProxy) {
+            octreeProxy->setForceRedrawRecursive(true);
+        }
+
+        updateDisplay();
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_OCTREE_LEVEL;
 
         // we must also reset the properties display!
         updateModel();
@@ -3430,8 +3549,13 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
     float alpha = val / 255.0f;
     if (image && image->getAlpha() != alpha) {
         image->setAlpha(alpha);
-        ecvDisplayTools::ChangeOpacity(
-                alpha, CVTools::FromQString(image->getViewId()));
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            PROPERTY_PARAM param(image, static_cast<double>(alpha));
+            param.entityType = ENTITY_TYPE::ECV_IMAGE;
+            param.viewId = image->getViewId();
+            param.viewport = 0;
+            view->changeEntityProperties(param);
+        }
     }
 }
 
@@ -3444,11 +3568,11 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
     // Check if this is a folder with children
     if (m_currentObject->getChildrenNumber() > 0) {
         // For folders, apply opacity to all renderable children recursively
+        auto* folderView = ecvViewManager::instance().getEffectiveView();
         std::function<void(ccHObject*, float)> applyOpacityRecursive =
-                [&applyOpacityRecursive](ccHObject* obj, float op) {
+                [&applyOpacityRecursive, folderView](ccHObject* obj, float op) {
                     if (!obj || !obj->isEnabled()) return;
 
-                    // Check if this is a renderable object
                     bool isRenderable = (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
                                          obj->isKindOf(CV_TYPES::MESH) ||
                                          obj->isKindOf(CV_TYPES::PRIMITIVE) ||
@@ -3456,13 +3580,21 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                                          obj->isKindOf(CV_TYPES::FACET));
 
                     if (isRenderable) {
-                        // Check if opacity actually changed to avoid
-                        // unnecessary updates
                         if (std::abs(obj->getOpacity() - op) >= 0.001f) {
+                            // Per-view: also update the active view's rep
+                            if (folderView) {
+                                auto* rep = ecvRepresentationManager::instance()
+                                                    .ensureRepresentation(
+                                                            obj, folderView);
+                                if (rep) {
+                                    auto props = rep->properties();
+                                    props.opacity = op;
+                                    rep->setProperties(props);
+                                }
+                            }
+
                             obj->setOpacity(op);
 
-                            // Determine entity type for proper property
-                            // application
                             ENTITY_TYPE entityType =
                                     ENTITY_TYPE::ECV_POINT_CLOUD;
                             if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
@@ -3476,20 +3608,17 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                                 entityType = ENTITY_TYPE::ECV_MESH;
                             }
 
-                            // Create property parameter and apply opacity
-                            // change
                             PROPERTY_PARAM param(obj, static_cast<double>(op));
                             param.entityType = entityType;
                             param.viewId = obj->getViewId();
                             param.viewport = 0;
 
-                            // Apply the opacity change via display tools
-                            ecvDisplayTools::ChangeEntityProperties(param,
-                                                                    true);
+                            if (folderView) {
+                                folderView->changeEntityProperties(param);
+                            }
                         }
                     }
 
-                    // Recursively process children
                     for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
                         applyOpacityRecursive(obj->getChild(i), op);
                     }
@@ -3504,17 +3633,27 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     } else {
-        // Single object - original behavior
-        // Check if opacity actually changed to avoid unnecessary updates
         if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
             return;
         }
 
-        // Store the new opacity in the object
+        // Per-view: store opacity in the active view's representation
+        // so different views can have different opacity for the same object.
+        auto* activeView = ecvViewManager::instance().getEffectiveView();
+        if (activeView) {
+            auto* rep =
+                    ecvRepresentationManager::instance().ensureRepresentation(
+                            m_currentObject, activeView);
+            if (rep) {
+                auto props = rep->properties();
+                props.opacity = opacity;
+                rep->setProperties(props);
+            }
+        }
+
         m_currentObject->setOpacity(opacity);
 
-        // Determine entity type for proper property application
-        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
+        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
 
         if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
             entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
@@ -3527,14 +3666,15 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
             entityType = ENTITY_TYPE::ECV_MESH;
         }
 
-        // Create property parameter and apply opacity change
         PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
         param.entityType = entityType;
         param.viewId = m_currentObject->getViewId();
         param.viewport = 0;
 
-        // Apply the opacity change via display tools
-        ecvDisplayTools::ChangeEntityProperties(param, true);
+        // Apply the opacity change to the effective view
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->changeEntityProperties(param);
+        }
 
         CVLog::PrintVerbose(
                 QString("[ccPropertiesTreeDelegate::opacityChanged] "
@@ -3542,6 +3682,34 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     }
+}
+
+void ccPropertiesTreeDelegate::perViewOpacityChanged(int val) {
+    if (!m_currentObject) return;
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    if (!activeView) return;
+    auto* rep = ecvRepresentationManager::instance().getRepresentation(
+            m_currentObject, activeView);
+    if (!rep) return;
+
+    auto props = rep->properties();
+    props.opacity = static_cast<float>(val) / 100.0f;
+    rep->setProperties(props);
+    emit ccObjectAppearanceChanged(m_currentObject);
+}
+
+void ccPropertiesTreeDelegate::perViewPointSizeChanged(int val) {
+    if (!m_currentObject) return;
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    if (!activeView) return;
+    auto* rep = ecvRepresentationManager::instance().getRepresentation(
+            m_currentObject, activeView);
+    if (!rep) return;
+
+    auto props = rep->properties();
+    props.pointSize = static_cast<float>(val);
+    rep->setProperties(props);
+    emit ccObjectAppearanceChanged(m_currentObject);
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {
@@ -3574,8 +3742,10 @@ void ccPropertiesTreeDelegate::applyLabelViewport() {
             ccHObjectCaster::To2DViewportObject(m_currentObject);
     assert(viewport);
 
-    ecvDisplayTools::SetViewportParameters(viewport->getParameters());
-    ecvDisplayTools::UpdateScreen();
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->setViewportParameters(viewport->getParameters());
+    }
+    refreshActiveDisplayLikeUpdateScreen();
 }
 
 void ccPropertiesTreeDelegate::updateLabelViewport() {
@@ -3585,7 +3755,9 @@ void ccPropertiesTreeDelegate::updateLabelViewport() {
             ccHObjectCaster::To2DViewportObject(m_currentObject);
     assert(viewport);
 
-    viewport->setParameters(ecvDisplayTools::GetViewportParameters());
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        viewport->setParameters(v->getViewportParameters());
+    }
     CVLog::Print(tr("Viewport '%1' has been updated").arg(viewport->getName()));
 }
 
@@ -3759,36 +3931,28 @@ void ccPropertiesTreeDelegate::coordinateSystemAxisWidthChanged(int size) {
     }
 }
 
-void ccPropertiesTreeDelegate::objectDisplayChanged(
-        const QString& newDisplayTitle) {
+void ccPropertiesTreeDelegate::objectDisplayIndexChanged(int index) {
     if (!m_currentObject) return;
 
-    QString actualDisplayTitle = Settings::APP_TITLE;
+    auto* comboBox = qobject_cast<QComboBox*>(sender());
+    if (!comboBox || index < 0) return;
 
-    if (actualDisplayTitle != newDisplayTitle) {
-        // we first mark the "old displays" before removal,
-        // to be sure that they will also be redrawn!
-        // m_currentObject->prepareDisplayForRefresh_recursive();
+    int viewID = comboBox->itemData(index).toInt();
+    ecvGenericGLDisplay* targetDisplay =
+            ecvViewManager::instance().findView(viewID);
+    if (!targetDisplay) return;
 
-        // ccGLWindow* win = MainWindow::GetGLWindow(newDisplayTitle);
-        // m_currentObject->setDisplay_recursive(win);
-        // if (win)
-        //{
-        //	m_currentObject->prepareDisplayForRefresh_recursive();
-        //	win->zoomGlobal();
-        // }
+    auto* oldDisplay = m_currentObject->getDisplay();
+    if (oldDisplay == targetDisplay) return;
 
-        // MainWindow::TheInstance()->refreshAll();
-    }
+    m_currentObject->setDisplay_recursive(targetDisplay);
+    ecvViewManager::instance().redrawAll();
 }
 
 void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
     if (!m_currentObject) return;
 
     bool appearanceChanged = false;
-
-    ecvRedrawScope scope;
-    scope.dismiss();
 
     if (source == s_noneString) {
         appearanceChanged =
@@ -3802,7 +3966,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showSF(false);
         if (m_currentObject->hasColors() &&
             !m_currentObject->isColorOverridden()) {
-            scope.markDirty(m_currentObject);
+            m_currentObject->setRedrawFlagRecursive(true);
         }
     } else if (source == s_sfColor) {
         appearanceChanged =
@@ -3810,20 +3974,18 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showColors(false);
         m_currentObject->showSF(true);
     } else {
-        // assert(false);
         CVLog::Warning(QString("unsupported source type [%1]").arg(source));
     }
 
     if (appearanceChanged) {
         updateDisplay();
     } else {
-        ecvDisplayTools::SetRedrawRecursive(true);
+        m_currentObject->setRedrawFlagRecursive(true);
+        m_currentObject->redrawDisplay();
     }
 }
 
 void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
-    ecvRedrawScope scope;
-    scope.dismiss();
     m_currentObject->setRedrawFlagRecursive(redraw);
     updateDisplay();
 }
@@ -3831,7 +3993,8 @@ void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
 // ParaView-style View Properties implementation
 
 void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
-    if (!ecvDisplayTools::HasInstance()) {
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) {
         return;
     }
 
@@ -3839,14 +4002,14 @@ void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
         // Per-object: apply light intensity to the selected object only
         QString viewID = m_currentObject->getViewId();
         if (!viewID.isEmpty()) {
-            ecvDisplayTools::SetObjectLightIntensity(viewID, intensity);
+            view->setObjectLightIntensity(viewID, intensity);
             return;
         }
     }
 
     // Fallback: global light intensity (headlight)
-    ecvDisplayTools::TheInstance()->setLightIntensity(intensity);
-    ecvDisplayTools::UpdateScreen();
+    view->setLightIntensity(intensity);
+    refreshActiveDisplayLikeUpdateScreen();
 }
 
 void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
@@ -3860,7 +4023,8 @@ void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
         return;
     }
 
-    if (!ecvDisplayTools::HasInstance()) {
+    auto* viewForGrid = ecvViewManager::instance().getEffectiveView();
+    if (!viewForGrid) {
         return;
     }
 
@@ -3871,8 +4035,7 @@ void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
     AxesGridProperties props;
 
     try {
-        ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
-                                                                  props);
+        viewForGrid->getDataAxesGridProperties(viewID, props);
     } catch (const std::exception& e) {
         CVLog::Warning(
                 QString("[Data Axes Grid] Exception getting properties: %1")
@@ -3964,9 +4127,10 @@ void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
         props.zMax = dialog.getZMax();
 
         // Apply using clean struct-based interface
-        ecvDisplayTools::TheInstance()->setDataAxesGridProperties(viewID,
-                                                                  props);
-        ecvDisplayTools::UpdateScreen();
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setDataAxesGridProperties(viewID, props);
+        }
+        refreshActiveDisplayLikeUpdateScreen();
     };
 
     // Connect Apply button for real-time preview (ParaView-style)

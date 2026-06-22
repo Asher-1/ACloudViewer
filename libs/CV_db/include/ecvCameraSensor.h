@@ -246,7 +246,10 @@ public:  // frustum display
     inline bool frustumIsDrawn() const { return m_frustumInfos.drawFrustum; }
 
     //! Sets whether the frustum should be displayed or not
-    inline void drawFrustum(bool state) { m_frustumInfos.drawFrustum = state; }
+    inline void drawFrustum(bool state) {
+        m_frustumInfos.drawFrustum = state;
+        m_geometryDirty = true;
+    }
 
     //! Returns whether the frustum planes should be displayed or not
     inline bool frustumPlanesAreDrawn() const {
@@ -256,6 +259,7 @@ public:  // frustum display
     //! Sets whether the frustum planes should be displayed or not
     inline void drawFrustumPlanes(bool state) {
         m_frustumInfos.drawSidePlanes = state;
+        m_geometryDirty = true;
     }
 
 public:  // coordinate systems conversion methods
@@ -554,6 +558,15 @@ public:  // misc
     virtual void clearDrawings() override;
     virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
 
+    void setGraphicScale(PointCoordinateType scale) override {
+        ccSensor::setGraphicScale(scale);
+        m_geometryDirty = true;
+    }
+    void setFrameColor(ecvColor::Rgb color) override {
+        ccSensor::setFrameColor(color);
+        m_geometryDirty = true;
+    }
+
 public:  // helpers
     //! Helper: converts camera focal from pixels to mm
     static float ConvertFocalPixToMM(float focal_pix, float ccdPixelSize_mm);
@@ -613,6 +626,9 @@ protected:
     cloudViewer::geometry::LineSet m_arrow;
     cloudViewer::geometry::LineSet m_axis;
     double m_focalLength;
+
+    bool m_geometryDirty{true};
+    double m_cachedTransformData[16]{};
 };
 
 class ccOctreeFrustumIntersector {

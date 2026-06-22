@@ -18,10 +18,10 @@
 #include <ecvColorTypes.h>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAngleRepresentation.h>
 #include <vtkAngleWidget.h>
 #include <vtkAssembly.h>
-#include <vtkAxesActor.h>
 #include <vtkBoxRepresentation.h>
 #include <vtkBoxWidget2.h>
 #include <vtkCamera.h>

@@ -16,7 +16,7 @@ class ccPolyline;
 class qSRA : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qSRA" FILE "../info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qSRA" FILE "../info.json")
 
 public:
     //! Default constructor

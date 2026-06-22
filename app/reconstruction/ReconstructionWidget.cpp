@@ -7,7 +7,7 @@
 
 #include "ReconstructionWidget.h"
 
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 #include "MainWindow.h"
 #include "ReconstructionOptionsWidget.h"
@@ -21,7 +21,7 @@ namespace cloudViewer {
 using namespace colmap;
 
 ReconstructionWidget::ReconstructionWidget(MainWindow* app)
-    : QWidget(ecvDisplayTools::GetMainScreen()),
+    : QWidget(ecvViewManager::instance().activeWidget()),
       app_(app),
       thread_control_widget_(new ThreadControlWidget(this)),
       statusbar_timer_label_(nullptr) {

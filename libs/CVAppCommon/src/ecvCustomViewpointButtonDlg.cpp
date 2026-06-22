@@ -14,8 +14,9 @@
 #include <CVTools.h>
 
 // ECV_DB_TOOL
-#include <ecvDisplayTools.h>
 #include <ecvGenericCameraTool.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvViewManager.h>
 
 #ifdef USE_VTK_BACKEND
 #include <Tools/CameraTools/EditCameraTool.h>
@@ -322,7 +323,9 @@ void ecvCustomViewpointButtonDlg::importConfigurations() {
     QString filename;
     filename = selectedFiles[0];
 
-    ecvDisplayTools::LoadCameraParameters(CVTools::FromQString(filename));
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->loadCameraParameters(CVTools::FromQString(filename));
+    }
 
 #ifdef USE_VTK_BACKEND
     EditCameraTool::UpdateCameraInfo();
@@ -367,7 +370,9 @@ void ecvCustomViewpointButtonDlg::exportConfigurations() {
     }
 
     QString filename = selectedFilename;
-    ecvDisplayTools::SaveCameraParameters(CVTools::FromQString(filename));
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->saveCameraParameters(CVTools::FromQString(filename));
+    }
 }
 
 //------------------------------------------------------------------------------

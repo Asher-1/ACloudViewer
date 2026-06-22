@@ -15,7 +15,7 @@
 #include "TextureRenderManager.h"
 
 // VTK
-#include <vtkLODActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
@@ -24,7 +24,7 @@ namespace Visualization {
 namespace renders {
 
 bool MeshMaterialExtractor::ApplyMaterialFromMesh(
-        vtkLODActor* actor,
+        vtkPVLODActor* actor,
         const ccGenericMesh* mesh,
         vtkPolyData* polydata,
         TextureRenderManager* render_manager,

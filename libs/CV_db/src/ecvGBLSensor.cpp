@@ -7,14 +7,34 @@
 
 #include "ecvGBLSensor.h"
 
+#include <cstring>
+
 // Local
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvPointCloud.h"
 #include "ecvProgressDialog.h"
 #include "ecvSphere.h"
+#include "ecvViewManager.h"
 
 // Qt
 #include <QCoreApplication>
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+
+    for (auto* view : ecvViewManager::instance().getAllViews()) {
+        if (!view) continue;
+        context.display = view;
+        view->removeEntities(context);
+    }
+}
+
+}  // namespace
 
 // maximum depth buffer dimension (width or height)
 static const int s_MaxDepthBufferSize = (1 << 14);  // 16384
@@ -698,96 +718,81 @@ unsigned char ccGBLSensor::checkVisibility(const CCVector3& P) const {
 }
 
 void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
-    // we draw a little 3d representation of the sensor
     if (!MACRO_Draw3D(context)) return;
 
-    // DGM FIXME: this display routine is crap!
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    if (!context.display || !context.display->asWidget()) {
         return;
     }
 
-    // build-up the normal representation own 'context'
     CC_DRAW_CONTEXT cameraContext = context;
-    // force line width
     cameraContext.currentLineWidth = 2;
     cameraContext.opacity = 0.2f;
 
-    // apply rigid transformation
     ccIndexedTransformation sensorPos;
     if (!getAbsoluteTransformation(sensorPos, m_activeIndex)) {
-        // no visible position for this index!
         return;
     }
 
-    const double halfHeadSize = 0.3;
-    double scale = static_cast<double>(m_scale);
+    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
+                                        16 * sizeof(double)) != 0;
 
-    // sensor axes
-    {
-        double axisLength = halfHeadSize * scale;
-        CCVector3d C(0.0, 0.0, 0.0);
-        m_axis.clear();
-        m_axis.points_.push_back(Eigen::Vector3d(C.u));
-        m_axis.points_.push_back(Eigen::Vector3d(C.x + axisLength, C.y, C.z));
-        m_axis.points_.push_back(Eigen::Vector3d(C.x, C.y + axisLength, C.z));
-        m_axis.points_.push_back(Eigen::Vector3d(C.x, C.y, C.z + axisLength));
+    if (m_geometryDirty || transformChanged) {
+        const double halfHeadSize = 0.3;
+        double scale = static_cast<double>(m_scale);
 
-        // x
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
+        {
+            double axisLength = halfHeadSize * scale;
+            m_axis.clear();
+            m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+            m_axis.points_.push_back(Eigen::Vector3d(axisLength, 0.0, 0.0));
+            m_axis.points_.push_back(Eigen::Vector3d(0.0, axisLength, 0.0));
+            m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, axisLength));
+            m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
+            m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
+            m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
+            m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
+            m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
+            m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
+        }
 
-        // y
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
+        {
+            Eigen::Vector3d minC(-halfHeadSize * scale, -halfHeadSize * scale,
+                                 -halfHeadSize * scale);
+            Eigen::Vector3d maxC(halfHeadSize * scale, halfHeadSize * scale,
+                                 halfHeadSize * scale);
+            ccBBox bbox(minC, maxC);
+            m_obbHead = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
+            m_obbHead.SetColor(ecvColor::Rgb::ToEigen(m_color));
+        }
 
-        // z
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
-    }
+        {
+            CCVector3d headConnect(0.0, 0.0, -halfHeadSize * scale);
+            m_leg.clear();
+            m_leg.points_.push_back(Eigen::Vector3d(headConnect.u));
+            m_leg.points_.push_back(Eigen::Vector3d(-scale, -scale, -scale));
+            m_leg.points_.push_back(Eigen::Vector3d(-scale, scale, -scale));
+            m_leg.points_.push_back(Eigen::Vector3d(scale, 0.0, -scale));
+            m_leg.lines_.push_back(Eigen::Vector2i(0, 1));
+            m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
+            m_leg.lines_.push_back(Eigen::Vector2i(0, 2));
+            m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
+            m_leg.lines_.push_back(Eigen::Vector2i(0, 3));
+            m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
+        }
 
-    // sensor head
-    {
-        Eigen::Vector3d minCorner(-halfHeadSize, -halfHeadSize, -halfHeadSize);
-        Eigen::Vector3d maxCorner(halfHeadSize, halfHeadSize, halfHeadSize);
-        minCorner *= scale;
-        maxCorner *= scale;
-        ccBBox bbox(minCorner, maxCorner);
-        m_obbHead = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
-        m_obbHead.SetColor(ecvColor::Rgb::ToEigen(m_color));
-    }
-
-    // sensor legs
-    {
-        CCVector3d headConnect =
-                /*headCenter*/ -CCVector3d(0.0, 0.0, halfHeadSize * scale);
-
-        m_leg.clear();
-        m_leg.points_.push_back(Eigen::Vector3d(headConnect.u));
-        m_leg.points_.push_back(Eigen::Vector3d(-scale, -scale, -scale));
-        m_leg.points_.push_back(Eigen::Vector3d(-scale, scale, -scale));
-        m_leg.points_.push_back(Eigen::Vector3d(scale, 0.0, -scale));
-
-        m_leg.lines_.push_back(Eigen::Vector2i(0, 1));
-        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
-
-        m_leg.lines_.push_back(Eigen::Vector2i(0, 2));
-        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
-
-        m_leg.lines_.push_back(Eigen::Vector2i(0, 3));
-        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
-    }
-
-    // tranformation
-    {
         Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
         m_obbHead.Transform(transformation);
         m_leg.Transform(transformation);
         m_axis.Transform(transformation);
+
+        std::memcpy(m_cachedTransformData, sensorPos.data(),
+                    16 * sizeof(double));
+        m_geometryDirty = false;
     }
 
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
-    ecvDisplayTools::Draw(cameraContext, this);
+    if (cameraContext.display) cameraContext.display->draw(cameraContext, this);
 }
 
 ccBBox ccGBLSensor::getOwnBB(bool withGLFeatures /*=false*/) {
@@ -831,15 +836,17 @@ ccBBox ccGBLSensor::getOwnFitBB(ccGLMatrix& trans) {
                   CCVector3(m_scale, m_scale, m_scale));
 }
 
-void ccGBLSensor::clearDrawings() { ecvDisplayTools::RemoveEntities(this); }
+void ccGBLSensor::clearDrawings() { removeObjectFromDisplays(this); }
 
 void ccGBLSensor::hideShowDrawings(CC_DRAW_CONTEXT& context) {
     context.viewID = this->getViewId();
-    ecvDisplayTools::HideShowEntities(context);
+    if (context.display) context.display->hideShowEntities(context);
 }
 
 bool ccGBLSensor::applyViewport() {
-    if (!ecvDisplayTools::GetCurrentScreen()) {
+    ecvGenericGLDisplay* view = getDisplay();
+    if (!view) view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !view->asWidget()) {
         CVLog::Warning("[ccGBLSensor::applyViewport] No associated display!");
         return false;
     }
@@ -899,10 +906,8 @@ bool ccGBLSensor::applyViewport() {
     ccGLMatrixd viewMat = ccGLMatrixd::FromViewDirAndUpDir(sensorX, sensorZ);
     viewMat.invert();
     viewMat.setTranslation(sensorCenterd);
-    // TODO: can we set the right FOV?
-    //    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true,
-    //    true);
-    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true, false);
+    ecvViewManager::instance().sharedSetupProjectiveViewport(viewMat, 0, 1.0f,
+                                                             true, false);
 
     return true;
 }

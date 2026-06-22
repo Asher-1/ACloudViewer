@@ -473,7 +473,8 @@ public:  // bounding-box
     method will return the bounding-box of this entity (and its children) in the
     specified 3D view (i.e. potentially not visible) \return bounding-box
     **/
-    virtual ccBBox getDisplayBB_recursive(bool relative);
+    virtual ccBBox getDisplayBB_recursive(
+            bool relative, const ecvGenericGLDisplay* display = nullptr);
 
     //! Returns best-fit bounding-box (if available)
     /** \warning Only suitable for leaf objects (i.e. without children)
@@ -559,6 +560,26 @@ public:  // display
                                                             ccHObject_recursive_call0(
                                                                     toggleShowName,
                                                                     toggleShowName_recursive);
+
+    // -- Multi-window display association --
+
+    ccHObject_recursive_call1(setDisplay,
+                              ecvGenericGLDisplay*,
+                              setDisplay_recursive)
+
+            /// Recursively clear display association for entities bound to the
+            /// given display.
+            void removeFromDisplay_recursive(
+                    const ecvGenericGLDisplay* display);
+
+    /// Returns true if this entity should be drawn in the given display.
+    /// Compatible three-way logic:
+    ///   display == nullptr:          legacy mode, no filtering
+    /// View isolation (ParaView-style):
+    ///   m_currentDisplay == nullptr + single view: draw everywhere (backward
+    ///   compat) m_currentDisplay == nullptr + multi-view: draw only in the
+    ///   effective (rendering) view m_currentDisplay == display:  normal match
+    bool isDisplayedIn(const ecvGenericGLDisplay* display) const;
 
     //! Returns the max 'unique ID' of this entity and its siblings
     unsigned findMaxUniqueID_recursive() const;

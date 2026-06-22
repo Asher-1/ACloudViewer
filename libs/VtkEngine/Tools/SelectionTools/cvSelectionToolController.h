@@ -22,11 +22,15 @@
 #include <QMap>
 #include <QObject>
 #include <QPointer>
+#include <QList>
+class QShortcut;
 #else
 #include <QtWidgets/QActionGroup>
+#include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
+class QShortcut;
 #endif
 // clang-format on
 
@@ -37,6 +41,7 @@
 class QAction;
 class QMenu;
 class QToolBar;
+class cvPerViewSelectionManager;
 class cvRenderViewSelectionReaction;
 class cvSelectionData;
 class cvSelectionHighlighter;
@@ -152,6 +157,13 @@ public:
     };
 
     /**
+     * @brief Dynamically create all selection QActions (no .ui dependency).
+     * @param parent Widget that owns the actions.
+     * @return Fully populated SelectionActions struct.
+     */
+    static SelectionActions createActions(QWidget* parent);
+
+    /**
      * @brief Setup all selection actions
      * @param actions Structure containing all action pointers
      */
@@ -252,6 +264,14 @@ public:
      */
     void invalidateCache();
 
+    const SelectionActions& getSelectionActions() const { return m_actions; }
+
+    /// Set the per-view selection manager so that ESC / disableAllTools can
+    /// also uncheck the per-view mirror actions.
+    void setPerViewSelectionManager(cvPerViewSelectionManager* mgr) {
+        m_perViewSelMgr = mgr;
+    }
+
 signals:
     /**
      * @brief Emitted when a selection operation is completed
@@ -299,6 +319,8 @@ public slots:
      */
     void onModifierChanged(QAction* action);
 
+    void installModifierShortcuts();
+
     // Note: onTooltipSettingsChanged has been removed as tooltip settings
     // are now managed through cvSelectionLabelPropertiesDialog
 
@@ -325,9 +347,13 @@ private:
     QPointer<QAction> m_addAction;
     QPointer<QAction> m_subtractAction;
     QPointer<QAction> m_toggleAction;
+    QList<QShortcut*> m_modifierShortcuts;
 
     // Manipulation actions
     QPointer<QAction> m_growAction;
     QPointer<QAction> m_shrinkAction;
     QPointer<QAction> m_clearAction;
+
+    // Per-view selection manager for mirror uncheck
+    cvPerViewSelectionManager* m_perViewSelMgr = nullptr;
 };

@@ -13,7 +13,7 @@
 
 #include "TextureRenderManager.h"
 
-class vtkLODActor;
+class vtkPVLODActor;
 class vtkPolyData;
 class ccGenericMesh;
 
@@ -36,7 +36,7 @@ public:
      * @param renderer VTK renderer (optional)
      * @return true on success
      */
-    static bool ApplyMaterialFromMesh(vtkLODActor* actor,
+    static bool ApplyMaterialFromMesh(vtkPVLODActor* actor,
                                       const ccGenericMesh* mesh,
                                       vtkPolyData* polydata,
                                       TextureRenderManager* render_manager,

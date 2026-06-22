@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QObject>
+#include <QSet>
 #include <QXmlStreamWriter>
 #include <cmath>
 #include <random>
@@ -36,7 +37,7 @@ class ccCompass : public QObject,
                   public ccPickingListener {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.ccCompass" FILE
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.ccCompass" FILE
                           "../info.json")
 
 public:
@@ -183,6 +184,9 @@ protected:
     // picking or not?
     bool m_picking = false;
     bool m_active = false;
+
+    // track windows with installed event filters for proper cleanup
+    QSet<QWidget*> m_filteredWindows;
 
     // ccCompass toolbar gui
     ccCompassDlg* m_dlg = nullptr;

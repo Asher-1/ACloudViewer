@@ -17,14 +17,16 @@
 
 // CV_DB_LIB
 #include <ecvColorScalesManager.h>
-#include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // qCC_io
 // #include <ImageFileFilter.h>
@@ -182,8 +184,8 @@ ccRasterizeTool::~ccRasterizeTool() { removeContourLines(); }
 void ccRasterizeTool::removeContourLines() {
     while (!m_contourLines.empty()) {
         ccPolyline* poly = m_contourLines.back();
-        if (ecvDisplayTools::GetMainWindow())
-            ecvDisplayTools::RemoveFromOwnDB(poly);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->removeFromOwnDB(poly);
         delete poly;
         m_contourLines.pop_back();
     }
@@ -191,7 +193,9 @@ void ccRasterizeTool::removeContourLines() {
     exportContoursPushButton->setEnabled(false);
     clearContoursPushButton->setEnabled(false);
 
-    if (ecvDisplayTools::GetMainWindow()) ecvDisplayTools::RedrawDisplay();
+    if (ecvViewManager::instance().getEffectiveView()) {
+        ecvRedrawScope scope;
+    }
 }
 
 bool ccRasterizeTool::showGridBoxEditor() {
@@ -332,8 +336,8 @@ void ccRasterizeTool::activeLayerChanged(int layerIndex,
             }
         }
 
-        if (ecvDisplayTools::GetMainWindow() && autoRedraw) {
-            ecvDisplayTools::RedrawDisplay();
+        if (ecvViewManager::instance().getEffectiveView() && autoRedraw) {
+            ecvRedrawScope scope;
         }
     }
 }
@@ -642,9 +646,9 @@ void ccRasterizeTool::updateGridAndDisplay() {
 
     // remove the previous cloud
     if (m_rasterCloud) {
-        if (ecvDisplayTools::GetMainWindow()) {
-            ecvDisplayTools::RemoveFromOwnDB(m_rasterCloud);
-            ecvDisplayTools::RedrawDisplay();
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->removeFromOwnDB(m_rasterCloud);
+            ecvRedrawScope scope;
         }
 
         delete m_rasterCloud;
@@ -660,33 +664,35 @@ void ccRasterizeTool::updateGridAndDisplay() {
                                 ccRasterGrid::INVALID_PROJECTION_TYPE);
     bool success = updateGrid(interpolateSF);
 
-    if (success && ecvDisplayTools::GetMainWindow()) {
-        // convert grid to point cloud
-        std::vector<ccRasterGrid::ExportableFields> exportedFields;
-        try {
-            // we always compute the default 'height' layer
-            exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
-            // but we may also have to compute the 'original SF(s)' layer(s)
-            QString activeLayerName = activeLayerComboBox->currentText();
-            m_rasterCloud = convertGridToCloud(
-                    exportedFields,
-                    /*interpolateSF=*/interpolateSF,
-                    /*interpolateColors=*/activeLayerIsRGB,
-                    /*copyHillshadeSF=*/false, activeLayerName, false);
-        } catch (const std::bad_alloc&) {
-            // see below
-        }
+    if (success) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            // convert grid to point cloud
+            std::vector<ccRasterGrid::ExportableFields> exportedFields;
+            try {
+                // we always compute the default 'height' layer
+                exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
+                // but we may also have to compute the 'original SF(s)' layer(s)
+                QString activeLayerName = activeLayerComboBox->currentText();
+                m_rasterCloud = convertGridToCloud(
+                        exportedFields,
+                        /*interpolateSF=*/interpolateSF,
+                        /*interpolateColors=*/activeLayerIsRGB,
+                        /*copyHillshadeSF=*/false, activeLayerName, false);
+            } catch (const std::bad_alloc&) {
+                // see below
+            }
 
-        if (m_rasterCloud) {
-            ecvDisplayTools::AddToOwnDB(m_rasterCloud);
-            ccBBox box = m_rasterCloud->getDisplayBB_recursive(false);
-            update2DDisplayZoom(box);
+            if (m_rasterCloud) {
+                view->addToOwnDB(m_rasterCloud);
+                ccBBox box = m_rasterCloud->getDisplayBB_recursive(false);
+                update2DDisplayZoom(box);
 
-            // update
-            activeLayerChanged(activeLayerComboBox->currentIndex(), false);
-        } else {
-            CVLog::Error("Not enough memory!");
-            ecvDisplayTools::RedrawDisplay();
+                // update
+                activeLayerChanged(activeLayerComboBox->currentIndex(), false);
+            } else {
+                CVLog::Error("Not enough memory!");
+                ecvRedrawScope scope;
+            }
         }
     }
 
@@ -896,7 +902,7 @@ void ccRasterizeTool::generateMesh() const {
             rasterMesh->showColors(rasterCloud->colorsShown());
 
             MainWindow* mainWindow = MainWindow::TheInstance();
-            if (mainWindow) MainWindow::TheInstance()->addToDB(rasterMesh);
+            if (mainWindow) mainWindow->addToDB(rasterMesh);
             CVLog::Print(QString("[Rasterize] Mesh '%1' successfully exported")
                                  .arg(rasterMesh->getName()));
         } else {
@@ -1543,8 +1549,8 @@ void ccRasterizeTool::generateHillshade() {
     activeLayerComboBox->setCurrentIndex(
             activeLayerComboBox->findText(HILLSHADE_FIELD_NAME));
 
-    if (ecvDisplayTools::GetMainWindow()) {
-        ecvDisplayTools::RedrawDisplay();
+    if (ecvViewManager::instance().getEffectiveView()) {
+        ecvRedrawScope scope;
     }
 }
 
@@ -1671,7 +1677,8 @@ void ccRasterizeTool::addNewContour(ccPolyline* poly,
         poly->showColors(true);
         // vertices->setEnabled(false);
 
-        if (ecvDisplayTools::GetMainWindow()) ecvDisplayTools::AddToOwnDB(poly);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->addToOwnDB(poly);
 
         m_contourLines.push_back(poly);
     }
@@ -1854,7 +1861,9 @@ void ccRasterizeTool::generateContours() {
         grid.resize(xDim * yDim, 0);
     } catch (const std::bad_alloc&) {
         CVLog::Error("Not enough memory!");
-        if (ecvDisplayTools::GetMainWindow()) ecvDisplayTools::RedrawDisplay();
+        if (ecvViewManager::instance().getEffectiveView()) {
+            ecvRedrawScope scope;
+        }
         return;
     }
 
@@ -2036,8 +2045,8 @@ void ccRasterizeTool::generateContours() {
         }
     }
 
-    if (ecvDisplayTools::GetMainWindow()) {
-        ecvDisplayTools::RedrawDisplay();
+    if (ecvViewManager::instance().getEffectiveView()) {
+        ecvRedrawScope scope;
     }
 }
 
@@ -2082,8 +2091,8 @@ void ccRasterizeTool::exportContourLines() {
 
         if (!colorize) poly->showColors(false);
         group->addChild(poly);
-        if (ecvDisplayTools::GetMainWindow())
-            ecvDisplayTools::RemoveFromOwnDB(poly);
+        if (auto* view = ecvViewManager::instance().getEffectiveView())
+            view->removeFromOwnDB(poly);
     }
     m_contourLines.resize(0);
     exportContoursPushButton->setEnabled(false);

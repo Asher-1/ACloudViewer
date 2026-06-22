@@ -34,8 +34,11 @@
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecvDisplayTools.h>
+#include <ecvDisplayTypes.h>
+#include <ecvEntityAddRemoveCommand.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvHObject.h>
@@ -46,7 +49,14 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvPropertyChangeCommand.h>
+#include <ecvRedrawScope.h>
+#include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
+#include <ecvScalarFieldEditCommand.h>
+#include <ecvUndoManager.h>
+#include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 
 // common
 #include <ecvPickOneElementDlg.h>
@@ -378,6 +388,21 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     connect(m_ccPropDelegate,
             &ccPropertiesTreeDelegate::ccObjectAndChildrenAppearanceChanged,
             this, &ccDBRoot::redrawCCObjectAndChildren);
+
+    // Per-view visibility: refresh checkbox states when the active view
+    // changes so that checkboxes reflect the new view's visibility.
+    connect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
+            [this](ecvGenericGLDisplay* /*newActive*/,
+                   ecvGenericGLDisplay* /*oldActive*/) {
+                // Refresh all rows (including nested children) so that
+                // CheckState/ForegroundRole/ToolTipRole reflect the new
+                // active view's per-view visibility.
+                emit layoutChanged();
+                // Also refresh the properties panel so per-view properties
+                // (opacity, normals, etc.) reflect the new active view.
+                updatePropertiesView();
+            });
 }
 
 ccDBRoot::~ccDBRoot() {
@@ -415,7 +440,7 @@ void ccDBRoot::unloadAll() {
 
     updatePropertiesView();
 
-    ecvDisplayTools::SetRemoveAllFlag(true);
+    ecvViewManager::instance().setRemoveAllFlag(true);
     MainWindow::TheInstance()->refreshAll();
 }
 
@@ -469,6 +494,8 @@ void ccDBRoot::addElement(ccHObject* object, bool autoExpand /*=true*/) {
     {
         m_dbTreeWidget->expand(insertNodeIndex);
     }
+
+    ecvViewManager::instance().invalidateLabelCache();
 
     if (wasEmpty && m_treeRoot->getChildrenNumber() != 0) {
         emit dbIsNotEmptyAnymore();
@@ -583,6 +610,8 @@ void ccDBRoot::removeElement(ccHObject* object) {
         endRemoveRows();
     }
 
+    ecvViewManager::instance().invalidateLabelCache();
+
     // we restore properties view
     updatePropertiesView();
 
@@ -649,6 +678,8 @@ void ccDBRoot::deleteSelectedEntities() {
 
     qism->clear();
     std::vector<removeInfo> toBeDeletedInfos;
+    auto* undoMgr = ecvViewManager::instance().undoManager();
+
     while (!toBeDeleted.empty()) {
         ccHObject* object = toBeDeleted.back();
         assert(object);
@@ -656,9 +687,6 @@ void ccDBRoot::deleteSelectedEntities() {
         toBeDeleted.pop_back();
 
         if (object->isKindOf(CV_TYPES::MESH)) {
-            // specific case: the object is a mesh and its parent is its
-            // vertices! (can happen if a Delaunay mesh is computed directly in
-            // CC)
             if (object->getParent() &&
                 object->getParent() == ccHObjectCaster::ToGenericMesh(object)
                                                ->getAssociatedCloud()) {
@@ -671,20 +699,48 @@ void ccDBRoot::deleteSelectedEntities() {
         assert(childPos >= 0);
 
         beginRemoveRows(index(object).parent(), childPos, childPos);
-        parent->removeChild(childPos);
+        parent->detachChild(object);
         endRemoveRows();
+
+        if (undoMgr) {
+            auto addFunc = [this](ccHObject* ent, ccHObject* par) {
+                par->addChild(ent);
+                addElement(ent, false);
+            };
+            auto removeFunc = [this](ccHObject* ent) {
+                ccHObject* par = ent->getParent();
+                if (!par) return;
+                int pos = par->getChildIndex(ent);
+                if (pos < 0) return;
+                beginRemoveRows(index(ent).parent(), pos, pos);
+                par->detachChild(ent);
+                endRemoveRows();
+            };
+            auto refreshFunc = []() {
+                MainWindow::TheInstance()->refreshAll();
+            };
+            undoMgr->push(new ecvEntityAddRemoveCommand(
+                    object, parent, ecvEntityAddRemoveCommand::Mode::Remove,
+                    addFunc, removeFunc, refreshFunc,
+                    tr("Delete '%1'").arg(object->getName())));
+        } else {
+            delete object;
+        }
     }
 
     updatePropertiesView();
+
+    ecvViewManager::instance().invalidateLabelCache();
 
     if (m_treeRoot->getChildrenNumber() == 0) {
         emit dbIsEmpty();
     }
 
     if (!toBeDeletedInfos.empty()) {
-        ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
-        ecvDisplayTools::SetRedrawRecursive(false);
-        MainWindow::TheInstance()->refreshAll(false);
+        ecvViewManager::instance().setRemoveViewIds(toBeDeletedInfos);
+        ecvDisplayTools::CheckIfRemove();
+        ecvViewManager::instance().setRedrawRecursive(false);
+        ecvViewManager::instance().redrawAll(false, true);
     }
 }
 
@@ -743,8 +799,6 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
         }
 
         case Qt::CheckStateRole: {
-            // Don't include checkboxes for hierarchy objects if they have no
-            // children or only contain hierarchy objects (recursively)
             if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
                 if (item->getChildrenNumber() == 0) {
                     return {};
@@ -761,10 +815,70 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
                 }
             }
 
-            if (item->isEnabled())
-                return Qt::Checked;
-            else
-                return Qt::Unchecked;
+            if (!item->isEnabled()) return Qt::Unchecked;
+
+            auto* mItem = const_cast<ccHObject*>(item);
+            auto* activeView = ecvViewManager::instance().getActiveView();
+            if (activeView) {
+                // Labels use global visibility, not per-view rep
+                if (item->isKindOf(CV_TYPES::LABEL_2D)) {
+                    return item->isVisible() ? Qt::Checked : Qt::Unchecked;
+                }
+
+                // Folders are pure containers — always show as checked
+                // when enabled.  They must not have per-view reps.
+                if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
+                    return Qt::Checked;
+                }
+
+                auto* rep =
+                        ecvRepresentationManager::instance().getRepresentation(
+                                mItem, activeView);
+                if (rep && rep->hasVisibilityOverride()) {
+                    return rep->isVisible() ? Qt::Checked : Qt::Unchecked;
+                }
+            }
+            return Qt::Checked;
+        }
+
+        case Qt::ForegroundRole: {
+            // Dim text for entities hidden in the active view via per-view
+            // override, providing a visual hint that the entity is visible
+            // in other views but not the current one.
+            // Folders are pure containers — never dim them.
+            if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT) return {};
+            auto* mutableItem = const_cast<ccHObject*>(item);
+            if (item->isEnabled()) {
+                auto* activeView = ecvViewManager::instance().getActiveView();
+                if (activeView) {
+                    auto* rep =
+                            ecvRepresentationManager::instance()
+                                    .getRepresentation(mutableItem, activeView);
+                    if (rep && rep->hasVisibilityOverride() &&
+                        !rep->isVisible()) {
+                        return QColor(160, 160, 160);
+                    }
+                }
+            }
+            return {};
+        }
+
+        case Qt::ToolTipRole: {
+            auto* mutableItem = const_cast<ccHObject*>(item);
+            if (item->isEnabled() &&
+                ecvViewManager::instance().getAllViews().size() > 1) {
+                auto reps = ecvRepresentationManager::instance()
+                                    .getRepresentationsForEntity(mutableItem);
+                int hiddenCount = 0;
+                for (auto* r : reps) {
+                    if (r && r->hasVisibilityOverride() && !r->isVisible())
+                        ++hiddenCount;
+                }
+                if (hiddenCount > 0) {
+                    return tr("Hidden in %1 view(s)").arg(hiddenCount);
+                }
+            }
+            return {};
         }
 
         default:
@@ -773,6 +887,44 @@ QVariant ccDBRoot::data(const QModelIndex& index, int role) const {
     }
 
     return QVariant();
+}
+
+namespace {
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.visible = visible;
+    ctx.viewID = obj->getViewId();
+    ctx.hideShowEntityType = obj->getEntityType();
+    ctx.display = const_cast<ecvGenericGLDisplay*>(obj->getDisplay());
+    if (ctx.display) ctx.display->hideShowEntities(ctx);
+    if (!obj->getDisplay()) {
+        for (auto* view : ecvViewManager::instance().getAllViews()) {
+            ecvGenericGLDisplay* primary =
+                    ecvViewManager::instance().getEffectiveView();
+            if (!view || view == primary) continue;
+            CC_DRAW_CONTEXT vctx = ctx;
+            vctx.display = view;
+            if (vctx.display) vctx.display->hideShowEntities(vctx);
+        }
+    }
+}
+
+}  // namespace
+
+/// Clear 3D VTK actors for all cc2DLabel descendants so they don't
+/// linger in the scene after the subtree is disabled.
+static void clearLabelsRecursive(ccHObject* entity) {
+    if (!entity) return;
+    if (entity->isA(CV_TYPES::LABEL_2D)) {
+        if (auto* label = ccHObjectCaster::To2DLabel(entity)) {
+            label->clearLabel(true);
+        }
+    }
+    for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+        clearLabelsRecursive(entity->getChild(i));
+    }
 }
 
 static void toggleFolderChildrenVisibility(ccHObject* parent,
@@ -786,6 +938,40 @@ static void toggleFolderChildrenVisibility(ccHObject* parent,
 
         if (child->getChildrenNumber() > 0) {
             toggleFolderChildrenVisibility(child, childActive);
+        }
+    }
+}
+
+/// Recursively set per-view visibility for an entity and its children.
+/// Unlike global setEnabled(), this only affects the specified view.
+/// HIERARCHY_OBJECT (folders) are skipped — they are pure containers
+/// and must not get per-view reps that would block children's visibility.
+static void setPerViewVisibilityRecursive(ccHObject* entity,
+                                          ecvGenericGLDisplay* view,
+                                          bool visible) {
+    if (!entity || !view) return;
+
+    if (entity->getClassID() == CV_TYPES::HIERARCHY_OBJECT) {
+        // Folder: recurse into children without creating a per-view rep
+    } else if (entity->isKindOf(CV_TYPES::LABEL_2D)) {
+        entity->setVisible(visible);
+        if (!visible) {
+            if (auto* label = ccHObjectCaster::To2DLabel(entity)) {
+                label->clearLabel(true);
+            }
+        }
+    } else {
+        auto* rep = ecvRepresentationManager::instance().ensureRepresentation(
+                entity, view);
+        if (rep) {
+            rep->setVisible(visible);
+        }
+    }
+
+    for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+        ccHObject* child = entity->getChild(i);
+        if (child && child->isEnabled()) {
+            setPerViewVisibilityRecursive(child, view, visible);
         }
     }
 }
@@ -808,15 +994,48 @@ bool ccDBRoot::setData(const QModelIndex& index,
                 if (item->nameShownIn3D() ||
                     item->isKindOf(CV_TYPES::LABEL_2D)) {
                     if (item->isEnabled() && item->isVisible()) {
-                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-                                WIDGETS_TYPE::WIDGET_T2D, item->getName()));
-                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                        ecvGenericGLDisplay* wpDisp =
+                                const_cast<ecvGenericGLDisplay*>(
+                                        item->getDisplay());
+                        if (!wpDisp) {
+                            wpDisp = ecvViewManager::instance()
+                                             .getEffectiveView();
+                        }
+                        WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
+                                                item->getName());
+                        wpTxt.context.display = wpDisp;
+                        if (wpTxt.context.display)
+                            wpTxt.context.display->removeWidgets(wpTxt);
+                        WIDGETS_PARAMETER wpRect(
                                 WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                item->getName()));
+                                item->getName());
+                        wpRect.context.display = wpDisp;
+                        if (wpRect.context.display)
+                            wpRect.context.display->removeWidgets(wpRect);
                     }
                 }
 
-                item->setName(value.toString());
+                QString oldName = item->getName();
+                QString newName = value.toString();
+                item->setName(newName);
+
+                auto refreshAfter = [this, index]() {
+                    reflectObjectPropChange(
+                            static_cast<ccHObject*>(index.internalPointer()));
+                    updatePropertiesView();
+                    emit dataChanged(index, index);
+                    MainWindow::TheInstance()->refreshAll(true, false);
+                };
+
+                auto* undoMgr = ecvViewManager::instance().undoManager();
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<QString>(
+                            item->getUniqueID(), QStringLiteral("name"),
+                            oldName, newName,
+                            [item](const QString& v) { item->setName(v); },
+                            refreshAfter,
+                            tr("Rename '%1' to '%2'").arg(oldName, newName)));
+                }
 
                 if (item->isEnabled() && item->isVisible()) {
                     MainWindow::TheInstance()->refreshAll(true, false);
@@ -832,27 +1051,59 @@ bool ccDBRoot::setData(const QModelIndex& index,
         } else if (role == Qt::CheckStateRole) {
             ccHObject* item = static_cast<ccHObject*>(index.internalPointer());
             assert(item);
-            if (item) {
-                if (value == Qt::Checked)
-                    item->setEnabled(true);
-                else
-                    item->setEnabled(false);
+            if (!item) return false;
+
+            bool newVal = (value == Qt::Checked);
+            auto& viewMgr = ecvViewManager::instance();
+            auto* activeView = viewMgr.getActiveView();
+
+            // Keep DB tree check behavior aligned with CloudCompare:
+            // checkbox toggles global enabled state of the entity subtree.
+            {
+                bool wasBefore = item->isEnabled();
+                if (wasBefore == newVal) return true;
+
+                item->setEnabled(newVal);
+
+                // Bind unbound objects to the active view when re-enabling
+                // (ParaView-aligned: re-checking a detached entity binds it
+                // to the currently active view).
+                if (newVal && activeView && item->getDisplay() == nullptr) {
+                    item->setDisplay(activeView);
+                }
+
+                auto* undoMgr = viewMgr.undoManager();
+                if (undoMgr && wasBefore != newVal) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("enabled"),
+                            wasBefore, newVal,
+                            [item](const bool& v) { item->setEnabled(v); },
+                            []() { MainWindow::TheInstance()->refreshAll(); },
+                            tr("Toggle enable '%1'").arg(item->getName())));
+                }
 
                 if (item->isKindOf(CV_TYPES::POINT_OCTREE) ||
                     item->isKindOf(CV_TYPES::POINT_KDTREE)) {
-                    // rendering this item only
-                    ecvDisplayTools::RedrawObject(item);
+                    MainWindow::TheInstance()->refreshObject(item);
                 } else if (item->isA(CV_TYPES::LABEL_2D) ||
                            item->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
                     if (item->isEnabled()) {
+                        item->setForceRedraw(true);
                         cc2DLabel* label = ccHObjectCaster::To2DLabel(item);
                         cc2DViewportLabel* vpLabel =
                                 ccHObjectCaster::To2DViewportLabel(item);
                         if (label) label->updateLabel();
                         if (vpLabel) vpLabel->updateLabel();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     } else {
-                        ecvDisplayTools::HideShowEntities(item, false);
-                        ecvDisplayTools::UpdateScreen();
+                        hideShowObjectOnDisplays(item, false);
+                        cc2DLabel* label = ccHObjectCaster::To2DLabel(item);
+                        if (label) {
+                            label->clearLabel(true);
+                        }
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::SENSOR)) {
                     ccSensor* sensor = ccHObjectCaster::ToSensor(item);
@@ -860,20 +1111,24 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
                         sensor->hideShowDrawings(context);
-                        // for bbox
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
-                            // Check if Axes Grid is visible - if so, hide
-                            // BoundingBox
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::HasInstance()) {
-                                AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()
-                                        ->getDataAxesGridProperties(
-                                                context.viewID, axesGridProps);
-                                if (axesGridProps.visible) {
-                                    shouldShowBB = false;
-                                }
+                            ecvGenericGLDisplay* axesDisp =
+                                    const_cast<ecvGenericGLDisplay*>(
+                                            sensor->getDisplay());
+                            if (!axesDisp) {
+                                axesDisp = viewMgr.getEffectiveView();
+                            }
+                            AxesGridProperties axesGridProps;
+                            bool haveAxesProps = false;
+                            if (axesDisp) {
+                                axesDisp->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                haveAxesProps = true;
+                            }
+                            if (haveAxesProps && axesGridProps.visible) {
+                                shouldShowBB = false;
                             }
                             if (shouldShowBB) {
                                 sensor->showBB(context);
@@ -883,7 +1138,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             sensor->hideBB(context);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
@@ -908,14 +1164,21 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         context.viewID = prim->getViewId();
                         if (prim->isSelected() && context.visible) {
                             bool shouldShowBB = true;
-                            if (ecvDisplayTools::HasInstance()) {
-                                AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()
-                                        ->getDataAxesGridProperties(
-                                                context.viewID, axesGridProps);
-                                if (axesGridProps.visible) {
-                                    shouldShowBB = false;
-                                }
+                            ecvGenericGLDisplay* axesDisp =
+                                    const_cast<ecvGenericGLDisplay*>(
+                                            prim->getDisplay());
+                            if (!axesDisp) {
+                                axesDisp = viewMgr.getEffectiveView();
+                            }
+                            AxesGridProperties axesGridProps;
+                            bool haveAxesProps = false;
+                            if (axesDisp) {
+                                axesDisp->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                haveAxesProps = true;
+                            }
+                            if (haveAxesProps && axesGridProps.visible) {
+                                shouldShowBB = false;
                             }
                             if (shouldShowBB) {
                                 prim->showBB(context);
@@ -925,7 +1188,8 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         } else {
                             prim->hideBB(context);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        if (auto* v = viewMgr.getEffectiveView())
+                            v->updateScene();
                     }
                 } else {
                     bool active = item->isEnabled();
@@ -934,20 +1198,28 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, false);
                         }
-                        ecvDisplayTools::UpdateScreen();
+                        // Clear 3D VTK actors for any label children
+                        // that would otherwise linger in the scene.
+                        clearLabelsRecursive(item);
+                        // Use the same full-redraw path as the enable branch
+                        // so VTK actor visibility is re-evaluated through the
+                        // draw pipeline (updateScene alone doesn't suffice).
+                        {
+                            ecvRedrawScope scope(false, true);
+                            scope.markDirty(item);
+                        }
                     } else {
                         item->toggleVisibility_recursive(true, false);
                         if (item->getChildrenNumber() > 0) {
                             toggleFolderChildrenVisibility(item, true);
                         }
                         item->setForceRedrawRecursive(true);
-                        ecvDisplayTools::SetRedrawRecursive(false);
+                        viewMgr.setRedrawRecursive(false);
                         redrawCCObjectAndChildren(item, false);
                     }
                 }
+                return true;
             }
-
-            return true;
         }
     }
 
@@ -1062,7 +1334,7 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
 
     updatePropertiesView();
 
-    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvViewManager::instance().setRedrawRecursive(false);
     MainWindow::TheInstance()->refreshAll(false, true);
 
     emit selectionChanged();
@@ -2062,8 +2334,8 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
     int selCount = selectedIndexes.size();
     if (selCount == 0) return;
 
-    // hide properties view
     hidePropertiesView();
+    auto* undoMgr = ecvViewManager::instance().undoManager();
 
     for (int i = 0; i < selCount; ++i) {
         ccHObject* item =
@@ -2072,35 +2344,92 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
             assert(false);
             continue;
         }
+
+        auto refreshAll = []() { MainWindow::TheInstance()->refreshAll(); };
+
         switch (prop) {
-            case TG_ENABLE:  // enable state
-                item->setEnabled(!item->isEnabled());
-                break;
-            case TG_VISIBLE:  // visibility
+            case TG_ENABLE: {
+                bool wasBefore = item->isEnabled();
+                item->setEnabled(!wasBefore);
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("enabled"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->setEnabled(v); },
+                            refreshAll,
+                            tr("Toggle enable '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_VISIBLE: {
+                bool wasBefore = item->isVisible();
                 item->toggleVisibility();
                 item->setForceRedrawRecursive(true);
-                break;
-            case TG_COLOR:  // color
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("visible"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) {
+                                item->setVisible(v);
+                                item->setForceRedrawRecursive(true);
+                            },
+                            refreshAll,
+                            tr("Toggle visibility '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_COLOR: {
+                bool wasBefore = item->colorsShown();
                 item->toggleColors();
-                break;
-            case TG_NORMAL:  // normal
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("colorsShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showColors(v); },
+                            refreshAll,
+                            tr("Toggle colors '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_NORMAL: {
+                bool wasBefore = item->normalsShown();
                 item->toggleNormals();
-                break;
-            case TG_SF:  // SF
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("normalsShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showNormals(v); },
+                            refreshAll,
+                            tr("Toggle normals '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_SF: {
+                bool wasBefore = item->sfShown();
                 item->toggleSF();
-                break;
-            case TG_3D_NAME:  // 3D name
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("sfShown"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showSF(v); },
+                            refreshAll,
+                            tr("Toggle SF '%1'").arg(item->getName())));
+                }
+            } break;
+            case TG_3D_NAME: {
+                bool wasBefore = item->nameShownIn3D();
                 item->toggleShowName();
-                break;
+                if (undoMgr) {
+                    undoMgr->push(new ecvPropertyChangeCommand<bool>(
+                            item->getUniqueID(), QStringLiteral("showNameIn3D"),
+                            wasBefore, !wasBefore,
+                            [item](const bool& v) { item->showNameIn3D(v); },
+                            refreshAll,
+                            tr("Toggle 3D name '%1'").arg(item->getName())));
+                }
+            } break;
         }
     }
 
-    // we restablish properties view
     updatePropertiesView();
 
-    // MainWindow::RefreshAllGLWindow(false);
     if (TG_ENABLE == prop || TG_VISIBLE == prop || TG_3D_NAME == prop) {
-        // draw 3D and no need to forceredraw
         MainWindow::TheInstance()->refreshAll(true, false);
     } else {
         MainWindow::TheInstance()->refreshAll();
@@ -2185,10 +2514,22 @@ void ccDBRoot::editLabelScalarValue() {
 
     ScalarType newS = static_cast<ScalarType>(newValue);
     if (s != newS) {
-        // update the value and update the display
         sf->setValue(P.index, newS);
         sf->computeMinAndMax();
         pc->redrawDisplay();
+
+        auto* undoMgr = ecvViewManager::instance().undoManager();
+        if (undoMgr) {
+            std::vector<ScalarType> beforeVals = {s};
+            std::vector<ScalarType> afterVals = {newS};
+            int sfIdx = pc->getScalarFieldIndexByName(sf->getName());
+            undoMgr->push(new ecvScalarFieldEditCommand(
+                    pc, sfIdx, P.index, beforeVals, afterVals,
+                    [pc]() { pc->redrawDisplay(); },
+                    tr("Edit scalar value '%1'[%2]")
+                            .arg(sf->getName())
+                            .arg(P.index)));
+        }
     }
 }
 
@@ -2457,6 +2798,24 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
                 menu.addAction(m_editLabelScalarValue);
             }
 
+            if (toggleVisibility &&
+                ecvViewManager::instance().viewCount() > 1) {
+                menu.addSeparator();
+                QMenu* moveMenu = menu.addMenu(QIcon(), tr("Move to View"));
+                moveMenu->addAction(
+                        tr("None (All Views)"), [this, selectedIndexes]() {
+                            moveSelectedToView(nullptr, selectedIndexes);
+                        });
+                const auto& views = ecvViewManager::instance().getAllViews();
+                for (auto* view : views) {
+                    if (!view) continue;
+                    moveMenu->addAction(
+                            view->getTitle(), [this, view, selectedIndexes]() {
+                                moveSelectedToView(view, selectedIndexes);
+                            });
+                }
+            }
+
             menu.addSeparator();
         }
 
@@ -2468,6 +2827,17 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
     }
 
     menu.exec(m_dbTreeWidget->mapToGlobal(menuPos));
+}
+
+void ccDBRoot::moveSelectedToView(ecvGenericGLDisplay* view,
+                                  const QModelIndexList& indexes) {
+    for (const auto& idx : indexes) {
+        auto* item = static_cast<ccHObject*>(idx.internalPointer());
+        if (!item) continue;
+        item->setDisplay_recursive(view);
+    }
+    ecvViewManager::instance().redrawAll();
+    updatePropertiesView();
 }
 
 QItemSelectionModel::SelectionFlags ccCustomQTreeView::selectionCommand(

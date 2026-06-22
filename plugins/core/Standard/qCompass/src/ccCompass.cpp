@@ -19,10 +19,12 @@
 
 // CV_DB_LIB
 #include <ecvBox.h>
-#include <ecvDisplayTools.h>
 #include <ecvExternalFactory.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvProgressDialog.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
 #include <qcombobox.h>
 
 // LOCAL
@@ -331,8 +333,8 @@ void ccCompass::doAction() {
                               SLOT(writeToLower()));
     }
 
-    m_dlg->linkWith(ecvDisplayTools::GetCurrentScreen());
-    m_mapDlg->linkWith(ecvDisplayTools::GetCurrentScreen());
+    m_dlg->linkWith(ecvViewManager::instance().activeWidget());
+    m_mapDlg->linkWith(ecvViewManager::instance().activeWidget());
 
     // load ccCompass objects
     tryLoading();
@@ -549,10 +551,33 @@ bool ccCompass::startMeasuring() {
     }
 
     // setup listener for mouse events
-    m_app->getActiveWindow()->installEventFilter(this);
+    m_filteredWindows.clear();
+    QWidget* activeWin = m_app->getActiveWindow();
+    if (activeWin) {
+        activeWin->installEventFilter(this);
+        m_filteredWindows.insert(activeWin);
+    }
+
+    // Follow multi-window view switches while measuring
+    connect(
+            &ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+            this,
+            [this](ecvGenericGLDisplay*, ecvGenericGLDisplay*) {
+                if (m_app && m_app->getActiveWindow()) {
+                    QWidget* w = m_app->getActiveWindow();
+                    if (!m_filteredWindows.contains(w)) {
+                        w->installEventFilter(this);
+                        m_filteredWindows.insert(w);
+                    }
+                    // Re-link overlay dialogs to the new active view
+                    if (m_dlg) m_dlg->linkWith(w);
+                    if (m_mapDlg) m_mapDlg->linkWith(w);
+                }
+            },
+            Qt::UniqueConnection);
 
     // refresh window
-    ecvDisplayTools::RedrawDisplay(true, false);
+    { ecvRedrawScope scope(true, false); }
 
     // start GUI
     m_app->registerOverlayDialog(m_dlg, Qt::TopRightCorner);
@@ -573,9 +598,12 @@ bool ccCompass::stopMeasuring(bool finalStop /*=false*/) {
         return true;
     }
     // remove click listener
-    if (m_app->getActiveWindow()) {
-        m_app->getActiveWindow()->removeEventFilter(this);
+    for (QWidget* w : m_filteredWindows) {
+        if (w) w->removeEventFilter(this);
     }
+    m_filteredWindows.clear();
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+               this, nullptr);
 
     // reset gui
     cleanupBeforeToolChange(!finalStop);
@@ -777,7 +805,7 @@ void ccCompass::pointPicked(
 
     // redraw
     m_app->updateUI();
-    ecvDisplayTools::RedrawDisplay();
+    { ecvRedrawScope scope; }
 }
 
 bool ccCompass::eventFilter(QObject* obj, QEvent* event) {
@@ -842,7 +870,7 @@ void ccCompass::cleanupBeforeToolChange(bool autoRestartPicking /*=true*/) {
             }
         }
         m_hiddenObjects.clear();
-        ecvDisplayTools::RedrawDisplay(false, true);
+        { ecvRedrawScope scope(false, true); }
     }
 
     // uncheck/disable gui components (the relevant ones will be activated
@@ -878,7 +906,7 @@ void ccCompass::setLineation() {
     // update GUI
     m_dlg->undoButton->setEnabled(false);
     m_dlg->pairModeButton->setChecked(true);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // activate plane mode
@@ -896,7 +924,7 @@ void ccCompass::setPlane() {
     // update GUI
     m_dlg->undoButton->setEnabled(m_fitPlaneTool->canUndo());
     m_dlg->planeModeButton->setChecked(true);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // activate trace mode
@@ -915,7 +943,7 @@ void ccCompass::setTrace() {
     m_dlg->traceModeButton->setChecked(true);
     m_dlg->undoButton->setEnabled(m_traceTool->canUndo());
     m_dlg->acceptButton->setEnabled(true);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // activate the paint tool
@@ -931,7 +959,7 @@ void ccCompass::setPick() {
     m_dlg->pickModeButton->setChecked(true);
     m_dlg->undoButton->setEnabled(false);
     m_dlg->acceptButton->setEnabled(false);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // activate the pinch-node tool
@@ -946,7 +974,7 @@ void ccCompass::addPinchNode() {
     m_dlg->extraModeButton->setChecked(true);
     m_dlg->undoButton->setEnabled(m_activeTool->canUndo());
     m_dlg->acceptButton->setEnabled(false);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 // activates the thickness tool
 void ccCompass::setThickness() {
@@ -965,7 +993,7 @@ void ccCompass::setThickness() {
     m_dlg->extraModeButton->setChecked(true);
     m_dlg->undoButton->setEnabled(m_activeTool->canUndo());
     m_dlg->acceptButton->setEnabled(true);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // activates the thickness tool in two-point mode
@@ -990,7 +1018,7 @@ void ccCompass::setYoungerThan()  // activates topology tool in "older-than"
     // update gui
     m_dlg->undoButton->setEnabled(false);
     m_dlg->acceptButton->setEnabled(false);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 
     // set topology tool mode
     ccTopologyTool::RELATIONSHIP = ccTopologyRelation::YOUNGER_THAN;
@@ -1022,7 +1050,7 @@ void ccCompass::setNote() {
     m_dlg->extraModeButton->setChecked(true);
     m_dlg->undoButton->setEnabled(m_activeTool->canUndo());
     m_dlg->acceptButton->setEnabled(false);
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // merges the selected GeoObjects
@@ -3541,7 +3569,7 @@ void ccCompass::recalculateSelectedTraces() {
         }
     }
 
-    ecvDisplayTools::RedrawDisplay();  // repaint window
+    { ecvRedrawScope scope; }  // repaint window
 }
 
 // recurse and hide visisble point clouds
@@ -3562,8 +3590,8 @@ void ccCompass::toggleStipple(bool checked) {
     ccCompass::drawStippled =
             checked;  // change stippling for newly created planes
     recurseStipple(m_app->dbRootObject(),
-                   checked);           // change stippling for existing planes
-    ecvDisplayTools::RedrawDisplay();  // redraw
+                   checked);   // change stippling for existing planes
+    { ecvRedrawScope scope; }  // redraw
 }
 
 void ccCompass::recurseStipple(ccHObject* object, bool checked) {
@@ -3583,9 +3611,9 @@ void ccCompass::recurseStipple(ccHObject* object, bool checked) {
 // toggle labels
 void ccCompass::toggleLabels(bool checked) {
     recurseLabels(m_app->dbRootObject(),
-                  checked);            // change labels for existing planes
-    ccCompass::drawName = checked;     // change labels for newly created planes
-    ecvDisplayTools::RedrawDisplay();  // redraw
+                  checked);         // change labels for existing planes
+    ccCompass::drawName = checked;  // change labels for newly created planes
+    { ecvRedrawScope scope; }       // redraw
 }
 
 void ccCompass::recurseLabels(ccHObject* object, bool checked) {
@@ -3606,7 +3634,7 @@ void ccCompass::toggleNormals(bool checked) {
     recurseNormals(m_app->dbRootObject(),
                    checked);           // change labels for existing planes
     ccCompass::drawNormals = checked;  // change labels for newly created planes
-    ecvDisplayTools::RedrawDisplay();  // redraw
+    { ecvRedrawScope scope; }          // redraw
 }
 
 void ccCompass::recurseNormals(ccHObject* object, bool checked) {
@@ -3645,7 +3673,7 @@ void ccCompass::enableMapMode()  // turns on/off map mode
     m_app->registerOverlayDialog(m_mapDlg, Qt::Corner::TopLeftCorner);
     m_mapDlg->start();
     m_app->updateOverlayDialogsPlacement();
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 }
 
 // enter or turn off map mode
@@ -3657,7 +3685,7 @@ void ccCompass::enableMeasureMode()  // turns on/off map mode
     m_dlg->mapMode->setChecked(false);
     m_dlg->compassMode->setChecked(true);
     ccCompass::mapMode = false;
-    ecvDisplayTools::RedrawDisplay(true, true);
+    { ecvRedrawScope scope(true, true); }
 
     // turn off map mode dialog
     m_mapDlg->stop(true);

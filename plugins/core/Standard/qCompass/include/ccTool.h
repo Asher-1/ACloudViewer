@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <ecvDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
+#include <ecvViewManager.h>
 
 /*
 Template class that defining the basic functionality of qCompass "tools".
@@ -21,7 +21,7 @@ public:
 
     void initializeTool(ecvMainAppInterface* app) {
         m_app = app;  // store copy of app
-        m_window = ecvDisplayTools::GetCurrentScreen();
+        m_window = ecvViewManager::instance().activeWidget();
     }
 
     // called when the tool is set to active (for initialization)

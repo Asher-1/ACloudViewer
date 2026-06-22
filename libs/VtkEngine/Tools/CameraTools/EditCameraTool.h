@@ -13,10 +13,16 @@
  */
 
 #include <ecvGenericCameraTool.h>
+#include <vtkSmartPointer.h>
 
 #include <QObject>
 
 #include "qVTK.h"
+
+class vtkCamera;
+namespace Visualization {
+class VtkVis;
+}
 
 /**
  * @class EditCameraTool
@@ -31,8 +37,8 @@ public:
 
     static void UpdateCameraInfo();
     static void UpdateCamera();
-    /// @param viewer Visualizer to set for static camera operations.
     static void SetVisualizer(ecvGenericVisualizer3D* viewer);
+    static EditCameraTool* ActiveTool();
 
 private slots:
     // Description:
@@ -53,4 +59,7 @@ private slots:
 private:
     virtual void adjustCamera(CameraAdjustmentType enType,
                               double value) override;
+
+    vtkSmartPointer<vtkCamera> m_camera;
+    class Visualization::VtkVis* m_viewer = nullptr;
 };

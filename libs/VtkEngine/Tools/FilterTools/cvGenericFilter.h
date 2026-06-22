@@ -31,14 +31,17 @@ namespace Visualization {
 class VtkVis;
 }
 class ecvGenericVisualizer3D;
+class ecvGenericGLDisplay;
 
 class vtkActor;
+class vtkCallbackCommand;
+class vtkObject;
 class vtkProp;
 class vtkDataSet;
 class vtkDataObject;
 class vtkDataArray;
 class vtkScalarBarActor;
-class vtkLODActor;
+class vtkPVLODActor;
 class vtk3DWidget;
 class vtkLookupTable;
 class vtkRenderWindowInteractor;
@@ -118,6 +121,17 @@ protected:
     void UpdateScalarRange();
 
     void applyDisplayEffect();
+    void applyModelDisplayEffect();
+    bool restoreDisplayEffectIfNeeded();
+    void installDisplayEffectObserver();
+    void removeDisplayEffectObserver();
+    static void OnRenderEnd(vtkObject* caller,
+                            unsigned long eid,
+                            void* clientData,
+                            void* callData);
+    void scheduleDisplayEffectRefresh();
+    void hideInputEntityForOpaquePreview(bool hide);
+    void restoreInputEntityVisibility();
     void setScalarBarColors(const QColor& clr1, const QColor& clr2);
     QColor color1() const;
     QColor color2() const;
@@ -188,15 +202,22 @@ protected:
     bool m_negative;
     bool m_meshMode;
     bool m_preview;
+    bool m_entityVisibilityOverridden = false;
+    bool m_entityOriginalVisibility = true;
+    bool m_entityHadVisibilityOverride = false;
+    ecvGenericGLDisplay* m_entityVisibilityView = nullptr;
     std::string m_id;
     ccHObject* m_entity = nullptr;
     Visualization::VtkVis* m_viewer = nullptr;
     vtkRenderWindowInteractor* m_interactor = nullptr;
 
     vtkSmartPointer<vtkActor> m_modelActor;
-    vtkSmartPointer<vtkLODActor> m_filterActor;
+    vtkSmartPointer<vtkPVLODActor> m_filterActor;
     vtkSmartPointer<vtkScalarBarActor> m_scalarBar;
     vtkSmartPointer<vtkActor> m_outlineActor;
+    vtkSmartPointer<vtkCallbackCommand> m_renderEndCallback;
+    unsigned long m_renderEndObserverTag = 0;
+    bool m_applyingDisplayEffect = false;
 
     QColor m_color1 = Qt::blue;
     QColor m_color2 = Qt::red;

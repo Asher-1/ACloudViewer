@@ -25,6 +25,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvDish.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDisc.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTypes.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawContext.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.h
@@ -38,6 +39,13 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericAnnotationTool.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvGenericGLDisplay.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewContext.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewLayoutProxy.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewManager.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewTitleRegistry.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvViewRepresentation.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvRepresentationManager.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.h

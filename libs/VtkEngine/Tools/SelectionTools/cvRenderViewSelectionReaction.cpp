@@ -30,7 +30,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 
 // CV_APP (forward declaration to avoid circular dependency)
 class MainWindow;
@@ -177,6 +177,10 @@ cvRenderViewSelectionReaction::cvRenderViewSelectionReaction(
 
 //-----------------------------------------------------------------------------
 cvRenderViewSelectionReaction::~cvRenderViewSelectionReaction() {
+    // Prevent dangling ActiveReaction pointer
+    if (ActiveReaction == this) {
+        ActiveReaction = nullptr;
+    }
     // Clean up observers before destruction
     // Reference: pqRenderViewSelectionReaction.cxx line 124-127
     cleanupObservers();
@@ -198,25 +202,35 @@ void cvRenderViewSelectionReaction::setVisualizer(
         return;
     }
 
-    // End any active selection before changing visualizer
-    if (isActive()) {
-        endSelection();
+    bool wasActive = isActive();
+
+    if (wasActive) {
+        // Tear down observers/style on the OLD interactor without
+        // fully deactivating (keep ActiveReaction == this).
+        cleanupObservers();
+        restoreStyle();
     }
 
     m_viewer = viewer;
     m_interactor = nullptr;
     m_renderer = nullptr;
 
-    // Get VTK objects from visualizer
     Visualization::VtkVis* pclVis = getVtkVis();
     if (pclVis) {
         m_interactor = pclVis->getRenderWindowInteractor();
         m_renderer = pclVis->getCurrentRenderer();
     }
 
-    // Update enable state with new visualizer
-    // This ensures polygon selection actions are enabled when viewer is set
-    updateEnableState();
+    if (wasActive && m_interactor) {
+        // Re-apply interactor style + observers on the NEW window so the
+        // active selection tool keeps working across multi-window switches.
+        setupInteractorStyle();
+        setupObservers();
+        // Do NOT call updateEnableState() here — it calls endSelection()
+        // which would undo the interactor rebind we just performed.
+    } else {
+        updateEnableState();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -603,13 +617,12 @@ void cvRenderViewSelectionReaction::endSelection() {
         }
     });
 
-    // Uncheck the action immediately (safe to do)
-    // Reference: line 516
+    // Uncheck the action immediately. Do NOT blockSignals so that
+    // per-view mirror buttons receive the toggled(false) and can uncheck.
+    // The reaction connects to triggered(), not toggled(), so no re-entrancy.
     if (m_parentAction && m_parentAction->isCheckable() &&
         m_parentAction->isChecked()) {
-        m_parentAction->blockSignals(true);
         m_parentAction->setChecked(false);
-        m_parentAction->blockSignals(false);
     }
 
     CVLog::PrintVerbose(
@@ -1056,13 +1069,8 @@ void cvRenderViewSelectionReaction::preSelection() {
         }
     }
 
-    // ParaView-style: Trigger render after selection update
-    // Reference: pqRenderViewSelectionReaction::fastPreSelection() line 871
-    if (m_interactor) {
-        vtkRenderWindow* renWin = m_interactor->GetRenderWindow();
-        if (renWin) {
-            renWin->Render();
-        }
+    if (Visualization::VtkVis* pclVis = getVtkVis()) {
+        pclVis->UpdateScreen();
     }
 
     updateTooltip();
@@ -1338,7 +1346,7 @@ void cvRenderViewSelectionReaction::updateTooltip() {
     if (!tooltipText.isEmpty()) {
         // Get widget position for tooltip
         // Reference: ParaView uses DPI scaling - we should too
-        QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+        QWidget* widget = ecvViewManager::instance().activeWidget();
         if (widget) {
             // Take DPI scaling into account (ParaView-style)
             qreal dpr = widget->devicePixelRatioF();
@@ -1377,32 +1385,34 @@ void cvRenderViewSelectionReaction::updateTooltip() {
 int cvRenderViewSelectionReaction::getSelectionModifier() {
     // Reference: pqSelectionReaction::getSelectionModifier() and
     // pqRenderViewSelectionReaction::getSelectionModifier()
-    // lines 1013-1035
 
-    // First check modifier group
-    // IMPORTANT: We cannot use QActionGroup::checkedAction() since the
-    // ModifierGroup may not be exclusive (exclusive=false). We need to iterate
-    // through all actions to find which one is checked, following ParaView's
-    // pqSelectionReaction pattern.
+    cvViewSelectionManager* manager = cvViewSelectionManager::instance();
     int selectionModifier =
-            static_cast<int>(SelectionModifier::SELECTION_DEFAULT);
+            manager ? static_cast<int>(manager->getCurrentModifier())
+                    : static_cast<int>(SelectionModifier::SELECTION_DEFAULT);
 
-    if (m_modifierGroup) {
-        // ParaView pattern: iterate through all actions in the group
+    // Fallback: toolbar group (in case manager was not updated yet).
+    if (selectionModifier ==
+                static_cast<int>(SelectionModifier::SELECTION_DEFAULT) &&
+        m_modifierGroup) {
         for (QAction* maction : m_modifierGroup->actions()) {
             if (maction && maction->isChecked() && maction->data().isValid()) {
                 selectionModifier = maction->data().toInt();
+                if (manager) {
+                    manager->setSelectionModifier(
+                            static_cast<SelectionModifier>(selectionModifier));
+                }
                 CVLog::PrintVerbose(
                         QString("[getSelectionModifier] From modifierGroup: "
                                 "action='%1', modifier=%2")
                                 .arg(maction->text())
                                 .arg(selectionModifier));
-                break;  // Only one should be checked at a time
+                break;
             }
         }
     }
 
-    // Check keyboard modifiers (override button selection)
+    // Keyboard overrides toolbar (ParaView pqRenderViewSelectionReaction).
     if (m_interactor) {
         bool ctrl = m_interactor->GetControlKey() == 1;
         bool shift = m_interactor->GetShiftKey() == 1;
@@ -1417,6 +1427,11 @@ int cvRenderViewSelectionReaction::getSelectionModifier() {
             selectionModifier =
                     static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION);
         }
+    }
+
+    if (manager) {
+        manager->setSelectionModifier(
+                static_cast<SelectionModifier>(selectionModifier));
     }
 
     return selectionModifier;
@@ -1485,6 +1500,23 @@ void cvRenderViewSelectionReaction::cleanupObservers() {
 }
 
 //-----------------------------------------------------------------------------
+void cvRenderViewSelectionReaction::prepareHardwareSelectionPick() {
+    if (cvSelectionHighlighter* highlighter = getSelectionHighlighter()) {
+        highlighter->setHighlightsVisible(false);
+    }
+    if (cvSelectionPipeline* pipeline = getSelectionPipeline()) {
+        pipeline->invalidateCachedSelection();
+    }
+    if (Visualization::VtkVis* vis = getVtkVis()) {
+        vis->UpdateScreen();
+    } else if (m_renderer) {
+        if (vtkRenderWindow* rw = m_renderer->GetRenderWindow()) {
+            rw->Render();
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::uncheckSelectionModifiers() {
     if (m_modifierGroup) {
         QAction* checkedAction = m_modifierGroup->checkedAction();
@@ -1508,22 +1540,19 @@ void cvRenderViewSelectionReaction::selectCellsOnSurface(
         return;
     }
 
-    // CRITICAL: Temporarily hide highlight actors before hardware selection
-    // This prevents the highlight actor from occluding the original data in
-    // the depth buffer, which would cause subtract selection to select wrong
-    // points.
-    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
+    prepareHardwareSelectionPick();
 
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
     cvSelectionData selection = pipeline->selectCellsOnSurface(region);
 
-    // Restore highlight visibility
     if (highlighter) {
         highlighter->setHighlightsVisible(true);
     }
 
+    CVLog::Print(QString("[cvRenderViewSelectionReaction] SurfaceCells pick "
+                         "count=%1 modifier=%2")
+                         .arg(selection.count())
+                         .arg(selectionModifier));
     finalizeSelection(selection, selectionModifier, "SurfaceCells");
 }
 
@@ -1538,22 +1567,20 @@ void cvRenderViewSelectionReaction::selectPointsOnSurface(
         return;
     }
 
-    // CRITICAL: Temporarily hide highlight actors before hardware selection
-    // This prevents the highlight actor from occluding the original data in
-    // the depth buffer, which would cause subtract selection to select wrong
-    // points.
-    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
+    prepareHardwareSelectionPick();
 
+    cvSelectionHighlighter* highlighter = getSelectionHighlighter();
     cvSelectionData selection = pipeline->selectPointsOnSurface(region);
 
-    // Restore highlight visibility
     if (highlighter) {
         highlighter->setHighlightsVisible(true);
     }
 
+    CVLog::PrintVerbose(
+            QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
+                    "count=%1 modifier=%2")
+                    .arg(selection.count())
+                    .arg(selectionModifier));
     finalizeSelection(selection, selectionModifier, "SurfacePoints");
 }
 
@@ -1568,16 +1595,10 @@ void cvRenderViewSelectionReaction::selectFrustumCells(int region[4],
         return;
     }
 
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectCellsInFrustum(region);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "FrustumCells");
 }
@@ -1593,16 +1614,10 @@ void cvRenderViewSelectionReaction::selectFrustumPoints(int region[4],
         return;
     }
 
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectPointsInFrustum(region);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "FrustumPoints");
 }
@@ -1618,6 +1633,8 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     Q_UNUSED(description);
 
     if (newSelection.isEmpty()) {
+        CVLog::Print(QString("[finalizeSelection] empty selection (%1)")
+                             .arg(description));
         return;
     }
 
@@ -1627,53 +1644,71 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     }
     cvSelectionData currentSel = manager->currentSelection();
 
-    // Combine with existing selection based on modifier
+    cvSelectionPipeline::CombineOperation combineOp =
+            cvSelectionPipeline::OPERATION_DEFAULT;
+    switch (static_cast<SelectionModifier>(selectionModifier)) {
+        case SelectionModifier::SELECTION_ADDITION:
+            combineOp = cvSelectionPipeline::OPERATION_ADDITION;
+            break;
+        case SelectionModifier::SELECTION_SUBTRACTION:
+            combineOp = cvSelectionPipeline::OPERATION_SUBTRACTION;
+            break;
+        case SelectionModifier::SELECTION_TOGGLE:
+            combineOp = cvSelectionPipeline::OPERATION_TOGGLE;
+            break;
+        default:
+            combineOp = cvSelectionPipeline::OPERATION_DEFAULT;
+            break;
+    }
+
     cvSelectionData combined = cvSelectionPipeline::combineSelections(
-            currentSel, newSelection,
-            static_cast<cvSelectionPipeline::CombineOperation>(
-                    selectionModifier));
+            currentSel, newSelection, combineOp);
 
     // Update source object from VtkVis for direct extraction
-    // This allows extraction operations to use the original ccPointCloud/ccMesh
-    // instead of converting from VTK polydata
     Visualization::VtkVis* pclVis = getVtkVis();
     if (pclVis && combined.hasActorInfo()) {
-        // Get viewID from the primary (front-most) actor
         vtkActor* primaryActor = combined.primaryActor();
         if (primaryActor) {
+            primaryActor = cvSelectionHighlighter::resolveRegisteredMeshActor(
+                    pclVis, primaryActor);
             std::string viewID = pclVis->getIdByActor(primaryActor);
+            if (viewID.empty() && combined.primaryPolyData()) {
+                viewID = pclVis->getIdByPolyData(combined.primaryPolyData());
+            }
             if (!viewID.empty()) {
-                ccHObject* sourceObj = pclVis->getSourceObject(viewID);
-                if (sourceObj) {
+                if (ccHObject* sourceObj = pclVis->getSourceObject(viewID)) {
                     manager->setSourceObject(sourceObj);
                 } else {
                     CVLog::Warning(
                             QString("[finalizeSelection] No source object "
-                                    "found "
-                                    "for viewID='%1'")
+                                    "found for viewID='%1'")
                                     .arg(QString::fromStdString(viewID)));
                 }
             } else {
-                CVLog::Warning(
+                CVLog::Print(
                         "[finalizeSelection] Could not find viewID for "
                         "primary actor");
             }
         }
     }
 
-    // Update manager's current selection
-    manager->setCurrentSelection(combined);
-
-    // Update persistent SELECTED highlight (ParaView-style)
-    // This shows accumulated selection as a persistent visual indicator
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+
+    // Highlight on the active view first, then publish selection state.
+    // Avoids selectionChanged handlers re-highlighting with stripped actor
+    // info.
+    manager->blockSignals(true);
     if (highlighter && !combined.isEmpty()) {
-        highlighter->highlightSelection(combined,
-                                        cvSelectionHighlighter::SELECTED);
+        const bool hlOk = highlighter->highlightSelection(
+                combined, cvSelectionHighlighter::SELECTED);
+        CVLog::Print(QString("[finalizeSelection] highlight %1 for %2 ids")
+                             .arg(hlOk ? "OK" : "FAIL")
+                             .arg(combined.count()));
     } else if (highlighter && combined.isEmpty()) {
-        // Clear highlight if selection is empty
         highlighter->clearHighlights();
     }
+    manager->setCurrentSelection(combined);
+    manager->blockSignals(false);
 
     emit selectionFinished(combined);
 }
@@ -1684,17 +1719,10 @@ void cvRenderViewSelectionReaction::selectPolygonCells(vtkIntArray* polygon,
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (!pipeline || !polygon) return;
 
-    // CRITICAL: Temporarily hide highlight actors before hardware selection
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectCellsInPolygon(polygon);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "PolygonCells");
 }
@@ -1705,17 +1733,10 @@ void cvRenderViewSelectionReaction::selectPolygonPoints(vtkIntArray* polygon,
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (!pipeline || !polygon) return;
 
-    // CRITICAL: Temporarily hide highlight actors before hardware selection
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectPointsInPolygon(polygon);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "PolygonPoints");
 }
@@ -1731,16 +1752,10 @@ void cvRenderViewSelectionReaction::selectBlock(int region[4],
         return;
     }
 
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectBlocksOnSurface(region);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "BlockSurface");
 }
@@ -1756,16 +1771,10 @@ void cvRenderViewSelectionReaction::selectFrustumBlocks(int region[4],
         return;
     }
 
+    prepareHardwareSelectionPick();
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
-    if (highlighter) {
-        highlighter->setHighlightsVisible(false);
-    }
-
     cvSelectionData selection = pipeline->selectBlocksInFrustum(region);
-
-    if (highlighter) {
-        highlighter->setHighlightsVisible(true);
-    }
+    if (highlighter) highlighter->setHighlightsVisible(true);
 
     finalizeSelection(selection, selectionModifier, "FrustumBlocks");
 }
@@ -1833,7 +1842,7 @@ bool cvRenderViewSelectionReaction::isTooltipMode() const {
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::setCursor(const QCursor& cursor) {
-    QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+    QWidget* widget = ecvViewManager::instance().activeWidget();
     if (widget) {
         widget->setCursor(cursor);
     }
@@ -1841,7 +1850,7 @@ void cvRenderViewSelectionReaction::setCursor(const QCursor& cursor) {
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::unsetCursor() {
-    QWidget* widget = ecvDisplayTools::GetCurrentScreen();
+    QWidget* widget = ecvViewManager::instance().activeWidget();
     if (widget) {
         widget->setCursor(Qt::ArrowCursor);  // Explicitly set arrow cursor
         widget->unsetCursor();  // Also unset to remove any override
@@ -1955,6 +1964,16 @@ void cvRenderViewSelectionReaction::setupInteractorStyle() {
             setCursor(m_zoomCursor);
             auto zoomStyle =
                     vtkSmartPointer<vtkInteractorStyleRubberBandZoom>::New();
+            // ParaView alignment (vtkPVRenderView.cxx):
+            // Lock rubber-band box to viewport aspect ratio so the drawn
+            // rectangle exactly matches the resulting zoom region.
+            zoomStyle->SetLockAspectToViewport(true);
+            // Use focal-point + view-angle zoom instead of dolly for
+            // perspective projection, matching ParaView behavior.
+            zoomStyle->SetUseDollyForPerspectiveProjection(false);
+            if (m_renderer) {
+                zoomStyle->SetDefaultRenderer(m_renderer);
+            }
             m_selectionStyle = zoomStyle;
             m_interactor->SetInteractorStyle(zoomStyle);
             break;

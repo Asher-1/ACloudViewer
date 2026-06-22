@@ -7,8 +7,38 @@
 
 #include "ecvGenericPrimitive.h"
 
-#include "ecvDisplayTools.h"
+#include "ecvDrawContext.h"
 #include "ecvPointCloud.h"
+#include "ecvViewManager.h"
+
+namespace {
+
+void removeObjectFromDisplays(const ccHObject* obj) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = obj->getViewId();
+    context.removeEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->removeEntities(context);
+}
+
+void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
+    if (!obj || !ecvViewManager::instance().activeWidget()) return;
+    CC_DRAW_CONTEXT context;
+    context.visible = visible;
+    context.viewID = obj->getViewId();
+    context.hideShowEntityType = obj->getEntityType();
+    context.display = obj->getDisplay();
+    if (auto* disp = context.display
+                             ? context.display
+                             : ecvViewManager::instance().getEffectiveView())
+        disp->hideShowEntities(context);
+}
+
+}  // namespace
 
 ccGenericPrimitive::ccGenericPrimitive(QString name /*=QString()*/,
                                        const ccGLMatrix* transMat /*=0*/)
@@ -212,12 +242,10 @@ const ccGLMatrix& ccGenericPrimitive::getGLTransformationHistory() const {
     return m_transformation;
 }
 
-void ccGenericPrimitive::clearDrawings() {
-    ecvDisplayTools::RemoveEntities(this);
-}
+void ccGenericPrimitive::clearDrawings() { removeObjectFromDisplays(this); }
 
 void ccGenericPrimitive::hideShowDrawings(CC_DRAW_CONTEXT& context) {
-    ecvDisplayTools::HideShowEntities(this, context.visible);
+    hideShowObjectOnDisplays(this, context.visible);
 }
 
 void ccGenericPrimitive::applyTransformationToVertices() {

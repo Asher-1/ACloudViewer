@@ -13,7 +13,6 @@
 
 // CV_DB_LIB
 #include <ecvBBox.h>
-#include <ecvDisplayTools.h>
 
 // SYSTEM
 #include <vector>
@@ -40,6 +39,9 @@ public:
     virtual bool linkWith(QWidget* win) override;
 
     bool setAnnotationsTool(ecvGenericAnnotationTool* annotationTool);
+    ecvGenericAnnotationTool* getAnnotationsTool() const {
+        return m_annotationTool;
+    }
 
     //! Adds an entity
     /** \return success, if the entity is eligible for clipping

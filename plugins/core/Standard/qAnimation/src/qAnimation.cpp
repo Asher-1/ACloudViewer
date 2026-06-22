@@ -16,11 +16,11 @@
 
 // CV_DB_LIB
 #include <ecv2DViewportObject.h>
-#include <ecvDisplayTools.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvViewManager.h>
 
 // Qt
 #include <QMainWindow>
@@ -179,7 +179,7 @@ void qAnimation::doAction() {
             };
         }
     }
-    ecvDisplayTools::UpdateScreen();
+    if (auto *w = ecvViewManager::instance().activeWidget()) w->update();
 
     // Export trajectory (for debug)
     if (videoDlg.exportTrajectoryOnExit() && videoDlg.getTrajectory()) {

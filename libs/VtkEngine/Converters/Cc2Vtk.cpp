@@ -21,6 +21,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewManager.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -30,6 +31,7 @@
 #include <vtkCellData.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
+#include <vtkIntArray.h>
 #include <vtkMatrix4x4.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
@@ -44,6 +46,57 @@
 #include <cassert>
 
 namespace Converters {
+
+namespace {
+
+void AddDatasetNameMetadata(vtkPolyData* polydata, const QString& name) {
+    if (!polydata || name.isEmpty()) {
+        return;
+    }
+
+    auto ds = vtkSmartPointer<vtkStringArray>::New();
+    ds->SetName("DatasetName");
+    ds->SetNumberOfTuples(1);
+    ds->SetValue(0, name.toStdString());
+    polydata->GetFieldData()->AddArray(ds);
+}
+
+void AddHasSourceRGBFlag(vtkPolyData* polydata) {
+    if (!polydata) {
+        return;
+    }
+
+    auto flag = vtkSmartPointer<vtkStringArray>::New();
+    flag->SetName("HasSourceRGB");
+    flag->SetNumberOfTuples(1);
+    flag->SetValue(0, "1");
+    polydata->GetFieldData()->AddArray(flag);
+}
+
+void AddActiveScalarFieldMetadata(vtkPolyData* polydata,
+                                  const ccPointCloud* cloud) {
+    if (!polydata || !cloud || !cloud->hasScalarFields()) {
+        return;
+    }
+
+    const int sfIdx = cloud->getCurrentDisplayedScalarFieldIndex();
+    if (sfIdx < 0) {
+        return;
+    }
+
+    const auto* sf = cloud->getScalarField(sfIdx);
+    if (!sf) {
+        return;
+    }
+
+    auto arr = vtkSmartPointer<vtkStringArray>::New();
+    arr->SetName("ActiveScalarField");
+    arr->SetNumberOfTuples(1);
+    arr->SetValue(0, Cc2Vtk::GetSimplifiedSFName(sf->getName()));
+    polydata->GetFieldData()->AddArray(arr);
+}
+
+}  // namespace
 
 vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         const ccPointCloud* cloud,
@@ -219,15 +272,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
     // Skip tooltip/selection-only arrays in lightweight mode (slider drag).
     // They are rebuilt on the next full draw cycle after the drag ends.
     if (!lightweight) {
-        // DatasetName for ParaView-style tooltip
-        QString name = cloud->getName();
-        if (!name.isEmpty()) {
-            auto ds = vtkSmartPointer<vtkStringArray>::New();
-            ds->SetName("DatasetName");
-            ds->SetNumberOfTuples(1);
-            ds->SetValue(0, name.toStdString());
-            polydata->GetFieldData()->AddArray(ds);
-        }
+        AddDatasetNameMetadata(polydata, cloud->getName());
+        AddActiveScalarFieldMetadata(polydata, cloud);
 
         // SourceRGB: original per-point colors when SF rendering is active,
         // so the tooltip shows real RGB instead of SF-mapped colors.
@@ -403,6 +449,13 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
     auto polys = vtkSmartPointer<vtkCellArray>::New();
     polys->AllocateEstimate(static_cast<vtkIdType>(tri_count), 3);
 
+    vtkSmartPointer<vtkIntArray> materialIndices;
+    if (mesh->hasMaterials()) {
+        materialIndices = vtkSmartPointer<vtkIntArray>::New();
+        materialIndices->SetName("MaterialIndex");
+        materialIndices->SetNumberOfComponents(1);
+    }
+
     const NormsIndexesTableType* tri_norms = mesh->getTriNormsTable();
     NormsIndexesTableType* norms_table = nullptr;
     ccNormalVectors* compressed_norms = nullptr;
@@ -516,6 +569,10 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         polys->InsertCellPoint(base + 1);
         polys->InsertCellPoint(base + 2);
 
+        if (materialIndices) {
+            materialIndices->InsertNextValue(mesh->getTriangleMtlIndex(n));
+        }
+
         vtk_pt_idx += static_cast<vtkIdType>(dim);
     }
 
@@ -544,14 +601,15 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
     if (normals) {
         polydata->GetPointData()->SetNormals(normals);
     }
+    if (materialIndices && materialIndices->GetNumberOfTuples() > 0) {
+        polydata->GetCellData()->AddArray(materialIndices);
+    }
 
-    QString mesh_name = mesh->getName();
-    if (!mesh_name.isEmpty()) {
-        auto ds = vtkSmartPointer<vtkStringArray>::New();
-        ds->SetName("DatasetName");
-        ds->SetNumberOfTuples(1);
-        ds->SetValue(0, mesh_name.toStdString());
-        polydata->GetFieldData()->AddArray(ds);
+    AddDatasetNameMetadata(polydata, mesh->getName());
+    AddActiveScalarFieldMetadata(polydata, vertex_cloud);
+
+    if (show_colors && !show_sf && vertex_cloud->hasColors()) {
+        AddHasSourceRGBFlag(polydata);
     }
 
     // Helper: iterate over the kept triangles (compact indexing).  When no
@@ -810,7 +868,12 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PolylineToPolyData(
         const CCVector3* pp = polyline->getPoint(i);
         CCVector3d out;
         if (polyline->is2DMode()) {
-            ecvDisplayTools::TheInstance()->toWorldPoint(*pp, out);
+            ecvGenericGLDisplay* disp = polyline->getDisplay();
+            if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+            if (auto* dt = dynamic_cast<ecvDisplayTools*>(disp))
+                dt->toWorldPoint(*pp, out);
+            else
+                out = CCVector3d::fromArray(pp->u);
         } else {
             out = CCVector3d::fromArray(pp->u);
         }

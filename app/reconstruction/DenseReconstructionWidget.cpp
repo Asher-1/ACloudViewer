@@ -20,7 +20,6 @@
 #include <FileSystem.h>
 
 // CV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecvPointCloud.h>
 
 // LOCAL

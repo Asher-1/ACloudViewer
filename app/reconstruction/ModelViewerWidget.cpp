@@ -18,6 +18,12 @@
 #include <ecvPointCloud.h>
 
 // LOCAL
+#include <Visualization/VtkDisplayTools.h>
+#include <Visualization/vtkGLView.h>
+#include <ecvGenericGLDisplay.h>
+#include <ecvRedrawScope.h>
+#include <ecvViewManager.h>
+
 #include "MainWindow.h"
 #include "ecvConsole.h"
 #include "ecvDBRoot.h"
@@ -35,6 +41,28 @@ const Eigen::Vector4d kMovieGrabberImageFrameColor(0.0, 0.8, 0.8, 1.0);
 
 namespace cloudViewer {
 namespace {
+
+Visualization::VtkDisplayTools* vtkPrimaryDisplayTools() {
+    ecvGenericGLDisplay* ev = ecvViewManager::instance().getEffectiveView();
+    if (auto* dt = dynamic_cast<ecvDisplayTools*>(ev)) {
+        return dynamic_cast<Visualization::VtkDisplayTools*>(dt);
+    }
+    return nullptr;
+}
+
+inline vtkGLView* effectiveGLView() {
+    return dynamic_cast<vtkGLView*>(
+            ecvViewManager::instance().getEffectiveView());
+}
+
+void refreshActiveLikeUpdateScreen() {
+    if (auto* w = ecvViewManager::instance().activeWidget()) {
+        w->update();
+    }
+    if (ecvViewManager::instance().viewCount() > 1) {
+        ecvViewManager::instance().refreshAll();
+    }
+}
 
 // Generate unique index from RGB color in the range [0, 256^3].
 inline size_t RGBToIndex(const uint8_t r, const uint8_t g, const uint8_t b) {
@@ -77,7 +105,10 @@ void BuildImageModel(ccCameraSensor* sensor,
     ecvColor::Rgb frameColor = ecvColor::Rgb::FromEigen(
             Eigen::Vector3d(frame_color(0), frame_color(1), frame_color(2)));
     sensor->setFrameColor(frameColor);
-    int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
+    int retinaScale = 1;
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        retinaScale = v->getDevicePixelRatio();
+    }
     sensor->setGraphicScale(-PC_ONE / retinaScale);
 
     // init camera intrinsic parameters
@@ -129,13 +160,17 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent,
     SetPointColormap(new PointColormapPhotometric());
     SetImageColormap(new ImageColormapUniform());
 
-    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked, this,
-            &ModelViewerWidget::SelectObject);
+    if (vtkPrimaryDisplayTools()) {
+        connect(&ecvViewManager::instance(), &ecvViewManager::itemPicked, this,
+                &ModelViewerWidget::SelectObject);
+    }
 
-    image_size_ = static_cast<float>(ecvDisplayTools::GetDevicePixelRatio() *
-                                     image_size_);
-    point_size_ = static_cast<float>(ecvDisplayTools::GetDevicePixelRatio() *
-                                     point_size_);
+    int dpr = 1;
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        dpr = v->getDevicePixelRatio();
+    }
+    image_size_ = static_cast<float>(dpr * image_size_);
+    point_size_ = static_cast<float>(dpr * point_size_);
 
     point_line_data_.clear();
     image_line_data_.clear();
@@ -198,7 +233,11 @@ void ModelViewerWidget::ClearReconstruction() {
 }
 
 int ModelViewerWidget::GetProjectionType() const {
-    if (ecvDisplayTools::GetPerspectiveState()) {
+    bool perspective = false;
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        perspective = v->perspectiveView();
+    }
+    if (perspective) {
         options_->render->projection_type =
                 colmap::RenderOptions::ProjectionType::PERSPECTIVE;
     } else {
@@ -224,18 +263,28 @@ void ModelViewerWidget::UpdateMovieGrabber() {
 }
 
 float ModelViewerWidget::ZoomScale() {
-    focus_distance_ =
-            static_cast<float>(ecvDisplayTools::GetCameraFocalDistance());
+    auto* glv = effectiveGLView();
+    auto* vis =
+            glv && glv->getVisualizer3D() ? glv->getVisualizer3D() : nullptr;
+    if (!glv || !vis) {
+        return 1.0f;
+    }
+    focus_distance_ = static_cast<float>(vis->getCameraFocalDistance());
+    const float fov_deg = glv->getViewportParameters().fov_deg;
+    const int gh = std::max(1, glv->glHeight());
     // "Constant" scale factor w.r.t. zoom-level.
-    return 2.0f *
-           std::tan(static_cast<float>(DegToRad(ecvDisplayTools::GetFov())) /
-                    2.0f) *
-           std::abs(focus_distance_) / ecvDisplayTools::GlHeight();
+    return 2.0f * std::tan(static_cast<float>(DegToRad(fov_deg)) / 2.0f) *
+           std::abs(focus_distance_) / static_cast<float>(gh);
 }
 
 float ModelViewerWidget::AspectRatio() const {
-    return static_cast<float>(ecvDisplayTools::GlWidth()) /
-           static_cast<float>(ecvDisplayTools::GlHeight());
+    auto* glv = effectiveGLView();
+    if (!glv) {
+        return 1.0f;
+    }
+    const int gw = std::max(1, glv->glWidth());
+    const int gh = std::max(1, glv->glHeight());
+    return static_cast<float>(gw) / static_cast<float>(gh);
 }
 
 void ModelViewerWidget::ChangeFocusDistance(const float delta) {
@@ -243,8 +292,11 @@ void ModelViewerWidget::ChangeFocusDistance(const float delta) {
         return;
     }
 
-    focus_distance_ =
-            static_cast<float>(ecvDisplayTools::GetCameraFocalDistance());
+    auto* glv = effectiveGLView();
+    auto* vis =
+            glv && glv->getVisualizer3D() ? glv->getVisualizer3D() : nullptr;
+    focus_distance_ = vis ? static_cast<float>(vis->getCameraFocalDistance())
+                          : focus_distance_;
     const float prev_focus_distance = focus_distance_;
     float diff = delta * ZoomScale() * kFocusSpeed;
     focus_distance_ -= diff;
@@ -255,9 +307,10 @@ void ModelViewerWidget::ChangeFocusDistance(const float delta) {
         focus_distance_ = kMaxFocusDistance;
         diff = prev_focus_distance - focus_distance_;
     }
-    ecvDisplayTools::SetCameraFocalDistance(
-            static_cast<double>(focus_distance_));
-    ecvDisplayTools::Update();
+    if (vis) {
+        vis->setCameraFocalDistance(static_cast<double>(focus_distance_));
+    }
+    refreshActiveLikeUpdateScreen();
 }
 
 void ModelViewerWidget::ChangePointSize(const float delta) {
@@ -294,9 +347,11 @@ void ModelViewerWidget::ResetView() {
 }
 
 ccGLMatrixd ModelViewerWidget::ModelViewMatrix() const {
-    ccGLMatrixd mat;
-    ecvDisplayTools::GetViewMatrix(mat.data());
-    return mat;
+    auto* glv = effectiveGLView();
+    if (glv) {
+        return glv->context().viewMatd;
+    }
+    return ccGLMatrixd();
 }
 
 void ModelViewerWidget::SelectObject(ccHObject* entity,
@@ -420,8 +475,11 @@ void ModelViewerWidget::SelectMoviewGrabberView(const size_t view_idx) {
 }
 
 QImage ModelViewerWidget::GrabImage() {
-    // render to image
-    return ecvDisplayTools::RenderToImage(1, false, true, 0);
+    auto* glv = effectiveGLView();
+    if (glv && glv->getVisualizer3D()) {
+        return glv->getVisualizer3D()->renderToImage(1, false, true, 0);
+    }
+    return QImage();
 }
 
 void ModelViewerWidget::GrabMovie() {
@@ -508,8 +566,13 @@ void ModelViewerWidget::SetBackgroundColor(const float r,
     ecvGui::ParamStruct params = ecvGui::Parameters();
     params.backgroundCol =
             ecvColor::Rgb::FromEigen(Eigen::Vector3f(r, g, b).cast<double>());
-    ecvDisplayTools::SetDisplayParameters(params);
-    ecvDisplayTools::RedrawDisplay(true, false);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        v->setDisplayParameters(params);
+    }
+    {
+        ecvRedrawScope redrawScope(true, false);
+        (void)redrawScope;
+    }
 }
 
 void ModelViewerWidget::SetupView() {
@@ -535,15 +598,27 @@ void ModelViewerWidget::Upload() {
 
 void ModelViewerWidget::StartRender() {
     // render before
-    ecvDisplayTools::SetRedrawRecursive(false);
+    if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+        if (ccHObject* db = v->getSceneDB()) {
+            db->setRedrawFlagRecursive(false);
+        }
+        if (ccHObject* own = v->getOwnDB()) {
+            own->setRedrawFlagRecursive(false);
+        }
+    }
     bbox_.clear();
 }
 
 void ModelViewerWidget::EndRender(bool autoZoom /* = true*/) {
     if (autoZoom && bbox_.isValid()) {
-        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox_, true);
+        if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+            v->updateConstellationCenterAndZoom(&bbox_);
+        }
     } else {
-        ecvDisplayTools::RedrawDisplay();
+        {
+            ecvRedrawScope redrawScope;
+            (void)redrawScope;
+        }
     }
 }
 
@@ -847,10 +922,14 @@ void ModelViewerWidget::UploadMovieGrabberData() {
         // Setup dummy camera with same settings as current OpenGL viewpoint.
         const unsigned long kDefaultImageWdith = 2048;
         const unsigned long kDefaultImageHeight = 1536;
-        const double focal_length =
-                -2.0 *
-                std::tan(DegToRad(ecvDisplayTools::GetCameraFovy()) / 2.0) *
-                kDefaultImageWdith;
+        double cam_fovy_deg = 45.0;
+        if (auto* glv = effectiveGLView()) {
+            cam_fovy_deg =
+                    static_cast<double>(glv->getViewportParameters().fov_deg);
+        }
+        const double focal_length = -2.0 *
+                                    std::tan(DegToRad(cam_fovy_deg) / 2.0) *
+                                    kDefaultImageWdith;
         Camera camera;
         camera.InitializeWithId(SimplePinholeCameraModel::model_id,
                                 focal_length, kDefaultImageWdith,
@@ -897,7 +976,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
     }
 }
 
-void ModelViewerWidget::update() { ecvDisplayTools::UpdateScreen(); }
+void ModelViewerWidget::update() { refreshActiveLikeUpdateScreen(); }
 
 void ModelViewerWidget::drawPointCloud(ccPointCloud* cloud) {
     if (cloud->IsEmpty()) {
@@ -950,12 +1029,26 @@ void ModelViewerWidget::drawLines(geometry::LineSet& lineset) {
             bbox_ += box;
         }
 
-        ecvDisplayTools::Draw(context, &lineset);
+        auto* glv = effectiveGLView();
+        auto* vdt = vtkPrimaryDisplayTools();
+        if (glv && vdt) {
+            context.display = glv;
+            vdt->draw(context, &lineset);
+        }
     }
 }
 
 void ModelViewerWidget::resetLines(geometry::LineSet& lineset) {
-    ecvDisplayTools::RemoveEntities(&lineset);
+    if (!ecvViewManager::instance().activeWidget()) {
+        return;
+    }
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = lineset.getViewId();
+    context.removeEntityType = lineset.getEntityType();
+    context.display = const_cast<ecvGenericGLDisplay*>(lineset.getDisplay());
+    if (auto* vdt = vtkPrimaryDisplayTools()) {
+        vdt->removeEntities(context);
+    }
 }
 
 void ModelViewerWidget::drawCameraSensors(

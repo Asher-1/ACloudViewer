@@ -20,7 +20,7 @@ Cignoni, R. Scopigno Proc. of Visualization 2003, October 19-24, Seattle, USA.
 class qPCV : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qPCV" FILE "../info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qPCV" FILE "../info.json")
 
 public:
     //! Default constructor

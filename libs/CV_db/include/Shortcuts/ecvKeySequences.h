@@ -12,7 +12,10 @@
 #include "CV_db.h"
 
 // Qt
+#include <QKeySequence>
+#include <QMap>
 #include <QObject>
+#include <QStringList>
 #include <QWidget>
 
 class QAction;
@@ -80,6 +83,14 @@ public:
      * Dump a list of shortcuts registered for a given key sequence (debug).
      */
     void dumpShortcuts(const QKeySequence& keySequence) const;
+
+    /**
+     * Return all registered key sequences and their owner names.
+     * Used by ecvShortcutDialog for comprehensive conflict detection.
+     *
+     * @return Map of key-sequence-string -> list of owner names
+     */
+    QMap<QString, QStringList> allRegisteredSequences() const;
 
 protected Q_SLOTS:
     /**

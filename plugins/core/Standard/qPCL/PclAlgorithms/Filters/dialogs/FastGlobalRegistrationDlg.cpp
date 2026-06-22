@@ -11,7 +11,6 @@
 #include <ecvQtHelpers.h>
 
 // qCC_db
-#include <ecvDisplayTools.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
 #include <ecvRedrawScope.h>
