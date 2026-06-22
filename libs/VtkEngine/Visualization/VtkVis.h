@@ -44,10 +44,10 @@ class ecvGenericGLDisplay;
 #include <ecvHObject.h>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkBoundingBox.h>  // needed for iVar
 #include <vtkCellArray.h>
 #include <vtkDataSetMapper.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -854,7 +854,8 @@ public:
      *  @return View ID string or empty if not found
      */
     std::string getIdByActor(vtkProp* actor);
-    /** Resolve cloud id when HW pick prop differs from registered actor pointer. */
+    /** Resolve cloud id when HW pick prop differs from registered actor
+     * pointer. */
     std::string getIdByPolyData(vtkPolyData* polyData);
     /** @param viewId Widget view ID
      *  @return VTK abstract widget or nullptr
@@ -1128,9 +1129,24 @@ public:
     /// Hit-test the Camera Orientation Widget in widget pixel coordinates.
     bool IsMouseOverCameraOrientationWidget(int qtX, int qtY) const;
 
-    /// Forward a Qt mouse event to the VTK interactor for widget interaction.
-    bool ForwardMouseToCameraOrientationWidget(QMouseEvent* event,
-                                                 QEvent::Type eventType);
+    /// Ensure the camera orientation widget is ready for interaction.
+    /// Re-validates interactor binding, ProcessEvents, and viewport sizing.
+    /// Returns true if the widget is ready.
+    /// NOTE: Do NOT call this during mouse event processing -- it resets
+    /// representation state and breaks the hover→click axis-pick flow.
+    bool EnsureCameraOrientationWidgetInteractive();
+
+    /// Lightweight version: only ensures ProcessEvents is on and interactor
+    /// is bound, without resizing or resetting the representation.
+    /// Safe to call on every mouse event.
+    void EnsureCameraOrientationWidgetProcessEvents();
+
+    /// Re-bind overlay widgets after camera sync / renderer changes
+    /// (comparative sub-views).
+    void RefreshOverlayWidgets();
+
+    /// Update orientation-marker viewport from render-window pixel size.
+    void UpdateOrientationMarkerLayout();
     // ---------- Methods formerly inherited from PCLVisualizer ----------
 
     /// Check if a cloud, shape, or coordinate with the given id exists.
@@ -1365,7 +1381,8 @@ protected:
     // Axes Grid actors (ParaView-style)
     // Data Axes Grid: one per object (viewID -> actor mapping)
     // Data Axes Grid: per-object, bound to viewID
-    std::map<std::string, vtkSmartPointer<vtkGridAxesActor3D>> m_dataAxesGridMap;
+    std::map<std::string, vtkSmartPointer<vtkGridAxesActor3D>>
+            m_dataAxesGridMap;
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;

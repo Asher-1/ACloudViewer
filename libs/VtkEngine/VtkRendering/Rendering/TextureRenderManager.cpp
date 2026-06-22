@@ -21,8 +21,8 @@
 #include "TextureRendererBase.h"
 
 // VTK
-#include <vtkActor.h>
 #include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkActor.h>
 #include <vtkPolyData.h>
 #include <vtkRenderer.h>
 

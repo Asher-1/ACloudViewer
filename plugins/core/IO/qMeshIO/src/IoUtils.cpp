@@ -57,7 +57,8 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
 
         image = QImage::fromData(imageDataByteArray);
         if (image.isNull() && texture->achFormatHint[0] != '\0') {
-            QString hint = QString::fromLatin1(texture->achFormatHint).trimmed();
+            QString hint =
+                    QString::fromLatin1(texture->achFormatHint).trimmed();
             if (hint.startsWith('.')) hint = hint.mid(1);
             if (!hint.isEmpty()) {
                 image = QImage::fromData(imageDataByteArray,
@@ -77,17 +78,18 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
 
     // Uncompressed embedded texture: BGRA8 pixels (mWidth x mHeight)
     if (texture->mWidth == 0 || texture->mHeight == 0 || !texture->pcData) {
-        CVLog::Warning(QStringLiteral(
-                "[qMeshIO] Invalid uncompressed embedded texture %1")
-                               .arg(inTextureIndex));
+        CVLog::Warning(
+                QStringLiteral(
+                        "[qMeshIO] Invalid uncompressed embedded texture %1")
+                        .arg(inTextureIndex));
         return image;
     }
 
     image = QImage(static_cast<int>(texture->mWidth),
                    static_cast<int>(texture->mHeight), QImage::Format_ARGB32);
     for (unsigned y = 0; y < texture->mHeight; ++y) {
-        auto *scanLine = reinterpret_cast<QRgb *>(image.scanLine(
-                static_cast<int>(texture->mHeight - 1 - y)));
+        auto *scanLine = reinterpret_cast<QRgb *>(
+                image.scanLine(static_cast<int>(texture->mHeight - 1 - y)));
         const aiTexel *src = texture->pcData + y * texture->mWidth;
         for (unsigned x = 0; x < texture->mWidth; ++x) {
             scanLine[x] = qRgba(src[x].r, src[x].g, src[x].b, src[x].a);
@@ -217,13 +219,12 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                 }
 
                 if (!image.isNull()) {
-                    QString storagePath =
-                            CVTools::ToNativeSeparators(QStringLiteral("%1/%2")
-                                                                .arg(inPath,
-                                                                     texturePath
-                                                                             .C_Str()));
+                    QString storagePath = CVTools::ToNativeSeparators(
+                            QStringLiteral("%1/%2").arg(inPath,
+                                                        texturePath.C_Str()));
                     if (match.hasMatch()) {
-                        // glTF/GLB embedded textures use Assimp paths like "*0".
+                        // glTF/GLB embedded textures use Assimp paths like
+                        // "*0".
                         storagePath = CVTools::ToNativeSeparators(
                                 QStringLiteral("%1/#embedded/%2")
                                         .arg(inPath, match.captured("index")));
@@ -233,7 +234,7 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                     }
 
                     if (newMaterial->loadAndSetTextureMap(ccType,
-                                                            storagePath)) {
+                                                          storagePath)) {
                         CVLog::PrintDebug(
                                 QStringLiteral(
                                         "[qMeshIO] Loaded %1 texture: %2")

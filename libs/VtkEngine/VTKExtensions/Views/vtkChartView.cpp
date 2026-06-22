@@ -10,6 +10,7 @@
 static constexpr unsigned kDefaultMaxChartPoints = 10000;
 
 #include <CVLog.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <Shortcuts/ecvKeySequences.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObject.h>
@@ -20,67 +21,64 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
 #include <ecvViewTitleRegistry.h>
+#include <vtkAnnotationLink.h>
+#include <vtkAxis.h>
+#include <vtkBrush.h>
+#include <vtkChart.h>
+#include <vtkChartBox.h>
+#include <vtkChartHistogram2D.h>
+#include <vtkChartParallelCoordinates.h>
+#include <vtkChartXY.h>
+#include <vtkColorSeries.h>
+#include <vtkCommand.h>
+#include <vtkContextMouseEvent.h>
+#include <vtkContextScene.h>
+#include <vtkContextView.h>
+#include <vtkFloatArray.h>
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkIdTypeArray.h>
+#include <vtkImageData.h>
+#include <vtkIntArray.h>
+#include <vtkNew.h>
+#include <vtkPNGWriter.h>
+#include <vtkPen.h>
+#include <vtkPlotArea.h>
+#include <vtkPlotBar.h>
+#include <vtkPlotBox.h>
+#include <vtkPlotHistogram2D.h>
+#include <vtkPlotLine.h>
+#include <vtkPlotParallelCoordinates.h>
+#include <vtkPlotPoints.h>
+#include <vtkRenderer.h>
+#include <vtkScatterPlotMatrix.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
+#include <vtkTable.h>
+#include <vtkTextProperty.h>
+#include <vtkTooltipItem.h>
+#include <vtkWindowToImageFilter.h>
 
 #include <QCheckBox>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QEvent>
-#include <QKeyEvent>
 #include <QFileDialog>
-#include <QShowEvent>
 #include <QHBoxLayout>
+#include <QHeaderView>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
-#include <QHeaderView>
 #include <QListWidget>
 #include <QMenu>
-#include <QTableWidget>
 #include <QPushButton>
+#include <QShowEvent>
 #include <QSpinBox>
+#include <QTableWidget>
 #include <QTextStream>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QVTKOpenGLNativeWidget.h>
-
-#include <vtkAnnotationLink.h>
-#include <vtkAxis.h>
-#include <vtkChart.h>
-#include <vtkCommand.h>
-#include <vtkIdTypeArray.h>
-#include <vtkChartBox.h>
-#include <vtkChartHistogram2D.h>
-#include <vtkChartParallelCoordinates.h>
-#include <vtkChartXY.h>
-#include <vtkTooltipItem.h>
-#include <vtkColorSeries.h>
-#include <vtkContextMouseEvent.h>
-#include <vtkContextScene.h>
-#include <vtkContextView.h>
-#include <vtkFloatArray.h>
-#include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkIntArray.h>
-#include <vtkNew.h>
-#include <vtkBrush.h>
-#include <vtkPen.h>
-#include <vtkPNGWriter.h>
-#include <vtkImageData.h>
-#include <vtkPlotBar.h>
-#include <vtkPlotArea.h>
-#include <vtkPlotHistogram2D.h>
-#include <vtkPlotBox.h>
-#include <vtkPlotLine.h>
-#include <vtkPlotParallelCoordinates.h>
-#include <vtkPlotPoints.h>
-#include <vtkScatterPlotMatrix.h>
-#include <vtkSelection.h>
-#include <vtkSelectionNode.h>
-#include <vtkRenderer.h>
-#include <vtkTable.h>
-#include <vtkTextProperty.h>
-#include <vtkWindowToImageFilter.h>
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -110,10 +108,10 @@ static QString chartViewTypeKey(vtkChartView::ChartType type) {
 }
 
 static const QColor kPalette[] = {
-        {0, 0, 0},       {230, 25, 75},  {60, 180, 75},   {0, 130, 200},
-        {245, 130, 48},  {145, 30, 180}, {70, 240, 240},   {240, 50, 230},
-        {210, 245, 60},  {250, 190, 212},{0, 128, 128},    {220, 190, 255},
-        {170, 110, 40},  {128, 0, 0},   {128, 128, 0},     {0, 0, 128},
+        {0, 0, 0},      {230, 25, 75},   {60, 180, 75},  {0, 130, 200},
+        {245, 130, 48}, {145, 30, 180},  {70, 240, 240}, {240, 50, 230},
+        {210, 245, 60}, {250, 190, 212}, {0, 128, 128},  {220, 190, 255},
+        {170, 110, 40}, {128, 0, 0},     {128, 128, 0},  {0, 0, 128},
 };
 
 vtkChartView::vtkChartView(ChartType type, QWidget* parent)
@@ -132,7 +130,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     decLayout->setContentsMargins(2, 1, 2, 1);
     decLayout->setSpacing(2);
 
-    auto* showingLabel = new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
+    auto* showingLabel =
+            new QLabel(QStringLiteral("<b>Showing</b>"), decoratorBar);
     decLayout->addWidget(showingLabel);
 
     m_sourceCombo = new QComboBox(decoratorBar);
@@ -141,14 +140,16 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     decLayout->addWidget(m_sourceCombo);
 
     decLayout->addSpacing(8);
-    auto* attrLabel = new QLabel(QStringLiteral("<b>Attribute:</b>"), decoratorBar);
+    auto* attrLabel =
+            new QLabel(QStringLiteral("<b>Attribute:</b>"), decoratorBar);
     decLayout->addWidget(attrLabel);
     m_attributeCombo = new QComboBox(decoratorBar);
     m_attributeCombo->addItem(tr("Point Data"), 0);
     m_attributeCombo->addItem(tr("Cell Data"), 1);
     decLayout->addWidget(m_attributeCombo);
-    connect(m_attributeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) {
+    connect(m_attributeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) {
                 auto* cur = currentEntity();
                 if (cur) setEntity(cur);
             });
@@ -205,8 +206,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         propsLayout->addWidget(m_binSpin);
 
         propsLayout->addSpacing(8);
-        auto* colorLabel = new QLabel(
-                QStringLiteral("<b>Color:</b>"), propsBar);
+        auto* colorLabel =
+                new QLabel(QStringLiteral("<b>Color:</b>"), propsBar);
         propsLayout->addWidget(colorLabel);
         m_histColorBtn = new QToolButton(propsBar);
         m_histColorBtn->setFixedSize(28, 20);
@@ -214,8 +215,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_histColorBtn->setStyleSheet(
                 QStringLiteral("background-color: %1; border: 1px solid #555;")
                         .arg(m_histColor.name()));
-        m_histColorBtn->setToolTip(
-                tr("Histogram bar color (click to change)"));
+        m_histColorBtn->setToolTip(tr("Histogram bar color (click to change)"));
         propsLayout->addWidget(m_histColorBtn);
 
         propsLayout->addSpacing(4);
@@ -223,8 +223,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_histOutlineCheck->setChecked(true);
         m_histOutlineCheck->setToolTip(tr("Show bar outlines"));
         propsLayout->addWidget(m_histOutlineCheck);
-        connect(m_histOutlineCheck, &QCheckBox::toggled,
-                this, [this]() { rebuildChart(); });
+        connect(m_histOutlineCheck, &QCheckBox::toggled, this,
+                [this]() { rebuildChart(); });
     }
 
     if (m_chartType == PARALLEL_COORDINATES) {
@@ -238,8 +238,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_lineOpacitySpin->setFixedWidth(60);
         propsLayout->addWidget(m_lineOpacitySpin);
         connect(m_lineOpacitySpin,
-                QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                this, [this]() { rebuildChart(); });
+                QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                [this]() { rebuildChart(); });
     }
 
     propsLayout->addStretch(1);
@@ -311,13 +311,12 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         connect(m_markerSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, [this]() {
                     float sz = static_cast<float>(m_markerSizeSpin->value());
-                    for (auto& sp : m_seriesProps)
-                        sp.markerSize = sz;
+                    for (auto& sp : m_seriesProps) sp.markerSize = sz;
                     rebuildChart();
                 });
     }
-    if (m_chartType == LINE_CHART || m_chartType == POINT_CHART
-        || m_chartType == PARALLEL_COORDINATES) {
+    if (m_chartType == LINE_CHART || m_chartType == POINT_CHART ||
+        m_chartType == PARALLEL_COORDINATES) {
         auto* lstLabel = new QLabel(tr("Line:"), axisBar);
         axisLayout->addWidget(lstLabel);
         m_lineStyleCombo = new QComboBox(axisBar);
@@ -326,17 +325,18 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_lineStyleCombo->addItem(tr("Dash"), 2);
         m_lineStyleCombo->addItem(tr("Dot"), 3);
         m_lineStyleCombo->addItem(tr("Dash-Dot"), 4);
-        int defLineIdx = (m_chartType == LINE_CHART
-                          || m_chartType == PARALLEL_COORDINATES) ? 1 : 0;
+        int defLineIdx = (m_chartType == LINE_CHART ||
+                          m_chartType == PARALLEL_COORDINATES)
+                                 ? 1
+                                 : 0;
         m_lineStyleCombo->setCurrentIndex(defLineIdx);
         m_lineStyleCombo->setFixedWidth(80);
         axisLayout->addWidget(m_lineStyleCombo);
         connect(m_lineStyleCombo,
-                QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, [this]() {
+                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                [this]() {
                     int ls = m_lineStyleCombo->currentData().toInt();
-                    for (auto& sp : m_seriesProps)
-                        sp.lineStyle = ls;
+                    for (auto& sp : m_seriesProps) sp.lineStyle = ls;
                     rebuildChart();
                 });
 
@@ -349,11 +349,10 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_lineThickSpin->setFixedWidth(55);
         axisLayout->addWidget(m_lineThickSpin);
         connect(m_lineThickSpin,
-                QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                this, [this]() {
+                QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                [this]() {
                     float w = static_cast<float>(m_lineThickSpin->value());
-                    for (auto& sp : m_seriesProps)
-                        sp.lineThickness = w;
+                    for (auto& sp : m_seriesProps) sp.lineThickness = w;
                     rebuildChart();
                 });
     }
@@ -371,11 +370,10 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_markerStyleCombo->setFixedWidth(75);
         axisLayout->addWidget(m_markerStyleCombo);
         connect(m_markerStyleCombo,
-                QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, [this]() {
+                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                [this]() {
                     int mkr = m_markerStyleCombo->currentData().toInt();
-                    for (auto& sp : m_seriesProps)
-                        sp.markerStyle = mkr;
+                    for (auto& sp : m_seriesProps) sp.markerStyle = mkr;
                     rebuildChart();
                 });
 
@@ -389,8 +387,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         connect(m_markerSizeSpin, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, [this]() {
                     float sz = static_cast<float>(m_markerSizeSpin->value());
-                    for (auto& sp : m_seriesProps)
-                        sp.markerSize = sz;
+                    for (auto& sp : m_seriesProps) sp.markerSize = sz;
                     rebuildChart();
                 });
     }
@@ -403,7 +400,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     m_titleLabel->setContentsMargins(2, 2, 2, 2);
     layout->addWidget(m_titleLabel);
 
-    // === Series field list (right-side collapsible, ParaView Series Editor) ===
+    // === Series field list (right-side collapsible, ParaView Series Editor)
+    // ===
     m_fieldList = new QListWidget(this);
     m_fieldList->setSelectionMode(QAbstractItemView::MultiSelection);
     m_fieldList->setMaximumHeight(80);
@@ -417,8 +415,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_seriesTable = new QTableWidget(0, 9, this);
         m_seriesTable->setHorizontalHeaderLabels(
                 {tr(""), tr(""), QString::fromUtf8("\xe2\x97\x8b"),
-                 tr("Variable"), tr("Legend Name"),
-                 tr("Thick"), tr("Line"), tr("Marker"), tr("Size")});
+                 tr("Variable"), tr("Legend Name"), tr("Thick"), tr("Line"),
+                 tr("Marker"), tr("Size")});
         m_seriesTable->setColumnWidth(0, 24);
         m_seriesTable->setColumnWidth(1, 24);
         m_seriesTable->setColumnWidth(2, 24);
@@ -435,10 +433,10 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         m_seriesTable->setEditTriggers(QAbstractItemView::DoubleClicked);
         m_seriesTable->setAlternatingRowColors(true);
         layout->addWidget(m_seriesTable);
-        connect(m_seriesTable, &QTableWidget::cellChanged,
-                this, [this]() { onSeriesTableChanged(); });
-        connect(m_seriesTable, &QTableWidget::cellClicked,
-                this, &vtkChartView::onSeriesTableCellClicked);
+        connect(m_seriesTable, &QTableWidget::cellChanged, this,
+                [this]() { onSeriesTableChanged(); });
+        connect(m_seriesTable, &QTableWidget::cellClicked, this,
+                &vtkChartView::onSeriesTableCellClicked);
     }
 
     m_linkCheck = new QCheckBox(this);
@@ -455,7 +453,8 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     apLayout->setContentsMargins(2, 1, 2, 1);
     apLayout->setSpacing(4);
 
-    apLayout->addWidget(new QLabel(QStringLiteral("<b>Axis:</b>"), axisPropsBar));
+    apLayout->addWidget(
+            new QLabel(QStringLiteral("<b>Axis:</b>"), axisPropsBar));
     m_axisSelectCombo = new QComboBox(axisPropsBar);
     m_axisSelectCombo->addItem(tr("Left"), vtkAxis::LEFT);
     m_axisSelectCombo->addItem(tr("Bottom"), vtkAxis::BOTTOM);
@@ -550,8 +549,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
                                 vtkColor4ub(220, 220, 220, 255));
         spm->SetScatterPlotSelectedRowColumnColor(
                 vtkColor4ub(200, 200, 200, 80));
-        spm->SetScatterPlotSelectedActiveColor(
-                vtkColor4ub(200, 200, 200, 100));
+        spm->SetScatterPlotSelectedActiveColor(vtkColor4ub(200, 200, 200, 100));
     } else {
         if (m_chartType == PARALLEL_COORDINATES) {
             m_chart = vtkChartParallelCoordinates::New();
@@ -564,8 +562,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         }
         m_contextView->GetScene()->AddItem(m_chart);
         m_chart->Delete();
-        if (m_chartType != BOX_CHART)
-            m_chart->SetShowLegend(true);
+        if (m_chartType != BOX_CHART) m_chart->SetShowLegend(true);
 
         if (m_chartType != BOX_CHART) {
             m_chart->SetActionToButton(vtkChart::SELECT,
@@ -660,8 +657,9 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
             &vtkChartView::onAxisTitleChanged);
     connect(m_logScaleCheck, &QCheckBox::toggled, this,
             &vtkChartView::onToggleLogScale);
-    connect(m_notationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &vtkChartView::onAxisNotationChanged);
+    connect(m_notationCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &vtkChartView::onAxisNotationChanged);
     connect(m_axisPrecSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &vtkChartView::onAxisPrecisionChanged);
     connect(m_customRangeCheck, &QCheckBox::toggled, this,
@@ -698,8 +696,7 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
 
     if ((m_chartType == HISTOGRAM || m_chartType == IMAGE_CHART) && m_binSpin) {
         menu.addSeparator();
-        auto* binAct = menu.addAction(
-                tr("Bins: %1").arg(m_binSpin->value()));
+        auto* binAct = menu.addAction(tr("Bins: %1").arg(m_binSpin->value()));
         binAct->setEnabled(false);
     }
 
@@ -708,7 +705,8 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
     auto* legendAct = menu.addAction(tr("Show Legend"));
     legendAct->setCheckable(true);
     legendAct->setChecked(m_legendCheck->isChecked());
-    connect(legendAct, &QAction::toggled, m_legendCheck, &QCheckBox::setChecked);
+    connect(legendAct, &QAction::toggled, m_legendCheck,
+            &QCheckBox::setChecked);
 
     auto* gridAct = menu.addAction(tr("Show Grid"));
     gridAct->setCheckable(true);
@@ -720,20 +718,17 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
     linkAct->setChecked(m_linkCheck->isChecked());
     connect(linkAct, &QAction::toggled, m_linkCheck, &QCheckBox::setChecked);
 
-    auto* axisPropsWidget = findChild<QWidget*>(
-            QLatin1String("ChartAxisPropsBar"));
+    auto* axisPropsWidget =
+            findChild<QWidget*>(QLatin1String("ChartAxisPropsBar"));
     if (axisPropsWidget) {
         auto* axisPropsAct = menu.addAction(
-                axisPropsWidget->isVisible()
-                        ? tr("Hide Axis Properties")
-                        : tr("Show Axis Properties"));
-        connect(axisPropsAct, &QAction::triggered, this,
-                [axisPropsWidget]() {
-                    bool show = !axisPropsWidget->isVisible();
-                    axisPropsWidget->setVisible(show);
-                    axisPropsWidget->setMaximumHeight(
-                            show ? QWIDGETSIZE_MAX : 0);
-                });
+                axisPropsWidget->isVisible() ? tr("Hide Axis Properties")
+                                             : tr("Show Axis Properties"));
+        connect(axisPropsAct, &QAction::triggered, this, [axisPropsWidget]() {
+            bool show = !axisPropsWidget->isVisible();
+            axisPropsWidget->setVisible(show);
+            axisPropsWidget->setMaximumHeight(show ? QWIDGETSIZE_MAX : 0);
+        });
     }
 
     menu.addSeparator();
@@ -921,8 +916,7 @@ void vtkChartView::setPlotOpacity(double opacity) {
         if (pen) {
             unsigned char c[4];
             pen->GetColor(c);
-            pen->SetColorF(c[0] / 255.0, c[1] / 255.0,
-                           c[2] / 255.0, opacity);
+            pen->SetColorF(c[0] / 255.0, c[1] / 255.0, c[2] / 255.0, opacity);
         }
     }
     if (m_vtkWidget && m_vtkWidget->renderWindow())
@@ -1025,9 +1019,10 @@ void vtkChartView::computeVertexNormals() {
             ++validCount;
         }
     }
-    CVLog::Print("[ChartView] computeVertexNormals: %d/%u vertices got normals "
-                 "from %u triangles (hasExplicitTriNormals=%d)",
-                 validCount, numVerts, numTris, hasExplicitTriNormals ? 1 : 0);
+    CVLog::Print(
+            "[ChartView] computeVertexNormals: %d/%u vertices got normals "
+            "from %u triangles (hasExplicitTriNormals=%d)",
+            validCount, numVerts, numTris, hasExplicitTriNormals ? 1 : 0);
 }
 
 float vtkChartView::getNormalComponent(unsigned vertIdx, int axis) const {
@@ -1051,9 +1046,12 @@ float vtkChartView::getNormalComponent(unsigned vertIdx, int axis) const {
                 continue;
             CCVector3 na, nb, nc;
             if (meshSrc->getTriangleNormals(t, na, nb, nc)) {
-                if (tri->i1 == vertIdx) accum += na;
-                else if (tri->i2 == vertIdx) accum += nb;
-                else accum += nc;
+                if (tri->i1 == vertIdx)
+                    accum += na;
+                else if (tri->i2 == vertIdx)
+                    accum += nb;
+                else
+                    accum += nc;
                 ++count;
             }
         }
@@ -1090,8 +1088,7 @@ void vtkChartView::setEntity(ccHObject* entity) {
             auto* child = entity->getChild(i);
             if (!m_genericMesh) {
                 m_genericMesh = ccHObjectCaster::ToGenericMesh(child);
-                if (!m_mesh)
-                    m_mesh = ccHObjectCaster::ToMesh(child);
+                if (!m_mesh) m_mesh = ccHObjectCaster::ToMesh(child);
             }
             if (!m_cloud) {
                 m_cloud = ccHObjectCaster::ToPointCloud(child);
@@ -1144,12 +1141,10 @@ void vtkChartView::setEntity(ccHObject* entity) {
         if (m_mesh && m_mesh->hasTriangleMaterialIds())
             addField(QStringLiteral("MaterialId"), -111);
 
-        unsigned cellCount = m_mesh ? m_mesh->size()
-                                    : m_genericMesh->size();
-        m_titleLabel->setText(
-                title() + QString(" - %1 (%2 cells)")
-                                  .arg(entity->getName())
-                                  .arg(cellCount));
+        unsigned cellCount = m_mesh ? m_mesh->size() : m_genericMesh->size();
+        m_titleLabel->setText(title() + QString(" - %1 (%2 cells)")
+                                                .arg(entity->getName())
+                                                .arg(cellCount));
 
         if (m_fieldList->count() > 0) {
             if (m_chartType == PARALLEL_COORDINATES) {
@@ -1201,8 +1196,8 @@ void vtkChartView::setEntity(ccHObject* entity) {
             }
         }
         if (!hasNorms && m_genericMesh) {
-            auto* assocCloud =
-                    ccHObjectCaster::ToPointCloud(m_genericMesh->getAssociatedCloud());
+            auto* assocCloud = ccHObjectCaster::ToPointCloud(
+                    m_genericMesh->getAssociatedCloud());
             if (assocCloud && assocCloud->hasNormals()) hasNorms = true;
         }
         if (!hasNorms) hasNorms = hasComputedNormals();
@@ -1210,7 +1205,7 @@ void vtkChartView::setEntity(ccHObject* entity) {
         if (hasNorms) {
             for (int n = 0; n < 3; ++n) {
                 FieldDef fd;
-                fd.name = (n == 0) ? QStringLiteral("Normals_X")
+                fd.name = (n == 0)   ? QStringLiteral("Normals_X")
                           : (n == 1) ? QStringLiteral("Normals_Y")
                                      : QStringLiteral("Normals_Z");
                 fd.sfIndex = -30 - n;
@@ -1248,7 +1243,7 @@ void vtkChartView::setEntity(ccHObject* entity) {
         if (m_cloud->hasColors()) {
             for (int ch = 0; ch < 3; ++ch) {
                 FieldDef fd;
-                fd.name = (ch == 0) ? tr("Color (R)")
+                fd.name = (ch == 0)   ? tr("Color (R)")
                           : (ch == 1) ? tr("Color (G)")
                                       : tr("Color (B)");
                 fd.sfIndex = -10 - ch;
@@ -1286,10 +1281,9 @@ void vtkChartView::setEntity(ccHObject* entity) {
                 }
             }
         }
-        m_titleLabel->setText(
-                title() + QString(" - %1 (%2 pts)")
-                                  .arg(entity->getName())
-                                  .arg(m_cloud->size()));
+        m_titleLabel->setText(title() + QString(" - %1 (%2 pts)")
+                                                .arg(entity->getName())
+                                                .arg(m_cloud->size()));
 
         if (m_fieldList->count() > 0) {
             if (m_chartType == PARALLEL_COORDINATES) {
@@ -1300,8 +1294,8 @@ void vtkChartView::setEntity(ccHObject* entity) {
                 for (int i = 0; i < limit; ++i) {
                     m_fieldList->item(i)->setSelected(true);
                 }
-            } else if (m_chartType == PLOT_MATRIX || m_chartType == BOX_CHART
-                       || m_chartType == QUARTILE_CHART) {
+            } else if (m_chartType == PLOT_MATRIX || m_chartType == BOX_CHART ||
+                       m_chartType == QUARTILE_CHART) {
                 int limit = qMin(m_fieldList->count(), 4);
                 for (int i = 0; i < limit; ++i) {
                     m_fieldList->item(i)->setSelected(true);
@@ -1407,9 +1401,7 @@ void vtkChartView::onSourceComboChanged(int index) {
     setEntity(entity);
 }
 
-void vtkChartView::onSourceComboAboutToShow() {
-    refreshSourceCombo();
-}
+void vtkChartView::onSourceComboAboutToShow() { refreshSourceCombo(); }
 
 bool vtkChartView::eventFilter(QObject* obj, QEvent* event) {
     if (obj == m_sourceCombo && event->type() == QEvent::MouseButtonPress) {
@@ -1440,17 +1432,13 @@ void vtkChartView::showEvent(QShowEvent* event) {
     }
 }
 
-void vtkChartView::onSelectionChanged() {
-    rebuildChart();
-}
+void vtkChartView::onSelectionChanged() { rebuildChart(); }
 
-void vtkChartView::onBinCountChanged(int) {
-    rebuildChart();
-}
+void vtkChartView::onBinCountChanged(int) { rebuildChart(); }
 
 void vtkChartView::onExportPNG() {
-    QString path = QFileDialog::getSaveFileName(
-            this, tr("Export Chart as PNG"), QString(), tr("PNG (*.png)"));
+    QString path = QFileDialog::getSaveFileName(this, tr("Export Chart as PNG"),
+                                                QString(), tr("PNG (*.png)"));
     if (path.isEmpty()) return;
 
     auto* rw = m_vtkWidget->renderWindow();
@@ -1472,8 +1460,7 @@ void vtkChartView::onExportCSV() {
     if (!m_cloud || m_fields.isEmpty()) return;
 
     QString path = QFileDialog::getSaveFileName(
-            this, tr("Export Chart Data as CSV"), QString(),
-            tr("CSV (*.csv)"));
+            this, tr("Export Chart Data as CSV"), QString(), tr("CSV (*.csv)"));
     if (path.isEmpty()) return;
 
     QList<int> selectedFields;
@@ -1701,8 +1688,7 @@ void vtkChartView::onToggleLogScale(bool log) {
             if (log) {
                 leftAxis->SetUnscaledMinimumLimit(
                         m_chartType == HISTOGRAM ? 0.5 : 1e-10);
-                if (m_chartType == HISTOGRAM)
-                    leftAxis->SetMinimumLimit(0.5);
+                if (m_chartType == HISTOGRAM) leftAxis->SetMinimumLimit(0.5);
             } else {
                 leftAxis->SetUnscaledMinimumLimit(0.0);
                 leftAxis->SetMinimumLimit(0.0);
@@ -1808,7 +1794,8 @@ void vtkChartView::applyTooltipFormat() {
         auto* plot = chartXY->GetPlot(i);
         if (!plot) continue;
         QByteArray fmtStr = QStringLiteral("%1: %%x, %%y")
-                .arg(plot->GetLabel().c_str()).toUtf8();
+                                    .arg(plot->GetLabel().c_str())
+                                    .toUtf8();
         plot->SetTooltipLabelFormat(fmtStr.constData());
         plot->SetTooltipNotation(notation);
         plot->SetTooltipPrecision(precision);
@@ -1870,8 +1857,7 @@ void vtkChartView::onChartAnnotationChanged() {
         if (!arr) continue;
         for (vtkIdType i = 0; i < arr->GetNumberOfTuples(); ++i) {
             vtkIdType row = arr->GetValue(i);
-            unsigned ptIdx =
-                    static_cast<unsigned>(row) * m_sampleStride;
+            unsigned ptIdx = static_cast<unsigned>(row) * m_sampleStride;
             if (ptIdx < m_cloud->size()) indices.append(ptIdx);
         }
     }
@@ -1880,9 +1866,8 @@ void vtkChartView::onChartAnnotationChanged() {
 }
 
 void vtkChartView::rebuildChart() {
-    if (m_chart && m_chartType != BOX_CHART
-        && m_chartType != PARALLEL_COORDINATES
-        && m_chartType != IMAGE_CHART)
+    if (m_chart && m_chartType != BOX_CHART &&
+        m_chartType != PARALLEL_COORDINATES && m_chartType != IMAGE_CHART)
         m_chart->ClearPlots();
 
     auto safeRender = [this]() {
@@ -1919,10 +1904,12 @@ void vtkChartView::rebuildChart() {
     if (!meshForCells && m_genericMesh)
         meshForCells = ccHObjectCaster::ToMesh(m_genericMesh);
 
-    unsigned pointCount = m_useCellData
-            ? (meshForCells ? meshForCells->size()
-                            : (m_genericMesh ? m_genericMesh->size() : 0))
-            : m_cloud->size();
+    unsigned pointCount =
+            m_useCellData
+                    ? (meshForCells
+                               ? meshForCells->size()
+                               : (m_genericMesh ? m_genericMesh->size() : 0))
+                    : m_cloud->size();
     if (pointCount == 0) {
         safeRender();
         return;
@@ -2046,8 +2033,7 @@ void vtkChartView::rebuildChart() {
     m_sampleStride = 1;
     if (pointCount > m_maxChartPoints)
         m_sampleStride = pointCount / m_maxChartPoints;
-    unsigned sampleCount =
-            (pointCount + m_sampleStride - 1) / m_sampleStride;
+    unsigned sampleCount = (pointCount + m_sampleStride - 1) / m_sampleStride;
 
     if (m_chartType == PLOT_MATRIX) {
         rebuildPlotMatrix(selectedFields, sampleCount, pointCount,
@@ -2057,9 +2043,11 @@ void vtkChartView::rebuildChart() {
     } else if (m_chartType == BOX_CHART) {
         rebuildBoxChart(selectedFields, sampleCount, pointCount, getFieldValue);
     } else if (m_chartType == QUARTILE_CHART) {
-        rebuildQuartileChart(selectedFields, sampleCount, pointCount, getFieldValue);
+        rebuildQuartileChart(selectedFields, sampleCount, pointCount,
+                             getFieldValue);
     } else if (m_chartType == IMAGE_CHART) {
-        rebuildImageChart(selectedFields, sampleCount, pointCount, getFieldValue);
+        rebuildImageChart(selectedFields, sampleCount, pointCount,
+                          getFieldValue);
     } else if (m_chartType == PARALLEL_COORDINATES) {
         rebuildParallelCoordinates(selectedFields, sampleCount, pointCount,
                                    getFieldValue);
@@ -2078,13 +2066,10 @@ void vtkChartView::rebuildChart() {
             for (int i = 0; i < 2; ++i) {
                 auto* axis = m_chart->GetAxis(i);
                 if (!axis) continue;
-                if (m_gridCheck)
-                    axis->SetGridVisible(m_gridCheck->isChecked());
+                if (m_gridCheck) axis->SetGridVisible(m_gridCheck->isChecked());
                 if (m_notationCombo)
-                    axis->SetNotation(
-                            m_notationCombo->currentData().toInt());
-                if (m_axisPrecSpin)
-                    axis->SetPrecision(m_axisPrecSpin->value());
+                    axis->SetNotation(m_notationCombo->currentData().toInt());
+                if (m_axisPrecSpin) axis->SetPrecision(m_axisPrecSpin->value());
             }
             {
                 auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
@@ -2115,7 +2100,8 @@ void vtkChartView::rebuildChart() {
 }
 
 void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
-                                  unsigned sampleCount, unsigned pointCount,
+                                  unsigned sampleCount,
+                                  unsigned pointCount,
                                   const FieldValueFn& getFieldValue) {
     vtkNew<vtkTable> table;
 
@@ -2175,11 +2161,11 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
         int fi = selectedFields[si];
         SeriesProps sp = m_seriesProps.value(fi);
 
-        float lw = m_seriesProps.contains(fi) ? sp.lineThickness
-                                              : globalLineWidth;
+        float lw =
+                m_seriesProps.contains(fi) ? sp.lineThickness : globalLineWidth;
         int ls = m_seriesProps.contains(fi) ? sp.lineStyle : globalLineStyle;
-        float ms = m_seriesProps.contains(fi) ? sp.markerSize
-                                              : globalMarkerSize;
+        float ms =
+                m_seriesProps.contains(fi) ? sp.markerSize : globalMarkerSize;
         int mkr = sp.markerStyle;
 
         int plotType;
@@ -2199,8 +2185,8 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
         }
         auto* plot = m_chart->AddPlot(plotType);
         plot->SetInputData(table, 0, si + 1);
-        QString label = sp.legendName.isEmpty() ? m_fields[fi].name
-                                                : sp.legendName;
+        QString label =
+                sp.legendName.isEmpty() ? m_fields[fi].name : sp.legendName;
         plot->SetLabel(label.toStdString());
         QColor col = seriesColor(fi);
         unsigned char penR = static_cast<unsigned char>(col.red());
@@ -2223,8 +2209,7 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
                     vtkPlotPoints::PLUS, vtkPlotPoints::DIAMOND};
             auto* plotPts = vtkPlotPoints::SafeDownCast(plot);
             if (plotPts) {
-                int mkrIdx = (mkr > 0) ? mkr
-                                       : markerCycle[si % 4];
+                int mkrIdx = (mkr > 0) ? mkr : markerCycle[si % 4];
                 plotPts->SetMarkerStyle(mkrIdx);
                 plotPts->SetMarkerSize(ms);
             }
@@ -2289,8 +2274,7 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
         bool isLog = m_logScaleCheck && m_logScaleCheck->isChecked();
         if (isLog) {
             for (int b = 0; b < numBins; ++b) {
-                if (counts->GetValue(b) < 0.5f)
-                    counts->SetValue(b, 0.5f);
+                if (counts->GetValue(b) < 0.5f) counts->SetValue(b, 0.5f);
             }
         }
 
@@ -2315,8 +2299,8 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
             bar->SetWidth(1.0);
         }
 
-        bool showOutline = !m_histOutlineCheck ||
-                           m_histOutlineCheck->isChecked();
+        bool showOutline =
+                !m_histOutlineCheck || m_histOutlineCheck->isChecked();
         if (showOutline) {
             bar->GetPen()->SetColor(38, 38, 38);
             bar->GetPen()->SetWidth(1.0);
@@ -2327,17 +2311,19 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
         }
     }
 
-    m_chart->GetAxis(vtkAxis::BOTTOM)->SetTitle(
-            selectedFields.size() == 1
-                    ? m_fields[selectedFields.first()].name.toStdString()
-                    : std::string("Value"));
+    m_chart->GetAxis(vtkAxis::BOTTOM)
+            ->SetTitle(selectedFields.size() == 1
+                               ? m_fields[selectedFields.first()]
+                                         .name.toStdString()
+                               : std::string("Value"));
     auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
     leftAxis->SetTitle("Frequency");
     leftAxis->SetMinimumLimit(0.0);
 }
 
 void vtkChartView::rebuildBoxChart(const QList<int>& selectedFields,
-                                   unsigned /*sampleCount*/, unsigned pointCount,
+                                   unsigned /*sampleCount*/,
+                                   unsigned pointCount,
                                    const FieldValueFn& getFieldValue) {
     auto* boxChart = vtkChartBox::SafeDownCast(m_chart);
     if (!boxChart) return;
@@ -2465,17 +2451,17 @@ void vtkChartView::rebuildQuartileChart(const QList<int>& selectedFields,
         QColor col = seriesColor(fi);
         unsigned char r = col.red(), g = col.green(), b = col.blue();
 
-        auto* areaPlot = vtkPlotArea::SafeDownCast(
-                xyChart->AddPlot(vtkChart::AREA));
+        auto* areaPlot =
+                vtkPlotArea::SafeDownCast(xyChart->AddPlot(vtkChart::AREA));
         if (areaPlot) {
             areaPlot->SetInputData(areaTable);
             areaPlot->SetInputArray(0, "Index");
             areaPlot->SetInputArray(1, q1Name.constData());
             areaPlot->SetInputArray(2, q3Name.constData());
             areaPlot->GetBrush()->SetColorF(col.redF(), col.greenF(),
-                                             col.blueF(), 0.3);
-            areaPlot->GetPen()->SetColorF(col.redF(), col.greenF(),
-                                           col.blueF(), 0.6);
+                                            col.blueF(), 0.3);
+            areaPlot->GetPen()->SetColorF(col.redF(), col.greenF(), col.blueF(),
+                                          0.6);
             areaPlot->GetPen()->SetWidth(1.0);
         }
 
@@ -2495,16 +2481,14 @@ void vtkChartView::rebuildQuartileChart(const QList<int>& selectedFields,
             }
             medTable->AddColumn(mxCol);
             medTable->AddColumn(myCol);
-            medianPlot->SetInputData(medTable, "Index",
-                                     medName.constData());
+            medianPlot->SetInputData(medTable, "Index", medName.constData());
             medianPlot->SetColor(r, g, b, 255);
             medianPlot->SetWidth(2.0);
         }
 
         auto* dataPlot = xyChart->AddPlot(vtkChart::LINE);
         if (dataPlot) {
-            dataPlot->SetInputData(areaTable, "Index",
-                                   nameBytes.constData());
+            dataPlot->SetInputData(areaTable, "Index", nameBytes.constData());
             dataPlot->SetColor(r, g, b, 200);
             dataPlot->SetWidth(1.5);
         }
@@ -2529,8 +2513,14 @@ void vtkChartView::rebuildImageChart(const QList<int>& selectedFields,
     for (unsigned i = 0; i < pointCount; ++i) {
         float xv = getFieldValue(xField, i);
         float yv = getFieldValue(yField, i);
-        if (std::isfinite(xv)) { xMin = std::min(xMin, xv); xMax = std::max(xMax, xv); }
-        if (std::isfinite(yv)) { yMin = std::min(yMin, yv); yMax = std::max(yMax, yv); }
+        if (std::isfinite(xv)) {
+            xMin = std::min(xMin, xv);
+            xMax = std::max(xMax, xv);
+        }
+        if (std::isfinite(yv)) {
+            yMin = std::min(yMin, yv);
+            yMax = std::max(yMax, yv);
+        }
     }
     if (xMin >= xMax || yMin >= yMax) return;
 
@@ -2576,8 +2566,10 @@ void vtkChartView::rebuildImageChart(const QList<int>& selectedFields,
 }
 
 void vtkChartView::rebuildParallelCoordinates(
-        const QList<int>& selectedFields, unsigned sampleCount,
-        unsigned pointCount, const FieldValueFn& getFieldValue) {
+        const QList<int>& selectedFields,
+        unsigned sampleCount,
+        unsigned pointCount,
+        const FieldValueFn& getFieldValue) {
     auto* pcChart = vtkChartParallelCoordinates::SafeDownCast(m_chart);
     if (!pcChart) return;
 
@@ -2604,12 +2596,11 @@ void vtkChartView::rebuildParallelCoordinates(
         pcChart->SetColumnVisibility(table->GetColumn(ci)->GetName(), true);
     }
 
-    auto* pcPlot = vtkPlotParallelCoordinates::SafeDownCast(
-            pcChart->GetPlot(0));
+    auto* pcPlot =
+            vtkPlotParallelCoordinates::SafeDownCast(pcChart->GetPlot(0));
     if (!pcPlot) {
         pcChart->GetPlot(0);
-        pcPlot = vtkPlotParallelCoordinates::SafeDownCast(
-                pcChart->GetPlot(0));
+        pcPlot = vtkPlotParallelCoordinates::SafeDownCast(pcChart->GetPlot(0));
     }
     if (!pcPlot) {
         CVLog::Warning("[ChartView] ParallelCoordinates: no plot object");
@@ -2621,15 +2612,14 @@ void vtkChartView::rebuildParallelCoordinates(
     float lineWidth = 2.0f;
     if (m_lineThickSpin) lineWidth = m_lineThickSpin->value();
     int lineStyle = 1;
-    if (m_lineStyleCombo)
-        lineStyle = m_lineStyleCombo->currentData().toInt();
+    if (m_lineStyleCombo) lineStyle = m_lineStyleCombo->currentData().toInt();
 
     unsigned char alpha = static_cast<unsigned char>(
             255.0 * qBound(0.01, (double)opacity, 1.0));
     pcPlot->GetPen()->SetColor(0, 0, 0, alpha);
     pcPlot->GetPen()->SetWidth(lineWidth);
-    pcPlot->GetPen()->SetLineType(
-            lineStyle > 0 ? lineStyle : vtkPen::SOLID_LINE);
+    pcPlot->GetPen()->SetLineType(lineStyle > 0 ? lineStyle
+                                                : vtkPen::SOLID_LINE);
 
     pcPlot->SetInputData(table);
     pcPlot->Modified();
@@ -2697,44 +2687,40 @@ void vtkChartView::rebuildPlotMatrix(const QList<int>& selectedFields,
     spm->SetBorders(60, 50, 60, 50);
 
     spm->SetPlotMarkerStyle(vtkScatterPlotMatrix::SCATTERPLOT,
-                             vtkPlotPoints::CIRCLE);
+                            vtkPlotPoints::CIRCLE);
     spm->SetPlotMarkerSize(vtkScatterPlotMatrix::SCATTERPLOT, 2.0f);
     spm->SetPlotMarkerStyle(vtkScatterPlotMatrix::ACTIVEPLOT,
-                             vtkPlotPoints::CIRCLE);
+                            vtkPlotPoints::CIRCLE);
     spm->SetPlotMarkerSize(vtkScatterPlotMatrix::ACTIVEPLOT, 4.0f);
 
-    spm->SetScatterPlotSelectedRowColumnColor(
-            vtkColor4ub(200, 200, 200, 80));
-    spm->SetScatterPlotSelectedActiveColor(
-            vtkColor4ub(200, 200, 200, 100));
+    spm->SetScatterPlotSelectedRowColumnColor(vtkColor4ub(200, 200, 200, 80));
+    spm->SetScatterPlotSelectedActiveColor(vtkColor4ub(200, 200, 200, 100));
 
     spm->SetPlotColor(vtkScatterPlotMatrix::SCATTERPLOT,
-                       vtkColor4ub(0, 0, 0, 220));
+                      vtkColor4ub(0, 0, 0, 220));
     spm->SetPlotColor(vtkScatterPlotMatrix::ACTIVEPLOT,
-                       vtkColor4ub(200, 0, 0, 255));
+                      vtkColor4ub(200, 0, 0, 255));
     spm->SetPlotColor(vtkScatterPlotMatrix::HISTOGRAM,
-                       vtkColor4ub(40, 40, 40, 255));
+                      vtkColor4ub(40, 40, 40, 255));
 
     spm->SetBackgroundColor(vtkScatterPlotMatrix::SCATTERPLOT,
-                             vtkColor4ub(230, 230, 230, 255));
+                            vtkColor4ub(230, 230, 230, 255));
     spm->SetBackgroundColor(vtkScatterPlotMatrix::ACTIVEPLOT,
-                             vtkColor4ub(255, 255, 255, 255));
+                            vtkColor4ub(255, 255, 255, 255));
     spm->SetBackgroundColor(vtkScatterPlotMatrix::HISTOGRAM,
-                             vtkColor4ub(220, 220, 220, 255));
+                            vtkColor4ub(220, 220, 220, 255));
 
     spm->Update();
 
     spm->SetBackgroundColor(vtkScatterPlotMatrix::SCATTERPLOT,
-                             vtkColor4ub(230, 230, 230, 255));
+                            vtkColor4ub(230, 230, 230, 255));
     spm->SetBackgroundColor(vtkScatterPlotMatrix::ACTIVEPLOT,
-                             vtkColor4ub(255, 255, 255, 255));
+                            vtkColor4ub(255, 255, 255, 255));
     spm->SetBackgroundColor(vtkScatterPlotMatrix::HISTOGRAM,
-                             vtkColor4ub(220, 220, 220, 255));
+                            vtkColor4ub(220, 220, 220, 255));
 
-    spm->SetScatterPlotSelectedRowColumnColor(
-            vtkColor4ub(200, 200, 200, 80));
-    spm->SetScatterPlotSelectedActiveColor(
-            vtkColor4ub(200, 200, 200, 100));
+    spm->SetScatterPlotSelectedRowColumnColor(vtkColor4ub(200, 200, 200, 80));
+    spm->SetScatterPlotSelectedActiveColor(vtkColor4ub(200, 200, 200, 100));
     spm->Modified();
 
     auto* bigChart = spm->GetMainChart();
@@ -2762,11 +2748,11 @@ void vtkChartView::populateSeriesTable() {
     };
     int markerCount = sizeof(markerIcons) / sizeof(markerIcons[0]);
 
-    static const QStringList lineNames = {
-            tr("None"), tr("Solid"), tr("Dash"), tr("Dot"), tr("Dash-Dot")};
-    static const QStringList markerNames = {
-            tr("None"), tr("Cross"), tr("Plus"), tr("Square"),
-            tr("Circle"), tr("Diamond")};
+    static const QStringList lineNames = {tr("None"), tr("Solid"), tr("Dash"),
+                                          tr("Dot"), tr("Dash-Dot")};
+    static const QStringList markerNames = {tr("None"),   tr("Cross"),
+                                            tr("Plus"),   tr("Square"),
+                                            tr("Circle"), tr("Diamond")};
 
     for (int i = 0; i < m_fieldList->count(); ++i) {
         auto* item = m_fieldList->item(i);
@@ -2775,7 +2761,7 @@ void vtkChartView::populateSeriesTable() {
 
         auto* visItem = new QTableWidgetItem();
         visItem->setCheckState(item->isSelected() ? Qt::Checked
-                                                   : Qt::Unchecked);
+                                                  : Qt::Unchecked);
         visItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
         m_seriesTable->setItem(row, 0, visItem);
 
@@ -2803,8 +2789,8 @@ void vtkChartView::populateSeriesTable() {
         SeriesProps sp = m_seriesProps.value(i);
         bool isLine = (m_chartType == LINE_CHART);
 
-        auto* thickItem = new QTableWidgetItem(
-                QString::number(sp.lineThickness, 'f', 1));
+        auto* thickItem =
+                new QTableWidgetItem(QString::number(sp.lineThickness, 'f', 1));
         thickItem->setTextAlignment(Qt::AlignCenter);
         thickItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable);
         m_seriesTable->setItem(row, 5, thickItem);
@@ -2823,8 +2809,8 @@ void vtkChartView::populateSeriesTable() {
         msItem->setFlags(Qt::ItemIsEnabled);
         m_seriesTable->setItem(row, 7, msItem);
 
-        auto* szItem = new QTableWidgetItem(
-                QString::number(sp.markerSize, 'f', 1));
+        auto* szItem =
+                new QTableWidgetItem(QString::number(sp.markerSize, 'f', 1));
         szItem->setTextAlignment(Qt::AlignCenter);
         szItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable);
         m_seriesTable->setItem(row, 8, szItem);
@@ -2844,8 +2830,8 @@ void vtkChartView::populateSeriesTable() {
 void vtkChartView::onSeriesTableChanged() {
     if (!m_seriesTable || !m_fieldList) return;
     m_fieldList->blockSignals(true);
-    for (int r = 0; r < m_seriesTable->rowCount() &&
-                    r < m_fieldList->count(); ++r) {
+    for (int r = 0; r < m_seriesTable->rowCount() && r < m_fieldList->count();
+         ++r) {
         auto* visItem = m_seriesTable->item(r, 0);
         if (visItem) {
             bool sel = (visItem->checkState() == Qt::Checked);
@@ -2876,9 +2862,8 @@ void vtkChartView::onSeriesTableCellClicked(int row, int col) {
     if (col == 6) {
         int cur = m_seriesProps[row].lineStyle;
         m_seriesProps[row].lineStyle = (cur + 1) % 5;
-        static const QStringList names = {
-                tr("None"), tr("Solid"), tr("Dash"), tr("Dot"),
-                tr("Dash-Dot")};
+        static const QStringList names = {tr("None"), tr("Solid"), tr("Dash"),
+                                          tr("Dot"), tr("Dash-Dot")};
         auto* it = m_seriesTable->item(row, 6);
         if (it) {
             it->setText(names[m_seriesProps[row].lineStyle]);
@@ -2890,9 +2875,9 @@ void vtkChartView::onSeriesTableCellClicked(int row, int col) {
     if (col == 7) {
         int cur = m_seriesProps[row].markerStyle;
         m_seriesProps[row].markerStyle = (cur + 1) % 6;
-        static const QStringList names = {
-                tr("None"), tr("Cross"), tr("Plus"), tr("Square"),
-                tr("Circle"), tr("Diamond")};
+        static const QStringList names = {tr("None"),   tr("Cross"),
+                                          tr("Plus"),   tr("Square"),
+                                          tr("Circle"), tr("Diamond")};
         auto* it = m_seriesTable->item(row, 7);
         if (it) {
             it->setText(names[m_seriesProps[row].markerStyle]);
@@ -2904,8 +2889,8 @@ void vtkChartView::onSeriesTableCellClicked(int row, int col) {
 
     if (col != 1) return;
     QColor current = seriesColor(row);
-    QColor picked = QColorDialog::getColor(current, this,
-                                           tr("Pick Series Color"));
+    QColor picked =
+            QColorDialog::getColor(current, this, tr("Pick Series Color"));
     if (!picked.isValid()) return;
     m_customSeriesColors[row] = picked;
     auto* colorItem = m_seriesTable->item(row, 1);

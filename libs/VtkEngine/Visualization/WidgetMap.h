@@ -10,8 +10,8 @@
 /// @file WidgetMap.h
 /// @brief Maps view IDs to VTK actors and widgets for the PCL visualizer.
 
-#include <vtkAbstractWidget.h>
 #include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkAbstractWidget.h>
 #include <vtkSmartPointer.h>
 
 #include <map>

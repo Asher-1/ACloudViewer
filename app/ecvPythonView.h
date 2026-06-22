@@ -11,7 +11,6 @@
 #pragma once
 
 #include <QWidget>
-
 #include <functional>
 
 class ccHObject;

@@ -11,8 +11,8 @@
  *  @brief Actor and widget map types for VTK cloud/shape/coordinate rendering
  */
 
-#include <vtkIdTypeArray.h>
 #include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkIdTypeArray.h>
 #include <vtkMatrix4x4.h>
 #include <vtkSmartPointer.h>
 

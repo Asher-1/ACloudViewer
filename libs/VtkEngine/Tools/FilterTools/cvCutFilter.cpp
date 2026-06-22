@@ -7,6 +7,7 @@
 
 #include "cvCutFilter.h"
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/boxwidgetobserver.h>
 #include <VtkUtils/gradientcombobox.h>
 #include <VtkUtils/implicitplanewidgetobserver.h>
@@ -22,7 +23,6 @@
 #include <vtkContourFilter.h>
 #include <vtkFloatArray.h>
 #include <vtkImplicitPlaneWidget.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPlane.h>
 #include <vtkPlanes.h>

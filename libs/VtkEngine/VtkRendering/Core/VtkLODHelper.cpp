@@ -8,7 +8,6 @@
 #include "VtkLODHelper.h"
 
 #include <VTKExtensions/Views/vtkPVLODActor.h>
-
 #include <vtkActor.h>
 #include <vtkActorCollection.h>
 #include <vtkDataSetMapper.h>
@@ -42,8 +41,7 @@ bool BuildAndAttachLODMapper(vtkPVLODActor* actor, vtkDataSet* data) {
         decimator->SetCopyCellData(true);
         double bounds[6];
         poly->GetBounds(bounds);
-        double maxDim = std::max({bounds[1] - bounds[0],
-                                  bounds[3] - bounds[2],
+        double maxDim = std::max({bounds[1] - bounds[0], bounds[3] - bounds[2],
                                   bounds[5] - bounds[4]});
         int divs = static_cast<int>(
                 std::cbrt(static_cast<double>(numPoints) * kLODTargetRatio));
@@ -69,9 +67,9 @@ bool BuildAndAttachLODMapper(vtkPVLODActor* actor, vtkDataSet* data) {
     } else {
         auto mask = vtkSmartPointer<vtkMaskPoints>::New();
         mask->SetInputData(data);
-        vtkIdType targetPts = std::min(
-                static_cast<vtkIdType>(numPoints * kLODTargetRatio),
-                kLODMaxPoints);
+        vtkIdType targetPts =
+                std::min(static_cast<vtkIdType>(numPoints * kLODTargetRatio),
+                         kLODMaxPoints);
         int ratio = std::max(static_cast<int>(numPoints / targetPts), 2);
         mask->SetOnRatio(ratio);
         mask->SetRandomModeType(0);

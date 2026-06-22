@@ -137,7 +137,8 @@ public slots:
     void onCloseView(QWidget* frame);
     void onMaximize(QWidget* frame);
 
-    /// Convert an empty cell to a specific view type (ParaView "Convert To...").
+    /// Convert an empty cell to a specific view type (ParaView "Convert
+    /// To...").
     void convertCell(int location, const QString& viewTypeLabel);
 
 protected:

@@ -30,6 +30,19 @@ class vtkPolyData;
 namespace Converters {
 
 /**
+ * @brief Options controlling VTK-to-CloudViewer conversion.
+ *
+ * When @p sourceEntity is provided, display parameters, scalar-field
+ * settings, and mesh materials/textures are propagated from the source
+ * entity in addition to attributes stored in the VTK poly data.
+ */
+struct QVTK_ENGINE_LIB_API Vtk2CcOptions {
+    const ccHObject* sourceEntity = nullptr;
+    bool silent = false;
+    QString nameOverride;
+};
+
+/**
  * @class Vtk2Cc
  * @brief Converts VTK poly data to CloudViewer (CV_db) entities.
  *
@@ -43,6 +56,18 @@ namespace Converters {
 class QVTK_ENGINE_LIB_API Vtk2Cc {
 public:
     /**
+     * @brief Unified conversion entry point for filter pipelines.
+     *
+     * @param polydata Source VTK poly data.
+     * @param asMesh   If true, convert as ccMesh; otherwise ccPointCloud.
+     * @param options  Conversion options (source entity, naming, etc.).
+     * @return New ccHObject instance (caller owns), or nullptr on failure.
+     */
+    static ccHObject* Convert(vtkPolyData* polydata,
+                              bool asMesh,
+                              const Vtk2CcOptions& options = {});
+
+    /**
      * @brief Convert vtkPolyData to a ccPointCloud.
      *
      * Extracts points, normals, RGB colors, and scalar fields from
@@ -51,11 +76,17 @@ public:
      * displayed scalar field.
      *
      * @param polydata Source VTK poly data. Must contain at least one point.
-     * @param silent   If true, suppresses warning messages on failure.
+     * @param options  Conversion options.
      * @return New ccPointCloud instance (caller owns), or nullptr on failure.
      */
     static ccPointCloud* ConvertToPointCloud(vtkPolyData* polydata,
-                                             bool silent = false);
+                                             const Vtk2CcOptions& options = {});
+
+    /**
+     * @brief Convert vtkPolyData to a ccPointCloud (legacy silent flag).
+     */
+    static ccPointCloud* ConvertToPointCloud(vtkPolyData* polydata,
+                                             bool silent);
 
     /**
      * @brief Convert vtkPolyData to a ccMesh.
@@ -66,10 +97,16 @@ public:
      * a child of the returned mesh.
      *
      * @param polydata Source VTK poly data containing polygon cells.
-     * @param silent   If true, suppresses warning messages on failure.
+     * @param options  Conversion options.
      * @return New ccMesh instance (caller owns), or nullptr on failure.
      */
-    static ccMesh* ConvertToMesh(vtkPolyData* polydata, bool silent = false);
+    static ccMesh* ConvertToMesh(vtkPolyData* polydata,
+                                 const Vtk2CcOptions& options = {});
+
+    /**
+     * @brief Convert vtkPolyData to a ccMesh (legacy silent flag).
+     */
+    static ccMesh* ConvertToMesh(vtkPolyData* polydata, bool silent);
 
     /**
      * @brief Convert vtkPolyData to a ccPolyline.

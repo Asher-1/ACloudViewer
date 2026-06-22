@@ -11,10 +11,10 @@
  *  @brief VTK actor creation, geometric primitives, and poly data utilities
  */
 
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkCellArray.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>

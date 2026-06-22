@@ -94,18 +94,18 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
     addNewTabWidget();
 
     {
-        auto* prevTab = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageUp),
-                                      this, nullptr, nullptr,
-                                      Qt::WindowShortcut);
+        auto* prevTab =
+                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageUp), this,
+                              nullptr, nullptr, Qt::WindowShortcut);
         connect(prevTab, &QShortcut::activated, this, [this]() {
             int cur = m_tabWidget->currentIndex();
             int count = tabCount();
             if (count > 1 && cur > 0) setCurrentTab(cur - 1);
         });
 
-        auto* nextTab = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageDown),
-                                      this, nullptr, nullptr,
-                                      Qt::WindowShortcut);
+        auto* nextTab =
+                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageDown), this,
+                              nullptr, nullptr, Qt::WindowShortcut);
         connect(nextTab, &QShortcut::activated, this, [this]() {
             int cur = m_tabWidget->currentIndex();
             int count = tabCount();
@@ -115,8 +115,7 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
         auto* newTab =
                 new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T),
                               this, nullptr, nullptr, Qt::WindowShortcut);
-        connect(newTab, &QShortcut::activated, this,
-                [this]() { createTab(); });
+        connect(newTab, &QShortcut::activated, this, [this]() { createTab(); });
 
         auto* closeCurrentTab =
                 new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, nullptr,

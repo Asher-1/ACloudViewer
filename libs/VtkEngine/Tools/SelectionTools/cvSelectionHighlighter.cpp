@@ -451,16 +451,15 @@ static void pruneSelectionOverlayRenderers(vtkRenderer* sceneRenderer) {
         rens->InitTraversal();
         while (vtkRenderer* ren = rens->GetNextItem()) {
             if (ren != sceneRenderer && ren->GetLayer() == 1 &&
-                !ren->GetInteractive()) {
+                !ren->GetInteractive() &&
+                ren->GetNumberOfPropsRendered() == 0 &&
+                ren->GetActors()->GetNumberOfItems() == 0) {
                 toRemove.push_back(ren);
             }
         }
     }
     for (vtkRenderer* ren : toRemove) {
         rw->RemoveRenderer(ren);
-    }
-    if (rw->GetNumberOfLayers() > 1 && toRemove.size() > 0) {
-        rw->SetNumberOfLayers(1);
     }
 }
 
@@ -1083,10 +1082,11 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
     addActorToVisualizer(actor, actorId);
 
-    CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Multi-color highlight: %1 "
-                         "sub-selections in mode %2")
-                         .arg(selectionsWithColors.size())
-                         .arg(mode));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionHighlighter] Multi-color highlight: %1 "
+                    "sub-selections in mode %2")
+                    .arg(selectionsWithColors.size())
+                    .arg(mode));
 
     return true;
 }

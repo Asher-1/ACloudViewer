@@ -11,10 +11,10 @@
 
 #pragma once
 
-#include "qVTK.h"
-
-#include <QWidget>
 #include <QVector>
+#include <QWidget>
+
+#include "qVTK.h"
 
 class QVTK_ENGINE_LIB_API vtkMultiSliceAxisWidget : public QWidget {
     Q_OBJECT
@@ -32,7 +32,10 @@ public:
     void setSlicePositions(const QVector<double>& positions);
     QVector<double> slicePositions() const { return m_positions; }
 
-    void setAxisTitle(const QString& title) { m_title = title; update(); }
+    void setAxisTitle(const QString& title) {
+        m_title = title;
+        update();
+    }
     QString axisTitle() const { return m_title; }
 
     Axis axis() const { return m_axis; }

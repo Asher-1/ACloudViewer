@@ -20,8 +20,8 @@
 #include "VtkMultiTextureRenderer.h"
 
 // VTK
-#include <vtkActor.h>
 #include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkActor.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>

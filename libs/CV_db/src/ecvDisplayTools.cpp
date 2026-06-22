@@ -2693,7 +2693,8 @@ void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx,
     if (norm <= 1.0e-12 || !std::isfinite(norm)) {
         ctx.rotationAxisLocked = false;
         ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
-        CVLog::Warning("[3D view] Ignoring invalid zero-length rotation lock axis");
+        CVLog::Warning(
+                "[3D view] Ignoring invalid zero-length rotation lock axis");
         return;
     }
 

@@ -3364,7 +3364,8 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
     {
         octree->setDisplayedLevel(val);
 
-        ccOctreeProxy* octreeProxy = ccHObjectCaster::ToOctreeProxy(m_currentObject);
+        ccOctreeProxy* octreeProxy =
+                ccHObjectCaster::ToOctreeProxy(m_currentObject);
         if (octreeProxy) {
             octreeProxy->setForceRedrawRecursive(true);
         }

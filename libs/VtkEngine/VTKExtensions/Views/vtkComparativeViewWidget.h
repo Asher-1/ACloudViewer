@@ -12,7 +12,9 @@
 
 #pragma once
 
-#include "qVTK.h"
+#include <vtkActor.h>
+#include <vtkCallbackCommand.h>
+#include <vtkSmartPointer.h>
 
 #include <QHash>
 #include <QList>
@@ -20,17 +22,12 @@
 #include <QPointer>
 #include <QSet>
 #include <QWidget>
-
-#include <vtkActor.h>
-#include <vtkCallbackCommand.h>
-#include <vtkSmartPointer.h>
 #include <functional>
 #include <vector>
 
-class QCheckBox;
-class QDoubleSpinBox;
+#include "qVTK.h"
+
 class QGridLayout;
-class QSpinBox;
 class QComboBox;
 class QLabel;
 class ccHObject;
@@ -63,13 +60,14 @@ public:
     using SubViewInitCallback = std::function<void(vtkGLView*)>;
     void setSubViewInitCallback(SubViewInitCallback cb);
 
-    /// Called for each sub-view immediately before synchronous teardown (e.g. remove MainWindow event filters).
+    /// Called for each sub-view immediately before synchronous teardown (e.g.
+    /// remove MainWindow event filters).
     using SubViewShutdownHook = std::function<void(vtkGLView*)>;
     void setSubViewShutdownHook(SubViewShutdownHook hook);
 
     void refreshSubViews();
-    /// Tear down sub-views, VTK observers, and signal hooks before widget destruction.
-    /// Safe to call multiple times (e.g. app exit and ~dtor).
+    /// Tear down sub-views, VTK observers, and signal hooks before widget
+    /// destruction. Safe to call multiple times (e.g. app exit and ~dtor).
     void shutdown();
     void setSourceView(vtkGLView* src);
     void connectExternalHighlighter(QObject* highlighter);
@@ -81,9 +79,6 @@ public:
 
     int rows() const { return m_rows; }
     int cols() const { return m_cols; }
-    void setDimensions(int rows, int cols);
-    void setSpacing(int spacing);
-    int spacing() const { return m_spacing; }
 
     QList<QWidget*> subWidgets() const { return m_subWidgets; }
     QList<vtkGLView*> subViews() const { return m_subViews; }
@@ -94,6 +89,12 @@ public:
     void syncCamerasFromFirst();
     void forceRenderAllSubViews();
     void zoomToData();
+
+    /// Toggle camera orientation widget on all sub-views atomically
+    /// (suppresses renderEndCallback interference during the toggle).
+    void toggleCameraOrientationWidgetOnAllSubViews(bool state);
+    /// Toggle orientation marker on all sub-views atomically.
+    void toggleOrientationMarkerOnAllSubViews(bool state);
 
     // 相机链接管理（供 MainWindow 等外部调用）
     void removeCameraLink();
@@ -123,20 +124,11 @@ signals:
     void clicked();
     void requestToolRebind(vtkGLView* activeView);
 
-private slots:
-    void onDimensionChanged();
-    void onCueParameterChanged(int index);
-    void onPlayCue();
-    void onToggleOverlay(bool checked);
-    void onExportScreenshot();
-    void captureScreenshotsAsync(const QString& path);
-
 private:
     void createRenderSubViews();
     void createChartSubViews();
     void buildToolbar();
     void refreshEntityCombo();
-    void applyCueToSubViews();
     void syncPivotFromFirst();
     void syncPivotFromView(int srcIdx);
     void syncRepresentationsFromFirst();
@@ -144,10 +136,19 @@ private:
     void scheduleSubViewRefresh(bool forceSceneDirty = false);
     void performSubViewRefresh();
     void onSubViewInteraction(int viewIdx, bool renderOthers = true);
-    static void interactionCallback(
-            vtkObject* caller, unsigned long eid, void* clientData, void*);
-    static void renderEndCallback(
-            vtkObject* caller, unsigned long eid, void* clientData, void*);
+    static void interactionCallback(vtkObject* caller,
+                                    unsigned long eid,
+                                    void* clientData,
+                                    void*);
+    static void renderEndCallback(vtkObject* caller,
+                                  unsigned long eid,
+                                  void* clientData,
+                                  void*);
+    static void cameraModifiedCallback(vtkObject* caller,
+                                       unsigned long eid,
+                                       void* clientData,
+                                       void*);
+    void refreshOverlayWidgetsOnAllSubViews();
     void stopInteractionTimer();
     void restartInteractionEndTimer();
     void onInteractionEndTimer();
@@ -172,23 +173,13 @@ private:
     QString m_title;
     int m_rows = 2;
     int m_cols = 2;
-    int m_spacing = 2;
     QWidget* m_toolbar = nullptr;
-    QSpinBox* m_rowSpin = nullptr;
-    QSpinBox* m_colSpin = nullptr;
-    QComboBox* m_cueParamCombo = nullptr;
-    QComboBox* m_cueModeCombo = nullptr;
-    QDoubleSpinBox* m_cueMinSpin = nullptr;
-    QDoubleSpinBox* m_cueMaxSpin = nullptr;
     QLabel* m_statusLabel = nullptr;
-    QCheckBox* m_overlayCheck = nullptr;
-    QCheckBox* m_syncCamCheck = nullptr;
     QComboBox* m_entityCombo = nullptr;
     bool m_updatingShowingCombo = false;
     bool m_applyingShowingSelection = false;
     QSet<ccHObject*> m_selectedEntities;
     QHash<vtkGLView*, QSet<ccHObject*>> m_showingEntitiesByView;
-    bool m_overlayMode = false;
     QGridLayout* m_gridLayout = nullptr;
     QList<QWidget*> m_subWidgets;
     QList<vtkGLView*> m_subViews;
@@ -221,7 +212,8 @@ private:
     };
     std::vector<InteractorObserver> m_cameraObservers;
 
-    QHash<vtkActor*, QList<vtkSmartPointer<vtkActor>>> m_highlightClonesBySource;
+    QHash<vtkActor*, QList<vtkSmartPointer<vtkActor>>>
+            m_highlightClonesBySource;
 
     vtkGLView* m_activeSubView = nullptr;
 
@@ -232,9 +224,9 @@ private:
     QMetaObject::Connection m_hlSelectionFinishedConn;
 
     struct CameraState {
-        double position[3] = {0,0,1};
-        double focalPoint[3] = {0,0,0};
-        double viewUp[3] = {0,1,0};
+        double position[3] = {0, 0, 1};
+        double focalPoint[3] = {0, 0, 0};
+        double viewUp[3] = {0, 1, 0};
         double viewAngle = 30;
         double parallelScale = 1;
         double clippingRange[2] = {0.01, 1000};

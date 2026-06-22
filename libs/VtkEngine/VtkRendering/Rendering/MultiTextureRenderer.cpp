@@ -28,11 +28,11 @@
 #include "TextureRendererBase.h"
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkActor.h>
 #include <vtkBMPReader.h>
 #include <vtkDataArray.h>
 #include <vtkJPEGReader.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkPNGReader.h>
 #include <vtkPNMReader.h>

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "qVTK.h"
-
 #include <vtkSmartPointer.h>
+
+#include "qVTK.h"
 
 class vtkMapper;
 class vtkPVLODActor;
@@ -33,12 +33,12 @@ constexpr vtkIdType kLODMaxPoints = 100000;
 /// For point clouds, uses vtkMaskPoints for uniform downsampling.
 /// Only generates LOD when the input exceeds kLODPointThreshold.
 /// Returns true if a LOD mapper was successfully created and attached.
-QVTK_ENGINE_LIB_API bool BuildAndAttachLODMapper(
-        vtkPVLODActor* actor, vtkDataSet* data);
+QVTK_ENGINE_LIB_API bool BuildAndAttachLODMapper(vtkPVLODActor* actor,
+                                                 vtkDataSet* data);
 
 /// Enable or disable LOD on all vtkPVLODActor instances in a renderer.
 /// Typically called at interaction start (enable=true) and end (enable=false).
-QVTK_ENGINE_LIB_API void SetLODEnabledForRenderer(
-        vtkRenderer* renderer, bool enable);
+QVTK_ENGINE_LIB_API void SetLODEnabledForRenderer(vtkRenderer* renderer,
+                                                  bool enable);
 
 }  // namespace VtkRendering

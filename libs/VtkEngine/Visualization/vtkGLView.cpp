@@ -8,6 +8,7 @@
 #include "vtkGLView.h"
 
 #include <CVLog.h>
+#include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <ecvBBox.h>
 #include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
@@ -24,7 +25,6 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkCameraPass.h>
-#include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <vtkCutter.h>
 #include <vtkDataSet.h>
 #include <vtkDefaultPass.h>
@@ -45,19 +45,22 @@ public:
     }
     int GetLowResFactor() const { return EDLLowResFactor; }
 };
-#include <vtkOpenGLFXAAPass.h>
+#include <ecvViewTitleRegistry.h>
+#include <vtkCollection.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImplicitPlaneRepresentation.h>
 #include <vtkImplicitPlaneWidget2.h>
 #include <vtkLightsPass.h>
 #include <vtkMapper.h>
+#include <vtkMath.h>
 #include <vtkMatrix4x4.h>
 #include <vtkNew.h>
 #include <vtkOpaquePass.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty.h>
+#include <vtkOpenGLFXAAPass.h>
 #include <vtkOverlayPass.h>
 #include <vtkPlane.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
 #include <vtkRenderPassCollection.h>
 #include <vtkRenderStepsPass.h>
 #include <vtkRenderWindow.h>
@@ -76,11 +79,85 @@ public:
 #include "ImageVis.h"
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
+#include "VTKExtensions/InteractionStyle/vtkPVTrackballRotate.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
-#include <ecvViewTitleRegistry.h>
-
 #include "VtkDisplayTools.h"
 #include "VtkVis.h"
+
+namespace {
+
+// Rodrigues rotation: rotate vector v around unit axis k by angle theta
+// (radians)
+static CCVector3d rodriguesRotate(const CCVector3d& v,
+                                  const CCVector3d& k,
+                                  double theta) {
+    const double ct = std::cos(theta);
+    const double st = std::sin(theta);
+    return v * ct + k.cross(v) * st + k * (k.dot(v)) * (1.0 - ct);
+}
+
+// CloudCompare-compatible locked rotation: builds absolute view orientation
+// from accumulated azimuth and elevation angles, then applies to VTK camera.
+// This matches ccGLUtils::GenerateViewMat(vertDir, vertAngle, orthoAngle).
+static void applyLockedRotationToVtkCamera(vtkCamera* camera,
+                                           const CCVector3d& lockedAxis,
+                                           double azimuthRad,
+                                           double elevationRad,
+                                           const CCVector3d& pivot,
+                                           double dist) {
+    if (!camera || dist <= 1.0e-12) return;
+
+    // CloudCompare's GenerateViewMat logic:
+    // viewMat = horizRot * baseFrame * vertRot
+    // Where:
+    //   vertRot = rotation by azimuth about lockedAxis
+    //   baseFrame = FromViewDirAndUpDir(orthoDir, lockedAxis)
+    //   horizRot = rotation by elevation about local X axis (world +X after
+    //   base transform)
+    //
+    // The view matrix transforms world → camera space. Camera looks along -Z,
+    // up is +Y. Extract camera params: forward = -row2, up = row1
+
+    CCVector3d axis = lockedAxis;
+    axis.normalize();
+    CCVector3d orthoDir = axis.orthogonal();
+    orthoDir.normalize();
+
+    // Base frame: camera looks along orthoDir, up = axis
+    // side = orthoDir x axis
+    CCVector3d side = orthoDir.cross(axis);
+    side.normalize();
+    // Recompute up = side x orthoDir
+    CCVector3d up = side.cross(orthoDir);
+    up.normalize();
+
+    // After base frame: forward = orthoDir, up = up (≈axis), side = side
+    // Apply vertRot (azimuth): rotate the forward direction around the locked
+    // axis
+    CCVector3d fwd = rodriguesRotate(orthoDir, axis, azimuthRad);
+    fwd.normalize();
+    // Side also rotates with azimuth
+    CCVector3d sideRotated = rodriguesRotate(side, axis, azimuthRad);
+    sideRotated.normalize();
+
+    // Apply horizRot (elevation): rotate forward and up around the rotated side
+    // axis This matches CloudCompare's horizRot about the local X axis (which
+    // is 'side')
+    CCVector3d fwdFinal = rodriguesRotate(fwd, sideRotated, elevationRad);
+    fwdFinal.normalize();
+    CCVector3d upFinal = rodriguesRotate(axis, sideRotated, elevationRad);
+    upFinal.normalize();
+
+    // VTK camera: position = pivot - forward*dist, focal = pivot, viewUp = up
+    camera->SetFocalPoint(pivot.x, pivot.y, pivot.z);
+    camera->SetPosition(pivot.x - fwdFinal.x * dist,
+                        pivot.y - fwdFinal.y * dist,
+                        pivot.z - fwdFinal.z * dist);
+    camera->SetViewUp(upFinal.x, upFinal.y, upFinal.z);
+    camera->OrthogonalizeViewUp();
+}
+
+}  // namespace
 
 int vtkGLView::s_nextWindowID = 1000;
 
@@ -696,8 +773,7 @@ void vtkGLView::setOutlineVisible(bool visible) {
             actor->SetVisibility(visible ? 1 : 0);
         }
     }
-    if (renderer->GetRenderWindow())
-        renderer->GetRenderWindow()->Render();
+    if (renderer->GetRenderWindow()) renderer->GetRenderWindow()->Render();
 }
 
 void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
@@ -742,8 +818,47 @@ void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
 }
 
 void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
+    const bool changed =
+            (m_ctx.viewportParams.perspectiveView != state) ||
+            (m_ctx.viewportParams.objectCenteredView != objectCenteredView);
+
     m_ctx.viewportParams.perspectiveView = state;
     m_ctx.viewportParams.objectCenteredView = objectCenteredView;
+
+    if (!changed) return;
+
+    // Apply projection change to VTK camera without triggering full scene
+    // rebuilds that can cause recursive render loops or freezes.
+    if (m_visualizer3D) {
+        auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get());
+        if (vis) {
+            vtkCamera* cam = vis->getVtkCamera();
+            if (cam) {
+                const int wasParallel = cam->GetParallelProjection();
+                const int wantParallel = state ? 0 : 1;
+                if (wasParallel != wantParallel) {
+                    if (wantParallel && !wasParallel) {
+                        // Perspective → Orthographic: preserve apparent size
+                        const double dist = cam->GetDistance();
+                        const double fovRad = vtkMath::RadiansFromDegrees(
+                                                      cam->GetViewAngle()) *
+                                              0.5;
+                        if (dist > 1.0e-6 && fovRad > 1.0e-6) {
+                            cam->SetParallelScale(dist * std::tan(fovRad));
+                        }
+                    }
+                    cam->SetParallelProjection(wantParallel);
+                    cam->Modified();
+                }
+                if (auto* ren = vis->getCurrentRenderer()) {
+                    ren->ResetCameraClippingRange();
+                }
+                vis->UpdateScreen();
+            }
+        }
+    }
+
+    emit perspectiveStateChanged();
 }
 
 bool vtkGLView::perspectiveView() const {
@@ -933,7 +1048,52 @@ int vtkGLView::getDevicePixelRatio() const {
 
 void vtkGLView::setInteractionMode(INTERACTION_FLAGS flags) {
     if (m_ctx.interactionFlags != flags) {
+        const bool wasSignalOnly =
+                (m_ctx.interactionFlags == INTERACT_SEND_ALL_SIGNALS);
+        const bool isSignalOnly = (flags == INTERACT_SEND_ALL_SIGNALS);
+
         m_ctx.interactionFlags = flags;
+
+        if (m_visualizer3D) {
+            auto style = m_visualizer3D->get3DInteractorStyle();
+            if (style) {
+                if (isSignalOnly && !wasSignalOnly) {
+                    style->RemoveAllManipulators();
+                } else if (!isSignalOnly && wasSignalOnly) {
+                    // Restore default 3D manipulators
+                    int manipulators[9];
+                    manipulators[0] = 4;  // Left: Rotate
+                    manipulators[3] = 1;  // Left+Shift: Pan
+                    manipulators[6] = 3;  // Left+Ctrl: Roll
+                    manipulators[1] = 1;  // Middle: Pan
+                    manipulators[4] = 4;  // Middle+Shift: Rotate
+                    manipulators[7] = 3;  // Middle+Ctrl: Roll
+                    manipulators[2] = 2;  // Right: Zoom
+                    manipulators[5] = 1;  // Right+Shift: Pan
+                    manipulators[8] = 6;  // Right+Ctrl: Zoom to Mouse
+                    m_visualizer3D->setCamera3DManipulators(manipulators);
+
+                    // Restore locked axis if still active
+                    if (m_ctx.rotationAxisLocked) {
+                        auto* manips = style->GetCameraManipulators();
+                        if (manips) {
+                            manips->InitTraversal();
+                            while (auto* obj = manips->GetNextItemAsObject()) {
+                                if (auto* rot =
+                                            vtkPVTrackballRotate::SafeDownCast(
+                                                    obj)) {
+                                    rot->SetLockedAxis(
+                                            m_ctx.lockedRotationAxis.x,
+                                            m_ctx.lockedRotationAxis.y,
+                                            m_ctx.lockedRotationAxis.z);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         emit interactionModeChanged(flags);
     }
 }
@@ -1230,7 +1390,8 @@ void vtkGLView::setPivotPoint(const CCVector3d& P,
     Q_UNUSED(verbose);
     m_ctx.viewportParams.setPivotPoint(P, true);
     m_ctx.autoPivotCandidate = P;
-    if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+    if (auto* vis =
+                dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
         vis->setCenterOfRotation(P.x, P.y, P.z);
     }
     if (autoRedraw) {
@@ -1270,133 +1431,173 @@ bool vtkGLView::isRotationAxisLocked() const {
     return m_ctx.rotationAxisLocked;
 }
 
+void vtkGLView::rotateBaseViewMat(const ccGLMatrixd& rotMat) {
+    m_ctx.viewportParams.viewMat = rotMat * m_ctx.viewportParams.viewMat;
+
+    // The viewMat stores camera axes as ROWS in column-major layout:
+    //   Row 0 = right,  Row 1 = up,  Row 2 = backward (-forward)
+    // In column-major storage: row i components are at data[i], data[4+i],
+    // data[8+i]
+    const double* d = m_ctx.viewportParams.viewMat.data();
+    CCVector3d upDir(d[1], d[5], d[9]);
+    upDir.normalize();
+    CCVector3d backward(d[2], d[6], d[10]);
+    backward.normalize();
+
+    // Get current camera distance and pivot from the VTK camera
+    CCVector3d pivot = m_ctx.viewportParams.getPivotPoint();
+    double distance = 1.0;
+    if (m_visualizer3D) {
+        if (auto* ren = m_visualizer3D->getCurrentRenderer()) {
+            if (auto* cam = ren->GetActiveCamera()) {
+                double* pos = cam->GetPosition();
+                double* foc = cam->GetFocalPoint();
+                distance = std::sqrt((pos[0] - foc[0]) * (pos[0] - foc[0]) +
+                                     (pos[1] - foc[1]) * (pos[1] - foc[1]) +
+                                     (pos[2] - foc[2]) * (pos[2] - foc[2]));
+                if (distance < 1.0e-6) distance = 1.0;
+                pivot = CCVector3d(foc[0], foc[1], foc[2]);
+            }
+        }
+    }
+
+    CCVector3d camPos = pivot + backward * distance;
+
+    m_ctx.viewportParams.setCameraCenter(camPos);
+    m_ctx.viewportParams.up = upDir;
+    m_ctx.viewportParams.focal = pivot;
+    m_ctx.viewportParams.setPivotPoint(pivot, true);
+
+    if (m_visualizer3D) {
+        m_visualizer3D->setCameraPosition(camPos.x, camPos.y, camPos.z, pivot.x,
+                                          pivot.y, pivot.z, upDir.x, upDir.y,
+                                          upDir.z, 0);
+    }
+
+    if (auto* rw = m_vtkWidget ? m_vtkWidget->renderWindow() : nullptr) {
+        rw->Render();
+    }
+
+    emit baseViewMatChanged(m_ctx.viewportParams.viewMat);
+    emit cameraParamChanged();
+}
+
 void vtkGLView::lockRotationAxis(bool state, const CCVector3d& axis) {
     m_ctx.rotationAxisLocked = state;
-    if (!state) {
-        return;
+    if (state) {
+        m_ctx.lockedRotationAxis = axis;
+        const double norm = m_ctx.lockedRotationAxis.norm();
+        if (norm <= 1.0e-12 || !std::isfinite(norm)) {
+            m_ctx.rotationAxisLocked = false;
+            m_ctx.lockedRotationAxis = CCVector3d(0.0, 0.0, 1.0);
+            return;
+        }
+        m_ctx.lockedRotationAxis /= norm;
     }
 
-    m_ctx.lockedRotationAxis = axis;
-    const double norm = m_ctx.lockedRotationAxis.norm();
-    if (norm <= 1.0e-12 || !std::isfinite(norm)) {
-        m_ctx.rotationAxisLocked = false;
-        m_ctx.lockedRotationAxis = CCVector3d(0.0, 0.0, 1.0);
-        CVLog::Warning("[vtkGLView] Ignoring invalid zero-length rotation lock axis");
-        return;
+    if (m_visualizer3D) {
+        auto style = m_visualizer3D->get3DInteractorStyle();
+        if (style) {
+            auto* manips = style->GetCameraManipulators();
+            if (manips) {
+                manips->InitTraversal();
+                while (auto* obj = manips->GetNextItemAsObject()) {
+                    if (auto* rot = vtkPVTrackballRotate::SafeDownCast(obj)) {
+                        if (state) {
+                            rot->SetLockedAxis(m_ctx.lockedRotationAxis.x,
+                                               m_ctx.lockedRotationAxis.y,
+                                               m_ctx.lockedRotationAxis.z);
+                        } else {
+                            rot->ClearLockedAxis();
+                        }
+                    }
+                }
+            }
+        }
     }
-    m_ctx.lockedRotationAxis /= norm;
-    m_ctx.lockedRotationAngle_rad = 0.0;
-    m_ctx.lockedRotationOrthoAngle_rad = 0.0;
-
-    // VTK views are driven by vtkCamera, not by the CloudCompare OpenGL
-    // viewMat.  Keep the current camera framing when enabling the lock and
-    // apply constrained VTK camera rotations during mouse drag.
-    syncVtkCameraToContext();
-    emit cameraParamChanged();
 }
 
 bool vtkGLView::rotateLockedCamera(int mouseDeltaX,
                                    int mouseDeltaY,
                                    int viewWidth,
                                    int viewHeight,
-                                   const CCVector2i& mousePos) {
-    if (!m_ctx.rotationAxisLocked || !m_visualizer3D) return false;
+                                   const CCVector2i& /*mousePos*/) {
+    if (!m_ctx.rotationAxisLocked || !m_visualizer3D) {
+        return false;
+    }
 
     vtkRenderer* renderer = m_visualizer3D->getCurrentRenderer();
     vtkCamera* camera = renderer ? renderer->GetActiveCamera() : nullptr;
     if (!renderer || !camera) return false;
 
-    CCVector3d axis = m_ctx.lockedRotationAxis;
-    const double axisNorm = axis.norm();
+    CCVector3d lockedAxis = m_ctx.lockedRotationAxis;
+    const double axisNorm = lockedAxis.norm();
     if (axisNorm <= 1.0e-12 || !std::isfinite(axisNorm)) return false;
-    axis /= axisNorm;
+    lockedAxis /= axisNorm;
 
-    constexpr double PI = 3.14159265358979323846;
-    constexpr double TWO_PI = 2.0 * PI;
-    constexpr double HALF_PI = 0.5 * PI;
     const double w = std::max(1, viewWidth);
     const double h = std::max(1, viewHeight);
 
-    const double horizDeltaRad = static_cast<double>(mouseDeltaX) * (TWO_PI / w);
-    const double oldOrthoRad = m_ctx.lockedRotationOrthoAngle_rad;
-    const double requestedOrthoRad =
-            oldOrthoRad + static_cast<double>(mouseDeltaY) * (PI / h);
-    const double newOrthoRad =
-            std::min(HALF_PI, std::max(-HALF_PI, requestedOrthoRad));
-    const double orthoDeltaRad = newOrthoRad - oldOrthoRad;
+    const double deltaAzDeg = static_cast<double>(mouseDeltaX) * (360.0 / w);
+    const double deltaElDeg = static_cast<double>(mouseDeltaY) * (180.0 / h);
 
-    if (std::abs(horizDeltaRad) <= 1.0e-12 &&
-        std::abs(orthoDeltaRad) <= 1.0e-12) {
+    if (std::abs(deltaAzDeg) < 1.0e-5 && std::abs(deltaElDeg) < 1.0e-5) {
         return true;
     }
 
-    m_ctx.lockedRotationAngle_rad += horizDeltaRad;
-    while (m_ctx.lockedRotationAngle_rad < -PI) {
-        m_ctx.lockedRotationAngle_rad += TWO_PI;
-    }
-    while (m_ctx.lockedRotationAngle_rad > PI) {
-        m_ctx.lockedRotationAngle_rad -= TWO_PI;
-    }
-    m_ctx.lockedRotationOrthoAngle_rad = newOrthoRad;
-
-    if (std::abs(horizDeltaRad) > 1.0e-12) {
-        m_visualizer3D->rotateWithAxis(
-                mousePos, axis, horizDeltaRad * 180.0 / PI, 0);
-    }
-
-    if (std::abs(orthoDeltaRad) > 1.0e-12) {
-        double pos[3] = {0.0, 0.0, 0.0};
-        double focal[3] = {0.0, 0.0, 0.0};
-        camera->GetPosition(pos);
-        camera->GetFocalPoint(focal);
-        CCVector3d viewDir(focal[0] - pos[0], focal[1] - pos[1],
-                           focal[2] - pos[2]);
-        const double viewNorm = viewDir.norm();
-        if (viewNorm > 1.0e-12 && std::isfinite(viewNorm)) {
-            viewDir /= viewNorm;
-            CCVector3d right = viewDir.cross(axis);
-            double rightNorm = right.norm();
-            if (rightNorm <= 1.0e-12 || !std::isfinite(rightNorm)) {
-                double up[3] = {0.0, 0.0, 1.0};
-                camera->GetViewUp(up);
-                right = CCVector3d(up[0], up[1], up[2]).cross(viewDir);
-                rightNorm = right.norm();
-            }
-            if (rightNorm > 1.0e-12 && std::isfinite(rightNorm)) {
-                right /= rightNorm;
-                m_visualizer3D->rotateWithAxis(
-                        mousePos, right, orthoDeltaRad * 180.0 / PI, 0);
-            }
-        }
-    }
-
-    double pos[3] = {0.0, 0.0, 0.0};
-    double focal[3] = {0.0, 0.0, 0.0};
+    // Use the camera's focal point as the orbit center
+    double fp[3], pos[3];
+    camera->GetFocalPoint(fp);
     camera->GetPosition(pos);
-    camera->GetFocalPoint(focal);
-    CCVector3d viewDir(focal[0] - pos[0], focal[1] - pos[1],
-                       focal[2] - pos[2]);
-    const double viewNorm = viewDir.norm();
-    if (viewNorm > 1.0e-12 && std::isfinite(viewNorm)) {
-        viewDir /= viewNorm;
-        CCVector3d up = axis - viewDir * axis.dot(viewDir);
-        const double upNorm = up.norm();
-        if (upNorm > 1.0e-12 && std::isfinite(upNorm)) {
-            up /= upNorm;
-            camera->SetViewUp(up.x, up.y, up.z);
-        }
+
+    CCVector3d focalPt(fp[0], fp[1], fp[2]);
+    CCVector3d camPos(pos[0], pos[1], pos[2]);
+    CCVector3d offset = camPos - focalPt;
+    double dist = offset.norm();
+    if (dist < 1.0e-9) dist = 1.0;
+
+    // 1) Azimuth: rotate offset around the locked axis
+    double azRad = cloudViewer::DegreesToRadians(deltaAzDeg);
+    offset = rodriguesRotate(offset, lockedAxis, azRad);
+
+    // 2) Elevation: rotate offset around camera's local right axis
+    //    The right axis is perpendicular to both the locked axis and
+    //    the current offset direction.
+    CCVector3d offsetDir = offset;
+    offsetDir.normalize();
+    CCVector3d rightAxis = lockedAxis.cross(offsetDir);
+    double rightNorm = rightAxis.norm();
+    if (rightNorm > 1.0e-9) {
+        rightAxis /= rightNorm;
+        double elRad = cloudViewer::DegreesToRadians(deltaElDeg);
+
+        // Clamp elevation to avoid flipping over the poles
+        double currentElev = std::asin(
+                std::max(-1.0, std::min(1.0, offsetDir.dot(lockedAxis))));
+        double newElev = currentElev + elRad;
+        const double maxElev = cloudViewer::DegreesToRadians(89.0);
+        if (newElev > maxElev)
+            elRad = maxElev - currentElev;
+        else if (newElev < -maxElev)
+            elRad = -maxElev - currentElev;
+
+        offset = rodriguesRotate(offset, rightAxis, elRad);
     }
 
+    // Set new camera position
+    CCVector3d newPos = focalPt + offset;
+    camera->SetPosition(newPos.x, newPos.y, newPos.z);
+
+    // Keep ViewUp aligned with locked axis
+    camera->SetViewUp(lockedAxis.x, lockedAxis.y, lockedAxis.z);
     camera->OrthogonalizeViewUp();
+
     camera->Modified();
     renderer->ResetCameraClippingRange();
-    renderer->Modified();
     if (auto* rw = m_vtkWidget ? m_vtkWidget->renderWindow() : nullptr) {
         rw->Render();
     }
     syncVtkCameraToContext();
-    emit cameraParamChanged();
-    if (m_vtkWidget) m_vtkWidget->update();
     return true;
 }
 
@@ -1404,7 +1605,10 @@ void vtkGLView::toggleCameraOrientationWidget(bool state) {
     // Route directly to this view's VtkVis. Comparative sub-views each own an
     // interactor, so using the global display tools can bind the camera widget
     // to the wrong render window.
-    if (m_visualizer3D) m_visualizer3D->ToggleCameraOrientationWidget(state);
+    if (m_visualizer3D) {
+        m_visualizer3D->ToggleCameraOrientationWidget(state);
+        if (state) m_visualizer3D->RefreshOverlayWidgets();
+    }
 }
 
 void vtkGLView::toggleOrientationMarker(bool state) {
@@ -1417,6 +1621,7 @@ void vtkGLView::toggleOrientationMarker(bool state) {
         } else {
             m_visualizer3D->hidePclMarkerAxes();
         }
+        m_visualizer3D->RefreshOverlayWidgets();
     }
 }
 

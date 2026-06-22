@@ -598,10 +598,12 @@ struct ccGLDrawContext {
     unsigned char defaultPointSize;         ///< Default point size
     glDrawParams drawParam;                 ///< Draw parameters
     MESH_RENDERING_MODE meshRenderingMode;  ///< Mesh rendering mode
-    ENTITY_TYPE hideShowEntityType = ENTITY_TYPE::ECV_NONE;  ///< Entity type for hide/show
+    ENTITY_TYPE hideShowEntityType =
+            ENTITY_TYPE::ECV_NONE;  ///< Entity type for hide/show
 
-    QString removeViewID;                                    ///< View ID for entity removal
-    ENTITY_TYPE removeEntityType = ENTITY_TYPE::ECV_NONE;   ///< Entity type for removal
+    QString removeViewID;  ///< View ID for entity removal
+    ENTITY_TYPE removeEntityType =
+            ENTITY_TYPE::ECV_NONE;  ///< Entity type for removal
 
     bool clearDepthLayer;  ///< Clear depth buffer
     bool clearColorLayer;  ///< Clear color buffer

@@ -7,8 +7,7 @@
 
 #include "ecvPythonSyntaxHighlighter.h"
 
-ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
-        QTextDocument* parent)
+ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(QTextDocument* parent)
     : QSyntaxHighlighter(parent) {
     // --- Keywords (Python 3) ---
     QTextCharFormat kwFmt;
@@ -16,18 +15,16 @@ ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
     kwFmt.setFontWeight(QFont::Bold);
 
     const QStringList keywords = {
-            "False",  "None",     "True",   "and",    "as",
-            "assert", "async",    "await",  "break",  "class",
-            "continue", "def",   "del",    "elif",   "else",
-            "except", "finally",  "for",    "from",   "global",
-            "if",     "import",   "in",     "is",     "lambda",
-            "nonlocal", "not",   "or",     "pass",   "raise",
-            "return", "try",      "while",  "with",   "yield",
+            "False",  "None",     "True",  "and",    "as",       "assert",
+            "async",  "await",    "break", "class",  "continue", "def",
+            "del",    "elif",     "else",  "except", "finally",  "for",
+            "from",   "global",   "if",    "import", "in",       "is",
+            "lambda", "nonlocal", "not",   "or",     "pass",     "raise",
+            "return", "try",      "while", "with",   "yield",
     };
     for (const auto& kw : keywords) {
         Rule rule;
-        rule.pattern = QRegularExpression(
-                QStringLiteral("\\b%1\\b").arg(kw));
+        rule.pattern = QRegularExpression(QStringLiteral("\\b%1\\b").arg(kw));
         rule.format = kwFmt;
         m_rules.append(rule);
     }
@@ -37,24 +34,27 @@ ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
     builtinFmt.setForeground(QColor(220, 220, 170));
 
     const QStringList builtins = {
-            "abs",      "all",       "any",      "bin",      "bool",
-            "bytes",    "callable",  "chr",      "classmethod", "compile",
-            "complex",  "delattr",   "dict",     "dir",      "divmod",
-            "enumerate","eval",      "exec",     "filter",   "float",
-            "format",   "frozenset", "getattr",  "globals",  "hasattr",
-            "hash",     "help",      "hex",      "id",       "input",
-            "int",      "isinstance","issubclass","iter",     "len",
-            "list",     "locals",    "map",      "max",      "memoryview",
-            "min",      "next",      "object",   "oct",      "open",
-            "ord",      "pow",       "print",    "property", "range",
-            "repr",     "reversed",  "round",    "set",      "setattr",
-            "slice",    "sorted",    "staticmethod","str",   "sum",
-            "super",    "tuple",     "type",     "vars",     "zip",
+            "abs",         "all",          "any",      "bin",
+            "bool",        "bytes",        "callable", "chr",
+            "classmethod", "compile",      "complex",  "delattr",
+            "dict",        "dir",          "divmod",   "enumerate",
+            "eval",        "exec",         "filter",   "float",
+            "format",      "frozenset",    "getattr",  "globals",
+            "hasattr",     "hash",         "help",     "hex",
+            "id",          "input",        "int",      "isinstance",
+            "issubclass",  "iter",         "len",      "list",
+            "locals",      "map",          "max",      "memoryview",
+            "min",         "next",         "object",   "oct",
+            "open",        "ord",          "pow",      "print",
+            "property",    "range",        "repr",     "reversed",
+            "round",       "set",          "setattr",  "slice",
+            "sorted",      "staticmethod", "str",      "sum",
+            "super",       "tuple",        "type",     "vars",
+            "zip",
     };
     for (const auto& fn : builtins) {
         Rule rule;
-        rule.pattern = QRegularExpression(
-                QStringLiteral("\\b%1\\b").arg(fn));
+        rule.pattern = QRegularExpression(QStringLiteral("\\b%1\\b").arg(fn));
         rule.format = builtinFmt;
         m_rules.append(rule);
     }
@@ -108,8 +108,7 @@ ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
     opFmt.setForeground(QColor(212, 212, 212));
     {
         Rule rule;
-        rule.pattern = QRegularExpression(
-                QStringLiteral("[+\\-*/%=<>!&|^~]+"));
+        rule.pattern = QRegularExpression(QStringLiteral("[+\\-*/%=<>!&|^~]+"));
         rule.format = opFmt;
         m_rules.append(rule);
     }
@@ -119,8 +118,8 @@ ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
     strFmt.setForeground(QColor(206, 145, 120));
     {
         Rule rule;
-        rule.pattern = QRegularExpression(
-                QStringLiteral("\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'"));
+        rule.pattern = QRegularExpression(QStringLiteral(
+                "\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'"));
         rule.format = strFmt;
         m_rules.append(rule);
     }
@@ -128,8 +127,8 @@ ecvPythonSyntaxHighlighter::ecvPythonSyntaxHighlighter(
     // --- f-string prefix ---
     {
         Rule rule;
-        rule.pattern = QRegularExpression(
-                QStringLiteral("[fFrRbBuU]+(?=\"|\')"));
+        rule.pattern =
+                QRegularExpression(QStringLiteral("[fFrRbBuU]+(?=\"|\')"));
         rule.format = strFmt;
         m_rules.append(rule);
     }
@@ -166,9 +165,9 @@ void ecvPythonSyntaxHighlighter::highlightBlock(const QString& text) {
     // Multi-line string states: 0 = none, 1 = in ''', 2 = in """
     setCurrentBlockState(0);
 
-    auto processTripleQuote = [this, &text](
-            const QRegularExpression& startExpr,
-            const QRegularExpression& endExpr, int state) {
+    auto processTripleQuote = [this, &text](const QRegularExpression& startExpr,
+                                            const QRegularExpression& endExpr,
+                                            int state) {
         int startIdx = 0;
 
         if (previousBlockState() != state) {

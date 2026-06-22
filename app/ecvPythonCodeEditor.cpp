@@ -33,8 +33,7 @@ int ecvPythonCodeEditor::lineNumberAreaWidth() const {
         max /= 10;
         ++digits;
     }
-    int space =
-            6 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+    int space = 6 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
     return space;
 }
 
@@ -49,8 +48,7 @@ void ecvPythonCodeEditor::updateLineNumberArea(const QRect& rect, int dy) {
         m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
                                  rect.height());
 
-    if (rect.contains(viewport()->rect()))
-        updateLineNumberAreaWidth(0);
+    if (rect.contains(viewport()->rect())) updateLineNumberAreaWidth(0);
 }
 
 void ecvPythonCodeEditor::resizeEvent(QResizeEvent* e) {
@@ -110,8 +108,7 @@ void ecvPythonCodeEditor::lineNumberAreaPaintEvent(QPaintEvent* event) {
 void ecvPythonCodeEditor::keyPressEvent(QKeyEvent* event) {
     if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
         QTextCursor cursor = textCursor();
-        QString currentLine =
-                cursor.block().text();
+        QString currentLine = cursor.block().text();
 
         QString indent;
         for (const QChar& ch : currentLine) {

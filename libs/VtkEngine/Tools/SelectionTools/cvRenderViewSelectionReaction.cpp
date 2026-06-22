@@ -1576,10 +1576,11 @@ void cvRenderViewSelectionReaction::selectPointsOnSurface(
         highlighter->setHighlightsVisible(true);
     }
 
-    CVLog::PrintVerbose(QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
-                         "count=%1 modifier=%2")
-                         .arg(selection.count())
-                         .arg(selectionModifier));
+    CVLog::PrintVerbose(
+            QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
+                    "count=%1 modifier=%2")
+                    .arg(selection.count())
+                    .arg(selectionModifier));
     finalizeSelection(selection, selectionModifier, "SurfacePoints");
 }
 
@@ -1632,9 +1633,8 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     Q_UNUSED(description);
 
     if (newSelection.isEmpty()) {
-        CVLog::Print(
-                QString("[finalizeSelection] empty selection (%1)")
-                        .arg(description));
+        CVLog::Print(QString("[finalizeSelection] empty selection (%1)")
+                             .arg(description));
         return;
     }
 
@@ -1695,7 +1695,8 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
 
     // Highlight on the active view first, then publish selection state.
-    // Avoids selectionChanged handlers re-highlighting with stripped actor info.
+    // Avoids selectionChanged handlers re-highlighting with stripped actor
+    // info.
     manager->blockSignals(true);
     if (highlighter && !combined.isEmpty()) {
         const bool hlOk = highlighter->highlightSelection(

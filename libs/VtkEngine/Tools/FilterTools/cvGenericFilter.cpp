@@ -28,6 +28,7 @@
 // CV_DB_LIB
 #include <ecvBBox.h>
 #include <ecvHObject.h>
+#include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
@@ -36,24 +37,31 @@
 #include <ecvViewRepresentation.h>
 
 // VTK
+#include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtk3DWidget.h>
 #include <vtkActor.h>
-#include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
 #include <vtkDataArray.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkFieldData.h>
 #include <vtkLookupTable.h>
+#include <vtkMapper.h>
 #include <vtkOutlineFilter.h>
+#include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProp.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #include <vtkScalarBarActor.h>
 #include <vtkTextProperty.h>
 #include <vtkUnstructuredGrid.h>
+
 #include <QTimer>
 
 cvGenericFilter::cvGenericFilter(QWidget* parent)
@@ -69,6 +77,7 @@ cvGenericFilter::cvGenericFilter(QWidget* parent)
 }
 
 cvGenericFilter::~cvGenericFilter() {
+    removeDisplayEffectObserver();
     restoreInputEntityVisibility();
     VtkUtils::vtkSafeDelete(m_dataObject);
     delete m_ui;
@@ -86,6 +95,8 @@ void cvGenericFilter::start() {
 
     // according to data type
     initFilter();
+
+    installDisplayEffectObserver();
 
     // update screen
     update();
@@ -124,15 +135,23 @@ bool cvGenericFilter::initModel() {
         return false;
     }
 
-    vtkPolyData* polydata =
-            reinterpret_cast<vtkPolyDataMapper*>(m_modelActor->GetMapper())
-                    ->GetInput();
+    vtkMapper* mapper = m_modelActor->GetMapper();
+    if (!mapper) {
+        return false;
+    }
+
+    vtkPolyData* polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
     if (!polydata) {
         return false;
     }
 
     int npoints = static_cast<int>(polydata->GetNumberOfPoints());
-    if (npoints > MAX_PREVIEW_NUMBER) {
+    if (!m_meshMode) {
+        // Point clouds use mapper clipping planes for Opaque preview
+        // (GPU-based, no geometry copy), so preview stays enabled regardless of
+        // size.
+        m_preview = true;
+    } else if (npoints > MAX_PREVIEW_NUMBER) {
         m_preview = false;
     } else {
         m_preview = true;
@@ -161,15 +180,57 @@ ccHObject* cvGenericFilter::getOutput() {
         return nullptr;
     }
 
-    ccHObject* result;
-    if (m_meshMode) {
-        result = Converters::Vtk2Cc::ConvertToMesh(polydata);
-        if (!result) {
-            CVLog::Warning(QString("try to save in cloud format"));
-            result = Converters::Vtk2Cc::ConvertToPointCloud(polydata);
+    Converters::Vtk2CcOptions options;
+    options.sourceEntity = m_entity;
+
+    ccHObject* result =
+            Converters::Vtk2Cc::Convert(polydata, m_meshMode, options);
+    if (!result && m_meshMode) {
+        CVLog::Warning(QString("try to save in cloud format"));
+        result = Converters::Vtk2Cc::Convert(polydata, false, options);
+    }
+
+    if (!result || !m_entity) {
+        return result;
+    }
+
+    auto propagateGlobalShiftScale = [](ccHObject* output,
+                                        const ccPointCloud* sourceCloud) {
+        if (!output || !sourceCloud) {
+            return;
         }
-    } else {
-        result = Converters::Vtk2Cc::ConvertToPointCloud(polydata);
+
+        if (ccPointCloud* outputCloud = ccHObjectCaster::ToPointCloud(output)) {
+            outputCloud->setGlobalScale(sourceCloud->getGlobalScale());
+            outputCloud->setGlobalShift(sourceCloud->getGlobalShift());
+            return;
+        }
+
+        if (ccMesh* outputMesh = ccHObjectCaster::ToMesh(output)) {
+            ccPointCloud* outputVertices = ccHObjectCaster::ToPointCloud(
+                    outputMesh->getAssociatedCloud());
+            if (outputVertices) {
+                outputVertices->setGlobalScale(sourceCloud->getGlobalScale());
+                outputVertices->setGlobalShift(sourceCloud->getGlobalShift());
+            }
+        }
+    };
+
+    if (m_entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        ccPointCloud* sourceCloud = ccHObjectCaster::ToPointCloud(m_entity);
+        propagateGlobalShiftScale(result, sourceCloud);
+    } else if (m_entity->isKindOf(CV_TYPES::MESH)) {
+        ccMesh* sourceMesh = ccHObjectCaster::ToMesh(m_entity);
+        ccPointCloud* sourceCloud =
+                sourceMesh ? ccHObjectCaster::ToPointCloud(
+                                     sourceMesh->getAssociatedCloud())
+                           : nullptr;
+        propagateGlobalShiftScale(result, sourceCloud);
+    }
+
+    const QString sourceName = m_entity->getName();
+    if (!sourceName.isEmpty()) {
+        result->setName(sourceName + ".filtered");
     }
 
     return result;
@@ -241,7 +302,7 @@ void cvGenericFilter::restoreOrigin() {
 void cvGenericFilter::setDisplayEffect(cvGenericFilter::DisplayEffect effect) {
     if (m_displayEffect != effect) {
         m_displayEffect = effect;
-        applyDisplayEffect();
+        apply();
     }
 }
 
@@ -320,7 +381,7 @@ void cvGenericFilter::restoreInputEntityVisibility() {
     m_entityVisibilityView = nullptr;
 }
 
-void cvGenericFilter::applyDisplayEffect() {
+void cvGenericFilter::applyModelDisplayEffect() {
     if (m_viewer && !m_id.empty()) {
         if (vtkActor* actor = m_viewer->getActorById(m_id)) {
             m_modelActor = actor;
@@ -331,45 +392,156 @@ void cvGenericFilter::applyDisplayEffect() {
         hideInputEntityForOpaquePreview(false);
     }
 
-    if (m_modelActor) {
-        switch (m_displayEffect) {
-            case Transparent:
-                hideInputEntityForOpaquePreview(false);
-                m_modelActor->GetProperty()->SetOpacity(0.3);
-                m_modelActor->SetVisibility(1);
-                m_modelActor->GetProperty()->SetRepresentationToSurface();
-                break;
-
-            case Opaque:
-                m_modelActor->GetProperty()->SetOpacity(1.0);
-                m_modelActor->SetVisibility(0);
-                hideInputEntityForOpaquePreview(true);
-                break;
-
-            case Points:
-                hideInputEntityForOpaquePreview(false);
-                m_modelActor->GetProperty()->SetOpacity(1.0);
-                m_modelActor->SetVisibility(1);
-                m_modelActor->GetProperty()->SetRepresentationToPoints();
-                break;
-
-            case Wireframe:
-                hideInputEntityForOpaquePreview(false);
-                m_modelActor->GetProperty()->SetOpacity(1.0);
-                m_modelActor->SetVisibility(1);
-                m_modelActor->GetProperty()->SetRepresentationToWireframe();
-                break;
-        }
-
-        vtkSmartPointer<vtkLookupTable> lut =
-                createLookupTable(m_scalarMin, m_scalarMax);
-        m_modelActor->GetMapper()->SetLookupTable(lut);
+    if (!m_modelActor) {
+        return;
     }
+
+    switch (m_displayEffect) {
+        case Transparent:
+            hideInputEntityForOpaquePreview(false);
+            m_modelActor->GetProperty()->SetOpacity(0.3);
+            m_modelActor->SetVisibility(1);
+            m_modelActor->GetProperty()->SetRepresentationToSurface();
+            break;
+
+        case Opaque:
+            m_modelActor->GetProperty()->SetOpacity(1.0);
+            m_modelActor->SetVisibility(0);
+            hideInputEntityForOpaquePreview(true);
+            break;
+
+        case Points:
+            hideInputEntityForOpaquePreview(false);
+            m_modelActor->GetProperty()->SetOpacity(1.0);
+            m_modelActor->SetVisibility(1);
+            m_modelActor->GetProperty()->SetRepresentationToPoints();
+            break;
+
+        case Wireframe:
+            hideInputEntityForOpaquePreview(false);
+            m_modelActor->GetProperty()->SetOpacity(1.0);
+            m_modelActor->SetVisibility(1);
+            m_modelActor->GetProperty()->SetRepresentationToWireframe();
+            break;
+    }
+
+    vtkSmartPointer<vtkLookupTable> lut =
+            createLookupTable(m_scalarMin, m_scalarMax);
+    m_modelActor->GetMapper()->SetLookupTable(lut);
+}
+
+bool cvGenericFilter::restoreDisplayEffectIfNeeded() {
+    if (m_viewer && !m_id.empty()) {
+        if (vtkActor* actor = m_viewer->getActorById(m_id)) {
+            m_modelActor = actor;
+        }
+    }
+    if (!m_modelActor) {
+        return false;
+    }
+
+    vtkProperty* prop = m_modelActor->GetProperty();
+    const int representation = prop->GetRepresentation();
+    const double opacity = prop->GetOpacity();
+    const int visibility = m_modelActor->GetVisibility();
+    bool needsRestore = false;
+
+    switch (m_displayEffect) {
+        case Transparent:
+            needsRestore = opacity != 0.3 || representation != VTK_SURFACE ||
+                           visibility != 1;
+            break;
+        case Points:
+            needsRestore = opacity != 1.0 || representation != VTK_POINTS ||
+                           visibility != 1;
+            break;
+        case Wireframe:
+            needsRestore = opacity != 1.0 || representation != VTK_WIREFRAME ||
+                           visibility != 1;
+            break;
+        case Opaque:
+            needsRestore = opacity != 1.0 || visibility != 0 ||
+                           !m_entityVisibilityOverridden;
+            break;
+    }
+
+    if (!needsRestore) {
+        return false;
+    }
+
+    applyModelDisplayEffect();
+    return true;
+}
+
+void cvGenericFilter::installDisplayEffectObserver() {
+    removeDisplayEffectObserver();
+    if (!m_viewer) {
+        return;
+    }
+
+    auto renderers = m_viewer->getRendererCollection();
+    vtkRenderer* renderer = renderers ? renderers->GetFirstRenderer() : nullptr;
+    if (!renderer) {
+        return;
+    }
+
+    m_renderEndCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+    m_renderEndCallback->SetClientData(this);
+    m_renderEndCallback->SetCallback(&cvGenericFilter::OnRenderEnd);
+    // Use StartEvent instead of EndEvent: the draw pipeline
+    // (drawMesh / setMeshRenderingMode / setMeshOpacity) runs BEFORE
+    // rw->Render(). StartEvent fires at the beginning of the render pass,
+    // allowing us to restore the correct properties before the frame is
+    // composited — eliminating the one-frame flash that EndEvent caused.
+    m_renderEndObserverTag =
+            renderer->AddObserver(vtkCommand::StartEvent, m_renderEndCallback);
+}
+
+void cvGenericFilter::removeDisplayEffectObserver() {
+    if (m_renderEndObserverTag == 0 || !m_viewer) {
+        m_renderEndObserverTag = 0;
+        m_renderEndCallback = nullptr;
+        return;
+    }
+
+    auto renderers = m_viewer->getRendererCollection();
+    vtkRenderer* renderer = renderers ? renderers->GetFirstRenderer() : nullptr;
+    if (renderer) {
+        renderer->RemoveObserver(m_renderEndObserverTag);
+    }
+    m_renderEndObserverTag = 0;
+    m_renderEndCallback = nullptr;
+}
+
+void cvGenericFilter::OnRenderEnd(vtkObject* /*caller*/,
+                                  unsigned long /*eid*/,
+                                  void* clientData,
+                                  void* /*callData*/) {
+    auto* self = static_cast<cvGenericFilter*>(clientData);
+    if (!self || self->m_applyingDisplayEffect) {
+        return;
+    }
+
+    self->m_applyingDisplayEffect = true;
+    self->restoreDisplayEffectIfNeeded();
+    self->m_applyingDisplayEffect = false;
+}
+
+void cvGenericFilter::applyDisplayEffect() {
+    applyModelDisplayEffect();
 
     if (m_filterActor) {
         m_filterActor->SetVisibility(1);
         m_filterActor->GetProperty()->SetOpacity(1.0);
-        m_filterActor->GetProperty()->SetRepresentationToSurface();
+        if (m_meshMode) {
+            m_filterActor->GetProperty()->SetRepresentationToSurface();
+        } else {
+            m_filterActor->GetProperty()->SetRepresentationToPoints();
+            if (m_modelActor) {
+                m_filterActor->GetProperty()->SetPointSize(
+                        m_modelActor->GetProperty()->GetPointSize());
+            }
+        }
         if (auto* mapper = m_filterActor->GetMapper()) {
             vtkSmartPointer<vtkLookupTable> lut =
                     createLookupTable(m_scalarMin, m_scalarMax);
@@ -507,6 +679,7 @@ void cvGenericFilter::removeActor(const vtkSmartPointer<vtkProp> actor) {
 }
 
 void cvGenericFilter::clearAllActor() {
+    removeDisplayEffectObserver();
     restoreInputEntityVisibility();
 
     if (!m_viewer) return;
@@ -568,6 +741,26 @@ void cvGenericFilter::setInteractor(vtkRenderWindowInteractor* interactor) {
 
 void cvGenericFilter::setResultData(vtkSmartPointer<vtkDataObject> data) {
     m_resultData->DeepCopy(data);
+
+    // VTK filter algorithms typically do NOT propagate field data (which stores
+    // material names, texture library paths, dataset flags, etc.) from input to
+    // output. Restore it from the original input so that Vtk2Cc conversion can
+    // reconstruct materials and textures.
+    if (m_dataObject && m_dataObject->GetFieldData() &&
+        m_dataObject->GetFieldData()->GetNumberOfArrays() > 0) {
+        vtkFieldData* srcFD = m_dataObject->GetFieldData();
+        vtkFieldData* dstFD = m_resultData->GetFieldData();
+        if (dstFD) {
+            for (int i = 0; i < srcFD->GetNumberOfArrays(); ++i) {
+                vtkAbstractArray* arr = srcFD->GetAbstractArray(i);
+                if (arr && arr->GetName() &&
+                    !dstFD->GetAbstractArray(arr->GetName())) {
+                    dstFD->AddArray(arr);
+                }
+            }
+        }
+    }
+
     scheduleDisplayEffectRefresh();
 }
 

@@ -13,13 +13,12 @@
 #include <ecvGuiParameters.h>
 #include <ecvViewContext.h>
 #include <ecvViewportParameters.h>
+#include <vtkSmartPointer.h>
 
 #include <QElapsedTimer>
 #include <QFont>
 #include <QObject>
 #include <QPoint>
-
-#include <vtkSmartPointer.h>
 
 class vtkActor;
 class vtkImplicitPlaneWidget2;
@@ -30,7 +29,6 @@ class vtkRenderPass;
 #include <list>
 #include <memory>
 #include <unordered_set>
-#include <vector>
 #include <vector>
 
 #include "qVTK.h"
@@ -72,7 +70,8 @@ public:
     static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
     ~vtkGLView() override;
 
-    /// Reassign ParaView XML label and registration name (e.g. Slice / EDL views).
+    /// Reassign ParaView XML label and registration name (e.g. Slice / EDL
+    /// views).
     void setViewXmlLabel(const QString& xmlLabel);
 
     // ================================================================
@@ -174,6 +173,7 @@ public:
     void resetCenterOfRotation(int viewport = 0) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;
+    void rotateBaseViewMat(const ccGLMatrixd& rotMat) override;
     bool rotateLockedCamera(int mouseDeltaX,
                             int mouseDeltaY,
                             int viewWidth,
@@ -249,8 +249,7 @@ public:
     void enableSliceMode(bool enable = true);
     bool isSliceModeEnabled() const { return m_sliceMode; }
 
-    void setMultiSlicePositions(int axis,
-                                const std::vector<double>& positions);
+    void setMultiSlicePositions(int axis, const std::vector<double>& positions);
     const std::vector<double>& getMultiSlicePositions(int axis) const;
     void clearMultiSlicePositions();
 

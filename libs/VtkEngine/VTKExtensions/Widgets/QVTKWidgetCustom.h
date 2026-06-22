@@ -33,8 +33,8 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // VTK
 // #include <QVTKWidget.h>
 #include <QVTKOpenGLNativeWidget.h>
-#include <vtkDataSet.h>
 #include <VTKExtensions/Views/vtkPVLODActor.h>
+#include <vtkDataSet.h>
 #include <vtkPlanes.h>
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
@@ -195,6 +195,7 @@ protected:
 
     // events handling
     virtual bool event(QEvent* evt) override;
+    virtual void resizeEvent(QResizeEvent* event) override;
     virtual void wheelEvent(QWheelEvent* event) override;
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void mouseMoveEvent(QMouseEvent* event) override;
@@ -343,6 +344,13 @@ protected:
     ecvHotZone* m_localHotZone = nullptr;
     bool m_localClickableVisible = false;
     bool m_cameraOrientMouseActive = false;
+
+public:
+    bool isCameraOrientationWidgetInteracting() const {
+        return m_cameraOrientMouseActive;
+    }
+
+private:
     bool m_directCameraWheelZoom = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
     float m_localDefaultPointSize = 1.0f;

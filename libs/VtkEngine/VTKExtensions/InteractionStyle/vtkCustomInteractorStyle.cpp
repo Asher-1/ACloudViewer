@@ -20,6 +20,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAbstractPropPicker.h>
 #include <vtkActorCollection.h>
@@ -29,7 +30,6 @@
 #include <vtkCellArray.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLegendScaleActor.h>
 #include <vtkLight.h>
 #include <vtkLightCollection.h>
@@ -306,16 +306,14 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                 CVLog::Print("    Ctrl+Shift + D    : Point representation");
                 CVLog::Print(
                         "    Ctrl+Shift + W    : Wireframe representation");
-                CVLog::Print(
-                        "    Ctrl+Shift + F    : Surface representation");
+                CVLog::Print("    Ctrl+Shift + F    : Surface representation");
                 CVLog::Print(
                         "    Ctrl+Shift + +/-  : Increase/decrease point "
                         "size");
                 CVLog::Print("    Ctrl+Alt + G      : Toggle scale grid");
                 CVLog::Print("    Ctrl+Alt + K      : Toggle lookup table");
                 CVLog::Print("  Camera:");
-                CVLog::Print(
-                        "    Ctrl+Alt + M      : Save camera parameters");
+                CVLog::Print("    Ctrl+Alt + M      : Save camera parameters");
                 CVLog::Print(
                         "    Ctrl + R          : Restore camera parameters");
                 CVLog::Print("    Ctrl+Alt + C      : Print camera parameters");
@@ -1179,8 +1177,7 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
         }
 
         {
-            vtkSmartPointer<vtkCamera> cam =
-                    CurrentRenderer->GetActiveCamera();
+            vtkSmartPointer<vtkCamera> cam = CurrentRenderer->GetActiveCamera();
             bool viewSet = false;
             if (lk == '1') {
                 cam->SetPosition(0, 0, 1);

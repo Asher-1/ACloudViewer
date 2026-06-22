@@ -311,9 +311,8 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
     }
 
     if (oldView) {
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                  m_polyTip->getViewId()));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
 #ifdef USE_VTK_BACKEND
         if (auto* oldGlView = dynamic_cast<vtkGLView*>(oldView)) {
             QObject::disconnect(oldGlView, nullptr, this, nullptr);
@@ -324,10 +323,12 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
 
     ecvGenericGLDisplay* newView = viewFromWidget(win);
     ecvViewManager& vm = ecvViewManager::instance();
-    connect(&vm, &ecvViewManager::rightButtonClicked, this,
+    connect(
+            &vm, &ecvViewManager::rightButtonClicked, this,
             [this](int x, int y) { closePolyLine(x, y); },
             Qt::UniqueConnection);
-    connect(&vm, &ecvViewManager::mouseMoved, this,
+    connect(
+            &vm, &ecvViewManager::mouseMoved, this,
             [this](int x, int y, Qt::MouseButtons buttons) {
                 updatePolyLineTip(x, y, buttons);
             },
@@ -337,10 +338,10 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
     auto bindGlView = [this](vtkGLView* glView) {
         if (!glView) return;
         QObject::connect(glView, SIGNAL(rightButtonClicked(int, int)), this,
-                         SLOT(closePolyLine(int, int)),
-                         Qt::UniqueConnection);
+                         SLOT(closePolyLine(int, int)), Qt::UniqueConnection);
         QObject::connect(glView, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
-                         this, SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)),
+                         this,
+                         SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)),
                          Qt::UniqueConnection);
     };
     if (auto* glView = dynamic_cast<vtkGLView*>(newView)) {
@@ -369,8 +370,7 @@ bool ccTracePolylineTool::start() {
 #ifdef USE_VTK_BACKEND
     if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
         QObject::connect(glView, SIGNAL(rightButtonClicked(int, int)), this,
-                         SLOT(closePolyLine(int, int)),
-                         Qt::UniqueConnection);
+                         SLOT(closePolyLine(int, int)), Qt::UniqueConnection);
         QObject::connect(glView, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)),
                          this,
                          SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)),
@@ -440,9 +440,8 @@ void ccTracePolylineTool::stop(bool accepted) {
                 ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 2,
                 ecvGenericGLDisplay::MANUAL_SEGMENTATION_MESSAGE);
 
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                  m_polyTip->getViewId()));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
         if (m_poly3D) stopView->removeFromOwnDB(m_poly3D);
 
         stopView->setInteractionMode(
@@ -477,9 +476,8 @@ void ccTracePolylineTool::updatePolyLineTip(int x,
     if (buttons != Qt::NoButton) {
         if (m_polyTip->isEnabled()) {
             m_polyTip->setEnabled(false);
-            ecvDisplayTools::RemoveWidgets(
-                    WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                      m_polyTip->getViewId()));
+            ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                    WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
             ecvDisplayTools::UpdateScreen();
         }
         return;
@@ -495,20 +493,19 @@ void ccTracePolylineTool::updatePolyLineTip(int x,
 
     assert(m_polyTip && m_polyTipVertices && m_polyTipVertices->size() == 2);
 
-    CCVector3* lastP = const_cast<CCVector3*>(
-            m_polyTipVertices->getPointPersistentPtr(1));
+    CCVector3* lastP =
+            const_cast<CCVector3*>(m_polyTipVertices->getPointPersistentPtr(1));
     *lastP = mouseToVtk2D(view, x, y);
 
     const CCVector3* P3D =
             m_poly3DVertices->getPoint(m_poly3DVertices->size() - 1);
-    CCVector3* firstP = const_cast<CCVector3*>(
-            m_polyTipVertices->getPointPersistentPtr(0));
+    CCVector3* firstP =
+            const_cast<CCVector3*>(m_polyTipVertices->getPointPersistentPtr(0));
     *firstP = point3DToVtk2D(view, *P3D);
 
     m_polyTip->setEnabled(true);
-    ecvDisplayTools::RemoveWidgets(
-            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                              m_polyTip->getViewId()));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+            WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
     ecvDisplayTools::DrawWidgets(
             WIDGETS_PARAMETER(m_polyTip, WIDGETS_TYPE::WIDGET_POLYLINE_2D),
             false);
@@ -538,10 +535,8 @@ void ccTracePolylineTool::onItemPicked(const PickedItem& pi) {
         m_poly3D->set2DMode(false);
         m_poly3D->addChild(m_poly3DVertices);
         m_poly3D->setDisplay(view);
-        m_poly3D->setWidth(
-                widthSpinBox->value() < 2
-                        ? 0
-                        : widthSpinBox->value());
+        m_poly3D->setWidth(widthSpinBox->value() < 2 ? 0
+                                                     : widthSpinBox->value());
 
         ccGenericPointCloud* cloud =
                 ccHObjectCaster::ToGenericPointCloud(pi.entity);
@@ -572,14 +567,12 @@ void ccTracePolylineTool::onItemPicked(const PickedItem& pi) {
     m_poly3D->addPointIndex(m_poly3DVertices->size() - 1);
     m_segmentParams.emplace_back(pi.clickPoint.x(), pi.clickPoint.y());
 
-    CCVector3* firstTipPoint = const_cast<CCVector3*>(
-            m_polyTipVertices->getPointPersistentPtr(0));
-    *firstTipPoint =
-            mouseToVtk2D(view, pi.clickPoint.x(), pi.clickPoint.y());
+    CCVector3* firstTipPoint =
+            const_cast<CCVector3*>(m_polyTipVertices->getPointPersistentPtr(0));
+    *firstTipPoint = mouseToVtk2D(view, pi.clickPoint.x(), pi.clickPoint.y());
     m_polyTip->setEnabled(false);
-    ecvDisplayTools::RemoveWidgets(
-            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                              m_polyTip->getViewId()));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+            WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
 
     view->redraw(false, true);
 
@@ -617,9 +610,8 @@ void ccTracePolylineTool::closePolyLine(int, int) {
         }
         m_done = true;
 
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                  m_polyTip->getViewId()));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
         if (v) v->redraw(true, false);
     }
 }
@@ -732,23 +724,20 @@ void ccTracePolylineTool::updatePoly3D() {
 }
 
 void ccTracePolylineTool::resetTip() {
-    ecvDisplayTools::RemoveWidgets(
-            WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                              m_polyTip->getViewId()));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+            WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
 }
 
 void ccTracePolylineTool::updateTip() {
     if (m_polyTip && m_polyTip->isEnabled()) {
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                  m_polyTip->getViewId()));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
         ecvDisplayTools::DrawWidgets(
                 WIDGETS_PARAMETER(m_polyTip, WIDGETS_TYPE::WIDGET_POLYLINE_2D),
                 true);
     } else {
-        ecvDisplayTools::RemoveWidgets(
-                WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-                                  m_polyTip->getViewId()));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                WIDGETS_TYPE::WIDGET_POLYLINE_2D, m_polyTip->getViewId()));
         ecvDisplayTools::UpdateScreen();
     }
 }

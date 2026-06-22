@@ -34,6 +34,8 @@ class ecvGenericVisualizer3D;
 class ecvGenericGLDisplay;
 
 class vtkActor;
+class vtkCallbackCommand;
+class vtkObject;
 class vtkProp;
 class vtkDataSet;
 class vtkDataObject;
@@ -119,6 +121,14 @@ protected:
     void UpdateScalarRange();
 
     void applyDisplayEffect();
+    void applyModelDisplayEffect();
+    bool restoreDisplayEffectIfNeeded();
+    void installDisplayEffectObserver();
+    void removeDisplayEffectObserver();
+    static void OnRenderEnd(vtkObject* caller,
+                            unsigned long eid,
+                            void* clientData,
+                            void* callData);
     void scheduleDisplayEffectRefresh();
     void hideInputEntityForOpaquePreview(bool hide);
     void restoreInputEntityVisibility();
@@ -205,6 +215,9 @@ protected:
     vtkSmartPointer<vtkPVLODActor> m_filterActor;
     vtkSmartPointer<vtkScalarBarActor> m_scalarBar;
     vtkSmartPointer<vtkActor> m_outlineActor;
+    vtkSmartPointer<vtkCallbackCommand> m_renderEndCallback;
+    unsigned long m_renderEndObserverTag = 0;
+    bool m_applyingDisplayEffect = false;
 
     QColor m_color1 = Qt::blue;
     QColor m_color2 = Qt::red;

@@ -14,11 +14,11 @@
 #include <ScalarField.h>
 
 // CV_DB_LIB
+#include <ecvGenericGLDisplay.h>
 #include <ecvHObject.h>
 
 // QT
 #include <QSet>
-
 #include <set>
 
 // GUI
@@ -164,4 +164,10 @@ protected:
 
     //! Source entities hidden when export-selection mode closes
     std::set<ccHObject*> m_disableOnClose;
+
+    //! Saved view state (restored on stop or pause)
+    ecvGenericGLDisplay::INTERACTION_FLAGS m_savedInteractionMode =
+            ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA;
+    bool m_savedPerspectiveState = true;
+    bool m_savedObjectCenteredView = true;
 };

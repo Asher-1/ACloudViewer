@@ -83,10 +83,14 @@ private:
     VtkCameraLink(const VtkCameraLink&) = delete;
     VtkCameraLink& operator=(const VtkCameraLink&) = delete;
 
-    static void OnRenderEnd(vtkObject* caller, unsigned long eid,
-                            void* clientData, void* callData);
-    static void OnResetCamera(vtkObject* caller, unsigned long eid,
-                              void* clientData, void* callData);
+    static void OnRenderEnd(vtkObject* caller,
+                            unsigned long eid,
+                            void* clientData,
+                            void* callData);
+    static void OnResetCamera(vtkObject* caller,
+                              unsigned long eid,
+                              void* clientData,
+                              void* callData);
 
     void syncCamerasFrom(VtkVis* source, VtkVis* target);
     void installLinkObservers(int linkIndex);

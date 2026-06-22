@@ -21,9 +21,9 @@
 #include "TextureRenderManager.h"
 
 // VTK
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkDataObject.h>
 #include <vtkFloatArray.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkMatrix4x4.h>
 #include <vtkOpenGLRenderWindow.h>
 #include <vtkPointData.h>

@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "qVTK.h"
-
 #include <QWidget>
 #include <vector>
+
+#include "qVTK.h"
 
 class QLabel;
 class vtkGLView;

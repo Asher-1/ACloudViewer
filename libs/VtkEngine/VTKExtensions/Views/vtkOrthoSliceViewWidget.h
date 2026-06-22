@@ -16,20 +16,19 @@
 
 #pragma once
 
-#include "qVTK.h"
-
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <vtkActor.h>
+#include <vtkSmartPointer.h>
 
+#include <QEvent>
 #include <QHash>
 #include <QList>
 #include <QRubberBand>
-
-#include <vtkActor.h>
-#include <vtkSmartPointer.h>
 #include <QSet>
 #include <QWidget>
-#include <QEvent>
 #include <functional>
+
+#include "qVTK.h"
 
 class QCheckBox;
 class QComboBox;
@@ -131,10 +130,12 @@ private:
     void activate3DInteractor();
     bool forwardMouseToInteractor(QMouseEvent* me, QEvent::Type eventType);
     bool isInCameraOrientationWidget(const QPoint& pos) const;
-    void mapWidgetToRendererDisplay(const QPoint& pos, vtkRenderer* ren,
+    void mapWidgetToRendererDisplay(const QPoint& pos,
+                                    vtkRenderer* ren,
                                     double outXY[2]) const;
     void createPlaneIndicators(const double bounds[6]);
-    void updatePlaneIndicatorFromSlice(int viewIdx, vtkPlane* plane,
+    void updatePlaneIndicatorFromSlice(int viewIdx,
+                                       vtkPlane* plane,
                                        vtkPlaneSource* ps,
                                        const double bounds[6]);
     void updateOutlineBounds();
@@ -228,6 +229,5 @@ private:
     QMetaObject::Connection m_hlOverlayConn;
 
     bool m_externalHighlighterLinked = false;
-    int m_selectionOverlayKind =
-            cvSelectionHighlighter::SelectionOverlayNone;
+    int m_selectionOverlayKind = cvSelectionHighlighter::SelectionOverlayNone;
 };

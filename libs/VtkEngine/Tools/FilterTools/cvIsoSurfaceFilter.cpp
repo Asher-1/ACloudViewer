@@ -8,13 +8,13 @@
 #include "cvIsoSurfaceFilter.h"
 
 #include <Converters/Vtk2Cc.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VtkUtils/gradientcombobox.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkCellData.h>
 #include <vtkContourFilter.h>
 #include <vtkDataSet.h>
-#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
