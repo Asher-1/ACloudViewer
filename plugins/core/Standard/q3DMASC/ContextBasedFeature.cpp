@@ -18,6 +18,8 @@
 
 #if defined(_OPENMP)
 #include <omp.h>
+
+#include <algorithm>
 #endif
 
 using namespace masc;

@@ -23,6 +23,7 @@
 
 // System
 #include <cassert>
+#include <cstring>
 
 // Max number of characters per line in an ASCII file
 // TODO: use QFile instead!

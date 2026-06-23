@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 double ecvGlobalShiftManager::MAX_COORDINATE_ABS_VALUE = 1.0e4;
 double ecvGlobalShiftManager::MAX_DIAGONAL_LENGTH = 1.0e6;
 

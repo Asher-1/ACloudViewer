@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <cmath>
+
 #include "core/assets/InputCamera.hpp"
 #include "core/system/CommandLineArgs.hpp"
 

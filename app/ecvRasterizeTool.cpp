@@ -33,6 +33,7 @@
 
 // Qt
 #include <QFileDialog>
+#include <QImage>
 #include <QMap>
 #include <QMessageBox>
 #include <QPushButton>
@@ -919,6 +920,8 @@ void ccRasterizeTool::generateMesh() const {
 #include <gdal_alg.h>
 #include <gdal_priv.h>
 #include <ogr_api.h>
+
+#include <algorithm>
 // local
 #include "ui_rasterExportOptionsDlg.h"
 

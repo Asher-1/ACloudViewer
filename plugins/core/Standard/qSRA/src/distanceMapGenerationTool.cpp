@@ -26,6 +26,9 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
+#include <QImage>
+#include <algorithm>
+
 // Meta-data key for profile (polyline) origin
 const char PROFILE_ORIGIN_KEY[] = "ProfileOrigin";
 // Meta-data key for profile (polyline) axis

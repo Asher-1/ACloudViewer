@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QVBoxLayout>
+#include <cmath>
 
 #include "CVMath.h"
 #include "ccLineation.h"

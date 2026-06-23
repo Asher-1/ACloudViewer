@@ -37,6 +37,7 @@
 #include "ecvViewManager.h"
 
 // STD
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -47,6 +48,7 @@
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
 #endif
+#include <QImage>
 #include <QLayout>
 #include <QMainWindow>
 #include <QMessageBox>

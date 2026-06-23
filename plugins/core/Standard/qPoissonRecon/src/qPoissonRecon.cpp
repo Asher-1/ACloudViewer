@@ -36,6 +36,8 @@
 #else
 #include <time.h>
 #include <unistd.h>
+
+#include <algorithm>
 #endif
 
 template <typename Real>

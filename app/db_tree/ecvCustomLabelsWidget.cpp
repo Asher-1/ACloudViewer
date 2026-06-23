@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
+#include <algorithm>
 
 ecvCustomLabelsWidget::ecvCustomLabelsWidget(QWidget* parent)
     : QWidget(parent) {

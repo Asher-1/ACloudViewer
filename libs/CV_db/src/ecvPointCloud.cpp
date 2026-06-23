@@ -44,17 +44,20 @@
 // Qt
 #include <QCoreApplication>
 #include <QElapsedTimer>
+#include <QImage>
 #include <QSharedPointer>
 
 // system
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <limits>
 #include <queue>
 #include <unordered_map>
 
 static const char s_deviationSFName[] = "Deviation";
 
-ccPointCloud::ccPointCloud(QString name) throw()
+ccPointCloud::ccPointCloud(QString name) noexcept
     : cloudViewer::PointCloudTpl<ccGenericPointCloud>(),
       m_rgbColors(nullptr),
       m_normals(nullptr),

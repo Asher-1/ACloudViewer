@@ -7,6 +7,7 @@
 
 #include "FPSCamera.hpp"
 
+#include <algorithm>
 #include <boost/filesystem.hpp>
 
 #include "core/graphics/GUI.hpp"

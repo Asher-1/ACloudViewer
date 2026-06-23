@@ -10,6 +10,7 @@
 #include <Helper.h>
 #include <Logging.h>
 
+#include <algorithm>
 #include <numeric>
 #include <unordered_map>
 

@@ -7,6 +7,7 @@
 
 #include "ecvCameraSensor.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -26,6 +27,8 @@
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
+
+#include <QImage>
 
 #include "ecvGenericGLDisplay.h"
 

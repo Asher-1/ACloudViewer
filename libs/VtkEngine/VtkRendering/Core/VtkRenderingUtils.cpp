@@ -56,6 +56,8 @@
 #include <vtkTextProperty.h>
 #include <vtkUnsignedCharArray.h>
 
+#include <algorithm>
+#include <cmath>
 #include <list>
 
 namespace VtkRendering {
@@ -191,7 +193,7 @@ static vtkSmartPointer<vtkPolyData> CreateLine(
         vtkSmartPointer<vtkUnsignedCharArray> colors) {
     if (points->GetNumberOfPoints() == 0 && lines->GetNumberOfCells() == 0 &&
         colors->GetNumberOfTuples() == 0) {
-        return nullptr;
+        return {};
     }
 
     vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
@@ -323,7 +325,7 @@ vtkSmartPointer<vtkPolyData> CreatePolyDataFromLineSet(
         if (GetVtkPointsAndLinesFromLineSet(lineset, points, lines, colors)) {
             return CreateLine(points, lines, colors);
         }
-        return nullptr;
+        return {};
     }
 }
 
@@ -338,7 +340,7 @@ vtkSmartPointer<vtkPolyData> CreateCube(double width,
     vtkSmartPointer<vtkPolyData> data = CreateCube(width, height, depth);
     if (!TransformPolyData(data, trans)) {
         CVLog::Error("[VtkRendering::CreateCube] Creating cube failed!");
-        return nullptr;
+        return {};
     }
     return data;
 }

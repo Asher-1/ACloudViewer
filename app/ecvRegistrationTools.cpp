@@ -26,6 +26,7 @@
 #include <ecvScalarField.h>
 
 // system
+#include <algorithm>
 #include <set>
 
 //! Default number of points sampled on the 'data' mesh (if any)

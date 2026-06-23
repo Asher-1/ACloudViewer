@@ -36,6 +36,8 @@
 #include <ecvColorTypes.h>
 #include <ecvPolyline.h>
 
+#include <cmath>
+
 // Static counter initialization
 int cvContourTool::s_contourIdCounter = 0;
 

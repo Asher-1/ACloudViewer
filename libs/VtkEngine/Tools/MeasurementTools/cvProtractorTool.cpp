@@ -15,6 +15,7 @@
 #include <vtkCommand.h>
 #include <vtkHandleRepresentation.h>
 #include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkPointHandleRepresentation3D.h>
 #include <vtkPolyLineRepresentation.h>
 #include <vtkProperty.h>

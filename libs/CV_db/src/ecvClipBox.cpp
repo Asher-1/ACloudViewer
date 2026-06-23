@@ -16,6 +16,7 @@
 #include "ecvViewManager.h"
 
 // system
+#include <algorithm>
 #include <cassert>
 
 // Components geometry

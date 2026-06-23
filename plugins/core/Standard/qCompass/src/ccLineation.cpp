@@ -7,6 +7,8 @@
 
 #include "ccLineation.h"
 
+#include <cmath>
+
 // pass ctors straight to PointPair
 ccLineation::ccLineation(ccPointCloud* associatedCloud)
     : ccPointPair(associatedCloud) {

@@ -10,6 +10,7 @@
 // Qt
 #include <QFileDialog>
 #include <QLocale>
+#include <algorithm>
 
 constexpr int TILLING_TAB_INDEX = 1;
 

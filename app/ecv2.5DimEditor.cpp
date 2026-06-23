@@ -30,6 +30,8 @@
 // System
 #include <assert.h>
 
+#include <algorithm>
+
 cc2Point5DimEditor::cc2Point5DimEditor() : m_bbEditorDlg(0), m_rasterCloud(0) {}
 
 cc2Point5DimEditor::~cc2Point5DimEditor() {

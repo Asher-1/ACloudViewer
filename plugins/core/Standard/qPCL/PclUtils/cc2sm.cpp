@@ -55,6 +55,8 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+
 using namespace pcl;
 
 cc2smReader::cc2smReader(bool showMode /* = false*/)
@@ -1176,7 +1178,7 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     vtkSmartPointer<vtkPoints> poly_points = vtkSmartPointer<vtkPoints>::New();
     poly_points->SetNumberOfPoints(static_cast<vtkIdType>(totalPoints));
 
-    vtkSmartPointer<vtkUnsignedCharArray> colors = nullptr;
+    vtkSmartPointer<vtkUnsignedCharArray> colors;
     if (showColors) {
         colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
         colors->SetNumberOfComponents(3);
@@ -1186,7 +1188,7 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
 
     // Create normals array if normals exist (for Find Data / selection)
     // Use hasNormalsForExport to always export normals data
-    vtkSmartPointer<vtkFloatArray> normals = nullptr;
+    vtkSmartPointer<vtkFloatArray> normals;
     if (hasNormalsForExport) {
         normals = vtkSmartPointer<vtkFloatArray>::New();
         normals->SetNumberOfComponents(3);

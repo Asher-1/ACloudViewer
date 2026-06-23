@@ -12,6 +12,7 @@
 
 #include <QDataStream>
 #include <QFile>
+#include <algorithm>
 
 WaveformDescriptor::WaveformDescriptor()
     : numberOfSamples(0),

@@ -7,6 +7,9 @@
 
 #include "core/graphics/Utils.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 namespace sibr {
 
 cv::Scalar jetColor(float gray) {

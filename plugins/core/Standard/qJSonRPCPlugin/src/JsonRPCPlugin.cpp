@@ -36,6 +36,7 @@
 #include <QJsonObject>
 #include <QProcess>
 #include <QtGui>
+#include <algorithm>
 #include <cmath>
 
 // ═══════════════════════════════════════════════════════════════════════════

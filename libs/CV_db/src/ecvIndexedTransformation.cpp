@@ -15,6 +15,7 @@
 // System
 #include <assert.h>
 
+#include <algorithm>
 #include <string>
 
 ccIndexedTransformation::ccIndexedTransformation() : ccGLMatrix(), m_index(0) {}

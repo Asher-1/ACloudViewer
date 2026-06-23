@@ -57,7 +57,7 @@ struct VtkMultiTextureRenderer::Impl {
     // Helper function: Create vtkImageData from QImage
     vtkSmartPointer<vtkImageData> QImageToVtkImage(const QImage& qimage) {
         if (qimage.isNull()) {
-            return nullptr;
+            return {};
         }
 
         // Convert to RGBA format
@@ -130,7 +130,7 @@ vtkSmartPointer<vtkTexture> VtkMultiTextureRenderer::LoadTexture(
                 "[VtkMultiTextureRenderer::LoadTexture] Failed to load "
                 "texture: %s",
                 texture_path.c_str());
-        return nullptr;
+        return {};
     }
 
     // Convert to vtkImageData
@@ -139,7 +139,7 @@ vtkSmartPointer<vtkTexture> VtkMultiTextureRenderer::LoadTexture(
         CVLog::Warning(
                 "[VtkMultiTextureRenderer::LoadTexture] Failed to convert "
                 "QImage to vtkImageData");
-        return nullptr;
+        return {};
     }
 
     // Create texture

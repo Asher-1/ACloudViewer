@@ -33,6 +33,8 @@
 #include <laszip/laszip_api.h>
 
 // System
+#include <algorithm>
+#include <cstring>
 #include <memory>
 #include <numeric>
 #include <utility>

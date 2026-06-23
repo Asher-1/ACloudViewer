@@ -14,6 +14,7 @@
 #include <ecvViewManager.h>
 
 #include <QWheelEvent>
+#include <algorithm>
 #include <cmath>
 
 ccMouseCircle::ccMouseCircle(QWidget* owner, QString name)

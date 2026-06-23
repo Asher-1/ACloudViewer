@@ -15,6 +15,7 @@
 #include <QOpenGLContext>
 #include <QOpenGLTexture>
 #include <QUuid>
+#include <algorithm>
 
 // Textures DB
 static QMap<QString, QImage> s_textureDB;

@@ -11,6 +11,7 @@
 #include <QtCompat.h>
 
 #include <QApplication>
+#include <QDir>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>

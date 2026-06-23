@@ -27,6 +27,8 @@
 #else
 #include <time.h>
 #include <unistd.h>
+
+#include <algorithm>
 #endif
 
 ccContourExtractorDlg::ccContourExtractorDlg(QWidget* parent /*=0*/)

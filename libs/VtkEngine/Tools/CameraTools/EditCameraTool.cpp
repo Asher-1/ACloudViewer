@@ -21,6 +21,7 @@
 #include <vtkCamera.h>
 #include <vtkCollection.h>
 #include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
 #include <vtkTransform.h>

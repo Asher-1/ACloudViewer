@@ -216,7 +216,7 @@ public:
             added to this cloud, at least partially).
             \param name cloud name (optional)
     **/
-    ccPointCloud(QString name = QString()) throw();
+    ccPointCloud(QString name = QString()) noexcept;
     ccPointCloud(const ccPointCloud& cloud);
     ccPointCloud(const std::vector<Eigen::Vector3d>& points,
                  const std::string& name = "cloud");

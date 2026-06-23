@@ -7,6 +7,8 @@
 
 #include "ecv2DViewportObject.h"
 
+#include <algorithm>
+
 cc2DViewportObject::cc2DViewportObject(QString name /*=QString()*/)
     : ccHObject(name) {}
 

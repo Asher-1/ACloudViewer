@@ -28,6 +28,8 @@
 #include <qcombobox.h>
 
 // LOCAL
+#include <algorithm>
+
 #include "ccCompass.h"
 #include "ccCompassCommands.h"
 #include "ccCompassDlg.h"

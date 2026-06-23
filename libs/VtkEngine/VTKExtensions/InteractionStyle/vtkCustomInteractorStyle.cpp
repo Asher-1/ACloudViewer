@@ -23,6 +23,7 @@
 #include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAbstractPropPicker.h>
+#include <vtkActor.h>
 #include <vtkActorCollection.h>
 #include <vtkAreaPicker.h>
 #include <vtkAssemblyPath.h>

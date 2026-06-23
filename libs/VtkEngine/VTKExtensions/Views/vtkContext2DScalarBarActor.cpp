@@ -7,6 +7,7 @@
 
 #include "vtkContext2DScalarBarActor.h"
 
+#include <cstring>
 #include <limits>
 #include <map>
 

@@ -912,4 +912,6 @@ LODIndexSet& ccPointCloudLOD::getIndexMap(
     return m_indexMap;
 }
 
+#include <algorithm>
+
 #include "ecvPointCloudLOD.moc"

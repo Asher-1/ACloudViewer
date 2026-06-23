@@ -9,6 +9,7 @@
 
 #include <imgui/imgui.h>
 
+#include <cmath>
 #include <core/view/InteractiveCameraHandler.hpp>
 
 #include "MeshViewer.h"

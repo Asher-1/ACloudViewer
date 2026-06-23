@@ -10,6 +10,8 @@
 #include <Logging.h>
 #include <Parallel.h>
 
+#include <algorithm>
+
 #include "ecvBBox.h"
 
 namespace {

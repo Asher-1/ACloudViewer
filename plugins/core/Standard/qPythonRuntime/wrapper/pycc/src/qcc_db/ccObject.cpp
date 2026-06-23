@@ -18,6 +18,7 @@
 #include <ecvShiftedObject.h>
 
 #include "../casters.h"
+#include <algorithm>
 
 namespace py = pybind11;
 using namespace pybind11::literals;

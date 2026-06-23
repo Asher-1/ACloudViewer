@@ -19,6 +19,8 @@
 // CORE
 #include <CVLog.h>
 // DB
+#include <algorithm>
+#include <cstring>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 

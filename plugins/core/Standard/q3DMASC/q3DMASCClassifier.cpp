@@ -41,6 +41,8 @@
 
 #if defined(CV_MAC_OS) || defined(CV_LINUX)
 #include <unistd.h>
+
+#include <algorithm>
 #endif
 
 using namespace masc;

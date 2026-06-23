@@ -36,6 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 struct CameraDesc {
     CameraDesc() : id(-1), sensorId(-1) {}
 

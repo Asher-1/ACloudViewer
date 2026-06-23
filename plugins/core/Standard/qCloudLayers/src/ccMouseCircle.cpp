@@ -14,6 +14,7 @@
 #include <QWheelEvent>
 
 // System
+#include <algorithm>
 #include <cmath>
 
 //! Unit circle

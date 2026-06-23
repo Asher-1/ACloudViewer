@@ -24,6 +24,9 @@
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
+#include <algorithm>
+#include <cmath>
+
 #include "MainWindow.h"
 #include "ecvConsole.h"
 #include "ecvDBRoot.h"

@@ -10,6 +10,7 @@
 // qCC_db
 #include <ecvScalarField.h>
 // System
+#include <cstring>
 #include <utility>
 
 // TODO take by move

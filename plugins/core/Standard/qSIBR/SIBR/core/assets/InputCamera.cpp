@@ -7,7 +7,9 @@
 
 #include "core/assets/InputCamera.hpp"
 
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
+#include <cmath>
 #include <map>
 
 #include "core/assets/ActiveImageFile.hpp"

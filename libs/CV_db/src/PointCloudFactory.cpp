@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <queue>
 #include <tuple>

@@ -47,7 +47,9 @@
 #include <QtCompat.h>
 
 // STL
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <limits>
 
 // QCustomPlot (VtkEngine uses its own copy)

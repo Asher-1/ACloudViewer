@@ -31,6 +31,7 @@
 #include <MeshSamplingTools.h>
 
 // System
+#include <algorithm>
 #include <array>
 
 using FieldIndexAndName = QPair<int, QString>;

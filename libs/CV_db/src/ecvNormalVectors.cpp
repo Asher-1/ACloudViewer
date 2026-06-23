@@ -23,6 +23,7 @@
 // System
 #include <assert.h>
 
+#include <algorithm>
 #include <random>
 
 // unique instance

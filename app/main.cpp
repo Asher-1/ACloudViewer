@@ -62,6 +62,7 @@
 #endif
 #ifdef Q_OS_MAC
 #include <cstdlib>  // For putenv
+#include <cstring>
 #endif
 
 // COMMON

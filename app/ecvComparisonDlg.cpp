@@ -34,10 +34,13 @@
 
 // Qt
 #include <QElapsedTimer>
+#include <QThread>
 #include <QThreadPool>
 
 // System
 #include <assert.h>
+
+#include <algorithm>
 
 const unsigned char DEFAULT_OCTREE_LEVEL = 7;
 

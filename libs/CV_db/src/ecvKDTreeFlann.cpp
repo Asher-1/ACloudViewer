@@ -18,6 +18,8 @@
 #include <nanoflann.hpp>
 
 // LOCAL
+#include <cstring>
+
 #include "HalfEdgeTriangleMesh.h"
 #include "ecvHObjectCaster.h"
 #include "ecvMesh.h"

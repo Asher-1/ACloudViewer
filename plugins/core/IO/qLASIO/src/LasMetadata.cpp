@@ -9,6 +9,7 @@
 
 #include "LasDetails.h"
 
+#include <cstring>
 #include <ecvPointCloud.h>
 
 namespace LasMetadata

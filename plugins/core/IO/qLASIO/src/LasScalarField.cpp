@@ -9,6 +9,7 @@
 
 #include "LasDetails.h"
 
+#include <cstring>
 #include <stdexcept>
 
 static constexpr bool IsPointFormatExtended(unsigned pointFormat)

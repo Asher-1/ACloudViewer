@@ -10,6 +10,7 @@
 #include "LasDetails.h"
 
 #include <QDataStream>
+#include <cstring>
 
 static bool ParseWavepacketDescriptorVlr(const laszip_vlr_struct& vlr, WaveformDescriptor& descriptor)
 {

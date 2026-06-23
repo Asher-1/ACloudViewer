@@ -12,6 +12,8 @@
 
 // Qt
 #include <QRect>
+#include <algorithm>
+#include <cmath>
 
 ecvViewportParameters::ecvViewportParameters()
     : defaultPointSize(1),

@@ -24,6 +24,8 @@
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
+#include <algorithm>
+
 ccCloudLayersDlg::ccCloudLayersDlg(ecvMainAppInterface* app, QWidget* parent)
     : ccOverlayDialog(parent),
       Ui::ccCloudLayersDlg(),

@@ -37,6 +37,8 @@
 #else
 #include <unistd.h>
 
+#include <algorithm>
+#include <cmath>
 #include <ctime>
 #endif
 

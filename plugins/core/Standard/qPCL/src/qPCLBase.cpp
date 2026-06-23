@@ -45,6 +45,8 @@
 #if defined(WITH_PCL_NURBS)
 #include <Surfaces/NurbsCurveFitting.h>
 #include <Surfaces/NurbsSurfaceReconstruction.h>
+
+#include <algorithm>
 #endif
 
 qPCL::qPCL(QObject *parent /*=0*/)

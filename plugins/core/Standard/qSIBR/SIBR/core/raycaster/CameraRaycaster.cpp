@@ -7,7 +7,9 @@
 
 #include "core/raycaster/CameraRaycaster.hpp"
 
+#include <algorithm>
 #include <boost/filesystem/path.hpp>
+#include <cmath>
 #include <core/system/Vector.hpp>
 
 namespace sibr {

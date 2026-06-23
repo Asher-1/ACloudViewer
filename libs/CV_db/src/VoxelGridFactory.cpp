@@ -9,6 +9,8 @@
 #include <IntersectionTest.h>
 #include <Logging.h>
 
+#include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <unordered_map>
 

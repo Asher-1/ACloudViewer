@@ -7,6 +7,8 @@
 
 #include "core/graphics/Window.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <regex>
 
 #include "core/graphics/Input.hpp"

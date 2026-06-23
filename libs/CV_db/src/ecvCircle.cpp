@@ -14,6 +14,8 @@
 #include <CVTools.h>
 #include <Logging.h>
 
+#include <algorithm>
+
 ccCircle::ccCircle(double radius /*=0.0*/,
                    unsigned resolution /*=48*/,
                    unsigned uniqueID /*=ccUniqueIDGenerator::InvalidUniqueID*/)

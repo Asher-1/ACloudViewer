@@ -23,6 +23,7 @@
 #include <ui_colorFromScalarDlg.h>
 
 // system
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 

@@ -9,6 +9,8 @@
 
 #include <imgui/imgui.h>
 
+#include <cmath>
+
 #define GUI_TEXT(txt)                   \
     {                                   \
         std::stringstream sss;          \

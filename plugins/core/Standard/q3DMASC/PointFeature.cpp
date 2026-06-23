@@ -86,6 +86,8 @@ constexpr const char* LAS_FIELD_NAMES[22] = {
 // Qt
 #include <QCoreApplication>
 #include <QMutex>
+#include <algorithm>
+#include <cmath>
 
 static const char* s_echoRatioSFName = "EchoRat";
 static const char* s_NIRSFName = "NIR";

@@ -22,6 +22,7 @@
 #include <QProgressDialog>
 
 // system
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iomanip>

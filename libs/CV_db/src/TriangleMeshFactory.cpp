@@ -11,6 +11,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <queue>
 #include <random>

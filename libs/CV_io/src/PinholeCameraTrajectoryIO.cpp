@@ -13,6 +13,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <cstring>
 #include <unordered_map>
 
 namespace cloudViewer {

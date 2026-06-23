@@ -14,6 +14,9 @@
 #include <ecvHObjectCaster.h>
 #include <ecvViewManager.h>
 
+#include <algorithm>
+#include <cmath>
+
 #include "ModelViewerWidget.h"
 #include "base/pose.h"
 #include "base/projection.h"

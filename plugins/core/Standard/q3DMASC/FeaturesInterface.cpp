@@ -14,6 +14,8 @@
 // system
 #include <assert.h>
 
+#include <cmath>
+
 using namespace masc;
 
 bool Feature::CheckSFExistence(ccPointCloud* cloud, const char* resultSFName) {

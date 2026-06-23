@@ -24,6 +24,7 @@
 
 // System
 #include <algorithm>
+#include <cmath>
 #include <map>
 
 // Qt
