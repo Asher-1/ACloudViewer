@@ -12,6 +12,8 @@
 // cloudViewer
 #include <ParallelSort.h>
 
+#include <algorithm>
+
 ccIndexedTransformationBuffer::ccIndexedTransformationBuffer(QString name)
     : ccHObject(name),
       m_bBoxValidSize(0),

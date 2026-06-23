@@ -333,6 +333,7 @@ void define_cccorelib(py::module &m)
 }
 
 #ifdef USE_EMBEDDED_MODULES
+#include <algorithm>
 #include <pybind11/embed.h>
 PYBIND11_EMBEDDED_MODULE(cccorelib, m)
 {

@@ -27,6 +27,7 @@
 // System
 #include <assert.h>
 
+#include <algorithm>
 #include <cmath>
 
 // Gui

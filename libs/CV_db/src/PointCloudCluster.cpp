@@ -43,6 +43,7 @@
 #endif
 
 #include <Eigen/Dense>
+#include <cmath>
 #include <unordered_set>
 
 using namespace cloudViewer;

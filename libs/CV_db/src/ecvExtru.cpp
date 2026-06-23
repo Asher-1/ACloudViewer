@@ -17,6 +17,8 @@
 // system
 #include <string.h>
 
+#include <algorithm>
+
 ccExtru::ccExtru(const std::vector<CCVector2>& profile,
                  PointCoordinateType height,
                  const ccGLMatrix* transMat /*= 0*/,

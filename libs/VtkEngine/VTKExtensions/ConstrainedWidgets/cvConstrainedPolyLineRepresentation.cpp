@@ -10,6 +10,7 @@
 #include <vtkActor2D.h>
 #include <vtkCellArray.h>
 #include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -21,6 +22,7 @@
 #include <vtkTextProperty.h>
 #include <vtkWindow.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <sstream>

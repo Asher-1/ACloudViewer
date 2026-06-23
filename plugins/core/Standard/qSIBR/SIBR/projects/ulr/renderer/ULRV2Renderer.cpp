@@ -7,6 +7,7 @@
 
 #include "ULRV2Renderer.hpp"
 
+#include <algorithm>
 #include <core/assets/Resources.hpp>
 #include <map>
 

@@ -7,6 +7,8 @@
 
 #include "IBRBasicUtils.hpp"
 
+#include <algorithm>
+
 namespace sibr {
 std::vector<uint> IBRBasicUtils::selectCameras(
         const std::vector<InputCamera::Ptr>& cams,

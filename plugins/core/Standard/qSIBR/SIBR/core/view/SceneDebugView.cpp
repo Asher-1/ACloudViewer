@@ -7,6 +7,7 @@
 
 #include "core/view/SceneDebugView.hpp"
 
+#include <algorithm>
 #include <core/raycaster/CameraRaycaster.hpp>
 #include <sstream>
 

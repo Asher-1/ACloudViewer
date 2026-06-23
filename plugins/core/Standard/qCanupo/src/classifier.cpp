@@ -14,6 +14,8 @@
 #include <assert.h>
 #include <limits.h>
 
+#include <algorithm>
+
 Classifier::Classifier()
     : class1(0),
       class2(0),

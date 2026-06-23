@@ -393,10 +393,10 @@ bool Cc2Vtk::GetVtkScalars(const ccPointCloud* cloud,
 
 vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         const ccPointCloud* vertex_cloud, ccGenericMesh* mesh) {
-    if (!mesh || !vertex_cloud) return nullptr;
+    if (!mesh || !vertex_cloud) return {};
 
     const unsigned tri_count = mesh->size();
-    if (tri_count == 0) return nullptr;
+    if (tri_count == 0) return {};
 
     const std::size_t dim = static_cast<std::size_t>(
             mesh->getTriangleVertIndexes(0)->getDimension());
@@ -858,7 +858,7 @@ bool Cc2Vtk::TextureMeshToPolyData(
 
 vtkSmartPointer<vtkPolyData> Cc2Vtk::PolylineToPolyData(
         const ccPolyline* polyline) {
-    if (!polyline || polyline->size() < 2) return nullptr;
+    if (!polyline || polyline->size() < 2) return {};
 
     const unsigned count = polyline->size();
     auto points = vtkSmartPointer<vtkPoints>::New();
@@ -898,11 +898,11 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PolylineToPolyData(
 
 vtkSmartPointer<vtkPolyData> Cc2Vtk::LineSetToPolyData(
         const cloudViewer::geometry::LineSet* lineset) {
-    if (!lineset) return nullptr;
+    if (!lineset) return {};
 
     const auto& pts = lineset->points_;
     const auto& lns = lineset->lines_;
-    if (pts.empty() || lns.empty()) return nullptr;
+    if (pts.empty() || lns.empty()) return {};
 
     auto vtk_points = vtkSmartPointer<vtkPoints>::New();
     vtk_points->SetNumberOfPoints(static_cast<vtkIdType>(pts.size()));

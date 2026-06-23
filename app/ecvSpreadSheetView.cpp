@@ -44,6 +44,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidgetAction>
+#include <algorithm>
 #include <cmath>
 
 // ============================================================================

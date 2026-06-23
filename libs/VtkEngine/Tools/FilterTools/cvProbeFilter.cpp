@@ -22,6 +22,7 @@
 #include <vtkPlane.h>
 #include <vtkPlaneSource.h>
 #include <vtkPlaneWidget.h>
+#include <vtkPolyData.h>
 #include <vtkProbeFilter.h>
 #include <vtkProperty.h>
 #include <vtkSphereWidget.h>

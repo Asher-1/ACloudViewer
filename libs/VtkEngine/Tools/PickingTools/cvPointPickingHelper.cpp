@@ -41,6 +41,7 @@
 #include <QCursor>
 #include <QShortcut>
 #include <QWidget>
+#include <algorithm>
 #include <cmath>
 
 //-----------------------------------------------------------------------------

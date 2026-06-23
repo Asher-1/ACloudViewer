@@ -18,6 +18,7 @@
 #include <QtPrintSupport/QPrintEngine>
 #include <QtPrintSupport/QPrinter>
 #include <QtWidgets/QToolTip>
+#include <cstring>
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -36,6 +36,7 @@
 #include <QScreen>
 #include <QScrollArea>
 #include <QSizePolicy>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWindow>
 

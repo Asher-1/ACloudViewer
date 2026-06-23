@@ -9,6 +9,7 @@
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <sstream>

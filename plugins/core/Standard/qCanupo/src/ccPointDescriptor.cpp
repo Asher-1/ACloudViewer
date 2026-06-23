@@ -19,6 +19,7 @@
 #include <QMap>
 
 // system
+#include <algorithm>
 #include <fstream>
 
 /**** SCALE PARAMETERS COMPUTERS ****/

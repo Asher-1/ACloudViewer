@@ -53,6 +53,8 @@ QImage animationRenderToImage(int zoomFactor,
 #ifdef QFFMPEG_SUPPORT
 // QTFFmpeg
 #include <QVideoEncoder.h>
+
+#include <QDir>
 #endif
 
 // System

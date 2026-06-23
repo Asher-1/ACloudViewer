@@ -10,6 +10,8 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+
 void ccMeshGroup::drawMeOnly(CC_DRAW_CONTEXT& context) {
     // does nothing
     return;

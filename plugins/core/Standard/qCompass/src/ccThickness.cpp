@@ -7,6 +7,8 @@
 
 #include "ccThickness.h"
 
+#include <cmath>
+
 // pass ctors straight to PointPair
 ccThickness::ccThickness(ccPointCloud* associatedCloud)
     : ccPointPair(associatedCloud) {

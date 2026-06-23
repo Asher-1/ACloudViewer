@@ -16,6 +16,8 @@
 // DXF lib
 #ifdef CV_DXF_SUPPORT
 #include <dl_dxf.h>
+
+#include <algorithm>
 #endif
 
 bool DxfProfilesExporter::IsEnabled() {

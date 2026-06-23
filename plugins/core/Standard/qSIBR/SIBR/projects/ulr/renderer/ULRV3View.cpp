@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <core/graphics/GUI.hpp>
 #include <projects/ulr/renderer/ULRV3View.hpp>
 

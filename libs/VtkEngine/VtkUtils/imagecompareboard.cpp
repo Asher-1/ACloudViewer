@@ -9,6 +9,7 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSplitter>

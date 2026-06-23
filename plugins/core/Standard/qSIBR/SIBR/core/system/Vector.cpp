@@ -7,6 +7,8 @@
 
 #include "core/system/Vector.hpp"
 
+#include <cmath>
+
 #include "core/system/Quaternion.hpp"
 
 namespace sibr {

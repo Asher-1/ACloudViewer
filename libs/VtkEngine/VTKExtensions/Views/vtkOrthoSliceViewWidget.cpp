@@ -1332,7 +1332,7 @@ void vtkOrthoSliceViewWidget::connectExternalHighlighter(QObject* highlighter) {
     auto* ren3D = d->renderers[PERSPECTIVE_VIEW].GetPointer();
 
     auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
-        if (!src) return nullptr;
+        if (!src) return {};
         auto clone = vtkSmartPointer<vtkActor>::New();
         clone->ShallowCopy(src);
         if (auto* srcMapper =
@@ -2893,7 +2893,7 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
 
     auto entityToPolyData =
             [](ccHObject* entity) -> vtkSmartPointer<vtkPolyData> {
-        if (!entity) return nullptr;
+        if (!entity) return {};
         auto* mesh = ccHObjectCaster::ToMesh(entity);
         auto* genericMesh = ccHObjectCaster::ToGenericMesh(entity);
         auto* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
@@ -2914,7 +2914,7 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
             cloud = ccHObjectCaster::ToGenericPointCloud(
                     genericMesh->getAssociatedCloud());
         if (!mesh && genericMesh) mesh = ccHObjectCaster::ToMesh(entity);
-        if (!cloud) return nullptr;
+        if (!cloud) return {};
 
         auto* pcCloud = ccHObjectCaster::ToPointCloud(entity);
         if (!pcCloud && genericMesh)

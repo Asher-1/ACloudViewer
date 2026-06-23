@@ -61,12 +61,12 @@ public:
      */
     vtkSmartPointer<vtkUnsignedCharArray> getColor() const {
         if (!capable_ || !points_ || !label_) {
-            return nullptr;
+            return {};
         }
 
         vtkIdType nr_points = points_->GetNumberOfPoints();
         if (nr_points <= 0) {
-            return nullptr;
+            return {};
         }
 
         vtkSmartPointer<vtkUnsignedCharArray> scalars =

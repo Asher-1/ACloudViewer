@@ -8,6 +8,7 @@
 #include "Cloud2CloudDist.h"
 
 // system
+#include <algorithm>
 #include <cmath>
 
 // For each lidar point, we find its neibors in cloth particles by  Rounding

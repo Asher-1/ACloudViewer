@@ -7,6 +7,7 @@
 
 #include "LasScalarFieldSaver.h"
 
+#include <algorithm>
 #include <ecvScalarField.h>
 #include <laszip/laszip_api.h>
 

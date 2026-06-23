@@ -18,6 +18,7 @@
 #include <QStringList>
 
 // System
+#include <cmath>
 #include <thread>
 
 ccCloudLayersHelper::ccCloudLayersHelper(ecvMainAppInterface* app,

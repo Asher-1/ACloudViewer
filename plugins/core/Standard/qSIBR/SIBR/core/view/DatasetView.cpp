@@ -7,6 +7,8 @@
 
 #include "DatasetView.hpp"
 
+#include <cmath>
+
 namespace sibr {
 
 DatasetView::DatasetView(const BasicIBRScene& scene,

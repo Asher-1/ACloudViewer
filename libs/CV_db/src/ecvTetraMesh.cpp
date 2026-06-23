@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 
 // SYSTEM
+#include <algorithm>
 #include <array>
 #include <numeric>
 #include <tuple>

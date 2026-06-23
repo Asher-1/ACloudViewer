@@ -18,6 +18,7 @@
 #include "ecvScalarField.h"
 
 // system
+#include <algorithm>
 #include <map>
 #include <queue>
 #include <set>

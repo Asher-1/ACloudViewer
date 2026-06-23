@@ -1039,6 +1039,8 @@ bool cvSelectionAlgebra::isBoundaryPoint(vtkPolyData* polyData,
 
 #include <vtkTriangle.h>
 
+#include <cmath>
+
 //-----------------------------------------------------------------------------
 cvSelectionFilter::cvSelectionFilter(QObject* parent) : QObject(parent) {
     CVLog::PrintVerbose("[cvSelectionFilter] Initialized");

@@ -7,6 +7,7 @@
 
 #include "PlaneEstimator.hpp"
 
+#include <algorithm>
 #include <random>
 
 typedef Eigen::Array<bool, Eigen::Dynamic, 1> ArrayXb;

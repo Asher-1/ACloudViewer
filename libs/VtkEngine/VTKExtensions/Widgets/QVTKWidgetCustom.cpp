@@ -98,6 +98,7 @@
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QPainter>
+#include <algorithm>
 #include <cmath>
 #include <mutex>
 #include <string>
@@ -209,8 +210,7 @@ public:
     QColor backgroundColor = Qt::black;
     bool multiViewports = false;
     vtkRenderer* defaultRenderer = nullptr;
-    vtkSmartPointer<vtkOrientationMarkerWidget> orientationMarkerWidget =
-            nullptr;
+    vtkSmartPointer<vtkOrientationMarkerWidget> orientationMarkerWidget;
 
     QList<vtkRenderer*> renderers;
     QList<vtkProp*> actors;

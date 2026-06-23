@@ -10,6 +10,7 @@
 #include <ecvPointCloud.h>
 
 #include <QObject>
+#include <cmath>
 
 static const char COMMAND_MPLANE[] = "MPLANE";
 static const char COMMAND_MP_NX[] = "NX";

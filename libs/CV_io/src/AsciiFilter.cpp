@@ -19,6 +19,7 @@
 #include <ecvScalarField.h>
 
 // System
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 

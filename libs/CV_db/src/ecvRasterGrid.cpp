@@ -21,6 +21,7 @@
 #include <QMap>
 
 // System
+#include <algorithm>
 #include <cassert>
 
 // default field names

@@ -7,6 +7,7 @@
 
 #include "WolmanCustomPlot.h"
 
+#include <algorithm>
 #include <iostream>
 
 #include "ui_WolmanCustomPlot.h"

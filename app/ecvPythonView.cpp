@@ -7,6 +7,7 @@
 
 #include "ecvPythonView.h"
 
+#include <QtCompat.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
@@ -909,7 +910,7 @@ void ecvPythonView::inspectVariables() {
     }
 
     QString varBlock = out.mid(startIdx + 15, endIdx - startIdx - 15).trimmed();
-    QStringList lines = varBlock.split('\n', Qt::SkipEmptyParts);
+    QStringList lines = varBlock.split('\n', QtCompat::SkipEmptyParts);
 
     m_variableTable->setRowCount(0);
     for (const auto& line : lines) {

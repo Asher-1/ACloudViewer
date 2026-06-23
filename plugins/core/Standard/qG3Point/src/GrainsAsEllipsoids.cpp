@@ -19,6 +19,8 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 

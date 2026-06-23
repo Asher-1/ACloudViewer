@@ -15,6 +15,7 @@
 #include <VtkUtils/spherewidgetobserver.h>
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
+#include <vtkActor.h>
 #include <vtkAppendPolyData.h>
 #include <vtkBoxWidget.h>
 #include <vtkCellData.h>
@@ -26,6 +27,7 @@
 #include <vtkLookupTable.h>
 #include <vtkPlane.h>
 #include <vtkPlanes.h>
+#include <vtkPolyData.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkSphereWidget.h>

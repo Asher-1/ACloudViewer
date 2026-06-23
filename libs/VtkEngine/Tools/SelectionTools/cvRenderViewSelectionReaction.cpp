@@ -73,6 +73,8 @@ class MainWindow;
 #include <QWidget>
 
 // Include zoom cursor XPM
+#include <algorithm>
+
 #include "zoom.xpm"
 
 //-----------------------------------------------------------------------------
@@ -1918,7 +1920,7 @@ void cvRenderViewSelectionReaction::setRubberBand3DStyle(
     if (m_renderer) {
         style->SetDefaultRenderer(m_renderer);
     }
-    m_selectionStyle = style;
+    m_selectionStyle = style.GetPointer();
     m_interactor->SetInteractorStyle(style);
 }
 
@@ -1974,7 +1976,7 @@ void cvRenderViewSelectionReaction::setupInteractorStyle() {
             if (m_renderer) {
                 zoomStyle->SetDefaultRenderer(m_renderer);
             }
-            m_selectionStyle = zoomStyle;
+            m_selectionStyle = zoomStyle.GetPointer();
             m_interactor->SetInteractorStyle(zoomStyle);
             break;
         }
@@ -1991,7 +1993,7 @@ void cvRenderViewSelectionReaction::setupInteractorStyle() {
             }
             // Enable pixel drawing for visual feedback (default is on)
             polygonStyle->SetDrawPolygonPixels(true);
-            m_selectionStyle = polygonStyle;
+            m_selectionStyle = polygonStyle.GetPointer();
             m_interactor->SetInteractorStyle(polygonStyle);
             break;
         }

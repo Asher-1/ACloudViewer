@@ -7,6 +7,7 @@
 
 #include "core/assets/CameraRecorder.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <opencv2/imgcodecs.hpp>
 

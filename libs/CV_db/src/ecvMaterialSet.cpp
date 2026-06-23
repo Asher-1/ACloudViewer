@@ -18,6 +18,7 @@
 #include <QtCompat.h>
 
 // System
+#include <algorithm>
 #include <set>
 
 ccMaterialSet::ccMaterialSet(const QString& name /*=QString()*/)

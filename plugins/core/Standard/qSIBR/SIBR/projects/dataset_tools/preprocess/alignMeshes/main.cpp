@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <core/graphics/Window.hpp>
 #include <core/renderer/DepthRenderer.hpp>

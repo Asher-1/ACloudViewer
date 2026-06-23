@@ -67,6 +67,7 @@
 
 // Qt
 #include <QImage>
+#include <algorithm>
 
 namespace Visualization {
 

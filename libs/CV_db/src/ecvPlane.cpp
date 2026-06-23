@@ -13,6 +13,8 @@
 #include "ecvPointCloud.h"
 
 // CV_CORE_LIB
+#include <algorithm>
+
 #include "DistanceComputationTools.h"
 
 ccPlane::ccPlane(PointCoordinateType xWidth,

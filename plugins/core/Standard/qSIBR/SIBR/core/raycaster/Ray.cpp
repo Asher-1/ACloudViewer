@@ -7,6 +7,8 @@
 
 #include "Ray.hpp"
 
+#include <algorithm>
+
 namespace sibr {
 /*static*/ SIBR_RAYCASTER_EXPORT const float RayHit::InfinityDist =
         std::numeric_limits<float>::infinity();

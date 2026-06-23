@@ -18,6 +18,7 @@
 #include <ManualSegmentationTools.h>
 
 // system
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 

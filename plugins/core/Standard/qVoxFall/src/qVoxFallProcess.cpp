@@ -48,6 +48,8 @@
 #if defined(_OPENMP)
 // OpenMP
 #include <omp.h>
+
+#include <algorithm>
 #endif
 using namespace cloudViewer;
 

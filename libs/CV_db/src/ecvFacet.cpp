@@ -19,6 +19,9 @@
 #include <MeshSamplingTools.h>
 #include <PointProjectionTools.h>
 
+#include <algorithm>
+#include <cstring>
+
 static const char DEFAULT_POLYGON_MESH_NAME[] = "2D polygon";
 static const char DEFAULT_CONTOUR_NAME[] = "Contour";
 static const char DEFAULT_CONTOUR_POINTS_NAME[] = "Contour points";

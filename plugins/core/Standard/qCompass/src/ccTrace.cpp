@@ -11,6 +11,7 @@
 #include <ecvViewManager.h>
 #include <ecvViewportParameters.h>
 
+#include <algorithm>
 #include <bitset>
 #include <queue>
 

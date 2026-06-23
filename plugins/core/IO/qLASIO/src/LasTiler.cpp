@@ -9,6 +9,7 @@
 
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <algorithm>
 #include <ecvProgressDialog.h>
 
 CC_FILE_ERROR TileLasReader(laszip_POINTER laszipReader, const QString& originName, const LasTilingOptions& options)

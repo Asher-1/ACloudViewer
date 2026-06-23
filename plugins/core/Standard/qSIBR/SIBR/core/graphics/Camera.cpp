@@ -7,6 +7,8 @@
 
 #include "core/graphics/Camera.hpp"
 
+#include <algorithm>
+
 namespace sibr {
 
 ByteStream& operator<<(ByteStream& stream, const Camera& c) {

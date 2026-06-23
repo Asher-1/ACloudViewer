@@ -7,6 +7,8 @@
 
 #include "VoxelGrid.hpp"
 
+#include <cmath>
+
 namespace sibr {
 
 VoxelGridBase::VoxelGridBase(const Box& boundingBox, int n, bool forceCube)

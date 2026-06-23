@@ -426,12 +426,20 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
         QVariant var = it.value();
         QString value;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        if (var.canConvert<QString>()) {
+            value = var.toString();
+        } else {
+            value = QString(var.metaType().name());
+        }
+#else
         if (var.canConvert(QVariant::String)) {
             var.convert(QVariant::String);
             value = var.toString();
         } else {
             value = QString(QVariant::typeToName(static_cast<int>(var.type())));
         }
+#endif
 
         appendRow(ITEM(it.key()), ITEM(value));
     }

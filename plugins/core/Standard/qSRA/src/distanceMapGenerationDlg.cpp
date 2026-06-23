@@ -57,6 +57,8 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+
 // default names
 static const char XLABEL_CLOUD_NAME[] = "X_Labels";
 static const char YLABEL_CLOUD_NAME[] = "Y_Labels";

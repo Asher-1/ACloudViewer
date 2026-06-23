@@ -20,6 +20,8 @@
 #include <CVLog.h>
 
 // Local
+#include <algorithm>
+
 #include "ecvObject.h"
 
 static const QString s_xmlACloudViewer("ACloudViewer");

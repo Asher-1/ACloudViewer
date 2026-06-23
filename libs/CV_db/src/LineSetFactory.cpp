@@ -8,6 +8,7 @@
 #include <Helper.h>
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <unordered_set>
 
 #include "LineSet.h"

@@ -16,6 +16,8 @@
 #include <DistanceComputationTools.h>
 #include <GenericProgressCallback.h>
 
+#include <algorithm>
+
 struct SFPair {
     SFPair(const cloudViewer::ScalarField* sfIn = 0,
            cloudViewer::ScalarField* sfOut = 0)

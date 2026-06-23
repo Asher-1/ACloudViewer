@@ -8,6 +8,7 @@
 #include <Logging.h>
 
 #include <Eigen/Dense>
+#include <cmath>
 #include <iostream>
 #include <list>
 

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <core/assets/ImageListFile.hpp>
 #include <core/raycaster/CameraRaycaster.hpp>
 #include <core/scene/BasicIBRScene.hpp>

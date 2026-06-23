@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 //////////// STRING HANDLING ////////////////////
