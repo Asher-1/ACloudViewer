@@ -41,6 +41,8 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/io/pcd_io.h>
 
+#include <cstring>
+
 using namespace cloudViewer;
 namespace {
 

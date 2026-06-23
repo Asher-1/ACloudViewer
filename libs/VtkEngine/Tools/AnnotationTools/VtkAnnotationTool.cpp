@@ -40,6 +40,7 @@
 // QT
 #include <QDir>
 #include <QFileInfo>
+#include <cstring>
 
 #define DEFAULT_POINT 0
 #define SELECTED_POINT -1

@@ -37,6 +37,7 @@
 #include <ecvSubMesh.h>
 
 // System
+#include <algorithm>
 #include <cstring>
 
 ObjFilter::ObjFilter()

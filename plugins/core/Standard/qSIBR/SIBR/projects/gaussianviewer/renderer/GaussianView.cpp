@@ -8,6 +8,7 @@
 // clang-format off
 #include <projects/gaussianviewer/renderer/GaussianView.hpp>
 #include <core/graphics/GUI.hpp>
+#include <algorithm>
 #include <thread>
 #include <boost/asio.hpp>
 #include <rasterizer.h>

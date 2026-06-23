@@ -18,6 +18,8 @@
 // System
 #include <string.h>
 
+#include <algorithm>
+
 //! Unique instance of ecvGui
 static ecvSingleton<ecvGui> s_gui;
 

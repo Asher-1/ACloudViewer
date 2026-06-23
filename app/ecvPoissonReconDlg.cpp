@@ -30,6 +30,8 @@
 #else
 #include <time.h>
 #include <unistd.h>
+
+#include <algorithm>
 #endif
 
 static double s_defaultResolution = 0.0;

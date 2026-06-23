@@ -20,9 +20,11 @@
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 #include <ecvViewTitleRegistry.h>
+#include <vtkActor.h>
 #include <vtkActorCollection.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
+#include <vtkDataSetMapper.h>
 #include <vtkImageData.h>
 #include <vtkInteractorObserver.h>
 #include <vtkMath.h>
@@ -1620,7 +1622,7 @@ void vtkComparativeViewWidget::connectExternalHighlighter(
     if (!hl) return;
 
     auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
-        if (!src) return nullptr;
+        if (!src) return {};
         auto clone = vtkSmartPointer<vtkActor>::New();
         clone->ShallowCopy(src);
         if (auto* srcMapper =

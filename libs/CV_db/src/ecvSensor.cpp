@@ -7,6 +7,8 @@
 
 #include "ecvSensor.h"
 
+#include <algorithm>
+
 #include "ecvDrawContext.h"
 #include "ecvViewManager.h"
 

@@ -8,6 +8,7 @@
 #include "TrackBall.h"
 
 #include <boost/filesystem.hpp>
+#include <cmath>
 
 #include "core/graphics/Input.hpp"
 #include "core/graphics/Mesh.hpp"

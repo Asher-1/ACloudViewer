@@ -15,6 +15,8 @@
 
 #include <vtkObjectFactory.h>
 
+#include <cstring>
+
 namespace VtkRendering {
 namespace context_items {
 

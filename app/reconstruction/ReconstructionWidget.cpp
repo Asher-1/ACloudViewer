@@ -9,6 +9,8 @@
 
 #include <ecvViewManager.h>
 
+#include <QTimer>
+
 #include "MainWindow.h"
 #include "ReconstructionOptionsWidget.h"
 #include "RenderOptionsWidget.h"

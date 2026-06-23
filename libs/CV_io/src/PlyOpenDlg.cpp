@@ -19,6 +19,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 //! Ply dialog loading context
 struct PlyLoadingContext {
     PlyLoadingContext() : ignoredProps(0), valid(false), applyAll(false) {}

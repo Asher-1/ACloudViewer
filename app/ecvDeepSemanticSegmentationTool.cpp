@@ -32,6 +32,8 @@
 #else
 #include <time.h>
 #include <unistd.h>
+
+#include <algorithm>
 #endif
 
 #ifdef USE_PYTHON_MODULE

@@ -30,6 +30,7 @@
 #include <QUuid>
 
 // system
+#include <algorithm>
 #include <cassert>
 #include <string>
 

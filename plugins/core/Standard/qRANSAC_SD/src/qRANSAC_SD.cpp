@@ -48,6 +48,7 @@
 
 // System
 #include <algorithm>
+#include <cmath>
 #if defined(CV_WINDOWS)
 #include "windows.h"
 #else

@@ -12,6 +12,8 @@
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
 
+#include <cstring>
+
 // Max number of characters per line in an ASCII file
 // TODO: use QFile instead!
 const int MAX_ASCII_FILE_LINE_LENGTH = 4096;

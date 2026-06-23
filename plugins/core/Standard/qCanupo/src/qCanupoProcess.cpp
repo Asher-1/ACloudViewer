@@ -28,6 +28,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QStringList>
+#include <algorithm>
 
 // Default SF names
 #ifdef COMPILE_PRIVATE_CANUPO
@@ -282,9 +283,14 @@ bool qCanupoProcess::Classify(
     if (realCorePoints) {
         mscMetaData = realCorePoints->getMetaData(s_canupoMSCMetaData);
         if (mscMetaData.isValid()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            bool validMetaData =
+                    (mscMetaData.typeId() == QMetaType::QByteArray &&
+#else
             bool validMetaData = (mscMetaData.type() == QVariant::ByteArray &&
-                                  corePointsDescriptors.fromByteArray(
-                                          mscMetaData.toByteArray()));
+#endif
+                     corePointsDescriptors.fromByteArray(
+                             mscMetaData.toByteArray()));
 
             if (validMetaData) {
                 useExistingMetaData = true;

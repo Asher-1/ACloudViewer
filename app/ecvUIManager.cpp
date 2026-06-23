@@ -17,6 +17,8 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
+#include <QDir>
+
 int QUIWidget::deskWidth() {
     // return qApp->desktop()->availableGeometry().width();
     return qApp->primaryScreen()->geometry().width();

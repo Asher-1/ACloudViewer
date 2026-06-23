@@ -13,6 +13,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 
+#include <algorithm>
 #include <cmath>
 
 // Manual implementation of New() with export macro

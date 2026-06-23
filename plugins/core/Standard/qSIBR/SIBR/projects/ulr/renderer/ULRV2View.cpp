@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
+#include <cmath>
 #include <core/assets/Resources.hpp>
 #include <core/graphics/GUI.hpp>
 #include <core/graphics/Texture.hpp>

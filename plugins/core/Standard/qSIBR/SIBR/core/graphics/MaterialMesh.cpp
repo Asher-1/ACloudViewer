@@ -14,6 +14,7 @@
 #include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>  // C++ importer interface
 #include <boost/variant/detail/substitute.hpp>
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <memory>

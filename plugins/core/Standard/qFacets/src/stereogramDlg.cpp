@@ -27,6 +27,9 @@
 #include <ecvProgressDialog.h>
 #include <ecvRedrawScope.h>
 
+#include <algorithm>
+#include <cstring>
+
 //! Density grid
 class FacetDensityGrid {
 public:

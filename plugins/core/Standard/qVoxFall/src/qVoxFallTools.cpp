@@ -23,6 +23,8 @@
 #include <QProgressDialog>
 #include <QtConcurrentMap>
 #include <QtCore>
+#include <algorithm>
+#include <cmath>
 
 float qVoxFallTransform::GetRotationAngle(double azimuth) {
     double azimuthRadians = azimuth * 3.14159 / 180;

@@ -206,6 +206,7 @@ bool Rasterization::RasterTerrain(Cloth& cloth,
 #include <SimpleCloud.h>
 
 #include <QThread>
+#include <algorithm>
 
 static bool ComputeMaxNeighborAltitude(
         const cloudViewer::DgmOctree::octreeCell& cell,

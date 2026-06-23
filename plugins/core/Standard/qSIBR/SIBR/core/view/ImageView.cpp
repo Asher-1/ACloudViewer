@@ -9,6 +9,8 @@
 
 #include <imgui/imgui.h>
 
+#include <algorithm>
+
 namespace sibr {
 
 ImageView::ImageView(bool interactiveMode) {

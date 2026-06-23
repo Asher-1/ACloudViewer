@@ -8,6 +8,8 @@
 #include "ecvBox.h"
 
 // CV_DB_LIB
+#include <algorithm>
+
 #include "ecvPlane.h"
 #include "ecvPointCloud.h"
 

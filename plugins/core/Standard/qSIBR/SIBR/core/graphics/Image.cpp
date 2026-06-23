@@ -7,6 +7,8 @@
 
 #include "core/graphics/Image.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 
 #include "core/system/ByteStream.hpp"

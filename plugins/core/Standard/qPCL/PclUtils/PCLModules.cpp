@@ -46,6 +46,8 @@
 // PCL SURFACE
 #include <pcl/surface/gp3.h>
 #include <pcl/surface/grid_projection.h>
+
+#include <QThread>
 // NOTE: <pcl/surface/poisson.h> is intentionally excluded here.
 // PCL 1.14's bundled poisson4 3rd-party headers have bugs that break under
 // PCL_NO_PRECOMPILE with modern Clang.  The Poisson implementation lives in

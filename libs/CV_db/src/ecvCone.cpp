@@ -8,6 +8,8 @@
 #include "ecvCone.h"
 
 // Local
+#include <algorithm>
+
 #include "ecvNormalVectors.h"
 #include "ecvPointCloud.h"
 

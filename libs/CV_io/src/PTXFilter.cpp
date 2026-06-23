@@ -26,6 +26,7 @@
 #include <QtCompat.h>
 
 // System
+#include <algorithm>
 #include <cassert>
 #include <string>
 

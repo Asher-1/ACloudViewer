@@ -7,6 +7,8 @@
 
 #include "MatchMatrixWidget.h"
 
+#include <algorithm>
+
 #include "base/database.h"
 #include "util/bitmap.h"
 #include "util/option_manager.h"

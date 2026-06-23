@@ -7,6 +7,8 @@
 
 #include "ReconstructionManagerWidget.h"
 
+#include <algorithm>
+
 #include "base/reconstruction_manager.h"
 
 namespace cloudViewer {

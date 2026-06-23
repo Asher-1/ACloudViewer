@@ -28,6 +28,7 @@
 #include <QCheckBox>
 
 // SYSTEM
+#include <algorithm>
 #include <unordered_set>
 
 ecvFilterByLabelDlg::ecvFilterByLabelDlg(QWidget* parent)

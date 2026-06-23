@@ -24,6 +24,7 @@
 #include <QMainWindow>
 
 // SYSTEM
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 

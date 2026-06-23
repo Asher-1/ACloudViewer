@@ -12,6 +12,8 @@
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
+#include <cmath>
+
 #include "ccCompass.h"
 #include "ccGeoObject.h"
 

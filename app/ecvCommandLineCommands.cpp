@@ -48,6 +48,7 @@
 // Qt
 #include <QDateTime>
 #include <QFileInfo>
+#include <algorithm>
 
 // commands
 constexpr char COMMAND_CLOUD_EXPORT_FORMAT[] = "C_EXPORT_FMT";

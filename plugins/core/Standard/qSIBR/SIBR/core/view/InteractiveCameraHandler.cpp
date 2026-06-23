@@ -7,6 +7,9 @@
 
 #include "InteractiveCameraHandler.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 #include "core/graphics/GUI.hpp"
 #include "core/graphics/Input.hpp"
 #include "core/graphics/Viewport.hpp"

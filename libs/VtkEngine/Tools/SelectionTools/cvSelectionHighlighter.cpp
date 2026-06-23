@@ -12,6 +12,7 @@
 
 // LOCAL
 #include <QVector>
+#include <algorithm>
 #include <vector>
 
 #include "Visualization/VtkVis.h"
@@ -72,7 +73,7 @@
 #include <vtkUnstructuredGrid.h>
 
 static vtkSmartPointer<vtkActor> cloneHighlightActor(vtkActor* source) {
-    if (!source) return nullptr;
+    if (!source) return {};
     vtkSmartPointer<vtkActor> clone;
     if (auto* srcLod = vtkPVLODActor::SafeDownCast(source)) {
         auto lodClone = vtkSmartPointer<vtkPVLODActor>::New();
@@ -83,7 +84,7 @@ static vtkSmartPointer<vtkActor> cloneHighlightActor(vtkActor* source) {
             mapper->ShallowCopy(srcMapper);
             lodClone->SetMapper(mapper);
         }
-        clone = lodClone;
+        clone = lodClone.GetPointer();
     } else {
         clone = vtkSmartPointer<vtkActor>::New();
         clone->ShallowCopy(source);
@@ -180,7 +181,7 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
         vtkIdTypeArray* selection,
         int fieldAssociation) {
     if (!polyData || !selection || selection->GetNumberOfTuples() == 0) {
-        return nullptr;
+        return {};
     }
 
     const bool isPointSelection = (fieldAssociation != 0);
@@ -197,7 +198,7 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
         }
     }
     if (validSelection->GetNumberOfTuples() == 0) {
-        return nullptr;
+        return {};
     }
 
     vtkSmartPointer<vtkSelectionNode> selectionNode =
@@ -218,7 +219,7 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
 
     vtkDataSet* extracted =
             vtkDataSet::SafeDownCast(extractor->GetOutputDataObject(0));
-    if (!extracted) return nullptr;
+    if (!extracted) return {};
 
     auto result = vtkSmartPointer<vtkPolyData>::New();
     if (auto* poly = vtkPolyData::SafeDownCast(extracted)) {
@@ -230,7 +231,7 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
         result->ShallowCopy(geom->GetOutput());
     }
     if (result->GetNumberOfCells() == 0 && result->GetNumberOfPoints() == 0) {
-        return nullptr;
+        return {};
     }
     return result;
 }
@@ -240,7 +241,7 @@ static vtkSmartPointer<vtkPolyData> buildSelectionMarkerPolyData(
         vtkIdTypeArray* selection,
         int fieldAssociation) {
     if (!polyData || !selection || selection->GetNumberOfTuples() == 0) {
-        return nullptr;
+        return {};
     }
 
     const bool isPointSelection = (fieldAssociation != 0);
@@ -264,7 +265,7 @@ static vtkSmartPointer<vtkPolyData> buildSelectionMarkerPolyData(
         centers->VertexCellsOn();
         centers->Update();
         auto* centersPoly = centers->GetOutput();
-        if (!centersPoly) return nullptr;
+        if (!centersPoly) return {};
         for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
             const vtkIdType cid = selection->GetValue(i);
             if (cid < 0 || cid >= centersPoly->GetNumberOfPoints()) continue;
@@ -276,7 +277,7 @@ static vtkSmartPointer<vtkPolyData> buildSelectionMarkerPolyData(
         }
     }
 
-    if (pts->GetNumberOfPoints() == 0) return nullptr;
+    if (pts->GetNumberOfPoints() == 0) return {};
     marker->SetPoints(pts);
     marker->SetVerts(verts);
     return marker;
@@ -323,10 +324,10 @@ void cvSelectionHighlighter::styleSelectionOverlayProperty(
 
 vtkSmartPointer<vtkActor> cvSelectionHighlighter::createSelectionOverlayActor(
         vtkPolyData* poly, SelectionOverlayKind kind) {
-    if (!poly) return nullptr;
+    if (!poly) return {};
 
     if (kind == SelectionOverlayPoints) {
-        if (poly->GetNumberOfPoints() == 0) return nullptr;
+        if (poly->GetNumberOfPoints() == 0) return {};
         auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
         mapper->SetInputData(poly);
         mapper->ScalarVisibilityOff();
@@ -338,10 +339,10 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createSelectionOverlayActor(
     }
 
     if (kind == SelectionOverlaySurface) {
-        if (poly->GetNumberOfCells() == 0) return nullptr;
+        if (poly->GetNumberOfCells() == 0) return {};
         vtkSmartPointer<vtkPVLODActor> actor;
         VtkRendering::CreateActorFromVTKDataSet(poly, actor);
-        if (!actor) return nullptr;
+        if (!actor) return {};
         if (auto* mapper = vtkDataSetMapper::SafeDownCast(actor->GetMapper())) {
             mapper->ScalarVisibilityOff();
             mapper->SetResolveCoincidentTopologyToPolygonOffset();
@@ -350,10 +351,10 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createSelectionOverlayActor(
         }
         styleSelectionOverlayProperty(actor->GetProperty(), kind);
         actor->SetPickable(0);
-        return actor;
+        return actor.GetPointer();
     }
 
-    return nullptr;
+    return {};
 }
 
 void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
@@ -1303,7 +1304,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         int fieldAssociation,
         HighlightMode mode) {
     if (!polyData || !selection) {
-        return nullptr;
+        return {};
     }
 
     // Validate selection IDs against polyData bounds and filter out invalid IDs
@@ -1333,7 +1334,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
                         "selection IDs (all %1 IDs are out of range [0, %2))")
                         .arg(selection->GetNumberOfTuples())
                         .arg(maxValidId));
-        return nullptr;
+        return {};
     }
 
     // Create selection node using validated IDs
@@ -1343,7 +1344,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         CVLog::Error(
                 "[cvSelectionHighlighter::createHighlightActor] Failed to "
                 "create selection node");
-        return nullptr;
+        return {};
     }
 
     // Create selection
@@ -1364,7 +1365,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         CVLog::Error(
                 "[cvSelectionHighlighter::createHighlightActor] Extraction "
                 "failed: extracted is nullptr");
-        return nullptr;
+        return {};
     }
 
     vtkSmartPointer<vtkPolyData> highlightPoly =
@@ -1382,7 +1383,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         highlightPoly->GetNumberOfPoints() == 0) {
         CVLog::Print(
                 "[cvSelectionHighlighter::createHighlightActor] extract empty");
-        return nullptr;
+        return {};
     }
 
     CVLog::PrintVerbose(
@@ -1421,7 +1422,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
 vtkSmartPointer<vtkSelectionNode> cvSelectionHighlighter::createSelectionNode(
         vtkIdTypeArray* selection, int fieldAssociation) {
     if (!selection) {
-        return nullptr;
+        return {};
     }
 
     vtkSmartPointer<vtkSelectionNode> node =
@@ -2035,6 +2036,7 @@ void cvSelectionHighlighter::setHighlightQColor(const QColor& color,
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
 #include <vtkFieldData.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkStringArray.h>
 

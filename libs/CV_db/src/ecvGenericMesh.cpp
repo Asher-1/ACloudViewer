@@ -28,7 +28,9 @@
 
 // system
 #include <QFileInfo>
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <limits>
 
 ccGenericMesh::ccGenericMesh(QString name /*=QString()*/)

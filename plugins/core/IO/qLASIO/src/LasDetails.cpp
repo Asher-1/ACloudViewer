@@ -22,6 +22,7 @@
 // Qt
 #include <QDataStream>
 // System
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 

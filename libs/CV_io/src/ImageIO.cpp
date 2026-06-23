@@ -10,6 +10,8 @@
 // clang-format off
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
+#include <algorithm>
 #include <jpeglib.h>  // Include after cstddef to define size_t
 #include <png.h>
 // clang-format on

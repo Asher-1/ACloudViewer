@@ -16,6 +16,8 @@
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 
+#include <cstring>
+
 vtkStandardNewMacro(cvConstrainedContourRepresentation);
 
 //----------------------------------------------------------------------------

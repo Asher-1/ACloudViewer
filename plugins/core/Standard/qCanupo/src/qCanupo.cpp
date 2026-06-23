@@ -38,6 +38,7 @@
 #include <QStringList>
 #include <QtCore>
 #include <QtGui>
+#include <algorithm>
 
 qCanupoPlugin::qCanupoPlugin(QObject* parent /*=0*/)
     : QObject(parent),

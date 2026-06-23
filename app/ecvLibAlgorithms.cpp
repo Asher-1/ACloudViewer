@@ -34,6 +34,8 @@
 // This is included only for temporarily removing an object from the tree.
 //	TODO figure out a cleaner way to do this without having to include all
 // of MainWindow.h
+#include <algorithm>
+
 #include "MainWindow.h"
 
 namespace ccLibAlgorithms {

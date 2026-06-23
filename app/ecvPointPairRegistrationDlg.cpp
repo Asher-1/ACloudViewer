@@ -35,6 +35,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QToolButton>
+#include <algorithm>
 
 // default position of each columns in the aligned and ref. table widgets
 static const int XYZ_COL_INDEX = 0;

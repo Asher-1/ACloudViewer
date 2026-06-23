@@ -9,6 +9,7 @@
 
 #include "LasDetails.h"
 
+#include <cstring>
 #include <ecvPointCloud.h>
 
 LasWaveformSaver::LasWaveformSaver(const ccPointCloud& pointCloud) noexcept

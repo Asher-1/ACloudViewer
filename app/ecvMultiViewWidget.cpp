@@ -29,6 +29,7 @@
 #include <vtkRendererCollection.h>
 #endif
 
+#include <QtCompat.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvRepresentationManager.h>
@@ -629,7 +630,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         connect(spreadSheet, &ecvSpreadSheetView::tableSelectionChanged, this,
                 [](ccHObject* entity, const QVector<unsigned>& indices) {
                     if (!entity || indices.isEmpty()) return;
-                    QSet<unsigned> idxSet(indices.begin(), indices.end());
+                    QSet<unsigned> idxSet = qtCompatQSetFromVector(indices);
                     emit ecvViewManager::instance().pointIndicesSelected(
                             entity, idxSet);
                 });
@@ -725,7 +726,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         connect(chartView, &vtkChartView::pointsHighlighted, this,
                 [](ccHObject* entity, const QVector<unsigned>& indices) {
                     if (!entity || indices.isEmpty()) return;
-                    QSet<unsigned> idxSet(indices.begin(), indices.end());
+                    QSet<unsigned> idxSet = qtCompatQSetFromVector(indices);
                     emit ecvViewManager::instance().pointIndicesSelected(
                             entity, idxSet);
                 });

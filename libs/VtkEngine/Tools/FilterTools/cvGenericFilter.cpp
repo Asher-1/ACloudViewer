@@ -639,7 +639,7 @@ double cvGenericFilter::scalarMax() const { return m_scalarMax; }
 
 vtkSmartPointer<vtkDataArray> cvGenericFilter::getActorScalars(
         vtkSmartPointer<vtkActor> actor) {
-    if (!actor) return nullptr;
+    if (!actor) return {};
 
     return actor->GetMapper()->GetInput()->GetPointData()->GetScalars();
 }
@@ -723,7 +723,7 @@ void cvGenericFilter::createActorFromData(vtkDataObject* dataObj) {
     mapper->Update();
 
     //	VtkUtils::vtkInitOnce(m_modelActor);
-    m_modelActor = vtkSmartPointer<vtkPVLODActor>::New();
+    m_modelActor.TakeReference(vtkPVLODActor::New());
     m_modelActor->SetMapper(mapper);
 
     m_modelActor->GetProperty()->SetInterpolationToFlat();

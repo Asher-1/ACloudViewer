@@ -37,6 +37,7 @@
 #include "vtkGLView.h"
 
 // SYSTEM
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <algorithm>
@@ -96,6 +97,7 @@
 
 // VTK
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <vtkActor.h>
 #include <vtkAreaPicker.h>
 #include <vtkAxes.h>
 #include <vtkBMPReader.h>
@@ -567,27 +569,25 @@ void VtkVis::setCameraManipulators(
             vtkSmartPointer<vtkCameraManipulator> cameraManipulator;
             switch (manipType) {
                 case PAN:
-                    cameraManipulator = vtkSmartPointer<vtkTrackballPan>::New();
+                    cameraManipulator.TakeReference(vtkTrackballPan::New());
                     break;
                 case ZOOM:
-                    cameraManipulator =
-                            vtkSmartPointer<vtkPVTrackballZoom>::New();
+                    cameraManipulator.TakeReference(vtkPVTrackballZoom::New());
                     break;
                 case ROLL:
-                    cameraManipulator =
-                            vtkSmartPointer<vtkPVTrackballRoll>::New();
+                    cameraManipulator.TakeReference(vtkPVTrackballRoll::New());
                     break;
                 case ROTATE:
-                    cameraManipulator =
-                            vtkSmartPointer<vtkPVTrackballRotate>::New();
+                    cameraManipulator.TakeReference(
+                            vtkPVTrackballRotate::New());
                     break;
                 case MULTI_ROTATE:
-                    cameraManipulator =
-                            vtkSmartPointer<vtkPVTrackballMultiRotate>::New();
+                    cameraManipulator.TakeReference(
+                            vtkPVTrackballMultiRotate::New());
                     break;
                 case ZOOM_TO_MOUSE:
-                    cameraManipulator =
-                            vtkSmartPointer<vtkPVTrackballZoomToMouse>::New();
+                    cameraManipulator.TakeReference(
+                            vtkPVTrackballZoomToMouse::New());
                     break;
             }
             if (cameraManipulator) {
@@ -1647,7 +1647,7 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
         removeShapes(viewID, viewport);
     }
 
-    vtkSmartPointer<vtkPolyData> linesData = nullptr;
+    vtkSmartPointer<vtkPolyData> linesData;
     if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
         // the sensor to draw
         const ccCameraSensor* camera =

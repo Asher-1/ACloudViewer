@@ -15,6 +15,7 @@
 
 // EIGEN
 #include <Eigen/Dense>
+#include <algorithm>
 
 namespace cloudViewer {
 namespace utility {

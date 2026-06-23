@@ -38,6 +38,8 @@
 #include <ecvMesh.h>
 
 // System
+#include <algorithm>
+#include <cstring>
 #include <string>
 
 //! Bundler camera

@@ -30,6 +30,8 @@
 #include <assert.h>
 
 // Gui
+#include <algorithm>
+
 #include "ui_histogramDlg.h"
 
 ccHistogramWindow::ccHistogramWindow(QWidget* parent /*=0*/)

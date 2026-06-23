@@ -29,6 +29,7 @@
 
 // Boost
 #include <boost/make_shared.hpp>
+#include <cstring>
 
 // Error codes
 static constexpr int NoNormals = -11;

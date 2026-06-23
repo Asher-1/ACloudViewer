@@ -26,6 +26,7 @@
 // System
 #include <assert.h>
 
+#include <algorithm>
 #include <cmath>
 #include <set>
 

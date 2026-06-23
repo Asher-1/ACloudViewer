@@ -12,6 +12,7 @@
 // Qt
 #include <QDate>
 // DB
+#include <cstring>
 #include <ecvGlobalShiftManager.h>
 #include <ecvPointCloud.h>
 

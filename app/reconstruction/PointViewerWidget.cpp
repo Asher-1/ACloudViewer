@@ -7,6 +7,10 @@
 
 #include "PointViewerWidget.h"
 
+#include <QPixmap>
+#include <algorithm>
+#include <cmath>
+
 #include "ModelViewerWidget.h"
 #include "ui/qt_utils.h"
 #include "util/bitmap.h"

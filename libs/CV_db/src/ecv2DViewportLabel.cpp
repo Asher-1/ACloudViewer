@@ -21,6 +21,8 @@
 // system
 #include <string.h>
 
+#include <algorithm>
+
 cc2DViewportLabel::cc2DViewportLabel(QString name /*=QString()*/)
     : cc2DViewportObject(name) {
     // label rectangle

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <cmath>
+
 #include "core/system/Transform3.hpp"
 
 namespace sibr {

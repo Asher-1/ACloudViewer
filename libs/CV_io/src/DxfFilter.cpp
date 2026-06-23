@@ -26,6 +26,7 @@
 #endif
 
 // system
+#include <algorithm>
 #include <cassert>
 
 DxfFilter::DxfFilter()

@@ -11,6 +11,7 @@
 #include <stdio.h>  // for snprintf
 
 #include <algorithm>
+#include <cstring>
 #include <sstream>
 
 #include "vtkAxis.h"

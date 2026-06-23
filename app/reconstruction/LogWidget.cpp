@@ -15,6 +15,8 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
+#include <QTimer>
+
 namespace cloudViewer {
 
 LogWidget::LogWidget(QWidget* parent, const int max_num_blocks) {

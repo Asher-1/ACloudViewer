@@ -7,6 +7,7 @@
 
 #include "ecvGBLSensor.h"
 
+#include <algorithm>
 #include <cstring>
 
 // Local

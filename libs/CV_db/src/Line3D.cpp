@@ -7,6 +7,7 @@
 
 #include "Line3D.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace cloudViewer {

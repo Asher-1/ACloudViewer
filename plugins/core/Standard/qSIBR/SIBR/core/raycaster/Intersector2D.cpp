@@ -7,6 +7,7 @@
 
 #include "Intersector2D.h"
 
+#include <algorithm>
 #include <core/graphics/Mesh.hpp>
 #include <core/graphics/RenderTarget.hpp>
 #include <core/graphics/Shader.hpp>

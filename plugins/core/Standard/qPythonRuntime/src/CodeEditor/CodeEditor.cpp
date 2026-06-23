@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QDir>
 #include <QtWidgets>
 
 #include "CodeEditor.h"

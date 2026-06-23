@@ -7,6 +7,8 @@
 
 #include "vtkBoundedVolumeSource.h"
 
+#include <cmath>
+
 #include "vtkBoundingBox.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"

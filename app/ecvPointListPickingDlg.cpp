@@ -39,6 +39,9 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+#include <cmath>
+
 // semi persistent settings
 static unsigned s_pickedPointsStartIndex = 0;
 static bool s_showGlobalCoordsCheckBoxChecked = false;

@@ -7,6 +7,8 @@
 
 #include "ImageViewerWidget.h"
 
+#include <QPixmap>
+
 #include "ModelViewerWidget.h"
 #include "base/database.h"
 #include "base/projection.h"

@@ -17,6 +17,7 @@
 #include <QDir>
 // to read the 'Cross Section' tool XML parameters file
 #include <QXmlStreamReader>
+#include <algorithm>
 
 constexpr char COMMAND_CROSS_SECTION[] = "CROSS_SECTION";
 

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QImage>
 #include <QImageReader>
 #include <QRegularExpression>
 #include <QVector3D>

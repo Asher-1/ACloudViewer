@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.13
+  - pip
   - ninja
   - openssl
   - libcurl=8.14.*

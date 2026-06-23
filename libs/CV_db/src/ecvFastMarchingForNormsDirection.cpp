@@ -19,6 +19,7 @@
 #endif
 
 // system
+#include <algorithm>
 #include <cassert>
 
 ccFastMarchingForNormsDirection::ccFastMarchingForNormsDirection()

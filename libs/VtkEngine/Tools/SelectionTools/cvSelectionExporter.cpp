@@ -55,6 +55,7 @@
 #include <QMap>
 #include <QSettings>
 #include <QWidget>
+#include <cstring>
 
 //-----------------------------------------------------------------------------
 ccMesh* cvSelectionExporter::exportToMesh(vtkPolyData* polyData,

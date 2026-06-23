@@ -11,6 +11,8 @@
 
 // CV_DB_LIB
 #include <Eigen/Dense>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <list>
 #include <unordered_map>

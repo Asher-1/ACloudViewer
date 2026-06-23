@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
+#include <cmath>
 #include <projects/ulr/renderer/ULRV3Renderer.hpp>
 
 sibr::ULRV3Renderer::ULRV3Renderer(const std::vector<InputCamera::Ptr>& cameras,
