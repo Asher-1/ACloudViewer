@@ -140,7 +140,7 @@ void cvDistanceTool::initTool() {
     VtkUtils::vtkInitOnce(m_rep);
 
     // Use constrained widget - automatically supports XYZL shortcuts
-    m_widget = vtkSmartPointer<cvConstrainedDistanceWidget>::New();
+    m_widget.TakeReference(cvConstrainedDistanceWidget::New());
 
     // Set representation BEFORE calling SetInteractor/SetRenderer
     m_widget->SetRepresentation(m_rep);

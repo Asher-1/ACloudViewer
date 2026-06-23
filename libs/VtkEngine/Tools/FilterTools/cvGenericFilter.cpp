@@ -163,7 +163,7 @@ bool cvGenericFilter::initModel() {
     m_dataObject->DeepCopy(polydata);
 
     if (!m_resultData) {
-        m_resultData = vtkPolyData::New();
+        m_resultData.TakeReference(vtkPolyData::New());
     }
 
     return true;
