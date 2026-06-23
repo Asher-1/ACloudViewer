@@ -257,7 +257,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     // Step 3: Create or reuse cvHardwareSelector (ParaView-style)
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector.TakeReference(cvHardwareSelector::New());
         m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
     }
 
@@ -451,7 +451,7 @@ bool cvSelectionPipeline::captureBuffersForFastPreSelection() {
 
     // Create cvHardwareSelector if needed (ParaView-style)
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector.TakeReference(cvHardwareSelector::New());
         m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
     }
 
@@ -673,7 +673,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // Create or reuse cvHardwareSelector (ParaView-style)
     // Reference: vtkPVRenderView uses vtkPVHardwareSelector
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector.TakeReference(cvHardwareSelector::New());
         m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
         CVLog::PrintVerbose(
                 QString("[cvSelectionPipeline] Created cvHardwareSelector "
