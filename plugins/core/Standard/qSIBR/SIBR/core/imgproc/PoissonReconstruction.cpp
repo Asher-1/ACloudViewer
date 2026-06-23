@@ -8,6 +8,8 @@
 #include "PoissonReconstruction.hpp"
 
 #include <Eigen/Sparse>
+#include <algorithm>
+#include <cmath>
 #include <queue>
 
 namespace sibr {

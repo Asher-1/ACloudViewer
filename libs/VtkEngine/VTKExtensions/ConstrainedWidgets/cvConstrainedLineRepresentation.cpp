@@ -22,6 +22,7 @@
 
 // STL
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 vtkStandardNewMacro(cvConstrainedLineRepresentation);

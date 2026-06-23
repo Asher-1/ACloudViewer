@@ -18,6 +18,7 @@
 
 // Qt
 #include <QFile>
+#include <algorithm>
 
 PVFilter::PVFilter()
     : FileIOFilter(

@@ -8,6 +8,8 @@
 #include "DistanceComputationTools.h"
 
 // Local dependencies
+#include <algorithm>
+
 #include "ccMPlaneErrors.h"
 #include "ccMeasurementDevice.h"
 

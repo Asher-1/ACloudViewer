@@ -42,6 +42,7 @@
 #else
 #include <unistd.h>
 
+#include <algorithm>
 #include <ctime>
 #endif
 

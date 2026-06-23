@@ -15,6 +15,7 @@
 #include <QFileInfo>
 #include <QImageReader>
 #include <QOpenGLTexture>
+#include <algorithm>
 
 ccImage::ccImage()
     : ccHObject("Not loaded"),

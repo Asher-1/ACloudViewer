@@ -23,6 +23,7 @@
 #include <ScalarFieldTools.h>
 
 #include <algorithm>
+#include <cmath>
 
 ccOctree::ccOctree(ccGenericPointCloud* aCloud)
     : cloudViewer::DgmOctree(aCloud),

@@ -20,6 +20,8 @@
 #include <ManualSegmentationTools.h>
 #include <SimpleMesh.h>
 
+#include <algorithm>
+
 ccHObject* ccCropTool::Crop(ccHObject* entity,
                             const ccBBox& box,
                             bool inside /*=true*/,

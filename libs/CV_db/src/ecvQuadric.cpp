@@ -18,6 +18,8 @@
 // system
 #include <string.h>
 
+#include <algorithm>
+
 ccQuadric::ccQuadric(CCVector2 minCorner,
                      CCVector2 maxCorner,
                      const PointCoordinateType eq[6],

@@ -7,6 +7,8 @@
 
 #include "ecvGenericPrimitive.h"
 
+#include <algorithm>
+
 #include "ecvDrawContext.h"
 #include "ecvPointCloud.h"
 #include "ecvViewManager.h"

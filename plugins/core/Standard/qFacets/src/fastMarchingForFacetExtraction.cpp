@@ -14,6 +14,7 @@
 
 // Qt
 #include <QApplication>
+#include <algorithm>
 
 //! 26-connexity neighbouring cells positions (common edges)
 const int c_3dNeighboursPosShift[] = {

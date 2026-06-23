@@ -7,6 +7,8 @@
 
 #include "core/graphics/RenderUtility.hpp"
 
+#include <cstring>
+
 #include "core/graphics/Shader.hpp"
 #include "core/graphics/Window.hpp"
 

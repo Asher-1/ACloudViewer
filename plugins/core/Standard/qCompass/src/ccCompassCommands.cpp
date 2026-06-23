@@ -20,6 +20,7 @@
 #include <QObject>
 #include <QTextStream>
 #include <QXmlStreamWriter>
+#include <cmath>
 
 #include "ccFitPlane.h"
 #include "ccGeoObject.h"

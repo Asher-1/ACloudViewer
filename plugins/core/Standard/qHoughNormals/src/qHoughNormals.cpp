@@ -24,6 +24,7 @@
 #include <QProgressDialog>
 
 // system
+#include <algorithm>
 #include <cassert>
 
 qHoughNormals::qHoughNormals(QObject* parent)

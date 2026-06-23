@@ -13,6 +13,8 @@
 #include <QBuffer>
 #include <QFileInfo>
 #include <QXmlStreamWriter>
+#include <algorithm>
+#include <cmath>
 
 #include "ccFitPlane.h"
 #include "ccGeoObject.h"

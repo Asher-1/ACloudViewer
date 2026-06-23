@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cmath>  //for std::modf
 
 static CCVector3 s_blankNorm(0, 0, 0);

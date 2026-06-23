@@ -8,6 +8,7 @@
 #include <Logging.h>
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <queue>
 #include <tuple>
 #include <unordered_map>

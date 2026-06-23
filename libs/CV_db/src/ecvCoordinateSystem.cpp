@@ -8,6 +8,8 @@
 #include "ecvCoordinateSystem.h"
 
 // CV_DB_LIB
+#include <algorithm>
+
 #include "ecvDrawContext.h"
 #include "ecvPlane.h"
 #include "ecvPointCloud.h"

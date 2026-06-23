@@ -7,6 +7,8 @@
 
 #include "core/view/MultiViewManager.hpp"
 
+#include <cmath>
+
 #include "core/graphics/GUI.hpp"
 
 namespace sibr {

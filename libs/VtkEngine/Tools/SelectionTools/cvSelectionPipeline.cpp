@@ -22,6 +22,7 @@
 #include <CVLog.h>
 
 // STL
+#include <algorithm>
 #include <cmath>
 
 // Qt
@@ -147,7 +148,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executeRectangleSelection(
     if (!m_viewer || !m_renderer) {
         CVLog::Warning("[cvSelectionPipeline] Invalid viewer or renderer");
         emit errorOccurred("Invalid viewer or renderer");
-        return nullptr;
+        return {};
     }
 
     // Check cache first
@@ -178,7 +179,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executeRectangleSelection(
     if (!selection) {
         CVLog::Warning("[cvSelectionPipeline] Hardware selection failed");
         emit errorOccurred("Hardware selection failed");
-        return nullptr;
+        return {};
     }
 
     // Cache the result
@@ -198,7 +199,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         CVLog::Warning(
                 "[cvSelectionPipeline] Invalid viewer, renderer, or polygon");
         emit errorOccurred("Invalid parameters");
-        return nullptr;
+        return {};
     }
 
     // The polygon array has 2 components (x, y) per tuple
@@ -210,7 +211,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     if (numPoints < 3) {
         CVLog::Warning("[cvSelectionPipeline] Polygon needs at least 3 points");
         emit errorOccurred("Invalid polygon: needs at least 3 points");
-        return nullptr;
+        return {};
     }
 
     // ParaView approach: Use vtkHardwareSelector::GeneratePolygonSelection
@@ -234,7 +235,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     if (minX >= maxX || minY >= maxY) {
         CVLog::Warning("[cvSelectionPipeline] Invalid polygon bounding box");
         emit errorOccurred("Invalid polygon geometry");
-        return nullptr;
+        return {};
     }
 
     FieldAssociation fieldAssoc = getFieldAssociation(type);
@@ -251,7 +252,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     if (!renderWindow) {
         CVLog::Warning("[cvSelectionPipeline] Invalid render window");
         emit errorOccurred("Invalid render window");
-        return nullptr;
+        return {};
     }
 
     // Step 3: Create or reuse cvHardwareSelector (ParaView-style)
@@ -283,7 +284,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         captureSuccess = m_hardwareSelector->CaptureBuffers();
         if (!captureSuccess) {
             emit errorOccurred("Buffer capture failed");
-            return nullptr;
+            return {};
         }
     }
 
@@ -334,13 +335,13 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
         vtkSelection* selection, FieldAssociation fieldAssociation) {
     if (!selection) {
-        return nullptr;
+        return {};
     }
 
     unsigned int numNodes = selection->GetNumberOfNodes();
     if (numNodes == 0) {
         CVLog::Print("[cvSelectionPipeline] Selection has no nodes");
-        return nullptr;
+        return {};
     }
 
     // ParaView merges IDs from all matching selection nodes via
@@ -386,7 +387,7 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
                         .arg(targetFieldType == vtkSelectionNode::CELL
                                      ? "CELL"
                                      : "POINT"));
-        return nullptr;
+        return {};
     }
 
     return merged;
@@ -626,20 +627,20 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // This prevents crashes when selection is attempted during cache
     // invalidation
     if (m_invalidating) {
-        return nullptr;  // Safe to return - selection will be retried later
+        return {};  // Safe to return - selection will be retried later
     }
 
     if (!m_viewer || !m_renderer) {
         CVLog::Print(
                 "[cvSelectionPipeline] performHardwareSelection: no "
                 "viewer/renderer");
-        return nullptr;
+        return {};
     }
 
     vtkRenderWindow* renderWindow = m_viewer->getRenderWindow();
     if (!renderWindow) {
         CVLog::Warning("[cvSelectionPipeline] Invalid render window");
-        return nullptr;
+        return {};
     }
 
     // IMPORTANT: region coordinates come from VTK's interactor events
@@ -718,7 +719,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
 
     if (!selection) {
         CVLog::Print("[cvSelectionPipeline] cvHardwareSelector returned null");
-        return nullptr;
+        return {};
     }
 
     if (selection->GetNumberOfNodes() == 0) {
@@ -783,7 +784,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::getCachedSelection(
     if (it != m_selectionCache.end()) {
         return it.value();
     }
-    return nullptr;
+    return {};
 }
 
 //-----------------------------------------------------------------------------
@@ -1534,7 +1535,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
         CVLog::Warning(
                 "[cvSelectionPipeline::refinePolygonSelection] Invalid "
                 "parameters");
-        return nullptr;
+        return {};
     }
 
     vtkSmartPointer<vtkSelection> refinedSelection =

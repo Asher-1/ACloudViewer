@@ -39,6 +39,9 @@
 
 // SYSTEM
 #include <QFile>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <map>
 
 using namespace std;

@@ -7,6 +7,7 @@
 
 #include "MeshTexturing.hpp"
 
+#include <algorithm>
 #include <core/system/LoadingProgress.hpp>
 
 #include "PoissonReconstruction.hpp"

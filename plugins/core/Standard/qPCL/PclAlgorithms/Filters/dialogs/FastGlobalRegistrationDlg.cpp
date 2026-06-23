@@ -18,6 +18,8 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+
 static double s_featureRadius = 0;
 
 FastGlobalRegistrationDialog::FastGlobalRegistrationDialog(

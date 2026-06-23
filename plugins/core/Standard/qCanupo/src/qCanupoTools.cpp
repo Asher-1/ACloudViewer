@@ -28,7 +28,10 @@
 #include <QComboBox>
 #include <QMainWindow>
 #include <QProgressDialog>
+#include <QThread>
 #include <QtConcurrentMap>
+#include <algorithm>
+#include <cstring>
 
 // ComputeCorePointsDescriptors parameters
 static struct {

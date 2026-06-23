@@ -40,6 +40,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 //! Custom ("Extra bytes") field (EVLR)
 struct ExtraLasField : LasField {
     //! Default constructor

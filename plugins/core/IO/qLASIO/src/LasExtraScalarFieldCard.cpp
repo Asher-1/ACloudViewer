@@ -7,6 +7,7 @@
 
 #include "LasExtraScalarFieldCard.h"
 
+#include <cstring>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 

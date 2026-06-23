@@ -10,6 +10,8 @@
 // Local
 #include <ecvViewManager.h>
 
+#include <algorithm>
+
 #include "ecvGenericDisplayTools.h"
 #include "ecvPointCloud.h"
 #include "ecvViewportParameters.h"

@@ -7,6 +7,8 @@
 
 #include "core/system/CommandLineArgs.hpp"
 
+#include <algorithm>
+
 #include "core/system/Utils.hpp"
 
 namespace sibr {

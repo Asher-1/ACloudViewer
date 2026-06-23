@@ -20,6 +20,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QThread>
+#include <algorithm>
 
 static bool s_firstTimeInit = true;
 

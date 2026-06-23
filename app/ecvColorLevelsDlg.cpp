@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 // persistent parameters
 static int s_inputLevels[2] = {0, 255};
 static int s_outputLevels[2] = {0, 255};

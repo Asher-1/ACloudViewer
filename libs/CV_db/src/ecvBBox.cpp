@@ -10,6 +10,8 @@
 // LOCAL
 #include <Logging.h>
 
+#include <algorithm>
+
 #include "ecvGenericGLDisplay.h"
 #include "ecvOrientedBBox.h"
 

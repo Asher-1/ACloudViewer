@@ -17,10 +17,14 @@
 
 // Qt
 #include <QDialog>
+#include <QImage>
 #include <QLabel>
+#include <QPixmap>
 #include <QVBoxLayout>
 
 // STL
+#include <algorithm>
+#include <cmath>
 #include <limits>
 
 void ccRenderingTools::ShowDepthBuffer(ccGBLSensor* sensor,

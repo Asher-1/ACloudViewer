@@ -11,6 +11,9 @@
 #include <CVTools.h>
 #include <Logging.h>
 
+#include <algorithm>
+#include <cmath>
+
 #include "ecvNormalVectors.h"
 #include "ecvPointCloud.h"
 

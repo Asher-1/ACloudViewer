@@ -57,6 +57,7 @@ using namespace pdal;
 // System
 #include <string.h>
 
+#include <algorithm>
 #include <bitset>
 
 static const char s_LAS_SRS_Key[] =

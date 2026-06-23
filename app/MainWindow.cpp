@@ -34,6 +34,7 @@
 
 // Standard
 #include <algorithm>
+#include <cmath>
 
 #include "ecvAnnotationsTool.h"
 #include "ecvApplication.h"

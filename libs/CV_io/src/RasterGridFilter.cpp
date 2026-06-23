@@ -20,6 +20,7 @@
 #include <gdal_priv.h>
 
 // Qt
+#include <QImage>
 #include <QMessageBox>
 
 // System

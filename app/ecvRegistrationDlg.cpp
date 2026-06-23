@@ -29,6 +29,8 @@
 // system
 #include <assert.h>
 
+#include <algorithm>
+
 static bool s_adjustScale = false;
 static unsigned s_randomSamplingLimit = 50000;
 static double s_rmsDifference = 1.0e-5;

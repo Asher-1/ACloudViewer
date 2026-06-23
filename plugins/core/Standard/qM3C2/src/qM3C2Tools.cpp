@@ -27,10 +27,12 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QProgressDialog>
+#include <QThread>
 #include <QtConcurrentMap>
 #include <QtCore>
 
 // system
+#include <algorithm>
 #include <vector>
 
 // ComputeCorePointNormal parameters

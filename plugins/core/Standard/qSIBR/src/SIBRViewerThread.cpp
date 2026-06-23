@@ -7,6 +7,8 @@
 
 #include "SIBRViewerThread.h"
 
+#include <algorithm>
+#include <cmath>
 #include <core/graphics/Window.hpp>
 #include <core/raycaster/Raycaster.hpp>
 #include <core/renderer/PointBasedRenderer.hpp>

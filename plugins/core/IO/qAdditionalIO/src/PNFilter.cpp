@@ -15,6 +15,7 @@
 
 // Qt
 #include <QFile>
+#include <algorithm>
 
 // default normal value
 static const CCVector3 s_defaultNorm(0, 0, 1);

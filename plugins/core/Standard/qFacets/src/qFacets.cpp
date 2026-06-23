@@ -7,6 +7,7 @@
 
 #include "qFacets.h"
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
 

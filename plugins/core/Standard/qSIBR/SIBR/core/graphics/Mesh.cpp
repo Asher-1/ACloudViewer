@@ -11,9 +11,12 @@
 #include <assimp/postprocess.h>  // Post processing flags
 #include <assimp/scene.h>        // Output data structure
 
+#include <algorithm>
 #include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>  // C++ importer interface
 #include <boost/variant/detail/substitute.hpp>
+#include <cmath>
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <memory>

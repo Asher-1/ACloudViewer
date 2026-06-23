@@ -26,6 +26,7 @@
 #include <vtkVRMLExporter.h>
 
 #include <QDebug>
+#include <QImage>
 #include <QThreadPool>
 
 #include "actorexporter.h"

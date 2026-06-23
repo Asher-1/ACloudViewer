@@ -104,6 +104,7 @@ ENTITY_TYPE convertClassToEntityType(CV_CLASS_ENUM type) {
 }  // namespace
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <numeric>
 
 // Qt

@@ -15,6 +15,7 @@
 
 // system
 #include <algorithm>
+#include <cstring>
 
 using namespace cloudViewer;
 

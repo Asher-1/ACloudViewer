@@ -10,6 +10,8 @@
 #include <CVLog.h>
 #include <ScalarField.h>
 
+#include <algorithm>
+
 #include "ui_AnglesCustomPlot.h"
 
 AnglesCustomPlot::AnglesCustomPlot(const QVector<double>& data,

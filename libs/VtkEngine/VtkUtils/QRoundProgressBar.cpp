@@ -7,6 +7,7 @@
 
 #include "QRoundProgressBar.h"
 
+#include <QImage>
 #include <QtGui/QPainter>
 #include <QtGui/QPainterPath>
 

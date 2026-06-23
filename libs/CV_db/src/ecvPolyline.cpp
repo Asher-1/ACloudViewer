@@ -8,6 +8,8 @@
 #include "ecvPolyline.h"
 
 // Local
+#include <algorithm>
+
 #include "ecvCone.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvPointCloud.h"

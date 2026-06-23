@@ -8,6 +8,7 @@
 #include "ecvTabbedMultiViewWidget.h"
 
 #include <CVLog.h>
+#include <QtCompat.h>
 #include <Visualization/vtkGLView.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
@@ -149,8 +150,8 @@ int ecvTabbedMultiViewWidget::createTab() {
     QSet<int> usedNumbers;
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         QString text = m_tabWidget->tabText(i);
-        QRegExp rx("Layout #(\\d+)");
-        if (rx.exactMatch(text)) {
+        QtCompatRegExpWrapper rx(qtCompatRegExp("^Layout #(\\d+)$"));
+        if (rx.indexIn(text) >= 0) {
             usedNumbers.insert(rx.cap(1).toInt());
         }
     }

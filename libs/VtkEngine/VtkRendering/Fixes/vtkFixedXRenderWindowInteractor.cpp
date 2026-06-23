@@ -21,6 +21,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include <vtkInteractorStyle.h>
+#include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkRenderWindow.h>
 #include <vtkStringArray.h>

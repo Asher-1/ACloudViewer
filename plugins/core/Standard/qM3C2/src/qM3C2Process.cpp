@@ -8,6 +8,7 @@
 #include "qM3C2Process.h"
 
 // system
+#include <algorithm>
 #include <cmath>
 
 // local
@@ -35,6 +36,7 @@
 #include <QApplication>
 #include <QElapsedTimer>
 #include <QMessageBox>
+#include <QThread>
 #include <QtConcurrentMap>
 #include <QtCore>
 #include <QtGui>

@@ -249,6 +249,8 @@ void ccGenericPointCloud::importParametersFrom(
 // for tests
 #include <ScalarField.h>
 
+#include <algorithm>
+
 #include "ecvPointCloud.h"
 #endif
 

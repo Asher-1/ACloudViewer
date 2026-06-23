@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
 #include <array>
 #include <sstream>
 

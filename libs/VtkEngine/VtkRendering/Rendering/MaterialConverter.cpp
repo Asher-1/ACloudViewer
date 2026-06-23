@@ -17,6 +17,8 @@
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 
+#include <algorithm>
+
 namespace Visualization {
 namespace renders {
 

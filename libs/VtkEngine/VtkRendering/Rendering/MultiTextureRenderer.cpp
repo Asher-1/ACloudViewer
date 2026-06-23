@@ -19,6 +19,7 @@
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <set>
@@ -47,6 +48,7 @@
 #include <vtkTexture.h>
 #include <vtkTextureUnitManager.h>
 
+#include <QImage>
 #include <sstream>
 
 namespace Visualization {

@@ -32,6 +32,8 @@
 #include <assert.h>
 #include <float.h>
 
+#include <algorithm>
+
 // default name for the Global Shift List file
 static QString s_defaultGlobalShiftListFilename("global_shift_list.txt");
 
