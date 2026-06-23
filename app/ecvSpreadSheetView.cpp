@@ -7,6 +7,7 @@
 
 #include "ecvSpreadSheetView.h"
 
+#include <QtCompat.h>
 #include <ecvAdvancedTypes.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
@@ -1447,7 +1448,7 @@ void ecvSpreadSheetView::setSelectedPointIndices(
         const QSet<unsigned>& indices) {
     m_model->setSelectedIndices(indices);
     if (!indices.isEmpty() && !m_model->selectionOnly()) {
-        QVector<unsigned> sorted(indices.begin(), indices.end());
+        QVector<unsigned> sorted = qtCompatQVectorFromSet(indices);
         std::sort(sorted.begin(), sorted.end());
         int firstRow = static_cast<int>(sorted.first());
         QModelIndex proxyIdx =
