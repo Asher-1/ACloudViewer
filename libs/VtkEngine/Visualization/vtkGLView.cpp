@@ -61,6 +61,7 @@ public:
 #include <vtkPlane.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkRenderPass.h>
 #include <vtkRenderPassCollection.h>
 #include <vtkRenderStepsPass.h>
 #include <vtkRenderWindow.h>

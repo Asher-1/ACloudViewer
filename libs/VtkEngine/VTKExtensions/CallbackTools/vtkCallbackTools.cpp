@@ -19,6 +19,7 @@
 
 // VTK
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <vtkActor.h>
 #include <vtkAngleRepresentation.h>
 #include <vtkAngleWidget.h>
 #include <vtkAssembly.h>
