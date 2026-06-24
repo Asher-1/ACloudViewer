@@ -44,6 +44,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include <vtkDataArray.h>
+#include <vtkDataObject.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
