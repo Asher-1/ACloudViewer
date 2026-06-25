@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QString>
 #include <QUndoCommand>
 #include <functional>
 
@@ -28,35 +29,12 @@ public:
                         RestoreFunc restoreFunc,
                         RefreshFunc refreshFunc,
                         const QString& label = QStringLiteral("Transform"),
-                        QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent),
-          m_entity(entity),
-          m_historyBefore(historyBefore),
-          m_historyAfter(historyAfter),
-          m_appliedTransform(appliedTransform),
-          m_restore(std::move(restoreFunc)),
-          m_refresh(std::move(refreshFunc)) {}
+                        QUndoCommand* parent = nullptr);
+    ~ecvTransformCommand() override;
 
-    void undo() override {
-        if (m_entity && m_restore) {
-            ccGLMatrix inverseTransform = m_appliedTransform.inverse();
-            m_restore(m_entity, inverseTransform);
-        }
-        if (m_refresh) m_refresh();
-    }
-
-    void redo() override {
-        if (m_firstRedo) {
-            m_firstRedo = false;
-            return;
-        }
-        if (m_entity && m_restore) {
-            m_restore(m_entity, m_appliedTransform);
-        }
-        if (m_refresh) m_refresh();
-    }
-
-    int id() const override { return 2002; }
+    void undo() override;
+    void redo() override;
+    int id() const override;
 
 private:
     ccHObject* m_entity;
