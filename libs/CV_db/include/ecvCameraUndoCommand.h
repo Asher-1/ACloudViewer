@@ -8,6 +8,7 @@
 // libs/CV_db/include/ecvCameraUndoCommand.h
 #pragma once
 
+#include <QString>
 #include <QUndoCommand>
 #include <functional>
 
@@ -21,6 +22,9 @@ struct CV_DB_LIB_API ecvCameraState {
     double fovy = 0.8575;
     bool parallelProjection = false;
     double parallelScale = 1.0;
+
+    ecvCameraState();
+    ~ecvCameraState();
 };
 
 class CV_DB_LIB_API ecvCameraUndoCommand : public QUndoCommand {
@@ -31,28 +35,13 @@ public:
                          const ecvCameraState& after,
                          ApplyFunc applyFunc,
                          const QString& label = QStringLiteral("Camera"),
-                         QUndoCommand* parent = nullptr)
-        : QUndoCommand(label, parent),
-          m_before(before),
-          m_after(after),
-          m_apply(std::move(applyFunc)) {}
+                         QUndoCommand* parent = nullptr);
+    ~ecvCameraUndoCommand() override;
 
-    void undo() override {
-        if (m_apply) m_apply(m_before);
-    }
-
-    void redo() override {
-        if (m_apply) m_apply(m_after);
-    }
-
-    int id() const override { return 1002; }
-
-    bool mergeWith(const QUndoCommand* other) override {
-        if (other->id() != id()) return false;
-        auto* o = static_cast<const ecvCameraUndoCommand*>(other);
-        m_after = o->m_after;
-        return true;
-    }
+    void undo() override;
+    void redo() override;
+    int id() const override;
+    bool mergeWith(const QUndoCommand* other) override;
 
 private:
     ecvCameraState m_before;

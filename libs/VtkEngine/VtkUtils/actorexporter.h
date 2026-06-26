@@ -10,6 +10,8 @@
 /// @file actorexporter.h
 /// @brief Exports VTK actor geometry to file (e.g. STL).
 
+#include <vtkPolyData.h>
+#include <vtkProperty.h>
 #include <vtkSmartPointer.h>
 
 #include <QRunnable>
@@ -18,8 +20,6 @@
 #include "qVTK.h"
 
 class vtkActor;
-class vtkPolyData;
-class vtkProperty;
 
 namespace VtkUtils {
 
