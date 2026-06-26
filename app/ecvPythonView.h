@@ -57,7 +57,7 @@ private:
     void setupCompleter();
     void insertCompletion(const QString& completion);
     void inspectVariables();
-    void highlightErrorLine(const QString& stderr);
+    void highlightErrorLine(const QString& stderrText);
     void clearErrorHighlights();
 
     using EntityListProvider = std::function<QList<ccHObject*>()>;
