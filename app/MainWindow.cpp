@@ -725,6 +725,14 @@ MainWindow::~MainWindow() {
     for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
         if (compView) compView->shutdown();
     }
+
+    // Shutdown all primary views BEFORE releaseDisplayTools() to avoid
+    // dangling m_displayTools pointers and use-after-free in signal handlers.
+    for (auto* v : vm.getAllViews()) {
+        if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
+            glView->shutdown();
+        }
+    }
 #endif
 
     Visualization::VtkCameraLink::instance().clear();
@@ -4388,11 +4396,41 @@ void MainWindow::addToDB(ccHObject* obj,
 
     // Now reset camera/zoom AFTER VTK actors exist, so the camera
     // frames the actual geometry instead of an empty scene.
+    // Skip pivot reset for 2D labels, their containers, and objects
+    // with no meaningful 3D geometry.
     if (auto* v = getActiveGLView()) {
         if (updateZoom) {
             v->updateConstellationCenterAndZoom();
         } else {
-            v->resetCenterOfRotation();
+            bool skip = obj->isKindOf(CV_TYPES::LABEL_2D) ||
+                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
+                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT);
+            // Point-list picking container (may be empty on first addToDB)
+            if (!skip && obj->getName() == QLatin1String("Picked points list")) {
+                skip = true;
+            }
+            if (!skip) {
+                ccHObject::Container labels2D;
+                obj->filterChildren(labels2D, true, CV_TYPES::LABEL_2D);
+                if (!labels2D.empty()) {
+                    // Label-only groups must not move the rotation center.
+                    ccHObject::Container allChildren;
+                    obj->filterChildren(allChildren, true);
+                    bool onlyLabels = !allChildren.empty();
+                    for (ccHObject* child : allChildren) {
+                        if (!child->isKindOf(CV_TYPES::LABEL_2D)) {
+                            onlyLabels = false;
+                            break;
+                        }
+                    }
+                    if (onlyLabels || !obj->getBB_recursive().isValid()) {
+                        skip = true;
+                    }
+                }
+            }
+            if (!skip) {
+                v->resetCenterOfRotation();
+            }
         }
     }
 

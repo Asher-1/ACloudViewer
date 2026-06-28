@@ -9,6 +9,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <ecvDisplayCoordinates.h>
 
 // CV_DB_LIB
 #include <Shortcuts/ecvKeySequences.h>
@@ -296,14 +297,18 @@ void cvPointPickingHelper::pickPoint() {
                             "falling back to QCursor::pos()")
                             .arg(displayX)
                             .arg(displayY));
-            displayX = static_cast<int>(pos.x());
-            displayY = sz.height() - static_cast<int>(pos.y()) - 1;
+            const double dprF = ecvDisplayCoordinates::dprOf(renderWidget);
+            QPoint vtkPt = ecvDisplayCoordinates::qtToVtkPhysical(
+                    pos.toPoint(), sz.height(), dprF);
+            displayX = vtkPt.x();
+            displayY = vtkPt.y();
         }
     } else {
-        // Fallback to cursor position if GetEventPosition() is invalid
-        // Convert to VTK display coordinates (origin at bottom-left)
-        displayX = static_cast<int>(pos.x());
-        displayY = sz.height() - static_cast<int>(pos.y()) - 1;
+        const double dprF = ecvDisplayCoordinates::dprOf(renderWidget);
+        QPoint vtkPt = ecvDisplayCoordinates::qtToVtkPhysical(
+                pos.toPoint(), sz.height(), dprF);
+        displayX = vtkPt.x();
+        displayY = vtkPt.y();
     }
 
     double position[3] = {0.0, 0.0, 0.0};
