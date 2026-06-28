@@ -89,9 +89,10 @@ struct CV_DB_LIB_API ecvHotZone {
           iconSize(16),
           topCorner(0, 0),
           pixelDeviceRatio(1.0) {
-        color[0] = ecvColor::defaultLabelBkgColor.r;
-        color[1] = ecvColor::defaultLabelBkgColor.g;
-        color[2] = ecvColor::defaultLabelBkgColor.b;
+        // CloudCompare hot-zone label color (greenish)
+        color[0] = 133;
+        color[1] = 193;
+        color[2] = 39;
 
         updateInternalVariables(win);
     }

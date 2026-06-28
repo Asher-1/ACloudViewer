@@ -44,6 +44,7 @@
 #include <cmath>
 #include <functional>
 #include <vector>
+#include <vtkTextActor.h>
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -67,6 +68,7 @@
 #include <ecvOrientedBBox.h>
 #include <ecvScalarField.h>
 #include <ecvUndoManager.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvViewContext.h>
 
 // VTK Extension
@@ -143,7 +145,6 @@
 #include <vtkSphereSource.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
-#include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkTexture.h>
 #include <vtkTransform.h>
@@ -650,13 +651,31 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
     }
 
     this->m_centerAxes->SetUseBounds(0);
+
+    // Exclude vtkTextActors (used by cc2DLabel overlays) from bounds
+    // computation.  Their display-coordinate positions produce
+    // misleading world-space bounds that shift the rotation center.
+    std::vector<vtkTextActor*> excludedTextActors;
+    if (auto* ren = this->getCurrentRenderer(viewport)) {
+        auto* props = ren->GetViewProps();
+        if (props) {
+            props->InitTraversal();
+            while (auto* prop = props->GetNextProp()) {
+                auto* ta = vtkTextActor::SafeDownCast(prop);
+                if (ta && ta->GetUseBounds()) {
+                    ta->SetUseBounds(false);
+                    excludedTextActors.push_back(ta);
+                }
+            }
+        }
+    }
+
     this->GeometryBounds.Reset();
 
     getRendererCollection()->InitTraversal();
     vtkRenderer* renderer = nullptr;
     int i = 0;
     while ((renderer = getRendererCollection()->GetNextItem())) {
-        // Modify all renderer's cameras
         if (viewport == 0 || viewport == i) {
             double prop_bounds[6];
             this->getCurrentRenderer(viewport)->ComputeVisiblePropBounds(
@@ -666,6 +685,9 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
         ++i;
     }
 
+    for (auto* ta : excludedTextActors) {
+        ta->SetUseBounds(true);
+    }
     this->m_centerAxes->SetUseBounds(1);
 
     // sync up bounds across all processes when doing distributed rendering.
@@ -3936,11 +3958,18 @@ void VtkVis::hideOrientationMarkerWidgetAxes() {
 static int cameraOrientationWidgetPixelSize(int /*winW*/,
                                             int /*winH*/,
                                             double devicePixelRatio = 1.0) {
-    // Fixed logical size (120px) scaled by DPI. This ensures consistent widget
-    // size across normal views and comparative sub-views regardless of viewport
-    // dimensions. ParaView uses a similar fixed-size approach.
+    // vtkCameraOrientationWidget::SetSize() operates in VTK render-window
+    // pixel space.  On macOS Retina, vtkRenderWindow::GetSize() returns
+    // *logical* pixels, so multiplying by DPR makes the widget appear
+    // oversized.  Only scale by DPR on platforms where the render window
+    // reports physical pixels (Linux/Windows).
+#ifdef __APPLE__
+    (void)devicePixelRatio;
+    return 100;
+#else
     const double dpr = std::max(1.0, devicePixelRatio);
-    return std::max(64, static_cast<int>(std::round(120.0 * dpr)));
+    return std::max(64, static_cast<int>(std::round(100.0 * dpr)));
+#endif
 }
 
 static void applyOrientationMarkerViewport(vtkOrientationMarkerWidget* widget,
@@ -5217,7 +5246,11 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
             rep->AnchorToUpperRight();
             if (auto* orientRep =
                         vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
+#ifdef __APPLE__
+                const int fontSize = 10;
+#else
                 const int fontSize = std::max(10, static_cast<int>(10 * dpr));
+#endif
                 vtkTextProperty* labels[] = {
                         orientRep->GetXPlusLabelProperty(),
                         orientRep->GetYPlusLabelProperty(),
@@ -5463,11 +5496,13 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     int* winSize = rw->GetSize();
     if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) return false;
 
-    const double dpr = m_ownerDisplay && m_ownerDisplay->asWidget()
-                               ? m_ownerDisplay->asWidget()->devicePixelRatioF()
+    const double dpr = (m_ownerDisplay && m_ownerDisplay->asWidget())
+                               ? ecvDisplayCoordinates::dprOf(
+                                         m_ownerDisplay->asWidget())
                                : 1.0;
-    const double dispX = qtX * dpr;
-    const double dispY = winSize[1] - 1.0 - qtY * dpr;
+    const double dispX = ecvDisplayCoordinates::toPhysicalF(qtX, dpr);
+    const double dispY = winSize[1] - 1.0 -
+            ecvDisplayCoordinates::toPhysicalF(qtY, dpr);
 
     auto* widget = const_cast<vtkCameraOrientationWidget*>(
             m_cameraOrientationWidget.GetPointer());

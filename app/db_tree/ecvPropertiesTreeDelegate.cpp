@@ -2711,6 +2711,8 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 if (label) {
                     label->setVisible(item->checkState() == Qt::Checked);
                     label->updateLabel();
+                    refreshActiveDisplayLikeUpdateScreen();
+                    redraw = true;
                     break;
                 }
             } else if (m_currentObject->isA(CV_TYPES::VIEWPORT_2D_LABEL)) {
@@ -2719,6 +2721,8 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                 if (label) {
                     label->setVisible(item->checkState() == Qt::Checked);
                     label->updateLabel();
+                    refreshActiveDisplayLikeUpdateScreen();
+                    redraw = true;
                     break;
                 }
             } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
@@ -2965,9 +2969,10 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             CC_DRAW_CONTEXT context;
             fillDrawContextFromEffectiveView(context);
             label->update2DLabelView(context);
-            // label->update2DLabelView(context, true);
+            label->setRedraw(true);
+            refreshActiveDisplayLikeUpdateScreen();
         }
-            redraw = false;
+            redraw = true;
             break;
         case OBJECT_LABEL_POINT_LEGEND: {
             cc2DLabel* label = ccHObjectCaster::To2DLabel(m_currentObject);
@@ -2976,8 +2981,10 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             CC_DRAW_CONTEXT context;
             fillDrawContextFromEffectiveView(context);
             label->update2DLabelView(context);
+            label->setRedraw(true);
+            refreshActiveDisplayLikeUpdateScreen();
         }
-            redraw = false;
+            redraw = true;
             break;
         case OBJECT_NAME_IN_3D: {
             m_currentObject->showNameIn3D(item->checkState() == Qt::Checked);
@@ -3092,6 +3099,13 @@ void ccPropertiesTreeDelegate::updateDisplay() {
         // trigger a redraw.
         else if (object->isKindOf(CV_TYPES::POINT_OCTREE) ||
                  object->isKindOf(CV_TYPES::POINT_KDTREE)) {
+            if (object->isEnabled()) {
+                objectIsDisplayed = true;
+            }
+        }
+        // 2D labels use QPainter overlay in paintGL(); property changes
+        // (show 2D panel, show legend) must trigger a VTK widget repaint.
+        else if (object->isKindOf(CV_TYPES::LABEL_2D)) {
             if (object->isEnabled()) {
                 objectIsDisplayed = true;
             }

@@ -57,6 +57,7 @@
 // CV_DB_LIB
 #include <Visualization/vtkGLView.h>
 #include <ecvDisplayTools.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
@@ -1328,11 +1329,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
                                       displayTarget()->exclusiveFullScreen());
 
-            const int retinaScale = displayTarget()->getDevicePixelRatio();
-            bool inZone = (x * retinaScale * 3 <
-                                   hz->topCorner.x() + areaRect.width() * 4 &&
-                           y * retinaScale * 2 <
-                                   hz->topCorner.y() + areaRect.height() * 4);
+            const double dpr = static_cast<double>(
+                    displayTarget()->getDevicePixelRatio());
+            int scaledX = ecvDisplayCoordinates::toPhysical(x, dpr);
+            int scaledY = ecvDisplayCoordinates::toPhysical(y, dpr);
+            QRect zoneRect = areaRect.translated(hz->topCorner);
+            bool inZone = zoneRect.contains(scaledX, scaledY);
 
             if (inZone != m_localClickableVisible) {
                 m_localClickableVisible = inZone;
@@ -1390,8 +1392,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     u.y *= curViewportParams().cameraAspectRatio;
                 }
 
-                const int retinaScale = displayTarget()->getDevicePixelRatio();
-                u *= retinaScale;
+                const double dpr = static_cast<double>(
+                        displayTarget()->getDevicePixelRatio());
+                u *= dpr;
 
                 bool entityMovingMode =
                         (curInteractionFlags() &
@@ -1674,16 +1677,20 @@ void QVTKWidgetCustom::updateActivateditems(
         CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
         curViewportParams().viewMat.transposed().applyRotation(u);
 
-        const int retinaScale = displayTarget()->getDevicePixelRatio();
-        u *= retinaScale;
+        const double dpr = static_cast<double>(
+                displayTarget()->getDevicePixelRatio());
+        u *= dpr;
 
         for (auto& activeItem : curActiveItems()) {
             if (!m_labelClickedOnPress &&
                 dynamic_cast<cc2DLabel*>(activeItem)) {
                 continue;
             }
-            if (activeItem->move2D(x * retinaScale, y * retinaScale,
-                                   dx * retinaScale, dy * retinaScale,
+            if (activeItem->move2D(
+                    ecvDisplayCoordinates::toPhysical(x, dpr),
+                    ecvDisplayCoordinates::toPhysical(y, dpr),
+                    ecvDisplayCoordinates::toPhysical(dx, dpr),
+                    ecvDisplayCoordinates::toPhysical(dy, dpr),
                                    displayTarget()->glWidth(),
                                    displayTarget()->glHeight())) {
                 movedAs2D = true;
@@ -1820,12 +1827,17 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 vertices = nullptr;
 
                 auto* w = displayTarget()->asWidget();
-                const int pickRefW = w ? w->width() : 0;
-                const int pickRefH = w ? w->height() : 0;
+                const double dpr = ecvDisplayCoordinates::dprOf(w);
+                const int pickRefW = w ? ecvDisplayCoordinates::toPhysical(
+                                                 w->width(), dpr)
+                                       : 0;
+                const int pickRefH = w ? ecvDisplayCoordinates::toPhysical(
+                                                 w->height(), dpr)
+                                       : 0;
                 displayTarget()->startPicking(
                         ecvGenericGLDisplay::ENTITY_RECT_PICKING,
-                        pickX + pickRefW / 2, pickRefH / 2 - pickY, pickW,
-                        pickH);
+                        pickX + pickRefW / 2, pickRefH / 2 - pickY,
+                        pickW, pickH);
                 displayTarget()->toBeRefreshed();
             }
 

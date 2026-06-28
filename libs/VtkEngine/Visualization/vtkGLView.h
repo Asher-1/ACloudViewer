@@ -70,6 +70,12 @@ public:
     static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
     ~vtkGLView() override;
 
+    /// Perform an orderly VTK teardown (interactor, GL context, ImageVis)
+    /// before the display-tools singleton or other shared resources are deleted.
+    /// Safe to call multiple times.
+    void shutdown();
+    bool isShutdown() const { return m_shutdownDone; }
+
     /// Reassign ParaView XML label and registration name (e.g. Slice / EDL
     /// views).
     void setViewXmlLabel(const QString& xmlLabel);
@@ -470,6 +476,7 @@ private:
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
+    bool m_shutdownDone = false;
     QElapsedTimer m_timer;
     vtkSmartPointer<vtkGridAxesActor3D> m_sliceCubeAxes;
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;

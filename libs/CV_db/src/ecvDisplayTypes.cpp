@@ -16,19 +16,21 @@
 void ecvHotZone::updateInternalVariables(QWidget* win) {
     if (win) {
         font = win->font();
-        pixelDeviceRatio = ecvDisplayTools::GetPlatformAwareDPIScale();
-        int fontSize = ecvDisplayTools::GetOptimizedFontSize(12);
-        if (fontSize != pixelDeviceRatio) {
-            font.setPointSize(fontSize);
-        } else {
-            font.setPointSize(12 * pixelDeviceRatio);
-        }
-        CVLog::PrintDebug(QString("pixelDeviceRatio: %1 and fontSize %2")
-                                  .arg(pixelDeviceRatio)
-                                  .arg(fontSize));
-        margin *= pixelDeviceRatio;
-        iconSize *= pixelDeviceRatio;
+        pixelDeviceRatio = win->devicePixelRatioF();
+        // Match CloudCompare: scale font/metrics by per-widget DPR so layout
+        // aligns with ImageVis / vtkRenderWindow physical pixel space.
+        static constexpr int kBaseFontPt = 12;
+        static constexpr int kBaseMargin = 16;
+        static constexpr int kBaseIconSize = 16;
+        font.setPointSize(static_cast<int>(kBaseFontPt * pixelDeviceRatio));
+        margin = static_cast<int>(kBaseMargin * pixelDeviceRatio);
+        iconSize = static_cast<int>(kBaseIconSize * pixelDeviceRatio);
         font.setBold(true);
+        CVLog::PrintDebug(QString("hotZone DPR: %1 fontPt: %2 margin: %3 icon: %4")
+                                  .arg(pixelDeviceRatio)
+                                  .arg(font.pointSize())
+                                  .arg(margin)
+                                  .arg(iconSize));
     }
 
     QFontMetrics metrics(font);
@@ -61,9 +63,6 @@ QRect ecvHotZone::rect(bool clickableItemsVisible,
         totalWidth = std::max(totalWidth, bbv_totalWidth);
     if (fullScreenEnabled) totalWidth = std::max(totalWidth, fs_totalWidth);
 
-#ifdef Q_OS_MAC
-    totalWidth = totalWidth + 3 * (margin + iconSize);
-#endif
     QPoint minAreaCorner(0, std::min(0, yTextBottomLineShift - textHeight));
     QPoint maxAreaCorner(totalWidth, std::max(iconSize, yTextBottomLineShift));
     int rowCount = clickableItemsVisible ? 2 : 0;

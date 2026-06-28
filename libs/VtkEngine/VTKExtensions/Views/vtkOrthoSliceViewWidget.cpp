@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "vtkOrthoSliceViewWidget.h"
+#include <ecvDisplayCoordinates.h>
 
 #include <CVLog.h>
 #include <Converters/Cc2Vtk.h>
@@ -1586,10 +1587,11 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
             }
             if (me->button() == Qt::LeftButton && viewIdx == PERSPECTIVE_VIEW &&
                 m_selectionMode != SEL_NONE) {
-                double dpr = d->vtkWidget->devicePixelRatioF();
-                int px = static_cast<int>(me->pos().x() * dpr);
-                int py = static_cast<int>(
-                        (d->vtkWidget->height() - 1 - me->pos().y()) * dpr);
+                double dpr = ecvDisplayCoordinates::dprOf(d->vtkWidget);
+                QPoint vtkPt = ecvDisplayCoordinates::qtToVtkPhysical(
+                        me->pos(), d->vtkWidget->height(), dpr);
+                int px = vtkPt.x();
+                int py = vtkPt.y();
 
                 auto* ren = d->renderers[PERSPECTIVE_VIEW].GetPointer();
                 if (ren && d->fullModelActor && !m_externalHighlighterLinked) {
@@ -1849,12 +1851,16 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 auto* ren = d->renderers[viewIdx].GetPointer();
                 if (!ren) return false;
 
-                double dpr = d->vtkWidget->devicePixelRatioF();
-                int physH = static_cast<int>(d->vtkWidget->height() * dpr);
+                double dpr = ecvDisplayCoordinates::dprOf(d->vtkWidget);
+                int physH = ecvDisplayCoordinates::toPhysical(
+                        d->vtkWidget->height(), dpr);
                 if (physH <= 0) return false;
 
-                double dispX = me->pos().x() * dpr;
-                double dispY = physH - 1.0 - me->pos().y() * dpr;
+                double dispX = ecvDisplayCoordinates::toPhysicalF(
+                        me->pos().x(), dpr);
+                double dispY = physH - 1.0 -
+                        ecvDisplayCoordinates::toPhysicalF(
+                                me->pos().y(), dpr);
 
                 ren->SetDisplayPoint(dispX, dispY, 0.0);
                 ren->DisplayToWorld();
@@ -2435,19 +2441,17 @@ void vtkOrthoSliceViewWidget::performRubberBandSelection() {
     auto* ren = d->renderers[PERSPECTIVE_VIEW].GetPointer();
     if (!ren) return;
 
-    double dpr = d->vtkWidget->devicePixelRatioF();
-    int x0 = static_cast<int>(
-            std::min(m_rubberBandStart.x(), m_rubberBandEnd.x()) * dpr);
-    int y0 = static_cast<int>(
-            (d->vtkWidget->height() - 1 -
-             std::max(m_rubberBandStart.y(), m_rubberBandEnd.y())) *
-            dpr);
-    int x1 = static_cast<int>(
-            std::max(m_rubberBandStart.x(), m_rubberBandEnd.x()) * dpr);
-    int y1 = static_cast<int>(
-            (d->vtkWidget->height() - 1 -
-             std::min(m_rubberBandStart.y(), m_rubberBandEnd.y())) *
-            dpr);
+    double dpr = ecvDisplayCoordinates::dprOf(d->vtkWidget);
+    QPoint p0 = ecvDisplayCoordinates::qtToVtkPhysical(
+            QPoint(std::min(m_rubberBandStart.x(), m_rubberBandEnd.x()),
+                   std::max(m_rubberBandStart.y(), m_rubberBandEnd.y())),
+            d->vtkWidget->height(), dpr);
+    QPoint p1 = ecvDisplayCoordinates::qtToVtkPhysical(
+            QPoint(std::max(m_rubberBandStart.x(), m_rubberBandEnd.x()),
+                   std::min(m_rubberBandStart.y(), m_rubberBandEnd.y())),
+            d->vtkWidget->height(), dpr);
+    int x0 = p0.x(), y0 = p0.y();
+    int x1 = p1.x(), y1 = p1.y();
 
     if (std::abs(x1 - x0) < 4 && std::abs(y1 - y0) < 4) return;
 
@@ -3107,13 +3111,13 @@ void vtkOrthoSliceViewWidget::mapWidgetToRendererDisplay(
     if (widgetW <= 0 || widgetH <= 0) return;
 
     int* winSize = d->renderWindow->GetSize();
-    const double dpr = d->vtkWidget->devicePixelRatioF();
+    const double dpr = ecvDisplayCoordinates::dprOf(d->vtkWidget);
     const int winW = (winSize && winSize[0] > 0)
                              ? winSize[0]
-                             : static_cast<int>(widgetW * dpr);
+                             : ecvDisplayCoordinates::toPhysical(widgetW, dpr);
     const int winH = (winSize && winSize[1] > 0)
                              ? winSize[1]
-                             : static_cast<int>(widgetH * dpr);
+                             : ecvDisplayCoordinates::toPhysical(widgetH, dpr);
 
     double vp[4];
     ren->GetViewport(vp);

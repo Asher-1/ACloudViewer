@@ -21,6 +21,7 @@
 #include "ecvCameraSensor.h"
 #include "ecvClipBox.h"
 #include "ecvDisplayTools.h"
+#include "ecvDisplayCoordinates.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvGenericMesh.h"
 #include "ecvGenericVisualizer.h"
@@ -118,7 +119,8 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT,
                                  const ecvViewContext& viewCtx) {
     CONTEXT.glW = viewCtx.glViewport.width();
     CONTEXT.glH = viewCtx.glViewport.height();
-    CONTEXT.devicePixelRatio = 1.0f;
+    CONTEXT.devicePixelRatio =
+            static_cast<float>(GetDevicePixelRatio());
     CONTEXT.drawingFlags = 0;
 
     const ecvGui::ParamStruct& guiParams = GetDisplayParameters();
@@ -579,9 +581,12 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
         return false;
     }
 
-    const int retinaScale = GetDevicePixelRatio();
-    x *= retinaScale;
-    y *= retinaScale;
+    // Qt mouse coords are logical; hot-zone areas are physical (DPR-scaled).
+    QWidget* dprWidget = owner && owner->asWidget() ? owner->asWidget()
+                                                    : GetCurrentScreen();
+    const double dpr = ecvDisplayCoordinates::dprOf(dprWidget);
+    x = ecvDisplayCoordinates::toPhysical(x, dpr);
+    y = ecvDisplayCoordinates::toPhysical(y, dpr);
 
     ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
     for (std::vector<ClickableItem>::const_iterator it = clickableItems.begin();
@@ -761,9 +766,9 @@ void ecvDisplayTools::StartPicking(PickingParameters& params) {
 
 void ecvDisplayTools::StartPicking(ecvViewContext& ctx,
                                    PickingParameters& params) {
-    const int retinaScale = GetDevicePixelRatio();
-    params.centerX *= retinaScale;
-    params.centerY *= retinaScale;
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
+    params.centerX = ecvDisplayCoordinates::toPhysical(params.centerX, dpr);
+    params.centerY = ecvDisplayCoordinates::toPhysical(params.centerY, dpr);
 
     bool hasDB = primaryDT()->m_globalDBRoot || primaryDT()->m_winDBRoot;
     if (!hasDB && primaryDT()->m_pickingTargetView) {
@@ -1376,13 +1381,18 @@ CCVector3d ecvDisplayTools::ToVtkCoordinates(int x, int y, int z) {
 }
 
 void ecvDisplayTools::ToVtkCoordinates(CCVector3d& sP) {
-    sP.y = Height() - sP.y;  // for vtk coordinates
-    sP *= GetDevicePixelRatio();
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
+    sP.y = Height() - 1 - sP.y;
+    sP.x = ecvDisplayCoordinates::toPhysicalF(sP.x, dpr);
+    sP.y = ecvDisplayCoordinates::toPhysicalF(sP.y, dpr);
+    sP.z = ecvDisplayCoordinates::toPhysicalF(sP.z, dpr);
 }
 
 void ecvDisplayTools::ToVtkCoordinates(CCVector2i& sP) {
-    sP.y = Height() - sP.y;  // for vtk coordinates
-    sP *= GetDevicePixelRatio();
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
+    sP.y = Height() - 1 - sP.y;
+    sP.x = ecvDisplayCoordinates::toPhysical(sP.x, dpr);
+    sP.y = ecvDisplayCoordinates::toPhysical(sP.y, dpr);
 }
 
 void ecvDisplayTools::SetPivotVisibility(ecvViewContext& ctx,
@@ -2887,10 +2897,11 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
     ctx.viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
     params.fov_deg = ctx.viewportParams.fov_deg;
 
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
     params.viewport[0] = 0;
     params.viewport[1] = 0;
-    params.viewport[2] = Width() * GetDevicePixelRatio();
-    params.viewport[3] = Height() * GetDevicePixelRatio();
+    params.viewport[2] = ecvDisplayCoordinates::toPhysical(Width(), dpr);
+    params.viewport[3] = ecvDisplayCoordinates::toPhysical(Height(), dpr);
     SetGLViewport(QRect(0, 0, Width(), Height()));
 
     params.perspective = ctx.viewportParams.perspectiveView;
@@ -3379,10 +3390,8 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
 }
 
 void ecvDisplayTools::SetGLViewport(ecvViewContext& ctx, const QRect& rect) {
-    const int retinaScale = GetDevicePixelRatio();
-    ctx.glViewport =
-            QRect(rect.left() * retinaScale, rect.top() * retinaScale,
-                  rect.width() * retinaScale, rect.height() * retinaScale);
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
+    ctx.glViewport = ecvDisplayCoordinates::toPhysical(rect, dpr);
     InvalidateViewport();
 }
 
@@ -3807,7 +3816,7 @@ void ecvDisplayTools::RenderText(
     context.textDefaultCol = color;
     int vpH = viewportHeightFor(display);
     if (context.textParam.display3D) {
-        context.textParam.textScale = GetPlatformAwareDPIScale();
+        context.textParam.textScale = static_cast<double>(GetDevicePixelRatio());
         CCVector3d input3D(x, vpH - y, 0);
         CCVector3d output2D;
         ToWorldPoint(input3D, output2D);
@@ -3976,7 +3985,7 @@ void ecvDisplayTools::DrawClickableItems(
                                                     : GetCurrentScreen();
     if (!hotZone) {
         hotZone = new HotZone(hzWin);
-    } else if (GetPlatformAwareDPIScale() != hotZone->pixelDeviceRatio) {
+    } else if (hzWin && hzWin->devicePixelRatioF() != hotZone->pixelDeviceRatio) {
         hotZone->updateInternalVariables(hzWin);
     }
 
@@ -3998,13 +4007,17 @@ void ecvDisplayTools::DrawClickableItems(
         return;
     }
 
-    int fullW = hzCtx.glViewport.width();
+    // HotZone layout uses physical pixels (DPR-scaled), matching
+    // CloudCompare ccGLWindowInterface::drawClickableItems and ImageVis.
     int fullH = hzCtx.glViewport.height();
-    (void)fullW;
 
     {
         WIDGETS_PARAMETER rmParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
         rmParam.context.display = display;
+        RemoveWidgets(rmParam);
+        rmParam.type = WIDGETS_TYPE::WIDGET_RECTANGLE_2D;
+        RemoveWidgets(rmParam);
+        rmParam.type = WIDGETS_TYPE::WIDGET_POINTS_2D;
         RemoveWidgets(rmParam);
     }
 
@@ -4022,29 +4035,35 @@ void ecvDisplayTools::DrawClickableItems(
         param.color.a = 210 / 255.0f;
         int x0 = areaRect.x();
         int y0 = fullH - areaRect.y() - areaRect.height();
-        param.rect = QRect(x0, y0, areaRect.width(), areaRect.height());
+        param.rect = QRect(x0, y0, areaRect.width(),
+                           areaRect.height());
         DrawWidgets(param, false);
     }
 
     yStart = hotZone->topCorner.y();
     int offset = 0;
-#ifdef Q_OS_MAC
-    offset = hotZone->margin / 3;
-#endif
     int iconSize = hotZone->iconSize;
 
     if (fullScreenEnabled) {
         int xStart = hotZone->topCorner.x();
 
-        RenderText(xStart, yStart + offset + hotZone->yTextBottomLineShift,
-                   hotZone->fs_label, hotZone->font,
-                   ecvColor::defaultLabelBkgColor, CLICKED_ITEMS, display);
+        {
+            WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+            tp.context.display = display;
+            tp.color = ecvColor::Rgbaf(hotZone->color[0] / 255.0f,
+                                        hotZone->color[1] / 255.0f,
+                                        hotZone->color[2] / 255.0f, 1.0f);
+            tp.text = hotZone->fs_label;
+            tp.fontSize = hotZone->font.pointSize();
+            tp.rect = QRect(xStart,
+                            fullH - (yStart + hotZone->yTextBottomLineShift),
+                            hotZone->fs_labelRect.width(),
+                            hotZone->fs_labelRect.height());
+            DrawWidgets(tp, false);
+        }
 
         xStart += hotZone->fs_labelRect.width() + hotZone->margin;
 
-#ifdef Q_OS_MAC
-        xStart += hotZone->margin * 4;
-#endif
         //"full-screen" icon
         {
             int x0 = xStart;
@@ -4053,7 +4072,8 @@ void ecvDisplayTools::DrawClickableItems(
                                     CLICKED_ITEMS);
             param.context.display = display;
             param.color = ecvColor::FromRgba(ecvColor::ored);
-            param.rect = QRect(x0, y0, iconSize + offset, iconSize);
+            param.rect = QRect(x0, y0, iconSize + offset,
+                               iconSize);
             DrawWidgets(param, false);
 
             WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
@@ -4078,21 +4098,49 @@ void ecvDisplayTools::DrawClickableItems(
     if (hzCtx.bubbleViewModeEnabled) {
         int xStart = hotZone->topCorner.x();
 
-        RenderText(xStart, yStart + offset + hotZone->yTextBottomLineShift,
-                   hotZone->bbv_label, hotZone->font,
-                   ecvColor::defaultLabelBkgColor, "", display);
+        {
+            WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+            tp.context.display = display;
+            tp.color = ecvColor::Rgbaf(hotZone->color[0] / 255.0f,
+                                        hotZone->color[1] / 255.0f,
+                                        hotZone->color[2] / 255.0f, 1.0f);
+            tp.text = hotZone->bbv_label;
+            tp.fontSize = hotZone->font.pointSize();
+            tp.rect = QRect(xStart,
+                            fullH - (yStart + hotZone->yTextBottomLineShift),
+                            hotZone->bbv_labelRect.width(),
+                            hotZone->bbv_labelRect.height());
+            DrawWidgets(tp, false);
+        }
 
         xStart += hotZone->bbv_labelRect.width() + hotZone->margin;
-#ifdef Q_OS_MAC
-        xStart += hotZone->margin * 4;
-#endif
 
-        //"exit" icon
+        //"exit" icon (red X button, matching CloudCompare)
         {
+            int is = hotZone->iconSize;
+            int x0 = xStart;
+            int y0 = fullH - (yStart + is);
+            WIDGETS_PARAMETER exitParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
+                                        CLICKED_ITEMS);
+            exitParam.context.display = display;
+            exitParam.color = ecvColor::FromRgba(ecvColor::ored);
+            exitParam.rect = QRect(x0, y0, is, is);
+            DrawWidgets(exitParam, false);
+
+            WIDGETS_PARAMETER exitTxt(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+            exitTxt.context.display = display;
+            exitTxt.color = ecvColor::bright;
+            exitTxt.text = "X";
+            exitTxt.rect =
+                    QRect(x0 + is / 4,
+                          fullH - (yStart + 3 * is / 4),
+                          is, is);
+            exitTxt.fontSize = hotZone->font.pointSize();
+            DrawWidgets(exitTxt, false);
+
             clickableItems.emplace_back(ClickableItem::LEAVE_BUBBLE_VIEW_MODE,
-                                        QRect(xStart, yStart, hotZone->iconSize,
-                                              hotZone->iconSize));
-            xStart += hotZone->iconSize;
+                                        QRect(xStart, yStart, is, is));
+            xStart += is;
         }
 
         yStart += hotZone->iconSize;
@@ -4115,16 +4163,31 @@ void ecvDisplayTools::DrawClickableItems(
         {
             int xStart = hotZone->topCorner.x();
 
-            RenderText(xStart, yStart + offset + hotZone->yTextBottomLineShift,
-                       hotZone->psi_label, hotZone->font, textColor,
-                       CLICKED_ITEMS, display);
+            {
+                WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+                tp.context.display = display;
+                tp.color = ecvColor::Rgbaf(textColor.r / 255.0f,
+                                        textColor.g / 255.0f,
+                                        textColor.b / 255.0f, 1.0f);
+                tp.text = hotZone->psi_label;
+                tp.fontSize = hotZone->font.pointSize();
+                tp.rect = QRect(xStart,
+                                fullH - (yStart + hotZone->yTextBottomLineShift),
+                                hotZone->psi_labelRect.width(),
+                                hotZone->psi_labelRect.height());
+                DrawWidgets(tp, false);
+            }
 
             xStart += hotZone->psi_labelRect.width() + hotZone->margin;
+            int barH = std::max(iconSize / 3, 4);
+            int barW = std::max(iconSize / 3, 4);
+
             //"minus" icon
             {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                int x0 = xStart + iconSize / 8;
+                int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
+                widgetParam.rect = QRect(x0, y0,
+                                         iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
                 clickableItems.emplace_back(
                         ClickableItem::DECREASE_POINT_SIZE,
@@ -4137,20 +4200,23 @@ void ecvDisplayTools::DrawClickableItems(
                 sepParam.radius = hzCtx.viewportParams.defaultPointSize / 2;
                 int x0 = xStart + hotZone->margin;
                 int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+                sepParam.rect = QRect(x0, y0,
+                                      iconSize, iconSize);
                 DrawWidgets(sepParam, false);
                 xStart += hotZone->margin * 2;
             }
 
             //"plus" icon
             {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                int x0 = xStart + iconSize / 8;
+                int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
+                widgetParam.rect = QRect(x0, y0,
+                                         iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
-                x0 = xStart + 3 * iconSize / 8;
-                y0 = fullH - (yStart + 7 * iconSize / 8);
-                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+                x0 = xStart + iconSize / 2 - barW / 2;
+                y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
+                widgetParam.rect = QRect(x0, y0,
+                                         barW, iconSize * 3 / 4);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4167,16 +4233,31 @@ void ecvDisplayTools::DrawClickableItems(
         {
             int xStart = hotZone->topCorner.x();
 
-            RenderText(xStart, yStart + offset + hotZone->yTextBottomLineShift,
-                       hotZone->lsi_label, hotZone->font, textColor,
-                       CLICKED_ITEMS, display);
+            {
+                WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
+                tp.context.display = display;
+                tp.color = ecvColor::Rgbaf(textColor.r / 255.0f,
+                                        textColor.g / 255.0f,
+                                        textColor.b / 255.0f, 1.0f);
+                tp.text = hotZone->lsi_label;
+                tp.fontSize = hotZone->font.pointSize();
+                tp.rect = QRect(xStart,
+                                fullH - (yStart + hotZone->yTextBottomLineShift),
+                                hotZone->lsi_labelRect.width(),
+                                hotZone->lsi_labelRect.height());
+                DrawWidgets(tp, false);
+            }
 
             xStart += hotZone->lsi_labelRect.width() + hotZone->margin;
+            int barH = std::max(iconSize / 3, 4);
+            int barW = std::max(iconSize / 3, 4);
+
             //"minus" icon
             {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                int x0 = xStart + iconSize / 8;
+                int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
+                widgetParam.rect = QRect(x0, y0,
+                                         iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4190,20 +4271,23 @@ void ecvDisplayTools::DrawClickableItems(
                 sepParam.radius = hzCtx.viewportParams.defaultLineWidth / 2;
                 int x0 = xStart + hotZone->margin;
                 int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+                sepParam.rect = QRect(x0, y0,
+                                      iconSize, iconSize);
                 DrawWidgets(sepParam, false);
                 xStart += hotZone->margin * 2;
             }
 
             //"plus" icon
             {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                int x0 = xStart + iconSize / 8;
+                int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
+                widgetParam.rect = QRect(x0, y0,
+                                         iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
-                x0 = xStart + 3 * iconSize / 8;
-                y0 = fullH - (yStart + 7 * iconSize / 8);
-                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+                x0 = xStart + iconSize / 2 - barW / 2;
+                y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
+                widgetParam.rect = QRect(x0, y0,
+                                         barW, iconSize * 3 / 4);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4490,15 +4574,18 @@ bool ecvDisplayTools::GetClick3DPos(const ecvViewContext& ctx,
                                     int y,
                                     CCVector3d& P3D) {
     ccGLCameraParameters camera;
-    GetGLCameraParameters(camera);
+    GetGLCameraParameters(camera, ctx);
 
-    y = ctx.glViewport.height() - 1 - y;
+    const double dpr = static_cast<double>(GetDevicePixelRatio());
+    int px = ecvDisplayCoordinates::toPhysical(x, dpr);
+    int py = ctx.glViewport.height() - 1 -
+             ecvDisplayCoordinates::toPhysical(y, dpr);
 
-    double glDepth = GetGLDepth(x, y);
+    double glDepth = GetGLDepth(px, py);
     if (glDepth == 1.0) {
         return false;
     }
-    CCVector3d P2D(x, y, glDepth);
+    CCVector3d P2D(px, py, glDepth);
     return camera.unproject(P2D, P3D);
 }
 

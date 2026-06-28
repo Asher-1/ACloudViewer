@@ -30,6 +30,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvViewManager.h>
 
 // CV_APP (forward declaration to avoid circular dependency)
@@ -1351,13 +1352,11 @@ void cvRenderViewSelectionReaction::updateTooltip() {
         QWidget* widget = ecvViewManager::instance().activeWidget();
         if (widget) {
             // Take DPI scaling into account (ParaView-style)
-            qreal dpr = widget->devicePixelRatioF();
-
-            // Convert VTK coordinates (origin bottom-left) to Qt coordinates
-            // (origin top-left) VTK Y increases upward, Qt Y increases downward
-            QPoint localPos(static_cast<int>(m_mousePosition[0] / dpr),
-                            widget->height() -
-                                    static_cast<int>(m_mousePosition[1] / dpr));
+            qreal dpr = ecvDisplayCoordinates::dprOf(widget);
+            QPoint localPos = ecvDisplayCoordinates::vtkPhysicalToQt(
+                    m_mousePosition[0], m_mousePosition[1],
+                    ecvDisplayCoordinates::toPhysical(widget->height(), dpr),
+                    dpr);
             QPoint globalPos = widget->mapToGlobal(localPos);
 
             QToolTip::showText(globalPos, tooltipText);
