@@ -3989,8 +3989,9 @@ void ecvDisplayTools::DrawClickableItems(
         hotZone->updateInternalVariables(hzWin);
     }
 
+    const int hzPad = hotZone->margin / 2;
     hotZone->topCorner =
-            QPoint(xStart0, yStart) + QPoint(hotZone->margin, hotZone->margin);
+            QPoint(xStart0, yStart) + QPoint(hzPad, hzPad);
 
     bool fullScreenEnabled =
             (display && display->viewContext())
@@ -4057,12 +4058,12 @@ void ecvDisplayTools::DrawClickableItems(
             tp.fontSize = hotZone->font.pointSize();
             tp.rect = QRect(xStart,
                             fullH - (yStart + hotZone->yTextBottomLineShift),
-                            hotZone->fs_labelRect.width(),
+                            hotZone->fs_textWidth,
                             hotZone->fs_labelRect.height());
             DrawWidgets(tp, false);
         }
 
-        xStart += hotZone->fs_labelRect.width() + hotZone->margin;
+        xStart += hotZone->fs_textWidth + hotZone->margin;
 
         //"full-screen" icon
         {
@@ -4108,12 +4109,12 @@ void ecvDisplayTools::DrawClickableItems(
             tp.fontSize = hotZone->font.pointSize();
             tp.rect = QRect(xStart,
                             fullH - (yStart + hotZone->yTextBottomLineShift),
-                            hotZone->bbv_labelRect.width(),
+                            hotZone->bbv_textWidth,
                             hotZone->bbv_labelRect.height());
             DrawWidgets(tp, false);
         }
 
-        xStart += hotZone->bbv_labelRect.width() + hotZone->margin;
+        xStart += hotZone->bbv_textWidth + hotZone->margin;
 
         //"exit" icon (red X button, matching CloudCompare)
         {
@@ -4173,12 +4174,12 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.fontSize = hotZone->font.pointSize();
                 tp.rect = QRect(xStart,
                                 fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->psi_labelRect.width(),
+                                hotZone->psi_textWidth,
                                 hotZone->psi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->psi_labelRect.width() + hotZone->margin;
+            xStart += hotZone->psi_textWidth + hotZone->margin;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 
@@ -4243,12 +4244,12 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.fontSize = hotZone->font.pointSize();
                 tp.rect = QRect(xStart,
                                 fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->lsi_labelRect.width(),
+                                hotZone->lsi_textWidth,
                                 hotZone->lsi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->lsi_labelRect.width() + hotZone->margin;
+            xStart += hotZone->lsi_textWidth + hotZone->margin;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 

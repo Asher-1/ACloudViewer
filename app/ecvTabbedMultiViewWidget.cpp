@@ -138,7 +138,9 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
     });
 }
 
-ecvTabbedMultiViewWidget::~ecvTabbedMultiViewWidget() = default;
+ecvTabbedMultiViewWidget::~ecvTabbedMultiViewWidget() {
+    exitFullScreenIfActive();
+}
 
 // ============================================================================
 // Tab creation
@@ -524,13 +526,79 @@ void ecvTabbedMultiViewWidget::lockViewSize(const QSize& size) {
     emit viewSizeLocked(!size.isEmpty());
 }
 
-void ecvTabbedMultiViewWidget::toggleFullScreen() {
-    if (m_fullScreenWindow) {
+
+
+void ecvTabbedMultiViewWidget::exitFullScreenIfActive() {
+    if (!m_fullScreenWindow) return;
+
+    if (m_fullScreenActiveFrame) {
+        auto widgets = m_fullScreenWindow->findChildren<QWidget*>(
+                QString(), Qt::FindDirectChildrenOnly);
+        for (auto* wid : widgets) {
+            if (wid->objectName() == "QVTKWidgetCustom" ||
+                wid->inherits("QVTKOpenGLNativeWidget")) {
+                if (auto* layout = m_fullScreenActiveFrame->layout()) {
+                    layout->addWidget(wid);
+                }
+            }
+        }
+    }
+
+    if (m_fullScreenWindow->layout()) {
         m_fullScreenWindow->layout()->removeWidget(m_tabWidget);
-        layout()->addWidget(m_tabWidget);
-        delete m_fullScreenWindow;
-        emit fullScreenEnabled(false);
+    }
+    restoreTabWidgetToLayout();
+    if (m_fullScreenWindow) {
+        m_fullScreenWindow->hide();
+        delete m_fullScreenWindow.data();
+    }
+    m_fullScreenActiveFrame = nullptr;
+}
+
+void ecvTabbedMultiViewWidget::restoreTabWidgetToLayout() {
+    if (auto* grid = qobject_cast<QGridLayout*>(layout())) {
+        grid->addWidget(m_tabWidget, 0, 0);
     } else {
+        layout()->addWidget(m_tabWidget);
+    }
+    m_tabWidget->show();
+    layout()->activate();
+    updateGeometry();
+}
+
+void ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen() {
+    if (!m_tabWidget || m_fullScreenWindow ||
+        ecvViewManager::instance().isShuttingDown()) return;
+
+    for (int i = 0; i < m_tabWidget->count(); ++i) {
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        if (!mvw) continue;
+        mvw->normalizeViewFrameLayout();
+        for (auto* display : mvw->viewProxies()) {
+            if (!display) continue;
+            QWidget* vw = display->asWidget();
+            if (!vw) continue;
+#ifdef USE_VTK_BACKEND
+            auto* glView = dynamic_cast<vtkGLView*>(display);
+            if (glView && vw->width() > 1 && vw->height() > 1) {
+                glView->resizeGL(vw->width(), vw->height());
+                glView->redraw(false, true);
+            }
+#endif
+        }
+    }
+    layout()->activate();
+    updateGeometry();
+    update();
+}
+
+void ecvTabbedMultiViewWidget::toggleFullScreen() {
+    if (m_fullScreenWindow && !m_fullScreenActiveFrame) {
+        exitFullScreenIfActive();
+        emit fullScreenEnabled(false);
+        QTimer::singleShot(0, this,
+                           &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
+    } else if (!m_fullScreenWindow) {
         auto* fsw = new QWidget(this, Qt::Window);
         m_fullScreenWindow = fsw;
         fsw->setObjectName("FullScreenWindow");
@@ -567,10 +635,16 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
                 }
             }
         }
-        layout()->addWidget(m_tabWidget);
-        delete m_fullScreenWindow;
+        restoreTabWidgetToLayout();
+        if (m_fullScreenWindow) {
+            m_fullScreenWindow->hide();
+            delete m_fullScreenWindow.data();
+        }
         m_fullScreenActiveFrame = nullptr;
         emit fullScreenActiveViewEnabled(false);
+        setDecorationsVisibility(true);
+        QTimer::singleShot(0, this,
+                           &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
         return;
     }
 
@@ -588,7 +662,7 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
     QWidget* activeFrame = mvw ? mvw->activeFrame() : nullptr;
     if (!activeFrame) {
         delete m_fullScreenWindow;
-        layout()->addWidget(m_tabWidget);
+        restoreTabWidgetToLayout();
         return;
     }
 
@@ -605,7 +679,7 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
 
     if (!m_fullScreenActiveFrame) {
         delete m_fullScreenWindow;
-        layout()->addWidget(m_tabWidget);
+        restoreTabWidgetToLayout();
         return;
     }
 

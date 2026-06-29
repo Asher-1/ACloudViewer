@@ -1559,6 +1559,53 @@ void ecvMultiViewWidget::onMaximize(QWidget* frame) {
 // Decoration visibility
 // ============================================================================
 
+void ecvMultiViewWidget::normalizeViewFrameLayout() {
+    for (auto it = m_cellFrames.begin(); it != m_cellFrames.end(); ++it) {
+        QWidget* f = it.value();
+        if (!f) continue;
+        auto* titleBar = f->findChild<QWidget*>("ViewTitleBar");
+        auto* contentFrame = f->findChild<QFrame*>("CentralWidgetFrame");
+        if (titleBar) {
+            titleBar->setSizePolicy(QSizePolicy::Preferred,
+                                    QSizePolicy::Fixed);
+            titleBar->setMinimumHeight(0);
+            titleBar->setMaximumHeight(QWIDGETSIZE_MAX);
+            titleBar->updateGeometry();
+        }
+        if (contentFrame) {
+            contentFrame->setMinimumSize(0, 0);
+            contentFrame->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+            contentFrame->setSizePolicy(QSizePolicy::Expanding,
+                                        QSizePolicy::Expanding);
+            if (auto* cl = qobject_cast<QVBoxLayout*>(contentFrame->layout())) {
+                for (int i = 0; i < cl->count(); ++i) {
+                    if (auto* w = cl->itemAt(i)->widget()) {
+                        w->setMinimumSize(0, 0);
+                        w->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+                        w->setSizePolicy(QSizePolicy::Expanding,
+                                         QSizePolicy::Expanding);
+                        cl->setStretch(i, 1);
+                    }
+                }
+                cl->activate();
+            }
+        }
+        if (auto* fl = qobject_cast<QVBoxLayout*>(f->layout())) {
+            if (titleBar) {
+                const int ti = fl->indexOf(titleBar);
+                if (ti >= 0) fl->setStretch(ti, 0);
+            }
+            if (contentFrame) {
+                const int ci = fl->indexOf(contentFrame);
+                if (ci >= 0) fl->setStretch(ci, 1);
+            }
+            fl->activate();
+        }
+        f->updateGeometry();
+    }
+    updateGeometry();
+}
+
 void ecvMultiViewWidget::setDecorationsVisibility(bool visible) {
     if (m_decorationsVisible == visible) return;
     m_decorationsVisible = visible;
@@ -1567,7 +1614,26 @@ void ecvMultiViewWidget::setDecorationsVisibility(bool visible) {
         QWidget* f = it.value();
         if (!f) continue;
         auto* titleBar = f->findChild<QWidget*>("ViewTitleBar");
-        if (titleBar) titleBar->setVisible(visible);
+        auto* contentFrame = f->findChild<QFrame*>("CentralWidgetFrame");
+        if (titleBar) {
+            titleBar->setVisible(visible);
+        }
+        if (contentFrame) {
+            if (visible) {
+                contentFrame->setFrameStyle(QFrame::Plain | QFrame::Box);
+                contentFrame->setLineWidth(2);
+            } else {
+                contentFrame->setFrameShape(QFrame::NoFrame);
+            }
+            if (auto* cl = contentFrame->layout()) {
+                const int m = visible ? 1 : 0;
+                cl->setContentsMargins(m, m, m, m);
+            }
+        }
+    }
+
+    if (visible) {
+        normalizeViewFrameLayout();
     }
 
     emit decorationsVisibilityChanged(visible);

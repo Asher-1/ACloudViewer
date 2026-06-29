@@ -642,6 +642,7 @@ MainWindow::~MainWindow() {
     m_closing = true;
 
     auto& vm = ecvViewManager::instance();
+    vm.setShuttingDown(true);
     vm.blockSignals(true);
     disconnect(&vm, nullptr, this, nullptr);
 
@@ -659,6 +660,30 @@ MainWindow::~MainWindow() {
     destroyInputDevices();
 
     cancelPreviousPickingOperation(false);  // just in case
+
+    if (m_tabbedMultiView) {
+        m_tabbedMultiView->exitFullScreenIfActive();
+    }
+
+#ifdef USE_VTK_BACKEND
+    if (auto* selCtrl = cvSelectionToolController::instance()) {
+        if (auto* hl = selCtrl->highlighter()) {
+            hl->prepareForShutdown();
+        }
+        selCtrl->setVisualizer(nullptr);
+    }
+    for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
+        if (compView) compView->shutdown();
+    }
+
+    // Shutdown all primary views BEFORE releaseDisplayTools() to avoid
+    // dangling m_displayTools pointers and use-after-free in signal handlers.
+    for (auto* v : vm.getAllViews()) {
+        if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
+            glView->shutdown();
+        }
+    }
+#endif
 
     // Reconstruction must before m_ccRoot
 #ifdef BUILD_RECONSTRUCTION
@@ -715,31 +740,11 @@ MainWindow::~MainWindow() {
         delete mdiDialog.dialog;
     }
 
-#ifdef USE_VTK_BACKEND
-    if (auto* selCtrl = cvSelectionToolController::instance()) {
-        if (auto* hl = selCtrl->highlighter()) {
-            hl->prepareForShutdown();
-        }
-        selCtrl->setVisualizer(nullptr);
-    }
-    for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
-        if (compView) compView->shutdown();
-    }
-
-    // Shutdown all primary views BEFORE releaseDisplayTools() to avoid
-    // dangling m_displayTools pointers and use-after-free in signal handlers.
-    for (auto* v : vm.getAllViews()) {
-        if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
-            glView->shutdown();
-        }
-    }
-#endif
 
     Visualization::VtkCameraLink::instance().clear();
 
-    if (m_tabbedMultiView) {
-        m_tabbedMultiView->reset();
-    }
+    // Do not reset()/destroyAllViews() during shutdown — it reparents GL
+    // widgets while views are still registered and causes segfault on exit.
 
     vm.setActiveSource(nullptr);
 
@@ -2980,6 +2985,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* titleBar = new QWidget(frame);
     titleBar->setObjectName("ViewTitleBar");
     titleBar->setContextMenuPolicy(Qt::CustomContextMenu);
+    titleBar->setSizePolicy(QSizePolicy::Preferred,
+                                QSizePolicy::Fixed);
     auto* titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->setSpacing(1);
@@ -6676,6 +6683,7 @@ void MainWindow::doActionMerge() {
 
 void MainWindow::refreshAll(bool only2D /* = false*/,
                             bool forceRedraw /* = true*/) {
+    if (m_closing) return;
     { ecvRedrawScope scope(only2D, forceRedraw); }
 }
 

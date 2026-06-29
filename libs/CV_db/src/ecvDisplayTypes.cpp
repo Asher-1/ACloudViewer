@@ -19,9 +19,9 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
         pixelDeviceRatio = win->devicePixelRatioF();
         // Match CloudCompare: scale font/metrics by per-widget DPR so layout
         // aligns with ImageVis / vtkRenderWindow physical pixel space.
-        static constexpr int kBaseFontPt = 12;
-        static constexpr int kBaseMargin = 16;
-        static constexpr int kBaseIconSize = 16;
+        static constexpr int kBaseFontPt = 11;
+        static constexpr int kBaseMargin = 10;
+        static constexpr int kBaseIconSize = 14;
         font.setPointSize(static_cast<int>(kBaseFontPt * pixelDeviceRatio));
         margin = static_cast<int>(kBaseMargin * pixelDeviceRatio);
         iconSize = static_cast<int>(kBaseIconSize * pixelDeviceRatio);
@@ -39,12 +39,21 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     psi_labelRect = metrics.boundingRect(psi_label);
     lsi_labelRect = metrics.boundingRect(lsi_label);
 
+    auto textLayoutWidth = [&metrics](const QString& text) {
+        return metrics.horizontalAdvance(text) + metrics.descent() / 2 + 4;
+    };
+    psi_textWidth = textLayoutWidth(psi_label);
+    lsi_textWidth = textLayoutWidth(lsi_label);
+    bbv_textWidth = textLayoutWidth(bbv_label);
+    fs_textWidth = textLayoutWidth(fs_label);
+
+    // CloudCompare row width: label + gap + minus + separator + plus
     psi_totalWidth =
-            psi_labelRect.width() + margin + iconSize + margin * 2 + iconSize;
+            psi_textWidth + margin + iconSize + margin * 2 + iconSize;
     lsi_totalWidth =
-            lsi_labelRect.width() + margin + iconSize + margin * 2 + iconSize;
-    bbv_totalWidth = bbv_labelRect.width() + margin + iconSize;
-    fs_totalWidth = fs_labelRect.width() + margin + iconSize;
+            lsi_textWidth + margin + iconSize + margin * 2 + iconSize;
+    bbv_totalWidth = bbv_textWidth + margin + iconSize;
+    fs_totalWidth = fs_textWidth + margin + iconSize;
 
     textHeight = std::max(psi_labelRect.height(), bbv_labelRect.height());
     textHeight = std::max(lsi_labelRect.height(), textHeight);
@@ -68,11 +77,12 @@ QRect ecvHotZone::rect(bool clickableItemsVisible,
     int rowCount = clickableItemsVisible ? 2 : 0;
     rowCount += bubbleViewModeEnabled ? 1 : 0;
     rowCount += fullScreenEnabled ? 1 : 0;
-    maxAreaCorner.setY(maxAreaCorner.y() +
-                       (iconSize + margin) * (rowCount - 1));
+    const int rowGap = iconSize + (margin * 3) / 4;
+    maxAreaCorner.setY(maxAreaCorner.y() + rowGap * (rowCount - 1));
 
-    QRect areaRect(minAreaCorner - QPoint(margin, margin) / 2,
-                   maxAreaCorner + QPoint(margin, margin) / 2);
+    const int pad = (margin * 3) / 4;
+    QRect areaRect(minAreaCorner - QPoint(pad, pad),
+                   maxAreaCorner + QPoint(pad, pad));
 
     return areaRect;
 }

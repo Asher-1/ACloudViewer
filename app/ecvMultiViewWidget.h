@@ -109,6 +109,7 @@ public slots:
 
     /// Show/hide title bars and decorations.
     void setDecorationsVisibility(bool visible);
+    void normalizeViewFrameLayout();
 
     /// Schedule a deferred VTK redraw for every view in this layout.
     /// Used after tab switches to repaint VTK framebuffers that were
