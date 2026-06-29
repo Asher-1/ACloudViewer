@@ -857,7 +857,13 @@ int main(int argc, char* argv[]) {
      */
 
     // release main window
-    MainWindow::DestroyInstance();
+    try {
+        MainWindow::DestroyInstance();
+    } catch (const std::exception& e) {
+        fprintf(stderr, "Shutdown error: %s\n", e.what());
+    } catch (...) {
+        fprintf(stderr, "Shutdown error: unknown exception\n");
+    }
 
     // release io filters
     FileIOFilter::UnregisterAll();

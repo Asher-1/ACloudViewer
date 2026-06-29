@@ -39,7 +39,7 @@ class CV_DB_LIB_API ecvRedrawScope final {
 public:
     explicit ecvRedrawScope(bool only2D = false, bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (!isMainThread()) {
+        if (!isMainThread() || ecvViewManager::instance().isShuttingDown()) {
             m_dismissed = true;
             return;
         }
@@ -52,7 +52,7 @@ public:
                             bool only2D = false,
                             bool forceRedraw = true)
         : m_only2D(only2D), m_forceRedraw(forceRedraw) {
-        if (!isMainThread()) {
+        if (!isMainThread() || ecvViewManager::instance().isShuttingDown()) {
             m_dismissed = true;
             return;
         }
@@ -65,7 +65,8 @@ public:
     }
 
     ~ecvRedrawScope() {
-        if (!m_dismissed && ecvViewManager::instance().hasAnyView()) {
+        if (!m_dismissed && !ecvViewManager::instance().isShuttingDown() &&
+            ecvViewManager::instance().hasAnyView()) {
             if (auto* view = ecvViewManager::instance().getEffectiveView()) {
                 view->redraw(m_only2D, m_forceRedraw);
             }

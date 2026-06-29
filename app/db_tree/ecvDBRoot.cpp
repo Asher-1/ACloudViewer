@@ -442,7 +442,9 @@ void ccDBRoot::unloadAll() {
     updatePropertiesView();
 
     ecvViewManager::instance().setRemoveAllFlag(true);
-    MainWindow::TheInstance()->refreshAll();
+    if (auto* mw = MainWindow::TheInstance(); mw && !mw->m_closing) {
+        mw->refreshAll();
+    }
 }
 
 ccHObject* ccDBRoot::getRootEntity() { return m_treeRoot; }
