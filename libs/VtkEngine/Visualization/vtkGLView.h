@@ -73,8 +73,8 @@ public:
     ~vtkGLView() override;
 
     /// Perform an orderly VTK teardown (interactor, GL context, ImageVis)
-    /// before the display-tools singleton or other shared resources are deleted.
-    /// Safe to call multiple times.
+    /// before the display-tools singleton or other shared resources are
+    /// deleted. Safe to call multiple times.
     void shutdown();
     bool isShutdown() const { return m_shutdownDone; }
 

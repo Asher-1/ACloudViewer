@@ -74,11 +74,10 @@ public:
 #include <vtkVolumetricPass.h>
 
 #include <Eigen/Core>
+#include <QSettings>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
-#include <QSettings>
 
 #include "ImageVis.h"
 #include "Tools/Common/ecvTools.h"
@@ -271,8 +270,9 @@ vtkGLView* vtkGLView::Create(QMainWindow* parent,
         vis->setUndoManager(ecvViewManager::instance().undoManager());
     }
 
-    // Initial updateScene to ensure scale bar and other widgets display correctly
-    // after view creation (especially in orthographic mode which is the default)
+    // Initial updateScene to ensure scale bar and other widgets display
+    // correctly after view creation (especially in orthographic mode which is
+    // the default)
     QTimer::singleShot(200, view, [view]() {
         if (view && view->m_vtkWidget) {
             view->updateScene();
@@ -328,7 +328,8 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
             savedObjectCenteredView = true;
             settings.endGroup();
         }
-        setPerspectiveState(savedPerspectiveView, savedObjectCenteredView, true);
+        setPerspectiveState(savedPerspectiveView, savedObjectCenteredView,
+                            true);
     } else {
         setPerspectiveState(m_ctx.viewportParams.perspectiveView,
                             m_ctx.viewportParams.objectCenteredView, false);
@@ -403,8 +404,8 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     // ComputeActualPixelSize() (which reads effectiveCtx().glViewport)
     // returns correct dimensions for this sub-window.
     const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
-    m_ctx.glViewport = QRect(0, 0,
-            ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
+    m_ctx.glViewport = QRect(
+            0, 0, ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
             ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
 
     // --- Build draw context from per-view state ---
@@ -953,10 +954,12 @@ void vtkGLView::setPerspectiveState(bool state,
     }
 
     if (ctxChanged && persistDefault) {
-        // Global default for newly created views (CloudCompare ccGLWindow group)
+        // Global default for newly created views (CloudCompare ccGLWindow
+        // group)
         QSettings settings;
         settings.beginGroup("ACVWindow");
-        settings.setValue("perspectiveView", m_ctx.viewportParams.perspectiveView);
+        settings.setValue("perspectiveView",
+                          m_ctx.viewportParams.perspectiveView);
         settings.setValue("objectCenteredView",
                           m_ctx.viewportParams.objectCenteredView);
         settings.endGroup();
@@ -1037,7 +1040,8 @@ void vtkGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
                         objectCenteredView);
     }
 
-    if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+    if (auto* vis =
+                dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
         if (vtkCamera* cam = vis->getVtkCamera()) {
             const bool isPerspective = (cam->GetParallelProjection() == 0);
             setPerspectiveState(isPerspective, objectCenteredView, false);
@@ -1085,11 +1089,10 @@ void vtkGLView::syncVtkCameraToContext() {
     m_ctx.viewportParams.perspectiveView = !vtkParallel;
     if (vtkParallel) {
         double ps = cam->GetParallelScale();
-        int h = m_vtkWidget
-                        ? ecvDisplayCoordinates::toPhysical(
-                                  m_vtkWidget->height(),
-                                  ecvDisplayCoordinates::dprOf(m_vtkWidget))
-                        : ren->GetSize()[1];
+        int h = m_vtkWidget ? ecvDisplayCoordinates::toPhysical(
+                                      m_vtkWidget->height(),
+                                      ecvDisplayCoordinates::dprOf(m_vtkWidget))
+                            : ren->GetSize()[1];
         if (h > 0) {
             m_ctx.viewportParams.pixelSize = static_cast<float>(2.0 * ps / h);
         }
@@ -1102,7 +1105,8 @@ void vtkGLView::syncVtkCameraToContext() {
     // causing mismatch with DPR-scaled mouse coords during picking.
     if (m_vtkWidget) {
         const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
-        m_ctx.glViewport = QRect(0, 0,
+        m_ctx.glViewport = QRect(
+                0, 0,
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
     } else {
@@ -1122,10 +1126,10 @@ void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
     params.viewport[0] = 0;
     params.viewport[1] = 0;
-    params.viewport[2] = ecvDisplayCoordinates::toPhysical(
-            m_vtkWidget->width(), dpr);
-    params.viewport[3] = ecvDisplayCoordinates::toPhysical(
-            m_vtkWidget->height(), dpr);
+    params.viewport[2] =
+            ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr);
+    params.viewport[3] =
+            ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr);
     params.perspective = m_ctx.viewportParams.perspectiveView;
     params.fov_deg = m_ctx.viewportParams.fov_deg;
     params.pixelSize = m_ctx.viewportParams.pixelSize;
@@ -1170,7 +1174,8 @@ QRect vtkGLView::getGLViewport() const {
     if (m_ctx.glViewport.isValid()) return m_ctx.glViewport;
     if (m_vtkWidget) {
         const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
-        return QRect(0, 0,
+        return QRect(
+                0, 0,
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
     }
@@ -1435,8 +1440,8 @@ void vtkGLView::updateCamera() {
 
 void vtkGLView::updateScene() {
     if (m_vtkWidget) {
-        // updateScene() must call QVTKWidgetCustom::updateScene() to update scale bar
-        // NOT QWidget::update() which only schedules a repaint
+        // updateScene() must call QVTKWidgetCustom::updateScene() to update
+        // scale bar NOT QWidget::update() which only schedules a repaint
         m_vtkWidget->updateScene();
     }
 }

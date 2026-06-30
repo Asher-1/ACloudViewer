@@ -610,7 +610,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         if (auto* glNew = dynamic_cast<vtkGLView*>(newView)) {
             if (auto* glSibling = dynamic_cast<vtkGLView*>(siblingView)) {
                 MainWindow::TheInstance()->copyPrimaryViewConfig(glNew,
-                                                               glSibling);
+                                                                 glSibling);
             } else {
                 MainWindow::TheInstance()->copyPrimaryViewConfig(glNew);
             }
@@ -808,7 +808,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         if (auto* glNew = dynamic_cast<vtkGLView*>(view)) {
             if (auto* glSibling = dynamic_cast<vtkGLView*>(siblingView)) {
                 MainWindow::TheInstance()->copyPrimaryViewConfig(glNew,
-                                                               glSibling);
+                                                                 glSibling);
             } else {
                 MainWindow::TheInstance()->copyPrimaryViewConfig(glNew);
             }
@@ -1586,8 +1586,7 @@ void ecvMultiViewWidget::normalizeViewFrameLayout() {
         auto* titleBar = f->findChild<QWidget*>("ViewTitleBar");
         auto* contentFrame = f->findChild<QFrame*>("CentralWidgetFrame");
         if (titleBar) {
-            titleBar->setSizePolicy(QSizePolicy::Preferred,
-                                    QSizePolicy::Fixed);
+            titleBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
             titleBar->setMinimumHeight(0);
             titleBar->setMaximumHeight(QWIDGETSIZE_MAX);
             titleBar->updateGeometry();

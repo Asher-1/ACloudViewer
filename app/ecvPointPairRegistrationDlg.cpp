@@ -286,8 +286,7 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
     ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
     if (!view) return;
 
-    const double retinaScale =
-            static_cast<double>(view->getDevicePixelRatio());
+    const double retinaScale = static_cast<double>(view->getDevicePixelRatio());
     for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
         ccHObject* child = m_alignedLabels.getChild(i);
         if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
@@ -299,7 +298,7 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
                             ecvDisplayCoordinates::toPhysical(y, retinaScale),
                             ecvDisplayCoordinates::toPhysical(dx, retinaScale),
                             ecvDisplayCoordinates::toPhysical(dy, retinaScale),
-                                       view->glWidth(), view->glHeight());
+                            view->glWidth(), view->glHeight());
                 }
 
                 CC_DRAW_CONTEXT context;
@@ -324,7 +323,7 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
                             ecvDisplayCoordinates::toPhysical(y, retinaScale),
                             ecvDisplayCoordinates::toPhysical(dx, retinaScale),
                             ecvDisplayCoordinates::toPhysical(dy, retinaScale),
-                                     view->glWidth(), view->glHeight());
+                            view->glWidth(), view->glHeight());
                 }
 
                 CC_DRAW_CONTEXT context;

@@ -8,7 +8,6 @@
 #include "ScaleBarWidget.h"
 
 #include <CVLog.h>
-
 #include <vtkActor2D.h>
 #include <vtkAlgorithmOutput.h>
 #include <vtkCamera.h>

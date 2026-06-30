@@ -20,8 +20,8 @@
 #include "ecvBBox.h"
 #include "ecvCameraSensor.h"
 #include "ecvClipBox.h"
-#include "ecvDisplayTools.h"
 #include "ecvDisplayCoordinates.h"
+#include "ecvDisplayTools.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvGenericMesh.h"
 #include "ecvGenericVisualizer.h"
@@ -119,8 +119,7 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT,
                                  const ecvViewContext& viewCtx) {
     CONTEXT.glW = viewCtx.glViewport.width();
     CONTEXT.glH = viewCtx.glViewport.height();
-    CONTEXT.devicePixelRatio =
-            static_cast<float>(GetDevicePixelRatio());
+    CONTEXT.devicePixelRatio = static_cast<float>(GetDevicePixelRatio());
     CONTEXT.drawingFlags = 0;
 
     const ecvGui::ParamStruct& guiParams = GetDisplayParameters();
@@ -582,8 +581,8 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
     }
 
     // Qt mouse coords are logical; hot-zone areas are physical (DPR-scaled).
-    QWidget* dprWidget = owner && owner->asWidget() ? owner->asWidget()
-                                                    : GetCurrentScreen();
+    QWidget* dprWidget =
+            owner && owner->asWidget() ? owner->asWidget() : GetCurrentScreen();
     const double dpr = ecvDisplayCoordinates::dprOf(dprWidget);
     x = ecvDisplayCoordinates::toPhysical(x, dpr);
     y = ecvDisplayCoordinates::toPhysical(y, dpr);
@@ -3818,7 +3817,8 @@ void ecvDisplayTools::RenderText(
     context.textDefaultCol = color;
     int vpH = viewportHeightFor(display);
     if (context.textParam.display3D) {
-        context.textParam.textScale = static_cast<double>(GetDevicePixelRatio());
+        context.textParam.textScale =
+                static_cast<double>(GetDevicePixelRatio());
         CCVector3d input3D(x, vpH - y, 0);
         CCVector3d output2D;
         ToWorldPoint(input3D, output2D);
@@ -3987,13 +3987,13 @@ void ecvDisplayTools::DrawClickableItems(
                                                     : GetCurrentScreen();
     if (!hotZone) {
         hotZone = new HotZone(hzWin);
-    } else if (hzWin && hzWin->devicePixelRatioF() != hotZone->pixelDeviceRatio) {
+    } else if (hzWin &&
+               hzWin->devicePixelRatioF() != hotZone->pixelDeviceRatio) {
         hotZone->updateInternalVariables(hzWin);
     }
 
     const int hzPad = hotZone->margin / 2;
-    hotZone->topCorner =
-            QPoint(xStart0, yStart) + QPoint(hzPad, hzPad);
+    hotZone->topCorner = QPoint(xStart0, yStart) + QPoint(hzPad, hzPad);
 
     bool fullScreenEnabled =
             (display && display->viewContext())
@@ -4038,8 +4038,7 @@ void ecvDisplayTools::DrawClickableItems(
         param.color.a = 210 / 255.0f;
         int x0 = areaRect.x();
         int y0 = fullH - areaRect.y() - areaRect.height();
-        param.rect = QRect(x0, y0, areaRect.width(),
-                           areaRect.height());
+        param.rect = QRect(x0, y0, areaRect.width(), areaRect.height());
         DrawWidgets(param, false);
     }
 
@@ -4054,14 +4053,13 @@ void ecvDisplayTools::DrawClickableItems(
             WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
             tp.context.display = display;
             tp.color = ecvColor::Rgbaf(hotZone->color[0] / 255.0f,
-                                        hotZone->color[1] / 255.0f,
-                                        hotZone->color[2] / 255.0f, 1.0f);
+                                       hotZone->color[1] / 255.0f,
+                                       hotZone->color[2] / 255.0f, 1.0f);
             tp.text = hotZone->fs_label;
             tp.fontSize = hotZone->font.pointSize();
-            tp.rect = QRect(xStart,
-                            fullH - (yStart + hotZone->yTextBottomLineShift),
-                            hotZone->fs_textWidth,
-                            hotZone->fs_labelRect.height());
+            tp.rect = QRect(
+                    xStart, fullH - (yStart + hotZone->yTextBottomLineShift),
+                    hotZone->fs_textWidth, hotZone->fs_labelRect.height());
             DrawWidgets(tp, false);
         }
 
@@ -4075,8 +4073,7 @@ void ecvDisplayTools::DrawClickableItems(
                                     CLICKED_ITEMS);
             param.context.display = display;
             param.color = ecvColor::FromRgba(ecvColor::ored);
-            param.rect = QRect(x0, y0, iconSize + offset,
-                               iconSize);
+            param.rect = QRect(x0, y0, iconSize + offset, iconSize);
             DrawWidgets(param, false);
 
             WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
@@ -4105,14 +4102,13 @@ void ecvDisplayTools::DrawClickableItems(
             WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
             tp.context.display = display;
             tp.color = ecvColor::Rgbaf(hotZone->color[0] / 255.0f,
-                                        hotZone->color[1] / 255.0f,
-                                        hotZone->color[2] / 255.0f, 1.0f);
+                                       hotZone->color[1] / 255.0f,
+                                       hotZone->color[2] / 255.0f, 1.0f);
             tp.text = hotZone->bbv_label;
             tp.fontSize = hotZone->font.pointSize();
-            tp.rect = QRect(xStart,
-                            fullH - (yStart + hotZone->yTextBottomLineShift),
-                            hotZone->bbv_textWidth,
-                            hotZone->bbv_labelRect.height());
+            tp.rect = QRect(
+                    xStart, fullH - (yStart + hotZone->yTextBottomLineShift),
+                    hotZone->bbv_textWidth, hotZone->bbv_labelRect.height());
             DrawWidgets(tp, false);
         }
 
@@ -4135,9 +4131,7 @@ void ecvDisplayTools::DrawClickableItems(
             exitTxt.color = ecvColor::bright;
             exitTxt.text = "X";
             exitTxt.rect =
-                    QRect(x0 + is / 4,
-                          fullH - (yStart + 3 * is / 4),
-                          is, is);
+                    QRect(x0 + is / 4, fullH - (yStart + 3 * is / 4), is, is);
             exitTxt.fontSize = hotZone->font.pointSize();
             DrawWidgets(exitTxt, false);
 
@@ -4170,14 +4164,15 @@ void ecvDisplayTools::DrawClickableItems(
                 WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
                 tp.context.display = display;
                 tp.color = ecvColor::Rgbaf(textColor.r / 255.0f,
-                                        textColor.g / 255.0f,
-                                        textColor.b / 255.0f, 1.0f);
+                                           textColor.g / 255.0f,
+                                           textColor.b / 255.0f, 1.0f);
                 tp.text = hotZone->psi_label;
                 tp.fontSize = hotZone->font.pointSize();
-                tp.rect = QRect(xStart,
-                                fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->psi_labelRect.width(),
-                                hotZone->psi_labelRect.height());
+                tp.rect =
+                        QRect(xStart,
+                              fullH - (yStart + hotZone->yTextBottomLineShift),
+                              hotZone->psi_labelRect.width(),
+                              hotZone->psi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
@@ -4189,8 +4184,7 @@ void ecvDisplayTools::DrawClickableItems(
             {
                 int x0 = xStart;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
-                widgetParam.rect = QRect(x0, y0,
-                                         iconSize * 3 / 4, barH);
+                widgetParam.rect = QRect(x0, y0, iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
                 clickableItems.emplace_back(
                         ClickableItem::DECREASE_POINT_SIZE,
@@ -4203,8 +4197,7 @@ void ecvDisplayTools::DrawClickableItems(
                 sepParam.radius = hzCtx.viewportParams.defaultPointSize / 2;
                 int x0 = xStart + hotZone->margin / 2;
                 int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0,
-                                      iconSize, iconSize);
+                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
                 DrawWidgets(sepParam, false);
                 xStart += hotZone->margin;
             }
@@ -4214,14 +4207,12 @@ void ecvDisplayTools::DrawClickableItems(
                 // Draw horizontal bar (same as minus)
                 int x0 = xStart + iconSize / 8;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
-                widgetParam.rect = QRect(x0, y0,
-                                         iconSize * 3 / 4, barH);
+                widgetParam.rect = QRect(x0, y0, iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
                 // Draw vertical bar - centered on horizontal bar
                 x0 = xStart + iconSize / 2 - barW / 2;
                 y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
-                widgetParam.rect = QRect(x0, y0,
-                                         barW, iconSize * 3 / 4);
+                widgetParam.rect = QRect(x0, y0, barW, iconSize * 3 / 4);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4242,14 +4233,15 @@ void ecvDisplayTools::DrawClickableItems(
                 WIDGETS_PARAMETER tp(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
                 tp.context.display = display;
                 tp.color = ecvColor::Rgbaf(textColor.r / 255.0f,
-                                        textColor.g / 255.0f,
-                                        textColor.b / 255.0f, 1.0f);
+                                           textColor.g / 255.0f,
+                                           textColor.b / 255.0f, 1.0f);
                 tp.text = hotZone->lsi_label;
                 tp.fontSize = hotZone->font.pointSize();
-                tp.rect = QRect(xStart,
-                                fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->lsi_labelRect.width(),
-                                hotZone->lsi_labelRect.height());
+                tp.rect =
+                        QRect(xStart,
+                              fullH - (yStart + hotZone->yTextBottomLineShift),
+                              hotZone->lsi_labelRect.width(),
+                              hotZone->lsi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
@@ -4261,8 +4253,7 @@ void ecvDisplayTools::DrawClickableItems(
             {
                 int x0 = xStart;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
-                widgetParam.rect = QRect(x0, y0,
-                                         iconSize * 3 / 4, barH);
+                widgetParam.rect = QRect(x0, y0, iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4276,8 +4267,7 @@ void ecvDisplayTools::DrawClickableItems(
                 sepParam.radius = hzCtx.viewportParams.defaultLineWidth / 2;
                 int x0 = xStart + hotZone->margin / 2;
                 int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0,
-                                      iconSize, iconSize);
+                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
                 DrawWidgets(sepParam, false);
                 xStart += hotZone->margin;
             }
@@ -4287,14 +4277,12 @@ void ecvDisplayTools::DrawClickableItems(
                 // Draw horizontal bar (same as minus)
                 int x0 = xStart + iconSize / 8;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
-                widgetParam.rect = QRect(x0, y0,
-                                         iconSize * 3 / 4, barH);
+                widgetParam.rect = QRect(x0, y0, iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
                 // Draw vertical bar - centered on horizontal bar
                 x0 = xStart + iconSize / 2 - barW / 2;
                 y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
-                widgetParam.rect = QRect(x0, y0,
-                                         barW, iconSize * 3 / 4);
+                widgetParam.rect = QRect(x0, y0, barW, iconSize * 3 / 4);
                 DrawWidgets(widgetParam, false);
 
                 clickableItems.emplace_back(
@@ -4401,7 +4389,7 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
             textFont.setBold(true);
             textFont.setWeight(QFont::Bold);
             textFont.setStyleStrategy(QFont::PreferAntialias);
-            
+
             // Store the font for rendering
             dt->m_font = textFont;
             dt->drawWidgets(param);
@@ -4673,8 +4661,8 @@ void ecvDisplayTools::setViewportParameters(
 }
 
 void ecvDisplayTools::setPerspectiveState(bool state,
-                                        bool objectCenteredView,
-                                        bool /*persistDefault*/) {
+                                          bool objectCenteredView,
+                                          bool /*persistDefault*/) {
     SetPerspectiveState(state, objectCenteredView);
 }
 
