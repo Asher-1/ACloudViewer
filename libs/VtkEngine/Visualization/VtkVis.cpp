@@ -174,7 +174,9 @@ namespace Visualization {
 
 static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     ren->SetBackground(0.0, 0.0, 0.0);
-    ren->GetActiveCamera()->SetParallelProjection(0);
+    // Note: Projection mode (parallel/perspective) is NOT set here.
+    // It should be controlled by vtkGLView::setPerspectiveState() which
+    // syncs from ecvViewportParameters (the single source of truth).
     ren->SetTwoSidedLighting(true);
 }
 

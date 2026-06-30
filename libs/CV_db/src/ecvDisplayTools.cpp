@@ -240,7 +240,7 @@ ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::TRANSFORM_ENTITIES() {
 
 /*** Persistent settings ***/
 
-static const char c_ps_groupName[] = "ECVWindow";
+static const char c_ps_groupName[] = "ACVWindow";
 static const char c_ps_perspectiveView[] = "perspectiveView";
 static const char c_ps_objectMode[] = "objectCenteredView";
 static const char c_ps_sunLight[] = "sunLightEnabled";
@@ -2066,6 +2066,14 @@ void ecvDisplayTools::SetBaseViewMat(ccGLMatrixd& mat) {
 void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
                                           bool state,
                                           bool objectCenteredView) {
+    // Active VTK view owns projection sync and QSettings persistence
+    if (auto* activeView = ecvViewManager::instance().getActiveView()) {
+        if (activeView->viewContext() == &ctx) {
+            activeView->setPerspectiveState(state, objectCenteredView);
+            return;
+        }
+    }
+
     bool perspectiveWasEnabled = ctx.viewportParams.perspectiveView;
     bool viewWasObjectCentered = ctx.viewportParams.objectCenteredView;
 
@@ -2119,16 +2127,6 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
     emit primaryDT() -> perspectiveStateChanged();
     emit primaryDT() -> cameraParamChanged();
 
-    {
-        QSettings settings;
-        settings.beginGroup(c_ps_groupName);
-        settings.setValue(c_ps_perspectiveView,
-                          ctx.viewportParams.perspectiveView);
-        settings.setValue(c_ps_objectMode,
-                          ctx.viewportParams.objectCenteredView);
-        settings.endGroup();
-    }
-
     ctx.bubbleViewModeEnabled = false;
 
     InvalidateViewport();
@@ -2137,6 +2135,10 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
 }
 
 void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView) {
+    if (auto* activeView = ecvViewManager::instance().getActiveView()) {
+        activeView->setPerspectiveState(state, objectCenteredView);
+        return;
+    }
     SetPerspectiveState(ecvViewManager::instance().resolveViewContext(), state,
                         objectCenteredView);
 }
@@ -4174,18 +4176,18 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.fontSize = hotZone->font.pointSize();
                 tp.rect = QRect(xStart,
                                 fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->psi_textWidth,
+                                hotZone->psi_labelRect.width(),
                                 hotZone->psi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->psi_textWidth + hotZone->margin;
+            xStart += hotZone->psi_labelRect.width() + hotZone->margin / 4;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 
             //"minus" icon
             {
-                int x0 = xStart + iconSize / 8;
+                int x0 = xStart;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
                 widgetParam.rect = QRect(x0, y0,
                                          iconSize * 3 / 4, barH);
@@ -4199,21 +4201,23 @@ void ecvDisplayTools::DrawClickableItems(
             // separator
             {
                 sepParam.radius = hzCtx.viewportParams.defaultPointSize / 2;
-                int x0 = xStart + hotZone->margin;
+                int x0 = xStart + hotZone->margin / 2;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0,
                                       iconSize, iconSize);
                 DrawWidgets(sepParam, false);
-                xStart += hotZone->margin * 2;
+                xStart += hotZone->margin;
             }
 
             //"plus" icon
             {
+                // Draw horizontal bar (same as minus)
                 int x0 = xStart + iconSize / 8;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
                 widgetParam.rect = QRect(x0, y0,
                                          iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
+                // Draw vertical bar - centered on horizontal bar
                 x0 = xStart + iconSize / 2 - barW / 2;
                 y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
                 widgetParam.rect = QRect(x0, y0,
@@ -4244,18 +4248,18 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.fontSize = hotZone->font.pointSize();
                 tp.rect = QRect(xStart,
                                 fullH - (yStart + hotZone->yTextBottomLineShift),
-                                hotZone->lsi_textWidth,
+                                hotZone->lsi_labelRect.width(),
                                 hotZone->lsi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->lsi_textWidth + hotZone->margin;
+            xStart += hotZone->lsi_labelRect.width() + hotZone->margin / 4;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 
             //"minus" icon
             {
-                int x0 = xStart + iconSize / 8;
+                int x0 = xStart;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
                 widgetParam.rect = QRect(x0, y0,
                                          iconSize * 3 / 4, barH);
@@ -4270,21 +4274,23 @@ void ecvDisplayTools::DrawClickableItems(
             // separator
             {
                 sepParam.radius = hzCtx.viewportParams.defaultLineWidth / 2;
-                int x0 = xStart + hotZone->margin;
+                int x0 = xStart + hotZone->margin / 2;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0,
                                       iconSize, iconSize);
                 DrawWidgets(sepParam, false);
-                xStart += hotZone->margin * 2;
+                xStart += hotZone->margin;
             }
 
             //"plus" icon
             {
+                // Draw horizontal bar (same as minus)
                 int x0 = xStart + iconSize / 8;
                 int y0 = fullH - (yStart + iconSize / 2 + barH / 2);
                 widgetParam.rect = QRect(x0, y0,
                                          iconSize * 3 / 4, barH);
                 DrawWidgets(widgetParam, false);
+                // Draw vertical bar - centered on horizontal bar
                 x0 = xStart + iconSize / 2 - barW / 2;
                 y0 = fullH - (yStart + iconSize / 8 + iconSize * 3 / 4);
                 widgetParam.rect = QRect(x0, y0,
@@ -4384,9 +4390,20 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
 
         case WIDGETS_TYPE::WIDGET_T2D: {
             QFont textFont = dt->m_font;
-            const_cast<WIDGETS_PARAMETER*>(&param)->fontSize =
-                    textFont.pointSize();
-
+            // If fontSize is specified, use it; otherwise use default
+            if (param.fontSize > 0) {
+                textFont.setPointSize(param.fontSize);
+            } else {
+                const_cast<WIDGETS_PARAMETER*>(&param)->fontSize =
+                        textFont.pointSize();
+            }
+            // Ensure bold font for bubble-view text
+            textFont.setBold(true);
+            textFont.setWeight(QFont::Bold);
+            textFont.setStyleStrategy(QFont::PreferAntialias);
+            
+            // Store the font for rendering
+            dt->m_font = textFont;
             dt->drawWidgets(param);
         } break;
         case WIDGETS_TYPE::WIDGET_IMAGE:
@@ -4655,7 +4672,9 @@ void ecvDisplayTools::setViewportParameters(
     SetViewportParameters(params);
 }
 
-void ecvDisplayTools::setPerspectiveState(bool state, bool objectCenteredView) {
+void ecvDisplayTools::setPerspectiveState(bool state,
+                                        bool objectCenteredView,
+                                        bool /*persistDefault*/) {
     SetPerspectiveState(state, objectCenteredView);
 }
 

@@ -106,6 +106,9 @@
 
 #include "ScaleBarWidget.h"
 
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
+
 // macroes
 #ifndef VTK_CREATE
 #define VTK_CREATE(TYPE, NAME) \
@@ -442,6 +445,12 @@ vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
     return lut;
 }
 
+void QVTKWidgetCustom::updateScaleBarIfNeeded() {
+    if (m_scaleBar && m_render) {
+        m_scaleBar->update(m_render, m_interactor);
+    }
+}
+
 void QVTKWidgetCustom::initVtk(
         vtkSmartPointer<vtkRenderWindowInteractor> interactor, bool useVBO) {
     this->m_useVBO = useVBO;
@@ -451,8 +460,42 @@ void QVTKWidgetCustom::initVtk(
             this->GetRenderWindow()->GetRenderers()->GetFirstRenderer();
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
+
+    // Keep scale bar in sync during VTK-driven zoom/pan/rotate (interactor
+    // style calls Render() directly, bypassing QVTKWidgetCustom mouse handlers).
+    // InteractionEvent avoids updating on every StartEvent/render frame.
+    if (m_interactor && !m_scaleBarUpdateObserver) {
+        m_scaleBarUpdateObserver = vtkSmartPointer<vtkCallbackCommand>::New();
+        m_scaleBarUpdateObserver->SetClientData(this);
+        m_scaleBarUpdateObserver->SetCallback(
+                [](vtkObject*, unsigned long, void* cd, void*) {
+                    auto* self = static_cast<QVTKWidgetCustom*>(cd);
+                    if (self) self->updateScaleBarIfNeeded();
+                });
+        m_interactor->AddObserver(vtkCommand::InteractionEvent,
+                                  m_scaleBarUpdateObserver);
+    }
+
     if (!m_scaleBar) {
         m_scaleBar = new ScaleBarWidget(m_render);
+        // CRITICAL: Enable visibility BEFORE notifying layout ready
+        // ScaleBarWidget defaults to visible=false in constructor
+        m_scaleBar->setVisible(true);
+        
+        // Notify layout ready after widget is created and renderer is available
+        // so the scale bar can be displayed immediately
+        QTimer::singleShot(100, this, [this]() {
+            if (m_scaleBar && m_render && m_interactor) {
+                if (!m_scaleBar->isLayoutReady()) {
+                    m_scaleBar->notifyLayoutReady();
+                }
+                m_scaleBar->update(m_render, m_interactor);
+                // Force a render to ensure the scale bar appears
+                if (this->GetRenderWindow()) {
+                    this->GetRenderWindow()->Render();
+                }
+            }
+        });
     }
 }
 
@@ -478,7 +521,7 @@ bool IsCalledFromMainThread() {
 }
 
 void QVTKWidgetCustom::updateScene() {
-    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
+    updateScaleBarIfNeeded();
     if (IsCalledFromMainThread() && this->GetRenderWindow()) {
         this->GetRenderWindow()->Render();
     } else {  // only core threading enabled rendering
@@ -1220,9 +1263,10 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
             m_wheelZoomUpdateTimer->start();
         }
 
+        updateScaleBarIfNeeded();
         if (m_ownerView) {
             if (auto* w = m_ownerView->asWidget()) w->update();
-            m_ownerView->updateCamera();
+            m_ownerView->updateScene();
         } else {
             displayTarget()->updateScene();
         }
@@ -1247,6 +1291,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     if (vtkToolStyle && !m_labelClickedOnPress) {
         QVTKOpenGLNativeWidget::mouseMoveEvent(event);
         if (event->buttons() != Qt::NoButton) {
+            updateScaleBarIfNeeded();
             curMouseMoved() = true;
             curLastMousePos() = event->pos();
             event->accept();
@@ -1272,6 +1317,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                                  curRotationAxisLocked(), event,
                                                  QEvent::MouseMove)) {
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+                    updateScaleBarIfNeeded();
                     ecvDisplayTools::UpdateDisplayParameters();
                 }
             }
@@ -1664,7 +1710,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     if (!m_labelClickedOnPress) {
         if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit cameraParamChanged();
-        if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
+        updateScaleBarIfNeeded();
     }
     event->accept();
 }

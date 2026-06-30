@@ -584,8 +584,6 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
     auto createRenderViewForCell = [this, location]() {
         if (!m_viewFactory || !m_layout) return;
-        auto* newView = m_viewFactory();
-        if (!newView) return;
 
         ecvGenericGLDisplay* siblingView = nullptr;
         int parentIdx = ecvViewLayoutProxy::parent(location);
@@ -603,6 +601,18 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                     siblingView = v;
                     break;
                 }
+            }
+        }
+
+        auto* newView = m_viewFactory();
+        if (!newView) return;
+
+        if (auto* glNew = dynamic_cast<vtkGLView*>(newView)) {
+            if (auto* glSibling = dynamic_cast<vtkGLView*>(siblingView)) {
+                MainWindow::TheInstance()->copyPrimaryViewConfig(glNew,
+                                                               glSibling);
+            } else {
+                MainWindow::TheInstance()->copyPrimaryViewConfig(glNew);
             }
         }
 
@@ -772,10 +782,6 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
     auto createEDLViewForCell = [this, location]() {
         if (!m_viewFactory || !m_layout) return;
-        auto* view = m_viewFactory();
-        if (!view) return;
-
-        view->setViewXmlLabel(QStringLiteral("Eye Dome Lighting"));
 
         ecvGenericGLDisplay* siblingView = nullptr;
         int parentIdx = ecvViewLayoutProxy::parent(location);
@@ -795,6 +801,20 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 }
             }
         }
+
+        auto* view = m_viewFactory();
+        if (!view) return;
+
+        if (auto* glNew = dynamic_cast<vtkGLView*>(view)) {
+            if (auto* glSibling = dynamic_cast<vtkGLView*>(siblingView)) {
+                MainWindow::TheInstance()->copyPrimaryViewConfig(glNew,
+                                                               glSibling);
+            } else {
+                MainWindow::TheInstance()->copyPrimaryViewConfig(glNew);
+            }
+        }
+
+        view->setViewXmlLabel(QStringLiteral("Eye Dome Lighting"));
 
         m_layout->assignView(location, view);
         if (siblingView) {

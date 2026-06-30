@@ -524,6 +524,8 @@ MainWindow::MainWindow()
         m_ui->ViewToolBar->insertWidget(m_ui->actionZoomToBox,
                                         m_viewModePopupButton);
         m_viewModePopupButton->setEnabled(false);
+        // Sync icon with active view projection mode (view exists after initial())
+        updateViewModePopUpMenu();
     }
 
     {  // custom viewports configuration
@@ -532,11 +534,6 @@ MainWindow::MainWindow()
         customViewpointsToolbar->setObjectName("customViewpointsToolbar");
         customViewpointsToolbar->layout()->setSpacing(0);
         this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-    }
-
-    {  // orthogonal projection mode (default)
-        m_ui->actionOrthogonalProjection->trigger();
-        ecvConsole::Print("Perspective off!");
     }
 
     {  // restore options
@@ -817,7 +814,7 @@ void MainWindow::initial() {
 
     // Phase M3: create the first vtkGLView as the primary view.
     // VtkDisplayTools is a pure engine service, not a view.
-    m_firstView = vtkGLView::Create(this);
+    m_firstView = vtkGLView::Create(this, stereoMode, true);
     assert(m_firstView);
     m_firstView->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     ecvViewManager::instance().setActiveView(m_firstView);
@@ -850,6 +847,8 @@ void MainWindow::initial() {
                 update3DViewsMenu();
             });
 
+    connectViewModeIconSync(m_firstView);
+
     viewWidget->installEventFilter(this);
 
     // picking hub
@@ -873,6 +872,7 @@ void MainWindow::initial() {
 
                     syncPivotButtonStates(newActive);
                     updateMenus();
+                    updateViewModePopUpMenu();
                 });
     }
 
@@ -907,10 +907,10 @@ void MainWindow::initParaViewLayoutSystem() {
     m_tabbedMultiView = new ecvTabbedMultiViewWidget(this);
 
     auto viewFactory = [this]() -> vtkGLView* {
-        auto* view = vtkGLView::Create(this);
+        auto* view = vtkGLView::Create(this, false, false);
         if (!view) return nullptr;
         view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
-        copyPrimaryViewConfig(view);
+        connectViewModeIconSync(view);
         Visualization::VtkCameraLink::instance().addView(
                 view->getVisualizer3D());
         view->asWidget()->installEventFilter(this);
@@ -2469,6 +2469,7 @@ void MainWindow::setOrthoView() {
     auto* view = getActiveGLView();
     if (view) {
         view->setPerspectiveState(false, true);
+        view->redraw(false, true);
 
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
@@ -2480,6 +2481,7 @@ void MainWindow::setPerspectiveView() {
     auto* view = getActiveGLView();
     if (view) {
         view->setPerspectiveState(true, true);
+        view->redraw(false, true);
 
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
@@ -2733,7 +2735,8 @@ void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
     }
 }
 
-void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
+void MainWindow::copyPrimaryViewConfig(vtkGLView* view,
+                                       vtkGLView* sourceView) {
     if (!view) return;
 
     auto* dt = ecvViewManager::instance().displayTools();
@@ -2745,14 +2748,22 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
-    auto* sourceView = ecvViewManager::instance().getActiveView();
+    vtkGLView* srcView = sourceView;
+    if (!srcView) {
+        srcView = dynamic_cast<vtkGLView*>(
+                ecvViewManager::instance().getActiveView());
+    }
     const ecvViewContext& srcCtx =
-            (sourceView && sourceView->viewContext())
-                    ? *sourceView->viewContext()
+            (srcView && srcView->viewContext())
+                    ? *srcView->viewContext()
                     : ecvViewManager::instance().resolveViewContext();
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
+
+    // Per-view projection: sync VTK from source window (not global QSettings)
+    view->setPerspectiveState(srcCtx.viewportParams.perspectiveView,
+                              srcCtx.viewportParams.objectCenteredView, false);
 
     CC_DRAW_CONTEXT ctx;
     dt->getContext(ctx);
@@ -2788,13 +2799,31 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
     });
 }
 
+void MainWindow::connectViewModeIconSync(vtkGLView* view) {
+    if (!view) return;
+    connect(view, &vtkGLView::perspectiveStateChanged, this,
+            [this, view]() {
+                if (getActiveGLView() == view) {
+                    updateViewModePopUpMenu();
+                }
+            });
+}
+
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     auto* engineDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
     if (!engineDT) return;
 
     auto* glView = dynamic_cast<vtkGLView*>(display);
-    if (glView && glView->getVisualizer3D() && glView->getVtkWidget()) {
+    // Additional safety: verify the view is still registered before rebinding
+    // to prevent crashes when switching tabs during view destruction
+    bool viewStillValid = false;
+    if (glView) {
+        const auto& allViews = ecvViewManager::instance().getAllViews();
+        viewStillValid = std::find(allViews.begin(), allViews.end(), glView) != allViews.end();
+    }
+    
+    if (glView && viewStillValid && glView->getVisualizer3D() && glView->getVtkWidget()) {
         // Phase M3: all views are vtkGLView — bind the engine to the
         // active view's VTK pipeline so static APIs route correctly.
         engineDT->switchActiveView(glView->getVisualizer3DSP(),
@@ -3952,11 +3981,12 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     // with a 50/50 ratio, creating a nested QSplitter.
     if (!frameToSplit) return;
 
-    auto* view = vtkGLView::Create(this);
+    auto* view = vtkGLView::Create(this, false, false);
     if (!view) return;
 
     view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     copyPrimaryViewConfig(view);
+    connectViewModeIconSync(view);
 
     QWidget* newFrame = createViewFrame(view->asWidget(), view->getTitle());
 
@@ -6181,10 +6211,6 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
     } else {
         // if we are currently in full-screen mode
         if (m_exclusiveFullscreen) {
-            if (m_currentFullWidget) {
-                m_currentFullWidget->setWindowFlags(Qt::SubWindow);
-            }
-
             m_exclusiveFullscreen = false;
             onExclusiveFullScreenToggled(state);
             ecvViewManager::instance().displayMessageOnActiveView(
@@ -6197,6 +6223,9 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
                     m_currentFullWidget->restoreGeometry(m_formerGeometry);
                     m_formerGeometry.clear();
                 }
+                m_currentFullWidget->setWindowFlags(Qt::SubWindow);
+                // Force widget to show again after changing flags
+                m_currentFullWidget->show();
             } else {
                 showNormal();
             }
@@ -6206,9 +6235,14 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
     QCoreApplication::processEvents();
     if (m_currentFullWidget) {
         m_currentFullWidget->setFocus();
+        // Force a full redraw to ensure proper viewport update
+        m_currentFullWidget->update();
     }
 
-    { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
+    // Full redraw including 3D content to fix white space issue
+    if (auto* activeView = ecvViewManager::instance().getActiveView()) {
+        activeView->redraw(true, false);
+    }
 }
 
 void MainWindow::toggle3DView(bool state) {
@@ -7764,6 +7798,20 @@ void MainWindow::showEvent(QShowEvent* event) {
     }
 
     m_FirstShow = false;
+
+    if (m_tabbedMultiView) {
+        QSettings settings;
+        const QByteArray layoutJson =
+                settings
+                        .value(QStringLiteral("MultiView/LayoutState"))
+                        .toByteArray();
+        if (!layoutJson.isEmpty()) {
+            const QJsonDocument doc = QJsonDocument::fromJson(layoutJson);
+            if (doc.isObject()) {
+                m_tabbedMultiView->restoreLayoutState(doc.object());
+            }
+        }
+    }
 
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);
