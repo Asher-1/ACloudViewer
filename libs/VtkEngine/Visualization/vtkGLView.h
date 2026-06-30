@@ -67,7 +67,9 @@ class QVTK_ENGINE_LIB_API vtkGLView : public QObject,
     Q_OBJECT
 
 public:
-    static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
+    static vtkGLView* Create(QMainWindow* parent,
+                             bool stereoMode = false,
+                             bool loadDefaultPerspective = false);
     ~vtkGLView() override;
 
     /// Perform an orderly VTK teardown (interactor, GL context, ImageVis)
@@ -91,7 +93,9 @@ public:
     void toBeRefreshed() override;
     const ecvViewportParameters& getViewportParameters() const override;
     void setViewportParameters(const ecvViewportParameters& params) override;
-    void setPerspectiveState(bool state, bool objectCenteredView) override;
+    void setPerspectiveState(bool state,
+                             bool objectCenteredView,
+                             bool persistDefault = true) override;
     bool perspectiveView() const override;
     bool objectCenteredView() const override;
     void setSceneDB(ccHObject* root) override;
@@ -419,7 +423,9 @@ protected:
     explicit vtkGLView(QMainWindow* parent);
 
 private:
-    void initVtkPipeline(QMainWindow* parent, bool stereoMode);
+    void initVtkPipeline(QMainWindow* parent,
+                         bool stereoMode,
+                         bool loadDefaultPerspective = false);
 
     // -- Identification --
     int m_uniqueID;

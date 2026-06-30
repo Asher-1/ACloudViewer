@@ -253,15 +253,17 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
     mvw->deleteLater();
     if (layout) layout->deleteLater();
 
-    m_closingTab = false;
-
-    // Select the first real tab if available
+    // Select the first real tab if available BEFORE clearing the guard
+    // to prevent premature rebindToolsToActiveView on destroyed views
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         if (m_tabWidget->widget(i) != m_newTabWidget) {
             m_tabWidget->setCurrentIndex(i);
             break;
         }
     }
+    
+    // Clear the guard AFTER tab switch is complete
+    m_closingTab = false;
 
     int realCount = tabCount();
     if (!m_readOnly && realCount == 0) {

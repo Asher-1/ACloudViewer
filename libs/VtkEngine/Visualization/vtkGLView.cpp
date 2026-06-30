@@ -78,6 +78,8 @@ public:
 #include <cmath>
 #include <cstring>
 
+#include <QSettings>
+
 #include "ImageVis.h"
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
@@ -253,9 +255,11 @@ vtkGLView::~vtkGLView() {
     }
 }
 
-vtkGLView* vtkGLView::Create(QMainWindow* parent, bool stereoMode) {
+vtkGLView* vtkGLView::Create(QMainWindow* parent,
+                             bool stereoMode,
+                             bool loadDefaultPerspective) {
     auto* view = new vtkGLView(parent);
-    view->initVtkPipeline(parent, stereoMode);
+    view->initVtkPipeline(parent, stereoMode, loadDefaultPerspective);
 
     view->m_winDBRoot =
             new ccHObject(QString("DB.GLView_%1").arg(view->m_uniqueID));
@@ -267,10 +271,20 @@ vtkGLView* vtkGLView::Create(QMainWindow* parent, bool stereoMode) {
         vis->setUndoManager(ecvViewManager::instance().undoManager());
     }
 
+    // Initial updateScene to ensure scale bar and other widgets display correctly
+    // after view creation (especially in orthographic mode which is the default)
+    QTimer::singleShot(200, view, [view]() {
+        if (view && view->m_vtkWidget) {
+            view->updateScene();
+        }
+    });
+
     return view;
 }
 
-void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
+void vtkGLView::initVtkPipeline(QMainWindow* parent,
+                                bool stereoMode,
+                                bool loadDefaultPerspective) {
     m_displayTools = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
     m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
@@ -298,6 +312,27 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget->setCustomInteractorStyle(
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
+
+    // CloudCompare model: each ccGLWindow owns its projection mode; QSettings
+    // only seeds the first/primary view. Additional views inherit from their
+    // source view via copyPrimaryViewConfig(), not the global default.
+    if (loadDefaultPerspective) {
+        bool savedPerspectiveView = false;
+        bool savedObjectCenteredView = true;
+        {
+            QSettings settings;
+            settings.beginGroup("ACVWindow");
+            savedPerspectiveView =
+                    settings.value("perspectiveView", false).toBool();
+            // Match CC: object-centered is always forced on load
+            savedObjectCenteredView = true;
+            settings.endGroup();
+        }
+        setPerspectiveState(savedPerspectiveView, savedObjectCenteredView, true);
+    } else {
+        setPerspectiveState(m_ctx.viewportParams.perspectiveView,
+                            m_ctx.viewportParams.objectCenteredView, false);
+    }
 
     if (ecvDisplayTools::USE_2D) {
         m_visualizer2D = std::make_shared<Visualization::ImageVis>(
@@ -852,15 +887,31 @@ void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
     updateScene();
 }
 
-void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
-    const bool changed =
+void vtkGLView::setPerspectiveState(bool state,
+                                    bool objectCenteredView,
+                                    bool persistDefault) {
+    const bool ctxChanged =
             (m_ctx.viewportParams.perspectiveView != state) ||
             (m_ctx.viewportParams.objectCenteredView != objectCenteredView);
 
     m_ctx.viewportParams.perspectiveView = state;
     m_ctx.viewportParams.objectCenteredView = objectCenteredView;
 
-    if (!changed) return;
+    const int wantParallel = state ? 0 : 1;
+    bool vtkOutOfSync = false;
+    if (m_visualizer3D) {
+        auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get());
+        if (vis) {
+            if (vtkCamera* cam = vis->getVtkCamera()) {
+                vtkOutOfSync = (cam->GetParallelProjection() != wantParallel);
+            }
+        }
+    }
+
+    // m_ctx may already match (ecvViewportParameters defaults to orthographic)
+    // while the VTK camera still uses its factory default (perspective).
+    // Must sync VTK even when ctx appears unchanged.
+    if (!ctxChanged && !vtkOutOfSync) return;
 
     // Apply projection change to VTK camera without triggering full scene
     // rebuilds that can cause recursive render loops or freezes.
@@ -870,7 +921,6 @@ void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
             vtkCamera* cam = vis->getVtkCamera();
             if (cam) {
                 const int wasParallel = cam->GetParallelProjection();
-                const int wantParallel = state ? 0 : 1;
                 if (wasParallel != wantParallel) {
                     if (wantParallel && !wasParallel) {
                         // Perspective → Orthographic: preserve apparent size
@@ -891,6 +941,25 @@ void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
                 vis->UpdateScreen();
             }
         }
+    }
+
+    if (m_vtkWidget) {
+        m_vtkWidget->setScaleBarVisible(!m_ctx.viewportParams.perspectiveView);
+    }
+
+    updateScene();
+    if (m_vtkWidget && m_vtkWidget->GetRenderWindow()) {
+        m_vtkWidget->GetRenderWindow()->Render();
+    }
+
+    if (ctxChanged && persistDefault) {
+        // Global default for newly created views (CloudCompare ccGLWindow group)
+        QSettings settings;
+        settings.beginGroup("ACVWindow");
+        settings.setValue("perspectiveView", m_ctx.viewportParams.perspectiveView);
+        settings.setValue("objectCenteredView",
+                          m_ctx.viewportParams.objectCenteredView);
+        settings.endGroup();
     }
 
     emit perspectiveStateChanged();
@@ -951,12 +1020,29 @@ Visualization::VtkVis* vtkGLView::getVisualizer3D() const {
 
 QJsonObject vtkGLView::saveLayoutCameraState() const {
     if (!m_visualizer3D) return {};
-    return m_visualizer3D->saveCameraToJson(0);
+    QJsonObject obj = m_visualizer3D->saveCameraToJson(0);
+    obj[QStringLiteral("objectCenteredView")] =
+            m_ctx.viewportParams.objectCenteredView;
+    return obj;
 }
 
 void vtkGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
     if (!m_visualizer3D || cameraJson.isEmpty()) return;
     m_visualizer3D->loadCameraFromJson(cameraJson, 0);
+
+    bool objectCenteredView = m_ctx.viewportParams.objectCenteredView;
+    if (cameraJson.contains(QStringLiteral("objectCenteredView"))) {
+        objectCenteredView =
+                cameraJson[QStringLiteral("objectCenteredView")].toBool(
+                        objectCenteredView);
+    }
+
+    if (auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+        if (vtkCamera* cam = vis->getVtkCamera()) {
+            const bool isPerspective = (cam->GetParallelProjection() == 0);
+            setPerspectiveState(isPerspective, objectCenteredView, false);
+        }
+    }
 }
 
 // ================================================================
@@ -1348,7 +1434,11 @@ void vtkGLView::updateCamera() {
 }
 
 void vtkGLView::updateScene() {
-    if (m_vtkWidget) m_vtkWidget->update();
+    if (m_vtkWidget) {
+        // updateScene() must call QVTKWidgetCustom::updateScene() to update scale bar
+        // NOT QWidget::update() which only schedules a repaint
+        m_vtkWidget->updateScene();
+    }
 }
 
 // -- Phase M1.3: Per-view picking and rendering --

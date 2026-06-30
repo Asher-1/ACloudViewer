@@ -7,6 +7,8 @@
 
 #include "ScaleBarWidget.h"
 
+#include <CVLog.h>
+
 #include <vtkActor2D.h>
 #include <vtkAlgorithmOutput.h>
 #include <vtkCamera.h>
@@ -82,11 +84,13 @@ ScaleBarWidget::~ScaleBarWidget() {}
 void ScaleBarWidget::setVisible(bool v) {
     visible = v;
     if (!v) {
+        // Hide all actors when visibility is disabled
         lineActor->SetVisibility(false);
         textActor->SetVisibility(false);
         leftTickActor->SetVisibility(false);
         rightTickActor->SetVisibility(false);
     }
+    // Note: When v=true, actors are shown by update() method when layoutReady
 }
 
 double ScaleBarWidget::getDPIScale() {

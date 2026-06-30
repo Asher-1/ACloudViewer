@@ -181,12 +181,10 @@ public:
 
     /// @param visible Whether to show the scale bar
     void setScaleBarVisible(bool visible) {
-        if (m_scaleBar) {
-            if (visible && !isVisible()) return;
-            m_scaleBar->setVisible(visible);
-            if (visible && m_scaleBar->isLayoutReady()) {
-                m_scaleBar->update(m_render, m_interactor);
-            }
+        if (!m_scaleBar) return;
+        m_scaleBar->setVisible(visible);
+        if (visible && isVisible() && m_scaleBar->isLayoutReady()) {
+            m_scaleBar->update(m_render, m_interactor);
         }
     }
 
@@ -381,6 +379,9 @@ private:
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
     ScaleBarWidget* m_scaleBar = nullptr;
+    vtkSmartPointer<vtkCallbackCommand> m_scaleBarUpdateObserver;
+
+    void updateScaleBarIfNeeded();
 
     VtkWidgetPrivate* d_ptr;
 
