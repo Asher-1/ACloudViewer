@@ -10,7 +10,6 @@
 #include <QPoint>
 #include <QRect>
 #include <QWidget>
-
 #include <algorithm>
 #include <cmath>
 
@@ -76,14 +75,12 @@ public:
 
     static QRect toPhysical(const QRect& lp, double dpr) {
         return QRect(toPhysical(lp.x(), dpr), toPhysical(lp.y(), dpr),
-                     toPhysical(lp.width(), dpr),
-                     toPhysical(lp.height(), dpr));
+                     toPhysical(lp.width(), dpr), toPhysical(lp.height(), dpr));
     }
 
     static QRect toLogical(const QRect& pp, double dpr) {
         return QRect(toLogical(pp.x(), dpr), toLogical(pp.y(), dpr),
-                     toLogical(pp.width(), dpr),
-                     toLogical(pp.height(), dpr));
+                     toLogical(pp.width(), dpr), toLogical(pp.height(), dpr));
     }
 
     // ---- Y-flip helpers ----
@@ -105,16 +102,18 @@ public:
     /// Qt logical mouse position → VTK physical display coordinates.
     /// Combines toPhysical + Y-flip in a single call.
     /// This is the most common conversion in picking/input handlers.
-    static QPoint qtToVtkPhysical(const QPoint& qtPos, int widgetHeight,
+    static QPoint qtToVtkPhysical(const QPoint& qtPos,
+                                  int widgetHeight,
                                   double dpr) {
         int px = toPhysical(qtPos.x(), dpr);
-        int py = toPhysical(widgetHeight, dpr) - 1 -
-                 toPhysical(qtPos.y(), dpr);
+        int py = toPhysical(widgetHeight, dpr) - 1 - toPhysical(qtPos.y(), dpr);
         return QPoint(px, py);
     }
 
     /// VTK physical display coordinates → Qt logical mouse position.
-    static QPoint vtkPhysicalToQt(int vtkX, int vtkY, int physicalHeight,
+    static QPoint vtkPhysicalToQt(int vtkX,
+                                  int vtkY,
+                                  int physicalHeight,
                                   double dpr) {
         int qtX = toLogical(vtkX, dpr);
         int qtY = toLogical(physicalHeight - 1 - vtkY, dpr);

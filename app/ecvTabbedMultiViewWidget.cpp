@@ -261,7 +261,7 @@ void ecvTabbedMultiViewWidget::closeTab(int index) {
             break;
         }
     }
-    
+
     // Clear the guard AFTER tab switch is complete
     m_closingTab = false;
 
@@ -528,8 +528,6 @@ void ecvTabbedMultiViewWidget::lockViewSize(const QSize& size) {
     emit viewSizeLocked(!size.isEmpty());
 }
 
-
-
 void ecvTabbedMultiViewWidget::exitFullScreenIfActive() {
     if (!m_fullScreenWindow) return;
 
@@ -570,7 +568,8 @@ void ecvTabbedMultiViewWidget::restoreTabWidgetToLayout() {
 
 void ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen() {
     if (!m_tabWidget || m_fullScreenWindow ||
-        ecvViewManager::instance().isShuttingDown()) return;
+        ecvViewManager::instance().isShuttingDown())
+        return;
 
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
@@ -598,8 +597,9 @@ void ecvTabbedMultiViewWidget::toggleFullScreen() {
     if (m_fullScreenWindow && !m_fullScreenActiveFrame) {
         exitFullScreenIfActive();
         emit fullScreenEnabled(false);
-        QTimer::singleShot(0, this,
-                           &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
+        QTimer::singleShot(
+                0, this,
+                &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
     } else if (!m_fullScreenWindow) {
         auto* fsw = new QWidget(this, Qt::Window);
         m_fullScreenWindow = fsw;
@@ -645,8 +645,9 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
         m_fullScreenActiveFrame = nullptr;
         emit fullScreenActiveViewEnabled(false);
         setDecorationsVisibility(true);
-        QTimer::singleShot(0, this,
-                           &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
+        QTimer::singleShot(
+                0, this,
+                &ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen);
         return;
     }
 

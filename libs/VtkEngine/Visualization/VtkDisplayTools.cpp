@@ -37,8 +37,8 @@
 #include <ecvSensor.h>
 
 // LOCAL
-#include <ecvRepresentationManager.h>
 #include <ecvDisplayCoordinates.h>
+#include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
@@ -1608,9 +1608,9 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
             // vtkContext2D shares the same render-window coordinate space.
             txtVis2D->addText(static_cast<unsigned int>(textParam.textPos.x),
                               static_cast<unsigned int>(textParam.textPos.y),
-                              text,
-                              textColor.r, textColor.g, textColor.b, viewID,
-                              textParam.opacity, textParam.font.pointSize(),
+                              text, textColor.r, textColor.g, textColor.b,
+                              viewID, textParam.opacity,
+                              textParam.font.pointSize(),
                               textParam.font.bold());
         } else if (vis) {
             vis->displayText(context);

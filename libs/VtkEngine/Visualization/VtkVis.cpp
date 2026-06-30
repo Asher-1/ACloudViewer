@@ -37,6 +37,8 @@
 #include "vtkGLView.h"
 
 // SYSTEM
+#include <vtkTextActor.h>
+
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -44,7 +46,6 @@
 #include <cmath>
 #include <functional>
 #include <vector>
-#include <vtkTextActor.h>
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -59,6 +60,7 @@
 #include <ecvCameraSensor.h>
 #include <ecvCameraUndoCommand.h>
 #include <ecvColorScale.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
@@ -68,7 +70,6 @@
 #include <ecvOrientedBBox.h>
 #include <ecvScalarField.h>
 #include <ecvUndoManager.h>
-#include <ecvDisplayCoordinates.h>
 #include <ecvViewContext.h>
 
 // VTK Extension
@@ -5498,13 +5499,13 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     int* winSize = rw->GetSize();
     if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) return false;
 
-    const double dpr = (m_ownerDisplay && m_ownerDisplay->asWidget())
-                               ? ecvDisplayCoordinates::dprOf(
-                                         m_ownerDisplay->asWidget())
-                               : 1.0;
+    const double dpr =
+            (m_ownerDisplay && m_ownerDisplay->asWidget())
+                    ? ecvDisplayCoordinates::dprOf(m_ownerDisplay->asWidget())
+                    : 1.0;
     const double dispX = ecvDisplayCoordinates::toPhysicalF(qtX, dpr);
-    const double dispY = winSize[1] - 1.0 -
-            ecvDisplayCoordinates::toPhysicalF(qtY, dpr);
+    const double dispY =
+            winSize[1] - 1.0 - ecvDisplayCoordinates::toPhysicalF(qtY, dpr);
 
     auto* widget = const_cast<vtkCameraOrientationWidget*>(
             m_cameraOrientationWidget.GetPointer());

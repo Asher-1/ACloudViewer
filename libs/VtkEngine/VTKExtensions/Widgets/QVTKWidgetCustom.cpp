@@ -56,8 +56,8 @@
 
 // CV_DB_LIB
 #include <Visualization/vtkGLView.h>
-#include <ecvDisplayTools.h>
 #include <ecvDisplayCoordinates.h>
+#include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
 #include <ecvPointCloud.h>
@@ -95,6 +95,8 @@
 #include <Shortcuts/ecvKeySequences.h>
 #include <ecv2DLabel.h>
 #include <ecvHObjectCaster.h>
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
 
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
@@ -105,9 +107,6 @@
 #include <string>
 
 #include "ScaleBarWidget.h"
-
-#include <vtkCallbackCommand.h>
-#include <vtkCommand.h>
 
 // macroes
 #ifndef VTK_CREATE
@@ -462,8 +461,9 @@ void QVTKWidgetCustom::initVtk(
     this->m_renders = this->GetRenderWindow()->GetRenderers();
 
     // Keep scale bar in sync during VTK-driven zoom/pan/rotate (interactor
-    // style calls Render() directly, bypassing QVTKWidgetCustom mouse handlers).
-    // InteractionEvent avoids updating on every StartEvent/render frame.
+    // style calls Render() directly, bypassing QVTKWidgetCustom mouse
+    // handlers). InteractionEvent avoids updating on every StartEvent/render
+    // frame.
     if (m_interactor && !m_scaleBarUpdateObserver) {
         m_scaleBarUpdateObserver = vtkSmartPointer<vtkCallbackCommand>::New();
         m_scaleBarUpdateObserver->SetClientData(this);
@@ -481,7 +481,7 @@ void QVTKWidgetCustom::initVtk(
         // CRITICAL: Enable visibility BEFORE notifying layout ready
         // ScaleBarWidget defaults to visible=false in constructor
         m_scaleBar->setVisible(true);
-        
+
         // Notify layout ready after widget is created and renderer is available
         // so the scale bar can be displayed immediately
         QTimer::singleShot(100, this, [this]() {
@@ -1375,8 +1375,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
                                       displayTarget()->exclusiveFullScreen());
 
-            const double dpr = static_cast<double>(
-                    displayTarget()->getDevicePixelRatio());
+            const double dpr =
+                    static_cast<double>(displayTarget()->getDevicePixelRatio());
             int scaledX = ecvDisplayCoordinates::toPhysical(x, dpr);
             int scaledY = ecvDisplayCoordinates::toPhysical(y, dpr);
             QRect zoneRect = areaRect.translated(hz->topCorner);
@@ -1723,8 +1723,8 @@ void QVTKWidgetCustom::updateActivateditems(
         CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
         curViewportParams().viewMat.transposed().applyRotation(u);
 
-        const double dpr = static_cast<double>(
-                displayTarget()->getDevicePixelRatio());
+        const double dpr =
+                static_cast<double>(displayTarget()->getDevicePixelRatio());
         u *= dpr;
 
         for (auto& activeItem : curActiveItems()) {
@@ -1732,11 +1732,10 @@ void QVTKWidgetCustom::updateActivateditems(
                 dynamic_cast<cc2DLabel*>(activeItem)) {
                 continue;
             }
-            if (activeItem->move2D(
-                    ecvDisplayCoordinates::toPhysical(x, dpr),
-                    ecvDisplayCoordinates::toPhysical(y, dpr),
-                    ecvDisplayCoordinates::toPhysical(dx, dpr),
-                    ecvDisplayCoordinates::toPhysical(dy, dpr),
+            if (activeItem->move2D(ecvDisplayCoordinates::toPhysical(x, dpr),
+                                   ecvDisplayCoordinates::toPhysical(y, dpr),
+                                   ecvDisplayCoordinates::toPhysical(dx, dpr),
+                                   ecvDisplayCoordinates::toPhysical(dy, dpr),
                                    displayTarget()->glWidth(),
                                    displayTarget()->glHeight())) {
                 movedAs2D = true;
@@ -1874,16 +1873,16 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
 
                 auto* w = displayTarget()->asWidget();
                 const double dpr = ecvDisplayCoordinates::dprOf(w);
-                const int pickRefW = w ? ecvDisplayCoordinates::toPhysical(
-                                                 w->width(), dpr)
-                                       : 0;
-                const int pickRefH = w ? ecvDisplayCoordinates::toPhysical(
-                                                 w->height(), dpr)
-                                       : 0;
+                const int pickRefW =
+                        w ? ecvDisplayCoordinates::toPhysical(w->width(), dpr)
+                          : 0;
+                const int pickRefH =
+                        w ? ecvDisplayCoordinates::toPhysical(w->height(), dpr)
+                          : 0;
                 displayTarget()->startPicking(
                         ecvGenericGLDisplay::ENTITY_RECT_PICKING,
-                        pickX + pickRefW / 2, pickRefH / 2 - pickY,
-                        pickW, pickH);
+                        pickX + pickRefW / 2, pickRefH / 2 - pickY, pickW,
+                        pickH);
                 displayTarget()->toBeRefreshed();
             }
 

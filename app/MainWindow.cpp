@@ -524,7 +524,8 @@ MainWindow::MainWindow()
         m_ui->ViewToolBar->insertWidget(m_ui->actionZoomToBox,
                                         m_viewModePopupButton);
         m_viewModePopupButton->setEnabled(false);
-        // Sync icon with active view projection mode (view exists after initial())
+        // Sync icon with active view projection mode (view exists after
+        // initial())
         updateViewModePopUpMenu();
     }
 
@@ -736,7 +737,6 @@ MainWindow::~MainWindow() {
         mdiDialog.dialog->setParent(nullptr);
         delete mdiDialog.dialog;
     }
-
 
     Visualization::VtkCameraLink::instance().clear();
 
@@ -2735,8 +2735,7 @@ void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
     }
 }
 
-void MainWindow::copyPrimaryViewConfig(vtkGLView* view,
-                                       vtkGLView* sourceView) {
+void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
     if (!view) return;
 
     auto* dt = ecvViewManager::instance().displayTools();
@@ -2801,12 +2800,11 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view,
 
 void MainWindow::connectViewModeIconSync(vtkGLView* view) {
     if (!view) return;
-    connect(view, &vtkGLView::perspectiveStateChanged, this,
-            [this, view]() {
-                if (getActiveGLView() == view) {
-                    updateViewModePopUpMenu();
-                }
-            });
+    connect(view, &vtkGLView::perspectiveStateChanged, this, [this, view]() {
+        if (getActiveGLView() == view) {
+            updateViewModePopUpMenu();
+        }
+    });
 }
 
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
@@ -2820,10 +2818,12 @@ void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     bool viewStillValid = false;
     if (glView) {
         const auto& allViews = ecvViewManager::instance().getAllViews();
-        viewStillValid = std::find(allViews.begin(), allViews.end(), glView) != allViews.end();
+        viewStillValid = std::find(allViews.begin(), allViews.end(), glView) !=
+                         allViews.end();
     }
-    
-    if (glView && viewStillValid && glView->getVisualizer3D() && glView->getVtkWidget()) {
+
+    if (glView && viewStillValid && glView->getVisualizer3D() &&
+        glView->getVtkWidget()) {
         // Phase M3: all views are vtkGLView — bind the engine to the
         // active view's VTK pipeline so static APIs route correctly.
         engineDT->switchActiveView(glView->getVisualizer3DSP(),
@@ -3014,8 +3014,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* titleBar = new QWidget(frame);
     titleBar->setObjectName("ViewTitleBar");
     titleBar->setContextMenuPolicy(Qt::CustomContextMenu);
-    titleBar->setSizePolicy(QSizePolicy::Preferred,
-                                QSizePolicy::Fixed);
+    titleBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     auto* titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->setSpacing(1);
@@ -4443,7 +4442,8 @@ void MainWindow::addToDB(ccHObject* obj,
                         obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
                         obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT);
             // Point-list picking container (may be empty on first addToDB)
-            if (!skip && obj->getName() == QLatin1String("Picked points list")) {
+            if (!skip &&
+                obj->getName() == QLatin1String("Picked points list")) {
                 skip = true;
             }
             if (!skip) {
@@ -7802,8 +7802,7 @@ void MainWindow::showEvent(QShowEvent* event) {
     if (m_tabbedMultiView) {
         QSettings settings;
         const QByteArray layoutJson =
-                settings
-                        .value(QStringLiteral("MultiView/LayoutState"))
+                settings.value(QStringLiteral("MultiView/LayoutState"))
                         .toByteArray();
         if (!layoutJson.isEmpty()) {
             const QJsonDocument doc = QJsonDocument::fromJson(layoutJson);

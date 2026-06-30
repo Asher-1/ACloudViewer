@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include "vtkOrthoSliceViewWidget.h"
-#include <ecvDisplayCoordinates.h>
 
 #include <CVLog.h>
 #include <Converters/Cc2Vtk.h>
@@ -18,6 +17,7 @@
 #include <VTKExtensions/Views/vtkPVAxesWidget.h>
 #include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
 #include <Visualization/VtkVis.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
@@ -1856,11 +1856,11 @@ bool vtkOrthoSliceViewWidget::eventFilter(QObject* obj, QEvent* event) {
                         d->vtkWidget->height(), dpr);
                 if (physH <= 0) return false;
 
-                double dispX = ecvDisplayCoordinates::toPhysicalF(
-                        me->pos().x(), dpr);
-                double dispY = physH - 1.0 -
-                        ecvDisplayCoordinates::toPhysicalF(
-                                me->pos().y(), dpr);
+                double dispX =
+                        ecvDisplayCoordinates::toPhysicalF(me->pos().x(), dpr);
+                double dispY =
+                        physH - 1.0 -
+                        ecvDisplayCoordinates::toPhysicalF(me->pos().y(), dpr);
 
                 ren->SetDisplayPoint(dispX, dispY, 0.0);
                 ren->DisplayToWorld();
