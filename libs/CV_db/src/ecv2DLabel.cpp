@@ -17,6 +17,7 @@
 #include <QThread>
 
 #include "ecvBasicTypes.h"
+#include "ecvDisplayCoordinates.h"
 #include "ecvDisplayTools.h"
 #include "ecvFacet.h"
 #include "ecvGenericDisplayTools.h"
@@ -439,12 +440,18 @@ void cc2DLabel::updateLabel() {
         disp->getContext(context);
     } else if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
         ev->getContext(context);
+        disp = ev;
     } else {
         return;
     }
     update3DLabelView(context, false);
     update2DLabelView(context, false);
     { ecvRedrawScope scope({this}); }
+    // Force immediate scene update on the label's own display to ensure
+    // actor removal (e.g. triangle face) is processed by VTK.
+    if (disp) {
+        disp->updateScene();
+    }
 }
 
 void cc2DLabel::update3DLabelView(CC_DRAW_CONTEXT& context,
@@ -1386,7 +1393,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         if (visibleCount) {
             if (!entityPickingMode) {
                 const float dpr = context.devicePixelRatio;
-                const float lH = context.glH / dpr;
+                const float lH = static_cast<float>(
+                        ecvDisplayCoordinates::toLogicalF(context.glH, dpr));
 
                 // Connecting segments between picked points
                 // (drawn before m_dispIn2D check, always visible when
@@ -1777,8 +1785,10 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     // const int xStart = static_cast<int>(context.glW * m_screenPos[0]);
     // const int yStart = static_cast<int>(context.glH * (1.0f -
     // m_screenPos[1]));
-    const float logicalW = context.glW / context.devicePixelRatio;
-    const float logicalH = context.glH / context.devicePixelRatio;
+    const float logicalW = static_cast<float>(ecvDisplayCoordinates::toLogicalF(
+            context.glW, context.devicePixelRatio));
+    const float logicalH = static_cast<float>(ecvDisplayCoordinates::toLogicalF(
+            context.glH, context.devicePixelRatio));
     const int xStart = static_cast<int>(logicalW * m_screenPos[0]);
     const int yStart = static_cast<int>(logicalH * (1.0f - m_screenPos[1]));
 
@@ -1869,7 +1879,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     if (!entityPickingMode && count > 0 && !m_historyMessage.empty()) {
         const float dpr = context.devicePixelRatio;
-        const float lH = context.glH / dpr;
+        const float lH = static_cast<float>(
+                ecvDisplayCoordinates::toLogicalF(context.glH, dpr));
 
         m_overlayData.panelRect = QRectF(m_labelROI);
         m_overlayData.bkgColor = QColor(defaultBkgColor.r, defaultBkgColor.g,

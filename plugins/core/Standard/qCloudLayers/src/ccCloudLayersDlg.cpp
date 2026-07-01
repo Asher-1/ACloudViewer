@@ -395,8 +395,9 @@ void ccCloudLayersDlg::mouseMoved(int x, int y, Qt::MouseButtons buttons) {
 
     QPointF pos2D;
     if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        pos2D = QPointF(x - view->glWidth() / 2.0f,
-                        view->glHeight() / 2.0f - y);
+        const int dpr = view->getDevicePixelRatio();
+        pos2D = QPointF(x * dpr - view->glWidth() / 2.0f,
+                        view->glHeight() / 2.0f - y * dpr);
     }
     CCVector2 center(static_cast<PointCoordinateType>(pos2D.x()),
                      static_cast<PointCoordinateType>(pos2D.y()));

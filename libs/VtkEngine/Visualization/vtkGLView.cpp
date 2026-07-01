@@ -10,6 +10,7 @@
 #include <CVLog.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <ecvBBox.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvDisplayTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericDisplayTools.h>
@@ -73,6 +74,7 @@ public:
 #include <vtkVolumetricPass.h>
 
 #include <Eigen/Core>
+#include <QSettings>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -184,15 +186,47 @@ void vtkGLView::setViewXmlLabel(const QString& xmlLabel) {
     m_title = ecvViewTitleRegistry::instance().allocate(m_viewTypeKey);
 }
 
+void vtkGLView::shutdown() {
+    if (m_shutdownDone) return;
+    m_shutdownDone = true;
+
+    blockSignals(true);
+    m_deferredPickingTimer.stop();
+    m_scheduleTimer.stop();
+    disconnect(this, nullptr, nullptr, nullptr);
+
+    if (m_visualizer3D) {
+        disconnect(m_visualizer3D.get(), nullptr, this, nullptr);
+        if (m_displayTools) {
+            disconnect(m_visualizer3D.get(), nullptr, m_displayTools, nullptr);
+        }
+    }
+
+    disableContext2DOverlay();
+
+    if (m_vtkWidget) {
+        m_vtkWidget->blockSignals(true);
+        m_vtkWidget->setOwnerView(nullptr);
+        if (auto* rw = m_vtkWidget->renderWindow()) {
+            if (auto* iren = rw->GetInteractor()) {
+                iren->Disable();
+                iren->TerminateApp();
+            }
+            rw->Finalize();
+        }
+    }
+
+    m_visualizer3D.reset();
+    m_displayTools = nullptr;
+}
+
 vtkGLView::~vtkGLView() {
+    shutdown();
+
     if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
         ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
     }
     emit aboutToClose(this);
-
-    if (m_vtkWidget) {
-        m_vtkWidget->setOwnerView(nullptr);
-    }
 
     if (m_globalDBRoot) {
         m_globalDBRoot->removeFromDisplay_recursive(this);
@@ -204,7 +238,7 @@ vtkGLView::~vtkGLView() {
     if (m_vtkWidget) {
         ecvGenericGLDisplay::UnregisterGLDisplay(m_vtkWidget);
         m_vtkWidget->setParent(nullptr);
-        m_vtkWidget->deleteLater();
+        delete m_vtkWidget;
         m_vtkWidget = nullptr;
     }
 
@@ -220,9 +254,11 @@ vtkGLView::~vtkGLView() {
     }
 }
 
-vtkGLView* vtkGLView::Create(QMainWindow* parent, bool stereoMode) {
+vtkGLView* vtkGLView::Create(QMainWindow* parent,
+                             bool stereoMode,
+                             bool loadDefaultPerspective) {
     auto* view = new vtkGLView(parent);
-    view->initVtkPipeline(parent, stereoMode);
+    view->initVtkPipeline(parent, stereoMode, loadDefaultPerspective);
 
     view->m_winDBRoot =
             new ccHObject(QString("DB.GLView_%1").arg(view->m_uniqueID));
@@ -234,10 +270,21 @@ vtkGLView* vtkGLView::Create(QMainWindow* parent, bool stereoMode) {
         vis->setUndoManager(ecvViewManager::instance().undoManager());
     }
 
+    // Initial updateScene to ensure scale bar and other widgets display
+    // correctly after view creation (especially in orthographic mode which is
+    // the default)
+    QTimer::singleShot(200, view, [view]() {
+        if (view && view->m_vtkWidget) {
+            view->updateScene();
+        }
+    });
+
     return view;
 }
 
-void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
+void vtkGLView::initVtkPipeline(QMainWindow* parent,
+                                bool stereoMode,
+                                bool loadDefaultPerspective) {
     m_displayTools = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
     m_vtkWidget = new QVTKWidgetCustom(parent, m_displayTools, stereoMode);
@@ -265,6 +312,28 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
     m_vtkWidget->setCustomInteractorStyle(
             m_visualizer3D->get3DInteractorStyle());
     m_visualizer3D->initialize();
+
+    // CloudCompare model: each ccGLWindow owns its projection mode; QSettings
+    // only seeds the first/primary view. Additional views inherit from their
+    // source view via copyPrimaryViewConfig(), not the global default.
+    if (loadDefaultPerspective) {
+        bool savedPerspectiveView = false;
+        bool savedObjectCenteredView = true;
+        {
+            QSettings settings;
+            settings.beginGroup("ACVWindow");
+            savedPerspectiveView =
+                    settings.value("perspectiveView", false).toBool();
+            // Match CC: object-centered is always forced on load
+            savedObjectCenteredView = true;
+            settings.endGroup();
+        }
+        setPerspectiveState(savedPerspectiveView, savedObjectCenteredView,
+                            true);
+    } else {
+        setPerspectiveState(m_ctx.viewportParams.perspectiveView,
+                            m_ctx.viewportParams.objectCenteredView, false);
+    }
 
     if (ecvDisplayTools::USE_2D) {
         m_visualizer2D = std::make_shared<Visualization::ImageVis>(
@@ -307,7 +376,7 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent, bool stereoMode) {
 // ================================================================
 
 void vtkGLView::redraw(bool only2D, bool forceRedraw) {
-    if (!m_visualizer3D || !m_vtkWidget) return;
+    if (m_shutdownDone || !m_visualizer3D || !m_vtkWidget) return;
 
     // Prevent re-entrant redraws.  VTK's vtkRenderWindow::Render() is
     // not re-entrant; calling it while already inside a render causes
@@ -334,9 +403,10 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     // Sync per-view glViewport from the actual widget so that
     // ComputeActualPixelSize() (which reads effectiveCtx().glViewport)
     // returns correct dimensions for this sub-window.
-    const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
-    m_ctx.glViewport = QRect(0, 0, m_vtkWidget->width() * dpr,
-                             m_vtkWidget->height() * dpr);
+    const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
+    m_ctx.glViewport = QRect(
+            0, 0, ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
+            ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
 
     // --- Build draw context from per-view state ---
     CC_DRAW_CONTEXT context;
@@ -818,15 +888,31 @@ void vtkGLView::setOrthoSliceCamera(OrthoAxis axis) {
     updateScene();
 }
 
-void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
-    const bool changed =
+void vtkGLView::setPerspectiveState(bool state,
+                                    bool objectCenteredView,
+                                    bool persistDefault) {
+    const bool ctxChanged =
             (m_ctx.viewportParams.perspectiveView != state) ||
             (m_ctx.viewportParams.objectCenteredView != objectCenteredView);
 
     m_ctx.viewportParams.perspectiveView = state;
     m_ctx.viewportParams.objectCenteredView = objectCenteredView;
 
-    if (!changed) return;
+    const int wantParallel = state ? 0 : 1;
+    bool vtkOutOfSync = false;
+    if (m_visualizer3D) {
+        auto* vis = dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get());
+        if (vis) {
+            if (vtkCamera* cam = vis->getVtkCamera()) {
+                vtkOutOfSync = (cam->GetParallelProjection() != wantParallel);
+            }
+        }
+    }
+
+    // m_ctx may already match (ecvViewportParameters defaults to orthographic)
+    // while the VTK camera still uses its factory default (perspective).
+    // Must sync VTK even when ctx appears unchanged.
+    if (!ctxChanged && !vtkOutOfSync) return;
 
     // Apply projection change to VTK camera without triggering full scene
     // rebuilds that can cause recursive render loops or freezes.
@@ -836,7 +922,6 @@ void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
             vtkCamera* cam = vis->getVtkCamera();
             if (cam) {
                 const int wasParallel = cam->GetParallelProjection();
-                const int wantParallel = state ? 0 : 1;
                 if (wasParallel != wantParallel) {
                     if (wantParallel && !wasParallel) {
                         // Perspective → Orthographic: preserve apparent size
@@ -857,6 +942,27 @@ void vtkGLView::setPerspectiveState(bool state, bool objectCenteredView) {
                 vis->UpdateScreen();
             }
         }
+    }
+
+    if (m_vtkWidget) {
+        m_vtkWidget->setScaleBarVisible(!m_ctx.viewportParams.perspectiveView);
+    }
+
+    updateScene();
+    if (m_vtkWidget && m_vtkWidget->GetRenderWindow()) {
+        m_vtkWidget->GetRenderWindow()->Render();
+    }
+
+    if (ctxChanged && persistDefault) {
+        // Global default for newly created views (CloudCompare ccGLWindow
+        // group)
+        QSettings settings;
+        settings.beginGroup("ACVWindow");
+        settings.setValue("perspectiveView",
+                          m_ctx.viewportParams.perspectiveView);
+        settings.setValue("objectCenteredView",
+                          m_ctx.viewportParams.objectCenteredView);
+        settings.endGroup();
     }
 
     emit perspectiveStateChanged();
@@ -917,12 +1023,30 @@ Visualization::VtkVis* vtkGLView::getVisualizer3D() const {
 
 QJsonObject vtkGLView::saveLayoutCameraState() const {
     if (!m_visualizer3D) return {};
-    return m_visualizer3D->saveCameraToJson(0);
+    QJsonObject obj = m_visualizer3D->saveCameraToJson(0);
+    obj[QStringLiteral("objectCenteredView")] =
+            m_ctx.viewportParams.objectCenteredView;
+    return obj;
 }
 
 void vtkGLView::loadLayoutCameraState(const QJsonObject& cameraJson) {
     if (!m_visualizer3D || cameraJson.isEmpty()) return;
     m_visualizer3D->loadCameraFromJson(cameraJson, 0);
+
+    bool objectCenteredView = m_ctx.viewportParams.objectCenteredView;
+    if (cameraJson.contains(QStringLiteral("objectCenteredView"))) {
+        objectCenteredView =
+                cameraJson[QStringLiteral("objectCenteredView")].toBool(
+                        objectCenteredView);
+    }
+
+    if (auto* vis =
+                dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
+        if (vtkCamera* cam = vis->getVtkCamera()) {
+            const bool isPerspective = (cam->GetParallelProjection() == 0);
+            setPerspectiveState(isPerspective, objectCenteredView, false);
+        }
+    }
 }
 
 // ================================================================
@@ -965,7 +1089,10 @@ void vtkGLView::syncVtkCameraToContext() {
     m_ctx.viewportParams.perspectiveView = !vtkParallel;
     if (vtkParallel) {
         double ps = cam->GetParallelScale();
-        int h = ren->GetSize()[1];
+        int h = m_vtkWidget ? ecvDisplayCoordinates::toPhysical(
+                                      m_vtkWidget->height(),
+                                      ecvDisplayCoordinates::dprOf(m_vtkWidget))
+                            : ren->GetSize()[1];
         if (h > 0) {
             m_ctx.viewportParams.pixelSize = static_cast<float>(2.0 * ps / h);
         }
@@ -973,9 +1100,19 @@ void vtkGLView::syncVtkCameraToContext() {
         m_ctx.viewportParams.fov_deg = static_cast<float>(cam->GetViewAngle());
     }
 
-    // Viewport from renderer's actual size
-    const int* sz = ren->GetSize();
-    m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
+    // Viewport: always use widget size * DPR for physical pixels.
+    // ren->GetSize() may return logical pixels on macOS Retina,
+    // causing mismatch with DPR-scaled mouse coords during picking.
+    if (m_vtkWidget) {
+        const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
+        m_ctx.glViewport = QRect(
+                0, 0,
+                ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
+                ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
+    } else {
+        const int* sz = ren->GetSize();
+        m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
+    }
 }
 
 void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
@@ -986,11 +1123,13 @@ void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
         const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
     }
 
-    const int dpr = static_cast<int>(m_vtkWidget->devicePixelRatioF());
+    const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
     params.viewport[0] = 0;
     params.viewport[1] = 0;
-    params.viewport[2] = m_vtkWidget->width() * dpr;
-    params.viewport[3] = m_vtkWidget->height() * dpr;
+    params.viewport[2] =
+            ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr);
+    params.viewport[3] =
+            ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr);
     params.perspective = m_ctx.viewportParams.perspectiveView;
     params.fov_deg = m_ctx.viewportParams.fov_deg;
     params.pixelSize = m_ctx.viewportParams.pixelSize;
@@ -1032,11 +1171,15 @@ void vtkGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
 }
 
 QRect vtkGLView::getGLViewport() const {
-    return m_ctx.glViewport.isValid()
-                   ? m_ctx.glViewport
-                   : (m_vtkWidget ? QRect(0, 0, m_vtkWidget->width(),
-                                          m_vtkWidget->height())
-                                  : QRect());
+    if (m_ctx.glViewport.isValid()) return m_ctx.glViewport;
+    if (m_vtkWidget) {
+        const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
+        return QRect(
+                0, 0,
+                ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
+                ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
+    }
+    return QRect();
 }
 
 int vtkGLView::glWidth() const { return getGLViewport().width(); }
@@ -1118,10 +1261,10 @@ void vtkGLView::getContext(ccGLDrawContext& context) const {
     ecvViewManager::instance().sharedGetContext(context, m_ctx);
     context.display = const_cast<vtkGLView*>(this);
     if (m_vtkWidget) {
-        context.glW = m_vtkWidget->width();
-        context.glH = m_vtkWidget->height();
+        context.glW = glWidth();
+        context.glH = glHeight();
         context.devicePixelRatio =
-                static_cast<float>(m_vtkWidget->devicePixelRatioF());
+                static_cast<float>(ecvDisplayCoordinates::dprOf(m_vtkWidget));
     }
 }
 
@@ -1296,7 +1439,11 @@ void vtkGLView::updateCamera() {
 }
 
 void vtkGLView::updateScene() {
-    if (m_vtkWidget) m_vtkWidget->update();
+    if (m_vtkWidget) {
+        // updateScene() must call QVTKWidgetCustom::updateScene() to update
+        // scale bar NOT QWidget::update() which only schedules a repaint
+        m_vtkWidget->updateScene();
+    }
 }
 
 // -- Phase M1.3: Per-view picking and rendering --
@@ -1364,8 +1511,8 @@ void vtkGLView::toggle2Dviewer(bool state) {
 // ================================================================
 
 CCVector3d vtkGLView::toVtkCoordinates(int x, int y, int z) {
-    CCVector3d p(x * 1.0, y * 1.0, z * 1.0);
-    p.y = glHeight() - p.y;
+    int logicalH = m_vtkWidget ? m_vtkWidget->height() : 0;
+    CCVector3d p(x * 1.0, (logicalH - 1 - y) * 1.0, z * 1.0);
     p *= getDevicePixelRatio();
     return p;
 }

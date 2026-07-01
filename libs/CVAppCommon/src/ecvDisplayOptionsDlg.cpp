@@ -16,6 +16,7 @@
 #include "ecvSettingManager.h"
 
 // CV_DB_LIB
+#include <VtkRendering/Core/VtkLODHelper.h>
 #include <ecvColorTypes.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvViewManager.h>
@@ -35,9 +36,6 @@
 
 // Standard
 #include <algorithm>
-
-// Default 'min cloud size' for LoD  when VBOs are activated
-static const double s_defaultMaxVBOCloudSizeM = 50.0;
 
 ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
     : QDialog(parent, Qt::Tool),
@@ -89,10 +87,6 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             [&](bool state) { parameters.colorScaleShowHistogram = state; });
     connect(m_ui->useColorScaleShaderCheckBox, &QCheckBox::toggled, this,
             [&](bool state) { parameters.colorScaleUseShader = state; });
-    connect(m_ui->decimateMeshBox, &QCheckBox::toggled, this,
-            [&](bool state) { parameters.decimateMeshOnMove = state; });
-    connect(m_ui->decimateCloudBox, &QCheckBox::toggled, this,
-            [&](bool state) { parameters.decimateCloudOnMove = state; });
     connect(m_ui->drawRoundedPointsCheckBox, &QCheckBox::toggled, this,
             [&](bool state) { parameters.drawRoundedPoints = state; });
     connect(m_ui->autoDisplayNormalsCheckBox, &QCheckBox::toggled, this,
@@ -135,14 +129,25 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             static_cast<void (QDoubleSpinBox::*)(double)>(
                     &QDoubleSpinBox::valueChanged),
             this, &ccDisplayOptionsDlg::changeZoomSpeed);
-    connect(m_ui->maxCloudSizeDoubleSpinBox,
+
+    connect(m_ui->lodThresholdDoubleSpinBox,
             static_cast<void (QDoubleSpinBox::*)(double)>(
                     &QDoubleSpinBox::valueChanged),
-            this, &ccDisplayOptionsDlg::changeMaxCloudSize);
-    connect(m_ui->maxMeshSizeDoubleSpinBox,
+            this, &ccDisplayOptionsDlg::changeLodRenderingThreshold);
+    connect(m_ui->lodResolutionDoubleSpinBox,
             static_cast<void (QDoubleSpinBox::*)(double)>(
                     &QDoubleSpinBox::valueChanged),
-            this, &ccDisplayOptionsDlg::changeMaxMeshSize);
+            this, &ccDisplayOptionsDlg::changeLodResolution);
+    connect(m_ui->lodInteractiveRateDoubleSpinBox,
+            static_cast<void (QDoubleSpinBox::*)(double)>(
+                    &QDoubleSpinBox::valueChanged),
+            this, &ccDisplayOptionsDlg::changeLodInteractiveUpdateRate);
+    connect(m_ui->lodStillRateDoubleSpinBox,
+            static_cast<void (QDoubleSpinBox::*)(double)>(
+                    &QDoubleSpinBox::valueChanged),
+            this, &ccDisplayOptionsDlg::changeLodStillUpdateRate);
+    connect(m_ui->lodSkipPointGaussianCheckBox, &QCheckBox::toggled, this,
+            [&](bool state) { parameters.lodSkipPointGaussian = state; });
 
     connect(m_ui->autoComputeOctreeComboBox,
             static_cast<void (QComboBox::*)(int)>(
@@ -234,13 +239,15 @@ void ccDisplayOptionsDlg::refresh() {
 
     m_ui->doubleSidedCheckBox->setChecked(parameters.lightDoubleSided);
     m_ui->enableGradientCheckBox->setChecked(parameters.drawBackgroundGradient);
-    m_ui->decimateMeshBox->setChecked(parameters.decimateMeshOnMove);
-    m_ui->maxMeshSizeDoubleSpinBox->setValue(parameters.minLoDMeshSize /
-                                             1000000.0);
-    m_ui->decimateCloudBox->setChecked(parameters.decimateCloudOnMove);
     m_ui->drawRoundedPointsCheckBox->setChecked(parameters.drawRoundedPoints);
-    m_ui->maxCloudSizeDoubleSpinBox->setValue(parameters.minLoDCloudSize /
-                                              1000000.0);
+    m_ui->lodThresholdDoubleSpinBox->setValue(
+            parameters.lodRenderingThresholdMB);
+    m_ui->lodResolutionDoubleSpinBox->setValue(parameters.lodResolution);
+    m_ui->lodInteractiveRateDoubleSpinBox->setValue(
+            parameters.lodInteractiveUpdateRate);
+    m_ui->lodStillRateDoubleSpinBox->setValue(parameters.lodStillUpdateRate);
+    m_ui->lodSkipPointGaussianCheckBox->setChecked(
+            parameters.lodSkipPointGaussian);
     m_ui->useVBOCheckBox->setChecked(parameters.useVBOs);
     m_ui->showCrossCheckBox->setChecked(parameters.displayCross);
 
@@ -408,20 +415,24 @@ void ccDisplayOptionsDlg::changeLabelMarkerColor() {
     update();
 }
 
-void ccDisplayOptionsDlg::changeMaxMeshSize(double val) {
-    parameters.minLoDMeshSize = static_cast<unsigned>(val * 1000000);
+void ccDisplayOptionsDlg::changeLodRenderingThreshold(double val) {
+    parameters.lodRenderingThresholdMB = std::max(0.0, val);
 }
 
-void ccDisplayOptionsDlg::changeMaxCloudSize(double val) {
-    parameters.minLoDCloudSize = static_cast<unsigned>(val * 1000000);
+void ccDisplayOptionsDlg::changeLodResolution(double val) {
+    parameters.lodResolution = std::clamp(val, 0.0, 1.0);
+}
+
+void ccDisplayOptionsDlg::changeLodInteractiveUpdateRate(double val) {
+    parameters.lodInteractiveUpdateRate = std::max(val, 0.001);
+}
+
+void ccDisplayOptionsDlg::changeLodStillUpdateRate(double val) {
+    parameters.lodStillUpdateRate = std::max(val, 0.0001);
 }
 
 void ccDisplayOptionsDlg::changeVBOUsage() {
     parameters.useVBOs = m_ui->useVBOCheckBox->isChecked();
-    if (parameters.useVBOs &&
-        m_ui->maxCloudSizeDoubleSpinBox->value() < s_defaultMaxVBOCloudSizeM) {
-        m_ui->maxCloudSizeDoubleSpinBox->setValue(s_defaultMaxVBOCloudSizeM);
-    }
 }
 
 void ccDisplayOptionsDlg::changeColorScaleRampWidth(int val) {
@@ -480,6 +491,9 @@ void ccDisplayOptionsDlg::doReject() {
     ecvGui::Set(oldParameters);
     ecvOptions::Set(oldOptions);
 
+    VtkRendering::RebuildAllInteractiveLOD();
+    VtkRendering::SyncStillUpdateRatesForAllViews();
+
     // Restore old application style
     if (m_defaultAppStyleIndex >= 0) {
         QString oldStyle =
@@ -526,6 +540,9 @@ void ccDisplayOptionsDlg::reset() {
 void ccDisplayOptionsDlg::apply() {
     ecvGui::Set(parameters);
     ecvOptions::Set(options);
+
+    VtkRendering::RebuildAllInteractiveLOD();
+    VtkRendering::SyncStillUpdateRatesForAllViews();
 
     // Apply application style
     {

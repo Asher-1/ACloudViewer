@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>745</width>
-    <height>423</height>
+    <height>560</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -795,137 +795,219 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <item>
-          <widget class="QCheckBox" name="decimateCloudBox">
-           <property name="statusTip">
-            <string>Automatically decimate big point clouds when moved</string>
-           </property>
-           <property name="whatsThis">
-            <string>Automatically decimate big point clouds when moved</string>
-           </property>
-           <property name="text">
-            <string>Decimate clouds over</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="maxCloudSizeDoubleSpinBox">
-           <property name="toolTip">
-            <string>Minimum number of points to activate decimation</string>
-           </property>
-           <property name="prefix">
-            <string notr="true">&gt; </string>
-           </property>
-           <property name="suffix">
-            <string notr="true"> M.</string>
-           </property>
-           <property name="decimals">
-            <number>1</number>
-           </property>
-           <property name="minimum">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>10.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_21">
-           <property name="text">
-            <string>points when moved</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
-         <item>
-          <widget class="QCheckBox" name="decimateMeshBox">
-           <property name="statusTip">
-            <string>Automatically decimate big meshes when moved</string>
-           </property>
-           <property name="whatsThis">
-            <string>Automatically decimate big meshes when moved</string>
-           </property>
-           <property name="text">
-            <string>Decimate meshes over</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="maxMeshSizeDoubleSpinBox">
-           <property name="toolTip">
-            <string>Minimum number of triangles to activate decimation</string>
-           </property>
-           <property name="prefix">
-            <string notr="true">&gt; </string>
-           </property>
-           <property name="suffix">
-            <string notr="true"> M.</string>
-           </property>
-           <property name="decimals">
-            <number>1</number>
-           </property>
-           <property name="minimum">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.500000000000000</double>
-           </property>
-           <property name="value">
-            <double>2.500000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_19">
-           <property name="text">
-            <string>triangles when moved</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+        <widget class="QGroupBox" name="interactiveLodGroupBox">
+         <property name="title">
+          <string>Interactive LOD (ParaView)</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_lod">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_lodThreshold">
+            <item>
+             <widget class="QLabel" name="lodThresholdLabel">
+              <property name="text">
+               <string>LOD threshold</string>
+              </property>
+              <property name="toolTip">
+               <string>Visible geometry size (MB) above which LOD is used while rotating. Set to 0 to always use LOD during interaction (ParaView LODThreshold).</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="lodThresholdDoubleSpinBox">
+              <property name="toolTip">
+               <string>Geometry size in megabytes. 0 = always decimate during interaction.</string>
+              </property>
+              <property name="suffix">
+               <string> MB</string>
+              </property>
+              <property name="decimals">
+               <number>1</number>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>102400.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>1.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>20.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_lodThreshold">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_lodResolution">
+            <item>
+             <widget class="QLabel" name="lodResolutionLabel">
+              <property name="text">
+               <string>LOD resolution</string>
+              </property>
+              <property name="toolTip">
+               <string>ParaView LODResolution: 0 = lowest detail, 1 = highest detail (quadric clustering grid density).</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="lodResolutionDoubleSpinBox">
+              <property name="toolTip">
+               <string>0.5 = ParaView default (85 grid divisions).</string>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.050000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.500000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_lodResolution">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_lodInteractiveRate">
+            <item>
+             <widget class="QLabel" name="lodInteractiveRateLabel">
+              <property name="text">
+               <string>Interactive update rate</string>
+              </property>
+              <property name="toolTip">
+               <string>ParaView InteractiveRender DesiredUpdateRate (default 5.0).</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="lodInteractiveRateDoubleSpinBox">
+              <property name="decimals">
+               <number>3</number>
+              </property>
+              <property name="minimum">
+               <double>0.001000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_lodInteractiveRate">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_lodStillRate">
+            <item>
+             <widget class="QLabel" name="lodStillRateLabel">
+              <property name="text">
+               <string>Still update rate</string>
+              </property>
+              <property name="toolTip">
+               <string>ParaView StillRender DesiredUpdateRate (default 0.002).</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="lodStillRateDoubleSpinBox">
+              <property name="decimals">
+               <number>4</number>
+              </property>
+              <property name="minimum">
+               <double>0.000100000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.001000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.002000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_lodStillRate">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="lodSkipPointGaussianCheckBox">
+            <property name="toolTip">
+             <string>When enabled, Point Gaussian (splat) clouds keep full quality during rotation instead of switching to the quadric LOD mapper.</string>
+            </property>
+            <property name="text">
+             <string>Keep Point Gaussian quality during interaction</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="drawRoundedPointsCheckBox">

@@ -37,6 +37,8 @@
 #include "vtkGLView.h"
 
 // SYSTEM
+#include <vtkTextActor.h>
+
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -58,6 +60,7 @@
 #include <ecvCameraSensor.h>
 #include <ecvCameraUndoCommand.h>
 #include <ecvColorScale.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericMesh.h>
@@ -143,7 +146,6 @@
 #include <vtkSphereSource.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
-#include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkTexture.h>
 #include <vtkTransform.h>
@@ -173,7 +175,9 @@ namespace Visualization {
 
 static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     ren->SetBackground(0.0, 0.0, 0.0);
-    ren->GetActiveCamera()->SetParallelProjection(0);
+    // Note: Projection mode (parallel/perspective) is NOT set here.
+    // It should be controlled by vtkGLView::setPerspectiveState() which
+    // syncs from ecvViewportParameters (the single source of truth).
     ren->SetTwoSidedLighting(true);
 }
 
@@ -650,13 +654,31 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
     }
 
     this->m_centerAxes->SetUseBounds(0);
+
+    // Exclude vtkTextActors (used by cc2DLabel overlays) from bounds
+    // computation.  Their display-coordinate positions produce
+    // misleading world-space bounds that shift the rotation center.
+    std::vector<vtkTextActor*> excludedTextActors;
+    if (auto* ren = this->getCurrentRenderer(viewport)) {
+        auto* props = ren->GetViewProps();
+        if (props) {
+            props->InitTraversal();
+            while (auto* prop = props->GetNextProp()) {
+                auto* ta = vtkTextActor::SafeDownCast(prop);
+                if (ta && ta->GetUseBounds()) {
+                    ta->SetUseBounds(false);
+                    excludedTextActors.push_back(ta);
+                }
+            }
+        }
+    }
+
     this->GeometryBounds.Reset();
 
     getRendererCollection()->InitTraversal();
     vtkRenderer* renderer = nullptr;
     int i = 0;
     while ((renderer = getRendererCollection()->GetNextItem())) {
-        // Modify all renderer's cameras
         if (viewport == 0 || viewport == i) {
             double prop_bounds[6];
             this->getCurrentRenderer(viewport)->ComputeVisiblePropBounds(
@@ -666,6 +688,9 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
         ++i;
     }
 
+    for (auto* ta : excludedTextActors) {
+        ta->SetUseBounds(true);
+    }
     this->m_centerAxes->SetUseBounds(1);
 
     // sync up bounds across all processes when doing distributed rendering.
@@ -1180,6 +1205,7 @@ bool VtkVis::updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,
 
     actor->GetMapper()->SetInputDataObject(polydata);
     actor->GetMapper()->Update();
+    VtkRendering::InvalidateLODMapper(actor);
     return true;
 }
 
@@ -1523,6 +1549,9 @@ static bool UpdatePointCloudPolyData(vtkSmartPointer<vtkPolyData> polydata,
     }
     mapper->Update();
     it->second.actor->Modified();
+    if (it->second.actor) {
+        VtkRendering::InvalidateLODMapper(it->second.actor);
+    }
     return true;
 }
 
@@ -1614,6 +1643,10 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             vtkActor* actor = getActorById(viewID);
             if (actor) applyLightPropertiesToActor(actor, viewID);
         }
+    }
+
+    if (contains(viewID)) {
+        setMeshOpacity(context.opacity, viewID, viewport);
     }
 
     updateShadingMode(context, pc);
@@ -2223,8 +2256,7 @@ void VtkVis::displayText(const CC_DRAW_CONTEXT& context) {
         return;
     }
     std::string text = CVTools::FromQString(textParam.text);
-    // std::string viewID = CVTools::FromQString(context.viewID);
-    const std::string& viewID = text;
+    const std::string& viewID = CVTools::FromQString(context.viewID);
 
     int viewport = context.defaultViewPort;
     int xPos = static_cast<int>(textParam.textPos.x);
@@ -2272,10 +2304,16 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
         return false;
     }
 
-    // Get polydata for texture coordinates
+    // Get polydata for texture coordinates (always use full-resolution mapper)
     vtkPolyData* polydata = nullptr;
-    vtkPolyDataMapper* mapper =
-            vtkPolyDataMapper::SafeDownCast(actor->GetMapper());
+    vtkPolyDataMapper* mapper = nullptr;
+    if (auto* lodActor = vtkPVLODActor::SafeDownCast(actor)) {
+        mapper = vtkPolyDataMapper::SafeDownCast(
+                lodActor->GetFullResolutionMapper());
+    }
+    if (!mapper) {
+        mapper = vtkPolyDataMapper::SafeDownCast(actor->GetMapper());
+    }
     if (mapper) {
         polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
     }
@@ -2287,6 +2325,9 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
     bool success = texture_render_manager_->Update(actor, materials, polydata,
                                                    renderer);
     if (success) {
+        // Re-apply display opacity after material/texture refresh, which may
+        // reset actor opacity from MTL values.
+        setMeshOpacity(context.opacity, viewID, context.defaultViewPort);
         actor->Modified();
     }
     return success;
@@ -2370,6 +2411,7 @@ bool VtkVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
 
     // Apply light properties
     applyLightPropertiesToActor(actor, id);
+    setMeshOpacity(mesh->getOpacity(), id, viewport);
     // Store smart pointer in member map to ensure lifetime extends beyond
     // function scope
     transformation_map_[id] = transformation;
@@ -2839,13 +2881,11 @@ void VtkVis::removePointClouds(const std::string& viewId, int viewport) {
         removePointCloud(viewId, viewport);
     }
 
-    // for normals case
     std::string normalViewId = viewId + "-normal";
     if (contains(normalViewId)) {
         removePointCloud(normalViewId, viewport);
     }
 
-    // Remove associated Data Axes Grid
     RemoveDataAxesGrid(viewId);
 }
 
@@ -2853,9 +2893,6 @@ void VtkVis::removeShapes(const std::string& viewId, int viewport) {
     if (contains(viewId)) {
         removeShape(viewId, viewport);
     }
-
-    // Remove associated Data Axes Grid
-    RemoveDataAxesGrid(viewId);
 }
 
 void VtkVis::removeMesh(const std::string& viewId, int viewport) {
@@ -2863,7 +2900,6 @@ void VtkVis::removeMesh(const std::string& viewId, int viewport) {
         removePolygonMesh(viewId, viewport);
     }
 
-    // Remove associated Data Axes Grid
     RemoveDataAxesGrid(viewId);
 }
 
@@ -3257,11 +3293,9 @@ void VtkVis::setShapeOpacity(double opacity,
 void VtkVis::setMeshOpacity(double opacity,
                             const std::string& viewID,
                             int viewport) {
-    // Get the actor for this mesh - try vtkPVLODActor first, then vtkActor
     vtkPVLODActor* lodActor = vtkPVLODActor::SafeDownCast(getActorById(viewID));
     vtkActor* actor = lodActor;
     if (!actor) {
-        // Fallback to vtkActor if not a LODActor
         actor = vtkActor::SafeDownCast(getActorById(viewID));
     }
     if (!actor) {
@@ -3270,54 +3304,82 @@ void VtkVis::setMeshOpacity(double opacity,
         return;
     }
 
-    // Check current opacity to avoid unnecessary updates
-    double currentOpacity = actor->GetProperty()->GetOpacity();
-    if (std::abs(currentOpacity - opacity) < 0.001) {
-        return;  // No change needed
+    const double prevOpacity = actor->GetProperty()->GetOpacity();
+    if (std::abs(prevOpacity - opacity) < 1e-4) {
+        return;
     }
 
-    // Set the opacity on the actor's property
-    // VTK automatically detects opacity < 1.0 in
-    // HasTranslucentPolygonalGeometry()
     actor->GetProperty()->SetOpacity(opacity);
 
-    // Configure transparency rendering based on opacity value
-    // Following ParaView's vtkPVLODActor pattern (line 107-108)
     if (opacity < 1.0) {
-        // Force actor to be treated as translucent for proper depth sorting
-        // This ensures VTK renders this actor in the translucent pass
         actor->ForceTranslucentOn();
         actor->ForceOpaqueOff();
 
-        // Configure renderer for transparency support (only once)
-        vtkRenderer* renderer = getCurrentRenderer();
-        if (renderer && !renderer->GetUseDepthPeeling()) {
+        vtkRenderer* renderer = getCurrentRenderer(viewport);
+        if (renderer) {
             vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
             if (renderWindow) {
-                // Enable alpha bit planes for RGBA transparency
                 renderWindow->SetAlphaBitPlanes(1);
+                renderWindow->SetMultiSamples(0);
             }
-
-            // Enable depth peeling for correct transparent object ordering
-            // This is the standard VTK technique for order-independent
-            // transparency
-            renderer->SetUseDepthPeeling(1);
-            // Quality/performance balance
-            renderer->SetMaximumNumberOfPeels(4);
-            // Full transparency support
-            renderer->SetOcclusionRatio(0.0);
+            if (!renderer->GetUseDepthPeeling()) {
+                renderer->SetUseDepthPeeling(1);
+                renderer->SetMaximumNumberOfPeels(4);
+                renderer->SetOcclusionRatio(0.0);
+            }
         }
     } else {
-        // Opacity is 1.0 (fully opaque), render in opaque pass
         actor->ForceTranslucentOff();
         actor->ForceOpaqueOn();
+
+        vtkRenderer* renderer = getCurrentRenderer(viewport);
+        if (renderer && renderer->GetUseDepthPeeling()) {
+            bool anyTranslucent = false;
+            if (auto* actors = renderer->GetActors()) {
+                actors->InitTraversal();
+                while (auto* a = actors->GetNextActor()) {
+                    if (a != actor && a->GetProperty() &&
+                        a->GetProperty()->GetOpacity() < 1.0 - 1e-4) {
+                        anyTranslucent = true;
+                        break;
+                    }
+                }
+            }
+            if (!anyTranslucent) {
+                renderer->SetUseDepthPeeling(0);
+            }
+        }
     }
 
-    // Mark the actor as modified to trigger re-render
     actor->Modified();
 
-    CVLog::PrintVerbose("[VtkVis::setMeshOpacity] Set opacity to %.3f for <%s>",
-                        opacity, viewID.c_str());
+    if (std::abs(prevOpacity - opacity) > 1e-6) {
+        CVLog::PrintDebug("[VtkVis::setMeshOpacity] <%s> opacity: %.3f -> %.3f",
+                          viewID.c_str(), prevOpacity, opacity);
+    }
+}
+
+void VtkVis::rebuildAllLODMappers() {
+    const double lodResolution = VtkRendering::GetLODResolution();
+    auto rebuildActor = [&](vtkPVLODActor* actor) {
+        if (!actor || !actor->GetMapper()) return;
+        vtkDataSet* data = vtkDataSet::SafeDownCast(
+                actor->GetMapper()->GetInputDataObject(0, 0));
+        if (data) {
+            VtkRendering::BuildAndAttachLODMapperSync(actor, data,
+                                                      lodResolution);
+        }
+    };
+
+    for (auto& kv : *cloud_actor_map_) {
+        rebuildActor(kv.second.actor);
+    }
+    for (auto& kv : *shape_actor_map_) {
+        rebuildActor(vtkPVLODActor::SafeDownCast(kv.second));
+    }
+    for (auto& kv : *coordinate_actor_map_) {
+        rebuildActor(vtkPVLODActor::SafeDownCast(kv.second));
+    }
 }
 
 void VtkVis::setShapeShadingMode(SHADING_MODE mode,
@@ -3428,7 +3490,6 @@ void VtkVis::setMeshStippling(bool enabled,
         prop->SetEdgeColor(0.3, 0.3, 0.3);
         prop->SetBackfaceCulling(false);
     } else {
-        prop->SetOpacity(1.0);
         prop->SetEdgeVisibility(false);
     }
     actor->Modified();
@@ -3936,11 +3997,18 @@ void VtkVis::hideOrientationMarkerWidgetAxes() {
 static int cameraOrientationWidgetPixelSize(int /*winW*/,
                                             int /*winH*/,
                                             double devicePixelRatio = 1.0) {
-    // Fixed logical size (120px) scaled by DPI. This ensures consistent widget
-    // size across normal views and comparative sub-views regardless of viewport
-    // dimensions. ParaView uses a similar fixed-size approach.
+    // vtkCameraOrientationWidget::SetSize() operates in VTK render-window
+    // pixel space.  On macOS Retina, vtkRenderWindow::GetSize() returns
+    // *logical* pixels, so multiplying by DPR makes the widget appear
+    // oversized.  Only scale by DPR on platforms where the render window
+    // reports physical pixels (Linux/Windows).
+#ifdef __APPLE__
+    (void)devicePixelRatio;
+    return 100;
+#else
     const double dpr = std::max(1.0, devicePixelRatio);
-    return std::max(64, static_cast<int>(std::round(120.0 * dpr)));
+    return std::max(64, static_cast<int>(std::round(100.0 * dpr)));
+#endif
 }
 
 static void applyOrientationMarkerViewport(vtkOrientationMarkerWidget* widget,
@@ -4335,10 +4403,17 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
         lodStartCb->SetCallback([](vtkObject*, unsigned long, void* cd, void*) {
             auto* self = static_cast<VtkVis*>(cd);
             if (!self || !self->rens_) return;
+            const double geometrySizeMB =
+                    VtkRendering::ComputeVisibleDataSizeMB(
+                            *self->getCloudActorMap());
+            if (VtkRendering::ShouldUseLODRendering(geometrySizeMB)) {
+                VtkRendering::EnsureLODMappersForCloudActors(
+                        *self->getCloudActorMap());
+            }
             self->rens_->InitTraversal();
             vtkRenderer* ren = nullptr;
             while ((ren = self->rens_->GetNextItem()))
-                VtkRendering::SetLODEnabledForRenderer(ren, true);
+                VtkRendering::BeginInteractiveLOD(ren, geometrySizeMB);
         });
         ThreeDInteractorStyle->AddObserver(vtkCommand::StartInteractionEvent,
                                            lodStartCb);
@@ -4351,12 +4426,12 @@ void VtkVis::setupInteractor(vtkRenderWindowInteractor* iren,
             self->rens_->InitTraversal();
             vtkRenderer* ren = nullptr;
             while ((ren = self->rens_->GetNextItem()))
-                VtkRendering::SetLODEnabledForRenderer(ren, false);
+                VtkRendering::EndInteractiveLOD(ren);
         });
         ThreeDInteractorStyle->AddObserver(vtkCommand::EndInteractionEvent,
                                            lodEndCb);
     }
-    iren->SetDesiredUpdateRate(30.0);
+    iren->SetDesiredUpdateRate(VtkRendering::GetStillUpdateRate());
     iren->Initialize();
 
     auto pp = vtkSmartPointer<vtkPointPicker>::New();
@@ -4910,6 +4985,10 @@ void GetGridAxesActorBounds(vtkGridAxesActor3D* actor, double bounds[6]) {
 
 void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
                                        const AxesGridProperties& props) {
+    CVLog::PrintDebug(
+            "[VtkVis::SetDataAxesGridProperties] viewID=<%s> "
+            "visible=%d showGrid=%d",
+            viewID.c_str(), props.visible, props.showGrid);
     vtkRenderer* renderer = getCurrentRenderer();
     if (!renderer) {
         CVLog::Warning("[VtkVis] No renderer available for Data Axes Grid");
@@ -4920,13 +4999,17 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
             m_dataAxesGridMap[viewID];
 
     if (!dataAxesGrid) {
-        dataAxesGrid = vtkSmartPointer<vtkPVGridAxes3DActor>::New();
+        auto pvGridActor = vtkSmartPointer<vtkPVGridAxes3DActor>::New();
+        pvGridActor->SetDataBoundsScaleFactor(1.0008);
+        dataAxesGrid = pvGridActor;
+
         dataAxesGrid->SetFaceMask(
                 vtkGridAxesHelper::MIN_YZ | vtkGridAxesHelper::MIN_ZX |
                 vtkGridAxesHelper::MIN_XY | vtkGridAxesHelper::MAX_YZ |
                 vtkGridAxesHelper::MAX_ZX | vtkGridAxesHelper::MAX_XY);
-        dataAxesGrid->SetLabelMask(0xff);
-        dataAxesGrid->SetGenerateGrid(true);
+        dataAxesGrid->SetLabelMask(0x3f);
+        dataAxesGrid->SetLabelUniqueEdgesOnly(true);
+        dataAxesGrid->SetGenerateGrid(false);
         dataAxesGrid->SetGenerateEdges(true);
         dataAxesGrid->SetGenerateTicks(true);
         dataAxesGrid->SetForceOpaque(true);
@@ -4941,16 +5024,18 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
             if (auto* titleProp = dataAxesGrid->GetTitleTextProperty(i)) {
                 titleProp->SetColor(1.0, 1.0, 1.0);
                 titleProp->SetFontFamilyToArial();
-                titleProp->SetFontSize(18);
+                titleProp->SetFontSize(12);
                 titleProp->SetBold(0);
                 titleProp->SetItalic(0);
+                titleProp->SetShadow(0);
             }
             if (auto* labelProp = dataAxesGrid->GetLabelTextProperty(i)) {
                 labelProp->SetColor(1.0, 1.0, 1.0);
                 labelProp->SetFontFamilyToArial();
-                labelProp->SetFontSize(14);
+                labelProp->SetFontSize(12);
                 labelProp->SetBold(0);
                 labelProp->SetItalic(0);
+                labelProp->SetShadow(0);
             }
         }
 
@@ -4985,8 +5070,9 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     gridProperty->SetFrontfaceCulling(true);
     dataAxesGrid->SetProperty(gridProperty);
 
-    // 4. Labels visibility via LabelMask
-    dataAxesGrid->SetLabelMask(props.showLabels ? 0xff : 0);
+    // 4. Labels visibility via LabelMask (0x3f = all 6 faces, matching
+    // ParaView)
+    dataAxesGrid->SetLabelMask(props.showLabels ? 0x3f : 0);
 
     // 5. Grid lines visibility
     dataAxesGrid->SetFaceMask(
@@ -5093,6 +5179,15 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
         }
     }
 
+    dataAxesGrid->Modified();
+
+    CVLog::PrintDebug(
+            "[VtkVis::SetDataAxesGridProperties] Grid ready: visibility=%d "
+            "bounds=[%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
+            dataAxesGrid->GetVisibility(), dataAxesGrid->GetGridBounds()[0],
+            dataAxesGrid->GetGridBounds()[1], dataAxesGrid->GetGridBounds()[2],
+            dataAxesGrid->GetGridBounds()[3], dataAxesGrid->GetGridBounds()[4],
+            dataAxesGrid->GetGridBounds()[5]);
     UpdateScreen();
     if (auto rw = getRenderWindow()) {
         rw->Render();
@@ -5217,7 +5312,11 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
             rep->AnchorToUpperRight();
             if (auto* orientRep =
                         vtkCameraOrientationRepresentation::SafeDownCast(rep)) {
+#ifdef __APPLE__
+                const int fontSize = 10;
+#else
                 const int fontSize = std::max(10, static_cast<int>(10 * dpr));
+#endif
                 vtkTextProperty* labels[] = {
                         orientRep->GetXPlusLabelProperty(),
                         orientRep->GetYPlusLabelProperty(),
@@ -5463,11 +5562,13 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
     int* winSize = rw->GetSize();
     if (!winSize || winSize[0] <= 0 || winSize[1] <= 0) return false;
 
-    const double dpr = m_ownerDisplay && m_ownerDisplay->asWidget()
-                               ? m_ownerDisplay->asWidget()->devicePixelRatioF()
-                               : 1.0;
-    const double dispX = qtX * dpr;
-    const double dispY = winSize[1] - 1.0 - qtY * dpr;
+    const double dpr =
+            (m_ownerDisplay && m_ownerDisplay->asWidget())
+                    ? ecvDisplayCoordinates::dprOf(m_ownerDisplay->asWidget())
+                    : 1.0;
+    const double dispX = ecvDisplayCoordinates::toPhysicalF(qtX, dpr);
+    const double dispY =
+            winSize[1] - 1.0 - ecvDisplayCoordinates::toPhysicalF(qtY, dpr);
 
     auto* widget = const_cast<vtkCameraOrientationWidget*>(
             m_cameraOrientationWidget.GetPointer());
@@ -5494,7 +5595,7 @@ bool VtkVis::IsMouseOverCameraOrientationWidget(int qtX, int qtY) const {
 void VtkVis::RemoveDataAxesGrid(const std::string& viewID) {
     auto it = m_dataAxesGridMap.find(viewID);
     if (it == m_dataAxesGridMap.end()) {
-        return;  // No Data Axes Grid for this viewID
+        return;
     }
 
     vtkRenderer* renderer = getCurrentRenderer();

@@ -22,7 +22,7 @@
 #include "ecvCustomLabelsWidget.h"
 
 ecvAxesGridDialog::ecvAxesGridDialog(const QString& title, QWidget* parent)
-    : QDialog(parent), m_currentColor(127, 127, 127) {
+    : QDialog(parent), m_currentColor(255, 255, 255) {
     setWindowTitle(title);
     // Non-modal for real-time preview (ParaView-style)
     setWindowModality(Qt::NonModal);

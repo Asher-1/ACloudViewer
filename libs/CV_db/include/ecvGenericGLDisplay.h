@@ -148,7 +148,9 @@ public:
 
     virtual const ecvViewportParameters& getViewportParameters() const = 0;
     virtual void setViewportParameters(const ecvViewportParameters& params) = 0;
-    virtual void setPerspectiveState(bool state, bool objectCenteredView) = 0;
+    virtual void setPerspectiveState(bool state,
+                                     bool objectCenteredView,
+                                     bool persistDefault = true) = 0;
     virtual bool perspectiveView() const = 0;
     virtual bool objectCenteredView() const = 0;
 

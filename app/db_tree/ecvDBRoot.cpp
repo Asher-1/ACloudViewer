@@ -442,7 +442,9 @@ void ccDBRoot::unloadAll() {
     updatePropertiesView();
 
     ecvViewManager::instance().setRemoveAllFlag(true);
-    MainWindow::TheInstance()->refreshAll();
+    if (auto* mw = MainWindow::TheInstance(); mw && !mw->m_closing) {
+        mw->refreshAll();
+    }
 }
 
 ccHObject* ccDBRoot::getRootEntity() { return m_treeRoot; }
@@ -1003,13 +1005,13 @@ bool ccDBRoot::setData(const QModelIndex& index,
                                              .getEffectiveView();
                         }
                         WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
-                                                item->getName());
+                                                item->getViewId());
                         wpTxt.context.display = wpDisp;
                         if (wpTxt.context.display)
                             wpTxt.context.display->removeWidgets(wpTxt);
                         WIDGETS_PARAMETER wpRect(
                                 WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                item->getName());
+                                item->getViewId());
                         wpRect.context.display = wpDisp;
                         if (wpRect.context.display)
                             wpRect.context.display->removeWidgets(wpRect);
@@ -2365,6 +2367,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 bool wasBefore = item->isVisible();
                 item->toggleVisibility();
                 item->setForceRedrawRecursive(true);
+                if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT &&
+                    item->getChildrenNumber() > 0) {
+                    toggleFolderChildrenVisibility(
+                            item, item->isVisible() && item->isEnabled());
+                }
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
                             item->getUniqueID(), QStringLiteral("visible"),

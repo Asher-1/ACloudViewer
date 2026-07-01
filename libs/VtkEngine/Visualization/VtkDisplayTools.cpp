@@ -37,6 +37,7 @@
 #include <ecvSensor.h>
 
 // LOCAL
+#include <ecvDisplayCoordinates.h>
 #include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
 
@@ -84,10 +85,10 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
         auto renderer = vtkSmartPointer<vtkRenderer>::New();
         auto renderWindow =
                 vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-        // CRITICAL: Disable multisampling for hardware selection to work
-        // ParaView does this in vtkPVRenderView.cxx line 453
-        // MultiSamples interferes with vtkHardwareSelector's pixel reading
-        // renderWindow->SetMultiSamples(0);
+        // NOTE: depth peeling is enabled lazily in setMeshOpacity when an
+        // actor becomes translucent.  Enabling it here globally would break
+        // vtkGridAxesActor3D rendering (it inherits vtkProp3D, not vtkActor,
+        // and may not participate correctly in the depth-peeling pipeline).
         renderWindow->AddRenderer(renderer);
         auto interactorStyle =
                 vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
@@ -1249,31 +1250,18 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             bool isSecondaryT2D = param.context.display &&
                                   param.context.display !=
                                           static_cast<ecvDisplayTools*>(this);
-            if (isSecondaryT2D && vis) {
-                std::string text = CVTools::FromQString(param.text);
-                std::string actorID = viewID + "#" + text;
-                int fontSize = param.fontSize > 0
-                                       ? param.fontSize
-                                       : ecvDisplayTools::GetLabelDisplayFont()
-                                                 .pointSize();
-                ecvColor::Rgbf textColor = ecvColor::Rgbf(
-                        param.color.r, param.color.g, param.color.b);
-                if (!vis->updateText(text, param.rect.x(), param.rect.y(),
-                                     actorID)) {
-                    vis->addText(text, param.rect.x(), param.rect.y(), fontSize,
-                                 textColor.r, textColor.g, textColor.b, actorID,
-                                 param.viewport);
+            if (isSecondaryT2D) {
+                Visualization::ImageVis* txtVis2D = nullptr;
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    txtVis2D = glView->getImageVis().get();
                 }
-                auto smap = vis->getShapeActorMap();
-                auto it = smap->find(actorID);
-                if (it != smap->end()) {
-                    auto ta = vtkTextActor::SafeDownCast(it->second);
-                    if (ta) {
-                        auto tp = ta->GetTextProperty();
-                        tp->SetBackgroundColor(0.15, 0.15, 0.15);
-                        tp->SetBackgroundOpacity(0.7);
-                        tp->ShadowOn();
-                    }
+                if (txtVis2D) {
+                    std::string text = CVTools::FromQString(param.text);
+                    txtVis2D->addText(param.rect.x(), param.rect.y(), text,
+                                      param.color.r, param.color.g,
+                                      param.color.b, viewID, param.color.a,
+                                      param.fontSize);
                 }
             } else {
                 Visualization::ImageVis* txtVis2D =
@@ -1297,7 +1285,7 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                     context.textDefaultCol =
                             ecvColor::FromRgbafToRgb(param.color);
                     context.textParam = tParam;
-                    context.viewID = tParam.text;
+                    context.viewID = param.viewID;
                     if (vis) vis->displayText(context);
                 }
             }
@@ -1616,9 +1604,13 @@ void VtkDisplayTools::displayText(const CC_DRAW_CONTEXT& context) {
             std::string text = CVTools::FromQString(textParam.text);
             ecvColor::Rgbf textColor =
                     ecvTools::TransFormRGB(context.textDefaultCol);
-            txtVis2D->addText(textParam.textPos.x, textParam.textPos.y, text,
-                              textColor.r, textColor.g, textColor.b, viewID,
-                              textParam.opacity, textParam.font.pointSize(),
+            // RenderText / glViewport use physical pixels; ImageVis
+            // vtkContext2D shares the same render-window coordinate space.
+            txtVis2D->addText(static_cast<unsigned int>(textParam.textPos.x),
+                              static_cast<unsigned int>(textParam.textPos.y),
+                              text, textColor.r, textColor.g, textColor.b,
+                              viewID, textParam.opacity,
+                              textParam.font.pointSize(),
                               textParam.font.bold());
         } else if (vis) {
             vis->displayText(context);
@@ -1759,11 +1751,8 @@ void VtkDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
     int viewport = param.viewport;
 
     // Route to the VtkVis that actually owns the entity's actors.
-    VtkVis* vis = m_visualizer3D.get();
-    if (param.entity) {
-        VtkVis* resolved = resolveVisualizer(param.entity->getDisplay());
-        if (resolved) vis = resolved;
-    }
+    VtkVis* vis = findVisByActorIdOrActive(viewId);
+    if (!vis) return;
 
     switch (param.property) {
         case PROPERTY_MODE::ECV_POINTSSIZE_PROPERTY: {

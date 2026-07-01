@@ -524,6 +524,9 @@ MainWindow::MainWindow()
         m_ui->ViewToolBar->insertWidget(m_ui->actionZoomToBox,
                                         m_viewModePopupButton);
         m_viewModePopupButton->setEnabled(false);
+        // Sync icon with active view projection mode (view exists after
+        // initial())
+        updateViewModePopUpMenu();
     }
 
     {  // custom viewports configuration
@@ -532,11 +535,6 @@ MainWindow::MainWindow()
         customViewpointsToolbar->setObjectName("customViewpointsToolbar");
         customViewpointsToolbar->layout()->setSpacing(0);
         this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-    }
-
-    {  // orthogonal projection mode (default)
-        m_ui->actionOrthogonalProjection->trigger();
-        ecvConsole::Print("Perspective off!");
     }
 
     {  // restore options
@@ -642,6 +640,7 @@ MainWindow::~MainWindow() {
     m_closing = true;
 
     auto& vm = ecvViewManager::instance();
+    vm.setShuttingDown(true);
     vm.blockSignals(true);
     disconnect(&vm, nullptr, this, nullptr);
 
@@ -659,6 +658,30 @@ MainWindow::~MainWindow() {
     destroyInputDevices();
 
     cancelPreviousPickingOperation(false);  // just in case
+
+    if (m_tabbedMultiView) {
+        m_tabbedMultiView->exitFullScreenIfActive();
+    }
+
+#ifdef USE_VTK_BACKEND
+    if (auto* selCtrl = cvSelectionToolController::instance()) {
+        if (auto* hl = selCtrl->highlighter()) {
+            hl->prepareForShutdown();
+        }
+        selCtrl->setVisualizer(nullptr);
+    }
+    for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
+        if (compView) compView->shutdown();
+    }
+
+    // Shutdown all primary views BEFORE releaseDisplayTools() to avoid
+    // dangling m_displayTools pointers and use-after-free in signal handlers.
+    for (auto* v : vm.getAllViews()) {
+        if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
+            glView->shutdown();
+        }
+    }
+#endif
 
     // Reconstruction must before m_ccRoot
 #ifdef BUILD_RECONSTRUCTION
@@ -715,23 +738,10 @@ MainWindow::~MainWindow() {
         delete mdiDialog.dialog;
     }
 
-#ifdef USE_VTK_BACKEND
-    if (auto* selCtrl = cvSelectionToolController::instance()) {
-        if (auto* hl = selCtrl->highlighter()) {
-            hl->prepareForShutdown();
-        }
-        selCtrl->setVisualizer(nullptr);
-    }
-    for (auto* compView : findChildren<vtkComparativeViewWidget*>()) {
-        if (compView) compView->shutdown();
-    }
-#endif
-
     Visualization::VtkCameraLink::instance().clear();
 
-    if (m_tabbedMultiView) {
-        m_tabbedMultiView->reset();
-    }
+    // Do not reset()/destroyAllViews() during shutdown — it reparents GL
+    // widgets while views are still registered and causes segfault on exit.
 
     vm.setActiveSource(nullptr);
 
@@ -804,7 +814,7 @@ void MainWindow::initial() {
 
     // Phase M3: create the first vtkGLView as the primary view.
     // VtkDisplayTools is a pure engine service, not a view.
-    m_firstView = vtkGLView::Create(this);
+    m_firstView = vtkGLView::Create(this, stereoMode, true);
     assert(m_firstView);
     m_firstView->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     ecvViewManager::instance().setActiveView(m_firstView);
@@ -837,6 +847,8 @@ void MainWindow::initial() {
                 update3DViewsMenu();
             });
 
+    connectViewModeIconSync(m_firstView);
+
     viewWidget->installEventFilter(this);
 
     // picking hub
@@ -860,6 +872,7 @@ void MainWindow::initial() {
 
                     syncPivotButtonStates(newActive);
                     updateMenus();
+                    updateViewModePopUpMenu();
                 });
     }
 
@@ -894,10 +907,10 @@ void MainWindow::initParaViewLayoutSystem() {
     m_tabbedMultiView = new ecvTabbedMultiViewWidget(this);
 
     auto viewFactory = [this]() -> vtkGLView* {
-        auto* view = vtkGLView::Create(this);
+        auto* view = vtkGLView::Create(this, false, false);
         if (!view) return nullptr;
         view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
-        copyPrimaryViewConfig(view);
+        connectViewModeIconSync(view);
         Visualization::VtkCameraLink::instance().addView(
                 view->getVisualizer3D());
         view->asWidget()->installEventFilter(this);
@@ -2456,6 +2469,7 @@ void MainWindow::setOrthoView() {
     auto* view = getActiveGLView();
     if (view) {
         view->setPerspectiveState(false, true);
+        view->redraw(false, true);
 
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
@@ -2467,6 +2481,7 @@ void MainWindow::setPerspectiveView() {
     auto* view = getActiveGLView();
     if (view) {
         view->setPerspectiveState(true, true);
+        view->redraw(false, true);
 
         if (m_viewModePopupButton)
             m_viewModePopupButton->setIcon(
@@ -2720,7 +2735,7 @@ void MainWindow::markActiveViewFrame(QWidget* activeViewWidget) {
     }
 }
 
-void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
+void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
     if (!view) return;
 
     auto* dt = ecvViewManager::instance().displayTools();
@@ -2732,14 +2747,22 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
     auto* newWidget = view->getVtkWidget();
     if (!primaryVis || !newVis || !newWidget) return;
 
-    auto* sourceView = ecvViewManager::instance().getActiveView();
+    vtkGLView* srcView = sourceView;
+    if (!srcView) {
+        srcView = dynamic_cast<vtkGLView*>(
+                ecvViewManager::instance().getActiveView());
+    }
     const ecvViewContext& srcCtx =
-            (sourceView && sourceView->viewContext())
-                    ? *sourceView->viewContext()
+            (srcView && srcView->viewContext())
+                    ? *srcView->viewContext()
                     : ecvViewManager::instance().resolveViewContext();
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
+
+    // Per-view projection: sync VTK from source window (not global QSettings)
+    view->setPerspectiveState(srcCtx.viewportParams.perspectiveView,
+                              srcCtx.viewportParams.objectCenteredView, false);
 
     CC_DRAW_CONTEXT ctx;
     dt->getContext(ctx);
@@ -2775,13 +2798,32 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view) {
     });
 }
 
+void MainWindow::connectViewModeIconSync(vtkGLView* view) {
+    if (!view) return;
+    connect(view, &vtkGLView::perspectiveStateChanged, this, [this, view]() {
+        if (getActiveGLView() == view) {
+            updateViewModePopUpMenu();
+        }
+    });
+}
+
 void MainWindow::rebindToolsToActiveView(ecvGenericGLDisplay* display) {
     auto* engineDT = static_cast<Visualization::VtkDisplayTools*>(
             ecvViewManager::instance().displayTools());
     if (!engineDT) return;
 
     auto* glView = dynamic_cast<vtkGLView*>(display);
-    if (glView && glView->getVisualizer3D() && glView->getVtkWidget()) {
+    // Additional safety: verify the view is still registered before rebinding
+    // to prevent crashes when switching tabs during view destruction
+    bool viewStillValid = false;
+    if (glView) {
+        const auto& allViews = ecvViewManager::instance().getAllViews();
+        viewStillValid = std::find(allViews.begin(), allViews.end(), glView) !=
+                         allViews.end();
+    }
+
+    if (glView && viewStillValid && glView->getVisualizer3D() &&
+        glView->getVtkWidget()) {
         // Phase M3: all views are vtkGLView — bind the engine to the
         // active view's VTK pipeline so static APIs route correctly.
         engineDT->switchActiveView(glView->getVisualizer3DSP(),
@@ -2972,6 +3014,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* titleBar = new QWidget(frame);
     titleBar->setObjectName("ViewTitleBar");
     titleBar->setContextMenuPolicy(Qt::CustomContextMenu);
+    titleBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     auto* titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->setSpacing(1);
@@ -3937,11 +3980,12 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     // with a 50/50 ratio, creating a nested QSplitter.
     if (!frameToSplit) return;
 
-    auto* view = vtkGLView::Create(this);
+    auto* view = vtkGLView::Create(this, false, false);
     if (!view) return;
 
     view->setSceneDB(m_ccRoot ? m_ccRoot->getRootEntity() : nullptr);
     copyPrimaryViewConfig(view);
+    connectViewModeIconSync(view);
 
     QWidget* newFrame = createViewFrame(view->asWidget(), view->getTitle());
 
@@ -4388,11 +4432,42 @@ void MainWindow::addToDB(ccHObject* obj,
 
     // Now reset camera/zoom AFTER VTK actors exist, so the camera
     // frames the actual geometry instead of an empty scene.
+    // Skip pivot reset for 2D labels, their containers, and objects
+    // with no meaningful 3D geometry.
     if (auto* v = getActiveGLView()) {
         if (updateZoom) {
             v->updateConstellationCenterAndZoom();
         } else {
-            v->resetCenterOfRotation();
+            bool skip = obj->isKindOf(CV_TYPES::LABEL_2D) ||
+                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
+                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT);
+            // Point-list picking container (may be empty on first addToDB)
+            if (!skip &&
+                obj->getName() == QLatin1String("Picked points list")) {
+                skip = true;
+            }
+            if (!skip) {
+                ccHObject::Container labels2D;
+                obj->filterChildren(labels2D, true, CV_TYPES::LABEL_2D);
+                if (!labels2D.empty()) {
+                    // Label-only groups must not move the rotation center.
+                    ccHObject::Container allChildren;
+                    obj->filterChildren(allChildren, true);
+                    bool onlyLabels = !allChildren.empty();
+                    for (ccHObject* child : allChildren) {
+                        if (!child->isKindOf(CV_TYPES::LABEL_2D)) {
+                            onlyLabels = false;
+                            break;
+                        }
+                    }
+                    if (onlyLabels || !obj->getBB_recursive().isValid()) {
+                        skip = true;
+                    }
+                }
+            }
+            if (!skip) {
+                v->resetCenterOfRotation();
+            }
         }
     }
 
@@ -6136,10 +6211,6 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
     } else {
         // if we are currently in full-screen mode
         if (m_exclusiveFullscreen) {
-            if (m_currentFullWidget) {
-                m_currentFullWidget->setWindowFlags(Qt::SubWindow);
-            }
-
             m_exclusiveFullscreen = false;
             onExclusiveFullScreenToggled(state);
             ecvViewManager::instance().displayMessageOnActiveView(
@@ -6152,6 +6223,9 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
                     m_currentFullWidget->restoreGeometry(m_formerGeometry);
                     m_formerGeometry.clear();
                 }
+                m_currentFullWidget->setWindowFlags(Qt::SubWindow);
+                // Force widget to show again after changing flags
+                m_currentFullWidget->show();
             } else {
                 showNormal();
             }
@@ -6161,9 +6235,14 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
     QCoreApplication::processEvents();
     if (m_currentFullWidget) {
         m_currentFullWidget->setFocus();
+        // Force a full redraw to ensure proper viewport update
+        m_currentFullWidget->update();
     }
 
-    { ecvRedrawScope scope(/*only2D=*/true, /*forceRedraw=*/false); }
+    // Full redraw including 3D content to fix white space issue
+    if (auto* activeView = ecvViewManager::instance().getActiveView()) {
+        activeView->redraw(true, false);
+    }
 }
 
 void MainWindow::toggle3DView(bool state) {
@@ -6638,6 +6717,7 @@ void MainWindow::doActionMerge() {
 
 void MainWindow::refreshAll(bool only2D /* = false*/,
                             bool forceRedraw /* = true*/) {
+    if (m_closing) return;
     { ecvRedrawScope scope(only2D, forceRedraw); }
 }
 
@@ -7719,6 +7799,11 @@ void MainWindow::showEvent(QShowEvent* event) {
 
     m_FirstShow = false;
 
+    // Always start with a single render view; do not restore multi-window
+    // layout.
+    QSettings settings;
+    settings.remove(QStringLiteral("MultiView/LayoutState"));
+
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);
     }
@@ -7808,13 +7893,8 @@ void MainWindow::saveGUIElementsPos() {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
 
-    if (m_tabbedMultiView) {
-        QJsonObject layoutState = m_tabbedMultiView->saveLayoutState();
-        QSettings settings;
-        settings.setValue(
-                QStringLiteral("MultiView/LayoutState"),
-                QJsonDocument(layoutState).toJson(QJsonDocument::Compact));
-    }
+    QSettings settings;
+    settings.remove(QStringLiteral("MultiView/LayoutState"));
 }
 
 void MainWindow::doShowPrimitiveFactory() {

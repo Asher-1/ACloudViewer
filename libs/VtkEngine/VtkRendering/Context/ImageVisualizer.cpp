@@ -92,9 +92,10 @@ int* ImageVisualizer::getSize() { return win_ ? win_->GetSize() : nullptr; }
 
 void ImageVisualizer::close() {
     stopped_ = true;
-    if (interactor_) {
-        interactor_->TerminateApp();
-    }
+    // Do NOT call interactor_->TerminateApp() here — the interactor is
+    // shared with QVTKWidgetCustom and its lifecycle is managed by
+    // vtkGLView::shutdown().  Calling TerminateApp() during destruction
+    // of a shared interactor causes use-after-free crashes on exit.
 }
 
 void ImageVisualizer::removeLayer(const std::string& layer_id) {

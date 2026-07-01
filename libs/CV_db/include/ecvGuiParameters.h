@@ -63,14 +63,18 @@ public:
 
         //! Use background gradient
         bool drawBackgroundGradient;
-        //! Decimate meshes when moved
-        bool decimateMeshOnMove;
-        //! Min mesh size for decimation
-        unsigned minLoDMeshSize;
-        //! Decimate clouds when moved
-        bool decimateCloudOnMove;
-        //! Min cloud size for decimation
-        unsigned minLoDCloudSize;
+        //! ParaView LODThreshold: geometry size (MB) above which interactive
+        //! LOD is enabled. 0 = always use LOD during interaction.
+        double lodRenderingThresholdMB;
+        //! ParaView LODResolution [0, 1]: quadric clustering grid density.
+        double lodResolution;
+        //! ParaView InteractiveRender desired update rate (default 5.0).
+        double lodInteractiveUpdateRate;
+        //! ParaView StillRender desired update rate (default 0.002).
+        double lodStillUpdateRate;
+        //! Skip LOD for Point Gaussian splats during interaction.
+        bool lodSkipPointGaussian;
+
         //! Display cross in the middle of the screen
         bool displayCross;
         //! Whether to use VBOs for faster display

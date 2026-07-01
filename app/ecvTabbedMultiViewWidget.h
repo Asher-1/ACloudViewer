@@ -147,6 +147,9 @@ public slots:
     /// Preview layout at specific size.
     QSize preview(const QSize& previewSize = QSize());
 
+    /// Restore tab widget if layout/active-view fullscreen is active.
+    void exitFullScreenIfActive();
+
 protected:
     bool eventFilter(QObject* obj, QEvent* evt) override;
 
@@ -160,6 +163,8 @@ private:
     void removeNewTabWidget();
     void setupTabButtons(int tabIndex);
     int tabButtonIndex(QWidget* button, QTabBar::ButtonPosition pos) const;
+    void restoreTabWidgetToLayout();
+    void refreshLayoutAfterFullScreen();
 
     static constexpr int TAB_BUTTON_PIXMAP_SIZE = 16;
     static QString popoutTooltip(bool poppedOut);
