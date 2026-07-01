@@ -2527,7 +2527,6 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                         AxesGridProperties props;
                         view->getDataAxesGridProperties(viewID, props);
 
-                        // Update visibility
                         props.visible = checked;
 
                         // Bounds will be automatically recalculated in
@@ -2574,6 +2573,15 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             }
                         } else {
                             refreshActiveDisplayLikeUpdateScreen();
+                        }
+
+                        if (checked && view) {
+                            AxesGridProperties verify;
+                            view->getDataAxesGridProperties(viewID, verify);
+                            CVLog::PrintDebug(
+                                    "[AxesGrid] POST-REDRAW: "
+                                    "visible=%d showGrid=%d",
+                                    verify.visible, verify.showGrid);
                         }
                     });
             break;
@@ -2989,6 +2997,19 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
         case OBJECT_NAME_IN_3D: {
             m_currentObject->showNameIn3D(item->checkState() == Qt::Checked);
             m_currentObject->setRedrawFlagRecursive(true);
+            if (item->checkState() != Qt::Checked) {
+                WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
+                                        m_currentObject->getViewId());
+                ecvGenericGLDisplay* view = const_cast<ecvGenericGLDisplay*>(
+                        m_currentObject->getDisplay());
+                if (!view) {
+                    view = ecvViewManager::instance().getEffectiveView();
+                }
+                if (view) {
+                    wpTxt.context.display = view;
+                    view->removeWidgets(wpTxt);
+                }
+            }
         }
             redraw = true;
             break;
@@ -3635,8 +3656,14 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                             param.viewId = obj->getViewId();
                             param.viewport = 0;
 
-                            if (folderView) {
-                                folderView->changeEntityProperties(param);
+                            ecvGenericGLDisplay* objView =
+                                    const_cast<ecvGenericGLDisplay*>(
+                                            obj->getDisplay());
+                            if (!objView) {
+                                objView = folderView;
+                            }
+                            if (objView) {
+                                objView->changeEntityProperties(param);
                             }
                         }
                     }
@@ -3647,6 +3674,7 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                 };
 
         applyOpacityRecursive(m_currentObject, opacity);
+        refreshActiveDisplayLikeUpdateScreen();
 
         CVLog::PrintVerbose(
                 QString("[ccPropertiesTreeDelegate::opacityChanged] "
@@ -3693,10 +3721,21 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
         param.viewId = m_currentObject->getViewId();
         param.viewport = 0;
 
-        // Apply the opacity change to the effective view
-        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-            view->changeEntityProperties(param);
+        ecvGenericGLDisplay* targetView =
+                const_cast<ecvGenericGLDisplay*>(m_currentObject->getDisplay());
+        if (!targetView) {
+            targetView = ecvViewManager::instance().getEffectiveView();
         }
+        if (targetView) {
+            targetView->changeEntityProperties(param);
+        }
+
+        // Opacity is a display property -- do NOT mark the entity for
+        // a full geometry/texture redraw (setRedrawFlagRecursive) because
+        // the texture pipeline re-applies material alpha and overwrites
+        // the user opacity.  changeEntityProperties already updated the
+        // VTK actor property; just trigger a lightweight VTK re-render.
+        refreshActiveDisplayLikeUpdateScreen();
 
         CVLog::PrintVerbose(
                 QString("[ccPropertiesTreeDelegate::opacityChanged] "

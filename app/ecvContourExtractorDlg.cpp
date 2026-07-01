@@ -59,7 +59,6 @@ void ccContourExtractorDlg::init() {
             params.textDefaultCol = ecvColor::black;
             params.pointsDefaultCol = ecvColor::black;
             params.drawBackgroundGradient = false;
-            params.decimateMeshOnMove = false;
             params.displayCross = false;
             params.colorScaleUseShader = false;
             view->setDisplayParameters(params);

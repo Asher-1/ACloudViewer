@@ -198,7 +198,8 @@ if (USE_VTK_BACKEND)
             Qt::Gui
             Qt::Widgets
             Qt::PrintSupport
-            Qt::OpenGL)
+            Qt::OpenGL
+            Qt::Concurrent)
     if(USE_QT6)
         target_link_libraries(${PROJECT_NAME} Qt::OpenGLWidgets)
     endif()

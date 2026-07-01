@@ -125,6 +125,16 @@ ecvGenericGLDisplay* mergeDisplay(ecvGenericGLDisplay* ctxDisp,
     return v;
 }
 
+// Default ccHObject shells (I/O file groups, auto-created "Group" nodes) stay
+// m_visible=false but must not suppress their renderable children.
+bool isStructuralHierarchyContainer(const ccHObject* obj) {
+    if (!obj || obj->getClassID() != CV_TYPES::HIERARCHY_OBJECT) return false;
+    if (obj->isVisible()) return false;
+    const QString& name = obj->getName();
+    if (name.contains('(') && name.contains(')')) return true;
+    return obj->isVisibilityLocked();
+}
+
 }  // namespace
 
 ccHObject::ccHObject(QString name /*=QString()*/)
@@ -992,7 +1002,7 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo>& rmInfos,
     // need to remove 3D name if shown
     if (nameShownIn3D()) {
         showNameIn3D(false);
-        WIDGETS_PARAMETER wp(WIDGETS_TYPE::WIDGET_T2D, getName());
+        WIDGETS_PARAMETER wp(WIDGETS_TYPE::WIDGET_T2D, getViewId());
         wp.context.display = mergeDisplay(nullptr, this);
         if (wp.context.display) wp.context.display->removeWidgets(wp);
     }
@@ -1596,7 +1606,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     const bool ancestorVisible = context.visible;
     if (isHierarchy) {
-        context.visible = ancestorVisible;
+        if (isStructuralHierarchyContainer(this)) {
+            // I/O wrappers and default group shells are invisible containers;
+            // they must not block child mesh/cloud rendering.
+            context.visible = ancestorVisible;
+        } else {
+            context.visible = ancestorVisible && m_visible;
+        }
     } else if (viewRep && viewRep->hasVisibilityOverride()) {
         context.visible = viewRep->isVisible() && ancestorVisible;
     } else if (drawInThisContext) {
@@ -1697,9 +1713,20 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // disabled, must not draw names.
     // Guard with isDisplayedIn() to prevent accessing the wrong VTK pipeline
     // when the object belongs to a secondary view but the primary redraws.
+    bool hierarchyAllowsNames = true;
+    for (const ccHObject* parent = m_parent; parent;
+         parent = parent->getParent()) {
+        if (parent->getClassID() == CV_TYPES::HIERARCHY_OBJECT &&
+            !parent->isVisible() &&
+            !isStructuralHierarchyContainer(parent)) {
+            hierarchyAllowsNames = false;
+            break;
+        }
+    }
     bool shouldDrawName = m_showNameIn3D && !MACRO_EntityPicking(context) &&
-                          isDisplayedIn(context.display) &&
-                          (m_visible || m_selected);
+                          isDisplayedIn(context.display) && isBranchEnabled() &&
+                          drawInThisContext && cascadeVisible &&
+                          hierarchyAllowsNames;
     if (shouldDrawName) {
         if (MACRO_Draw3D(context)) {
             ccBBox bBox = getBB_recursive(true);
@@ -1722,12 +1749,12 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         }
     } else if (!shouldDrawName && isDisplayedIn(context.display)) {
         if (!isKindOf(CV_TYPES::LABEL_2D)) {
-            WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getName());
+            WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getViewId());
             wpTxt.context.display = mergeDisplay(context.display, this);
             if (wpTxt.context.display)
                 wpTxt.context.display->removeWidgets(wpTxt);
             WIDGETS_PARAMETER wpRect(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                     getName());
+                                     getViewId());
             wpRect.context.display = mergeDisplay(context.display, this);
             if (wpRect.context.display)
                 wpRect.context.display->removeWidgets(wpRect);
@@ -1912,6 +1939,21 @@ void ccHObject::hideObject_recursive(bool recursive) {
 
         ccHObject* obj = find(hdInfo.hideId.toUInt());
 
+        // hideShowEntities() only toggles the geometry actor for this
+        // entity type; the "show name (in 3D)" overlay is a separate T2D
+        // widget keyed by the same viewID and is never touched by that
+        // dispatch. Since draw() short-circuits via hideObject_recursive()
+        // and never reaches the shouldDrawName/removeWidgets code path,
+        // we must explicitly drop the name widget here or it keeps
+        // floating in the scene after the branch/object is disabled.
+        if (obj && obj->nameShownIn3D()) {
+            WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, hdInfo.hideId);
+            wpTxt.context.display = mergeDisplay(nullptr, obj);
+            if (wpTxt.context.display) {
+                wpTxt.context.display->removeWidgets(wpTxt);
+            }
+        }
+
         if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE ||
             hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT) {
             context.viewID = hdInfo.hideId;
@@ -1996,6 +2038,21 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
         }
 
         if (!visible) {
+            // Same rationale as hideObject_recursive(): hideShowEntities()
+            // only toggles the geometry actor; the "show name (in 3D)" T2D
+            // overlay is a separate widget that must be explicitly removed,
+            // otherwise it keeps floating in the scene when a folder (or
+            // this entity) is hidden via the DB-tree checkbox / TG_VISIBLE.
+            ccHObject* nameObj = find(hdInfo.hideId.toUInt());
+            if (nameObj && nameObj->nameShownIn3D()) {
+                WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
+                                        hdInfo.hideId);
+                wpTxt.context.display = mergeDisplay(nullptr, nameObj);
+                if (wpTxt.context.display) {
+                    wpTxt.context.display->removeWidgets(wpTxt);
+                }
+            }
+
             hideBB(context);
             context.viewID = hdInfo.hideId;
             ccHObject* obj = find(hdInfo.hideId.toUInt());

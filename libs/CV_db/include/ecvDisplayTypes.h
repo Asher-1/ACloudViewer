@@ -170,9 +170,9 @@ struct CV_DB_LIB_API AxesGridProperties {
     double opacity = 1.0;
 
     bool showGrid = false;
-    QString xTitle = "X-Axis";
-    QString yTitle = "Y-Axis";
-    QString zTitle = "Z-Axis";
+    QString xTitle = "X Axis";
+    QString yTitle = "Y Axis";
+    QString zTitle = "Z Axis";
     bool xUseCustomLabels = false;
     bool yUseCustomLabels = false;
     bool zUseCustomLabels = false;

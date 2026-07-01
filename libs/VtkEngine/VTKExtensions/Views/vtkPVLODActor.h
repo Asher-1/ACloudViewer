@@ -13,6 +13,7 @@
 
 class vtkMapper;
 class vtkPiecewiseFunction;
+class vtkDataObject;
 
 class QVTK_ENGINE_LIB_API vtkPVLODActor : public vtkActor {
 public:
@@ -55,6 +56,11 @@ public:
      * renderered.
      */
     vtkMapper* GetMapper() override { return this->SelectMapper(); }
+
+    /// Full-resolution mapper (not the active LOD/full mapper from
+    /// SelectMapper).
+    vtkMapper* GetFullResolutionMapper() { return this->Mapper; }
+    vtkDataObject* GetFullResolutionInput();
 
     /**
      * When this objects gets modified, this method also modifies the object.
