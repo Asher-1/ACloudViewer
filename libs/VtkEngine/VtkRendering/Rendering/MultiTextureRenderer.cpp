@@ -386,9 +386,8 @@ bool MultiTextureRenderer::Apply(vtkPVLODActor* actor,
                 currentOpacity);
     } else if (hasMaterialOpacity) {
         actor->GetProperty()->SetOpacity(modelOpacity);
-        CVLog::PrintDebug(
-                "[MultiTextureRenderer] Material opacity: %.3f",
-                modelOpacity);
+        CVLog::PrintDebug("[MultiTextureRenderer] Material opacity: %.3f",
+                          modelOpacity);
     } else {
         actor->GetProperty()->SetOpacity(1.0f);
     }
