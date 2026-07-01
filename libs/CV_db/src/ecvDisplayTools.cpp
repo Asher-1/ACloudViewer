@@ -124,9 +124,10 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT,
 
     const ecvGui::ParamStruct& guiParams = GetDisplayParameters();
 
-    CONTEXT.decimateCloudOnMove = guiParams.decimateCloudOnMove;
-    CONTEXT.minLODPointCount = guiParams.minLoDCloudSize;
-    CONTEXT.minLODTriangleCount = guiParams.minLoDMeshSize;
+    CONTEXT.decimateCloudOnMove = false;
+    CONTEXT.decimateMeshOnMove = false;
+    CONTEXT.minLODPointCount = 0;
+    CONTEXT.minLODTriangleCount = 0;
     CONTEXT.higherLODLevelsAvailable = false;
     CONTEXT.moreLODPointsAvailable = false;
     CONTEXT.currentLODLevel = 0;
@@ -2736,9 +2737,10 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
     const ecvGui::ParamStruct& guiParams = GetDisplayParameters();
 
     // decimation options
-    CONTEXT.decimateCloudOnMove = guiParams.decimateCloudOnMove;
-    CONTEXT.minLODPointCount = guiParams.minLoDCloudSize;
-    CONTEXT.minLODTriangleCount = guiParams.minLoDMeshSize;
+    CONTEXT.decimateCloudOnMove = false;
+    CONTEXT.decimateMeshOnMove = false;
+    CONTEXT.minLODPointCount = 0;
+    CONTEXT.minLODTriangleCount = 0;
     CONTEXT.higherLODLevelsAvailable = false;
     CONTEXT.moreLODPointsAvailable = false;
     CONTEXT.currentLODLevel = 0;

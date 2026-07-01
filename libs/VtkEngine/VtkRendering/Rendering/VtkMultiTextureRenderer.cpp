@@ -178,10 +178,9 @@ VtkMultiTextureRenderer::DetectRenderingMode(
     // If there are multiple map_Kd textures, VTK PBR doesn't support it,
     // so we must use traditional multi-texture rendering
     if (material.hasMultipleMapKd) {
-        CVLog::Print(
-                "[VtkMultiTextureRenderer::DetectRenderingMode] Multiple "
-                "map_Kd detected, using traditional multi-texture rendering "
-                "instead of PBR");
+        CVLog::PrintDebug(
+                "[VtkMultiTextureRenderer] Multiple map_Kd detected, using "
+                "traditional multi-texture rendering instead of PBR");
         return RenderingMode::TEXTURED;
     }
 
@@ -252,7 +251,15 @@ bool VtkMultiTextureRenderer::ApplyPBRMaterial(
     }
 
     // Validate and clamp material parameter ranges
-    float opacity = std::max(0.0f, std::min(1.0f, material.opacity));
+    const float materialOpacity =
+            std::max(0.0f, std::min(1.0f, material.opacity));
+    const float actorOpacity = property->GetOpacity();
+    // Display opacity (property panel / setMeshOpacity) overrides material
+    // file alpha when the user has requested transparency.
+    float opacity = materialOpacity;
+    if (actorOpacity < 1.0f - 1e-4f) {
+        opacity = std::max(0.0f, std::min(1.0f, actorOpacity));
+    }
 
     // Enable transparency rendering support ONLY if opacity < 1.0
     // This avoids unnecessary performance overhead for opaque materials
@@ -263,30 +270,16 @@ bool VtkMultiTextureRenderer::ApplyPBRMaterial(
         if (renderer) {
             vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
             if (renderWindow) {
-                // Enable alpha bit planes for transparency rendering
                 renderWindow->SetAlphaBitPlanes(1);
+                renderWindow->SetMultiSamples(0);
             }
-
-            // Enable depth peeling for proper transparency rendering
             renderer->UseDepthPeelingOn();
-            renderer->SetMaximumNumberOfPeels(4);  // Reasonable default
-            renderer->SetOcclusionRatio(0.0);      // Full transparency support
-
-            CVLog::Print(
-                    "[VtkMultiTextureRenderer::ApplyPBRMaterial] Enabled "
-                    "transparency rendering support: opacity=%.3f, depth "
-                    "peeling enabled",
-                    opacity);
+            renderer->SetMaximumNumberOfPeels(4);
+            renderer->SetOcclusionRatio(0.0);
         }
     } else {
-        // Fully opaque material - ensure transparent rendering is disabled
         actor->ForceTranslucentOff();
         actor->ForceOpaqueOn();
-
-        CVLog::PrintDebug(
-                "[VtkMultiTextureRenderer::ApplyPBRMaterial] Material is fully "
-                "opaque (opacity=%.3f), transparent rendering disabled",
-                opacity);
     }
     float metallic = std::max(0.0f, std::min(1.0f, material.metallic));
     float roughness = std::max(0.0f, std::min(1.0f, material.roughness));
@@ -503,9 +496,9 @@ bool VtkMultiTextureRenderer::ApplyPBRRendering(
                     material.baseColorTexture.c_str());
         }
     } else {
-        CVLog::Print(
-                "[VtkMultiTextureRenderer::ApplyPBRMaterial] No BaseColor "
-                "texture specified, using base color: (%.2f,%.2f,%.2f)",
+        CVLog::PrintDebug(
+                "[VtkMultiTextureRenderer] No BaseColor texture, using "
+                "base color: (%.2f,%.2f,%.2f)",
                 material.baseColor[0], material.baseColor[1],
                 material.baseColor[2]);
     }

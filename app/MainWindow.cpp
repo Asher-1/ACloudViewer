@@ -7799,18 +7799,10 @@ void MainWindow::showEvent(QShowEvent* event) {
 
     m_FirstShow = false;
 
-    if (m_tabbedMultiView) {
-        QSettings settings;
-        const QByteArray layoutJson =
-                settings.value(QStringLiteral("MultiView/LayoutState"))
-                        .toByteArray();
-        if (!layoutJson.isEmpty()) {
-            const QJsonDocument doc = QJsonDocument::fromJson(layoutJson);
-            if (doc.isObject()) {
-                m_tabbedMultiView->restoreLayoutState(doc.object());
-            }
-        }
-    }
+    // Always start with a single render view; do not restore multi-window
+    // layout.
+    QSettings settings;
+    settings.remove(QStringLiteral("MultiView/LayoutState"));
 
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);
@@ -7901,13 +7893,8 @@ void MainWindow::saveGUIElementsPos() {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
 
-    if (m_tabbedMultiView) {
-        QJsonObject layoutState = m_tabbedMultiView->saveLayoutState();
-        QSettings settings;
-        settings.setValue(
-                QStringLiteral("MultiView/LayoutState"),
-                QJsonDocument(layoutState).toJson(QJsonDocument::Compact));
-    }
+    QSettings settings;
+    settings.remove(QStringLiteral("MultiView/LayoutState"));
 }
 
 void MainWindow::doShowPrimitiveFactory() {

@@ -172,12 +172,9 @@ bool MultiTextureRenderer::Apply(vtkPVLODActor* actor,
     }
 
     if (map_kd_count > 1) {
-        CVLog::Print(
+        CVLog::PrintDebug(
                 "[MultiTextureRenderer::Apply] Detected %d map_Kd textures "
-                "across %zu materials. Applying global intensity scale %.3f "
-                "to maintain balanced brightness. All textures will be "
-                "rendered "
-                "and blended together.",
+                "across %zu materials. intensity_scale=%.3f",
                 map_kd_count, materials->size(), global_intensity_scale);
     } else if (map_kd_count == 0) {
         CVLog::Warning(
@@ -253,10 +250,9 @@ bool MultiTextureRenderer::Apply(vtkPVLODActor* actor,
         if (hasAlpha) {
             texture->SetBlendingMode(
                     vtkTexture::VTK_TEXTURE_BLENDING_MODE_INTERPOLATE);
-            CVLog::Print(
-                    "[MultiTextureRenderer::Apply] Texture %zu: Using "
-                    "INTERPOLATE "
-                    "blending mode for alpha transparency",
+            CVLog::PrintDebug(
+                    "[MultiTextureRenderer::Apply] Texture %zu: INTERPOLATE "
+                    "blending for alpha",
                     tex_id);
         }
 
@@ -382,50 +378,34 @@ bool MultiTextureRenderer::Apply(vtkPVLODActor* actor,
     // Get current opacity from actor property (may have been set externally)
     float currentOpacity = actor->GetProperty()->GetOpacity();
 
-    // If material has opacity, use it; otherwise preserve external setting
-    // If external setting is less than 1.0, it means transparency was requested
-    if (hasMaterialOpacity) {
-        // Material defines opacity, use it
-        actor->GetProperty()->SetOpacity(modelOpacity);
-        CVLog::Print(
-                "[MultiTextureRenderer::Apply] Set model opacity from "
-                "material: "
-                "%.3f",
-                modelOpacity);
-    } else if (currentOpacity < 1.0f) {
-        // External opacity setting exists, preserve it
+    // Display opacity from the property panel wins over material file alpha.
+    if (currentOpacity < 1.0f - 1e-4f) {
         actor->GetProperty()->SetOpacity(currentOpacity);
-        CVLog::Print(
-                "[MultiTextureRenderer::Apply] Preserving external opacity "
-                "setting: %.3f",
+        CVLog::PrintDebug(
+                "[MultiTextureRenderer] Preserving display opacity: %.3f",
                 currentOpacity);
+    } else if (hasMaterialOpacity) {
+        actor->GetProperty()->SetOpacity(modelOpacity);
+        CVLog::PrintDebug(
+                "[MultiTextureRenderer] Material opacity: %.3f",
+                modelOpacity);
     } else {
-        // Default: fully opaque
         actor->GetProperty()->SetOpacity(1.0f);
     }
 
-    // Enable transparency rendering support if opacity < 1.0
     float finalOpacity = actor->GetProperty()->GetOpacity();
     if (finalOpacity < 1.0f) {
-        // Configure renderer for transparency rendering
+        actor->ForceTranslucentOn();
+        actor->ForceOpaqueOff();
         if (renderer) {
             vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
             if (renderWindow) {
-                // Enable alpha bit planes for transparency rendering
                 renderWindow->SetAlphaBitPlanes(1);
-
-                // Enable depth sorting for proper transparency rendering
-                // VTK will automatically sort transparent objects by depth
-                renderer->SetUseDepthPeeling(1);
-                renderer->SetMaximumNumberOfPeels(4);  // Reasonable default
-                renderer->SetOcclusionRatio(0.0);  // Full transparency support
-
-                CVLog::Print(
-                        "[MultiTextureRenderer::Apply] Enabled transparency "
-                        "rendering support: opacity=%.3f, depth peeling "
-                        "enabled",
-                        finalOpacity);
+                renderWindow->SetMultiSamples(0);
             }
+            renderer->SetUseDepthPeeling(1);
+            renderer->SetMaximumNumberOfPeels(4);
+            renderer->SetOcclusionRatio(0.0);
         }
     }
 
@@ -609,10 +589,11 @@ bool MultiTextureRenderer::ApplyMaterial(ccMaterial::CShared material,
         materialOpacity = std::max(0.0f, std::min(1.0f, ambientColor.a));
     }
 
-    // Only set opacity if it's different from current, or if current is 1.0
-    // This preserves external opacity settings
+    // Preserve display opacity set via the property panel / setMeshOpacity.
     float currentOpacity = actor->GetProperty()->GetOpacity();
-    if (currentOpacity >= 1.0f || materialOpacity < currentOpacity) {
+    if (currentOpacity >= 1.0f - 1e-4f &&
+        (materialOpacity < currentOpacity - 1e-4f ||
+         std::abs(materialOpacity - currentOpacity) <= 1e-4f)) {
         actor->GetProperty()->SetOpacity(materialOpacity);
     }
     actor->GetProperty()->SetInterpolationToPhong();
