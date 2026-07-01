@@ -3354,9 +3354,8 @@ void VtkVis::setMeshOpacity(double opacity,
     actor->Modified();
 
     if (std::abs(prevOpacity - opacity) > 1e-6) {
-        CVLog::PrintDebug(
-                "[VtkVis::setMeshOpacity] <%s> opacity: %.3f -> %.3f",
-                viewID.c_str(), prevOpacity, opacity);
+        CVLog::PrintDebug("[VtkVis::setMeshOpacity] <%s> opacity: %.3f -> %.3f",
+                          viewID.c_str(), prevOpacity, opacity);
     }
 }
 
@@ -5071,7 +5070,8 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     gridProperty->SetFrontfaceCulling(true);
     dataAxesGrid->SetProperty(gridProperty);
 
-    // 4. Labels visibility via LabelMask (0x3f = all 6 faces, matching ParaView)
+    // 4. Labels visibility via LabelMask (0x3f = all 6 faces, matching
+    // ParaView)
     dataAxesGrid->SetLabelMask(props.showLabels ? 0x3f : 0);
 
     // 5. Grid lines visibility
@@ -5184,10 +5184,10 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     CVLog::PrintDebug(
             "[VtkVis::SetDataAxesGridProperties] Grid ready: visibility=%d "
             "bounds=[%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
-            dataAxesGrid->GetVisibility(),
-            dataAxesGrid->GetGridBounds()[0], dataAxesGrid->GetGridBounds()[1],
-            dataAxesGrid->GetGridBounds()[2], dataAxesGrid->GetGridBounds()[3],
-            dataAxesGrid->GetGridBounds()[4], dataAxesGrid->GetGridBounds()[5]);
+            dataAxesGrid->GetVisibility(), dataAxesGrid->GetGridBounds()[0],
+            dataAxesGrid->GetGridBounds()[1], dataAxesGrid->GetGridBounds()[2],
+            dataAxesGrid->GetGridBounds()[3], dataAxesGrid->GetGridBounds()[4],
+            dataAxesGrid->GetGridBounds()[5]);
     UpdateScreen();
     if (auto rw = getRenderWindow()) {
         rw->Render();

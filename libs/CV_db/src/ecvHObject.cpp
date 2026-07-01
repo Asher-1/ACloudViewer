@@ -1717,8 +1717,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     for (const ccHObject* parent = m_parent; parent;
          parent = parent->getParent()) {
         if (parent->getClassID() == CV_TYPES::HIERARCHY_OBJECT &&
-            !parent->isVisible() &&
-            !isStructuralHierarchyContainer(parent)) {
+            !parent->isVisible() && !isStructuralHierarchyContainer(parent)) {
             hierarchyAllowsNames = false;
             break;
         }
