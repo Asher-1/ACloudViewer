@@ -1845,6 +1845,21 @@ void MainWindow::connectActions() {
     connect(m_ui->actionEnableVisualDebugTraces, &QAction::triggered, this,
             &MainWindow::toggleVisualDebugTraces);
 
+    // FPS counter + performance logging in Sandbox menu
+    {
+        auto* fpsAction = new QAction(tr("Show FPS Counter"), this);
+        fpsAction->setCheckable(true);
+        fpsAction->setChecked(false);
+        connect(fpsAction, &QAction::toggled, this, [](bool checked) {
+            auto* dt = ecvViewManager::instance().displayTools();
+            if (!dt) return;
+            auto* widget = dynamic_cast<QVTKWidgetCustom*>(dt->asWidget());
+            if (widget) widget->setFpsVisible(checked);
+        });
+        m_ui->menuSandBox->addSeparator();
+        m_ui->menuSandBox->addAction(fpsAction);
+    }
+
     connect(&ecvViewManager::instance(), &ecvViewManager::newLabel, this,
             &MainWindow::handleNewLabel);
     connect(&ecvViewManager::instance(), &ecvViewManager::autoPickPivot, this,

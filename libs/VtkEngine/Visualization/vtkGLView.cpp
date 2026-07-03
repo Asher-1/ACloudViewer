@@ -1446,6 +1446,14 @@ void vtkGLView::updateScene() {
     }
 }
 
+void vtkGLView::renderScene() {
+    if (m_vtkWidget) {
+        if (auto* rw = m_vtkWidget->GetRenderWindow()) {
+            rw->Render();
+        }
+    }
+}
+
 // -- Phase M1.3: Per-view picking and rendering --
 
 QString vtkGLView::pick2DLabel(int x, int y) {

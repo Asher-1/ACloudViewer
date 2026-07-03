@@ -31,7 +31,7 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
 
         static constexpr int kBaseFontPt =
                 14;  // Increased base for better readability
-        static constexpr int kBaseMargin = 12;
+        static constexpr int kBaseMargin = 16;  // Match CloudCompare spacing
         static constexpr int kBaseIconSize = 16;
 
         // ====================================================================
@@ -152,22 +152,30 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     psi_labelRect = metrics.boundingRect(psi_label);
     lsi_labelRect = metrics.boundingRect(lsi_label);
 
-    auto textLayoutWidth = [&metrics](const QString& text) {
-        return metrics.horizontalAdvance(text) + metrics.descent() / 2 + 4;
+    // Use max of horizontalAdvance and boundingRect width for robust layout.
+    // On macOS, bold font rendering can exceed horizontalAdvance; on some Linux
+    // configs, boundingRect can be too small. Taking the max covers both.
+    auto textLayoutWidth = [&metrics](const QString& text, const QRect& br) {
+        int advance = metrics.horizontalAdvance(text);
+        int brWidth = br.width();
+        int baseWidth = std::max(advance, brWidth) + metrics.descent() / 2 + 4;
+#ifdef Q_OS_MACOS
+        baseWidth += metrics.averageCharWidth();
+#endif
+        return baseWidth;
     };
-    psi_textWidth = textLayoutWidth(psi_label);
-    lsi_textWidth = textLayoutWidth(lsi_label);
-    bbv_textWidth = textLayoutWidth(bbv_label);
-    fs_textWidth = textLayoutWidth(fs_label);
+    psi_textWidth = textLayoutWidth(psi_label, psi_labelRect);
+    lsi_textWidth = textLayoutWidth(lsi_label, lsi_labelRect);
+    bbv_textWidth = textLayoutWidth(bbv_label, bbv_labelRect);
+    fs_textWidth = textLayoutWidth(fs_label, fs_labelRect);
 
-    // CloudCompare row width: label + gap + minus + separator + plus
-    // Gap between text and icons reduced to margin/4 for tighter layout
-    psi_totalWidth =
-            psi_labelRect.width() + margin / 4 + iconSize + margin + iconSize;
-    lsi_totalWidth =
-            lsi_labelRect.width() + margin / 4 + iconSize + margin + iconSize;
-    bbv_totalWidth = bbv_labelRect.width() + margin + iconSize;
-    fs_totalWidth = fs_labelRect.width() + margin + iconSize;
+    // Use max(horizontalAdvance, boundingRect) width for layout.
+    // On macOS with bold fonts, either metric alone can underestimate actual
+    // rendered width; using the maximum prevents text/icon overlap.
+    psi_totalWidth = psi_textWidth + margin + iconSize + margin + iconSize;
+    lsi_totalWidth = lsi_textWidth + margin + iconSize + margin + iconSize;
+    bbv_totalWidth = bbv_textWidth + margin + iconSize;
+    fs_totalWidth = fs_textWidth + margin + iconSize;
 
     textHeight = std::max(psi_labelRect.height(), bbv_labelRect.height());
     textHeight = std::max(lsi_labelRect.height(), textHeight);

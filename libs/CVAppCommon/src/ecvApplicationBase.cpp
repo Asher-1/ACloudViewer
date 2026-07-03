@@ -53,6 +53,8 @@ void ecvApplicationBase::InitOpenGL() {
         format.setStereo(true);
 #endif
         format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        format.setSwapInterval(
+                0);  // Disable VSync globally for responsive interaction
 
 #ifdef Q_OS_MAC
         format.setVersion(3, 3);  // must be 3.3

@@ -1171,7 +1171,6 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                         c_unitTriMarker->getContour()->setDisplay(
                                 context.display);
                     markerContext.viewID = m_contourIdfix;
-                    c_unitTriMarker->getContour()->setRedraw(true);
                     c_unitTriMarker->getContour()->draw(markerContext);
                 }
                 // draw triangle mesh surface
@@ -1180,7 +1179,6 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                         c_unitTriMarker->getPolygon()->setDisplay(
                                 context.display);
                     markerContext.viewID = m_surfaceIdfix;
-                    c_unitTriMarker->getPolygon()->setRedraw(true);
                     c_unitTriMarker->getPolygon()->draw(markerContext);
                 }
             }

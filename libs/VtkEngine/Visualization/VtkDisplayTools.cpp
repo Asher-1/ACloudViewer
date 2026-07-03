@@ -522,7 +522,7 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         vis->setMeshRenderingMode(context.meshRenderingMode, viewID, viewport);
 
         ccMesh* ccMeshObj = dynamic_cast<ccMesh*>(mesh);
-        if (ccMeshObj && (firstShow || mesh->isRedraw())) {
+        if (ccMeshObj && firstShow) {
             vis->setCurrentSourceObject(ccMeshObj, viewID);
         }
 

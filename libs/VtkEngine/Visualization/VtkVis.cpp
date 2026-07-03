@@ -1663,7 +1663,11 @@ void VtkVis::drawPolyline(const CC_DRAW_CONTEXT& context,
     removeShape(viewID);
 
     auto polydata = Converters::Cc2Vtk::PolylineToPolyData(polyline);
-    if (!polydata) return;
+    if (!polydata) {
+        CVLog::Warning("[drawPolyline] '%s' PolylineToPolyData returned null!",
+                       viewID.c_str());
+        return;
+    }
 
     addPolyline(polydata, polygonColor.x(), polygonColor.y(), polygonColor.z(),
                 context.defaultLineWidth, viewID, viewport);
@@ -2238,14 +2242,15 @@ bool VtkVis::addPolyline(vtkSmartPointer<vtkPolyData> polydata,
 
     (*getShapeActorMap())[id] = actor;
     applyLightPropertiesToActor(actor, id);
-    CVLog::Print(QString("[VtkVis::addPolyline] Added polyline '%1' with %2 "
-                         "points, lineWidth=%3, color=(%4,%5,%6)")
-                         .arg(QString::fromStdString(id))
-                         .arg(polydata->GetNumberOfPoints())
-                         .arg(width)
-                         .arg(r)
-                         .arg(g)
-                         .arg(b));
+    CVLog::PrintDebug(
+            QString("[VtkVis::addPolyline] Added polyline '%1' with %2 "
+                    "points, lineWidth=%3, color=(%4,%5,%6)")
+                    .arg(QString::fromStdString(id))
+                    .arg(polydata->GetNumberOfPoints())
+                    .arg(width)
+                    .arg(r)
+                    .arg(g)
+                    .arg(b));
     return true;
 }
 
@@ -2910,8 +2915,19 @@ void VtkVis::removeText3D(const std::string& viewId, int viewport) {
 }
 
 void VtkVis::removeText2D(const std::string& viewId, int viewport) {
-    if (contains(viewId)) {
-        removeShapes(viewId, viewport);
+    // Only remove text actors keyed with composite IDs (e.g. "viewId#text"),
+    // NOT the entity's own shape actor which shares the same plain viewId.
+    // The old code called removeShapes(viewId) which incorrectly destroyed
+    // polyline/sensor geometry actors that happened to have the same ID.
+    std::string prefix = viewId + "#";
+    std::vector<std::string> toRemove;
+    for (const auto& kv : *shape_actor_map_) {
+        if (kv.first.find(prefix) == 0) {
+            toRemove.push_back(kv.first);
+        }
+    }
+    for (const auto& id : toRemove) {
+        removeShape(id, viewport);
     }
 }
 

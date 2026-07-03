@@ -321,6 +321,7 @@ public:
 
     virtual void updateCamera() {}
     virtual void updateScene() {}
+    virtual void renderScene() { updateScene(); }
     virtual void resetCamera(const ccBBox* bbox) { Q_UNUSED(bbox); }
     virtual void resetCamera() {}
     virtual void setBackgroundColor(const ccGLDrawContext& context) {

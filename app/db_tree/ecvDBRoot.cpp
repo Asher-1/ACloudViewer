@@ -11,7 +11,9 @@
 #include <QtCompat.h>
 
 #include <QApplication>
+#include <QDateTime>
 #include <QDir>
+#include <QHash>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>
@@ -1056,6 +1058,15 @@ bool ccDBRoot::setData(const QModelIndex& index,
             assert(item);
             if (!item) return false;
 
+            static QHash<unsigned int, qint64> s_checkTimestamp;
+            unsigned int uid = item->getUniqueID();
+            qint64 now = QDateTime::currentMSecsSinceEpoch();
+            if (s_checkTimestamp.contains(uid) &&
+                (now - s_checkTimestamp[uid]) < 300) {
+                return true;
+            }
+            s_checkTimestamp[uid] = now;
+
             bool newVal = (value == Qt::Checked);
             auto& viewMgr = ecvViewManager::instance();
             auto* activeView = viewMgr.getActiveView();
@@ -1113,6 +1124,12 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     if (sensor) {
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
+                        context.display = const_cast<ecvGenericGLDisplay*>(
+                                sensor->getDisplay());
+                        if (!context.display) {
+                            context.display = viewMgr.getEffectiveView();
+                        }
+                        context.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
                         sensor->hideShowDrawings(context);
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
@@ -1142,7 +1159,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             sensor->hideBB(context);
                         }
                         if (auto* v = viewMgr.getEffectiveView())
-                            v->updateScene();
+                            v->renderScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
