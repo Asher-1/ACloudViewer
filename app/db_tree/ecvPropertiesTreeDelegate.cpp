@@ -2749,6 +2749,12 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     CC_DRAW_CONTEXT context;
                     context.visible =
                             sensor->isVisible() && sensor->isEnabled();
+                    context.display = const_cast<ecvGenericGLDisplay*>(
+                            sensor->getDisplay());
+                    if (!context.display)
+                        context.display =
+                                ecvViewManager::instance().getEffectiveView();
+                    context.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
                     sensor->hideShowDrawings(context);
                     // for bbox
                     context.viewID = sensor->getViewId();

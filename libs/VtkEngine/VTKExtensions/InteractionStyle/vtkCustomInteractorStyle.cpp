@@ -362,8 +362,6 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                 else
                     CVLog::Warning(
                             "no current renderer on the interactor style.");
-
-                CurrentRenderer->Render();
                 break;
             }
 
@@ -413,7 +411,6 @@ void vtkCustomInteractorStyle::OnKeyDown() {
 
             CurrentRenderer->SetActiveCamera(cam);
             CurrentRenderer->ResetCameraClippingRange();
-            CurrentRenderer->Render();
             break;
         }
 
@@ -450,7 +447,6 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             Interactor->GetShiftKey());
     keyboard_signal_(event);
 
-    rens_->Render();
     Interactor->Render();
 }
 
@@ -652,8 +648,6 @@ void vtkCustomInteractorStyle::OnMouseWheelForward() {
         CurrentRenderer->SetActiveCamera(cam);
         CurrentRenderer->ResetCameraClippingRange();
         CurrentRenderer->Modified();
-        CurrentRenderer->Render();
-        rens_->Render();
         Interactor->Render();
     } else
         vtkInteractorStyleRubberBandPick::OnMouseWheelForward();
@@ -680,8 +674,6 @@ void vtkCustomInteractorStyle::OnMouseWheelBackward() {
         CurrentRenderer->SetActiveCamera(cam);
         CurrentRenderer->ResetCameraClippingRange();
         CurrentRenderer->Modified();
-        CurrentRenderer->Render();
-        rens_->Render();
         Interactor->Render();
     } else
         vtkInteractorStyleRubberBandPick::OnMouseWheelBackward();
@@ -980,8 +972,6 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
         CurrentRenderer->AddActor(lut_actor_);
     } else
         return;
-
-    CurrentRenderer->Render();
 }
 
 //-------------------------------------------------------------------------
@@ -1058,7 +1048,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                     CurrentRenderer->RemoveViewProp(grid_actor_);
                     grid_enabled_ = false;
                 }
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1072,7 +1061,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                     CVLog::Print(
                             "[VtkEngine] LUT toggle: no scalar data available");
                 }
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1082,8 +1070,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                 int flag = cam->GetParallelProjection();
                 cam->SetParallelProjection(!flag);
                 CurrentRenderer->SetActiveCamera(cam);
-                CurrentRenderer->Render();
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1108,7 +1094,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                     max_win_height_ = ws[0];
                     max_win_width_ = ws[1];
                 }
-                iren->GetRenderWindow()->Render();
                 iren->Render();
                 return true;
             }
@@ -1157,7 +1142,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                     }
                 }
                 iren->GetRenderWindow()->SetStereoRender(!stereo);
-                iren->GetRenderWindow()->Render();
                 iren->Render();
                 return true;
             }
@@ -1166,13 +1150,11 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
         }
         if (key == '+' || key == '=') {
             zoomIn();
-            rens_->Render();
             iren->Render();
             return true;
         }
         if (key == '-') {
             zoomOut();
-            rens_->Render();
             iren->Render();
             return true;
         }
@@ -1214,7 +1196,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
             if (viewSet) {
                 CurrentRenderer->ResetCamera();
                 CurrentRenderer->ResetCameraClippingRange();
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1238,7 +1219,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                         apart->GetProperty()->SetRepresentationToPoints();
                     }
                 }
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1256,7 +1236,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                         apart->GetProperty()->SetLighting(false);
                     }
                 }
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1275,7 +1254,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                         apart->GetProperty()->SetLighting(true);
                     }
                 }
-                rens_->Render();
                 iren->Render();
                 return true;
             }
@@ -1297,7 +1275,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                         apart->GetProperty()->SetPointSize(psize + 1.0f);
                 }
             }
-            rens_->Render();
             iren->Render();
             return true;
         }
@@ -1316,7 +1293,6 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                         apart->GetProperty()->SetPointSize(psize - 1.0f);
                 }
             }
-            rens_->Render();
             iren->Render();
             return true;
         }
@@ -1339,7 +1315,7 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                                 cam->SetViewUp(saved_cam_viewup_);
                                 cam->SetClippingRange(saved_cam_clip_);
                                 ren->ResetCameraClippingRange();
-                                ren->Render();
+                                iren->Render();
                             }
                         }
                         CVLog::Print("Camera parameters restored.");

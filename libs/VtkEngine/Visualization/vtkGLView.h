@@ -163,6 +163,7 @@ public:
     void changeEntityProperties(PROPERTY_PARAM& param) override;
     void updateCamera() override;
     void updateScene() override;
+    void renderScene() override;
     void resetCamera(const ccBBox* bbox) override;
     void resetCamera() override;
     void toggle2Dviewer(bool state) override;

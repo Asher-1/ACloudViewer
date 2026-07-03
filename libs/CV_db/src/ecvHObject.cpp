@@ -1690,10 +1690,22 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     {
         setHideShowType(context);
         context.display = mergeDisplay(context.display, this);
+
+        // Override context.visible for leaf entities so that
+        // hideShowEntities reflects the entity's OWN visibility, not the
+        // ancestor cascade.  Use m_visible (not drawInThisContext) because
+        // drawInThisContext includes m_selected — a selected-but-hidden
+        // entity must remain hidden.
+        const bool savedVisible = context.visible;
+        if (!isHierarchy) {
+            context.visible = m_visible && isDisplayedIn(context.display);
+        }
+
         bool hasExist = true;
         if (context.display) {
             hasExist = context.display->hideShowEntities(context);
         }
+        context.visible = savedVisible;
         if (!context.forceRedraw && m_forceRedraw && !hasExist) {
             if (!isA(CV_TYPES::OBJECT) && !isA(CV_TYPES::HIERARCHY_OBJECT) &&
                 !isA(CV_TYPES::TRANS_BUFFER)) {
@@ -1813,7 +1825,6 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         hideBB(context);
     }
 
-    // reset redraw flag to true and forceRedraw flag to false(default)
     setRedraw(true);
     setForceRedraw(false);
 }

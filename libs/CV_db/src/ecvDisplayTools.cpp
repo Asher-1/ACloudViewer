@@ -4173,12 +4173,12 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.rect =
                         QRect(xStart,
                               fullH - (yStart + hotZone->yTextBottomLineShift),
-                              hotZone->psi_labelRect.width(),
+                              hotZone->psi_textWidth,
                               hotZone->psi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->psi_labelRect.width() + hotZone->margin / 4;
+            xStart += hotZone->psi_textWidth + hotZone->margin;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 
@@ -4242,12 +4242,12 @@ void ecvDisplayTools::DrawClickableItems(
                 tp.rect =
                         QRect(xStart,
                               fullH - (yStart + hotZone->yTextBottomLineShift),
-                              hotZone->lsi_labelRect.width(),
+                              hotZone->lsi_textWidth,
                               hotZone->lsi_labelRect.height());
                 DrawWidgets(tp, false);
             }
 
-            xStart += hotZone->lsi_labelRect.width() + hotZone->margin / 4;
+            xStart += hotZone->lsi_textWidth + hotZone->margin;
             int barH = std::max(iconSize / 3, 4);
             int barW = std::max(iconSize / 3, 4);
 
