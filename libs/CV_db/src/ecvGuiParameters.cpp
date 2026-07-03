@@ -71,10 +71,11 @@ void ecvGui::ParamStruct::reset() {
     lightDoubleSided = true;
     drawBackgroundGradient = true;
     drawRoundedPoints = false;
-    decimateMeshOnMove = true;
-    minLoDMeshSize = 2500000;
-    decimateCloudOnMove = true;
-    minLoDCloudSize = 10000000;
+    lodRenderingThresholdMB = 20.0;
+    lodResolution = 0.5;
+    lodInteractiveUpdateRate = 5.0;
+    lodStillUpdateRate = 0.002;
+    lodSkipPointGaussian = true;
     useVBOs = true;
     displayCross = true;
 
@@ -215,10 +216,18 @@ void ecvGui::ParamStruct::fromPersistentSettings() {
     drawBackgroundGradient =
             settings.value("backgroundGradient", true).toBool();
     drawRoundedPoints = settings.value("drawRoundedPoints", false).toBool();
-    decimateMeshOnMove = settings.value("meshDecimation", true).toBool();
-    minLoDMeshSize = settings.value("minLoDMeshSize", 2500000).toUInt();
-    decimateCloudOnMove = settings.value("cloudDecimation", true).toBool();
-    minLoDCloudSize = settings.value("minLoDCloudSize", 10000000).toUInt();
+    lodRenderingThresholdMB =
+            settings.value("lodRenderingThresholdMB", 20.0).toDouble();
+    lodResolution = settings.value("lodResolution", 0.5).toDouble();
+    lodInteractiveUpdateRate =
+            settings.value("lodInteractiveUpdateRate", 5.0).toDouble();
+    lodStillUpdateRate = settings.value("lodStillUpdateRate", 0.002).toDouble();
+    lodSkipPointGaussian =
+            settings.value("lodSkipPointGaussian", true).toBool();
+    lodRenderingThresholdMB = std::max(0.0, lodRenderingThresholdMB);
+    lodResolution = std::clamp(lodResolution, 0.0, 1.0);
+    lodInteractiveUpdateRate = std::max(lodInteractiveUpdateRate, 0.001);
+    lodStillUpdateRate = std::max(lodStillUpdateRate, 0.0001);
     useVBOs = settings.value("useVBOs", true).toBool();
     displayCross = settings.value("crossDisplayed", true).toBool();
     labelMarkerSize = static_cast<unsigned>(
@@ -287,10 +296,11 @@ void ecvGui::ParamStruct::toPersistentSettings() const {
     settings.setValue("bbLineWidth", bbLineWidth);
     settings.setValue("backgroundGradient", drawBackgroundGradient);
     settings.setValue("drawRoundedPoints", drawRoundedPoints);
-    settings.setValue("meshDecimation", decimateMeshOnMove);
-    settings.setValue("minLoDMeshSize", minLoDMeshSize);
-    settings.setValue("cloudDecimation", decimateCloudOnMove);
-    settings.setValue("minLoDCloudSize", minLoDCloudSize);
+    settings.setValue("lodRenderingThresholdMB", lodRenderingThresholdMB);
+    settings.setValue("lodResolution", lodResolution);
+    settings.setValue("lodInteractiveUpdateRate", lodInteractiveUpdateRate);
+    settings.setValue("lodStillUpdateRate", lodStillUpdateRate);
+    settings.setValue("lodSkipPointGaussian", lodSkipPointGaussian);
     settings.setValue("useVBOs", useVBOs);
     settings.setValue("crossDisplayed", displayCross);
     settings.setValue("labelMarkerSize", labelMarkerSize);

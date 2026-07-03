@@ -219,7 +219,9 @@ public:
     void equalizeSplitter(QSplitter* splitter, bool horizontal, bool vertical);
     void swapViewFrames(QWidget* frameA, QWidget* frameB);
     void lockViewSize(const QSize& size);
-    void copyPrimaryViewConfig(vtkGLView* view);
+    void copyPrimaryViewConfig(vtkGLView* view,
+                               vtkGLView* sourceView = nullptr);
+    void connectViewModeIconSync(vtkGLView* view);
     void rebindToolsToActiveView(ecvGenericGLDisplay* display);
     void syncPivotButtonStates(ecvGenericGLDisplay* display);
     void prepareViewClose(QWidget* viewFrame);

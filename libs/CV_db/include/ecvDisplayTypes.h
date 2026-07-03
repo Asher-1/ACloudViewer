@@ -59,18 +59,22 @@ struct CV_DB_LIB_API ecvHotZone {
 
     QString bbv_label;
     QRect bbv_labelRect;
+    int bbv_textWidth;
     int bbv_totalWidth;
 
     QString fs_label;
     QRect fs_labelRect;
+    int fs_textWidth;
     int fs_totalWidth;
 
     QString psi_label;
     QRect psi_labelRect;
+    int psi_textWidth;
     int psi_totalWidth;
 
     QString lsi_label;
     QRect lsi_labelRect;
+    int lsi_textWidth;
     int lsi_totalWidth;
 
     int margin;
@@ -85,13 +89,18 @@ struct CV_DB_LIB_API ecvHotZone {
           fs_label("fullscreen mode"),
           psi_label("default point size"),
           lsi_label("default line width"),
-          margin(16),
-          iconSize(16),
+          margin(10),
+          iconSize(14),
+          bbv_textWidth(0),
+          fs_textWidth(0),
+          psi_textWidth(0),
+          lsi_textWidth(0),
           topCorner(0, 0),
           pixelDeviceRatio(1.0) {
-        color[0] = ecvColor::defaultLabelBkgColor.r;
-        color[1] = ecvColor::defaultLabelBkgColor.g;
-        color[2] = ecvColor::defaultLabelBkgColor.b;
+        // CloudCompare hot-zone label color (greenish)
+        color[0] = 133;
+        color[1] = 193;
+        color[2] = 39;
 
         updateInternalVariables(win);
     }
@@ -161,9 +170,9 @@ struct CV_DB_LIB_API AxesGridProperties {
     double opacity = 1.0;
 
     bool showGrid = false;
-    QString xTitle = "X-Axis";
-    QString yTitle = "Y-Axis";
-    QString zTitle = "Z-Axis";
+    QString xTitle = "X Axis";
+    QString yTitle = "Y Axis";
+    QString zTitle = "Z Axis";
     bool xUseCustomLabels = false;
     bool yUseCustomLabels = false;
     bool zUseCustomLabels = false;

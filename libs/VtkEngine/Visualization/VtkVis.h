@@ -825,6 +825,9 @@ public:
                         const std::string& viewID,
                         int viewport = 0);
 
+    /// Rebuild LOD mappers using current Display Settings LOD resolution.
+    void rebuildAllLODMappers();
+
     /*
      * value = 0, PCL_VISUALIZER_SHADING_FLAT
      * value = 1, PCL_VISUALIZER_SHADING_GOURAUD

@@ -1561,25 +1561,22 @@ void vtkComparativeViewWidget::performCameraSyncRender() {
 }
 
 void vtkComparativeViewWidget::setInteractiveLOD(bool enable) {
-    // ParaView pattern: enable LOD actors during interaction for faster
-    // frame rates, disable on EndInteraction for full-quality still render.
-    // Also adjusts DesiredUpdateRate (ParaView: 5.0 interactive / 0.002 still).
-    const double rate = enable ? 5.0 : 0.002;
+    // ParaView: vtkPVRenderView::InteractiveRender / StillRender +
+    // ShouldUseLODRendering(geometry_size).
     for (auto* view : m_subViews) {
         if (!view || !view->getVtkWidget()) continue;
         auto* rw = view->getVtkWidget()->renderWindow();
         if (!rw) continue;
 
-        auto* iren = rw->GetInteractor();
-        if (iren) {
-            iren->SetDesiredUpdateRate(rate);
-        }
-
         auto* renderers = rw->GetRenderers();
         if (!renderers) continue;
         renderers->InitTraversal();
         while (auto* ren = renderers->GetNextItem()) {
-            VtkRendering::SetLODEnabledForRenderer(ren, enable);
+            if (enable) {
+                VtkRendering::BeginInteractiveLOD(ren);
+            } else {
+                VtkRendering::EndInteractiveLOD(ren);
+            }
         }
     }
 }

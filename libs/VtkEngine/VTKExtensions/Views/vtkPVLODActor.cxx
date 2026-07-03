@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPVLODActor.h"
 
+#include "vtkDataObject.h"
 #include "vtkInformation.h"
 #include "vtkMapper.h"
 #include "vtkMath.h"
@@ -21,6 +22,10 @@
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPVLODActor);
+
+vtkDataObject* vtkPVLODActor::GetFullResolutionInput() {
+    return this->Mapper ? this->Mapper->GetInputDataObject(0, 0) : nullptr;
+}
 
 vtkCxxSetObjectMacro(vtkPVLODActor, LODMapper, vtkMapper);
 //----------------------------------------------------------------------------
