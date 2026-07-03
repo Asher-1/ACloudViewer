@@ -134,6 +134,9 @@ public:
     void setRemoveAllFlag(bool flag);
     void setRedrawRecursive(bool redraw);
 
+    void setShuttingDown(bool shuttingDown) { m_shuttingDown = shuttingDown; }
+    bool isShuttingDown() const { return m_shuttingDown; }
+
     /// Increment the label-cache generation counter so that all widgets
     /// rescan the DB tree for labels on their next paint.
     void invalidateLabelCache() { ++m_labelCacheGeneration; }
@@ -364,4 +367,5 @@ private:
     ecvGui::ParamStruct m_overridenDisplayParameters;
     bool m_overridenDisplayParametersEnabled = false;
     unsigned m_labelCacheGeneration = 0;
+    bool m_shuttingDown = false;
 };

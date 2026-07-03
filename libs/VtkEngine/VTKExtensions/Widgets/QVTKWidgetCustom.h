@@ -39,6 +39,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkTextActor.h>
 
 #include "ScaleBarWidget.h"
 
@@ -181,12 +182,10 @@ public:
 
     /// @param visible Whether to show the scale bar
     void setScaleBarVisible(bool visible) {
-        if (m_scaleBar) {
-            if (visible && !isVisible()) return;
-            m_scaleBar->setVisible(visible);
-            if (visible && m_scaleBar->isLayoutReady()) {
-                m_scaleBar->update(m_render, m_interactor);
-            }
+        if (!m_scaleBar) return;
+        m_scaleBar->setVisible(visible);
+        if (visible && isVisible() && m_scaleBar->isLayoutReady()) {
+            m_scaleBar->update(m_render, m_interactor);
         }
     }
 
@@ -381,6 +380,9 @@ private:
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
     ScaleBarWidget* m_scaleBar = nullptr;
+    vtkSmartPointer<vtkCallbackCommand> m_scaleBarUpdateObserver;
+
+    void updateScaleBarIfNeeded();
 
     VtkWidgetPrivate* d_ptr;
 
@@ -388,6 +390,18 @@ private:
 
     // Timer for delayed 2D label update after wheel zoom
     QTimer* m_wheelZoomUpdateTimer = nullptr;
+
+    // High-frequency render timer during interaction
+    QTimer* m_interactionRenderTimer = nullptr;
+    void startInteractionRenderTimer();
+    void stopInteractionRenderTimer();
+
+    bool m_hasPendingMousePos = false;
+    QPoint m_pendingMousePos;
+    int m_renderFrameCount = 0;
+    int m_timerTickCount = 0;
+    qint64 m_renderTimeAccumNs = 0;
+    QElapsedTimer m_interactionFpsTimer;
 
     // True when a cc2DLabel was directly hit in mousePressEvent
     bool m_labelClickedOnPress = false;
@@ -408,4 +422,23 @@ private:
     static constexpr int CURSOR_COORD_THROTTLE_MS = 33;  // ~30 fps
     QElapsedTimer m_cursorCoordTimer;
     bool m_cursorCoordTimerStarted = false;
+
+    // FPS counter
+    bool m_fpsEnabled = false;
+    int m_frameCount = 0;
+    QElapsedTimer m_fpsTimer;
+    QElapsedTimer m_renderTimer;
+    double m_currentFps = 0.0;
+    qint64 m_renderStartNs = 0;
+    qint64 m_renderAccumNs = 0;
+    int m_renderTimingCount = 0;
+    vtkSmartPointer<vtkCallbackCommand> m_fpsObserver;
+    vtkSmartPointer<vtkCallbackCommand> m_startObserver;
+    vtkSmartPointer<vtkTextActor> m_fpsActor;
+    void onRenderForFps();
+    void onRenderStart();
+
+public:
+    void setFpsVisible(bool visible);
+    bool isFpsVisible() const { return m_fpsEnabled; }
 };

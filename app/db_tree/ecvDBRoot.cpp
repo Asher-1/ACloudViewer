@@ -11,7 +11,9 @@
 #include <QtCompat.h>
 
 #include <QApplication>
+#include <QDateTime>
 #include <QDir>
+#include <QHash>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>
@@ -442,7 +444,9 @@ void ccDBRoot::unloadAll() {
     updatePropertiesView();
 
     ecvViewManager::instance().setRemoveAllFlag(true);
-    MainWindow::TheInstance()->refreshAll();
+    if (auto* mw = MainWindow::TheInstance(); mw && !mw->m_closing) {
+        mw->refreshAll();
+    }
 }
 
 ccHObject* ccDBRoot::getRootEntity() { return m_treeRoot; }
@@ -1003,13 +1007,13 @@ bool ccDBRoot::setData(const QModelIndex& index,
                                              .getEffectiveView();
                         }
                         WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D,
-                                                item->getName());
+                                                item->getViewId());
                         wpTxt.context.display = wpDisp;
                         if (wpTxt.context.display)
                             wpTxt.context.display->removeWidgets(wpTxt);
                         WIDGETS_PARAMETER wpRect(
                                 WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                item->getName());
+                                item->getViewId());
                         wpRect.context.display = wpDisp;
                         if (wpRect.context.display)
                             wpRect.context.display->removeWidgets(wpRect);
@@ -1053,6 +1057,15 @@ bool ccDBRoot::setData(const QModelIndex& index,
             ccHObject* item = static_cast<ccHObject*>(index.internalPointer());
             assert(item);
             if (!item) return false;
+
+            static QHash<unsigned int, qint64> s_checkTimestamp;
+            unsigned int uid = item->getUniqueID();
+            qint64 now = QDateTime::currentMSecsSinceEpoch();
+            if (s_checkTimestamp.contains(uid) &&
+                (now - s_checkTimestamp[uid]) < 300) {
+                return true;
+            }
+            s_checkTimestamp[uid] = now;
 
             bool newVal = (value == Qt::Checked);
             auto& viewMgr = ecvViewManager::instance();
@@ -1111,6 +1124,12 @@ bool ccDBRoot::setData(const QModelIndex& index,
                     if (sensor) {
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
+                        context.display = const_cast<ecvGenericGLDisplay*>(
+                                sensor->getDisplay());
+                        if (!context.display) {
+                            context.display = viewMgr.getEffectiveView();
+                        }
+                        context.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
                         sensor->hideShowDrawings(context);
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
@@ -1140,7 +1159,7 @@ bool ccDBRoot::setData(const QModelIndex& index,
                             sensor->hideBB(context);
                         }
                         if (auto* v = viewMgr.getEffectiveView())
-                            v->updateScene();
+                            v->renderScene();
                     }
                 } else if (item->isKindOf(CV_TYPES::PRIMITIVE)) {
                     ccGenericPrimitive* prim =
@@ -2365,6 +2384,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
                 bool wasBefore = item->isVisible();
                 item->toggleVisibility();
                 item->setForceRedrawRecursive(true);
+                if (item->getClassID() == CV_TYPES::HIERARCHY_OBJECT &&
+                    item->getChildrenNumber() > 0) {
+                    toggleFolderChildrenVisibility(
+                            item, item->isVisible() && item->isEnabled());
+                }
                 if (undoMgr) {
                     undoMgr->push(new ecvPropertyChangeCommand<bool>(
                             item->getUniqueID(), QStringLiteral("visible"),

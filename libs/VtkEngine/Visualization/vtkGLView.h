@@ -67,8 +67,16 @@ class QVTK_ENGINE_LIB_API vtkGLView : public QObject,
     Q_OBJECT
 
 public:
-    static vtkGLView* Create(QMainWindow* parent, bool stereoMode = false);
+    static vtkGLView* Create(QMainWindow* parent,
+                             bool stereoMode = false,
+                             bool loadDefaultPerspective = false);
     ~vtkGLView() override;
+
+    /// Perform an orderly VTK teardown (interactor, GL context, ImageVis)
+    /// before the display-tools singleton or other shared resources are
+    /// deleted. Safe to call multiple times.
+    void shutdown();
+    bool isShutdown() const { return m_shutdownDone; }
 
     /// Reassign ParaView XML label and registration name (e.g. Slice / EDL
     /// views).
@@ -85,7 +93,9 @@ public:
     void toBeRefreshed() override;
     const ecvViewportParameters& getViewportParameters() const override;
     void setViewportParameters(const ecvViewportParameters& params) override;
-    void setPerspectiveState(bool state, bool objectCenteredView) override;
+    void setPerspectiveState(bool state,
+                             bool objectCenteredView,
+                             bool persistDefault = true) override;
     bool perspectiveView() const override;
     bool objectCenteredView() const override;
     void setSceneDB(ccHObject* root) override;
@@ -153,6 +163,7 @@ public:
     void changeEntityProperties(PROPERTY_PARAM& param) override;
     void updateCamera() override;
     void updateScene() override;
+    void renderScene() override;
     void resetCamera(const ccBBox* bbox) override;
     void resetCamera() override;
     void toggle2Dviewer(bool state) override;
@@ -413,7 +424,9 @@ protected:
     explicit vtkGLView(QMainWindow* parent);
 
 private:
-    void initVtkPipeline(QMainWindow* parent, bool stereoMode);
+    void initVtkPipeline(QMainWindow* parent,
+                         bool stereoMode,
+                         bool loadDefaultPerspective = false);
 
     // -- Identification --
     int m_uniqueID;
@@ -470,6 +483,7 @@ private:
     QTimer m_scheduleTimer;
     qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
+    bool m_shutdownDone = false;
     QElapsedTimer m_timer;
     vtkSmartPointer<vtkGridAxesActor3D> m_sliceCubeAxes;
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;

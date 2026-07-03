@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <ecvDisplayCoordinates.h>
 #include <ecvPointPairRegistrationDlg.h>
 
 // LOCAL
@@ -285,16 +286,19 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
     ecvGenericGLDisplay* view = ecvViewManager::instance().getEffectiveView();
     if (!view) return;
 
-    const int retinaScale = view->getDevicePixelRatio();
+    const double retinaScale = static_cast<double>(view->getDevicePixelRatio());
     for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i) {
         ccHObject* child = m_alignedLabels.getChild(i);
         if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
             cc2DLabel* alignLabel = ccHObjectCaster::To2DLabel(child);
             if (alignLabel) {
                 if (abs(dx) > 0 || abs(dy) > 0) {
-                    alignLabel->move2D(x * retinaScale, y * retinaScale,
-                                       dx * retinaScale, dy * retinaScale,
-                                       view->glWidth(), view->glHeight());
+                    alignLabel->move2D(
+                            ecvDisplayCoordinates::toPhysical(x, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(y, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(dx, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(dy, retinaScale),
+                            view->glWidth(), view->glHeight());
                 }
 
                 CC_DRAW_CONTEXT context;
@@ -314,9 +318,12 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy) {
             cc2DLabel* refLabel = ccHObjectCaster::To2DLabel(child);
             if (refLabel) {
                 if (abs(dx) > 0 || abs(dy) > 0) {
-                    refLabel->move2D(x * retinaScale, y * retinaScale,
-                                     dx * retinaScale, dy * retinaScale,
-                                     view->glWidth(), view->glHeight());
+                    refLabel->move2D(
+                            ecvDisplayCoordinates::toPhysical(x, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(y, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(dx, retinaScale),
+                            ecvDisplayCoordinates::toPhysical(dy, retinaScale),
+                            view->glWidth(), view->glHeight());
                 }
 
                 CC_DRAW_CONTEXT context;

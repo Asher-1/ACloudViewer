@@ -281,6 +281,7 @@ bool ecvViewManager::hasAnyView() const { return !m_views.isEmpty(); }
 // ============================================================================
 
 void ecvViewManager::refreshAll(bool only2D) {
+    if (m_shuttingDown) return;
     for (auto* view : m_views) {
         if (!view) continue;
         QWidget* w = view->asWidget();
@@ -293,6 +294,7 @@ void ecvViewManager::refreshAll(bool only2D) {
 void ecvViewManager::redrawAll(bool only2D,
                                bool forceRedraw,
                                bool /*includePrimary*/) {
+    if (m_shuttingDown) return;
     for (auto* view : m_views) {
         if (!view) continue;
         // Skip views whose widget is hidden (e.g. inactive QTabWidget

@@ -210,7 +210,6 @@ DistanceMapGenerationDlg::DistanceMapGenerationDlg(
             mapDispParams.drawBackgroundGradient = false;
             mapDispParams.colorScaleShowHistogram = false;
             mapDispParams.colorScaleRampWidth = 30;
-            mapDispParams.decimateMeshOnMove = false;
             mapDispParams.displayCross = false;
             mapDispParams.colorScaleUseShader = false;
             view->setDisplayParameters(mapDispParams);

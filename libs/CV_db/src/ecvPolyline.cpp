@@ -181,7 +181,9 @@ static QSharedPointer<ccCone> c_unitArrow(0);
 
 void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
     unsigned vertCount = size();
-    if (vertCount < 2) return;
+    if (vertCount < 2) {
+        return;
+    }
 
     bool draw = false;
 
@@ -192,9 +194,13 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
         draw = ((drawFG && m_foreground) || (!drawFG && !m_foreground));
     }
 
-    if (!draw) return;
+    if (!draw) {
+        return;
+    }
 
-    if (!context.display) return;
+    if (!context.display) {
+        return;
+    }
 
     if (isColorOverridden()) {
         context.defaultPolylineColor = getTempColor();

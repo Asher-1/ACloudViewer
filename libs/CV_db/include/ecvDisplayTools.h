@@ -274,7 +274,9 @@ public:
     void toBeRefreshed() override;
     const ecvViewportParameters& getViewportParameters() const override;
     void setViewportParameters(const ecvViewportParameters& params) override;
-    void setPerspectiveState(bool state, bool objectCenteredView) override;
+    void setPerspectiveState(bool state,
+                             bool objectCenteredView,
+                             bool persistDefault = true) override;
     bool perspectiveView() const override;
     bool objectCenteredView() const override;
     void setSceneDB(ccHObject* root) override;

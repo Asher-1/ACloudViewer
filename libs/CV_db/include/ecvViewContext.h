@@ -35,9 +35,27 @@
 struct CV_DB_LIB_API ecvViewContext {
     // ================================================================
     // Viewport / Camera
+    //
+    // COORDINATE SPACE CONTRACT:
+    //   glViewport    — PHYSICAL pixels (widget size * DPR).
+    //                   Used for GL projection, depth-buffer reads,
+    //                   picking coordinates, and camera viewport params.
+    //
+    //   Qt widget coords — LOGICAL pixels (QWidget::width/height,
+    //                   QMouseEvent pos). Used for UI layout, hit-testing
+    //                   before DPR conversion.
+    //
+    //   ImageVis / VTK render-window coords — LOGICAL pixels on macOS
+    //                   Retina (vtkRenderWindow::GetSize()). Used for
+    //                   2D overlay rendering (text, rectangles, icons).
+    //
+    // Conversions: use ecvDisplayCoordinates::toPhysical/toLogical.
+    //   Input events:  logical → toPhysical(pos, dpr) for picking/GL.
+    //   GL results:    physical → toLogical(pos, dpr) for ImageVis overlay.
     // ================================================================
 
     ecvViewportParameters viewportParams;
+    /// GL viewport in PHYSICAL pixels (synced from widget * DPR).
     QRect glViewport;
     ccGLMatrixd viewMatd;
     ccGLMatrixd projMatd;

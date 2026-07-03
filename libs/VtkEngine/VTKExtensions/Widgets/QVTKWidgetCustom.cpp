@@ -56,6 +56,7 @@
 
 // CV_DB_LIB
 #include <Visualization/vtkGLView.h>
+#include <ecvDisplayCoordinates.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvInteractor.h>
@@ -94,6 +95,9 @@
 #include <Shortcuts/ecvKeySequences.h>
 #include <ecv2DLabel.h>
 #include <ecvHObjectCaster.h>
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
+#include <vtkTextProperty.h>
 
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
@@ -332,8 +336,54 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
         if (auto* dt = displayTarget()) dt->update2DLabels(true);
     });
 
+    m_interactionRenderTimer = new QTimer(this);
+    m_interactionRenderTimer->setInterval(16);  // ~60Hz target frame rate
+    connect(m_interactionRenderTimer, &QTimer::timeout, this, [this]() {
+        m_timerTickCount++;
+        if (m_hasPendingMousePos) {
+            m_hasPendingMousePos = false;
+            m_renderFrameCount++;
+            if (auto* rw = this->renderWindow()) {
+                auto* iren = rw->GetInteractor();
+                if (iren) {
+                    iren->SetEventInformationFlipY(m_pendingMousePos.x(),
+                                                   m_pendingMousePos.y());
+                    iren->MouseMoveEvent();
+                }
+                QElapsedTimer rt;
+                rt.start();
+                rw->Render();
+                qint64 renderNs = rt.nsecsElapsed();
+                m_renderTimeAccumNs += renderNs;
+            }
+        }
+        if (m_interactionFpsTimer.isValid() &&
+            m_interactionFpsTimer.elapsed() >= 2000) {
+            double elapsed = m_interactionFpsTimer.elapsed() / 1000.0;
+            double fps = m_renderFrameCount / elapsed;
+            double avgRenderMs =
+                    m_renderFrameCount > 0
+                            ? (m_renderTimeAccumNs / 1e6) / m_renderFrameCount
+                            : 0;
+            if (m_fpsEnabled) {
+                CVLog::Print(QString("[INTERACTION-FPS] fps=%1 renders=%2 "
+                                     "ticks=%3 avgRender=%4ms elapsed=%5s")
+                                     .arg(fps, 0, 'f', 1)
+                                     .arg(m_renderFrameCount)
+                                     .arg(m_timerTickCount)
+                                     .arg(avgRenderMs, 0, 'f', 2)
+                                     .arg(elapsed, 0, 'f', 1));
+            }
+            m_renderFrameCount = 0;
+            m_timerTickCount = 0;
+            m_renderTimeAccumNs = 0;
+            m_interactionFpsTimer.restart();
+        }
+    });
+
     QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
     fmt.setStereo(stereoMode);
+    fmt.setSwapInterval(0);
     setFormat(fmt);
 
 #ifdef Q_OS_WIN
@@ -441,6 +491,136 @@ vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
     return lut;
 }
 
+void QVTKWidgetCustom::startInteractionRenderTimer() {
+    if (m_interactionRenderTimer && !m_interactionRenderTimer->isActive()) {
+        m_hasPendingMousePos = false;
+        m_renderFrameCount = 0;
+        m_timerTickCount = 0;
+        m_renderTimeAccumNs = 0;
+        m_interactionFpsTimer.start();
+        m_interactionRenderTimer->start();
+    }
+    if (auto* rw = this->renderWindow()) {
+        rw->SetDesiredUpdateRate(5.0);
+        if (auto* iren = rw->GetInteractor()) {
+            iren->SetEnableRender(false);
+        }
+    }
+}
+
+void QVTKWidgetCustom::stopInteractionRenderTimer() {
+    if (m_interactionRenderTimer && m_interactionRenderTimer->isActive()) {
+        m_interactionRenderTimer->stop();
+        m_hasPendingMousePos = false;
+    }
+    if (auto* rw = this->renderWindow()) {
+        if (auto* iren = rw->GetInteractor()) {
+            iren->SetEnableRender(true);
+        }
+        rw->SetDesiredUpdateRate(0.002);
+        rw->Render();
+    }
+    this->update();
+}
+
+void QVTKWidgetCustom::updateScaleBarIfNeeded() {
+    if (m_scaleBar && m_render) {
+        m_scaleBar->update(m_render, m_interactor);
+    }
+}
+
+void QVTKWidgetCustom::onRenderStart() {
+    m_renderStartNs = m_renderTimer.nsecsElapsed();
+}
+
+void QVTKWidgetCustom::onRenderForFps() {
+    qint64 renderDurationNs = m_renderTimer.nsecsElapsed() - m_renderStartNs;
+    m_renderAccumNs += renderDurationNs;
+    m_renderTimingCount++;
+    m_frameCount++;
+    qint64 elapsed = m_fpsTimer.elapsed();
+    if (elapsed >= 500) {
+        m_currentFps = m_frameCount * 1000.0 / elapsed;
+        m_frameCount = 0;
+        m_fpsTimer.restart();
+        if (m_fpsActor) {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.1f FPS", m_currentFps);
+            m_fpsActor->SetInput(buf);
+        }
+        double interval = m_currentFps > 0 ? 1000.0 / m_currentFps : 0;
+        double avgRenderMs =
+                m_renderTimingCount > 0
+                        ? (m_renderAccumNs / 1e6) / m_renderTimingCount
+                        : 0;
+        if (m_fpsEnabled) {
+            CVLog::Print(
+                    QString("[FPS] %1 FPS (interval ~%2 ms, renderTime ~%3 "
+                            "ms)")
+                            .arg(m_currentFps, 0, 'f', 1)
+                            .arg(interval, 0, 'f', 1)
+                            .arg(avgRenderMs, 0, 'f', 1));
+        }
+        m_renderAccumNs = 0;
+        m_renderTimingCount = 0;
+    }
+}
+
+void QVTKWidgetCustom::setFpsVisible(bool visible) {
+    m_fpsEnabled = visible;
+    if (visible) {
+        if (!m_fpsActor) {
+            m_fpsActor = vtkSmartPointer<vtkTextActor>::New();
+            m_fpsActor->SetInput("-- FPS");
+            m_fpsActor->GetTextProperty()->SetFontSize(14);
+            m_fpsActor->GetTextProperty()->SetColor(0.0, 1.0, 0.0);
+            m_fpsActor->GetTextProperty()->SetFontFamilyToCourier();
+            m_fpsActor->GetTextProperty()->SetBold(true);
+            m_fpsActor->SetDisplayPosition(10, 10);
+        }
+        if (m_render) {
+            m_render->AddActor2D(m_fpsActor);
+        }
+        if (!m_fpsObserver) {
+            m_fpsObserver = vtkSmartPointer<vtkCallbackCommand>::New();
+            m_fpsObserver->SetClientData(this);
+            m_fpsObserver->SetCallback(
+                    [](vtkObject*, unsigned long, void* cd, void*) {
+                        auto* self = static_cast<QVTKWidgetCustom*>(cd);
+                        if (self) self->onRenderForFps();
+                    });
+            if (auto* rw = this->GetRenderWindow()) {
+                rw->AddObserver(vtkCommand::EndEvent, m_fpsObserver);
+            }
+        }
+        if (!m_startObserver) {
+            m_startObserver = vtkSmartPointer<vtkCallbackCommand>::New();
+            m_startObserver->SetClientData(this);
+            m_startObserver->SetCallback(
+                    [](vtkObject*, unsigned long, void* cd, void*) {
+                        auto* self = static_cast<QVTKWidgetCustom*>(cd);
+                        if (self) self->onRenderStart();
+                    });
+            if (auto* rw = this->GetRenderWindow()) {
+                rw->AddObserver(vtkCommand::StartEvent, m_startObserver);
+            }
+        }
+        m_renderTimer.start();
+        m_fpsTimer.start();
+        m_frameCount = 0;
+    } else {
+        if (m_fpsActor && m_render) {
+            m_render->RemoveActor2D(m_fpsActor);
+        }
+        if (m_fpsObserver) {
+            if (auto* rw = this->GetRenderWindow()) {
+                rw->RemoveObserver(m_fpsObserver);
+            }
+            m_fpsObserver = nullptr;
+        }
+    }
+}
+
 void QVTKWidgetCustom::initVtk(
         vtkSmartPointer<vtkRenderWindowInteractor> interactor, bool useVBO) {
     this->m_useVBO = useVBO;
@@ -450,9 +630,46 @@ void QVTKWidgetCustom::initVtk(
             this->GetRenderWindow()->GetRenderers()->GetFirstRenderer();
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
+
+    // Keep scale bar in sync during VTK-driven zoom/pan/rotate (interactor
+    // style calls Render() directly, bypassing QVTKWidgetCustom mouse
+    // handlers). InteractionEvent avoids updating on every StartEvent/render
+    // frame.
+    if (m_interactor && !m_scaleBarUpdateObserver) {
+        m_scaleBarUpdateObserver = vtkSmartPointer<vtkCallbackCommand>::New();
+        m_scaleBarUpdateObserver->SetClientData(this);
+        m_scaleBarUpdateObserver->SetCallback(
+                [](vtkObject*, unsigned long, void* cd, void*) {
+                    auto* self = static_cast<QVTKWidgetCustom*>(cd);
+                    if (self) self->updateScaleBarIfNeeded();
+                });
+        m_interactor->AddObserver(vtkCommand::InteractionEvent,
+                                  m_scaleBarUpdateObserver);
+    }
+
     if (!m_scaleBar) {
         m_scaleBar = new ScaleBarWidget(m_render);
+        // CRITICAL: Enable visibility BEFORE notifying layout ready
+        // ScaleBarWidget defaults to visible=false in constructor
+        m_scaleBar->setVisible(true);
+
+        // Notify layout ready after widget is created and renderer is available
+        // so the scale bar can be displayed immediately
+        QTimer::singleShot(100, this, [this]() {
+            if (m_scaleBar && m_render && m_interactor) {
+                if (!m_scaleBar->isLayoutReady()) {
+                    m_scaleBar->notifyLayoutReady();
+                }
+                m_scaleBar->update(m_render, m_interactor);
+                // Force a render to ensure the scale bar appears
+                if (this->GetRenderWindow()) {
+                    this->GetRenderWindow()->Render();
+                }
+            }
+        });
     }
+
+    setFpsVisible(false);
 }
 
 void QVTKWidgetCustom::transformCameraView(const double* viewMat) {
@@ -477,13 +694,12 @@ bool IsCalledFromMainThread() {
 }
 
 void QVTKWidgetCustom::updateScene() {
-    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
-    if (IsCalledFromMainThread() && this->GetRenderWindow()) {
-        this->GetRenderWindow()->Render();
-    } else {  // only core threading enabled rendering
+    updateScaleBarIfNeeded();
+    if (IsCalledFromMainThread()) {
+        this->update();
+    } else {
         QMetaObject::invokeMethod(
-                this, [=]() { this->GetRenderWindow()->Render(); },
-                Qt::QueuedConnection);
+                this, [=]() { this->update(); }, Qt::QueuedConnection);
     }
 }
 
@@ -805,6 +1021,8 @@ bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
 
 // event processing
 void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
+    startInteractionRenderTimer();
+
     // Activate the view on click (ParaView-style): the render view becomes
     // current when the user presses the mouse here, not when the cursor
     // merely passes over the widget (see mouseMoveEvent).
@@ -1212,16 +1430,16 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
     if (doRedraw) {
         if (m_ownerView) emit m_ownerView->labelmove2D(0, 0, 0, 0);
         emit labelmove2D(0, 0, 0, 0);
-        displayTarget()->updateNamePoseRecursive();
 
         if (m_wheelZoomUpdateTimer) {
             m_wheelZoomUpdateTimer->stop();
             m_wheelZoomUpdateTimer->start();
         }
 
+        updateScaleBarIfNeeded();
         if (m_ownerView) {
             if (auto* w = m_ownerView->asWidget()) w->update();
-            m_ownerView->updateCamera();
+            m_ownerView->updateScene();
         } else {
             displayTarget()->updateScene();
         }
@@ -1229,6 +1447,17 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 }
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
+    static QElapsedTimer s_framePerfTimer;
+    static int s_perfFrameCount = 0;
+    static qint64 s_perfAccum = 0;
+    static qint64 s_vtkAccum = 0;
+    static int s_pathTrace = 0;
+    if (!s_framePerfTimer.isValid()) s_framePerfTimer.start();
+
+    QElapsedTimer localTimer;
+    localTimer.start();
+    qint64 t_vtkRender = 0;
+
     if (handleCameraOrientationMouse(event, QEvent::MouseMove)) {
         event->accept();
         return;
@@ -1244,14 +1473,44 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                          curRotationAxisLocked(), event,
                                          QEvent::MouseMove);
     if (vtkToolStyle && !m_labelClickedOnPress) {
+        s_pathTrace = 1;
+        qint64 t0 = localTimer.nsecsElapsed();
         QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+        t_vtkRender = localTimer.nsecsElapsed() - t0;
         if (event->buttons() != Qt::NoButton) {
+            updateScaleBarIfNeeded();
             curMouseMoved() = true;
             curLastMousePos() = event->pos();
+
+            // Performance logging for the primary rotation/pan path
+            qint64 totalNs = localTimer.nsecsElapsed();
+            s_perfAccum += totalNs;
+            s_vtkAccum += t_vtkRender;
+            s_perfFrameCount++;
+            if (s_perfFrameCount >= 30) {
+                double avgMs = (s_perfAccum / 1e6) / s_perfFrameCount;
+                double avgVtkMs = (s_vtkAccum / 1e6) / s_perfFrameCount;
+                double eventFps =
+                        s_perfFrameCount * 1000.0 / s_framePerfTimer.elapsed();
+                CVLog::PrintDebug(
+                        QString("[PERF] vtkToolStyle avg=%1 ms (VTK=%2 ms) "
+                                "eventRate=%3/s over %4 frames")
+                                .arg(avgMs, 0, 'f', 2)
+                                .arg(avgVtkMs, 0, 'f', 2)
+                                .arg(eventFps, 0, 'f', 1)
+                                .arg(s_perfFrameCount));
+                s_perfAccum = 0;
+                s_vtkAccum = 0;
+                s_perfFrameCount = 0;
+                s_framePerfTimer.restart();
+            }
+
             event->accept();
             return;
         }
     }
+
+    bool vtkHandledInteraction = false;
 
     if (!((curInteractionFlags() & ecvGenericGLDisplay::INTERACT_ROTATE) &&
           (curInteractionFlags() &
@@ -1261,6 +1520,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             if (event->buttons() & Qt::MiddleButton) {
                 if (m_ownerView) {
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+                    vtkHandledInteraction = true;
                 } else {
                     event->accept();
                 }
@@ -1270,8 +1530,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                                  curInteractionFlags(),
                                                  curRotationAxisLocked(), event,
                                                  QEvent::MouseMove)) {
+                    s_pathTrace = 2;
+                    qint64 t0 = localTimer.nsecsElapsed();
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+                    t_vtkRender = localTimer.nsecsElapsed() - t0;
+                    updateScaleBarIfNeeded();
                     ecvDisplayTools::UpdateDisplayParameters();
+                    vtkHandledInteraction = true;
                 }
             }
         }
@@ -1328,11 +1593,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
                                       displayTarget()->exclusiveFullScreen());
 
-            const int retinaScale = displayTarget()->getDevicePixelRatio();
-            bool inZone = (x * retinaScale * 3 <
-                                   hz->topCorner.x() + areaRect.width() * 4 &&
-                           y * retinaScale * 2 <
-                                   hz->topCorner.y() + areaRect.height() * 4);
+            const double dpr =
+                    static_cast<double>(displayTarget()->getDevicePixelRatio());
+            int scaledX = ecvDisplayCoordinates::toPhysical(x, dpr);
+            int scaledY = ecvDisplayCoordinates::toPhysical(y, dpr);
+            QRect zoneRect = areaRect.translated(hz->topCorner);
+            bool inZone = zoneRect.contains(scaledX, scaledY);
 
             if (inZone != m_localClickableVisible) {
                 m_localClickableVisible = inZone;
@@ -1369,6 +1635,15 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
 
         // don't need to process any further
+        s_pathTrace = 3;
+        s_perfFrameCount++;
+        if (s_perfFrameCount >= 30) {
+            CVLog::PrintDebug(QString("[PERF] noButton path=%1 frames=%2")
+                                      .arg(s_pathTrace)
+                                      .arg(s_perfFrameCount));
+            s_perfFrameCount = 0;
+            s_framePerfTimer.restart();
+        }
         return;
     }
 
@@ -1379,7 +1654,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (abs(dx) > 0 || abs(dy) > 0) {
             if (m_ownerView) emit m_ownerView->labelmove2D(x, y, 0, 0);
             emit labelmove2D(x, y, 0, 0);
-            displayTarget()->updateNamePoseRecursive();
         }
     } else if ((event->buttons() & Qt::MiddleButton)) {
         if (!m_ownerView) {
@@ -1390,8 +1664,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     u.y *= curViewportParams().cameraAspectRatio;
                 }
 
-                const int retinaScale = displayTarget()->getDevicePixelRatio();
-                u *= retinaScale;
+                const double dpr = static_cast<double>(
+                        displayTarget()->getDevicePixelRatio());
+                u *= dpr;
 
                 bool entityMovingMode =
                         (curInteractionFlags() &
@@ -1451,15 +1726,16 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (abs(dx) > 0 || abs(dy) > 0) {
             if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
             emit labelmove2D(x, y, dx, dy);
-            displayTarget()->updateNamePoseRecursive();
             if (!curActiveItems().empty()) {
                 updateActivateditems(x, y, dx, dy, true);
             }
         }
     } else if (event->buttons() & Qt::LeftButton)  // rotation
     {
-        if (!m_labelClickedOnPress) {
-            if (auto* dt = displayTarget()) dt->scheduleFullRedraw(1000);
+        if (vtkHandledInteraction) {
+            s_pathTrace = 5;
+        } else if (!m_labelClickedOnPress) {
+            s_pathTrace = 4;
         }
 
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
@@ -1484,14 +1760,12 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             if (abs(dx) > 0 || abs(dy) > 0) {
                 if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit labelmove2D(x, y, dx, dy);
-                ecvDisplayTools::UpdateNamePoseRecursive();
                 updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
             }
         } else {
             if (abs(dx) > 0 || abs(dy) > 0) {
                 if (m_ownerView) emit m_ownerView->labelmove2D(x, y, dx, dy);
                 emit labelmove2D(x, y, dx, dy);
-                ecvDisplayTools::UpdateNamePoseRecursive();
                 if (!curActiveItems().empty()) {
                     updateActivateditems(x, y, dx, dy,
                                          !ecvDisplayTools::USE_2D);
@@ -1563,8 +1837,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 }
             }
             // standard rotation around the current pivot
-            else if (curInteractionFlags() &
-                     ecvGenericGLDisplay::INTERACT_ROTATE) {
+            else if (!vtkHandledInteraction &&
+                     (curInteractionFlags() &
+                      ecvGenericGLDisplay::INTERACT_ROTATE)) {
                 // choose the right rotation mode
                 enum RotationMode { StandardMode, BubbleViewMode };
                 RotationMode rotationMode = StandardMode;
@@ -1658,11 +1933,35 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
 
     curMouseMoved() = true;
     curLastMousePos() = event->pos();
-    if (!m_labelClickedOnPress) {
+    if (!m_labelClickedOnPress && !vtkHandledInteraction) {
         if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit cameraParamChanged();
-        if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
+        updateScaleBarIfNeeded();
     }
+
+    // Performance logging: report every 30 frames
+    qint64 totalNs = localTimer.nsecsElapsed();
+    s_perfAccum += totalNs;
+    s_vtkAccum += t_vtkRender;
+    s_perfFrameCount++;
+    if (s_perfFrameCount >= 30) {
+        double avgMs = (s_perfAccum / 1e6) / s_perfFrameCount;
+        double avgVtkMs = (s_vtkAccum / 1e6) / s_perfFrameCount;
+        double eventFps =
+                s_perfFrameCount * 1000.0 / s_framePerfTimer.elapsed();
+        CVLog::PrintDebug(QString("[PERF] path=%1 avg=%2 ms (VTK=%3 ms) "
+                                  "eventRate=%4/s over %5 frames")
+                                  .arg(s_pathTrace)
+                                  .arg(avgMs, 0, 'f', 2)
+                                  .arg(avgVtkMs, 0, 'f', 2)
+                                  .arg(eventFps, 0, 'f', 1)
+                                  .arg(s_perfFrameCount));
+        s_perfAccum = 0;
+        s_vtkAccum = 0;
+        s_perfFrameCount = 0;
+        s_framePerfTimer.restart();
+    }
+
     event->accept();
 }
 
@@ -1674,16 +1973,19 @@ void QVTKWidgetCustom::updateActivateditems(
         CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
         curViewportParams().viewMat.transposed().applyRotation(u);
 
-        const int retinaScale = displayTarget()->getDevicePixelRatio();
-        u *= retinaScale;
+        const double dpr =
+                static_cast<double>(displayTarget()->getDevicePixelRatio());
+        u *= dpr;
 
         for (auto& activeItem : curActiveItems()) {
             if (!m_labelClickedOnPress &&
                 dynamic_cast<cc2DLabel*>(activeItem)) {
                 continue;
             }
-            if (activeItem->move2D(x * retinaScale, y * retinaScale,
-                                   dx * retinaScale, dy * retinaScale,
+            if (activeItem->move2D(ecvDisplayCoordinates::toPhysical(x, dpr),
+                                   ecvDisplayCoordinates::toPhysical(y, dpr),
+                                   ecvDisplayCoordinates::toPhysical(dx, dpr),
+                                   ecvDisplayCoordinates::toPhysical(dy, dpr),
                                    displayTarget()->glWidth(),
                                    displayTarget()->glHeight())) {
                 movedAs2D = true;
@@ -1710,6 +2012,8 @@ void QVTKWidgetCustom::updateActivateditems(
 }
 
 void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
+    stopInteractionRenderTimer();
+
     if (handleCameraOrientationMouse(event, QEvent::MouseButtonRelease)) {
         event->accept();
         return;
@@ -1767,6 +2071,10 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     curMouseMoved() = false;
     QApplication::restoreOverrideCursor();
 
+    if (mouseHasMoved) {
+        displayTarget()->updateNamePoseRecursive();
+    }
+
     if (curInteractionFlags() &
         ecvGenericGLDisplay::INTERACT_SIG_BUTTON_RELEASED) {
         event->accept();
@@ -1820,8 +2128,13 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 vertices = nullptr;
 
                 auto* w = displayTarget()->asWidget();
-                const int pickRefW = w ? w->width() : 0;
-                const int pickRefH = w ? w->height() : 0;
+                const double dpr = ecvDisplayCoordinates::dprOf(w);
+                const int pickRefW =
+                        w ? ecvDisplayCoordinates::toPhysical(w->width(), dpr)
+                          : 0;
+                const int pickRefH =
+                        w ? ecvDisplayCoordinates::toPhysical(w->height(), dpr)
+                          : 0;
                 displayTarget()->startPicking(
                         ecvGenericGLDisplay::ENTITY_RECT_PICKING,
                         pickX + pickRefW / 2, pickRefH / 2 - pickY, pickW,
@@ -2080,6 +2393,14 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
         case QEvent::MouseMove: {
             if (m_labelClickedOnPress || m_rightClickOnLabel) {
                 return QOpenGLWidget::event(evt);
+            }
+            QMouseEvent* me = static_cast<QMouseEvent*>(evt);
+            if (me->buttons() != Qt::NoButton && m_interactionRenderTimer &&
+                m_interactionRenderTimer->isActive()) {
+                m_hasPendingMousePos = true;
+                m_pendingMousePos = me->pos();
+                evt->accept();
+                return true;
             }
         } break;
 

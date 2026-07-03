@@ -52,8 +52,10 @@ protected slots:
     void changeTextColor();
     void changeLabelBackgroundColor();
     void changeLabelMarkerColor();
-    void changeMaxMeshSize(double);
-    void changeMaxCloudSize(double);
+    void changeLodRenderingThreshold(double);
+    void changeLodResolution(double);
+    void changeLodInteractiveUpdateRate(double);
+    void changeLodStillUpdateRate(double);
     void changeVBOUsage();
     void changeColorScaleRampWidth(int);
     void changeBBColor();

@@ -3,6 +3,42 @@ ACloudViewer Version History
 
 v3.9.5-Beta (Asher) - 02/02/2026
 --------------------------------
+- Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
+    - Add multiple 3D windows support with independent per-view rendering state
+      (camera, interaction, picking, viewport parameters per window)
+    - Refactor ecvDisplayTools from static singleton to per-view architecture
+      (Phase 1-5 singleton migration, Phase M1-M6, Phase N1-N2b)
+      - Move global state from ecvDisplayTools singleton to ecvViewManager
+      - Per-view VTK widgets and ecvViewManager signal relay
+      - Per-view active items, message system, CaptureModeOptions
+      - Parameterize 27 effectiveCtx() functions with ecvViewContext&
+      - Python binding cleanup and representation audit
+      - Remove primary/secondary view distinction (ecvGLView as sole view type)
+    - Add vtkChartView with 7 chart types: line, bar, histogram, box, point,
+      parallel coordinates, scatter matrix (ref: ParaView pqChartView)
+    - Add OrthoSlice view with vtkCutter/vtkPlane slice geometry, 3D picking,
+      translucent RGB-colored plane indicators in perspective viewport,
+      display/lighting properties (ref: ParaView Orthographic Slice View)
+    - Add Comparative view with overlay compositing, display property sync,
+      chart comparative cue effect (ref: ParaView pqComparativeVisPanel)
+    - Add VtkCameraLink: ParaView-style pairwise named camera links with
+      Manage Links UI dialog (ref: ParaView pqLinksModel/vtkSMCameraLink)
+    - Align all view types with ParaView defaults:
+      - Chart selection via left click (ref: ParaView pqContextView pattern)
+      - Histogram color picker and log scale Y-axis
+      - Line Chart Series Parameters table (visibility, color, legend name)
+      - Parallel Coordinates per-axis log scale, axis titles, Arial font
+      - Plot Matrix scatter/diagonal display with distinct colors
+      - OrthoSlice scalar coloring with dynamic array selection
+    - Fix cc2DLabel performance and garbled number display
+      (ref: CloudCompare cc2DLabel rendering)
+    - Optimize ccCameraSensor/ccGBLSensor frustum rendering with dirty-flag
+      and transform caching, per-view mode for sensors
+    - Remove bubble-view mode overlay (hot zone point size/line width HUD)
+    - Fix: window management, crashes on exit/view open, Link 3D interactions
+    - Fix: point picking and octree tools in multi-window context
+    - CI: fix Windows, Ubuntu focal, and cross-platform link issues
+
 - Agent integration:
     - Add agent-integration module for AI agent frameworks (OpenClaw, Cursor, Claude Code)
     - JSON-RPC plugin: expand from 12 to 32 RPC methods

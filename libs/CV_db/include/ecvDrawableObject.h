@@ -50,7 +50,10 @@ public:  // drawing and drawing options
     //! Returns whether entity is visible or not
     inline virtual bool isVisible() const { return m_visible; }
     //! Sets entity visibility
-    inline virtual void setVisible(bool state) { m_visible = state; }
+    inline virtual void setVisible(bool state) {
+        if (state && !m_visible) setRedraw(true);
+        m_visible = state;
+    }
 
     //! Toggles visibility
     inline virtual void toggleVisibility() { setVisible(!isVisible()); }
