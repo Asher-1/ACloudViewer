@@ -1195,18 +1195,15 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     // pivot-point logic to prevent rapid +/- clicks from resetting the
     // rotation center.
     bool inHotZone = false;
-    if (curInteractionFlags() &
-        ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
+    if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
         ecvHotZone* hz = curHotZone();
         if (hz && displayTarget()) {
             QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
                                       displayTarget()->exclusiveFullScreen());
-            const double dpr = static_cast<double>(
-                    displayTarget()->getDevicePixelRatio());
-            int scaledX =
-                    ecvDisplayCoordinates::toPhysical(event->x(), dpr);
-            int scaledY =
-                    ecvDisplayCoordinates::toPhysical(event->y(), dpr);
+            const double dpr =
+                    static_cast<double>(displayTarget()->getDevicePixelRatio());
+            int scaledX = ecvDisplayCoordinates::toPhysical(event->x(), dpr);
+            int scaledY = ecvDisplayCoordinates::toPhysical(event->y(), dpr);
             QRect zoneRect = areaRect.translated(hz->topCorner);
             inHotZone = zoneRect.contains(scaledX, scaledY);
         }
