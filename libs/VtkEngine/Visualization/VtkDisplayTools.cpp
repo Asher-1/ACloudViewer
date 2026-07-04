@@ -1535,15 +1535,26 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                           param.color.a);
             }
             break;
-        case WIDGETS_TYPE::WIDGET_IMAGE:
-            if (m_visualizer2D) {
-                if (param.image.isNull()) return;
-
-                m_visualizer2D->addRGBImage(param.image, param.rect.x(),
-                                            param.rect.y(), viewID,
-                                            param.opacity);
+        case WIDGETS_TYPE::WIDGET_IMAGE: {
+            bool isSecondaryImg = param.context.display &&
+                                  param.context.display !=
+                                          static_cast<ecvDisplayTools*>(this);
+            Visualization::ImageVis* imgVis2D = nullptr;
+            if (isSecondaryImg) {
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    imgVis2D = glView->getImageVis().get();
+                }
+            } else {
+                imgVis2D = m_visualizer2D ? m_visualizer2D.get() : nullptr;
             }
-            break;
+            if (imgVis2D && !param.image.isNull()) {
+                imgVis2D->addImageOverlay(
+                        param.image, param.rect.x(), param.rect.y(),
+                        param.rect.width(), param.rect.height(), viewID,
+                        param.opacity);
+            }
+        } break;
         default:
             break;
     }

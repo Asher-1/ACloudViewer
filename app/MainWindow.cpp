@@ -13514,6 +13514,16 @@ void MainWindow::activateSegmentationMode() {
 void MainWindow::deactivateSegmentationMode(bool state) {
     bool deleteHiddenParts = false;
 
+    // Preserve the rotation center (pivot) across segmentation --
+    // addToDB() calls resetCenterOfRotation() for new entities which
+    // would otherwise move the pivot unexpectedly.
+    CCVector3d savedPivot(0, 0, 0);
+    bool hasSavedPivot = false;
+    if (auto* v = getActiveGLView()) {
+        savedPivot = v->getViewportParameters().getPivotPoint();
+        hasSavedPivot = true;
+    }
+
     // shall we apply segmentation?
     if (state) {
         ccHObject* firstResult = nullptr;
@@ -13556,7 +13566,10 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             cc2DLabel* label = static_cast<cc2DLabel*>(*it);
                             bool removeLabel = false;
                             for (unsigned i = 0; i < label->size(); ++i) {
-                                if (label->getPickedPoint(i).cloud == entity) {
+                                const auto& pp = label->getPickedPoint(i);
+                                if (pp.cloud == entity ||
+                                    pp.cloud == cloud ||
+                                    pp.mesh == entity) {
                                     removeLabel = true;
                                     break;
                                 }
@@ -13568,6 +13581,10 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                                            "cloud %2 and will be removed")
                                                 .arg(label->getName(),
                                                      cloud->getName()));
+                                label->setVisible(false);
+                                label->setEnabled(false);
+                                label->clearLabel();
+                                label->setRedrawFlagRecursive(false);
                                 ccHObject* labelParent = label->getParent();
                                 ccHObjectContext objContext =
                                         removeObjectTemporarilyFromDBTree(
@@ -13731,6 +13748,17 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                 if (deleteOriginalEntity) {
                     p = segmentedEntities.erase(p);
 
+                    // Clean up any remaining label children before deletion
+                    // to ensure their VTK actors are removed from the scene.
+                    ccHObject::Container remainingLabels;
+                    entity->filterChildren(remainingLabels, true,
+                                           CV_TYPES::LABEL_2D);
+                    for (ccHObject* lbl : remainingLabels) {
+                        if (lbl && lbl->isA(CV_TYPES::LABEL_2D)) {
+                            static_cast<cc2DLabel*>(lbl)->clearLabel();
+                        }
+                    }
+
                     delete entity;
                     entity = nullptr;
                 } else {
@@ -13769,6 +13797,13 @@ void MainWindow::deactivateSegmentationMode(bool state) {
         }
         if (auto* v = getActiveGLView())
             v->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
+
+    // Restore the saved pivot so the rotation center stays unchanged.
+    if (hasSavedPivot) {
+        if (auto* v = getActiveGLView()) {
+            v->setPivotPoint(savedPivot, false, false);
+        }
     }
 
     freezeUI(false);

@@ -348,7 +348,11 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
                 if (iren) {
                     iren->SetEventInformationFlipY(m_pendingMousePos.x(),
                                                    m_pendingMousePos.y());
-                    iren->MouseMoveEvent();
+                    if (m_skipFirstTimerMove) {
+                        m_skipFirstTimerMove = false;
+                    } else {
+                        iren->MouseMoveEvent();
+                    }
                 }
                 QElapsedTimer rt;
                 rt.start();
@@ -494,6 +498,7 @@ vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
 void QVTKWidgetCustom::startInteractionRenderTimer() {
     if (m_interactionRenderTimer && !m_interactionRenderTimer->isActive()) {
         m_hasPendingMousePos = false;
+        m_skipFirstTimerMove = true;
         m_renderFrameCount = 0;
         m_timerTickCount = 0;
         m_renderTimeAccumNs = 0;
@@ -512,6 +517,7 @@ void QVTKWidgetCustom::stopInteractionRenderTimer() {
     if (m_interactionRenderTimer && m_interactionRenderTimer->isActive()) {
         m_interactionRenderTimer->stop();
         m_hasPendingMousePos = false;
+        m_skipFirstTimerMove = false;
     }
     if (auto* rw = this->renderWindow()) {
         if (auto* iren = rw->GetInteractor()) {
@@ -1181,6 +1187,32 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     }
 
     if (isSignalOnlyInteraction(curInteractionFlags())) {
+        event->accept();
+        return;
+    }
+
+    // Check if double-click is within the HotZone area. If so, ignore the
+    // pivot-point logic to prevent rapid +/- clicks from resetting the
+    // rotation center.
+    bool inHotZone = false;
+    if (curInteractionFlags() &
+        ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
+        ecvHotZone* hz = curHotZone();
+        if (hz && displayTarget()) {
+            QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
+                                      displayTarget()->exclusiveFullScreen());
+            const double dpr = static_cast<double>(
+                    displayTarget()->getDevicePixelRatio());
+            int scaledX =
+                    ecvDisplayCoordinates::toPhysical(event->x(), dpr);
+            int scaledY =
+                    ecvDisplayCoordinates::toPhysical(event->y(), dpr);
+            QRect zoneRect = areaRect.translated(hz->topCorner);
+            inHotZone = zoneRect.contains(scaledX, scaledY);
+        }
+    }
+
+    if (inHotZone) {
         event->accept();
         return;
     }

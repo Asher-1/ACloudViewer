@@ -3964,7 +3964,7 @@ void ecvDisplayTools::ClearBubbleView(ecvGenericGLDisplay* display) {
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->fs_label));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->psi_label));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->lsi_label));
-    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_IMAGE, "Exit"));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
     RemoveWidgets(
             makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, "clicked_items"));
@@ -4067,30 +4067,26 @@ void ecvDisplayTools::DrawClickableItems(
 
         xStart += hotZone->fs_textWidth + hotZone->margin;
 
-        //"full-screen" icon
+        //"full-screen" exit icon (CloudCompare ecvExit.png)
         {
+            static const QImage s_exitIcon(
+                    ":/Resources/images/ecvExit.png");
+            int is = iconSize;
             int x0 = xStart;
-            int y0 = fullH - (yStart + iconSize);
-            WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                    CLICKED_ITEMS);
-            param.context.display = display;
-            param.color = ecvColor::FromRgba(ecvColor::ored);
-            param.rect = QRect(x0, y0, iconSize + offset, iconSize);
-            DrawWidgets(param, false);
+            int y0 = fullH - (yStart + is);
+            WIDGETS_PARAMETER imgParam(WIDGETS_TYPE::WIDGET_IMAGE,
+                                       CLICKED_ITEMS);
+            imgParam.context.display = display;
+            imgParam.image = s_exitIcon.scaled(is, is, Qt::KeepAspectRatio,
+                                               Qt::SmoothTransformation);
+            imgParam.opacity = 1.0;
+            imgParam.rect = QRect(x0, y0, is, is);
+            DrawWidgets(imgParam, false);
 
-            WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
-            texParam.context.display = display;
-            texParam.color = ecvColor::bright;
-            texParam.text = "Exit";
-            texParam.rect =
-                    QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
-                          iconSize, iconSize);
-            texParam.fontSize = hotZone->font.pointSize();
-            DrawWidgets(texParam, false);
             clickableItems.emplace_back(
                     ClickableItem::LEAVE_FULLSCREEN_MODE,
-                    QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
+                    QRect(xStart, yStart, is, is));
+            xStart += is;
         }
 
         yStart += iconSize;
