@@ -1549,10 +1549,10 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 imgVis2D = m_visualizer2D ? m_visualizer2D.get() : nullptr;
             }
             if (imgVis2D && !param.image.isNull()) {
-                imgVis2D->addImageOverlay(
-                        param.image, param.rect.x(), param.rect.y(),
-                        param.rect.width(), param.rect.height(), viewID,
-                        param.opacity);
+                imgVis2D->addImageOverlay(param.image, param.rect.x(),
+                                          param.rect.y(), param.rect.width(),
+                                          param.rect.height(), viewID,
+                                          param.opacity);
             }
         } break;
         default:

@@ -13567,8 +13567,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             bool removeLabel = false;
                             for (unsigned i = 0; i < label->size(); ++i) {
                                 const auto& pp = label->getPickedPoint(i);
-                                if (pp.cloud == entity ||
-                                    pp.cloud == cloud ||
+                                if (pp.cloud == entity || pp.cloud == cloud ||
                                     pp.mesh == entity) {
                                     removeLabel = true;
                                     break;
