@@ -119,6 +119,14 @@ public:
                      const std::string& layer_id,
                      double opacity = 1.0);
 
+    void addImageOverlay(const QImage& qimage,
+                         unsigned x,
+                         unsigned y,
+                         unsigned w,
+                         unsigned h,
+                         const std::string& layer_id,
+                         double opacity = 1.0);
+
     void addQImage(const QImage& qimage,
                    const std::string& layer_id = "image",
                    double opacity = 1.0);

@@ -397,6 +397,7 @@ private:
     void stopInteractionRenderTimer();
 
     bool m_hasPendingMousePos = false;
+    bool m_skipFirstTimerMove = false;
     QPoint m_pendingMousePos;
     int m_renderFrameCount = 0;
     int m_timerTickCount = 0;

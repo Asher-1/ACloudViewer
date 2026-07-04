@@ -325,7 +325,6 @@ void VtkVis::configInteractorStyle(
     // add some default manipulators. Applications can override them without
     // much ado.
     registerInteractorStyle(false);
-    // keyboard modifier configured via interactor style directly
 }
 
 void VtkVis::initialize() {
@@ -3805,6 +3804,11 @@ inline ecvCameraState cameraParamsToUndoState(const VtkVis::CameraParams& p) {
 }  // namespace
 
 void VtkVis::pushCameraState() {
+    if (m_inCameraUndoRedo) return;
+
+    vtkSmartPointer<vtkCamera> cam = getVtkCamera(0);
+    if (!cam) return;
+
     CameraParams state = getCamera(0);
     if (!m_cameraUndoStack.empty()) {
         const auto& top = m_cameraUndoStack.back();
@@ -3828,13 +3832,15 @@ void VtkVis::pushCameraState() {
     }
     m_cameraRedoStack.clear();
 
-    if (m_undoManager && !m_inCameraUndoRedo && hadPrior) {
+    if (m_undoManager && hadPrior) {
+        m_inCameraUndoRedo = true;
         ecvCameraState before = cameraParamsToUndoState(beforeParams);
         ecvCameraState after = cameraParamsToUndoState(state);
         m_undoManager->push(new ecvCameraUndoCommand(
                 before, after,
                 [this](const ecvCameraState& cs) { applyCameraState(cs); },
                 QStringLiteral("Camera")));
+        m_inCameraUndoRedo = false;
     }
 }
 

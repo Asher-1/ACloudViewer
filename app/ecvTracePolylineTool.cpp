@@ -448,7 +448,8 @@ void ccTracePolylineTool::stop(bool accepted) {
                 ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
         stopView->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
         stopView->asWidget()->setCursor(Qt::ArrowCursor);
-        stopView->asWidget()->setMouseTracking(false);
+        while (QApplication::overrideCursor())
+            QApplication::restoreOverrideCursor();
 
         if (m_hasSavedViewState) {
             stopView->setAutoPickPivotAtCenter(m_savedAutoPickPivot);

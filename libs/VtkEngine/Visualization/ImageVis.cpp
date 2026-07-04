@@ -436,6 +436,40 @@ void ImageVis::addQImage(const QImage& qimage,
     addRGBImage(qimage, 0, 0, layer_id, opacity);
 }
 
+void ImageVis::addImageOverlay(const QImage& qimage,
+                               unsigned x,
+                               unsigned y,
+                               unsigned w,
+                               unsigned h,
+                               const std::string& layer_id,
+                               double opacity) {
+    if (qimage.isNull() || w == 0 || h == 0) return;
+
+    LayerMap::iterator am_it = std::find_if(
+            layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
+    if (am_it == layer_map_.end()) {
+        am_it = createLayer(layer_id, getSize()[0] - 1, getSize()[1] - 1,
+                            opacity, false);
+    }
+
+    QImage rgbaImage = qimage;
+    if (rgbaImage.format() != QImage::Format_RGBA8888) {
+        rgbaImage = rgbaImage.convertToFormat(QImage::Format_RGBA8888);
+    }
+
+    auto imgSource = vtkSmartPointer<vtkQImageToImageSource>::New();
+    imgSource->SetQImage(&rgbaImage);
+    imgSource->Update();
+
+    auto item =
+            vtkSmartPointer<VtkRendering::context_items::ImageOverlay>::New();
+    item->set(static_cast<float>(x), static_cast<float>(y),
+              static_cast<float>(w), static_cast<float>(h));
+    item->setOpacity(opacity);
+    item->setImageData(imgSource->GetOutput());
+    am_it->actor->GetScene()->AddItem(item);
+}
+
 bool ImageVis::addLine(unsigned int x_min,
                        unsigned int y_min,
                        unsigned int x_max,
