@@ -2118,6 +2118,15 @@ void vtkComparativeViewWidget::syncViewPropertiesFromSource(vtkGLView* source,
             stripClickableItems(source->getInteractionMode()));
     target->setPickingMode(source->getPickingMode());
 
+    // Sync orientation marker from source view
+    if (auto* srcVis = source->getVisualizer3D()) {
+        if (auto* dstVis = target->getVisualizer3D()) {
+            if (srcVis->pclMarkerAxesShown() && !dstVis->pclMarkerAxesShown()) {
+                dstVis->showPclMarkerAxes(dstVis->getRenderWindowInteractor());
+            }
+        }
+    }
+
     disableBubbleViewForSubView(target);
 }
 
