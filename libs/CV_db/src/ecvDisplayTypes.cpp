@@ -152,9 +152,8 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     // Apply 2/3 reduction for visual parity with CloudCompare on macOS.
     if (pixelDeviceRatio >= 1.5) {
         constexpr qreal kMacDisplayScale = 2.0 / 3.0;
-        font.setPointSize(
-                std::max(static_cast<int>(font.pointSize() * kMacDisplayScale),
-                         14));
+        font.setPointSize(std::max(
+                static_cast<int>(font.pointSize() * kMacDisplayScale), 14));
         margin = std::max(static_cast<int>(margin * kMacDisplayScale), 16);
         iconSize = std::max(static_cast<int>(iconSize * kMacDisplayScale), 16);
     }
@@ -172,7 +171,7 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     const qreal metricsScale = std::max(pixelDeviceRatio, 1.0);
 
     auto textLayoutWidth = [&metrics, metricsScale](const QString& text,
-                                                     const QRect& br) {
+                                                    const QRect& br) {
         int advance = metrics.horizontalAdvance(text);
         int brWidth = br.width();
         int baseWidth = std::max(advance, brWidth) + metrics.descent() / 2 + 4;
@@ -188,7 +187,8 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
     bbv_totalWidth = bbv_textWidth + margin + iconSize;
     fs_totalWidth = fs_textWidth + margin + iconSize;
 
-    int scaledMaxHeight = std::max(psi_labelRect.height(), bbv_labelRect.height());
+    int scaledMaxHeight =
+            std::max(psi_labelRect.height(), bbv_labelRect.height());
     scaledMaxHeight = std::max(lsi_labelRect.height(), scaledMaxHeight);
     scaledMaxHeight = std::max(fs_labelRect.height(), scaledMaxHeight);
     textHeight = static_cast<int>((3 * scaledMaxHeight * metricsScale) / 4);

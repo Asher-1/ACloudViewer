@@ -15,8 +15,8 @@
 #include <vtkBrush.h>
 #include <vtkContext2D.h>
 #include <vtkContextItem.h>
-#include <vtkPen.h>
 #include <vtkImageData.h>
+#include <vtkPen.h>
 #include <vtkSmartPointer.h>
 #include <vtkTextProperty.h>
 
@@ -206,9 +206,7 @@ public:
     vtkTypeMacro(ImageOverlay, VtkContextItemBase);
     static ImageOverlay* New();
     bool Paint(vtkContext2D* painter) override;
-    void set(float x, float y, float w, float h) {
-        params = {x, y, w, h};
-    }
+    void set(float x, float y, float w, float h) { params = {x, y, w, h}; }
     void setImageData(vtkImageData* img) { imageData_ = img; }
 
     vtkSmartPointer<vtkImageData> imageData_;
