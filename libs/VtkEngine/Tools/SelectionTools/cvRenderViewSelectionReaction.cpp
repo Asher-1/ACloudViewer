@@ -453,6 +453,15 @@ void cvRenderViewSelectionReaction::beginSelection() {
         ActiveReaction->endSelection();
     }
 
+    // Invalidate any pending deferred cleanup from a prior endSelection()
+    // AND synchronously clean up any observers left from it. The deferred
+    // lambda would have done this, but since we're starting a new session
+    // now (on the Qt event loop, safe from VTK re-entrancy), we must do it
+    // ourselves to prevent duplicate observers.
+    ++m_endSelectionGen;
+    cleanupObservers();
+    m_selectionStyle = nullptr;
+
     // Set this as the active reaction
     // Reference: line 333
     ActiveReaction = this;
@@ -461,7 +470,9 @@ void cvRenderViewSelectionReaction::beginSelection() {
     // Reference: lines 335-336
     // In ParaView this uses vtkSMPropertyHelper to get InteractionMode
     // We store the interactor style instead
-    m_previousRenderViewMode = 0;  // Placeholder (valid value, not -1)
+    // Mark that a selection session is active (value != -1 means active).
+    // The sentinel -1 in endSelection() gates the cleanup path.
+    m_previousRenderViewMode = 0;
 
     // Handle each mode type
     // Reference: lines 340-437 (first switch statement)
@@ -538,10 +549,6 @@ void cvRenderViewSelectionReaction::endSelection() {
     // Reference: pqRenderViewSelectionReaction::endSelection()
     // lines 497-533
 
-    if (!m_viewer) {
-        return;
-    }
-
     // Only end if this is the active reaction
     // Reference: lines 504-507
     if (ActiveReaction != this || m_previousRenderViewMode == -1) {
@@ -573,47 +580,47 @@ void cvRenderViewSelectionReaction::endSelection() {
         m_copyTooltipShortcut->setEnabled(false);
     }
 
-    // CRITICAL FIX: Defer cleanup operations to avoid crashing when called
-    // from within VTK event handlers (e.g.,
-    // vtkInteractorStyleRubberBand3D::OnLeftButtonUp) The VTK event loop may
-    // still invoke additional events after SelectionChangedEvent, so we must
-    // not cleanup observers until the event loop completes.
-    QTimer::singleShot(0, this, [this]() {
-        // If a new mode has started, only skip the mode-exit operations
-        // but still clean up observers from this mode
-        bool newModeActive = (ActiveReaction != nullptr);
+    // Restore interactor style and cursor IMMEDIATELY so the user regains
+    // normal camera interaction right away. This is safe because
+    // m_selectionStyle (a vtkSmartPointer) keeps the old style alive even
+    // after SetInteractorStyle() removes it from the interactor.
+    if (m_interactor && m_previousStyle) {
+        m_interactor->SetInteractorStyle(m_previousStyle);
+        m_previousStyle = nullptr;
+    } else if (m_interactor) {
+        Visualization::VtkVis* pclVis = getVtkVis();
+        if (pclVis && pclVis->get3DInteractorStyle()) {
+            m_interactor->SetInteractorStyle(pclVis->get3DInteractorStyle());
+        }
+    }
+    unsetCursor();
 
-        if (newModeActive) {
-            // Only clean up observers - the new mode will handle style/cursor
-            cleanupObservers();
+    // Defer operations that are unsafe inside VTK event handlers:
+    // - Observer removal (can corrupt VTK's observer list during traversal)
+    // - m_selectionStyle release (prevents use-after-free if VTK event
+    //   handler still references the style object on the call stack)
+    // - Pipeline/PointPicking state transitions
+    // Use a generation token so the lambda is no-op if beginSelection() ran
+    // between endSelection() and the timer firing (prevents stale cleanup).
+    const unsigned int gen = ++m_endSelectionGen;
+    QTimer::singleShot(0, this, [this, gen]() {
+        if (gen != m_endSelectionGen) {
             return;
         }
 
-        // Full cleanup when no new mode is active:
-
-        // Restore previous interactor style
-        // Reference: lines 510-513
-        restoreStyle();
-
-        // Restore cursor to default arrow
-        // Reference: line 514
-        unsetCursor();
-
-        // Clean up observers - SAFE now since we're outside VTK event loop
-        // Reference: line 515
         cleanupObservers();
+        m_selectionStyle = nullptr;
 
-        // Update tooltip
-        // Reference: line 519
-        updateTooltip();
+        if (ActiveReaction != nullptr) {
+            return;
+        }
 
-        // Exit selection mode to release cached buffers
         cvSelectionPipeline* pipeline = getSelectionPipeline();
         if (pipeline) {
             pipeline->exitSelectionMode();
         }
 
-        // Re-enable VtkVis's PointPickingCallback
+        if (!m_viewer) return;
         Visualization::VtkVis* pclVis = getVtkVis();
         if (pclVis && !pclVis->isPointPickingEnabled()) {
             pclVis->setPointPickingEnabled(true);
@@ -628,10 +635,7 @@ void cvRenderViewSelectionReaction::endSelection() {
         m_parentAction->setChecked(false);
     }
 
-    CVLog::PrintVerbose(
-            QString("[cvRenderViewSelectionReaction] Selection mode %1 ended")
-                    .arg(static_cast<int>(m_mode)));
-}
+    }
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::onMouseStop() {
@@ -846,8 +850,7 @@ void cvRenderViewSelectionReaction::onMouseMove() {
         case SelectionMode::SELECT_SURFACE_POINTDATA_INTERACTIVELY:
         case SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY:
         case SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY:
-            // Use preSelection for highlighting
-            preSelection();
+            fastPreSelection();
             break;
 
         case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
@@ -1022,6 +1025,14 @@ void cvRenderViewSelectionReaction::preSelection() {
         return;
     }
 
+    // Skip HW picks while the pipeline is invalidating its cache.
+    // During invalidation, picks return empty and clear the hover highlight,
+    // causing visible flicker during camera moves.
+    cvSelectionPipeline* pipelineGuard = getSelectionPipeline();
+    if (pipelineGuard && pipelineGuard->isInvalidating()) {
+        return;
+    }
+
     int x = m_interactor->GetEventPosition()[0];
     int y = m_interactor->GetEventPosition()[1];
     int* size = m_interactor->GetSize();
@@ -1072,10 +1083,6 @@ void cvRenderViewSelectionReaction::preSelection() {
         }
     }
 
-    if (Visualization::VtkVis* pclVis = getVtkVis()) {
-        pclVis->UpdateScreen();
-    }
-
     updateTooltip();
 }
 
@@ -1084,9 +1091,72 @@ void cvRenderViewSelectionReaction::fastPreSelection() {
     // Reference: pqRenderViewSelectionReaction::fastPreSelection()
     // lines 768-872
 
-    // For now, use regular preSelection
-    // Fast pre-selection optimization can be added later
-    preSelection();
+    if (ActiveReaction != this || !m_interactor || !m_renderer) {
+        return;
+    }
+
+    int x = m_interactor->GetEventPosition()[0];
+    int y = m_interactor->GetEventPosition()[1];
+    int* size = m_interactor->GetSize();
+
+    if (x < 0 || y < 0 || x >= size[0] || y >= size[1]) {
+        cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+        if (highlighter) {
+            highlighter->clearHoverHighlight();
+        }
+        m_hoveredId = -1;
+        m_currentPolyData = nullptr;
+        return;
+    }
+
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (!pipeline) {
+        return;
+    }
+
+    // During cache invalidation, HW picks return empty and would clear the
+    // hover highlight, causing flicker. Skip the entire pick cycle.
+    if (pipeline->isInvalidating()) {
+        return;
+    }
+
+    // Skip HW pick entirely if mouse hasn't moved (major perf optimization)
+    if (x == m_mousePosition[0] && y == m_mousePosition[1] && m_hoveredId >= 0) {
+        return;
+    }
+    m_mousePosition[0] = x;
+    m_mousePosition[1] = y;
+
+    bool selectCells = isSelectingCells();
+    cvSelectionPipeline::PixelSelectionInfo info =
+            pipeline->getPixelSelectionInfo(x, y, selectCells);
+
+    if (info.valid && info.attributeID >= 0) {
+        if (info.attributeID == m_hoveredId && info.polyData == m_currentPolyData) {
+            return;
+        }
+        m_hoveredId = info.attributeID;
+        m_currentPolyData = info.polyData;
+
+        cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+        if (highlighter && info.polyData) {
+            int fieldAssociation = selectCells ? 0 : 1;
+            highlighter->highlightElement(info.polyData, info.attributeID,
+                                          fieldAssociation);
+        }
+    } else {
+        if (m_hoveredId < 0 && !m_currentPolyData) {
+            return;
+        }
+        m_hoveredId = -1;
+        m_currentPolyData = nullptr;
+        cvSelectionHighlighter* highlighter = getSelectionHighlighter();
+        if (highlighter) {
+            highlighter->clearHoverHighlight();
+        }
+    }
+
+    updateTooltip();
 }
 
 //-----------------------------------------------------------------------------
@@ -1403,11 +1473,6 @@ int cvRenderViewSelectionReaction::getSelectionModifier() {
                     manager->setSelectionModifier(
                             static_cast<SelectionModifier>(selectionModifier));
                 }
-                CVLog::PrintVerbose(
-                        QString("[getSelectionModifier] From modifierGroup: "
-                                "action='%1', modifier=%2")
-                                .arg(maction->text())
-                                .arg(selectionModifier));
                 break;
             }
         }
@@ -1550,10 +1615,6 @@ void cvRenderViewSelectionReaction::selectCellsOnSurface(
         highlighter->setHighlightsVisible(true);
     }
 
-    CVLog::Print(QString("[cvRenderViewSelectionReaction] SurfaceCells pick "
-                         "count=%1 modifier=%2")
-                         .arg(selection.count())
-                         .arg(selectionModifier));
     finalizeSelection(selection, selectionModifier, "SurfaceCells");
 }
 
@@ -1577,11 +1638,6 @@ void cvRenderViewSelectionReaction::selectPointsOnSurface(
         highlighter->setHighlightsVisible(true);
     }
 
-    CVLog::PrintVerbose(
-            QString("[cvRenderViewSelectionReaction] SurfacePoints pick "
-                    "count=%1 modifier=%2")
-                    .arg(selection.count())
-                    .arg(selectionModifier));
     finalizeSelection(selection, selectionModifier, "SurfacePoints");
 }
 
@@ -1634,8 +1690,10 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     Q_UNUSED(description);
 
     if (newSelection.isEmpty()) {
-        CVLog::Print(QString("[finalizeSelection] empty selection (%1)")
-                             .arg(description));
+        // Empty pick region (e.g. click on empty space): no-op for all
+        // modifiers. ParaView's pqRenderViewSelectionReaction does not clear
+        // existing selection on empty picks — that's handled by explicit
+        // CLEAR_SELECTION mode instead.
         return;
     }
 
@@ -1685,10 +1743,6 @@ void cvRenderViewSelectionReaction::finalizeSelection(
                                     "found for viewID='%1'")
                                     .arg(QString::fromStdString(viewID)));
                 }
-            } else {
-                CVLog::Print(
-                        "[finalizeSelection] Could not find viewID for "
-                        "primary actor");
             }
         }
     }
@@ -1700,11 +1754,8 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     // info.
     manager->blockSignals(true);
     if (highlighter && !combined.isEmpty()) {
-        const bool hlOk = highlighter->highlightSelection(
-                combined, cvSelectionHighlighter::SELECTED);
-        CVLog::Print(QString("[finalizeSelection] highlight %1 for %2 ids")
-                             .arg(hlOk ? "OK" : "FAIL")
-                             .arg(combined.count()));
+        highlighter->highlightSelection(combined,
+                                        cvSelectionHighlighter::SELECTED);
     } else if (highlighter && combined.isEmpty()) {
         highlighter->clearHighlights();
     }
@@ -1884,9 +1935,6 @@ void cvRenderViewSelectionReaction::storeCurrentStyle() {
 
             if (!isSelectionStyle) {
                 m_previousStyle = style;
-                CVLog::PrintVerbose(QString("[storeCurrentStyle] Stored "
-                                            "non-selection style: %1")
-                                            .arg(style->GetClassName()));
             }
         }
     }

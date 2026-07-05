@@ -950,6 +950,17 @@ void vtkComparativeViewWidget::zoomToData() {
         return;
     }
 
+    auto* sourceWidget = sourceView->getVtkWidget();
+    if (!sourceWidget || !sourceWidget->renderWindow()) {
+        m_cameraLinkEnabled = restoreCameraLink;
+        if (restoreCameraLink) installCameraLink();
+        return;
+    }
+
+    // Force a render to ensure prop bounds are up-to-date before ResetCamera.
+    // Without this, the first zoomToData call may see stale/partial bounds.
+    sourceWidget->renderWindow()->Render();
+
     const bool hasBounds = resetRendererCameraFramed(sourceRen);
     double bounds[6];
     sourceRen->ComputeVisiblePropBounds(bounds);
