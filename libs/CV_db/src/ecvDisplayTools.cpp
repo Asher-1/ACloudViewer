@@ -4069,8 +4069,7 @@ void ecvDisplayTools::DrawClickableItems(
 
         //"full-screen" exit icon (CloudCompare ecvExit.png)
         {
-            static const QImage s_exitIcon(
-                    ":/Resources/images/ecvExit.png");
+            static const QImage s_exitIcon(":/Resources/images/ecvExit.png");
             int is = iconSize;
             int x0 = xStart;
             int y0 = fullH - (yStart + is);
@@ -4083,9 +4082,8 @@ void ecvDisplayTools::DrawClickableItems(
             imgParam.rect = QRect(x0, y0, is, is);
             DrawWidgets(imgParam, false);
 
-            clickableItems.emplace_back(
-                    ClickableItem::LEAVE_FULLSCREEN_MODE,
-                    QRect(xStart, yStart, is, is));
+            clickableItems.emplace_back(ClickableItem::LEAVE_FULLSCREEN_MODE,
+                                        QRect(xStart, yStart, is, is));
             xStart += is;
         }
 
