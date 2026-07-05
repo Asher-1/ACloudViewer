@@ -30,6 +30,7 @@
 #include <vtkImageData.h>
 #include <vtkInteractorStyle.h>
 #include <vtkInteractorStyleDrawPolygon.h>
+#include <Tools/SelectionTools/cvInteractorStyleDrawPolygon.h>
 #include <vtkInteractorStyleRubberBand3D.h>
 #include <vtkInteractorStyleRubberBandZoom.h>
 #include <vtkLogger.h>
@@ -123,7 +124,8 @@ static bool isVtkToolInteractorStyle(vtkRenderWindowInteractor* interactor) {
 
     if (vtkInteractorStyleRubberBand3D::SafeDownCast(style) ||
         vtkInteractorStyleRubberBandZoom::SafeDownCast(style) ||
-        vtkInteractorStyleDrawPolygon::SafeDownCast(style)) {
+        vtkInteractorStyleDrawPolygon::SafeDownCast(style) ||
+        cvInteractorStyleDrawPolygon::SafeDownCast(style)) {
         return true;
     }
 
@@ -390,9 +392,7 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
     fmt.setSwapInterval(0);
     setFormat(fmt);
 
-#ifdef Q_OS_WIN
     this->setEnableHiDPI(true);
-#endif
 
     // drag & drop handling
     setAcceptDrops(true);
@@ -1027,7 +1027,9 @@ bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
 
 // event processing
 void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
-    startInteractionRenderTimer();
+    if (!isVtkToolInteractorStyle(m_interactor)) {
+        startInteractionRenderTimer();
+    }
 
     // Activate the view on click (ParaView-style): the render view becomes
     // current when the user presses the mouse here, not when the cursor
@@ -2428,7 +2430,8 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             }
             QMouseEvent* me = static_cast<QMouseEvent*>(evt);
             if (me->buttons() != Qt::NoButton && m_interactionRenderTimer &&
-                m_interactionRenderTimer->isActive()) {
+                m_interactionRenderTimer->isActive() &&
+                !isVtkToolInteractorStyle(m_interactor)) {
                 m_hasPendingMousePos = true;
                 m_pendingMousePos = me->pos();
                 evt->accept();

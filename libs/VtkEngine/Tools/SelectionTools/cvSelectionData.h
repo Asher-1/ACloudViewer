@@ -119,6 +119,7 @@ struct QVTK_ENGINE_LIB_API cvActorSelectionInfo {
     int propId;     ///< Unique prop ID (from hardware selector)
     unsigned int blockIndex;  ///< Block index for composite datasets
     QString actorName;        ///< Optional actor name/description
+    QVector<qint64> selectedIds;  ///< Per-actor selected IDs
 
     cvActorSelectionInfo()
         : actor(nullptr),
