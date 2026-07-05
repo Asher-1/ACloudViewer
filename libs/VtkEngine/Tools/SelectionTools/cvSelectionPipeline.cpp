@@ -117,9 +117,7 @@ cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionPipeline::~cvSelectionPipeline() {
-    clearCache();
-}
+cvSelectionPipeline::~cvSelectionPipeline() { clearCache(); }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPipeline::setVisualizer(Visualization::VtkVis* viewer) {
@@ -153,7 +151,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executeRectangleSelection(
         vtkSmartPointer<vtkSelection> cached = getCachedSelection(cacheKey);
         if (cached) {
             m_cacheHits++;
-            
+
             // Return a copy
             vtkSmartPointer<vtkSelection> copy =
                     vtkSmartPointer<vtkSelection>::New();
@@ -293,7 +291,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
             polygonArray.data(), static_cast<vtkIdType>(numPoints * 2));
 
     if (!selection) {
-                // This is not an error - just no items selected
+        // This is not an error - just no items selected
         vtkSmartPointer<vtkSelection> emptySelection =
                 vtkSmartPointer<vtkSelection>::New();
         m_lastSelection = emptySelection;
@@ -379,7 +377,7 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
 void cvSelectionPipeline::setEnableCaching(bool enable) {
     if (m_cachingEnabled != enable) {
         m_cachingEnabled = enable;
-        
+
         if (!enable) {
             clearCache();
         }
@@ -893,15 +891,12 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         }
     }
 
-    
     return result;
 }
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::remapToSourceIds(
-        vtkIdTypeArray* vtkIds,
-        vtkPolyData* polyData,
-        bool isCells) {
+        vtkIdTypeArray* vtkIds, vtkPolyData* polyData, bool isCells) {
     if (!vtkIds || !polyData) {
         return vtkIds;
     }
@@ -953,8 +948,12 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
     int x1 = std::max(region[0], region[2]);
     int y1 = std::max(region[1], region[3]);
 
-    if (x0 == x1) { x1 = x0 + 1; }
-    if (y0 == y1) { y1 = y0 + 1; }
+    if (x0 == x1) {
+        x1 = x0 + 1;
+    }
+    if (y0 == y1) {
+        y1 = y0 + 1;
+    }
 
     // Convert screen rectangle to 8 world-space frustum corners
     // (4 near-plane corners at z=0, 4 far-plane corners at z=1)
@@ -1025,11 +1024,10 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
                 // Cell is selected if ANY corner lies inside the frustum
                 // (EvaluateFunction <= 0 means inside).
                 double corners8[8][3] = {
-                    {cb[0], cb[2], cb[4]}, {cb[1], cb[2], cb[4]},
-                    {cb[0], cb[3], cb[4]}, {cb[1], cb[3], cb[4]},
-                    {cb[0], cb[2], cb[5]}, {cb[1], cb[2], cb[5]},
-                    {cb[0], cb[3], cb[5]}, {cb[1], cb[3], cb[5]}
-                };
+                        {cb[0], cb[2], cb[4]}, {cb[1], cb[2], cb[4]},
+                        {cb[0], cb[3], cb[4]}, {cb[1], cb[3], cb[4]},
+                        {cb[0], cb[2], cb[5]}, {cb[1], cb[2], cb[5]},
+                        {cb[0], cb[3], cb[5]}, {cb[1], cb[3], cb[5]}};
                 bool inside = false;
                 for (int c = 0; c < 8; ++c) {
                     if (frustumPlanes->EvaluateFunction(corners8[c]) <= 0.0) {
@@ -1078,7 +1076,7 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
 
     int totalSelected = 0;
     for (const auto& as : actorSelections) totalSelected += as.ids.size();
-    
+
     return result;
 }
 
@@ -1108,23 +1106,23 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
 //-----------------------------------------------------------------------------
 
 cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
-        vtkSmartPointer<vtkSelection> vtkSel =
+    vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_CELLS);
 
     cvSelectionData result = convertSelectionToData(
             vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsOnSurface");
-        return result;
+    return result;
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
         const int region[4]) {
-        vtkSmartPointer<vtkSelection> vtkSel =
+    vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_POINTS);
 
     cvSelectionData result = convertSelectionToData(
             vtkSel, FIELD_ASSOCIATION_POINTS, "selectPointsOnSurface");
-        return result;
+    return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -1187,14 +1185,12 @@ cvSelectionData cvSelectionPipeline::expandToBlockSelection(
         }
     }
 
-    
     return result;
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectCellsInPolygon(
         vtkIntArray* polygon) {
-    
     if (!polygon) {
         CVLog::Warning("[cvSelectionPipeline] Invalid polygon");
         return cvSelectionData();
@@ -1210,7 +1206,6 @@ cvSelectionData cvSelectionPipeline::selectCellsInPolygon(
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectPointsInPolygon(
         vtkIntArray* polygon) {
-    
     if (!polygon) {
         CVLog::Warning("[cvSelectionPipeline] Invalid polygon");
         return cvSelectionData();
@@ -1231,7 +1226,6 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         const cvSelectionData& sel1,
         const cvSelectionData& sel2,
         CombineOperation operation) {
-    
     // Handle empty selections first (before field association check!)
     // ParaView behavior (vtkSMSelectionHelper::CombineSelection line 156-159):
     // - If sel1 is empty and deepCopy=false, return true (no-op, result is
@@ -1340,7 +1334,6 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         }
     }
 
-    
     return result;
 }
 
@@ -1499,7 +1492,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
         }
     }
 
-    
     return refinedSelection;
 }
 

@@ -634,8 +634,7 @@ void cvRenderViewSelectionReaction::endSelection() {
         m_parentAction->isChecked()) {
         m_parentAction->setChecked(false);
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::onMouseStop() {
@@ -1121,7 +1120,8 @@ void cvRenderViewSelectionReaction::fastPreSelection() {
     }
 
     // Skip HW pick entirely if mouse hasn't moved (major perf optimization)
-    if (x == m_mousePosition[0] && y == m_mousePosition[1] && m_hoveredId >= 0) {
+    if (x == m_mousePosition[0] && y == m_mousePosition[1] &&
+        m_hoveredId >= 0) {
         return;
     }
     m_mousePosition[0] = x;
@@ -1132,7 +1132,8 @@ void cvRenderViewSelectionReaction::fastPreSelection() {
             pipeline->getPixelSelectionInfo(x, y, selectCells);
 
     if (info.valid && info.attributeID >= 0) {
-        if (info.attributeID == m_hoveredId && info.polyData == m_currentPolyData) {
+        if (info.attributeID == m_hoveredId &&
+            info.polyData == m_currentPolyData) {
             return;
         }
         m_hoveredId = info.attributeID;

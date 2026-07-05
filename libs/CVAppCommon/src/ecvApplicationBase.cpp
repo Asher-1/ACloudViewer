@@ -115,8 +115,9 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     {
         QString styleKey = settings.value("style", QString()).toString();
 
-        // CloudCompare behavior: only apply a style if one was explicitly saved.
-        // If empty, use Qt's platform default (macOS, windowsvista, etc.)
+        // CloudCompare behavior: only apply a style if one was explicitly
+        // saved. If empty, use Qt's platform default (macOS, windowsvista,
+        // etc.)
         if (!styleKey.isEmpty()) {
             if (styleKey == "QDarkStyleSheet::Dark") {
                 QFile f(":/qdarkstyle/dark/darkstyle.qss");

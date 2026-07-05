@@ -17,6 +17,7 @@
 #include <CVTools.h>
 
 // VTK
+#include <Tools/SelectionTools/cvInteractorStyleDrawPolygon.h>
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAngleRepresentation2D.h>
@@ -30,7 +31,6 @@
 #include <vtkImageData.h>
 #include <vtkInteractorStyle.h>
 #include <vtkInteractorStyleDrawPolygon.h>
-#include <Tools/SelectionTools/cvInteractorStyleDrawPolygon.h>
 #include <vtkInteractorStyleRubberBand3D.h>
 #include <vtkInteractorStyleRubberBandZoom.h>
 #include <vtkLogger.h>
