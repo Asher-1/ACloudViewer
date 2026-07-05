@@ -107,7 +107,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
 #endif
 
     // Restore the style from persistent settings
-    // (matching CloudCompare's approach - using QSettings directly)
+    // (matching CloudCompare's approach exactly)
     // Note: We use Qt API directly here instead of setAppStyle() because
     // CVLog and ecvSettingManager are not yet initialized in the constructor
     QSettings settings;
@@ -115,16 +115,8 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     {
         QString styleKey = settings.value("style", QString()).toString();
 
-        // Apply platform-appropriate default if no saved style
-        if (styleKey.isEmpty()) {
-#ifdef Q_OS_MAC
-            // macOS: Use Fusion for consistent button borders (ParaView
-            // approach)
-            styleKey = "Fusion";
-#endif
-        }
-
-        // Apply the style using Qt API directly (safe in constructor)
+        // CloudCompare behavior: only apply a style if one was explicitly saved.
+        // If empty, use Qt's platform default (macOS, windowsvista, etc.)
         if (!styleKey.isEmpty()) {
             if (styleKey == "QDarkStyleSheet::Dark") {
                 QFile f(":/qdarkstyle/dark/darkstyle.qss");
