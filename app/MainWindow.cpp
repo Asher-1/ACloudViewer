@@ -6784,7 +6784,9 @@ void MainWindow::refreshSelected(bool only2D /* = false*/,
 
 void MainWindow::refreshObject(ccHObject* obj, bool only2D, bool forceRedraw) {
     if (obj) {
-        { ecvRedrawScope scope({obj}, only2D, forceRedraw); }
+        {
+            ecvRedrawScope scope({obj}, only2D, forceRedraw);
+        }
     }
 }
 
@@ -13631,7 +13633,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }      // if (cloud)
+                }  // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see
