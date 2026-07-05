@@ -183,14 +183,13 @@ public:
      * Cc2Vtk to translate VTK IDs back to source IDs.
      *
      * @param vtkIds       The VTK-space IDs from hardware selection
-     * @param polyData     The mapper's input polydata (containing mapping arrays)
+     * @param polyData     The mapper's input polydata (containing mapping
+     * arrays)
      * @param isCells      True for cell IDs, false for point IDs
      * @return Remapped IDs (source-space), or original IDs if no mapping exists
      */
     static vtkSmartPointer<vtkIdTypeArray> remapToSourceIds(
-            vtkIdTypeArray* vtkIds,
-            vtkPolyData* polyData,
-            bool isCells);
+            vtkIdTypeArray* vtkIds, vtkPolyData* polyData, bool isCells);
 
     /**
      * @brief Test if a 2D point is inside a polygon (ParaView-aligned)

@@ -28,10 +28,10 @@
 
 // VTK
 #include <vtkCellArray.h>
-#include <vtkIdTypeArray.h>
 #include <vtkCellData.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
+#include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
 #include <vtkMatrix4x4.h>
 #include <vtkPointData.h>
@@ -645,8 +645,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
                     static_cast<vtkIdType>(kept_tri_indices.size()));
             for (vtkIdType k = 0;
                  k < static_cast<vtkIdType>(kept_tri_indices.size()); ++k) {
-                origCellIds->SetValue(k,
-                                      static_cast<vtkIdType>(kept_tri_indices[k]));
+                origCellIds->SetValue(
+                        k, static_cast<vtkIdType>(kept_tri_indices[k]));
             }
         } else {
             origCellIds->SetNumberOfTuples(static_cast<vtkIdType>(tri_count));
@@ -693,9 +693,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             const cloudViewer::VerticesIndexes* tsi2 =
                     mesh->getTriangleVertIndexes(src_n);
             for (std::size_t vi = 0; vi < dim; ++vi) {
-                origPointIds->SetValue(
-                        base + static_cast<vtkIdType>(vi),
-                        static_cast<vtkIdType>(tsi2->i[vi]));
+                origPointIds->SetValue(base + static_cast<vtkIdType>(vi),
+                                       static_cast<vtkIdType>(tsi2->i[vi]));
             }
         });
         polydata->GetPointData()->AddArray(origPointIds);

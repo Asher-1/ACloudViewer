@@ -391,7 +391,7 @@ void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
             a->GetProperty()->SetColor(cr, cg, cb);
             a->SetPickable(0);
         }
-                return;
+        return;
     }
 
     if (kind == SelectionOverlaySurface) {
@@ -401,7 +401,7 @@ void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
                     "surface overlay");
             return;
         }
-            }
+    }
 }
 
 static cvSelectionHighlighter::SelectionOverlayKind
@@ -536,8 +536,7 @@ cvSelectionHighlighter::cvSelectionHighlighter()
     m_preselectedActorId = "__highlight_preselected__";
     m_selectedActorId = "__highlight_selected__";
     m_boundaryActorId = "__highlight_boundary__";
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 cvSelectionHighlighter::~cvSelectionHighlighter() {
@@ -599,8 +598,7 @@ void cvSelectionHighlighter::setHighlightColor(double r,
             emit colorChanged(static_cast<int>(mode));
             emit propertiesChanged();
         }
-
-            }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -645,8 +643,7 @@ void cvSelectionHighlighter::setHighlightOpacity(double opacity,
         emit opacityChanged(static_cast<int>(mode));
         emit propertiesChanged();
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 const double* cvSelectionHighlighter::getHighlightColor(
@@ -727,7 +724,6 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    
     // Delegate to the explicit polyData overload
     return highlightSelection(polyData, selection, fieldAssociation, mode);
 }
@@ -772,10 +768,9 @@ bool cvSelectionHighlighter::highlightSelection(
         if (!vis) return false;
         vtkSmartPointer<vtkPolyData> overlayPoly;
         const bool interactive = true;
-        auto kind = upsertParaViewSelectionOverlay(vis, polyData, selection,
-                                                   fieldAssociation, overlayPoly,
-                                                   overlayIdForMode(mode),
-                                                   interactive);
+        auto kind = upsertParaViewSelectionOverlay(
+                vis, polyData, selection, fieldAssociation, overlayPoly,
+                overlayIdForMode(mode), interactive);
         if (kind == SelectionOverlayNone) {
             return false;
         }
@@ -789,8 +784,8 @@ bool cvSelectionHighlighter::highlightSelection(
         scheduleAllViewsUpdate();
     } else {
         // BOUNDARY mode: needs full actor for addActorToVisualizer
-        vtkSmartPointer<vtkActor> actor =
-                createHighlightActor(polyData, selection, fieldAssociation, mode);
+        vtkSmartPointer<vtkActor> actor = createHighlightActor(
+                polyData, selection, fieldAssociation, mode);
         if (!actor) {
             return false;
         }
@@ -813,7 +808,6 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    
     vtkPolyData* polyData = getPolyDataForSelection(&selectionData);
     if (!polyData && selectionData.primaryActor()) {
         if (auto* mapper = selectionData.primaryActor()->GetMapper()) {
@@ -821,7 +815,7 @@ bool cvSelectionHighlighter::highlightSelection(
         }
     }
     if (!polyData) {
-                return false;
+        return false;
     }
 
     Visualization::VtkVis* vis = getVtkVis();
@@ -832,7 +826,7 @@ bool cvSelectionHighlighter::highlightSelection(
             polyData, selectionData.vtkArray(),
             static_cast<int>(selectionData.fieldAssociation()), mode);
     m_highlightSourceActor = nullptr;
-        return ok;
+    return ok;
 }
 
 //-----------------------------------------------------------------------------
@@ -1025,7 +1019,6 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
     addActorToVisualizer(actor, actorId);
 
-    
     return true;
 }
 
@@ -1277,7 +1270,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
     // If no valid IDs remain, this is a normal case (invalid selection),
     // not an error - return nullptr silently
     if (validSelection->GetNumberOfTuples() == 0) {
-                return {};
+        return {};
     }
 
     // Create selection node using validated IDs
@@ -1324,10 +1317,9 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
 
     if (highlightPoly->GetNumberOfCells() == 0 &&
         highlightPoly->GetNumberOfPoints() == 0) {
-                return {};
+        return {};
     }
 
-    
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
     mapper->SetInputData(highlightPoly);
@@ -1438,7 +1430,7 @@ void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
             instances.append(inst);
             double b[6] = {0, 0, 0, 0, 0, 0};
             inst.actor->GetBounds(b);
-                    }
+        }
     }
 
     stripHighlightTemplatesFromVisualizer(pclVis, actor, nullptr, nullptr,
@@ -1510,8 +1502,7 @@ void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
         emit highlightActorRemoved(actor);
         scheduleAllViewsUpdate();
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setPointSize(int size, HighlightMode mode) {
@@ -1551,8 +1542,7 @@ void cvSelectionHighlighter::setPointSize(int size, HighlightMode mode) {
         emit pointSizeChanged(static_cast<int>(mode));
         emit propertiesChanged();
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 int cvSelectionHighlighter::getPointSize(HighlightMode mode) const {
@@ -1608,8 +1598,7 @@ void cvSelectionHighlighter::setLineWidth(int width, HighlightMode mode) {
         emit lineWidthChanged(static_cast<int>(mode));
         emit propertiesChanged();
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 int cvSelectionHighlighter::getLineWidth(HighlightMode mode) const {
@@ -1685,8 +1674,7 @@ void cvSelectionHighlighter::setLabelProperties(
         emit labelPropertiesChanged(interactive);
         emit propertiesChanged();
     }
-
-    }
+}
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setPointLabelArray(const QString& arrayName,
@@ -1694,7 +1682,6 @@ void cvSelectionHighlighter::setPointLabelArray(const QString& arrayName,
     m_pointLabelArrayName = arrayName;
     m_pointLabelVisible = visible && !arrayName.isEmpty();
 
-    
     // Update label rendering
     updateLabelActor(true);  // true = point labels
 
@@ -1708,7 +1695,6 @@ void cvSelectionHighlighter::setCellLabelArray(const QString& arrayName,
     m_cellLabelArrayName = arrayName;
     m_cellLabelVisible = visible && !arrayName.isEmpty();
 
-    
     // Update label rendering
     updateLabelActor(false);  // false = cell labels
 
@@ -1745,7 +1731,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
 
     if (!visible || arrayName.isEmpty()) {
         // Labels disabled - ensure proper cleanup and refresh
-                // Force render to update the view
+        // Force render to update the view
         scheduleAllViewsUpdate();
         return;
     }
@@ -1789,7 +1775,6 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
         cellCenters->SetInputData(data);
         cellCenters->Update();
 
-        
         // Feed cell centers to mask filter
         maskFilter->SetInputConnection(cellCenters->GetOutputPort());
     } else {
@@ -1802,7 +1787,6 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
     maskFilter->RandomModeOn();  // ParaView uses random sampling
     maskFilter->Update();
 
-    
     // Create label mapper with masked input for performance
     vtkSmartPointer<vtkLabeledDataMapper> labelMapper =
             vtkSmartPointer<vtkLabeledDataMapper>::New();
@@ -1884,7 +1868,6 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
     // Add to renderer
     renderer->AddActor2D(labelActor);
 
-    
     scheduleAllViewsUpdate();
 }
 
