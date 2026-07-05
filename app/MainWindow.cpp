@@ -2790,24 +2790,62 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
     newVis->setBackgroundColor(bkg1.r, bkg1.g, bkg1.b, bkg2.r, bkg2.g, bkg2.b,
                                ctx.drawBackgroundGradient);
 
+    // Determine the effective source visualizer for overlay widget state:
+    // prefer the source view's own VtkVis; fall back to the primary visualizer.
+    Visualization::VtkVis* srcVis = nullptr;
+    if (srcView) {
+        srcVis = srcView->getVisualizer3D();
+    }
+    if (!srcVis) {
+        srcVis = primaryVis;
+    }
+
     // Camera orientation widget (ParaView-style gizmo)
-    if (primaryVis->IsCameraOrientationWidgetShown()) {
+    if (srcVis->IsCameraOrientationWidgetShown()) {
         newVis->ToggleCameraOrientationWidget(true);
     }
 
     // Orientation marker axes (corner trihedron)
-    if (primaryVis->pclMarkerAxesShown()) {
+    if (srcVis->pclMarkerAxesShown()) {
         newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
+    } else {
+        QSettings settings;
+        if (settings.value("OrientationMarker/Visible", true).toBool()) {
+            newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
+        }
     }
 
     // Defer the full redraw until the widget is shown in the layout with
     // a valid size.  Calling Render() before the FBO is properly initialised
     // causes driver-dependent artefacts (often bright green on Mesa/NVIDIA).
     // A 100 ms delay gives the layout time to assign geometry.
-    QTimer::singleShot(100, view, [view]() {
+    const bool shouldShowMarker = srcVis->pclMarkerAxesShown();
+    const bool shouldShowCOW = srcVis->IsCameraOrientationWidgetShown();
+    QTimer::singleShot(100, view, [view, shouldShowMarker, shouldShowCOW]() {
         if (!view) return;
         QWidget* w = view->asWidget();
         if (w && w->isVisible() && w->width() > 0 && w->height() > 0) {
+            if (auto* vis = view->getVisualizer3D()) {
+                auto rw = vis->getRenderWindow();
+                if (rw) {
+                    // Ensure VTK render window knows its actual size
+                    // (it may still report 0x0 from creation time).
+                    const double dpr = w->devicePixelRatioF();
+                    const int pw = static_cast<int>(w->width() * dpr + 0.5);
+                    const int ph = static_cast<int>(w->height() * dpr + 0.5);
+                    rw->SetSize(pw, ph);
+                }
+                if (shouldShowMarker) {
+                    // Cycle off/on so VTK rebuilds the internal
+                    // renderer with the now-valid window size.
+                    vis->hidePclMarkerAxes();
+                    vis->showPclMarkerAxes(vis->getRenderWindowInteractor());
+                }
+                if (shouldShowCOW && !vis->IsCameraOrientationWidgetShown()) {
+                    vis->ToggleCameraOrientationWidget(true);
+                }
+                vis->RefreshOverlayWidgets();
+            }
             view->redraw();
         }
     });
@@ -6746,9 +6784,7 @@ void MainWindow::refreshSelected(bool only2D /* = false*/,
 
 void MainWindow::refreshObject(ccHObject* obj, bool only2D, bool forceRedraw) {
     if (obj) {
-        {
-            ecvRedrawScope scope({obj}, only2D, forceRedraw);
-        }
+        { ecvRedrawScope scope({obj}, only2D, forceRedraw); }
     }
 }
 
@@ -13595,7 +13631,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }  // if (cloud)
+                }      // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see

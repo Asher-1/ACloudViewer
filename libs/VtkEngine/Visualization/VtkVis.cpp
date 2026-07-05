@@ -3981,9 +3981,11 @@ void VtkVis::exitCallbackProcess() {
 
 /********************************MarkerAxes*********************************/
 void VtkVis::showPclMarkerAxes(vtkRenderWindowInteractor* interactor) {
-    if (!interactor) return;
+    if (!interactor) {
+        interactor = getRenderWindowInteractor();
+        if (!interactor) return;
+    }
     showOrientationMarkerWidgetAxes(interactor);
-    CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
 }
 
 void VtkVis::hidePclMarkerAxes() {
@@ -4037,7 +4039,11 @@ static void applyOrientationMarkerViewport(vtkOrientationMarkerWidget* widget,
                                            int winW,
                                            int winH,
                                            double dpr = 1.0) {
-    if (!widget || winW < 2 || winH < 2) return;
+    if (!widget) return;
+    if (winW < 2 || winH < 2) {
+        widget->SetViewport(0.0, 0.0, 0.25, 0.25);
+        return;
+    }
     const int markerPx = cameraOrientationWidgetPixelSize(winW, winH, dpr) + 40;
     const double vx = std::min(0.35, static_cast<double>(markerPx) / winW);
     const double vy = std::min(0.35, static_cast<double>(markerPx) / winH);
@@ -4384,7 +4390,13 @@ void VtkVis::UpdateScreen() {
         auto* glView = dynamic_cast<vtkGLView*>(view);
         if (glView && glView->getVisualizer3D() == this) {
             auto* w = glView->getVtkWidget();
-            if (w) w->update();
+            if (w) {
+                w->makeCurrent();
+                if (auto rw = w->renderWindow()) {
+                    rw->Render();
+                }
+                w->update();
+            }
             return;
         }
     }
