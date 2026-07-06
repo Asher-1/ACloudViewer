@@ -528,7 +528,7 @@ private slots:
     void setViewDecorationsVisible(bool visible);
     void showDisplayOptions();
 
-    void toggleActiveWindowAutoPickRotCenter(bool state);
+    void toggleActiveWindowPickRotCenter(bool state);
     void toggleRotationCenterVisibility(bool state);
     void doActionResetRotCenter();
 

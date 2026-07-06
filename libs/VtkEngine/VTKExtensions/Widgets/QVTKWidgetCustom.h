@@ -309,7 +309,6 @@ public:
         return curCtx().pivotVisibility;
     }
     bool& curPivotSymbolShown() { return curCtx().pivotSymbolShown; }
-    bool& curAutoPickPivotAtCenter() { return curCtx().autoPickPivotAtCenter; }
     bool& curShowCursorCoordinates() { return curCtx().showCursorCoordinates; }
     qint64& curLastClickTime() { return curCtx().lastClickTime_ticks; }
 
@@ -317,7 +316,11 @@ public:
     std::list<ccInteractor*>& curActiveItems();
     ecvHotZone*& curHotZone();
 
+    void beginPickCenterOfRotation();
+    void cancelPickCenterOfRotation();
+
 signals:
+    void pickCenterOfRotationFinished(bool success);
     void rightButtonClicked(int x, int y);
     void leftButtonClicked(int x, int y);
     void doubleButtonClicked(int x, int y);
@@ -403,6 +406,9 @@ private:
     int m_timerTickCount = 0;
     qint64 m_renderTimeAccumNs = 0;
     QElapsedTimer m_interactionFpsTimer;
+
+    // One-shot "Pick Center of Rotation" mode (ParaView-style)
+    bool m_pickCenterPending = false;
 
     // True when a cc2DLabel was directly hit in mousePressEvent
     bool m_labelClickedOnPress = false;

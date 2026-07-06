@@ -2218,20 +2218,10 @@ public:  // visualization matrix transformation
                 .showCursorCoordinates;
     }
 
-    //! Toggles the automatic setting of the pivot point at the center of the
-    //! screen
+    //! Legacy no-op (kept for API compatibility)
     static void SetAutoPickPivotAtCenter(bool state);
-    static void SendAutoPickPivotAtCenter(bool state) {
-        if (auto* dt = ecvViewManager::instance().displayTools()) {
-            emit dt->autoPickPivot(state);
-        }
-    }
-    //! Whether the pivot point is automatically set at the center of the screen
-    inline static bool AutoPickPivotAtCenter() {
-        return ecvViewManager::instance()
-                .resolveViewContext()
-                .autoPickPivotAtCenter;
-    }
+    //! Legacy no-op
+    inline static bool AutoPickPivotAtCenter() { return false; }
 
     //! Lock the rotation axis
     static void LockRotationAxis(bool state, const CCVector3d& axis);

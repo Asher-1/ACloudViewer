@@ -1153,7 +1153,6 @@ void vtkGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
     if (box && box->isValid()) {
         CCVector3d center = CCVector3d::fromArray(box->getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
-        m_ctx.autoPivotCandidate = center;
         if (m_visualizer3D) {
             m_visualizer3D->resetCamera(box);
             if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
@@ -1366,7 +1365,6 @@ void vtkGLView::zoomGlobal() {
         m_visualizer3D->resetCamera(&bbox);
         CCVector3d center = CCVector3d::fromArray(bbox.getCenter().u);
         m_ctx.viewportParams.setPivotPoint(center, true);
-        m_ctx.autoPivotCandidate = center;
         if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
                     m_visualizer3D.get())) {
             vis->setCenterOfRotation(center.x, center.y, center.z);
@@ -1545,7 +1543,6 @@ void vtkGLView::setPivotPoint(const CCVector3d& P,
                               bool verbose) {
     Q_UNUSED(verbose);
     m_ctx.viewportParams.setPivotPoint(P, true);
-    m_ctx.autoPivotCandidate = P;
     if (auto* vis =
                 dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
         vis->setCenterOfRotation(P.x, P.y, P.z);
@@ -1561,11 +1558,18 @@ void vtkGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
 }
 
 void vtkGLView::setAutoPickPivotAtCenter(bool state) {
-    if (m_ctx.autoPickPivotAtCenter != state) {
-        m_ctx.autoPickPivotAtCenter = state;
-        if (state) {
-            m_ctx.autoPivotCandidate = CCVector3d(0, 0, 0);
-        }
+    Q_UNUSED(state);
+}
+
+void vtkGLView::beginPickCenterOfRotation() {
+    if (m_vtkWidget) {
+        m_vtkWidget->beginPickCenterOfRotation();
+    }
+}
+
+void vtkGLView::cancelPickCenterOfRotation() {
+    if (m_vtkWidget) {
+        m_vtkWidget->cancelPickCenterOfRotation();
     }
 }
 
@@ -1579,7 +1583,6 @@ void vtkGLView::resetCenterOfRotation(int viewport) {
         vis->getCenterOfRotation(center);
         CCVector3d pivot(center[0], center[1], center[2]);
         m_ctx.viewportParams.setPivotPoint(pivot, true);
-        m_ctx.autoPivotCandidate = pivot;
     }
 }
 

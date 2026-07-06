@@ -459,12 +459,12 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="AutoPickCenterOfRotation">
+        <widget class="QPushButton" name="PickCenterOfRotation">
          <property name="toolTip">
-          <string>reset center of rotation when camera is reset.</string>
+          <string>Click, then pick a point in the 3D view to set the center of rotation.</string>
          </property>
          <property name="text">
-          <string>Auto Pick Center of Rotation When Left Button is Clicked</string>
+          <string>Mouse press to pick center of rotation</string>
          </property>
         </widget>
        </item>
@@ -1168,7 +1168,7 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>AutoPickCenterOfRotation</tabstop>
+  <tabstop>PickCenterOfRotation</tabstop>
  </tabstops>
  <resources>
   <include location="../../../app/MainWindow.qrc"/>

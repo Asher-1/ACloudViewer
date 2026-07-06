@@ -540,13 +540,6 @@ MainWindow::MainWindow()
     {  // restore options
         QSettings settings;
 
-        // auto pick center
-        bool autoPickRotationCenter =
-                settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
-        if (autoPickRotationCenter) {
-            m_ui->actionAutoPickPivot->toggle();
-        }
-
         // show center
         bool autoShowCenterAxis =
                 settings.value(ecvPS::AutoShowCenter(), true).toBool();
@@ -1782,7 +1775,7 @@ void MainWindow::connectActions() {
             [=]() { setView(CC_ISO_VIEW_2); });
 
     connect(m_ui->actionAutoPickPivot, &QAction::toggled, this,
-            &MainWindow::toggleActiveWindowAutoPickRotCenter);
+            &MainWindow::toggleActiveWindowPickRotCenter);
     connect(m_ui->actionShowPivot, &QAction::toggled, this,
             &MainWindow::toggleRotationCenterVisibility);
     connect(m_ui->actionResetPivot, &QAction::triggered, this,
@@ -2400,35 +2393,47 @@ void MainWindow::autoShowReconstructionToolBar(bool state) {
 }
 #endif
 
-void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
-    if (auto* view = getActiveGLView()) {
-        if (state) {
-            view->resetCenterOfRotation();
-            view->setAutoPickPivotAtCenter(false);
-            m_ui->actionAutoPickPivot->blockSignals(true);
-            m_ui->actionAutoPickPivot->setChecked(false);
-            m_ui->actionAutoPickPivot->blockSignals(false);
-        } else {
-            view->setAutoPickPivotAtCenter(false);
+void MainWindow::toggleActiveWindowPickRotCenter(bool state) {
+    auto* glView = dynamic_cast<vtkGLView*>(getActiveGLView());
+    if (!glView) return;
+
+    if (state) {
+        glView->beginPickCenterOfRotation();
+        auto* widget = glView->getVtkWidget();
+        if (widget) {
+            auto* conn = new QMetaObject::Connection;
+            *conn = connect(
+                    widget,
+                    &QVTKWidgetCustom::pickCenterOfRotationFinished, this,
+                    [this, conn](bool /*success*/) {
+                        m_ui->actionAutoPickPivot->blockSignals(true);
+                        m_ui->actionAutoPickPivot->setChecked(false);
+                        m_ui->actionAutoPickPivot->blockSignals(false);
+                        disconnect(*conn);
+                        delete conn;
+                    });
         }
-        QSettings settings;
-        settings.setValue(ecvPS::AutoPickRotationCenter(), false);
+    } else {
+        glView->cancelPickCenterOfRotation();
     }
 }
 
 void MainWindow::doActionResetRotCenter() {
     if (auto* view = getActiveGLView()) {
         view->resetCenterOfRotation();
+        view->redraw(false, false);
     }
 }
 
 void MainWindow::toggleRotationCenterVisibility(bool state) {
     if (auto* view = getActiveGLView()) {
         if (state) {
-            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE);
+            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
         } else {
             view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_HIDE);
         }
+
+        view->redraw(false, false);
 
         // save the option
         {
@@ -2474,10 +2479,12 @@ void MainWindow::onMousePosChanged(const QPoint& pos) {
 }
 
 void MainWindow::setAutoPickPivot(bool state) {
-    m_ui->actionAutoPickPivot->blockSignals(true);
-    m_ui->actionAutoPickPivot->setChecked(state);
-    m_ui->actionAutoPickPivot->blockSignals(false);
-    toggleActiveWindowAutoPickRotCenter(state);
+    if (state) {
+        m_ui->actionAutoPickPivot->blockSignals(true);
+        m_ui->actionAutoPickPivot->setChecked(true);
+        m_ui->actionAutoPickPivot->blockSignals(false);
+        toggleActiveWindowPickRotCenter(true);
+    }
 }
 
 void MainWindow::setOrthoView() {
@@ -2976,7 +2983,7 @@ void MainWindow::syncPivotButtonStates(ecvGenericGLDisplay* display) {
     const auto& ctx = glView->context();
 
     m_ui->actionAutoPickPivot->blockSignals(true);
-    m_ui->actionAutoPickPivot->setChecked(ctx.autoPickPivotAtCenter);
+    m_ui->actionAutoPickPivot->setChecked(false);
     m_ui->actionAutoPickPivot->blockSignals(false);
 
     bool showPivot =

@@ -313,7 +313,6 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
     m_autoRefresh = false;
     m_hotZone = nullptr;
     ctx.showCursorCoordinates = false;
-    ctx.autoPickPivotAtCenter = false;
     ctx.ignoreMouseReleaseEvent = false;
     ctx.rotationAxisLocked = false;
     ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
@@ -2559,7 +2558,7 @@ void ecvDisplayTools::SetupProjectiveViewport(
     cameraMatrix.applyRotation(UP.data());
     SetCameraPos(ctx, T);
     SetCameraPosition(T.data(), UP.data());
-    if (viewerBasedPerspective && ctx.autoPickPivotAtCenter) {
+    if (viewerBasedPerspective) {
         SetPivotPoint(T);
     }
 
@@ -2678,20 +2677,12 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
         RedrawDisplay(true, false);
     }
 
-    ctx.autoPivotCandidate = P;
     InvalidateViewport();
     InvalidateVisualization();
 }
 
 void ecvDisplayTools::SetAutoPickPivotAtCenter(bool state) {
-    auto& ctx = ecvViewManager::instance().resolveViewContext();
-    if (ctx.autoPickPivotAtCenter != state) {
-        ctx.autoPickPivotAtCenter = state;
-
-        if (state) {
-            ctx.autoPivotCandidate = CCVector3d(0, 0, 0);
-        }
-    }
+    Q_UNUSED(state);
 }
 
 void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx,
@@ -3425,17 +3416,6 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx, CC_DRAW_CONTEXT& CONTEXT) {
         CONTEXT.visible = true;
         primaryDT()->m_winDBRoot->draw(CONTEXT);
     }
-
-#if 0
-	if (ctx.autoPickPivotAtCenter)
-	{
-		CCVector3d P;
-		if (GetClick3DPos(ctx.glViewport.width() / 2, ctx.glViewport.height() / 2, P))
-		{
-			ctx.autoPivotCandidate = P;
-		}
-	}
-#endif
 
     if (primaryDT()->m_globalDBRoot &&
         primaryDT()->m_globalDBRoot->getChildrenNumber()) {

@@ -280,13 +280,9 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source, VtkVis* target) {
 
     target->setCenterOfRotation(cor);
 
-    for (auto* view : ecvViewManager::instance().getAllViews()) {
-        auto* glView = dynamic_cast<vtkGLView*>(view);
-        if (glView && glView->getVisualizer3D() == target) {
-            auto* w = glView->getVtkWidget();
-            if (w) w->update();
-            break;
-        }
+    auto rw = target->getRenderWindow();
+    if (rw) {
+        rw->Render();
     }
 
     m_updating = false;

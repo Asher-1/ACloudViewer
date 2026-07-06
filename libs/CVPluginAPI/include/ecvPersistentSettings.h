@@ -82,8 +82,8 @@ public:
     static inline const QString MaxAbsDiag() {
         return QStringLiteral("MaxAbsDiag");
     }
-    static inline const QString AutoPickRotationCenter() {
-        return QStringLiteral("AutoPickRotationCenter");
+    static inline const QString PickRotationCenter() {
+        return QStringLiteral("PickRotationCenter");
     }
     static inline const QString AutoShowCenter() {
         return QStringLiteral("AutoShowCenter");
