@@ -134,8 +134,8 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
     QObject::connect(this->Internal->viewZMinus, SIGNAL(clicked()), this,
                      SLOT(resetViewDirectionNegZ()));
 
-    QObject::connect(this->Internal->AutoPickCenterOfRotation,
-                     SIGNAL(toggled(bool)), this,
+    QObject::connect(this->Internal->PickCenterOfRotation,
+                     SIGNAL(clicked()), this,
                      SLOT(autoPickRotationCenterWithCamera()));
 
     QObject::connect(this->Internal->rollButton, SIGNAL(clicked()), this,
@@ -180,13 +180,6 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
                      SIGNAL(clicked()), this,
                      SLOT(ConfigureCustomViewpoints()));
 
-    bool autoPickPivotCenter = false;
-    if (ecvGenericGLDisplay* eff =
-                ecvViewManager::instance().getEffectiveView()) {
-        if (const ecvViewContext* vctx = eff->viewContext())
-            autoPickPivotCenter = vctx->autoPickPivotAtCenter;
-    }
-    this->Internal->AutoPickCenterOfRotation->setChecked(autoPickPivotCenter);
 
     QObject::connect(this->Internal->updatePushButton, SIGNAL(clicked()), this,
                      SLOT(updateCamera()));
@@ -455,9 +448,7 @@ void ecvCameraParamEditDlg::cameraChanged() {
 
 //-----------------------------------------------------------------------------
 void ecvCameraParamEditDlg::autoPickRotationCenterWithCamera() {
-    ecvViewManager::instance().notifyAutoPickPivot(
-            this->Internal->AutoPickCenterOfRotation->isChecked());
-    // m_app->setAutoPickPivot(this->Internal->AutoPickCenterOfRotation->isChecked());
+    ecvViewManager::instance().notifyAutoPickPivot(true);
 }
 
 void ecvCameraParamEditDlg::updateUi() {
@@ -577,7 +568,7 @@ void ecvCameraParamEditDlg::SetCameraGroupsEnabled(bool enabled) {
     internal.rcxDoubleSpinBox->setEnabled(enabled);
     internal.rcyDoubleSpinBox->setEnabled(enabled);
     internal.rczDoubleSpinBox->setEnabled(enabled);
-    internal.AutoPickCenterOfRotation->setEnabled(enabled);
+    internal.PickCenterOfRotation->setEnabled(enabled);
 
     internal.rotationFactor->setEnabled(enabled);
 

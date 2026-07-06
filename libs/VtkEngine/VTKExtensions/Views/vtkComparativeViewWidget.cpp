@@ -1213,7 +1213,6 @@ void vtkComparativeViewWidget::syncPivotFromView(int srcIdx) {
         auto* dstView = m_subViews[i];
         if (!dstView || !dstView->viewContext()) continue;
         dstView->viewContext()->viewportParams.setPivotPoint(pivot, true);
-        dstView->viewContext()->autoPivotCandidate = pivot;
         if (dstView->getInteractionMode() != interactionFlags) {
             dstView->setInteractionMode(interactionFlags);
         }

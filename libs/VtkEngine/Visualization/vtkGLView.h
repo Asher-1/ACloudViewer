@@ -181,6 +181,8 @@ public:
                        bool verbose = false) override;
     void setPivotVisibility(PivotVisibility vis) override;
     void setAutoPickPivotAtCenter(bool state) override;
+    void beginPickCenterOfRotation();
+    void cancelPickCenterOfRotation();
     void resetCenterOfRotation(int viewport = 0) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;

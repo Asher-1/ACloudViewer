@@ -572,6 +572,18 @@ void QVTKWidgetCustom::onRenderForFps() {
     }
 }
 
+void QVTKWidgetCustom::beginPickCenterOfRotation() {
+    m_pickCenterPending = true;
+    setCursor(Qt::CrossCursor);
+}
+
+void QVTKWidgetCustom::cancelPickCenterOfRotation() {
+    if (m_pickCenterPending) {
+        m_pickCenterPending = false;
+        setCursor(QCursor());
+    }
+}
+
 void QVTKWidgetCustom::setFpsVisible(bool visible) {
     m_fpsEnabled = visible;
     if (visible) {
@@ -1150,12 +1162,20 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
             emit leftButtonClicked(event->x(), event->y());
         }
 
-        if (!isSignalOnlyInteraction(curInteractionFlags()) &&
-            curAutoPickPivotAtCenter()) {
+        if (m_pickCenterPending) {
             CCVector3d P;
-            if (ecvDisplayTools::GetClick3DPos(event->x(), event->y(), P)) {
-                ecvDisplayTools::SetPivotPoint(P, true, false);
+            if (displayTarget()->getClick3DPos(event->x(), event->y(), P)) {
+                displayTarget()->setPivotPoint(P, true, true);
+                m_pickCenterPending = false;
+                setCursor(QCursor());
+                emit pickCenterOfRotationFinished(true);
+            } else {
+                m_pickCenterPending = false;
+                setCursor(QCursor());
+                emit pickCenterOfRotationFinished(false);
             }
+            event->accept();
+            return;
         }
     } else {
     }
