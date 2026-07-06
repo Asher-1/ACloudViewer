@@ -158,9 +158,8 @@ public:
             ecvGenericGLDisplay::MessageType type =
                     ecvGenericGLDisplay::CUSTOM_MESSAGE);
 
-    /// Emits autoPickPivot (same path as
-    /// ecvDisplayTools::SendAutoPickPivotAtCenter).
-    void notifyAutoPickPivot(bool state);
+    /// Emits pickCenterOfRotation signal to enter one-shot pick mode.
+    void notifyPickCenterOfRotation();
 
     void setRemoveViewIds(std::vector<removeInfo>& removeinfos);
 
@@ -304,7 +303,7 @@ signals:
     void filesDropped(const QStringList& filenames, bool displayDialog);
     void cameraParamChanged();
     void mousePosChanged(const QPoint& pos);
-    void autoPickPivot(bool state);
+    void pickCenterOfRotation();
     void exclusiveFullScreenToggled(bool exclusive);
 
     void itemPicked(ccHObject* entity,

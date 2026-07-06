@@ -33,14 +33,6 @@ ecvGenericCameraTool::ecvGenericCameraTool() {}
 ecvGenericCameraTool::~ecvGenericCameraTool() {}
 
 //-----------------------------------------------------------------------------
-void ecvGenericCameraTool::setAutoPickPivotAtCenter(bool state) {
-    if (ecvGenericGLDisplay* v =
-                ecvViewManager::instance().getEffectiveView()) {
-        v->setAutoPickPivotAtCenter(state);
-    }
-}
-
-//-----------------------------------------------------------------------------
 void ecvGenericCameraTool::saveCameraConfiguration(const std::string& file) {}
 
 //-----------------------------------------------------------------------------

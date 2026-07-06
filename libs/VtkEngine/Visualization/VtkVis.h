@@ -421,10 +421,6 @@ public:
         resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4],
                     bounds[5]);
     }
-    /** @param range Output [2] for near/far clip distances
-     *  @param viewport Viewport ID (default 0)
-     */
-    void getReasonableClippingRange(double range[2], int viewport = 0);
     /** @param bounds Bounding box [6] to expand
      *  @param matrix Transformation matrix
      */

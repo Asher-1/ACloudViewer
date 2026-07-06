@@ -2681,10 +2681,6 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
     InvalidateVisualization();
 }
 
-void ecvDisplayTools::SetAutoPickPivotAtCenter(bool state) {
-    Q_UNUSED(state);
-}
-
 void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx,
                                        bool state,
                                        const CCVector3d& axis) {
@@ -4705,10 +4701,6 @@ void ecvDisplayTools::setPivotPoint(const CCVector3d& P,
 
 void ecvDisplayTools::setPivotVisibility(PivotVisibility vis) {
     SetPivotVisibility(vis);
-}
-
-void ecvDisplayTools::setAutoPickPivotAtCenter(bool state) {
-    SetAutoPickPivotAtCenter(state);
 }
 
 bool ecvDisplayTools::isRotationAxisLocked() const {

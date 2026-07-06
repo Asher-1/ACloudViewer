@@ -134,9 +134,8 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
     QObject::connect(this->Internal->viewZMinus, SIGNAL(clicked()), this,
                      SLOT(resetViewDirectionNegZ()));
 
-    QObject::connect(this->Internal->PickCenterOfRotation,
-                     SIGNAL(clicked()), this,
-                     SLOT(autoPickRotationCenterWithCamera()));
+    QObject::connect(this->Internal->PickCenterOfRotation, SIGNAL(clicked()),
+                     this, SLOT(autoPickRotationCenterWithCamera()));
 
     QObject::connect(this->Internal->rollButton, SIGNAL(clicked()), this,
                      SLOT(applyCameraRoll()));
@@ -179,7 +178,6 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
     QObject::connect(this->Internal->configureCustomViewpoints,
                      SIGNAL(clicked()), this,
                      SLOT(ConfigureCustomViewpoints()));
-
 
     QObject::connect(this->Internal->updatePushButton, SIGNAL(clicked()), this,
                      SLOT(updateCamera()));
@@ -448,7 +446,7 @@ void ecvCameraParamEditDlg::cameraChanged() {
 
 //-----------------------------------------------------------------------------
 void ecvCameraParamEditDlg::autoPickRotationCenterWithCamera() {
-    ecvViewManager::instance().notifyAutoPickPivot(true);
+    ecvViewManager::instance().notifyPickCenterOfRotation();
 }
 
 void ecvCameraParamEditDlg::updateUi() {

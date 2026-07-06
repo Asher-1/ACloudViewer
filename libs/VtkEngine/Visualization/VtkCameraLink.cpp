@@ -128,14 +128,49 @@ void VtkCameraLink::unlinkAll() {
 void VtkCameraLink::setEnabled(bool enabled) {
     if (enabled) {
         linkAll();
+        initialSyncFromActive();
     } else {
         unlinkAll();
+    }
+}
+
+void VtkCameraLink::initialSyncFromActive() {
+    if (m_registeredViews.size() < 2 || m_links.empty()) return;
+
+    auto* activeView = ecvViewManager::instance().getActiveView();
+    VtkVis* sourceVis = nullptr;
+    if (activeView) {
+        auto* glView = dynamic_cast<::vtkGLView*>(activeView);
+        if (glView) {
+            sourceVis = glView->getVisualizer3D();
+        }
+    }
+    if (!sourceVis) {
+        sourceVis = m_registeredViews.front();
+    }
+
+    for (auto* v : m_registeredViews) {
+        if (v != sourceVis) {
+            syncCamerasFrom(sourceVis, v);
+        }
     }
 }
 
 void VtkCameraLink::clear() {
     unlinkAll();
     m_registeredViews.clear();
+}
+
+// --- Helpers ---
+
+::vtkGLView* VtkCameraLink::findGLViewForVis(VtkVis* vis) const {
+    if (!vis) return nullptr;
+    for (auto* disp : ecvViewManager::instance().getAllViews()) {
+        if (auto* glView = dynamic_cast<::vtkGLView*>(disp)) {
+            if (glView->getVisualizer3D() == vis) return glView;
+        }
+    }
+    return nullptr;
 }
 
 // --- Observer installation / removal ---
@@ -251,26 +286,22 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source, VtkVis* target) {
         return;
     }
 
-    double pos[3], foc[3], up[3], clip[2];
+    // Camera properties (ParaView: CameraPositionInfo -> CameraPosition, etc.)
+    double pos[3], foc[3], up[3];
     srcCam->GetPosition(pos);
     srcCam->GetFocalPoint(foc);
     srcCam->GetViewUp(up);
-    srcCam->GetClippingRange(clip);
     double viewAngle = srcCam->GetViewAngle();
     double parallelScale = srcCam->GetParallelScale();
     int parallelProj = srcCam->GetParallelProjection();
     double focalDisk = srcCam->GetFocalDisk();
     double focalDistance = srcCam->GetFocalDistance();
 
-    double cor[3];
-    source->getCenterOfRotation(cor);
-
     auto dstCam = target->getVtkCamera();
     if (dstCam) {
         dstCam->SetPosition(pos);
         dstCam->SetFocalPoint(foc);
         dstCam->SetViewUp(up);
-        dstCam->SetClippingRange(clip);
         dstCam->SetViewAngle(viewAngle);
         dstCam->SetParallelScale(parallelScale);
         dstCam->SetParallelProjection(parallelProj);
@@ -278,7 +309,29 @@ void VtkCameraLink::syncCamerasFrom(VtkVis* source, VtkVis* target) {
         dstCam->SetFocalDistance(focalDistance);
     }
 
+    // CenterOfRotation (ParaView syncs COR between linked views)
+    double cor[3];
+    source->getCenterOfRotation(cor);
     target->setCenterOfRotation(cor);
+
+    // Also update the vtkGLView context pivot so the UI layer stays in sync.
+    if (auto* glView = findGLViewForVis(target)) {
+        CCVector3d pivot(cor[0], cor[1], cor[2]);
+        glView->viewContext()->viewportParams.setPivotPoint(pivot, true);
+    }
+
+    // RotationFactor (ParaView: interactor rotation speed)
+    target->setRotationFactor(source->getRotationFactor());
+
+    // InteractionMode (ParaView: 3D vs 2D)
+    target->setInteractionMode(source->getInteractionMode());
+
+    // ClippingRange is NOT synced (ParaView behavior); each view computes its
+    // own from local geometry bounds.
+    auto* ren = target->getCurrentRenderer();
+    if (ren) {
+        ren->ResetCameraClippingRange();
+    }
 
     auto rw = target->getRenderWindow();
     if (rw) {

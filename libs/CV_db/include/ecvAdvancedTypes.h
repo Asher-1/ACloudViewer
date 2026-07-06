@@ -29,6 +29,7 @@ public:
     CV_CLASS_ENUM getClassID() const override {
         return CV_TYPES::NORMAL_INDEXES_ARRAY;
     }
+    short minimumFileVersion() const override { return 41; }
 
     //! Duplicates array (overloaded from ccArray::clone)
     NormsIndexesTableType* clone() override {

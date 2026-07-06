@@ -354,6 +354,10 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
     m_deferredPickingTimer.setSingleShot(true);
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
+        if (auto rw = m_visualizer3D ? m_visualizer3D->getRenderWindow()
+                                     : nullptr) {
+            rw->Render();
+        }
         syncVtkCameraToContext();
 
         m_displayTools->setPickingTargetView(this);
@@ -1555,10 +1559,6 @@ void vtkGLView::setPivotPoint(const CCVector3d& P,
 void vtkGLView::setPivotVisibility(ecvGenericGLDisplay::PivotVisibility vis) {
     m_ctx.pivotVisibility = vis;
     if (m_displayTools) m_displayTools->setPivotVisibility(vis);
-}
-
-void vtkGLView::setAutoPickPivotAtCenter(bool state) {
-    Q_UNUSED(state);
 }
 
 void vtkGLView::beginPickCenterOfRotation() {

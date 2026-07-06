@@ -2218,11 +2218,6 @@ public:  // visualization matrix transformation
                 .showCursorCoordinates;
     }
 
-    //! Legacy no-op (kept for API compatibility)
-    static void SetAutoPickPivotAtCenter(bool state);
-    //! Legacy no-op
-    inline static bool AutoPickPivotAtCenter() { return false; }
-
     //! Lock the rotation axis
     static void LockRotationAxis(bool state, const CCVector3d& axis);
 
@@ -2530,7 +2525,6 @@ public:
                        bool autoRedraw = true,
                        bool verbose = false) override;
     void setPivotVisibility(PivotVisibility vis) override;
-    void setAutoPickPivotAtCenter(bool state) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;
     void toggleDebugTrace() override;
@@ -2697,7 +2691,7 @@ signals:
 
     //! Signal emitted when the exclusive fullscreen is toggled
     void exclusiveFullScreenToggled(bool exclusive);
-    void autoPickPivot(bool state);
+    void pickCenterOfRotation();
 
     void labelmove2D(int x, int y, int dx, int dy);
 

@@ -1855,8 +1855,8 @@ void MainWindow::connectActions() {
 
     connect(&ecvViewManager::instance(), &ecvViewManager::newLabel, this,
             &MainWindow::handleNewLabel);
-    connect(&ecvViewManager::instance(), &ecvViewManager::autoPickPivot, this,
-            &MainWindow::setAutoPickPivot);
+    connect(&ecvViewManager::instance(), &ecvViewManager::pickCenterOfRotation,
+            this, &MainWindow::doPickCenterOfRotation);
     connect(&ecvViewManager::instance(),
             &ecvViewManager::exclusiveFullScreenToggled, this,
             &MainWindow::toggleExclusiveFullScreen);
@@ -2402,16 +2402,15 @@ void MainWindow::toggleActiveWindowPickRotCenter(bool state) {
         auto* widget = glView->getVtkWidget();
         if (widget) {
             auto* conn = new QMetaObject::Connection;
-            *conn = connect(
-                    widget,
-                    &QVTKWidgetCustom::pickCenterOfRotationFinished, this,
-                    [this, conn](bool /*success*/) {
-                        m_ui->actionAutoPickPivot->blockSignals(true);
-                        m_ui->actionAutoPickPivot->setChecked(false);
-                        m_ui->actionAutoPickPivot->blockSignals(false);
-                        disconnect(*conn);
-                        delete conn;
-                    });
+            *conn = connect(widget,
+                            &QVTKWidgetCustom::pickCenterOfRotationFinished,
+                            this, [this, conn](bool /*success*/) {
+                                m_ui->actionAutoPickPivot->blockSignals(true);
+                                m_ui->actionAutoPickPivot->setChecked(false);
+                                m_ui->actionAutoPickPivot->blockSignals(false);
+                                disconnect(*conn);
+                                delete conn;
+                            });
         }
     } else {
         glView->cancelPickCenterOfRotation();
@@ -2478,13 +2477,11 @@ void MainWindow::onMousePosChanged(const QPoint& pos) {
     }
 }
 
-void MainWindow::setAutoPickPivot(bool state) {
-    if (state) {
-        m_ui->actionAutoPickPivot->blockSignals(true);
-        m_ui->actionAutoPickPivot->setChecked(true);
-        m_ui->actionAutoPickPivot->blockSignals(false);
-        toggleActiveWindowPickRotCenter(true);
-    }
+void MainWindow::doPickCenterOfRotation() {
+    m_ui->actionAutoPickPivot->blockSignals(true);
+    m_ui->actionAutoPickPivot->setChecked(true);
+    m_ui->actionAutoPickPivot->blockSignals(false);
+    toggleActiveWindowPickRotCenter(true);
 }
 
 void MainWindow::setOrthoView() {
@@ -4880,6 +4877,16 @@ void MainWindow::doActionSaveFile() {
                                             selectedFilter)
                         .toString();
 
+    // Validate the restored filter exists in the available filters.
+    // AcvProjectFilter is for whole-project saving (Save Project action), not
+    // for individual entity saving. Fall back to BinFilter if invalid.
+    if (!fileFilters.contains(selectedFilter) ||
+        selectedFilter == AcvProjectFilter::GetFileFilter()) {
+        QString binFilter = BinFilter::GetFileFilter();
+        selectedFilter = fileFilters.contains(binFilter) ? binFilter
+                                                         : fileFilters.first();
+    }
+
     // default output path (+ filename)
     QString currentPath =
             ecvSettingManager::getValue(ecvPS::SaveFile(), ecvPS::CurrentPath(),
@@ -5059,10 +5066,10 @@ void MainWindow::doActionSaveProject() {
     }
     fullPathName += QString("/") + defaultFileName;
 
-    QString acvFilter = AcvProjectFilter::GetFileFilter();
     QString binFilter = BinFilter::GetFileFilter();
-    QString allFilters = acvFilter + ";;" + binFilter;
-    QString selectedFilter = acvFilter;
+    QString acvFilter = AcvProjectFilter::GetFileFilter();
+    QString allFilters = binFilter + ";;" + acvFilter;
+    QString selectedFilter = binFilter;
 
     // ask the user for the output filename
     QString selectedFilename = QFileDialog::getSaveFileName(

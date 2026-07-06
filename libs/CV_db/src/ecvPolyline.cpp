@@ -324,7 +324,9 @@ bool ccPolyline::toFile_MeOnly(QFile& out, short dataVersion) const {
     }
 
     //'global shift & scale' (dataVersion>=39)
-    saveShiftInfoToFile(out);
+    if (dataVersion >= 39) {
+        saveShiftInfoToFile(out);
+    }
 
     QDataStream outStream(&out);
 

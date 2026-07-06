@@ -158,7 +158,7 @@ bool ccGenericPointCloud::toFile_MeOnly(QFile& out, short dataVersion) const {
 
     if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
-    //'global shift & scale' (dataVersion>=39)
+    //'global shift & scale' (dataVersion>=33)
     saveShiftInfoToFile(out);
 
     //'visibility' array (dataVersion>=20)

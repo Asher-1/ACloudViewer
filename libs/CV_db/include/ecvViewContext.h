@@ -81,7 +81,7 @@ struct CV_DB_LIB_API ecvViewContext {
     ecvGenericGLDisplay::PICKING_MODE pickingMode =
             ecvGenericGLDisplay::DEFAULT_PICKING;
     bool pickingModeLocked = false;
-    int pickRadius = 3;
+    int pickRadius = 5;
     bool allowRectangularEntityPicking = true;
 
     // ================================================================

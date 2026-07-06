@@ -634,11 +634,11 @@ bool cc2DLabel::toFile_MeOnly(QFile& out, short dataVersion) const {
     if (out.write((const char*)&m_dispPointsLegend, sizeof(bool)) < 0)
         return WriteError();
 
-    // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere size!
-    // This is always written when saving, but only read when dataVersion >= 49
-    // to maintain backward compatibility with version 48 and earlier
-    if (out.write((const char*)&m_relMarkerScale, sizeof(float)) < 0)
-        return WriteError();
+    // Relative marker scale (dataVersion >= 49)
+    if (dataVersion >= 49) {
+        if (out.write((const char*)&m_relMarkerScale, sizeof(float)) < 0)
+            return WriteError();
+    }
 
     return true;
 }

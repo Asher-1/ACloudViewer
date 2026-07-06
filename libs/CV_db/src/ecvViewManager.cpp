@@ -337,8 +337,8 @@ void ecvViewManager::displayMessageOnActiveView(
                                 type);
 }
 
-void ecvViewManager::notifyAutoPickPivot(bool state) {
-    emit autoPickPivot(state);
+void ecvViewManager::notifyPickCenterOfRotation() {
+    emit pickCenterOfRotation();
 }
 
 void ecvViewManager::setRemoveAllFlag(bool flag) {

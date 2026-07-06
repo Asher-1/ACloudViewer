@@ -172,7 +172,7 @@ public:
     //! Saves position and state of all GUI elements
     void saveGUIElementsPos();
 
-    void setAutoPickPivot(bool state);
+    void doPickCenterOfRotation();
     void setOrthoView();
     void setPerspectiveView();
 
