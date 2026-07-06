@@ -1164,16 +1164,60 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 
         if (m_pickCenterPending) {
             CCVector3d P;
-            if (displayTarget()->getClick3DPos(event->x(), event->y(), P)) {
-                displayTarget()->setPivotPoint(P, true, true);
-                m_pickCenterPending = false;
-                setCursor(QCursor());
-                emit pickCenterOfRotationFinished(true);
-            } else {
-                m_pickCenterPending = false;
-                setCursor(QCursor());
-                emit pickCenterOfRotationFinished(false);
+            bool onSurface = false;
+
+            auto* vis = vtkVisForWidget(this);
+            auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
+            if (ren) {
+                auto rw = vis->getRenderWindow();
+                if (rw) {
+                    rw->Render();
+                }
+
+                const double dpr = devicePixelRatioF();
+                int px = static_cast<int>(event->x() * dpr);
+                int py = static_cast<int>(ren->GetSize()[1] - 1 -
+                                          event->y() * dpr);
+
+                double z = vis->getGLDepth(px, py);
+
+                if (z < 1.0) {
+                    ren->SetDisplayPoint(px, py, z);
+                    ren->DisplayToWorld();
+                    double* wp = ren->GetWorldPoint();
+                    if (wp[3] != 0.0) {
+                        P = CCVector3d(wp[0] / wp[3], wp[1] / wp[3],
+                                       wp[2] / wp[3]);
+                        onSurface = true;
+                    }
+                }
+
+                if (!onSurface) {
+                    vtkCamera* cam = ren->GetActiveCamera();
+                    if (cam) {
+                        double fp[4];
+                        cam->GetFocalPoint(fp);
+                        fp[3] = 1.0;
+                        ren->SetWorldPoint(fp);
+                        ren->WorldToDisplay();
+                        double* dc = ren->GetDisplayPoint();
+                        ren->SetDisplayPoint(px, py, dc[2]);
+                        ren->DisplayToWorld();
+                        double* wp = ren->GetWorldPoint();
+                        if (wp[3] != 0.0) {
+                            P = CCVector3d(wp[0] / wp[3], wp[1] / wp[3],
+                                           wp[2] / wp[3]);
+                            onSurface = true;
+                        }
+                    }
+                }
             }
+            if (onSurface) {
+                displayTarget()->setPivotPoint(P, true, true);
+            }
+            m_pickCenterPending = false;
+            setCursor(QCursor());
+            emit pickCenterOfRotationFinished(onSurface);
             event->accept();
             return;
         }

@@ -377,7 +377,6 @@ public:
         Q_UNUSED(verbose);
     }
     virtual void setPivotVisibility(PivotVisibility vis) { Q_UNUSED(vis); }
-    virtual void setAutoPickPivotAtCenter(bool state) { Q_UNUSED(state); }
     virtual void resetCenterOfRotation(int viewport = 0) { Q_UNUSED(viewport); }
     virtual bool isRotationAxisLocked() const { return false; }
     virtual void lockRotationAxis(bool state, const CCVector3d& axis) {

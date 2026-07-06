@@ -112,8 +112,6 @@ public:
                                     double up_y,
                                     double up_z) {}
 
-    virtual void setAutoPickPivotAtCenter(bool state);
-
     enum CameraAdjustmentType { Roll = 0, Elevation, Azimuth, Zoom };
 
     virtual void adjustCamera(CameraAdjustmentType enType, double value) = 0;

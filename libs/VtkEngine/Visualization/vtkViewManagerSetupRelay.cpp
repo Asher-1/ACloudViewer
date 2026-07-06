@@ -35,8 +35,8 @@ static void typedSingletonRelay(ecvViewManager* mgr,
                      &ecvViewManager::cameraParamChanged);
     QObject::connect(glView, &vtkGLView::mousePosChanged, mgr,
                      &ecvViewManager::mousePosChanged);
-    QObject::connect(glView, &vtkGLView::autoPickPivot, mgr,
-                     &ecvViewManager::autoPickPivot);
+    QObject::connect(glView, &vtkGLView::pickCenterOfRotation, mgr,
+                     &ecvViewManager::pickCenterOfRotation);
     QObject::connect(glView, &vtkGLView::exclusiveFullScreenToggled, mgr,
                      &ecvViewManager::exclusiveFullScreenToggled);
     QObject::connect(glView, &vtkGLView::itemPicked, mgr,

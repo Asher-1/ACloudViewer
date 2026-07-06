@@ -179,6 +179,7 @@ static void SetupRenderer(vtkSmartPointer<vtkRenderer> ren) {
     // It should be controlled by vtkGLView::setPerspectiveState() which
     // syncs from ecvViewportParameters (the single source of truth).
     ren->SetTwoSidedLighting(true);
+    ren->SetNearClippingPlaneTolerance(0.0001);
 }
 
 // ParaView BUG #13534: intercept ResetCameraClippingRangeEvent so we use
@@ -710,20 +711,38 @@ void VtkVis::setCenterAxesVisibility(bool v) {
 }
 
 double VtkVis::getGLDepth(int x, int y) {
-    // Get camera focal point and position. Convert to display (screen)
-    // coordinates. We need a depth value for z-buffer.
-    //
-    double cameraFP[4];
-    getVtkCamera()->GetFocalPoint(cameraFP);
-    cameraFP[3] = 1.0;
-    auto* ren = getCurrentRenderer();
-    if (!ren) return 0.0;
-    ren->SetWorldPoint(cameraFP);
-    ren->WorldToDisplay();
-    double* displayCoord = ren->GetDisplayPoint();
-    double z_buffer = displayCoord[2];
+    auto rw = getRenderWindow();
+    if (!rw) return 1.0;
 
-    return z_buffer;
+    const int* sz = rw->GetSize();
+    if (x < 0 || y < 0 || x >= sz[0] || y >= sz[1]) {
+        return 1.0;
+    }
+
+    float z = 1.0f;
+    if (rw->GetZbufferData(x, y, x, y, &z) == 0) {
+        return 1.0;
+    }
+    if (z < 1.0f) {
+        return static_cast<double>(z);
+    }
+
+    const int radius = 2;
+    int x0 = std::max(0, x - radius);
+    int y0 = std::max(0, y - radius);
+    int x1 = std::min(sz[0] - 1, x + radius);
+    int y1 = std::min(sz[1] - 1, y + radius);
+    int w = x1 - x0 + 1;
+    int h = y1 - y0 + 1;
+    std::vector<float> buf(w * h, 1.0f);
+    if (rw->GetZbufferData(x0, y0, x1, y1, buf.data()) == 0) {
+        return 1.0;
+    }
+    float minZ = 1.0f;
+    for (float v : buf) {
+        if (v < minZ) minZ = v;
+    }
+    return static_cast<double>(minZ);
 }
 
 double VtkVis::getCameraFocalDistance(int viewport) {
@@ -817,117 +836,6 @@ void VtkVis::resetCamera(double xMin,
     vtkRenderer* renderer = nullptr;
     while ((renderer = getRendererCollection()->GetNextItem()) != nullptr) {
         renderer->ResetCamera(xMin, xMax, yMin, yMax, zMin, zMax);
-    }
-}
-
-// reset the camera clipping range to include this entire bounding box
-void VtkVis::getReasonableClippingRange(double range[2], int viewport) {
-    double vn[3], position[3], a, b, c, d;
-    double dist;
-    int i, j, k;
-
-    this->synchronizeGeometryBounds(viewport);
-
-    double bounds[6];
-    this->GeometryBounds.GetBounds(bounds);
-
-    // Don't reset the clipping range when we don't have any 3D visible props
-    if (!vtkMath::AreBoundsInitialized(bounds)) {
-        return;
-    }
-
-    if (getVtkCamera() == nullptr) {
-        CVLog::Warning("Trying to reset clipping range of non-existent camera");
-        return;
-    }
-
-    double expandedBounds[6] = {bounds[0], bounds[1], bounds[2],
-                                bounds[3], bounds[4], bounds[5]};
-    if (!getVtkCamera()->GetUseOffAxisProjection()) {
-        getVtkCamera()->GetViewPlaneNormal(vn);
-        getVtkCamera()->GetPosition(position);
-        this->expandBounds(expandedBounds,
-                           getVtkCamera()->GetModelTransformMatrix());
-    } else {
-        getVtkCamera()->GetEyePosition(position);
-        getVtkCamera()->GetEyePlaneNormal(vn);
-        this->expandBounds(expandedBounds,
-                           getVtkCamera()->GetModelViewTransformMatrix());
-    }
-
-    a = -vn[0];
-    b = -vn[1];
-    c = -vn[2];
-    d = -(a * position[0] + b * position[1] + c * position[2]);
-
-    // Set the max near clipping plane and the min far clipping plane
-    range[0] = a * expandedBounds[0] + b * expandedBounds[2] +
-               c * expandedBounds[4] + d;
-    range[1] = 1e-18;
-
-    // Find the closest / farthest bounding box vertex
-    for (k = 0; k < 2; k++) {
-        for (j = 0; j < 2; j++) {
-            for (i = 0; i < 2; i++) {
-                dist = a * expandedBounds[i] + b * expandedBounds[2 + j] +
-                       c * expandedBounds[4 + k] + d;
-                range[0] = (dist < range[0]) ? (dist) : (range[0]);
-                range[1] = (dist > range[1]) ? (dist) : (range[1]);
-            }
-        }
-    }
-
-    // do not let far - near be less than 0.1 of the window height
-    // this is for cases such as 2D images which may have zero range
-    double minGap = 0.0;
-    if (getVtkCamera()->GetParallelProjection()) {
-        minGap = 0.1 * this->getParallelScale();
-    } else {
-        double angle =
-                vtkMath::RadiansFromDegrees(getVtkCamera()->GetViewAngle());
-        minGap = 0.2 * tan(angle / 2.0) * range[1];
-    }
-    if (range[1] - range[0] < minGap) {
-        minGap = minGap - range[1] + range[0];
-        range[1] += minGap / 2.0;
-        range[0] -= minGap / 2.0;
-    }
-
-    // Do not let the range behind the camera throw off the calculation.
-    if (range[0] < 0.0) {
-        range[0] = 0.0;
-    }
-
-    auto* ren = getCurrentRenderer();
-    if (!ren) return;
-
-    // Give ourselves a little breathing room
-    range[0] = 0.99 * range[0] -
-               (range[1] - range[0]) * ren->GetClippingRangeExpansion();
-    range[1] = 1.01 * range[1] +
-               (range[1] - range[0]) * ren->GetClippingRangeExpansion();
-
-    // Make sure near is not bigger than far
-    range[0] = (range[0] >= range[1]) ? (0.01 * range[1]) : (range[0]);
-
-    // Make sure near is at least some fraction of far - this prevents near
-    // from being behind the camera or too close in front. How close is too
-    // close depends on the resolution of the depth buffer
-    if (!ren->GetNearClippingPlaneTolerance()) {
-        ren->SetNearClippingPlaneTolerance(0.01);
-        if (this->getRenderWindow()) {
-            int ZBufferDepth = this->getRenderWindow()->GetDepthBufferSize();
-            if (ZBufferDepth > 16) {
-                ren->SetNearClippingPlaneTolerance(0.001);
-            }
-        }
-    }
-
-    // make sure the front clipping range is not too far from the far clippnig
-    // range, this is to make sure that the zbuffer resolution is effectively
-    // used
-    if (range[0] < ren->GetNearClippingPlaneTolerance() * range[1]) {
-        range[0] = ren->GetNearClippingPlaneTolerance() * range[1];
     }
 }
 
@@ -1563,6 +1471,8 @@ static bool AddPolygonMeshPolyData(vtkSmartPointer<vtkPolyData> polydata,
     vtkSmartPointer<vtkPVLODActor> actor;
     VtkRendering::CreateActorFromVTKDataSet(polydata, actor);
     actor->GetProperty()->SetRepresentationToSurface();
+    actor->GetProperty()->SetBackfaceCulling(false);
+    actor->GetProperty()->SetFrontfaceCulling(false);
     vis->addActorToRenderer(actor, viewport);
     VtkRendering::CloudActor& ca = (*cloud_map)[id];
     ca.actor = actor;

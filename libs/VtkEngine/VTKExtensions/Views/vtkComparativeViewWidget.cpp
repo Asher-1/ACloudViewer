@@ -1024,7 +1024,6 @@ void vtkComparativeViewWidget::performSubViewRefresh() {
         if (!view) continue;
         QWidget* w = view->asWidget();
         if (w && isVisible()) w->show();
-        view->setAutoPickPivotAtCenter(false);
     }
 
     const bool needsCameraReset = m_needsCameraReset;

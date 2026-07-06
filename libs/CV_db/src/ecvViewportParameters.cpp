@@ -92,8 +92,11 @@ bool ecvViewportParameters::toFile(QFile& out, short dataVersion) const {
 }
 
 short ecvViewportParameters::minimumFileVersion() const {
-    // Version 36 introduced double precision for camera matrix
-    return std::max(static_cast<short>(36), viewMat.minimumFileVersion());
+    // v36 introduced double precision for camera matrix.
+    // v48 dropped the orthoAspectRatio field that existed in v30-47.
+    // We require v48+ to avoid the read-side consuming 4 bytes that
+    // the write-side never produces (orthoAspectRatio).
+    return std::max(static_cast<short>(48), viewMat.minimumFileVersion());
 }
 
 bool ecvViewportParameters::fromFile(QFile& in,

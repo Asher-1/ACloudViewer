@@ -359,10 +359,48 @@ bool ccMaterial::toFile(QFile& out, short dataVersion) const {
     outStream << m_shininessFront;
     outStream << m_shininessBack;
 
+    if (dataVersion >= 58) {
+        // PBR scalar parameters (dataVersion >= 58)
+        outStream << m_illum;
+        outStream << m_metallic;
+        outStream << m_roughness;
+        outStream << m_sheen;
+        outStream << m_clearcoat;
+        outStream << m_clearcoatRoughness;
+        outStream << m_anisotropy;
+        outStream << m_ambientOcclusion;
+
+        // multi-texture map (dataVersion >= 58)
+        uint32_t mapSize = static_cast<uint32_t>(m_textureFilenames.size());
+        outStream << mapSize;
+        for (const auto& pair : m_textureFilenames) {
+            outStream << static_cast<int32_t>(pair.first);
+            uint32_t fnCount = static_cast<uint32_t>(pair.second.size());
+            outStream << fnCount;
+            for (const auto& fn : pair.second) {
+                outStream << fn;
+            }
+        }
+    }
+
     return true;
 }
 
-short ccMaterial::minimumFileVersion() const { return 20; }
+short ccMaterial::minimumFileVersion() const {
+    // If material has PBR parameters or multi-texture maps beyond legacy
+    // DIFFUSE, require version 58
+    if (!m_textureFilenames.empty()) {
+        if (m_textureFilenames.size() > 1) return 58;
+        auto it = m_textureFilenames.find(TextureMapType::DIFFUSE);
+        if (it == m_textureFilenames.end()) return 58;
+    }
+    if (m_metallic != 0.0f || m_roughness != 0.5f || m_sheen != 0.0f ||
+        m_clearcoat != 0.0f || m_clearcoatRoughness != 0.0f ||
+        m_anisotropy != 0.0f || m_ambientOcclusion != 0.0f) {
+        return 58;
+    }
+    return 20;
+}
 
 bool ccMaterial::fromFile(QFile& in,
                           short dataVersion,
@@ -397,6 +435,43 @@ bool ccMaterial::fromFile(QFile& in,
     // material shininess (dataVersion>=20)
     inStream >> m_shininessFront;
     inStream >> m_shininessBack;
+
+    if (dataVersion >= 58) {
+        // PBR scalar parameters (dataVersion >= 58)
+        inStream >> m_illum;
+        inStream >> m_metallic;
+        inStream >> m_roughness;
+        inStream >> m_sheen;
+        inStream >> m_clearcoat;
+        inStream >> m_clearcoatRoughness;
+        inStream >> m_anisotropy;
+        inStream >> m_ambientOcclusion;
+
+        // multi-texture map (dataVersion >= 58)
+        uint32_t mapSize = 0;
+        inStream >> mapSize;
+        m_textureFilenames.clear();
+        for (uint32_t i = 0; i < mapSize; ++i) {
+            int32_t typeInt = 0;
+            inStream >> typeInt;
+            uint32_t fnCount = 0;
+            inStream >> fnCount;
+            std::vector<QString> fns;
+            fns.reserve(fnCount);
+            for (uint32_t j = 0; j < fnCount; ++j) {
+                QString fn;
+                inStream >> fn;
+                fns.push_back(fn);
+            }
+            m_textureFilenames[static_cast<TextureMapType>(typeInt)] =
+                    std::move(fns);
+        }
+    } else {
+        // For older files, populate multi-texture map from legacy field
+        if (!m_textureFilename.isEmpty()) {
+            m_textureFilenames[TextureMapType::DIFFUSE] = {m_textureFilename};
+        }
+    }
 
     return true;
 }
