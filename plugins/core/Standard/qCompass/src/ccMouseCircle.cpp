@@ -55,8 +55,7 @@ ccMouseCircle::~ccMouseCircle() {
 }
 
 float ccMouseCircle::getRadiusWorld() {
-    ecvGenericGLDisplay* eff =
-            ecvViewManager::instance().getEffectiveView();
+    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
     if (eff) {
         m_pixelSize =
                 static_cast<float>(std::abs(eff->computeActualPixelSize()));
