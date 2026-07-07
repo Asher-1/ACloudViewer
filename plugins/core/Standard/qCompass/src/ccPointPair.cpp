@@ -180,8 +180,8 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
                                                 : getMeasurementColour();
         c_unitPointMarker->setTempColor(color);
 
-        // Match CloudCompare's GL_POINT_SIZE default (typically 1.0)
-        float pSize = 1.0f;
+        float pSize = static_cast<float>(context.defaultPointSize);
+        if (pSize < 1.0f) pSize = 1.0f;
 
         const ecvViewportParameters& viewportParams =
                 effView->getViewportParameters();

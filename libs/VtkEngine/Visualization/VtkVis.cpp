@@ -2218,6 +2218,14 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
         return false;
     }
 
+    // Reset actor color to white so textures are not tinted by a previously
+    // set uniform color (e.g. from setPointCloudUniqueColor when Colors=RGB
+    // was active). Also restore ScalarVisibility so texture mapping works.
+    actor->GetProperty()->SetColor(1.0, 1.0, 1.0);
+    if (actor->GetMapper()) {
+        actor->GetMapper()->ScalarVisibilityOn();
+    }
+
     // Get polydata for texture coordinates (always use full-resolution mapper)
     vtkPolyData* polydata = nullptr;
     vtkPolyDataMapper* mapper = nullptr;
@@ -3404,18 +3412,14 @@ void VtkVis::setMeshStippling(bool enabled,
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
 
-    // CloudCompare stippling = fake transparency via glPolygonStipple
-    // (checkerboard pattern). VTK's OpenGL2 backend doesn't support
-    // glPolygonStipple, so we approximate with reduced opacity + edge
-    // visibility for a see-through effect.
+    // CloudCompare stippling = 50%-density checkerboard via glPolygonStipple.
+    // VTK's OpenGL2 backend doesn't support glPolygonStipple, so we
+    // approximate with 50% opacity (matching the 50% pixel density of the
+    // checkerboard pattern).
     vtkProperty* prop = actor->GetProperty();
     if (enabled) {
-        prop->SetOpacity(0.4);
-        prop->SetEdgeVisibility(true);
-        prop->SetEdgeColor(0.3, 0.3, 0.3);
+        prop->SetOpacity(0.5);
         prop->SetBackfaceCulling(false);
-    } else {
-        prop->SetEdgeVisibility(false);
     }
     actor->Modified();
 }
@@ -4772,20 +4776,20 @@ void VtkVis::applyLightPropertiesToActor(vtkActor* actor,
     }
 
     if (isPointCloud) {
-        // Point clouds: scale ambient/diffuse by intensity
-        double ambient = 0.1 + intensity * 0.5;  // Range: 0.1-0.6
-        double diffuse = 0.3 + intensity * 0.5;  // Range: 0.3-0.8
+        double ambient = 0.1 + intensity * 0.5;
+        double diffuse = 0.3 + intensity * 0.5;
         prop->SetAmbient(ambient);
         prop->SetDiffuse(diffuse);
         prop->SetSpecular(0.1);
     } else {
-        // Meshes: ALSO scale by intensity (was previously fixed values)
-        double ambient = 0.1 + intensity * 0.2;  // Range: 0.1-0.3
-        double diffuse = intensity * 0.7;        // Range: 0.0-0.7
-        double specular = intensity * 0.2;       // Range: 0.0-0.2
+        double ambient = 0.1 + intensity * 0.2;
+        double diffuse = intensity * 0.7;
+        double specular = intensity * 0.2;
         prop->SetAmbient(ambient);
         prop->SetDiffuse(diffuse);
         prop->SetSpecular(specular);
+        prop->SetSpecularColor(m_meshSpecularColor[0], m_meshSpecularColor[1],
+                               m_meshSpecularColor[2]);
     }
 
     actor->Modified();
@@ -4885,6 +4889,42 @@ void VtkVis::setLightIntensity(double intensity) {
 }
 
 double VtkVis::getLightIntensity() const { return m_lightIntensity; }
+
+void VtkVis::applyDisplaySettingsLighting(const CC_DRAW_CONTEXT& context) {
+    vtkRenderer* renderer = getCurrentRenderer();
+    if (!renderer) return;
+
+    renderer->SetTwoSidedLighting(context.lightDoubleSided);
+
+    vtkLightCollection* lights = renderer->GetLights();
+    vtkLight* headlight = nullptr;
+    if (lights) {
+        lights->InitTraversal();
+        vtkLight* light = nullptr;
+        while ((light = lights->GetNextItem())) {
+            if (light->GetLightType() == VTK_LIGHT_TYPE_HEADLIGHT) {
+                headlight = light;
+                break;
+            }
+        }
+    }
+
+    if (headlight) {
+        headlight->SetDiffuseColor(context.lightDiffuseColor.r,
+                                   context.lightDiffuseColor.g,
+                                   context.lightDiffuseColor.b);
+        headlight->SetAmbientColor(context.lightAmbientColor.r,
+                                   context.lightAmbientColor.g,
+                                   context.lightAmbientColor.b);
+        headlight->SetSpecularColor(context.lightSpecularColor.r,
+                                    context.lightSpecularColor.g,
+                                    context.lightSpecularColor.b);
+    }
+
+    m_meshSpecularColor[0] = context.defaultMeshSpecular.r;
+    m_meshSpecularColor[1] = context.defaultMeshSpecular.g;
+    m_meshSpecularColor[2] = context.defaultMeshSpecular.b;
+}
 
 // ============================================================================
 // Axes Grid and Camera Orientation Widget (ParaView-compatible)

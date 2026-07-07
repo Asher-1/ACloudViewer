@@ -8,7 +8,6 @@
 #include "ccFitPlaneTool.h"
 
 #include <CVLog.h>
-#include <ecvColorTypes.h>
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
@@ -94,14 +93,15 @@ void ccFitPlaneTool::pointPicked(ccHObject* insertPoint,
 
         pPlane->updateAttributes(rms, r);
 
-        static const ecvColor::Rgb defaultPlaneColor(0, 230, 69);
-        pPlane->setColor(defaultPlaneColor);
-        pPlane->showColors(true);
-
         pPlane->setVisible(true);
         pPlane->setSelectionBehavior(ccHObject::SELECTION_IGNORED);
 
         insertPoint->addChild(pPlane);
+
+        if (ecvGenericGLDisplay* eff =
+                    ecvViewManager::instance().getEffectiveView()) {
+            pPlane->setDisplay(eff);
+        }
 
         m_app->addToDB(pPlane, false, false, false, false);
 
