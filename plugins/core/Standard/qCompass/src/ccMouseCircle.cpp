@@ -55,15 +55,20 @@ ccMouseCircle::~ccMouseCircle() {
 }
 
 float ccMouseCircle::getRadiusWorld() {
-    if (m_pixelSize <= 0) {
-        ecvGenericGLDisplay* eff =
-                ecvViewManager::instance().getEffectiveView();
-        if (!eff) return 0.0f;
-
+    ecvGenericGLDisplay* eff =
+            ecvViewManager::instance().getEffectiveView();
+    if (eff) {
         m_pixelSize =
                 static_cast<float>(std::abs(eff->computeActualPixelSize()));
     }
+    if (m_pixelSize <= 0) {
+        return 0.0f;
+    }
     float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
+    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
+                         .arg(r)
+                         .arg(getRadiusPx())
+                         .arg(m_pixelSize));
     return r;
 }
 
