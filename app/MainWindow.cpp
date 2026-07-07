@@ -540,13 +540,6 @@ MainWindow::MainWindow()
     {  // restore options
         QSettings settings;
 
-        // auto pick center
-        bool autoPickRotationCenter =
-                settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
-        if (autoPickRotationCenter) {
-            m_ui->actionAutoPickPivot->toggle();
-        }
-
         // show center
         bool autoShowCenterAxis =
                 settings.value(ecvPS::AutoShowCenter(), true).toBool();
@@ -1782,7 +1775,7 @@ void MainWindow::connectActions() {
             [=]() { setView(CC_ISO_VIEW_2); });
 
     connect(m_ui->actionAutoPickPivot, &QAction::toggled, this,
-            &MainWindow::toggleActiveWindowAutoPickRotCenter);
+            &MainWindow::toggleActiveWindowPickRotCenter);
     connect(m_ui->actionShowPivot, &QAction::toggled, this,
             &MainWindow::toggleRotationCenterVisibility);
     connect(m_ui->actionResetPivot, &QAction::triggered, this,
@@ -1862,8 +1855,8 @@ void MainWindow::connectActions() {
 
     connect(&ecvViewManager::instance(), &ecvViewManager::newLabel, this,
             &MainWindow::handleNewLabel);
-    connect(&ecvViewManager::instance(), &ecvViewManager::autoPickPivot, this,
-            &MainWindow::setAutoPickPivot);
+    connect(&ecvViewManager::instance(), &ecvViewManager::pickCenterOfRotation,
+            this, &MainWindow::doPickCenterOfRotation);
     connect(&ecvViewManager::instance(),
             &ecvViewManager::exclusiveFullScreenToggled, this,
             &MainWindow::toggleExclusiveFullScreen);
@@ -2400,35 +2393,46 @@ void MainWindow::autoShowReconstructionToolBar(bool state) {
 }
 #endif
 
-void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state) {
-    if (auto* view = getActiveGLView()) {
-        if (state) {
-            view->resetCenterOfRotation();
-            view->setAutoPickPivotAtCenter(false);
-            m_ui->actionAutoPickPivot->blockSignals(true);
-            m_ui->actionAutoPickPivot->setChecked(false);
-            m_ui->actionAutoPickPivot->blockSignals(false);
-        } else {
-            view->setAutoPickPivotAtCenter(false);
+void MainWindow::toggleActiveWindowPickRotCenter(bool state) {
+    auto* glView = dynamic_cast<vtkGLView*>(getActiveGLView());
+    if (!glView) return;
+
+    if (state) {
+        glView->beginPickCenterOfRotation();
+        auto* widget = glView->getVtkWidget();
+        if (widget) {
+            auto* conn = new QMetaObject::Connection;
+            *conn = connect(widget,
+                            &QVTKWidgetCustom::pickCenterOfRotationFinished,
+                            this, [this, conn](bool /*success*/) {
+                                m_ui->actionAutoPickPivot->blockSignals(true);
+                                m_ui->actionAutoPickPivot->setChecked(false);
+                                m_ui->actionAutoPickPivot->blockSignals(false);
+                                disconnect(*conn);
+                                delete conn;
+                            });
         }
-        QSettings settings;
-        settings.setValue(ecvPS::AutoPickRotationCenter(), false);
+    } else {
+        glView->cancelPickCenterOfRotation();
     }
 }
 
 void MainWindow::doActionResetRotCenter() {
     if (auto* view = getActiveGLView()) {
         view->resetCenterOfRotation();
+        view->redraw(false, false);
     }
 }
 
 void MainWindow::toggleRotationCenterVisibility(bool state) {
     if (auto* view = getActiveGLView()) {
         if (state) {
-            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE);
+            view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_ALWAYS_SHOW);
         } else {
             view->setPivotVisibility(ecvGenericGLDisplay::PIVOT_HIDE);
         }
+
+        view->redraw(false, false);
 
         // save the option
         {
@@ -2473,11 +2477,11 @@ void MainWindow::onMousePosChanged(const QPoint& pos) {
     }
 }
 
-void MainWindow::setAutoPickPivot(bool state) {
+void MainWindow::doPickCenterOfRotation() {
     m_ui->actionAutoPickPivot->blockSignals(true);
-    m_ui->actionAutoPickPivot->setChecked(state);
+    m_ui->actionAutoPickPivot->setChecked(true);
     m_ui->actionAutoPickPivot->blockSignals(false);
-    toggleActiveWindowAutoPickRotCenter(state);
+    toggleActiveWindowPickRotCenter(true);
 }
 
 void MainWindow::setOrthoView() {
@@ -2790,24 +2794,62 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
     newVis->setBackgroundColor(bkg1.r, bkg1.g, bkg1.b, bkg2.r, bkg2.g, bkg2.b,
                                ctx.drawBackgroundGradient);
 
+    // Determine the effective source visualizer for overlay widget state:
+    // prefer the source view's own VtkVis; fall back to the primary visualizer.
+    Visualization::VtkVis* srcVis = nullptr;
+    if (srcView) {
+        srcVis = srcView->getVisualizer3D();
+    }
+    if (!srcVis) {
+        srcVis = primaryVis;
+    }
+
     // Camera orientation widget (ParaView-style gizmo)
-    if (primaryVis->IsCameraOrientationWidgetShown()) {
+    if (srcVis->IsCameraOrientationWidgetShown()) {
         newVis->ToggleCameraOrientationWidget(true);
     }
 
     // Orientation marker axes (corner trihedron)
-    if (primaryVis->pclMarkerAxesShown()) {
+    if (srcVis->pclMarkerAxesShown()) {
         newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
+    } else {
+        QSettings settings;
+        if (settings.value("OrientationMarker/Visible", true).toBool()) {
+            newVis->showPclMarkerAxes(newVis->getRenderWindowInteractor());
+        }
     }
 
     // Defer the full redraw until the widget is shown in the layout with
     // a valid size.  Calling Render() before the FBO is properly initialised
     // causes driver-dependent artefacts (often bright green on Mesa/NVIDIA).
     // A 100 ms delay gives the layout time to assign geometry.
-    QTimer::singleShot(100, view, [view]() {
+    const bool shouldShowMarker = srcVis->pclMarkerAxesShown();
+    const bool shouldShowCOW = srcVis->IsCameraOrientationWidgetShown();
+    QTimer::singleShot(100, view, [view, shouldShowMarker, shouldShowCOW]() {
         if (!view) return;
         QWidget* w = view->asWidget();
         if (w && w->isVisible() && w->width() > 0 && w->height() > 0) {
+            if (auto* vis = view->getVisualizer3D()) {
+                auto rw = vis->getRenderWindow();
+                if (rw) {
+                    // Ensure VTK render window knows its actual size
+                    // (it may still report 0x0 from creation time).
+                    const double dpr = w->devicePixelRatioF();
+                    const int pw = static_cast<int>(w->width() * dpr + 0.5);
+                    const int ph = static_cast<int>(w->height() * dpr + 0.5);
+                    rw->SetSize(pw, ph);
+                }
+                if (shouldShowMarker) {
+                    // Cycle off/on so VTK rebuilds the internal
+                    // renderer with the now-valid window size.
+                    vis->hidePclMarkerAxes();
+                    vis->showPclMarkerAxes(vis->getRenderWindowInteractor());
+                }
+                if (shouldShowCOW && !vis->IsCameraOrientationWidgetShown()) {
+                    vis->ToggleCameraOrientationWidget(true);
+                }
+                vis->RefreshOverlayWidgets();
+            }
             view->redraw();
         }
     });
@@ -2938,7 +2980,7 @@ void MainWindow::syncPivotButtonStates(ecvGenericGLDisplay* display) {
     const auto& ctx = glView->context();
 
     m_ui->actionAutoPickPivot->blockSignals(true);
-    m_ui->actionAutoPickPivot->setChecked(ctx.autoPickPivotAtCenter);
+    m_ui->actionAutoPickPivot->setChecked(false);
     m_ui->actionAutoPickPivot->blockSignals(false);
 
     bool showPivot =
@@ -4835,6 +4877,16 @@ void MainWindow::doActionSaveFile() {
                                             selectedFilter)
                         .toString();
 
+    // Validate the restored filter exists in the available filters.
+    // AcvProjectFilter is for whole-project saving (Save Project action), not
+    // for individual entity saving. Fall back to BinFilter if invalid.
+    if (!fileFilters.contains(selectedFilter) ||
+        selectedFilter == AcvProjectFilter::GetFileFilter()) {
+        QString binFilter = BinFilter::GetFileFilter();
+        selectedFilter = fileFilters.contains(binFilter) ? binFilter
+                                                         : fileFilters.first();
+    }
+
     // default output path (+ filename)
     QString currentPath =
             ecvSettingManager::getValue(ecvPS::SaveFile(), ecvPS::CurrentPath(),
@@ -5014,10 +5066,10 @@ void MainWindow::doActionSaveProject() {
     }
     fullPathName += QString("/") + defaultFileName;
 
-    QString acvFilter = AcvProjectFilter::GetFileFilter();
     QString binFilter = BinFilter::GetFileFilter();
-    QString allFilters = acvFilter + ";;" + binFilter;
-    QString selectedFilter = acvFilter;
+    QString acvFilter = AcvProjectFilter::GetFileFilter();
+    QString allFilters = binFilter + ";;" + acvFilter;
+    QString selectedFilter = binFilter;
 
     // ask the user for the output filename
     QString selectedFilename = QFileDialog::getSaveFileName(
@@ -13514,6 +13566,16 @@ void MainWindow::activateSegmentationMode() {
 void MainWindow::deactivateSegmentationMode(bool state) {
     bool deleteHiddenParts = false;
 
+    // Preserve the rotation center (pivot) across segmentation --
+    // addToDB() calls resetCenterOfRotation() for new entities which
+    // would otherwise move the pivot unexpectedly.
+    CCVector3d savedPivot(0, 0, 0);
+    bool hasSavedPivot = false;
+    if (auto* v = getActiveGLView()) {
+        savedPivot = v->getViewportParameters().getPivotPoint();
+        hasSavedPivot = true;
+    }
+
     // shall we apply segmentation?
     if (state) {
         ccHObject* firstResult = nullptr;
@@ -13556,7 +13618,9 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             cc2DLabel* label = static_cast<cc2DLabel*>(*it);
                             bool removeLabel = false;
                             for (unsigned i = 0; i < label->size(); ++i) {
-                                if (label->getPickedPoint(i).cloud == entity) {
+                                const auto& pp = label->getPickedPoint(i);
+                                if (pp.cloud == entity || pp.cloud == cloud ||
+                                    pp.mesh == entity) {
                                     removeLabel = true;
                                     break;
                                 }
@@ -13568,6 +13632,10 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                                            "cloud %2 and will be removed")
                                                 .arg(label->getName(),
                                                      cloud->getName()));
+                                label->setVisible(false);
+                                label->setEnabled(false);
+                                label->clearLabel();
+                                label->setRedrawFlagRecursive(false);
                                 ccHObject* labelParent = label->getParent();
                                 ccHObjectContext objContext =
                                         removeObjectTemporarilyFromDBTree(
@@ -13731,6 +13799,17 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                 if (deleteOriginalEntity) {
                     p = segmentedEntities.erase(p);
 
+                    // Clean up any remaining label children before deletion
+                    // to ensure their VTK actors are removed from the scene.
+                    ccHObject::Container remainingLabels;
+                    entity->filterChildren(remainingLabels, true,
+                                           CV_TYPES::LABEL_2D);
+                    for (ccHObject* lbl : remainingLabels) {
+                        if (lbl && lbl->isA(CV_TYPES::LABEL_2D)) {
+                            static_cast<cc2DLabel*>(lbl)->clearLabel();
+                        }
+                    }
+
                     delete entity;
                     entity = nullptr;
                 } else {
@@ -13769,6 +13848,13 @@ void MainWindow::deactivateSegmentationMode(bool state) {
         }
         if (auto* v = getActiveGLView())
             v->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
+
+    // Restore the saved pivot so the rotation center stays unchanged.
+    if (hasSavedPivot) {
+        if (auto* v = getActiveGLView()) {
+            v->setPivotPoint(savedPivot, false, false);
+        }
     }
 
     freezeUI(false);

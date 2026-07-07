@@ -326,6 +326,11 @@ void cc2DLabel::clear(bool ignoreDependencies, bool ignoreCaption) {
 }
 
 void cc2DLabel::clear3Dviews() {
+    if (!QCoreApplication::instance() ||
+        QThread::currentThread() != QCoreApplication::instance()->thread()) {
+        return;
+    }
+
     auto doRemoveOn = [](ecvGenericGLDisplay* d, WIDGETS_TYPE t,
                          const QString& id) {
         WIDGETS_PARAMETER p(t, id);
@@ -353,16 +358,11 @@ void cc2DLabel::clear3Dviews() {
         }
     };
 
-    // Remove from ALL registered views to guarantee actors are cleaned up
-    // regardless of which view originally rendered them.
     const auto& views = ecvViewManager::instance().getAllViews();
     for (auto* view : views) {
-        if (view) removeAllWidgetsOn(view);
+        if (view && view->asWidget()) removeAllWidgetsOn(view);
     }
 
-    // Fallback: also remove via the static path (covers the primary VtkVis
-    // when no views are registered or the entity was drawn before any
-    // view was created).
     if (views.isEmpty()) {
         removeAllWidgetsOn(nullptr);
     }
@@ -634,11 +634,11 @@ bool cc2DLabel::toFile_MeOnly(QFile& out, short dataVersion) const {
     if (out.write((const char*)&m_dispPointsLegend, sizeof(bool)) < 0)
         return WriteError();
 
-    // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere size!
-    // This is always written when saving, but only read when dataVersion >= 49
-    // to maintain backward compatibility with version 48 and earlier
-    if (out.write((const char*)&m_relMarkerScale, sizeof(float)) < 0)
-        return WriteError();
+    // Relative marker scale (dataVersion >= 49)
+    if (dataVersion >= 49) {
+        if (out.write((const char*)&m_relMarkerScale, sizeof(float)) < 0)
+            return WriteError();
+    }
 
     return true;
 }

@@ -1643,8 +1643,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="467"/>
-        <source>Auto Pick Center of Rotation When Left Button is Clicked</source>
-        <translation>左键点击时自动选取旋转中心</translation>
+        <source>Mouse press to pick center of rotation</source>
+        <translation>鼠标按下时选取旋转中心</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="494"/>

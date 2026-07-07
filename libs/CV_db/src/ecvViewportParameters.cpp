@@ -92,8 +92,11 @@ bool ecvViewportParameters::toFile(QFile& out, short dataVersion) const {
 }
 
 short ecvViewportParameters::minimumFileVersion() const {
-    // Version 36 introduced double precision for camera matrix
-    return std::max(static_cast<short>(36), viewMat.minimumFileVersion());
+    // v36 introduced double precision for camera matrix.
+    // v48 dropped the orthoAspectRatio field that existed in v30-47.
+    // We require v48+ to avoid the read-side consuming 4 bytes that
+    // the write-side never produces (orthoAspectRatio).
+    return std::max(static_cast<short>(48), viewMat.minimumFileVersion());
 }
 
 bool ecvViewportParameters::fromFile(QFile& in,
@@ -320,10 +323,38 @@ double ecvViewportParameters::computeDistanceToWidthRatio() const {
     return 2.0 * computeDistanceToHalfWidthRatio();
 }
 
+double ecvViewportParameters::computeDistanceToWidthRatio(
+        int screenWidth, int screenHeight) const {
+    if (screenHeight <= 0 || screenWidth <= 0) {
+        assert(false);
+        return 1.0;
+    }
+
+    double ar = std::min(1.0, static_cast<double>(screenWidth) /
+                                      (static_cast<double>(screenHeight) *
+                                       cameraAspectRatio));
+
+    return (2.0 * computeDistanceToHalfWidthRatio()) / ar;
+}
+
 double ecvViewportParameters::computeWidthAtFocalDist() const {
     return getFocalDistance() * computeDistanceToWidthRatio();
 }
 
+double ecvViewportParameters::computeWidthAtFocalDist(int screenWidth,
+                                                      int screenHeight) const {
+    return getFocalDistance() *
+           computeDistanceToWidthRatio(screenWidth, screenHeight);
+}
+
 double ecvViewportParameters::computePixelSize(int glWidth) const {
     return (glWidth > 0 ? computeWidthAtFocalDist() / glWidth : 1.0);
+}
+
+double ecvViewportParameters::computePixelSize(int screenWidth,
+                                               int screenHeight) const {
+    return (screenWidth > 0
+                    ? computeWidthAtFocalDist(screenWidth, screenHeight) /
+                              screenWidth
+                    : 1.0);
 }

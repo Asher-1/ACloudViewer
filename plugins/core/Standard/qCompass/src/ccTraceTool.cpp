@@ -46,6 +46,10 @@ void ccTraceTool::pointPicked(ccHObject* insertPoint,
         if (cloud) {
             cloud->addDependency(t, ccHObject::DP_NOTIFY_OTHER_ON_DELETE);
         }
+        if (ecvGenericGLDisplay* eff =
+                    ecvViewManager::instance().getEffectiveView()) {
+            t->setDisplay(eff);
+        }
         t->setVisible(true);
         t->setName("Trace");
         m_trace_id = t->getUniqueID();

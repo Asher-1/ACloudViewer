@@ -439,11 +439,6 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     }
 
     if (mesh->isRedraw() || firstShow) {
-        CVLog::PrintDebug(
-                "[VtkDisplayTools::drawMesh] Entering render block "
-                "(isRedraw=%d || firstShow=%d)",
-                mesh->isRedraw(), firstShow);
-
         ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
         if (!ecvCloud) {
             CVLog::Warning(
@@ -457,11 +452,6 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         bool lodEnabled = false;
         bool showTextures =
                 (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
-
-        CVLog::PrintDebug(
-                "[VtkDisplayTools::drawMesh] applyMaterials=%d, "
-                "showTextures=%d",
-                applyMaterials, showTextures);
 
         if (firstShow || checkEntityNeedUpdate(vis, viewID, ecvCloud)) {
             if (applyMaterials || showTextures) {
@@ -491,9 +481,6 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 }
             }
         } else {
-            CVLog::PrintDebug(
-                    "[VtkDisplayTools::drawMesh] Update path: updating "
-                    "properties only");
             vis->resetScalarColor(viewID, true, viewport);
             if (!updateEntityColor(context, ecvCloud)) {
                 if (applyMaterials || showTextures) {
@@ -506,10 +493,6 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                         }
                     }
                 } else {
-                    // Geometry is unchanged (checkEntityNeedUpdate == false)
-                    // and no colors/materials to update. Use non-destructive
-                    // path to avoid recreating the actor (which would reset
-                    // properties set by active filter tools).
                     context.visFiltering = false;
                     vis->drawMesh(context, mesh);
                 }
@@ -526,12 +509,20 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             vis->setCurrentSourceObject(ccMeshObj, viewID);
         }
 
-        if ((!context.drawParam.showColors && !context.drawParam.showSF) ||
-            mesh->isColorOverridden()) {
+        if (mesh->isColorOverridden()) {
             ecvColor::Rgbf meshColor =
                     ecvTools::TransFormRGB(context.defaultMeshColor);
             vis->setPointCloudUniqueColor(meshColor.r, meshColor.g, meshColor.b,
                                           viewID, viewport);
+        } else if (!context.drawParam.showColors && !context.drawParam.showSF) {
+            bool hasMats = mesh->hasMaterials() && mesh->materialsShown();
+            bool hasTex = mesh->hasTextures() && mesh->materialsShown();
+            if (!hasMats && !hasTex) {
+                ecvColor::Rgbf meshColor =
+                        ecvTools::TransFormRGB(context.defaultMeshColor);
+                vis->setPointCloudUniqueColor(meshColor.r, meshColor.g,
+                                              meshColor.b, viewID, viewport);
+            }
         }
         vis->setMeshOpacity(context.opacity, viewID, viewport);
         vis->setMeshStippling(mesh->stipplingEnabled(), viewID, viewport);
@@ -745,6 +736,11 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
 
 void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
                            const ccHObject* obj) {
+    VtkVis* vis = resolveVisualizer(context.display);
+    if (vis) {
+        vis->applyDisplaySettingsLighting(context);
+    }
+
     if (obj->isA(CV_TYPES::POINT_CLOUD)) {
         ccPointCloud* ecvCloud =
                 ccHObjectCaster::ToPointCloud(const_cast<ccHObject*>(obj));
@@ -784,7 +780,6 @@ void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         return;
     }
 
-    VtkVis* vis = resolveVisualizer(context.display);
     if (vis) {
         vis->resetCameraClippingRange(context.defaultViewPort);
     }
@@ -1535,15 +1530,26 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                           param.color.a);
             }
             break;
-        case WIDGETS_TYPE::WIDGET_IMAGE:
-            if (m_visualizer2D) {
-                if (param.image.isNull()) return;
-
-                m_visualizer2D->addRGBImage(param.image, param.rect.x(),
-                                            param.rect.y(), viewID,
-                                            param.opacity);
+        case WIDGETS_TYPE::WIDGET_IMAGE: {
+            bool isSecondaryImg = param.context.display &&
+                                  param.context.display !=
+                                          static_cast<ecvDisplayTools*>(this);
+            Visualization::ImageVis* imgVis2D = nullptr;
+            if (isSecondaryImg) {
+                auto* glView = dynamic_cast<vtkGLView*>(param.context.display);
+                if (glView && glView->getImageVis()) {
+                    imgVis2D = glView->getImageVis().get();
+                }
+            } else {
+                imgVis2D = m_visualizer2D ? m_visualizer2D.get() : nullptr;
             }
-            break;
+            if (imgVis2D && !param.image.isNull()) {
+                imgVis2D->addImageOverlay(param.image, param.rect.x(),
+                                          param.rect.y(), param.rect.width(),
+                                          param.rect.height(), viewID,
+                                          param.opacity);
+            }
+        } break;
         default:
             break;
     }

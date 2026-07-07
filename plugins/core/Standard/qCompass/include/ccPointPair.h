@@ -39,10 +39,7 @@ public:
                              bool relative) override;
 
 protected:
-    // VTK renders ccSphere actors significantly larger than OpenGL's glScalef.
-    // CloudCompare uses 5.0f with OpenGL; reduced here for visual parity in
-    // VTK.
-    float m_relMarkerScale = 1.5f;
+    float m_relMarkerScale = 5.0f;
 
     // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;

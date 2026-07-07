@@ -151,8 +151,8 @@ unsigned FileIOFilter::IncreaseSesionCounter() { return ++s_sessionCounter; }
 
 void FileIOFilter::InitInternalFilters() {
     // from the most useful to the less one!
-    Register(Shared(new AcvProjectFilter()));
     Register(Shared(new BinFilter()));
+    Register(Shared(new AcvProjectFilter()));
     Register(Shared(new AsciiFilter()));
     Register(Shared(new PTXFilter()));
     Register(Shared(new PlyFilter()));

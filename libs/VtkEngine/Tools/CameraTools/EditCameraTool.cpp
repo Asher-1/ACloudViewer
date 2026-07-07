@@ -93,8 +93,10 @@ static EditCameraTool* s_activeTool = nullptr;
 //-----------------------------------------------------------------------------
 EditCameraTool::EditCameraTool(ecvGenericVisualizer3D* viewer)
     : ecvGenericCameraTool() {
-    SetVisualizer(viewer);
     s_activeTool = this;
+    if (viewer) {
+        m_viewer = reinterpret_cast<Visualization::VtkVis*>(viewer);
+    }
     updateCameraParameters();
 }
 
@@ -171,17 +173,18 @@ void EditCameraTool::resetViewDirection(double look_x,
                                         double up_x,
                                         double up_y,
                                         double up_z) {
-    if (m_viewer) {
-        m_viewer->setCameraPosition(0.0, 0.0, 0.0, look_x, look_y, look_z, up_x,
-                                    up_y, up_z);
-        m_viewer->synchronizeGeometryBounds();
-        double bounds[6];
-        m_viewer->getVisibleGeometryBounds().GetBounds(bounds);
-        m_viewer->resetCamera(bounds);
-        if (auto* w = ecvViewManager::instance().activeWidget()) {
-            w->update();
-        }
+    if (!m_viewer) {
+        SetVisualizer(visualizerFromEffectiveView());
     }
+    if (!m_viewer) return;
+
+    m_viewer->setCameraPosition(0.0, 0.0, 0.0, look_x, look_y, look_z, up_x,
+                                up_y, up_z);
+    m_viewer->synchronizeGeometryBounds();
+    double bounds[6];
+    m_viewer->getVisibleGeometryBounds().GetBounds(bounds);
+    m_viewer->resetCamera(bounds);
+    m_viewer->UpdateScreen();
 }
 
 void EditCameraTool::updateCamera() { UpdateCamera(); }
@@ -190,31 +193,37 @@ void EditCameraTool::updateCameraParameters() { UpdateCameraInfo(); }
 
 //-----------------------------------------------------------------------------
 void EditCameraTool::adjustCamera(CameraAdjustmentType enType, double value) {
-    if (m_viewer && m_camera) {
-        switch (enType) {
-            case ecvGenericCameraTool::Roll:
-                m_camera->Roll(value);
-                break;
-            case ecvGenericCameraTool::Elevation:
-                RotateElevation(m_camera, value);
-                break;
-            case ecvGenericCameraTool::Azimuth:
-                m_camera->Azimuth(value);
-                break;
-            case ecvGenericCameraTool::Zoom: {
-                if (m_camera->GetParallelProjection()) {
-                    m_camera->SetParallelScale(m_camera->GetParallelScale() /
-                                               value);
-                } else {
-                    m_camera->Dolly(value);
-                }
-            } break;
-            default:
-                break;
-        }
-
-        m_viewer->UpdateScreen();
+    if (!m_viewer) {
+        SetVisualizer(visualizerFromEffectiveView());
     }
+    if (!m_viewer) return;
+
+    m_camera = m_viewer->getVtkCamera();
+    if (!m_camera) return;
+
+    switch (enType) {
+        case ecvGenericCameraTool::Roll:
+            m_camera->Roll(value);
+            break;
+        case ecvGenericCameraTool::Elevation:
+            RotateElevation(m_camera, value);
+            break;
+        case ecvGenericCameraTool::Azimuth:
+            m_camera->Azimuth(value);
+            break;
+        case ecvGenericCameraTool::Zoom: {
+            if (m_camera->GetParallelProjection()) {
+                m_camera->SetParallelScale(m_camera->GetParallelScale() /
+                                           value);
+            } else {
+                m_camera->Dolly(value);
+            }
+        } break;
+        default:
+            break;
+    }
+
+    m_viewer->UpdateScreen();
 }
 
 //-----------------------------------------------------------------------------

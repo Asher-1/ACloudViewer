@@ -149,6 +149,13 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT,
     CONTEXT.defaultMat->setShininessFront(30);
     CONTEXT.defaultMat->setShininessBack(50);
 
+    CONTEXT.lightDiffuseColor = guiParams.lightDiffuseColor;
+    CONTEXT.lightAmbientColor = guiParams.lightAmbientColor;
+    CONTEXT.lightSpecularColor = guiParams.lightSpecularColor;
+    CONTEXT.lightDoubleSided = guiParams.lightDoubleSided;
+    CONTEXT.defaultMeshFrontDiff = guiParams.meshFrontDiff;
+    CONTEXT.defaultMeshBackDiff = guiParams.meshBackDiff;
+    CONTEXT.defaultMeshSpecular = guiParams.meshSpecular;
     CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;
     CONTEXT.textDefaultCol = guiParams.textDefaultCol;
     CONTEXT.labelDefaultBkgCol = guiParams.labelBackgroundCol;
@@ -313,7 +320,6 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
     m_autoRefresh = false;
     m_hotZone = nullptr;
     ctx.showCursorCoordinates = false;
-    ctx.autoPickPivotAtCenter = false;
     ctx.ignoreMouseReleaseEvent = false;
     ctx.rotationAxisLocked = false;
     ctx.lockedRotationAxis = CCVector3d(0, 0, 1);
@@ -2559,7 +2565,7 @@ void ecvDisplayTools::SetupProjectiveViewport(
     cameraMatrix.applyRotation(UP.data());
     SetCameraPos(ctx, T);
     SetCameraPosition(T.data(), UP.data());
-    if (viewerBasedPerspective && ctx.autoPickPivotAtCenter) {
+    if (viewerBasedPerspective) {
         SetPivotPoint(T);
     }
 
@@ -2678,20 +2684,8 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
         RedrawDisplay(true, false);
     }
 
-    ctx.autoPivotCandidate = P;
     InvalidateViewport();
     InvalidateVisualization();
-}
-
-void ecvDisplayTools::SetAutoPickPivotAtCenter(bool state) {
-    auto& ctx = ecvViewManager::instance().resolveViewContext();
-    if (ctx.autoPickPivotAtCenter != state) {
-        ctx.autoPickPivotAtCenter = state;
-
-        if (state) {
-            ctx.autoPivotCandidate = CCVector3d(0, 0, 0);
-        }
-    }
 }
 
 void ecvDisplayTools::LockRotationAxis(ecvViewContext& ctx,
@@ -2768,6 +2762,13 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
     CONTEXT.defaultMat->setShininessBack(50);
 
     // default colors
+    CONTEXT.lightDiffuseColor = guiParams.lightDiffuseColor;
+    CONTEXT.lightAmbientColor = guiParams.lightAmbientColor;
+    CONTEXT.lightSpecularColor = guiParams.lightSpecularColor;
+    CONTEXT.lightDoubleSided = guiParams.lightDoubleSided;
+    CONTEXT.defaultMeshFrontDiff = guiParams.meshFrontDiff;
+    CONTEXT.defaultMeshBackDiff = guiParams.meshBackDiff;
+    CONTEXT.defaultMeshSpecular = guiParams.meshSpecular;
     CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;
     CONTEXT.textDefaultCol = guiParams.textDefaultCol;
     CONTEXT.labelDefaultBkgCol = guiParams.labelBackgroundCol;
@@ -3426,17 +3427,6 @@ void ecvDisplayTools::Draw3D(ecvViewContext& ctx, CC_DRAW_CONTEXT& CONTEXT) {
         primaryDT()->m_winDBRoot->draw(CONTEXT);
     }
 
-#if 0
-	if (ctx.autoPickPivotAtCenter)
-	{
-		CCVector3d P;
-		if (GetClick3DPos(ctx.glViewport.width() / 2, ctx.glViewport.height() / 2, P))
-		{
-			ctx.autoPivotCandidate = P;
-		}
-	}
-#endif
-
     if (primaryDT()->m_globalDBRoot &&
         primaryDT()->m_globalDBRoot->getChildrenNumber()) {
     }
@@ -3964,7 +3954,7 @@ void ecvDisplayTools::ClearBubbleView(ecvGenericGLDisplay* display) {
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->fs_label));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->psi_label));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, hz->lsi_label));
-    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
+    RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_IMAGE, "Exit"));
     RemoveWidgets(makeParam(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
     RemoveWidgets(
             makeParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, "clicked_items"));
@@ -4067,30 +4057,24 @@ void ecvDisplayTools::DrawClickableItems(
 
         xStart += hotZone->fs_textWidth + hotZone->margin;
 
-        //"full-screen" icon
+        //"full-screen" exit icon (CloudCompare ecvExit.png)
         {
+            static const QImage s_exitIcon(":/Resources/images/ecvExit.png");
+            int is = iconSize;
             int x0 = xStart;
-            int y0 = fullH - (yStart + iconSize);
-            WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                                    CLICKED_ITEMS);
-            param.context.display = display;
-            param.color = ecvColor::FromRgba(ecvColor::ored);
-            param.rect = QRect(x0, y0, iconSize + offset, iconSize);
-            DrawWidgets(param, false);
+            int y0 = fullH - (yStart + is);
+            WIDGETS_PARAMETER imgParam(WIDGETS_TYPE::WIDGET_IMAGE,
+                                       CLICKED_ITEMS);
+            imgParam.context.display = display;
+            imgParam.image = s_exitIcon.scaled(is, is, Qt::KeepAspectRatio,
+                                               Qt::SmoothTransformation);
+            imgParam.opacity = 1.0;
+            imgParam.rect = QRect(x0, y0, is, is);
+            DrawWidgets(imgParam, false);
 
-            WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
-            texParam.context.display = display;
-            texParam.color = ecvColor::bright;
-            texParam.text = "Exit";
-            texParam.rect =
-                    QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
-                          iconSize, iconSize);
-            texParam.fontSize = hotZone->font.pointSize();
-            DrawWidgets(texParam, false);
-            clickableItems.emplace_back(
-                    ClickableItem::LEAVE_FULLSCREEN_MODE,
-                    QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
+            clickableItems.emplace_back(ClickableItem::LEAVE_FULLSCREEN_MODE,
+                                        QRect(xStart, yStart, is, is));
+            xStart += is;
         }
 
         yStart += iconSize;
@@ -4731,10 +4715,6 @@ void ecvDisplayTools::setPivotPoint(const CCVector3d& P,
 
 void ecvDisplayTools::setPivotVisibility(PivotVisibility vis) {
     SetPivotVisibility(vis);
-}
-
-void ecvDisplayTools::setAutoPickPivotAtCenter(bool state) {
-    SetAutoPickPivotAtCenter(state);
 }
 
 bool ecvDisplayTools::isRotationAxisLocked() const {

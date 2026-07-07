@@ -62,6 +62,7 @@ struct FileVersionToVersion : QMap<short, QString> {
         insert(55, "2.9.2 (02/19/2024)");
         insert(56, "3.9.3 (01/05/2025)");
         insert(57, "3.9.4 (01/05/2026)");
+        insert(58, "3.9.5 (07/06/2026)");
     }
 
     QString getMinVersion(short fileVersion) const {

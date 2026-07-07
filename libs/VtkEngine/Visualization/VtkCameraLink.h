@@ -15,6 +15,7 @@
 #include "qVTK.h"
 
 class vtkCallbackCommand;
+class vtkGLView;
 class vtkObject;
 
 namespace Visualization {
@@ -93,6 +94,8 @@ private:
                               void* callData);
 
     void syncCamerasFrom(VtkVis* source, VtkVis* target);
+    void initialSyncFromActive();
+    ::vtkGLView* findGLViewForVis(VtkVis* vis) const;
     void installLinkObservers(int linkIndex);
     void removeLinkObservers(int linkIndex);
 

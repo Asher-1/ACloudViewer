@@ -110,6 +110,5 @@ protected:
 
     //! Saved view state (restored on stop)
     CCVector3d m_savedPivot;
-    bool m_savedAutoPickPivot = false;
     bool m_hasSavedViewState = false;
 };

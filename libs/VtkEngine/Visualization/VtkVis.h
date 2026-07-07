@@ -421,10 +421,6 @@ public:
         resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4],
                     bounds[5]);
     }
-    /** @param range Output [2] for near/far clip distances
-     *  @param viewport Viewport ID (default 0)
-     */
-    void getReasonableClippingRange(double range[2], int viewport = 0);
     /** @param bounds Bounding box [6] to expand
      *  @param matrix Transformation matrix
      */
@@ -1081,6 +1077,14 @@ public:
     void applyLightPropertiesToActor(vtkActor* actor,
                                      const std::string& viewID = "");
 
+    /**
+     * @brief Apply display settings light colors to VTK renderer and actors
+     *
+     * Syncs headlight color, mesh specular, and two-sided lighting
+     * from the draw context (which holds values from Display Settings).
+     */
+    void applyDisplaySettingsLighting(const CC_DRAW_CONTEXT& context);
+
     // ========================================================================
     // Data Axes Grid (Unified Interface with DataAxesGridProperties struct)
     // ========================================================================
@@ -1380,6 +1384,7 @@ protected:
     double m_lightIntensity;  // Current light intensity (0.0-1.0)
     std::map<std::string, double>
             m_objectLightIntensity;  // Per-object light intensity
+    double m_meshSpecularColor[3] = {0.5, 0.5, 0.5};  // From display settings
 
     // Axes Grid actors (ParaView-style)
     // Data Axes Grid: one per object (viewID -> actor mapping)

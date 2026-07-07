@@ -35,6 +35,7 @@ class vtkIntArray;
 class vtkIdTypeArray;
 class vtkDataObject;
 class vtkDataSet;
+class vtkPolyData;
 class vtkRenderer;
 class vtkProp;
 
@@ -174,6 +175,23 @@ public:
             vtkSelection* selection, FieldAssociation fieldAssociation);
 
     /**
+     * @brief Remap VTK selection IDs to source object IDs.
+     *
+     * When visibility/SF filtering is active, VTK cell/point indices don't
+     * correspond 1:1 with source ccMesh/ccPointCloud indices. This method
+     * uses the vtkOriginalCellIds/vtkOriginalPointIds arrays embedded by
+     * Cc2Vtk to translate VTK IDs back to source IDs.
+     *
+     * @param vtkIds       The VTK-space IDs from hardware selection
+     * @param polyData     The mapper's input polydata (containing mapping
+     * arrays)
+     * @param isCells      True for cell IDs, false for point IDs
+     * @return Remapped IDs (source-space), or original IDs if no mapping exists
+     */
+    static vtkSmartPointer<vtkIdTypeArray> remapToSourceIds(
+            vtkIdTypeArray* vtkIds, vtkPolyData* polyData, bool isCells);
+
+    /**
      * @brief Test if a 2D point is inside a polygon (ParaView-aligned)
      * Uses the ray casting algorithm for robust point-in-polygon testing
      * @param point 2D point coordinates [x, y]
@@ -250,6 +268,12 @@ public:
      * Reference: vtkPVRenderView::InvalidateCachedSelection
      */
     void invalidateCachedSelection();
+
+    /** @return True while invalidateCachedSelection() is running.
+     *  Callers (e.g. preSelection) can skip HW picks during this window
+     *  to avoid hover flicker caused by empty results.
+     */
+    bool isInvalidating() const { return m_invalidating; }
 
     ///@{
     /**
