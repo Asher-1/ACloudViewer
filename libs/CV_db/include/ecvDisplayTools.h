@@ -2218,21 +2218,6 @@ public:  // visualization matrix transformation
                 .showCursorCoordinates;
     }
 
-    //! Toggles the automatic setting of the pivot point at the center of the
-    //! screen
-    static void SetAutoPickPivotAtCenter(bool state);
-    static void SendAutoPickPivotAtCenter(bool state) {
-        if (auto* dt = ecvViewManager::instance().displayTools()) {
-            emit dt->autoPickPivot(state);
-        }
-    }
-    //! Whether the pivot point is automatically set at the center of the screen
-    inline static bool AutoPickPivotAtCenter() {
-        return ecvViewManager::instance()
-                .resolveViewContext()
-                .autoPickPivotAtCenter;
-    }
-
     //! Lock the rotation axis
     static void LockRotationAxis(bool state, const CCVector3d& axis);
 
@@ -2540,7 +2525,6 @@ public:
                        bool autoRedraw = true,
                        bool verbose = false) override;
     void setPivotVisibility(PivotVisibility vis) override;
-    void setAutoPickPivotAtCenter(bool state) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;
     void toggleDebugTrace() override;
@@ -2707,7 +2691,7 @@ signals:
 
     //! Signal emitted when the exclusive fullscreen is toggled
     void exclusiveFullScreenToggled(bool exclusive);
-    void autoPickPivot(bool state);
+    void pickCenterOfRotation();
 
     void labelmove2D(int x, int y, int dx, int dy);
 

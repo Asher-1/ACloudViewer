@@ -17,6 +17,7 @@
 #include <CVTools.h>
 
 // VTK
+#include <Tools/SelectionTools/cvInteractorStyleDrawPolygon.h>
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
 #include <vtkAbstractPicker.h>
 #include <vtkAngleRepresentation2D.h>
@@ -123,7 +124,8 @@ static bool isVtkToolInteractorStyle(vtkRenderWindowInteractor* interactor) {
 
     if (vtkInteractorStyleRubberBand3D::SafeDownCast(style) ||
         vtkInteractorStyleRubberBandZoom::SafeDownCast(style) ||
-        vtkInteractorStyleDrawPolygon::SafeDownCast(style)) {
+        vtkInteractorStyleDrawPolygon::SafeDownCast(style) ||
+        cvInteractorStyleDrawPolygon::SafeDownCast(style)) {
         return true;
     }
 
@@ -348,7 +350,11 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
                 if (iren) {
                     iren->SetEventInformationFlipY(m_pendingMousePos.x(),
                                                    m_pendingMousePos.y());
-                    iren->MouseMoveEvent();
+                    if (m_skipFirstTimerMove) {
+                        m_skipFirstTimerMove = false;
+                    } else {
+                        iren->MouseMoveEvent();
+                    }
                 }
                 QElapsedTimer rt;
                 rt.start();
@@ -386,9 +392,7 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
     fmt.setSwapInterval(0);
     setFormat(fmt);
 
-#ifdef Q_OS_WIN
     this->setEnableHiDPI(true);
-#endif
 
     // drag & drop handling
     setAcceptDrops(true);
@@ -494,6 +498,7 @@ vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
 void QVTKWidgetCustom::startInteractionRenderTimer() {
     if (m_interactionRenderTimer && !m_interactionRenderTimer->isActive()) {
         m_hasPendingMousePos = false;
+        m_skipFirstTimerMove = true;
         m_renderFrameCount = 0;
         m_timerTickCount = 0;
         m_renderTimeAccumNs = 0;
@@ -512,6 +517,7 @@ void QVTKWidgetCustom::stopInteractionRenderTimer() {
     if (m_interactionRenderTimer && m_interactionRenderTimer->isActive()) {
         m_interactionRenderTimer->stop();
         m_hasPendingMousePos = false;
+        m_skipFirstTimerMove = false;
     }
     if (auto* rw = this->renderWindow()) {
         if (auto* iren = rw->GetInteractor()) {
@@ -563,6 +569,18 @@ void QVTKWidgetCustom::onRenderForFps() {
         }
         m_renderAccumNs = 0;
         m_renderTimingCount = 0;
+    }
+}
+
+void QVTKWidgetCustom::beginPickCenterOfRotation() {
+    m_pickCenterPending = true;
+    setCursor(Qt::CrossCursor);
+}
+
+void QVTKWidgetCustom::cancelPickCenterOfRotation() {
+    if (m_pickCenterPending) {
+        m_pickCenterPending = false;
+        setCursor(QCursor());
     }
 }
 
@@ -1021,7 +1039,9 @@ bool QVTKWidgetCustom::handleCameraOrientationMouse(QMouseEvent* event,
 
 // event processing
 void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
-    startInteractionRenderTimer();
+    if (!isVtkToolInteractorStyle(m_interactor)) {
+        startInteractionRenderTimer();
+    }
 
     // Activate the view on click (ParaView-style): the render view becomes
     // current when the user presses the mouse here, not when the cursor
@@ -1142,12 +1162,64 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
             emit leftButtonClicked(event->x(), event->y());
         }
 
-        if (!isSignalOnlyInteraction(curInteractionFlags()) &&
-            curAutoPickPivotAtCenter()) {
+        if (m_pickCenterPending) {
             CCVector3d P;
-            if (ecvDisplayTools::GetClick3DPos(event->x(), event->y(), P)) {
-                ecvDisplayTools::SetPivotPoint(P, true, false);
+            bool onSurface = false;
+
+            auto* vis = vtkVisForWidget(this);
+            auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
+            if (ren) {
+                auto rw = vis->getRenderWindow();
+                if (rw) {
+                    rw->Render();
+                }
+
+                const double dpr = devicePixelRatioF();
+                int px = static_cast<int>(event->x() * dpr);
+                int py = static_cast<int>(ren->GetSize()[1] - 1 -
+                                          event->y() * dpr);
+
+                double z = vis->getGLDepth(px, py);
+
+                if (z < 1.0) {
+                    ren->SetDisplayPoint(px, py, z);
+                    ren->DisplayToWorld();
+                    double* wp = ren->GetWorldPoint();
+                    if (wp[3] != 0.0) {
+                        P = CCVector3d(wp[0] / wp[3], wp[1] / wp[3],
+                                       wp[2] / wp[3]);
+                        onSurface = true;
+                    }
+                }
+
+                if (!onSurface) {
+                    vtkCamera* cam = ren->GetActiveCamera();
+                    if (cam) {
+                        double fp[4];
+                        cam->GetFocalPoint(fp);
+                        fp[3] = 1.0;
+                        ren->SetWorldPoint(fp);
+                        ren->WorldToDisplay();
+                        double* dc = ren->GetDisplayPoint();
+                        ren->SetDisplayPoint(px, py, dc[2]);
+                        ren->DisplayToWorld();
+                        double* wp = ren->GetWorldPoint();
+                        if (wp[3] != 0.0) {
+                            P = CCVector3d(wp[0] / wp[3], wp[1] / wp[3],
+                                           wp[2] / wp[3]);
+                            onSurface = true;
+                        }
+                    }
+                }
             }
+            if (onSurface) {
+                displayTarget()->setPivotPoint(P, true, true);
+            }
+            m_pickCenterPending = false;
+            setCursor(QCursor());
+            emit pickCenterOfRotationFinished(onSurface);
+            event->accept();
+            return;
         }
     } else {
     }
@@ -1181,6 +1253,29 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent* event) {
     }
 
     if (isSignalOnlyInteraction(curInteractionFlags())) {
+        event->accept();
+        return;
+    }
+
+    // Check if double-click is within the HotZone area. If so, ignore the
+    // pivot-point logic to prevent rapid +/- clicks from resetting the
+    // rotation center.
+    bool inHotZone = false;
+    if (curInteractionFlags() & ecvGenericGLDisplay::INTERACT_CLICKABLE_ITEMS) {
+        ecvHotZone* hz = curHotZone();
+        if (hz && displayTarget()) {
+            QRect areaRect = hz->rect(true, curBubbleViewModeEnabled(),
+                                      displayTarget()->exclusiveFullScreen());
+            const double dpr =
+                    static_cast<double>(displayTarget()->getDevicePixelRatio());
+            int scaledX = ecvDisplayCoordinates::toPhysical(event->x(), dpr);
+            int scaledY = ecvDisplayCoordinates::toPhysical(event->y(), dpr);
+            QRect zoneRect = areaRect.translated(hz->topCorner);
+            inHotZone = zoneRect.contains(scaledX, scaledY);
+        }
+    }
+
+    if (inHotZone) {
         event->accept();
         return;
     }
@@ -2396,7 +2491,8 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             }
             QMouseEvent* me = static_cast<QMouseEvent*>(evt);
             if (me->buttons() != Qt::NoButton && m_interactionRenderTimer &&
-                m_interactionRenderTimer->isActive()) {
+                m_interactionRenderTimer->isActive() &&
+                !isVtkToolInteractorStyle(m_interactor)) {
                 m_hasPendingMousePos = true;
                 m_pendingMousePos = me->pos();
                 evt->accept();

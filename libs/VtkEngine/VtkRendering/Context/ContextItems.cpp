@@ -14,6 +14,7 @@
 #include "ContextItems.h"
 
 #include <vtkObjectFactory.h>
+#include <vtkRect.h>
 
 #include <cstring>
 
@@ -217,6 +218,17 @@ bool Markers::Paint(vtkContext2D* painter) {
             point_colors[0], point_colors[1], point_colors[2],
             static_cast<unsigned char>(255.0 * GetOpacity()));
     painter->DrawPointSprites(nullptr, params.data(), nb_points);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+vtkStandardNewMacro(ImageOverlay);
+
+bool ImageOverlay::Paint(vtkContext2D* painter) {
+    if (!imageData_ || params.size() < 4) return true;
+    float x = params[0], y = params[1], w = params[2], h = params[3];
+    vtkRectf pos(x, y, w, h);
+    painter->DrawImage(pos, imageData_);
     return true;
 }
 

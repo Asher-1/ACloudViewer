@@ -100,21 +100,13 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    // test viewport parameters
-    const ecvViewportParameters* paramsPtr = nullptr;
     if (context.display) {
-        paramsPtr = &context.display->getViewportParameters();
+        m_pixelSize = static_cast<float>(
+                std::abs(context.display->computeActualPixelSize()));
     }
-    if (!paramsPtr) {
+    if (m_pixelSize <= 0) {
         return;
     }
-    const ecvViewportParameters& params = *paramsPtr;
-
-    // CVLog::Print(QString("WidthAtFocalDist = %1 (= %2 x
-    // %3)").arg(params.computeWidthAtFocalDist()).arg(params.computeDistanceToWidthRatio()).arg(params.getFocalDistance()));
-    m_pixelSize =
-            (context.glW != 0 ? params.computeWidthAtFocalDist() / context.glW
-                              : 0);
 
     // get mouse position
     QPoint p = m_owner->mapFromGlobal(QCursor::pos());

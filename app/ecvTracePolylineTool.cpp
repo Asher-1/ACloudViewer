@@ -390,13 +390,7 @@ bool ccTracePolylineTool::start() {
     view->asWidget()->setMouseTracking(true);
 
     m_savedPivot = view->getViewportParameters().getPivotPoint();
-    if (const ecvViewContext* ctx = view->viewContext()) {
-        m_savedAutoPickPivot = ctx->autoPickPivotAtCenter;
-    } else {
-        m_savedAutoPickPivot = false;
-    }
     m_hasSavedViewState = true;
-    view->setAutoPickPivotAtCenter(false);
 
     m_polyTip->setDisplay(displayTools());
 
@@ -448,10 +442,10 @@ void ccTracePolylineTool::stop(bool accepted) {
                 ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
         stopView->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
         stopView->asWidget()->setCursor(Qt::ArrowCursor);
-        stopView->asWidget()->setMouseTracking(false);
+        while (QApplication::overrideCursor())
+            QApplication::restoreOverrideCursor();
 
         if (m_hasSavedViewState) {
-            stopView->setAutoPickPivotAtCenter(m_savedAutoPickPivot);
             stopView->setPivotPoint(m_savedPivot, true, false);
             m_hasSavedViewState = false;
         }

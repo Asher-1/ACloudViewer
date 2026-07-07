@@ -4422,7 +4422,7 @@ bool ccPointCloud::toFile_MeOnly(QFile& out, short dataVersion) const {
     }
 
     // grid structures (dataVersion>=41)
-    {
+    if (dataVersion >= 41) {
         // number of grids
         uint32_t count = static_cast<uint32_t>(this->gridCount());
         if (out.write((const char*)&count, 4) < 0) return WriteError();
@@ -4439,49 +4439,52 @@ bool ccPointCloud::toFile_MeOnly(QFile& out, short dataVersion) const {
     }
 
     // Waveforms (dataVersion >= 44)
-    bool withFWF = hasFWF();
-    if (out.write((const char*)&withFWF, sizeof(bool)) < 0) {
-        return WriteError();
-    }
-    if (withFWF) {
-        // first save the descriptors
-        uint32_t descriptorCount =
-                static_cast<uint32_t>(m_fwfDescriptors.size());
-        if (out.write((const char*)&descriptorCount, 4) < 0) {
+    if (dataVersion >= 44) {
+        bool withFWF = hasFWF();
+        if (out.write((const char*)&withFWF, sizeof(bool)) < 0) {
             return WriteError();
         }
-        for (auto it = m_fwfDescriptors.begin(); it != m_fwfDescriptors.end();
-             ++it) {
-            // write the key (descriptor ID)
-            if (out.write((const char*)&it.key(), 1) < 0) {
+        if (withFWF) {
+            // first save the descriptors
+            uint32_t descriptorCount =
+                    static_cast<uint32_t>(m_fwfDescriptors.size());
+            if (out.write((const char*)&descriptorCount, 4) < 0) {
                 return WriteError();
             }
-            // write the descriptor
-            if (!it.value().toFile(out, dataVersion)) {
-                return WriteError();
+            for (auto it = m_fwfDescriptors.begin();
+                 it != m_fwfDescriptors.end(); ++it) {
+                // write the key (descriptor ID)
+                if (out.write((const char*)&it.key(), 1) < 0) {
+                    return WriteError();
+                }
+                // write the descriptor
+                if (!it.value().toFile(out, dataVersion)) {
+                    return WriteError();
+                }
             }
-        }
 
-        // then the waveforms
-        uint32_t waveformCount = static_cast<uint32_t>(m_fwfWaveforms.size());
-        if (out.write((const char*)&waveformCount, 4) < 0) {
-            return WriteError();
-        }
-        for (const ccWaveform& w : m_fwfWaveforms) {
-            if (!w.toFile(out, dataVersion)) {
+            // then the waveforms
+            uint32_t waveformCount =
+                    static_cast<uint32_t>(m_fwfWaveforms.size());
+            if (out.write((const char*)&waveformCount, 4) < 0) {
                 return WriteError();
             }
-        }
+            for (const ccWaveform& w : m_fwfWaveforms) {
+                if (!w.toFile(out, dataVersion)) {
+                    return WriteError();
+                }
+            }
 
-        // eventually save the data
-        uint64_t dataSize =
-                static_cast<uint64_t>(m_fwfData ? m_fwfData->size() : 0);
-        if (out.write((const char*)&dataSize, 8) < 0) {
-            return WriteError();
-        }
-        if (m_fwfData &&
-            out.write((const char*)m_fwfData->data(), dataSize) < 0) {
-            return WriteError();
+            // eventually save the data
+            uint64_t dataSize =
+                    static_cast<uint64_t>(m_fwfData ? m_fwfData->size() : 0);
+            if (out.write((const char*)&dataSize, 8) < 0) {
+                return WriteError();
+            }
+            if (m_fwfData &&
+                out.write((const char*)m_fwfData->data(), dataSize) < 0) {
+                return WriteError();
+            }
         }
     }
 

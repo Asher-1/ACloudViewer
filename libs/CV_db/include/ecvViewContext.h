@@ -81,7 +81,7 @@ struct CV_DB_LIB_API ecvViewContext {
     ecvGenericGLDisplay::PICKING_MODE pickingMode =
             ecvGenericGLDisplay::DEFAULT_PICKING;
     bool pickingModeLocked = false;
-    int pickRadius = 3;
+    int pickRadius = 5;
     bool allowRectangularEntityPicking = true;
 
     // ================================================================
@@ -122,8 +122,6 @@ struct CV_DB_LIB_API ecvViewContext {
     ecvGenericGLDisplay::PivotVisibility pivotVisibility =
             ecvGenericGLDisplay::PIVOT_SHOW_ON_MOVE;
     bool pivotSymbolShown = false;
-    bool autoPickPivotAtCenter = false;
-    CCVector3d autoPivotCandidate{0, 0, 0};
 
     // ================================================================
     // Rotation lock

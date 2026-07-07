@@ -4026,6 +4026,9 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
                 m_currentObject->colorsShown() || m_currentObject->sfShown();
         m_currentObject->showColors(false);
         m_currentObject->showSF(false);
+        if (appearanceChanged) {
+            m_currentObject->setRedrawFlagRecursive(true);
+        }
     } else if (source == s_rgbColor) {
         appearanceChanged =
                 !m_currentObject->colorsShown() || m_currentObject->sfShown();
@@ -4040,6 +4043,9 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
                 m_currentObject->colorsShown() || !m_currentObject->sfShown();
         m_currentObject->showColors(false);
         m_currentObject->showSF(true);
+        if (appearanceChanged) {
+            m_currentObject->setRedrawFlagRecursive(true);
+        }
     } else {
         CVLog::Warning(QString("unsupported source type [%1]").arg(source));
     }

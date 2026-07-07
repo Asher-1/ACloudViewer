@@ -620,6 +620,7 @@ private:
 
     // Previous render view mode (for restoration)
     int m_previousRenderViewMode = -1;
+    unsigned int m_endSelectionGen = 0;
 
     // Event observer IDs for interactor events (increased to 8 for pan/zoom)
     unsigned long m_observerIds[8] = {0, 0, 0, 0, 0, 0, 0, 0};

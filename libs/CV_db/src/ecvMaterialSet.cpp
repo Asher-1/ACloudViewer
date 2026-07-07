@@ -685,9 +685,15 @@ bool ccMaterialSet::toFile_MeOnly(QFile& out, short dataVersion) const {
         ccMaterial::CShared mtl = *it;
         mtl->toFile(out, dataVersion);
 
-        // remember its texture as well (if any)
+        // collect legacy texture filename
         QString texFilename = mtl->getTextureFilename();
         if (!texFilename.isEmpty()) texFilenames.insert(texFilename);
+
+        // collect ALL multi-texture filenames (PBR maps, etc.)
+        auto allTextures = mtl->getAllTextureFilenames();
+        for (const auto& texPair : allTextures) {
+            if (!texPair.second.isEmpty()) texFilenames.insert(texPair.second);
+        }
     }
 
     // now save the number of textures (dataVersion>=37)

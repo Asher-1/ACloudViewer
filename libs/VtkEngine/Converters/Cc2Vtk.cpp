@@ -31,6 +31,7 @@
 #include <vtkCellData.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
+#include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
 #include <vtkMatrix4x4.h>
 #include <vtkPointData.h>
@@ -198,6 +199,12 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         normals->SetName("Normals");
     }
 
+    // Track source point index for each VTK point (for selection remapping)
+    std::vector<vtkIdType> orig_point_indices;
+    if (partial_visibility || sf_hides_points) {
+        orig_point_indices.reserve(visible_count);
+    }
+
     // Fill data
     vtkIdType idx = 0;
     for (unsigned i = 0; i < point_count; ++i) {
@@ -239,6 +246,9 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
             nptr[2] = static_cast<float>(n.z);
         }
 
+        if (partial_visibility || sf_hides_points) {
+            orig_point_indices.push_back(static_cast<vtkIdType>(i));
+        }
         ++idx;
     }
 
@@ -258,6 +268,25 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
     }
     if (normals) {
         polydata->GetPointData()->SetNormals(normals);
+    }
+
+    // ParaView-style: Add vtkOriginalPointIds for selection ID remapping.
+    // When visibility/SF filtering is active, VTK point index != source index.
+    {
+        auto origPointIds = vtkSmartPointer<vtkIdTypeArray>::New();
+        origPointIds->SetName("vtkOriginalPointIds");
+        origPointIds->SetNumberOfComponents(1);
+        origPointIds->SetNumberOfTuples(nr);
+        if (!orig_point_indices.empty()) {
+            for (vtkIdType k = 0; k < nr; ++k) {
+                origPointIds->SetValue(k, orig_point_indices[k]);
+            }
+        } else {
+            for (vtkIdType k = 0; k < nr; ++k) {
+                origPointIds->SetValue(k, k);
+            }
+        }
+        polydata->GetPointData()->AddArray(origPointIds);
     }
 
     // Add HasSourceRGB flag for Vtk2Cc reverse conversion
@@ -605,6 +634,29 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         polydata->GetCellData()->AddArray(materialIndices);
     }
 
+    // ParaView-style: Add original ID arrays so that hardware-selected VTK IDs
+    // can be mapped back to source ccMesh/ccPointCloud indices.
+    {
+        auto origCellIds = vtkSmartPointer<vtkIdTypeArray>::New();
+        origCellIds->SetName("vtkOriginalCellIds");
+        origCellIds->SetNumberOfComponents(1);
+        if (may_skip) {
+            origCellIds->SetNumberOfTuples(
+                    static_cast<vtkIdType>(kept_tri_indices.size()));
+            for (vtkIdType k = 0;
+                 k < static_cast<vtkIdType>(kept_tri_indices.size()); ++k) {
+                origCellIds->SetValue(
+                        k, static_cast<vtkIdType>(kept_tri_indices[k]));
+            }
+        } else {
+            origCellIds->SetNumberOfTuples(static_cast<vtkIdType>(tri_count));
+            for (vtkIdType k = 0; k < static_cast<vtkIdType>(tri_count); ++k) {
+                origCellIds->SetValue(k, k);
+            }
+        }
+        polydata->GetCellData()->AddArray(origCellIds);
+    }
+
     AddDatasetNameMetadata(polydata, mesh->getName());
     AddActiveScalarFieldMetadata(polydata, vertex_cloud);
 
@@ -630,6 +682,23 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
             }
         }
     };
+
+    // vtkOriginalPointIds: maps VTK point index -> source cloud point index
+    {
+        auto origPointIds = vtkSmartPointer<vtkIdTypeArray>::New();
+        origPointIds->SetName("vtkOriginalPointIds");
+        origPointIds->SetNumberOfComponents(1);
+        origPointIds->SetNumberOfTuples(actual_pts);
+        iterate_kept([&](unsigned src_n, vtkIdType base) {
+            const cloudViewer::VerticesIndexes* tsi2 =
+                    mesh->getTriangleVertIndexes(src_n);
+            for (std::size_t vi = 0; vi < dim; ++vi) {
+                origPointIds->SetValue(base + static_cast<vtkIdType>(vi),
+                                       static_cast<vtkIdType>(tsi2->i[vi]));
+            }
+        });
+        polydata->GetPointData()->AddArray(origPointIds);
+    }
 
     // SourceRGB: original per-vertex colors when SF rendering is active,
     // so the tooltip shows real RGB instead of SF-mapped colors.

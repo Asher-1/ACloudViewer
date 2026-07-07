@@ -96,11 +96,26 @@ public:  // functions
      **/
     double computeDistanceToWidthRatio() const;
 
+    //! Computes the ratio 'distance to width' with aspect ratio correction
+    /** \warning The ratio changes if the aspect ratio (W/H) is less than 1.0.
+        Width = ratio * distance = (2 * tan(fov / 2)) * distance /
+       std::min(ar, 1.0)
+    **/
+    double computeDistanceToWidthRatio(int screenWidth, int screenHeight) const;
+
     //! Computes the object 'width' at the 'focal' distance
     double computeWidthAtFocalDist() const;
 
+    //! Computes the object 'width' at the 'focal' distance (with aspect ratio
+    //! correction)
+    double computeWidthAtFocalDist(int screenWidth, int screenHeight) const;
+
     //! Computes the pixel size at the 'focal' distance
     double computePixelSize(int glWidth) const;
+
+    //! Computes the pixel size at the 'focal' distance (with aspect ratio
+    //! correction, matching CloudCompare's API)
+    double computePixelSize(int screenWidth, int screenHeight) const;
 
 public:  // variables
     //! Visualization matrix (rotation only)

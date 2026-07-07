@@ -961,13 +961,13 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo>& rmInfos,
     } else if (rminfo.removeType == ENTITY_TYPE::ECV_MESH) {
         ccHObject* obj = find(rminfo.removeId.toUInt());
 
-        // try clear plane
+        // try clear plane normal arrow actors
         ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(obj);
         if (plane) {
-            // remove temp octree model from rendering window
             plane->showNormalVector(false);
             CC_DRAW_CONTEXT context;
-            plane->glDrawNormal(context, CCVector3(), 1.0);
+            context.display = mergeDisplay(nullptr, obj);
+            plane->clearNormalVector(context);
         }
 
         // try clear primitives

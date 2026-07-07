@@ -8,7 +8,6 @@
 #include "ccMouseCircle.h"
 
 #include <CVLog.h>
-#include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
@@ -55,37 +54,21 @@ ccMouseCircle::~ccMouseCircle() {
     }
 }
 
-float ccMouseCircle::computeOrthoPixelSize(int viewportHeight) {
-    double parallelScale = -1.0;
-    if (ecvGenericGLDisplay* v =
-                ecvViewManager::instance().getEffectiveView()) {
-        ecvViewManager::ScopedRenderOverride guard(v);
-        if (auto* dt = dynamic_cast<ecvDisplayTools*>(v)) {
-            parallelScale = dt->getParallelScale(0);
-        }
+float ccMouseCircle::getRadiusWorld() {
+    ecvGenericGLDisplay* eff =
+            ecvViewManager::instance().getEffectiveView();
+    if (eff) {
+        m_pixelSize =
+                static_cast<float>(std::abs(eff->computeActualPixelSize()));
     }
-    if (parallelScale <= 0 || viewportHeight <= 0) {
+    if (m_pixelSize <= 0) {
         return 0.0f;
     }
-    return static_cast<float>(2.0 * parallelScale / viewportHeight);
-}
-
-float ccMouseCircle::getRadiusWorld() {
-    if (m_pixelSize == 0) {
-        ecvGenericGLDisplay* eff =
-                ecvViewManager::instance().getEffectiveView();
-        QWidget* screen = ecvViewManager::instance().activeWidget();
-        if (!eff || !screen) return 0.0f;
-
-        const ecvViewportParameters& params = eff->getViewportParameters();
-        if (params.perspectiveView) {
-            m_pixelSize = static_cast<float>(
-                    std::abs(params.computePixelSize(screen->width())));
-        } else {
-            m_pixelSize = computeOrthoPixelSize(screen->height());
-        }
-    }
     float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
+    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
+                         .arg(r)
+                         .arg(getRadiusPx())
+                         .arg(m_pixelSize));
     return r;
 }
 
@@ -113,13 +96,8 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    const ecvViewportParameters& params = effView->getViewportParameters();
-    if (params.perspectiveView) {
-        m_pixelSize = static_cast<float>(
-                std::abs(params.computePixelSize(context.glW)));
-    } else {
-        m_pixelSize = computeOrthoPixelSize(context.glH);
-    }
+    m_pixelSize =
+            static_cast<float>(std::abs(effView->computeActualPixelSize()));
 
     {
         CC_DRAW_CONTEXT clr;

@@ -134,9 +134,8 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
     QObject::connect(this->Internal->viewZMinus, SIGNAL(clicked()), this,
                      SLOT(resetViewDirectionNegZ()));
 
-    QObject::connect(this->Internal->AutoPickCenterOfRotation,
-                     SIGNAL(toggled(bool)), this,
-                     SLOT(autoPickRotationCenterWithCamera()));
+    QObject::connect(this->Internal->PickCenterOfRotation, SIGNAL(clicked()),
+                     this, SLOT(autoPickRotationCenterWithCamera()));
 
     QObject::connect(this->Internal->rollButton, SIGNAL(clicked()), this,
                      SLOT(applyCameraRoll()));
@@ -180,16 +179,63 @@ ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent,
                      SIGNAL(clicked()), this,
                      SLOT(ConfigureCustomViewpoints()));
 
-    bool autoPickPivotCenter = false;
-    if (ecvGenericGLDisplay* eff =
-                ecvViewManager::instance().getEffectiveView()) {
-        if (const ecvViewContext* vctx = eff->viewContext())
-            autoPickPivotCenter = vctx->autoPickPivotAtCenter;
-    }
-    this->Internal->AutoPickCenterOfRotation->setChecked(autoPickPivotCenter);
-
     QObject::connect(this->Internal->updatePushButton, SIGNAL(clicked()), this,
                      SLOT(updateCamera()));
+
+    // Live camera update: connect all camera parameter spinboxes
+    QObject::connect(this->Internal->xPosition,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->yPosition,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->zPosition,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->xFocal,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->yFocal,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->zFocal,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->xViewup,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->yViewup,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->zViewup,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->viewAngle,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->eyeAngle,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->nearClipping,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+    QObject::connect(this->Internal->farClipping,
+                     static_cast<void (QDoubleSpinBox::*)(double)>(
+                             &QDoubleSpinBox::valueChanged),
+                     this, &ecvCameraParamEditDlg::updateCamera);
+
     QObject::connect(this->Internal->pivotPickingToolButton,
                      &QAbstractButton::toggled, this,
                      &ecvCameraParamEditDlg::pickPointAsPivot);
@@ -368,8 +414,8 @@ void ecvCameraParamEditDlg::updateCamera() {
     if (!m_tool) return;
 
     m_tool->CurrentCameraParam.position.x = this->Internal->xPosition->value();
-    m_tool->CurrentCameraParam.position.y = this->Internal->zPosition->value();
-    m_tool->CurrentCameraParam.position.z = this->Internal->yPosition->value();
+    m_tool->CurrentCameraParam.position.y = this->Internal->yPosition->value();
+    m_tool->CurrentCameraParam.position.z = this->Internal->zPosition->value();
 
     m_tool->CurrentCameraParam.focal.x = this->Internal->xFocal->value();
     m_tool->CurrentCameraParam.focal.y = this->Internal->yFocal->value();
@@ -400,23 +446,21 @@ void ecvCameraParamEditDlg::cameraChanged() {
 
 //-----------------------------------------------------------------------------
 void ecvCameraParamEditDlg::autoPickRotationCenterWithCamera() {
-    ecvViewManager::instance().notifyAutoPickPivot(
-            this->Internal->AutoPickCenterOfRotation->isChecked());
-    // m_app->setAutoPickPivot(this->Internal->AutoPickCenterOfRotation->isChecked());
+    ecvViewManager::instance().notifyPickCenterOfRotation();
 }
 
 void ecvCameraParamEditDlg::updateUi() {
     if (!m_tool) return;
 
     this->Internal->xPosition->blockSignals(true);
-    this->Internal->zPosition->blockSignals(true);
     this->Internal->yPosition->blockSignals(true);
+    this->Internal->zPosition->blockSignals(true);
     this->Internal->xPosition->setValue(m_tool->CurrentCameraParam.position.x);
-    this->Internal->zPosition->setValue(m_tool->CurrentCameraParam.position.y);
-    this->Internal->yPosition->setValue(m_tool->CurrentCameraParam.position.z);
+    this->Internal->yPosition->setValue(m_tool->CurrentCameraParam.position.y);
+    this->Internal->zPosition->setValue(m_tool->CurrentCameraParam.position.z);
     this->Internal->xPosition->blockSignals(false);
-    this->Internal->zPosition->blockSignals(false);
     this->Internal->yPosition->blockSignals(false);
+    this->Internal->zPosition->blockSignals(false);
 
     this->Internal->xFocal->blockSignals(true);
     this->Internal->yFocal->blockSignals(true);
@@ -522,7 +566,7 @@ void ecvCameraParamEditDlg::SetCameraGroupsEnabled(bool enabled) {
     internal.rcxDoubleSpinBox->setEnabled(enabled);
     internal.rcyDoubleSpinBox->setEnabled(enabled);
     internal.rczDoubleSpinBox->setEnabled(enabled);
-    internal.AutoPickCenterOfRotation->setEnabled(enabled);
+    internal.PickCenterOfRotation->setEnabled(enabled);
 
     internal.rotationFactor->setEnabled(enabled);
 

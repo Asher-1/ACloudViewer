@@ -42,6 +42,7 @@
 #include <ecvMainAppInterface.h>
 
 // Qt
+#include <QApplication>
 #include <QCursor>
 #include <QInputDialog>
 #include <QMenu>
@@ -113,11 +114,6 @@ void setActiveSegmentationInteractionMode(
     for (auto* view : viewManager.getAllViews()) {
         if (view) {
             view->setInteractionMode(flags);
-            if (auto* widget = view->asWidget()) {
-                widget->setMouseTracking(
-                        flags ==
-                        ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
-            }
         }
     }
 
@@ -401,8 +397,11 @@ void ccGraphicalSegmentationTool::stop(bool accepted) {
                                    m_savedObjectCenteredView);
             v->setPickingMode(ecvGenericGLDisplay::DEFAULT_PICKING);
         }
-        if (auto* w = ecvViewManager::instance().activeWidget())
-            w->setMouseTracking(false);
+        if (auto* w = ecvViewManager::instance().activeWidget()) {
+            w->setCursor(Qt::ArrowCursor);
+            while (QApplication::overrideCursor())
+                QApplication::restoreOverrideCursor();
+        }
         resetSegmentation();
         { ecvRedrawScope scope(true, false); }
     }
@@ -1101,8 +1100,11 @@ void ccGraphicalSegmentationTool::pauseSegmentationMode(
             v->setPerspectiveState(m_savedPerspectiveState,
                                    m_savedObjectCenteredView);
         }
-        if (auto* w = ecvViewManager::instance().activeWidget())
-            w->setMouseTracking(false);
+        if (auto* w = ecvViewManager::instance().activeWidget()) {
+            w->setCursor(Qt::ArrowCursor);
+            while (QApplication::overrideCursor())
+                QApplication::restoreOverrideCursor();
+        }
         ecvViewManager::instance().displayMessageOnActiveView(
                 "Segmentation [PAUSED]",
                 ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 3600,

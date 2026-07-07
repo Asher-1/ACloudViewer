@@ -146,41 +146,52 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
                         .arg(iconSize));
     }
 
+#ifdef Q_OS_MACOS
+    // VTK with HiDPI enabled renders at DPI = DPR * 72, which inflates
+    // the HotZone relative to CloudCompare's native GL rendering.
+    // Apply 2/3 reduction for visual parity with CloudCompare on macOS.
+    if (pixelDeviceRatio >= 1.5) {
+        constexpr qreal kMacDisplayScale = 2.0 / 3.0;
+        font.setPointSize(std::max(
+                static_cast<int>(font.pointSize() * kMacDisplayScale), 14));
+        margin = std::max(static_cast<int>(margin * kMacDisplayScale), 16);
+        iconSize = std::max(static_cast<int>(iconSize * kMacDisplayScale), 16);
+    }
+#endif
+
     QFontMetrics metrics(font);
     bbv_labelRect = metrics.boundingRect(bbv_label);
     fs_labelRect = metrics.boundingRect(fs_label);
     psi_labelRect = metrics.boundingRect(psi_label);
     lsi_labelRect = metrics.boundingRect(lsi_label);
 
-    // Use max of horizontalAdvance and boundingRect width for robust layout.
-    // On macOS, bold font rendering can exceed horizontalAdvance; on some Linux
-    // configs, boundingRect can be too small. Taking the max covers both.
-    auto textLayoutWidth = [&metrics](const QString& text, const QRect& br) {
+    // QFontMetrics returns logical pixels. With VTK HiDPI enabled, the
+    // render window DPI = UnscaledDPI * DPR, so VTK renders text at DPR
+    // times the logical size. Scale metrics by DPR to match physical layout.
+    const qreal metricsScale = std::max(pixelDeviceRatio, 1.0);
+
+    auto textLayoutWidth = [&metrics, metricsScale](const QString& text,
+                                                    const QRect& br) {
         int advance = metrics.horizontalAdvance(text);
         int brWidth = br.width();
         int baseWidth = std::max(advance, brWidth) + metrics.descent() / 2 + 4;
-#ifdef Q_OS_MACOS
-        baseWidth += metrics.averageCharWidth();
-#endif
-        return baseWidth;
+        return static_cast<int>(baseWidth * metricsScale);
     };
     psi_textWidth = textLayoutWidth(psi_label, psi_labelRect);
     lsi_textWidth = textLayoutWidth(lsi_label, lsi_labelRect);
     bbv_textWidth = textLayoutWidth(bbv_label, bbv_labelRect);
     fs_textWidth = textLayoutWidth(fs_label, fs_labelRect);
 
-    // Use max(horizontalAdvance, boundingRect) width for layout.
-    // On macOS with bold fonts, either metric alone can underestimate actual
-    // rendered width; using the maximum prevents text/icon overlap.
     psi_totalWidth = psi_textWidth + margin + iconSize + margin + iconSize;
     lsi_totalWidth = lsi_textWidth + margin + iconSize + margin + iconSize;
     bbv_totalWidth = bbv_textWidth + margin + iconSize;
     fs_totalWidth = fs_textWidth + margin + iconSize;
 
-    textHeight = std::max(psi_labelRect.height(), bbv_labelRect.height());
-    textHeight = std::max(lsi_labelRect.height(), textHeight);
-    textHeight = std::max(fs_labelRect.height(), textHeight);
-    textHeight = (3 * textHeight) / 4;
+    int scaledMaxHeight =
+            std::max(psi_labelRect.height(), bbv_labelRect.height());
+    scaledMaxHeight = std::max(lsi_labelRect.height(), scaledMaxHeight);
+    scaledMaxHeight = std::max(fs_labelRect.height(), scaledMaxHeight);
+    textHeight = static_cast<int>((3 * scaledMaxHeight * metricsScale) / 4);
     yTextBottomLineShift = (iconSize / 2) + (textHeight / 2);
 }
 

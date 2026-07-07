@@ -180,7 +180,8 @@ public:
                        bool autoRedraw = true,
                        bool verbose = false) override;
     void setPivotVisibility(PivotVisibility vis) override;
-    void setAutoPickPivotAtCenter(bool state) override;
+    void beginPickCenterOfRotation();
+    void cancelPickCenterOfRotation();
     void resetCenterOfRotation(int viewport = 0) override;
     bool isRotationAxisLocked() const override;
     void lockRotationAxis(bool state, const CCVector3d& axis) override;
@@ -413,7 +414,7 @@ signals:
     void filesDropped(const QStringList& filenames, bool displayDialog);
     void newLabel(ccHObject* obj);
     void exclusiveFullScreenToggled(bool exclusive);
-    void autoPickPivot(bool state);
+    void pickCenterOfRotation();
     void labelmove2D(int x, int y, int dx, int dy);
 
     // -- Selection (per-view emission, relayed to global via ecvViewManager) --

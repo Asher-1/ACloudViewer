@@ -22,6 +22,7 @@
 #include "vtkRenderer.h"
 #include "vtkTransform.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 

@@ -7,6 +7,8 @@
 
 #include "ccLineationTool.h"
 
+#include <ecvViewManager.h>
+
 #include "ccCompass.h"
 
 ccLineationTool::ccLineationTool() : ccTool() {}
@@ -30,6 +32,10 @@ void ccLineationTool::pointPicked(ccHObject* insertPoint,
         l = new ccLineation(cloud);
         m_lineation_id = l->getUniqueID();
 
+        if (ecvGenericGLDisplay* eff =
+                    ecvViewManager::instance().getEffectiveView()) {
+            l->setDisplay(eff);
+        }
         l->setVisible(true);
         l->setName("Lineation");
 
