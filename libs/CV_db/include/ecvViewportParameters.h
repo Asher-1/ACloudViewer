@@ -101,8 +101,7 @@ public:  // functions
         Width = ratio * distance = (2 * tan(fov / 2)) * distance /
        std::min(ar, 1.0)
     **/
-    double computeDistanceToWidthRatio(int screenWidth,
-                                       int screenHeight) const;
+    double computeDistanceToWidthRatio(int screenWidth, int screenHeight) const;
 
     //! Computes the object 'width' at the 'focal' distance
     double computeWidthAtFocalDist() const;

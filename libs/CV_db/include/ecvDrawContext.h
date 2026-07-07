@@ -616,10 +616,11 @@ struct ccGLDrawContext {
 
     ccMaterial::Shared defaultMat;  ///< Default material
 
-    ecvColor::Rgbaf lightDiffuseColor;   ///< Light diffuse color (from settings)
-    ecvColor::Rgbaf lightAmbientColor;   ///< Light ambient color (from settings)
-    ecvColor::Rgbaf lightSpecularColor;  ///< Light specular color (from settings)
-    bool lightDoubleSided;               ///< Double sided light (from settings)
+    ecvColor::Rgbaf lightDiffuseColor;  ///< Light diffuse color (from settings)
+    ecvColor::Rgbaf lightAmbientColor;  ///< Light ambient color (from settings)
+    ecvColor::Rgbaf
+            lightSpecularColor;  ///< Light specular color (from settings)
+    bool lightDoubleSided;       ///< Double sided light (from settings)
 
     ecvColor::Rgbaf defaultMeshFrontDiff;  ///< Default mesh color (front)
     ecvColor::Rgbaf defaultMeshBackDiff;   ///< Default mesh color (back)

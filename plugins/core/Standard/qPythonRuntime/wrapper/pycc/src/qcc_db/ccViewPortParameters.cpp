@@ -56,24 +56,27 @@ void define_ccViewPortParameters(py::module &m)
              &ecvViewportParameters::computeDistanceToHalfWidthRatio)
         .def("computeDistanceToWidthRatio",
              static_cast<double (ecvViewportParameters::*)() const>(
-                     &ecvViewportParameters::computeDistanceToWidthRatio))
+                 &ecvViewportParameters::computeDistanceToWidthRatio))
         .def("computeDistanceToWidthRatio",
              static_cast<double (ecvViewportParameters::*)(int, int) const>(
-                     &ecvViewportParameters::computeDistanceToWidthRatio),
-             "screenWidth"_a, "screenHeight"_a)
+                 &ecvViewportParameters::computeDistanceToWidthRatio),
+             "screenWidth"_a,
+             "screenHeight"_a)
         .def("computeWidthAtFocalDist",
              static_cast<double (ecvViewportParameters::*)() const>(
-                     &ecvViewportParameters::computeWidthAtFocalDist))
+                 &ecvViewportParameters::computeWidthAtFocalDist))
         .def("computeWidthAtFocalDist",
              static_cast<double (ecvViewportParameters::*)(int, int) const>(
-                     &ecvViewportParameters::computeWidthAtFocalDist),
-             "screenWidth"_a, "screenHeight"_a)
+                 &ecvViewportParameters::computeWidthAtFocalDist),
+             "screenWidth"_a,
+             "screenHeight"_a)
         .def("computePixelSize",
              static_cast<double (ecvViewportParameters::*)(int) const>(
-                     &ecvViewportParameters::computePixelSize),
+                 &ecvViewportParameters::computePixelSize),
              "glWidth"_a)
         .def("computePixelSize",
              static_cast<double (ecvViewportParameters::*)(int, int) const>(
-                     &ecvViewportParameters::computePixelSize),
-             "screenWidth"_a, "screenHeight"_a);
+                 &ecvViewportParameters::computePixelSize),
+             "screenWidth"_a,
+             "screenHeight"_a);
 }

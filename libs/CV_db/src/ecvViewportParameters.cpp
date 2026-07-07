@@ -330,10 +330,9 @@ double ecvViewportParameters::computeDistanceToWidthRatio(
         return 1.0;
     }
 
-    double ar = std::min(
-            1.0, static_cast<double>(screenWidth) /
-                         (static_cast<double>(screenHeight) *
-                          cameraAspectRatio));
+    double ar = std::min(1.0, static_cast<double>(screenWidth) /
+                                      (static_cast<double>(screenHeight) *
+                                       cameraAspectRatio));
 
     return (2.0 * computeDistanceToHalfWidthRatio()) / ar;
 }
