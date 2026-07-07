@@ -616,8 +616,14 @@ struct ccGLDrawContext {
 
     ccMaterial::Shared defaultMat;  ///< Default material
 
+    ecvColor::Rgbaf lightDiffuseColor;   ///< Light diffuse color (from settings)
+    ecvColor::Rgbaf lightAmbientColor;   ///< Light ambient color (from settings)
+    ecvColor::Rgbaf lightSpecularColor;  ///< Light specular color (from settings)
+    bool lightDoubleSided;               ///< Double sided light (from settings)
+
     ecvColor::Rgbaf defaultMeshFrontDiff;  ///< Default mesh color (front)
     ecvColor::Rgbaf defaultMeshBackDiff;   ///< Default mesh color (back)
+    ecvColor::Rgbaf defaultMeshSpecular;   ///< Default mesh specular color
     ecvColor::Rgb defaultMeshColor;        ///< Default mesh color
 
     ecvColor::Rgb defaultPolylineColor;  ///< Default polyline color
@@ -690,9 +696,20 @@ struct ccGLDrawContext {
           devicePixelRatio(1.0f),
           renderZoom(1.0f),
           defaultMat(new ccMaterial("default")),
+          lightDiffuseColor(ecvColor::bright),
+          lightAmbientColor(ecvColor::night),
+          lightSpecularColor(ecvColor::darker),
+          lightDoubleSided(true),
           defaultMeshFrontDiff(ecvColor::defaultMeshFrontDiff),
           defaultMeshBackDiff(ecvColor::defaultMeshBackDiff),
-          defaultMeshColor(ecvColor::lightGrey),
+          defaultMeshSpecular(ecvColor::middle),
+          defaultMeshColor(
+                  static_cast<ColorCompType>(ecvColor::defaultMeshFrontDiff.r *
+                                             ecvColor::MAX),
+                  static_cast<ColorCompType>(ecvColor::defaultMeshFrontDiff.g *
+                                             ecvColor::MAX),
+                  static_cast<ColorCompType>(ecvColor::defaultMeshFrontDiff.b *
+                                             ecvColor::MAX)),
           defaultPolylineColor(ecvColor::green),
           pointsDefaultCol(ecvColor::defaultColor),
           pointsCurrentCol(ecvColor::defaultColor),

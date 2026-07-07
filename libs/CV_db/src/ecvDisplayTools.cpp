@@ -149,6 +149,13 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT,
     CONTEXT.defaultMat->setShininessFront(30);
     CONTEXT.defaultMat->setShininessBack(50);
 
+    CONTEXT.lightDiffuseColor = guiParams.lightDiffuseColor;
+    CONTEXT.lightAmbientColor = guiParams.lightAmbientColor;
+    CONTEXT.lightSpecularColor = guiParams.lightSpecularColor;
+    CONTEXT.lightDoubleSided = guiParams.lightDoubleSided;
+    CONTEXT.defaultMeshFrontDiff = guiParams.meshFrontDiff;
+    CONTEXT.defaultMeshBackDiff = guiParams.meshBackDiff;
+    CONTEXT.defaultMeshSpecular = guiParams.meshSpecular;
     CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;
     CONTEXT.textDefaultCol = guiParams.textDefaultCol;
     CONTEXT.labelDefaultBkgCol = guiParams.labelBackgroundCol;
@@ -2755,6 +2762,13 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
     CONTEXT.defaultMat->setShininessBack(50);
 
     // default colors
+    CONTEXT.lightDiffuseColor = guiParams.lightDiffuseColor;
+    CONTEXT.lightAmbientColor = guiParams.lightAmbientColor;
+    CONTEXT.lightSpecularColor = guiParams.lightSpecularColor;
+    CONTEXT.lightDoubleSided = guiParams.lightDoubleSided;
+    CONTEXT.defaultMeshFrontDiff = guiParams.meshFrontDiff;
+    CONTEXT.defaultMeshBackDiff = guiParams.meshBackDiff;
+    CONTEXT.defaultMeshSpecular = guiParams.meshSpecular;
     CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;
     CONTEXT.textDefaultCol = guiParams.textDefaultCol;
     CONTEXT.labelDefaultBkgCol = guiParams.labelBackgroundCol;

@@ -79,7 +79,8 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
             thickID = getScalarFieldIndexByName("Spacing");
         }
 
-        float lineWidth = 1.0f;
+        float lineWidth = static_cast<float>(context.defaultPointSize);
+        if (lineWidth < 1.0f) lineWidth = 1.0f;
         QString baseViewId = getViewId();
 
         ccPointCloud lineCloud;

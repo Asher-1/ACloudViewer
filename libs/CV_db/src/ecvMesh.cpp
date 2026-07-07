@@ -2740,8 +2740,14 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
                                 ->rgbColors()
                                 ->getValue(0);
             }
-        } else {
-            context.defaultMeshColor = ecvColor::lightGrey;
+        } else if (!applyMaterials && !showTextures) {
+            context.defaultMeshColor = ecvColor::Rgb(
+                    static_cast<ColorCompType>(context.defaultMeshFrontDiff.r *
+                                               ecvColor::MAX),
+                    static_cast<ColorCompType>(context.defaultMeshFrontDiff.g *
+                                               ecvColor::MAX),
+                    static_cast<ColorCompType>(context.defaultMeshFrontDiff.b *
+                                               ecvColor::MAX));
         }
 
         context.drawParam = glParams;
