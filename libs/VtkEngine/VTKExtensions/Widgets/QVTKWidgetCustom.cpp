@@ -1067,14 +1067,17 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curLastPointIndex() = -1;
     curLastPickedId() = QString();
 
-    // Signal-only mode (e.g., segment tool active): emit signals but do NOT
-    // process camera manipulation or forward to VTK.
     if (isSignalOnlyInteraction(curInteractionFlags())) {
-        if (event->buttons() & Qt::LeftButton) {
+        m_signalOnlyButtons = event->buttons() | event->button();
+        curLastMousePos() = event->pos();
+        curMouseButtonPressed() = true;
+
+        const Qt::MouseButtons btns = m_signalOnlyButtons;
+        if (btns & Qt::LeftButton) {
             if (m_ownerView)
                 emit m_ownerView->leftButtonClicked(event->x(), event->y());
             emit leftButtonClicked(event->x(), event->y());
-        } else if (event->buttons() & Qt::RightButton) {
+        } else if (btns & Qt::RightButton) {
             if (m_ownerView)
                 emit m_ownerView->rightButtonClicked(event->x(), event->y());
             emit rightButtonClicked(event->x(), event->y());
@@ -1443,17 +1446,17 @@ void QVTKWidgetCustom::paintGL() {
 }
 
 void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
+    if (isSignalOnlyInteraction(curInteractionFlags())) {
+        event->accept();
+        return;
+    }
+
     bool doRedraw = false;
     Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
 
     if (m_ownerView) emit m_ownerView->mouseWheelChanged(event);
     emit mouseWheelChanged(event);
     double delta = qtCompatWheelEventDelta(event);
-
-    if (isSignalOnlyInteraction(curInteractionFlags())) {
-        event->accept();
-        return;
-    }
 
     if (!(curInteractionFlags() & ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA)) {
         event->accept();
@@ -1501,13 +1504,15 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
                ecvGenericGLDisplay::INTERACT_ZOOM_CAMERA) {
         float wheelDelta_deg = static_cast<float>(delta) / 8;
 
-        if (m_directCameraWheelZoom) {
+        if (curBubbleViewModeEnabled()) {
+            // In bubble-view, wheel only changes FOV — bypass VTK dolly/zoom
+            if (auto* dt = dynamic_cast<ecvDisplayTools*>(displayTarget()))
+                dt->onWheelEvent(wheelDelta_deg);
+        } else if (m_directCameraWheelZoom) {
             applyDirectCameraWheelZoom(this, wheelDelta_deg);
         } else {
             QVTKOpenGLNativeWidget::wheelEvent(event);
-        }
 
-        if (!m_directCameraWheelZoom) {
             if (auto* dt = dynamic_cast<ecvDisplayTools*>(displayTarget()))
                 dt->onWheelEvent(wheelDelta_deg);
         }
@@ -1554,6 +1559,42 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     qint64 t_vtkRender = 0;
 
     if (handleCameraOrientationMouse(event, QEvent::MouseMove)) {
+        event->accept();
+        return;
+    }
+
+    if (isSignalOnlyInteraction(curInteractionFlags())) {
+        const int x = event->x();
+        const int y = event->y();
+        const Qt::MouseButtons btns = m_signalOnlyButtons | event->buttons();
+        const bool isActiveWidget =
+                (ecvGenericGLDisplay::FromWidget(this) == displayTarget());
+
+        if (isActiveWidget) {
+            curLastMouseMovePos() = event->pos();
+            if (m_ownerView) emit m_ownerView->mousePosChanged(event->pos());
+            emit mousePosChanged(event->pos());
+
+            if (curInteractionFlags() &
+                ecvGenericGLDisplay::INTERACT_SIG_MOUSE_MOVED) {
+                if (m_ownerView) emit m_ownerView->mouseMoved(x, y, btns);
+                emit mouseMoved(x, y, btns);
+            }
+        }
+
+        if (btns & Qt::MiddleButton) {
+            const int dy = y - curLastMousePos().y();
+            if (dy != 0) {
+                applyDirectCameraWheelZoom(this, static_cast<float>(-dy));
+                if (m_ownerView) {
+                    emit m_ownerView->cameraParamChanged();
+                }
+                if (auto* rw = GetRenderWindow()) rw->Render();
+            }
+        }
+
+        curMouseMoved() = true;
+        curLastMousePos() = event->pos();
         event->accept();
         return;
     }
@@ -1621,6 +1662,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 }
             } else {
                 if (!m_labelClickedOnPress && curActiveItems().empty() &&
+                    !curBubbleViewModeEnabled() &&
                     shouldForwardMouseEventToVtk(m_interactor,
                                                  curInteractionFlags(),
                                                  curRotationAxisLocked(), event,
@@ -1653,13 +1695,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (m_ownerView) emit m_ownerView->mouseMoved(x, y, event->buttons());
         emit mouseMoved(x, y, event->buttons());
         event->accept();
-    }
-
-    if (isSignalOnlyInteraction(curInteractionFlags())) {
-        curMouseMoved() = true;
-        curLastMousePos() = event->pos();
-        event->accept();
-        return;
     }
 
     // no button pressed
@@ -2015,6 +2050,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                     QApplication::changeOverrideCursor(
                             QCursor(Qt::ClosedHandCursor));
 
+                    displayTarget()->rotateBaseViewMat(rotMat);
                     if (m_ownerView) emit m_ownerView->viewMatRotated(rotMat);
                     emit viewMatRotated(rotMat);
                 } else {
@@ -2120,6 +2156,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     }
 
     if (isSignalOnlyInteraction(curInteractionFlags())) {
+        m_signalOnlyButtons = Qt::NoButton;
         curMouseButtonPressed() = false;
         curMouseMoved() = false;
         QApplication::restoreOverrideCursor();
@@ -2430,6 +2467,30 @@ static bool isVtkViewerShortcut(int key, Qt::KeyboardModifiers mods) {
 }
 
 bool QVTKWidgetCustom::event(QEvent* evt) {
+    // In signal-only mode (e.g. qCloudLayers brush), intercept all mouse/wheel
+    // events BEFORE VTK's QVTKOpenGLNativeWidget::event() can forward them to
+    // VTK's interactor. Without this, VTK processes events through
+    // QVTKInteractorAdapter::ProcessEvent() before our virtual overrides
+    // (mousePressEvent, wheelEvent, etc.) ever run.
+    if (isSignalOnlyInteraction(curInteractionFlags())) {
+        switch (evt->type()) {
+            case QEvent::MouseButtonPress:
+                mousePressEvent(static_cast<QMouseEvent*>(evt));
+                return true;
+            case QEvent::MouseButtonRelease:
+                mouseReleaseEvent(static_cast<QMouseEvent*>(evt));
+                return true;
+            case QEvent::MouseMove:
+                mouseMoveEvent(static_cast<QMouseEvent*>(evt));
+                return true;
+            case QEvent::Wheel:
+                wheelEvent(static_cast<QWheelEvent*>(evt));
+                return true;
+            default:
+                break;
+        }
+    }
+
     switch (evt->type()) {
         case QEvent::ShortcutOverride: {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);

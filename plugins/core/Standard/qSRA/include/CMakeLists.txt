@@ -11,6 +11,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/profileLoader.h
 		${CMAKE_CURRENT_LIST_DIR}/qSRA.h
 		${CMAKE_CURRENT_LIST_DIR}/qSRACommands.h
+		${CMAKE_CURRENT_LIST_DIR}/qSRAMapWidget.h
 )
 
 target_include_directories( ${PROJECT_NAME}

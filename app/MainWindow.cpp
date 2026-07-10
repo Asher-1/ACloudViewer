@@ -9,7 +9,6 @@
 
 // Local
 #include "ecvLayoutManager.h"
-#include "ecvMultiViewFrameManager.h"
 #include "ecvMultiViewWidget.h"
 #include "ecvShortcutDialog.h"
 #include "ecvTabbedMultiViewWidget.h"
@@ -113,7 +112,6 @@
 #include <ecvViewManager.h>
 
 // CV_IO_LIB
-#include <AcvProjectFilter.h>
 #include <AsciiFilter.h>
 #include <BinFilter.h>
 #include <DepthMapFileFilter.h>
@@ -779,8 +777,6 @@ QMenu* MainWindow::createPopupMenu() {
 
 // MainWindow Initialization
 void MainWindow::initial() {
-    m_viewFrameManager = new ecvMultiViewFrameManager(this);
-
     bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
     ecvViewManager::instance().initDisplayTools(
             new Visualization::VtkDisplayTools(), this, stereoMode);
@@ -964,7 +960,17 @@ void MainWindow::onViewClosingFromLayout(ecvGenericGLDisplay* closingDisplay) {
 
     auto* glView = dynamic_cast<vtkGLView*>(closingDisplay);
 
+    // CloudCompare-aligned: hide properties, detach entities (display→None),
+    // then refresh properties panel so the display dropdown shows "None".
+    if (m_ccRoot) {
+        m_ccRoot->hidePropertiesView();
+    }
+
     ecvViewManager::instance().unregisterView(closingDisplay);
+
+    if (m_ccRoot) {
+        m_ccRoot->updatePropertiesView();
+    }
 
     // Phase M3: all views are vtkGLView. When the active view closes,
     // find a surviving vtkGLView and rebind the engine to it.
@@ -4878,10 +4884,7 @@ void MainWindow::doActionSaveFile() {
                         .toString();
 
     // Validate the restored filter exists in the available filters.
-    // AcvProjectFilter is for whole-project saving (Save Project action), not
-    // for individual entity saving. Fall back to BinFilter if invalid.
-    if (!fileFilters.contains(selectedFilter) ||
-        selectedFilter == AcvProjectFilter::GetFileFilter()) {
+    if (!fileFilters.contains(selectedFilter)) {
         QString binFilter = BinFilter::GetFileFilter();
         selectedFilter = fileFilters.contains(binFilter) ? binFilter
                                                          : fileFilters.first();
@@ -5067,13 +5070,11 @@ void MainWindow::doActionSaveProject() {
     fullPathName += QString("/") + defaultFileName;
 
     QString binFilter = BinFilter::GetFileFilter();
-    QString acvFilter = AcvProjectFilter::GetFileFilter();
-    QString allFilters = binFilter + ";;" + acvFilter;
     QString selectedFilter = binFilter;
 
     // ask the user for the output filename
     QString selectedFilename = QFileDialog::getSaveFileName(
-            this, tr("Save file"), fullPathName, allFilters, &selectedFilter,
+            this, tr("Save file"), fullPathName, binFilter, &selectedFilter,
             ECVFileDialogOptions());
 
     if (selectedFilename.isEmpty()) {
@@ -7016,6 +7017,10 @@ void MainWindow::freezeUI(bool state) {
     m_pluginUIManager->mainPluginToolbar()->setDisabled(state);
     for (QToolBar* toolbar : m_pluginUIManager->additionalPluginToolbars()) {
         toolbar->setDisabled(state);
+    }
+
+    if (m_tabbedMultiView) {
+        m_tabbedMultiView->setViewCloseButtonsEnabled(!state);
     }
 
     if (!state) {

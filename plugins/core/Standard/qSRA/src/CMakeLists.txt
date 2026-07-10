@@ -10,4 +10,5 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/profileLoader.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qSRA.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qSRACommands.cpp
+		${CMAKE_CURRENT_LIST_DIR}/qSRAMapWidget.cpp
 )

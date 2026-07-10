@@ -100,6 +100,12 @@ bool ccOverlayDialog::start() {
                 }
             });
 
+    // Safety net: if the bound view is destroyed while we're running,
+    // null-out the cached pointer and stop gracefully to prevent
+    // use-after-free on m_boundView.
+    connect(&ecvViewManager::instance(), &ecvViewManager::viewUnregistered,
+            this, &ccOverlayDialog::onBoundViewUnregistered);
+
     // auto-show
     show();
 
@@ -113,10 +119,22 @@ bool ccOverlayDialog::start() {
     return true;
 }
 
+void ccOverlayDialog::onBoundViewUnregistered(ecvGenericGLDisplay* view) {
+    if (view && view == m_boundView) {
+        CVLog::Warning(
+                "[ccOverlayDialog] Bound view destroyed during processing — "
+                "stopping tool gracefully.");
+        m_boundView = nullptr;
+        if (m_processing) stop(false);
+    }
+}
+
 void ccOverlayDialog::stop(bool accepted) {
     m_processing = false;
 
     disconnect(&ecvViewManager::instance(), &ecvViewManager::activeViewChanged,
+               this, nullptr);
+    disconnect(&ecvViewManager::instance(), &ecvViewManager::viewUnregistered,
                this, nullptr);
 
     // auto-hide

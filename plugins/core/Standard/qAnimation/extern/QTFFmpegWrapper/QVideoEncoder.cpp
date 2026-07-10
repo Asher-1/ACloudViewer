@@ -1,5 +1,7 @@
 #include "QVideoEncoder.h"
 
+#include <QFileInfo>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -198,17 +200,26 @@ bool QVideoEncoder::open(QString formatShortName, QStringList &errors) {
         }
     }
 
-    // find the output format
-    avformat_alloc_output_context2(
-            &m_ff->formatContext, outputFormat, nullptr,
-            outputFormat ? qPrintable(m_filename) : nullptr);
+    // find the output format (always pass filename so FFmpeg can guess from
+    // extension when no explicit format is selected)
+    avformat_alloc_output_context2(&m_ff->formatContext, outputFormat, nullptr,
+                                   qPrintable(m_filename));
     if (!m_ff->formatContext) {
         if (!outputFormat) {
-            errors << "Could not deduce output format from file extension: "
-                      "using MPEG";
-
-            avformat_alloc_output_context2(&m_ff->formatContext, nullptr,
-                                           "mpeg", qPrintable(m_filename));
+            // Try to guess format from file extension before falling back
+            const QString suffix = QFileInfo(m_filename).suffix().toLower();
+            if (!suffix.isEmpty()) {
+                avformat_alloc_output_context2(
+                        &m_ff->formatContext, nullptr,
+                        qPrintable(suffix), qPrintable(m_filename));
+            }
+            if (!m_ff->formatContext) {
+                errors << "Could not deduce output format from file "
+                          "extension: using MPEG";
+                avformat_alloc_output_context2(&m_ff->formatContext, nullptr,
+                                               "mpeg",
+                                               qPrintable(m_filename));
+            }
             if (!m_ff->formatContext) {
                 errors << "Codec not found";
                 return false;
@@ -219,6 +230,11 @@ bool QVideoEncoder::open(QString formatShortName, QStringList &errors) {
                               formatShortName;
             return false;
         }
+    }
+
+    if (m_ff->formatContext->oformat->flags & AVFMT_NOFILE) {
+        errors << "Codec is not meant to create a video file";
+        return false;
     }
 
     // get the codec
@@ -269,17 +285,21 @@ bool QVideoEncoder::open(QString formatShortName, QStringList &errors) {
         return false;
     }
     m_ff->videoStream->id = m_ff->formatContext->nb_streams - 1;
-    avcodec_parameters_from_context(m_ff->videoStream->codecpar,
-                                    m_ff->codecContext);
     m_ff->videoStream->time_base.num = 1;
     m_ff->videoStream->time_base.den = m_fps;
+    m_ff->codecContext->time_base = m_ff->videoStream->time_base;
 
-    // av_dump_format(m_ff->formatContext, 0, fileName.toStdString().c_str(),
-    // 1);
-
-    // open the codec
+    // Open the codec BEFORE copying parameters to stream (codec extradata
+    // like SPS/PPS are only available after avcodec_open2)
     if (avcodec_open2(m_ff->codecContext, pCodec, 0) < 0) {
         errors << "Could not open the codec";
+        return false;
+    }
+
+    // Copy codec parameters to stream AFTER open (contains extradata)
+    if (avcodec_parameters_from_context(m_ff->videoStream->codecpar,
+                                        m_ff->codecContext) < 0) {
+        errors << "Could not copy the stream parameters";
         return false;
     }
 
@@ -396,6 +416,11 @@ bool QVideoEncoder::encodeImage(const QImage &image,
                                 QString *errorString /*=nullptr*/) {
     if (!isOpen()) {
         if (errorString) *errorString = "Stream is not opened";
+        return false;
+    }
+
+    if (av_frame_make_writable(m_ff->frame) < 0) {
+        if (errorString) *errorString = "Encoder frame is not writable";
         return false;
     }
 

@@ -21,6 +21,7 @@
 #include <QMimeData>
 #include <QSettings>
 #include <QStandardItemModel>
+#include <QTimer>
 #include <QTreeView>
 
 // LOCAL
@@ -2856,12 +2857,35 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
 
 void ccDBRoot::moveSelectedToView(ecvGenericGLDisplay* view,
                                   const QModelIndexList& indexes) {
+    if (!view) return;
+
+    ccBBox movedBB;
     for (const auto& idx : indexes) {
         auto* item = static_cast<ccHObject*>(idx.internalPointer());
         if (!item) continue;
-        item->setDisplay_recursive(view);
+        ecvViewManager::instance().moveEntityToView(item, view);
+
+        ccBBox itemBB = item->getDisplayBB_recursive(false, view);
+        if (itemBB.isValid()) {
+            movedBB += itemBB;
+        }
     }
-    ecvViewManager::instance().redrawAll();
+
+    // Defer zoom-to-fit until after queued redraw / representationChanged
+    // handlers finish creating VTK actors in the target view.
+    auto* viewObject = dynamic_cast<QObject*>(view);
+    const ccBBox zoomBox = movedBB;
+    QTimer::singleShot(0, viewObject, [viewObject, view, zoomBox]() {
+        QTimer::singleShot(50, viewObject, [view, zoomBox]() {
+            if (!view) return;
+            if (zoomBox.isValid()) {
+                view->updateConstellationCenterAndZoom(&zoomBox);
+            } else {
+                view->updateConstellationCenterAndZoom();
+            }
+        });
+    });
+
     updatePropertiesView();
 }
 

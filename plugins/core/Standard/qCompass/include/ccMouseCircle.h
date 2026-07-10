@@ -15,6 +15,8 @@ entirely transparent, except for a circle with radius r around the mouse.
 
 #include <QObject>
 
+class ecvGenericGLDisplay;
+
 class ccMouseCircle : public cc2DViewportObject, public QObject {
 public:
     explicit ccMouseCircle(QWidget* owner,
@@ -36,6 +38,7 @@ protected:
 
 private:
     QWidget* m_owner;
+    ecvGenericGLDisplay* m_bindView = nullptr;
     float m_pixelSize;
     int m_radius;
     int m_radiusStep;

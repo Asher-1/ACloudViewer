@@ -105,7 +105,6 @@ class QTreeWidgetItem;
 class QUIWidget;
 class ecvGenericGLDisplay;
 class vtkGLView;
-class ecvMultiViewFrameManager;
 class ecvTabbedMultiViewWidget;
 class ecvMultiViewWidget;
 class ecvViewLayoutProxy;
@@ -774,8 +773,6 @@ private:
     int m_layoutCounter = 0;
     bool m_creatingView = false;
     QSize m_lockedViewSize;
-
-    ecvMultiViewFrameManager* m_viewFrameManager = nullptr;
 
     // Phase M3: the first vtkGLView created at startup (sole view type)
     vtkGLView* m_firstView = nullptr;

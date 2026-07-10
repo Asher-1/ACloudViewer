@@ -120,6 +120,7 @@ bool ccAsprsModel::setData(const QModelIndex& index,
             QString name = value.toString();
             if (!isNameExist(name)) {
                 item.name = name;
+                emit classNamedChanged(index.row(), name);
                 break;
             } else {
                 return false;

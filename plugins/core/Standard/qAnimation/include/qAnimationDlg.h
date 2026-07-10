@@ -29,6 +29,7 @@
 
 // Qt
 #include <QDialog>
+#include <QMap>
 
 // System
 #include <QProgressDialog>
@@ -39,6 +40,7 @@
 class ccMesh;
 class ccPolyline;
 class cc2DViewportObject;
+class ecvGenericGLDisplay;
 class QListWidgetItem;
 #ifdef QFFMPEG_SUPPORT
 class QVideoEncoder;
@@ -74,6 +76,7 @@ protected:
     void onAutoStepsDurationToggled(bool);
     void onSmoothTrajectoryToggled(bool);
     void onSmoothRatioChanged(double);
+    void onCodecChanged(int);
 
     void preview();
     void renderAnimation() { render(false); }
@@ -131,8 +134,14 @@ protected:  // members
     Trajectory m_smoothVideoSteps;
     MeshList m_mesh_list;
 
-    //! Associated 3D view
+    //! Associated 3D view widget (for resize operations)
     QWidget* m_view3d;
+
+    //! Bound GL display (captured at construction, stable across view switches)
+    ecvGenericGLDisplay* m_bindView = nullptr;
+
+    //! Map of the codecs short names vs extensions
+    QMap<QString, QString> m_codecNamesAndExtensions;
     void textureAnimationPreview(const QStringList& texture_files,
                                  QProgressDialog& progressDialog);
     bool textureAnimationRender(const QStringList& texture_files,

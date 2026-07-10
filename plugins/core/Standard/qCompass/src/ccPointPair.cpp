@@ -17,15 +17,17 @@ static QSharedPointer<ccCone> c_headMarker(nullptr);
 
 ccPointPair::~ccPointPair() {
     QString baseViewId = getViewId();
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    auto removeActor = [eff](const QString& viewId, ENTITY_TYPE type) {
-        if (!eff) return;
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    auto removeActor = [view](const QString& viewId, ENTITY_TYPE type) {
+        if (!view) return;
         CC_DRAW_CONTEXT ctx;
-        ctx.display = eff;
+        ctx.display = view;
         ctx.defaultViewPort = 0;
         ctx.removeViewID = viewId;
         ctx.removeEntityType = type;
-        if (ctx.display) ctx.display->removeEntities(ctx);
+        view->removeEntities(ctx);
     };
     for (unsigned i = 0; i < size(); i++) {
         removeActor(baseViewId + "-pt" + QString::number(i),
@@ -84,22 +86,24 @@ void ccPointPair::getTypeID_recursive(std::vector<hideInfo>& hdInfos,
 }
 
 void ccPointPair::hideShowSubActors(bool visible) {
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    if (!eff) return;
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
     QString baseViewId = getViewId();
     CC_DRAW_CONTEXT ctx;
-    ctx.display = eff;
+    ctx.display = view;
     ctx.defaultViewPort = 0;
     ctx.hideShowEntityType = ENTITY_TYPE::ECV_MESH;
     ctx.visible = visible;
     for (unsigned i = 0; i < size(); i++) {
         ctx.viewID = baseViewId + "-pt" + QString::number(i);
-        if (ctx.display) ctx.display->hideShowEntities(ctx);
+        view->hideShowEntities(ctx);
     }
     ctx.viewID = baseViewId + "-body";
-    if (ctx.display) ctx.display->hideShowEntities(ctx);
+    view->hideShowEntities(ctx);
     ctx.viewID = baseViewId + "-head";
-    if (ctx.display) ctx.display->hideShowEntities(ctx);
+    view->hideShowEntities(ctx);
 }
 
 void ccPointPair::draw(CC_DRAW_CONTEXT& context) {
@@ -122,15 +126,11 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
         if (size() == 0)  // no points -> bail!
             return;
 
-        // get the set of OpenGL functions (version 2.1)
-        if (ecvViewManager::instance().activeWidget() == nullptr) {
-            assert(false);
-            return;
-        }
-
         ecvGenericGLDisplay* effView =
-                ecvViewManager::instance().getEffectiveView();
+                context.display ? context.display
+                                : ecvViewManager::instance().getEffectiveView();
         if (!effView) return;
+        m_lastDrawnView = effView;
 
         bool entityPickingMode = MACRO_EntityPicking(context);
         if (entityPickingMode) {

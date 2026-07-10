@@ -114,16 +114,7 @@ public:
     ecvViewContext* viewContext() override { return nullptr; }
     const ecvViewContext* viewContext() const override { return nullptr; }
 
-    /// Override from ecvGenericGLDisplay — returns primary-window active items.
-    std::list<ccInteractor*>& activeItemsRef() override {
-        return m_activeItems;
-    }
-
     ecvHotZone*& hotZonePtrRef() override { return m_hotZone; }
-
-    std::vector<ecvClickableItem>& clickableItemsRef() override {
-        return m_clickableItems;
-    }
 
     // ================================================================
     // Context-aware static API overloads  (Phase A)
@@ -293,21 +284,6 @@ public:
         return ecvViewManager::instance().defaultFont();
     }
 
-    /**
-     * @brief Schedule a full redraw
-     *
-     * Schedules a complete redraw (no LOD) after a specified delay.
-     * Any previously scheduled redraw will be cancelled.
-     * @param maxDelay_ms Maximum delay before redraw (milliseconds)
-     * @warning Cancelled if redraw/update is called before delay expires
-     */
-    void scheduleFullRedraw(unsigned maxDelay_ms);
-
-    /**
-     * @brief Cancel any scheduled redraw
-     */
-    void cancelScheduledRedraw();
-
 public:
     // PICKING_MODE, INTERACTION_FLAG/FLAGS, MessagePosition, MessageType,
     // PivotVisibility are now defined in the base class ecvGenericGLDisplay
@@ -319,8 +295,6 @@ public:
     static INTERACTION_FLAGS TRANSFORM_ENTITIES();
 
     using MessageToDisplay = ecvMessageToDisplay;
-
-    std::list<MessageToDisplay> m_messagesToDisplay;
 
     using ProjectionMetrics = ecvProjectionMetrics;
 
@@ -1607,10 +1581,7 @@ public:  // Main interface accessors
 
     [[deprecated("Phase B: use per-view vtkGLView::redraw()")]]
     static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
-    [[deprecated("Phase B: use per-view vtkGLView::redraw()")]]
-    static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
     static void Update2DLabel(bool immediateUpdate = false);
-    static void Pick2DLabel(int x, int y);
     QString pick2DLabel(int x, int y) override { return QString(); }
     static void Redraw2DLabel();
 
@@ -1708,9 +1679,6 @@ public:  // visualization matrix transformation
     /** Warning: may return overridden parameters!
      **/
     static const ecvGui::ParamStruct& GetDisplayParameters();
-
-    //! Sets current parameters for this display
-    static void SetDisplayParameters(const ecvGui::ParamStruct& params);
 
     static void UpdateDisplayParameters();
 
@@ -1840,7 +1808,7 @@ public:  // visualization matrix transformation
      **/
     static CCVector3d ConvertMousePositionToOrientation(int x, int y);
 
-    //! Updates currently active items list (m_activeItems)
+    //! Updates the per-view active items list via activeItemsRef().
     /** The items must be currently displayed in this context
             AND at least one of them must be under the mouse cursor.
     **/
@@ -2350,11 +2318,6 @@ public:  // visualization matrix transformation
                 .displayOverlayEntities;
     }
 
-    //! Currently active items
-    /** Active items can be moved with mouse, etc.
-     **/
-    std::list<ccInteractor*> m_activeItems;
-
 protected:
     ecvDisplayTools() = default;
     //! register visualizer callback function
@@ -2368,15 +2331,8 @@ protected:
 public:
     using ClickableItem = ecvClickableItem;
 
-    std::vector<ClickableItem> m_clickableItems;
-
     //! Internal timer
     QElapsedTimer m_timer;
-
-    //! Scheduler timer
-    QTimer m_scheduleTimer;
-    //! Scheduled full redraw (no LOD)
-    qint64 m_scheduledFullRedrawTime;
 
     //! Overridden display parameter
     ecvGui::ParamStruct m_overridenDisplayParameters;
@@ -2495,9 +2451,6 @@ public slots:
                           int y);
 
     void onPointPicking(const CCVector3& p, int index, const std::string& id);
-
-    //! Checks for scheduled redraw
-    void checkScheduledRedraw();
 
     //! Performs standard picking at the last clicked mouse position.
     //! Uses m_pickingTargetView's context if set, otherwise shared state

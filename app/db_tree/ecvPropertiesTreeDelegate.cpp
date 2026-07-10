@@ -92,6 +92,7 @@
 #include <assert.h>
 #include <ecvRedrawScope.h>
 
+#include <QTimer>
 #include <cmath>
 
 namespace {
@@ -1404,9 +1405,10 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
     switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
+            comboBox->addItem(tr("None"), -1);
             const auto& views = ecvViewManager::instance().getAllViews();
             for (auto* view : views) {
-                if (view) {
+                if (view && !view->isComparativeSubView()) {
                     comboBox->addItem(view->getTitle(), view->getUniqueID());
                 }
             }
@@ -3810,7 +3812,18 @@ void ccPropertiesTreeDelegate::applyLabelViewport() {
     assert(viewport);
 
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-        v->setViewportParameters(viewport->getParameters());
+        const auto& p = viewport->getParameters();
+        CVLog::Print(QString("[applyLabelViewport] '%1' → view=%2 "
+                             "persp=%3 objCentered=%4 fov=%5 pixelSize=%6 "
+                             "focalDist=%7")
+                             .arg(viewport->getName())
+                             .arg(v->getUniqueID())
+                             .arg(p.perspectiveView)
+                             .arg(p.objectCenteredView)
+                             .arg(p.fov_deg)
+                             .arg(p.pixelSize, 0, 'f', 6)
+                             .arg(p.getFocalDistance(), 0, 'f', 3));
+        v->setViewportParameters(p);
     }
     refreshActiveDisplayLikeUpdateScreen();
 }
@@ -4005,6 +4018,18 @@ void ccPropertiesTreeDelegate::objectDisplayIndexChanged(int index) {
     if (!comboBox || index < 0) return;
 
     int viewID = comboBox->itemData(index).toInt();
+
+    if (viewID < 0) {
+        auto* oldDisplay = m_currentObject->getDisplay();
+        if (oldDisplay) {
+            ecvViewManager::instance().detachEntityFromView(m_currentObject,
+                                                            oldDisplay);
+        }
+        m_currentObject->clearAllDisplays_recursive();
+        if (oldDisplay) oldDisplay->redraw(false, true);
+        return;
+    }
+
     ecvGenericGLDisplay* targetDisplay =
             ecvViewManager::instance().findView(viewID);
     if (!targetDisplay) return;
@@ -4012,8 +4037,19 @@ void ccPropertiesTreeDelegate::objectDisplayIndexChanged(int index) {
     auto* oldDisplay = m_currentObject->getDisplay();
     if (oldDisplay == targetDisplay) return;
 
-    m_currentObject->setDisplay_recursive(targetDisplay);
-    ecvViewManager::instance().redrawAll();
+    ecvViewManager::instance().moveEntityToView(m_currentObject, targetDisplay);
+
+    ccBBox bb = m_currentObject->getDisplayBB_recursive(false, targetDisplay);
+    if (bb.isValid()) {
+        auto* viewObject = dynamic_cast<QObject*>(targetDisplay);
+        QTimer::singleShot(0, viewObject, [targetDisplay, bb]() {
+            QTimer::singleShot(50, [targetDisplay, bb]() {
+                if (targetDisplay) {
+                    targetDisplay->updateConstellationCenterAndZoom(&bb);
+                }
+            });
+        });
+    }
 }
 
 void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {

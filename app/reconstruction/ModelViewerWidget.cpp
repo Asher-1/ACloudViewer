@@ -570,7 +570,7 @@ void ModelViewerWidget::SetBackgroundColor(const float r,
     params.backgroundCol =
             ecvColor::Rgb::FromEigen(Eigen::Vector3f(r, g, b).cast<double>());
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
-        v->setDisplayParameters(params);
+        v->setDisplayParameters(params, true);
     }
     {
         ecvRedrawScope redrawScope(true, false);

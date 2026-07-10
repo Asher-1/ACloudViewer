@@ -19,6 +19,7 @@
 #include <ReferenceCloud.h>
 #include <ScalarFieldTools.h>
 #include <ecvColorScalesManager.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
@@ -493,7 +494,9 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcClear(p); });
 
     // --- View control ---
-    reg("view.setOrientation", "Set camera view: {orientation: top|bottom|front|back|left|right|iso1|iso2}",
+    reg("view.list",          "List all views: returns [{view_id, active}]",
+        [this](auto& p){ return rpcViewList(p); });
+    reg("view.setOrientation", "Set camera view: {orientation, ?view_id}",
         [this](auto& p){ return rpcViewSetOrientation(p); });
     reg("view.zoomFit",      "Zoom to fit: {?entity_id}",
         [this](auto& p){ return rpcViewZoomFit(p); });
@@ -651,6 +654,20 @@ void JsonRPCPlugin::registerMethods() {
             return JsonRPCResult::success(QJsonDocument(arr).toVariant());
         });
     // clang-format on
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// View resolution helper
+// ═══════════════════════════════════════════════════════════════════════════
+
+ecvGenericGLDisplay* JsonRPCPlugin::resolveView(
+        const QMap<QString, QVariant>& params) {
+    if (params.contains("view_id")) {
+        int viewId = params["view_id"].toInt();
+        auto* view = ecvViewManager::instance().findView(viewId);
+        return view;
+    }
+    return ecvViewManager::instance().getEffectiveView();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1124,7 +1141,7 @@ JsonRPCResult JsonRPCPlugin::rpcSceneSelect(
 // clear
 // ═══════════════════════════════════════════════════════════════════════════
 
-JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>&) {
+JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>& params) {
     auto* root = m_app->dbRootObject();
     int removed = 0;
     ccHObject* child;
@@ -1135,7 +1152,7 @@ JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>&) {
 
     CC_DRAW_CONTEXT ctx;
     ctx.removeEntityType = ENTITY_TYPE::ECV_ALL;
-    if (auto* eff = ecvViewManager::instance().getEffectiveView()) {
+    if (auto* eff = resolveView(params)) {
         ctx.display = eff;
         eff->removeEntities(ctx);
     }
@@ -1144,6 +1161,26 @@ JsonRPCResult JsonRPCPlugin::rpcClear(const QMap<QString, QVariant>&) {
     QJsonObject result;
     result["removed_count"] = removed;
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// view.list
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcViewList(const QMap<QString, QVariant>&) {
+    auto* activeView = ecvViewManager::instance().getEffectiveView();
+    const auto& allViews = ecvViewManager::instance().getAllViews();
+    QJsonArray arr;
+    for (auto* view : allViews) {
+        QJsonObject v;
+        v["view_id"] = view->getUniqueID();
+        v["title"] = view->getTitle();
+        v["active"] = (view == activeView);
+        v["width"] = view->glWidth();
+        v["height"] = view->glHeight();
+        arr.append(v);
+    }
+    return JsonRPCResult::success(QJsonDocument(arr).toVariant());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1251,10 +1288,12 @@ JsonRPCResult JsonRPCPlugin::rpcViewScreenshot(
 // view.getCamera
 // ═══════════════════════════════════════════════════════════════════════════
 
-JsonRPCResult JsonRPCPlugin::rpcViewGetCamera(const QMap<QString, QVariant>&) {
+JsonRPCResult JsonRPCPlugin::rpcViewGetCamera(
+        const QMap<QString, QVariant>& params) {
     ccGLMatrixd viewMat;
     ecvViewportParameters vp;
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+    auto* view = resolveView(params);
+    if (view) {
         vp = view->getViewportParameters();
         viewMat = vp.viewMat;
     }

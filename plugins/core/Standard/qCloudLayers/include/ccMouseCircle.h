@@ -20,6 +20,8 @@ entirely transparent, except for a circle with radius r around the mouse.
 #include <QObject>
 #include <QPoint>
 
+class ecvGenericGLDisplay;
+
 class ccMouseCircle : public cc2DViewportObject, public QObject {
 public:
     // constructor
@@ -42,6 +44,9 @@ public:
     // Re-attach to a new owner widget (for multi-window view switches)
     void setOwner(QWidget* newOwner);
 
+    // Re-bind to the view used for 2D overlay drawing
+    void setBindView(ecvGenericGLDisplay* view);
+
     // sets whether scroll is allowed or not
     inline void setAllowScroll(bool state) { m_allowScroll = state; }
 
@@ -53,6 +58,7 @@ private:
     ecvMainAppInterface* m_app;
 
     QWidget* m_owner;
+    ecvGenericGLDisplay* m_bindView = nullptr;
 
     float m_pixelSize;
 

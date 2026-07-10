@@ -911,8 +911,7 @@ ccBBox ccHObject::getDisplayBB_recursive(bool relative,
     ccBBox box;
     // Only include this node's own BB if it belongs to the requested display
     // (or no display filter is set, or entity is unbound to any display).
-    if (!display || m_currentDisplay == nullptr ||
-        m_currentDisplay == display) {
+    if (!display || !m_displayBindingExplicit || isDisplayedIn(display)) {
         box = getOwnBB(true);
     }
 
@@ -1579,7 +1578,8 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // the entity must be either visible or selected, and of course it should be
     // displayed in this context
     bool drawInThisContext =
-            ((m_visible || m_selected) && isDisplayedIn(context.display));
+            ((m_visible || m_selected) &&
+             (context.skipDisplayCheck || isDisplayedIn(context.display)));
 
     ecvViewRepresentation* viewRep = nullptr;
     const bool isLabel2D = isKindOf(CV_TYPES::LABEL_2D);
@@ -1591,7 +1591,8 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // HIERARCHY_OBJECT (folders) are pure containers with no VTK geometry;
     // they must NOT get per-view reps or they will incorrectly block
     // children's visibility through the cascade.
-    const bool trueVisible = m_visible && isDisplayedIn(context.display);
+    const bool trueVisible = m_visible && (context.skipDisplayCheck ||
+                                           isDisplayedIn(context.display));
     if (context.display && trueVisible && !isFixedId() && !isLabel2D &&
         !isHierarchy) {
         viewRep = ecvRepresentationManager::instance().ensureRepresentation(
@@ -1696,9 +1697,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         // ancestor cascade.  Use m_visible (not drawInThisContext) because
         // drawInThisContext includes m_selected — a selected-but-hidden
         // entity must remain hidden.
+        // When skipDisplayCheck is active (ownDB entities in comparative
+        // views), bypass isDisplayedIn() — the entity is intentionally
+        // shown in a view it is not bound to.
         const bool savedVisible = context.visible;
         if (!isHierarchy) {
-            context.visible = m_visible && isDisplayedIn(context.display);
+            context.visible = m_visible && (context.skipDisplayCheck ||
+                                            isDisplayedIn(context.display));
         }
 
         bool hasExist = true;
@@ -1924,13 +1929,20 @@ void ccHObject::hideObject_recursive(bool recursive) {
     context.visible = false;
     context.display = mergeDisplay(nullptr, this);
 
-    // Helper: propagate hideShowEntities to the primary display and, for
-    // unbound entities, to every registered view so actors don't remain
-    // visible in non-active windows.
+    // Helper: propagate hideShowEntities to all bound displays, or to every
+    // registered view for unbound entities.
     auto hideInAllViews = [&](CC_DRAW_CONTEXT& ctx) {
         if (ctx.display) ctx.display->hideShowEntities(ctx);
-        if (!getDisplay()) {
+        const auto& displays = getDisplays();
+        if (displays.empty() || !hasExplicitDisplayBinding()) {
             for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == ctx.display) continue;
+                CC_DRAW_CONTEXT vctx = ctx;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        } else {
+            for (auto* view : displays) {
                 if (!view || view == ctx.display) continue;
                 CC_DRAW_CONTEXT vctx = ctx;
                 vctx.display = view;
@@ -2038,8 +2050,16 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
         context.hideShowEntityType = hdInfo.hideType;
         context.viewID = hdInfo.hideId;
         if (context.display) context.display->hideShowEntities(context);
-        if (!getDisplay()) {
+        const auto& displays = getDisplays();
+        if (displays.empty() || !hasExplicitDisplayBinding()) {
             for (auto* view : ecvViewManager::instance().getAllViews()) {
+                if (!view || view == context.display) continue;
+                CC_DRAW_CONTEXT vctx = context;
+                vctx.display = view;
+                view->hideShowEntities(vctx);
+            }
+        } else {
+            for (auto* view : displays) {
                 if (!view || view == context.display) continue;
                 CC_DRAW_CONTEXT vctx = context;
                 vctx.display = view;
@@ -2088,10 +2108,14 @@ void ccHObject::toggleVisibility_recursive(bool visible, bool recursive) {
 
 void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
-    if (m_currentDisplay) {
-        m_currentDisplay->redraw(only2D, forceRedraw);
+    if (!m_displays.empty()) {
+        for (auto* disp : m_displays) {
+            if (disp) disp->redraw(only2D, forceRedraw);
+        }
         auto* effective = ecvViewManager::instance().getEffectiveView();
-        if (effective && effective != m_currentDisplay) {
+        bool alreadyRedrawn = std::find(m_displays.begin(), m_displays.end(),
+                                        effective) != m_displays.end();
+        if (effective && !alreadyRedrawn) {
             ecvRedrawScope scope(only2D, forceRedraw);
         }
     } else {
@@ -2145,10 +2169,19 @@ void ccHObject::removeFromDisplay_recursive(
 bool ccHObject::isDisplayedIn(const ecvGenericGLDisplay* display) const {
     if (display == nullptr) return true;
 
-    if (m_currentDisplay == nullptr) {
+    if (!m_displayBindingExplicit) {
         return true;
     }
-    if (m_currentDisplay == display) return true;
 
-    return display->acceptsBoundEntitiesFrom(m_currentDisplay);
+    if (m_displays.empty()) {
+        return false;
+    }
+
+    for (auto* d : m_displays) {
+        if (d == display) return true;
+    }
+    for (auto* d : m_displays) {
+        if (display->acceptsBoundEntitiesFrom(d)) return true;
+    }
+    return false;
 }

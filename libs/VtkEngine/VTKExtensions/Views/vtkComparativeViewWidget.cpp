@@ -1044,6 +1044,8 @@ void vtkComparativeViewWidget::performSubViewRefresh() {
         if (forceSceneDirty) {
             ccHObject* root = view->getSceneDB();
             if (root) root->setRedrawFlagRecursive(true);
+            ccHObject* ownRoot = view->getOwnDB();
+            if (ownRoot) ownRoot->setRedrawFlagRecursive(true);
         }
         stripExtraRenderers(view);
         safeRedraw(view);
@@ -1864,6 +1866,7 @@ void vtkComparativeViewWidget::applySelectedEntitiesToRenderViews(
 
     auto& repMgr = ecvRepresentationManager::instance();
     m_applyingShowingSelection = true;
+
     for (auto* view : m_subViews) {
         if (!view) continue;
         view->setSceneDB(nullptr);
