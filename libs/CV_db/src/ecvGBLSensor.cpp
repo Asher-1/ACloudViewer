@@ -908,7 +908,7 @@ bool ccGBLSensor::applyViewport() {
     viewMat.invert();
     viewMat.setTranslation(sensorCenterd);
     ecvViewManager::instance().sharedSetupProjectiveViewport(viewMat, 0, 1.0f,
-                                                             true, false);
+                                                             true, true);
 
     return true;
 }

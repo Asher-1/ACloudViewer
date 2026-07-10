@@ -10,6 +10,7 @@
 #include "../include/ccMouseCircle.h"
 
 // CC
+#include <CVLog.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
@@ -37,6 +38,8 @@ ccCloudLayersHelper::ccCloudLayersHelper(ecvMainAppInterface* app,
     if (m_cloud) {
         m_formerCloudColorsWereShown = m_cloud->colorsShown();
         m_formerCloudSFWasShown = m_cloud->sfShown();
+        m_formerDisplayedSFIndex =
+                m_cloud->getCurrentDisplayedScalarFieldIndex();
 
         if (m_cloud->hasColors()) {
             // store the original colors
@@ -56,14 +59,20 @@ ccCloudLayersHelper::ccCloudLayersHelper(ecvMainAppInterface* app,
     }
 }
 
+void ccCloudLayersHelper::commitChanges() {
+    m_committed = true;
+    if (m_formerCloudColors) {
+        delete m_formerCloudColors;
+        m_formerCloudColors = nullptr;
+    }
+}
+
 ccCloudLayersHelper::~ccCloudLayersHelper() {
-    if (m_cloud) {
+    if (m_cloud && !m_committed) {
         if (m_formerCloudColors) {
             if (m_cloud->rgbColors()) {
-                // restore original colors
                 m_formerCloudColors->copy(*m_cloud->rgbColors());
             }
-
             delete m_formerCloudColors;
             m_formerCloudColors = nullptr;
         } else {
@@ -72,7 +81,14 @@ ccCloudLayersHelper::~ccCloudLayersHelper() {
 
         m_cloud->showColors(m_formerCloudColorsWereShown);
         m_cloud->showSF(m_formerCloudSFWasShown);
+        if (m_formerDisplayedSFIndex >= 0) {
+            m_cloud->setCurrentDisplayedScalarField(m_formerDisplayedSFIndex);
+        }
         m_cloud->redrawDisplay();
+    }
+    if (m_formerCloudColors) {
+        delete m_formerCloudColors;
+        m_formerCloudColors = nullptr;
     }
     m_cloud = nullptr;
 }
@@ -93,8 +109,12 @@ void ccCloudLayersHelper::setScalarFieldIndex(int index) {
 }
 
 void ccCloudLayersHelper::keepCurrentSFVisible() {
-    m_formerCloudSFWasShown = true;
     m_cloud->setCurrentDisplayedScalarField(m_scalarFieldIndex);
+    if (auto* sf = m_cloud->getCurrentDisplayedScalarField()) {
+        sf->computeMinAndMax();
+    }
+    m_cloud->showSF(true);
+    m_cloud->setRedraw(true);
 }
 
 void ccCloudLayersHelper::setVisible(bool value) {
@@ -214,6 +234,23 @@ void ccCloudLayersHelper::restoreState() {
         sf->setValue(i, state.code);
         m_cloud->setPointColor(i, state.color);
     }
+    m_cloud->setRedraw(true);
+}
+
+void ccCloudLayersHelper::restoreColors() {
+    if (!m_cloud) return;
+
+    if (m_formerCloudColors) {
+        if (m_cloud->rgbColors()) {
+            m_formerCloudColors->copy(*m_cloud->rgbColors());
+            m_cloud->colorsHaveChanged();
+        }
+    } else {
+        m_cloud->unallocateColors();
+    }
+    m_cloud->showColors(m_formerCloudColorsWereShown);
+    m_cloud->setRedraw(true);
+    m_cloud->redrawDisplay();
 }
 
 void ccCloudLayersHelper::project(ccGLCameraParameters camera,
@@ -249,7 +286,10 @@ void ccCloudLayersHelper::mouseMove(const CCVector2& center,
     }
 
     cloudViewer::ScalarField* sf = m_cloud->getScalarField(m_scalarFieldIndex);
-    if (!sf) return;
+    if (!sf) {
+        CVLog::Warning("[qCL::helper::mouseMove] SF is null!");
+        return;
+    }
 
     ScalarType inputCode =
             m_parameters.input != nullptr
@@ -262,33 +302,36 @@ void ccCloudLayersHelper::mouseMove(const CCVector2& center,
             ecvColor::FromQColor(m_parameters.output->color), alpha);
 
     unsigned cloudSize = m_cloud->size();
+    int inFrustum = 0;
+    int inRadius = 0;
+    int codeMatch = 0;
+    int painted = 0;
     for (unsigned i = 0; i < cloudSize; ++i) {
-        // skip camera outside point
         if (!m_pointInFrustum[i]) continue;
+        ++inFrustum;
 
-        // skip invisible points (per-point alpha, same as CloudCompare)
         if (m_parameters.visiblePoints) {
             if (m_cloud->getPointColorAlpha(i) != ecvColor::MAX) continue;
         }
 
         ScalarType code = sf->getValue(i);
 
-        // skip other codes
         if (m_parameters.input && code != inputCode) continue;
+        ++codeMatch;
 
-        // skip circle outside point
         if (ComputeSquaredEuclideanDistance(center, m_projectedPoints[i]) >
             squareDist)
             continue;
+        ++inRadius;
 
-        if (code != outputCode) {
-            sf->setValue(i, outputCode);
-            m_cloud->setPointColor(i, outputColor);
+        if (code == outputCode) continue;
 
-            --affected[code];
-            ++affected[outputCode];
-        }
+        sf->setValue(i, outputCode);
+        m_cloud->setPointColor(i, outputColor);
+        ++painted;
 
+        --affected[code];
+        ++affected[outputCode];
         m_modified = true;
     }
 
@@ -296,7 +339,6 @@ void ccCloudLayersHelper::mouseMove(const CCVector2& center,
 }
 
 void ccCloudLayersHelper::projectCloud(const ccGLCameraParameters& camera) {
-    // check camera parameters changes
     bool hasChanges = false;
     auto a = m_cameraParameters.modelViewMat.data();
     auto b = camera.modelViewMat.data();
@@ -304,6 +346,24 @@ void ccCloudLayersHelper::projectCloud(const ccGLCameraParameters& camera) {
         if (std::abs(a[i] - b[i]) > 1e-6) {
             hasChanges = true;
             break;
+        }
+    }
+    if (!hasChanges) {
+        auto pa = m_cameraParameters.projectionMat.data();
+        auto pb = camera.projectionMat.data();
+        for (int i = 0; i < OPENGL_MATRIX_SIZE; ++i) {
+            if (std::abs(pa[i] - pb[i]) > 1e-6) {
+                hasChanges = true;
+                break;
+            }
+        }
+    }
+    if (!hasChanges) {
+        for (int i = 0; i < 4; ++i) {
+            if (m_cameraParameters.viewport[i] != camera.viewport[i]) {
+                hasChanges = true;
+                break;
+            }
         }
     }
 

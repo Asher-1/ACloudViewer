@@ -5,6 +5,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/classifier.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qCanupo.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qCanupo2DViewDialog.cpp
+		${CMAKE_CURRENT_LIST_DIR}/qCanupo2DWidget.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qCanupoClassifDialog.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qCanupoProcess.cpp
 		${CMAKE_CURRENT_LIST_DIR}/qCanupoTools.cpp

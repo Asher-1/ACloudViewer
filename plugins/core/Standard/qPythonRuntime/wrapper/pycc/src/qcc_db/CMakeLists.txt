@@ -18,6 +18,7 @@ set(pycc_db_sources
     ${CMAKE_CURRENT_LIST_DIR}/ccGenericPrimitive.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccGLMatrix.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccGenericDisplayTools.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/ccGenericGLDisplay.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccDisplayTools.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccIndexedTransformation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ccInteractor.cpp

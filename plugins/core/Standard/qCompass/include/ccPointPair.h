@@ -40,6 +40,7 @@ public:
 
 protected:
     float m_relMarkerScale = 5.0f;
+    ecvGenericGLDisplay* m_lastDrawnView = nullptr;
 
     // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;

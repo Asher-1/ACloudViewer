@@ -567,18 +567,35 @@ public:  // display
                               ecvGenericGLDisplay*,
                               setDisplay_recursive)
 
+            ccHObject_recursive_call1(addToDisplay,
+                                      ecvGenericGLDisplay*,
+                                      addToDisplay_recursive)
+
             /// Recursively clear display association for entities bound to the
             /// given display.
             void removeFromDisplay_recursive(
                     const ecvGenericGLDisplay* display);
 
+    /// Recursively clear all display bindings.
+    inline virtual void clearAllDisplays_recursive() {
+        clearAllDisplays();
+        for (auto* child : m_children) {
+            child->clearAllDisplays_recursive();
+        }
+    }
+
     /// Returns true if this entity should be drawn in the given display.
-    /// Compatible three-way logic:
-    ///   display == nullptr:          legacy mode, no filtering
-    /// View isolation (ParaView-style):
-    ///   m_currentDisplay == nullptr + single view: draw everywhere (backward
-    ///   compat) m_currentDisplay == nullptr + multi-view: draw only in the
-    ///   effective (rendering) view m_currentDisplay == display:  normal match
+    ///
+    /// Logic:
+    ///   1. display == nullptr:                no filtering (legacy / "draw in
+    ///   all")
+    ///   2. !m_displayBindingExplicit:         entity unbound — visible in ALL
+    ///      registered views (global visibility, backward-compatible default)
+    ///   3. m_displays contains display:       normal per-view match
+    ///   4. display->acceptsBoundEntitiesFrom: linked-view pass-through
+    ///
+    /// Per-view fine-grained visibility override is handled separately by
+    /// ecvViewRepresentation::hasVisibilityOverride() in the draw() path.
     bool isDisplayedIn(const ecvGenericGLDisplay* display) const;
 
     //! Returns the max 'unique ID' of this entity and its siblings

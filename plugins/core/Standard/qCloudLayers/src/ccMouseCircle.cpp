@@ -7,6 +7,7 @@
 
 #include "../include/ccMouseCircle.h"
 
+#include <ecvGenericGLDisplay.h>
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
@@ -16,22 +17,6 @@
 // System
 #include <algorithm>
 #include <cmath>
-
-//! Unit circle
-struct Circle {
-    Circle() {
-        // setup unit circle
-        for (int n = 0; n < Resolution; n++) {
-            double heading = n * (2 * M_PI / Resolution);  // heading in radians
-            vertices[n][0] = std::cos(heading);
-            vertices[n][1] = std::sin(heading);
-        }
-    }
-
-    static const int Resolution = 100;
-    double vertices[Resolution][2];
-};
-static Circle s_unitCircle;
 
 ccMouseCircle::ccMouseCircle(ecvMainAppInterface* appInterface,
                              QWidget* owner,
@@ -48,16 +33,23 @@ ccMouseCircle::ccMouseCircle(ecvMainAppInterface* appInterface,
     assert(owner);  // check valid pointer
     ccMouseCircle::m_owner = owner;
     m_owner->installEventFilter(this);
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->addToOwnDB(this, true);
+    m_bindView = ecvViewManager::instance().getEffectiveView();
+    if (m_bindView) {
+        m_bindView->addToOwnDB(this, true);
     }
 }
 
 ccMouseCircle::~ccMouseCircle() {
     if (m_owner) {
         m_owner->removeEventFilter(this);
-        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-            view->removeFromOwnDB(this);
+        if (m_bindView) {
+            CC_DRAW_CONTEXT clr;
+            clr.display = m_bindView;
+            clr.defaultViewPort = 0;
+            clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+            clr.removeViewID = getViewId();
+            m_bindView->removeEntities(clr);
+            m_bindView->removeFromOwnDB(this);
         }
     }
 }
@@ -73,15 +65,25 @@ void ccMouseCircle::setOwner(QWidget* newOwner) {
     }
 }
 
-// get the circle radius in world coordinates
-float ccMouseCircle::getRadiusWorld() {
-    float r = getRadiusPx() * m_pixelSize;
-    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
-                         .arg(r)
-                         .arg(getRadiusPx())
-                         .arg(m_pixelSize));
-    return r;
+void ccMouseCircle::setBindView(ecvGenericGLDisplay* view) {
+    if (m_bindView == view) return;
+    if (m_bindView) {
+        CC_DRAW_CONTEXT clr;
+        clr.display = m_bindView;
+        clr.defaultViewPort = 0;
+        clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+        clr.removeViewID = getViewId();
+        m_bindView->removeEntities(clr);
+        m_bindView->removeFromOwnDB(this);
+    }
+    m_bindView = view;
+    if (m_bindView) {
+        m_bindView->addToOwnDB(this, true);
+    }
 }
+
+// get the circle radius in world coordinates
+float ccMouseCircle::getRadiusWorld() { return getRadiusPx() * m_pixelSize; }
 
 // override draw function
 void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
@@ -100,70 +102,61 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    if (context.display) {
-        m_pixelSize = static_cast<float>(
-                std::abs(context.display->computeActualPixelSize()));
+    ecvGenericGLDisplay* drawView =
+            context.display ? context.display : m_bindView;
+    if (!drawView) {
+        return;
     }
+
+    m_pixelSize =
+            static_cast<float>(std::abs(drawView->computeActualPixelSize()));
     if (m_pixelSize <= 0) {
         return;
     }
 
+    {
+        CC_DRAW_CONTEXT clr;
+        clr.display = drawView;
+        clr.defaultViewPort = 0;
+        clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+        clr.removeViewID = getViewId();
+        drawView->removeEntities(clr);
+    }
+
     // get mouse position
-    QPoint p = m_owner->mapFromGlobal(QCursor::pos());
-    int mx = p.x();                    // mouse x-coord
-    int my = context.glH - 1 - p.y();  // mouse y-coord in OpenGL coordinates
-                                       // (origin at bottom left, not top left)
+    QPoint p =
+            m_owner->mapFromGlobal(QCursor::pos()) * context.devicePixelRatio;
+    int mx = p.x();
+    int my = context.glH - 1 - p.y();
 
-    // calculate circle location
-    int cx = mx - context.glW / 2;
-    int cy = my - context.glH / 2;
-
-    //// draw circle
-    //{
-    //    // thick dotted line
-    //    {
-    //        glFunc->glPushAttrib(GL_LINE_BIT);
-    //        glFunc->glLineWidth(2);
-    //        glFunc->glLineStipple(1, 0xAAAA);
-    //        glFunc->glEnable(GL_LINE_STIPPLE);
-    //    }
-    //    glFunc->glColor4ubv(ecvColor::red.rgba);
-    //    glFunc->glBegin(GL_LINE_LOOP);
-    //    // glFunc->glBegin(GL_POLYGON);
-    //    for (int n = 0; n < Circle::Resolution; n++) {
-    //        glFunc->glVertex2d(s_unitCircle.vertices[n][0] * m_radius + cx,
-    //                           s_unitCircle.vertices[n][1] * m_radius + cy);
-    //    }
-
-    //    glFunc->glEnd();
-    //    glFunc->glPopAttrib();
-    //}
+    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CIRCLE_2D, getViewId());
+    param.context.display = drawView;
+    param.rect = QRect(mx, my, 0, 0);
+    param.radius = static_cast<float>(m_radius);
+    param.color = ecvColor::Rgbaf(1.0f, 0.0f, 0.0f, 0.8f);
+    if (param.context.display) {
+        param.context.display->drawWidgets(param);
+    }
 }
 
-// get mouse move events
 bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
-    // only process events when visible
     if (!ccMouseCircle::isVisible()) return false;
 
     if (event->type() == QEvent::MouseMove) {
-        if (m_owner) {
-            {
-                ecvRedrawScope scope(true, false);
-            }  // redraw 2D graphics
+        if (m_bindView) {
+            m_bindView->redraw(true, false);
         }
-    }
-
-    if (event->type() == QEvent::Wheel && m_allowScroll) {
+    } else if (event->type() == QEvent::Wheel && m_allowScroll) {
         QWheelEvent* wheelEvent = static_cast<QWheelEvent*>(event);
 
-        // adjust radius (+ avoid really small radius)
         double delta = qtCompatWheelEventDelta(wheelEvent);
         m_radius = std::max(
                 m_radiusStep,
                 m_radius - static_cast<int>(m_radiusStep * (delta / 100.0)));
 
-        // repaint
-        { ecvRedrawScope scope(true, false); }
+        if (m_bindView) {
+            m_bindView->redraw(true, false);
+        }
     }
-    return false;  // pass event to other listeners
+    return false;
 }

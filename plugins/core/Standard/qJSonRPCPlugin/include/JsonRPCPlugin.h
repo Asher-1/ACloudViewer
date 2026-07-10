@@ -44,6 +44,7 @@ private:
     ccHObject* findEntity(unsigned id);
     ccPointCloud* findCloud(unsigned id, JsonRPCResult& err);
     ccMesh* findMesh(unsigned id, JsonRPCResult& err);
+    ecvGenericGLDisplay* resolveView(const QMap<QString, QVariant>& params);
     void redraw();
     void logRequest(const QString& method,
                     const QMap<QString, QVariant>& params);
@@ -63,6 +64,7 @@ private:
     JsonRPCResult rpcSceneSelect(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcClear(const QMap<QString, QVariant>& params);
     // --- View control ---
+    JsonRPCResult rpcViewList(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcViewSetOrientation(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcViewZoomFit(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcViewRefresh(const QMap<QString, QVariant>& params);

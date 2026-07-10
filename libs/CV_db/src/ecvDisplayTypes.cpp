@@ -69,7 +69,7 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
                     // ~92 DPI
                     if (physicalDPI > 145.0 && pixelSize.width() >= 3000) {
                         isHighResolutionScreen = true;
-                        CVLog::Print(
+                        CVLog::PrintVerbose(
                                 QString("[HotZone] High-res screen detected: "
                                         "%1x%2 @ %3 DPI (physical)")
                                         .arg(pixelSize.width())
@@ -98,30 +98,30 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
             // Common on Linux 4K displays at 100% scaling
             scaledFontSize =
                     22;  // Larger than base but not as large as DPI=2.0
-            CVLog::Print(
+            CVLog::PrintVerbose(
                     "[HotZone] High-resolution screen override applied (22pt)");
         } else if (pixelDeviceRatio >= 2.5) {
             // Ultra-high DPI (4K+ at 150-200% scaling, or 5K/6K displays)
             scaledFontSize = 28;
-            CVLog::PrintDebug("[HotZone] Ultra-high DPI detected (>=2.5)");
+            CVLog::PrintVerbose("[HotZone] Ultra-high DPI detected (>=2.5)");
         } else if (pixelDeviceRatio >= 2.0) {
             // High DPI (Retina, 4K at proper scaling)
             scaledFontSize = 24;
-            CVLog::PrintDebug("[HotZone] High DPI detected (>=2.0)");
+            CVLog::PrintVerbose("[HotZone] High DPI detected (>=2.0)");
         } else if (pixelDeviceRatio >= 1.5) {
             // Medium-high DPI (1440p at 125%, 1080p at 150%)
             scaledFontSize = 18;
-            CVLog::PrintDebug("[HotZone] Medium-high DPI detected (>=1.5)");
+            CVLog::PrintVerbose("[HotZone] Medium-high DPI detected (>=1.5)");
         } else if (pixelDeviceRatio >= 1.25) {
             // Slightly scaled (1080p at 125%)
             scaledFontSize = 16;
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[HotZone] Slightly scaled DPI detected (>=1.25)");
         } else {
             // Standard DPI or low DPI
             scaledFontSize = static_cast<int>(kBaseFontPt * pixelDeviceRatio);
             scaledFontSize = std::max(scaledFontSize, 14);  // Minimum 14pt
-            CVLog::PrintDebug("[HotZone] Standard DPI detected");
+            CVLog::PrintVerbose("[HotZone] Standard DPI detected");
         }
 
         font.setPointSize(scaledFontSize);
@@ -138,7 +138,7 @@ void ecvHotZone::updateInternalVariables(QWidget* win) {
         font.setStyleStrategy(QFont::PreferAntialias);
         font.setHintingPreference(QFont::PreferFullHinting);
 
-        CVLog::Print(
+        CVLog::PrintVerbose(
                 QString("[HotZone] DPI: %1, Font: %2pt, Margin: %3, Icon: %4")
                         .arg(pixelDeviceRatio, 0, 'f', 2)
                         .arg(font.pointSize())

@@ -16,6 +16,7 @@
 
 // CV_DB_LIB
 #include <ecv2DViewportObject.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
@@ -158,6 +159,13 @@ void qAnimation::doAction() {
     m_app->dispToConsole(
             QString("[qAnimation] Selected meshes: %1").arg(meshes.size()));
 
+    ecvGenericGLDisplay *bindView =
+            ecvViewManager::instance().getEffectiveView();
+    ecvViewportParameters savedViewport;
+    if (bindView) {
+        savedViewport = bindView->getViewportParameters();
+    }
+
     qAnimationDlg videoDlg(glWindow, m_app->getMainWindow());
 
     if (!videoDlg.init(viewports, meshes)) {
@@ -169,7 +177,7 @@ void qAnimation::doAction() {
 
     videoDlg.exec();
 
-    // restore
+    // restore textures
     for (std::size_t i = 0; i < meshes.size(); ++i) {
         auto &mesh = meshes[i];
         if (mesh && mesh->getMaterialSet()) {
@@ -179,7 +187,11 @@ void qAnimation::doAction() {
             };
         }
     }
-    if (auto *w = ecvViewManager::instance().activeWidget()) w->update();
+
+    if (bindView) {
+        bindView->setViewportParameters(savedViewport);
+        bindView->redraw(false, true);
+    }
 
     // Export trajectory (for debug)
     if (videoDlg.exportTrajectoryOnExit() && videoDlg.getTrajectory()) {
@@ -187,8 +199,7 @@ void qAnimation::doAction() {
         if (!trajectory) {
             CVLog::Error("Not enough memory");
         } else {
-            trajectory->setColor(ecvColor::yellow);
-            trajectory->showColors(true);
+            trajectory->setTempColor(ecvColor::red);
             trajectory->setWidth(2);
 
             getMainAppInterface()->addToDB(trajectory);

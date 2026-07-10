@@ -576,9 +576,14 @@ struct ccGLDrawContext {
     bool forceRedraw;   ///< Force redraw
     bool visFiltering;  ///< Visibility filtering enabled
 
+    /// When true, bypass isDisplayedIn() check during draw traversal.
+    /// Set for ownDB rendering: entities in a view's ownDB are always
+    /// rendered regardless of their global display binding.
+    bool skipDisplayCheck = false;
+
     /// The display (window) that owns this draw context.
     /// Used for per-window draw filtering: entities check their
-    /// m_currentDisplay against this pointer to decide whether they
+    /// display binding set against this pointer to decide whether they
     /// should be drawn in the current window.
     /// nullptr means "draw in all windows" (backward-compatible default).
     ecvGenericGLDisplay* display = nullptr;

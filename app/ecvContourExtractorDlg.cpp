@@ -61,7 +61,7 @@ void ccContourExtractorDlg::init() {
             params.drawBackgroundGradient = false;
             params.displayCross = false;
             params.colorScaleUseShader = false;
-            view->setDisplayParameters(params);
+            view->setDisplayParameters(params, true);
             view->setPerspectiveState(false, true);
             view->setInteractionMode(
                     ecvGenericGLDisplay::INTERACT_PAN |

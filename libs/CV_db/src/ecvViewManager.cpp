@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <algorithm>
 
 #include "ecvDisplayTools.h"
 #include "ecvDrawContext.h"
@@ -498,35 +499,107 @@ void ecvViewManager::moveEntityToView(ccHObject* obj,
     ecvGenericGLDisplay* oldView = obj->getDisplay();
     if (oldView == targetView) return;
 
-    // Remove from old view's VTK pipeline
     if (oldView) {
-        CC_DRAW_CONTEXT ctx;
-        ctx.removeViewID = obj->getViewId();
-        ctx.removeEntityType = obj->getEntityType();
-        ctx.display = oldView;
-        oldView->removeEntities(ctx);
+        std::function<void(ccHObject*)> removeRecursive =
+                [&](ccHObject* entity) {
+                    if (!entity) return;
+
+                    const QString viewId = entity->getViewId();
+                    const QString bboxId = QString("BBox-") + viewId;
+
+                    CC_DRAW_CONTEXT ctx;
+                    ctx.removeViewID = viewId;
+                    ctx.removeEntityType = entity->getEntityType();
+                    ctx.display = oldView;
+                    oldView->removeEntities(ctx);
+
+                    CC_DRAW_CONTEXT bbCtx;
+                    bbCtx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+                    bbCtx.removeViewID = bboxId;
+                    bbCtx.display = oldView;
+                    oldView->removeEntities(bbCtx);
+
+                    for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+                        removeRecursive(entity->getChild(i));
+                    }
+                };
+        removeRecursive(obj);
+
+        std::function<void(ccHObject*)> removeReps = [&](ccHObject* entity) {
+            if (!entity) return;
+            ecvRepresentationManager::instance().removeRepresentation(entity,
+                                                                      oldView);
+            for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+                removeReps(entity->getChild(i));
+            }
+        };
+        removeReps(obj);
     }
 
-    // Rebind to the target view
     obj->setDisplay_recursive(targetView);
+    obj->setForceRedrawRecursive(true);
 
-    // Remove representation from old view
-    if (oldView) {
-        ecvRepresentationManager::instance().removeRepresentation(obj, oldView);
-    }
+    if (oldView) oldView->redraw(false, true);
+    targetView->redraw(false, true);
+}
 
-    // Trigger redraw on both views
-    if (oldView) oldView->redraw();
-    targetView->redraw();
+void ecvViewManager::detachEntityFromView(ccHObject* obj,
+                                          ecvGenericGLDisplay* fromView) {
+    if (!obj || !fromView) return;
+
+    std::function<void(ccHObject*)> removeRecursive = [&](ccHObject* entity) {
+        if (!entity) return;
+        const QString viewId = entity->getViewId();
+        CC_DRAW_CONTEXT ctx;
+        ctx.removeViewID = viewId;
+        ctx.removeEntityType = entity->getEntityType();
+        ctx.display = fromView;
+        fromView->removeEntities(ctx);
+
+        CC_DRAW_CONTEXT bbCtx;
+        bbCtx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+        bbCtx.removeViewID = QString("BBox-") + viewId;
+        bbCtx.display = fromView;
+        fromView->removeEntities(bbCtx);
+
+        for (unsigned i = 0; i < entity->getChildrenNumber(); ++i) {
+            removeRecursive(entity->getChild(i));
+        }
+    };
+    removeRecursive(obj);
 }
 
 void ecvViewManager::detachEntitiesFromView(ecvGenericGLDisplay* closingView) {
     if (!closingView) return;
 
+    // Scan scene DB if available
     ccHObject* sceneDB = closingView->getSceneDB();
-    if (!sceneDB) return;
+    if (sceneDB) {
+        reassignEntitiesFromView(sceneDB, closingView, nullptr);
+    }
 
-    reassignEntitiesFromView(sceneDB, closingView, nullptr);
+    // Also scan the global/shared scene DB to catch entities that reference
+    // this view (e.g., comparative sub-views where sceneDB may be null but
+    // entities in the main DB still hold this view in their display set).
+    for (auto* otherView : m_views) {
+        if (!otherView || otherView == closingView) continue;
+        ccHObject* otherDB = otherView->getSceneDB();
+        if (otherDB && otherDB != sceneDB) {
+            reassignEntitiesFromView(otherDB, closingView, nullptr);
+        }
+    }
+
+    // Also clean the ownDB of the closing view itself
+    ccHObject* ownDB = closingView->getOwnDB();
+    if (ownDB) {
+        reassignEntitiesFromView(ownDB, closingView, nullptr);
+    }
+
+    for (auto* v : m_views) {
+        if (v && v != closingView) {
+            v->redraw(false, true);
+        }
+    }
 }
 
 void ecvViewManager::reassignEntitiesFromView(ccHObject* root,
@@ -534,13 +607,15 @@ void ecvViewManager::reassignEntitiesFromView(ccHObject* root,
                                               ecvGenericGLDisplay* toView) {
     if (!root) return;
 
-    if (root->getDisplay() == fromView) {
+    const auto& displays = root->getDisplays();
+    bool boundToFromView = std::find(displays.begin(), displays.end(),
+                                     fromView) != displays.end();
+
+    if (boundToFromView) {
         root->removeFromDisplay(fromView);
-        // ParaView-aligned: don't reassign to another view.  The entity
-        // becomes "unbound" and disabled so the DB tree checkbox reflects
-        // the hidden state.  Re-checking the checkbox later will bind the
-        // entity to the then-active view.
-        root->setEnabled(false);
+        if (toView) {
+            root->addToDisplay(toView);
+        }
     }
 
     for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {

@@ -28,18 +28,20 @@ ccSNECloud::ccSNECloud(ccPointCloud* obj) : ccPointCloud() {
 ccSNECloud::~ccSNECloud() { removeNormalActors(); }
 
 void ccSNECloud::removeNormalActors() {
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    if (!eff) {
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    if (!view) {
         m_normalViewIds.clear();
         return;
     }
     for (const QString& viewId : m_normalViewIds) {
         CC_DRAW_CONTEXT ctx;
-        ctx.display = eff;
+        ctx.display = view;
         ctx.defaultViewPort = 0;
         ctx.removeViewID = viewId;
         ctx.removeEntityType = ENTITY_TYPE::ECV_LINES_3D;
-        if (ctx.display) ctx.display->removeEntities(ctx);
+        view->removeEntities(ctx);
     }
     m_normalViewIds.clear();
 }
@@ -55,6 +57,15 @@ bool ccSNECloud::isSNECloud(ccHObject* object) {
     return false;
 }
 
+void ccSNECloud::draw(CC_DRAW_CONTEXT& context) {
+    if (MACRO_Draw3D(context)) {
+        if (!isVisible() || !isEnabled()) {
+            removeNormalActors();
+        }
+    }
+    ccPointCloud::draw(context);
+}
+
 void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!MACRO_Foreground(context)) {
         return;
@@ -67,8 +78,9 @@ void ccSNECloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        if (ecvViewManager::instance().activeWidget() == nullptr) {
-            assert(false);
+        if (context.display) {
+            m_lastDrawnView = context.display;
+        } else if (!ecvViewManager::instance().getEffectiveView()) {
             return;
         }
 

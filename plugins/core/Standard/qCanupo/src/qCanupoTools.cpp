@@ -31,24 +31,32 @@
 #include <QThread>
 #include <QtConcurrentMap>
 #include <algorithm>
+#include <atomic>
 #include <cstring>
 
-// ComputeCorePointsDescriptors parameters
+// Shared state for parallel descriptor computation (used by
+// QtConcurrent::blockingMap). Thread-safety: invalidDescriptors and
+// invalidDescCount are only written as true/incremented (never reset during
+// computation), so concurrent writes are benign.
 static struct {
     cloudViewer::GenericIndexedCloud* corePoints;
     ccGenericPointCloud* sourceCloud;
     cloudViewer::DgmOctree* octree;
     unsigned char octreeLevel;
     CorePointDescSet* descriptors;
-    bool invalidDescriptors;
+    bool invalidDescriptors;  //!< set to true if any core point has < 3
+                              //!< neighbors
+    std::atomic<unsigned> invalidDescCount;  //!< number of core points with
+                                             //!< invalid descriptors
 
     cloudViewer::NormalizedProgress* nProgress;
     bool processCanceled;
     bool errorOccurred;
 
-    ScaleParamsComputer* computer;  // the per-scale parameters computer
+    ScaleParamsComputer* computer;  //!< the per-scale parameters computer
 
-    std::vector<ccScalarField*>* roughnessSFs;  // for test
+    std::vector<ccScalarField*>*
+            roughnessSFs;  //!< optional per-level roughness (for tests)
 
 } s_computeCorePointsDescParams;
 
@@ -185,6 +193,8 @@ void ComputeCorePointDescriptor(unsigned index) {
 
             if (invalidScale) {
                 s_computeCorePointsDescParams.invalidDescriptors = true;
+                s_computeCorePointsDescParams.invalidDescCount.fetch_add(
+                        1, std::memory_order_relaxed);
                 // no need to compute the remaining scales!
                 for (size_t j = i + 1; j < scaleCount; ++j) {
                     // copy the same parameters for all scales (see CANUPO
@@ -202,6 +212,8 @@ void ComputeCorePointDescriptor(unsigned index) {
         // if the widest neighborhood has less than 3 points, we can't compute a
         // valid descriptor!
         s_computeCorePointsDescParams.invalidDescriptors = true;
+        s_computeCorePointsDescParams.invalidDescCount.fetch_add(
+                1, std::memory_order_relaxed);
     }
 
     // progress notification
@@ -217,6 +229,7 @@ bool qCanupoTools::ComputeCorePointsDescriptors(
         ccGenericPointCloud* sourceCloud,
         const std::vector<float>& sortedScales,
         bool& invalidDescriptors,
+        unsigned& invalidDescCount,
         QString& error,  // if any
         unsigned descriptorID /*=DESC_DIMENSIONALITY*/,
         int maxThreadCount /*=0*/,
@@ -227,6 +240,7 @@ bool qCanupoTools::ComputeCorePointsDescriptors(
     assert(!sortedScales.empty());
 
     invalidDescriptors = true;
+    invalidDescCount = 0;
     error = QString();
 
     unsigned corePtsCount = corePoints->size();
@@ -313,6 +327,8 @@ bool qCanupoTools::ComputeCorePointsDescriptors(
     s_computeCorePointsDescParams.processCanceled = false;
     s_computeCorePointsDescParams.errorOccurred = false;
     s_computeCorePointsDescParams.invalidDescriptors = false;
+    s_computeCorePointsDescParams.invalidDescCount.store(
+            0, std::memory_order_relaxed);
     s_computeCorePointsDescParams.roughnessSFs = roughnessSFs;
 
     // we try the parallel way (if we have enough memory)
@@ -358,6 +374,8 @@ bool qCanupoTools::ComputeCorePointsDescriptors(
     else if (wasCanceled)
         error = "Process has been cancelled by the user";
     invalidDescriptors = s_computeCorePointsDescParams.invalidDescriptors;
+    invalidDescCount = s_computeCorePointsDescParams.invalidDescCount.load(
+            std::memory_order_relaxed);
 
     // reset static parameters (just to be clean ;)
     s_computeCorePointsDescParams.corePoints = nullptr;
@@ -369,6 +387,8 @@ bool qCanupoTools::ComputeCorePointsDescriptors(
     s_computeCorePointsDescParams.processCanceled = false;
     s_computeCorePointsDescParams.errorOccurred = false;
     s_computeCorePointsDescParams.invalidDescriptors = false;
+    s_computeCorePointsDescParams.invalidDescCount.store(
+            0, std::memory_order_relaxed);
     s_computeCorePointsDescParams.computer = nullptr;
 
     if (progressCb) {

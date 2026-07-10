@@ -19,6 +19,7 @@ class ecvMainAppInterface;
 class ccHObject;
 class ccPointCloud;
 class ccPolyline;
+class qCanupo2DWidget;
 
 //! CANUPO plugin's 2D view dialog
 class qCanupo2DViewDialog : public QDialog, public Ui::Canupo2DViewDialog {
@@ -77,29 +78,30 @@ protected:
     //! Returns the list of active scales
     void getActiveScales(std::vector<float>& scales) const;
 
-    //! Adds a custom object to the 2D view
-    void addObject(ccHObject* obj);
-
-    //! Updates zoom
+    //! Updates zoom to fit all data
     void updateZoom();
 
     //! Updates classifier path with the currently displayed polyline
     void updateClassifierPath(Classifier& classifier) const;
 
-    //! Returns the click position in 3D
+    //! Returns the click position in world 2D coords
     CCVector3 getClickPos(int x, int y) const;
-    //! Returns closest vertex
+
+    //! Returns the closest polyline vertex index
     int getClosestVertex(int x, int y, CCVector3& P) const;
 
     //! Gives access to the application (data-base, UI, etc.)
     ecvMainAppInterface* m_app;
+
+    //! Native QPainter-based 2D scatter plot view
+    qCanupo2DWidget* m_2dView = nullptr;
 
     //! Associated classifier
     Classifier m_classifier;
     //! Whether the classifier has been saved (at least once)
     bool m_classifierSaved;
 
-    // descritpors
+    // descriptors
     const CorePointDescSet* m_descriptors1;
     const CorePointDescSet* m_descriptors2;
     const CorePointDescSet* m_evaluationDescriptors;

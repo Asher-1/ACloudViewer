@@ -17,6 +17,7 @@
 #include <QMutexLocker>
 #include <QWidget>
 
+#include "ecvHObject.h"
 #include "ecvViewManager.h"
 
 namespace {
@@ -37,6 +38,13 @@ void ecvGenericGLDisplay::getVisibleObjectsBB(ccBBox& /*box*/) const {}
 
 void ecvGenericGLDisplay::updateConstellationCenterAndZoom(
         const ccBBox* /*box*/) {}
+
+void ecvGenericGLDisplay::clearOwnDB() {
+    if (ccHObject* own = getOwnDB()) {
+        own->removeAllChildren();
+        ecvViewManager::instance().invalidateLabelCache();
+    }
+}
 
 QRect ecvGenericGLDisplay::getGLViewport() const {
     const QWidget* w = asWidget();
@@ -152,4 +160,25 @@ void ecvGenericGLDisplay::RegisterGLDisplay(QWidget* widget,
 void ecvGenericGLDisplay::UnregisterGLDisplay(QWidget* widget) {
     QMutexLocker lock(&s_registryMutex);
     s_displayRegistry.remove(widget);
+}
+
+// ================================================================
+// View factory
+// ================================================================
+
+namespace {
+ecvGenericGLDisplay::ViewFactoryFunc s_viewFactory = nullptr;
+}
+
+void ecvGenericGLDisplay::SetViewFactory(ViewFactoryFunc factory) {
+    s_viewFactory = factory;
+}
+
+ecvGenericGLDisplay* ecvGenericGLDisplay::CreateView(QWidget* parent,
+                                                     bool silentInit,
+                                                     bool offscreen) {
+    if (s_viewFactory) {
+        return s_viewFactory(parent, silentInit, offscreen);
+    }
+    return nullptr;
 }

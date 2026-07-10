@@ -11,6 +11,10 @@
 #include "ecvDrawContext.h"
 #include "ecvGLMatrix.h"
 
+// STL
+#include <algorithm>
+#include <vector>
+
 // CV_CORE_LIB
 #include <CVGeom.h>
 
@@ -33,15 +37,35 @@ public:
     virtual ~ccDrawableObject() = default;
 
 public:  // display association (multi-window support)
-    /// Returns the currently associated GL display, or nullptr (= all windows).
-    virtual ecvGenericGLDisplay* getDisplay() const { return m_currentDisplay; }
+    /// Returns the primary associated GL display (first in the binding set),
+    /// or nullptr if unbound. Backward-compatible single-display accessor.
+    virtual ecvGenericGLDisplay* getDisplay() const;
 
-    /// Associates this entity with a specific display window.
-    /// Pass nullptr to unbind (entity will be drawn in all windows).
+    /// Associates this entity with a SINGLE display (replaces all previous
+    /// bindings). Equivalent to clearDisplays() + addToDisplay(display).
+    /// Pass nullptr to explicitly unbind from all displays (display=None).
     virtual void setDisplay(ecvGenericGLDisplay* display);
 
-    /// Clears the display association if it matches the given display.
+    /// Adds a display to this entity's binding set.
+    virtual void addToDisplay(ecvGenericGLDisplay* display);
+
+    /// Removes a specific display from the binding set.
     virtual void removeFromDisplay(const ecvGenericGLDisplay* display);
+
+    /// Clears all display bindings (entity shows nowhere = None).
+    virtual void clearAllDisplays();
+
+    /// Resets to legacy mode: entity shows in ALL windows (no explicit
+    /// binding).
+    virtual void setDisplayAll();
+
+    /// Returns the full set of bound displays.
+    const std::vector<ecvGenericGLDisplay*>& getDisplays() const {
+        return m_displays;
+    }
+
+    /// Returns true if entity has explicit display binding (vs legacy "all").
+    bool hasExplicitDisplayBinding() const { return m_displayBindingExplicit; }
 
 public:  // drawing and drawing options
     //! Draws entity and its children
@@ -321,9 +345,17 @@ public:  // push and pop display state
     virtual void applyDisplayState(const DisplayState& state);
 
 protected:  // members
-    /// Currently associated GL display (window).
-    /// nullptr = show in any window that draws this entity (legacy mode).
-    ecvGenericGLDisplay* m_currentDisplay = nullptr;
+    /// Bound displays for this entity (multi-window support).
+    /// Empty + m_displayBindingExplicit=false → legacy "show in all windows"
+    /// Empty + m_displayBindingExplicit=true  → display=None (show nowhere)
+    /// Non-empty → show only in these specific windows
+    std::vector<ecvGenericGLDisplay*> m_displays;
+
+    /// Whether the display binding is explicit (user-controlled).
+    /// false = legacy mode: entity shows in all windows (default for new
+    /// entities). true  = explicit: entity shows only in m_displays (or nowhere
+    /// if empty).
+    bool m_displayBindingExplicit = false;
 
     bool m_fixedId;
     bool m_modelRedraw;
