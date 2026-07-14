@@ -32,6 +32,7 @@
 #include "controllers/automatic_reconstruction.h"
 
 #include "base/undistortion.h"
+#include "controllers/da3_depth_controller.h"
 #include "controllers/incremental_mapper.h"
 #include "controllers/texturing_controller.h"
 #include "feature/extraction.h"
@@ -42,6 +43,7 @@
 #include "util/download.h"
 #include "util/misc.h"
 #include "util/option_manager.h"
+#include "util/ply.h"
 
 namespace colmap {
 
@@ -168,20 +170,27 @@ void AutomaticReconstructionController::Run() {
     return;
   }
 
-  RunFeatureExtraction();
+  // DA3 sparse model path: skip feature extraction/matching, use DA3 depth+pose
+  if (options_.sparse_mode == SparseModelMode::DA3_DEPTH_POSE) {
+    if (options_.sparse) {
+      RunDA3SparseMapper();
+    }
+  } else {
+    RunFeatureExtraction();
 
-  if (IsStopped()) {
-    return;
-  }
+    if (IsStopped()) {
+      return;
+    }
 
-  RunFeatureMatching();
+    RunFeatureMatching();
 
-  if (IsStopped()) {
-    return;
-  }
+    if (IsStopped()) {
+      return;
+    }
 
-  if (options_.sparse) {
-    RunSparseMapper();
+    if (options_.sparse) {
+      RunSparseMapper();
+    }
   }
 
   if (IsStopped()) {
@@ -189,6 +198,29 @@ void AutomaticReconstructionController::Run() {
   }
 
   if (options_.dense) {
+    use_da3_stereo_maps_ =
+        options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+        DA3ModelSupportsStereo(options_.da3_model_type);
+    if (options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+        options_.sparse_mode != SparseModelMode::DA3_DEPTH_POSE) {
+      std::cout << std::endl
+                << "WARNING: DA3 depth inference is configured with a non-DA3 "
+                   "sparse model. Camera poses may not match metric depth; "
+                   "prefer Sparse mode = DA3 (depth+pose)."
+                << std::endl;
+    }
+    if (options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+        !use_da3_stereo_maps_) {
+      std::cout << std::endl
+                << "WARNING: DA3 depth inference requires a nested model "
+                   "(Nested AnyView / Nested Metric). "
+                   "Falling back to COLMAP PatchMatch stereo."
+                << std::endl;
+    }
+    if (use_da3_stereo_maps_) {
+      RunDA3DepthMaps();
+      if (IsStopped()) return;
+    }
     RunDenseMapper();
   }
 
@@ -259,6 +291,146 @@ void AutomaticReconstructionController::RunSparseMapper() {
   reconstruction_manager_->Write(sparse_path, &option_manager_);
 }
 
+void AutomaticReconstructionController::RunDA3SparseMapper() {
+  const auto sparse_path = JoinPaths(options_.workspace_path, "sparse");
+  if (ExistsDir(sparse_path)) {
+    auto dir_list = GetDirList(sparse_path);
+    std::sort(dir_list.begin(), dir_list.end());
+    if (dir_list.size() > 0) {
+      std::cout << std::endl
+                << "WARNING: Skipping DA3 sparse reconstruction because it is "
+                   "already computed"
+                << std::endl;
+      for (const auto& dir : dir_list) {
+        reconstruction_manager_->Read(dir);
+      }
+      return;
+    }
+  }
+
+  std::cout << std::endl
+            << "========================================" << std::endl
+            << "Running DA3 depth+pose sparse model generation" << std::endl
+            << "========================================" << std::endl;
+
+  DA3Config da3_config;
+  da3_config.model_type = options_.da3_model_type;
+  da3_config.quant_type = options_.da3_quant_type;
+  da3_config.model_path = options_.da3_model_path;
+  da3_config.metric_model_path = options_.da3_metric_model_path;
+  da3_config.num_threads = options_.num_threads;
+  da3_config.sparse_mode = SparseModelMode::DA3_DEPTH_POSE;
+
+  if (da3_config.model_path.empty()) {
+    da3_config.model_path = DA3DepthController::ResolveModelPath(da3_config);
+    if (da3_config.model_path.empty()) {
+      std::cout << "ERROR: DA3 model could not be resolved. "
+                << "Skipping DA3 sparse model generation." << std::endl;
+      return;
+    }
+  }
+
+  std::cout << "DA3 sparse: model_path=" << da3_config.model_path
+            << "  image_path=" << options_.image_path << std::endl;
+
+  DA3DepthController da3_controller(
+      da3_config, options_.image_path, options_.workspace_path);
+  active_thread_ = &da3_controller;
+  da3_controller.Start();
+  da3_controller.Wait();
+  active_thread_ = nullptr;
+
+  // Read back the generated sparse model
+  const auto sparse_0 = JoinPaths(sparse_path, "0");
+  if (ExistsDir(sparse_0)) {
+    reconstruction_manager_->Read(sparse_0);
+    std::cout << "DA3 sparse: loaded " << reconstruction_manager_->Size()
+              << " reconstruction(s) from " << sparse_0 << std::endl;
+  } else {
+    std::cout << "ERROR: DA3 sparse model generation produced no output at "
+              << sparse_0 << ".  Check stderr / glog for details." << std::endl;
+  }
+}
+
+void AutomaticReconstructionController::RunDA3DepthMaps() {
+  if (!DA3ModelSupportsStereo(options_.da3_model_type)) {
+    std::cout << "ERROR: DA3 depth map generation requires a nested model."
+              << std::endl;
+    return;
+  }
+
+  std::cout << std::endl
+            << "========================================" << std::endl
+            << "Running DA3 depth map generation (replacing PatchMatch stereo)"
+            << std::endl
+            << "========================================" << std::endl;
+
+  DA3Config da3_config;
+  da3_config.model_type = options_.da3_model_type;
+  da3_config.quant_type = options_.da3_quant_type;
+  da3_config.model_path = options_.da3_model_path;
+  da3_config.metric_model_path = options_.da3_metric_model_path;
+  da3_config.num_threads = options_.num_threads;
+  da3_config.stereo_mode = StereoPipelineMode::DA3_DEPTH_INFERENCE;
+
+  // Resolve model path once before the loop to avoid repeated
+  // filesystem probes / downloads for each reconstruction index.
+  if (da3_config.model_path.empty()) {
+    da3_config.model_path = DA3DepthController::ResolveModelPath(da3_config);
+    if (da3_config.model_path.empty()) {
+      std::cout << "ERROR: DA3 model could not be resolved. "
+                << "Skipping DA3 depth map generation." << std::endl;
+      return;
+    }
+  }
+
+  if (reconstruction_manager_->Size() == 0) {
+    std::cout << "WARNING: DA3 depth map generation skipped — no sparse "
+                 "reconstructions available.  Run sparse reconstruction first."
+              << std::endl;
+    return;
+  }
+
+  std::cout << "DA3 depth maps: model_path=" << da3_config.model_path
+            << "  reconstructions=" << reconstruction_manager_->Size()
+            << std::endl;
+
+  CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
+
+  for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
+    if (IsStopped()) return;
+
+    const std::string dense_path =
+        JoinPaths(options_.workspace_path, "dense", std::to_string(i));
+    CreateDirIfNotExists(dense_path);
+
+    // Undistort images first
+    if (!ExistsDir(JoinPaths(dense_path, "images"))) {
+      UndistortCameraOptions undistortion_options;
+      undistortion_options.max_image_size =
+          option_manager_.patch_match_stereo->max_image_size;
+      COLMAPUndistorter undistorter(undistortion_options,
+                                    &reconstruction_manager_->Get(i),
+                                    *option_manager_.image_path, dense_path);
+      active_thread_ = &undistorter;
+      undistorter.Start();
+      undistorter.Wait();
+      active_thread_ = nullptr;
+    }
+
+    if (IsStopped()) return;
+
+    const std::string undist_images = JoinPaths(dense_path, "images");
+    if (ExistsDir(undist_images)) {
+      DA3DepthController da3_controller(da3_config, undist_images, dense_path);
+      active_thread_ = &da3_controller;
+      da3_controller.Start();
+      da3_controller.Wait();
+      active_thread_ = nullptr;
+    }
+  }
+}
+
 void AutomaticReconstructionController::RunDenseMapper() {
   CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
 
@@ -303,24 +475,30 @@ void AutomaticReconstructionController::RunDenseMapper() {
       return;
     }
 
-    // Patch match stereo.
+    // Patch match stereo (skipped if DA3 depth inference is active).
 
+    if (use_da3_stereo_maps_) {
+      std::cout << std::endl
+                << "Skipping PatchMatch stereo: using DA3 depth maps instead."
+                << std::endl;
+    } else {
 #ifdef CUDA_ENABLED
-    {
-      mvs::PatchMatchController patch_match_controller(
-          *option_manager_.patch_match_stereo, dense_path, "COLMAP", "");
-      active_thread_ = &patch_match_controller;
-      patch_match_controller.Start();
-      patch_match_controller.Wait();
-      active_thread_ = nullptr;
-    }
+      {
+        mvs::PatchMatchController patch_match_controller(
+            *option_manager_.patch_match_stereo, dense_path, "COLMAP", "");
+        active_thread_ = &patch_match_controller;
+        patch_match_controller.Start();
+        patch_match_controller.Wait();
+        active_thread_ = nullptr;
+      }
 #else   // CUDA_ENABLED
-    std::cout
-        << std::endl
-        << "WARNING: Skipping patch match stereo because CUDA is not available."
-        << std::endl;
-    return;
+      std::cout
+          << std::endl
+          << "WARNING: Skipping patch match stereo because CUDA is not available."
+          << std::endl;
+      return;
 #endif  // CUDA_ENABLED
+    }
 
     if (IsStopped()) {
       return;
@@ -331,8 +509,14 @@ void AutomaticReconstructionController::RunDenseMapper() {
     if (!ExistsFile(fused_path)) {
       auto fusion_options = *option_manager_.stereo_fusion;
       const int num_reg_images = reconstruction_manager_->Get(i).NumRegImages();
-      fusion_options.min_num_pixels =
-          std::min(num_reg_images + 1, fusion_options.min_num_pixels);
+      if (use_da3_stereo_maps_) {
+        // Nested metric depth is multi-view consistent; use standard fusion threshold.
+        fusion_options.min_num_pixels =
+            std::min(num_reg_images + 1, fusion_options.min_num_pixels);
+      } else {
+        fusion_options.min_num_pixels =
+            std::min(num_reg_images + 1, fusion_options.min_num_pixels);
+      }
       mvs::StereoFusion fuser(
           fusion_options, dense_path, "COLMAP", "",
           options_.quality == Quality::HIGH ? "geometric" : "photometric");
@@ -357,8 +541,15 @@ void AutomaticReconstructionController::RunDenseMapper() {
 
     // Surface meshing.
 
+    const bool has_fused_points =
+        ExistsFile(fused_path) && ReadPly(fused_path).size() > 0;
+
     if (!ExistsFile(meshing_path)) {
-      if (options_.mesher == Mesher::POISSON) {
+      if (!has_fused_points) {
+        std::cout << "WARNING: Skipping surface meshing because stereo fusion "
+                     "produced no points."
+                  << std::endl;
+      } else if (options_.mesher == Mesher::POISSON) {
         mvs::PoissonMeshing(*option_manager_.poisson_meshing, fused_path,
                             meshing_path);
       } else if (options_.mesher == Mesher::DELAUNAY) {

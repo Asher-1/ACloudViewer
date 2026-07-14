@@ -1,0 +1,28 @@
+#include "dino_backbone.hpp"
+#include "model_loader.hpp"
+#include "parity.hpp"
+#include <cstdlib>
+#include <cmath>
+#include <vector>
+#include <string>
+int main(){
+    const char* gguf=std::getenv("DA_TEST_GGUF"); const char* base=std::getenv("DA_TEST_BASELINE");
+    if (!gguf||!base) return 77;
+    da::ModelLoader ml; if(!ml.load(gguf)) return 1;
+    std::vector<float> img; std::vector<int64_t> s;
+    if (!da_parity::load_baseline(base, "input_image", img, s)) return 1;
+    int HW=(int)(img.size()/3); int H=(int)std::lround(std::sqrt((double)HW)), W=H;
+    da::Backend be; da::DinoBackbone bb(ml, be);
+    std::vector<std::vector<float>> feats, cams;
+    if (!bb.forward(img, H, W, feats, cams)) return 1;
+    const int Ls[4]={5,7,9,11};
+    bool ok=true;
+    for (int i=0;i<4;++i){
+        std::vector<float> rf, rc;
+        da_parity::load_baseline(base, std::string("feat_")+std::to_string(Ls[i]), rf, s);
+        da_parity::load_baseline(base, std::string("cam_token_")+std::to_string(Ls[i]), rc, s);
+        ok &= da_parity::compare(feats[i], rf, (std::string("feat_")+std::to_string(Ls[i])).c_str(), 2e-3f, 2e-3f);
+        ok &= da_parity::compare(cams[i],  rc, (std::string("cam_")+std::to_string(Ls[i])).c_str(),  2e-3f, 2e-3f);
+    }
+    return ok ? 0 : 1;
+}

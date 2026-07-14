@@ -67,6 +67,7 @@ void ccImage::setData(const QImage& image) {
     m_width = m_image.width();
     m_height = m_image.height();
     updateAspectRatio();
+    setRedraw(true);
 }
 
 void ccImage::updateAspectRatio() {
@@ -82,45 +83,6 @@ void ccImage::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!context.display) return;
 
     context.display->draw(context, this);
-    ////get the set of OpenGL functions (version 2.1)
-    // QOpenGLFunctions_2_1 *glFunc =
-    // context.glFunctions<QOpenGLFunctions_2_1>(); assert( glFunc != nullptr );
-    //
-    // if ( glFunc == nullptr )
-    //	return;
-
-    // glFunc->glPushAttrib(GL_COLOR_BUFFER_BIT);
-    // glFunc->glEnable(GL_BLEND);
-    // glFunc->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // glFunc->glPushAttrib(GL_ENABLE_BIT);
-    // glFunc->glEnable(GL_TEXTURE_2D);
-
-    // QOpenGLTexture texture(m_image);
-    // texture.bind();
-    //{
-    //	//we make the texture fit inside viewport
-    //	int realWidth = static_cast<int>(m_height * m_aspectRatio); //take
-    // aspect ratio into account! 	GLfloat cw =
-    // static_cast<GLfloat>(context.glW)
-    /// realWidth; 	GLfloat ch = static_cast<GLfloat>(context.glH)
-    /// /m_height;
-    //	GLfloat zoomFactor = (cw > ch ? ch : cw) / 2;
-    //	GLfloat dX = realWidth*zoomFactor;
-    //	GLfloat dY = m_height*zoomFactor;
-
-    //	glFunc->glColor4f(1, 1, 1, m_texAlpha);
-    //	glFunc->glBegin(GL_QUADS);
-    //	glFunc->glTexCoord2f(0, 1); glFunc->glVertex2f(-dX, -dY);
-    //	glFunc->glTexCoord2f(1, 1); glFunc->glVertex2f( dX, -dY);
-    //	glFunc->glTexCoord2f(1, 0); glFunc->glVertex2f( dX,  dY);
-    //	glFunc->glTexCoord2f(0, 0); glFunc->glVertex2f(-dX,  dY);
-    //	glFunc->glEnd();
-    //}
-    // texture.release();
-
-    // glFunc->glPopAttrib();
-    // glFunc->glPopAttrib();
 }
 
 void ccImage::setAlpha(float value) {
@@ -215,4 +177,123 @@ bool ccImage::fromFile_MeOnly(QFile& in,
     inStream >> fakeString;  // formerly: 'complete filename'
 
     return true;
+}
+
+// --- DA3 depth estimation ---
+
+#ifdef DA3_ENABLED
+#include "da_capi.h"
+#include <QDir>
+#include <QTemporaryFile>
+#include <cstring>
+#endif
+
+bool ccImage::estimateDepth(const QString& model_path, int n_threads,
+                            DepthResult& out,
+                            const QString& metric_model_path) const {
+#ifndef DA3_ENABLED
+    Q_UNUSED(model_path);
+    Q_UNUSED(n_threads);
+    Q_UNUSED(out);
+    Q_UNUSED(metric_model_path);
+    return false;
+#else
+    if (m_image.isNull()) return false;
+
+    QTemporaryFile tmp;
+    tmp.setFileTemplate(QDir::tempPath() + "/ccImage_XXXXXX.png");
+    if (!tmp.open()) return false;
+    m_image.save(&tmp, "PNG");
+    tmp.close();
+
+    const int threads = n_threads > 0 ? n_threads : 1;
+    da_ctx* ctx = metric_model_path.isEmpty()
+        ? da_capi_load(model_path.toStdString().c_str(), threads)
+        : da_capi_load_nested(model_path.toStdString().c_str(),
+                              metric_model_path.toStdString().c_str(), threads);
+    if (!ctx) return false;
+
+    int h = 0, w = 0;
+    float* depth = da_capi_depth_path(ctx, tmp.fileName().toStdString().c_str(),
+                                      &h, &w);
+    if (!depth) {
+        da_capi_free(ctx);
+        return false;
+    }
+
+    out.width = w;
+    out.height = h;
+    out.depth.assign(depth, depth + h * w);
+    out.has_pose = false;
+    da_capi_free_floats(depth);
+    da_capi_free(ctx);
+    return true;
+#endif
+}
+
+bool ccImage::estimateDepthAndPose(const QString& model_path, int n_threads,
+                                   DepthResult& out,
+                                   const QString& metric_model_path) const {
+#ifndef DA3_ENABLED
+    Q_UNUSED(model_path);
+    Q_UNUSED(n_threads);
+    Q_UNUSED(out);
+    Q_UNUSED(metric_model_path);
+    return false;
+#else
+    if (m_image.isNull()) return false;
+
+    QTemporaryFile tmp;
+    tmp.setFileTemplate(QDir::tempPath() + "/ccImage_XXXXXX.png");
+    if (!tmp.open()) return false;
+    m_image.save(&tmp, "PNG");
+    tmp.close();
+
+    const int threads = n_threads > 0 ? n_threads : 1;
+    da_ctx* ctx = metric_model_path.isEmpty()
+        ? da_capi_load(model_path.toStdString().c_str(), threads)
+        : da_capi_load_nested(model_path.toStdString().c_str(),
+                              metric_model_path.toStdString().c_str(), threads);
+    if (!ctx) return false;
+
+    int h = 0, w = 0, is_metric = 0;
+    float* depth_ptr = nullptr;
+    float* conf_ptr = nullptr;
+    float* sky_ptr = nullptr;
+    float ext[12] = {}, intr[9] = {};
+
+    int ret = da_capi_depth_dense(ctx,
+                                  tmp.fileName().toStdString().c_str(),
+                                  &h, &w, &depth_ptr, &conf_ptr, &sky_ptr,
+                                  ext, intr, &is_metric);
+    if (ret != 0 || !depth_ptr) {
+        da_capi_free(ctx);
+        return false;
+    }
+
+    out.width = w;
+    out.height = h;
+    out.depth.assign(depth_ptr, depth_ptr + h * w);
+    if (conf_ptr) {
+        out.confidence.assign(conf_ptr, conf_ptr + h * w);
+        da_capi_free_floats(conf_ptr);
+    }
+    if (sky_ptr) da_capi_free_floats(sky_ptr);
+
+    out.has_pose = true;
+    std::memcpy(out.extrinsics, ext, sizeof(ext));
+    std::memcpy(out.intrinsics, intr, sizeof(intr));
+
+    da_capi_free_floats(depth_ptr);
+    da_capi_free(ctx);
+    return true;
+#endif
+}
+
+bool ccImage::isDA3Available() {
+#ifdef DA3_ENABLED
+    return true;
+#else
+    return false;
+#endif
 }

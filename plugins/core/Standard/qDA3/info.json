@@ -1,0 +1,22 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "Depth Anything V3 (DA3)",
+  "icon": ":/CC/plugin/qDA3/images/qDA3.svg",
+  "description": "Depth Anything V3 monocular depth estimation plugin using ggml inference. Supports depth map generation, COLMAP sparse model export, and integration with the reconstruction pipeline.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "Depth Anything V3: https://github.com/DepthAnything/Depth-Anything-V3"
+    }
+  ]
+}

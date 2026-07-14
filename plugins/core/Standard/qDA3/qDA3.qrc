@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qDA3">
+        <file>info.json</file>
+        <file>images/qDA3.svg</file>
+    </qresource>
+</RCC>

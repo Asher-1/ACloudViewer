@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="depthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a237e;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#4fc3f7;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#e1f5fe;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="8" fill="url(#depthGrad)"/>
+  <text x="32" y="28" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">DA3</text>
+  <text x="32" y="46" font-family="Arial,sans-serif" font-size="9" fill="white" text-anchor="middle">Depth</text>
+</svg>
