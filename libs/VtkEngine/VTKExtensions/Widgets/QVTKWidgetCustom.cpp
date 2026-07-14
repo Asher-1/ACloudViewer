@@ -1405,11 +1405,16 @@ void QVTKWidgetCustom::paintGL() {
         }
         label->update2DLabelView(context, false);
         if (!label->overlayValid()) {
-            CVLog::Warning(
-                    "[paintGL] label '%s' overlay INVALID after "
-                    "update2DLabelView (dispIn2D=%d pts=%d)",
-                    qPrintable(label->getName()), label->isDisplayedIn2D(),
-                    static_cast<int>(label->size()));
+            // 3D-mode labels (dispIn2D=false) do not produce QPainter
+            // overlay data — they render via VTK's 3D pipeline instead.
+            // Only warn for labels that SHOULD have valid overlay data.
+            if (label->isDisplayedIn2D()) {
+                CVLog::Warning(
+                        "[paintGL] label '%s' overlay INVALID after "
+                        "update2DLabelView (pts=%d)",
+                        qPrintable(label->getName()),
+                        static_cast<int>(label->size()));
+            }
             continue;
         }
         ++validCount;

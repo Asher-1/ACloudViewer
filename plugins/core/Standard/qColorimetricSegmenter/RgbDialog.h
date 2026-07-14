@@ -31,6 +31,7 @@
 #include <QDialog>
 
 class ccPickingHub;
+
 /*
         Get the values of the RGB interface, and interactions
 */
@@ -42,16 +43,19 @@ public:
     explicit RgbDialog(ccPickingHub* pickingHub, QWidget* parent = nullptr);
 
     //! Inherited from ccPickingListener
-    virtual void onItemPicked(const PickedItem& pi);
+    void onItemPicked(const PickedItem& pi) override;
 
 public slots:
     void pickPoint_first(bool);
     void pickPoint_second(bool);
 
-protected:  // members
-    //! Picking window (if any)
-    QWidget* m_pickingWin;
+protected slots:
+    void storeParameters();
 
-    //! Picking hub
+protected:  // methods
+    void updateFirstColorButton();
+    void updateSecondColorButton();
+
+protected:  // members
     ccPickingHub* m_pickingHub;
 };

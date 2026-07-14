@@ -48,6 +48,12 @@ vtkPVInteractorStyle::~vtkPVInteractorStyle()
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::RemoveAllManipulators()
 {
+  if (this->CurrentManipulator)
+  {
+    this->CurrentManipulator->EndInteraction();
+    this->CurrentManipulator->UnRegister(this);
+    this->CurrentManipulator = NULL;
+  }
   this->CameraManipulators->RemoveAllItems();
 }
 

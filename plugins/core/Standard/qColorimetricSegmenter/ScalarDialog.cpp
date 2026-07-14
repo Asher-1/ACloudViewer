@@ -8,32 +8,25 @@
 #include "ScalarDialog.h"
 
 // common
+#include <CVLog.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvPickingHub.h>
 
 // Qt
 #include <QCheckBox>
 
-/*
-        Constructor
-*/
 ScalarDialog::ScalarDialog(ccPickingHub* pickingHub, QWidget* parent)
-    : QDialog(parent),
-      Ui::ScalarDialog(),
-      m_pickingWin(0),
-      m_pickingHub(pickingHub) {
+    : QDialog(parent), Ui::ScalarDialog(), m_pickingHub(pickingHub) {
     assert(pickingHub);
 
     setModal(false);
     setupUi(this);
 
-    // Link between Ui and actions
     connect(pointPickingButton_first, &QCheckBox::toggled, this,
             &ScalarDialog::pickPoint_first);
     connect(pointPickingButton_second, &QCheckBox::toggled, this,
             &ScalarDialog::pickPoint_second);
 
-    // auto disable picking mode on quit
     connect(this, &QDialog::finished, [&]() {
         if (pointPickingButton_first->isChecked())
             pointPickingButton_first->setChecked(false);
@@ -42,9 +35,6 @@ ScalarDialog::ScalarDialog(ccPickingHub* pickingHub, QWidget* parent)
     });
 }
 
-/*
-        Method for the first picking point functionnality
-*/
 void ScalarDialog::pickPoint_first(bool state) {
     if (!m_pickingHub) {
         return;
@@ -64,9 +54,6 @@ void ScalarDialog::pickPoint_first(bool state) {
     pointPickingButton_first->blockSignals(false);
 }
 
-/*
-        Method for the second picking point functionnality
-*/
 void ScalarDialog::pickPoint_second(bool state) {
     if (!m_pickingHub) {
         return;
@@ -86,35 +73,35 @@ void ScalarDialog::pickPoint_second(bool state) {
     pointPickingButton_second->blockSignals(false);
 }
 
-/*
-        Method applied after a point is picked by picking point functionnality
-*/
 void ScalarDialog::onItemPicked(const PickedItem& pi) {
-    assert(pi.entity);
-    m_pickingWin = m_pickingHub->activeWindow();
+    if (!pi.entity || !m_pickingHub) {
+        return;
+    }
 
     if (pi.entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        if (static_cast<ccGenericPointCloud*>(pi.entity)->hasScalarFields()) {
-            // Get RGB values of the picked point
-            ccGenericPointCloud* cloud =
-                    static_cast<ccGenericPointCloud*>(pi.entity);
+        ccGenericPointCloud* cloud =
+                static_cast<ccGenericPointCloud*>(pi.entity);
+        if (cloud->hasDisplayedScalarField()) {
             const ScalarType scalarValue =
                     cloud->getPointScalarValue(pi.itemIndex);
-            if (pointPickingButton_first->isChecked()) {
-                CVLog::Print("Point picked from first point picker");
+            CVLog::Print(QString("%0 point picked: %1 - SF value = %2")
+                                 .arg(pointPickingButton_first->isChecked()
+                                              ? "First"
+                                              : "Second")
+                                 .arg(pi.itemIndex)
+                                 .arg(scalarValue));
 
+            if (pointPickingButton_first->isChecked()) {
                 first->setValue(scalarValue);
 
                 pointPickingButton_first->setChecked(false);
             } else {
-                CVLog::Print("Point picked from second point picker");
-
                 second->setValue(scalarValue);
 
                 pointPickingButton_second->setChecked(false);
             }
         } else {
-            CVLog::Print("The point cloud hasn't any scalar field.");
+            CVLog::Print("This point cloud doesn't have an active scalar field");
         }
     }
 }

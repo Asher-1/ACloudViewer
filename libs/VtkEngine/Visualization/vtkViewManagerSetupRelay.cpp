@@ -39,8 +39,14 @@ static void typedSingletonRelay(ecvViewManager* mgr,
                      &ecvViewManager::pickCenterOfRotation);
     QObject::connect(glView, &vtkGLView::exclusiveFullScreenToggled, mgr,
                      &ecvViewManager::exclusiveFullScreenToggled);
-    QObject::connect(glView, &vtkGLView::itemPicked, mgr,
-                     &ecvViewManager::itemPicked);
+    // NOTE: Do NOT relay glView::itemPicked → mgr::itemPicked here.
+    // installDisplayToolsBridge already bridges ecvDisplayTools::itemPicked
+    // → ecvViewManager::itemPicked.  vtkGLView::initVtkPipeline also relays
+    // ecvDisplayTools::itemPicked → vtkGLView::itemPicked (for plugins that
+    // connect to the per-view signal, e.g. qBroom).  Adding a THIRD relay
+    // here would cause duplicate delivery: ccPickingHub::processPickedItem
+    // runs twice per pick, breaking multi-point label accumulation (Distance
+    // needs exactly 2 picks, Area needs exactly 3).
     QObject::connect(
             glView,
             QOverload<int, int, Qt::MouseButtons>::of(&vtkGLView::mouseMoved),
