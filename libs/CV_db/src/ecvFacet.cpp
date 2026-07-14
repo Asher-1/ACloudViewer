@@ -192,15 +192,6 @@ ccFacet* ccFacet::Create(cloudViewer::GenericIndexedCloudPersist* cloud,
     ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);
     if (pc) {
         facet->setName(pc->getName() + QString(".facet"));
-        if (facet->getPolygon()) {
-            facet->getPolygon()->setOpacity(0.5f);
-            facet->getPolygon()->setTempColor(ecvColor::darkGrey);
-        }
-        if (facet->getContour()) {
-            facet->getContour()->setColor(ecvColor::green);
-            facet->getContour()->showColors(true);
-        }
-
         if (transferOwnership) {
             pc->setName(DEFAULT_ORIGIN_POINTS_NAME);
             pc->setEnabled(false);
@@ -208,6 +199,16 @@ ccFacet* ccFacet::Create(cloudViewer::GenericIndexedCloudPersist* cloud,
             facet->addChild(pc);
             facet->setOriginPoints(pc);
         }
+
+        // In CC, setDisplay(nullptr) means "no specific display" (show
+        // everywhere).  In ACV, setDisplay(nullptr) sets
+        // m_displayBindingExplicit=true with an empty display list, making
+        // the entity invisible in ALL windows.  Guard with a null check to
+        // preserve CC semantics: only propagate when an actual display exists.
+        if (pc->getDisplay()) {
+            facet->setDisplay_recursive(pc->getDisplay());
+        }
+        facet->setMetaData("RMS", facet->getRMS());
     }
 
     return facet;

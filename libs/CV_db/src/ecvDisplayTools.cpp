@@ -921,6 +921,33 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
         }
     }
 
+    if (!pickedEntity &&
+        (params.mode == ENTITY_PICKING || params.mode == ENTITY_RECT_PICKING ||
+         params.mode == FAST_PICKING)) {
+        ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
+        if (!pickView) pickView = ecvViewManager::instance().getActiveView();
+        if (pickView) {
+            QString viewID =
+                    pickView->pickObject(static_cast<double>(params.centerX),
+                                         static_cast<double>(params.centerY));
+            if (!viewID.isEmpty() && viewID != QStringLiteral("-1")) {
+                unsigned int uid = viewID.toUInt();
+                ccHObject* sceneDB = pickView->getSceneDB();
+                ccHObject* localDB = pickView->getOwnDB();
+                if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
+                if (!localDB) localDB = primaryDT()->m_winDBRoot;
+                if (params.pickInSceneDB && sceneDB)
+                    pickedEntity = sceneDB->find(uid);
+                if (!pickedEntity && params.pickInLocalDB && localDB)
+                    pickedEntity = localDB->find(uid);
+                if (pickedEntity) {
+                    selectedID = pickedEntity->getUniqueID();
+                    selectedIDs.insert(selectedID);
+                }
+            }
+        }
+    }
+
     if (pickedEntity && pickedItemIndex >= 0 &&
         pickedEntity->isKindOf(CV_TYPES::POINT_CLOUD)) {
         ccGenericPointCloud* tempEntity =

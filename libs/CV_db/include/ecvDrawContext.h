@@ -590,6 +590,13 @@ struct ccGLDrawContext {
     TransformInfo transformInfo;  ///< Transformation information
     ecvTextParam textParam;       ///< Text rendering parameters
 
+    /// Accumulated GL transformation from ancestor setGLTransformation calls.
+    /// In CC's OpenGL path this is handled by glPushMatrix/glMultMatrix;
+    /// VTK has no implicit matrix stack, so we maintain it explicitly here.
+    /// VtkDisplayTools applies this to each VTK actor via SetUserTransform.
+    ccGLMatrix glTransAccum;
+    bool hasGLTransAccum = false;
+
     QString viewID;       ///< View identifier
     int defaultViewPort;  ///< Default viewport index
     int normalDensity;    ///< Normal vector display density (%)

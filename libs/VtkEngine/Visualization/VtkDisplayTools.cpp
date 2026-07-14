@@ -894,7 +894,17 @@ void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         return;
     }
 
+    // Apply accumulated GL transformation from ancestor
+    // setGLTransformation calls.  This mirrors OpenGL's glMultMatrix
+    // applied before each entity in CC's rendering path.
     if (vis) {
+        std::string viewID = CVTools::FromQString(context.viewID);
+        if (context.hasGLTransAccum) {
+            vis->applyGLTransform(context.glTransAccum, viewID,
+                                  context.defaultViewPort);
+        } else {
+            vis->clearGLTransform(viewID, context.defaultViewPort);
+        }
         vis->resetCameraClippingRange(context.defaultViewPort);
     }
 }

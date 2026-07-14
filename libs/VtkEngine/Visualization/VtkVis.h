@@ -450,6 +450,13 @@ public:
                      const cloudViewer::geometry::LineSet* lineset);
 
     void transformEntities(const CC_DRAW_CONTEXT& context);
+    /// Apply accumulated GL transformation (from ccHObject::setGLTransformation
+    /// hierarchy) to a VTK actor.  Mirrors OpenGL's glMultMatrix behaviour.
+    void applyGLTransform(const ccGLMatrix& glTrans,
+                          const std::string& viewID,
+                          int viewport);
+    /// Clear any previously set GL user-transform on a VTK actor.
+    void clearGLTransform(const std::string& viewID, int viewport);
     vtkSmartPointer<vtkTransform> getTransformation(
             const CC_DRAW_CONTEXT& context, const CCVector3d& origin);
     void updateNormals(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud);

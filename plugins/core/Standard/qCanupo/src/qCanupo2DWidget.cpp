@@ -7,6 +7,7 @@
 
 #include "qCanupo2DWidget.h"
 
+#include <QtCompat.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 
@@ -234,17 +235,15 @@ void qCanupo2DWidget::wheelEvent(QWheelEvent* event) {
     double factor = (event->angleDelta().y() > 0) ? 1.15 : (1.0 / 1.15);
 
     // Remember world position under cursor before zoom
-    QPointF worldPos =
-            screenToWorld(event->position().x(), event->position().y());
+    const QPointF pos = qtCompatWheelEventPos(event);
+    QPointF worldPos = screenToWorld(pos.x(), pos.y());
 
     m_scale *= factor;
 
     // After scaling, recalculate what world position the cursor now maps to,
     // then shift the center so the original world point stays under the cursor.
-    double newWx =
-            (event->position().x() - width() / 2.0) / m_scale + m_centerX;
-    double newWy =
-            (height() / 2.0 - event->position().y()) / m_scale + m_centerY;
+    double newWx = (pos.x() - width() / 2.0) / m_scale + m_centerX;
+    double newWy = (height() / 2.0 - pos.y()) / m_scale + m_centerY;
     m_centerX += (worldPos.x() - newWx);
     m_centerY += (worldPos.y() - newWy);
 

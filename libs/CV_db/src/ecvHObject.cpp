@@ -667,6 +667,17 @@ bool ccHObject::addChild(ccHObject* child,
     if ((dependencyFlags & DP_PARENT_OF_OTHER) == DP_PARENT_OF_OTHER) {
         child->setParent(this);
         if (child->isShareable()) dynamic_cast<CCShareable*>(child)->link();
+        if (!child->getDisplay()) {
+            ecvGenericGLDisplay* parentDisp = getDisplay();
+            // Only propagate when the parent has an actual display.
+            // setDisplay(nullptr) in ACV sets m_displayBindingExplicit=true
+            // with an empty display list, making the child invisible in
+            // ALL windows — the opposite of the intended "inherit parent"
+            // behavior.
+            if (parentDisp) {
+                child->setDisplay_recursive(parentDisp);
+            }
+        }
     }
 
     return true;
@@ -1651,10 +1662,19 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         context.viewID = getViewId();
     }
 
+    // Save GL transform accumulator state before this node potentially
+    // pushes its own transform. Restored after children are drawn.
+    const ccGLMatrix savedGLTransAccum = context.glTransAccum;
+    const bool savedHasGLTransAccum = context.hasGLTransAccum;
+
     if (draw3D) {
-        // apply 3D 'temporary' transformation (for display only)
         if (m_glTransEnabled) {
-            // context.transformInfo.setRotMat(m_glTrans);
+            if (context.hasGLTransAccum) {
+                context.glTransAccum = context.glTransAccum * m_glTrans;
+            } else {
+                context.glTransAccum = m_glTrans;
+            }
+            context.hasGLTransAccum = true;
         }
 
         // LOD for clouds is enabled?
@@ -1835,6 +1855,10 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         context.viewID = getViewId();
         hideBB(context);
     }
+
+    // Restore GL transform accumulator (pop the matrix stack).
+    context.glTransAccum = savedGLTransAccum;
+    context.hasGLTransAccum = savedHasGLTransAccum;
 
     setRedraw(true);
     setForceRedraw(false);

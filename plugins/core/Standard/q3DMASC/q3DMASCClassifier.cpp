@@ -286,8 +286,15 @@ bool Classifier::classify(const Feature::Source::Set& featureSources,
 
     if (classifSFBackup != nullptr) {
         if (app) {
+            std::vector<ScalarType> actual(classifSFBackup->size());
+            std::vector<ScalarType> predicted(classificationSF->size());
+            for (unsigned i = 0; i < actual.size(); ++i) {
+                actual[i] = classifSFBackup->getValue(i);
+                predicted[i] = classificationSF->getValue(i);
+            }
             ConfusionMatrix* confusionMatrix =
-                    new ConfusionMatrix(*classifSFBackup, *classificationSF);
+                    new ConfusionMatrix(actual, predicted);
+            confusionMatrix->show();
         }
     }
 

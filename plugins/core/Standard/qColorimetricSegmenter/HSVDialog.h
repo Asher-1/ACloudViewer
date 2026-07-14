@@ -32,9 +32,7 @@
 
 class ccPickingHub;
 
-/*
-        Get the values of the HSV interface, and interactions
-*/
+//! Get the values of the HSV interface, and interactions
 class HSVDialog : public QDialog,
                   public ccPickingListener,
                   public Ui::HSVDialog {
@@ -43,13 +41,18 @@ public:
     explicit HSVDialog(ccPickingHub* pickingHub, QWidget* parent = nullptr);
 
     //! Inherited from ccPickingListener
-    virtual void onItemPicked(const PickedItem& pi);
+    void onItemPicked(const PickedItem& pi) override;
 
 public slots:
     void pickPoint(bool);
     void updateValues();
 
+protected slots:
+    void storeParameters();
+
+protected:  // methods
+    void updateColorButton();
+
 protected:  // members
-    //! Picking hub
     ccPickingHub* m_pickingHub;
 };

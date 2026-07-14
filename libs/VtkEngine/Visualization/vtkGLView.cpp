@@ -282,6 +282,9 @@ vtkGLView* vtkGLView::Create(QMainWindow* parent,
     ecvGenericGLDisplay::RegisterGLDisplay(view->m_vtkWidget, view);
     ecvViewManager::instance().registerView(view);
 
+    view->setPickingMode(DEFAULT_PICKING);
+    view->setInteractionMode(MODE_TRANSFORM_CAMERA);
+
     if (Visualization::VtkVis* vis = view->getVisualizer3D()) {
         vis->setUndoManager(ecvViewManager::instance().undoManager());
     }
@@ -389,6 +392,25 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
     });
+
+    // Relay picking signals from the singleton ecvDisplayTools to this
+    // per-view vtkGLView.  Plugins connect to signalSource() (== this),
+    // but ProcessPickingResult() emits from the singleton.  Without this
+    // relay, embedded views (e.g. qBroom) never receive itemPicked.
+    // The filter ensures only the view that initiated the pick re-emits.
+    connect(m_displayTools, &ecvDisplayTools::itemPicked, this,
+            [this](ccHObject* entity, unsigned subEntityID, int x, int y,
+                   const CCVector3& P) {
+                if (m_displayTools->m_pickingTargetView == this) {
+                    emit itemPicked(entity, subEntityID, x, y, P);
+                }
+            });
+    connect(m_displayTools, &ecvDisplayTools::itemPickedFast, this,
+            [this](ccHObject* entity, int subEntityID, int x, int y) {
+                if (m_displayTools->m_pickingTargetView == this) {
+                    emit itemPickedFast(entity, subEntityID, x, y);
+                }
+            });
 
     connect(
             &ecvRepresentationManager::instance(),
@@ -1156,8 +1178,25 @@ void vtkGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     } else {
         m_winDBRoot->addChild(obj);
     }
-    // ownDB entities are always rendered via skipDisplayCheck in the draw
-    // context. No need to modify the entity's global display binding.
+    // WARNING: Do NOT call obj->setDisplay(this) here!
+    //
+    // Unlike CloudCompare's ccGLWindowInterface::addToOwnDB which calls
+    // setDisplay(this), we must NOT rebind the entity's display in
+    // ACloudViewer.
+    //
+    // Reason: in comparative / split-view scenarios an entity from the global
+    // DB can be temporarily added to a secondary view's ownDB for overlay
+    // rendering (e.g. comparative showing).  If we called setDisplay(this),
+    // the entity's global display binding would be overwritten to point at the
+    // secondary view.  When that secondary view is closed, the entity would
+    // lose its valid display reference, causing it to disappear from the
+    // primary view's normal draw pass (which checks isDisplayedIn()).
+    //
+    // The ownDB draw path already sets skipDisplayCheck = true in the draw
+    // context, so entities render in this view regardless of their display
+    // binding.  Plugins that need an explicit binding (e.g. qBroom's embedded
+    // view) should call obj->setDisplay(m_glView) themselves before or after
+    // addToOwnDB — that is the caller's responsibility, not ours.
     obj->setRedrawFlagRecursive(true);
     obj->setForceRedrawRecursive(true);
     ecvViewManager::instance().invalidateLabelCache();
@@ -1249,6 +1288,44 @@ void vtkGLView::syncVtkCameraToContext() {
     m_ctx.validModelviewMatrix = true;
     m_ctx.validProjectionMatrix = true;
 
+    // Sync viewportParams.viewMat from VTK camera's view transform.
+    //
+    // VTK's GetViewTransformMatrix() returns the world→camera rotation
+    // with camera axes as rows (right, up, backward).  CC's viewMat
+    // stores the same layout in column-major order.  This must be kept
+    // in sync because:
+    //   - qBroom drag uses viewMat.transposed().applyRotation(u) to
+    //     convert screen-space displacement to world-space
+    //   - getCurrentViewDir() reads viewMat row 2 for the view direction
+    //   - setView() relies on viewMat matching the actual VTK camera
+    //
+    // Without this sync, after any VTK-driven camera rotation the
+    // viewMat is stale, causing broom drag to move in wrong directions.
+    {
+        vtkMatrix4x4* vm = cam->GetViewTransformMatrix();
+        double* vd = m_ctx.viewportParams.viewMat.data();
+        for (int col = 0; col < 3; ++col) {
+            for (int row = 0; row < 3; ++row) {
+                vd[col * 4 + row] = vm->GetElement(row, col);
+            }
+        }
+        vd[3] = vd[7] = vd[11] = 0.0;
+        vd[12] = vd[13] = vd[14] = 0.0;
+        vd[15] = 1.0;
+    }
+
+    // Sync camera position, up, and focal from VTK.
+    {
+        double pos[3], foc[3], up[3];
+        cam->GetPosition(pos);
+        cam->GetFocalPoint(foc);
+        cam->GetViewUp(up);
+        m_ctx.viewportParams.setCameraCenter(CCVector3d(pos[0], pos[1], pos[2]),
+                                             false);
+        m_ctx.viewportParams.up = CCVector3d(up[0], up[1], up[2]);
+        m_ctx.viewportParams.focal = CCVector3d(foc[0], foc[1], foc[2]);
+    }
+
     // Sync perspective state
     bool vtkParallel = (cam->GetParallelProjection() != 0);
     m_ctx.viewportParams.perspectiveView = !vtkParallel;
@@ -1283,10 +1360,12 @@ void vtkGLView::syncVtkCameraToContext() {
 void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     if (!m_vtkWidget) return;
 
-    // If matrices haven't been synced yet, do a live sync from VTK camera.
-    if (!m_ctx.validModelviewMatrix || !m_ctx.validProjectionMatrix) {
-        const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
-    }
+    // Always re-sync from VTK camera.  The valid flags are set after our
+    // own redraw(), but VTK-driven camera changes (e.g. trackball
+    // rotation through the VTK interactor) update the VTK camera without
+    // calling our redraw().  Without a live sync, the projection matrices
+    // are stale and trianglePicking / unproject produce wrong results.
+    const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
 
     const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
     params.viewport[0] = 0;
@@ -1426,6 +1505,22 @@ vtkGLView::INTERACTION_FLAGS vtkGLView::getInteractionMode() const {
 }
 
 void vtkGLView::setPickingMode(PICKING_MODE mode) {
+    switch (mode) {
+        case DEFAULT_PICKING:
+            mode = ENTITY_PICKING;
+            [[fallthrough]];
+        case NO_PICKING:
+        case ENTITY_PICKING:
+            break;
+        case ENTITY_RECT_PICKING:
+        case FAST_PICKING:
+        case POINT_PICKING:
+        case TRIANGLE_PICKING:
+        case POINT_OR_TRIANGLE_PICKING:
+        case POINT_OR_TRIANGLE_OR_LABEL_PICKING:
+        case LABEL_PICKING:
+            break;
+    }
     if (!m_ctx.pickingModeLocked && m_ctx.pickingMode != mode) {
         m_ctx.pickingMode = mode;
         emit pickingModeChanged(mode);
@@ -1659,7 +1754,13 @@ QString vtkGLView::pick3DItem(int x, int y) {
 
 QString vtkGLView::pickObject(double x, double y) {
     if (m_visualizer3D) {
-        vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
+        double vtkY = y;
+        if (m_vtkWidget) {
+            int h = m_vtkWidget->height();
+            double dpr = getDevicePixelRatio();
+            vtkY = h * dpr - 1.0 - y;
+        }
+        vtkActor* pickedActor = m_visualizer3D->pickActor(x, vtkY);
         if (pickedActor) {
             return m_visualizer3D->getIdByActor(pickedActor).c_str();
         }

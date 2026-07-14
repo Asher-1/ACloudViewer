@@ -10,56 +10,61 @@
 // Local
 #include "HSV.h"
 
-// CV_CORE_LIB
-#include <ecvPickingHub.h>
-
-// CV_DB_LIB
+// common
+#include <CVLog.h>
 #include <ecvGenericPointCloud.h>
+#include <ecvPickingHub.h>
+#include <ecvQtHelpers.h>
 
 // Qt
 #include <QCheckBox>
 
-/*
-        Constructor
-*/
+// Semi-persistent parameters
+static int s_lastR = 0;
+static int s_lastG = 0;
+static int s_lastB = 0;
+
 HSVDialog::HSVDialog(ccPickingHub* pickingHub, QWidget* parent)
     : QDialog(parent), Ui::HSVDialog(), m_pickingHub(pickingHub) {
     assert(pickingHub);
 
-    setModal(false);
     setupUi(this);
+    setModal(false);
 
-    red->setValue(0);
-    green->setValue(0);
-    blue->setValue(0);
+    red->setValue(s_lastR);
+    green->setValue(s_lastG);
+    blue->setValue(s_lastB);
+    updateValues();  // sync hue/sat/val from restored RGB
 
-    // link between Ui and actions
+    updateColorButton();
+
     connect(pointPickingButton_first, &QCheckBox::toggled, this,
             &HSVDialog::pickPoint);
-    connect(red,
-            static_cast<void (QDoubleSpinBox::*)(double)>(
-                    &QDoubleSpinBox::valueChanged),
-            this, &HSVDialog::updateValues);
-    connect(green,
-            static_cast<void (QDoubleSpinBox::*)(double)>(
-                    &QDoubleSpinBox::valueChanged),
-            this, &HSVDialog::updateValues);
-    connect(blue,
-            static_cast<void (QDoubleSpinBox::*)(double)>(
-                    &QDoubleSpinBox::valueChanged),
-            this, &HSVDialog::updateValues);
+    connect(red, qOverload<int>(&QSpinBox::valueChanged), this,
+            &HSVDialog::updateValues);
+    connect(green, qOverload<int>(&QSpinBox::valueChanged), this,
+            &HSVDialog::updateValues);
+    connect(blue, qOverload<int>(&QSpinBox::valueChanged), this,
+            &HSVDialog::updateValues);
+    connect(this, &QDialog::accepted, this, &HSVDialog::storeParameters);
 
-    // auto disable picking mode on quit
     connect(this, &QDialog::finished, [&]() {
-        // if (pointPickingButton_first->isChecked())
-        // pointPickingButton_first->setChecked(false);
         if (m_pickingHub) m_pickingHub->removeListener(this);
     });
 }
 
-/*
-        Method for the picking point functionnality
-*/
+void HSVDialog::storeParameters() {
+    s_lastR = red->value();
+    s_lastG = green->value();
+    s_lastB = blue->value();
+}
+
+void HSVDialog::updateColorButton() {
+    ccQtHelpers::SetButtonColor(
+            rgbColorToolButton,
+            QColor(red->value(), green->value(), blue->value()));
+}
+
 void HSVDialog::pickPoint(bool state) {
     if (!m_pickingHub) {
         return;
@@ -81,44 +86,50 @@ void HSVDialog::pickPoint(bool state) {
     pointPickingButton_first->blockSignals(false);
 }
 
-/*
-        Method applied after a point is picked by picking point functionnality
-*/
 void HSVDialog::onItemPicked(const PickedItem& pi) {
-    assert(pi.entity);
+    if (!pi.entity || !m_pickingHub) {
+        return;
+    }
 
-    if (pi.entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        // Get RGB values of the picked point
-        ccGenericPointCloud* cloud =
-                static_cast<ccGenericPointCloud*>(pi.entity);
-        const ecvColor::Rgb& rgb = cloud->getPointColor(pi.itemIndex);
-        if (pointPickingButton_first->isChecked()) {
-            CVLog::Print("Point picked");
+    if (pointPickingButton_first->isChecked()) {
+        if (pi.entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+            ccGenericPointCloud* cloud =
+                    static_cast<ccGenericPointCloud*>(pi.entity);
+            if (cloud->hasColors()) {
+                const ecvColor::Rgb& rgb = cloud->getPointColor(pi.itemIndex);
 
-            // blocking signals to avoid updating 2 times hsv values for nothing
-            red->blockSignals(true);
-            green->blockSignals(true);
+                CVLog::Print(QString("Point picked: %1 - color: R=%2 G=%3 B=%4")
+                                     .arg(pi.itemIndex)
+                                     .arg(rgb.r)
+                                     .arg(rgb.g)
+                                     .arg(rgb.b));
 
-            red->setValue(rgb.r);
-            green->setValue(rgb.g);
-            blue->setValue(rgb.b);
+                red->blockSignals(true);
+                green->blockSignals(true);
+                blue->blockSignals(true);
 
-            red->blockSignals(false);
-            green->blockSignals(false);
+                red->setValue(rgb.r);
+                green->setValue(rgb.g);
+                blue->setValue(rgb.b);
 
-            pointPickingButton_first->setChecked(false);
+                red->blockSignals(false);
+                green->blockSignals(false);
+                blue->blockSignals(false);
+
+                updateValues();
+                pointPickingButton_first->setChecked(false);
+            }
         }
     }
 }
 
-/*
-        Method applied after entering a value in RGB text fields
-*/
 void HSVDialog::updateValues() {
     ecvColor::Rgb rgb(red->value(), green->value(), blue->value());
 
-    Hsv hsv_values(rgb);
-    hue_first->setValue(hsv_values.h);
-    sat_first->setValue(hsv_values.s);
-    val_first->setValue(hsv_values.v);
+    Hsv hsv(rgb);
+    hue->setValue(hsv.h);
+    sat->setValue(hsv.s);
+    val->setValue(hsv.v);
+
+    updateColorButton();
 }
