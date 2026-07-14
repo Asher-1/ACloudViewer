@@ -33,6 +33,7 @@ set(FOLDER_NAME "ui")
 
 COLMAP_ADD_SOURCES(
     automatic_reconstruction_widget.h automatic_reconstruction_widget.cc
+    da3_reconstruction_ui_bindings.h da3_reconstruction_ui_bindings.cc
     bundle_adjustment_widget.h bundle_adjustment_widget.cc
     colormaps.h colormaps.cc
     database_management_widget.h database_management_widget.cc

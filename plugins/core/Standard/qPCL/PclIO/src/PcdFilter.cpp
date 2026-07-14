@@ -67,20 +67,19 @@ struct PCDHeader {
 public:
     std::string version;
     std::vector<PCLPointField> fields;
-    int width;
-    int height;
-    int points;
-    PCDDataType datatype;
+    int width = 0;
+    int height = 0;
+    int points = 0;
+    PCDDataType datatype = PCD_DATA_ASCII;
     std::string viewpoint;
-    // helper variables
-    int elementnum;
-    int pointsize;
-    bool has_points;
-    bool has_normals;
-    bool has_colors;
-    bool has_ring;
-    bool has_intensity;
-    bool has_timestamp;
+    int elementnum = 0;
+    int pointsize = 0;
+    bool has_points = false;
+    bool has_normals = false;
+    bool has_colors = false;
+    bool has_ring = false;
+    bool has_intensity = false;
+    bool has_timestamp = false;
 };
 
 bool CheckHeader(PCDHeader& header) {
@@ -1226,7 +1225,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
     int pcd_version;
     int data_type;
     unsigned int data_idx;
-    size_t pointCount = -1;
+    size_t pointCount = 0;
     PCLCloud::Ptr inputCloud(new PCLCloud);
     // Load the given file
     pcl::PCDReader p;
@@ -1244,6 +1243,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
             container.addChild(ccCloud);
             return CC_FERR_NO_ERROR;
         } else {
+            delete ccCloud;
             CVLog::Warning(QString("[PCL] Failed to "
                                    "mannually read %1")
                                    .arg(qPrintable(filename)));
@@ -1271,6 +1271,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
             container.addChild(ccCloud);
             return CC_FERR_NO_ERROR;
         } else {
+            delete ccCloud;
             CVLog::Warning(QString("[PCL] Failed to "
                                    "mannually read %1")
                                    .arg(qPrintable(filename)));

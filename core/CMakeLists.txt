@@ -267,3 +267,6 @@ endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DCV_DEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DCV_DEBUG")
+
+# DA3 (Depth Anything V3) algorithm sub-module
+add_subdirectory(DA3)

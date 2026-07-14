@@ -2251,6 +2251,18 @@ import_3rdparty_library(3rdparty_ransacSD
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
+# ggml: ML inference library for AI model support (DA3, etc.)
+# GGML_ENABLED option is defined in the root CMakeLists.txt
+# NOTE: ggml is NOT added to the global 3rdparty target lists because only
+# DA3Core needs it. DA3Core links 3rdparty_ggml directly (PUBLIC) in
+# core/DA3/CMakeLists.txt, so consumers of DA3Core inherit it transitively.
+if(GGML_ENABLED)
+    include(${CloudViewer_3RDPARTY_DIR}/ggml/ggml.cmake)
+    if(NOT GGML_FOUND)
+        message(WARNING "GGML_ENABLED is ON but ggml build failed — disabling DA3_ENABLED")
+        set(DA3_ENABLED OFF CACHE BOOL "" FORCE)
+    endif()
+endif()
 
 if (BUILD_RECONSTRUCTION)
     # freeimage
