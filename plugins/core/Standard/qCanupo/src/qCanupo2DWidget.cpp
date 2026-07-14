@@ -7,10 +7,9 @@
 
 #include "qCanupo2DWidget.h"
 
+#include <QtCompat.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-
-#include <QtCompat.h>
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -243,10 +242,8 @@ void qCanupo2DWidget::wheelEvent(QWheelEvent* event) {
 
     // After scaling, recalculate what world position the cursor now maps to,
     // then shift the center so the original world point stays under the cursor.
-    double newWx =
-            (pos.x() - width() / 2.0) / m_scale + m_centerX;
-    double newWy =
-            (height() / 2.0 - pos.y()) / m_scale + m_centerY;
+    double newWx = (pos.x() - width() / 2.0) / m_scale + m_centerX;
+    double newWy = (height() / 2.0 - pos.y()) / m_scale + m_centerY;
     m_centerX += (worldPos.x() - newWx);
     m_centerY += (worldPos.y() - newWy);
 

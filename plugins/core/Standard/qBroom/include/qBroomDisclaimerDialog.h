@@ -10,38 +10,34 @@
 
 #include <ui_disclaimerDlg.h>
 
-//qCC_plugins
+// qCC_plugins
 #include <ecvMainAppInterface.h>
 
-//Qt
-#include <QMainWindow>
+// Qt
 #include <QDialog>
+#include <QMainWindow>
 
 //! Dialog for displaying the M3C2/UEB disclaimer
-class DisclaimerDialog : public QDialog, public Ui::DisclaimerDialog
-{
+class DisclaimerDialog : public QDialog, public Ui::DisclaimerDialog {
 public:
-	//! Default constructor
-	DisclaimerDialog(QWidget* parent = nullptr)
-		: QDialog(parent)
-		, Ui::DisclaimerDialog()
-	{
-		setupUi(this);
-	}
+    //! Default constructor
+    DisclaimerDialog(QWidget* parent = nullptr)
+        : QDialog(parent), Ui::DisclaimerDialog() {
+        setupUi(this);
+    }
 };
 
-//whether disclaimer has already been displayed (and accepted) or not
+// whether disclaimer has already been displayed (and accepted) or not
 static bool s_disclaimerAccepted = false;
 
-static bool ShowDisclaimer(ecvMainAppInterface* app)
-{
-	if (!s_disclaimerAccepted)
-	{
-		//if the user "cancels" it, then he refuses the diclaimer!
-		s_disclaimerAccepted = DisclaimerDialog(app ? app->getMainWindow() : 0).exec();
-	}
-	
-	return s_disclaimerAccepted;
+static bool ShowDisclaimer(ecvMainAppInterface* app) {
+    if (!s_disclaimerAccepted) {
+        // if the user "cancels" it, then he refuses the diclaimer!
+        s_disclaimerAccepted =
+                DisclaimerDialog(app ? app->getMainWindow() : 0).exec();
+    }
+
+    return s_disclaimerAccepted;
 }
 
-#endif //QBROOM_DISCLAIMER_DIALOG_HEADER
+#endif  // QBROOM_DISCLAIMER_DIALOG_HEADER

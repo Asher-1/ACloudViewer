@@ -11,33 +11,31 @@
 #include "ecvStdPluginInterface.h"
 
 //! CEA virtual broom plugin
-class qBroom : public QObject, public ccStdPluginInterface
-{
-	Q_OBJECT
-	Q_INTERFACES( ccPluginInterface ccStdPluginInterface )
-	
-	Q_PLUGIN_METADATA( IID "cvcorp.cloudviewer.plugin.qBroom" FILE "../info.json" )
+class qBroom : public QObject, public ccStdPluginInterface {
+    Q_OBJECT
+    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
+
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qBroom" FILE
+                          "../info.json")
 
 public:
+    //! Default constructor
+    explicit qBroom(QObject* parent = nullptr);
 
-	//! Default constructor
-	explicit qBroom(QObject* parent = nullptr);
+    virtual ~qBroom() = default;
 
-	virtual ~qBroom() = default;
-
-	//inherited from ccStdPluginInterface
-	virtual void onNewSelection(const ccHObject::Container& selectedEntities) override;
-	virtual QList<QAction *> getActions() override;
-
-protected:
-
-	//! Slot called when associated ation is triggered
-	void doAction();
+    // inherited from ccStdPluginInterface
+    virtual void onNewSelection(
+            const ccHObject::Container& selectedEntities) override;
+    virtual QList<QAction*> getActions() override;
 
 protected:
+    //! Slot called when associated ation is triggered
+    void doAction();
 
-	//! Associated action
-	QAction* m_action;
+protected:
+    //! Associated action
+    QAction* m_action;
 };
 
-#endif //Q_BROOM_PLUGIN_HEADER
+#endif  // Q_BROOM_PLUGIN_HEADER

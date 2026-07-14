@@ -80,15 +80,16 @@ void RgbDialog::storeParameters() {
 }
 
 void RgbDialog::updateFirstColorButton() {
-    ccQtHelpers::SetButtonColor(
-            firstColorToolButton,
-            QColor(red_first->value(), green_first->value(), blue_first->value()));
+    ccQtHelpers::SetButtonColor(firstColorToolButton,
+                                QColor(red_first->value(), green_first->value(),
+                                       blue_first->value()));
 }
 
 void RgbDialog::updateSecondColorButton() {
     ccQtHelpers::SetButtonColor(
             secondColorToolButton,
-            QColor(red_second->value(), green_second->value(), blue_second->value()));
+            QColor(red_second->value(), green_second->value(),
+                   blue_second->value()));
 }
 
 void RgbDialog::pickPoint_first(bool state) {

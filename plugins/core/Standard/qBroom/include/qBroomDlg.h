@@ -10,15 +10,16 @@
 
 #include "ui_broomDlg.h"
 
-//CCCoreLib
+// CCCoreLib
 #include <CVGeom.h>
 
-//qCC_db
+// qCC_db
 #include <ecvGLMatrix.h>
 
-//system
-#include <vector>
+// system
 #include <stdint.h>
+
+#include <vector>
 
 class ccHObject;
 class ccGenericPointCloud;
@@ -33,262 +34,264 @@ class ecvMainAppInterface;
 class RGBAColorsTableType;
 
 //! Dialog for the qBroom plugin
-class qBroomDlg : public QDialog, public Ui::BroomDialog
-{
-	Q_OBJECT
+class qBroomDlg : public QDialog, public Ui::BroomDialog {
+    Q_OBJECT
 
 public:
+    //! Default constructor
+    explicit qBroomDlg(ecvMainAppInterface* app = nullptr);
 
-	//! Default constructor
-	explicit qBroomDlg(ecvMainAppInterface* app = nullptr);
+    //! Destructor
+    virtual ~qBroomDlg();
 
-	//! Destructor
-	virtual ~qBroomDlg();
+    //! Sets associated point cloud
+    /** \warning The cloud should already have an associated octree structure.
+            If not, the octree will be computed and the method may return false
+    (if an error occurs).
+    **/
+    bool setCloud(ccPointCloud* cloud,
+                  bool ownCloud = false,
+                  bool autoRedraw = true);
 
-	//! Sets associated point cloud
-	/** \warning The cloud should already have an associated octree structure.
-		If not, the octree will be computed and the method may return false (if
-		an error occurs).
-	**/
-	bool setCloud(ccPointCloud* cloud, bool ownCloud = false, bool autoRedraw = true);
-
-	//! Returns the embedded GL view
-	ecvGenericGLDisplay* getGLView() const { return m_glView; }
+    //! Returns the embedded GL view
+    ecvGenericGLDisplay* getGLView() const { return m_glView; }
 
 public slots:
 
-	//! Handles picked item (points)
-	void handlePickedItem(ccHObject*, unsigned, int, int, const CCVector3&);
+    //! Handles picked item (points)
+    void handlePickedItem(ccHObject*, unsigned, int, int, const CCVector3&);
 
-	//! Slot called when the left mouse button is clicked (on the 3D view)
-	void onLeftButtonClicked(int, int);
-	//! Slot called when the mouse is displaced over the 3D view
-	void onMouseMoved(int, int, Qt::MouseButtons);
-	//! Slot called when the mouse is released
-	void onButtonReleased();
+    //! Slot called when the left mouse button is clicked (on the 3D view)
+    void onLeftButtonClicked(int, int);
+    //! Slot called when the mouse is displaced over the 3D view
+    void onMouseMoved(int, int, Qt::MouseButtons);
+    //! Slot called when the mouse is released
+    void onButtonReleased();
 
 protected:
+    //! Slot called when the 'reposition' button is clicked
+    void onReposition();
+    //! Slot called when the 'automate' button is clicked
+    void onAutomate();
 
-	//! Slot called when the 'reposition' button is clicked
-	void onReposition();
-	//! Slot called when the 'automate' button is clicked
-	void onAutomate();
+    //! Slot called when the height of the clean area is modified
+    void onCleanHeightChanged(double);
 
-	//! Slot called when the height of the clean area is modified
-	void onCleanHeightChanged(double);
+    //! Slot called when one of the broom dimensions is modified
+    void onDimensionChanged(double);
 
-	//! Slot called when one of the broom dimensions is modified
-	void onDimensionChanged(double);
+    //! Slot called when the selection mode changes
+    void onSelectionModeChanged(int);
 
-	//! Slot called when the selection mode changes
-	void onSelectionModeChanged(int);
+    //! Undoes the last selection
+    void doUndo() { undo(1); }
+    //! Undoes the last ten selections
+    void doUndo10() { undo(10); }
 
-	//! Undoes the last selection
-	void doUndo() { undo(1); }
-	//! Undoes the last ten selections
-	void doUndo10() { undo(10); }
+    //! Cancels the segmentation process
+    void cancel();
+    //! Applies the segmentation
+    void apply();
+    //! Closes the tool
+    void validate();
 
-	//! Cancels the segmentation process
-	void cancel();
-	//! Applies the segmentation
-	void apply();
-	//! Closes the tool
-	void validate();
+protected:  // methods
+    struct BroomDimensions {
+        PointCoordinateType length, width, thick, height;
+    };
 
-protected: //methods
+    //! Returns the broom dimensions
+    void getBroomDimensions(BroomDimensions& dimensions) const;
 
-	struct BroomDimensions
-	{
-		PointCoordinateType length, width, thick, height;
-	};
+    //! Position the broom (between two points)
+    bool positionBroom(const CCVector3& P0, const CCVector3& P1);
 
-	//! Returns the broom dimensions
-	void getBroomDimensions(BroomDimensions& dimensions) const;
+    //! Displace the broom (either with the mouse or with a know translation)
+    /** \warning Doesn't modify the class state BUT THE UNDO/SELECTION
+    mechanism! \param broomTrans starting position of the broom (updated with
+    the new position on output) \param broomDelta desired displacement (updated
+    with the actual displacement on output) \param stickToTheFloor whether to
+    force the broom to stick to the 'floor' or not \return whether the broom
+    could be displaced or not (e.g. it lost track)
+    **/
+    bool moveBroom(ccGLMatrix& broomTrans,
+                   CCVector3d& broomDelta,
+                   bool stickToTheFloor) const;
 
-	//! Position the broom (between two points)
-	bool positionBroom(const CCVector3& P0, const CCVector3& P1);
+    //! Select the points inside or above/below the broom
+    bool selectPoints(const ccGLMatrix& broomTrans,
+                      BroomDimensions* _broom = nullptr);
 
-	//! Displace the broom (either with the mouse or with a know translation)
-	/** \warning Doesn't modify the class state BUT THE UNDO/SELECTION mechanism!
-		\param broomTrans starting position of the broom (updated with the new position on output)
-		\param broomDelta desired displacement (updated with the actual displacement on output)
-		\param stickToTheFloor whether to force the broom to stick to the 'floor' or not
-		\return whether the broom could be displaced or not (e.g. it lost track)
-	**/
-	bool moveBroom(ccGLMatrix& broomTrans, CCVector3d& broomDelta, bool stickToTheFloor) const;
+    //! Automate the process
+    bool startAutomation();
 
-	//! Select the points inside or above/below the broom
-	bool selectPoints(const ccGLMatrix& broomTrans, BroomDimensions* _broom = nullptr);
+    //! Frrezes most of the UI elements
+    void freezeUI(bool state);
 
-	//! Automate the process
-	bool startAutomation();
+    //! Resets the GUI after the broom points picking process
+    void stopBroomPicking();
 
-	//! Frrezes most of the UI elements
-	void freezeUI(bool state);
+    //! Resets the GUI after the 'automation' button as be clicked
+    void stopAutomation();
 
-	//! Resets the GUI after the broom points picking process
-	void stopBroomPicking();
+    //! Updates the broom representation
+    void updateBroomBox();
+    //! Updates the cleaning are representation
+    void updateSelectionBox();
 
-	//! Resets the GUI after the 'automation' button as be clicked
-	void stopAutomation();
+    //! Selects a given point
+    /** \return whether the point has been actually selected
+     **/
+    bool selectPoint(unsigned index);
 
-	//! Updates the broom representation
-	void updateBroomBox();
-	//! Updates the cleaning are representation
-	void updateSelectionBox();
+    //! Undoes a given number of steps
+    void undo(uint32_t count);
 
-	//! Selects a given point
-	/** \return whether the point has been actually selected
-	**/
-	bool selectPoint(unsigned index);
+    //! Prepares a new 'undo' step
+    uint32_t addUndoStep(const ccGLMatrix& broomPos);
 
-	//! Undoes a given number of steps
-	void undo(uint32_t count);
+    //! Displays an error message
+    void displayError(QString message);
 
-	//! Prepares a new 'undo' step
-	uint32_t addUndoStep(const ccGLMatrix& broomPos);
+    //! Generates the segmented point cloud
+    ccPointCloud* createSegmentedCloud(ccPointCloud* cloud,
+                                       bool removeSelected,
+                                       bool& error);
 
-	//! Displays an error message
-	void displayError(QString message);
+    // inherited from QWidget
+    void closeEvent(QCloseEvent*);
 
-	//! Generates the segmented point cloud
-	ccPointCloud* createSegmentedCloud(ccPointCloud* cloud, bool removeSelected, bool& error);
+    //! Updates the automation area preview polyline
+    void updateAutomationAreaPolyline(int x, int y);
 
-	//inherited from QWidget
-	void closeEvent(QCloseEvent*);
+    //! Saves persistent settings
+    void savePersistentSettings();
 
-	//! Updates the automation area preview polyline
-	void updateAutomationAreaPolyline(int x, int y);
+protected:  // members
+    //! Cloud original state backup structure
+    struct CloudBackup {
+        ccPointCloud* ref;
+        RGBAColorsTableType* colors;
+        bool hadColors;
+        int displayedSFIndex;
+        ecvGenericGLDisplay* originDisplay;
+        bool colorsWereDisplayed;
+        bool sfWasDisplayed;
+        bool wasVisible;
+        bool wasEnabled;
+        bool wasSelected;
+        bool hadOctree;
+        bool ownCloud;
 
-	//! Saves persistent settings
-	void savePersistentSettings();
+        //! Default constructor
+        CloudBackup()
+            : ref(0),
+              colors(0),
+              hadColors(false),
+              displayedSFIndex(-1),
+              originDisplay(0),
+              colorsWereDisplayed(false),
+              sfWasDisplayed(false),
+              wasVisible(false),
+              wasEnabled(false),
+              wasSelected(false),
+              hadOctree(false),
+              ownCloud(false) {}
 
-protected: //members
+        //! Destructor
+        ~CloudBackup() {
+            restore();
+            clear();
+        }
 
-	//! Cloud original state backup structure
-	struct CloudBackup
-	{
-		ccPointCloud* ref;
-		RGBAColorsTableType* colors;
-		bool hadColors;
-		int displayedSFIndex;
-		ecvGenericGLDisplay* originDisplay;
-		bool colorsWereDisplayed;
-		bool sfWasDisplayed;
-		bool wasVisible;
-		bool wasEnabled;
-		bool wasSelected;
-		bool hadOctree;
-		bool ownCloud;
+        //! Backups the given cloud
+        void backup(ccPointCloud* cloud);
 
-		//! Default constructor
-		CloudBackup()
-			: ref(0)
-			, colors(0)
-			, hadColors(false)
-			, displayedSFIndex(-1)
-			, originDisplay(0)
-			, colorsWereDisplayed(false)
-			, sfWasDisplayed(false)
-			, wasVisible(false)
-			, wasEnabled(false)
-			, wasSelected(false)
-			, hadOctree(false)
-			, ownCloud(false)
-		{}
+        //! Backups the colors (not done by default)
+        bool backupColors();
 
-		//! Destructor
-		~CloudBackup() { restore(); clear(); }
+        //! Restores the cloud
+        void restore();
 
-		//! Backups the given cloud
-		void backup(ccPointCloud* cloud);
+        //! Clears the structure
+        void clear();
+    };
 
-		//! Backups the colors (not done by default)
-		bool backupColors();
+    //! Associated cloud (descriptor)
+    CloudBackup m_cloud;
 
-		//! Restores the cloud
-		void restore();
+    //! Dialog's own 3D view
+    ecvGenericGLDisplay* m_glView;
 
-		//! Clears the structure
-		void clear();
-	};
+    //! Broom box
+    ccBox* m_broomBox;
+    //! Selection box
+    ccBox* m_selectionBox;
+    //! Boxes container
+    ccHObject* m_boxes;
 
-	//! Associated cloud (descriptor)
-	CloudBackup m_cloud;
+    //! Picking parameters
+    struct Picking {
+        Picking() : mode(NO_PICKING) {}
+        ~Picking() { clear(); }
 
-	//! Dialog's own 3D view
-	ecvGenericGLDisplay* m_glView;
+        cc2DLabel* addLabel(ccGenericPointCloud* cloud, unsigned pointIndex);
+        void clear();
 
-	//! Broom box
-	ccBox* m_broomBox;
-	//! Selection box
-	ccBox* m_selectionBox;
-	//! Boxes container
-	ccHObject* m_boxes;
+        enum Mode { NO_PICKING, BROOM_PICKING, AUTO_AREA_PICKING };
 
-	//! Picking parameters
-	struct Picking
-	{
-		Picking() : mode(NO_PICKING) {}
-		~Picking() { clear(); }
+        Mode mode;
+        std::vector<cc2DLabel*> labels;
+    };
 
-		cc2DLabel* addLabel(ccGenericPointCloud* cloud, unsigned pointIndex);
-		void clear();
-		
-		enum Mode { NO_PICKING, BROOM_PICKING, AUTO_AREA_PICKING };
-		
-		Mode mode;
-		std::vector<cc2DLabel*> labels;
-	};
+    //! Automation area
+    struct AutomationArea {
+        AutomationArea() : polyline(0) {}
+        ~AutomationArea() { clear(); }
 
-	//! Automation area
-	struct AutomationArea
-	{
-		AutomationArea() : polyline(0) {}
-		~AutomationArea() { clear(); }
+        void clear();
 
-		void clear();
+        ccPolyline* polyline;
+        std::vector<CCVector3> clickedPoints;
+    };
 
-		ccPolyline* polyline;
-		std::vector<CCVector3> clickedPoints;
-	};
+    //!  Current picking parameters
+    Picking m_picking;
 
-	//!  Current picking parameters
-	Picking m_picking;
+    //! Automation area
+    AutomationArea m_autoArea;
 
-	//! Automation area
-	AutomationArea m_autoArea;
+    //! Last mouse cursor position
+    QPoint m_lastMousePos;
+    //! Last click position in 3D
+    CCVector3 m_lastMousePos3D;
+    //! Whether the last click position in 3D is valid or not
+    bool m_hasLastMousePos3D;
+    //! Whether the initial click occurred on the broom or not
+    bool m_broomSelected;
 
-	//! Last mouse cursor position
-	QPoint m_lastMousePos;
-	//! Last click position in 3D
-	CCVector3 m_lastMousePos3D;
-	//! Whether the last click position in 3D is valid or not
-	bool m_hasLastMousePos3D;
-	//! Whether the initial click occurred on the broom or not
-	bool m_broomSelected;
+    //! Selection modes
+    enum SelectionModes {
+        INSIDE = 0,
+        ABOVE = 1,
+        BELOW = 2,
+        ABOVE_AND_BELOW = 3
+    };
 
-	//! Selection modes
-	enum SelectionModes {	INSIDE = 0,
-							ABOVE = 1,
-							BELOW = 2,
-							ABOVE_AND_BELOW = 3
-	};
+    //! Current selection mode
+    SelectionModes m_selectionMode;
 
-	//! Current selection mode
-	SelectionModes m_selectionMode;
+    //! Selection table
+    std::vector<uint32_t> m_selectionTable;
 
-	//! Selection table
-	std::vector<uint32_t> m_selectionTable;
+    //! Positions of the broom (for undo)
+    std::vector<ccGLMatrix> m_undoPositions;
 
-	//! Positions of the broom (for undo)
-	std::vector<ccGLMatrix> m_undoPositions;
+    //! Associated application
+    ecvMainAppInterface* m_app;
 
-	//! Associated application
-	ecvMainAppInterface* m_app;
-
-	//! First cloud
-	ccPointCloud* m_initialCloud;
+    //! First cloud
+    ccPointCloud* m_initialCloud;
 };
 
 #endif

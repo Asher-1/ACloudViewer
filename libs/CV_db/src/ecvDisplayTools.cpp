@@ -921,16 +921,15 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
         }
     }
 
-    if (!pickedEntity && (params.mode == ENTITY_PICKING ||
-                          params.mode == ENTITY_RECT_PICKING ||
-                          params.mode == FAST_PICKING)) {
+    if (!pickedEntity &&
+        (params.mode == ENTITY_PICKING || params.mode == ENTITY_RECT_PICKING ||
+         params.mode == FAST_PICKING)) {
         ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
-        if (!pickView)
-            pickView = ecvViewManager::instance().getActiveView();
+        if (!pickView) pickView = ecvViewManager::instance().getActiveView();
         if (pickView) {
-            QString viewID = pickView->pickObject(
-                    static_cast<double>(params.centerX),
-                    static_cast<double>(params.centerY));
+            QString viewID =
+                    pickView->pickObject(static_cast<double>(params.centerX),
+                                         static_cast<double>(params.centerY));
             if (!viewID.isEmpty() && viewID != QStringLiteral("-1")) {
                 unsigned int uid = viewID.toUInt();
                 ccHObject* sceneDB = pickView->getSceneDB();

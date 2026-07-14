@@ -101,7 +101,8 @@ void ScalarDialog::onItemPicked(const PickedItem& pi) {
                 pointPickingButton_second->setChecked(false);
             }
         } else {
-            CVLog::Print("This point cloud doesn't have an active scalar field");
+            CVLog::Print(
+                    "This point cloud doesn't have an active scalar field");
         }
     }
 }

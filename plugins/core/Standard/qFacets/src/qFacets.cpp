@@ -375,8 +375,9 @@ void qFacets::extractFacets(CellsFusionDlg::Algorithm algo) {
             sfIdx = -1;
 
             bool error = false;
-            ccHObject* group = CreateFacets(pc, components, s_minPointsPerFacet,
-                                            s_maxEdgeLength, false, error, &pDlg);
+            ccHObject* group =
+                    CreateFacets(pc, components, s_minPointsPerFacet,
+                                 s_maxEdgeLength, false, error, &pDlg);
 
             if (group) {
                 switch (algo) {
@@ -462,8 +463,8 @@ ccHObject* qFacets::CreateFacets(
     bool cloudHasNormal = cloud->hasNormals();
     size_t componentCount = components.size();
 
-    cloudViewer::NormalizedProgress nProgress(progress,
-                                            static_cast<unsigned>(componentCount));
+    cloudViewer::NormalizedProgress nProgress(
+            progress, static_cast<unsigned>(componentCount));
     if (progress) {
         progress->setMethodTitle(
                 QObject::tr("Facets creation").toUtf8().constData());
@@ -499,7 +500,8 @@ ccHObject* qFacets::CreateFacets(
                         facet->getPolygon()->showNormals(false);
                     }
                     if (facet->getContour()) {
-                        facet->getContour()->copyGlobalShiftAndScale(*facetCloud);
+                        facet->getContour()->copyGlobalShiftAndScale(
+                                *facetCloud);
                     }
 
                     if (cloudHasNormal) {
@@ -631,7 +633,8 @@ void GetFacetMetaData(const ccFacet* facet, FacetMetaData& data) {
     data.center = facet->getCenter();
 
     ccHObject::Container clouds;
-    if (facet->filterChildren(clouds, false, CV_TYPES::POINT_CLOUD, true) != 0) {
+    if (facet->filterChildren(clouds, false, CV_TYPES::POINT_CLOUD, true) !=
+        0) {
         data.globalCenter =
                 static_cast<const ccGenericPointCloud*>(clouds.front())
                         ->toGlobal3d(data.center);
@@ -756,8 +759,8 @@ void qFacets::exportFacets() {
     }
 
     if (!ExecuteExportFacets(facets, filename, useNativeOrientation,
-                             useGlobalOrientation, useCustomOrientation, nX,
-                             nY, nZ, false)) {
+                             useGlobalOrientation, useCustomOrientation, nX, nY,
+                             nZ, false)) {
         m_app->dispToConsole(tr("ExportFacets failed for some reason"),
                              ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
     }
@@ -943,9 +946,9 @@ ccHObject* qFacets::ExecuteFacetExtraction(ccPointCloud* pc,
     int sfIdx = pc->getScalarFieldIndexByName(c_defaultSFName);
     if (sfIdx < 0) sfIdx = pc->addScalarField(c_defaultSFName);
     if (sfIdx < 0) {
-        CVLog::Error(
-                QObject::tr("Couldn't allocate a new scalar field for computing "
-                            "fusion labels!"));
+        CVLog::Error(QObject::tr(
+                "Couldn't allocate a new scalar field for computing "
+                "fusion labels!"));
         error = true;
         return nullptr;
     }
@@ -970,7 +973,8 @@ ccHObject* qFacets::ExecuteFacetExtraction(ccPointCloud* pc,
                             params.kdTreeFusionMaxRelativeDistance),
                     true, progress);
         } else {
-            CVLog::Error(QObject::tr("Failed to build Kd-tree! (not enough memory?)"));
+            CVLog::Error(QObject::tr(
+                    "Failed to build Kd-tree! (not enough memory?)"));
             success = false;
         }
     } else if (params.algo == CellsFusionDlg::ALGO_FAST_MARCHING) {
@@ -990,9 +994,9 @@ ccHObject* qFacets::ExecuteFacetExtraction(ccPointCloud* pc,
         cloudViewer::ReferenceCloudContainer components;
         if (!cloudViewer::AutoSegmentationTools::extractConnectedComponents(
                     pc, components)) {
-            CVLog::Error(
-                    QObject::tr("Failed to extract fused components! (not enough "
-                                "memory?)"));
+            CVLog::Error(QObject::tr(
+                    "Failed to extract fused components! (not enough "
+                    "memory?)"));
             error = true;
         } else {
             ccScalarField* indexSF =
@@ -1016,7 +1020,8 @@ ccHObject* qFacets::ExecuteFacetExtraction(ccPointCloud* pc,
             indexSF->release();
         }
     } else {
-        CVLog::Error(QObject::tr("An error occurred during the fusion process!"));
+        CVLog::Error(
+                QObject::tr("An error occurred during the fusion process!"));
         error = true;
     }
 
@@ -1085,9 +1090,9 @@ bool qFacets::ExecuteExportFacets(const FacetSet& facets,
 
     ccHObject toSave(QObject::tr("facets"));
 
-    ccGLMatrix oriRotMat = CalcOriRotMat(facets, useNativeOrientation,
-                                         useGlobalOrientation,
-                                         useCustomOrientation, nX, nY, nZ);
+    ccGLMatrix oriRotMat =
+            CalcOriRotMat(facets, useNativeOrientation, useGlobalOrientation,
+                          useCustomOrientation, nX, nY, nZ);
 
     for (ccFacet* facet : facets) {
         ccPolyline* poly = facet->getContour();
@@ -1280,9 +1285,8 @@ bool qFacets::ExecuteExportFacetsInfo(const FacetSet& facets,
     QFile outFile(filename);
     if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
         if (!silentMode) {
-            CVLog::Error(
-                    QObject::tr("Failed to open file for writing: %1")
-                            .arg(filename));
+            CVLog::Error(QObject::tr("Failed to open file for writing: %1")
+                                 .arg(filename));
         }
         return false;
     }
@@ -1312,9 +1316,9 @@ bool qFacets::ExecuteExportFacetsInfo(const FacetSet& facets,
     }
     outStream << " \n";
 
-    ccGLMatrix oriRotMat = CalcOriRotMat(facets, useNativeOrientation,
-                                         useGlobalOrientation,
-                                         useCustomOrientation, nX, nY, nZ);
+    ccGLMatrix oriRotMat =
+            CalcOriRotMat(facets, useNativeOrientation, useGlobalOrientation,
+                          useCustomOrientation, nX, nY, nZ);
 
     for (ccFacet* facet : facets) {
         FacetMetaData data;
@@ -1350,16 +1354,18 @@ bool qFacets::ExecuteExportFacetsInfo(const FacetSet& facets,
                 }
 
                 ccPolyline* newPoly = new ccPolyline(*poly);
-                ccPointCloud* pc = (newPoly ? dynamic_cast<ccPointCloud*>(
-                                                      newPoly->getAssociatedCloud())
-                                            : nullptr);
+                ccPointCloud* pc =
+                        (newPoly ? dynamic_cast<ccPointCloud*>(
+                                           newPoly->getAssociatedCloud())
+                                 : nullptr);
                 if (pc) {
                     pc->applyGLTransformation_recursive(&oriRotMat);
                 } else {
                     if (!silentMode) {
                         CVLog::Warning(
-                                QObject::tr("Failed to change the orientation "
-                                            "of polyline '%1'! (not enough memory)")
+                                QObject::tr(
+                                        "Failed to change the orientation "
+                                        "of polyline '%1'! (not enough memory)")
                                         .arg(poly->getName()));
                     }
                     delete newPoly;
@@ -1392,8 +1398,8 @@ QString qFacets::PolylineCoordsToWKT_POLYGONZ(const ccPolyline* polyline,
 
     const unsigned pointCount = polyline->size();
     if (pointCount < 3) {
-        return QString(
-                       "Invalid WKT input: POLYGON Z requires min 4 points. Found %1.")
+        return QString("Invalid WKT input: POLYGON Z requires min 4 points. "
+                       "Found %1.")
                 .arg(pointCount);
     }
 
