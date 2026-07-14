@@ -10,6 +10,7 @@
 #include <string>
 
 #include "base/reconstruction_manager.h"
+#include "controllers/da3_depth_controller.h"
 #include "retrieval/resources.h"
 #include "util/option_manager.h"
 #include "util/threading.h"
@@ -81,6 +82,27 @@ public:
         // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".
         // By default, all GPUs will be used in all stages.
         std::string gpu_index = "-1";
+
+        // --- DA3 (Depth Anything V3) integration options ---
+
+        // Sparse model generation mode:
+        //   COLMAP_NATIVE  - traditional COLMAP SfM pipeline (default)
+        //   DA3_DEPTH_POSE - DA3 monocular depth+pose estimation
+        SparseModelMode sparse_mode = SparseModelMode::COLMAP_NATIVE;
+
+        // Dense/stereo pipeline mode:
+        //   COLMAP_PATCH_MATCH  - traditional COLMAP PatchMatch stereo (default)
+        //   DA3_DEPTH_INFERENCE - DA3 ggml-based depth inference (faster)
+        StereoPipelineMode stereo_mode = StereoPipelineMode::COLMAP_PATCH_MATCH;
+
+        // DA3 model configuration (used when sparse_mode or stereo_mode is DA3)
+        DA3ModelType da3_model_type = DA3ModelType::BASE;
+        DA3QuantType da3_quant_type = DA3QuantType::Q8_0;
+
+        // Custom path to DA3 GGUF model (auto-downloaded if empty)
+        std::string da3_model_path;
+        // Custom path to metric model for nested types (auto-resolved if empty)
+        std::string da3_metric_model_path;
     };
 
     AutomaticReconstructionController(
@@ -111,6 +133,10 @@ private:
     void RunFeatureExtraction();
     void RunFeatureMatching();
     void RunSparseMapper();
+    void RunDA3SparseMapper();
+    void RunDA3DepthMaps();
+
+    bool use_da3_stereo_maps_ = false;
 
     std::unique_ptr<Thread> feature_extractor_;
     std::unique_ptr<Thread> exhaustive_matcher_;

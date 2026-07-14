@@ -2320,6 +2320,32 @@ void MainWindow::initDBRoot() {
             if (ownerView && ownerView != vm.getActiveView()) {
                 vm.setActiveView(ownerView);
             }
+
+            bool imageSelected = first->isA(CV_TYPES::IMAGE);
+            auto* glView = dynamic_cast<vtkGLView*>(vm.getActiveView());
+            if (glView) {
+                glView->toggle2Dviewer(imageSelected);
+
+                auto* ownerWidget = glView->asWidget();
+                if (ownerWidget) {
+                    QWidget* frame = ownerWidget;
+                    while (frame && frame->objectName() != "CentralWidgetFrame")
+                        frame = frame->parentWidget();
+                    if (frame) frame = frame->parentWidget();
+                    if (!frame) frame = ownerWidget->window();
+                    auto* toolbar = frame->findChild<QToolBar*>(
+                            "ViewSelectionToolBar");
+                    if (toolbar) {
+                        auto* act = toolbar->findChild<QAction*>(
+                                "view3DToggleAction");
+                        if (act) {
+                            act->blockSignals(true);
+                            act->setChecked(!imageSelected);
+                            act->blockSignals(false);
+                        }
+                    }
+                }
+            }
         });
         connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() {
             updateUIWithSelection();
@@ -3382,6 +3408,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
         auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
                                       tr("3D View"), viewToolBar);
+        view3DAct->setObjectName("view3DToggleAction");
         view3DAct->setCheckable(true);
         view3DAct->setChecked(true);
         connect(view3DAct, &QAction::toggled, this,
@@ -4372,6 +4399,13 @@ void MainWindow::addToDB(const QStringList& filenames,
                              2000);
 }
 
+static bool is2DOnlyEntity(const ccHObject* obj) {
+    return obj->isKindOf(CV_TYPES::LABEL_2D) ||
+           obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
+           obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT) ||
+           obj->isA(CV_TYPES::IMAGE);
+}
+
 void MainWindow::addToDB(ccHObject* obj,
                          bool updateZoom /*=false*/,
                          bool autoExpandDBTree /*=true*/,
@@ -4450,11 +4484,14 @@ void MainWindow::addToDB(ccHObject* obj,
             updateZoom = true;
         }
 
-        ccHObject::Container childs;
-        obj->filterChildren(childs, true, CV_TYPES::IMAGE);
-        if (!childs.empty()) {
+        if (obj->isA(CV_TYPES::IMAGE)) {
             updateZoom = false;
-            autoRedraw = true;
+        } else {
+            ccHObject::Container imgs;
+            obj->filterChildren(imgs, true, CV_TYPES::IMAGE);
+            if (!imgs.empty()) {
+                updateZoom = false;
+            }
         }
 
         m_ccRoot->addElement(obj, autoExpandDBTree);
@@ -4501,31 +4538,27 @@ void MainWindow::addToDB(ccHObject* obj,
         if (updateZoom) {
             v->updateConstellationCenterAndZoom();
         } else {
-            bool skip = obj->isKindOf(CV_TYPES::LABEL_2D) ||
-                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
-                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT);
+            bool skip = is2DOnlyEntity(obj);
             // Point-list picking container (may be empty on first addToDB)
             if (!skip &&
                 obj->getName() == QLatin1String("Picked points list")) {
                 skip = true;
             }
             if (!skip) {
-                ccHObject::Container labels2D;
-                obj->filterChildren(labels2D, true, CV_TYPES::LABEL_2D);
-                if (!labels2D.empty()) {
-                    // Label-only groups must not move the rotation center.
-                    ccHObject::Container allChildren;
-                    obj->filterChildren(allChildren, true);
-                    bool onlyLabels = !allChildren.empty();
-                    for (ccHObject* child : allChildren) {
-                        if (!child->isKindOf(CV_TYPES::LABEL_2D)) {
-                            onlyLabels = false;
-                            break;
-                        }
+                ccHObject::Container allChildren;
+                obj->filterChildren(allChildren, true);
+                bool has2D = false;
+                bool only2D = !allChildren.empty();
+                for (ccHObject* child : allChildren) {
+                    if (is2DOnlyEntity(child)) {
+                        has2D = true;
+                    } else {
+                        only2D = false;
                     }
-                    if (onlyLabels || !obj->getBB_recursive().isValid()) {
-                        skip = true;
-                    }
+                }
+                if (has2D &&
+                    (only2D || !obj->getBB_recursive().isValid())) {
+                    skip = true;
                 }
             }
             if (!skip) {
@@ -6987,12 +7020,16 @@ void MainWindow::removeFromDB(ccHObject* obj, bool autoDelete) {
 
     obj->removeFromRenderScreen(true);
 
+    ecvRepresentationManager::instance().removeRepresentationsForEntity(obj);
+
     // remove dependency to avoid deleting the object when removing it from DB
     // tree
     if (!autoDelete && obj->getParent())
         obj->getParent()->removeDependencyWith(obj);
 
     if (m_ccRoot) m_ccRoot->removeElement(obj);
+
+    ecvViewManager::instance().refreshAll(true);
 }
 
 void MainWindow::setSelectedInDB(ccHObject* obj, bool selected) {

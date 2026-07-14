@@ -35266,4 +35266,381 @@ auto-discover one in the dataset directory.</source>
         <translation>将角度转换为度</translation>
     </message>
 </context>
+<context>
+    <name>ManualSensorCalibDlg</name>
+    <message>
+        <source>Manual Sensor Calibration</source>
+        <translation>手动传感器标定</translation>
+    </message>
+    <message>
+        <source>BEV View</source>
+        <translation>BEV视图</translation>
+    </message>
+    <message>
+        <source>LiDAR Proj</source>
+        <translation>点云投影</translation>
+    </message>
+    <message>
+        <source>Single Frame</source>
+        <translation>单帧投影</translation>
+    </message>
+    <message>
+        <source>Multi Frame</source>
+        <translation>多帧视图</translation>
+    </message>
+    <message>
+        <source>load bag</source>
+        <translation>加载bag</translation>
+    </message>
+    <message>
+        <source>load cfg</source>
+        <translation>加载配置</translation>
+    </message>
+    <message>
+        <source>Sensor Type</source>
+        <translation>传感器类型</translation>
+    </message>
+    <message>
+        <source>Adjust Range</source>
+        <translation>调整范围</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>相机</translation>
+    </message>
+    <message>
+        <source>Lidar</source>
+        <translation>激光雷达</translation>
+    </message>
+    <message>
+        <source>Radar</source>
+        <translation>毫米波雷达</translation>
+    </message>
+    <message>
+        <source>Point size</source>
+        <translation>点大小</translation>
+    </message>
+    <message>
+        <source>Dist(m)</source>
+        <translation>距离(m)</translation>
+    </message>
+    <message>
+        <source>Gnd(m)</source>
+        <translation>地面(m)</translation>
+    </message>
+    <message>
+        <source>Parameter Adjustment</source>
+        <translation>参数调整区</translation>
+    </message>
+    <message>
+        <source>Roll</source>
+        <translation>横滚</translation>
+    </message>
+    <message>
+        <source>Pitch</source>
+        <translation>俯仰</translation>
+    </message>
+    <message>
+        <source>Yaw</source>
+        <translation>偏航</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>重置参数</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>保存参数</translation>
+    </message>
+    <message>
+        <source>Export PCD</source>
+        <translation>导出PCD</translation>
+    </message>
+    <message>
+        <source>Export BEV</source>
+        <translation>导出BEV</translation>
+    </message>
+    <message>
+        <source>Multi-frame Accumulation</source>
+        <translation>多帧累积</translation>
+    </message>
+    <message>
+        <source>LiDAR</source>
+        <translation>激光雷达</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Select Config Directory</source>
+        <translation>选择配置目录</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <source>Failed to load camera config: %1</source>
+        <translation>加载相机配置失败: %1</translation>
+    </message>
+    <message>
+        <source>Config loaded: %1 cameras, %2 lidars</source>
+        <translation>配置已加载: %1 个相机, %2 个激光雷达</translation>
+    </message>
+    <message>
+        <source>Open ROS Bag</source>
+        <translation>打开ROS Bag</translation>
+    </message>
+    <message>
+        <source>ROS Bag (*.bag)</source>
+        <translation>ROS Bag (*.bag)</translation>
+    </message>
+    <message>
+        <source>Opening bag file...</source>
+        <translation>正在打开bag文件...</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Failed to open bag: %1</source>
+        <translation>打开bag失败: %1</translation>
+    </message>
+    <message>
+        <source>Scanning topics...</source>
+        <translation>正在扫描topics...</translation>
+    </message>
+    <message>
+        <source>Loading vehicle trajectory...</source>
+        <translation>正在加载车辆轨迹...</translation>
+    </message>
+    <message>
+        <source>Loading initial frame images...</source>
+        <translation>正在加载初始帧图像...</translation>
+    </message>
+    <message>
+        <source>Loading initial frame point cloud...</source>
+        <translation>正在加载初始帧点云...</translation>
+    </message>
+    <message>
+        <source>Preparing view...</source>
+        <translation>正在准备视图...</translation>
+    </message>
+    <message>
+        <source>Loading data...</source>
+        <translation>正在加载数据...</translation>
+    </message>
+    <message>
+        <source>No point cloud data</source>
+        <translation>无点云数据</translation>
+    </message>
+    <message>
+        <source>3D View: %1 points</source>
+        <translation>3D视图: %1 个点</translation>
+    </message>
+    <message>
+        <source>Load config and bag first</source>
+        <translation>请先加载配置和bag文件</translation>
+    </message>
+    <message>
+        <source>Select Output Directory for BEV Images</source>
+        <translation>选择BEV图像输出目录</translation>
+    </message>
+    <message>
+        <source>Exporting BEV images...</source>
+        <translation>正在导出BEV图像...</translation>
+    </message>
+    <message>
+        <source>Bag loaded: %1s (%2 cam, %3 lidar)</source>
+        <translation>Bag已加载: %1秒 (%2 相机, %3 激光雷达)</translation>
+    </message>
+    <message>
+        <source>Select Output Directory</source>
+        <translation>选择输出目录</translation>
+    </message>
+    <message>
+        <source>Camera config saved to: %1</source>
+        <translation>相机配置已保存至: %1</translation>
+    </message>
+    <message>
+        <source>Failed to save camera config</source>
+        <translation>保存相机配置失败</translation>
+    </message>
+    <message>
+        <source>Lidar config saved to: %1</source>
+        <translation>激光雷达配置已保存至: %1</translation>
+    </message>
+    <message>
+        <source>Failed to save lidar config</source>
+        <translation>保存激光雷达配置失败</translation>
+    </message>
+    <message>
+        <source>Save Point Cloud</source>
+        <translation>保存点云</translation>
+    </message>
+    <message>
+        <source>PCD (*.pcd);;PLY (*.ply);;XYZ (*.xyz)</source>
+        <translation>PCD (*.pcd);;PLY (*.ply);;XYZ (*.xyz)</translation>
+    </message>
+    <message>
+        <source>No point cloud to save</source>
+        <translation>没有可保存的点云</translation>
+    </message>
+    <message>
+        <source>Saved %1 points to: %2</source>
+        <translation>已保存 %1 个点至: %2</translation>
+    </message>
+    <message>
+        <source>lidar_%1</source>
+        <translation>激光雷达_%1</translation>
+    </message>
+    <message>
+        <source>LiDAR %1 (rings %2-%3)</source>
+        <translation>激光雷达 %1 (环 %2-%3)</translation>
+    </message>
+    <message>
+        <source>Exported %1/%2 BEV images to: %3</source>
+        <translation>已导出 %1/%2 张BEV图像至: %3</translation>
+    </message>
+</context>
+<context>
+    <name>ManualAvmAdjustDlg</name>
+    <message>
+        <source>AVM View Adjustment</source>
+        <translation>AVM视图调节</translation>
+    </message>
+    <message>
+        <source>load bag</source>
+        <translation>加载bag</translation>
+    </message>
+    <message>
+        <source>load cfg</source>
+        <translation>加载配置</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Select Config Directory</source>
+        <translation>选择配置目录</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <source>Failed to load config: %1</source>
+        <translation>加载配置失败: %1</translation>
+    </message>
+    <message>
+        <source>Open Bag</source>
+        <translation>打开Bag</translation>
+    </message>
+    <message>
+        <source>Bag Files (*.bag)</source>
+        <translation>Bag文件 (*.bag)</translation>
+    </message>
+    <message>
+        <source>Opening bag file...</source>
+        <translation>正在打开bag文件...</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Failed to open bag: %1</source>
+        <translation>打开bag失败: %1</translation>
+    </message>
+    <message>
+        <source>Open Image</source>
+        <translation>打开图像</translation>
+    </message>
+    <message>
+        <source>Loading...</source>
+        <translation>加载中...</translation>
+    </message>
+    <message>
+        <source>Save Parameters</source>
+        <translation>保存参数</translation>
+    </message>
+    <message>
+        <source>Load Parameters</source>
+        <translation>加载参数</translation>
+    </message>
+    <message>
+        <source>Config loaded: %1 cameras</source>
+        <translation>配置已加载: %1 个相机</translation>
+    </message>
+    <message>
+        <source>Scanning topics...</source>
+        <translation>正在扫描topics...</translation>
+    </message>
+    <message>
+        <source>Loading initial image...</source>
+        <translation>正在加载初始图像...</translation>
+    </message>
+    <message>
+        <source>Preparing view...</source>
+        <translation>正在准备视图...</translation>
+    </message>
+    <message>
+        <source>Bag loaded: %1s, %2 msgs</source>
+        <translation>Bag已加载: %1秒, %2 条消息</translation>
+    </message>
+    <message>
+        <source>Images (*.jpg *.png *.bmp *.tiff)</source>
+        <translation>图像 (*.jpg *.png *.bmp *.tiff)</translation>
+    </message>
+    <message>
+        <source>Failed to load image: %1</source>
+        <translation>加载图像失败: %1</translation>
+    </message>
+    <message>
+        <source>Image loaded: %1x%2</source>
+        <translation>图像已加载: %1x%2</translation>
+    </message>
+    <message>
+        <source>Config (*.txt *.cfg)</source>
+        <translation>配置 (*.txt *.cfg)</translation>
+    </message>
+    <message>
+        <source>Cannot write: %1</source>
+        <translation>无法写入: %1</translation>
+    </message>
+    <message>
+        <source>Parameters saved to: %1</source>
+        <translation>参数已保存至: %1</translation>
+    </message>
+    <message>
+        <source>Cannot read: %1</source>
+        <translation>无法读取: %1</translation>
+    </message>
+    <message>
+        <source>Parameters loaded from: %1</source>
+        <translation>参数已加载自: %1</translation>
+    </message>
+</context>
+<context>
+    <name>qManualCalib</name>
+    <message>
+        <source>Sensor Extrinsic Calibration</source>
+        <translation>传感器外参标定</translation>
+    </message>
+    <message>
+        <source>AVM View Adjustment</source>
+        <translation>AVM视图调节</translation>
+    </message>
+    <message>
+        <source>Manually adjust sensor extrinsic parameters (roll/pitch/yaw/x/y/z) with real-time visual feedback</source>
+        <translation>手动调整传感器外参(横滚/俯仰/偏航/x/y/z)，实时可视化反馈</translation>
+    </message>
+    <message>
+        <source>Adjust Around View Monitor (AVM) virtual camera parameters for panoramic view generation</source>
+        <translation>调整环视监控(AVM)虚拟相机参数以生成全景视图</translation>
+    </message>
+</context>
 </TS>

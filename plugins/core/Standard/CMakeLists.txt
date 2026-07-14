@@ -18,6 +18,7 @@ add_subdirectory( qTreeIso )
 add_subdirectory( qVoxFall )
 add_subdirectory( qPythonRuntime )
 add_subdirectory( qSIBR )
+add_subdirectory( qDA3 )
 
 #plugins integrated as submodules
 set( submod_plugins

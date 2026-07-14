@@ -206,6 +206,20 @@ if (NOT ${BUILD_RECONSTRUCTION})
     set(BUILD_COLMAP_GUI OFF)
 endif()
 
+# AVX-512 instruction set (default OFF for binary portability — most consumer
+# CPUs lack AVX-512; GPU inference makes CPU SIMD width largely irrelevant)
+option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    OFF)
+
+# GGML inference library (required by DA3 and future AI modules)
+option(GGML_ENABLED "Enable ggml ML inference library"                          OFF)
+# DA3 (Depth Anything V3) monocular depth estimation module
+option(DA3_ENABLED "Enable DA3 depth estimation module (requires GGML)"         OFF)
+# DA3 depends on GGML: auto-enable GGML when DA3 is requested
+if(DA3_ENABLED AND NOT GGML_ENABLED)
+    message(STATUS "DA3_ENABLED requires GGML — auto-enabling GGML_ENABLED")
+    set(GGML_ENABLED ON CACHE BOOL "Enable ggml ML inference library" FORCE)
+endif()
+
 option(PACKAGE "Package the build results with zip or not"                      OFF)
 
 # VTK ENGINE SUPPORT
@@ -712,7 +726,7 @@ if (USE_SIMD)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
     endif ()
 
-    if (UNIX AND NOT APPLE)
+    if (UNIX AND NOT APPLE AND NOT ENABLE_AVX512)
         # Disable AVX512 for Linux to fix "Illegal instruction" issues
         # when binaries are compiled on newer CPUs but run on older ones
         # AVX and AVX2 are widely supported and should be kept enabled
@@ -722,6 +736,8 @@ if (USE_SIMD)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
         message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")
+    elseif(ENABLE_AVX512)
+        message(STATUS "AVX-512 enabled by user (ENABLE_AVX512=ON)")
     endif()
 
     message(STATUS "Enabling SIMD support")

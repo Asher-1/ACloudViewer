@@ -1,0 +1,10 @@
+torch
+numpy
+pillow
+safetensors
+gguf
+huggingface_hub
+einops
+omegaconf
+addict
+opencv-python-headless

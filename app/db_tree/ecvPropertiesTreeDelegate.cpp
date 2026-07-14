@@ -279,8 +279,11 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     // Per-view representation overrides
     fillWithPerViewProperties();
 
-    // View properties (ParaView-style) - added right after ECV Object section
-    if (m_currentObject->getViewId().length() > 0) {
+    // View properties (ParaView-style) - added right after ECV Object section.
+    // ccImage is a pure 2D overlay with its own Alpha control;
+    // Light/Opacity/AxesGrid do not apply (matching CloudCompare).
+    if (m_currentObject->getViewId().length() > 0 &&
+        !m_currentObject->isA(CV_TYPES::IMAGE)) {
         fillWithViewProperties();
     }
 
@@ -580,9 +583,12 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
                   CHECKABLE_ITEM(normShown, OBJECT_NORMALS_SHOWN));
     }
 
-    // name in 3D
-    appendRow(ITEM(tr("Show name (in 3D)")),
-              CHECKABLE_ITEM(_obj->nameShownIn3D(), OBJECT_NAME_IN_3D));
+    // name in 3D — not applicable to IMAGE (pure 2D overlay, matching
+    // CloudCompare which does not expose this property for ccImage)
+    if (!_obj->isA(CV_TYPES::IMAGE)) {
+        appendRow(ITEM(tr("Show name (in 3D)")),
+                  CHECKABLE_ITEM(_obj->nameShownIn3D(), OBJECT_NAME_IN_3D));
+    }
 
     // color source
     if (_obj->hasColors() || _obj->hasScalarFields())
@@ -3139,6 +3145,13 @@ void ccPropertiesTreeDelegate::updateDisplay() {
                 objectIsDisplayed = true;
             }
         }
+        // ccImage renders through VTK 2D overlay; property changes (alpha)
+        // must trigger a redraw.
+        else if (object->isA(CV_TYPES::IMAGE)) {
+            if (object->isEnabled()) {
+                objectIsDisplayed = true;
+            }
+        }
     }
 
     if (objectIsDisplayed) {
@@ -3606,6 +3619,7 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
             param.viewId = image->getViewId();
             param.viewport = 0;
             view->changeEntityProperties(param);
+            view->renderScene();
         }
     }
 }

@@ -16,6 +16,7 @@ function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
     message(STATUS "Enabled Features:")
     cloudViewer_aligned_print("SIMD" "${USE_SIMD}")
+    cloudViewer_aligned_print("AVX-512" "${ENABLE_AVX512}")
     cloudViewer_aligned_print("OpenMP" "${WITH_OPENMP}")
     cloudViewer_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
     cloudViewer_aligned_print("Build GUI" "${BUILD_GUI}")
@@ -34,6 +35,8 @@ function(cloudViewer_print_configuration_summary)
     cloudViewer_aligned_print("Bundle CloudViewer-ML" "${BUNDLE_CLOUDVIEWER_ML}")
     cloudViewer_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
     cloudViewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
+    cloudViewer_aligned_print("GGML Inference Library" "${GGML_ENABLED}")
+    cloudViewer_aligned_print("DA3 Depth Estimation" "${DA3_ENABLED}")
     cloudViewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
     cloudViewer_aligned_print("Use VTK" "${USE_VTK_BACKEND}")
     cloudViewer_aligned_print("Use PCL" "${CLOUDVIEWER_NEED_PCL}")
@@ -55,6 +58,7 @@ function(cloudViewer_print_configuration_summary)
             Assimp
             Opencv
             Eigen3
+            ggml
             BLAS
             curl
             openssl

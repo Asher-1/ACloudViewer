@@ -41,6 +41,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC CVCoreLib)
 # Qt5/Qt6 compatibility - use unified Qt:: prefix
 target_link_libraries(${PROJECT_NAME} PUBLIC Qt::OpenGL Qt::Widgets)
 
+# DA3 depth estimation module (optional, from core/DA3)
+if(DA3_ENABLED AND TARGET DA3Core)
+    target_link_libraries(${PROJECT_NAME} PRIVATE DA3Core)
+endif()
+
 # Enforce 3rd party dependencies
 if (USE_SIMD)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})

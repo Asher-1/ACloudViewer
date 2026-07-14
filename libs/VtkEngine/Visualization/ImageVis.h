@@ -131,6 +131,10 @@ public:
                    const std::string& layer_id = "image",
                    double opacity = 1.0);
 
+    /** Sync with VtkVis interaction mode: 2D configures parallel camera,
+     *  3D leaves camera/clipping to VtkVis GeometryBounds (ParaView-style). */
+    void setImageInteractionMode(bool is2D);
+
     bool addLine(unsigned int x_min,
                  unsigned int y_min,
                  unsigned int x_max,
@@ -234,6 +238,7 @@ private:
     void updateImageSliceTransform(vtkImageSlice* imageSlice,
                                    unsigned width,
                                    unsigned height);
+    void refreshAllImageSliceTransforms();
     void setImageInteractorStyle();
 
     vtkSmartPointer<vtkRenderWindowInteractor> m_mainInteractor;
@@ -260,6 +265,7 @@ private:
     };
     std::map<std::string, ImageInfo> m_imageInfoMap;
     bool m_disposed = false;
+    bool m_imageInteraction2D = true;
 };
 
 typedef std::shared_ptr<ImageVis> ImageVisPtr;

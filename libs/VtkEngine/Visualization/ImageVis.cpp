@@ -185,6 +185,7 @@ vtkSmartPointer<vtkRenderer> ImageVis::getRender() { return this->ren_; }
 
 void ImageVis::setRender(vtkSmartPointer<vtkRenderer> render) {
     this->ren_ = render;
+    slice_->SetUseBounds(false);
     this->ren_->AddViewProp(slice_);
 }
 
@@ -416,6 +417,7 @@ void ImageVis::addRGBImage(const QImage& qimage,
 
     setImageInteractorStyle();
 
+    imageSlice->SetUseBounds(0);
     if (ren_) {
         ren_->AddViewProp(imageSlice);
     }
@@ -670,6 +672,23 @@ void ImageVis::updateImageScales() {
     }
 }
 
+void ImageVis::setImageInteractionMode(bool is2D) {
+    if (m_imageInteraction2D == is2D) return;
+    m_imageInteraction2D = is2D;
+    refreshAllImageSliceTransforms();
+}
+
+void ImageVis::refreshAllImageSliceTransforms() {
+    for (auto& pair : m_imageInfoMap) {
+        if (pair.second.imageSlice && pair.second.originalWidth > 0 &&
+            pair.second.originalHeight > 0) {
+            updateImageSliceTransform(pair.second.imageSlice,
+                                      pair.second.originalWidth,
+                                      pair.second.originalHeight);
+        }
+    }
+}
+
 void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
                                          unsigned width,
                                          unsigned height) {
@@ -693,6 +712,16 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         mapper->Update();
     }
 
+    // In 3D mode do not touch camera or clipping — VtkVis recomputes clipping
+    // every frame from GeometryBounds that includes this image plane
+    // (ParaView vtkImageSliceRepresentation + BUG #13534 pattern).
+    if (!m_imageInteraction2D) {
+        if (imageSlice) {
+            imageSlice->Modified();
+        }
+        return;
+    }
+
     vtkCamera* camera = ren_->GetActiveCamera();
     if (camera) {
         double pos[3] = {0.0, 0.0, 0.0};
@@ -707,10 +736,17 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         camera->SetViewUp(0.0, 1.0, 0.0);
         camera->SetFocalPoint(xc, yc, 0.0);
         camera->SetPosition(xc, yc, zd);
-        camera->SetParallelScale(0.5 * height);
+        const double aspect_win =
+                static_cast<double>(winSize[0]) / winSize[1];
+        const double aspect_img = static_cast<double>(width) / height;
+        double parallelScale = 0.5 * height;
+        if (aspect_win > aspect_img) {
+            parallelScale = 0.5 * height;
+        } else {
+            parallelScale = 0.5 * width / aspect_win;
+        }
+        camera->SetParallelScale(parallelScale);
         camera->ParallelProjectionOn();
-
-        ren_->ResetCameraClippingRange();
     }
 
     if (imageSlice) {

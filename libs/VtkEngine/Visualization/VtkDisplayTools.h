@@ -18,6 +18,8 @@
 #include "VtkVis.h"
 #include "qVTK.h"
 
+#include <QPointer>
+
 // CV_CORE_LIB
 #include <CVMath.h>
 
@@ -612,6 +614,9 @@ private:
     /// simplify to always require a valid vtkGLView* (no null/this fallback).
     VtkVis* resolveVisualizer(ecvGenericGLDisplay* display) const;
 
+    /// Resolve ImageVis for a display context (per-view vtkGLView preferred).
+    ImageVis* resolveImageVis(ecvGenericGLDisplay* display) const;
+
     /// [B] Cross-view actor lookup. Move to ecvViewManager or standalone.
     VtkVis* findVisByActorId(const std::string& viewId) const;
 
@@ -637,8 +642,10 @@ protected:
     QVTKWidgetCustom* m_vtkWidget = nullptr;
 
     /// The original widget created in registerVisualizer(), orphaned after
-    /// switchActiveView(). Stored for proper cleanup in the destructor.
-    QVTKWidgetCustom* m_engineOwnedWidget = nullptr;
+    /// switchActiveView(). Tracked via QPointer so a deletion by a
+    /// vtkGLView destructor automatically nulls this, preventing
+    /// double-free on engine teardown.
+    QPointer<QVTKWidgetCustom> m_engineOwnedWidget;
 
     /// [B→C] 2D viewer. In Phase M, per-view ImageVis on vtkGLView.
     ImageVisPtr m_visualizer2D = nullptr;

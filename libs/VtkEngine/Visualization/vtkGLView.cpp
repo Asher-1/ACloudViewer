@@ -357,6 +357,16 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
         m_visualizer2D->setRender(m_vtkWidget->getVtkRender());
         m_visualizer2D->setupInteractor(m_vtkWidget->GetInteractor(),
                                         m_vtkWidget->GetRenderWindow());
+        m_visualizer3D->setInteractionModeChangedCallback(
+                [this](int mode) {
+                    if (m_visualizer2D) {
+                        m_visualizer2D->setImageInteractionMode(
+                                mode == Visualization::VtkVis::INTERACTION_MODE_2D);
+                    }
+                });
+        m_visualizer2D->setImageInteractionMode(
+                m_visualizer3D->getInteractionMode() ==
+                Visualization::VtkVis::INTERACTION_MODE_2D);
     }
 
     connect(m_visualizer3D.get(),
@@ -1542,6 +1552,12 @@ void vtkGLView::zoomGlobal() {
         }
     } else {
         m_visualizer3D->resetCamera();
+        CCVector3d origin(0, 0, 0);
+        m_ctx.viewportParams.setPivotPoint(origin, true);
+        if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
+                    m_visualizer3D.get())) {
+            vis->setCenterOfRotation(0, 0, 0);
+        }
     }
 
     if (m_vtkWidget) {
@@ -1683,6 +1699,7 @@ void vtkGLView::toggle2Dviewer(bool state) {
                 state ? Visualization::VtkVis::INTERACTION_MODE_2D
                       : Visualization::VtkVis::INTERACTION_MODE_3D);
     }
+    // ImageVis mode sync happens via setInteractionModeChangedCallback.
 }
 
 // ================================================================

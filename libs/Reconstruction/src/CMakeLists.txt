@@ -79,3 +79,8 @@ if (CUDA_ENABLED)
 else ()
     target_link_libraries(${COLMAP_LIB_NAME} PUBLIC ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif ()
+
+# DA3 depth estimation module (from core/DA3)
+if(DA3_ENABLED AND TARGET DA3Core)
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC DA3Core)
+endif()

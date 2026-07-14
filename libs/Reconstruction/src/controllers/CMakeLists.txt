@@ -34,7 +34,10 @@ set(FOLDER_NAME "controllers")
 COLMAP_ADD_SOURCES(
     automatic_reconstruction.h automatic_reconstruction.cc
     bundle_adjustment.h bundle_adjustment.cc
+    da3_depth_controller.h da3_depth_controller.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     texturing_controller.h texturing_controller.cc
 )
+
+COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)

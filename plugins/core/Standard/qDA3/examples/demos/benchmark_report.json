@@ -1,0 +1,695 @@
+{
+  "depth_inference": [
+    {
+      "model": "depth-anything-small-f32",
+      "image": "canyon",
+      "time_s": 0.464,
+      "gpu_MiB": 1893,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.3077,
+        "max": 3.2835
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "desk",
+      "time_s": 0.393,
+      "gpu_MiB": 1894,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.6277,
+        "max": 2.0183
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "mountains",
+      "time_s": 0.449,
+      "gpu_MiB": 1893,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.3286,
+        "max": 2.5946
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "street",
+      "time_s": 0.451,
+      "gpu_MiB": 1894,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7643,
+        "max": 1.5154
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "canyon",
+      "time_s": 0.863,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.2848,
+        "max": 4.5876
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "desk",
+      "time_s": 0.813,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7306,
+        "max": 2.1264
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "mountains",
+      "time_s": 0.751,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.437,
+        "max": 3.7581
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "street",
+      "time_s": 0.742,
+      "gpu_MiB": 1894,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8853,
+        "max": 1.3028
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "canyon",
+      "time_s": 0.718,
+      "gpu_MiB": 1893,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.2849,
+        "max": 4.5873
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "desk",
+      "time_s": 0.652,
+      "gpu_MiB": 1894,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7306,
+        "max": 2.1281
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "mountains",
+      "time_s": 0.661,
+      "gpu_MiB": 1893,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.4373,
+        "max": 3.7551
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "street",
+      "time_s": 0.718,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8855,
+        "max": 1.3026
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "canyon",
+      "time_s": 0.587,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.2829,
+        "max": 4.5815
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "desk",
+      "time_s": 0.589,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7313,
+        "max": 2.1307
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "mountains",
+      "time_s": 0.568,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.4372,
+        "max": 3.7621
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "street",
+      "time_s": 0.588,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8866,
+        "max": 1.3029
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "canyon",
+      "time_s": 0.585,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.2726,
+        "max": 4.4143
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "desk",
+      "time_s": 0.535,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7415,
+        "max": 2.4887
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "mountains",
+      "time_s": 0.539,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.4694,
+        "max": 4.0034
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "street",
+      "time_s": 0.537,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8792,
+        "max": 1.2529
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "canyon",
+      "time_s": 2.341,
+      "gpu_MiB": 1892,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.2605,
+        "max": 5.4264
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "desk",
+      "time_s": 1.665,
+      "gpu_MiB": 1893,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7594,
+        "max": 2.1699
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "mountains",
+      "time_s": 1.698,
+      "gpu_MiB": 1891,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.746,
+        "max": 8.2707
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "street",
+      "time_s": 1.693,
+      "gpu_MiB": 1899,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8996,
+        "max": 1.452
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "canyon",
+      "time_s": 4.836,
+      "gpu_MiB": 1916,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.0873,
+        "max": 3.8366
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "desk",
+      "time_s": 4.016,
+      "gpu_MiB": 1927,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.8168,
+        "max": 2.0913
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "mountains",
+      "time_s": 4.099,
+      "gpu_MiB": 1922,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.3505,
+        "max": 7.6696
+      },
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "street",
+      "time_s": 3.946,
+      "gpu_MiB": 1902,
+      "depth_info": {
+        "w": 504,
+        "h": 336,
+        "min": 0.7973,
+        "max": 1.8239
+      },
+      "status": "ok"
+    }
+  ],
+  "pose_estimation": [
+    {
+      "model": "depth-anything-small-f32",
+      "image": "canyon",
+      "time_s": 0.46,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "desk",
+      "time_s": 0.411,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "mountains",
+      "time_s": 0.461,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-small-f32",
+      "image": "street",
+      "time_s": 0.474,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "canyon",
+      "time_s": 0.833,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "desk",
+      "time_s": 0.813,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "mountains",
+      "time_s": 0.79,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "image": "street",
+      "time_s": 0.836,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "canyon",
+      "time_s": 0.74,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "desk",
+      "time_s": 0.7,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "mountains",
+      "time_s": 0.778,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "image": "street",
+      "time_s": 0.673,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "canyon",
+      "time_s": 0.623,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "desk",
+      "time_s": 0.65,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "mountains",
+      "time_s": 0.64,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "image": "street",
+      "time_s": 0.693,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "canyon",
+      "time_s": 0.642,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "desk",
+      "time_s": 0.636,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "mountains",
+      "time_s": 0.605,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "image": "street",
+      "time_s": 0.616,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "canyon",
+      "time_s": 1.82,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "desk",
+      "time_s": 1.746,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "mountains",
+      "time_s": 1.818,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "image": "street",
+      "time_s": 1.776,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "canyon",
+      "time_s": 4.144,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "desk",
+      "time_s": 4.217,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "mountains",
+      "time_s": 4.212,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "image": "street",
+      "time_s": 4.242,
+      "status": "ok"
+    }
+  ],
+  "nested_metric": [
+    {
+      "image": "canyon",
+      "time_s": 8.476,
+      "status": "fail",
+      "depth_info": null,
+      "error": "error: depth_metric failed"
+    },
+    {
+      "image": "desk",
+      "time_s": 61.233,
+      "status": "fail",
+      "depth_info": null,
+      "error": "error: depth_metric failed"
+    },
+    {
+      "image": "mountains",
+      "time_s": 9.324,
+      "status": "fail",
+      "depth_info": null,
+      "error": "error: depth_metric failed"
+    },
+    {
+      "image": "street",
+      "time_s": 7.348,
+      "status": "fail",
+      "depth_info": null,
+      "error": "error: depth_metric failed"
+    }
+  ],
+  "multiview": [
+    {
+      "model": "depth-anything-base-f32",
+      "pair": "canyon_mountains",
+      "time_s": 20.534,
+      "status": "ok",
+      "output_files": [
+        "canyon_mountains_view1.json",
+        "canyon_mountains_view1.png",
+        "canyon_mountains_view0.json",
+        "canyon_mountains_view1.pfm",
+        "canyon_mountains_view0.pfm",
+        "canyon_mountains_view0.png"
+      ]
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "pair": "desk_street",
+      "time_s": 2.516,
+      "status": "ok",
+      "output_files": [
+        "desk_street_view1.pfm",
+        "desk_street_view0.json",
+        "desk_street_view0.png",
+        "desk_street_view1.png",
+        "desk_street_view0.pfm",
+        "desk_street_view1.json"
+      ]
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "pair": "canyon_mountains",
+      "time_s": 39.379,
+      "status": "ok",
+      "output_files": [
+        "canyon_mountains_view1.json",
+        "canyon_mountains_view1.png",
+        "canyon_mountains_view0.json",
+        "canyon_mountains_view1.pfm",
+        "canyon_mountains_view0.pfm",
+        "canyon_mountains_view0.png"
+      ]
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "pair": "desk_street",
+      "time_s": 11.801,
+      "status": "ok",
+      "output_files": [
+        "desk_street_view1.pfm",
+        "desk_street_view0.json",
+        "desk_street_view0.png",
+        "desk_street_view1.png",
+        "desk_street_view0.pfm",
+        "desk_street_view1.json"
+      ]
+    }
+  ],
+  "3d_export": [
+    {
+      "model": "depth-anything-base-f32",
+      "glb_time_s": 1.113,
+      "glb_ok": true,
+      "colmap_ok": true,
+      "reconstruct_time_s": 1.87,
+      "ply_ok": false,
+      "glb_size_KB": 1588,
+      "ply_size_KB": 0
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "glb_time_s": 4.713,
+      "glb_ok": true,
+      "colmap_ok": true,
+      "reconstruct_time_s": 10.396,
+      "ply_ok": true,
+      "glb_size_KB": 1588,
+      "ply_size_KB": 37558
+    }
+  ],
+  "model_info": [
+    {
+      "model": "depth-anything-small-f32",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f32",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-f16",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q8_0",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-base-q4_k",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-large-f32",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-giant-f32",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-nested-anyview",
+      "info_lines": 9,
+      "status": "ok"
+    },
+    {
+      "model": "depth-anything-nested-metric",
+      "info_lines": 9,
+      "status": "ok"
+    }
+  ]
+}

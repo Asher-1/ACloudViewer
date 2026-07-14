@@ -116,6 +116,7 @@
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
 #include <vtkInteractorObserver.h>
+#include <vtkImageSlice.h>
 #include <vtkJPEGReader.h>
 #include <vtkLineSource.h>
 #include <vtkLookupTable.h>
@@ -478,6 +479,7 @@ void VtkVis::setInteractionMode(int mode) {
     if (m_interactionMode == mode) return;
     if (mode != INTERACTION_MODE_3D && mode != INTERACTION_MODE_2D) return;
     m_interactionMode = mode;
+    GeometryBoundsDirty = true;
 
     vtkRenderWindowInteractor* iren = getRenderWindowInteractor();
     vtkRenderer* ren = getCurrentRenderer();
@@ -488,15 +490,30 @@ void VtkVis::setInteractionMode(int mode) {
                 iren->SetInteractorStyle(ThreeDInteractorStyle);
             }
             if (ren && ren->GetActiveCamera()) {
-                ren->GetActiveCamera()->SetParallelProjection(
-                        m_savedParallelProjection);
+                auto* cam = ren->GetActiveCamera();
+                if (m_saved3DCameraState.valid) {
+                    cam->SetPosition(m_saved3DCameraState.position);
+                    cam->SetFocalPoint(m_saved3DCameraState.focalPoint);
+                    cam->SetViewUp(m_saved3DCameraState.viewUp);
+                    cam->SetParallelScale(m_saved3DCameraState.parallelScale);
+                    cam->SetViewAngle(m_saved3DCameraState.viewAngle);
+                    cam->SetParallelProjection(m_savedParallelProjection);
+                } else {
+                    cam->SetParallelProjection(m_savedParallelProjection);
+                }
             }
             break;
         case INTERACTION_MODE_2D:
             if (ren && ren->GetActiveCamera()) {
-                m_savedParallelProjection =
-                        ren->GetActiveCamera()->GetParallelProjection();
-                ren->GetActiveCamera()->SetParallelProjection(1);
+                auto* cam = ren->GetActiveCamera();
+                m_savedParallelProjection = cam->GetParallelProjection();
+                cam->GetPosition(m_saved3DCameraState.position);
+                cam->GetFocalPoint(m_saved3DCameraState.focalPoint);
+                cam->GetViewUp(m_saved3DCameraState.viewUp);
+                m_saved3DCameraState.parallelScale = cam->GetParallelScale();
+                m_saved3DCameraState.viewAngle = cam->GetViewAngle();
+                m_saved3DCameraState.valid = true;
+                cam->SetParallelProjection(1);
             }
             if (iren && TwoDInteractorStyle) {
                 iren->SetInteractorStyle(TwoDInteractorStyle);
@@ -505,6 +522,11 @@ void VtkVis::setInteractionMode(int mode) {
         default:
             break;
     }
+
+    if (m_interactionModeChangedCallback) {
+        m_interactionModeChangedCallback(mode);
+    }
+    this->resetCameraClippingRange(0);
     UpdateScreen();
 }
 
@@ -692,6 +714,29 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
         ta->SetUseBounds(true);
     }
     this->m_centerAxes->SetUseBounds(1);
+
+    // ParaView vtkImageSliceRepresentation: register image-plane bounds even
+    // when UseBounds(false), so zero-thickness planes participate in clipping
+    // during 3D rotation (ComputeVisiblePropBounds alone would miss them).
+    if (auto* ren = this->getCurrentRenderer(viewport)) {
+        auto* props = ren->GetViewProps();
+        if (props) {
+            props->InitTraversal();
+            while (auto* prop = props->GetNextProp()) {
+                auto* slice = vtkImageSlice::SafeDownCast(prop);
+                if (!slice || !slice->GetVisibility()) continue;
+                double image_bounds[6];
+                slice->GetBounds(image_bounds);
+                if (!vtkMath::AreBoundsInitialized(image_bounds)) continue;
+                if (image_bounds[5] - image_bounds[4] < 1e-6) {
+                    constexpr double z_pad = 0.5;
+                    image_bounds[4] -= z_pad;
+                    image_bounds[5] += z_pad;
+                }
+                this->GeometryBounds.AddBounds(image_bounds);
+            }
+        }
+    }
 
     // sync up bounds across all processes when doing distributed rendering.
     if (!this->GeometryBounds.IsValid()) {
@@ -4496,7 +4541,7 @@ void VtkVis::registerAreaPicking() {
     cb->SetClientData(this);
     cb->SetCallback(&VtkVis::OnAreaPicking);
     if (interactor_) interactor_->AddObserver(vtkCommand::EndPickEvent, cb);
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[global areaPicking] press A to start or ending picking!");
     m_cloud_mutex.unlock();
 }
