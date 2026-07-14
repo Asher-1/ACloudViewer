@@ -60,8 +60,9 @@ void HSVDialog::storeParameters() {
 }
 
 void HSVDialog::updateColorButton() {
-    ccQtHelpers::SetButtonColor(rgbColorToolButton,
-                                QColor(red->value(), green->value(), blue->value()));
+    ccQtHelpers::SetButtonColor(
+            rgbColorToolButton,
+            QColor(red->value(), green->value(), blue->value()));
 }
 
 void HSVDialog::pickPoint(bool state) {

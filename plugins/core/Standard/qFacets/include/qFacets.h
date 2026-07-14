@@ -86,15 +86,15 @@ public:
     typedef std::unordered_set<ccFacet*> FacetSet;
 
     static bool ExecuteExportFacetsInfo(const FacetSet& facets,
-                                      const QString& filename,
-                                      bool coordsInCsv = false,
-                                      bool useNativeOrientation = true,
-                                      bool useGlobalOrientation = false,
-                                      bool useCustomOrientation = false,
-                                      double nX = 0.0,
-                                      double nY = 0.0,
-                                      double nZ = 1.0,
-                                      bool silentMode = false);
+                                        const QString& filename,
+                                        bool coordsInCsv = false,
+                                        bool useNativeOrientation = true,
+                                        bool useGlobalOrientation = false,
+                                        bool useCustomOrientation = false,
+                                        double nX = 0.0,
+                                        double nY = 0.0,
+                                        double nZ = 1.0,
+                                        bool silentMode = false);
 
     static bool ExecuteExportFacets(const FacetSet& facets,
                                     const QString& filename,

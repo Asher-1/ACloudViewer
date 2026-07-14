@@ -1171,7 +1171,8 @@ void vtkGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     // WARNING: Do NOT call obj->setDisplay(this) here!
     //
     // Unlike CloudCompare's ccGLWindowInterface::addToOwnDB which calls
-    // setDisplay(this), we must NOT rebind the entity's display in ACloudViewer.
+    // setDisplay(this), we must NOT rebind the entity's display in
+    // ACloudViewer.
     //
     // Reason: in comparative / split-view scenarios an entity from the global
     // DB can be temporarily added to a secondary view's ownDB for overlay
@@ -1309,8 +1310,8 @@ void vtkGLView::syncVtkCameraToContext() {
         cam->GetPosition(pos);
         cam->GetFocalPoint(foc);
         cam->GetViewUp(up);
-        m_ctx.viewportParams.setCameraCenter(
-                CCVector3d(pos[0], pos[1], pos[2]), false);
+        m_ctx.viewportParams.setCameraCenter(CCVector3d(pos[0], pos[1], pos[2]),
+                                             false);
         m_ctx.viewportParams.up = CCVector3d(up[0], up[1], up[2]);
         m_ctx.viewportParams.focal = CCVector3d(foc[0], foc[1], foc[2]);
     }

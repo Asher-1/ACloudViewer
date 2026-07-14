@@ -364,14 +364,13 @@ void qSRAMapWidget::wheelEvent(QWheelEvent* event) {
     const double factor = (event->angleDelta().y() > 0) ? 1.15 : (1.0 / 1.15);
 
     const QPointF pos = qtCompatWheelEventPos(event);
-    const QPointF worldPos = screenToWorld(
-            pos.x(), pos.y(), width(), height());
+    const QPointF worldPos = screenToWorld(pos.x(), pos.y(), width(), height());
 
     m_scale *= factor;
     if (m_scale < 1e-6) m_scale = 1e-6;
 
-    const QPointF newWorldPos = screenToWorld(
-            pos.x(), pos.y(), width(), height());
+    const QPointF newWorldPos =
+            screenToWorld(pos.x(), pos.y(), width(), height());
     m_centerX += worldPos.x() - newWorldPos.x();
     m_centerY += worldPos.y() - newWorldPos.y();
 
