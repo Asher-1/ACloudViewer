@@ -12,21 +12,17 @@ if (PLUGIN_STANDARD_3DMASC)
 
 	include( CMakePolicies NO_POLICY_SCOPE )
 
-	#As we are going to re-use several components of the main qCC project
-	#we define its sources path relatively to the plugin's dir
-	set(${ACloudViewer_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../app)
-
 	#include the whole CC directory (easier)
-	include_directories( ${${ACloudViewer_SOURCE_DIR}} )
+	include_directories( ${ACloudViewer_SOURCE_DIR} )
 
 	file( GLOB PLUGIN_HDR_LIST ${CMAKE_CURRENT_SOURCE_DIR}/*.h )
 	file( GLOB PLUGIN_SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp )
 	file( GLOB PLUGIN_UI_LIST ${CMAKE_CURRENT_SOURCE_DIR}/*.ui )
 
 	#we need the "order choice" dialog
-	file( GLOB CC_HDR_LIST ${${ACloudViewer_SOURCE_DIR}}/ecvOrderChoiceDlg*.h )
-	file( GLOB CC_SRC_LIST ${${ACloudViewer_SOURCE_DIR}}/ecvOrderChoiceDlg*.cpp )
-	set( CC_UI_LIST	${${ACloudViewer_SOURCE_DIR}}/ui_templates/roleChoiceDlg.ui )
+	file( GLOB CC_HDR_LIST ${ACloudViewer_SOURCE_DIR}/ecvOrderChoiceDlg*.h )
+	file( GLOB CC_SRC_LIST ${ACloudViewer_SOURCE_DIR}/ecvOrderChoiceDlg*.cpp )
+	set( CC_UI_LIST	${ACloudViewer_SOURCE_DIR}/ui_templates/roleChoiceDlg.ui )
 
 	# add source files
 	target_sources( ${PROJECT_NAME}
@@ -43,13 +39,13 @@ if (PLUGIN_STANDARD_3DMASC)
 	
 	set_target_properties( ${PROJECT_NAME} PROPERTIES
 	# FIXME Remove after everything has moved to targets
-	AUTOUIC_SEARCH_PATHS "${${ACloudViewer_SOURCE_DIR}}/ui_templates;${CMAKE_CURRENT_SOURCE_DIR}/ui")
+	AUTOUIC_SEARCH_PATHS "${ACloudViewer_SOURCE_DIR}/ui_templates;${CMAKE_CURRENT_SOURCE_DIR}/ui")
 
 	# FIXME These are required because we have dependencies outside of the api
 	target_include_directories( ${PROJECT_NAME}
 		PRIVATE
-			${${ACloudViewer_SOURCE_DIR}}
-			${${ACloudViewer_SOURCE_DIR}}/../common)
+			${ACloudViewer_SOURCE_DIR}
+			${ACloudViewer_SOURCE_DIR}/../common)
 
 	if (BUILD_OPENCV)
 			add_dependencies(${PROJECT_NAME} 3rdparty_opencv)

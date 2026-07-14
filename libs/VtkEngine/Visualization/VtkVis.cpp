@@ -1663,6 +1663,39 @@ void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
     applyLightPropertiesToActor(linesActor, viewID);
 }
 
+void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
+                              const std::string& viewID,
+                              int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+
+    // ccGLMatrix is column-major (OpenGL convention).
+    // vtkMatrix4x4::SetElement(row, col) is row-major internally but the
+    // setter uses (row, col) indexing, so we convert: element(r,c) = data[c*4+r].
+    vtkSmartPointer<vtkMatrix4x4> mat44 = vtkSmartPointer<vtkMatrix4x4>::New();
+    const float* data = glTrans.data();
+    for (int r = 0; r < 4; ++r)
+        for (int c = 0; c < 4; ++c)
+            mat44->SetElement(r, c, static_cast<double>(data[c * 4 + r]));
+
+    vtkSmartPointer<vtkTransform> vtkTrans = vtkSmartPointer<vtkTransform>::New();
+    vtkTrans->SetMatrix(mat44);
+    actor->SetUserTransform(vtkTrans);
+    actor->Modified();
+}
+
+void VtkVis::clearGLTransform(const std::string& viewID, int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+    if (actor->GetUserTransform()) {
+        vtkSmartPointer<vtkTransform> identity =
+                vtkSmartPointer<vtkTransform>::New();
+        identity->Identity();
+        actor->SetUserTransform(identity);
+        actor->Modified();
+    }
+}
+
 void VtkVis::transformEntities(const CC_DRAW_CONTEXT& context) {
     if (context.transformInfo.isApplyTransform()) {
         std::string viewID = CVTools::FromQString(context.viewID);
