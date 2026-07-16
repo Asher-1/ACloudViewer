@@ -144,6 +144,9 @@ public slots:
     /// Reset all tabs.
     void reset();
 
+    /// Enable or disable all "Close View" buttons across all tabs.
+    void setViewCloseButtonsEnabled(bool enabled);
+
     /// Preview layout at specific size.
     QSize preview(const QSize& previewSize = QSize());
 

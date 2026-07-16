@@ -87,6 +87,19 @@ bool ViewInterpolate::interpolate(ecvViewportParameters& interpView,
         interpView.setFocalDistance(InterpolateNumber(
                 m_view1.getFocalDistance(), m_view2.getFocalDistance(),
                 interpolate_fraction));
+
+        // Sync VTK-facing fields from interpolated CC parameters
+        interpView.up = interpView.getUpDir();
+        ccGLMatrixd invMv = interpView.computeViewMatrix();
+        invMv.invert();
+        const CCVector3d pos = invMv.getTranslationAsVec3D();
+        if (interpView.objectCenteredView) {
+            interpView.focal = interpView.getPivotPoint();
+        } else {
+            const CCVector3d viewDir = interpView.getViewDir();
+            const double dist = std::max(interpView.getFocalDistance(), 1.0);
+            interpView.focal = pos + viewDir * dist;
+        }
     }
 
     return true;

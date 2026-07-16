@@ -53,8 +53,7 @@ ccCloudLayersDlg::ccCloudLayersDlg(ecvMainAppInterface* app, QWidget* parent)
             &ccCloudLayersDlg::pauseClicked);
     connect(pbApply, &QPushButton::clicked, this,
             &ccCloudLayersDlg::applyClicked);
-    connect(pbClose, &QPushButton::clicked, this,
-            &ccCloudLayersDlg::closeClicked);
+    connect(pbClose, &QPushButton::clicked, this, &ccCloudLayersDlg::reject);
 
     // connect comboboxes
     connect(cbScalarField, qOverload<int>(&QComboBox::currentIndexChanged),
@@ -73,6 +72,8 @@ ccCloudLayersDlg::ccCloudLayersDlg(ecvMainAppInterface* app, QWidget* parent)
             &ccCloudLayersDlg::codeChanged);
     connect(&m_asprsModel, &ccAsprsModel::colorChanged, this,
             &ccCloudLayersDlg::colorChanged);
+    connect(&m_asprsModel, &ccAsprsModel::classNamedChanged, this,
+            &ccCloudLayersDlg::classNameChanged);
 
     m_presets.append(QString("All Points"));
     m_presets.append(QString("Visible Points"));
@@ -95,6 +96,21 @@ bool ccCloudLayersDlg::linkWith(QWidget* win) {
     if (m_mouseCircle && win) {
         m_mouseCircle->setOwner(win);
     }
+
+    QObject::disconnect(m_mouseMovedConnection);
+    m_mouseMovedConnection = {};
+    m_bindView = win ? ecvGenericGLDisplay::FromWidget(win) : nullptr;
+    if (!m_bindView) {
+        m_bindView = ecvViewManager::instance().getEffectiveView();
+    }
+    if (m_mouseCircle && m_bindView) {
+        m_mouseCircle->setBindView(m_bindView);
+    }
+
+    m_mouseMovedConnection =
+            connect(&ecvViewManager::instance(), &ecvViewManager::mouseMoved,
+                    this, &ccCloudLayersDlg::mouseMoved);
+
     return true;
 }
 
@@ -127,12 +143,8 @@ bool ccCloudLayersDlg::start() {
     resetUI();
     m_app->freezeUI(true);
 
-    QObject::disconnect(m_mouseMovedConnection);
-    m_mouseMovedConnection =
-            connect(&ecvViewManager::instance(), &ecvViewManager::mouseMoved,
-                    this, &ccCloudLayersDlg::mouseMoved);
-
     if (m_helper) {
+        m_helper->apply(m_asprsModel.getData());
         m_helper->saveState();
     }
 
@@ -143,13 +155,40 @@ void ccCloudLayersDlg::stop(bool accepted) {
     QObject::disconnect(m_mouseMovedConnection);
     m_mouseMovedConnection = {};
 
-    if (m_mouseCircle && m_mouseCircle->isVisible()) pauseClicked();
+    if (m_mouseCircle) {
+        m_mouseCircle->setVisible(false);
+        if (m_bindView) {
+            CC_DRAW_CONTEXT clr;
+            clr.display = m_bindView;
+            clr.defaultViewPort = 0;
+            clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+            clr.removeViewID = m_mouseCircle->getViewId();
+            m_bindView->removeEntities(clr);
+            m_bindView->removeFromOwnDB(m_mouseCircle);
+        }
+    }
+
+    if (m_bindView) {
+        m_bindView->setPickingMode(
+                ecvGenericGLDisplay::PICKING_MODE::DEFAULT_PICKING);
+        m_bindView->setInteractionMode(
+                ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
+    if (m_associatedWin) {
+        m_associatedWin->setMouseTracking(false);
+    }
 
     if (accepted && m_helper) {
         m_helper->keepCurrentSFVisible();
     }
 
     setPointCloud(nullptr);
+
+    if (m_bindView) {
+        m_bindView->redraw(false, true);
+    }
+
+    m_bindView = nullptr;
 
     if (m_app) {
         m_app->freezeUI(false);
@@ -169,7 +208,11 @@ void ccCloudLayersDlg::setPointCloud(ccPointCloud* cloud) {
     if (cloud) {
         m_helper = new ccCloudLayersHelper(m_app, cloud);
 
+        cbScalarField->blockSignals(true);
         cbScalarField->addItems(m_helper->getScalarFields());
+        cbScalarField->blockSignals(false);
+
+        m_helper->apply(m_asprsModel.getData());
     }
 }
 
@@ -211,6 +254,8 @@ void ccCloudLayersDlg::saveSettings() {
             settings.setValue("InputClass", cbInput->currentText());
         if (cbOutput->currentIndex() >= 0)
             settings.setValue("OutputClass", cbOutput->currentText());
+
+        settings.setValue("keepRGBOnExit", keepRGBColorsCheckBox->isChecked());
 
         settings.beginGroup("Window");
         { settings.setValue("geometry", saveGeometry()); }
@@ -256,6 +301,9 @@ void ccCloudLayersDlg::loadSettings() {
         QString outputName = settings.value("OutputClass").toString();
         int outIndex = m_asprsModel.indexOf(outputName);
         cbOutput->setCurrentIndex(outIndex == -1 ? 0 : outIndex);
+
+        keepRGBColorsCheckBox->setChecked(
+                settings.value("keepRGBOnExit", false).toBool());
 
         settings.beginGroup("Window");
         { restoreGeometry(settings.value("geometry").toByteArray()); }
@@ -315,15 +363,29 @@ void ccCloudLayersDlg::deleteClicked() {
 
 void ccCloudLayersDlg::startClicked() {
     if (nullptr == m_app->getActiveWindow()) {
+        CVLog::Warning("[qCloudLayers::start] No active window!");
         return;
     }
 
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->setPickingMode(ecvGenericGLDisplay::PICKING_MODE::NO_PICKING);
-        // set orthographic view (as this tool doesn't work in perspective mode)
-        view->setPerspectiveState(false, true);
-        view->setInteractionMode(
+    if (m_associatedWin) {
+        m_bindView = ecvGenericGLDisplay::FromWidget(m_associatedWin);
+    }
+    if (!m_bindView) {
+        m_bindView = ecvViewManager::instance().getEffectiveView();
+    }
+
+    if (m_bindView) {
+        m_bindView->setPickingMode(
+                ecvGenericGLDisplay::PICKING_MODE::NO_PICKING);
+        m_bindView->setPerspectiveState(false, true);
+        m_bindView->setInteractionMode(
                 ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
+    if (m_mouseCircle && m_bindView) {
+        m_mouseCircle->setBindView(m_bindView);
+    }
+    if (m_associatedWin) {
+        m_associatedWin->setMouseTracking(true);
     }
     m_mouseCircle->setVisible(true);
 
@@ -337,11 +399,23 @@ void ccCloudLayersDlg::pauseClicked() {
     }
 
     m_mouseCircle->setVisible(false);
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->setPickingMode(
+
+    if (m_bindView) {
+        CC_DRAW_CONTEXT clr;
+        clr.display = m_bindView;
+        clr.defaultViewPort = 0;
+        clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
+        clr.removeViewID = m_mouseCircle->getViewId();
+        m_bindView->removeEntities(clr);
+
+        m_bindView->setPickingMode(
                 ecvGenericGLDisplay::PICKING_MODE::DEFAULT_PICKING);
-        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
-        { ecvRedrawScope scope(true, false); }
+        m_bindView->setInteractionMode(
+                ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        m_bindView->redraw(false, true);
+    }
+    if (m_associatedWin) {
+        m_associatedWin->setMouseTracking(false);
     }
 
     pbStart->setEnabled(true);
@@ -354,25 +428,13 @@ void ccCloudLayersDlg::applyClicked() {
     saveSettings();
 
     if (m_helper) {
-        m_helper->setVisible(true);
-    }
-
-    stop(true);
-}
-
-void ccCloudLayersDlg::closeClicked() {
-    if (m_helper) {
-        if (m_helper->hasChanges()) {
-            if (QMessageBox::question(
-                        m_associatedWin, "Cloud layers plugin",
-                        "The cloud has been modified, are you sure you want "
-                        "exit?",
-                        QMessageBox::Yes, QMessageBox::No) == QMessageBox::No) {
-                return;
-            }
+        m_helper->keepCurrentSFVisible();
+        if (!keepRGBColorsCheckBox->isChecked()) {
+            m_helper->restoreColors();
+        } else {
+            m_helper->setVisible(true);
         }
-
-        m_helper->restoreState();
+        m_helper->commitChanges();
     }
 
     stop(true);
@@ -382,22 +444,23 @@ void ccCloudLayersDlg::mouseMoved(int x, int y, Qt::MouseButtons buttons) {
     if (!m_helper) {
         return;
     }
-    if (buttons != Qt::LeftButton) {
+
+    if (!(buttons & Qt::LeftButton)) {
         return;
     }
 
     ccGLCameraParameters camera;
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->getGLCameraParameters(camera);
+    if (m_bindView) {
+        m_bindView->getGLCameraParameters(camera);
     }
 
     m_helper->projectCloud(camera);
 
     QPointF pos2D;
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        const int dpr = view->getDevicePixelRatio();
-        pos2D = QPointF(x * dpr - view->glWidth() / 2.0f,
-                        view->glHeight() / 2.0f - y * dpr);
+    if (m_bindView) {
+        const int dpr = m_bindView->getDevicePixelRatio();
+        pos2D = QPointF(x * dpr - m_bindView->glWidth() / 2.0f,
+                        m_bindView->glHeight() / 2.0f - y * dpr);
     }
     CCVector2 center(static_cast<PointCoordinateType>(pos2D.x()),
                      static_cast<PointCoordinateType>(pos2D.y()));
@@ -406,13 +469,22 @@ void ccCloudLayersDlg::mouseMoved(int x, int y, Qt::MouseButtons buttons) {
     std::map<ScalarType, int> affected;
     m_helper->mouseMove(center, radius * radius, affected);
 
-    // update point counts
+    int totalAffected = 0;
     for (const auto& kv : affected) {
         auto item = m_asprsModel.find(kv.first);
         if (item) item->count += kv.second;
+        totalAffected += std::abs(kv.second);
     }
 
     m_asprsModel.refreshData();
+
+    if (m_helper->cloud()) {
+        m_helper->cloud()->setRedraw(true);
+    }
+
+    if (m_bindView) {
+        m_bindView->redraw(false, true);
+    }
 }
 
 bool ccCloudLayersDlg::eventFilter(QObject* obj, QEvent* event) {
@@ -420,12 +492,20 @@ bool ccCloudLayersDlg::eventFilter(QObject* obj, QEvent* event) {
         QKeyEvent* ev = static_cast<QKeyEvent*>(event);
         if (ev->key() == Qt::Key::Key_Alt) {
             swapInputOutput();
+        }
+        if (ev->key() == Qt::Key::Key_Alt ||
+            ev->key() == Qt::Key::Key_Control ||
+            ev->key() == Qt::Key::Key_Shift) {
             m_mouseCircle->setAllowScroll(false);
         }
     } else if (event->type() == QEvent::KeyRelease) {
         QKeyEvent* ev = static_cast<QKeyEvent*>(event);
         if (ev->key() == Qt::Key::Key_Alt) {
             swapInputOutput();
+        }
+        if (ev->key() == Qt::Key::Key_Alt ||
+            ev->key() == Qt::Key::Key_Control ||
+            ev->key() == Qt::Key::Key_Shift) {
             m_mouseCircle->setAllowScroll(true);
         }
     }
@@ -471,7 +551,7 @@ void ccCloudLayersDlg::outputClassIndexChanged(int index) {
         return;
     }
     ccCloudLayersHelper::Parameters& params = m_helper->getParameters();
-    if (cbInput->currentIndex() < 0) {
+    if (cbOutput->currentIndex() < 0) {
         params.output = nullptr;
         return;
     }
@@ -495,6 +575,11 @@ void ccCloudLayersDlg::colorChanged(ccAsprsModel::AsprsItem& item) {
 
     // refresh point count
     m_asprsModel.refreshData();
+}
+
+void ccCloudLayersDlg::classNameChanged(int row, QString newName) {
+    cbInput->setItemText(m_presets.size() + row, newName);
+    cbOutput->setItemText(row, newName);
 }
 
 void ccCloudLayersDlg::tableViewDoubleClicked(const QModelIndex& index) {

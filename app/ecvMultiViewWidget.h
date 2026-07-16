@@ -122,6 +122,10 @@ public slots:
     /// Reset the layout (single empty cell).
     void reset();
 
+    /// Enable or disable all "Close View" buttons.
+    /// Used by freezeUI to prevent view closure during plugin operations.
+    void setViewCloseButtonsEnabled(bool enabled);
+
 public slots:
     /// Make a specific frame the active one.
     void makeActive(QWidget* frame);

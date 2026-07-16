@@ -54,6 +54,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkIntArray.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -128,10 +129,15 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
                 }
                 std::string viewID = CVTools::FromQString(entity->getViewId());
                 VtkVis* vis = resolveVisualizer(view);
-                if (vis && vis->contains(viewID)) {
+                if (!vis) return;
+                if (vis->contains(viewID)) {
                     vis->removePointCloud(viewID);
                     vis->removePolygonMesh(viewID);
                     vis->removeShape(viewID);
+                }
+                const std::string bboxId = "BBox-" + viewID;
+                if (vis->contains(bboxId)) {
+                    vis->removeShape(bboxId);
                 }
             });
 }
@@ -171,10 +177,22 @@ void VtkDisplayTools::switchActiveView(VtkVisPtr vis,
     }
 
     if (oldWidget && oldWidget != widget) {
-        // Per-view widgets (owned by an vtkGLView) must NOT be hidden or
-        // detached — they stay visible inside their own layout cell.
-        // Only hide/detach the legacy engine-owned singleton widget.
-        if (!oldWidget->ownerView()) {
+        // Validate that oldWidget is still alive: check if its ownerView
+        // is still registered. If the view was destroyed (e.g., comparative
+        // window closed), the widget is already deleted and must not be
+        // accessed.
+        bool oldWidgetValid = false;
+        if (oldWidget == m_engineOwnedWidget) {
+            oldWidgetValid = true;
+        } else {
+            for (auto* v : ecvViewManager::instance().getAllViews()) {
+                if (v && v->asWidget() == oldWidget) {
+                    oldWidgetValid = true;
+                    break;
+                }
+            }
+        }
+        if (oldWidgetValid && !oldWidget->ownerView()) {
             oldWidget->hide();
             oldWidget->setParent(nullptr);
             if (!m_engineOwnedWidget) {
@@ -250,6 +268,27 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                 firstShow || checkEntityNeedUpdate(vis, viewID, ecvCloud);
         bool sfTriggered = false;
 
+        // Detect SF/RGB display mode switch: if the cached polydata was built
+        // with a different SF mode than what drawParam requests now, force a
+        // full rebuild so colors are regenerated from the correct source.
+        if (!needFullRebuild) {
+            vtkActor* actor = vis->getActorById(viewID);
+            if (actor && actor->GetMapper()) {
+                vtkPolyData* pd = vtkPolyData::SafeDownCast(
+                        actor->GetMapper()->GetInputDataObject(0, 0));
+                if (pd) {
+                    auto* cachedMode = vtkIntArray::SafeDownCast(
+                            pd->GetFieldData()->GetAbstractArray("_ColorMode"));
+                    int prevMode = cachedMode ? cachedMode->GetValue(0) : -1;
+                    int curMode = localContext.drawParam.showSF ? 1 : 0;
+                    if (prevMode != curMode) {
+                        needFullRebuild = true;
+                        sfTriggered = true;
+                    }
+                }
+            }
+        }
+
         // SF hiding: O(1) check using the cached display range stored in the
         // polydata's field data ("_SFDispRange"). Avoids an O(n) visible-point
         // counting loop on every draw call.
@@ -303,6 +342,23 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                 } else {
                     vis->updateNormals(localContext,
                                        static_cast<ccPointCloud*>(nullptr));
+                }
+            }
+        }
+
+        // Cache current color mode in polydata field data so we can detect
+        // SF ↔ RGB switches on the next draw.
+        {
+            vtkActor* actor = vis->getActorById(viewID);
+            if (actor && actor->GetMapper()) {
+                vtkPolyData* pd = vtkPolyData::SafeDownCast(
+                        actor->GetMapper()->GetInputDataObject(0, 0));
+                if (pd) {
+                    auto modeArr = vtkSmartPointer<vtkIntArray>::New();
+                    modeArr->SetName("_ColorMode");
+                    modeArr->SetNumberOfTuples(1);
+                    modeArr->SetValue(0, localContext.drawParam.showSF ? 1 : 0);
+                    pd->GetFieldData()->AddArray(modeArr);
                 }
             }
         }
@@ -780,7 +836,17 @@ void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         return;
     }
 
+    // Apply accumulated GL transformation from ancestor
+    // setGLTransformation calls.  This mirrors OpenGL's glMultMatrix
+    // applied before each entity in CC's rendering path.
     if (vis) {
+        std::string viewID = CVTools::FromQString(context.viewID);
+        if (context.hasGLTransAccum) {
+            vis->applyGLTransform(context.glTransAccum, viewID,
+                                  context.defaultViewPort);
+        } else {
+            vis->clearGLTransform(viewID, context.defaultViewPort);
+        }
         vis->resetCameraClippingRange(context.defaultViewPort);
     }
 }
@@ -1209,6 +1275,13 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         }
 
         if (vis->contains(viewId)) {
+            if (!context.visible) {
+                CVLog::PrintDebug(
+                        "[VtkDisplayTools::hideShowEntities] HIDING actor "
+                        "viewId=%s visible=%d skipDisplayCheck=%d",
+                        viewId.c_str(), context.visible ? 1 : 0,
+                        context.skipDisplayCheck ? 1 : 0);
+            }
             vis->hideShowActors(context.visible, viewId,
                                 context.defaultViewPort);
             found = true;

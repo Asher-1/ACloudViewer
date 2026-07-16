@@ -29,7 +29,8 @@ ccDrawableObject::ccDrawableObject() {
 }
 
 ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
-    : m_currentDisplay(object.m_currentDisplay),
+    : m_displays(object.m_displays),
+      m_displayBindingExplicit(object.m_displayBindingExplicit),
       m_fixedId(object.m_fixedId),
       m_modelRedraw(object.m_modelRedraw),
       m_forceRedraw(object.m_forceRedraw),
@@ -50,17 +51,58 @@ ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
       m_pointGaussianShaderPreset(object.m_pointGaussianShaderPreset),
       m_pointGaussianEmissive(object.m_pointGaussianEmissive) {}
 
+ecvGenericGLDisplay* ccDrawableObject::getDisplay() const {
+    if (m_displays.empty()) return nullptr;
+    return m_displays.front();
+}
+
 void ccDrawableObject::setDisplay(ecvGenericGLDisplay* display) {
-    if (m_currentDisplay == display) return;
-    m_currentDisplay = display;
+    if (display) {
+        if (m_displays.size() == 1 && m_displays[0] == display &&
+            m_displayBindingExplicit) {
+            return;
+        }
+        m_displays.clear();
+        m_displays.push_back(display);
+        m_displayBindingExplicit = true;
+    } else {
+        if (m_displays.empty() && m_displayBindingExplicit) return;
+        m_displays.clear();
+        m_displayBindingExplicit = true;
+    }
+    setRedraw(true);
+}
+
+void ccDrawableObject::addToDisplay(ecvGenericGLDisplay* display) {
+    if (!display) return;
+    if (std::find(m_displays.begin(), m_displays.end(), display) !=
+        m_displays.end()) {
+        return;
+    }
+    m_displays.push_back(display);
+    m_displayBindingExplicit = true;
     setRedraw(true);
 }
 
 void ccDrawableObject::removeFromDisplay(const ecvGenericGLDisplay* display) {
-    if (m_currentDisplay == display) {
-        m_currentDisplay = nullptr;
+    auto it = std::find(m_displays.begin(), m_displays.end(), display);
+    if (it != m_displays.end()) {
+        m_displays.erase(it);
         setRedraw(true);
     }
+}
+
+void ccDrawableObject::clearAllDisplays() {
+    if (m_displays.empty() && m_displayBindingExplicit) return;
+    m_displays.clear();
+    m_displayBindingExplicit = true;
+    setRedraw(true);
+}
+
+void ccDrawableObject::setDisplayAll() {
+    m_displays.clear();
+    m_displayBindingExplicit = false;
+    setRedraw(true);
 }
 
 void ccDrawableObject::enableGLTransformation(bool state) {

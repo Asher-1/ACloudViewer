@@ -102,6 +102,26 @@ v3.9.5-Beta (Asher) - 02/02/2026
       instantiation includes (fpfh_omp, normal_3d_omp, shot_omp)
 
 - Plugin fixes (VTK adaptation):
+    - qBroom: VTK engine integration fixes
+      - Fix RemoveAllManipulators to clear CurrentManipulator (prevents stale
+        camera rotation after interaction mode switch)
+      - Fix duplicate itemPicked signal delivery in vtkViewManagerSetupRelay
+        (broke cc2DLabel Distance/Area multi-point picking)
+      - Add GL transform accumulation (ccGLMatrix stack emulation for VTK):
+        glTransAccum/hasGLTransAccum in CC_DRAW_CONTEXT, applyGLTransform/
+        clearGLTransform in VtkVis, accumulation logic in ccHObject::draw
+      - Add picking signal relay from ecvDisplayTools to per-view vtkGLView
+        (enables embedded view picking for plugins like qBroom)
+      - Sync viewportParams.viewMat from VTK camera in syncVtkCameraToContext
+        (fixes stale matrices for trianglePicking/unproject)
+      - Add VTK actor picking fallback in ecvDisplayTools::StartOpenGLPicking
+      - Normalize DEFAULT_PICKING → ENTITY_PICKING in vtkGLView::setPickingMode
+      - Suppress noisy "overlay INVALID" warnings for 3D-mode labels
+    - qColorimetricSegmenter: full CC→ACV API alignment (headers, namespaces,
+      UI files, hasColors() guard for safe color access)
+    - qFacets: fix kd-tree display (remove incorrect opacity/color defaults),
+      add display propagation in facetsClassifier.h, fix SHP export global
+      center fields, add facetsExportDlg.ui enhancements
     - qCompass: fix plane fitting failure "Not enough points in input cloud"
       - Add octree existence check and auto-computation before neighbourhood search
       - Add radius/viewport validation (reject r≤0 with diagnostic message)
@@ -118,13 +138,17 @@ v3.9.5-Beta (Asher) - 02/02/2026
     - qJSonRPCPlugin: add optional PCV integration (HAS_PCV_PLUGIN compile flag)
       for ambient occlusion RPC methods when qPCV is available
     - q3DMASC: fix ContextBasedFeature, PointFeature, q3DMASCClassifier, and
-      q3DMASCTools for VTK-based rendering and updated API signatures
+      q3DMASCTools for VTK-based rendering and updated API signatures;
+      fix CMakeLists.txt broken source dir variable, pass m_app to
+      classifier.classify() for confusion matrix display, call show() on matrix
     - qVoxFall: fix VoxFallProcess cluster labeling and parallel pipeline
       for VTK compatibility (bool→int type fixes for OMP reduction)
     - qTreeIso: fix CutPursuit_L2/CutPursuit_SPG Boost graph template
       compilation issues
     - qHoughNormals: fix Normals.h header compatibility (atomic, Eigen,
       nanoflann includes, USE_OPENMP_FOR_NORMEST guards)
+    - qCanupo/qSRA/QCustomPlot: replace event->position()/posF() with
+      qtCompatWheelEventPos() for Qt5/Qt6 compatibility
 
 - Core library fixes (CV_db):
     - Fix OpenMP multi-threading crash in point/triangle picking:
@@ -142,6 +166,10 @@ v3.9.5-Beta (Asher) - 02/02/2026
       - Only allocate/resize m_pointColorAlphas when alpha is actually used
       - Fix out-of-bounds access when appending clouds without alpha
     - Fix PointCloudFactory and ecvDisplayTools for VTK backend compatibility
+    - Fix setDisplay(nullptr) semantic mismatch: guard setDisplay_recursive
+      with null check in ecvFacet.cpp and facetsClassifier.h; change
+      setDisplay(nullptr) to setDisplayAll() in ecvTracePolylineTool.cpp
+    - Guard addChild display propagation against null parent display
 
 - Documentation:
     - Comprehensive plugin documentation overhaul: rewrite 37 plugin READMEs
@@ -176,6 +204,12 @@ v3.9.5-Beta (Asher) - 02/02/2026
       (add FORCE to CLOUDVIEWER_VERSION_FULL and CLOUDVIEWER_ABI_VERSION)
 
 - New plugins:
+    - Add qBroom plugin: interactive point cloud cleaning tool (ported from CloudCompare)
+      - Movable broom rectangle for selective point removal with undo support
+      - Full VTK integration: embedded 3D view with dynamic interaction mode
+        switching (camera rotation ↔ signal-only for broom dragging/automation)
+      - Reposition (two-point picking), automation (area polyline), apply/validate
+      - Fix CC bug: bottomViewToolButton wired to CC_TOP_VIEW → CC_BOTTOM_VIEW
     - Add qSIBR plugin: Full SIBR (System for Image Based Rendering) integration
       - Embedded SIBR core engine (system, graphics, assets, raycaster, scene, video, view, renderer, imgproc)
       - ULR Viewer, ULR v2/v3 Viewer, Textured Mesh Viewer, Point-Based Viewer

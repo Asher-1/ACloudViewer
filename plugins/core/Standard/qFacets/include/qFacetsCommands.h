@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <ecvFacet.h>
-#include <ecvHObject.h>
-
+#include <QDir>
+#include <QFileInfo>
 #include <QObject>
 
 #include "ecvCommandLineInterface.h"
@@ -17,359 +16,644 @@
 #include "qFacets.h"
 
 static constexpr char COMMAND_FACETS[] = "FACETS";
-static constexpr char COMMAND_FACETS_EXTRACT[] = "EXTRACT_FACETS";
-static constexpr char COMMAND_FACETS_ALGO[] = "ALGO";
-static constexpr char COMMAND_FACETS_KD_MAX_ANGLE[] =
-        "KD_TREE_FUSION_MAX_ANGLE_DEG";
-static constexpr char COMMAND_FACETS_KD_MAX_REL_DIST[] =
-        "KD_TREE_FUSION_MAX_RELATIVE_DISTANCE";
-static constexpr char COMMAND_FACETS_OCTREE_LEVEL[] = "OCTREE_LEVEL";
-static constexpr char COMMAND_FACETS_RETRO_PROJ[] =
-        "USE_RETRO_PROJECTION_ERROR";
-static constexpr char COMMAND_FACETS_ERR_MAX[] = "ERROR_MAX_PER_FACET";
-static constexpr char COMMAND_FACETS_MIN_PTS[] = "MIN_POINTS_PER_FACET";
-static constexpr char COMMAND_FACETS_MAX_EDGE[] = "MAX_EDGE_LENGTH";
-static constexpr char COMMAND_FACETS_ERR_MEASURE[] = "ERROR_MEASURE";
-static constexpr char COMMAND_FACETS_CLASSIFY_ANGLE[] =
-        "CLASSIFY_FACETS_BY_ANGLE";
-static constexpr char COMMAND_FACETS_CLASSIF_STEP[] = "CLASSIF_ANGLE_STEP";
-static constexpr char COMMAND_FACETS_CLASSIF_MAX_DIST[] = "CLASSIF_MAX_DIST";
-static constexpr char COMMAND_FACETS_EXPORT_SHP[] = "EXPORT_FACETS";
-static constexpr char COMMAND_FACETS_SHAPE_NAME[] = "SHAPE_FILENAME";
-static constexpr char COMMAND_FACETS_USE_NATIVE[] = "USE_NATIVE_ORIENTATION";
-static constexpr char COMMAND_FACETS_USE_GLOBAL[] = "USE_GLOBAL_ORIENTATION";
-static constexpr char COMMAND_FACETS_USE_CUSTOM[] = "USE_CUSTOM_ORIENTATION";
-static constexpr char COMMAND_FACETS_EXPORT_CSV[] = "EXPORT_FACETS_INFO";
-static constexpr char COMMAND_FACETS_CSV_NAME[] = "CSV_FILENAME";
-static constexpr char COMMAND_FACETS_COORDS_CSV[] = "COORDS_IN_CSV";
 
-inline void commandFacetsCollectFacets(ccHObject* root,
-                                       qFacets::FacetSet& out) {
-    if (!root) {
-        return;
-    }
-    if (root->isA(CV_TYPES::FACET)) {
-        ccFacet* f = static_cast<ccFacet*>(root);
-        if (f->getContour()) {
-            out.insert(f);
+static constexpr char EXTRACT_FACETS[] = "-EXTRACT_FACETS";
+static constexpr char ALGO[] = "-ALGO";
+static constexpr char ALGO_FAST_MARCHING[] = "ALGO_FAST_MARCHING";
+static constexpr char ALGO_KD_TREE[] = "ALGO_KD_TREE";
+static constexpr char KD_TREE_FUSION_MAX_ANGLE_DEG[] =
+        "-KD_TREE_FUSION_MAX_ANGLE_DEG";
+static constexpr char KD_TREE_FUSION_MAX_RELATIVE_DISTANCE[] =
+        "-KD_TREE_FUSION_MAX_RELATIVE_DISTANCE";
+static constexpr char OCTREE_LEVEL[] = "-OCTREE_LEVEL";
+static constexpr char USE_RETRO_PROJECTION_ERROR[] =
+        "-USE_RETRO_PROJECTION_ERROR";
+static constexpr char ERROR_MAX_PER_FACET[] = "-ERROR_MAX_PER_FACET";
+static constexpr char MAX_EDGE_LENGTH[] = "-MAX_EDGE_LENGTH";
+static constexpr char MIN_POINTS_PER_FACET[] = "MIN_POINTS_PER_FACET";
+static constexpr char ERROR_MEASURE[] = "-ERROR_MEASURE";
+static constexpr char RMS[] = "RMS";
+static constexpr char MAX_DIST_68_PERCENT[] = "MAX_DIST_68_PERCENT";
+static constexpr char MAX_DIST_95_PERCENT[] = "MAX_DIST_95_PERCENT";
+static constexpr char MAX_DIST_99_PERCENT[] = "MAX_DIST_99_PERCENT";
+static constexpr char MAX_DIST[] = "MAX_DIST";
+static constexpr char CLASSIFY_FACETS_BY_ANGLE[] = "-CLASSIFY_FACETS_BY_ANGLE";
+static constexpr char CLASSIF_ANGLE_STEP[] = "-CLASSIF_ANGLE_STEP";
+static constexpr char CLASSIF_MAX_DIST[] = "-CLASSIF_MAX_DIST";
+static constexpr char EXPORT_FACETS[] = "-EXPORT_FACETS";
+static constexpr char SHAPE_FILENAME[] = "-SHAPE_FILENAME";
+static constexpr char USE_NATIVE_ORIENTATION[] = "-USE_NATIVE_ORIENTATION";
+static constexpr char USE_GLOBAL_ORIENTATION[] = "-USE_GLOBAL_ORIENTATION";
+static constexpr char USE_CUSTOM_ORIENTATION[] = "-USE_CUSTOM_ORIENTATION";
+static constexpr char EXPORT_FACETS_INFO[] = "-EXPORT_FACETS_INFO";
+static constexpr char CSV_FILENAME[] = "-CSV_FILENAME";
+static constexpr char COORDS_IN_CSV[] = "-COORDS_IN_CSV";
+
+static void AddFacetsToGroup(ccHObject* group,
+                             const qFacets::FacetSet& facets) {
+    for (ccFacet* facet : facets) {
+        if (facet) {
+            group->addChild(facet);
         }
-        return;
     }
+}
+
+static void GetFacetsFromGroup(ccHObject* group, qFacets::FacetSet& facets) {
+    facets.clear();
     ccHObject::Container childFacets;
-    root->filterChildren(childFacets, true, CV_TYPES::FACET);
-    for (ccHObject* child : childFacets) {
-        ccFacet* f = static_cast<ccFacet*>(child);
-        if (f->getContour()) {
-            out.insert(f);
+    group->filterChildren(childFacets, true, CV_TYPES::FACET);
+
+    for (ccHObject* childFacet : childFacets) {
+        ccFacet* facet = static_cast<ccFacet*>(childFacet);
+        if (facet->getContour()) {
+            facets.insert(facet);
         }
     }
 }
 
 struct CommandFacets : public ccCommandLineInterface::Command {
     CommandFacets()
-        : ccCommandLineInterface::Command(QStringLiteral("FACETS"),
-                                          QStringLiteral("FACETS")) {}
+        : ccCommandLineInterface::Command(QObject::tr("FACETS"),
+                                          COMMAND_FACETS) {}
 
     bool process(ccCommandLineInterface& cmd) override {
         cmd.print("[FACETS]");
-
         if (cmd.clouds().empty()) {
-            return cmd.error(QObject::tr("No point cloud loaded. Open one with "
-                                         "\"-O\" before "
-                                         "\"-%1\"")
-                                     .arg(COMMAND_FACETS));
+            return cmd.error(
+                    QObject::tr("No point cloud to attempt FACETS on (be sure "
+                                "to open one with \"-O [cloud filename]\" "
+                                "before \"-%2\")")
+                            .arg(COMMAND_FACETS));
         }
 
         qFacets::FacetsParams params;
+        QStringList paramNames =
+                QStringList()
+                << EXTRACT_FACETS << ALGO << KD_TREE_FUSION_MAX_ANGLE_DEG
+                << KD_TREE_FUSION_MAX_RELATIVE_DISTANCE << OCTREE_LEVEL
+                << USE_RETRO_PROJECTION_ERROR << ERROR_MAX_PER_FACET
+                << MIN_POINTS_PER_FACET << MAX_EDGE_LENGTH << ERROR_MEASURE
+                << CLASSIFY_FACETS_BY_ANGLE << CLASSIF_ANGLE_STEP
+                << CLASSIF_MAX_DIST << EXPORT_FACETS << SHAPE_FILENAME
+                << USE_NATIVE_ORIENTATION << USE_GLOBAL_ORIENTATION
+                << USE_CUSTOM_ORIENTATION << EXPORT_FACETS_INFO << CSV_FILENAME
+                << COORDS_IN_CSV;
+        QStringList algoNames = QStringList()
+                                << ALGO_FAST_MARCHING << ALGO_KD_TREE;
+        QStringList errorMeasureNames = QStringList()
+                                        << RMS << MAX_DIST_68_PERCENT
+                                        << MAX_DIST_95_PERCENT
+                                        << MAX_DIST_99_PERCENT << MAX_DIST;
 
-        while (!cmd.arguments().empty()) {
-            const QString& ARG = cmd.arguments().front();
-            if (ccCommandLineInterface::IsCommand(ARG,
-                                                  COMMAND_FACETS_EXTRACT)) {
-                cmd.arguments().pop_front();
-                params.extractFacets = true;
-            } else if (ccCommandLineInterface::IsCommand(ARG,
-                                                         COMMAND_FACETS_ALGO)) {
-                cmd.arguments().pop_front();
+        if (!cmd.arguments().empty()) {
+            QString param = cmd.arguments().takeFirst().toUpper();
+            while (paramNames.contains(param)) {
+                cmd.print(QObject::tr("\t%1 : %2").arg(COMMAND_FACETS, param));
+
+                if (param == EXTRACT_FACETS) {
+                    params.extractFacets = true;
+                } else if (param == ALGO) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: Algorithm type "
+                                            "after \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, ALGO));
+                    }
+
+                    QString val = cmd.arguments().takeFirst().toUpper();
+                    cmd.print(QObject::tr("\t-ALGO : %1").arg(val));
+                    if (val == ALGO_FAST_MARCHING) {
+                        params.algo = CellsFusionDlg::ALGO_FAST_MARCHING;
+                    } else if (val == ALGO_KD_TREE) {
+                        params.algo = CellsFusionDlg::ALGO_KD_TREE;
+                    } else {
+                        return cmd.error(
+                                QObject::tr("No valid parameter: Algorithm "
+                                            "type after \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, ALGO));
+                    }
+                } else if (param == KD_TREE_FUSION_MAX_ANGLE_DEG) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             KD_TREE_FUSION_MAX_ANGLE_DEG));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for "
+                                "-KD_TREE_FUSION_MAX_ANGLE_DEG!");
+                    }
+                    cmd.print(
+                            QObject::tr("\t-KD_TREE_FUSION_MAX_ANGLE_DEG : %1")
+                                    .arg(val));
+                    params.kdTreeFusionMaxAngleDeg = val;
+                } else if (param == KD_TREE_FUSION_MAX_RELATIVE_DISTANCE) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             KD_TREE_FUSION_MAX_RELATIVE_DISTANCE));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for "
+                                "-KD_TREE_FUSION_MAX_RELATIVE_DISTANCE!");
+                    }
+                    cmd.print(QObject::tr("\t-KD_TREE_FUSION_MAX_RELATIVE_"
+                                          "DISTANCE : %1")
+                                      .arg(val));
+                    params.kdTreeFusionMaxRelativeDistance = val;
+                } else if (param == OCTREE_LEVEL) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, OCTREE_LEVEL));
+                    }
+                    bool ok = false;
+                    int val = cmd.arguments().takeFirst().toInt(&ok);
+                    if (!ok) {
+                        return cmd.error("Invalid number for -OCTREE_LEVEL!");
+                    }
+                    cmd.print(QObject::tr("\t-OCTREE_LEVEL : %1").arg(val));
+                    params.octreeLevel = static_cast<unsigned>(val);
+                } else if (param == USE_RETRO_PROJECTION_ERROR) {
+                    params.useRetroProjectionError = true;
+                } else if (param == ERROR_MAX_PER_FACET) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             ERROR_MAX_PER_FACET));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for -ERROR_MAX_PER_FACET!");
+                    }
+                    cmd.print(QObject::tr("\t-ERROR_MAX_PER_FACET : %1")
+                                      .arg(val));
+                    params.errorMaxPerFacet = val;
+                } else if (param == MIN_POINTS_PER_FACET) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             MIN_POINTS_PER_FACET));
+                    }
+                    bool ok = false;
+                    int val = cmd.arguments().takeFirst().toInt(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for -MIN_POINTS_PER_FACET!");
+                    }
+                    cmd.print(QObject::tr("\t-MIN_POINTS_PER_FACET : %1")
+                                      .arg(val));
+                    params.minPointsPerFacet = static_cast<unsigned>(val);
+                } else if (param == MAX_EDGE_LENGTH) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, MAX_EDGE_LENGTH));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for -MAX_EDGE_LENGTH!");
+                    }
+                    cmd.print(QObject::tr("\t-MAX_EDGE_LENGTH : %1").arg(val));
+                    params.maxEdgeLength = val;
+                } else if (param == ERROR_MEASURE) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: ERROR_MEASURE "
+                                            "type after \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, ERROR_MEASURE));
+                    }
+
+                    QString val = cmd.arguments().takeFirst().toUpper();
+                    cmd.print(QObject::tr("\t-ERROR_MEASURE : %1").arg(val));
+                    if (val == RMS) {
+                        params.errorMeasure =
+                                cloudViewer::DistanceComputationTools::RMS;
+                    } else if (val == MAX_DIST_68_PERCENT) {
+                        params.errorMeasure = cloudViewer::
+                                DistanceComputationTools::MAX_DIST_68_PERCENT;
+                    } else if (val == MAX_DIST_95_PERCENT) {
+                        params.errorMeasure = cloudViewer::
+                                DistanceComputationTools::MAX_DIST_95_PERCENT;
+                    } else if (val == MAX_DIST_99_PERCENT) {
+                        params.errorMeasure = cloudViewer::
+                                DistanceComputationTools::MAX_DIST_99_PERCENT;
+                    } else if (val == MAX_DIST) {
+                        params.errorMeasure =
+                                cloudViewer::DistanceComputationTools::MAX_DIST;
+                    } else {
+                        return cmd.error(
+                                QObject::tr("No valid parameter: Error measure "
+                                            "type after \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, ERROR_MEASURE));
+                    }
+                } else if (param == CLASSIFY_FACETS_BY_ANGLE) {
+                    params.classifyFacetsByAngle = true;
+                } else if (param == CLASSIF_ANGLE_STEP) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             CLASSIF_ANGLE_STEP));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for -CLASSIF_ANGLE_STEP!");
+                    }
+                    cmd.print(
+                            QObject::tr("\t-CLASSIF_ANGLE_STEP : %1").arg(val));
+                    params.classifAngleStep = val;
+                } else if (param == CLASSIF_MAX_DIST) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: number after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, CLASSIF_MAX_DIST));
+                    }
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for -CLASSIF_MAX_DIST!");
+                    }
+                    cmd.print(QObject::tr("\t-CLASSIF_MAX_DIST : %1").arg(val));
+                    params.classifMaxDist = val;
+                } else if (param == EXPORT_FACETS) {
+                    params.exportFacets = true;
+                } else if (param == SHAPE_FILENAME) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: filepath after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, SHAPE_FILENAME));
+                    }
+
+                    QString val = cmd.arguments().takeFirst();
+                    cmd.print(QObject::tr("\t-SHAPE_FILENAME : %1").arg(val));
+                    params.shapeFilename = val;
+                } else if (param == USE_NATIVE_ORIENTATION) {
+                    params.useNativeOrientation = true;
+                    params.useGlobalOrientation = false;
+                    params.useCustomOrientation = false;
+                } else if (param == USE_GLOBAL_ORIENTATION) {
+                    params.useNativeOrientation = false;
+                    params.useGlobalOrientation = true;
+                    params.useCustomOrientation = false;
+                } else if (param == USE_CUSTOM_ORIENTATION) {
+                    params.useNativeOrientation = false;
+                    params.useGlobalOrientation = false;
+                    params.useCustomOrientation = true;
+
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: Nx \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             USE_CUSTOM_ORIENTATION));
+                    }
+
+                    bool ok = false;
+                    float val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for Nx in "
+                                "-USE_CUSTOM_ORIENTATION!");
+                    }
+                    params.nX = val;
+
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: Ny \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             USE_CUSTOM_ORIENTATION));
+                    }
+
+                    val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for Ny in "
+                                "-USE_CUSTOM_ORIENTATION!");
+                    }
+                    params.nY = val;
+
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: Nz \"-%1 %2\"")
+                                        .arg(COMMAND_FACETS,
+                                             USE_CUSTOM_ORIENTATION));
+                    }
+                    val = cmd.arguments().takeFirst().toFloat(&ok);
+                    if (!ok) {
+                        return cmd.error(
+                                "Invalid number for Nz in "
+                                "-USE_CUSTOM_ORIENTATION!");
+                    }
+                    params.nZ = val;
+                } else if (param == EXPORT_FACETS_INFO) {
+                    params.exportFacetsInfo = true;
+                } else if (param == CSV_FILENAME) {
+                    if (cmd.arguments().empty()) {
+                        return cmd.error(
+                                QObject::tr("Missing parameter: filepath after "
+                                            "\"-%1 %2\"")
+                                        .arg(COMMAND_FACETS, CSV_FILENAME));
+                    }
+
+                    QString val = cmd.arguments().takeFirst();
+                    cmd.print(QObject::tr("\t-CSV_FILENAME : %1").arg(val));
+                    params.csvFilename = val;
+                } else if (param == COORDS_IN_CSV) {
+                    params.coordsInCsv = true;
+                }
+
                 if (cmd.arguments().empty()) {
-                    return cmd.error(
-                            QObject::tr("Missing value after \"-%1\" (expected "
-                                        "ALGO_KD_TREE or ALGO_FAST_MARCHING)")
-                                    .arg(COMMAND_FACETS_ALGO));
+                    break;
                 }
-                QString v = cmd.arguments().takeFirst().toUpper();
-                if (v == QStringLiteral("ALGO_KD_TREE")) {
-                    params.algo = CellsFusionDlg::ALGO_KD_TREE;
-                } else if (v == QStringLiteral("ALGO_FAST_MARCHING")) {
-                    params.algo = CellsFusionDlg::ALGO_FAST_MARCHING;
-                } else {
-                    return cmd.error(QObject::tr("Invalid \"-%1\" value: %2")
-                                             .arg(COMMAND_FACETS_ALGO, v));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_KD_MAX_ANGLE)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.kdTreeFusionMaxAngleDeg =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(QObject::tr("Invalid number after \"-%1\"")
-                                             .arg(COMMAND_FACETS_KD_MAX_ANGLE));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_KD_MAX_REL_DIST)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.kdTreeFusionMaxRelativeDistance =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(
-                            QObject::tr("Invalid number after \"-%1\"")
-                                    .arg(COMMAND_FACETS_KD_MAX_REL_DIST));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_OCTREE_LEVEL)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.octreeLevel = cmd.arguments().takeFirst().toUInt(&ok);
-                if (!ok) {
-                    return cmd.error(
-                            QObject::tr(
-                                    "Invalid unsigned integer after \"-%1\"")
-                                    .arg(COMMAND_FACETS_OCTREE_LEVEL));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_RETRO_PROJ)) {
-                cmd.arguments().pop_front();
-                params.useRetroProjectionError = true;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_ERR_MAX)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.errorMaxPerFacet =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(QObject::tr("Invalid number after \"-%1\"")
-                                             .arg(COMMAND_FACETS_ERR_MAX));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_MIN_PTS)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.minPointsPerFacet =
-                        cmd.arguments().takeFirst().toUInt(&ok);
-                if (!ok) {
-                    return cmd.error(
-                            QObject::tr(
-                                    "Invalid unsigned integer after \"-%1\"")
-                                    .arg(COMMAND_FACETS_MIN_PTS));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_MAX_EDGE)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.maxEdgeLength =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(QObject::tr("Invalid number after \"-%1\"")
-                                             .arg(COMMAND_FACETS_MAX_EDGE));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_ERR_MEASURE)) {
-                cmd.arguments().pop_front();
-                if (cmd.arguments().empty()) {
-                    return cmd.error(QObject::tr("Missing value after \"-%1\"")
-                                             .arg(COMMAND_FACETS_ERR_MEASURE));
-                }
-                QString m = cmd.arguments().takeFirst().toUpper();
-                if (m == QStringLiteral("RMS")) {
-                    params.errorMeasure =
-                            cloudViewer::DistanceComputationTools::RMS;
-                } else if (m == QStringLiteral("MAX_DIST_68_PERCENT")) {
-                    params.errorMeasure = cloudViewer::
-                            DistanceComputationTools::MAX_DIST_68_PERCENT;
-                } else if (m == QStringLiteral("MAX_DIST_95_PERCENT")) {
-                    params.errorMeasure = cloudViewer::
-                            DistanceComputationTools::MAX_DIST_95_PERCENT;
-                } else if (m == QStringLiteral("MAX_DIST_99_PERCENT")) {
-                    params.errorMeasure = cloudViewer::
-                            DistanceComputationTools::MAX_DIST_99_PERCENT;
-                } else if (m == QStringLiteral("MAX_DIST")) {
-                    params.errorMeasure =
-                            cloudViewer::DistanceComputationTools::MAX_DIST;
-                } else {
-                    return cmd.error(
-                            QObject::tr("Invalid \"-%1\" value: %2")
-                                    .arg(COMMAND_FACETS_ERR_MEASURE, m));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_CLASSIFY_ANGLE)) {
-                cmd.arguments().pop_front();
-                params.classifyFacetsByAngle = true;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_CLASSIF_STEP)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.classifAngleStep =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(QObject::tr("Invalid number after \"-%1\"")
-                                             .arg(COMMAND_FACETS_CLASSIF_STEP));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_CLASSIF_MAX_DIST)) {
-                cmd.arguments().pop_front();
-                bool ok = false;
-                params.classifMaxDist =
-                        cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(
-                            QObject::tr("Invalid number after \"-%1\"")
-                                    .arg(COMMAND_FACETS_CLASSIF_MAX_DIST));
-                }
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_EXPORT_SHP)) {
-                cmd.arguments().pop_front();
-                params.exportFacets = true;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_SHAPE_NAME)) {
-                cmd.arguments().pop_front();
-                if (cmd.arguments().empty()) {
-                    return cmd.error(QObject::tr("Missing path after \"-%1\"")
-                                             .arg(COMMAND_FACETS_SHAPE_NAME));
-                }
-                params.shapeFilename = cmd.arguments().takeFirst();
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_USE_NATIVE)) {
-                cmd.arguments().pop_front();
-                params.useNativeOrientation = true;
-                params.useGlobalOrientation = false;
-                params.useCustomOrientation = false;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_USE_GLOBAL)) {
-                cmd.arguments().pop_front();
-                params.useNativeOrientation = false;
-                params.useGlobalOrientation = true;
-                params.useCustomOrientation = false;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_USE_CUSTOM)) {
-                cmd.arguments().pop_front();
-                if (cmd.arguments().size() < 3) {
-                    return cmd.error(
-                            QObject::tr("Expected Nx Ny Nz after \"-%1\"")
-                                    .arg(COMMAND_FACETS_USE_CUSTOM));
-                }
-                bool ok = true;
-                params.nX = cmd.arguments().takeFirst().toDouble(&ok);
-                params.nY = cmd.arguments().takeFirst().toDouble(&ok);
-                params.nZ = cmd.arguments().takeFirst().toDouble(&ok);
-                if (!ok) {
-                    return cmd.error(
-                            QObject::tr("Invalid numbers after \"-%1\"")
-                                    .arg(COMMAND_FACETS_USE_CUSTOM));
-                }
-                params.useNativeOrientation = false;
-                params.useGlobalOrientation = false;
-                params.useCustomOrientation = true;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_EXPORT_CSV)) {
-                cmd.arguments().pop_front();
-                params.exportFacetsInfo = true;
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_CSV_NAME)) {
-                cmd.arguments().pop_front();
-                if (cmd.arguments().empty()) {
-                    return cmd.error(QObject::tr("Missing path after \"-%1\"")
-                                             .arg(COMMAND_FACETS_CSV_NAME));
-                }
-                params.csvFilename = cmd.arguments().takeFirst();
-            } else if (ccCommandLineInterface::IsCommand(
-                               ARG, COMMAND_FACETS_COORDS_CSV)) {
-                cmd.arguments().pop_front();
-                params.coordsInCsv = true;
-            } else {
-                break;
+                param = cmd.arguments().takeFirst().toUpper();
+            }
+
+            if (!paramNames.contains(param)) {
+                cmd.arguments().push_front(param);
             }
         }
 
-        if (!params.extractFacets) {
-            return cmd.error(QObject::tr("Facet extraction disabled: add "
-                                         "\"-%1\" to run extraction.")
-                                     .arg(COMMAND_FACETS_EXTRACT));
+        if (!params.extractFacets && !params.classifyFacetsByAngle &&
+            !params.exportFacets && !params.exportFacetsInfo) {
+            return cmd.error(
+                    QObject::tr(
+                            "No valid parameter: Need one of -%2, -%3, -%4, "
+                            "or -%5 after \"-%1\"")
+                            .arg(COMMAND_FACETS, EXTRACT_FACETS,
+                                 CLASSIFY_FACETS_BY_ANGLE, EXPORT_FACETS,
+                                 EXPORT_FACETS_INFO));
         }
 
-        CLCloudDesc& cld = cmd.clouds().front();
-        ccPointCloud* pc = cld.pc;
-        if (!pc) {
-            return cmd.error(QObject::tr("Invalid cloud"));
-        }
+        cmd.print(QObject::tr("[FACETS] Parameters including default"));
+        if (params.extractFacets) {
+            cmd.print(QObject::tr("\t-EXTRACT_FACETS"));
+            if (params.algo == CellsFusionDlg::ALGO_KD_TREE) {
+                cmd.print(QObject::tr("\t\t-ALGO : ALGO_KD_TREE"));
+                cmd.print(
+                        QObject::tr("\t\t\t-KD_TREE_FUSION_MAX_ANGLE_DEG : %1")
+                                .arg(params.kdTreeFusionMaxAngleDeg));
+                cmd.print(QObject::tr("\t\t\t-KD_TREE_FUSION_MAX_RELATIVE_"
+                                      "DISTANCE : %1")
+                                  .arg(params.kdTreeFusionMaxRelativeDistance));
+            } else if (params.algo == CellsFusionDlg::ALGO_FAST_MARCHING) {
+                cmd.print(QObject::tr("\t\t-ALGO ALGO_FAST_MARCHING"));
+                cmd.print(QObject::tr("\t\t\t-OCTREE_LEVEL : %1")
+                                  .arg(params.octreeLevel));
+                cmd.print(QObject::tr("\t\t\t-USE_RETRO_PROJECTION_ERROR : %1")
+                                  .arg(params.useRetroProjectionError));
+            }
 
-        ecvProgressDialog* progressCb = cmd.progressDialog();
-        bool facetError = false;
-        ccHObject* group = qFacets::ExecuteFacetExtraction(
-                pc, params, facetError, progressCb);
-
-        if (!group) {
-            return cmd.error(QObject::tr(
-                    "Facet extraction failed or produced no facets."));
-        }
-
-        if (facetError) {
-            cmd.warning(
-                    QObject::tr("Warning: errors occurred during facet "
-                                "creation; result may "
-                                "be incomplete."));
+            if (params.errorMeasure ==
+                cloudViewer::DistanceComputationTools::RMS) {
+                cmd.print(QObject::tr("\t\t-ERROR_MEASURE RMS"));
+            } else if (params.errorMeasure ==
+                       cloudViewer::DistanceComputationTools::
+                               MAX_DIST_68_PERCENT) {
+                cmd.print(
+                        QObject::tr("\t\t-ERROR_MEASURE MAX_DIST_68_PERCENT"));
+            } else if (params.errorMeasure ==
+                       cloudViewer::DistanceComputationTools::
+                               MAX_DIST_95_PERCENT) {
+                cmd.print(
+                        QObject::tr("\t\t-ERROR_MEASURE MAX_DIST_95_PERCENT"));
+            } else if (params.errorMeasure ==
+                       cloudViewer::DistanceComputationTools::
+                               MAX_DIST_99_PERCENT) {
+                cmd.print(
+                        QObject::tr("\t\t-ERROR_MEASURE MAX_DIST_99_PERCENT"));
+            } else if (params.errorMeasure ==
+                       cloudViewer::DistanceComputationTools::MAX_DIST) {
+                cmd.print(QObject::tr("\t\t-ERROR_MEASURE MAX_DIST"));
+            }
+            cmd.print(QObject::tr("\t\t-ERROR_MAX_PER_FACET : %1")
+                              .arg(params.errorMaxPerFacet));
+            cmd.print(QObject::tr("\t\t-MIN_POINTS_PER_FACET : %1")
+                              .arg(params.minPointsPerFacet));
+            cmd.print(QObject::tr("\t\t-MAX_EDGE_LENGTH : %1")
+                              .arg(params.maxEdgeLength));
         }
 
         if (params.classifyFacetsByAngle) {
-            if (!FacetsClassifier::ByOrientation(group, params.classifAngleStep,
-                                                 params.classifMaxDist)) {
-                cmd.warning(QObject::tr(
-                        "Facet classification by orientation failed."));
-            }
+            cmd.print(QObject::tr("\t-CLASSIFY_FACETS_BY_ANGLE"));
+            cmd.print(QObject::tr("\t\t-CLASSIF_ANGLE_STEP : %1")
+                              .arg(params.classifAngleStep));
+            cmd.print(QObject::tr("\t\t-CLASSIF_MAX_DIST : %1")
+                              .arg(params.classifMaxDist));
         }
 
-        qFacets::FacetSet facetSet;
-        commandFacetsCollectFacets(group, facetSet);
-
-        const bool silent = cmd.silentMode();
-
         if (params.exportFacets) {
-            if (!qFacets::ExecuteExportFacets(facetSet, params.shapeFilename,
-                                              params.useNativeOrientation,
-                                              params.useGlobalOrientation,
-                                              params.useCustomOrientation,
-                                              params.nX, params.nY, params.nZ,
-                                              silent)) {
-                delete group;
-                return cmd.error(QObject::tr("Shapefile export failed."));
+            cmd.print(QObject::tr("\t-EXPORT_FACETS"));
+            cmd.print(QObject::tr("\t\t-SHAPE_FILENAME : \"%1\"")
+                              .arg(params.shapeFilename));
+            if (params.useNativeOrientation) {
+                cmd.print(QObject::tr("\t\t-USE_NATIVE_ORIENTATION"));
+            } else if (params.useGlobalOrientation) {
+                cmd.print(QObject::tr("\t\t-USE_GLOBAL_ORIENTATION"));
+            } else if (params.useCustomOrientation) {
+                cmd.print(QObject::tr("\t\t-USE_CUSTOM_ORIENTATION : %1 %2 %3")
+                                  .arg(params.nX)
+                                  .arg(params.nY)
+                                  .arg(params.nZ));
             }
         }
 
         if (params.exportFacetsInfo) {
-            if (!qFacets::ExecuteExportFacetsInfo(
-                        facetSet, params.csvFilename, params.coordsInCsv,
+            cmd.print(QObject::tr("\t-EXPORT_FACETS_INFO"));
+            cmd.print(QObject::tr("\t\t-CSV_FILENAME : \"%1\"")
+                              .arg(params.csvFilename));
+            if (params.coordsInCsv) {
+                cmd.print(QObject::tr("\t\t-COORDS_IN_CSV"));
+                if (params.useNativeOrientation) {
+                    cmd.print(QObject::tr("\t\t\t-USE_NATIVE_ORIENTATION"));
+                } else if (params.useGlobalOrientation) {
+                    cmd.print(QObject::tr("\t\t\t-USE_GLOBAL_ORIENTATION"));
+                } else if (params.useCustomOrientation) {
+                    cmd.print(
+                            QObject::tr(
+                                    "\t\t\t-USE_CUSTOM_ORIENTATION : %1 %2 %3")
+                                    .arg(params.nX)
+                                    .arg(params.nY)
+                                    .arg(params.nZ));
+                }
+            }
+        }
+
+        ecvProgressDialog* progressCb = cmd.progressDialog();
+
+        for (CLCloudDesc clCloud : cmd.clouds()) {
+            qFacets::FacetSet facets;
+            ccHObject* group = nullptr;
+
+            if (params.extractFacets) {
+                cmd.print(QObject::tr("[FACETS] Extracting Facets: \"%1\"")
+                                  .arg(clCloud.pc->getName()));
+                bool errorDuringFacetCreation = false;
+                group = qFacets::ExecuteFacetExtraction(
+                        clCloud.pc, params, errorDuringFacetCreation,
+                        progressCb);
+
+                if (errorDuringFacetCreation) {
+                    cmd.error(
+                            QObject::tr("[FACETS] Failed to extract facets."));
+                    return false;
+                }
+
+                GetFacetsFromGroup(group, facets);
+                if (facets.empty()) {
+                    delete group;
+                    cmd.error(QObject::tr(
+                            "[FACETS] Did not extract any facets."));
+                    return false;
+                }
+                cmd.print(QObject::tr("[FACETS] Extracted %1 facets")
+                                  .arg(facets.size()));
+            }
+
+            if (params.classifyFacetsByAngle) {
+                cmd.print(
+                        QObject::tr("[FACETS] Classifying facets by angles."));
+                if (facets.empty()) {
+                    delete group;
+                    cmd.error(
+                            QObject::tr("[FACETS] Need facets. Must use "
+                                        "-EXTRACT_FACETS."));
+                    return false;
+                }
+
+                ccHObject* classifGroup =
+                        new ccHObject(QString("FACETS group"));
+                AddFacetsToGroup(classifGroup, facets);
+
+                bool success = FacetsClassifier::ByOrientation(
+                        classifGroup, params.classifAngleStep,
+                        params.classifMaxDist);
+                if (!success) {
+                    delete classifGroup;
+                    delete group;
+                    cmd.error(QObject::tr(
+                            "[FACETS] Failed to Classify facets by angles."));
+                    return false;
+                }
+                delete classifGroup;
+            }
+
+            if (params.exportFacets) {
+                cmd.print(QObject::tr(
+                        "[FACETS] Exporting Facets info to shape file"));
+                if (facets.empty()) {
+                    delete group;
+                    cmd.error(QObject::tr(
+                            "[FACETS] Need facets. Must use -EXTRACT_FACETS."));
+                    return false;
+                }
+
+                QFileInfo fileInfo(params.shapeFilename);
+                QString directoryPath = fileInfo.path();
+                QString newFileName = clCloud.pc->getName() + QString("_") +
+                                      fileInfo.fileName();
+                QString outputName = QDir(directoryPath).filePath(newFileName);
+                QDir dir;
+                if (!dir.mkpath(directoryPath)) {
+                    delete group;
+                    cmd.error(
+                            QObject::tr(
+                                    "[FACETS] Failed to create directories %1")
+                                    .arg(outputName));
+                    return false;
+                }
+                bool success = qFacets::ExecuteExportFacets(
+                        facets, outputName, params.useNativeOrientation,
+                        params.useGlobalOrientation,
+                        params.useCustomOrientation, params.nX, params.nY,
+                        params.nZ, cmd.silentMode());
+
+                if (!success) {
+                    delete group;
+                    cmd.error(QObject::tr(
+                            "[FACETS] Failed to Export Facets to shape file."));
+                    return false;
+                }
+            }
+
+            if (params.exportFacetsInfo) {
+                cmd.print(
+                        QObject::tr("[FACETS] Exporting Facets info to csv."));
+                if (facets.empty()) {
+                    delete group;
+                    cmd.error(
+                            QObject::tr("[FACETS] Need facets. Must have "
+                                        "-EXTRACT_FACETS."));
+                    return false;
+                }
+
+                QFileInfo fileInfo(params.csvFilename);
+                QString directoryPath = fileInfo.path();
+                QString newFileName = clCloud.pc->getName() + QString("_") +
+                                      fileInfo.fileName();
+                QString outputName = QDir(directoryPath).filePath(newFileName);
+                QDir dir;
+                if (!dir.mkpath(directoryPath)) {
+                    delete group;
+                    cmd.error(
+                            QObject::tr(
+                                    "[FACETS] Failed to create directories %1")
+                                    .arg(outputName));
+                    return false;
+                }
+                bool success = qFacets::ExecuteExportFacetsInfo(
+                        facets, outputName, params.coordsInCsv,
                         params.useNativeOrientation,
                         params.useGlobalOrientation,
                         params.useCustomOrientation, params.nX, params.nY,
-                        params.nZ, silent)) {
-                delete group;
-                return cmd.error(QObject::tr("CSV export failed."));
+                        params.nZ, cmd.silentMode());
+                if (!success) {
+                    delete group;
+                    cmd.error(QObject::tr(
+                            "[FACETS] Failed to Export Facets Info to csv"));
+                    return false;
+                }
             }
+
+            if (group && cmd.autoSaveMode()) {
+                CLGroupDesc grpDesc(group,
+                                    clCloud.basename + QObject::tr("_FACETS"),
+                                    clCloud.path);
+                QString errStr = cmd.exportEntity(
+                        grpDesc, QString(), nullptr,
+                        ccCommandLineInterface::ExportOption::ForceHierarchy);
+                if (!errStr.isEmpty()) {
+                    cmd.warning(errStr);
+                }
+            }
+
+            delete group;
         }
 
-        if (cmd.autoSaveMode()) {
-            CLGroupDesc grpDesc(group, cld.basename + QObject::tr("_FACETS"),
-                                cld.path);
-            QString errStr = cmd.exportEntity(
-                    grpDesc, QString(), nullptr,
-                    ccCommandLineInterface::ExportOption::ForceHierarchy);
-            if (!errStr.isEmpty()) {
-                cmd.warning(errStr);
-            }
-        }
-
-        delete group;
         return true;
     }
 };

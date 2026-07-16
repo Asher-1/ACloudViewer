@@ -37,6 +37,7 @@
 
 class ccPointCloud;
 class ccMouseCircle;
+class ecvGenericGLDisplay;
 
 class ccCloudLayersDlg : public ccOverlayDialog, public Ui::ccCloudLayersDlg {
     Q_OBJECT
@@ -83,9 +84,6 @@ private Q_SLOTS:
     //! apply changes and close dialog
     void applyClicked();
 
-    //! restore changes and close dialog
-    void closeClicked();
-
     void scalarFieldIndexChanged(int index);
     void inputClassIndexChanged(int index);
     void outputClassIndexChanged(int index);
@@ -93,6 +91,7 @@ private Q_SLOTS:
     //! asprs model signals
     void codeChanged(ccAsprsModel::AsprsItem& item, int oldCode);
     void colorChanged(ccAsprsModel::AsprsItem& item);
+    void classNameChanged(int row, QString newName);
 
     //! show color picker dialog
     void tableViewDoubleClicked(const QModelIndex& index);
@@ -108,6 +107,7 @@ private:
     ccAsprsModel m_asprsModel;
     ccCloudLayersHelper* m_helper;
     ccMouseCircle* m_mouseCircle;
+    ecvGenericGLDisplay* m_bindView = nullptr;
     QList<QString> m_presets;
     QMetaObject::Connection m_mouseMovedConnection{};
 };

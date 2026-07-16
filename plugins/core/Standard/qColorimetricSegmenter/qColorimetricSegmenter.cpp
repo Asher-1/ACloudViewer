@@ -873,9 +873,9 @@ void ColorimetricSegmenter::filterHSV() {
 
     // Get HSV values
     Hsv hsv_first;
-    hsv_first.h = static_cast<uint16_t>(hsvDlg.hue_first->value());
-    hsv_first.s = static_cast<uint16_t>(hsvDlg.sat_first->value());
-    hsv_first.v = static_cast<uint16_t>(hsvDlg.val_first->value());
+    hsv_first.h = static_cast<uint16_t>(hsvDlg.hue->value());
+    hsv_first.s = static_cast<uint16_t>(hsvDlg.sat->value());
+    hsv_first.v = static_cast<uint16_t>(hsvDlg.val->value());
 
     // We use look-up tables for faster comparisons
     static const uint8_t LOW = 0;

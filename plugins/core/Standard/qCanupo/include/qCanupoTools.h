@@ -67,13 +67,31 @@ public:
                                      const std::vector<float>& second);
 
     //! Computes the 'descriptors' for various scales on core points only
+    /** For each core point, the multi-scale descriptors (e.g. dimensionality)
+        are computed by PCA analysis of the neighborhoods at each scale.
+        The neighborhood is extracted from the source cloud's octree.
+        \param corePoints the subsampled core points (references into
+    sourceCloud) \param corePointsDescriptors [out] computed descriptors for
+    each core point \param sourceCloud the original point cloud used for
+    neighborhood extraction \param sortedScales scales in DESCENDING order
+    (largest first) \param invalidDescriptors [out] true if any core point had
+    insufficient neighbors \param invalidDescCount [out] number of core points
+    with invalid descriptors \param error [out] error message if the method
+    returns false \param descriptorID which descriptor to compute (default:
+    dimensionality) \param maxThreadCount max threads (0 = auto-detect) \param
+    progressCb optional progress callback \param inputOctree optional
+    pre-computed octree (will be built if null) \param roughnessSFs optional
+    per-level roughness scalar fields (for tests) \return true on success, false
+    on error or cancellation
+    **/
     static bool ComputeCorePointsDescriptors(
             cloudViewer::GenericIndexedCloud* corePoints,
             CorePointDescSet& corePointsDescriptors,
             ccGenericPointCloud* sourceCloud,
             const std::vector<float>& sortedScales,
             bool& invalidDescriptors,
-            QString& error,  // if any
+            unsigned& invalidDescCount,
+            QString& error,
             unsigned descriptorID = DESC_DIMENSIONALITY,
             int maxThreadCount = 0,
             cloudViewer::GenericProgressCallback* progressCb = 0,

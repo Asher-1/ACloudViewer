@@ -105,6 +105,7 @@ public:
     void removeFromOwnDB(ccHObject* obj) override;
     QWidget* asWidget() override;
     const QWidget* asWidget() const override;
+    QObject* signalSource() override { return this; }
     bool hasOverriddenDisplayParameters() const override;
     void aboutToBeRemoved(ccDrawableObject* obj) override;
 
@@ -245,7 +246,7 @@ public:
     QImage renderToImage(int zoomFactor = 1,
                          bool renderOverlayItems = false,
                          bool silent = false,
-                         int viewport = 0);
+                         int viewport = 0) override;
 
     // ================================================================
     // VTK-specific accessors
@@ -291,13 +292,15 @@ public:
             const ecvGenericGLDisplay* primaryView) const override {
         return primaryView && primaryView == m_entityBindingSource;
     }
+    bool isComparativeSubView() const override {
+        return m_entityBindingSource != nullptr;
+    }
 
     // ================================================================
     // Per-view timer & scheduling (replaces singleton m_timer)
     // ================================================================
 
     qint64 elapsedMs() const override { return m_timer.elapsed(); }
-    void scheduleFullRedraw(int delayMs) override;
     void startDeferredPicking();
     void syncVtkCameraToContext();
     QTimer& deferredPickingTimer() { return m_deferredPickingTimer; }
@@ -481,8 +484,6 @@ private:
     int m_edlLowResFactor = 4;
     vtkSmartPointer<vtkRenderPass> m_edlPass;
     bool m_sliceMode = false;
-    QTimer m_scheduleTimer;
-    qint64 m_scheduledFullRedrawTime = 0;
     bool m_autoRefresh = false;
     bool m_shutdownDone = false;
     QElapsedTimer m_timer;

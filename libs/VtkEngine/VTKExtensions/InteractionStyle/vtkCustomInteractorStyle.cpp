@@ -76,6 +76,11 @@ vtkCustomInteractorStyle::~vtkCustomInteractorStyle() {
 
 //-------------------------------------------------------------------------
 void vtkCustomInteractorStyle::RemoveAllManipulators() {
+    if (this->CurrentManipulator) {
+        this->CurrentManipulator->EndInteraction();
+        this->CurrentManipulator->UnRegister(this);
+        this->CurrentManipulator = nullptr;
+    }
     this->CameraManipulators->RemoveAllItems();
 }
 

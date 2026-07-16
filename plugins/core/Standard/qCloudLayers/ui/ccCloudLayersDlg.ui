@@ -56,6 +56,16 @@
       </spacer>
      </item>
      <item>
+      <widget class="QCheckBox" name="keepRGBColorsCheckBox">
+       <property name="toolTip">
+        <string>Overwrite the cloud RGB colors with the displayed class colors on exit (if validated)</string>
+       </property>
+       <property name="text">
+        <string>overwrite RGB colors on exit</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pbApply">
        <property name="toolTip">
         <string>apply and close dialog</string>

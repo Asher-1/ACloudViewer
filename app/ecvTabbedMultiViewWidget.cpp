@@ -808,3 +808,10 @@ bool ecvTabbedMultiViewWidget::restoreLayoutState(const QJsonObject& state) {
 
     return true;
 }
+
+void ecvTabbedMultiViewWidget::setViewCloseButtonsEnabled(bool enabled) {
+    for (int i = 0; i < m_tabWidget->count(); ++i) {
+        auto* mvw = qobject_cast<ecvMultiViewWidget*>(m_tabWidget->widget(i));
+        if (mvw) mvw->setViewCloseButtonsEnabled(enabled);
+    }
+}

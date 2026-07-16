@@ -7,25 +7,23 @@
 
 #include "qCanupo2DViewDialog.h"
 
+#include "qCanupo2DWidget.h"
+
 // local
 #include "qCanupoTools.h"
 
 // CV_DB_LIB
-#include <CVMath.h>
-#include <ecvGenericGLDisplay.h>
+#include <CVLog.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <ecvRedrawScope.h>
-#include <ecvSphere.h>
-#include <ecvViewManager.h>
-#include <ecvViewportParameters.h>
 
 // Qt
 #include <QApplication>
+#include <QColor>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QMainWindow>
+#include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
@@ -33,32 +31,7 @@
 // system
 #include <assert.h>
 
-#include <algorithm>
 #include <cmath>
-#include <limits>
-
-namespace {
-
-//! Per-view equivalent of ComputeActualPixelSize().
-double computeActualPixelSize(ecvGenericGLDisplay* ev) {
-    if (!ev) return 1.0;
-    const ecvViewportParameters& vp = ev->getViewportParameters();
-    const QRect glVp = ev->getGLViewport();
-    if (!vp.perspectiveView) {
-        return static_cast<double>(vp.pixelSize / vp.zoom);
-    }
-    const int minScreenDim = std::min(glVp.width(), glVp.height());
-    if (minScreenDim <= 0) return 1.0;
-    const double zoomEquivalentDist =
-            (vp.getCameraCenter() - vp.getPivotPoint()).norm();
-    const double currentFov_deg = static_cast<double>(vp.fov_deg);
-    return zoomEquivalentDist *
-           std::tan(cloudViewer::DegreesToRadians(
-                   std::min(currentFov_deg, 75.0))) /
-           minScreenDim;
-}
-
-}  // namespace
 
 static bool s_firstDisplay = true;
 
@@ -71,7 +44,7 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
         int class2 /*=2*/,
         const CorePointDescSet* evaluationDescriptors /*=0*/,
         ecvMainAppInterface* app /*=0*/)
-    : QDialog(app ? app->getActiveWindow() : 0),
+    : QDialog(app ? app->getActiveWindow() : nullptr),
       Ui::Canupo2DViewDialog(),
       m_app(app),
       m_classifierSaved(false),
@@ -82,9 +55,9 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
       m_cloud1Name(cloud1Name),
       m_cloud2Name(cloud2Name),
       m_class2(class2),
-      m_cloud(0),
-      m_poly(0),
-      m_polyVertices(0),
+      m_cloud(nullptr),
+      m_poly(nullptr),
+      m_polyVertices(nullptr),
       m_selectedPointIndex(-1),
       m_pickingRadius(5) {
     setupUi(this);
@@ -97,48 +70,25 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
 
     s_firstDisplay = true;
 
-    // setup 2D view
+    // setup native 2D view (QPainter-based, no VTK/OpenGL dependency)
     {
-        // QWidget* glWidget = 0;
-        // m_app->createGLWindow(m_glWindow, glWidget);
-        // assert(m_glWindow && glWidget);
-
-        // if (auto* evSetup = ecvViewManager::instance().getEffectiveView()) {
-        //     ecvGui::ParamStruct params = evSetup->getDisplayParameters();
-        //     params.backgroundCol = ecvColor::white;
-        //     params.textDefaultCol = ecvColor::black;
-        //     params.pointsDefaultCol = ecvColor::black;
-        //     params.drawBackgroundGradient = false;
-        //     params.displayCross = false;
-        //     evSetup->setDisplayParameters(params);
-        //     evSetup->setPerspectiveState(false, true);
-        //     evSetup->setInteractionMode(
-        //             ecvGenericGLDisplay::MODE_PAN_ONLY |
-        //             ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
-        //     evSetup->setPickingMode(ecvGenericGLDisplay::NO_PICKING);
-        // }
-        // add window to the dedicated layout
+        m_2dView = new qCanupo2DWidget(this);
         viewFrame->setLayout(new QHBoxLayout());
-        /*viewFrame->layout()->addWidget(
-                ecvViewManager::instance().activeWidget());
+        viewFrame->layout()->setContentsMargins(0, 0, 0, 0);
+        viewFrame->layout()->addWidget(m_2dView);
 
-        // Non-relayed per-view mouse signals: prefer
-        dynamic_cast<ecvDisplayTools*>(
-        //     ecvViewManager::instance().getEffectiveView()) as sender.
-        ecvDisplayTools* dt = dynamic_cast<ecvDisplayTools*>(
-                ecvViewManager::instance().getEffectiveView());
-        connect(dt, SIGNAL(leftButtonClicked(int, int)), this,
-                SLOT(addOrSelectPoint(int, int)));
-        connect(dt, SIGNAL(rightButtonClicked(int, int)), this,
-                SLOT(removePoint(int, int)));
-        connect(dt, SIGNAL(mouseMoved(int, int, Qt::MouseButtons)), this,
-                SLOT(moveSelectedPoint(int, int, Qt::MouseButtons)));
-        connect(dt, SIGNAL(buttonReleased()), this, SLOT(deselectPoint()));*/
+        connect(m_2dView, &qCanupo2DWidget::leftButtonClicked, this,
+                &qCanupo2DViewDialog::addOrSelectPoint);
+        connect(m_2dView, &qCanupo2DWidget::rightButtonClicked, this,
+                &qCanupo2DViewDialog::removePoint);
+        connect(m_2dView, &qCanupo2DWidget::mouseMoved, this,
+                &qCanupo2DViewDialog::moveSelectedPoint);
+        connect(m_2dView, &qCanupo2DWidget::buttonReleased, this,
+                &qCanupo2DViewDialog::deselectPoint);
     }
 
     updateScalesList(true);
 
-    // loadParamsFromPersistentSettings();
     connect(resetToolButton, SIGNAL(clicked()), this, SLOT(resetBoundary()));
     connect(statisticsToolButton, SIGNAL(clicked()), this,
             SLOT(computeStatistics()));
@@ -150,16 +100,9 @@ qCanupo2DViewDialog::qCanupo2DViewDialog(
             SLOT(onScalesCountSpinBoxChanged(int)));
 }
 
-qCanupo2DViewDialog::~qCanupo2DViewDialog() {
-    reset();
-
-    if (m_app && ecvViewManager::instance().activeWidget()) {
-        // m_app->destroyGLWindow(m_glWindow);
-    }
-}
+qCanupo2DViewDialog::~qCanupo2DViewDialog() { reset(); }
 
 void qCanupo2DViewDialog::updateScalesList(bool firstTime) {
-    // update list of scales
     if (!m_descriptors1 || !m_descriptors2) {
         scalesListLineEdit->setText("Invalid descriptors!");
         scalesCountSpinBox->setEnabled(false);
@@ -181,17 +124,18 @@ void qCanupo2DViewDialog::updateScalesList(bool firstTime) {
 }
 
 void qCanupo2DViewDialog::reset() {
-    // if (auto* w = ecvViewManager::instance().activeWidget()) {
-    //     if (auto* ev = ecvViewManager::instance().getEffectiveView())
-    //         if (ccHObject* own = ev->getOwnDB()) own->removeAllChildren();
-    // }
-
     if (m_poly) delete m_poly;
-    m_poly = 0;
-    m_polyVertices = 0;  // m_polyVertices is a child of m_poly
+    m_poly = nullptr;
+    m_polyVertices = nullptr;
 
     if (m_cloud) delete m_cloud;
-    m_cloud = 0;
+    m_cloud = nullptr;
+
+    if (m_2dView) {
+        m_2dView->setCloud(nullptr);
+        m_2dView->setPolyline(nullptr);
+        m_2dView->update();
+    }
 }
 
 void qCanupo2DViewDialog::getActiveScales(std::vector<float>& scales) const {
@@ -199,7 +143,6 @@ void qCanupo2DViewDialog::getActiveScales(std::vector<float>& scales) const {
 
     if (!m_descriptors1) return;
 
-    // take only the right number (among the smallest)
     const std::vector<float>& allScales = m_descriptors1->scales();
     int maxScaleCount = static_cast<int>(allScales.size());
     int currentScaleCount = scalesCountSpinBox->value();
@@ -207,8 +150,6 @@ void qCanupo2DViewDialog::getActiveScales(std::vector<float>& scales) const {
     currentScaleCount = std::min<int>(currentScaleCount, maxScaleCount);
     scales.resize(currentScaleCount);
     for (int i = 0; i < currentScaleCount; ++i) {
-        // take only the smallest values (scales are sorted from the biggest to
-        // the smallest)
         scales[i] = allScales[maxScaleCount - currentScaleCount + i];
     }
 }
@@ -226,7 +167,6 @@ bool qCanupo2DViewDialog::trainClassifier() {
     setEnabled(false);
     QApplication::processEvents();
 
-    // take only the right number (among the smallest)
     std::vector<float> scales;
     getActiveScales(scales);
 
@@ -243,7 +183,7 @@ bool qCanupo2DViewDialog::trainClassifier() {
                                        *m_descriptors2, scales, m_cloud,
                                        m_evaluationDescriptors, m_app)) {
         delete m_cloud;
-        m_cloud = 0;
+        m_cloud = nullptr;
 
         s_training = false;
         setEnabled(true);
@@ -251,31 +191,15 @@ bool qCanupo2DViewDialog::trainClassifier() {
         return false;
     }
 
-    addObject(m_cloud);
+    // Set cloud on the 2D view
+    m_2dView->setCloud(m_cloud);
 
-    // show reference points as spheres
-    {
-        PointCoordinateType l = m_cloud->getOwnBB().getMaxBoxDim() / 100;
-        ccGLMatrix matPos;
-        matPos.setTranslation(CCVector3(m_classifier.refPointPos.x,
-                                        m_classifier.refPointPos.y, 0));
-        ccSphere* spherePos = new ccSphere(l, &matPos);
-        spherePos->setColor(ecvColor::red);
-        spherePos->showColors(true);
-        spherePos->enableStippling(true);
-        m_cloud->addChild(spherePos);
-        addObject(spherePos);
-
-        ccGLMatrix matNeg;
-        matNeg.setTranslation(CCVector3(m_classifier.refPointNeg.x,
-                                        m_classifier.refPointNeg.y, 0));
-        ccSphere* sphereNeg = new ccSphere(l, &matNeg);
-        sphereNeg->setColor(ecvColor::blue);
-        sphereNeg->showColors(true);
-        sphereNeg->enableStippling(true);
-        m_cloud->addChild(sphereNeg);
-        addObject(sphereNeg);
-    }
+    // Show reference points as markers
+    m_2dView->clearMarkers();
+    m_2dView->addMarker(m_classifier.refPointPos.x, m_classifier.refPointPos.y,
+                        QColor(255, 0, 0), 6.0);
+    m_2dView->addMarker(m_classifier.refPointNeg.x, m_classifier.refPointNeg.y,
+                        QColor(0, 0, 255), 6.0);
 
     // update/create boundary representation
     resetBoundary();
@@ -288,21 +212,19 @@ bool qCanupo2DViewDialog::trainClassifier() {
     s_training = false;
     setEnabled(true);
 
-    // we need a valid classifier to compute statistics!
     statisticsToolButton->setEnabled(true);
 
     return true;
 }
 
 void qCanupo2DViewDialog::onScalesCountSpinBoxChanged(int value) {
+    Q_UNUSED(value);
     if (s_training) {
         scalesCountSpinBox->blockSignals(true);
         scalesCountSpinBox->setValue(s_trainingValue);
         scalesCountSpinBox->blockSignals(false);
     } else {
-        // update list of scales
         updateScalesList(false);
-
         trainClassifier();
     }
 }
@@ -344,14 +266,9 @@ void qCanupo2DViewDialog::computeStatistics() {
 }
 
 void qCanupo2DViewDialog::setPointSize(int value) {
-    // if (ecvViewManager::instance().activeWidget()) {
-    //     if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
-    //         ecvGui::ParamStruct p = ev->getDisplayParameters();
-    //         p.defaultPointSize = static_cast<float>(value);
-    //         ev->setDisplayParameters(p);
-    //     }
-    //     { ecvRedrawScope scope; }
-    // }
+    if (m_2dView) {
+        m_2dView->setPointSize(value);
+    }
 }
 
 void qCanupo2DViewDialog::checkBeforeAccept() {
@@ -368,8 +285,6 @@ void qCanupo2DViewDialog::checkBeforeAccept() {
 }
 
 void qCanupo2DViewDialog::resetBoundary() {
-    assert(ecvViewManager::instance().activeWidget());
-
     if (!m_poly) {
         assert(!m_polyVertices);
         m_polyVertices = new ccPointCloud("vertices");
@@ -380,7 +295,6 @@ void qCanupo2DViewDialog::resetBoundary() {
         m_poly->setWidth(2);
         m_poly->showVertices(true);
         m_poly->setVertexMarkerWidth(4);
-        addObject(m_poly);
     }
 
     m_poly->clear();
@@ -388,23 +302,22 @@ void qCanupo2DViewDialog::resetBoundary() {
 
     unsigned pathLength = static_cast<unsigned>(m_classifier.path.size());
     if (pathLength > 1) {
-        if (!m_poly->reserve(pathLength) ||
-            !m_polyVertices->reserve(pathLength))
-            return;
-
-        for (unsigned i = 0; i < pathLength; ++i)
-            m_polyVertices->addPoint(CCVector3(
-                    m_classifier.path[i].x, m_classifier.path[i].y,
-                    -std::numeric_limits<PointCoordinateType>::epsilon()));
-
-        m_poly->addPointIndex(0, pathLength);
+        m_polyVertices->reserve(pathLength);
+        m_poly->reserve(pathLength);
+        for (unsigned i = 0; i < pathLength; ++i) {
+            m_polyVertices->addPoint(CCVector3(m_classifier.path[i].x,
+                                               m_classifier.path[i].y, 0));
+            m_poly->addPointIndex(i);
+        }
     }
 
-    { ecvRedrawScope scope; }
+    if (m_2dView) {
+        m_2dView->setPolyline(m_poly);
+        m_2dView->update();
+    }
 }
 
 void qCanupo2DViewDialog::saveClassifier() {
-    // select file to save
     QSettings settings("qCanupo");
     settings.beginGroup("Classif");
     QString currentPath =
@@ -415,7 +328,6 @@ void qCanupo2DViewDialog::saveClassifier() {
                                                     currentPath, "*.prm");
     if (filename.isEmpty()) return;
 
-    // update the classifier's path
     Classifier classifier = m_classifier;
     updateClassifierPath(classifier);
 
@@ -431,13 +343,11 @@ void qCanupo2DViewDialog::saveClassifier() {
                                  ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
     }
 
-    // we update current file path
     currentPath = QFileInfo(filename).absolutePath();
     settings.setValue("MscCurrentPath", currentPath);
 }
 
 void qCanupo2DViewDialog::updateClassifierPath(Classifier& classifier) const {
-    // update the classifier's path
     if (m_poly) {
         classifier.path.resize(m_poly->size());
         for (unsigned i = 0; i < m_poly->size(); ++i) {
@@ -447,19 +357,10 @@ void qCanupo2DViewDialog::updateClassifierPath(Classifier& classifier) const {
     }
 }
 
-void qCanupo2DViewDialog::addObject(ccHObject* obj) {
-    if (!obj) return;
-    obj->setVisible(true);
-    // if (auto* ev = ecvViewManager::instance().getEffectiveView())
-    //     ev->addToOwnDB(obj);
-}
-
 void qCanupo2DViewDialog::updateZoom() {
-    auto* ev = ecvViewManager::instance().getEffectiveView();
-    if (!ev || !ev->getOwnDB()) return;
-    ccBBox box = ev->getOwnDB()->getDisplayBB_recursive(false);
-    ev->updateConstellationCenterAndZoom(&box);
-    { ecvRedrawScope scope; }
+    if (m_2dView) {
+        m_2dView->zoomFit();
+    }
 }
 
 void qCanupo2DViewDialog::setPickingRadius(int radius) {
@@ -467,39 +368,20 @@ void qCanupo2DViewDialog::setPickingRadius(int radius) {
 }
 
 CCVector3 qCanupo2DViewDialog::getClickPos(int x, int y) const {
-    if (!ecvViewManager::instance().activeWidget()) {
+    if (!m_2dView) {
         assert(false);
         return CCVector3(0, 0, 0);
     }
-
-    auto* ev = ecvViewManager::instance().getEffectiveView();
-    if (!ev) {
-        assert(false);
-        return CCVector3(0, 0, 0);
-    }
-
-    // we must convert the mouse click to the polyline coordinate system
-    ccGLCameraParameters camera;
-    ev->getGLCameraParameters(camera);
-
-    CCVector3d pos2D = ev->toVtkCoordinates(x, y);
-    CCVector3 P2D(pos2D.x, pos2D.y, 0);
-
-    CCVector3d P3D;
-    camera.unproject(P2D, P3D);
-
-    // DGM: the Z value is meaningless!
-    P3D.z = 0;
-
-    return CCVector3::fromArray(P3D.u);
+    QPointF wp = m_2dView->screenToWorld(x, y);
+    return CCVector3(static_cast<PointCoordinateType>(wp.x()),
+                     static_cast<PointCoordinateType>(wp.y()), 0);
 }
 
 int qCanupo2DViewDialog::getClosestVertex(int x, int y, CCVector3& P) const {
-    if (!m_poly || !ecvViewManager::instance().activeWidget()) return -1;
+    if (!m_poly || !m_2dView) return -1;
 
     P = getClickPos(x, y);
 
-    // look for the closest vertex
     int closeIndex = -1;
     float closestSquareDist = 0;
     for (unsigned i = 0; i < m_poly->size(); ++i) {
@@ -514,49 +396,37 @@ int qCanupo2DViewDialog::getClosestVertex(int x, int y, CCVector3& P) const {
 }
 
 void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
-    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
+    if (!m_poly || !m_2dView) return;
 
     CCVector3 P;
     int closeIndex = getClosestVertex(x, y, P);
 
-    // B = closest vertex
-    const CCVector3* B = (closeIndex >= 0 ? m_poly->getPoint(closeIndex) : 0);
+    const CCVector3* B =
+            (closeIndex >= 0 ? m_poly->getPoint(closeIndex) : nullptr);
 
-    ecvGenericGLDisplay* ev = ecvViewManager::instance().getEffectiveView();
-
-    // picking radius
     double maxPickingDist =
-            static_cast<double>(m_pickingRadius) * computeActualPixelSize(ev);
+            static_cast<double>(m_pickingRadius) * m_2dView->pixelSize();
 
-    // to allow 'mouse move" tracking event
-    if (ev) {
-        ev->setInteractionMode(ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
-    }
-
-    // is the closest point close enough?
     if (closeIndex >= 0) {
         assert(B);
         if ((P - *B).norm() <= maxPickingDist) {
-            // we select the closest vertex
             m_selectedPointIndex = closeIndex;
             return;
         }
     }
 
-    // let's look if the click fall 'inside' a segment
+    // look if the click falls 'inside' a segment
     double nearestProjectionDist = maxPickingDist;
     CCVector3 nearestProj = P;
     int nearestSegIndex = -1;
     for (unsigned i = 0; i + 1 < m_poly->size(); ++i) {
         const CCVector3* A = m_poly->getPoint(i);
-        const CCVector3* B = m_poly->getPoint(i + 1);
+        const CCVector3* B2 = m_poly->getPoint(i + 1);
 
-        CCVector3 AB = (*B - *A);
+        CCVector3 AB = (*B2 - *A);
         CCVector3 AP = (P - *A);
 
         PointCoordinateType dot = AB.dot(AP);
-
-        // projection falls inside the segment?
         dot /= AB.norm2();
         if (dot > 0 && dot < PC_ONE) {
             CCVector3 AH = AB * dot;
@@ -572,21 +442,18 @@ void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
     }
 
     if (nearestSegIndex >= 0) {
-        // if we have a candidate
         closeIndex = nearestSegIndex;
-        P = nearestProj;  // shall we really replace P by its projection on the
+        P = nearestProj;
     } else {
-        // we'll add the point to the nearest end (i.e. front or back)
         const CCVector3* A = m_poly->getPoint(0);
-        const CCVector3* B = m_poly->getPoint(m_poly->size() - 1);
-        if ((P - *A).norm2() < (P - *B).norm2()) {
+        const CCVector3* B2 = m_poly->getPoint(m_poly->size() - 1);
+        if ((P - *A).norm2() < (P - *B2).norm2()) {
             closeIndex = -1;
         } else {
             closeIndex = static_cast<int>(m_poly->size() - 1);
         }
     }
 
-    // add the point to the vertices cloud
     ccPointCloud* vertices =
             dynamic_cast<ccPointCloud*>(m_poly->getAssociatedCloud());
     if (!vertices) {
@@ -597,14 +464,11 @@ void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
     vertices->reserve(newIndexInCloud + 1);
     vertices->addPoint(P);
 
-    // add the corresponding point index at the end of the polyline
-    //(whatever the case to avoid complicated tests later)
     m_poly->reserve(m_poly->size() + 1);
     m_poly->addPointIndex(newIndexInCloud);
 
     m_selectedPointIndex = closeIndex + 1;
 
-    // eventually we must shift the indexes starting from newIndexInPoly
     unsigned newIndexInPoly = static_cast<unsigned>(m_selectedPointIndex);
     while (newIndexInPoly < m_poly->size()) {
         unsigned previousIndexInCloud =
@@ -614,42 +478,32 @@ void qCanupo2DViewDialog::addOrSelectPoint(int x, int y) {
         ++newIndexInPoly;
     }
 
-    { ecvRedrawScope scope; }
+    if (m_2dView) m_2dView->update();
 }
 
 void qCanupo2DViewDialog::removePoint(int x, int y) {
-    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
+    if (!m_poly || !m_2dView) return;
 
-    // we can't accept less than 2 vertices!
     unsigned polySize = m_poly->size();
     if (polySize < 3) return;
 
     CCVector3 P;
     int closeIndex = getClosestVertex(x, y, P);
-
-    // nothing to do
     if (closeIndex < 0) return;
 
-    // picking radius
     double maxPickingDist =
-            static_cast<double>(m_pickingRadius) *
-            computeActualPixelSize(
-                    ecvViewManager::instance().getEffectiveView());
+            static_cast<double>(m_pickingRadius) * m_2dView->pixelSize();
 
-    // B = closest vertex
-    const CCVector3* B = (closeIndex >= 0 ? m_poly->getPoint(closeIndex) : 0);
+    const CCVector3* B = m_poly->getPoint(closeIndex);
     if ((P - *B).norm() > maxPickingDist) {
-        // too far
         return;
     }
 
-    // shift all indexes on the polyline only (we don't bother with the vertices
-    // cloud!)
     for (unsigned i = static_cast<unsigned>(closeIndex); i < polySize - 1; ++i)
         m_poly->setPointIndex(i, m_poly->getPointGlobalIndex(i + 1));
     m_poly->resize(polySize - 1);
 
-    { ecvRedrawScope scope; }
+    if (m_2dView) m_2dView->update();
 }
 
 void qCanupo2DViewDialog::moveSelectedPoint(int x,
@@ -657,7 +511,7 @@ void qCanupo2DViewDialog::moveSelectedPoint(int x,
                                             Qt::MouseButtons buttons) {
     if (buttons != Qt::LeftButton) return;
     if (m_selectedPointIndex < 0) return;
-    if (!m_poly || !ecvViewManager::instance().activeWidget()) return;
+    if (!m_poly || !m_2dView) return;
 
     CCVector3 newP = getClickPos(x, y);
 
@@ -666,18 +520,7 @@ void qCanupo2DViewDialog::moveSelectedPoint(int x,
             const_cast<CCVector3*>(m_poly->getPoint(m_selectedPointIndex));
     *P = newP;
 
-    // TODO: in theory we should update the vertices cloud bounding-box
-    //(but we as never use it...)
-
-    { ecvRedrawScope scope; }
+    m_2dView->update();
 }
 
-void qCanupo2DViewDialog::deselectPoint() {
-    // to disable 'mouse move' event tracking
-    if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
-        ev->setInteractionMode(ecvGenericGLDisplay::MODE_PAN_ONLY |
-                               ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
-    }
-
-    m_selectedPointIndex = -1;
-}
+void qCanupo2DViewDialog::deselectPoint() { m_selectedPointIndex = -1; }

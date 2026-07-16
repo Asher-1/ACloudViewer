@@ -25,10 +25,13 @@ public:
 
     static bool isSNECloud(ccHObject* obj);
 
+    void draw(CC_DRAW_CONTEXT& context) override;
+
 protected:
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 private:
     void removeNormalActors();
     QStringList m_normalViewIds;
+    ecvGenericGLDisplay* m_lastDrawnView = nullptr;
 };
