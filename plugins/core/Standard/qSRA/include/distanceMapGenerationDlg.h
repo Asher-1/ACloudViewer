@@ -16,6 +16,7 @@
 // Qt
 #include <QColor>
 #include <QSharedPointer>
+#include <QVector>
 
 // cloudViewer
 #include <CVTypes.h>
@@ -30,6 +31,8 @@ class ccScalarField;
 class ccColorScaleSelector;
 class ccSymbolCloud;
 class ccMapWindow;
+class qSRAMapWidget;
+class QCloseEvent;
 
 //! Dialog for generating a distance map (surface of revolution)
 class DistanceMapGenerationDlg : public QDialog,
@@ -143,8 +146,11 @@ protected:
     //! Updates 2D view zoom
     void updateZoom(ccBBox& box);
 
-    //! Clears the 3D view
+    //! Clears the map display
     void clearView();
+
+    //! Syncs overlay symbol data to the map widget for rendering
+    void syncOverlaySymbolsToWidget();
 
     //! Returns currently applicable base radius
     /** Warning: return always 1 for concial projection mode!
@@ -161,6 +167,8 @@ protected:
 
     //! Saves parameters to persistent settings
     void saveToPersistentSettings();
+
+    void closeEvent(QCloseEvent* event) override;
 
     //! Updates the min and max limits (fields)
     void updateMinAndMaxLimits();
@@ -183,16 +191,17 @@ protected:
     //! Current angular units
     ANGULAR_UNIT m_angularUnits;
 
-    //! 2D display
+    //! 2D display (kept for SF context compatibility)
     ccMapWindow* m_window;
+
+    //! QPainter-based map widget
+    qSRAMapWidget* m_mapWidget = nullptr;
 
     //! Color scale selector
     ccColorScaleSelector* m_colorScaleSelector;
 
-    //! X labels
-    ccSymbolCloud* m_xLabels;
-    //! Y labels
-    ccSymbolCloud* m_yLabels;
+    //! Overlay symbol clouds (loaded from file, not tied to GL view)
+    QVector<ccSymbolCloud*> m_overlaySymbols;
 
     //! Grid color
     QColor m_gridColor;

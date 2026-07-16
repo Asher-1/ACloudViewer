@@ -463,9 +463,9 @@ public:
             }
         }
 
-        // update associated display to all children as the whole structure may
-        // have changed!
-        // facetGroup->setDisplay_recursive(facetGroup->getDisplay());
+        if (facetGroup->getDisplay()) {
+            facetGroup->setDisplay_recursive(facetGroup->getDisplay());
+        }
 
         return !error;
     }

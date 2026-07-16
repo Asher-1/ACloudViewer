@@ -33,7 +33,7 @@
 class ccPickingHub;
 
 /*
-        Get the values of the RGB interface, and interactions
+        Get the values of the scalar interface, and interactions
 */
 class ScalarDialog : public QDialog,
                      public ccPickingListener,
@@ -43,16 +43,12 @@ public:
     explicit ScalarDialog(ccPickingHub* pickingHub, QWidget* parent = nullptr);
 
     //! Inherited from ccPickingListener
-    virtual void onItemPicked(const PickedItem& pi);
+    void onItemPicked(const PickedItem& pi) override;
 
 public slots:
     void pickPoint_first(bool);
     void pickPoint_second(bool);
 
 protected:  // members
-    //! Picking window (if any)
-    QWidget* m_pickingWin;
-
-    //! Picking hub
     ccPickingHub* m_pickingHub;
 };

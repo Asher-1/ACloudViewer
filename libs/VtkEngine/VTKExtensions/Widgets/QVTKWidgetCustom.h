@@ -353,6 +353,7 @@ public:
     }
 
 private:
+    Qt::MouseButtons m_signalOnlyButtons = Qt::NoButton;
     bool m_directCameraWheelZoom = false;
     std::shared_ptr<Visualization::ImageVis> m_localImageVis;
     float m_localDefaultPointSize = 1.0f;

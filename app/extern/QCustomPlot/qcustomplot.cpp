@@ -15538,11 +15538,7 @@ void QCustomPlot::mouseReleaseEvent(QMouseEvent *event) {
 void QCustomPlot::wheelEvent(QWheelEvent *event) {
     emit mouseWheel(event);
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    const QPointF pos = event->pos();
-#else
-    const QPointF pos = event->position();
-#endif
+    const QPointF pos = qtCompatWheelEventPos(event);
 
     // forward event to layerable under cursor:
     foreach (QCPLayerable *candidate, layerableListAt(pos, false)) {

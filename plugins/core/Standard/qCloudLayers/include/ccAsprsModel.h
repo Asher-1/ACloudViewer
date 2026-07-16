@@ -80,6 +80,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void codeChanged(AsprsItem& item, int oldCode);
     void colorChanged(AsprsItem& item);
+    void classNamedChanged(int row, QString newName);
 
 private:
     QList<AsprsItem> m_data;

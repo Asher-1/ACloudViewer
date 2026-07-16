@@ -313,7 +313,6 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
     ctx.bubbleViewFov_deg = 90.0f;
     ctx.touchInProgress = false;
     ctx.touchBaseDist = 0.0;
-    m_scheduledFullRedrawTime = 0;
     ctx.exclusiveFullscreen = false;
     ctx.showDebugTraces = false;
     ctx.pickRadius = DefaultPickRadius;
@@ -387,8 +386,6 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
             &ecvGenericVisualizer3D::interactorPointPickedEvent, this,
             &ecvDisplayTools::onPointPicking);
 
-    connect(&m_scheduleTimer, &QTimer::timeout, this,
-            &ecvDisplayTools::checkScheduledRedraw);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this,
             &ecvDisplayTools::doPicking);
 
@@ -398,7 +395,6 @@ void ecvDisplayTools::initializeEngine(QMainWindow* win, bool stereoMode) {
 }
 
 ecvDisplayTools::~ecvDisplayTools() {
-    cancelScheduledRedraw();
     if (m_winDBRoot) {
         delete m_winDBRoot;
         m_winDBRoot = nullptr;
@@ -408,44 +404,6 @@ ecvDisplayTools::~ecvDisplayTools() {
         m_rectPickingPoly = nullptr;
     }
     m_hotZone = nullptr;
-}
-
-void ecvDisplayTools::checkScheduledRedraw() {
-    if (m_scheduledFullRedrawTime &&
-        m_timer.elapsed() > m_scheduledFullRedrawTime) {
-        // clean the outdated messages
-        {
-            std::list<MessageToDisplay>::iterator it =
-                    m_messagesToDisplay.begin();
-            qint64 currentTime_sec = m_timer.elapsed() / 1000;
-            // CVLog::PrintDebug(QString("[paintGL] Current time:
-            // %1.").arg(currentTime_sec));
-
-            while (it != m_messagesToDisplay.end()) {
-                // no more valid? we delete the message
-                if (it->messageValidity_sec < currentTime_sec) {
-                    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                                    it->message));
-                    it = m_messagesToDisplay.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
-}
-
-void ecvDisplayTools::cancelScheduledRedraw() {
-    m_scheduledFullRedrawTime = 0;
-    m_scheduleTimer.stop();
-}
-
-void ecvDisplayTools::scheduleFullRedraw(unsigned maxDelay_ms) {
-    m_scheduledFullRedrawTime = m_timer.elapsed() + maxDelay_ms;
-
-    if (!m_scheduleTimer.isActive()) {
-        m_scheduleTimer.start(500);
-    }
 }
 
 void ecvDisplayTools::onPointPicking(const CCVector3& p,
@@ -960,6 +918,33 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
             selectedID = pickedEntity->getUniqueID();
             selectedIDs.insert(selectedID);
             pickedItemIndex = ctx.lastPointIndex;
+        }
+    }
+
+    if (!pickedEntity &&
+        (params.mode == ENTITY_PICKING || params.mode == ENTITY_RECT_PICKING ||
+         params.mode == FAST_PICKING)) {
+        ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
+        if (!pickView) pickView = ecvViewManager::instance().getActiveView();
+        if (pickView) {
+            QString viewID =
+                    pickView->pickObject(static_cast<double>(params.centerX),
+                                         static_cast<double>(params.centerY));
+            if (!viewID.isEmpty() && viewID != QStringLiteral("-1")) {
+                unsigned int uid = viewID.toUInt();
+                ccHObject* sceneDB = pickView->getSceneDB();
+                ccHObject* localDB = pickView->getOwnDB();
+                if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
+                if (!localDB) localDB = primaryDT()->m_winDBRoot;
+                if (params.pickInSceneDB && sceneDB)
+                    pickedEntity = sceneDB->find(uid);
+                if (!pickedEntity && params.pickInLocalDB && localDB)
+                    pickedEntity = localDB->find(uid);
+                if (pickedEntity) {
+                    selectedID = pickedEntity->getUniqueID();
+                    selectedIDs.insert(selectedID);
+                }
+            }
         }
     }
 
@@ -1973,8 +1958,14 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
         zNear = bbHalfDiag * ctx.viewportParams.zNearCoef;
         zFar = std::max(zNear + ZERO_TOLERANCE_D, zFar);
 
-        double xMax =
-                zNear * ctx.viewportParams.computeDistanceToHalfWidthRatio();
+        // CloudCompare ccGLWindowInterface: bubble-view uses bubbleViewFov_deg,
+        // not viewportParams.fov_deg, for the frustum half-width ratio.
+        const double distanceToHalfWidthRatio =
+                ctx.bubbleViewModeEnabled
+                        ? std::tan(cloudViewer::DegreesToRadians(
+                                  ctx.bubbleViewFov_deg / 2.0))
+                        : ctx.viewportParams.computeDistanceToHalfWidthRatio();
+        double xMax = zNear * distanceToHalfWidthRatio;
         double yMax = xMax * ar;
 
         double frustumAsymmetry = 0.0;
@@ -2535,6 +2526,36 @@ float ecvDisplayTools::GetFov() {
                                       : ctx.viewportParams.fov_deg);
 }
 
+static void SyncProjectiveViewportToDisplay(ecvViewContext& ctx) {
+    auto* ev = ecvViewManager::instance().getEffectiveView();
+    if (!ev) {
+        ecvDisplayTools::UpdateScreen();
+        return;
+    }
+
+    CCVector3d pos = ctx.viewportParams.getCameraCenter();
+    CCVector3d up = ctx.viewportParams.viewMat.getColumnAsVec3D(1);
+    CCVector3d viewDir = ctx.viewportParams.viewMat.getColumnAsVec3D(2);
+    up.normalize();
+    viewDir.normalize();
+    ctx.viewportParams.up = up;
+
+    // Viewer-based / bubble-view: camera stays at the pivot (sensor center).
+    // VTK still needs a non-coincident focal point — use a unit offset.
+    if (ctx.bubbleViewModeEnabled || !ctx.viewportParams.objectCenteredView) {
+        const double vtkLookDist =
+                ctx.bubbleViewModeEnabled
+                        ? 1.0
+                        : std::max((ctx.viewportParams.focal - pos).norm(),
+                                   1.0);
+        ctx.viewportParams.focal = pos + viewDir * vtkLookDist;
+    }
+
+    ev->setViewportParameters(ctx.viewportParams);
+    if (QWidget* w = ev->asWidget()) w->update();
+    ev->redraw(false, true);
+}
+
 void ecvDisplayTools::SetupProjectiveViewport(
         ecvViewContext& ctx,
         const ccGLMatrixd& cameraMatrix,
@@ -2542,29 +2563,23 @@ void ecvDisplayTools::SetupProjectiveViewport(
         float ar /*=1.0f*/,
         bool viewerBasedPerspective /*=true*/,
         bool bubbleViewMode /*=false*/) {
+    // Match CloudCompare ccGLWindowInterface::setupProjectiveViewport
     if (bubbleViewMode) {
-        SetBubbleViewMode(true);
+        SetBubbleViewMode(ctx, true);
     } else {
-        SetPerspectiveState(true, !viewerBasedPerspective);
+        SetPerspectiveState(ctx, true, !viewerBasedPerspective);
     }
 
     if (fov_deg > 0.0f) {
-        if (ctx.viewportParams.perspectiveView) {
-            SetFov(ctx, fov_deg);
-        } else {
-            SetParallelScale(
-                    static_cast<double>(cloudViewer::DegreesToRadians(fov_deg)),
-                    0);
-        }
+        SetFov(ctx, fov_deg);
     }
 
-    SetAspectRatio(ctx, ar);
+    if (ar > 0.0f) {
+        SetAspectRatio(ctx, ar);
+    }
 
     CCVector3d T = cameraMatrix.getTranslationAsVec3D();
-    CCVector3d UP = cameraMatrix.getColumnAsVec3D(1);
-    cameraMatrix.applyRotation(UP.data());
     SetCameraPos(ctx, T);
-    SetCameraPosition(T.data(), UP.data());
     if (viewerBasedPerspective) {
         SetPivotPoint(T);
     }
@@ -2574,8 +2589,7 @@ void ecvDisplayTools::SetupProjectiveViewport(
     trans.invert();
     SetBaseViewMat(ctx, trans);
 
-    ResetCameraClippingRange();
-    UpdateScreen();
+    SyncProjectiveViewportToDisplay(ctx);
 }
 
 void ecvDisplayTools::SetupProjectiveViewport(
@@ -2912,18 +2926,6 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
     params.pixelSize = ctx.viewportParams.pixelSize;
 }
 
-void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
-    // Write-through: also update the active secondary view.
-    auto* av = activeSecondaryView();
-    if (av) {
-        av->setDisplayParameters(params, true);
-    }
-
-    ecvViewManager::instance().setOverriddenDisplayParameters(params);
-
-    ecvGui::Set(params);
-}
-
 void ecvDisplayTools::UpdateDisplayParameters(ecvViewContext& ctx) {
     double nearFar[2];
     GetCameraClip(nearFar);
@@ -3056,9 +3058,17 @@ void ecvDisplayTools::SetBubbleViewFov(ecvViewContext& ctx, float fov_deg) {
         ctx.bubbleViewFov_deg = fov_deg;
 
         if (ctx.bubbleViewModeEnabled) {
+            // CloudCompare keeps bubble FOV separate from
+            // viewportParams.fov_deg.
             InvalidateViewport();
             InvalidateVisualization();
             Deprecate3DLayer();
+
+            if (auto* ev = ecvViewManager::instance().getEffectiveView()) {
+                ev->setViewportParameters(ctx.viewportParams);
+                if (QWidget* w = ev->asWidget()) w->update();
+            }
+
             emit primaryDT() -> fovChanged(ctx.bubbleViewFov_deg);
             emit primaryDT() -> cameraParamChanged();
         }
@@ -3354,22 +3364,6 @@ void ecvDisplayTools::RedrawDisplay(ecvViewContext& ctx,
         Deprecate3DLayer();
     }
 
-    // Clean outdated messages (global, not per-view)
-    {
-        std::list<MessageToDisplay>::iterator it =
-                primaryDT()->m_messagesToDisplay.begin();
-        qint64 currentTime_sec = primaryDT()->m_timer.elapsed() / 1000;
-        while (it != primaryDT()->m_messagesToDisplay.end()) {
-            if (it->messageValidity_sec < currentTime_sec) {
-                RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D,
-                                                it->message));
-                it = primaryDT()->m_messagesToDisplay.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
     ecvViewManager::instance().redrawAll(only2D, g_redrawDisplayForceRedraw);
 
     // === Post-render housekeeping ===
@@ -3555,93 +3549,6 @@ void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT) {
     }
 }
 
-void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
-    /****************************************/
-    /****  PASS: 2D/FOREGROUND/NO LIGHT  ****/
-    /****************************************/
-
-    const auto& fgCtx = ecvViewManager::instance().resolveViewContext();
-    CONTEXT.visible = true;
-    CONTEXT.drawingFlags = CC_DRAW_2D | CC_DRAW_FOREGROUND;
-    if (fgCtx.interactionFlags & INTERACT_TRANSFORM_ENTITIES) {
-        CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
-    }
-
-    // we draw 2D entities
-    if (primaryDT()->m_globalDBRoot) primaryDT()->m_globalDBRoot->draw(CONTEXT);
-    if (primaryDT()->m_winDBRoot) primaryDT()->m_winDBRoot->draw(CONTEXT);
-
-    // current displayed scalar field color ramp (if any)
-    ccRenderingTools::DrawColorRamp(CONTEXT);
-
-    ecvGenericGLDisplay* fgView = ecvViewManager::instance().getEffectiveView();
-    if (!fgView) fgView = primaryDT();
-    fgView->clickableItemsRef().clear();
-
-    /*** overlay entities ***/
-    if (fgCtx.displayOverlayEntities) {
-        if (!primaryDT()->m_captureMode.enabled ||
-            primaryDT()->m_captureMode.renderOverlayItems) {
-            // scale: only in ortho mode
-            if (!fgCtx.viewportParams.perspectiveView) {
-                SetScaleBarVisible(true);
-            } else {
-                SetScaleBarVisible(false);
-            }
-            UpdateScreen();
-        }
-
-        if (!primaryDT()->m_captureMode.enabled) {
-            int yStart = 0;
-
-            // current messages (if valid)
-            if (!primaryDT()->m_messagesToDisplay.empty()) {
-                QFont font = primaryDT()->m_font;
-                QFontMetrics fm(font);
-                int margin = fm.height() / 4;
-                int ll_currentHeight = fgCtx.glViewport.height() - 10;
-                int uc_currentHeight = 10;
-
-                for (const auto& message : primaryDT()->m_messagesToDisplay) {
-                    switch (message.position) {
-                        case LOWER_LEFT_MESSAGE: {
-                            RenderText(10, ll_currentHeight, message.message,
-                                       font);
-                            int messageHeight = fm.height();
-                            ll_currentHeight -= (messageHeight + margin);
-                        } break;
-                        case UPPER_CENTER_MESSAGE: {
-                            QRect rect = fm.boundingRect(message.message);
-                            int x = (fgCtx.glViewport.width() - rect.width()) /
-                                    2;
-                            int y = uc_currentHeight + rect.height();
-                            RenderText(x, y, message.message, font);
-                            uc_currentHeight += (rect.height() + margin);
-                        } break;
-                        case SCREEN_CENTER_MESSAGE: {
-                            QFont newFont(font);
-                            int fontSize = GetOptimizedFontSize(12);
-                            newFont.setPointSize(fontSize);
-                            QRect rect = QFontMetrics(newFont).boundingRect(
-                                    message.message);
-                            RenderText(
-                                    (fgCtx.glViewport.width() - rect.width()) /
-                                            2,
-                                    (fgCtx.glViewport.height() -
-                                     rect.height()) /
-                                            2,
-                                    message.message, newFont);
-                        } break;
-                    }
-                }
-            }
-
-            // hot-zone
-            { ecvDisplayTools::DrawClickableItems(0, yStart); }
-        }
-    }
-}
-
 void ecvDisplayTools::Redraw2DLabel() {
     ccHObject::Container labels;
     FilterByEntityType(labels, CV_TYPES::LABEL_2D);
@@ -3681,11 +3588,8 @@ void ecvDisplayTools::Redraw2DLabel() {
 
 void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
     // Only update overlay data for visible labels.
-    // Do NOT add labels to m_activeItems here — active items should only be
-    // populated by explicit user interaction (click/pick), not by periodic
-    // timer updates.  The old approach of clearing and refilling m_activeItems
-    // every 50 ms caused cross-window pollution and unintended label movement
-    // during camera rotation.
+    // Active items are populated by explicit user interaction (click/pick) via
+    // per-view activeItemsRef(), not by periodic timer updates.
     ccHObject::Container labels;
     FilterByEntityType(labels, CV_TYPES::LABEL_2D);
 
@@ -3714,34 +3618,6 @@ void ecvDisplayTools::Update2DLabel(bool immediateUpdate /* = false*/) {
             cc2DViewportLabel* l = ccHObjectCaster::To2DViewportLabel(label);
             if (!l) continue;
             l->clear2Dviews();
-        }
-    }
-}
-
-void ecvDisplayTools::Pick2DLabel(int x, int y) {
-    auto* dt = ecvViewManager::instance().displayTools();
-    QString id = dt ? dt->pick2DLabel(x, y) : QString();
-
-    std::list<ccInteractor*>* itemsPtr = nullptr;
-    if (auto* effView = ecvViewManager::instance().getEffectiveView()) {
-        itemsPtr = &effView->activeItemsRef();
-    } else if (auto* p = primaryDT()) {
-        itemsPtr = &p->m_activeItems;
-    }
-    if (!itemsPtr) return;
-
-    itemsPtr->clear();
-    if (!id.isEmpty()) {
-        ccHObject::Container labels;
-        FilterByEntityType(labels, CV_TYPES::LABEL_2D);
-        for (auto& label : labels) {
-            if (label->isA(CV_TYPES::LABEL_2D) && label->isEnabled() &&
-                label->isVisible()) {
-                cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
-                if (l->getViewId().compare(id) == 0) {
-                    itemsPtr->push_back(l);
-                }
-            }
         }
     }
 }

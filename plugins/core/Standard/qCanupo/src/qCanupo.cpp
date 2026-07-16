@@ -397,29 +397,27 @@ void qCanupoPlugin::doTrainAction() {
         CorePointDescSet descriptors1;
         {
             bool invalidDescriptors = false;
+            unsigned invalidCount = 0;
             QString errorStr;
-            if (!qCanupoTools::ComputeCorePointsDescriptors(corePoints1,
-				descriptors1,
-				//if the origin cloud was specified, then we'll use it as base cloud for descriptors
-				originCloud ? originCloud : cloud1,
-				scales,
-				invalidDescriptors,
-				errorStr,
-				descriptorID,
-				ctDlg.getMaxThreadCount(),
-				&pDlg/*,
-				octree*/))
-			{
+            if (!qCanupoTools::ComputeCorePointsDescriptors(
+                        corePoints1, descriptors1,
+                        // if the origin cloud was specified, then we'll use it
+                        // as base cloud for descriptors
+                        originCloud ? originCloud : cloud1, scales,
+                        invalidDescriptors, invalidCount, errorStr,
+                        descriptorID, ctDlg.getMaxThreadCount(), &pDlg)) {
                 m_app->dispToConsole(
                         tr("Failed to compute core points descriptors: %1")
                                 .arg(errorStr),
                         ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
                 break;
             } else if (invalidDescriptors) {
-                m_app->dispToConsole(
-                        tr("[qCanupo] Some descriptors couldn't be computed on "
-                           "cloud#1 (min scale may be too small)!"),
-                        ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
+                m_app->dispToConsole(tr("[qCanupo] %1/%2 descriptors couldn't "
+                                        "be computed on "
+                                        "cloud#1 (min scale may be too small)")
+                                             .arg(invalidCount)
+                                             .arg(corePoints1->size()),
+                                     ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
             }
         }
 
@@ -427,29 +425,27 @@ void qCanupoPlugin::doTrainAction() {
         CorePointDescSet descriptors2;
         {
             bool invalidDescriptors = false;
+            unsigned invalidCount = 0;
             QString errorStr;
-            if (!qCanupoTools::ComputeCorePointsDescriptors(corePoints2,
-				descriptors2,
-				//if the origin cloud was specified, then we'll use it as base cloud for descriptors
-				originCloud ? originCloud : cloud2,
-				scales,
-				invalidDescriptors,
-				errorStr,
-				descriptorID,
-				ctDlg.getMaxThreadCount(),
-				&pDlg/*,
-				octree*/))
-			{
+            if (!qCanupoTools::ComputeCorePointsDescriptors(
+                        corePoints2, descriptors2,
+                        // if the origin cloud was specified, then we'll use it
+                        // as base cloud for descriptors
+                        originCloud ? originCloud : cloud2, scales,
+                        invalidDescriptors, invalidCount, errorStr,
+                        descriptorID, ctDlg.getMaxThreadCount(), &pDlg)) {
                 m_app->dispToConsole(
                         tr("Failed to compute core points descriptors: %1")
                                 .arg(errorStr),
                         ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
                 break;
             } else if (invalidDescriptors) {
-                m_app->dispToConsole(
-                        tr("[qCanupo] Some descriptors couldn't be computed on "
-                           "cloud#2 (min scale may be too small)!"),
-                        ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
+                m_app->dispToConsole(tr("[qCanupo] %1/%2 descriptors couldn't "
+                                        "be computed on "
+                                        "cloud#2 (min scale may be too small)")
+                                             .arg(invalidCount)
+                                             .arg(corePoints2->size()),
+                                     ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
             }
         }
 
@@ -457,13 +453,14 @@ void qCanupoPlugin::doTrainAction() {
         // we must compute its descriptors now
         CorePointDescSet evaluationDescriptors;
         if (evaluationPoints) {
-            // computes the 'descriptors'
             bool invalidDescriptors = false;
+            unsigned invalidCount = 0;
             QString errorStr;
             if (!qCanupoTools::ComputeCorePointsDescriptors(
                         evaluationPoints, evaluationDescriptors,
-                        evaluationCloud, scales, invalidDescriptors, errorStr,
-                        descriptorID, ctDlg.getMaxThreadCount(), &pDlg)) {
+                        evaluationCloud, scales, invalidDescriptors,
+                        invalidCount, errorStr, descriptorID,
+                        ctDlg.getMaxThreadCount(), &pDlg)) {
                 m_app->dispToConsole(
                         tr("Failed to compute core points descriptors: %1")
                                 .arg(errorStr),
@@ -473,8 +470,11 @@ void qCanupoPlugin::doTrainAction() {
 
             if (invalidDescriptors) {
                 m_app->dispToConsole(
-                        tr("[qCanupo] Some descriptors couldn't be computed on "
-                           "evaluation cloud (min scale may be too small)!"),
+                        tr("[qCanupo] %1/%2 descriptors couldn't be computed "
+                           "on "
+                           "evaluation cloud (min scale may be too small)")
+                                .arg(invalidCount)
+                                .arg(evaluationPoints->size()),
                         ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
             }
         }

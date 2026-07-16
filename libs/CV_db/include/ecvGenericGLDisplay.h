@@ -11,6 +11,7 @@
 
 #include <QFlags>
 #include <QFont>
+#include <QImage>
 #include <QJsonObject>
 #include <QRect>
 #include <QString>
@@ -176,6 +177,7 @@ public:
     virtual ccHObject* getOwnDB() = 0;
     virtual void addToOwnDB(ccHObject* obj, bool noDependency = true) = 0;
     virtual void removeFromOwnDB(ccHObject* obj) = 0;
+    virtual void clearOwnDB();
 
     // ================================================================
     // Qt widget bridge
@@ -183,6 +185,11 @@ public:
 
     virtual QWidget* asWidget() = 0;
     virtual const QWidget* asWidget() const = 0;
+
+    /// Returns the underlying QObject for signal/slot connections.
+    /// Plugins use this to connect mouse signals (leftButtonClicked, etc.)
+    /// without depending on the concrete view class.
+    virtual QObject* signalSource() { return nullptr; }
 
     // ================================================================
     // Interaction / picking (per-view)
@@ -393,6 +400,17 @@ public:
         Q_UNUSED(immediateUpdate);
     }
 
+    virtual QImage renderToImage(int zoomFactor = 1,
+                                 bool renderOverlayItems = false,
+                                 bool silent = false,
+                                 int viewport = 0) {
+        Q_UNUSED(zoomFactor);
+        Q_UNUSED(renderOverlayItems);
+        Q_UNUSED(silent);
+        Q_UNUSED(viewport);
+        return QImage();
+    }
+
     virtual bool renderToFile(const QString& filename,
                               float zoomFactor = 1.0f,
                               bool dontScale = false) {
@@ -469,6 +487,7 @@ public:
     virtual void setViewportDefaultLineWidth(float width) { Q_UNUSED(width); }
     virtual void setZNearCoef(double coef) { Q_UNUSED(coef); }
     virtual void setFov(float fov_deg) { Q_UNUSED(fov_deg); }
+    virtual float getFov() const { return getViewportParameters().fov_deg; }
     virtual void setPointSizeOnView(float size) { Q_UNUSED(size); }
     virtual void rotateWithAxis(const CCVector2i& mousePos,
                                 const CCVector3d& axis,
@@ -487,7 +506,6 @@ public:
     }
     virtual void redraw2DLabel() {}
 
-    virtual void scheduleFullRedraw(int delayMs) { Q_UNUSED(delayMs); }
     virtual void stopDeferredPicking() {}
     virtual void startDeferredPickingFor(ecvGenericGLDisplay* targetView) {
         Q_UNUSED(targetView);
@@ -505,6 +523,8 @@ public:
         return false;
     }
 
+    virtual bool isComparativeSubView() const { return false; }
+
     // ================================================================
     // Static registry: QWidget* -> ecvGenericGLDisplay*
     // ================================================================
@@ -513,6 +533,20 @@ public:
     static void RegisterGLDisplay(QWidget* widget,
                                   ecvGenericGLDisplay* display);
     static void UnregisterGLDisplay(QWidget* widget);
+
+    // ================================================================
+    // View factory — abstracts backend-specific view creation so
+    // plugins only depend on CV_db, not VtkEngine.
+    // VtkEngine registers its vtkGLView::Create via SetViewFactory().
+    // ================================================================
+
+    using ViewFactoryFunc = ecvGenericGLDisplay* (*)(QWidget* parent,
+                                                     bool silentInit,
+                                                     bool offscreen);
+    static void SetViewFactory(ViewFactoryFunc factory);
+    static ecvGenericGLDisplay* CreateView(QWidget* parent = nullptr,
+                                           bool silentInit = false,
+                                           bool offscreen = false);
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ecvGenericGLDisplay::INTERACTION_FLAGS)

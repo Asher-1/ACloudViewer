@@ -318,7 +318,7 @@ bool ccTracePolylineTool::linkWith(QWidget* win) {
             QObject::disconnect(oldGlView, nullptr, this, nullptr);
         }
 #endif
-        if (m_polyTip) m_polyTip->setDisplay(nullptr);
+        if (m_polyTip) m_polyTip->setDisplayAll();
     }
 
     ecvGenericGLDisplay* newView = viewFromWidget(win);

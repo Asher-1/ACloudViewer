@@ -274,6 +274,7 @@ public:
     /// ParaView equivalent: pqActiveObjects + representation visibility toggle.
     void moveEntityToView(ccHObject* obj, ecvGenericGLDisplay* targetView);
 
+    void detachEntityFromView(ccHObject* obj, ecvGenericGLDisplay* fromView);
     void detachEntitiesFromView(ecvGenericGLDisplay* view);
     void reassignEntitiesFromView(ccHObject* root,
                                   ecvGenericGLDisplay* fromView,

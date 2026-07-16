@@ -306,6 +306,7 @@ private:
     QStringList m_segmentViewIds;
     QStringList m_waypointViewIds;
     QStringList m_tracePointViewIds;
+    ecvGenericGLDisplay* m_lastDrawnView = nullptr;
 
     /*
     Test if a point falls within a circle who's diameter equals the line from

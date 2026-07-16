@@ -1663,6 +1663,41 @@ void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
     applyLightPropertiesToActor(linesActor, viewID);
 }
 
+void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
+                              const std::string& viewID,
+                              int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+
+    // ccGLMatrix is column-major (OpenGL convention).
+    // vtkMatrix4x4::SetElement(row, col) is row-major internally but the
+    // setter uses (row, col) indexing, so we convert: element(r,c) =
+    // data[c*4+r].
+    vtkSmartPointer<vtkMatrix4x4> mat44 = vtkSmartPointer<vtkMatrix4x4>::New();
+    const float* data = glTrans.data();
+    for (int r = 0; r < 4; ++r)
+        for (int c = 0; c < 4; ++c)
+            mat44->SetElement(r, c, static_cast<double>(data[c * 4 + r]));
+
+    vtkSmartPointer<vtkTransform> vtkTrans =
+            vtkSmartPointer<vtkTransform>::New();
+    vtkTrans->SetMatrix(mat44);
+    actor->SetUserTransform(vtkTrans);
+    actor->Modified();
+}
+
+void VtkVis::clearGLTransform(const std::string& viewID, int viewport) {
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+    if (actor->GetUserTransform()) {
+        vtkSmartPointer<vtkTransform> identity =
+                vtkSmartPointer<vtkTransform>::New();
+        identity->Identity();
+        actor->SetUserTransform(identity);
+        actor->Modified();
+    }
+}
+
 void VtkVis::transformEntities(const CC_DRAW_CONTEXT& context) {
     if (context.transformInfo.isApplyTransform()) {
         std::string viewID = CVTools::FromQString(context.viewID);
@@ -2970,8 +3005,8 @@ void VtkVis::setShapeUniqueColor(
 void VtkVis::setPointSize(const unsigned char pointSize,
                           const std::string& viewID,
                           int viewport) {
-    unsigned char size = pointSize > 16 ? 16 : pointSize;
-    size = pointSize < 1 ? 1 : pointSize;
+    unsigned char size =
+            std::max<unsigned char>(1, std::min<unsigned char>(pointSize, 16));
     if (contains(viewID)) {
         setPointCloudRenderingProperties(PCL_VISUALIZER_POINT_SIZE, size,
                                          viewID, viewport);
@@ -3561,9 +3596,11 @@ void VtkVis::setLightMode(const std::string& viewID, int viewport) {
 void VtkVis::setLineWidth(const unsigned char lineWidth,
                           const std::string& viewID,
                           int viewport) {
+    unsigned char width =
+            std::max<unsigned char>(1, std::min<unsigned char>(lineWidth, 16));
     vtkActor* actor = getActorById(viewID);
     if (actor) {
-        actor->GetProperty()->SetLineWidth(float(lineWidth));
+        actor->GetProperty()->SetLineWidth(float(width));
         actor->Modified();
     }
 }
@@ -4259,21 +4296,17 @@ bool VtkVis::removeActorFromRenderer(const vtkSmartPointer<vtkProp>& actor,
     vtkRenderer* renderer = nullptr;
     int i = 0;
     while ((renderer = getRendererCollection()->GetNextItem()) != nullptr) {
-        // Should we remove the actor from all renderers?
         if (viewport == 0) {
-            renderer->RemoveActor(actor);
-        } else if (viewport ==
-                   i)  // add the actor only to the specified viewport
-        {
-            // Iterate over all actors in this renderer
-            vtkPropCollection* actors = renderer->GetViewProps();
-            actors->InitTraversal();
-            vtkProp* current_actor = nullptr;
-            while ((current_actor = actors->GetNextProp()) != nullptr) {
-                if (current_actor != actor_to_remove) continue;
-                renderer->RemoveActor(actor);
-                // Found the correct viewport and removed the actor
-                return (true);
+            renderer->RemoveViewProp(actor);
+        } else if (viewport == i) {
+            vtkPropCollection* props = renderer->GetViewProps();
+            props->InitTraversal();
+            vtkProp* current_prop = nullptr;
+            while ((current_prop = props->GetNextProp()) != nullptr) {
+                if (current_prop != actor_to_remove) continue;
+                renderer->RemoveViewProp(actor);
+                this->GeometryBoundsDirty = true;
+                return true;
             }
         }
         ++i;
@@ -4398,7 +4431,7 @@ void VtkVis::registerKeyboard() {
     cb->SetClientData(this);
     cb->SetCallback(&VtkVis::OnKeyPress);
     if (interactor_) interactor_->AddObserver(vtkCommand::KeyPressEvent, cb);
-    CVLog::Print(
+    CVLog::PrintVerbose(
             "[annotation keyboard Event] press Delete to remove annotations");
     m_cloud_mutex.unlock();
 }
@@ -4410,7 +4443,7 @@ void VtkVis::registerMouse() {
     cb->SetCallback(&VtkVis::OnRightButtonPress);
     if (interactor_)
         interactor_->AddObserver(vtkCommand::RightButtonPressEvent, cb);
-    CVLog::Print(
+    CVLog::PrintVerbose(
             "[annotation mouse Event] click right button to pick annotation");
     m_cloud_mutex.unlock();
 }
@@ -4421,7 +4454,8 @@ void VtkVis::registerPointPicking() {
     cb->SetClientData(this);
     cb->SetCallback(&VtkVis::OnPointPicking);
     if (interactor_) interactor_->AddObserver(vtkCommand::EndPickEvent, cb);
-    CVLog::Print("[global pointPicking] SHIFT + left click to select a point!");
+    CVLog::PrintVerbose(
+            "[global pointPicking] SHIFT + left click to select a point!");
     m_cloud_mutex.unlock();
 }
 
@@ -4497,7 +4531,8 @@ void VtkVis::registerAreaPicking() {
     cb->SetClientData(this);
     cb->SetCallback(&VtkVis::OnAreaPicking);
     if (interactor_) interactor_->AddObserver(vtkCommand::EndPickEvent, cb);
-    CVLog::Print("[global areaPicking] press A to start or ending picking!");
+    CVLog::PrintDebug(
+            "[global areaPicking] press A to start or ending picking!");
     m_cloud_mutex.unlock();
 }
 

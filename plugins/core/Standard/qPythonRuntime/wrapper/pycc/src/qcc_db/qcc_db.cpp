@@ -59,6 +59,7 @@ void define_ccRasterGrid(py::module &m);
 void define_ccQuadric(py::module &m);
 void define_ccPolyline(py::module &m);
 void define_ccCircle(py::module &m);
+void define_ccGenericGLDisplay(py::module &m);
 void define_ccViewManager(py::module &m);
 
 template <class T> using observer_ptr = std::unique_ptr<T, py::nodelete>;
@@ -168,5 +169,6 @@ void define_qcc_db(py::module &m)
     define_ccGenericDisplayTools(m);
     define_ccDisplayTools(m);
 
+    define_ccGenericGLDisplay(m);
     define_ccViewManager(m);
 }

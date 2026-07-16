@@ -501,6 +501,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
     auto* closeBtn = makeBtn(QIcon(":/Resources/images/svg/pqCloseView.svg"),
                              tr("Close View"));
+    closeBtn->setObjectName(QStringLiteral("closeViewBtn"));
     connect(closeBtn, &QToolButton::clicked, this,
             [this, frame]() { onCloseView(frame); });
     closeBtn->setEnabled(location != 0);
@@ -1765,4 +1766,13 @@ int ecvMultiViewWidget::findLocationForFrame(QWidget* frame) const {
         if (it.value() == frame) return it.key();
     }
     return -1;
+}
+
+void ecvMultiViewWidget::setViewCloseButtonsEnabled(bool enabled) {
+    for (auto it = m_cellFrames.begin(); it != m_cellFrames.end(); ++it) {
+        if (!it.value()) continue;
+        auto* btn = it.value()->findChild<QToolButton*>(
+                QStringLiteral("closeViewBtn"));
+        if (btn) btn->setEnabled(enabled);
+    }
 }

@@ -192,7 +192,6 @@ void vtkGLView::shutdown() {
 
     blockSignals(true);
     m_deferredPickingTimer.stop();
-    m_scheduleTimer.stop();
     disconnect(this, nullptr, nullptr, nullptr);
 
     if (m_visualizer3D) {
@@ -254,9 +253,26 @@ vtkGLView::~vtkGLView() {
     }
 }
 
+namespace {
+ecvGenericGLDisplay* vtkGLViewFactory(QWidget* parent,
+                                      bool silentInit,
+                                      bool offscreen) {
+    Q_UNUSED(offscreen);
+    QMainWindow* mw = qobject_cast<QMainWindow*>(parent);
+    return vtkGLView::Create(mw, false, !silentInit);
+}
+
+bool s_factoryRegistered = false;
+}  // namespace
+
 vtkGLView* vtkGLView::Create(QMainWindow* parent,
                              bool stereoMode,
                              bool loadDefaultPerspective) {
+    if (!s_factoryRegistered) {
+        ecvGenericGLDisplay::SetViewFactory(vtkGLViewFactory);
+        s_factoryRegistered = true;
+    }
+
     auto* view = new vtkGLView(parent);
     view->initVtkPipeline(parent, stereoMode, loadDefaultPerspective);
 
@@ -265,6 +281,9 @@ vtkGLView* vtkGLView::Create(QMainWindow* parent,
 
     ecvGenericGLDisplay::RegisterGLDisplay(view->m_vtkWidget, view);
     ecvViewManager::instance().registerView(view);
+
+    view->setPickingMode(DEFAULT_PICKING);
+    view->setInteractionMode(MODE_TRANSFORM_CAMERA);
 
     if (Visualization::VtkVis* vis = view->getVisualizer3D()) {
         vis->setUndoManager(ecvViewManager::instance().undoManager());
@@ -363,6 +382,25 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
         m_displayTools->setPickingTargetView(this);
         m_displayTools->doPicking();
     });
+
+    // Relay picking signals from the singleton ecvDisplayTools to this
+    // per-view vtkGLView.  Plugins connect to signalSource() (== this),
+    // but ProcessPickingResult() emits from the singleton.  Without this
+    // relay, embedded views (e.g. qBroom) never receive itemPicked.
+    // The filter ensures only the view that initiated the pick re-emits.
+    connect(m_displayTools, &ecvDisplayTools::itemPicked, this,
+            [this](ccHObject* entity, unsigned subEntityID, int x, int y,
+                   const CCVector3& P) {
+                if (m_displayTools->m_pickingTargetView == this) {
+                    emit itemPicked(entity, subEntityID, x, y, P);
+                }
+            });
+    connect(m_displayTools, &ecvDisplayTools::itemPickedFast, this,
+            [this](ccHObject* entity, int subEntityID, int x, int y) {
+                if (m_displayTools->m_pickingTargetView == this) {
+                    emit itemPickedFast(entity, subEntityID, x, y);
+                }
+            });
 
     connect(
             &ecvRepresentationManager::instance(),
@@ -464,7 +502,9 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
         context.drawingFlags =
                 CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
         context.visible = true;
+        context.skipDisplayCheck = true;
         m_winDBRoot->draw(context);
+        context.skipDisplayCheck = false;
     }
 
     // --- 2D foreground pass ---
@@ -478,7 +518,11 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
         context.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
     }
     if (m_globalDBRoot) m_globalDBRoot->draw(context);
-    if (m_winDBRoot) m_winDBRoot->draw(context);
+    if (m_winDBRoot) {
+        context.skipDisplayCheck = true;
+        m_winDBRoot->draw(context);
+        context.skipDisplayCheck = false;
+    }
 
     // --- Color ramp ---
     ccRenderingTools::DrawColorRamp(context);
@@ -587,11 +631,136 @@ void vtkGLView::refresh(bool only2D) {
 void vtkGLView::toBeRefreshed() { m_shouldBeRefreshed = true; }
 
 const ecvViewportParameters& vtkGLView::getViewportParameters() const {
+    // Sync VTK camera state to CC-compatible viewport parameters before
+    // returning, so callers (e.g. viewport save) always get current state.
+    if (m_visualizer3D) {
+        if (vtkCamera* cam = m_visualizer3D->getVtkCamera()) {
+            double pos[3], foc[3], up[3];
+            cam->GetPosition(pos);
+            cam->GetFocalPoint(foc);
+            cam->GetViewUp(up);
+
+            auto& vp = const_cast<ecvViewportParameters&>(m_ctx.viewportParams);
+
+            CCVector3d vtkPos(pos[0], pos[1], pos[2]);
+            CCVector3d vtkFoc(foc[0], foc[1], foc[2]);
+            CCVector3d vtkUp(up[0], up[1], up[2]);
+
+            vp.focal = vtkFoc;
+            vp.up = vtkUp;
+
+            CCVector3d forward = vtkFoc - vtkPos;
+            double dist = forward.norm();
+            if (dist > 1.0e-12) forward /= dist;
+
+            CCVector3d right = forward.cross(vtkUp);
+            double rlen = right.norm();
+            if (rlen > 1.0e-12) right /= rlen;
+
+            CCVector3d trueUp = right.cross(forward);
+
+            // viewMat is a pure rotation (CC convention):
+            //   row0 = right, row1 = up, row2 = -forward
+            double* M = vp.viewMat.data();
+            M[0] = right.x;
+            M[4] = right.y;
+            M[8] = right.z;
+            M[1] = trueUp.x;
+            M[5] = trueUp.y;
+            M[9] = trueUp.z;
+            M[2] = -forward.x;
+            M[6] = -forward.y;
+            M[10] = -forward.z;
+            M[3] = 0;
+            M[7] = 0;
+            M[11] = 0;
+            M[12] = 0;
+            M[13] = 0;
+            M[14] = 0;
+            M[15] = 1;
+
+            {
+                const CCVector3d& pivot =
+                        vp.objectCenteredView ? vp.getPivotPoint() : vtkPos;
+                // CC convention: pos = pivot + R^T * (cameraCenter - pivot)
+                // So: cameraCenter = pivot + R * (pos - pivot)
+                CCVector3d diff = vtkPos - pivot;
+                CCVector3d ccDiff;
+                ccDiff.x = M[0] * diff.x + M[4] * diff.y + M[8] * diff.z;
+                ccDiff.y = M[1] * diff.x + M[5] * diff.y + M[9] * diff.z;
+                ccDiff.z = M[2] * diff.x + M[6] * diff.y + M[10] * diff.z;
+                CCVector3d cc = pivot + ccDiff;
+
+                vp.setCameraCenter(cc, false);
+                vp.setFocalDistance(dist);
+            }
+
+            if (cam->GetParallelProjection()) {
+                int h = m_vtkWidget ? ecvDisplayCoordinates::toPhysical(
+                                              m_vtkWidget->height(),
+                                              ecvDisplayCoordinates::dprOf(
+                                                      m_vtkWidget))
+                                    : 1;
+                double ps = cam->GetParallelScale();
+                if (h > 0) {
+                    vp.pixelSize = static_cast<float>(ps * 2.0 / h);
+                }
+            }
+        }
+    }
     return m_ctx.viewportParams;
 }
 
 void vtkGLView::setViewportParameters(const ecvViewportParameters& params) {
     m_ctx.viewportParams = params;
+
+    if (!m_visualizer3D) return;
+    vtkCamera* cam = m_visualizer3D->getVtkCamera();
+    if (!cam) return;
+
+    ccGLMatrixd invMv = params.computeViewMatrix();
+    invMv.invert();
+    const CCVector3d pos = invMv.getTranslationAsVec3D();
+    const CCVector3d upDir = params.getUpDir();
+    const CCVector3d viewDir = params.getViewDir();
+
+    CCVector3d foc;
+    if (m_ctx.bubbleViewModeEnabled) {
+        foc = pos + viewDir * 1.0;
+    } else if (params.objectCenteredView) {
+        foc = params.getPivotPoint();
+    } else {
+        double dist = params.getFocalDistance();
+        if (dist <= 1.0e-12) dist = 1.0;
+        foc = pos + viewDir * dist;
+    }
+
+    m_ctx.viewportParams.up = upDir;
+    m_ctx.viewportParams.focal = foc;
+
+    cam->SetPosition(pos.x, pos.y, pos.z);
+    cam->SetFocalPoint(foc.x, foc.y, foc.z);
+    cam->SetViewUp(upDir.x, upDir.y, upDir.z);
+
+    if (params.perspectiveView) {
+        cam->SetParallelProjection(false);
+        const float fov_deg = m_ctx.bubbleViewModeEnabled
+                                      ? m_ctx.bubbleViewFov_deg
+                                      : params.fov_deg;
+        cam->SetViewAngle(static_cast<double>(fov_deg));
+    } else {
+        cam->SetParallelProjection(true);
+        int h = m_vtkWidget ? ecvDisplayCoordinates::toPhysical(
+                                      m_vtkWidget->height(),
+                                      ecvDisplayCoordinates::dprOf(m_vtkWidget))
+                            : 1;
+        double ps = static_cast<double>(params.pixelSize) * h * 0.5;
+        if (ps > 0) cam->SetParallelScale(ps);
+    }
+
+    if (vtkRenderer* ren = m_visualizer3D->getCurrentRenderer()) {
+        ren->ResetCameraClippingRange();
+    }
 }
 
 void vtkGLView::enableEDL(bool enable) {
@@ -999,6 +1168,27 @@ void vtkGLView::addToOwnDB(ccHObject* obj, bool noDependency) {
     } else {
         m_winDBRoot->addChild(obj);
     }
+    // WARNING: Do NOT call obj->setDisplay(this) here!
+    //
+    // Unlike CloudCompare's ccGLWindowInterface::addToOwnDB which calls
+    // setDisplay(this), we must NOT rebind the entity's display in
+    // ACloudViewer.
+    //
+    // Reason: in comparative / split-view scenarios an entity from the global
+    // DB can be temporarily added to a secondary view's ownDB for overlay
+    // rendering (e.g. comparative showing).  If we called setDisplay(this),
+    // the entity's global display binding would be overwritten to point at the
+    // secondary view.  When that secondary view is closed, the entity would
+    // lose its valid display reference, causing it to disappear from the
+    // primary view's normal draw pass (which checks isDisplayedIn()).
+    //
+    // The ownDB draw path already sets skipDisplayCheck = true in the draw
+    // context, so entities render in this view regardless of their display
+    // binding.  Plugins that need an explicit binding (e.g. qBroom's embedded
+    // view) should call obj->setDisplay(m_glView) themselves before or after
+    // addToOwnDB — that is the caller's responsibility, not ours.
+    obj->setRedrawFlagRecursive(true);
+    obj->setForceRedrawRecursive(true);
     ecvViewManager::instance().invalidateLabelCache();
 }
 
@@ -1088,6 +1278,44 @@ void vtkGLView::syncVtkCameraToContext() {
     m_ctx.validModelviewMatrix = true;
     m_ctx.validProjectionMatrix = true;
 
+    // Sync viewportParams.viewMat from VTK camera's view transform.
+    //
+    // VTK's GetViewTransformMatrix() returns the world→camera rotation
+    // with camera axes as rows (right, up, backward).  CC's viewMat
+    // stores the same layout in column-major order.  This must be kept
+    // in sync because:
+    //   - qBroom drag uses viewMat.transposed().applyRotation(u) to
+    //     convert screen-space displacement to world-space
+    //   - getCurrentViewDir() reads viewMat row 2 for the view direction
+    //   - setView() relies on viewMat matching the actual VTK camera
+    //
+    // Without this sync, after any VTK-driven camera rotation the
+    // viewMat is stale, causing broom drag to move in wrong directions.
+    {
+        vtkMatrix4x4* vm = cam->GetViewTransformMatrix();
+        double* vd = m_ctx.viewportParams.viewMat.data();
+        for (int col = 0; col < 3; ++col) {
+            for (int row = 0; row < 3; ++row) {
+                vd[col * 4 + row] = vm->GetElement(row, col);
+            }
+        }
+        vd[3] = vd[7] = vd[11] = 0.0;
+        vd[12] = vd[13] = vd[14] = 0.0;
+        vd[15] = 1.0;
+    }
+
+    // Sync camera position, up, and focal from VTK.
+    {
+        double pos[3], foc[3], up[3];
+        cam->GetPosition(pos);
+        cam->GetFocalPoint(foc);
+        cam->GetViewUp(up);
+        m_ctx.viewportParams.setCameraCenter(CCVector3d(pos[0], pos[1], pos[2]),
+                                             false);
+        m_ctx.viewportParams.up = CCVector3d(up[0], up[1], up[2]);
+        m_ctx.viewportParams.focal = CCVector3d(foc[0], foc[1], foc[2]);
+    }
+
     // Sync perspective state
     bool vtkParallel = (cam->GetParallelProjection() != 0);
     m_ctx.viewportParams.perspectiveView = !vtkParallel;
@@ -1122,10 +1350,12 @@ void vtkGLView::syncVtkCameraToContext() {
 void vtkGLView::getGLCameraParameters(ccGLCameraParameters& params) const {
     if (!m_vtkWidget) return;
 
-    // If matrices haven't been synced yet, do a live sync from VTK camera.
-    if (!m_ctx.validModelviewMatrix || !m_ctx.validProjectionMatrix) {
-        const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
-    }
+    // Always re-sync from VTK camera.  The valid flags are set after our
+    // own redraw(), but VTK-driven camera changes (e.g. trackball
+    // rotation through the VTK interactor) update the VTK camera without
+    // calling our redraw().  Without a live sync, the projection matrices
+    // are stale and trianglePicking / unproject produce wrong results.
+    const_cast<vtkGLView*>(this)->syncVtkCameraToContext();
 
     const double dpr = ecvDisplayCoordinates::dprOf(m_vtkWidget);
     params.viewport[0] = 0;
@@ -1162,6 +1392,16 @@ void vtkGLView::updateConstellationCenterAndZoom(const ccBBox* box) {
             if (auto* vis = dynamic_cast<Visualization::VtkVis*>(
                         m_visualizer3D.get())) {
                 vis->setCenterOfRotation(center.x, center.y, center.z);
+            }
+            // Sync VTK camera state back to context after resetCamera
+            if (vtkCamera* cam = m_visualizer3D->getVtkCamera()) {
+                double pos[3], focal[3];
+                cam->GetPosition(pos);
+                cam->GetFocalPoint(focal);
+                m_ctx.viewportParams.setCameraCenter(
+                        CCVector3d(pos[0], pos[1], pos[2]), false);
+                m_ctx.viewportParams.focal =
+                        CCVector3d(focal[0], focal[1], focal[2]);
             }
             if (m_vtkWidget) {
                 if (auto* rw = m_vtkWidget->GetRenderWindow()) rw->Render();
@@ -1241,6 +1481,11 @@ void vtkGLView::setInteractionMode(INTERACTION_FLAGS flags) {
             }
         }
 
+        if (m_vtkWidget) {
+            m_vtkWidget->setMouseTracking(flags & (INTERACT_CLICKABLE_ITEMS |
+                                                   INTERACT_SIG_MOUSE_MOVED));
+        }
+
         emit interactionModeChanged(flags);
     }
 }
@@ -1250,6 +1495,22 @@ vtkGLView::INTERACTION_FLAGS vtkGLView::getInteractionMode() const {
 }
 
 void vtkGLView::setPickingMode(PICKING_MODE mode) {
+    switch (mode) {
+        case DEFAULT_PICKING:
+            mode = ENTITY_PICKING;
+            [[fallthrough]];
+        case NO_PICKING:
+        case ENTITY_PICKING:
+            break;
+        case ENTITY_RECT_PICKING:
+        case FAST_PICKING:
+        case POINT_PICKING:
+        case TRIANGLE_PICKING:
+        case POINT_OR_TRIANGLE_PICKING:
+        case POINT_OR_TRIANGLE_OR_LABEL_PICKING:
+        case LABEL_PICKING:
+            break;
+    }
     if (!m_ctx.pickingModeLocked && m_ctx.pickingMode != mode) {
         m_ctx.pickingMode = mode;
         emit pickingModeChanged(mode);
@@ -1284,6 +1545,7 @@ void vtkGLView::setDisplayParameters(const ecvGui::ParamStruct& params,
         m_overriddenDisplayParameters = params;
         m_overriddenDisplayParametersEnabled = true;
     } else {
+        m_overriddenDisplayParametersEnabled = false;
         ecvGui::Set(params);
     }
 }
@@ -1429,7 +1691,9 @@ bool vtkGLView::hideShowEntities(const ccGLDrawContext& context) {
 }
 
 void vtkGLView::removeEntities(const ccGLDrawContext& context) {
-    if (m_displayTools) m_displayTools->removeEntities(context);
+    if (m_displayTools) {
+        m_displayTools->removeEntities(context);
+    }
 }
 
 void vtkGLView::changeEntityProperties(PROPERTY_PARAM& param) {
@@ -1474,7 +1738,13 @@ QString vtkGLView::pick3DItem(int x, int y) {
 
 QString vtkGLView::pickObject(double x, double y) {
     if (m_visualizer3D) {
-        vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
+        double vtkY = y;
+        if (m_vtkWidget) {
+            int h = m_vtkWidget->height();
+            double dpr = getDevicePixelRatio();
+            vtkY = h * dpr - 1.0 - y;
+        }
+        vtkActor* pickedActor = m_visualizer3D->pickActor(x, vtkY);
         if (pickedActor) {
             return m_visualizer3D->getIdByActor(pickedActor).c_str();
         }
@@ -1593,44 +1863,61 @@ bool vtkGLView::isRotationAxisLocked() const {
 void vtkGLView::rotateBaseViewMat(const ccGLMatrixd& rotMat) {
     m_ctx.viewportParams.viewMat = rotMat * m_ctx.viewportParams.viewMat;
 
-    // The viewMat stores camera axes as ROWS in column-major layout:
-    //   Row 0 = right,  Row 1 = up,  Row 2 = backward (-forward)
-    // In column-major storage: row i components are at data[i], data[4+i],
-    // data[8+i]
     const double* d = m_ctx.viewportParams.viewMat.data();
     CCVector3d upDir(d[1], d[5], d[9]);
     upDir.normalize();
-    CCVector3d backward(d[2], d[6], d[10]);
-    backward.normalize();
+    CCVector3d viewDir(d[2], d[6], d[10]);
+    viewDir.normalize();
 
-    // Get current camera distance and pivot from the VTK camera
-    CCVector3d pivot = m_ctx.viewportParams.getPivotPoint();
-    double distance = 1.0;
-    if (m_visualizer3D) {
-        if (auto* ren = m_visualizer3D->getCurrentRenderer()) {
-            if (auto* cam = ren->GetActiveCamera()) {
-                double* pos = cam->GetPosition();
-                double* foc = cam->GetFocalPoint();
-                distance = std::sqrt((pos[0] - foc[0]) * (pos[0] - foc[0]) +
-                                     (pos[1] - foc[1]) * (pos[1] - foc[1]) +
-                                     (pos[2] - foc[2]) * (pos[2] - foc[2]));
-                if (distance < 1.0e-6) distance = 1.0;
-                pivot = CCVector3d(foc[0], foc[1], foc[2]);
+    if (m_ctx.bubbleViewModeEnabled) {
+        // CloudCompare ccGLWindowInterface::rotateBaseViewMat — only viewMat
+        // changes; the camera stays at the sensor / pivot.
+        const CCVector3d sensorCenter = m_ctx.viewportParams.getPivotPoint();
+        const double vtkLookDist = 1.0;
+        const CCVector3d focal = sensorCenter + viewDir * vtkLookDist;
+
+        m_ctx.viewportParams.setCameraCenter(sensorCenter, true);
+        m_ctx.viewportParams.up = upDir;
+        m_ctx.viewportParams.focal = focal;
+
+        if (m_visualizer3D) {
+            m_visualizer3D->setCameraPosition(
+                    sensorCenter.x, sensorCenter.y, sensorCenter.z, focal.x,
+                    focal.y, focal.z, upDir.x, upDir.y, upDir.z, 0);
+            if (vtkCamera* cam = m_visualizer3D->getVtkCamera()) {
+                cam->SetViewAngle(static_cast<double>(m_ctx.bubbleViewFov_deg));
             }
         }
-    }
+    } else {
+        CCVector3d backward = viewDir;
+        CCVector3d pivot = m_ctx.viewportParams.getPivotPoint();
+        double distance = 1.0;
+        if (m_visualizer3D) {
+            if (auto* ren = m_visualizer3D->getCurrentRenderer()) {
+                if (auto* cam = ren->GetActiveCamera()) {
+                    double* pos = cam->GetPosition();
+                    double* foc = cam->GetFocalPoint();
+                    distance = std::sqrt((pos[0] - foc[0]) * (pos[0] - foc[0]) +
+                                         (pos[1] - foc[1]) * (pos[1] - foc[1]) +
+                                         (pos[2] - foc[2]) * (pos[2] - foc[2]));
+                    if (distance < 1.0e-6) distance = 1.0;
+                    pivot = CCVector3d(foc[0], foc[1], foc[2]);
+                }
+            }
+        }
 
-    CCVector3d camPos = pivot + backward * distance;
+        CCVector3d camPos = pivot + backward * distance;
 
-    m_ctx.viewportParams.setCameraCenter(camPos);
-    m_ctx.viewportParams.up = upDir;
-    m_ctx.viewportParams.focal = pivot;
-    m_ctx.viewportParams.setPivotPoint(pivot, true);
+        m_ctx.viewportParams.setCameraCenter(camPos);
+        m_ctx.viewportParams.up = upDir;
+        m_ctx.viewportParams.focal = pivot;
+        m_ctx.viewportParams.setPivotPoint(pivot, true);
 
-    if (m_visualizer3D) {
-        m_visualizer3D->setCameraPosition(camPos.x, camPos.y, camPos.z, pivot.x,
-                                          pivot.y, pivot.z, upDir.x, upDir.y,
-                                          upDir.z, 0);
+        if (m_visualizer3D) {
+            m_visualizer3D->setCameraPosition(camPos.x, camPos.y, camPos.z,
+                                              pivot.x, pivot.y, pivot.z,
+                                              upDir.x, upDir.y, upDir.z, 0);
+        }
     }
 
     if (auto* rw = m_vtkWidget ? m_vtkWidget->renderWindow() : nullptr) {
@@ -1814,7 +2101,11 @@ bool vtkGLView::renderToFile(const QString& filename,
 }
 
 void vtkGLView::removeBB(const QString& viewId) {
-    if (m_displayTools) m_displayTools->removeBB(viewId);
+    if (!m_displayTools) return;
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = viewId;
+    context.display = this;
+    m_displayTools->removeBB(context);
 }
 
 void vtkGLView::removeBB(const ccGLDrawContext& context) {
@@ -1963,13 +2254,6 @@ void vtkGLView::startPicking(PICKING_MODE mode, int x, int y, int w, int h) {
 
 void vtkGLView::redraw2DLabel() {
     if (m_displayTools) m_displayTools->redraw2DLabel();
-}
-
-void vtkGLView::scheduleFullRedraw(int delayMs) {
-    m_scheduledFullRedrawTime = m_timer.elapsed() + delayMs;
-    if (!m_scheduleTimer.isActive()) {
-        m_scheduleTimer.start(delayMs);
-    }
 }
 
 void vtkGLView::startDeferredPicking() { m_deferredPickingTimer.start(); }

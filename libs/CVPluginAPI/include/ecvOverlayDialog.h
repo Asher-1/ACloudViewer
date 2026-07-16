@@ -89,6 +89,10 @@ protected slots:
     //! Slot called when the linked window is deleted (calls 'onClose')
     virtual void onLinkedWindowDeletion(QObject* object = nullptr);
 
+    //! Called when a view is unregistered — stops the dialog if the
+    //! unregistered view is our m_boundView (prevents use-after-free).
+    void onBoundViewUnregistered(ecvGenericGLDisplay* view);
+
 protected:
     // inherited from QObject
     bool eventFilter(QObject* obj, QEvent* e) override;

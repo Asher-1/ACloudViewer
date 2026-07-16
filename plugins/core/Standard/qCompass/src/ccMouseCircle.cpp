@@ -28,9 +28,9 @@ ccMouseCircle::ccMouseCircle(QWidget* owner, QString name)
     assert(owner);
     m_owner = owner;
     m_owner->installEventFilter(this);
-    if (ecvGenericGLDisplay* eff =
-                ecvViewManager::instance().getEffectiveView()) {
-        eff->addToOwnDB(this, true);
+    m_bindView = ecvViewManager::instance().getEffectiveView();
+    if (m_bindView) {
+        m_bindView->addToOwnDB(this, true);
     }
 }
 
@@ -38,38 +38,30 @@ ccMouseCircle::~ccMouseCircle() {
     if (m_owner) {
         m_owner->removeEventFilter(this);
 
-        if (ecvGenericGLDisplay* eff =
-                    ecvViewManager::instance().getEffectiveView()) {
+        if (m_bindView) {
             CC_DRAW_CONTEXT ctx;
-            ctx.display = eff;
+            ctx.display = m_bindView;
             ctx.defaultViewPort = 0;
             ctx.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
             ctx.removeViewID = getViewId();
-            if (ctx.display) {
-                ctx.display->removeEntities(ctx);
-            }
-
-            eff->removeFromOwnDB(this);
+            m_bindView->removeEntities(ctx);
+            m_bindView->removeFromOwnDB(this);
         }
     }
 }
 
 float ccMouseCircle::getRadiusWorld() {
-    ecvGenericGLDisplay* eff =
-            ecvViewManager::instance().getEffectiveView();
-    if (eff) {
+    ecvGenericGLDisplay* view =
+            m_bindView ? m_bindView
+                       : ecvViewManager::instance().getEffectiveView();
+    if (view) {
         m_pixelSize =
-                static_cast<float>(std::abs(eff->computeActualPixelSize()));
+                static_cast<float>(std::abs(view->computeActualPixelSize()));
     }
     if (m_pixelSize <= 0) {
         return 0.0f;
     }
-    float r = static_cast<float>(getRadiusPx()) * m_pixelSize;
-    CVLog::Print(QString("Radius_w = %1 (= %2 x %3)")
-                         .arg(r)
-                         .arg(getRadiusPx())
-                         .arg(m_pixelSize));
-    return r;
+    return static_cast<float>(getRadiusPx()) * m_pixelSize;
 }
 
 void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
@@ -86,28 +78,22 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    if (!ecvViewManager::instance().activeWidget()) {
-        return;
-    }
-
-    ecvGenericGLDisplay* effView =
-            ecvViewManager::instance().getEffectiveView();
-    if (!effView) {
+    ecvGenericGLDisplay* drawView =
+            context.display ? context.display : m_bindView;
+    if (!drawView) {
         return;
     }
 
     m_pixelSize =
-            static_cast<float>(std::abs(effView->computeActualPixelSize()));
+            static_cast<float>(std::abs(drawView->computeActualPixelSize()));
 
     {
         CC_DRAW_CONTEXT clr;
-        clr.display = effView;
+        clr.display = drawView;
         clr.defaultViewPort = 0;
         clr.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
         clr.removeViewID = getViewId();
-        if (clr.display) {
-            clr.display->removeEntities(clr);
-        }
+        drawView->removeEntities(clr);
     }
 
     QPoint p =
@@ -116,7 +102,7 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     int my = context.glH - 1 - p.y();
 
     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CIRCLE_2D, getViewId());
-    param.context.display = effView;
+    param.context.display = drawView;
     param.rect = QRect(mx, my, 0, 0);
     param.radius = static_cast<float>(m_radius);
     param.color = ecvColor::Rgbaf(1.0f, 0.0f, 0.0f, 0.8f);
@@ -131,14 +117,10 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
     }
 
     if (event->type() == QEvent::MouseMove) {
-        if (m_owner) {
-            {
-                ecvRedrawScope redrawScope(true, true);
-            }
+        if (m_bindView) {
+            m_bindView->redraw(true, false);
         }
-    }
-
-    if (event->type() == QEvent::Wheel) {
+    } else if (event->type() == QEvent::Wheel) {
         QWheelEvent* wheelEvent = static_cast<QWheelEvent*>(event);
 
         if (wheelEvent->modifiers().testFlag(Qt::ControlModifier)) {
@@ -147,7 +129,9 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
                     m_radius - static_cast<int>(
                                        m_radiusStep *
                                        (wheelEvent->angleDelta().y() / 100.0)));
-            { ecvRedrawScope redrawScope(true, true); }
+            if (m_bindView) {
+                m_bindView->redraw(true, false);
+            }
         }
     }
     return false;

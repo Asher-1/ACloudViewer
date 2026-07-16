@@ -7,23 +7,6 @@
 
 #pragma once
 
-// ##########################################################################
-// #                                                                        #
-// #                   CloudViewer PLUGIN: qCloudLayers                    #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                     COPYRIGHT: WigginsTech 2022                        #
-// #                                                                        #
-// ##########################################################################
-
 #include "ccAsprsModel.h"
 
 // CC
@@ -74,6 +57,9 @@ public:
     // restore initial colors and codes
     void restoreState();
 
+    // restore initial colors only (keep classification SF values)
+    void restoreColors();
+
     void mouseMove(const CCVector2& center,
                    float squareDist,
                    std::map<ScalarType, int>& affected);
@@ -93,6 +79,9 @@ public:
 
     void keepCurrentSFVisible();
 
+    //! Mark changes as committed (skip destructor restore)
+    void commitChanges();
+
 private:  // methods
     void project(ccGLCameraParameters camera, unsigned start, unsigned end);
     static PointCoordinateType ComputeSquaredEuclideanDistance(
@@ -104,6 +93,8 @@ private:  // variables
     ColorsTableType* m_formerCloudColors;
     bool m_formerCloudColorsWereShown;
     bool m_formerCloudSFWasShown;
+    int m_formerDisplayedSFIndex = -1;
+    bool m_committed = false;
     Parameters m_parameters;
 
     unsigned m_scalarFieldIndex;

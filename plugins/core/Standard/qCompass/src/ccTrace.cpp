@@ -80,34 +80,38 @@ ccTrace::~ccTrace() {
 }
 
 void ccTrace::removeSegmentActors() {
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    if (!eff) return;
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
     for (const QString& viewId : m_segmentViewIds) {
         CC_DRAW_CONTEXT ctx;
-        ctx.display = eff;
+        ctx.display = view;
         ctx.defaultViewPort = 0;
         ctx.removeViewID = viewId;
         ctx.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
-        if (ctx.display) ctx.display->removeEntities(ctx);
+        view->removeEntities(ctx);
     }
     m_segmentViewIds.clear();
 }
 
 void ccTrace::removeMarkerActors() {
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    if (!eff) {
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    if (!view) {
         m_waypointViewIds.clear();
         m_tracePointViewIds.clear();
         return;
     }
-    auto removeList = [eff](QStringList& ids, ENTITY_TYPE type) {
+    auto removeList = [view](QStringList& ids, ENTITY_TYPE type) {
         for (const QString& viewId : ids) {
             CC_DRAW_CONTEXT ctx;
-            ctx.display = eff;
+            ctx.display = view;
             ctx.defaultViewPort = 0;
             ctx.removeViewID = viewId;
             ctx.removeEntityType = type;
-            if (ctx.display) ctx.display->removeEntities(ctx);
+            view->removeEntities(ctx);
         }
         ids.clear();
     };
@@ -116,18 +120,20 @@ void ccTrace::removeMarkerActors() {
 }
 
 void ccTrace::hideShowTraceActors(bool visible) {
-    ecvGenericGLDisplay* eff = ecvViewManager::instance().getEffectiveView();
-    if (!eff) return;
-    auto hideShowList = [eff, visible](const QStringList& ids,
-                                       ENTITY_TYPE type) {
+    ecvGenericGLDisplay* view =
+            m_lastDrawnView ? m_lastDrawnView
+                            : ecvViewManager::instance().getEffectiveView();
+    if (!view) return;
+    auto hideShowList = [view, visible](const QStringList& ids,
+                                        ENTITY_TYPE type) {
         for (const QString& viewId : ids) {
             CC_DRAW_CONTEXT ctx;
             ctx.visible = visible;
-            ctx.display = eff;
+            ctx.display = view;
             ctx.defaultViewPort = 0;
             ctx.viewID = viewId;
             ctx.hideShowEntityType = type;
-            if (ctx.display) ctx.display->hideShowEntities(ctx);
+            view->hideShowEntities(ctx);
         }
     };
     hideShowList(m_segmentViewIds, ENTITY_TYPE::ECV_SHAPE);
@@ -139,6 +145,8 @@ void ccTrace::draw(CC_DRAW_CONTEXT& context) {
     if (MACRO_Draw3D(context)) {
         if (!isVisible() || !isEnabled()) {
             hideShowTraceActors(false);
+        } else {
+            hideShowTraceActors(true);
         }
     }
     ccHObject::draw(context);
@@ -753,6 +761,7 @@ int ccTrace::getSegmentCostScalar(int p1, int p2) {
     // m_cloud->getCurrentDisplayedScalarFieldIndex();
     ccScalarField* sf = static_cast<ccScalarField*>(
             m_cloud->getCurrentDisplayedScalarField());
+    if (!sf) return 765;
     return (sf->getValue(p2) - sf->getMin()) *
            (765 / (sf->getMax() - sf->getMin()));  // return scalar field value
                                                    // mapped to range 0 - 765
@@ -761,6 +770,7 @@ int ccTrace::getSegmentCostScalar(int p1, int p2) {
 int ccTrace::getSegmentCostScalarInv(int p1, int p2) {
     ccScalarField* sf = static_cast<ccScalarField*>(
             m_cloud->getCurrentDisplayedScalarField());
+    if (!sf) return 765;
     return (sf->getMax() - sf->getValue(p2)) *
            (765 /
             (sf->getMax() - sf->getMin()));  // return inverted scalar field
@@ -1071,16 +1081,13 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
             return;
         }
 
-        if (ecvViewManager::instance().activeWidget() == nullptr) {
-            assert(false);
-            return;
-        }
-
         ecvGenericGLDisplay* effView =
-                ecvViewManager::instance().getEffectiveView();
+                context.display ? context.display
+                                : ecvViewManager::instance().getEffectiveView();
         if (!effView) {
             return;
         }
+        m_lastDrawnView = effView;
 
         if (!c_unitPointMarker) {
             c_unitPointMarker.reset(

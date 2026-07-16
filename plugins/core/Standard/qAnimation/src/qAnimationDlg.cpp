@@ -12,8 +12,10 @@
 
 // CV_DB_LIB
 #include <CVTools.h>
+#include <QtCompat.h>
 #include <ecv2DViewportObject.h>
 #include <ecvDisplayTools.h>
+#include <ecvGenericGLDisplay.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
@@ -27,6 +29,8 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QSettings>
+#include <QTemporaryFile>
+#include <QThread>
 #include <QtGui>
 
 // standard includes
@@ -35,17 +39,82 @@
 
 namespace {
 
-QImage animationRenderToImage(int zoomFactor,
+QString outputFormatFromFilename(
+        const QString& filename,
+        const QMap<QString, QString>& codecNamesAndExtensions) {
+    const QString suffix = QFileInfo(filename).suffix().toLower();
+    if (suffix.isEmpty()) {
+        return QString();
+    }
+
+    for (auto it = codecNamesAndExtensions.constBegin();
+         it != codecNamesAndExtensions.constEnd(); ++it) {
+        const QStringList extensions =
+                it.value().split(',', QtCompat::SkipEmptyParts);
+        for (const QString& ext : extensions) {
+            if (ext.compare(suffix, Qt::CaseInsensitive) == 0) {
+                return it.key();
+            }
+        }
+    }
+
+    if (suffix == "mp4" || suffix == "m4v") {
+        return QStringLiteral("mp4");
+    }
+    if (suffix == "mov") {
+        return QStringLiteral("mov");
+    }
+    if (suffix == "avi") {
+        return QStringLiteral("avi");
+    }
+    if (suffix == "mkv") {
+        return QStringLiteral("matroska");
+    }
+
+    return QString();
+}
+
+QImage animationRenderToImage(ecvGenericGLDisplay* view,
+                              int zoomFactor,
                               bool renderOverlayItems,
                               bool silent,
                               int viewport) {
-    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (!view) {
+        return QImage();
+    }
+
     ecvViewManager::ScopedRenderOverride guard(view);
-    ecvDisplayTools* tools =
-            view ? dynamic_cast<ecvDisplayTools*>(view) : nullptr;
-    return tools ? tools->renderToImage(zoomFactor, renderOverlayItems, silent,
-                                        viewport)
-                 : QImage();
+
+    view->redraw(false, true);
+    QApplication::processEvents();
+
+    {
+        QImage image = view->renderToImage(zoomFactor, renderOverlayItems,
+                                           silent, viewport);
+        if (!image.isNull()) {
+            return image;
+        }
+    }
+
+    if (auto* tools = dynamic_cast<ecvDisplayTools*>(view)) {
+        return tools->renderToImage(zoomFactor, renderOverlayItems, silent,
+                                    viewport);
+    }
+
+    // Fallback: use renderToFile with temp file
+    QTemporaryFile tempFile(QStringLiteral("acv_animation_XXXXXX.png"));
+    tempFile.setAutoRemove(true);
+    if (!tempFile.open()) {
+        return QImage();
+    }
+    tempFile.close();
+
+    const QString filename = tempFile.fileName();
+    if (!view->renderToFile(filename, static_cast<float>(zoomFactor))) {
+        return QImage();
+    }
+
+    return QImage(filename);
 }
 
 }  // namespace
@@ -100,7 +169,10 @@ QStringList getImageList(const QString& path) {
 }
 
 qAnimationDlg::qAnimationDlg(QWidget* view3d, QWidget* parent)
-    : QDialog(parent, Qt::Tool), Ui::AnimationDialog(), m_view3d(view3d) {
+    : QDialog(parent, Qt::Tool),
+      Ui::AnimationDialog(),
+      m_view3d(view3d),
+      m_bindView(ecvViewManager::instance().getEffectiveView()) {
     setupUi(this);
 
     // restore previous settings
@@ -196,6 +268,7 @@ qAnimationDlg::qAnimationDlg(QWidget* view3d, QWidget* parent)
             int defaultIndex = 0;
             for (const QVideoEncoder::OutputFormat& f : formats) {
                 QString title = f.longName;
+                m_codecNamesAndExtensions[f.shortName] = f.extensions;
                 if (!f.extensions.isEmpty()) {
                     title += "[" + f.extensions + "]";
                     static const int s_maxTitleLength = 48;
@@ -208,10 +281,25 @@ qAnimationDlg::qAnimationDlg(QWidget* view3d, QWidget* parent)
                     defaultIndex = outputFormatComboBox->count() - 1;
                 }
             }
+            if (defaultIndex == 0 && outputFileLineEdit->text().endsWith(
+                                             ".mp4", Qt::CaseInsensitive)) {
+                for (int i = 0; i < outputFormatComboBox->count(); ++i) {
+                    if (outputFormatComboBox->itemData(i).toString() ==
+                        QStringLiteral("mp4")) {
+                        defaultIndex = i;
+                        break;
+                    }
+                }
+            }
             outputFormatComboBox->setCurrentIndex(defaultIndex);
         }
 #endif
     }
+
+    connect(outputFormatComboBox,
+            static_cast<void (QComboBox::*)(int)>(
+                    &QComboBox::currentIndexChanged),
+            this, &qAnimationDlg::onCodecChanged);
 
     connect(autoStepDurationCheckBox, &QAbstractButton::toggled, this,
             &qAnimationDlg::onAutoStepsDurationToggled);
@@ -279,8 +367,8 @@ bool qAnimationDlg::init(const std::vector<cc2DViewportObject*>& viewports,
     }
 
     ccBBox visibleObjectsBBox;
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->getVisibleObjectsBB(visibleObjectsBBox);
+    if (m_bindView) {
+        m_bindView->getVisibleObjectsBB(visibleObjectsBBox);
     }
 
     for (size_t i = 0; i < viewports.size(); ++i) {
@@ -745,8 +833,61 @@ void qAnimationDlg::onSmoothRatioChanged(double ratio) {
 }
 
 ccPolyline* qAnimationDlg::getTrajectory() {
-    // TODO
-    return nullptr;
+    const Trajectory* trajectory = nullptr;
+    Trajectory compressedTrajectory;
+
+    if (smoothTrajectoryGroupBox->isChecked()) {
+        trajectory = &m_smoothVideoSteps;
+    } else {
+        if (!getCompressedTrajectory(compressedTrajectory)) {
+            return nullptr;
+        }
+        trajectory = &compressedTrajectory;
+    }
+
+    if (!trajectory || trajectory->size() < 2) {
+        return nullptr;
+    }
+
+    auto* vertices = new ccPointCloud("vertices");
+    if (!vertices->reserve(static_cast<unsigned>(trajectory->size()))) {
+        delete vertices;
+        return nullptr;
+    }
+
+    for (const Step& step : *trajectory) {
+        CCVector3 C = step.cameraCenter.toPC();
+
+        if (vertices->size() != 0) {
+            // skip duplicate camera positions
+            if (!cloudViewer::GreaterThanEpsilon(
+                        (*vertices->getPoint(vertices->size() - 1) - C)
+                                .norm())) {
+                continue;
+            }
+        }
+        vertices->addPoint(C);
+    }
+    vertices->shrinkToFit();
+
+    if (vertices->size() < 2) {
+        delete vertices;
+        return nullptr;
+    }
+
+    auto* polyline = new ccPolyline(vertices);
+    polyline->addChild(vertices);
+    vertices->setVisible(false);
+    if (!polyline->addPointIndex(0, static_cast<unsigned>(vertices->size()))) {
+        delete polyline;
+        return nullptr;
+    }
+    polyline->setClosed(loopCheckBox->isChecked());
+    if (!m_videoSteps.empty() && m_videoSteps.front().viewport) {
+        polyline->setDisplay_recursive(m_bindView);
+    }
+
+    return polyline;
 }
 
 bool qAnimationDlg::exportTrajectoryOnExit() {
@@ -775,11 +916,9 @@ int qAnimationDlg::getCurrentStepIndex() {
 
 void qAnimationDlg::applyViewport(
         const ecvViewportParameters& viewportParameters) {
-    if (m_view3d) {
-        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-            view->setViewportParameters(viewportParameters);
-        }
-        if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
+    if (m_bindView) {
+        m_bindView->setViewportParameters(viewportParameters);
+        m_bindView->redraw(true, false);
     }
 }
 
@@ -883,6 +1022,27 @@ void qAnimationDlg::onStepTimeChanged(double time_sec) {
     updateCurrentStepDuration();
     // we have to update the whole smooth trajectory duration as well
     updateSmoothTrajectoryDurations();
+}
+
+void qAnimationDlg::onCodecChanged(int index) {
+    QString filename = outputFileLineEdit->text();
+    if (filename.size() < 3 || !filename.contains('.')) {
+        return;
+    }
+
+    QString codecFormat = outputFormatComboBox->itemData(index).toString();
+    QString extensions = m_codecNamesAndExtensions.value(codecFormat);
+    if (extensions.isEmpty()) {
+        return;
+    }
+
+    QFileInfo fi(filename);
+    QString completeSuffix = fi.completeSuffix();
+    if (!extensions.contains(completeSuffix)) {
+        QString newSuffix = extensions.split(',').first();
+        filename.replace('.' + completeSuffix, '.' + newSuffix);
+        outputFileLineEdit->setText(filename);
+    }
 }
 
 void qAnimationDlg::onBrowseButtonClicked() {
@@ -1073,6 +1233,7 @@ void qAnimationDlg::preview() {
         } else {
             if (!getCompressedTrajectory(compressedTrajectory)) {
                 CVLog::Error("Not enough memory");
+                setEnabled(true);
                 return;
             }
             trajectory = &compressedTrajectory;
@@ -1180,14 +1341,9 @@ void qAnimationDlg::preview() {
 
                     qint64 dt_ms = timer.elapsed();
 
-                    // remaining time
                     if (dt_ms < delay_ms) {
                         int wait_ms = static_cast<int>(delay_ms - dt_ms);
-#if defined(CV_WINDOWS)
-                        ::Sleep(wait_ms);
-#else
-                        usleep(wait_ms * 1000);
-#endif
+                        QThread::msleep(static_cast<unsigned long>(wait_ms));
                     }
                 } else {
                     // we'll try the next step
@@ -1250,7 +1406,9 @@ void qAnimationDlg::textureAnimationPreview(const QStringList& texture_files,
             CVLog::Warning(QString("Ignoring not existing texture image: %1")
                                    .arg(texture_file));
         }
-        if (auto* w = ecvViewManager::instance().activeWidget()) w->update();
+        if (m_bindView) {
+            if (auto* w = m_bindView->asWidget()) w->update();
+        }
 
         // next frame
         ++frameIndex;
@@ -1320,12 +1478,14 @@ bool qAnimationDlg::textureAnimationRender(
                             "toggle shown material first!");
                 };
             }
-            if (auto* w = ecvViewManager::instance().activeWidget())
-                w->update();
+            if (m_bindView) {
+                if (auto* w = m_bindView->asWidget()) w->update();
+            }
         }
 
         // render to image
-        QImage image = animationRenderToImage(superRes, false, true, 0);
+        QImage image =
+                animationRenderToImage(m_bindView, superRes, false, true, 0);
 
         if (image.isNull()) {
             QMessageBox::critical(this, "Error", "Failed to grab the screen!");
@@ -1419,6 +1579,7 @@ void qAnimationDlg::render(bool asSeparateFrames) {
     } else {
         if (!getCompressedTrajectory(compressedTrajectory)) {
             CVLog::Error("Not enough memory");
+            setEnabled(true);
             return;
         }
         trajectory = &compressedTrajectory;
@@ -1463,8 +1624,8 @@ void qAnimationDlg::render(bool asSeparateFrames) {
     QSize originalViewSize;
     if (!asSeparateFrames) {
         // get original viewport size
-        if (auto* w = ecvViewManager::instance().activeWidget()) {
-            originalViewSize = w->size();
+        if (m_bindView) {
+            if (auto* w = m_bindView->asWidget()) originalViewSize = w->size();
         }
 
         // hack: as the encoder requires that the video dimensions are multiples
@@ -1492,15 +1653,19 @@ void qAnimationDlg::render(bool asSeparateFrames) {
 
         int gw = 0;
         int gh = 0;
-        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-            gw = view->glWidth();
-            gh = view->glHeight();
+        if (m_bindView) {
+            gw = m_bindView->glWidth();
+            gh = m_bindView->glHeight();
         }
         encoder.reset(new QVideoEncoder(
                 outputFilename, gw * animScale, gh * animScale, bitrate, gop,
                 static_cast<unsigned>(fpsSpinBox->value())));
         QStringList errors;
         QString outputFormat = outputFormatComboBox->currentData().toString();
+        if (outputFormat.isEmpty()) {
+            outputFormat = outputFormatFromFilename(outputFilename,
+                                                    m_codecNamesAndExtensions);
+        }
         bool success = encoder->open(outputFormat, errors);
         for (const QString& e : errors) {
             CVLog::Warning(e);
@@ -1521,6 +1686,7 @@ void qAnimationDlg::render(bool asSeparateFrames) {
         QMessageBox::critical(
                 this, "Error",
                 QString("Animation mode is not supported (no FFMPEG support)"));
+        setEnabled(true);
         return;
     }
 #endif
@@ -1583,7 +1749,8 @@ void qAnimationDlg::render(bool asSeparateFrames) {
                 applyViewport(currentViewport);
 
                 // render to image
-                QImage image = animationRenderToImage(superRes, false, true, 0);
+                QImage image = animationRenderToImage(m_bindView, superRes,
+                                                      false, true, 0);
 
                 if (image.isNull()) {
                     QMessageBox::critical(this, "Error",

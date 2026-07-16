@@ -442,13 +442,15 @@ bool qCanupoProcess::Classify(
 #endif
                 // computes the 'descriptors'
                 bool invalidDescriptors = false;
+                unsigned invalidCount = 0;
                 QString errorStr;
                 if (!qCanupoTools::ComputeCorePointsDescriptors(
                             corePoints, corePointsDescriptors, cloud, scales,
-                            invalidDescriptors, errorStr, descriptorID,
-                            params.maxThreadCount, &pDlg, octree.data()
+                            invalidDescriptors, invalidCount, errorStr,
+                            descriptorID, params.maxThreadCount, &pDlg,
+                            octree.data()
 #ifdef COMPILE_PRIVATE_CANUPO
-                                                                  ,
+                                    ,
                             generateRoughnessSF ? &coreRoughnessSFs : 0
 #endif
                             )) {
@@ -462,8 +464,11 @@ bool qCanupoProcess::Classify(
                 } else if (invalidDescriptors) {
                     if (app)
                         app->dispToConsole(
-                                "[qCanupo] Some descriptors couldn't be "
-                                "computed (min scale may be too small)!",
+                                QString("[qCanupo] %1/%2 descriptors couldn't "
+                                        "be computed (min scale may be too "
+                                        "small)")
+                                        .arg(invalidCount)
+                                        .arg(corePoints->size()),
                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
                 }
             }

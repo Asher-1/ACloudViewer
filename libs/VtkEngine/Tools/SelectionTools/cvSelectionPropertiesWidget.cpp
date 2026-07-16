@@ -22,6 +22,10 @@
 #include <ecvGenericVisualizer3D.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvViewManager.h>
+
+// VtkEngine (for cross-view data producer enumeration)
+#include "Visualization/vtkGLView.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -5378,91 +5382,141 @@ void cvSelectionPropertiesWidget::updateDataProducerCombo() {
     // Add "(none)" option as default like ParaView
     m_dataProducerCombo->addItem(tr("(none)"));
 
-    // Get list of available data sources from all renderers
-    // Use "DatasetName" field data like VtkVis stores entity names
-    Visualization::VtkVis* pclVis = getVtkVis();
-    if (pclVis) {
-        vtkRendererCollection* renderers = pclVis->getRendererCollection();
-        if (renderers) {
-            QSet<QString> addedNames;
+    QSet<QString> addedNames;
 
-            // Iterate through ALL renderers to get all data producers
-            renderers->InitTraversal();
-            vtkRenderer* renderer;
-            while ((renderer = renderers->GetNextItem()) != nullptr) {
-                vtkActorCollection* actors = renderer->GetActors();
-                if (!actors) continue;
+    // Collect data producers from ALL views (ParaView-style: not just active)
+    const auto& allViews = ecvViewManager::instance().getAllViews();
+    for (ecvGenericGLDisplay* display : allViews) {
+        auto* glView = dynamic_cast<vtkGLView*>(display);
+        if (!glView) continue;
 
-                actors->InitTraversal();
-                vtkActor* actor;
-                while ((actor = actors->GetNextActor()) != nullptr) {
-                    // Include visible OR pickable actors (more inclusive)
-                    if (!actor->GetVisibility()) {
-                        continue;
-                    }
+        Visualization::VtkVis* vis = glView->getVisualizer3D();
+        if (!vis) continue;
 
-                    QString name;
+        vtkRendererCollection* renderers = vis->getRendererCollection();
+        if (!renderers) continue;
 
-                    // Get the entity name from "DatasetName" field data
-                    // This is how VtkVis stores the ccHObject name
-                    vtkPolyData* polyData = vtkPolyData::SafeDownCast(
-                            actor->GetMapper() ? actor->GetMapper()->GetInput()
-                                               : nullptr);
-                    if (polyData) {
-                        vtkFieldData* fieldData = polyData->GetFieldData();
-                        if (fieldData) {
-                            // Primary: check "DatasetName" (used by VtkVis)
-                            vtkStringArray* datasetNameArray =
-                                    vtkStringArray::SafeDownCast(
-                                            fieldData->GetAbstractArray(
-                                                    "DatasetName"));
-                            if (datasetNameArray &&
-                                datasetNameArray->GetNumberOfTuples() > 0) {
-                                name = QString::fromStdString(
-                                        datasetNameArray->GetValue(0));
-                            }
+        renderers->InitTraversal();
+        vtkRenderer* renderer;
+        while ((renderer = renderers->GetNextItem()) != nullptr) {
+            vtkActorCollection* actors = renderer->GetActors();
+            if (!actors) continue;
 
-                            // Fallback: check "Name" array
-                            if (name.isEmpty()) {
-                                vtkAbstractArray* nameArray =
-                                        fieldData->GetAbstractArray("Name");
-                                if (nameArray &&
-                                    nameArray->GetNumberOfTuples() > 0) {
-                                    vtkVariant v =
-                                            nameArray->GetVariantValue(0);
-                                    name = QString::fromStdString(v.ToString());
-                                }
+            actors->InitTraversal();
+            vtkActor* actor;
+            while ((actor = actors->GetNextActor()) != nullptr) {
+                if (!actor->GetVisibility()) continue;
+
+                QString name;
+                vtkPolyData* polyData = vtkPolyData::SafeDownCast(
+                        actor->GetMapper() ? actor->GetMapper()->GetInput()
+                                           : nullptr);
+                if (polyData) {
+                    vtkFieldData* fieldData = polyData->GetFieldData();
+                    if (fieldData) {
+                        vtkStringArray* datasetNameArray =
+                                vtkStringArray::SafeDownCast(
+                                        fieldData->GetAbstractArray(
+                                                "DatasetName"));
+                        if (datasetNameArray &&
+                            datasetNameArray->GetNumberOfTuples() > 0) {
+                            name = QString::fromStdString(
+                                    datasetNameArray->GetValue(0));
+                        }
+
+                        if (name.isEmpty()) {
+                            vtkAbstractArray* nameArray =
+                                    fieldData->GetAbstractArray("Name");
+                            if (nameArray &&
+                                nameArray->GetNumberOfTuples() > 0) {
+                                vtkVariant v = nameArray->GetVariantValue(0);
+                                name = QString::fromStdString(v.ToString());
                             }
                         }
                     }
+                }
 
-                    // Skip if no valid name found
-                    if (name.isEmpty()) {
-                        continue;
-                    }
+                // Skip if no valid name found
+                if (name.isEmpty()) continue;
 
-                    // Add only unique names
-                    if (!addedNames.contains(name)) {
-                        m_dataProducerCombo->addItem(name);
-                        addedNames.insert(name);
+                // Add only unique names
+                if (!addedNames.contains(name)) {
+                    m_dataProducerCombo->addItem(name);
+                    addedNames.insert(name);
+                }
+            }
+        }
+    }
+
+    // Fallback: if no views found yet, use the configured visualizer
+    if (addedNames.isEmpty()) {
+        Visualization::VtkVis* pclVis = getVtkVis();
+        if (pclVis) {
+            vtkRendererCollection* renderers = pclVis->getRendererCollection();
+            if (renderers) {
+                renderers->InitTraversal();
+                vtkRenderer* renderer;
+                while ((renderer = renderers->GetNextItem()) != nullptr) {
+                    vtkActorCollection* actors = renderer->GetActors();
+                    if (!actors) continue;
+
+                    actors->InitTraversal();
+                    vtkActor* actor;
+                    while ((actor = actors->GetNextActor()) != nullptr) {
+                        if (!actor->GetVisibility()) continue;
+
+                        QString name;
+                        vtkPolyData* polyData = vtkPolyData::SafeDownCast(
+                                actor->GetMapper()
+                                        ? actor->GetMapper()->GetInput()
+                                        : nullptr);
+                        if (polyData) {
+                            vtkFieldData* fieldData = polyData->GetFieldData();
+                            if (fieldData) {
+                                vtkStringArray* datasetNameArray =
+                                        vtkStringArray::SafeDownCast(
+                                                fieldData->GetAbstractArray(
+                                                        "DatasetName"));
+                                if (datasetNameArray &&
+                                    datasetNameArray->GetNumberOfTuples() > 0) {
+                                    name = QString::fromStdString(
+                                            datasetNameArray->GetValue(0));
+                                }
+                                if (name.isEmpty()) {
+                                    vtkAbstractArray* nameArray =
+                                            fieldData->GetAbstractArray("Name");
+                                    if (nameArray &&
+                                        nameArray->GetNumberOfTuples() > 0) {
+                                        vtkVariant v =
+                                                nameArray->GetVariantValue(0);
+                                        name = QString::fromStdString(
+                                                v.ToString());
+                                    }
+                                }
+                            }
+                        }
+                        if (name.isEmpty()) continue;
+                        if (!addedNames.contains(name)) {
+                            m_dataProducerCombo->addItem(name);
+                            addedNames.insert(name);
+                        }
                     }
                 }
             }
-
-            CVLog::PrintVerbose(
-                    QString("[cvSelectionPropertiesWidget] Found %1 "
-                            "data producers")
-                            .arg(addedNames.size()));
         }
     }
+
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Found %1 data producers "
+                    "across %2 views")
+                    .arg(addedNames.size())
+                    .arg(allViews.size()));
 
     // Also update attribute combo with first data producer
     updateAttributeCombo();
 
     // IMPORTANT: Manually trigger the enable/disable logic for Create Selection
-    // controls When items are added to combo, the currentIndex may still be 0
-    // (None), but we need to re-evaluate the enable state based on the new
-    // state
+    // controls
     onDataProducerChanged(m_dataProducerCombo->currentIndex());
 }
 
