@@ -210,13 +210,12 @@ endif()
 # CPUs lack AVX-512; GPU inference makes CPU SIMD width largely irrelevant)
 option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    OFF)
 
-# GGML inference library (required by DA3 and future AI modules)
-option(GGML_ENABLED "Enable ggml ML inference library"                          OFF)
-# DA3 (Depth Anything V3) monocular depth estimation module
-option(DA3_ENABLED "Enable DA3 depth estimation module (requires GGML)"         OFF)
-# DA3 depends on GGML: auto-enable GGML when DA3 is requested
-if(DA3_ENABLED AND NOT GGML_ENABLED)
-    message(STATUS "DA3_ENABLED requires GGML — auto-enabling GGML_ENABLED")
+# AICore: unified AI inference core (DA3 + FreeSplatter, ggml linked once)
+# When ON: auto-enables GGML and builds libAICore.so containing both modules.
+# Plugins (qDA3, qFreeSplatter) must be separately enabled via their PLUGIN_STANDARD_* options.
+option(AICore_ENABLED "Enable unified AI inference core (auto-enables GGML)"     OFF)
+if(AICore_ENABLED AND NOT GGML_ENABLED)
+    message(STATUS "AICore_ENABLED — auto-enabling GGML_ENABLED")
     set(GGML_ENABLED ON CACHE BOOL "Enable ggml ML inference library" FORCE)
 endif()
 

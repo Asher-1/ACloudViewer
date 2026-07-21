@@ -71,7 +71,7 @@ void ecvGui::ParamStruct::reset() {
     lightDoubleSided = true;
     drawBackgroundGradient = true;
     drawRoundedPoints = false;
-    lodRenderingThresholdMB = 20.0;
+    lodRenderingThresholdMB = 50.0;
     lodResolution = 0.5;
     lodInteractiveUpdateRate = 5.0;
     lodStillUpdateRate = 0.002;
@@ -217,7 +217,7 @@ void ecvGui::ParamStruct::fromPersistentSettings() {
             settings.value("backgroundGradient", true).toBool();
     drawRoundedPoints = settings.value("drawRoundedPoints", false).toBool();
     lodRenderingThresholdMB =
-            settings.value("lodRenderingThresholdMB", 20.0).toDouble();
+            settings.value("lodRenderingThresholdMB", 50.0).toDouble();
     lodResolution = settings.value("lodResolution", 0.5).toDouble();
     lodInteractiveUpdateRate =
             settings.value("lodInteractiveUpdateRate", 5.0).toDouble();

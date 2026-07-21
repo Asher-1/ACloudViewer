@@ -1,0 +1,9 @@
+# Reference-generation + conversion deps (run in docker/Dockerfile.cuda, or a
+# local venv). The C++/ggml engine itself needs none of these.
+numpy
+gguf>=0.10
+# torch / safetensors / the upstream FreeSplatter repo are needed only by
+# convert.py and hf_dump.py; pin them in the CUDA image where the GPU model runs.
+# torch>=2.4
+# safetensors
+# omegaconf

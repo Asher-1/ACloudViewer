@@ -31,6 +31,8 @@
 
 #include "mvs/fusion.h"
 
+#include <algorithm>
+
 #include "util/misc.h"
 
 namespace colmap {
@@ -255,6 +257,17 @@ void StereoFusion::Run() {
                 Eigen::Map<const Eigen::Matrix<float, 3, 3, Eigen::RowMajor>>(
                         image.GetR())
                         .transpose();
+
+        if (workspace_->HasConsistencyGraph(image_idx)) {
+            ++num_consistency_graphs_;
+        }
+    }
+
+    if (num_consistency_graphs_ > 0) {
+        std::cout << "StereoFusion: per-pixel consistency graphs enabled for "
+                  << num_consistency_graphs_ << " / "
+                  << std::count(used_images_.begin(), used_images_.end(), true)
+                  << " views (PatchMatch-style BFS)" << std::endl;
     }
 
     std::cout << StringPrintf("Starting fusion with %d threads", num_threads)
@@ -514,58 +527,62 @@ void StereoFusion::Fuse(const int thread_id,
             continue;
         }
 
-        if (static_cast<size_t>(image_idx) < overlapping_images_.size()) {
+        const ConsistencyGraph* consistency_graph =
+                workspace_->GetConsistencyGraph(image_idx);
+
+        const auto enqueue_neighbor = [&](const int next_image_idx) {
+            if (next_image_idx < 0 ||
+                static_cast<size_t>(next_image_idx) >= used_images_.size() ||
+                static_cast<size_t>(next_image_idx) >= fused_images_.size() ||
+                !used_images_[next_image_idx] ||
+                fused_images_[next_image_idx]) {
+                return;
+            }
+
+            if (static_cast<size_t>(next_image_idx) >= P_.size()) {
+                return;
+            }
+
+            const Eigen::Vector3f next_proj =
+                    P_[next_image_idx] * xyz.homogeneous();
+
+            if (std::abs(next_proj(2)) <
+                std::numeric_limits<float>::epsilon()) {
+                return;
+            }
+
+            const int next_col = static_cast<int>(
+                    std::round(next_proj(0) / next_proj(2)));
+            const int next_row = static_cast<int>(
+                    std::round(next_proj(1) / next_proj(2)));
+
+            if (static_cast<size_t>(next_image_idx) >=
+                depth_map_sizes_.size()) {
+                return;
+            }
+
+            const auto& depth_map_size = depth_map_sizes_[next_image_idx];
+            if (next_col < 0 || next_row < 0 ||
+                next_col >= depth_map_size.first ||
+                next_row >= depth_map_size.second) {
+                return;
+            }
+            fusion_queue.emplace_back(next_image_idx, next_row, next_col,
+                                      traversal_depth + 1);
+        };
+
+        if (consistency_graph != nullptr) {
+            int num_consistent = 0;
+            const int* consistent_image_idxs = nullptr;
+            consistency_graph->GetImageIdxs(row, col, &num_consistent,
+                                             &consistent_image_idxs);
+            for (int i = 0; i < num_consistent; ++i) {
+                enqueue_neighbor(consistent_image_idxs[i]);
+            }
+        } else if (static_cast<size_t>(image_idx) <
+                   overlapping_images_.size()) {
             for (const auto next_image_idx : overlapping_images_[image_idx]) {
-                if (next_image_idx < 0 ||
-                    static_cast<size_t>(next_image_idx) >=
-                            used_images_.size() ||
-                    static_cast<size_t>(next_image_idx) >=
-                            fused_images_.size() ||
-                    !used_images_[next_image_idx] ||
-                    fused_images_[next_image_idx]) {
-                    continue;
-                }
-
-                if (static_cast<size_t>(next_image_idx) >= P_.size()) {
-                    std::cout << "P_ size: " << P_.size() << std::endl;
-                    std::cout << "next_image_idx: " << next_image_idx
-                              << std::endl;
-                    continue;
-                }
-
-                const Eigen::Vector3f next_proj =
-                        P_[next_image_idx] * xyz.homogeneous();
-
-                // Check for valid projection depth to avoid division by zero
-                if (std::abs(next_proj(2)) <
-                    std::numeric_limits<float>::epsilon()) {
-                    std::cout << "next_proj(2) is zero: " << next_proj(2)
-                              << std::endl;
-                    continue;
-                }
-
-                const int next_col = static_cast<int>(
-                        std::round(next_proj(0) / next_proj(2)));
-                const int next_row = static_cast<int>(
-                        std::round(next_proj(1) / next_proj(2)));
-
-                if (static_cast<size_t>(next_image_idx) >=
-                    depth_map_sizes_.size()) {
-                    std::cout << "depth_map_sizes_ size: "
-                              << depth_map_sizes_.size() << std::endl;
-                    std::cout << "next_image_idx: " << next_image_idx
-                              << std::endl;
-                    continue;
-                }
-
-                const auto& depth_map_size = depth_map_sizes_[next_image_idx];
-                if (next_col < 0 || next_row < 0 ||
-                    next_col >= depth_map_size.first ||
-                    next_row >= depth_map_size.second) {
-                    continue;
-                }
-                fusion_queue.emplace_back(next_image_idx, next_row, next_col,
-                                          traversal_depth + 1);
+                enqueue_neighbor(next_image_idx);
             }
         }
     }

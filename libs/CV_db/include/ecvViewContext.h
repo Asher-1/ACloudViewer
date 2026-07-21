@@ -63,6 +63,21 @@ struct CV_DB_LIB_API ecvViewContext {
     bool validProjectionMatrix = false;
     double cameraToBBCenterDist = 1.0;
     double bbHalfDiag = 1.0;
+    //! When > 0, VTK near clip is never closer than this (camera apply).
+    double minVtkNearClip = 0.0;
+    //! During apply-viewport preview, skip drawing this sensor's gizmo only
+    //! (entity stays visible/enabled; cleared on user navigation).
+    unsigned appliedViewportSensorId = 0;
+
+    //! True when this view is showing an applied camera sensor preview.
+    bool isAppliedViewportPreview(unsigned sensorId) const {
+        return appliedViewportSensorId != 0 &&
+               appliedViewportSensorId == sensorId;
+    }
+
+    bool hasAppliedViewportPreview() const {
+        return appliedViewportSensorId != 0;
+    }
 
     // ================================================================
     // Bubble view

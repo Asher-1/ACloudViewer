@@ -35,6 +35,7 @@ COLMAP_ADD_SOURCES(
     consistency_graph.h consistency_graph.cc
     depth_map.h depth_map.cc
     fusion.h fusion.cc
+    da3_fusion.h da3_fusion.cc
     image.h image.cc
     meshing.h meshing.cc
     model.h model.cc

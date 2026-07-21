@@ -67,7 +67,7 @@ ExternalProject_Add(ext_opencv
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
-            -DBUILD_opencv_calib3d=OFF
+            -DBUILD_opencv_calib3d=${PLUGIN_STANDARD_QMANUAL_CALIB}
             -DBUILD_JAVA=OFF
             -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
             -DBUILD_opencv_apps=OFF
@@ -81,7 +81,7 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_js=OFF
             -DBUILD_opencv_dnn=OFF
             -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
-            -DBUILD_opencv_objdetect=OFF
+            -DBUILD_opencv_objdetect=${PLUGIN_STANDARD_QMANUAL_CALIB}
             -DBUILD_opencv_xobjdetect=OFF
             -DBUILD_opencv_dnn_objdetect=OFF
             -DBUILD_opencv_optflow=OFF

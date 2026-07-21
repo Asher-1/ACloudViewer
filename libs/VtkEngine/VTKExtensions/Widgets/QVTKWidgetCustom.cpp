@@ -57,6 +57,7 @@
 
 // CV_DB_LIB
 #include <Visualization/vtkGLView.h>
+#include <ecvCameraSensor.h>
 #include <ecvDisplayCoordinates.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
@@ -659,7 +660,9 @@ void QVTKWidgetCustom::initVtk(
         m_scaleBarUpdateObserver->SetCallback(
                 [](vtkObject*, unsigned long, void* cd, void*) {
                     auto* self = static_cast<QVTKWidgetCustom*>(cd);
-                    if (self) self->updateScaleBarIfNeeded();
+                    if (self) {
+                        self->updateScaleBarIfNeeded();
+                    }
                 });
         m_interactor->AddObserver(vtkCommand::InteractionEvent,
                                   m_scaleBarUpdateObserver);
@@ -965,6 +968,10 @@ static bool applyDirectCameraWheelZoom(QVTKWidgetCustom* widget,
             std::pow(1.1, static_cast<double>(wheelDelta_deg) /
                                   static_cast<double>(c_defaultDeg2Zoom));
     if (zoomFactor <= 0.0 || zoomFactor == 1.0) return false;
+
+    if (ecvGenericGLDisplay* view = widget->displayTarget()) {
+        clearAppliedViewportCameraPreview(view);
+    }
 
     if (cam->GetParallelProjection()) {
         cam->SetParallelScale(cam->GetParallelScale() / zoomFactor);
@@ -1552,17 +1559,6 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 }
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
-    static QElapsedTimer s_framePerfTimer;
-    static int s_perfFrameCount = 0;
-    static qint64 s_perfAccum = 0;
-    static qint64 s_vtkAccum = 0;
-    static int s_pathTrace = 0;
-    if (!s_framePerfTimer.isValid()) s_framePerfTimer.start();
-
-    QElapsedTimer localTimer;
-    localTimer.start();
-    qint64 t_vtkRender = 0;
-
     if (handleCameraOrientationMouse(event, QEvent::MouseMove)) {
         event->accept();
         return;
@@ -1614,38 +1610,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                          curRotationAxisLocked(), event,
                                          QEvent::MouseMove);
     if (vtkToolStyle && !m_labelClickedOnPress) {
-        s_pathTrace = 1;
-        qint64 t0 = localTimer.nsecsElapsed();
         QVTKOpenGLNativeWidget::mouseMoveEvent(event);
-        t_vtkRender = localTimer.nsecsElapsed() - t0;
         if (event->buttons() != Qt::NoButton) {
             updateScaleBarIfNeeded();
             curMouseMoved() = true;
             curLastMousePos() = event->pos();
-
-            // Performance logging for the primary rotation/pan path
-            qint64 totalNs = localTimer.nsecsElapsed();
-            s_perfAccum += totalNs;
-            s_vtkAccum += t_vtkRender;
-            s_perfFrameCount++;
-            if (s_perfFrameCount >= 30) {
-                double avgMs = (s_perfAccum / 1e6) / s_perfFrameCount;
-                double avgVtkMs = (s_vtkAccum / 1e6) / s_perfFrameCount;
-                double eventFps =
-                        s_perfFrameCount * 1000.0 / s_framePerfTimer.elapsed();
-                CVLog::PrintDebug(
-                        QString("[PERF] vtkToolStyle avg=%1 ms (VTK=%2 ms) "
-                                "eventRate=%3/s over %4 frames")
-                                .arg(avgMs, 0, 'f', 2)
-                                .arg(avgVtkMs, 0, 'f', 2)
-                                .arg(eventFps, 0, 'f', 1)
-                                .arg(s_perfFrameCount));
-                s_perfAccum = 0;
-                s_vtkAccum = 0;
-                s_perfFrameCount = 0;
-                s_framePerfTimer.restart();
-            }
-
             event->accept();
             return;
         }
@@ -1672,10 +1641,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                                  curInteractionFlags(),
                                                  curRotationAxisLocked(), event,
                                                  QEvent::MouseMove)) {
-                    s_pathTrace = 2;
-                    qint64 t0 = localTimer.nsecsElapsed();
                     QVTKOpenGLNativeWidget::mouseMoveEvent(event);
-                    t_vtkRender = localTimer.nsecsElapsed() - t0;
                     updateScaleBarIfNeeded();
                     ecvDisplayTools::UpdateDisplayParameters();
                     vtkHandledInteraction = true;
@@ -1769,16 +1735,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             }
         }
 
-        // don't need to process any further
-        s_pathTrace = 3;
-        s_perfFrameCount++;
-        if (s_perfFrameCount >= 30) {
-            CVLog::PrintDebug(QString("[PERF] noButton path=%1 frames=%2")
-                                      .arg(s_pathTrace)
-                                      .arg(s_perfFrameCount));
-            s_perfFrameCount = 0;
-            s_framePerfTimer.restart();
-        }
         return;
     }
 
@@ -1867,12 +1823,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
     } else if (event->buttons() & Qt::LeftButton)  // rotation
     {
-        if (vtkHandledInteraction) {
-            s_pathTrace = 5;
-        } else if (!m_labelClickedOnPress) {
-            s_pathTrace = 4;
-        }
-
         if (curInteractionFlags() & ecvDisplayTools::INTERACT_2D_ITEMS) {
             if (!curMouseMoved() && !m_labelClickedOnPress) {
                 if (curPickingMode() != ecvDisplayTools::NO_PICKING &&
@@ -2073,29 +2023,6 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit cameraParamChanged();
         updateScaleBarIfNeeded();
-    }
-
-    // Performance logging: report every 30 frames
-    qint64 totalNs = localTimer.nsecsElapsed();
-    s_perfAccum += totalNs;
-    s_vtkAccum += t_vtkRender;
-    s_perfFrameCount++;
-    if (s_perfFrameCount >= 30) {
-        double avgMs = (s_perfAccum / 1e6) / s_perfFrameCount;
-        double avgVtkMs = (s_vtkAccum / 1e6) / s_perfFrameCount;
-        double eventFps =
-                s_perfFrameCount * 1000.0 / s_framePerfTimer.elapsed();
-        CVLog::PrintDebug(QString("[PERF] path=%1 avg=%2 ms (VTK=%3 ms) "
-                                  "eventRate=%4/s over %5 frames")
-                                  .arg(s_pathTrace)
-                                  .arg(avgMs, 0, 'f', 2)
-                                  .arg(avgVtkMs, 0, 'f', 2)
-                                  .arg(eventFps, 0, 'f', 1)
-                                  .arg(s_perfFrameCount));
-        s_perfAccum = 0;
-        s_vtkAccum = 0;
-        s_perfFrameCount = 0;
-        s_framePerfTimer.restart();
     }
 
     event->accept();

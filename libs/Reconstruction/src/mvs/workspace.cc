@@ -52,6 +52,8 @@ Workspace::Workspace(const Options& options)
       JoinPaths(options_.workspace_path, options_.stereo_folder, "depth_maps"));
   normal_map_path_ = EnsureTrailingSlash(JoinPaths(
       options_.workspace_path, options_.stereo_folder, "normal_maps"));
+  consistency_graph_path_ = EnsureTrailingSlash(JoinPaths(
+      options_.workspace_path, options_.stereo_folder, "consistency_graphs"));
 }
 
 std::string Workspace::GetFileName(const int image_idx) const {
@@ -65,6 +67,7 @@ void Workspace::Load(const std::vector<std::string>& image_names) {
   bitmaps_.resize(num_images);
   depth_maps_.resize(num_images);
   normal_maps_.resize(num_images);
+  consistency_graphs_.resize(num_images);
 
   auto LoadWorkspaceData = [&, this](const int image_idx) {
     const size_t width = model_.images.at(image_idx).GetWidth();
@@ -89,6 +92,11 @@ void Workspace::Load(const std::vector<std::string>& image_names) {
     normal_maps_[image_idx]->Read(GetNormalMapPath(image_idx));
     if (options_.max_image_size > 0) {
       normal_maps_[image_idx]->Downsize(width, height);
+    }
+
+    if (HasConsistencyGraph(image_idx)) {
+      consistency_graphs_[image_idx] = std::make_unique<ConsistencyGraph>();
+      consistency_graphs_[image_idx]->Read(GetConsistencyGraphPath(image_idx));
     }
   };
 
@@ -128,6 +136,14 @@ const NormalMap& Workspace::GetNormalMap(const int image_idx) {
   return *normal_maps_[image_idx];
 }
 
+const ConsistencyGraph* Workspace::GetConsistencyGraph(const int image_idx) {
+  if (image_idx < 0 ||
+      static_cast<size_t>(image_idx) >= consistency_graphs_.size()) {
+    return nullptr;
+  }
+  return consistency_graphs_[image_idx].get();
+}
+
 std::string Workspace::GetBitmapPath(const int image_idx) const {
   return model_.images.at(image_idx).GetPath();
 }
@@ -138,6 +154,10 @@ std::string Workspace::GetDepthMapPath(const int image_idx) const {
 
 std::string Workspace::GetNormalMapPath(const int image_idx) const {
   return normal_map_path_ + GetFileName(image_idx);
+}
+
+std::string Workspace::GetConsistencyGraphPath(const int image_idx) const {
+  return consistency_graph_path_ + GetFileName(image_idx);
 }
 
 bool Workspace::HasBitmap(const int image_idx) const {
@@ -152,11 +172,16 @@ bool Workspace::HasNormalMap(const int image_idx) const {
   return ExistsFile(GetNormalMapPath(image_idx));
 }
 
+bool Workspace::HasConsistencyGraph(const int image_idx) const {
+  return ExistsFile(GetConsistencyGraphPath(image_idx));
+}
+
 CachedWorkspace::CachedImage::CachedImage(CachedImage&& other) {
   num_bytes = other.num_bytes;
   bitmap = std::move(other.bitmap);
   depth_map = std::move(other.depth_map);
   normal_map = std::move(other.normal_map);
+  consistency_graph = std::move(other.consistency_graph);
 }
 
 CachedWorkspace::CachedImage& CachedWorkspace::CachedImage::operator=(
@@ -166,6 +191,7 @@ CachedWorkspace::CachedImage& CachedWorkspace::CachedImage::operator=(
     bitmap = std::move(other.bitmap);
     depth_map = std::move(other.depth_map);
     normal_map = std::move(other.normal_map);
+    consistency_graph = std::move(other.consistency_graph);
   }
   return *this;
 }
@@ -222,6 +248,22 @@ const NormalMap& CachedWorkspace::GetNormalMap(const int image_idx) {
     cache_.UpdateNumBytes(image_idx);
   }
   return *cached_image->normal_map;
+}
+
+const ConsistencyGraph* CachedWorkspace::GetConsistencyGraph(
+    const int image_idx) {
+  if (!HasConsistencyGraph(image_idx)) {
+    return nullptr;
+  }
+  auto cached_image = cache_.Get(image_idx);
+  std::lock_guard<std::mutex> lock(cached_image->mutex);
+  if (!cached_image->consistency_graph) {
+    cached_image->consistency_graph = std::make_unique<ConsistencyGraph>();
+    cached_image->consistency_graph->Read(GetConsistencyGraphPath(image_idx));
+    cached_image->num_bytes += cached_image->consistency_graph->GetNumBytes();
+    cache_.UpdateNumBytes(image_idx);
+  }
+  return cached_image->consistency_graph.get();
 }
 
 void ImportPMVSWorkspace(const Workspace& workspace,

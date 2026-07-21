@@ -1,11 +1,19 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <QMetaType>
 #include <QThread>
 #include <QVector>
+
 #include "DA3Dialog.h"
 
-struct da_ctx;
+struct aicore_depth_ctx;
 
 struct DA3DepthResult {
     QString sourceName;
@@ -33,7 +41,8 @@ class DA3Worker : public QThread {
     Q_OBJECT
 
 public:
-    explicit DA3Worker(const DA3Dialog::Settings& settings, QObject* parent = nullptr);
+    explicit DA3Worker(const DA3Dialog::Settings& settings,
+                       QObject* parent = nullptr);
 
 signals:
     void logMessage(const QString& msg);
@@ -57,7 +66,7 @@ private:
     bool runModelInfo();
 
     struct CtxGuard {
-        da_ctx* ctx = nullptr;
+        aicore_depth_ctx* ctx = nullptr;
         ~CtxGuard();
         explicit operator bool() const { return ctx != nullptr; }
     };

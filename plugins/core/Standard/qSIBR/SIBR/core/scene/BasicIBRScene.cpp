@@ -172,6 +172,10 @@ void BasicIBRScene::createFromData(const uint width) {
             _inputMeshTexture.reset(new sibr::Texture2DRGB(
                     inputTextureImg, SIBR_GPU_LINEAR_SAMPLING));
         }
+    } else {
+        // In-memory Gaussian scenes skip proxy loading but views such as
+        // SceneDebugView still expect a valid (possibly empty) mesh handle.
+        _proxies->replaceProxyPtr(std::make_shared<Mesh>());
     }
 
     if (_currentOpts.renderTargets) {

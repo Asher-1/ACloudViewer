@@ -1355,10 +1355,11 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
 
     updatePropertiesView();
 
+    // Apply interaction-mode / camera adjustments before the single redraw.
+    emit selectionChanged();
+
     ecvViewManager::instance().setRedrawRecursive(false);
     MainWindow::TheInstance()->refreshAll(false, true);
-
-    emit selectionChanged();
 }
 
 void ccDBRoot::unselectEntity(ccHObject* obj) {

@@ -110,6 +110,7 @@ private:
     std::vector<char> used_images_;
     std::vector<char> fused_images_;
     std::vector<std::vector<int>> overlapping_images_;
+    size_t num_consistency_graphs_ = 0;
     // Contains image masks of pre-masked and already fused pixels.
     // Initialized from image masks if provided in StereoFusionOptions.
     std::vector<Mat<char>> fused_pixel_masks_;
