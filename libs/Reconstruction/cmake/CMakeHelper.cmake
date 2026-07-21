@@ -51,6 +51,16 @@ set(COLMAP_SRC_ROOT_FOLDER "colmap_sources")
 
 set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
 
+# When AICore is linked, omit static CUDA archives from 3rdparty deps to avoid
+# embedding ~400MB nv_fatbin into shared libs / executables (CUDA lives in libAICore.so).
+macro(COLMAP_LINK_3RDPARTY TARGET_NAME)
+    if(AICore_ENABLED AND TARGET AICore)
+        cloudViewer_link_3rdparty_libraries(${TARGET_NAME} EXCLUDE_CUDA_STATIC)
+    else()
+        cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    endif()
+endmacro(COLMAP_LINK_3RDPARTY)
+
 # This macro will search for source files in a given directory, will add them
 # to a source group (folder within a project), and will then return paths to
 # each of the found files. The usage of the macro is as follows:
@@ -130,7 +140,7 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-    cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME}/)
@@ -152,7 +162,7 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-    cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
     # install
     # install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME})
@@ -178,7 +188,7 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-    cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
@@ -203,7 +213,7 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-    cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
@@ -229,7 +239,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-    cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
     cloudViewer_set_targets_independent(${TARGET_NAME})
@@ -274,7 +284,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-        cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+        COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
         # install
         if (IS_MSVC)
@@ -304,7 +314,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
-        cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+        COLMAP_LINK_3RDPARTY(${TARGET_NAME})
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
         # install

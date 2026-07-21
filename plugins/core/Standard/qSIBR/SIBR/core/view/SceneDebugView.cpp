@@ -687,8 +687,11 @@ void SceneDebugView::setupMeshes() {
     bool success = false;
     Mesh sdv_mesh;
     Mesh::Ptr mp;
-    if (!_scene->proxies()->proxyPtr()->hasColors() &&
-        !_scene->proxies()->proxyPtr()->hasTexCoords()) {
+    Mesh::Ptr proxyMesh = _scene->proxies()->proxyPtr();
+    if (!proxyMesh) {
+        proxyMesh = std::make_shared<Mesh>();
+    }
+    if (!proxyMesh->hasColors() && !proxyMesh->hasTexCoords()) {
         std::string fn;
         if (fileExists(fn = _scene->data()->basePathName() +
                             "/capreal/mesh.ply")) {
@@ -707,13 +710,9 @@ void SceneDebugView::setupMeshes() {
             mp->merge(sdv_mesh);
             addMesh("proxy", mp);
         } else
-            addMesh("proxy", _scene->proxies()->proxyPtr())
-                    .setRadiusPoint(2)
-                    .setDepthTest(false);
+            addMesh("proxy", proxyMesh).setRadiusPoint(2).setDepthTest(false);
     } else
-        addMesh("proxy", _scene->proxies()->proxyPtr())
-                .setRadiusPoint(2)
-                .setDepthTest(false);
+        addMesh("proxy", proxyMesh).setRadiusPoint(2).setDepthTest(false);
 
     // Add a gizmo.
     addMeshAsLines("guizmo", RenderUtility::createAxisGizmo())

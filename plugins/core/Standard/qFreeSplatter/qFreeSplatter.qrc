@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qFreeSplatter">
+        <file>info.json</file>
+        <file>images/qFreeSplatter.svg</file>
+    </qresource>
+</RCC>

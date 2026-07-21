@@ -1,7 +1,14 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
-#include <ecvStdPluginInterface.h>
 #include <ecvHObject.h>
+#include <ecvStdPluginInterface.h>
 
 #include "DA3Dialog.h"
 #include "DA3Worker.h"
@@ -11,8 +18,7 @@ class ccImage;
 class qDA3 : public QObject, public ccStdPluginInterface {
     Q_OBJECT
     Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
-    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qDA3"
-                       FILE "../info.json")
+    Q_PLUGIN_METADATA(IID "cvcorp.cloudviewer.plugin.qDA3" FILE "../info.json")
 
 public:
     explicit qDA3(QObject* parent = nullptr);
@@ -35,8 +41,9 @@ private slots:
 private:
     void refreshDbImages();
     ccImage* findDbImage(const QString& name) const;
+    bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
     static bool saveDepthAsImage(const DA3DepthResult& result,
-                                  const QString& path);
+                                 const QString& path);
 
     QAction* m_action = nullptr;
     DA3Dialog* m_dialog = nullptr;

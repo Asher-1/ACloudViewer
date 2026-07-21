@@ -64,6 +64,9 @@ struct Model {
     std::vector<std::map<int, float>> ComputeTriangulationAngles(
             const float percentile = 50) const;
 
+    // Optional PMVS vis.dat (stereo/vis.dat) for StereoFusion BFS ordering.
+    void LoadVisDat(const std::string& path);
+
     // Note that in case the data is read from a COLMAP reconstruction, the
     // index of an image or point does not correspond to its original identifier
     // in the reconstruction, but it corresponds to the position in the

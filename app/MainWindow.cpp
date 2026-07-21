@@ -24,6 +24,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QShortcut>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QTabBar>
 #include <QThread>
@@ -2300,6 +2301,108 @@ void MainWindow::initPlugins() {
     updateAllToolbarIconSizes();
 }
 
+namespace {
+
+void collectImageViewerState(const ccHObject* node,
+                             bool& hasDisplayedImage,
+                             bool& hasDisplayedNonImage) {
+    if (!node) return;
+    for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
+        const ccHObject* child = node->getChild(i);
+        if (!child || !child->isEnabled()) continue;
+        if (child->isA(CV_TYPES::IMAGE)) {
+            if (child->isDisplayed()) hasDisplayedImage = true;
+        } else if (child->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) {
+            collectImageViewerState(child, hasDisplayedImage,
+                                    hasDisplayedNonImage);
+        } else if (child->isDisplayed()) {
+            hasDisplayedNonImage = true;
+        }
+    }
+}
+
+bool shouldUse2DImageViewer(const ccHObject* obj) {
+    if (!obj) return false;
+    if (obj->isA(CV_TYPES::IMAGE)) return true;
+    if (!obj->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) return false;
+
+    bool hasDisplayedImage = false;
+    bool hasDisplayedNonImage = false;
+    collectImageViewerState(obj, hasDisplayedImage, hasDisplayedNonImage);
+    return hasDisplayedImage && !hasDisplayedNonImage;
+}
+
+void fitActiveViewForImageEntity(ccHObject* obj, ecvGenericGLDisplay* view) {
+    if (!obj || !view || !shouldUse2DImageViewer(obj)) {
+        return;
+    }
+
+    auto* glView = dynamic_cast<vtkGLView*>(view);
+    if (!glView) {
+        return;
+    }
+
+    glView->toggle2Dviewer(true);
+    if (auto imgVis = glView->getImageVis()) {
+        imgVis->setImageInteractionMode(true);
+        // ImageVis owns 2D zoom-fit; do not call
+        // updateConstellationCenterAndZoom (3D camera reset distorts an already
+        // fitted image view).
+        imgVis->fitImagesToWindow();
+    }
+}
+
+QWidget* outerFrameForViewWidget(QWidget* viewWidget) {
+    if (!viewWidget) return nullptr;
+    QWidget* frame = viewWidget;
+    while (frame && frame->objectName() != "CentralWidgetFrame")
+        frame = frame->parentWidget();
+    if (!frame) return viewWidget->window();
+    QWidget* outer = frame->parentWidget();
+    return outer ? outer : frame;
+}
+
+QAction* findView3DToggleAction(QWidget* viewWidget) {
+    QWidget* outer = outerFrameForViewWidget(viewWidget);
+    if (!outer) return nullptr;
+    auto* tb = outer->findChild<QWidget*>("ViewSelectionToolBar");
+    if (!tb) return nullptr;
+    for (auto* btn : tb->findChildren<QToolButton*>()) {
+        if (auto* act = btn->defaultAction()) {
+            if (act->objectName() == QLatin1String("view3DToggleAction"))
+                return act;
+        }
+    }
+    return nullptr;
+}
+
+void syncView3DToggleButton(QWidget* viewWidget, bool threeDModeActive) {
+    if (auto* act = findView3DToggleAction(viewWidget)) {
+        const QSignalBlocker blocker(act);
+        act->setChecked(threeDModeActive);
+    }
+}
+
+void applyViewInteractionModeForEntity(vtkGLView* glView, bool use2D) {
+    if (!glView) return;
+
+    // ImageVis installs vtkPVImageInteractorStyle while viewing images; restore
+    // before switching VtkVis mode so 3D trackball is not left stuck on 2D pan.
+    if (auto imgVis = glView->getImageVis()) {
+        imgVis->setImageInteractionMode(use2D);
+    }
+
+    glView->toggle2Dviewer(use2D);
+
+    if (auto* vis = glView->getVisualizer3D()) {
+        vis->ensureInteractorStyleMatchesMode();
+    }
+
+    syncView3DToggleButton(glView->asWidget(), !use2D);
+}
+
+}  // namespace
+
 void MainWindow::initDBRoot() {
     // db-tree
     {
@@ -2321,30 +2424,31 @@ void MainWindow::initDBRoot() {
                 vm.setActiveView(ownerView);
             }
 
-            bool imageSelected = first->isA(CV_TYPES::IMAGE);
+            const bool imageSelected = shouldUse2DImageViewer(first);
             auto* glView = dynamic_cast<vtkGLView*>(vm.getActiveView());
             if (glView) {
-                glView->toggle2Dviewer(imageSelected);
+                bool was2D = false;
+                if (auto* vis = glView->getVisualizer3D()) {
+                    was2D = (vis->getInteractionMode() ==
+                             Visualization::VtkVis::INTERACTION_MODE_2D);
+                }
+                if (!was2D) {
+                    if (auto* act = findView3DToggleAction(glView->asWidget()))
+                        was2D = !act->isChecked();
+                }
 
-                auto* ownerWidget = glView->asWidget();
-                if (ownerWidget) {
-                    QWidget* frame = ownerWidget;
-                    while (frame && frame->objectName() != "CentralWidgetFrame")
-                        frame = frame->parentWidget();
-                    if (frame) frame = frame->parentWidget();
-                    if (!frame) frame = ownerWidget->window();
-                    auto* toolbar = frame->findChild<QToolBar*>(
-                            "ViewSelectionToolBar");
-                    if (toolbar) {
-                        auto* act = toolbar->findChild<QAction*>(
-                                "view3DToggleAction");
-                        if (act) {
-                            act->blockSignals(true);
-                            act->setChecked(!imageSelected);
-                            act->blockSignals(false);
-                        }
+                applyViewInteractionModeForEntity(glView, imageSelected);
+
+                if (imageSelected) {
+                    fitActiveViewForImageEntity(first, glView);
+                } else if (was2D) {
+                    const ccBBox bbox = first->getDisplayBB_recursive(false);
+                    if (bbox.isValid()) {
+                        glView->updateConstellationCenterAndZoom(&bbox);
                     }
                 }
+                // ccDBRoot emits selectionChanged before its single
+                // refreshAll().
             }
         });
         connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() {
@@ -4556,8 +4660,7 @@ void MainWindow::addToDB(ccHObject* obj,
                         only2D = false;
                     }
                 }
-                if (has2D &&
-                    (only2D || !obj->getBB_recursive().isValid())) {
+                if (has2D && (only2D || !obj->getBB_recursive().isValid())) {
                     skip = true;
                 }
             }
@@ -4571,6 +4674,19 @@ void MainWindow::addToDB(ccHObject* obj,
     // QVTKOpenGLNativeWidget surface.  Force a full redraw after Qt processes
     // pending layout/paint events so the framebuffer is flushed to screen.
     QTimer::singleShot(0, this, [this]() { refreshAll(); });
+
+    // ccImage renders as a pixel-space vtkImageSlice; zoom-fit only runs in 2D
+    // image mode (ImageVis::updateImageSliceTransform). Defer until actors
+    // exist.
+    if (shouldUse2DImageViewer(obj)) {
+        ccHObject* objPtr = obj;
+        ecvGenericGLDisplay* targetView =
+                ecvViewManager::instance().getActiveView();
+        QTimer::singleShot(50, this, [this, objPtr, targetView]() {
+            fitActiveViewForImageEntity(objPtr, targetView);
+            refreshAll();
+        });
+    }
 
 #ifdef USE_VTK_BACKEND
     // ParaView-style: When new entities are added, refresh Data Producer combo
@@ -13593,15 +13709,8 @@ void MainWindow::activateSegmentationMode() {
         deactivateSegmentationMode(false);
     } else {
         updateOverlayDialogsPlacement();
-        auto* activeViewForSeg = getActiveGLView();
-        bool perspectiveEnabled =
-                activeViewForSeg ? activeViewForSeg->perspectiveView() : false;
-        if (!perspectiveEnabled) {
-            doActionPerspectiveProjection();
-            m_lastViewMode = VIEWMODE::ORTHOGONAL;
-        } else {
-            m_lastViewMode = VIEWMODE::PERSPECTIVE;
-        }
+        // Keep the current camera (CloudCompare does not zoom on segment
+        // start).
     }
 }
 

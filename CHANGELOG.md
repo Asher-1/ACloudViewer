@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.5-Beta (Asher) - 02/02/2026
+v3.9.5-Beta (Asher) - 07/21/2026
 --------------------------------
 - Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
     - Add multiple 3D windows support with independent per-view rendering state
@@ -219,6 +219,62 @@ v3.9.5-Beta (Asher) - 02/02/2026
       - Parameter configuration dialog for viewer settings (resolution, model path, CUDA device)
       - Multi-threaded viewer architecture with GLFW windows in separate QThreads
       - Reuses ACloudViewer 3rdparty targets (OpenGL, OpenMP, Boost, OpenCV, GLEW, GLFW, Assimp, Embree, Eigen, zlib, tinyfiledialogs)
+    - Add qDA3 plugin: Depth Anything V3 monocular depth + camera pose (based on
+      [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp) / ggml)
+      - Shares unified `core/AICore` → `libAICore.so` (ggml linked once with qFreeSplatter)
+      - Public C API: `aicore/depth_capi.h` (`aicore_depth_*`); Qt helper `aicore/depth_image.h`
+      - GUI plugin: single/multi-view depth, pose export, Gaussian reconstruction,
+        GLB/COLMAP export, GGUF quantization, model info; DB-tree image input
+      - `ccImage::estimateDepth` / `estimateDepthAndPose` (thin wrappers; link `AICore` via `CV_db` with `EXCLUDE_CUDA_STATIC` to avoid nv_fatbin bloat)
+      - Automatic Reconstruction integration via `DA3DepthController`:
+        sparse model mode **DA3 (depth+pose)** and stereo mode **DA3 depth inference**
+        (nested AnyView/Metric models; auto-download from HuggingFace)
+      - **COLMAP + DA3 hybrid dense (≥3 views):** COLMAP sparse poses, sequential
+        per-view DA3 metric depth as `.photometric.bin` priors (replaces COLMAP
+        photometric PatchMatch), fast geometric-only PatchMatch refine, then
+        COLMAP StereoFusion; auto-fallback to full PatchMatch if fusion is sparse
+        (`DA3_FULL_PATCHMATCH=1` forces full NCC re-optimization)
+      - Align DA3 metric depth to COLMAP sparse scale before export; skip aggressive
+        COLMAP-camera cleaning when exporting photometric priors for PatchMatch refine
+      - Sequential multiview inference: single ggml backend, O(1) VRAM vs view count;
+        `DA3_FORCE_JOINT_MV=1` optional joint multiview (OOM risk on large sets)
+      - Hybrid dense hardening: per-view `*Ready()` checks via `fusion.cfg`, dense-only
+        resume loads workspace sparse, CUDA-missing skips one dense model (not all),
+        PatchMatch photometric init uses DA3 depth+normal priors, UI tooltips for
+        automatic hybrid path (≥3 images + DA3 sparse/stereo)
+      - Hybrid dense perf/UX: VRAM cap warning (console + UI dialog), skip per-pixel
+        consistency-graph export on photometric-prior path (sparse co-visibility for
+        `vis.dat`/`patch-match.cfg` only), cap sparse scale-alignment samples at 2048
+      - `DA3_SKIP_GEOMETRIC_REFINE=1` / UI “Skip geometric refine”: fuse DA3 priors
+        via DA3 voxel fusion on `.photometric.bin` (auto-fallback to PatchMatch
+        geometric refine when point count is low); fast export path (low-res scale
+        align, bilinear upsample, fusion-resolution cap); direct-fusion quality gate
+        now requires ≥3% multi-view consensus acceptance (not just point count);
+        tighter direct-prior profile (`point_dist=0.07m`, `depth_err=0.06`); poor
+        consensus skips relaxed retry and falls back to PatchMatch geometric refine
+      - Depth backend auto picks CUDA→OpenCL→Vulkan→iGPU→CPU at runtime; ggml can compile
+        multiple backends in parallel with platform-specific defaults (Metal/Vulkan on Apple,
+        OpenCL on Linux/Windows) and runtime Auto selection
+      - GGUF model cache: `~/cloudViewer_data/extract/da3_models`
+        ([mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf))
+      - Python: `_build_config.AICore_ENABLED` + preload `libAICore.so` in `cloudViewer/__init__.py`
+    - Add qFreeSplatter plugin: [FreeSplatter](https://github.com/TencentARC/FreeSplatter)
+      3D Gaussian Splatting from plain photos — no camera poses, no Python runtime
+      - Inference in `libAICore` gaussian module via `aicore/gaussian_capi.h` (`aicore_gaussian_*`)
+      - GUI: **Plugins → FreeSplatter 3D Reconstruction** (`FreeSplatterDialog` + background worker)
+        - Scene model (2 views) and Object model (3+ views); six GGUF variants (F16/F32/Q8_0)
+        - Image input from files, folders, or DB tree multi-select; device `auto` / `cpu` / `vulkan` / `cuda`
+        - Optional PnP pose estimation, opacity threshold, Basic/Full PLY export fields
+        - Results registered to DB tree; progress and error reporting on worker thread
+      - SIBR-compatible PLY export (OpenGL coords, SH / opacity / scale / rotation)
+      - **Visualize** button: runtime launch of qSIBR Gaussian Viewer from in-memory PLY
+        (`PLUGIN_STANDARD_QSIBR=ON`; no static link to avoid CUDA/ggml conflicts)
+      - GGUF model auto-download from [cloudViewer_downloads/3dgs](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/3dgs);
+        cache dir `~/cloudViewer_data/extract/freesplatter_models`
+      - Optional CLI `free_splatter-cli` (`PLUGIN_STANDARD_QFREESPLATTER_TOOLS=ON`, OpenCV decode)
+      - White-box tests under `core/AICore/tests/gaussian/` (`AICore_BUILD_TESTS=ON`):
+        loader, graph blocks, image ingest, pose math, optional GGUF parity tier
+      - CMake: `PLUGIN_STANDARD_QFREESPLATTER=ON` + `AICore_ENABLED=ON`
   
 - New features:
     - Add Point Gaussian rendering support for point clouds and meshes
@@ -254,7 +310,14 @@ v3.9.5-Beta (Asher) - 02/02/2026
         - Add --network host flag to docker run command
         - Add network connectivity check before running tests
         - Skip tests gracefully if network is unavailable (wheel is already built successfully)
-    - Fix light intensity adjustment issues
+    - Fix View properties Opacity and Light Intensity slider responsiveness (ParaView-style)
+        - Drag preview updates VTK actors only with 1 ms coalesced `renderScene()`; full DB/rep
+          sync and multi-view refresh on slider release or spinbox `editingFinished`
+        - Fix group detection: only `HIERARCHY_OBJECT` folders recurse; point clouds with
+          metadata children (e.g. octree) no longer enter folder recursive path
+        - Light Intensity: recursive apply to all renderable descendants in groups (aligned
+          with Opacity); `setObjectLightIntensity(..., triggerRender=false)` during drag
+    - Fix light intensity adjustment issues (legacy per-object/global path)
     - Fix image slice display orientation in 2D viewer
         - Reset camera ViewUp to (0,1,0) so image is always upright regardless of 3D scene rotation
         - Use ResetCameraClippingRange() instead of ResetCamera() to preserve configured camera parameters
@@ -433,6 +496,10 @@ v3.9.4 (Asher) - 02/01/2026
         -   Opacity control now appears for folders in addition to renderable objects
         -   When adjusting opacity on a folder, all renderable children are recursively updated with the new opacity value
         -   Initial opacity value for folders is calculated as the average opacity of all renderable children
+        -   Slider drag no longer triggers redundant full-scene refresh on every step (see View properties fix above)
+    -   Fix plugin DB tree naming and activation for AI plugins
+        -   Header-only `ecvPluginDbNaming` for unique prefixed exports (qFreeSplatter, qDA3, qManualCalib)
+        -   qFreeSplatter **Visualize** gated on `PLUGIN_STANDARD_QSIBR`; fix qSIBR include and symbol export issues
     -   Fix 2DLabel caption text font size issues on macOS
     -   Fix Find data UI issues
     -   Fix GitHub CI issues for macOS, Windows, and Ubuntu workflows

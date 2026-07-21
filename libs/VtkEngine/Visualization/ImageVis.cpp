@@ -415,7 +415,11 @@ void ImageVis::addRGBImage(const QImage& qimage,
         slice_->SetVisibility(0);
     }
 
-    setImageInteractorStyle();
+    // Only install image pan/zoom interactor while in 2D image mode; otherwise
+    // a redraw during refreshAll would clobber the active 3D trackball style.
+    if (m_imageInteraction2D) {
+        setImageInteractorStyle();
+    }
 
     imageSlice->SetUseBounds(0);
     if (ren_) {
@@ -672,11 +676,35 @@ void ImageVis::updateImageScales() {
     }
 }
 
+void ImageVis::restoreMainInteractorStyle() {
+    if (!interactor_) return;
+
+    auto* current = interactor_->GetInteractorStyle();
+    if (!vtkInteractorStyleImage::SafeDownCast(current)) return;
+
+    if (m_originalInteractorStyle) {
+        interactor_->SetInteractorStyle(m_originalInteractorStyle);
+    }
+}
+
 void ImageVis::setImageInteractionMode(bool is2D) {
-    if (m_imageInteraction2D == is2D) return;
+    if (!is2D) {
+        restoreMainInteractorStyle();
+    }
+
+    if (m_imageInteraction2D == is2D) {
+        return;
+    }
+
     m_imageInteraction2D = is2D;
     refreshAllImageSliceTransforms();
+
+    if (is2D && !m_imageInfoMap.empty()) {
+        setImageInteractorStyle();
+    }
 }
+
+void ImageVis::fitImagesToWindow() { refreshAllImageSliceTransforms(); }
 
 void ImageVis::refreshAllImageSliceTransforms() {
     for (auto& pair : m_imageInfoMap) {
@@ -736,8 +764,7 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         camera->SetViewUp(0.0, 1.0, 0.0);
         camera->SetFocalPoint(xc, yc, 0.0);
         camera->SetPosition(xc, yc, zd);
-        const double aspect_win =
-                static_cast<double>(winSize[0]) / winSize[1];
+        const double aspect_win = static_cast<double>(winSize[0]) / winSize[1];
         const double aspect_img = static_cast<double>(width) / height;
         double parallelScale = 0.5 * height;
         if (aspect_win > aspect_img) {

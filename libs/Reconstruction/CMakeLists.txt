@@ -264,9 +264,9 @@ if (DOWNLOAD_ENABLED)
     add_compile_definitions(COLMAP_DOWNLOAD_ENABLED)
 endif ()
 
-# DA3 depth estimation integration (DA3Core from core/DA3)
-if(DA3_ENABLED AND TARGET DA3Core)
-    message(STATUS "DA3 depth estimation integration enabled (DA3Core)")
+# DA3 depth estimation integration (AICore from core/DA3)
+if(AICore_ENABLED AND TARGET AICore)
+    message(STATUS "DA3 depth estimation integration enabled (AICore)")
 endif()
 
 if (Qt5_FOUND)

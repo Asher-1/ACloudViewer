@@ -1716,6 +1716,13 @@ void PatchMatchCuda::InitWorkspaceMemory() {
                 problem_.depth_maps->at(problem_.ref_image_idx);
         depth_map_->CopyToDevice(init_depth_map.GetPtr(),
                                  init_depth_map.GetWidth() * sizeof(float));
+    } else if (options_.photometric_use_existing_as_init &&
+               problem_.depth_maps != nullptr &&
+               problem_.depth_maps->at(problem_.ref_image_idx).GetWidth() > 0) {
+        const DepthMap& init_depth_map =
+                problem_.depth_maps->at(problem_.ref_image_idx);
+        depth_map_->CopyToDevice(init_depth_map.GetPtr(),
+                                 init_depth_map.GetWidth() * sizeof(float));
     } else {
         depth_map_->FillWithRandomNumbers(options_.depth_min,
                                           options_.depth_max, *rand_state_map_);
@@ -1746,6 +1753,14 @@ void PatchMatchCuda::InitWorkspaceMemory() {
     ComputeCudaConfig();
 
     if (options_.geom_consistency) {
+        const NormalMap& init_normal_map =
+                problem_.normal_maps->at(problem_.ref_image_idx);
+        normal_map_->CopyToDevice(init_normal_map.GetPtr(),
+                                  init_normal_map.GetWidth() * sizeof(float));
+    } else if (options_.photometric_use_existing_as_init &&
+               problem_.normal_maps != nullptr &&
+               problem_.normal_maps->at(problem_.ref_image_idx).GetWidth() >
+                       0) {
         const NormalMap& init_normal_map =
                 problem_.normal_maps->at(problem_.ref_image_idx);
         normal_map_->CopyToDevice(init_normal_map.GetPtr(),

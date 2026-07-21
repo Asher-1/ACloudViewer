@@ -12,13 +12,13 @@
 /// viewers.
 
 // Local
+#include <QPointer>
+
 #include "ImageVis.h"
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 #include "VtkVis.h"
 #include "qVTK.h"
-
-#include <QPointer>
 
 // CV_CORE_LIB
 #include <CVMath.h>
@@ -160,6 +160,11 @@ public:  // inherit from ecvDisplayTools
 
     virtual void removeEntities(const CC_DRAW_CONTEXT& context) override;
     virtual bool hideShowEntities(const CC_DRAW_CONTEXT& context) override;
+
+    void updateApplyViewportPreviewOverlay(ecvGenericGLDisplay* display,
+                                           unsigned sensorId);
+    void removeApplyViewportPreviewOverlay(ecvGenericGLDisplay* display,
+                                           unsigned sensorId);
 
     /** \brief Create a new viewport from [xmin,ymin] -> [xmax,ymax].
      * \param[in] xmin the minimum X coordinate for the viewport (0.0 <= 1.0)
@@ -560,7 +565,8 @@ public:
      * @param intensity Light intensity (0.0-1.0)
      */
     void setObjectLightIntensity(const QString& viewID,
-                                 double intensity) override;
+                                 double intensity,
+                                 bool triggerRender = true) override;
 
     /**
      * @brief Get light intensity for a specific object

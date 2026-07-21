@@ -27,6 +27,7 @@
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvGenericMesh.h>
+#include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvImage.h>
 #include <ecvMaterialSet.h>
@@ -39,8 +40,10 @@
 // LOCAL
 #include <ecvDisplayCoordinates.h>
 #include <ecvRepresentationManager.h>
+#include <ecvViewContext.h>
 #include <ecvViewManager.h>
 
+#include "ImageVis.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "vtkGLView.h"
 
@@ -121,13 +124,12 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     }
 
     if (m_visualizer3D && m_visualizer2D) {
-        m_visualizer3D->setInteractionModeChangedCallback(
-                [this](int mode) {
-                    if (m_visualizer2D) {
-                        m_visualizer2D->setImageInteractionMode(
-                                mode == VtkVis::INTERACTION_MODE_2D);
-                    }
-                });
+        m_visualizer3D->setInteractionModeChangedCallback([this](int mode) {
+            if (m_visualizer2D) {
+                m_visualizer2D->setImageInteractionMode(
+                        mode == VtkVis::INTERACTION_MODE_2D);
+            }
+        });
         m_visualizer2D->setImageInteractionMode(
                 m_visualizer3D->getInteractionMode() ==
                 VtkVis::INTERACTION_MODE_2D);
@@ -722,8 +724,8 @@ void VtkDisplayTools::drawImage(const CC_DRAW_CONTEXT& context,
         }
 
         if (vis3d) {
-            imageVis->setImageInteractionMode(
-                    vis3d->getInteractionMode() == VtkVis::INTERACTION_MODE_2D);
+            imageVis->setImageInteractionMode(vis3d->getInteractionMode() ==
+                                              VtkVis::INTERACTION_MODE_2D);
         }
         imageVis->addQImage(qimage, viewID, opacity);
         image->setRedraw(false);
@@ -735,10 +737,83 @@ void VtkDisplayTools::drawImage(const CC_DRAW_CONTEXT& context,
     }
 }
 
+namespace {
+
+std::string applyViewportPreviewLayerId(unsigned sensorId) {
+    return "ApplyViewportPreview-" + std::to_string(sensorId);
+}
+
+}  // namespace
+
+void VtkDisplayTools::updateApplyViewportPreviewOverlay(
+        ecvGenericGLDisplay* display, unsigned sensorId) {
+    auto* glView = dynamic_cast<vtkGLView*>(display);
+    if (!glView) {
+        return;
+    }
+    auto imageVis = glView->getImageVis();
+    if (!imageVis) {
+        return;
+    }
+
+    ecvColor::Rgb frameColor = ecvColor::yellow;
+    if (ccHObject* root = ecvViewManager::instance().globalDBRoot()) {
+        if (ccHObject* obj = root->find(sensorId)) {
+            if (ccCameraSensor* sensor = ccHObjectCaster::ToCameraSensor(obj)) {
+                frameColor = sensor->getFrameColor();
+            }
+        }
+    }
+
+    const std::string layerId = applyViewportPreviewLayerId(sensorId);
+    imageVis->removeLayer(layerId);
+
+    int width = imageVis->getSize()[0];
+    int height = imageVis->getSize()[1];
+    if (width <= 1 || height <= 1) {
+        if (QWidget* widget = display->asWidget()) {
+            width = widget->width();
+            height = widget->height();
+        }
+    }
+    if (width <= 1 || height <= 1) {
+        return;
+    }
+
+    imageVis->addRectangle(0, width - 1, 0, height - 1, frameColor.r / 255.0,
+                           frameColor.g / 255.0, frameColor.b / 255.0, layerId,
+                           1.0);
+}
+
+void VtkDisplayTools::removeApplyViewportPreviewOverlay(
+        ecvGenericGLDisplay* display, unsigned sensorId) {
+    auto* glView = dynamic_cast<vtkGLView*>(display);
+    if (!glView) {
+        return;
+    }
+    auto imageVis = glView->getImageVis();
+    if (!imageVis) {
+        return;
+    }
+    imageVis->removeLayer(applyViewportPreviewLayerId(sensorId));
+}
+
 void VtkDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context,
                                  ccSensor* sensor) {
     if (!sensor) {
         return;
+    }
+
+    // Apply preview: 3D gizmo is hidden; screen-space frame is drawn via
+    // overlay.
+    if (ccCameraSensor* camera = ccHObjectCaster::ToCameraSensor(sensor)) {
+        if (ecvViewContext* vctx = context.display
+                                           ? context.display->viewContext()
+                                           : nullptr) {
+            if (vctx->isAppliedViewportPreview(camera->getUniqueID())) {
+                return;
+            }
+        }
     }
 
     VtkVis* vis = resolveVisualizer(context.display);
@@ -977,14 +1052,15 @@ void VtkDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
     int viewport = context.defaultViewPort;
     if (vis) {
         std::string bboxID = CVTools::FromQString(context.viewID);
-        if (!vis->contains(bboxID)) {
-            vis->addCube(bbox->minCorner().x, bbox->maxCorner().x,
-                         bbox->minCorner().y, bbox->maxCorner().y,
-                         bbox->minCorner().z, bbox->maxCorner().z, colf.r,
-                         colf.g, colf.b, bboxID, viewport);
-            vis->setLineWidth(context.defaultLineWidth, bboxID, viewport);
-            vis->setLightMode(bboxID, viewport);
+        if (vis->contains(bboxID)) {
+            vis->removeShape(bboxID);
         }
+        vis->addCube(bbox->minCorner().x, bbox->maxCorner().x,
+                     bbox->minCorner().y, bbox->maxCorner().y,
+                     bbox->minCorner().z, bbox->maxCorner().z, colf.r, colf.g,
+                     colf.b, bboxID, viewport);
+        vis->setLineWidth(context.defaultLineWidth, bboxID, viewport);
+        vis->setLightMode(bboxID, viewport);
 
         const int representation =
                 (context.meshRenderingMode ==
@@ -1355,13 +1431,6 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         }
 
         if (vis->contains(viewId)) {
-            if (!context.visible) {
-                CVLog::PrintDebug(
-                        "[VtkDisplayTools::hideShowEntities] HIDING actor "
-                        "viewId=%s visible=%d skipDisplayCheck=%d",
-                        viewId.c_str(), context.visible ? 1 : 0,
-                        context.skipDisplayCheck ? 1 : 0);
-            }
             vis->hideShowActors(context.visible, viewId,
                                 context.defaultViewPort);
             found = true;
@@ -1951,9 +2020,17 @@ void VtkDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
                     vis->setShapeOpacity(param.opacity, viewId, viewport);
                 } break;
                 case ENTITY_TYPE::ECV_IMAGE: {
-                    if (m_visualizer2D &&
-                        m_visualizer2D->contains(viewId)) {
-                        m_visualizer2D->changeOpacity(param.opacity, viewId);
+                    ecvGenericGLDisplay* display = m_pickingTargetView;
+                    if (!display && param.entity) {
+                        display = param.entity->getDisplay();
+                    }
+                    if (!display) {
+                        display = ecvViewManager::instance().getEffectiveView();
+                    }
+                    if (ImageVis* imageVis = resolveImageVis(display)) {
+                        if (imageVis->contains(viewId)) {
+                            imageVis->changeOpacity(param.opacity, viewId);
+                        }
                     }
                 } break;
                 default:
@@ -2040,11 +2117,12 @@ double VtkDisplayTools::getLightIntensity() const {
 }
 
 void VtkDisplayTools::setObjectLightIntensity(const QString& viewID,
-                                              double intensity) {
+                                              double intensity,
+                                              bool triggerRender) {
     std::string id = CVTools::FromQString(viewID);
     VtkVis* vis = findVisByActorIdOrActive(id);
     if (!vis) return;
-    vis->setObjectLightIntensity(id, intensity);
+    vis->setObjectLightIntensity(id, intensity, 0, triggerRender);
 }
 
 double VtkDisplayTools::getObjectLightIntensity(const QString& viewID) const {

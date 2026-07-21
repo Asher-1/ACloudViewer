@@ -13,6 +13,7 @@
 #include <core/raycaster/Raycaster.hpp>
 #include <core/renderer/PointBasedRenderer.hpp>
 #include <core/scene/BasicIBRScene.hpp>
+#include <core/scene/ParseData.hpp>
 #include <core/system/CommandLineArgs.hpp>
 #include <core/system/Utils.hpp>
 #include <core/view/MultiViewManager.hpp>
@@ -28,6 +29,9 @@
 #endif
 
 #ifdef SIBR_HAS_CUDA
+#include <core/assets/CameraRecorder.hpp>
+#include <core/assets/InputCamera.hpp>
+#include <core/view/InteractiveCameraHandler.hpp>
 #include <projects/gaussianviewer/renderer/Config.hpp>
 #include <projects/gaussianviewer/renderer/GaussianView.hpp>
 #endif
@@ -170,6 +174,128 @@ private:
     int _pointSize;
     uint64_t _frameCount = 0;
 };
+
+#ifdef SIBR_HAS_CUDA
+namespace {
+
+constexpr float kGaussianSidePanelWidth = 380.f;
+constexpr float kGaussianTopBarHeight = 28.f;
+
+sibr::Vector2u computeGaussianViewResolution(const sibr::Window& window,
+                                             int requestedWidth,
+                                             int requestedHeight) {
+    const sibr::Vector2i winSize = window.size();
+    uint renderingWidth = 0;
+    uint renderingHeight = 0;
+
+    if (requestedWidth > 0 && requestedHeight > 0) {
+        renderingWidth =
+                std::max(static_cast<uint>(requestedWidth),
+                         static_cast<uint>(std::max(
+                                 1280.f, static_cast<float>(winSize.x()) -
+                                                 kGaussianSidePanelWidth)));
+        renderingHeight =
+                std::max(static_cast<uint>(requestedHeight),
+                         static_cast<uint>(std::max(
+                                 720.f, static_cast<float>(winSize.y()) -
+                                                kGaussianTopBarHeight)));
+    } else {
+        renderingWidth = static_cast<uint>(std::max(
+                1280.f,
+                static_cast<float>(winSize.x()) - kGaussianSidePanelWidth));
+        renderingHeight = static_cast<uint>(std::max(
+                720.f,
+                static_cast<float>(winSize.y()) - kGaussianTopBarHeight));
+    }
+
+    return sibr::Vector2u(renderingWidth, renderingHeight);
+}
+
+std::vector<sibr::Camera> buildOrbitTourCameras(const sibr::Vector3f& center,
+                                                float radius,
+                                                const sibr::Camera& templateCam,
+                                                int numKeyframes) {
+    std::vector<sibr::Camera> path;
+    if (numKeyframes < 8) numKeyframes = 8;
+    path.reserve(static_cast<size_t>(numKeyframes) + 1);
+
+    const float elevation = std::max(radius * 0.22f, 0.05f);
+    for (int i = 0; i < numKeyframes; ++i) {
+        const float t =
+                static_cast<float>(i) / static_cast<float>(numKeyframes);
+        const float angle = t * 2.f * static_cast<float>(M_PI);
+        const sibr::Vector3f eye(center.x() + radius * std::cos(angle),
+                                 center.y() + elevation,
+                                 center.z() + radius * std::sin(angle));
+
+        sibr::Camera cam;
+        cam.fovy(templateCam.fovy());
+        cam.aspect(templateCam.aspect());
+        cam.znear(std::max(radius * 0.002f, 1e-4f));
+        cam.zfar(std::max(radius * 40.f, cam.znear() * 50.f));
+        cam.setLookAt(eye, center, sibr::Vector3f(0.f, 1.f, 0.f));
+        path.push_back(cam);
+    }
+    path.push_back(path.front());
+    return path;
+}
+
+std::vector<sibr::Camera> buildInputCameraTour(
+        const std::vector<sibr::InputCamera::Ptr>& inputCameras,
+        uint viewWidth,
+        uint viewHeight) {
+    std::vector<sibr::Camera> path;
+    if (inputCameras.empty()) return path;
+
+    path.reserve(inputCameras.size() + 1);
+    for (const auto& camPtr : inputCameras) {
+        if (!camPtr) continue;
+        sibr::InputCamera cam(*camPtr, static_cast<int>(viewWidth),
+                              static_cast<int>(viewHeight));
+        path.push_back(cam);
+    }
+    if (!path.empty()) {
+        path.push_back(path.front());
+    }
+    return path;
+}
+
+void startDefaultGaussianTour(sibr::InteractiveCameraHandler& cameraHandler,
+                              const sibr::BasicIBRScene::Ptr& scene,
+                              const sibr::GaussianView* gaussianView,
+                              uint viewWidth,
+                              uint viewHeight) {
+    auto& recorder = cameraHandler.getCameraRecorder();
+    recorder.reset();
+
+    std::vector<sibr::Camera> tour;
+    const auto& inputCameras = scene->cameras()->inputCameras();
+    if (inputCameras.size() >= 3) {
+        tour = buildInputCameraTour(inputCameras, viewWidth, viewHeight);
+    }
+
+    if (tour.empty() && gaussianView && gaussianView->splatCount() > 0) {
+        const sibr::Vector3f center =
+                0.5f * (gaussianView->sceneMin() + gaussianView->sceneMax());
+        const float radius = std::max(
+                0.5f * (gaussianView->sceneMax() - gaussianView->sceneMin())
+                                .norm(),
+                0.5f);
+        tour = buildOrbitTourCameras(center, radius * 1.35f,
+                                     cameraHandler.getCamera(), 120);
+    }
+
+    if (tour.size() < 2) {
+        return;
+    }
+
+    recorder.cams() = std::move(tour);
+    recorder.speed() = inputCameras.size() >= 3 ? 0.035f : 0.02f;
+    recorder.playback();
+}
+
+}  // namespace
+#endif
 }  // anonymous namespace
 
 void SIBRViewerThread::run() {
@@ -610,9 +736,24 @@ int SIBRViewerThread::runGaussianViewer() {
 
     FakeArgs fargs;
     std::vector<std::pair<std::string, std::string>> params;
-    if (!m_datasetPath.isEmpty())
+    const bool memoryPly = !m_gaussianPlyMemory.empty();
+    const bool memoryCameras = !m_gaussianCamerasJson.empty();
+    const bool memoryBundle = memoryPly && memoryCameras;
+    const std::string memoryStubPath = "/tmp/sibr_freesplatter_memory";
+    if (!m_datasetPath.isEmpty()) {
         params.push_back({"path", m_datasetPath.toStdString()});
-    params.push_back({"model-path", m_modelPath.toStdString()});
+    } else if (memoryPly) {
+        // In-memory Gaussian payloads still require IBR CLI placeholders.
+        params.push_back({"path", memoryStubPath});
+    }
+    if (!m_modelPath.isEmpty()) {
+        params.push_back({"model-path", m_modelPath.toStdString()});
+    } else if (memoryPly) {
+        params.push_back({"model-path", memoryStubPath});
+    }
+    if (memoryPly && m_iteration.isEmpty()) {
+        params.push_back({"iteration", "0"});
+    }
     params.push_back({"width", std::to_string(m_width)});
     params.push_back({"height", std::to_string(m_height)});
     params.push_back({"device", std::to_string(m_cudaDevice)});
@@ -629,6 +770,12 @@ int SIBRViewerThread::runGaussianViewer() {
     }
     auto& myArgs = *argsPtr;
 
+    if (memoryPly) {
+        if (!myArgs.dataset_path.isInit()) myArgs.dataset_path = memoryStubPath;
+        if (!myArgs.modelPath.isInit()) myArgs.modelPath = memoryStubPath;
+        if (!myArgs.iteration.isInit()) myArgs.iteration = "0";
+    }
+
     if (!myArgs.modelPath.isInit() && myArgs.modelPathShort.isInit())
         myArgs.modelPath = myArgs.modelPathShort.get();
     if (!myArgs.dataset_path.isInit() && myArgs.pathShort.isInit())
@@ -636,36 +783,47 @@ int SIBRViewerThread::runGaussianViewer() {
 
     int device = myArgs.device;
 
-    uint rendering_width = myArgs.rendering_size.get()[0];
-    uint rendering_height = myArgs.rendering_size.get()[1];
-
     Window window("SIBR 3D Gaussian Splatting", sibr::Vector2i(50, 50), myArgs,
                   getResourcesDirectory() + "/gaussians/sibr_3Dgaussian.ini");
+    if (m_gaussianLargePointView) {
+        const sibr::Vector2i desktop = sibr::Window::desktopSize();
+        const int targetW =
+                std::max(m_width > 0 ? m_width : 1920, desktop.x() - 200);
+        const int targetH =
+                std::max(m_height > 0 ? m_height : 1080, desktop.y() - 200);
+        window.size(targetW, targetH);
+        window.position(100, 100);
+    }
     drainPendingGLErrors();
 
     std::string cfgLine;
-    std::ifstream cfgFile(myArgs.modelPath.get() + "/cfg_args");
-    if (cfgFile.good()) {
-        std::getline(cfgFile, cfgLine);
+    if (!memoryPly) {
+        std::ifstream cfgFile(myArgs.modelPath.get() + "/cfg_args");
+        if (cfgFile.good()) {
+            std::getline(cfgFile, cfgLine);
 
-        if (!myArgs.dataset_path.isInit()) {
-            auto findArgLambda = [](const std::string& line,
-                                    const std::string& name) {
-                int start = line.find(name, 0);
-                start = line.find("=", start);
-                start += 1;
-                int end = line.find_first_of(",)", start);
-                return std::make_pair(start, end);
-            };
-            auto rng = findArgLambda(cfgLine, "source_path");
-            myArgs.dataset_path =
-                    cfgLine.substr(rng.first + 1, rng.second - rng.first - 2);
+            if (!myArgs.dataset_path.isInit()) {
+                auto findArgLambda = [](const std::string& line,
+                                        const std::string& name) {
+                    int start = line.find(name, 0);
+                    start = line.find("=", start);
+                    start += 1;
+                    int end = line.find_first_of(",)", start);
+                    return std::make_pair(start, end);
+                };
+                auto rng = findArgLambda(cfgLine, "source_path");
+                myArgs.dataset_path = cfgLine.substr(
+                        rng.first + 1, rng.second - rng.first - 2);
+            }
         }
     }
 
     int sh_degree = 3;
     bool white_background = false;
-    if (!cfgLine.empty()) {
+    if (memoryPly && m_gaussianShDegree >= 0) {
+        sh_degree = m_gaussianShDegree;
+        white_background = m_gaussianWhiteBackground;
+    } else if (!memoryPly && !cfgLine.empty()) {
         auto findArgLambda = [](const std::string& line,
                                 const std::string& name) {
             int start = line.find(name, 0);
@@ -684,70 +842,142 @@ int SIBRViewerThread::runGaussianViewer() {
 
     BasicIBRScene::SceneOptions sceneOpts;
     sceneOpts.renderTargets = myArgs.loadImages;
-    sceneOpts.mesh = true;
+    sceneOpts.mesh = !memoryBundle;
     sceneOpts.images = myArgs.loadImages;
     sceneOpts.cameras = true;
     sceneOpts.texture = false;
-
-    BasicIBRScene::Ptr scene;
-    try {
-        scene.reset(new BasicIBRScene(myArgs, sceneOpts));
-    } catch (...) {
-        myArgs.dataset_path = myArgs.modelPath.get();
-        scene.reset(new BasicIBRScene(myArgs, sceneOpts));
+    if (memoryBundle) {
+        sceneOpts.renderTargets = false;
+        sceneOpts.images = false;
     }
 
-    std::string plyfile = myArgs.modelPath.get();
-    if (plyfile.back() != '/') plyfile += "/";
-    plyfile += "point_cloud";
+    BasicIBRScene::Ptr scene;
+    if (memoryBundle) {
+        auto parseData = std::make_shared<ParseData>();
+        parseData->getParsedGaussianDataFromJSON(m_gaussianCamerasJson);
+        if (parseData->cameras().empty()) {
+            emit viewerError(
+                    "[SIBR] Failed to parse in-memory cameras.json payload");
+            return 1;
+        }
+        scene.reset(new BasicIBRScene());
+        scene->createFromCustomData(parseData, 0, sceneOpts);
+    } else {
+        try {
+            scene.reset(new BasicIBRScene(myArgs, sceneOpts));
+        } catch (...) {
+            myArgs.dataset_path = myArgs.modelPath.get();
+            scene.reset(new BasicIBRScene(myArgs, sceneOpts));
+        }
+    }
 
-    namespace fs = boost::filesystem;
-    if (!myArgs.iteration.isInit()) {
-        int largest = -1;
-        std::string largestDir;
-        for (auto& entry : fs::directory_iterator(plyfile)) {
-            if (fs::is_directory(entry)) {
-                std::string name = entry.path().filename().string();
-                std::regex re(R"_(iteration_(\d+))_");
-                std::smatch m;
-                if (std::regex_match(name, m, re)) {
-                    int num = std::stoi(m[1]);
-                    if (num > largest) {
-                        largest = num;
-                        largestDir = name;
+    std::string plyfile;
+    if (!memoryPly) {
+        plyfile = myArgs.modelPath.get();
+        if (plyfile.back() != '/') plyfile += "/";
+        plyfile += "point_cloud";
+
+        namespace fs = boost::filesystem;
+        if (!myArgs.iteration.isInit()) {
+            int largest = -1;
+            std::string largestDir;
+            for (auto& entry : fs::directory_iterator(plyfile)) {
+                if (fs::is_directory(entry)) {
+                    std::string name = entry.path().filename().string();
+                    std::regex re(R"_(iteration_(\d+))_");
+                    std::smatch m;
+                    if (std::regex_match(name, m, re)) {
+                        int num = std::stoi(m[1]);
+                        if (num > largest) {
+                            largest = num;
+                            largestDir = name;
+                        }
                     }
                 }
             }
+            plyfile += "/" + largestDir + "/point_cloud.ply";
+        } else {
+            plyfile +=
+                    "/iteration_" + myArgs.iteration.get() + "/point_cloud.ply";
         }
-        plyfile += "/" + largestDir + "/point_cloud.ply";
-    } else {
-        plyfile += "/iteration_" + myArgs.iteration.get() + "/point_cloud.ply";
     }
 
-    uint sw = scene->cameras()->inputCameras()[0]->w();
-    uint sh = scene->cameras()->inputCameras()[0]->h();
-    float sa = (float)sw / sh;
-
-    rendering_width =
-            (rendering_width <= 0) ? std::min(1200u, sw) : rendering_width;
-    rendering_height = (rendering_height <= 0) ? (uint)(rendering_width / sa)
-                                               : rendering_height;
-    Vector2u usedRes(rendering_width, rendering_height);
+    sibr::Vector2u usedRes;
+    if (m_gaussianLargePointView) {
+        usedRes = computeGaussianViewResolution(window, m_width, m_height);
+    } else {
+        uint rendering_width = myArgs.rendering_size.get()[0];
+        uint rendering_height = myArgs.rendering_size.get()[1];
+        const uint sw = scene->cameras()->inputCameras()[0]->w();
+        const uint sh = scene->cameras()->inputCameras()[0]->h();
+        const float sa = static_cast<float>(sw) / static_cast<float>(sh);
+        rendering_width =
+                (rendering_width <= 0) ? std::min(1200u, sw) : rendering_width;
+        rendering_height = (rendering_height <= 0)
+                                   ? static_cast<uint>(rendering_width / sa)
+                                   : rendering_height;
+        usedRes = sibr::Vector2u(rendering_width, rendering_height);
+    }
 
     bool messageRead = false;
-    GaussianView::Ptr gaussianView(new GaussianView(
-            scene, usedRes.x(), usedRes.y(), plyfile.c_str(), &messageRead,
-            sh_degree, white_background, !myArgs.noInterop, device));
+    GaussianView::Ptr gaussianView;
+    if (memoryPly) {
+        gaussianView.reset(new GaussianView(
+                scene, usedRes.x(), usedRes.y(), m_gaussianPlyMemory.data(),
+                m_gaussianPlyMemory.size(), &messageRead, sh_degree,
+                white_background, !myArgs.noInterop, device));
+        if (!gaussianView || gaussianView->splatCount() <= 0) {
+            emit viewerError(
+                    "[SIBR] Failed to load splats from in-memory PLY (0 "
+                    "vertices — try lowering opacity threshold)");
+            return 1;
+        }
+    } else {
+        gaussianView.reset(new GaussianView(
+                scene, usedRes.x(), usedRes.y(), plyfile.c_str(), &messageRead,
+                sh_degree, white_background, !myArgs.noInterop, device));
+    }
 
     InteractiveCameraHandler::Ptr cam(new InteractiveCameraHandler());
-    cam->setup(scene->cameras()->inputCameras(),
-               Viewport(0, 0, (float)usedRes.x(), (float)usedRes.y()), nullptr);
+    if (memoryBundle && gaussianView && gaussianView->splatCount() > 0) {
+        Eigen::AlignedBox<float, 3> bbox;
+        bbox.extend(gaussianView->sceneMin());
+        bbox.extend(gaussianView->sceneMax());
+        const float diag = bbox.diagonal().norm();
+        const float zNear = std::max(diag * 0.001f, 1e-4f);
+        const float zFar = std::max(diag * 20.f, 100.f);
+        cam->setup(bbox, Viewport(0, 0, (float)usedRes.x(), (float)usedRes.y()),
+                   nullptr);
+        cam->setClippingPlanes(zNear, zFar);
+        emit viewerLog(QString("[SIBR] Loaded %1 splats | bounds [%2,%3,%4] – "
+                               "[%5,%6,%7] | clip (%8, %9)")
+                               .arg(gaussianView->splatCount())
+                               .arg(gaussianView->sceneMin().x(), 0, 'g', 4)
+                               .arg(gaussianView->sceneMin().y(), 0, 'g', 4)
+                               .arg(gaussianView->sceneMin().z(), 0, 'g', 4)
+                               .arg(gaussianView->sceneMax().x(), 0, 'g', 4)
+                               .arg(gaussianView->sceneMax().y(), 0, 'g', 4)
+                               .arg(gaussianView->sceneMax().z(), 0, 'g', 4)
+                               .arg(zNear, 0, 'g', 4)
+                               .arg(zFar, 0, 'g', 4));
+    } else {
+        cam->setup(scene->cameras()->inputCameras(),
+                   Viewport(0, 0, (float)usedRes.x(), (float)usedRes.y()),
+                   nullptr);
+    }
 
     MultiViewManager mvm(window, false);
     mvm.addIBRSubView("Point view", gaussianView, usedRes,
                       ImGuiWindowFlags_ResizeFromAnySide |
                               ImGuiWindowFlags_NoBringToFrontOnFocus);
     mvm.addCameraForView("Point view", cam);
+    if (m_gaussianLargePointView) {
+        mvm.layoutSubView("Point view",
+                          sibr::Viewport(0.f, kGaussianTopBarHeight,
+                                         static_cast<float>(usedRes.x()),
+                                         static_cast<float>(usedRes.y()) +
+                                                 kGaussianTopBarHeight));
+    }
 
     auto topView = std::make_shared<SceneDebugView>(scene, cam, myArgs,
                                                     myArgs.imagesPath.get());
@@ -756,18 +986,37 @@ int SIBRViewerThread::runGaussianViewer() {
 
     cam->getCameraRecorder().setViewPath(gaussianView,
                                          myArgs.dataset_path.get());
+    if (m_gaussianAutoTour) {
+        startDefaultGaussianTour(*cam, scene, gaussianView.get(), usedRes.x(),
+                                 usedRes.y());
+    }
 
-    emit viewerLog(QString("[SIBR] 3D Gaussian Splatting Viewer ready | "
-                           "%1 cameras | resolution %2x%3")
-                           .arg(scene->cameras()->inputCameras().size())
-                           .arg(usedRes.x())
-                           .arg(usedRes.y()));
+    emit viewerLog(
+            QString("[SIBR] 3D Gaussian Splatting Viewer ready | "
+                    "%1 cameras | resolution %2x%3%4")
+                    .arg(scene->cameras()->inputCameras().size())
+                    .arg(usedRes.x())
+                    .arg(usedRes.y())
+                    .arg(m_gaussianAutoTour
+                                 ? QString(" | auto-tour %1")
+                                           .arg(cam->getCameraRecorder()
+                                                                .isPlaying()
+                                                        ? "on"
+                                                        : "off")
+                                 : QString()));
     emit viewerLog(QString("[SIBR] SH degree: %1 | white_bg: %2 | device: %3")
                            .arg(sh_degree)
                            .arg(white_background ? "yes" : "no")
                            .arg(device));
     emit viewerLog(
-            QString("[SIBR] PLY: %1").arg(QString::fromStdString(plyfile)));
+            memoryPly ? (memoryCameras
+                                 ? QString("[SIBR] PLY: in-memory (%1 bytes) | "
+                                           "cameras: in-memory JSON")
+                                           .arg(m_gaussianPlyMemory.size())
+                                 : QString("[SIBR] PLY: in-memory (%1 bytes)")
+                                           .arg(m_gaussianPlyMemory.size()))
+                      : QString("[SIBR] PLY: %1")
+                                .arg(QString::fromStdString(plyfile)));
 
     while (window.isOpened() && !m_stopRequested.load()) {
         Input::poll();
@@ -778,8 +1027,10 @@ int SIBRViewerThread::runGaussianViewer() {
         window.swapBuffer();
     }
 
-    emit viewerResultReady(QString::fromStdString(plyfile),
-                           tr("3DGS Model (Gaussian Splats)"));
+    if (!memoryPly) {
+        emit viewerResultReady(QString::fromStdString(plyfile),
+                               tr("3DGS Model (Gaussian Splats)"));
+    }
 
     auto meshFile = QString::fromStdString(scene->data()->meshPath());
     if (!meshFile.isEmpty())

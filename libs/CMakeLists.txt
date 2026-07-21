@@ -4,8 +4,15 @@ add_subdirectory( CV_io )
 # Links <target> against all 3rdparty libraries.
 # We need this because we create a lot of object libraries to assemble the main CloudViewer library.
 function(cloudViewer_link_3rdparty_libraries target)
+    cmake_parse_arguments(ARG "EXCLUDE_CUDA_STATIC" "" "" ${ARGN})
+
+    set(_3rdparty_private_targets ${CloudViewer_3RDPARTY_PRIVATE_TARGETS})
+    if(ARG_EXCLUDE_CUDA_STATIC)
+        list(FILTER _3rdparty_private_targets EXCLUDE REGEX "^3rdparty_cublas$|^3rdparty_cuda_npp$")
+    endif()
+
     # Directly pass public and private dependencies to the target.
-    target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} CV_DB_LIB CV_IO_LIB)
+    target_link_libraries(${target} PRIVATE ${_3rdparty_private_targets} CV_DB_LIB CV_IO_LIB)
     target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} CV_DB_LIB CV_IO_LIB)
 
     if(USE_SIMD)

@@ -13,8 +13,10 @@
 // Qt
 #include <QPointer>
 #include <QStyledItemDelegate>
+#include <QTimer>
 
 // Forward declarations
+class ecvGenericGLDisplay;
 class ecvGenericVisualizer3D;
 class ccHObject;
 class ccGenericPointCloud;
@@ -235,10 +237,16 @@ private:
     void polyineWidthChanged(int);
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
-    void opacityChanged(int);           // Opacity slider value changed [0, 100]
-    void perViewOpacityChanged(int);    // Per-view opacity [0, 100]
-    void perViewPointSizeChanged(int);  // Per-view point size
+    void opacityChanged(int);  // Opacity slider value changed [0, 100]
+    void opacityCommit();      // Finalize opacity after slider/spinbox edit
+    ecvGenericGLDisplay* applyOpacityPreview(int val);
+    ecvGenericGLDisplay* applyOpacityValue(int val);
+    void perViewOpacityChanged(int);     // Per-view opacity [0, 100]
+    void perViewPointSizeChanged(int);   // Per-view point size
     void lightIntensityChanged(double);  // Light intensity changed [0.0, 1.0]
+    void lightIntensityCommit();
+    void applyLightIntensityPreview(double intensity);
+    void applyLightIntensityValue(double intensity);
     // View property slots (ParaView-style)
     void dataAxesGridEditRequested();
     void cameraOrientationWidgetChanged(bool);
@@ -303,4 +311,9 @@ protected:
     ecvGenericVisualizer3D* m_viewer;
     //! Last focused item role (used to force scroll focus after model update)
     CC_PROPERTY_ROLE m_lastFocusItemRole;
+    //! Coalesce view-property renders during slider drag (ParaView-style)
+    QTimer m_viewPropertyRenderTimer;
+    ecvGenericGLDisplay* m_lastPreviewView = nullptr;
+    int m_pendingOpacityValue = -1;
+    double m_pendingLightIntensity = -1.0;
 };

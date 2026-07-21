@@ -27,8 +27,13 @@ public:
                        const std::function<void()>& func);
 
 private:
+    void RequestCancel();
+    void OnThreadFinished();
+
     QProgressDialog* progress_bar_;
-    QAction* destructor_;
+    QAction* cancel_action_;
+    QAction* finished_action_;
+    QTimer* cleanup_timer_;
     std::unique_ptr<colmap::Thread> thread_;
 };
 

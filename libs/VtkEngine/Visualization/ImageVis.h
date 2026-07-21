@@ -135,6 +135,9 @@ public:
      *  3D leaves camera/clipping to VtkVis GeometryBounds (ParaView-style). */
     void setImageInteractionMode(bool is2D);
 
+    /** Recompute 2D parallel camera to fit displayed images (2D mode only). */
+    void fitImagesToWindow();
+
     bool addLine(unsigned int x_min,
                  unsigned int y_min,
                  unsigned int x_max,
@@ -240,6 +243,7 @@ private:
                                    unsigned height);
     void refreshAllImageSliceTransforms();
     void setImageInteractorStyle();
+    void restoreMainInteractorStyle();
 
     vtkSmartPointer<vtkRenderWindowInteractor> m_mainInteractor;
     vtkSmartPointer<vtkCallbackCommand> m_windowResizeCallback;

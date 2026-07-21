@@ -1,17 +1,18 @@
 import sys
 from pathlib import Path
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+
+REPO = Path(__file__).resolve().parents[5]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import scripts.gen_gguf_keys_header as G
 
 
-def test_header_matches_source():
-    # Compare the COMMITTED header against render() WITHOUT regenerating it, so a
-    # stale committed header fails the test (the whole point of the drift guard).
-    committed = (ROOT / "include/da_gguf_keys.h").read_text()
-    assert committed == G.render(), "da_gguf_keys.h is stale; run scripts/gen_gguf_keys_header.py"
-    assert 'DA_KV_VIT_EMBED_DIM "depthanything3.vit.embed_dim"' in committed
-    assert 'DA_ARCH "depthanything3"' in committed
+def test_canonical_header_matches_source():
+    canonical = (REPO / "core/AICore/include/aicore/depth_gguf_keys.h").read_text()
+    assert canonical == G.render_canonical(), (
+        "depth_gguf_keys.h is stale; run scripts/gen_gguf_keys_header.py"
+    )
+    assert 'AICORE_DEPTH_KV_VIT_EMBED_DIM "depthanything3.vit.embed_dim"' in canonical
+    assert 'AICORE_DEPTH_ARCH "depthanything3"' in canonical
 
 
 def test_head_max_depth_key_present():
@@ -20,6 +21,5 @@ def test_head_max_depth_key_present():
 
 
 def test_header_has_max_depth_macro():
-    import pathlib
-    h = pathlib.Path(__file__).resolve().parent.parent / "include" / "da_gguf_keys.h"
-    assert 'DA_KV_HEAD_MAX_DEPTH "depthanything3.head.max_depth"' in h.read_text()
+    h = (REPO / "core/AICore/include/aicore/depth_gguf_keys.h").read_text()
+    assert 'AICORE_DEPTH_KV_HEAD_MAX_DEPTH "depthanything3.head.max_depth"' in h

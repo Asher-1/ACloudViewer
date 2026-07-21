@@ -116,6 +116,19 @@ struct PatchMatchOptions {
     // Whether to write the consistency graph.
     bool write_consistency_graph = false;
 
+    // When true, recompute photometric maps even if they already exist on disk.
+    // Used with DA3 metric depth priors: existing .photometric.bin files are
+    // treated as initialization, not as final photometric output.
+    bool photometric_force_recompute = false;
+
+    // When true, the photometric pass initializes from an existing
+    // .photometric.bin depth map (e.g. DA3 priors) instead of random depths.
+    bool photometric_use_existing_as_init = false;
+
+    // When true with geom_consistency, skip the COLMAP photometric PatchMatch
+    // pass and use existing .photometric.bin maps (e.g. DA3 priors) directly.
+    bool skip_photometric_pass = false;
+
     void Print() const;
     bool Check() const {
         if (depth_min != -1.0f || depth_max != -1.0f) {

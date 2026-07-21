@@ -46,6 +46,43 @@
 
 namespace colmap {
 
+namespace {
+
+DA3ModelType ParseDA3ModelType(const std::string& model) {
+  if (model == "base") {
+    return DA3ModelType::BASE;
+  } else if (model == "large") {
+    return DA3ModelType::LARGE;
+  } else if (model == "giant") {
+    return DA3ModelType::GIANT;
+  } else if (model == "nested" || model == "nested_metric") {
+    return DA3ModelType::NESTED_METRIC;
+  } else if (model == "nested_anyview") {
+    return DA3ModelType::NESTED_ANYVIEW;
+  }
+  LOG(FATAL) << "Invalid DA3 model provided. "
+             << "Use 'base', 'large', 'giant', 'nested_metric', or "
+                "'nested_anyview'.";
+  return DA3ModelType::BASE;
+}
+
+DA3QuantType ParseDA3QuantType(const std::string& quant) {
+  if (quant == "f32") {
+    return DA3QuantType::F32;
+  } else if (quant == "f16") {
+    return DA3QuantType::F16;
+  } else if (quant == "q8_0") {
+    return DA3QuantType::Q8_0;
+  } else if (quant == "q4_k") {
+    return DA3QuantType::Q4_K;
+  }
+  LOG(FATAL) << "Invalid da3 quant provided. Use 'f32', 'f16', 'q8_0', or "
+                "'q4_k'.";
+  return DA3QuantType::Q8_0;
+}
+
+}  // namespace
+
 int RunAutomaticReconstructor(int argc, char** argv) {
   AutomaticReconstructionController::Options reconstruction_options;
   std::string data_type = "individual";
@@ -55,6 +92,10 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   std::string stereo_mode = "colmap";
   std::string da3_model = "base";
   std::string da3_quant = "q8_0";
+  std::string da3_sparse_model;
+  std::string da3_sparse_quant;
+  std::string da3_stereo_model = "nested_anyview";
+  std::string da3_stereo_quant;
 
   OptionManager options;
   options.AddRequiredOption("workspace_path",
@@ -72,6 +113,10 @@ int RunAutomaticReconstructor(int argc, char** argv) {
                            &reconstruction_options.single_camera);
   options.AddDefaultOption("sparse", &reconstruction_options.sparse);
   options.AddDefaultOption("dense", &reconstruction_options.dense);
+  options.AddDefaultOption("meshing", &reconstruction_options.meshing,
+                           "Generate surface mesh from fused point cloud");
+  options.AddDefaultOption("texturing", &reconstruction_options.texturing,
+                           "Texture the reconstructed mesh");
   options.AddDefaultOption("mesher", &mesher, "{poisson, delaunay}");
   options.AddDefaultOption("num_threads", &reconstruction_options.num_threads);
   options.AddDefaultOption("use_gpu", &reconstruction_options.use_gpu);
@@ -81,14 +126,48 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   options.AddDefaultOption("stereo_mode", &stereo_mode,
                            "{colmap, da3}");
   options.AddDefaultOption("da3_model", &da3_model,
-                           "{base, large, giant, nested_metric, nested_anyview}");
+                           "{base, large, giant, nested_metric, nested_anyview} "
+                           "(alias for da3_sparse_model)");
   options.AddDefaultOption("da3_quant", &da3_quant,
+                           "{f32, f16, q8_0, q4_k} (alias for da3_sparse_quant)");
+  options.AddDefaultOption("da3_sparse_model", &da3_sparse_model,
+                           "{base, large, giant, nested_metric, nested_anyview}");
+  options.AddDefaultOption("da3_sparse_quant", &da3_sparse_quant,
                            "{f32, f16, q8_0, q4_k}");
-  options.AddDefaultOption("da3_model_path",
-                           &reconstruction_options.da3_model_path);
-  options.AddDefaultOption("da3_metric_model_path",
-                           &reconstruction_options.da3_metric_model_path,
-                           "Metric model path for nested DA3 (auto-resolved if empty)");
+  options.AddDefaultOption("da3_stereo_model", &da3_stereo_model,
+                           "{nested_metric, nested_anyview}");
+  options.AddDefaultOption("da3_stereo_quant", &da3_stereo_quant,
+                           "{f32, f16, q8_0, q4_k}");
+  options.AddDefaultOption("da3_sparse_model_path",
+                           &reconstruction_options.da3_sparse_model_path);
+  options.AddDefaultOption("da3_sparse_metric_model_path",
+                           &reconstruction_options.da3_sparse_metric_model_path,
+                           "Metric model path for nested DA3 sparse step");
+  options.AddDefaultOption("da3_stereo_model_path",
+                           &reconstruction_options.da3_stereo_model_path);
+  options.AddDefaultOption("da3_stereo_metric_model_path",
+                           &reconstruction_options.da3_stereo_metric_model_path,
+                           "Metric model path for nested DA3 stereo step");
+  options.AddDefaultOption("da3_force_recompute",
+                           &reconstruction_options.da3_force_recompute,
+                           "Recompute DA3 sparse/stereo/fusion even if cached");
+  options.AddDefaultOption("da3_skip_geometric_refine",
+                           &reconstruction_options.da3_skip_geometric_refine,
+                           "Fuse DA3 priors directly; skip PatchMatch geometric "
+                           "(auto-fallback if sparse)");
+  options.AddDefaultOption("fused_point_filter",
+                           &reconstruction_options.fused_point_filter.enabled,
+                           "Apply voxel + SOR cleanup before Poisson meshing");
+  options.AddDefaultOption("fused_voxel_size",
+                           &reconstruction_options.fused_point_filter.voxel_size,
+                           "Voxel edge length for fused point downsampling (m)");
+  options.AddDefaultOption("fused_sor_enabled",
+                           &reconstruction_options.fused_point_filter.sor_enabled,
+                           "Apply statistical outlier removal after voxel filter");
+  options.AddDefaultOption("fused_sor_nb_neighbors",
+                           &reconstruction_options.fused_point_filter.sor_nb_neighbors);
+  options.AddDefaultOption("fused_sor_std_ratio",
+                           &reconstruction_options.fused_point_filter.sor_std_ratio);
   options.Parse(argc, argv);
 
   StringToLower(&data_type);
@@ -153,28 +232,42 @@ int RunAutomaticReconstructor(int argc, char** argv) {
     LOG(FATAL) << "Invalid stereo_mode provided. Use 'colmap' or 'da3'.";
   }
 
-  // DA3 model type
-  StringToLower(&da3_model);
-  if (da3_model == "base") {
-    reconstruction_options.da3_model_type = DA3ModelType::BASE;
-  } else if (da3_model == "large") {
-    reconstruction_options.da3_model_type = DA3ModelType::LARGE;
-  } else if (da3_model == "giant") {
-    reconstruction_options.da3_model_type = DA3ModelType::GIANT;
-  } else if (da3_model == "nested" || da3_model == "nested_metric") {
-    reconstruction_options.da3_model_type = DA3ModelType::NESTED_METRIC;
-  } else if (da3_model == "nested_anyview") {
-    reconstruction_options.da3_model_type = DA3ModelType::NESTED_ANYVIEW;
+  // DA3 sparse/stereo model types (da3_model/da3_quant are legacy aliases)
+  if (da3_sparse_model.empty()) {
+    StringToLower(&da3_model);
+    da3_sparse_model = da3_model;
   } else {
-    LOG(FATAL) << "Invalid da3_model provided. "
-               << "Use 'base', 'large', 'giant', 'nested_metric', or 'nested_anyview'.";
+    StringToLower(&da3_sparse_model);
   }
+  if (da3_sparse_quant.empty()) {
+    StringToLower(&da3_quant);
+    da3_sparse_quant = da3_quant;
+  } else {
+    StringToLower(&da3_sparse_quant);
+  }
+  StringToLower(&da3_stereo_model);
+  if (!da3_stereo_quant.empty()) {
+    StringToLower(&da3_stereo_quant);
+  } else if (!da3_sparse_quant.empty()) {
+    da3_stereo_quant = da3_sparse_quant;
+  } else {
+    da3_stereo_quant = "q8_0";
+  }
+
+  reconstruction_options.da3_sparse_model_type =
+      ParseDA3ModelType(da3_sparse_model);
+  reconstruction_options.da3_sparse_quant_type =
+      ParseDA3QuantType(da3_sparse_quant);
+  reconstruction_options.da3_stereo_model_type =
+      ParseDA3ModelType(da3_stereo_model);
+  reconstruction_options.da3_stereo_quant_type =
+      ParseDA3QuantType(da3_stereo_quant);
 
   if (reconstruction_options.stereo_mode ==
           StereoPipelineMode::DA3_DEPTH_INFERENCE &&
-      !DA3ModelSupportsStereo(reconstruction_options.da3_model_type)) {
+      !DA3ModelSupportsStereo(reconstruction_options.da3_stereo_model_type)) {
     LOG(FATAL) << "DA3 stereo (--stereo_mode da3) requires a nested model. "
-               << "Use --da3_model nested_anyview or nested_metric.";
+               << "Use --da3_stereo_model nested_anyview or nested_metric.";
   }
 
   if (reconstruction_options.stereo_mode ==
@@ -182,20 +275,6 @@ int RunAutomaticReconstructor(int argc, char** argv) {
       reconstruction_options.sparse_mode != SparseModelMode::DA3_DEPTH_POSE) {
     LOG(WARNING) << "DA3 stereo with non-DA3 sparse model: use --sparse_mode da3 "
                     "for consistent poses.";
-  }
-
-  // DA3 quantization type
-  StringToLower(&da3_quant);
-  if (da3_quant == "f32") {
-    reconstruction_options.da3_quant_type = DA3QuantType::F32;
-  } else if (da3_quant == "f16") {
-    reconstruction_options.da3_quant_type = DA3QuantType::F16;
-  } else if (da3_quant == "q8_0") {
-    reconstruction_options.da3_quant_type = DA3QuantType::Q8_0;
-  } else if (da3_quant == "q4_k") {
-    reconstruction_options.da3_quant_type = DA3QuantType::Q4_K;
-  } else {
-    LOG(FATAL) << "Invalid da3_quant provided. Use 'f32', 'f16', 'q8_0', or 'q4_k'.";
   }
 
   ReconstructionManager reconstruction_manager;

@@ -12,7 +12,6 @@
 
 // Qt
 #include <QImage>
-
 #include <memory>
 #include <vector>
 
@@ -79,12 +78,11 @@ public:
         return m_associatedSensor;
     }
 
-    // --- DA3 depth estimation interface ---
-    // These methods are declared unconditionally (not guarded by #ifdef DA3_ENABLED)
-    // because CV_DB_LIB links DA3Core with PRIVATE visibility — consumers of
-    // CV_DB_LIB do not inherit the DA3_ENABLED definition. The implementations
-    // gracefully return false when DA3 is disabled; use isDA3Available() for
-    // runtime feature detection.
+    ccBBox getOwnBB(bool withGLFeatures = false) override;
+
+    // --- AICore depth estimation (via libAICore.so) ---
+    // Declared unconditionally: implementations return false when AICore is
+    // disabled. Use isAICoreAvailable() for runtime feature detection.
 
     //! Depth estimation result for a single image
     struct DepthResult {
@@ -97,27 +95,21 @@ public:
         float intrinsics[9] = {};
     };
 
-    //! Estimates monocular depth from the loaded image using DA3.
-    //! Returns true on success; result is stored in out.
-    //! \param model_path path to GGUF model file
-    //! \param n_threads number of inference threads (0 = default)
-    //! \param out depth estimation output
-    //! \param metric_model_path optional path to nested metric model
-    bool estimateDepth(const QString& model_path, int n_threads,
+    //! Estimates monocular depth from the loaded image.
+    bool estimateDepth(const QString& model_path,
+                       int n_threads,
                        DepthResult& out,
                        const QString& metric_model_path = QString()) const;
 
-    //! Estimates depth + camera pose from the loaded image using DA3.
-    //! \param model_path path to GGUF model file
-    //! \param n_threads number of inference threads (0 = default)
-    //! \param out depth + pose estimation output (has_pose=true on success)
-    //! \param metric_model_path optional path to nested metric model
-    bool estimateDepthAndPose(const QString& model_path, int n_threads,
-                              DepthResult& out,
-                              const QString& metric_model_path = QString()) const;
+    //! Estimates depth + camera pose from the loaded image.
+    bool estimateDepthAndPose(
+            const QString& model_path,
+            int n_threads,
+            DepthResult& out,
+            const QString& metric_model_path = QString()) const;
 
-    //! Returns true if DA3 depth estimation is available (compiled with DA3_ENABLED)
-    static bool isDA3Available();
+    //! Returns true when built with AICore and libAICore.so is linked.
+    static bool isAICoreAvailable();
 
 protected:
     // inherited from ccHObject

@@ -13,6 +13,7 @@
 
 // CV_DB_LIB
 #include <ecvCameraSensor.h>
+#include <ecvCameraSensorDisplayUtils.h>
 #include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
@@ -83,23 +84,34 @@ inline Eigen::Vector4f IndexToRGB(const size_t index) {
     return color;
 }
 
+CCVector3 ColmapPointToViewer(const Eigen::Vector3d& xyz) {
+    return CCVector3(static_cast<PointCoordinateType>(xyz(0)),
+                     static_cast<PointCoordinateType>(xyz(1)),
+                     static_cast<PointCoordinateType>(xyz(2)));
+}
+
 void BuildImageModel(ccCameraSensor* sensor,
                      const colmap::Image& image,
                      const colmap::Camera& camera,
                      const float image_size,
                      const Eigen::Vector4d& plane_color,
                      const Eigen::Vector4d& frame_color) {
-    // temp information
-    const float kBaseCameraWidth = 1024.0f;
-    const float image_width = image_size * camera.Width() / kBaseCameraWidth;
-    const float image_height = image_width *
-                               static_cast<float>(camera.Height()) /
-                               static_cast<float>(camera.Width());
-    const float image_extent = std::max(image_width, image_height);
-    const float camera_extent = std::max(camera.Width(), camera.Height());
+    const int array_width = static_cast<int>(camera.Width());
+    const int array_height = static_cast<int>(camera.Height());
+    const float camera_extent =
+            static_cast<float>(std::max(camera.Width(), camera.Height()));
     const float camera_extent_world =
             static_cast<float>(camera.ImageToWorldThreshold(camera_extent));
-    const float focal_length = 2.0f * image_extent / camera_extent_world;
+    const float display_focal_mm =
+            ecvCameraSensorDisplay::ComputeFrustumDisplayFocalMmFromExtent(
+                    image_size, array_width, array_height, camera_extent_world);
+
+    const float focal_y_px = static_cast<float>(
+            camera.FocalLengthIdxs().size() >= 2 ? camera.FocalLengthY()
+                                                 : camera.MeanFocalLength());
+    const float viewport_v_fov_rad =
+            ecvCameraSensorDisplay::ComputeVerticalFovRad(focal_y_px,
+                                                          array_height);
 
     // set color
     ecvColor::Rgb planeColor = ecvColor::Rgb::FromEigen(
@@ -112,7 +124,8 @@ void BuildImageModel(ccCameraSensor* sensor,
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
         retinaScale = v->getDevicePixelRatio();
     }
-    sensor->setGraphicScale(-PC_ONE / retinaScale);
+    sensor->setGraphicScale(PC_ONE / retinaScale);
+    sensor->setPoseFrame(ccCameraSensor::PoseFrame::VtkColmap);
 
     // init camera intrinsic parameters
     ccCameraSensor::IntrinsicParameters iParams;
@@ -122,22 +135,28 @@ void BuildImageModel(ccCameraSensor* sensor,
     iParams.pixelSize_mm[0] = pixelSize_mm;
     iParams.pixelSize_mm[1] = pixelSize_mm;
     iParams.vertFocal_pix =
-            ccCameraSensor::ConvertFocalMMToPix(focal_length, pixelSize_mm);
-    iParams.vFOV_rad = cloudViewer::DegreesToRadians(45.0f);
-    iParams.arrayWidth = static_cast<int>(camera.Width());
-    iParams.arrayHeight = static_cast<int>(camera.Height());
+            ccCameraSensor::ConvertFocalMMToPix(display_focal_mm, pixelSize_mm);
+    // Match wireframe frustum to the real pinhole used by applyViewport.
+    iParams.vFOV_rad = viewport_v_fov_rad;
+    iParams.arrayWidth = array_width;
+    iParams.arrayHeight = array_height;
     iParams.principal_point[0] = static_cast<float>(camera.PrincipalPointX());
     iParams.principal_point[1] = static_cast<float>(camera.PrincipalPointY());
     sensor->setIntrinsicParameters(iParams);
+    sensor->setApplyViewportVFov_rad(viewport_v_fov_rad);
 
-    // init camera rigid transformation parameters
     const Eigen::Matrix<float, 3, 4> proj_matrix =
             image.InverseProjectionMatrix().cast<float>();
-    Eigen::Matrix3f rotation = proj_matrix.leftCols<3>();
-    Eigen::Vector3f translation = proj_matrix.rightCols<1>();
-    ccGLMatrix rot = ccGLMatrix::FromEigenMatrix3(rotation);
-    rot.setTranslation(translation.data());
-    sensor->setRigidTransformation(rot);
+    float inv_proj_row_major[12];
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 4; ++c) {
+            inv_proj_row_major[r * 4 + c] = proj_matrix(r, c);
+        }
+    }
+    sensor->setRigidTransformation(
+            ecvCameraSensorDisplay::
+                    ColmapInverseProjectionToVtkCameraSensorMatrix(
+                            inv_proj_row_major));
 }
 
 }  // namespace
@@ -664,13 +683,8 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
         for (const auto& point3D : points3D) {
             if (point3D.second.Error() <= options_->render->max_error &&
                 point3D.second.Track().Length() >= min_track_len) {
-                CCVector3 painter_point;
-                painter_point.x =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(0));
-                painter_point.y =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(1));
-                painter_point.z =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(2));
+                CCVector3 painter_point =
+                        ColmapPointToViewer(point3D.second.XYZ());
                 cloud_sparse_->addPoint(painter_point);
 
                 Eigen::Vector4d color;
@@ -699,13 +713,8 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
         for (const auto& point3D : points3D) {
             if (point3D.second.Error() <= options_->render->max_error &&
                 point3D.second.Track().Length() >= min_track_len) {
-                CCVector3 painter_point;
-                painter_point.x =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(0));
-                painter_point.y =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(1));
-                painter_point.z =
-                        static_cast<PointCoordinateType>(point3D.second.XYZ(2));
+                CCVector3 painter_point =
+                        ColmapPointToViewer(point3D.second.XYZ());
                 cloud_sparse_->addPoint(painter_point);
 
                 Eigen::Vector4d color;

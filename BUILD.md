@@ -134,6 +134,12 @@ cmake --build . --config Release --target install
 | `BUILD_TENSORFLOW_OPS` | OFF | Build TensorFlow operators |
 | `BUILD_PYTORCH_OPS` | OFF | Build PyTorch operators |
 | `BUNDLE_CLOUDVIEWER_ML` | OFF | Include CloudViewer-ML repo in Python wheel |
+| `AICore_ENABLED` | OFF | Build unified AI core (`libAICore.so`) — DA3 depth/pose + FreeSplatter 3D Gaussians (auto-enables `GGML_ENABLED`) |
+| `GGML_ENABLED` | OFF | Build ggml inference library (auto-enabled when `AICore_ENABLED=ON`) |
+| `GGML_USE_CUDA` | OFF | Enable ggml CUDA backend on Linux/Windows (also on when `BUILD_CUDA_MODULE=ON`) |
+| `GGML_USE_VULKAN` | Apple: ON, else OFF | Auto-detect Vulkan when ON (loader + glslc + SPIRV-Headers; MoltenVK on macOS) |
+| `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | Auto-detect OpenCL 3.0 headers + ICD + Python3 when ON; **not built on macOS** |
+| `GGML_USE_METAL` | Apple: ON, else OFF | ggml Metal backend (Apple only) |
 
 ### Sensor Support
 
@@ -178,40 +184,60 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 
 #### Standard Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| `PLUGIN_STANDARD_QJSONRPC` | JSON-RPC server for AI agent integration |
-| `PLUGIN_STANDARD_QSIBR` | SIBR Gaussian Splatting viewers |
-| `PLUGIN_STANDARD_QPCL` | PCL integration (point cloud algorithms) |
-| `PLUGIN_STANDARD_QANIMATION` | Animation and video export (requires FFmpeg) |
-| `PLUGIN_STANDARD_QPOISSON_RECON` | Poisson surface reconstruction |
-| `PLUGIN_STANDARD_QRANSAC_SD` | RANSAC shape detection |
-| `PLUGIN_STANDARD_QFACETS` | Facet segmentation |
-| `PLUGIN_STANDARD_QHPR` | Hidden Point Removal |
-| `PLUGIN_STANDARD_QSRA` | Surface of Revolution Analysis |
-| `PLUGIN_STANDARD_QCORK` | Cork boolean operations |
-| `PLUGIN_STANDARD_QCANUPO` | CANUPO classification |
-| `PLUGIN_STANDARD_QPYTHONRUNTIME` | Python script runtime |
+|       Plugin Name       |         CMake Option                     | Default Value | Description
+|-------------------------|------------------------------------------|---------------|-------------
+| q3DMASC                 | PLUGIN_STANDARD_3DMASC                   | OFF           | Automatic point cloud classification: https://lidar.univ-rennes.fr/en/3dmasc
+| qAnimation              | PLUGIN_STANDARD_QANIMATION               | OFF           | Plugin to create videos: https://www.cloudcompare.org/doc/wiki/index.php/Animation_(plugin).
+| qBroom                  | PLUGIN_STANDARD_QBROOM                   | OFF           | Interactive cloud cleaning tool: https://www.cloudcompare.org/doc/wiki/index.php/Virtual_broom_(plugin)
+| qCanupo                 | PLUGIN_STANDARD_QCANUPO                  | OFF           | Automatic point cloud classification: https://www.cloudcompare.org/doc/wiki/index.php/CANUPO_(plugin)
+| qCloudLayers            | PLUGIN_STANDARD_QCLOUDLAYERS             | OFF           | Manual point cloud classification/labelling: https://www.cloudcompare.org/doc/wiki/index.php/QCloudLayers_(plugin)
+| qColorimetricSegmenter  | PLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER  | OFF           | Point cloud color-based segmentation: https://www.cloudcompare.org/doc/wiki/index.php/Colorimetric_Segmenter_(plugin)
+| qCompass                | PLUGIN_STANDARD_QCOMPASS                 | OFF           | Digitization of geological structures and structural traces on point clouds: https://www.cloudcompare.org/doc/wiki/index.php/Compass_(plugin)
+| qCork                   | PLUGIN_STANDARD_QCORK                    | OFF           | Mesh Boolean Operations: https://www.cloudcompare.org/doc/wiki/index.php/Cork_(plugin)
+| qCSF                    | PLUGIN_STANDARD_QCSF                     | OFF           | Automatic ground/non-ground classification: https://www.cloudcompare.org/doc/wiki/index.php/CSF_(plugin)
+| qFacets                 | PLUGIN_STANDARD_QFACETS                  | OFF           | Structural geology plugin: https://www.cloudcompare.org/doc/wiki/index.php/Facets_(plugin)
+| qHoughNormals           | PLUGIN_STANDARD_QHOUGH_NORMALS           | OFF           | Normals computation: https://www.cloudcompare.org/doc/wiki/index.php/HoughNormals_(plugin)
+| qHPR                    | PLUGIN_STANDARD_QHPR                     | OFF           | Hidden Point Removal: https://www.cloudcompare.org/doc/wiki/index.php/Hidden_Point_Removal_(plugin)
+| qJSonRPCPlugin          | PLUGIN_STANDARD_QJSONRPC                 | OFF           | Json/RPC control plugin
+| qM3C2                   | PLUGIN_STANDARD_QM3C2                    | OFF           | Robust point cloud distances computation: https://www.cloudcompare.org/doc/wiki/index.php/M3C2_(plugin)
+| qMasonry                |                                          |               | Segmentation of masonry structures: https://www.cloudcompare.org/doc/wiki/index.php/Masonry_Segmentation_(plugin)
+|  - qAutoSeg             | PLUGIN_STANDARD_MASONRY_QAUTO_SEG        | OFF           |
+|  - qManualSeg           | PLUGIN_STANDARD_MASONRY_QMANUAL_SEG      | OFF           |
+| qMeshBoolean            | PLUGIN_STANDARD_QMESH_BOOLEAN            | OFF           | Mesh Boolean Operations: https://www.cloudcompare.org/doc/wiki/index.php/Mesh_Boolean_(plugin)
+| qMPlane                 | PLUGIN_STANDARD_QMPLANE                  | OFF           | Normal distance measurements against a defined plane: https://www.cloudcompare.org/doc/wiki/index.php/MPlane_(plugin)
+| qPCL                    | PLUGIN_STANDARD_QPCL                     | OFF           | Interface to some algorithms of the PCL library: https://www.cloudcompare.org/doc/wiki/index.php/Point_Cloud_Library_Wrapper_(plugin)
+| qPCV                    | PLUGIN_STANDARD_QPCV                     | OFF           | Ambient Occlusion for meshes or point clouds: https://www.cloudcompare.org/doc/wiki/index.php/ShadeVis_(plugin)
+| qPoissonRecon           | PLUGIN_STANDARD_QPOISSON_RECON           | OFF           | Surface Mesh Reconstruction: https://www.cloudcompare.org/doc/wiki/index.php/Poisson_Surface_Reconstruction_(plugin)
+| qRANSAC_SD              | PLUGIN_STANDARD_QRANSAC_SD               | OFF           | Automatic RANSAC shape detection: https://www.cloudcompare.org/doc/wiki/index.php/RANSAC_Shape_Detection_(plugin)
+| qSRA                    | PLUGIN_STANDARD_QSRA                     | OFF           | Surface of Revolution Analysis: https://www.cloudcompare.org/doc/wiki/index.php/Surface_of_Revolution_Analysis_(plugin)
+| qTreeIso                | PLUGIN_STANDARD_QTREEISO                 | OFF           | Individual Tree Isolation: https://www.cloudcompare.org/doc/wiki/index.php/Treeiso_(plugin)
+| qPythonRuntime          | PLUGIN_PYTHON                            | OFF           | Python script runtime |
+| qJSonRPCPlugin          | PLUGIN_STANDARD_QJSONRPC                 | OFF           | JSON-RPC server for AI agent integration |
+| qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers |
+| qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
+| qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
+
+> 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
 #### I/O Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| `PLUGIN_IO_QFBX` | Autodesk FBX file format support |
-| `PLUGIN_IO_QE57` | E57 point cloud format |
-| `PLUGIN_IO_QLAS` | LAS/LAZ point cloud format |
-| `PLUGIN_IO_QPDAL` | PDAL integration (multiple formats) |
-| `PLUGIN_IO_QPHOTOSCAN` | Agisoft Photoscan format |
-| `PLUGIN_IO_QRDB` | Riegl RDB format |
-| `PLUGIN_IO_QDRACO` | Google Draco compressed format |
-| `PLUGIN_IO_QCSV_MATRIX` | CSV matrix files |
+## IO Plugins
 
-#### GL Plugins
+|       Plugin Name       |         CMake Option                     | Default Value | Description
+|-------------------------|------------------------------------------|---------------|-------------
+| qAdditionalIO           | PLUGIN_IO_QADDITIONAL                    | OFF           |
+| qCoreIO                 | PLUGIN_IO_QCORE                          | ON            |
+| qCSVMatrixIO            | PLUGIN_IO_QCSV_MATRIX                    | OFF           | Add support for CSV matrix files.
+| qDraco                  | PLUGIN_IO_QDRACO                         | OFF           | Add support force draco files
+| qE57IO                  | PLUGIN_IO_QE57                           | OFF           | Add support for e57 files using **libE57**.
+| qFBXIO                  | PLUGIN_IO_QFBX                           | OFF           | Add support for AutoDesk FBX files using the official **FBX SDK**
+| qLASFWIO                | PLUGIN_IO_QLAS_FWF                       | OFF           | Windows only. Support for LAS/LAZ with and without waveform using LIBlas (***deprecated, consider using qLASIO instead***).
+| qLASIO                  | PLUGIN_IO_QLAS                           | OFF           | Support for LAS/LAZ with and without waveform (all platforms) using **LASZIP**.
+| qPDALIO                 | PLUGIN_IO_QPDAL                          | OFF           | Add support for LAS/LAZ files using PDAL (***deprecated, consider using qLASIO instead***).
+| qPhotoscanIO            | PLUGIN_IO_QPHOTOSCAN                     | OFF           |
+| qRDBIO                  | PLUGIN_IO_QRDB                           | OFF           | Add support for RDB.
+| qStepCADImport          | PLUGIN_IO_QSTEP                          | OFF           | Add support for STEP files.
 
-| Plugin | Description |
-|--------|-------------|
-| `PLUGIN_GL_QSSAO` | Screen Space Ambient Occlusion |
-| `PLUGIN_GL_QEDL` | Eye Dome Lighting |
 
 > 📖 **For detailed plugin configuration**, see the platform-specific build guides.
 
@@ -261,11 +287,62 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DBUILD_PYTHON_MODULE=ON \
       -DBUILD_GUI=ON \
       -DBUILD_RECONSTRUCTION=ON \
+      -DAICore_ENABLED=ON \
+      -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QJSONRPC=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
+      -DAICore_ENABLED=ON \
+      -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       ..
 cmake --build . --config Release
 ```
+
+#### AICore (qDA3 + qFreeSplatter) Build
+
+Builds `libAICore.so` (shared ggml inference core for DA3 and FreeSplatter) and the selected GUI plugins. Multiple ggml backends can be compiled into one build; runtime **Auto** selects CUDA → OpenCL → Vulkan → CPU (first available). CUDA requires `BUILD_CUDA_MODULE=ON` or `-DGGML_USE_CUDA=ON`; Vulkan/OpenCL are auto-detected when dependencies are present.
+
+```bash
+cmake -DBUILD_GUI=ON \
+      -DBUILD_RECONSTRUCTION=ON \
+      -DAICore_ENABLED=ON \
+      -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+      -DBUILD_CUDA_MODULE=ON \
+      ..
+cmake --build . --config Release --target ACloudViewer
+```
+
+**Outputs:** `bin/libAICore.so`, `bin/libQDA3_PLUGIN.so`, `bin/libQFREESPLATTER_PLUGIN.so` (when enabled)
+
+**Models:**
+- **DA3** GGUF: downloaded on first use to `~/cloudViewer_data/extract/da3_models` — [mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
+- **FreeSplatter** GGUF: auto-downloaded from [cloudViewer_downloads/3dgs](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/3dgs)
+
+**Notes:**
+- `AICore_ENABLED=ON` auto-enables `GGML_ENABLED`.
+- With CUDA, `libAICore.so` is large (~200–250 MB) because `libggml-cuda.a` CUDA kernels for `CMAKE_CUDA_ARCHITECTURES` are linked statically into AICore only. **`libCV_DB_LIB.so` does not link AICore** — use `aicore::depth::ImageDepth` from `aicore/depth_image.h` in code that already links `libAICore.so`.
+- CPU-only AICore: omit `-DBUILD_CUDA_MODULE=ON`.
+- qFreeSplatter **Visualize** button requires `-DPLUGIN_STANDARD_QSIBR=ON` (not supported on macOS by default).
+
+See [plugins/README.md](plugins/README.md), [qDA3 README](plugins/core/Standard/qDA3/README.md), and [qFreeSplatter README](plugins/core/Standard/qFreeSplatter/README.md).
+
+#### DA3-only Build (legacy recipe)
+
+Same as AICore build with only qDA3 enabled:
+
+```bash
+cmake -DBUILD_GUI=ON \
+      -DBUILD_RECONSTRUCTION=ON \
+      -DAICore_ENABLED=ON \
+      -DPLUGIN_STANDARD_QDA3=ON \
+      -DBUILD_CUDA_MODULE=ON \
+      ..
+cmake --build . --config Release --target ACloudViewer
+```
+
+**Outputs:** `bin/libAICore.so`, `bin/libQDA3_PLUGIN.so`
 
 #### Python Package Only
 
@@ -347,6 +424,9 @@ cmake --build . --config Release --target install
 - **[macOS Build Guide](docs/guides/compiling_doc/compiling-cloudviewer-macos.md)** - macOS build instructions
 - **[QUICKSTART.md](docs/guides/QUICKSTART.md)** - Comprehensive build reference
 - **[Agent Integration](agent-integration/README.md)** - Building for AI agent development
+- **[Plugin catalog](plugins/README.md)** - Per-plugin README index (AI, Standard, I/O)
+- **[qDA3 Plugin](plugins/core/Standard/qDA3/README.md)** - Depth Anything V3 build, models, and Automatic Reconstruction integration
+- **[qFreeSplatter Plugin](plugins/core/Standard/qFreeSplatter/README.md)** - FreeSplatter 3D Gaussian Splatting, models, and SIBR export
 
 ---
 

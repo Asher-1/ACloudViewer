@@ -1,17 +1,25 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
-#include <QDialog>
-#include <QComboBox>
-#include <QLineEdit>
-#include <QSpinBox>
 #include <QCheckBox>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QProgressBar>
+#include <QComboBox>
+#include <QDialog>
+#include <QFile>
 #include <QLabel>
-#include <QStackedWidget>
+#include <QLineEdit>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QSpinBox>
+#include <QStackedWidget>
+#include <QTextEdit>
 
 struct DA3BuiltinModel {
     QString displayName;
@@ -41,6 +49,7 @@ public:
         QStringList inputPaths;
         QString outputDir;
         int threads = 0;
+        QString device = "auto";  // auto | cpu | cuda | vulkan | opencl
         bool invertDepth = true;
         bool unproject3D = true;
         int downsampleStep = 1;
@@ -85,10 +94,14 @@ private slots:
 
 private:
     void setupUi();
-    void populateModelCombos();
+    void populateModelCombos(const QString& keepModelFilename = QString(),
+                             const QString& keepMetricFilename = QString());
     QString resolveModelPath(QComboBox* combo, QLineEdit* customEdit) const;
     bool ensureAllModelsAvailable();
     void startDownload(const DA3BuiltinModel& model);
+    void cancelDownload();
+    void onCancel();
+    bool selectComboItemByFilename(QComboBox* combo, const QString& filename);
 
     enum class ModelSize { Base, Large, Giant, Unknown };
     static ModelSize modelSizeFromFilename(const QString& filename);
@@ -111,6 +124,7 @@ private:
     QWidget* m_customMetricRow = nullptr;
     QLabel* m_metricLabel = nullptr;
 
+    QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
     QLineEdit* m_inputPath = nullptr;
     QLineEdit* m_outputDir = nullptr;
@@ -141,4 +155,7 @@ private:
     QNetworkReply* m_currentDownload = nullptr;
     QVector<DA3BuiltinModel> m_downloadQueue;
     bool m_autoRunAfterDownload = false;
+    bool m_downloadInProgress = false;
+    QString m_downloadTargetFilename;
+    QFile* m_downloadOutFile = nullptr;
 };
