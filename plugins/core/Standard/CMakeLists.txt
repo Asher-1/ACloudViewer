@@ -21,6 +21,7 @@ add_subdirectory( qPythonRuntime )
 add_subdirectory( qSIBR )
 add_subdirectory( qDA3 )
 add_subdirectory( qFreeSplatter )
+add_subdirectory( qManualCalib )
 
 #plugins integrated as submodules
 set( submod_plugins

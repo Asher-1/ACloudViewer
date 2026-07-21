@@ -258,6 +258,7 @@ Documentation is automatically built and deployed via GitHub Actions:
   - [Overview](guides/plugins/README.md)
   - [qDA3 — Depth Anything V3](guides/plugins/qDA3.md)
   - [qFreeSplatter — 3D Gaussian Splatting](guides/plugins/qFreeSplatter.md)
+  - [qManualCalib — Manual Calibration](guides/plugins/qManualCalib.md)
 - **Python API** → `/documentation/python_api/index.html`
 - **C++ API** → `/documentation/cpp_api/index.html`
 - **Tutorials** → `/documentation/tutorial/index.html`

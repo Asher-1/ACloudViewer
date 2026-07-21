@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Car body (top-down view) -->
+  <rect x="20" y="14" width="24" height="36" rx="6" fill="#607D8B" opacity="0.7"/>
+  <rect x="24" y="18" width="16" height="8" rx="2" fill="#90A4AE" opacity="0.5"/>
+  <rect x="24" y="38" width="16" height="8" rx="2" fill="#90A4AE" opacity="0.5"/>
+  <!-- Four camera views (AVM surround) -->
+  <!-- Front camera cone -->
+  <path d="M32 14 L24 4 L40 4 Z" fill="#2196F3" opacity="0.4"/>
+  <line x1="32" y1="14" x2="24" y2="4" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="32" y1="14" x2="40" y2="4" stroke="#2196F3" stroke-width="1.5"/>
+  <!-- Rear camera cone -->
+  <path d="M32 50 L24 60 L40 60 Z" fill="#4CAF50" opacity="0.4"/>
+  <line x1="32" y1="50" x2="24" y2="60" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="32" y1="50" x2="40" y2="60" stroke="#4CAF50" stroke-width="1.5"/>
+  <!-- Left camera cone -->
+  <path d="M20 32 L10 24 L10 40 Z" fill="#FF9800" opacity="0.4"/>
+  <line x1="20" y1="32" x2="10" y2="24" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="20" y1="32" x2="10" y2="40" stroke="#FF9800" stroke-width="1.5"/>
+  <!-- Right camera cone -->
+  <path d="M44 32 L54 24 L54 40 Z" fill="#9C27B0" opacity="0.4"/>
+  <line x1="44" y1="32" x2="54" y2="24" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="44" y1="32" x2="54" y2="40" stroke="#9C27B0" stroke-width="1.5"/>
+  <!-- Adjustment sliders -->
+  <rect x="50" y="54" width="12" height="3" rx="1.5" fill="#F44336" opacity="0.8"/>
+  <circle cx="56" cy="55.5" r="2" fill="#F44336"/>
+  <rect x="2" y="54" width="12" height="3" rx="1.5" fill="#F44336" opacity="0.8"/>
+  <circle cx="8" cy="55.5" r="2" fill="#F44336"/>
+</svg>

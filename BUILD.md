@@ -216,6 +216,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
+| qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — ROS bag v2.0, BEV, LiDAR projection ([README](plugins/core/Standard/qManualCalib/README.md), [DATA_CARD](plugins/core/Standard/qManualCalib/tests/data/DATA_CARD.md)). Requires `BUILD_OPENCV=ON`. |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 

@@ -189,6 +189,10 @@ Both plugins require ``-DAICore_ENABLED=ON`` (builds ``libAICore.so`` with a sin
 
 See :doc:`../guides/plugins/qDA3` and :doc:`../guides/plugins/qFreeSplatter` for usage and build instructions.
 
+* **qManualCalib**: Manual sensor extrinsic calibration and AVM view adjustment — ROS bag v2.0, BEV stitching, LiDAR projection, protobuf ``.cfg`` configs. CMake: ``PLUGIN_STANDARD_QMANUAL_CALIB``.
+
+See :doc:`../guides/plugins/qManualCalib` for usage and build instructions.
+
 **Advanced Processing**
 
 * **qPCL**: Integration with Point Cloud Library (PCL) algorithms
@@ -564,6 +568,8 @@ The catalog and build index is at ``plugins/README.md`` in the repository root.
    ../plugins/q3DMASC/README
    ../plugins/qTreeIso/README
    ../plugins/qG3Point/README
+   ../guides/plugins/qManualCalib
+   ../plugins/qManualCalib/README
 
 .. toctree::
    :maxdepth: 1

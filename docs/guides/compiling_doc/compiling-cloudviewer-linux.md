@@ -8,6 +8,7 @@
 > ```
 >
 > **AI plugins (qDA3 / qFreeSplatter):** see [docs/guides/plugins/](../../guides/plugins/README.md) for usage; enable with `-DAICore_ENABLED=ON -DPLUGIN_STANDARD_QDA3=ON -DPLUGIN_STANDARD_QFREESPLATTER=ON`.
+> **Manual calibration (qManualCalib):** same guides index; enable with `-DBUILD_OPENCV=ON -DPLUGIN_STANDARD_QMANUAL_CALIB=ON`. Sample data: [DATA_CARD](../../../plugins/core/Standard/qManualCalib/tests/data/DATA_CARD.md).
 
 ---
 
