@@ -182,10 +182,12 @@ Available Standard Plugins
 
 **AI inference (AICore)**
 
-Both plugins require ``-DAICore_ENABLED=ON`` (builds ``libAICore.so`` with a single ggml copy). See `plugins/README.md <https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md>`_ for the full catalog.
+Both plugins require ``-DAICore_ENABLED=ON`` (builds ``libAICore.so`` with a single ggml copy). User-facing guides live in the repository at ``docs/guides/plugins/`` (synced into Sphinx at build time). The full developer README for each plugin is under ``plugins/core/Standard/``.
 
 * **qDA3**: Depth Anything V3 — monocular/multiview depth, camera pose, GLB/COLMAP export, Automatic Reconstruction sparse/dense hooks. CMake: ``PLUGIN_STANDARD_QDA3``.
 * **qFreeSplatter**: FreeSplatter 3D Gaussian Splatting — uncalibrated images to per-pixel 3D Gaussians, PnP pose recovery, SIBR-compatible PLY export; optional in-app viewer when qSIBR is enabled. CMake: ``PLUGIN_STANDARD_QFREESPLATTER``.
+
+See :doc:`../guides/plugins/qDA3` and :doc:`../guides/plugins/qFreeSplatter` for usage and build instructions.
 
 **Advanced Processing**
 
@@ -539,6 +541,9 @@ The catalog and build index is at ``plugins/README.md`` in the repository root.
    :maxdepth: 1
    :caption: AI Inference (AICore)
 
+   ../guides/plugins/README
+   ../guides/plugins/qDA3
+   ../guides/plugins/qFreeSplatter
    ../plugins/qDA3/README
    ../plugins/qFreeSplatter/README
 

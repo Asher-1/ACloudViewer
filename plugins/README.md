@@ -15,6 +15,7 @@ plugins/
 | Location | Purpose |
 |----------|---------|
 | `plugins/core/<Category>/<PluginName>/README.md` | **Authoritative** plugin doc: features, build flags, usage, models |
+| `docs/guides/plugins/` | **User guides** for AI plugins (qDA3, qFreeSplatter); synced into Sphinx |
 | `plugins/core/<Category>/<PluginName>/info.json` | Plugin metadata shown in the app |
 | [`BUILD.md`](../BUILD.md) | CMake option table and common build recipes |
 | [`docs/source/cpp_api/plugins.rst`](../docs/source/cpp_api/plugins.rst) | Sphinx plugin overview (READMEs are synced at doc-build time) |
@@ -27,10 +28,10 @@ When adding a new plugin, add a `README.md` in the plugin directory and register
 
 Both plugins link **`libAICore.so`**, which bundles DA3 and FreeSplatter with a single ggml copy.
 
-| Plugin | CMake option | README | Summary |
-|--------|--------------|--------|---------|
-| **qDA3** | `PLUGIN_STANDARD_QDA3` | [qDA3/README.md](core/Standard/qDA3/README.md) | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction |
-| **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) | FreeSplatter 3D Gaussian Splatting — photos → 3D Gaussians, PLY export, optional qSIBR viewer |
+| Plugin | CMake option | User guide | README |
+|--------|--------------|------------|--------|
+| **qDA3** | `PLUGIN_STANDARD_QDA3` | [docs/guides/plugins/qDA3.md](../docs/guides/plugins/qDA3.md) | [qDA3/README.md](core/Standard/qDA3/README.md) |
+| **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [docs/guides/plugins/qFreeSplatter.md](../docs/guides/plugins/qFreeSplatter.md) | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -78,7 +79,6 @@ cmake -DBUILD_GUI=ON \
 | qSRA | [core/Standard/qSRA/README.md](core/Standard/qSRA/README.md) |
 | qTreeIso | [core/Standard/qTreeIso/README.md](core/Standard/qTreeIso/README.md) |
 | qVoxFall | [core/Standard/qVoxFall/README.md](core/Standard/qVoxFall/README.md) |
-| qManualCalib | [core/Standard/qManualCalib/README.md](core/Standard/qManualCalib/README.md) |
 
 Submodule plugins (when present): qColorimetricSegmenter, qMasonry, qMPlane, qJSonRPCPlugin, qG3Point.
 

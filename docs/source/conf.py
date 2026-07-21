@@ -77,6 +77,31 @@ def _sync_plugin_docs(app):
     print(f"[conf.py] Synced {copied} plugin READMEs → {dest_root}")
 
 
+def _sync_guides_plugins(app):
+    """Copy committed user guides from docs/guides/plugins/ into Sphinx srcdir."""
+    srcdir = app.srcdir if app else current_file_dir
+    repo_root = os.path.abspath(os.path.join(srcdir, "..", ".."))
+    src_guides = os.path.join(repo_root, "docs", "guides", "plugins")
+    dest_root = os.path.join(srcdir, "guides", "plugins")
+    if not os.path.isdir(src_guides):
+        return
+    os.makedirs(dest_root, exist_ok=True)
+    copied = 0
+    for md in sorted(glob.glob(os.path.join(src_guides, "*.md"))):
+        shutil.copy2(md, os.path.join(dest_root, os.path.basename(md)))
+        copied += 1
+    print(f"[conf.py] Synced {copied} plugin guides → {dest_root}")
+
+
+def _cleanup_guides_plugins(app, exception):
+    """Remove generated guides/plugins copy after Sphinx build."""
+    srcdir = app.srcdir if app else current_file_dir
+    dest_root = os.path.join(srcdir, "guides", "plugins")
+    if os.path.isdir(dest_root):
+        shutil.rmtree(dest_root)
+        print(f"[conf.py] Cleaned up {dest_root}")
+
+
 def _cleanup_plugin_docs(app, exception):
     """Sphinx ``build-finished`` hook: remove the generated plugins/ directory."""
     srcdir = app.srcdir if app else current_file_dir
@@ -500,7 +525,9 @@ def process_docstring(app, what, name, obj, options, lines):
 def setup(app):
     """Sphinx setup function to connect autodoc events and plugin doc sync."""
     app.connect("builder-inited", _sync_plugin_docs)
+    app.connect("builder-inited", _sync_guides_plugins)
     app.connect("build-finished", _cleanup_plugin_docs)
+    app.connect("build-finished", _cleanup_guides_plugins)
     app.connect("autodoc-skip-member", skip)
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
