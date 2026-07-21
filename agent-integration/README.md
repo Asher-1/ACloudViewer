@@ -203,12 +203,12 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 ```
 agent-integration/
 ├── README.md               # This file — unified reference (CLI, MCP, RPC, testing)
-├── cli/                    # CLI harness source (installed via pip)
+├── cli/                    # Pointer to CLI-Anything harness (canonical source)
 ├── mcp/
 │   └── README.md           # MCP server setup and tool reference
 ├── openclaw/
-│   ├── README.md           # OpenClaw integration guide
-│   └── openclaw-skill.json # OpenClaw skill manifest
+│   ├── README.md           # Agent skill guide (OpenClaw, Cursor MCP, Codex SKILL.md)
+│   └── openclaw-skill.json # Reference copy — canonical file in CLI-Anything harness
 ├── docs/
 │   ├── JSON-RPC-API.md        # Full JSON-RPC method reference
 │   ├── TESTING.md             # End-to-end testing guide
