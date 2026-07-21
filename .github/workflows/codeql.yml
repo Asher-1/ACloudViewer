@@ -240,6 +240,10 @@ jobs:
             -DPLUGIN_STANDARD_3DMASC=OFF \
             -DPLUGIN_STANDARD_QVOXFALL=OFF \
             -DPLUGIN_STANDARD_G3POINT=OFF \
+            -DPLUGIN_STANDARD_QSIBR=OFF \
+            -DAICore_ENABLED=OFF \
+            -DPLUGIN_STANDARD_QDA3=OFF \
+            -DPLUGIN_STANDARD_QFREESPLATTER=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

@@ -113,10 +113,14 @@ ACloudViewer has a rich plugin system. Key plugins:
 
 - **I/O Plugins**: QDRACO, QLAS, QE57, QMESH, QPHOTOSCAN, QRDB, QFBX
 - **Standard Plugins**: QCORK, QANIMATION, QCANUPO, QCSF, QM3C2, QPCL, QPOISSON_RECON
-- **AI Plugins (AICore)**: QDA3 (depth/pose), QFreeSplatter (3D Gaussian Splatting) — see `plugins/README.md <https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md>`_
+- **AI Plugins (AICore)**: QDA3 (depth/pose), QFreeSplatter (3D Gaussian Splatting)
+
+  - User guides (committed in repo): ``docs/guides/plugins/qDA3.md``, ``docs/guides/plugins/qFreeSplatter.md``
+  - Plugin catalog & CMake index: `plugins/README.md <https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md>`_
+  - Sphinx: guides + per-plugin READMEs are synced at doc-build time (``docs/source/conf.py``)
 - **Masonry Plugins**: QAUTO_SEG, QMANUAL_SEG
 
-Per-plugin READMEs live under ``plugins/core/``; Sphinx copies them at doc-build time (see ``docs/source/conf.py``).
+Per-plugin READMEs live under ``plugins/core/``; AI user guides under ``docs/guides/plugins/``.
 
 See platform-specific sections for complete plugin lists.
 
@@ -236,6 +240,10 @@ Building Application (Full Configuration)
        -DPLUGIN_STANDARD_3DMASC=ON \
        -DPLUGIN_STANDARD_QTREEISO=ON \
        -DPLUGIN_STANDARD_QVOXFALL=ON \
+       -DPLUGIN_STANDARD_QSIBR=ON \
+       -DAICore_ENABLED=ON \
+       -DPLUGIN_STANDARD_QDA3=ON \
+       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
        -DBUILD_UNIT_TESTS=OFF \
@@ -401,6 +409,10 @@ Building Application
        -DPLUGIN_STANDARD_3DMASC=ON \
        -DPLUGIN_STANDARD_QTREEISO=ON \
        -DPLUGIN_STANDARD_QVOXFALL=ON \
+       -DPLUGIN_STANDARD_QSIBR=ON \
+       -DAICore_ENABLED=ON \
+       -DPLUGIN_STANDARD_QDA3=ON \
+       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
        -DBUILD_UNIT_TESTS=OFF \
@@ -559,6 +571,10 @@ Building Application
        -DPLUGIN_STANDARD_3DMASC=ON `
        -DPLUGIN_STANDARD_QTREEISO=ON `
        -DPLUGIN_STANDARD_QVOXFALL=ON `
+       -DPLUGIN_STANDARD_QSIBR=ON `
+       -DAICore_ENABLED=ON `
+       -DPLUGIN_STANDARD_QDA3=ON `
+       -DPLUGIN_STANDARD_QFREESPLATTER=ON `
        -DBUILD_WITH_CONDA=ON `
        -DCONDA_PREFIX=$env:CONDA_PREFIX `
        -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `

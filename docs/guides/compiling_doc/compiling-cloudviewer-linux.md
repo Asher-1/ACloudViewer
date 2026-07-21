@@ -6,6 +6,8 @@
 > ./docker/build-release.sh        # system-packages build
 > ./docker/build-release-conda.sh  # conda-based build
 > ```
+>
+> **AI plugins (qDA3 / qFreeSplatter):** see [docs/guides/plugins/](../../guides/plugins/README.md) for usage; enable with `-DAICore_ENABLED=ON -DPLUGIN_STANDARD_QDA3=ON -DPLUGIN_STANDARD_QFREESPLATTER=ON`.
 
 ---
 
