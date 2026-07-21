@@ -1,6 +1,13 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Standalone harness for scripts/parity_colmap.py: reads a synthetic input
-// blob and writes a COLMAP model via da::write_colmap. Not a ctest (takes CLI
-// args).
+// blob and writes a COLMAP model via aicore::depth::write_colmap. Not a ctest
+// (takes CLI args).
 //
 // Input blob layout (little-endian):
 //   int32 N, H, W
@@ -13,8 +20,6 @@
 //   per frame: int32 name_len, char name[name_len]
 //
 // Usage: colmap_parity_dump <in.bin> <out_dir> [binary=1]
-#include "colmap_export.hpp"
-
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -22,6 +27,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "colmap_export.hpp"
 
 template <class T>
 static bool read_n(std::ifstream& f, T* dst, size_t n) {
@@ -31,11 +38,15 @@ static bool read_n(std::ifstream& f, T* dst, size_t n) {
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        std::fprintf(stderr, "usage: %s <in.bin> <out_dir> [binary]\n", argv[0]);
+        std::fprintf(stderr, "usage: %s <in.bin> <out_dir> [binary]\n",
+                     argv[0]);
         return 2;
     }
     std::ifstream f(argv[1], std::ios::binary);
-    if (!f) { std::fprintf(stderr, "cannot open %s\n", argv[1]); return 2; }
+    if (!f) {
+        std::fprintf(stderr, "cannot open %s\n", argv[1]);
+        return 2;
+    }
 
     int32_t N = 0, H = 0, W = 0;
     if (!read_n(f, &N, 1) || !read_n(f, &H, 1) || !read_n(f, &W, 1)) return 2;
@@ -49,9 +60,12 @@ int main(int argc, char** argv) {
 
     if (!read_n(f, depth.data(), tot)) return 2;
     if (!read_n(f, conf.data(), tot)) return 2;
-    for (int i = 0; i < N; ++i) if (!read_n(f, K[i].data(), 9)) return 2;
-    for (int i = 0; i < N; ++i) if (!read_n(f, ext[i].data(), 16)) return 2;
-    for (int i = 0; i < N; ++i) if (!read_n(f, imgs[i].data(), plane * 3)) return 2;
+    for (int i = 0; i < N; ++i)
+        if (!read_n(f, K[i].data(), 9)) return 2;
+    for (int i = 0; i < N; ++i)
+        if (!read_n(f, ext[i].data(), 16)) return 2;
+    for (int i = 0; i < N; ++i)
+        if (!read_n(f, imgs[i].data(), plane * 3)) return 2;
 
     std::vector<std::pair<int, int>> orig_wh(N);
     for (int i = 0; i < N; ++i) {
@@ -74,8 +88,8 @@ int main(int argc, char** argv) {
     bool binary = true;
     if (argc >= 4) binary = (std::atoi(argv[3]) != 0);
 
-    if (!da::write_colmap(argv[2], depth, conf, K, ext, img_ptrs, names,
-                          orig_wh, H, W, N, binary)) {
+    if (!aicore::depth::write_colmap(argv[2], depth, conf, K, ext, img_ptrs,
+                                     names, orig_wh, H, W, N, binary)) {
         std::fprintf(stderr, "write_colmap failed\n");
         return 1;
     }

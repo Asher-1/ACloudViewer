@@ -360,13 +360,12 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
         m_visualizer2D->setRender(m_vtkWidget->getVtkRender());
         m_visualizer2D->setupInteractor(m_vtkWidget->GetInteractor(),
                                         m_vtkWidget->GetRenderWindow());
-        m_visualizer3D->setInteractionModeChangedCallback(
-                [this](int mode) {
-                    if (m_visualizer2D) {
-                        m_visualizer2D->setImageInteractionMode(
-                                mode == Visualization::VtkVis::INTERACTION_MODE_2D);
-                    }
-                });
+        m_visualizer3D->setInteractionModeChangedCallback([this](int mode) {
+            if (m_visualizer2D) {
+                m_visualizer2D->setImageInteractionMode(
+                        mode == Visualization::VtkVis::INTERACTION_MODE_2D);
+            }
+        });
         m_visualizer2D->setImageInteractionMode(
                 m_visualizer3D->getInteractionMode() ==
                 Visualization::VtkVis::INTERACTION_MODE_2D);
@@ -770,6 +769,15 @@ void vtkGLView::setViewportParameters(const ecvViewportParameters& params) {
 
     if (vtkRenderer* ren = m_visualizer3D->getCurrentRenderer()) {
         ren->ResetCameraClippingRange();
+        if (m_ctx.minVtkNearClip > 0.0) {
+            double clip[2] = {0.0, 0.0};
+            cam->GetClippingRange(clip);
+            if (clip[0] < m_ctx.minVtkNearClip) {
+                cam->SetClippingRange(
+                        m_ctx.minVtkNearClip,
+                        std::max(clip[1], m_ctx.minVtkNearClip * 10.0));
+            }
+        }
     }
 }
 
@@ -1712,6 +1720,18 @@ void vtkGLView::removeEntities(const ccGLDrawContext& context) {
     }
 }
 
+void vtkGLView::updateApplyViewportPreviewOverlay(unsigned sensorId) {
+    if (m_displayTools) {
+        m_displayTools->updateApplyViewportPreviewOverlay(this, sensorId);
+    }
+}
+
+void vtkGLView::removeApplyViewportPreviewOverlay(unsigned sensorId) {
+    if (m_displayTools) {
+        m_displayTools->removeApplyViewportPreviewOverlay(this, sensorId);
+    }
+}
+
 void vtkGLView::changeEntityProperties(PROPERTY_PARAM& param) {
     if (m_displayTools) m_displayTools->changeEntityProperties(param);
 }
@@ -2139,9 +2159,12 @@ double vtkGLView::getObjectLightIntensity(const QString& viewID) const {
 }
 
 void vtkGLView::setObjectLightIntensity(const QString& viewID,
-                                        double intensity) {
-    if (m_displayTools)
-        m_displayTools->setObjectLightIntensity(viewID, intensity);
+                                        double intensity,
+                                        bool triggerRender) {
+    if (m_displayTools) {
+        m_displayTools->setObjectLightIntensity(viewID, intensity,
+                                                triggerRender);
+    }
 }
 
 double vtkGLView::getLightIntensity() const {

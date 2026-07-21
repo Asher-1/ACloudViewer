@@ -106,6 +106,19 @@ Example test commands:
 
 **Note**: The test script automatically detects whether ML ops are available in the Docker image by checking the installed `cloudViewer` package's build configuration. You don't need to manually specify whether ML ops are enabled.
 
+### Optional: AICore plugins (qDA3, qFreeSplatter)
+
+Docker/CI GUI builds **do not** enable AICore by default (large ggml/CUDA artifact). To build with AI plugins inside a container:
+
+```bash
+export AICore_ENABLED=ON
+export PLUGIN_STANDARD_QDA3=ON          # Depth Anything V3
+export PLUGIN_STANDARD_QFREESPLATTER=ON # FreeSplatter 3D Gaussians
+export PLUGIN_STANDARD_QSIBR=ON         # optional: in-app Gaussian viewer (Linux/Windows)
+./docker/build_gui_app.sh 3.12 ON
+```
+
+Or pass the same variables when invoking `build_gui_app` from `util/ci_utils.sh`. Plugin READMEs: [plugins/README.md](../plugins/README.md).
 
 ## Building for Linux under Windows
 

@@ -17,6 +17,7 @@
 #include "ecvHObject.h"
 #include "ecvRepresentationManager.h"
 #include "ecvUndoManager.h"
+#include "ecvViewContext.h"
 #include "ecvViewLayoutProxy.h"
 #include "ecvViewRepresentation.h"
 

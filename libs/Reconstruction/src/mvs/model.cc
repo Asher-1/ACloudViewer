@@ -112,6 +112,53 @@ void Model::ReadFromCOLMAP(const std::string& path,
   reconstruction.DeleteAllPoints2DAndPoints3D();
   // Note: After these operations, the reconstruction object will be safely
   // destroyed without accessing potentially misaligned Eigen members.
+
+  const std::string vis_dat_path = JoinPaths(path, "stereo", "vis.dat");
+  if (ExistsFile(vis_dat_path)) {
+    LoadVisDat(vis_dat_path);
+  }
+}
+
+void Model::LoadVisDat(const std::string& path) {
+  if (!ExistsFile(path)) {
+    return;
+  }
+
+  std::ifstream vis_dat_file(path);
+  CHECK(vis_dat_file.is_open()) << path;
+
+  std::string visdata;
+  vis_dat_file >> visdata;
+  CHECK_EQ(visdata, "VISDATA");
+
+  int num_images = 0;
+  vis_dat_file >> num_images;
+  CHECK_GE(num_images, 0);
+  CHECK_EQ(num_images, static_cast<int>(images.size()));
+
+  pmvs_vis_dat_.assign(static_cast<size_t>(num_images), {});
+  for (int i = 0; i < num_images; ++i) {
+    int image_idx = 0;
+    vis_dat_file >> image_idx;
+    CHECK_GE(image_idx, 0);
+    CHECK_LT(image_idx, num_images);
+
+    int num_visible_images = 0;
+    vis_dat_file >> num_visible_images;
+
+    auto& visible_image_idxs = pmvs_vis_dat_[static_cast<size_t>(image_idx)];
+    visible_image_idxs.reserve(static_cast<size_t>(num_visible_images));
+
+    for (int j = 0; j < num_visible_images; ++j) {
+      int visible_image_idx = 0;
+      vis_dat_file >> visible_image_idx;
+      CHECK_GE(visible_image_idx, 0);
+      CHECK_LT(visible_image_idx, num_images);
+      if (visible_image_idx != image_idx) {
+        visible_image_idxs.push_back(visible_image_idx);
+      }
+    }
+  }
 }
 
 void Model::ReadFromPMVS(const std::string& path) {
@@ -425,41 +472,7 @@ bool Model::ReadFromRawPMVS(const std::string& path) {
     image_name_to_idx_.emplace(image_name, image_idx);
   }
 
-  std::ifstream vis_dat_file(vis_dat_path);
-  CHECK(vis_dat_file.is_open()) << vis_dat_path;
-
-  std::string visdata;
-  vis_dat_file >> visdata;
-  CHECK_EQ(visdata, "VISDATA");
-
-  int num_images;
-  vis_dat_file >> num_images;
-  CHECK_GE(num_images, 0);
-  CHECK_EQ(num_images, images.size());
-
-  pmvs_vis_dat_.resize(num_images);
-  for (int i = 0; i < num_images; ++i) {
-    int image_idx;
-    vis_dat_file >> image_idx;
-    CHECK_GE(image_idx, 0);
-    CHECK_LT(image_idx, num_images);
-
-    int num_visible_images;
-    vis_dat_file >> num_visible_images;
-
-    auto& visible_image_idxs = pmvs_vis_dat_[image_idx];
-    visible_image_idxs.reserve(num_visible_images);
-
-    for (int j = 0; j < num_visible_images; ++j) {
-      int visible_image_idx;
-      vis_dat_file >> visible_image_idx;
-      CHECK_GE(visible_image_idx, 0);
-      CHECK_LT(visible_image_idx, num_images);
-      if (visible_image_idx != image_idx) {
-        visible_image_idxs.push_back(visible_image_idx);
-      }
-    }
-  }
+  LoadVisDat(vis_dat_path);
 
   return true;
 }

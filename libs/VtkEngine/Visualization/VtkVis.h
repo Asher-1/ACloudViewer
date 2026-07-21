@@ -914,6 +914,11 @@ public:
      */
     void setInteractionMode(int mode);
 
+    /** Re-apply the interactor style for the current mode (no early return).
+     *  Use after ImageVis or other code replaces the VTK interactor style.
+     */
+    void ensureInteractorStyleMatchesMode();
+
     /** @return Current interaction mode (INTERACTION_MODE_3D or _2D). */
     int getInteractionMode() const { return m_interactionMode; }
 
@@ -1081,7 +1086,8 @@ public:
      */
     void setObjectLightIntensity(const std::string& viewID,
                                  double intensity,
-                                 int viewport = 0);
+                                 int viewport = 0,
+                                 bool triggerRender = true);
 
     /**
      * @brief Get per-object light intensity

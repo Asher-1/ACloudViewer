@@ -113,7 +113,10 @@ ACloudViewer has a rich plugin system. Key plugins:
 
 - **I/O Plugins**: QDRACO, QLAS, QE57, QMESH, QPHOTOSCAN, QRDB, QFBX
 - **Standard Plugins**: QCORK, QANIMATION, QCANUPO, QCSF, QM3C2, QPCL, QPOISSON_RECON
+- **AI Plugins (AICore)**: QDA3 (depth/pose), QFreeSplatter (3D Gaussian Splatting) — see `plugins/README.md <https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md>`_
 - **Masonry Plugins**: QAUTO_SEG, QMANUAL_SEG
+
+Per-plugin READMEs live under ``plugins/core/``; Sphinx copies them at doc-build time (see ``docs/source/conf.py``).
 
 See platform-specific sections for complete plugin lists.
 
@@ -215,6 +218,7 @@ Building Application (Full Configuration)
        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
        -DPLUGIN_STANDARD_QANIMATION=ON \
+       -DPLUGIN_STANDARD_QBROOM=ON \
        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
        -DPLUGIN_STANDARD_QCANUPO=ON \
        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
@@ -379,6 +383,7 @@ Building Application
        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=OFF \
        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=OFF \
        -DPLUGIN_STANDARD_QANIMATION=ON \
+       -DPLUGIN_STANDARD_QBROOM=ON \
        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
        -DPLUGIN_STANDARD_QCANUPO=ON \
        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
@@ -536,6 +541,7 @@ Building Application
        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON `
        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON `
        -DPLUGIN_STANDARD_QANIMATION=ON `
+       -DPLUGIN_STANDARD_QBROOM=ON `
        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON `
        -DPLUGIN_STANDARD_QCANUPO=ON `
        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON `

@@ -25,6 +25,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewContext.h>
 #include <ecvViewManager.h>
 
 #include <QMouseEvent>
@@ -115,8 +116,8 @@
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
-#include <vtkInteractorObserver.h>
 #include <vtkImageSlice.h>
+#include <vtkInteractorObserver.h>
 #include <vtkJPEGReader.h>
 #include <vtkLineSource.h>
 #include <vtkLookupTable.h>
@@ -531,6 +532,30 @@ void VtkVis::setInteractionMode(int mode) {
 }
 
 //----------------------------------------------------------------------------
+void VtkVis::ensureInteractorStyleMatchesMode() {
+    vtkRenderWindowInteractor* iren = getRenderWindowInteractor();
+    if (!iren) return;
+
+    switch (m_interactionMode) {
+        case INTERACTION_MODE_3D:
+            if (ThreeDInteractorStyle) {
+                iren->SetInteractorStyle(ThreeDInteractorStyle);
+                ThreeDInteractorStyle->Initialize();
+            }
+            break;
+        case INTERACTION_MODE_2D:
+            if (TwoDInteractorStyle) {
+                iren->SetInteractorStyle(TwoDInteractorStyle);
+                TwoDInteractorStyle->Initialize();
+            }
+            break;
+        default:
+            break;
+    }
+    UpdateScreen();
+}
+
+//----------------------------------------------------------------------------
 void VtkVis::setCenterOfRotation(double x, double y, double z) {
     this->m_centerAxes->SetPosition(x, y, z);
     if (this->TwoDInteractorStyle) {
@@ -836,6 +861,30 @@ void VtkVis::resetCamera(const ccBBox* bbox) {
     resetCamera(bounds);
 }
 
+namespace {
+
+void enforceViewMinNearClip(vtkRenderer* ren) {
+    if (!ren) {
+        return;
+    }
+    const double minNear =
+            ecvViewManager::instance().resolveViewContext().minVtkNearClip;
+    if (minNear <= 0.0) {
+        return;
+    }
+    vtkCamera* cam = ren->GetActiveCamera();
+    if (!cam) {
+        return;
+    }
+    double clip[2] = {0.0, 0.0};
+    cam->GetClippingRange(clip);
+    if (clip[0] < minNear) {
+        cam->SetClippingRange(minNear, std::max(clip[1], minNear * 10.0));
+    }
+}
+
+}  // namespace
+
 void VtkVis::resetCameraClippingRange(int viewport) {
     // Full recompute: synchronize geometry bounds from all visible props,
     // then reset clipping.  Called when scene content changes (add/remove
@@ -848,6 +897,7 @@ void VtkVis::resetCameraClippingRange(int viewport) {
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
         ren->ResetCameraClippingRange(bounds);
+        enforceViewMinNearClip(ren);
     }
 }
 
@@ -867,6 +917,7 @@ void VtkVis::resetCameraClippingCached(int viewport) {
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
         ren->ResetCameraClippingRange(bounds);
+        enforceViewMinNearClip(ren);
     }
 }
 
@@ -2585,11 +2636,30 @@ bool VtkVis::addCube(double xMin,
         return false;
     }
 
-    auto cube = vtkSmartPointer<vtkCubeSource>::New();
-    cube->SetBounds(xMin, xMax, yMin, yMax, zMin, zMax);
-    cube->Update();
-    vtkSmartPointer<vtkPolyData> data = cube->GetOutput();
-    if (!data) return false;
+    // Draw only the 12 bbox edges. vtkCubeSource wireframe also triangulates
+    // each face and shows diagonal grid lines when the view rotates.
+    auto pts = vtkSmartPointer<vtkPoints>::New();
+    auto lines = vtkSmartPointer<vtkCellArray>::New();
+    const double corners[8][3] = {
+            {xMin, yMin, zMin}, {xMax, yMin, zMin}, {xMax, yMax, zMin},
+            {xMin, yMax, zMin}, {xMin, yMin, zMax}, {xMax, yMin, zMax},
+            {xMax, yMax, zMax}, {xMin, yMax, zMax},
+    };
+    for (const auto& c : corners) {
+        pts->InsertNextPoint(c[0], c[1], c[2]);
+    }
+    static constexpr int kEdges[12][2] = {
+            {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
+            {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
+    };
+    for (const auto& edge : kEdges) {
+        lines->InsertNextCell(2);
+        lines->InsertCellPoint(edge[0]);
+        lines->InsertCellPoint(edge[1]);
+    }
+    auto data = vtkSmartPointer<vtkPolyData>::New();
+    data->SetPoints(pts);
+    data->SetLines(lines);
 
     vtkSmartPointer<vtkPVLODActor> actor;
     VtkRendering::CreateActorFromVTKDataSet(data, actor, false);
@@ -4877,19 +4947,22 @@ void VtkVis::applyLightPropertiesToActor(vtkActor* actor,
 
 void VtkVis::setObjectLightIntensity(const std::string& viewID,
                                      double intensity,
-                                     int viewport) {
+                                     int viewport,
+                                     bool triggerRender) {
+    Q_UNUSED(viewport);
     intensity = std::max(0.0, std::min(1.0, intensity));
     m_objectLightIntensity[viewID] = intensity;
 
-    // Apply to the actor immediately if it exists
     vtkActor* actor = getActorById(viewID);
     if (actor) {
         applyLightPropertiesToActor(actor, viewID);
     }
 
-    UpdateScreen();
-    if (auto rw = getRenderWindow()) {
-        rw->Render();
+    if (triggerRender) {
+        UpdateScreen();
+        if (auto rw = getRenderWindow()) {
+            rw->Render();
+        }
     }
 }
 

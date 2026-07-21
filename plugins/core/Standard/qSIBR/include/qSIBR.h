@@ -28,6 +28,10 @@ public:
     QList<QAction*> getActions() override;
     void registerCommands(ccCommandLineInterface* cmd) override;
 
+    Q_INVOKABLE void launchInMemoryGaussianViewer(QByteArray plyBytes,
+                                                  QByteArray camerasJson,
+                                                  int shDegree = 3);
+
 protected slots:
     void launchULRViewer();
     void launchULRv2Viewer();

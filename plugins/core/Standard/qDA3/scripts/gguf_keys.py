@@ -1,5 +1,5 @@
 """Single source of truth for GGUF arch, KV keys, and tensor renames.
-Both the C++ loader (via generated include/da_gguf_keys.h) and the Python
+Both the C++ loader (via generated include/aicore/depth_gguf_keys.h) and the Python
 converter import from here, so they cannot drift."""
 import re
 

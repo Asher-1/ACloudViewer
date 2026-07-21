@@ -16,6 +16,11 @@
 #include <QImageReader>
 #include <QOpenGLTexture>
 #include <algorithm>
+#include <cstring>
+
+#ifdef AICore_ENABLED
+#include "aicore/depth_image.h"
+#endif
 
 ccImage::ccImage()
     : ccHObject("Not loaded"),
@@ -86,12 +91,24 @@ void ccImage::drawMeOnly(CC_DRAW_CONTEXT& context) {
 }
 
 void ccImage::setAlpha(float value) {
-    if (value <= 0)
-        m_texAlpha = 0;
-    else if (value > 1.0f)
-        m_texAlpha = 1.0f;
-    else
-        m_texAlpha = value;
+    const float clamped = value <= 0.0f ? 0.0f : (value > 1.0f ? 1.0f : value);
+    if (m_texAlpha == clamped) {
+        return;
+    }
+    m_texAlpha = clamped;
+    setRedraw(true);
+}
+
+ccBBox ccImage::getOwnBB(bool withGLFeatures /*=false*/) {
+    Q_UNUSED(withGLFeatures);
+    if (m_width == 0 || m_height == 0) {
+        return ccBBox();
+    }
+    ccBBox box;
+    box.add(CCVector3(0, 0, 0));
+    box.add(CCVector3(static_cast<PointCoordinateType>(m_width - 1),
+                      static_cast<PointCoordinateType>(m_height - 1), 0));
+    return box;
 }
 
 void ccImage::setAssociatedSensor(ccCameraSensor* sensor) {
@@ -179,19 +196,28 @@ bool ccImage::fromFile_MeOnly(QFile& in,
     return true;
 }
 
-// --- DA3 depth estimation ---
+#ifdef AICore_ENABLED
+namespace {
 
-#ifdef DA3_ENABLED
-#include "da_capi.h"
-#include <QDir>
-#include <QTemporaryFile>
-#include <cstring>
+void copyDepthResult(const aicore::depth::ImageDepthResult& src,
+                     ccImage::DepthResult& out) {
+    out.width = src.width;
+    out.height = src.height;
+    out.depth = src.depth;
+    out.confidence = src.confidence;
+    out.has_pose = src.has_pose;
+    std::memcpy(out.extrinsics, src.extrinsics, sizeof(out.extrinsics));
+    std::memcpy(out.intrinsics, src.intrinsics, sizeof(out.intrinsics));
+}
+
+}  // namespace
 #endif
 
-bool ccImage::estimateDepth(const QString& model_path, int n_threads,
+bool ccImage::estimateDepth(const QString& model_path,
+                            int n_threads,
                             DepthResult& out,
                             const QString& metric_model_path) const {
-#ifndef DA3_ENABLED
+#ifndef AICore_ENABLED
     Q_UNUSED(model_path);
     Q_UNUSED(n_threads);
     Q_UNUSED(out);
@@ -200,41 +226,21 @@ bool ccImage::estimateDepth(const QString& model_path, int n_threads,
 #else
     if (m_image.isNull()) return false;
 
-    QTemporaryFile tmp;
-    tmp.setFileTemplate(QDir::tempPath() + "/ccImage_XXXXXX.png");
-    if (!tmp.open()) return false;
-    m_image.save(&tmp, "PNG");
-    tmp.close();
-
-    const int threads = n_threads > 0 ? n_threads : 1;
-    da_ctx* ctx = metric_model_path.isEmpty()
-        ? da_capi_load(model_path.toStdString().c_str(), threads)
-        : da_capi_load_nested(model_path.toStdString().c_str(),
-                              metric_model_path.toStdString().c_str(), threads);
-    if (!ctx) return false;
-
-    int h = 0, w = 0;
-    float* depth = da_capi_depth_path(ctx, tmp.fileName().toStdString().c_str(),
-                                      &h, &w);
-    if (!depth) {
-        da_capi_free(ctx);
+    aicore::depth::ImageDepthResult result;
+    if (!aicore::depth::ImageDepth::estimateDepth(
+                m_image, model_path, n_threads, result, metric_model_path)) {
         return false;
     }
-
-    out.width = w;
-    out.height = h;
-    out.depth.assign(depth, depth + h * w);
-    out.has_pose = false;
-    da_capi_free_floats(depth);
-    da_capi_free(ctx);
+    copyDepthResult(result, out);
     return true;
 #endif
 }
 
-bool ccImage::estimateDepthAndPose(const QString& model_path, int n_threads,
+bool ccImage::estimateDepthAndPose(const QString& model_path,
+                                   int n_threads,
                                    DepthResult& out,
                                    const QString& metric_model_path) const {
-#ifndef DA3_ENABLED
+#ifndef AICore_ENABLED
     Q_UNUSED(model_path);
     Q_UNUSED(n_threads);
     Q_UNUSED(out);
@@ -243,56 +249,19 @@ bool ccImage::estimateDepthAndPose(const QString& model_path, int n_threads,
 #else
     if (m_image.isNull()) return false;
 
-    QTemporaryFile tmp;
-    tmp.setFileTemplate(QDir::tempPath() + "/ccImage_XXXXXX.png");
-    if (!tmp.open()) return false;
-    m_image.save(&tmp, "PNG");
-    tmp.close();
-
-    const int threads = n_threads > 0 ? n_threads : 1;
-    da_ctx* ctx = metric_model_path.isEmpty()
-        ? da_capi_load(model_path.toStdString().c_str(), threads)
-        : da_capi_load_nested(model_path.toStdString().c_str(),
-                              metric_model_path.toStdString().c_str(), threads);
-    if (!ctx) return false;
-
-    int h = 0, w = 0, is_metric = 0;
-    float* depth_ptr = nullptr;
-    float* conf_ptr = nullptr;
-    float* sky_ptr = nullptr;
-    float ext[12] = {}, intr[9] = {};
-
-    int ret = da_capi_depth_dense(ctx,
-                                  tmp.fileName().toStdString().c_str(),
-                                  &h, &w, &depth_ptr, &conf_ptr, &sky_ptr,
-                                  ext, intr, &is_metric);
-    if (ret != 0 || !depth_ptr) {
-        da_capi_free(ctx);
+    aicore::depth::ImageDepthResult result;
+    if (!aicore::depth::ImageDepth::estimateDepthAndPose(
+                m_image, model_path, n_threads, result, metric_model_path)) {
         return false;
     }
-
-    out.width = w;
-    out.height = h;
-    out.depth.assign(depth_ptr, depth_ptr + h * w);
-    if (conf_ptr) {
-        out.confidence.assign(conf_ptr, conf_ptr + h * w);
-        da_capi_free_floats(conf_ptr);
-    }
-    if (sky_ptr) da_capi_free_floats(sky_ptr);
-
-    out.has_pose = true;
-    std::memcpy(out.extrinsics, ext, sizeof(ext));
-    std::memcpy(out.intrinsics, intr, sizeof(intr));
-
-    da_capi_free_floats(depth_ptr);
-    da_capi_free(ctx);
+    copyDepthResult(result, out);
     return true;
 #endif
 }
 
-bool ccImage::isDA3Available() {
-#ifdef DA3_ENABLED
-    return true;
+bool ccImage::isAICoreAvailable() {
+#ifdef AICore_ENABLED
+    return aicore::depth::ImageDepth::isAvailable();
 #else
     return false;
 #endif

@@ -1,0 +1,25 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "FreeSplatter 3D Reconstruction",
+  "icon": ":/CC/plugin/qFreeSplatter/images/qFreeSplatter.svg",
+  "description": "FreeSplatter 3D Gaussian Splatting plugin using ggml inference. Turns plain photos into 3D Gaussians without camera poses or Python. Supports multi-view reconstruction, pose recovery, and PLY export for SIBR visualization.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "FreeSplatter: https://github.com/TencentARC/FreeSplatter"
+    },
+    {
+      "text": "free-splatter.cpp: https://github.com/LocalAI-io/free-splatter.cpp"
+    }
+  ]
+}

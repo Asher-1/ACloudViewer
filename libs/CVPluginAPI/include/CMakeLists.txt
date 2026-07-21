@@ -11,6 +11,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvPersistentSettings.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingHub.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingListener.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvPluginDbNaming.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvQtHelpers.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderToFileDlg.h
 )

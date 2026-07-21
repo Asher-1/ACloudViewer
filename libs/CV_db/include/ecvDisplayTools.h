@@ -788,8 +788,10 @@ public:  // Main 3D layer drawing methods
             dt->setObjectLightIntensity(viewID, intensity);
         UpdateScreen();
     }
-    inline void setObjectLightIntensity(const QString& /*viewID*/,
-                                        double /*intensity*/) override {}
+    inline void setObjectLightIntensity(
+            const QString& /*viewID*/,
+            double /*intensity*/,
+            bool /*triggerRender*/ = true) override {}
 
     /// Get light intensity for a specific object
     /// @param viewID The view ID of the target object

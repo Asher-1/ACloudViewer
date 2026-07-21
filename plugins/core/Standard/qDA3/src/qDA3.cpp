@@ -1,24 +1,36 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "qDA3.h"
 
+#ifdef AICore_ENABLED
+#include "aicore/depth_capi.h"
+#endif
+
+#include <ecvGLMatrix.h>
+#include <ecvImage.h>
+#include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
-#include <ecvImage.h>
-#include <ecvGLMatrix.h>
 
 #include <QAction>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QMainWindow>
 #include <QMessageBox>
-
 #include <algorithm>
 #include <cmath>
 
 qDA3::qDA3(QObject* parent)
-    : QObject(parent)
-    , ccStdPluginInterface(":/CC/plugin/qDA3/info.json") {
+    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qDA3/info.json") {
     m_action = new QAction("DA3 Depth Estimation", this);
-    m_action->setToolTip("Depth Anything V3 — monocular depth, pose, 3D reconstruction");
+    m_action->setToolTip(
+            "Depth Anything V3 — monocular depth, pose, 3D reconstruction");
     m_action->setIcon(QIcon(":/CC/plugin/qDA3/images/qDA3.svg"));
     connect(m_action, &QAction::triggered, this, &qDA3::showDialog);
 }
@@ -27,9 +39,7 @@ void qDA3::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;
 }
 
-QList<QAction*> qDA3::getActions() {
-    return { m_action };
-}
+QList<QAction*> qDA3::getActions() { return {m_action}; }
 
 void qDA3::refreshDbImages() {
     if (!m_app || !m_dialog) return;
@@ -65,17 +75,39 @@ ccImage* qDA3::findDbImage(const QString& name) const {
     return nullptr;
 }
 
+bool qDA3::warmupInferenceBackend(const QString& device,
+                                  QString* logMsg) const {
+#ifdef AICore_ENABLED
+    const QByteArray dev =
+            device.isEmpty() ? QByteArray("auto") : device.toUtf8();
+    if (aicore_depth_warmup_backend(dev.constData()) != 0) {
+        if (logMsg) {
+            *logMsg =
+                    tr("[Warning] GPU backend warmup failed — worker will "
+                       "retry (try CPU if it crashes).");
+        }
+        return false;
+    }
+    return true;
+#else
+    (void)device;
+    (void)logMsg;
+    return false;
+#endif
+}
+
 void qDA3::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new DA3Dialog(m_app->getMainWindow());
         connect(m_dialog, &DA3Dialog::runRequested, this, &qDA3::executeTask);
         connect(m_dialog, &DA3Dialog::cancelRequested, this, &qDA3::cancelTask);
-        connect(m_dialog, &DA3Dialog::exportDepthRequested, this, &qDA3::exportDepthMap);
-        connect(m_dialog, &DA3Dialog::exportAllDepthsRequested, this, &qDA3::exportAllDepthMaps);
-        connect(m_dialog, &DA3Dialog::refreshDbImagesRequested, this, [this]() {
-            refreshDbImages();
-        });
+        connect(m_dialog, &DA3Dialog::exportDepthRequested, this,
+                &qDA3::exportDepthMap);
+        connect(m_dialog, &DA3Dialog::exportAllDepthsRequested, this,
+                &qDA3::exportAllDepthMaps);
+        connect(m_dialog, &DA3Dialog::refreshDbImagesRequested, this,
+                [this]() { refreshDbImages(); });
     }
     refreshDbImages();
     m_dialog->show();
@@ -88,6 +120,16 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         QMessageBox::warning(m_dialog, "DA3", "A task is already running.");
         return;
     }
+    if (m_worker) {
+        m_worker->disconnect(this);
+        m_worker->disconnect(m_dialog);
+        m_worker->deleteLater();
+        m_worker = nullptr;
+    }
+
+    m_hasDepthResult = false;
+    m_allDepthResults.clear();
+    m_lastDepthResult = {};
 
     DA3Dialog::Settings resolvedSettings = settings;
 
@@ -99,21 +141,18 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
             QString tmpPath = tmpDir + "/" + settings.dbImageName + ".png";
             if (img->data().save(tmpPath)) {
                 resolvedSettings.inputPaths = QStringList() << tmpPath;
-                m_dialog->appendLog(
-                        tr("[DA3] Using DB image: %1 (%2x%3)")
-                                .arg(settings.dbImageName)
-                                .arg(img->getW())
-                                .arg(img->getH()));
+                m_dialog->appendLog(tr("[DA3] Using DB image: %1 (%2x%3)")
+                                            .arg(settings.dbImageName)
+                                            .arg(img->getW())
+                                            .arg(img->getH()));
             } else {
-                m_dialog->appendLog(
-                        tr("[Error] Failed to export DB image: %1")
-                                .arg(settings.dbImageName));
+                m_dialog->appendLog(tr("[Error] Failed to export DB image: %1")
+                                            .arg(settings.dbImageName));
                 return;
             }
         } else {
-            m_dialog->appendLog(
-                    tr("[Error] DB image not found or empty: %1")
-                            .arg(settings.dbImageName));
+            m_dialog->appendLog(tr("[Error] DB image not found or empty: %1")
+                                        .arg(settings.dbImageName));
             return;
         }
     }
@@ -124,8 +163,25 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         return;
     }
 
+    if (!resolvedSettings.modelPath.isEmpty() &&
+        resolvedSettings.mode != DA3Dialog::Mode::Quantize &&
+        !QFile::exists(resolvedSettings.modelPath)) {
+        m_dialog->appendLog(tr("[Error] Model file not found: %1\n"
+                               "Use Download on the model combo or pick a "
+                               "valid custom GGUF.")
+                                    .arg(resolvedSettings.modelPath));
+        return;
+    }
+
+    if (!resolvedSettings.metricModelPath.isEmpty() &&
+        !QFile::exists(resolvedSettings.metricModelPath)) {
+        m_dialog->appendLog(tr("[Error] Metric model file not found: %1")
+                                    .arg(resolvedSettings.metricModelPath));
+        return;
+    }
+
     bool needsInput = (resolvedSettings.mode != DA3Dialog::Mode::Quantize &&
-                        resolvedSettings.mode != DA3Dialog::Mode::ModelInfo);
+                       resolvedSettings.mode != DA3Dialog::Mode::ModelInfo);
     if (needsInput && resolvedSettings.inputPaths.isEmpty()) {
         m_dialog->appendLog(
                 "[Error] No input image selected. Use 'Browse...' to select "
@@ -133,12 +189,34 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         return;
     }
 
+    QString warmupMsg;
+    QString workerDevice = resolvedSettings.device;
+    const auto isGpuDevice = [](const QString& device) {
+        const QString d = device.trimmed().toLower();
+        return d.isEmpty() || d == QLatin1String("auto") ||
+               d == QLatin1String("gpu") || d == QLatin1String("cuda") ||
+               d == QLatin1String("vulkan") || d == QLatin1String("opencl");
+    };
+    if (!warmupInferenceBackend(resolvedSettings.device, &warmupMsg)) {
+        if (!warmupMsg.isEmpty()) {
+            m_dialog->appendLog(warmupMsg);
+        }
+        if (isGpuDevice(workerDevice)) {
+            workerDevice = QStringLiteral("cpu");
+            m_dialog->appendLog(tr(
+                    "[DA3] GPU backend unavailable — using CPU for this run."));
+        }
+    } else {
+        m_dialog->appendLog(tr("[DA3] Inference backend ready on UI thread."));
+    }
+    resolvedSettings.device = workerDevice;
+
     m_currentSettings = resolvedSettings;
-    m_hasDepthResult = false;
-    m_allDepthResults.clear();
+    m_dialog->enableExportButtons(false);
     m_worker = new DA3Worker(resolvedSettings, this);
     connect(m_worker, &DA3Worker::logMessage, m_dialog, &DA3Dialog::appendLog);
-    connect(m_worker, &DA3Worker::progressUpdate, m_dialog, &DA3Dialog::setProgress);
+    connect(m_worker, &DA3Worker::progressUpdate, m_dialog,
+            &DA3Dialog::setProgress);
     connect(m_worker, &DA3Worker::depthResultReady, this, &qDA3::onDepthResult);
     connect(m_worker, &DA3Worker::reconResultReady, this, &qDA3::onReconResult);
     connect(m_worker, &DA3Worker::modelInfoReady, this, &qDA3::onModelInfo);
@@ -156,8 +234,10 @@ void qDA3::cancelTask() {
     }
 }
 
-static QImage depthToGrayscaleImage(const QVector<float>& depth, int W, int H,
-                                     bool invert = true) {
+static QImage depthToGrayscaleImage(const QVector<float>& depth,
+                                    int W,
+                                    int H,
+                                    bool invert = true) {
     if (depth.isEmpty() || W <= 0 || H <= 0) return {};
     float dmin = *std::min_element(depth.begin(), depth.end());
     float dmax = *std::max_element(depth.begin(), depth.end());
@@ -176,6 +256,37 @@ static QImage depthToGrayscaleImage(const QVector<float>& depth, int W, int H,
     return img;
 }
 
+namespace {
+
+QString da3ModeTag(DA3Dialog::Mode mode) {
+    switch (mode) {
+        case DA3Dialog::Mode::DepthSingle:
+            return QStringLiteral("Depth");
+        case DA3Dialog::Mode::DepthPose:
+            return QStringLiteral("DepthPose");
+        case DA3Dialog::Mode::DepthMultiView:
+            return QStringLiteral("DepthMV");
+        case DA3Dialog::Mode::Reconstruct:
+            return QStringLiteral("Recon");
+        default:
+            return QStringLiteral("Run");
+    }
+}
+
+QString buildDa3ExportBaseName(const DA3Dialog::Settings& settings,
+                               const QString& entityKind,
+                               const QString& sourceName) {
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
+    const QString modeTag = da3ModeTag(settings.mode);
+    QString source = ecvPluginDbNaming::sanitizeSegment(sourceName);
+    if (source.isEmpty()) source = QStringLiteral("run");
+    return QStringLiteral("DA3_%1_%2_%3_%4")
+            .arg(modelTag, modeTag, entityKind, source);
+}
+
+}  // namespace
+
 void qDA3::onDepthResult(const DA3DepthResult& result) {
     if (!m_app) return;
 
@@ -192,8 +303,11 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     const int sampledH = (H + step - 1) / step;
     const int N = sampledW * sampledH;
 
-    auto* cloud = new ccPointCloud(
-        QString("DA3_Depth_%1").arg(result.sourceName));
+    const QString cloudBase = buildDa3ExportBaseName(
+            m_currentSettings, QStringLiteral("Cloud"), result.sourceName);
+    const QString cloudName = ecvPluginDbNaming::makeUnique(cloudBase, m_app);
+
+    auto* cloud = new ccPointCloud(cloudName);
 
     if (!cloud->reserve(static_cast<unsigned>(N))) {
         m_dialog->appendLog("[Error] Failed to allocate point cloud.");
@@ -209,8 +323,8 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
                    confSF->reserveSafe(static_cast<unsigned>(N));
 
     float fx = 1.0f, fy = 1.0f, cx = 0.0f, cy = 0.0f;
-    float R[9] = {1,0,0, 0,1,0, 0,0,1};
-    float t[3] = {0,0,0};
+    float R[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    float t[3] = {0, 0, 0};
 
     if (unproject) {
         fx = result.intrinsics[0];
@@ -222,7 +336,7 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
             R[i * 3 + 0] = result.extrinsics[i * 4 + 0];
             R[i * 3 + 1] = result.extrinsics[i * 4 + 1];
             R[i * 3 + 2] = result.extrinsics[i * 4 + 2];
-            t[i]         = result.extrinsics[i * 4 + 3];
+            t[i] = result.extrinsics[i * 4 + 3];
         }
     }
 
@@ -245,28 +359,27 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
                 float yc = (static_cast<float>(y) - cy) * d / fy;
                 float zc = d;
 
-                float xw = R[0]*xc + R[1]*yc + R[2]*zc + t[0];
-                float yw = R[3]*xc + R[4]*yc + R[5]*zc + t[1];
-                float zw = R[6]*xc + R[7]*yc + R[8]*zc + t[2];
+                float xw = R[0] * xc + R[1] * yc + R[2] * zc + t[0];
+                float yw = R[3] * xc + R[4] * yc + R[5] * zc + t[1];
+                float zw = R[6] * xc + R[7] * yc + R[8] * zc + t[2];
 
-                cloud->addPoint(CCVector3(
-                    static_cast<PointCoordinateType>(xw),
-                    static_cast<PointCoordinateType>(-yw),
-                    static_cast<PointCoordinateType>(-zw)));
+                cloud->addPoint(
+                        CCVector3(static_cast<PointCoordinateType>(xw),
+                                  static_cast<PointCoordinateType>(-yw),
+                                  static_cast<PointCoordinateType>(-zw)));
             } else {
                 float z = (d - dmin) / drange;
                 cloud->addPoint(CCVector3(
-                    static_cast<PointCoordinateType>(x),
-                    static_cast<PointCoordinateType>(H - 1 - y),
-                    static_cast<PointCoordinateType>(z * 100.0f)));
+                        static_cast<PointCoordinateType>(x),
+                        static_cast<PointCoordinateType>(H - 1 - y),
+                        static_cast<PointCoordinateType>(z * 100.0f)));
             }
 
-            if (hasSF)
-                depthSF->addElement(static_cast<ScalarType>(d));
+            if (hasSF) depthSF->addElement(static_cast<ScalarType>(d));
 
             if (hasConf)
                 confSF->addElement(
-                    static_cast<ScalarType>(result.confidence[y * W + x]));
+                        static_cast<ScalarType>(result.confidence[y * W + x]));
         }
     }
 
@@ -296,9 +409,9 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
         ccGLMatrix poseMatrix;
         float* mat = poseMatrix.data();
         for (int r = 0; r < 3; ++r) {
-            mat[r]      = result.extrinsics[r * 4 + 0];
-            mat[4 + r]  = result.extrinsics[r * 4 + 1];
-            mat[8 + r]  = result.extrinsics[r * 4 + 2];
+            mat[r] = result.extrinsics[r * 4 + 0];
+            mat[4 + r] = result.extrinsics[r * 4 + 1];
+            mat[8 + r] = result.extrinsics[r * 4 + 2];
             mat[12 + r] = result.extrinsics[r * 4 + 3];
         }
         mat[3] = mat[7] = mat[11] = 0.0f;
@@ -309,9 +422,15 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     cloud->setVisible(true);
     cloud->setEnabled(true);
 
-    auto* depthImage = new ccImage(
-        depthToGrayscaleImage(result.depth, W, H, m_currentSettings.invertDepth),
-        QString("DA3_DepthMap_%1").arg(result.sourceName));
+    const QString depthMapBase = buildDa3ExportBaseName(
+            m_currentSettings, QStringLiteral("DepthMap"), result.sourceName);
+    const QString depthMapName =
+            ecvPluginDbNaming::makeUnique(depthMapBase, m_app);
+
+    auto* depthImage =
+            new ccImage(depthToGrayscaleImage(result.depth, W, H,
+                                              m_currentSettings.invertDepth),
+                        depthMapName);
     depthImage->setVisible(true);
     depthImage->setEnabled(true);
 
@@ -319,17 +438,25 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     m_app->addToDB(depthImage);
 
     QString modeStr = unproject ? "3D unprojected" : "2D grid";
-    m_dialog->appendLog(
-        QString("[DA3] Depth cloud '%1' + depth image added (%2x%3 step=%4, %5 pts, %6)")
-            .arg(cloud->getName()).arg(W).arg(H).arg(step).arg(N).arg(modeStr));
+    m_dialog->appendLog(QString("[DA3] Depth cloud '%1' + depth image added "
+                                "(%2x%3 step=%4, %5 pts, %6)")
+                                .arg(cloud->getName())
+                                .arg(W)
+                                .arg(H)
+                                .arg(step)
+                                .arg(N)
+                                .arg(modeStr));
 }
 
 void qDA3::onReconResult(const DA3ReconResult& result) {
     if (!m_app) return;
 
     const int N = result.count;
-    auto* cloud = new ccPointCloud(
-        QString("DA3_Recon_%1").arg(result.sourceName));
+    const QString reconBase = buildDa3ExportBaseName(
+            m_currentSettings, QStringLiteral("Gaussians"), result.sourceName);
+    const QString reconName = ecvPluginDbNaming::makeUnique(reconBase, m_app);
+
+    auto* cloud = new ccPointCloud(reconName);
 
     if (!cloud->reserve(static_cast<unsigned>(N))) {
         m_dialog->appendLog("[Error] Failed to allocate point cloud.");
@@ -337,22 +464,22 @@ void qDA3::onReconResult(const DA3ReconResult& result) {
         return;
     }
 
-    bool hasColors = (result.colors.size() == N * 3) &&
-                      cloud->reserveTheRGBTable();
+    bool hasColors =
+            (result.colors.size() == N * 3) && cloud->reserveTheRGBTable();
 
     for (int i = 0; i < N; ++i) {
         cloud->addPoint(CCVector3(
-            static_cast<PointCoordinateType>(result.positions[i * 3 + 0]),
-            static_cast<PointCoordinateType>(result.positions[i * 3 + 1]),
-            static_cast<PointCoordinateType>(result.positions[i * 3 + 2])));
+                static_cast<PointCoordinateType>(result.positions[i * 3 + 0]),
+                static_cast<PointCoordinateType>(result.positions[i * 3 + 1]),
+                static_cast<PointCoordinateType>(result.positions[i * 3 + 2])));
 
         if (hasColors) {
-            auto r = static_cast<ColorCompType>(
-                std::clamp(result.colors[i * 3 + 0] * 255.0f, 0.0f, 255.0f));
-            auto g = static_cast<ColorCompType>(
-                std::clamp(result.colors[i * 3 + 1] * 255.0f, 0.0f, 255.0f));
-            auto b = static_cast<ColorCompType>(
-                std::clamp(result.colors[i * 3 + 2] * 255.0f, 0.0f, 255.0f));
+            auto r = static_cast<ColorCompType>(std::clamp(
+                    result.colors[i * 3 + 0] * 255.0f, 0.0f, 255.0f));
+            auto g = static_cast<ColorCompType>(std::clamp(
+                    result.colors[i * 3 + 1] * 255.0f, 0.0f, 255.0f));
+            auto b = static_cast<ColorCompType>(std::clamp(
+                    result.colors[i * 3 + 2] * 255.0f, 0.0f, 255.0f));
             cloud->addRGBColor(r, g, b);
         }
     }
@@ -361,7 +488,8 @@ void qDA3::onReconResult(const DA3ReconResult& result) {
         auto* opacitySF = new ccScalarField("Opacity");
         if (opacitySF->reserveSafe(static_cast<unsigned>(N))) {
             for (int i = 0; i < N; ++i) {
-                opacitySF->addElement(static_cast<ScalarType>(result.opacities[i]));
+                opacitySF->addElement(
+                        static_cast<ScalarType>(result.opacities[i]));
             }
             opacitySF->computeMinAndMax();
             cloud->addScalarField(opacitySF);
@@ -375,9 +503,9 @@ void qDA3::onReconResult(const DA3ReconResult& result) {
         if (scaleSF->reserveSafe(static_cast<unsigned>(N))) {
             for (int i = 0; i < N; ++i) {
                 float s = std::sqrt(
-                    result.scales[i * 3 + 0] * result.scales[i * 3 + 0] +
-                    result.scales[i * 3 + 1] * result.scales[i * 3 + 1] +
-                    result.scales[i * 3 + 2] * result.scales[i * 3 + 2]);
+                        result.scales[i * 3 + 0] * result.scales[i * 3 + 0] +
+                        result.scales[i * 3 + 1] * result.scales[i * 3 + 1] +
+                        result.scales[i * 3 + 2] * result.scales[i * 3 + 2]);
                 scaleSF->addElement(static_cast<ScalarType>(s));
             }
             scaleSF->computeMinAndMax();
@@ -392,8 +520,10 @@ void qDA3::onReconResult(const DA3ReconResult& result) {
     cloud->setEnabled(true);
     m_app->addToDB(cloud);
 
-    m_dialog->appendLog(QString("[DA3] Reconstruction '%1' added (%2 gaussians)")
-                        .arg(cloud->getName()).arg(N));
+    m_dialog->appendLog(
+            QString("[DA3] Reconstruction '%1' added (%2 gaussians)")
+                    .arg(cloud->getName())
+                    .arg(N));
 }
 
 void qDA3::onModelInfo(const QString& info) {
@@ -401,10 +531,18 @@ void qDA3::onModelInfo(const QString& info) {
 }
 
 void qDA3::onTaskFinished(bool success) {
-    Q_UNUSED(success);
-    m_dialog->appendLog("[DA3] Task finished.");
+    if (success) {
+        m_dialog->appendLog("[DA3] Task finished.");
+        m_dialog->setProgress(100, 100);
+    } else {
+        m_dialog->appendLog("[Error] Task failed — see log above.");
+        m_dialog->setProgress(0, 100);
+        m_hasDepthResult = false;
+        m_allDepthResults.clear();
+        m_lastDepthResult = {};
+    }
     m_dialog->setRunning(false);
-    m_dialog->enableExportButtons(m_hasDepthResult);
+    m_dialog->enableExportButtons(success && m_hasDepthResult);
     if (m_worker) {
         m_worker->deleteLater();
         m_worker = nullptr;
@@ -423,8 +561,7 @@ void qDA3::onTaskFinished(bool success) {
     }
 }
 
-bool qDA3::saveDepthAsImage(const DA3DepthResult& result,
-                             const QString& path) {
+bool qDA3::saveDepthAsImage(const DA3DepthResult& result, const QString& path) {
     const int W = result.width;
     const int H = result.height;
     if (W <= 0 || H <= 0 || result.depth.isEmpty()) return false;
@@ -440,8 +577,8 @@ bool qDA3::saveDepthAsImage(const DA3DepthResult& result,
         for (int x = 0; x < W; ++x) {
             float d = depth[y * W + x];
             float norm = (d - dmin) / drange;
-            line[x] = static_cast<uchar>(
-                    std::clamp(norm * 255.0f, 0.0f, 255.0f));
+            line[x] =
+                    static_cast<uchar>(std::clamp(norm * 255.0f, 0.0f, 255.0f));
         }
     }
     return depthImg.save(path);
@@ -461,11 +598,10 @@ void qDA3::exportDepthMap() {
     if (path.isEmpty()) return;
 
     if (saveDepthAsImage(m_lastDepthResult, path)) {
-        m_dialog->appendLog(
-                QString("[DA3] Depth map saved: %1 (%2x%3)")
-                        .arg(path)
-                        .arg(m_lastDepthResult.width)
-                        .arg(m_lastDepthResult.height));
+        m_dialog->appendLog(QString("[DA3] Depth map saved: %1 (%2x%3)")
+                                    .arg(path)
+                                    .arg(m_lastDepthResult.width)
+                                    .arg(m_lastDepthResult.height));
     } else {
         m_dialog->appendLog(
                 QString("[Error] Failed to save depth map: %1").arg(path));
@@ -495,9 +631,8 @@ void qDA3::exportAllDepthMaps(const QString& outputDir) {
                     QString("[Error] Failed to save: %1").arg(path));
         }
     }
-    m_dialog->appendLog(
-            QString("[DA3] Exported %1/%2 depth maps to: %3")
-                    .arg(saved)
-                    .arg(m_allDepthResults.size())
-                    .arg(outputDir));
+    m_dialog->appendLog(QString("[DA3] Exported %1/%2 depth maps to: %3")
+                                .arg(saved)
+                                .arg(m_allDepthResults.size())
+                                .arg(outputDir));
 }

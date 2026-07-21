@@ -27,7 +27,21 @@ int AutomaticReconstruct(const std::string& workspace_path,
                          bool dense = true,
                          int num_threads = -1,
                          bool use_gpu = true,
-                         const std::string& gpu_index = "-1");
+                         const std::string& gpu_index = "-1",
+                         const std::string& sparse_mode = "colmap",
+                         const std::string& stereo_mode = "colmap",
+                         const std::string& da3_model = "base",
+                         const std::string& da3_quant = "q8_0",
+                         const std::string& da3_sparse_model = "",
+                         const std::string& da3_sparse_quant = "",
+                         const std::string& da3_stereo_model = "nested_anyview",
+                         const std::string& da3_stereo_quant = "",
+                         const std::string& da3_sparse_model_path = "",
+                         const std::string& da3_sparse_metric_model_path = "",
+                         const std::string& da3_stereo_model_path = "",
+                         const std::string& da3_stereo_metric_model_path = "",
+                         bool da3_force_recompute = false,
+                         bool da3_skip_geometric_refine = false);
 
 int BundleAdjustment(
         const std::string& input_path,

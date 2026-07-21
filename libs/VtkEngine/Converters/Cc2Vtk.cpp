@@ -139,8 +139,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
         sf_disp_range = &active_cc_sf->displayRange();
         bool range_narrowed = (sf_disp_range->start() > sf_disp_range->min() ||
                                sf_disp_range->stop() < sf_disp_range->max());
-        sf_hides_points = range_narrowed &&
-                          !active_cc_sf->areNaNValuesShownInGrey();
+        sf_hides_points =
+                range_narrowed && !active_cc_sf->areNaNValuesShownInGrey();
     }
 
     unsigned visible_count = point_count;
@@ -453,8 +453,8 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
         mesh_sf_disp = &displayed_sf->displayRange();
         bool range_narrowed = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
                                mesh_sf_disp->stop() < mesh_sf_disp->max());
-        sf_hides_faces = range_narrowed &&
-                         !displayed_sf->areNaNValuesShownInGrey();
+        sf_hides_faces =
+                range_narrowed && !displayed_sf->areNaNValuesShownInGrey();
     }
 
     const bool may_skip = vis_filter || sf_hides_faces;
@@ -816,8 +816,8 @@ bool Cc2Vtk::TextureMeshToPolyData(
         mesh_sf_disp = &displayed_sf->displayRange();
         bool range_narrowed = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
                                mesh_sf_disp->stop() < mesh_sf_disp->max());
-        sf_hides_faces = range_narrowed &&
-                         !displayed_sf->areNaNValuesShownInGrey();
+        sf_hides_faces =
+                range_narrowed && !displayed_sf->areNaNValuesShownInGrey();
     }
 
     const ccMaterialSet* materials = mesh->getMaterialSet();

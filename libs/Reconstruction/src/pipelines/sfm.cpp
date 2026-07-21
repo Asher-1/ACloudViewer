@@ -12,20 +12,35 @@
 
 namespace cloudViewer {
 
-int AutomaticReconstruct(const std::string& workspace_path,
-                         const std::string& image_path,
-                         const std::string& mask_path /*= ""*/,
-                         const std::string& vocab_tree_path /*= ""*/,
-                         const std::string& data_type /*= "individual"*/,
-                         const std::string& quality /*= "high"*/,
-                         const std::string& mesher /*= "poisson"*/,
-                         const std::string& camera_model /*= "SIMPLE_RADIAL"*/,
-                         bool single_camera /*= false*/,
-                         bool sparse /*= true*/,
-                         bool dense /*= true*/,
-                         int num_threads /*= -1*/,
-                         bool use_gpu /*= true*/,
-                         const std::string& gpu_index /*= "-1"*/) {
+int AutomaticReconstruct(
+        const std::string& workspace_path,
+        const std::string& image_path,
+        const std::string& mask_path /*= ""*/,
+        const std::string& vocab_tree_path /*= ""*/,
+        const std::string& data_type /*= "individual"*/,
+        const std::string& quality /*= "high"*/,
+        const std::string& mesher /*= "poisson"*/,
+        const std::string& camera_model /*= "SIMPLE_RADIAL"*/,
+        bool single_camera /*= false*/,
+        bool sparse /*= true*/,
+        bool dense /*= true*/,
+        int num_threads /*= -1*/,
+        bool use_gpu /*= true*/,
+        const std::string& gpu_index /*= "-1"*/,
+        const std::string& sparse_mode /*= "colmap"*/,
+        const std::string& stereo_mode /*= "colmap"*/,
+        const std::string& da3_model /*= "base"*/,
+        const std::string& da3_quant /*= "q8_0"*/,
+        const std::string& da3_sparse_model /*= ""*/,
+        const std::string& da3_sparse_quant /*= ""*/,
+        const std::string& da3_stereo_model /*= "nested_anyview"*/,
+        const std::string& da3_stereo_quant /*= ""*/,
+        const std::string& da3_sparse_model_path /*= ""*/,
+        const std::string& da3_sparse_metric_model_path /*= ""*/,
+        const std::string& da3_stereo_model_path /*= ""*/,
+        const std::string& da3_stereo_metric_model_path /*= ""*/,
+        bool da3_force_recompute /*= false*/,
+        bool da3_skip_geometric_refine /*= false*/) {
 #ifdef CUDA_ENABLED
     dense = true;
 #else
@@ -49,6 +64,23 @@ int AutomaticReconstruct(const std::string& workspace_path,
     parser.registerOption("num_threads", &num_threads);
     parser.registerOption("use_gpu", &use_gpu);
     parser.registerOption("gpu_index", &gpu_index);
+    parser.registerOption("sparse_mode", &sparse_mode);
+    parser.registerOption("stereo_mode", &stereo_mode);
+    parser.registerOption("da3_model", &da3_model);
+    parser.registerOption("da3_quant", &da3_quant);
+    parser.registerOption("da3_sparse_model", &da3_sparse_model);
+    parser.registerOption("da3_sparse_quant", &da3_sparse_quant);
+    parser.registerOption("da3_stereo_model", &da3_stereo_model);
+    parser.registerOption("da3_stereo_quant", &da3_stereo_quant);
+    parser.registerOption("da3_sparse_model_path", &da3_sparse_model_path);
+    parser.registerOption("da3_sparse_metric_model_path",
+                          &da3_sparse_metric_model_path);
+    parser.registerOption("da3_stereo_model_path", &da3_stereo_model_path);
+    parser.registerOption("da3_stereo_metric_model_path",
+                          &da3_stereo_metric_model_path);
+    parser.registerOption("da3_force_recompute", &da3_force_recompute);
+    parser.registerOption("da3_skip_geometric_refine",
+                          &da3_skip_geometric_refine);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunAutomaticReconstructor(parser.getArgc(),

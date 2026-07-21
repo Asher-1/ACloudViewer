@@ -7,21 +7,22 @@
 
 #include "AutomaticReconstructionWidget.h"
 
+#include <ecvImage.h>
 #include <ecvPointCloud.h>
 
 #include <QApplication>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QShowEvent>
-
 #include <filesystem>
+#include <set>
 
 #include "MainWindow.h"
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
 #include "controllers/da3_depth_controller.h"
-#include "ui/da3_reconstruction_ui_bindings.h"
 #include "retrieval/resources.h"
+#include "ui/da3_reconstruction_ui_bindings.h"
 #include "util/download.h"
 
 namespace cloudViewer {
@@ -75,7 +76,8 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddOptionBool(&options_.single_camera, "Shared intrinsics");
     AddOptionBool(&options_.sparse, "Sparse model");
     dense_cb_ = AddOptionBool(&options_.dense, "Dense model");
-    AddOptionBool(&options_.texturing, "Mesh texturing");
+    meshing_cb_ = AddOptionBool(&options_.meshing, "Surface meshing");
+    texturing_cb_ = AddOptionBool(&options_.texturing, "Mesh texturing");
     AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
     QLabel* mesher_label = new QLabel(tr("Mesher"), this);
@@ -89,6 +91,19 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     mesher_cb_->setCurrentIndex(0);
     grid_layout_->addWidget(mesher_cb_, grid_layout_->rowCount() - 1, 1);
 
+    connect(meshing_cb_, &QCheckBox::toggled, mesher_cb_, &QWidget::setEnabled);
+    connect(meshing_cb_, &QCheckBox::toggled, texturing_cb_,
+            [this](bool meshing_enabled) {
+                texturing_cb_->setEnabled(meshing_enabled);
+                if (!meshing_enabled) {
+                    texturing_cb_->blockSignals(true);
+                    texturing_cb_->setChecked(false);
+                    texturing_cb_->blockSignals(false);
+                }
+            });
+    mesher_cb_->setEnabled(meshing_cb_->isChecked());
+    texturing_cb_->setEnabled(meshing_cb_->isChecked());
+
     AddSpacer();
 
     // --- DA3 (Depth Anything V3) options ---
@@ -98,10 +113,17 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     grid_layout_->addWidget(sparse_mode_label, grid_layout_->rowCount(), 0);
 
     sparse_mode_cb_ = new QComboBox(this);
-    sparse_mode_cb_->addItem("COLMAP (native SfM)");
-    sparse_mode_cb_->addItem("DA3 (depth+pose)");
-    sparse_mode_cb_->setCurrentIndex(0);
+    colmap::DA3ReconstructionUiBindings::InitSparseModeComboBox(
+            sparse_mode_cb_);
     grid_layout_->addWidget(sparse_mode_cb_, grid_layout_->rowCount() - 1, 1);
+
+    da3_hybrid_hint_label_ = new QLabel(this);
+    da3_hybrid_hint_label_->setWordWrap(true);
+    da3_hybrid_hint_label_->setStyleSheet(
+            "color: palette(mid); font-size: 11px;");
+    da3_hybrid_hint_label_->hide();
+    grid_layout_->addWidget(da3_hybrid_hint_label_, grid_layout_->rowCount(),
+                            1);
 
     QLabel* stereo_mode_label = new QLabel(tr("Stereo mode"), this);
     stereo_mode_label->setFont(font());
@@ -109,46 +131,144 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     grid_layout_->addWidget(stereo_mode_label, grid_layout_->rowCount(), 0);
 
     stereo_mode_cb_ = new QComboBox(this);
-    colmap::DA3ReconstructionUiBindings::InitStereoComboBox(stereo_mode_cb_);
+    colmap::DA3ReconstructionUiBindings::InitStereoModeComboBox(
+            stereo_mode_cb_);
     grid_layout_->addWidget(stereo_mode_cb_, grid_layout_->rowCount() - 1, 1);
 
-    QLabel* da3_model_label = new QLabel(tr("DA3 model"), this);
-    da3_model_label->setFont(font());
-    da3_model_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    grid_layout_->addWidget(da3_model_label, grid_layout_->rowCount(), 0);
+    da3_sparse_model_label_ = new QLabel(tr("DA3 sparse model"), this);
+    da3_sparse_model_label_->setFont(font());
+    da3_sparse_model_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_sparse_model_label_, grid_layout_->rowCount(),
+                            0);
 
-    da3_model_cb_ = new QComboBox(this);
-    da3_model_cb_->addItem("Base (ViT-S, fastest)");
-    da3_model_cb_->addItem("Large (ViT-L)");
-    da3_model_cb_->addItem("Giant (ViT-G, best quality)");
-    da3_model_cb_->addItem("Nested Metric");
-    da3_model_cb_->addItem("Nested AnyView");
-    da3_model_cb_->setCurrentIndex(0);
-    grid_layout_->addWidget(da3_model_cb_, grid_layout_->rowCount() - 1, 1);
+    da3_sparse_model_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitSparseModelComboBox(
+            da3_sparse_model_cb_);
+    grid_layout_->addWidget(da3_sparse_model_cb_, grid_layout_->rowCount() - 1,
+                            1);
 
-    QLabel* da3_quant_label = new QLabel(tr("DA3 quantization"), this);
-    da3_quant_label->setFont(font());
-    da3_quant_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    grid_layout_->addWidget(da3_quant_label, grid_layout_->rowCount(), 0);
+    da3_sparse_quant_label_ = new QLabel(tr("DA3 sparse quant"), this);
+    da3_sparse_quant_label_->setFont(font());
+    da3_sparse_quant_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_sparse_quant_label_, grid_layout_->rowCount(),
+                            0);
 
-    da3_quant_cb_ = new QComboBox(this);
-    grid_layout_->addWidget(da3_quant_cb_, grid_layout_->rowCount() - 1, 1);
+    da3_sparse_quant_cb_ = new QComboBox(this);
+    grid_layout_->addWidget(da3_sparse_quant_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_stereo_model_label_ = new QLabel(tr("DA3 stereo model"), this);
+    da3_stereo_model_label_->setFont(font());
+    da3_stereo_model_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_stereo_model_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_stereo_model_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitStereoModelComboBox(
+            da3_stereo_model_cb_);
+    grid_layout_->addWidget(da3_stereo_model_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_stereo_quant_label_ = new QLabel(tr("DA3 stereo quant"), this);
+    da3_stereo_quant_label_->setFont(font());
+    da3_stereo_quant_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_stereo_quant_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_stereo_quant_cb_ = new QComboBox(this);
+    grid_layout_->addWidget(da3_stereo_quant_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_ui_controls_.da3_force_recompute_label =
+            new QLabel(tr("DA3 force recompute"), this);
+    da3_ui_controls_.da3_force_recompute_label->setFont(font());
+    da3_ui_controls_.da3_force_recompute_label->setAlignment(Qt::AlignRight |
+                                                             Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_ui_controls_.da3_force_recompute_label,
+                            grid_layout_->rowCount(), 0);
+
+    da3_ui_controls_.da3_force_recompute_cb =
+            new QCheckBox(tr("Ignore cached sparse/stereo outputs"), this);
+    grid_layout_->addWidget(da3_ui_controls_.da3_force_recompute_cb,
+                            grid_layout_->rowCount() - 1, 1);
+
+    da3_ui_controls_.da3_skip_geometric_refine_label =
+            new QLabel(tr("Skip geometric refine"), this);
+    da3_ui_controls_.da3_skip_geometric_refine_label->setFont(font());
+    da3_ui_controls_.da3_skip_geometric_refine_label->setAlignment(
+            Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_ui_controls_.da3_skip_geometric_refine_label,
+                            grid_layout_->rowCount(), 0);
+
+    da3_ui_controls_.da3_skip_geometric_refine_cb = new QCheckBox(
+            tr("Fuse DA3 priors directly (auto-fallback if sparse)"), this);
+    grid_layout_->addWidget(da3_ui_controls_.da3_skip_geometric_refine_cb,
+                            grid_layout_->rowCount() - 1, 1);
 
     da3_ui_controls_.sparse_mode_cb = sparse_mode_cb_;
     da3_ui_controls_.stereo_mode_cb = stereo_mode_cb_;
-    da3_ui_controls_.da3_model_cb = da3_model_cb_;
-    da3_ui_controls_.da3_quant_cb = da3_quant_cb_;
+    da3_ui_controls_.da3_sparse_model_cb = da3_sparse_model_cb_;
+    da3_ui_controls_.da3_sparse_quant_cb = da3_sparse_quant_cb_;
+    da3_ui_controls_.da3_stereo_model_cb = da3_stereo_model_cb_;
+    da3_ui_controls_.da3_stereo_quant_cb = da3_stereo_quant_cb_;
+    da3_ui_controls_.da3_sparse_model_label = da3_sparse_model_label_;
+    da3_ui_controls_.da3_sparse_quant_label = da3_sparse_quant_label_;
+    da3_ui_controls_.da3_stereo_model_label = da3_stereo_model_label_;
+    da3_ui_controls_.da3_stereo_quant_label = da3_stereo_quant_label_;
+    da3_ui_controls_.da3_hybrid_hint_label = da3_hybrid_hint_label_;
     da3_ui_controls_.dense_cb = dense_cb_;
     colmap::DA3ReconstructionUiBindings::Install(da3_ui_controls_, this);
-    da3_model_cb_->setCurrentIndex(0);
 
-    AddOptionFilePath(&options_.da3_model_path, "DA3 model path<br>(optional, auto-download)");
+    AddOptionFilePath(&options_.da3_sparse_model_path,
+                      "DA3 sparse model path<br>(optional, auto-download)");
+    AddOptionFilePath(&options_.da3_stereo_model_path,
+                      "DA3 stereo model path<br>(optional, auto-download)");
 
     AddSpacer();
 
     AddOptionInt(&options_.num_threads, "num_threads", -1);
     AddOptionBool(&options_.use_gpu, "GPU");
     AddOptionText(&options_.gpu_index, "gpu_index");
+
+    fused_point_filter_label_ = new QLabel(tr("Fused point filter"), this);
+    fused_point_filter_label_->setFont(font());
+    fused_point_filter_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(fused_point_filter_label_, grid_layout_->rowCount(),
+                            0);
+
+    fused_point_filter_cb_ = new QCheckBox(
+            tr("Voxel downsample + statistical outlier removal"), this);
+    grid_layout_->addWidget(fused_point_filter_cb_,
+                            grid_layout_->rowCount() - 1, 1);
+
+    fused_voxel_size_label_ = new QLabel(tr("Fused voxel size (m)"), this);
+    fused_voxel_size_label_->setFont(font());
+    fused_voxel_size_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(fused_voxel_size_label_, grid_layout_->rowCount(),
+                            0);
+
+    fused_voxel_size_spin_ = new QDoubleSpinBox(this);
+    fused_voxel_size_spin_->setDecimals(3);
+    fused_voxel_size_spin_->setRange(0.001, 1.0);
+    fused_voxel_size_spin_->setSingleStep(0.005);
+    fused_voxel_size_spin_->setValue(0.02);
+    grid_layout_->addWidget(fused_voxel_size_spin_,
+                            grid_layout_->rowCount() - 1, 1);
+
+    connect(fused_point_filter_cb_, &QCheckBox::toggled, fused_voxel_size_spin_,
+            &QWidget::setEnabled);
+    connect(fused_point_filter_cb_, &QCheckBox::toggled,
+            fused_voxel_size_label_, &QWidget::setEnabled);
+    fused_voxel_size_spin_->setEnabled(false);
+    fused_voxel_size_label_->setEnabled(false);
+
+    da3_ui_controls_.fused_point_filter_cb = fused_point_filter_cb_;
+    da3_ui_controls_.fused_voxel_size_spin = fused_voxel_size_spin_;
+    da3_ui_controls_.fused_voxel_size_label = fused_voxel_size_label_;
+    colmap::DA3ReconstructionUiBindings::ApplyDa3FusedPointFilterDefaults(
+            da3_ui_controls_);
+
+    applyAICoreUiAvailability();
 
     AddSpacer();
 
@@ -165,18 +285,6 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
 void AutomaticReconstructionWidget::Run() {
     WriteOptions();
 
-    if (stereo_mode_cb_->currentIndex() ==
-            colmap::DA3ReconstructionUiBindings::kStereoDa3 &&
-        !colmap::DA3ModelSupportsStereo(
-            colmap::DA3ReconstructionUiBindings::ModelTypeFromIndex(
-                da3_model_cb_->currentIndex()))) {
-        QMessageBox::warning(
-            this, tr("DA3 stereo"),
-            tr("DA3 depth inference requires a Nested model (Nested AnyView or "
-               "Nested Metric). Select a nested model or use COLMAP PatchMatch."));
-        return;
-    }
-
     if (!ExistsDir(options_.workspace_path)) {
         QMessageBox::critical(this, "", tr("Invalid workspace folder"));
         return;
@@ -186,6 +294,9 @@ void AutomaticReconstructionWidget::Run() {
         QMessageBox::critical(this, "", tr("Invalid image folder"));
         return;
     }
+
+    colmap::DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(
+            da3_ui_controls_, options_.image_path);
 
     switch (data_type_cb_->currentIndex()) {
         case 0:
@@ -257,126 +368,110 @@ void AutomaticReconstructionWidget::Run() {
     // DA3 stereo pipeline mode
     switch (stereo_mode_cb_->currentIndex()) {
         case 0:
-            options_.stereo_mode = colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
             break;
         case 1:
-            options_.stereo_mode = colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE;
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE;
             break;
         default:
-            options_.stereo_mode = colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
             break;
     }
 
-    // DA3 model type
-    switch (da3_model_cb_->currentIndex()) {
-        case 0: options_.da3_model_type = colmap::DA3ModelType::BASE; break;
-        case 1: options_.da3_model_type = colmap::DA3ModelType::LARGE; break;
-        case 2: options_.da3_model_type = colmap::DA3ModelType::GIANT; break;
-        case 3: options_.da3_model_type = colmap::DA3ModelType::NESTED_METRIC; break;
-        case 4: options_.da3_model_type = colmap::DA3ModelType::NESTED_ANYVIEW; break;
-        default: options_.da3_model_type = colmap::DA3ModelType::BASE; break;
-    }
+    options_.da3_sparse_model_type =
+            colmap::DA3ReconstructionUiBindings::SparseModelTypeFromIndex(
+                    da3_sparse_model_cb_->currentIndex());
+    options_.da3_sparse_quant_type =
+            colmap::DA3ReconstructionUiBindings::QuantTypeFromComboText(
+                    da3_sparse_quant_cb_->currentText());
 
-    // DA3 quantization type — resolved by text since combobox is dynamic
-    {
-        QString qt = da3_quant_cb_->currentText();
-        if (qt.startsWith("Q4_K"))
-            options_.da3_quant_type = colmap::DA3QuantType::Q4_K;
-        else if (qt.startsWith("F16"))
-            options_.da3_quant_type = colmap::DA3QuantType::F16;
-        else if (qt.startsWith("F32"))
-            options_.da3_quant_type = colmap::DA3QuantType::F32;
-        else
-            options_.da3_quant_type = colmap::DA3QuantType::Q8_0;
-    }
+    options_.da3_stereo_model_type =
+            colmap::DA3ReconstructionUiBindings::StereoModelTypeFromIndex(
+                    da3_stereo_model_cb_->currentIndex());
+    options_.da3_stereo_quant_type =
+            colmap::DA3ReconstructionUiBindings::QuantTypeFromComboText(
+                    da3_stereo_quant_cb_->currentText());
 
-    if (options_.stereo_mode == colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+    options_.da3_force_recompute =
+            da3_ui_controls_.da3_force_recompute_cb &&
+            da3_ui_controls_.da3_force_recompute_cb->isChecked();
+    options_.da3_skip_geometric_refine =
+            da3_ui_controls_.da3_skip_geometric_refine_cb &&
+            da3_ui_controls_.da3_skip_geometric_refine_cb->isChecked();
+
+    options_.fused_point_filter.enabled =
+            fused_point_filter_cb_ && fused_point_filter_cb_->isChecked();
+    options_.fused_point_filter.voxel_size =
+            fused_voxel_size_spin_ ? fused_voxel_size_spin_->value() : 0.02;
+    options_.fused_point_filter.sor_enabled = true;
+
+    if (options_.stereo_mode ==
+                colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE &&
         options_.sparse_mode != colmap::SparseModelMode::DA3_DEPTH_POSE) {
-        QMessageBox::warning(
-            this, tr("DA3 stereo"),
-            tr("DA3 depth inference requires DA3 (depth+pose) sparse mode for "
-               "consistent camera poses. Select DA3 sparse mode or use COLMAP "
-               "PatchMatch for stereo."));
-        return;
+        QMessageBox::information(
+                this, tr("DA3 stereo"),
+                tr("DA3 depth inference works best with DA3 (depth+pose) "
+                   "sparse mode "
+                   "for consistent camera poses. Continuing with the current "
+                   "sparse/stereo model selection."));
     }
 
-    // --- DA3 model pre-check: ensure model(s) are cached before starting ---
-    bool uses_da3 = (options_.sparse_mode == colmap::SparseModelMode::DA3_DEPTH_POSE ||
-                     options_.stereo_mode == colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE);
-    if (uses_da3 && options_.da3_model_path.empty()) {
+    const bool uses_da3_sparse =
+            options_.sparse_mode == colmap::SparseModelMode::DA3_DEPTH_POSE;
+    const bool uses_da3_stereo =
+            options_.stereo_mode ==
+            colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE;
+    if (uses_da3_sparse || uses_da3_stereo) {
         std::string cache_dir = colmap::DA3ModelCacheDir();
         std::filesystem::create_directories(cache_dir);
 
-        struct ModelToCheck {
-            std::string filename;
-            std::string url;
-            std::string* dest_path;
-        };
-        std::vector<ModelToCheck> needed;
-
-        // Main model
-        std::string main_filename = colmap::DA3ModelFilename(
-                options_.da3_model_type, options_.da3_quant_type);
-        auto main_cached = std::filesystem::path(cache_dir) / main_filename;
-        if (!std::filesystem::exists(main_cached)) {
-            needed.push_back({main_filename,
-                colmap::DA3ModelDownloadURL(options_.da3_model_type, options_.da3_quant_type),
-                &options_.da3_model_path});
-        } else {
-            options_.da3_model_path = main_cached.string();
+        std::vector<colmap::DA3ModelCacheNeed> needed;
+        if (uses_da3_sparse) {
+            colmap::CollectDA3ModelCacheNeeds(
+                    cache_dir, options_.da3_sparse_model_type,
+                    options_.da3_sparse_quant_type,
+                    options_.da3_sparse_model_path,
+                    options_.da3_sparse_metric_model_path, needed);
         }
-
-        // Metric model (only for nested types)
-        bool is_nested =
-            options_.da3_model_type == colmap::DA3ModelType::NESTED_METRIC ||
-            options_.da3_model_type == colmap::DA3ModelType::NESTED_ANYVIEW;
-        if (is_nested && options_.da3_metric_model_path.empty()) {
-            std::string metric_filename = colmap::DA3ModelFilename(
-                    colmap::DA3ModelType::NESTED_METRIC, colmap::DA3QuantType::F32);
-            auto metric_cached = std::filesystem::path(cache_dir) / metric_filename;
-            if (!std::filesystem::exists(metric_cached)) {
-                needed.push_back({metric_filename,
-                    colmap::DA3ModelDownloadURL(colmap::DA3ModelType::NESTED_METRIC,
-                                               colmap::DA3QuantType::F32),
-                    &options_.da3_metric_model_path});
-            } else {
-                options_.da3_metric_model_path = metric_cached.string();
-            }
-        }
-
-        if (options_.da3_model_type == colmap::DA3ModelType::NESTED_METRIC) {
-            colmap::DA3QuantType anyview_quant = colmap::DA3QuantType::Q8_0;
-            if (colmap::DA3ModelExists(colmap::DA3ModelType::NESTED_ANYVIEW,
-                                       options_.da3_quant_type)) {
-                anyview_quant = options_.da3_quant_type;
-            }
-            const std::string anyview_filename = colmap::DA3ModelFilename(
-                    colmap::DA3ModelType::NESTED_ANYVIEW, anyview_quant);
-            const auto anyview_cached =
-                    std::filesystem::path(cache_dir) / anyview_filename;
-            if (!std::filesystem::exists(anyview_cached)) {
-                needed.push_back({anyview_filename,
-                    colmap::DA3ModelDownloadURL(
-                            colmap::DA3ModelType::NESTED_ANYVIEW, anyview_quant),
-                    nullptr});
-            }
+        if (uses_da3_stereo) {
+            colmap::CollectDA3ModelCacheNeeds(
+                    cache_dir, options_.da3_stereo_model_type,
+                    options_.da3_stereo_quant_type,
+                    options_.da3_stereo_model_path,
+                    options_.da3_stereo_metric_model_path, needed);
         }
 
         if (!needed.empty()) {
 #ifdef COLMAP_DOWNLOAD_ENABLED
             QStringList names;
-            for (const auto& m : needed)
-                names << QString::fromStdString(m.filename);
+            std::set<std::string> seen_names;
+            for (const auto& m : needed) {
+                if (seen_names.insert(m.filename).second) {
+                    names << QString::fromStdString(m.filename);
+                }
+            }
             auto answer = QMessageBox::question(
                     this, tr("Download DA3 Model(s)"),
                     tr("The following DA3 model(s) are not cached locally:\n\n"
-                       "  %1\n\nDownload them now?").arg(names.join("\n  ")),
+                       "  %1\n\nDownload them now?")
+                            .arg(names.join("\n  ")),
                     QMessageBox::Yes | QMessageBox::No);
             if (answer != QMessageBox::Yes) return;
 
             for (auto& m : needed) {
+                const auto target =
+                        std::filesystem::path(cache_dir) / m.filename;
+                if (std::filesystem::exists(target)) {
+                    if (m.dest_path) *m.dest_path = target.string();
+                    continue;
+                }
+
                 QProgressDialog progress_dialog(
-                        tr("Downloading %1...").arg(QString::fromStdString(m.filename)),
+                        tr("Downloading %1...")
+                                .arg(QString::fromStdString(m.filename)),
                         tr("Cancel"), 0, 100, this);
                 progress_dialog.setWindowModality(Qt::ApplicationModal);
                 progress_dialog.setWindowTitle(tr("Downloading DA3 Model"));
@@ -388,20 +483,24 @@ void AutomaticReconstructionWidget::Run() {
 
                 bool download_canceled = false;
                 colmap::DownloadProgressCallback progress_callback =
-                        [&progress_dialog, &download_canceled](int64_t downloaded,
-                                                               int64_t total) {
+                        [&progress_dialog, &download_canceled](
+                                int64_t downloaded, int64_t total) {
                             QApplication::processEvents();
                             if (progress_dialog.wasCanceled()) {
                                 download_canceled = true;
                                 return;
                             }
                             if (total > 0) {
-                                int percent = static_cast<int>((downloaded * 100) / total);
+                                int percent = static_cast<int>(
+                                        (downloaded * 100) / total);
                                 progress_dialog.setValue(percent);
-                                double dl_mb = static_cast<double>(downloaded) / (1024.0 * 1024.0);
-                                double tot_mb = static_cast<double>(total) / (1024.0 * 1024.0);
+                                double dl_mb = static_cast<double>(downloaded) /
+                                               (1024.0 * 1024.0);
+                                double tot_mb = static_cast<double>(total) /
+                                                (1024.0 * 1024.0);
                                 progress_dialog.setLabelText(
-                                        tr("Downloading...\n%1 MB / %2 MB (%3%)")
+                                        tr("Downloading...\n%1 MB / %2 MB "
+                                           "(%3%)")
                                                 .arg(dl_mb, 0, 'f', 1)
                                                 .arg(tot_mb, 0, 'f', 1)
                                                 .arg(percent));
@@ -415,8 +514,9 @@ void AutomaticReconstructionWidget::Run() {
                     progress_dialog.close();
 
                     if (download_canceled || downloaded_path.empty()) {
-                        QMessageBox::warning(this, tr("Download Canceled"),
-                                             tr("DA3 model download was canceled."));
+                        QMessageBox::warning(
+                                this, tr("Download Canceled"),
+                                tr("DA3 model download was canceled."));
                         return;
                     }
                     auto target = std::filesystem::path(cache_dir) / m.filename;
@@ -425,13 +525,22 @@ void AutomaticReconstructionWidget::Run() {
                         std::filesystem::rename(downloaded_path, target, ec);
                         if (ec) {
                             std::filesystem::copy_file(
-                                downloaded_path, target,
-                                std::filesystem::copy_options::overwrite_existing, ec);
-                            if (!ec) std::filesystem::remove(downloaded_path, ec);
+                                    downloaded_path, target,
+                                    std::filesystem::copy_options::
+                                            overwrite_existing,
+                                    ec);
+                            if (!ec)
+                                std::filesystem::remove(downloaded_path, ec);
                         }
                     }
                     if (m.dest_path) {
                         *m.dest_path = target.string();
+                    }
+                    for (auto& other : needed) {
+                        if (other.filename == m.filename && other.dest_path &&
+                            other.dest_path != m.dest_path) {
+                            *other.dest_path = target.string();
+                        }
                     }
                 } catch (const std::exception& e) {
                     progress_dialog.close();
@@ -450,7 +559,8 @@ void AutomaticReconstructionWidget::Run() {
             QMessageBox::warning(
                     this, tr("DA3 Model Not Found"),
                     tr("DA3 model(s) not found and download support is "
-                       "disabled:\n  %1\nPlease provide the model path manually.")
+                       "disabled:\n  %1\nPlease provide the model path "
+                       "manually.")
                             .arg(names.join("\n  ")));
             return;
 #endif
@@ -580,6 +690,19 @@ void AutomaticReconstructionWidget::Run() {
     thread_control_widget_->StartThread("Reconstructing...", true, controller);
 }
 
+void AutomaticReconstructionWidget::applyAICoreUiAvailability() {
+    const bool available = ccImage::isAICoreAvailable();
+    colmap::DA3ReconstructionUiBindings::SetAICoreAvailable(da3_ui_controls_,
+                                                            available);
+    if (available) {
+        ShowOption(&options_.da3_sparse_model_path);
+        ShowOption(&options_.da3_stereo_model_path);
+    } else {
+        HideOption(&options_.da3_sparse_model_path);
+        HideOption(&options_.da3_stereo_model_path);
+    }
+}
+
 void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // Ensure vocab_tree_path has default value before reading options
     // This ensures that even if WriteOptions() previously saved an empty value,
@@ -592,6 +715,10 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // value)
     OptionsWidget::showEvent(event);
 
+    applyAICoreUiAvailability();
+
+    colmap::DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(
+            da3_ui_controls_, options_.image_path);
     colmap::DA3ReconstructionUiBindings::Sync(da3_ui_controls_);
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
@@ -625,6 +752,12 @@ void AutomaticReconstructionWidget::RenderResult() {
     }
 
     if (options_.dense) {
+        const std::string vram_warning = DA3VramCapWarningMessage();
+        if (!vram_warning.empty()) {
+            QMessageBox::warning(
+                    this, tr("DA3 GPU memory"),
+                    tr("%1").arg(QString::fromStdString(vram_warning)));
+        }
         if (options_.autoVisualization) {
             // add dense point cloud
             if (!fused_points_.empty()) {
@@ -638,13 +771,21 @@ void AutomaticReconstructionWidget::RenderResult() {
                             new ccPointCloud(QString("%1-denseCloud").arg(i));
                     if (cloud) {
                         unsigned nPoints =
-                                static_cast<unsigned>(fused_points_.size());
+                                static_cast<unsigned>(fused_points_[i].size());
                         if (nPoints > 0 &&
                             cloud->reserveThePointsTable(nPoints)) {
                             if (cloud->reserveTheRGBTable()) {
                                 for (const auto& point : fused_points_[i]) {
-                                    cloud->addPoint(CCVector3(point.x, point.y,
-                                                              point.z));
+                                    // Keep COLMAP world coordinates — same
+                                    // frame as textured / Delaunay meshes from
+                                    // addToDBAuto().
+                                    cloud->addPoint(CCVector3(
+                                            static_cast<PointCoordinateType>(
+                                                    point.x),
+                                            static_cast<PointCoordinateType>(
+                                                    point.y),
+                                            static_cast<PointCoordinateType>(
+                                                    point.z)));
                                     cloud->addRGBColor(ecvColor::Rgb(
                                             point.r, point.g, point.b));
                                 }
