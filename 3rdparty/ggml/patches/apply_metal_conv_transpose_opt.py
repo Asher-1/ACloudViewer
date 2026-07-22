@@ -177,6 +177,23 @@ def patch_ops_dispatch(src_dir):
     return True
 
 
+def touch_metal_sources(src_dir):
+    """Touch all Metal backend source files to ensure they are recompiled.
+
+    ExternalProject may retain stale .o files from a previous build when only
+    some sources are modified by the patch step. Touching all sources forces a
+    full recompile of the Metal backend.
+    """
+    metal_dir = os.path.join(src_dir, "src", "ggml-metal")
+    if not os.path.isdir(metal_dir):
+        return
+    for fname in os.listdir(metal_dir):
+        fpath = os.path.join(metal_dir, fname)
+        if os.path.isfile(fpath) and (fname.endswith(".cpp") or fname.endswith(".m")
+                                       or fname.endswith(".h") or fname.endswith(".metal")):
+            os.utime(fpath, None)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <ggml_source_dir>")
@@ -185,4 +202,6 @@ if __name__ == "__main__":
     src_dir = sys.argv[1]
     ok1 = patch_metal_shader(src_dir)
     ok2 = patch_ops_dispatch(src_dir)
+    if ok1 or ok2:
+        touch_metal_sources(src_dir)
     sys.exit(0 if (ok1 and ok2) else 1)
