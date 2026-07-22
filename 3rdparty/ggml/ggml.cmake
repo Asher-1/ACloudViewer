@@ -31,19 +31,16 @@ set(GGML_CMAKE_ARGS
 # CPU is always built. GPU backends below are enabled when ON and dependencies are found.
 #
 # Platform defaults (override with -DGGML_USE_*=ON/OFF):
-#   Apple:     Metal ON, Vulkan ON,  OpenCL OFF (macOS OpenCL is deprecated/unusable)
+#   Apple:     Metal ON, Vulkan OFF, OpenCL OFF
 #   Linux/Win: Metal OFF, Vulkan OFF, OpenCL ON  (auto-detect when dependencies exist)
 if(APPLE)
     set(_GGML_METAL_DEFAULT ON)
-    set(_GGML_VULKAN_DEFAULT ON)
     set(_GGML_OPENCL_DEFAULT OFF)
 elseif(WIN32 OR UNIX)
     set(_GGML_METAL_DEFAULT OFF)
-    set(_GGML_VULKAN_DEFAULT OFF)
     set(_GGML_OPENCL_DEFAULT ON)
 else()
     set(_GGML_METAL_DEFAULT OFF)
-    set(_GGML_VULKAN_DEFAULT OFF)
     set(_GGML_OPENCL_DEFAULT OFF)
 endif()
 
@@ -92,8 +89,8 @@ else()
     endif()
 endif()
 
-# Vulkan backend — default ON on Apple, OFF elsewhere; auto-detect loader + glslc + SPIRV-Headers
-option(GGML_USE_VULKAN "Enable ggml Vulkan backend (default ON on Apple; auto-detect when ON)" ${_GGML_VULKAN_DEFAULT})
+# Vulkan backend (opt-in: requires Vulkan SDK + glslc + SPIRV-Headers)
+option(GGML_USE_VULKAN "Enable ggml Vulkan backend (opt-in; requires Vulkan SDK)" OFF)
 set(_GGML_VULKAN_ENABLED OFF)
 if(GGML_USE_VULKAN)
     if(DEFINED ENV{VULKAN_SDK})
@@ -103,6 +100,18 @@ if(GGML_USE_VULKAN)
     find_package(SPIRV-Headers CONFIG QUIET)
     if(Vulkan_FOUND AND Vulkan_GLSLC_EXECUTABLE AND SPIRV-Headers_FOUND)
         list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=ON)
+        if(SPIRV-Headers_DIR)
+            list(APPEND GGML_CMAKE_ARGS -DSPIRV-Headers_DIR=${SPIRV-Headers_DIR})
+        endif()
+        if(Vulkan_INCLUDE_DIR)
+            list(APPEND GGML_CMAKE_ARGS -DVulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
+        endif()
+        if(Vulkan_LIBRARY)
+            list(APPEND GGML_CMAKE_ARGS -DVulkan_LIBRARY=${Vulkan_LIBRARY})
+        endif()
+        if(Vulkan_GLSLC_EXECUTABLE)
+            list(APPEND GGML_CMAKE_ARGS -DVulkan_GLSLC_EXECUTABLE=${Vulkan_GLSLC_EXECUTABLE})
+        endif()
         set(_GGML_VULKAN_ENABLED ON)
         message(STATUS "ggml: Vulkan backend enabled (glslc=${Vulkan_GLSLC_EXECUTABLE})")
     else()
@@ -119,7 +128,6 @@ if(GGML_USE_VULKAN)
     endif()
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=OFF)
-    message(STATUS "ggml: Vulkan backend disabled (GGML_USE_VULKAN=OFF)")
 endif()
 
 # OpenCL backend — default ON on Linux/Windows, OFF on macOS; auto-detect OpenCL 3.0 + Python3
@@ -219,6 +227,11 @@ endif()
 if(_GGML_METAL_ENABLED)
     list(APPEND GGML_BUILD_BYPRODUCTS
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ggml-metal${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
+endif()
+if(GGML_USE_BLAS OR APPLE)
+    list(APPEND GGML_BUILD_BYPRODUCTS
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ggml-blas${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
 endif()
 if(_GGML_VULKAN_ENABLED)
@@ -324,6 +337,27 @@ if(_GGML_OPENCL_ENABLED)
     endif()
 endif()
 
+# BLAS / Accelerate
+if(GGML_USE_BLAS OR APPLE)
+    target_link_libraries(3rdparty_ggml INTERFACE
+        ${GGML_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ggml-blas${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
+    if(APPLE)
+        target_link_libraries(3rdparty_ggml INTERFACE "-framework Accelerate")
+    else()
+        find_package(BLAS QUIET)
+        if(BLAS_FOUND)
+            target_link_libraries(3rdparty_ggml INTERFACE ${BLAS_LIBRARIES})
+        endif()
+    endif()
+endif()
+
+# OpenMP (ggml defaults GGML_OPENMP=ON; link the runtime when available)
+find_package(OpenMP QUIET)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(3rdparty_ggml INTERFACE OpenMP::OpenMP_CXX)
+endif()
+
 # --- Platform dependencies ---
 find_package(Threads REQUIRED)
 target_link_libraries(3rdparty_ggml INTERFACE Threads::Threads)
@@ -355,9 +389,9 @@ if(_GGML_METAL_ENABLED)
     list(APPEND _GGML_BACKEND_LIST "Metal")
 endif()
 if(APPLE)
-    set(_GGML_AUTO_ORDER "Metal -> Vulkan -> CUDA -> CPU")
+    set(_GGML_AUTO_ORDER "Metal -> CUDA -> CPU")
 else()
-    set(_GGML_AUTO_ORDER "CUDA -> OpenCL -> Vulkan -> CPU")
+    set(_GGML_AUTO_ORDER "CUDA -> OpenCL -> CPU")
 endif()
 message(STATUS "ggml ${GGML_VERSION}: backends = ${_GGML_BACKEND_LIST} "
                 "(auto runtime order: ${_GGML_AUTO_ORDER})")
