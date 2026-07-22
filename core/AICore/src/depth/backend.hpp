@@ -1,4 +1,5 @@
 #pragma once
+#include "aicore/export.h"
 #include "ggml.h"
 #include "ggml-backend.h"
 #include "ggml-cpu.h"
@@ -25,7 +26,7 @@ struct GraphInputPool {
     }
 };
 
-class Backend {
+class AICORE_CXX_API Backend {
 public:
     // auto priority: macOS Metal -> CUDA -> CPU; else CUDA -> OpenCL -> CPU.
     // DA_DEVICE overrides: "cpu" / "auto" / "cuda[:N]" / "opencl[:N]" /
