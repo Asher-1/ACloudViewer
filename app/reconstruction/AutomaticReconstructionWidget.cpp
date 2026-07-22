@@ -511,9 +511,8 @@ void AutomaticReconstructionWidget::Run() {
 
                 try {
                     auto target = std::filesystem::path(cache_dir) / m.filename;
-                    std::string downloaded_path =
-                            colmap::DownloadAndCacheFile(
-                                    m.url, target, progress_callback);
+                    std::string downloaded_path = colmap::DownloadAndCacheFile(
+                            m.url, target, progress_callback);
                     progress_dialog.close();
 
                     if (download_canceled || downloaded_path.empty()) {

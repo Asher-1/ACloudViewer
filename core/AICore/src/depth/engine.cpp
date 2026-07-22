@@ -104,8 +104,7 @@ void Engine::release_gpu_working_memory() {
 
 int Engine::cap_img_resize_target(int requested) const {
     return cap_resize_target_for_vram(requested, metric_ml_ != nullptr,
-                                      query_gpu_memory(be_),
-                                      be_.device_name());
+                                      query_gpu_memory(be_), be_.device_name());
 }
 
 namespace {
