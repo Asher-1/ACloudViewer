@@ -41,7 +41,11 @@ struct kv {
     }
     std::string str(const char* key, bool required = true) const {
         int64_t id = find(key, required);
-        return id >= 0 ? gguf_get_val_str(g, id) : "";
+        if (id < 0) {
+            return "";
+        }
+        const char* v = gguf_get_val_str(g, id);
+        return v ? std::string(v) : std::string();
     }
 };
 

@@ -38,6 +38,32 @@ function Check-CondaEnv {
     }
 }
 
+function Install-PythonReleaseDeps {
+    $reqFile = Join-Path $CLOUDVIEWER_SOURCE_ROOT "plugins\core\Standard\qPythonRuntime\requirements-release.txt"
+    Write-Host "Installing Python release deps for qPythonRuntime..."
+    python -m pip install -r $reqFile
+    if ($LASTEXITCODE -ne 0) {
+        throw "pip install requirements-release.txt failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Test-PythonReleaseDepsRequired {
+    $pluginPython = if ($env:PLUGIN_PYTHON) { $env:PLUGIN_PYTHON } else { "ON" }
+    if ($pluginPython -eq "OFF") { return $false }
+
+    $buildPythonModule = if ($env:BUILD_PYTHON_MODULE) { $env:BUILD_PYTHON_MODULE } else { "ON" }
+    if ($buildPythonModule -eq "OFF") { return $false }
+
+    # Full env copy skips verify_python_release_packages_available().
+    $copyEnv = if ($env:PLUGIN_PYTHON_COPY_ENV) { $env:PLUGIN_PYTHON_COPY_ENV } else { "OFF" }
+    if ($copyEnv -eq "ON") { return $false }
+
+    $copyMinimal = if ($env:PLUGIN_PYTHON_COPY_MINIMAL_ENV) { $env:PLUGIN_PYTHON_COPY_MINIMAL_ENV } else { "ON" }
+    if ($copyMinimal -eq "OFF") { return $false }
+
+    return $true
+}
+
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
@@ -176,6 +202,18 @@ function Build-GuiApp {
     )
 
     Check-CondaEnv
+
+    $PLUGIN_PYTHON = if ($env:PLUGIN_PYTHON) { $env:PLUGIN_PYTHON } else { "ON" }
+    $BUILD_PYTHON_MODULE = if ($env:BUILD_PYTHON_MODULE) { $env:BUILD_PYTHON_MODULE } else { "ON" }
+    $PLUGIN_PYTHON_COPY_MINIMAL_ENV = if ($env:PLUGIN_PYTHON_COPY_MINIMAL_ENV) { $env:PLUGIN_PYTHON_COPY_MINIMAL_ENV } else { "ON" }
+    $PLUGIN_PYTHON_COPY_ENV = if ($env:PLUGIN_PYTHON_COPY_ENV) { $env:PLUGIN_PYTHON_COPY_ENV } else { "OFF" }
+
+    if (Test-PythonReleaseDepsRequired) {
+        Install-PythonReleaseDeps
+    } else {
+        Write-Host "Skipping Python release deps (PLUGIN_PYTHON/minimal env disabled)"
+    }
+
     Write-Host "Building ACloudViewer gui app"
     $options = $Arguments -join "|"
     Write-Host "Using cmake: $(Get-Command cmake -ErrorAction SilentlyContinue)"

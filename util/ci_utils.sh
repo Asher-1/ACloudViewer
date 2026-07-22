@@ -92,6 +92,20 @@ fi
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
+install_python_release_deps() {
+    local req_file="${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt"
+    echo "Installing Python release deps for qPythonRuntime..."
+    python -m pip install -r "${req_file}"
+}
+
+python_release_deps_required() {
+    [[ "${PLUGIN_PYTHON:-ON}" != "OFF" ]] || return 1
+    [[ "${BUILD_PYTHON_MODULE:-ON}" != "OFF" ]] || return 1
+    [[ "${PLUGIN_PYTHON_COPY_ENV:-OFF}" == "ON" ]] && return 1
+    [[ "${PLUGIN_PYTHON_COPY_MINIMAL_ENV:-ON}" != "OFF" ]] || return 1
+    return 0
+}
+
 install_python_dependencies() {
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
@@ -279,6 +293,17 @@ build_gui_app() {
 
     echo "Building ACloudViewer gui app"
     options="$(echo "$@" | tr ' ' '|')"
+
+    PLUGIN_PYTHON="${PLUGIN_PYTHON:-ON}"
+    BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE:-ON}"
+    PLUGIN_PYTHON_COPY_MINIMAL_ENV="${PLUGIN_PYTHON_COPY_MINIMAL_ENV:-ON}"
+    PLUGIN_PYTHON_COPY_ENV="${PLUGIN_PYTHON_COPY_ENV:-OFF}"
+
+    if python_release_deps_required; then
+        install_python_release_deps
+    else
+        echo "Skipping Python release deps (PLUGIN_PYTHON/minimal env disabled)"
+    fi
     
     echo "Using cmake: $(command -v cmake)"
     cmake --version
