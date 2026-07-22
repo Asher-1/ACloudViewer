@@ -20,7 +20,14 @@
 #include <ggml_common/ggml_backend_utils.hpp>
 #include <thread>
 
-#if defined(GGML_USE_CUDA)
+#ifdef AICore_HAS_CVLOG
+#include <CVLog.h>
+#define FS_LOG(...)  CVLog::Print("[FS] " __VA_ARGS__)
+#else
+#define FS_LOG(...)  do { std::fprintf(stderr, "[FS] " __VA_ARGS__); std::fprintf(stderr, "\n"); } while (0)
+#endif
+
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
 #endif
 
@@ -30,9 +37,7 @@ namespace gaussian {
 namespace {
 
 void clear_sticky_cuda_errors() {
-#if defined(GGML_USE_CUDA)
-    // Other subsystems (BEV remap, SIBR, etc.) may leave the CUDA context in an
-    // error state; clear it before ggml touches the device.
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
     cudaGetLastError();
 #endif
 }
@@ -46,6 +51,10 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
     std::string name;
     int want_idx = 0;
     ggml_common::parse_device(device_req, name, want_idx);
+
+    FS_LOG("init: device_req='%s' parsed_name='%s' want_idx=%d dev_count=%zu",
+           device_req.c_str(), name.c_str(), want_idx,
+           ggml_backend_dev_count());
 
     // Auto: platform order from find_auto_gpu_backend (CUDA/OpenCL/Metal, no
     // Vulkan).
@@ -91,6 +100,8 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
                 "' (want auto|cpu|gpu|cuda|opencl|metal)";
         return false;
     }
+
+    FS_LOG("ggml backend initialized: device=%s", device.c_str());
 
     galloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(be));
     if (!galloc) {

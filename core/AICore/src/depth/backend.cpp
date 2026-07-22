@@ -19,7 +19,7 @@
 #include "ggml.h"
 #include "ggml_common/ggml_backend_utils.hpp"
 
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
 #endif
 
@@ -29,7 +29,7 @@ namespace depth {
 namespace {
 
 void clear_sticky_cuda_errors() {
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
     cudaGetLastError();
 #endif
 }
@@ -105,6 +105,8 @@ Backend::Backend() : impl_(new Impl()) {
                      device_name_.c_str());
     };
 
+    const bool explicit_device = !want.empty() && parsed_name != "auto";
+
     if (parsed_name == "cpu") {
         // CPU forced below.
     } else if (want.empty() || parsed_name.empty() || parsed_name == "auto") {
@@ -119,16 +121,18 @@ Backend::Backend() : impl_(new Impl()) {
         if (ggml_backend_t be = ggml_common::find_gpu_backend(
                     parsed_name, want_idx, resolved)) {
             adopt_gpu(be, resolved);
-        } else if (!want.empty()) {
-            DA_WARN("aicore::depth::Backend: DA_DEVICE=%s not found; falling "
-                    "back",
-                    want.c_str());
+        } else {
+            DA_ERR("Device '%s' is not available. Please select a different "
+                   "device in the plugin settings.",
+                   want.c_str());
+            error_ = "device '" + want + "' not available";
+            return;
         }
     } else if (parsed_name == "vulkan") {
-        if (!want.empty()) {
-            DA_WARN("aicore::depth::Backend: Vulkan is disabled in this build; "
-                    "falling back");
-        }
+        DA_ERR("Vulkan backend is disabled in this build. Please select a "
+               "different device (auto|cpu|cuda|opencl|metal).");
+        error_ = "vulkan backend disabled";
+        return;
     } else if (!want.empty()) {
         // Explicit registry device name (e.g. CUDA0, Vulkan0).
         for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
@@ -146,13 +150,21 @@ Backend::Backend() : impl_(new Impl()) {
             }
         }
         if (!impl_->backend) {
-            DA_WARN("aicore::depth::Backend: DA_DEVICE=%s not found; falling "
-                    "back",
-                    want.c_str());
+            DA_ERR("Device '%s' not found. Please select a different device.",
+                   want.c_str());
+            error_ = "device '" + want + "' not found";
+            return;
         }
     }
 
-    if (!impl_->backend) {  // CPU fallback (or CPU-only build)
+    if (!impl_->backend) {
+        if (explicit_device) {
+            DA_ERR("Device '%s' initialization failed. Please select a "
+                   "different device.",
+                   want.c_str());
+            error_ = "device '" + want + "' init failed";
+            return;
+        }
         impl_->backend = ggml_backend_cpu_init();
         device_name_ = "cpu";
         offloading_ = false;
@@ -161,6 +173,8 @@ Backend::Backend() : impl_(new Impl()) {
             return;
         }
     }
+    DA_LOG("ggml backend initialized: device=%s", device_name_.c_str());
+
     // GPU path: create a CPU fallback backend so ops the device lacks a kernel
     // for are offloaded to CPU by the scheduler instead of aborting. The
     // CPU/single-backend path keeps using the persistent gallocr and is

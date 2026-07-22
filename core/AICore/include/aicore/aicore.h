@@ -30,6 +30,7 @@
  * Consumers link libAICore and include only headers under include/aicore/.
  */
 
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/depth_image.h"
 #include "aicore/export.h"

@@ -88,6 +88,7 @@ target_include_directories(${PROJECT_NAME}
 
 if(NOT MSVC)
     set_source_files_properties(
+        ${AICORE_COMMON_SRC_DIR}/backend_capi.cpp
         ${AICORE_DEPTH_SRC_DIR}/capi.cpp
         ${AICORE_DEPTH_SRC_DIR}/image_depth.cpp
         ${AICORE_GAUSSIAN_SRC_DIR}/capi.cpp
@@ -101,12 +102,20 @@ if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PUBLIC ${GGML_INCLUDE_DIRS})
 endif()
 
-# When CUDA is enabled, ggml-cuda static archives are embedded into libAICore.so
+# Dynamic backend mode: GPU backends are separate .so files loaded at runtime
+# via ggml_backend_load_all(). libAICore.so has NO hard GPU deps (no DT_NEEDED
+# for libcuda.so.1, etc.), so the Python wheel works on non-GPU machines.
+if(GGML_DYNAMIC_BACKENDS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GGML_BACKEND_DL)
+    message(STATUS "AICore: using dynamic ggml backends (GGML_BACKEND_DL)")
+endif()
+
+# Static mode only: ggml-cuda static archives are embedded into libAICore.so
 # and pull in CUDA driver API (libcuda.so) as a DT_NEEDED dep.  In Docker/CI
 # environments the real driver isn't installed; the CUDA toolkit ships a stub at
 # <toolkit>/lib64/stubs/.  Expose that path so downstream executables (colmap_exe,
 # ACloudViewer) can resolve libcuda.so at link time.
-if(GGML_CUDA_ENABLED AND CUDAToolkit_FOUND)
+if(NOT GGML_DYNAMIC_BACKENDS AND GGML_CUDA_ENABLED AND CUDAToolkit_FOUND)
     get_target_property(_cuda_driver_loc CUDA::cuda_driver IMPORTED_LOCATION)
     if(_cuda_driver_loc)
         get_filename_component(_cuda_driver_dir "${_cuda_driver_loc}" DIRECTORY)
@@ -170,6 +179,24 @@ set(AICore_LIBRARIES AICore CACHE STRING "AICore library target" FORCE)
 if(NOT APPLE)
     cloudViewer_install_targets(${PROJECT_NAME})
     InstallSharedLibrary(TARGET ${PROJECT_NAME})
+endif()
+
+# Ship ggml shared libs and dynamic backend modules alongside libAICore.
+# file(GLOB) runs at configure time before ExternalProject builds, so we use a
+# POST_BUILD script that globs at build time when the dylibs exist.
+# On macOS, ggml's dynamic loader searches the executable directory
+# (_NSGetExecutablePath). For app bundles that's Contents/MacOS/, not the
+# directory containing libAICore.dylib, so we copy to both locations.
+if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+            -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+            -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
+        COMMENT "Copying ggml dynamic backends to libAICore directory"
+    )
 endif()
 
 if(AICore_BUILD_TESTS)

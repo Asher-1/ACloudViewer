@@ -8,6 +8,7 @@
 #include "qDA3.h"
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #endif
 
@@ -191,17 +192,11 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
 
     QString warmupMsg;
     QString workerDevice = resolvedSettings.device;
-    const auto isGpuDevice = [](const QString& device) {
-        const QString d = device.trimmed().toLower();
-        return d.isEmpty() || d == QLatin1String("auto") ||
-               d == QLatin1String("gpu") || d == QLatin1String("cuda") ||
-               d == QLatin1String("opencl") || d == QLatin1String("metal");
-    };
     if (!warmupInferenceBackend(resolvedSettings.device, &warmupMsg)) {
         if (!warmupMsg.isEmpty()) {
             m_dialog->appendLog(warmupMsg);
         }
-        if (isGpuDevice(workerDevice)) {
+        if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
             workerDevice = QStringLiteral("cpu");
             m_dialog->appendLog(tr(
                     "[DA3] GPU backend unavailable — using CPU for this run."));

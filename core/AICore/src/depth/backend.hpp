@@ -39,6 +39,9 @@ public:
 
     // Name of the selected compute device ("cpu" or a registry device name).
     const std::string& device_name() const { return device_name_; }
+    // Non-empty if initialization failed (e.g. requested device not available).
+    const std::string& error() const { return error_; }
+    bool has_error() const { return !error_.empty(); }
     // True when the active backend is NOT the CPU backend (a GPU/accelerator was
     // selected). Drives weight offload: when false, the loader keeps using the
     // gguf host tensors directly (zero-copy CPU path, byte-identical to before).
@@ -86,6 +89,7 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
     std::string device_name_ = "cpu";
+    std::string error_;
     bool        offloading_  = false;  // true iff `backend` is a non-CPU device
     int         n_threads_   = 1;
 };

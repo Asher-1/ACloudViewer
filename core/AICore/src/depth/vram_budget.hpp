@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
 namespace aicore {
 namespace depth {
@@ -25,9 +26,12 @@ GpuMemoryInfo query_gpu_memory(const Backend& be);
 // Cap preprocess long-edge for a *single-view* GIANT nested graph (backbone +
 // DPT head). Uses free VRAM, not view count. Returns `requested` unchanged on
 // CPU or when VRAM query is unavailable.
+// `device_name` is used to apply backend-specific limits (e.g. Metal's slow
+// conv_transpose_2d caps more aggressively than CUDA).
 int cap_resize_target_for_vram(int requested,
                                bool nested_metric,
-                               const GpuMemoryInfo& mem);
+                               const GpuMemoryInfo& mem,
+                               const std::string& device_name = "");
 
 } // namespace depth
 } // namespace aicore
