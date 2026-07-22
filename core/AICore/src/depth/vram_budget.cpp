@@ -72,13 +72,15 @@ int cap_resize_target_for_vram(int requested,
     }
 
     // Metal's conv_transpose_2d kernel is orders of magnitude slower than CUDA;
-    // large DPT head activations can hang the GPU (macOS command buffer timeout).
-    // Cap to 1008 (72 ViT patches per side) which is empirically safe on M-series.
+    // large DPT head activations can hang the GPU (macOS command buffer
+    // timeout). Cap to 1008 (72 ViT patches per side) which is empirically safe
+    // on M-series.
     constexpr int kMetalMaxTarget = 1008;
     if (is_metal_device(device_name) && requested > kMetalMaxTarget) {
         DA_DEBUG_LOG(
                 "Metal perf cap: img_resize_target %d -> %d "
-                "(conv_transpose_2d slow on Metal; reduce to avoid GPU timeout)",
+                "(conv_transpose_2d slow on Metal; reduce to avoid GPU "
+                "timeout)",
                 requested, kMetalMaxTarget);
         requested = kMetalMaxTarget;
     }

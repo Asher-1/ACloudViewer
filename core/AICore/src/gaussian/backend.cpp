@@ -22,9 +22,13 @@
 
 #ifdef AICore_HAS_CVLOG
 #include <CVLog.h>
-#define FS_LOG(...)  CVLog::Print("[FS] " __VA_ARGS__)
+#define FS_LOG(...) CVLog::Print("[FS] " __VA_ARGS__)
 #else
-#define FS_LOG(...)  do { std::fprintf(stderr, "[FS] " __VA_ARGS__); std::fprintf(stderr, "\n"); } while (0)
+#define FS_LOG(...)                                \
+    do {                                           \
+        std::fprintf(stderr, "[FS] " __VA_ARGS__); \
+        std::fprintf(stderr, "\n");                \
+    } while (0)
 #endif
 
 #if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)

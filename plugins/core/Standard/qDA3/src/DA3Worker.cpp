@@ -327,7 +327,8 @@ bool DA3Worker::runDepthMultiView() {
         res.width = w;
         res.height = h;
         res.depth.resize(h * w);
-        std::copy(depth + i * h * w, depth + (i + 1) * h * w, res.depth.begin());
+        std::copy(depth + i * h * w, depth + (i + 1) * h * w,
+                  res.depth.begin());
         res.hasPose = true;
         std::copy(ext.data() + i * 12, ext.data() + (i + 1) * 12,
                   res.extrinsics);
