@@ -1,12 +1,34 @@
 #!/bin/bash
 
-# options="$(echo "$@" | tr ' ' '|')"
-# if [[ "skip_libs" =~ ^($options)$ ]]; then
-#     exclude_libs="libc.so.* libdl.so.* libselinux.so.* libpthread.so.* librt.so.* ld-linux-x86-64.so.* libdrm.so.* libm.so.* libdrm_intel.so.* libstdc++.so.*"
-# else
-#     exclude_libs=""
-# fi
-exclude_libs="libc.so.* libdl.so.* libselinux.so.* libpthread.so.* librt.so.* ld-linux-x86-64.so.* libdrm.so.* libm.so.* libdrm_intel.so.* libstdc++.so.*"
+# Bundle dependency .so files for Qt IFW deploy (Linux).
+# NVIDIA CUDA runtime libraries are NOT copied — same policy as
+# scripts/platforms/windows/pack_windows.ps1 Should-Filter (Windows was
+# already excluding cublas/cudart/etc.; this script was updated to match).
+
+should_exclude_lib() {
+    local base_name="$1"
+
+    # glibc / base system (always present on target machines)
+    case "$base_name" in
+        libc.so.*|libdl.so.*|libselinux.so.*|libpthread.so.*|librt.so.*|\
+        ld-linux-*.so.*|libdrm.so.*|libdrm_*.so.*|libm.so.*|libstdc++.so.*|\
+        libgcc_s.so.*|libutil.so.*|libresolv.so.*|libnss_*.so.*|libnsl.so.*)
+            return 0
+            ;;
+    esac
+
+    # NVIDIA CUDA runtime — aligned with pack_windows.ps1 filter list:
+    # cu*, npp*, nvrtc*, cudnn*, cublas*, cufft*, curand*, cusolver*, cusparse*
+    case "$base_name" in
+        libcuda.so*|libcudart.so*|libcublas*.so*|libcufft.so*|libcurand.so*|\
+        libcusolver.so*|libcusparse.so*|libnpp*.so*|libnvrtc.so*|libcudnn.so*|\
+        libculibos.so*|libnvjpeg.so*|libnvToolsExt.so*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
 
 # Support multiple extra library paths separated by colon
 # Convert to absolute paths
@@ -102,48 +124,48 @@ process_target() {
     for Variable in ${lib_array[@]}
     do
         base_name=$(basename "$Variable")
-        sub_name=${base_name:0:7}
         
         # Skip if already processed
         if [ "${PROCESSED_LIBS[$base_name]}" = "1" ]; then
             continue
         fi
         
-        if [[ ! "${exclude_libs[@]}" =~ "$sub_name" ]]; then
-            local copied_lib=""
+        if should_exclude_lib "$base_name"; then
+            echo "+++++++++++++Ignore library: $Variable"
+            continue
+        fi
+
+        local copied_lib=""
+        
+        if [ -L "$Variable" ]; then
+            echo "Add soft dependence: $Variable to $LibDir"
+            if copy_real_file_with_symlink_name "$Variable" "$LibDir"; then
+                copied_lib="$LibDir/$base_name"
+            fi
+        elif [ -f "$Variable" ]; then
+            echo "Add dependence: $Variable to $LibDir"
+            cp "$Variable" "$LibDir"
+            copied_lib="$LibDir/$base_name"
+        else
+            # Library not found, try to find it in extra paths
+            local found_lib=$(find_library_in_paths "$base_name" "$EXTRA_LIB_PATHS")
             
-            if [ -L "$Variable" ]; then
-                echo "Add soft dependence: $Variable to $LibDir"
-                if copy_real_file_with_symlink_name "$Variable" "$LibDir"; then
-                    copied_lib="$LibDir/$base_name"
+            if [ -n "$found_lib" ]; then
+                echo "Library not found at $Variable. Found at $found_lib. Copying to $LibDir"
+                if [ -L "$found_lib" ]; then
+                    copy_real_file_with_symlink_name "$found_lib" "$LibDir"
+                else
+                    cp -f "$found_lib" "$LibDir"
                 fi
-            elif [ -f "$Variable" ]; then
-                echo "Add dependence: $Variable to $LibDir"
-                cp "$Variable" "$LibDir"
                 copied_lib="$LibDir/$base_name"
             else
-                # Library not found, try to find it in extra paths
-                local found_lib=$(find_library_in_paths "$base_name" "$EXTRA_LIB_PATHS")
-                
-                if [ -n "$found_lib" ]; then
-                    echo "Library not found at $Variable. Found at $found_lib. Copying to $LibDir"
-                    if [ -L "$found_lib" ]; then
-                        copy_real_file_with_symlink_name "$found_lib" "$LibDir"
-                    else
-                        cp -f "$found_lib" "$LibDir"
-                    fi
-                    copied_lib="$LibDir/$base_name"
-                else
-                    echo "Warning: $Variable not found in any search paths."
-                fi
+                echo "Warning: $Variable not found in any search paths."
             fi
-            
-            # Recursively process the copied library's dependencies
-            if [ -n "$copied_lib" ] && [ -f "$copied_lib" ] && [ "$Recursive" = "true" ]; then
-                process_target "$copied_lib" "$LibDir" true
-            fi
-        else
-            echo "+++++++++++++Ignore library: $Variable"
+        fi
+        
+        # Recursively process the copied library's dependencies
+        if [ -n "$copied_lib" ] && [ -f "$copied_lib" ] && [ "$Recursive" = "true" ]; then
+            process_target "$copied_lib" "$LibDir" true
         fi
     done
 }

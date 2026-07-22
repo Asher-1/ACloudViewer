@@ -106,6 +106,11 @@ Write-Host "Using dumpbin: $global:DumpbinPath"
 # ensure output folder exists
 New-Item -ItemType Directory -Force -Path $OutputFolder | Out-Null
 
+# Do NOT bundle NVIDIA CUDA runtime DLLs into the installer (libcublas/cudart are
+# large and version-locked). GPU features require a matching CUDA install on the
+# target machine. Linux equivalent: scripts/platforms/linux/pack_ubuntu.sh
+# should_exclude_lib().
+
 function Should-Filter {
     param (
         [string]$FileName

@@ -3,3 +3,6 @@ pybind11>=3.0
 tqdm
 invoke
 typing_extensions
+pip
+setuptools
+wheel

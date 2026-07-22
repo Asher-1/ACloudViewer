@@ -11,12 +11,24 @@ import subprocess
 import sys
 from pathlib import Path
 
+_BUNDLE_DIR = Path(__file__).resolve().parent
+if str(_BUNDLE_DIR) not in sys.path:
+    sys.path.insert(0, str(_BUNDLE_DIR))
+
+from bundle_slim import (
+    copy_python_env_filtered,
+    copy_python_env_minimal,
+    should_skip_cuda_runtime_lib,
+)
+
 logger = logging.getLogger(__name__)
 
 
 class CCAppBundleConfig:
     output_dependencies: bool
     embed_python: bool
+    python_minimal: bool
+    python_full: bool
 
     app_name: str
     cc_bin_path: Path
@@ -37,6 +49,8 @@ class CCAppBundleConfig:
             extra_pathlib: Path,
             output_dependencies: bool,
             embed_python: bool,
+            python_minimal: bool = True,
+            python_full: bool = False,
     ) -> None:
         """Construct a configuration.
 
@@ -52,6 +66,8 @@ class CCAppBundleConfig:
         self.app_name = app_name
         self.extra_pathlib = extra_pathlib
         self.output_dependencies = output_dependencies
+        self.python_minimal = python_minimal and not python_full
+        self.python_full = python_full
         self.bundle_abs_path = (install_path / (self.app_name + ".app")).absolute()
         self.cc_bin_path = self.bundle_abs_path / "Contents" / "MacOS" / app_name
         self.frameworks_path = self.bundle_abs_path / "Contents" / "Frameworks"
@@ -260,11 +276,8 @@ class CCBundler:
         return abs_paths
 
     def _copy_python_env(self) -> None:
-        """Copy python environment.
-
-        Ideally this should be handled by CCPython-Runtime CMake script like in Windows.
-        """
-        logger.info("Python: copy distribution in package")
+        """Copy python environment into the app bundle (minimal by default)."""
+        logger.info("Python: copy distribution in package (minimal=%s, full=%s)", self.config.python_minimal, self.config.python_full)
         try:
             if self.config.embedded_python_path.exists():
                 print(f"Start to remvoe old bundle python binary path: {self.config.embedded_python_path}")
@@ -279,10 +292,34 @@ class CCBundler:
                 "Python dir already exists in bundle, please clean your bundle and rerun this script",
             )
             sys.exit(1)
-        shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+
         python_version_name = self.config.embedded_python_lib.name
-        CCBundler.create_symlink(f"{python_version_name}/site-packages", "site-packages", self.config.embedded_python_libpath)
-        shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
+        if self.config.python_minimal:
+            copy_python_env_minimal(
+                self.config.base_python_libs,
+                self.config.base_python_binary,
+                self.config.embedded_python_lib,
+                self.config.embedded_python_binary,
+                self.config.embedded_python_libpath,
+                python_version_name,
+            )
+        elif self.config.python_full:
+            shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+            CCBundler.create_symlink(
+                f"{python_version_name}/site-packages",
+                "site-packages",
+                self.config.embedded_python_libpath,
+            )
+            shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
+        else:
+            copy_python_env_filtered(
+                self.config.base_python_libs,
+                self.config.base_python_binary,
+                self.config.embedded_python_lib,
+                self.config.embedded_python_binary,
+                self.config.embedded_python_libpath,
+                python_version_name,
+            )
 
     def _embed_python(self) -> None:
         """Embed python distribution dependencies in site-packages.
@@ -299,6 +336,14 @@ class CCBundler:
         python_libs = set()  # Lib in python dir
 
         self._copy_python_env()
+        for lib in self.config.embedded_python_libpath.glob("libpython*.dylib"):
+            if lib.is_file():
+                libs_to_check.append(lib)
+                python_libs.add(lib)
+        for lib in self.config.embedded_python_libpath.glob("libpython*.so*"):
+            if lib.is_file():
+                libs_to_check.append(lib)
+                python_libs.add(lib)
         # --- enumerate all libs inside the dir
         # Path.walk() is python 3.12+
         for root, _, files in os.walk(self.config.embedded_python_lib):
@@ -336,6 +381,9 @@ class CCBundler:
                     for abs_rp in abs_rpaths:
                         abs_lib = abs_rp / lib
                         if abs_lib.is_file():
+                            if should_skip_cuda_runtime_lib(abs_lib):
+                                logger.info("Skip NVIDIA CUDA runtime dependency: %s", abs_lib)
+                                break
                             if abs_lib not in libs_to_check and abs_lib not in libs_found:
                                 libs_to_check.append(abs_lib)
                             break
@@ -346,7 +394,10 @@ class CCBundler:
         libs_in_framework = set(self.config.frameworks_path.iterdir())
         added_to_framework_count = 0
         for lib in libs_found:
-            if lib == self.config.embedded_python_binary:  # if it's the Python binary we continue
+            if lib == self.config.embedded_python_binary:
+                continue
+            if should_skip_cuda_runtime_lib(lib):
+                logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
             base = self.config.frameworks_path / lib.name
             if base not in libs_in_framework and lib not in python_libs:
@@ -458,6 +509,9 @@ class CCBundler:
                 for abs_rp in abs_search_paths:
                     abslib_path = abs_rp / dependency
                     if abslib_path.is_file():
+                        if should_skip_cuda_runtime_lib(abslib_path):
+                            logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
+                            break
                         if abslib_path not in libs_to_check and abslib_path not in libs_found:
                             # if this lib was not checked for dependencies yet, we append it to the list of lib to check
                             libs_to_check.append(abslib_path)
@@ -496,6 +550,9 @@ class CCBundler:
         nb_libs_added = 0
         for lib in libs_found:
             if lib == self.config.cc_bin_path:
+                continue
+            if should_skip_cuda_runtime_lib(lib):
+                logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
             base = self.config.frameworks_path / lib.name
             if (base not in libs_in_frameworks) and (lib not in libs_in_plugins) and (lib not in libs_in_cv_plugins):
@@ -608,6 +665,17 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--python_minimal",
+        help="Embed stdlib + requirements-release.txt only (default when --embed_python)",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--python_full",
+        help="Embed the entire active Python prefix (can be multi-GB; dev only)",
+        action="store_true",
+    )
+    parser.add_argument(
         "--output_dependencies",
         help="Output a json files in order to debug dependency graph",
         action="store_true",
@@ -632,6 +700,8 @@ if __name__ == "__main__":
         extra_pathlib,
         arguments.output_dependencies,
         arguments.embed_python,
+        python_minimal=arguments.python_minimal,
+        python_full=arguments.python_full,
     )
 
     bundler = CCBundler(config)

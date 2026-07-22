@@ -37,6 +37,7 @@
 #include "base/reconstruction.h"
 #include "controllers/automatic_reconstruction.h"
 #include "controllers/da3_depth_controller.h"
+#include "controllers/da3_pipeline_defaults.h"
 #include "controllers/bundle_adjustment.h"
 #include "controllers/hierarchical_mapper.h"
 #include "exe/gui.h"
@@ -88,9 +89,15 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   std::string data_type = "individual";
   std::string quality = "high";
   std::string mesher = "poisson";
+#if defined(AICore_ENABLED) && !defined(CUDA_ENABLED)
+  std::string sparse_mode = "da3";
+  std::string stereo_mode = "da3";
+  std::string da3_model = "nested_anyview";
+#else
   std::string sparse_mode = "colmap";
   std::string stereo_mode = "colmap";
   std::string da3_model = "base";
+#endif
   std::string da3_quant = "q8_0";
   std::string da3_sparse_model;
   std::string da3_sparse_quant;

@@ -29,6 +29,22 @@ Enable the Python module and the plugin together:
 -DPLUGIN_PYTHON=ON -DBUILD_PYTHON_MODULE=ON
 ```
 
+For **installer / PACKAGE=ON** builds, use a dedicated minimal venv (not a bloated pyenv global env):
+
+```bash
+python -m venv /tmp/acloudviewer-python-pack
+/tmp/acloudviewer-python-pack/bin/pip install -r plugins/core/Standard/qPythonRuntime/requirements-release.txt
+cmake ... -DPython3_EXECUTABLE=/tmp/acloudviewer-python-pack/bin/python \
+          -DPLUGIN_PYTHON_COPY_MINIMAL_ENV=ON -DPLUGIN_PYTHON_COPY_ENV=OFF
+```
+
+CMake options (see `plugins/core/Standard/qPythonRuntime/CMakeLists.txt`):
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `PLUGIN_PYTHON_COPY_MINIMAL_ENV` | ON | stdlib + `requirements-release.txt` only |
+| `PLUGIN_PYTHON_COPY_ENV` | OFF | full site-packages (minus torch/jupyter bloat filter) |
+
 Use **Python** development headers/libs matching the interpreter you link. Configure **pybind11** per `cmake/PythonEnvHelper.cmake` and project docs.
 
 ## Dependencies

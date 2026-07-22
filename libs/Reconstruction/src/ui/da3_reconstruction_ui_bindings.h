@@ -38,6 +38,8 @@ struct DA3ReconstructionUiControls {
     QDoubleSpinBox* fused_voxel_size_spin = nullptr;
     QLabel* fused_voxel_size_label = nullptr;
     QLabel* da3_hybrid_hint_label = nullptr;
+    QCheckBox* use_gpu_cb = nullptr;
+    bool* use_gpu = nullptr;
 };
 
 // Shared combobox linkage: sparse/stereo modes, per-step model+quant
@@ -65,6 +67,8 @@ public:
     static void Install(const DA3ReconstructionUiControls& controls,
                         QObject* context);
     static void Sync(const DA3ReconstructionUiControls& controls);
+    static void ApplyPreferDa3Defaults(
+            const DA3ReconstructionUiControls& controls);
     static void ApplyDa3FusedPointFilterDefaults(
             const DA3ReconstructionUiControls& controls);
     static void ApplyHybridDenseTooltips(

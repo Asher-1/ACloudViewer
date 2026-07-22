@@ -512,9 +512,21 @@ void AutomaticReconstructionController::Run() {
     return;
   }
 
+  const StereoPipelineMode effective_stereo_mode =
+      EffectiveStereoPipelineMode(options_.stereo_mode);
+#if defined(AICore_ENABLED) && !defined(CUDA_ENABLED)
+  if (options_.dense &&
+      options_.stereo_mode == StereoPipelineMode::COLMAP_PATCH_MATCH &&
+      effective_stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE) {
+    RECON_LOG_WARN(
+            "WARNING: COLMAP PatchMatch stereo requires CUDA; using DA3 depth "
+            "inference (AICore: Metal/CUDA/OpenCL/CPU) for dense reconstruction.\n");
+  }
+#endif
+
   use_da3_stereo_maps_ =
       options_.dense &&
-      options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+      effective_stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
       DA3ModelSupportsStereo(options_.da3_stereo_model_type);
   da3_reuse_sparse_stereo_ =
       options_.sparse &&
@@ -537,7 +549,12 @@ void AutomaticReconstructionController::Run() {
       num_da3_images >= static_cast<size_t>(kDA3ColmapSparseAutoMinViews);
 
   da3_auto_colmap_sparse_ = options_.sparse && da3_colmap_hybrid_dense;
+#ifdef CUDA_ENABLED
   da3_patchmatch_refine_ = da3_colmap_hybrid_dense;
+#else
+  // PatchMatch requires COLMAP CUDA; hybrid dense still uses DA3 depth + fusion.
+  da3_patchmatch_refine_ = false;
+#endif
   da3_skip_geometric_refine_ =
       da3_patchmatch_refine_ &&
       (options_.da3_skip_geometric_refine || DA3SkipGeometricRefineRequested());
@@ -614,7 +631,11 @@ void AutomaticReconstructionController::Run() {
     }
     if (options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
         !use_da3_stereo_maps_) {
+#ifdef CUDA_ENABLED
       RECON_LOG_WARN("WARNING: DA3 depth inference requires a nested model "                    "(Nested AnyView / Nested Metric). "                    "Falling back to COLMAP PatchMatch stereo.\n");
+#else
+      RECON_LOG_WARN("ERROR: DA3 depth inference requires a nested model "                    "(Nested AnyView / Nested Metric) and AICore. "                    "COLMAP PatchMatch stereo is not available without CUDA.\n");
+#endif
     }
     if (use_da3_stereo_maps_) {
       RunDA3DepthMaps();
@@ -1082,9 +1103,8 @@ void AutomaticReconstructionController::RunDenseMapper() {
 #else   // CUDA_ENABLED
       RECON_LOG_WARN(
               "WARNING: Skipping patch match stereo for dense/%zu because CUDA "
-              "is not available.\n",
+              "is not available (use DA3 stereo or enable CUDA).\n",
               i);
-      continue;
 #endif  // CUDA_ENABLED
     } else if (use_da3_stereo_maps_ && da3_skip_geometric_refine_) {
       RECON_LOG_DEBUG("DA3: skipping PatchMatch geometric refine; fusing DA3 "                    "priors directly.\n");
@@ -1216,6 +1236,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
         if (da3_skip_geometric_refine_ && direct_fusion_gate.should_fallback) {
           const auto run_patchmatch_geometric_fallback = [&]() {
             RECON_LOG_WARN("WARNING: falling back to PatchMatch geometric refine "                          "(close SIBR/BEV viewers to free GPU memory).\n");
+#ifdef CUDA_ENABLED
             RemoveColmapGeometricStereoMaps(dense_path);
             auto patch_match_options = MakeDA3PatchMatchRefineOptions(
                 *option_manager_.patch_match_stereo);
@@ -1235,6 +1256,11 @@ void AutomaticReconstructionController::RunDenseMapper() {
             active_thread_ = nullptr;
             fused_cloud.points = retry_fuser.GetFusedPoints();
             fused_cloud.visibility = retry_fuser.GetFusedPointsVisibility();
+#else
+            RECON_LOG_WARN(
+                    "WARNING: PatchMatch geometric refine fallback skipped "
+                    "because CUDA is not available.\n");
+#endif
           };
 
           if (direct_fusion_gate.consensus_acceptance_rate >= 0.0) {
@@ -1291,6 +1317,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
                   "WARNING: fast DA3 PatchMatch fusion produced %zu points (< "
                   "%zu); falling back to full photometric+geometric PatchMatch.\n",
                   fused_cloud.points.size(), kDA3ColmapFusionFallbackMinPoints);
+#ifdef CUDA_ENABLED
           RemoveColmapGeometricStereoMaps(dense_path);
           auto full_patch_match_options = *option_manager_.patch_match_stereo;
           full_patch_match_options.geom_consistency = true;
@@ -1313,6 +1340,11 @@ void AutomaticReconstructionController::RunDenseMapper() {
           active_thread_ = nullptr;
           fused_cloud.points = retry_fuser.GetFusedPoints();
           fused_cloud.visibility = retry_fuser.GetFusedPointsVisibility();
+#else
+          RECON_LOG_WARN(
+                  "WARNING: full PatchMatch fallback skipped because CUDA is "
+                  "not available.\n");
+#endif
         }
       }
 

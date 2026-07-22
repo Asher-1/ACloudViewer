@@ -103,7 +103,7 @@ void ecvGui::ParamStruct::reset() {
 }
 
 void ecvGui::ParamStruct::initFontSizesIfNeeded() {
-    // 只有在QApplication已初始化后才调用
+    // Call only after QApplication has been initialized
     defaultFontSize = ecvViewManager::sharedGetOptimizedFontSize(12);
 #ifdef Q_OS_MAC
     labelFontSize = ecvViewManager::sharedGetOptimizedFontSize(24);

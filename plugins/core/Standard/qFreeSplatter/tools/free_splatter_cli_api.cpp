@@ -65,7 +65,7 @@ free_splatter_ctx* free_splatter_load(const char* gguf_path,
     } else {
         aicore_gaussian_options* o = aicore_gaussian_options_new();
         if (o) {
-            aicore_gaussian_options_set_device(o, "vulkan");
+            aicore_gaussian_options_set_device(o, "auto");
             ctx->inner = aicore_gaussian_load_opts(gguf_path, o);
             aicore_gaussian_options_free(o);
         }

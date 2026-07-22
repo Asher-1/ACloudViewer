@@ -481,7 +481,8 @@ void vtkComparativeViewWidget::setupGrid() {
         createChartSubViews();
     }
 
-    // 初始化Entity下拉框（ParaView模式：用户手动选择显示的实体）
+    // Initialize the entity combo box (ParaView mode: user manually selects
+    // entities to display)
     QTimer::singleShot(200, this, [this]() {
         if (!m_closing) {
             refreshEntityCombo();
@@ -556,8 +557,8 @@ void vtkComparativeViewWidget::createRenderSubViews() {
                 firstView = view;
                 m_activeSubView = view;
 
-                // ParaView模式: Comparative视图初始为空
-                // 用户通过Showing下拉框手动选择要显示的实体
+                // ParaView mode: comparative view starts empty;
+                // user selects entities to display via the Showing combo box
                 if (m_subViewInitCb) {
                     m_subViewInitCb(view);
                 }
@@ -597,8 +598,8 @@ void vtkComparativeViewWidget::createRenderSubViews() {
         }
     }
 
-    // ParaView模式: 不自动复制表示，保持4个空视窗
-    // 用户通过Showing下拉框选择要显示的实体
+    // ParaView mode: do not auto-copy representations; keep four empty
+    // viewports. User selects entities to display via the Showing combo box.
     if (m_sourceView) {
         for (auto* view : m_subViews) {
             if (!view) continue;
@@ -640,11 +641,13 @@ void vtkComparativeViewWidget::createRenderSubViews() {
 
     m_needsCameraReset = false;
     if (!m_closing) {
-        // ParaView模式: 初始为空视窗，不执行同步
-        // 用户通过Showing下拉框选择实体后会自动触发同步和刷新
+        // ParaView mode: start with empty viewports; skip initial sync.
+        // Sync and refresh are triggered automatically after the user selects
+        // entities via the Showing combo box.
         QTimer::singleShot(100, this, [this]() {
             if (m_closing) return;
-            // 只初始化相机链接（确保4个视窗的初始状态一致）
+            // Only initialize camera link (ensure consistent initial state
+            // across four viewports)
             if (m_cameraLinkEnabled && m_subViews.size() > 1) {
                 syncCamerasFromFirst();
             }
@@ -692,13 +695,14 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             }
         });
 
-        // 监听DBTree变化以刷新Entity下拉框（不自动复制表示）
+        // Listen for DB tree changes to refresh the entity combo (no auto-copy
+        // of representations)
         connect(
                 &ecvRepresentationManager::instance(),
                 &ecvRepresentationManager::representationAdded, this,
                 [this](ecvViewRepresentation* /*rep*/) {
                     if (m_closing || m_subViews.isEmpty()) return;
-                    // 延迟刷新entity combo列表
+                    // Defer refresh of the entity combo list
                     QTimer::singleShot(100, this, [this]() {
                         if (m_closing) return;
                         refreshEntityCombo();
@@ -789,10 +793,10 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
         return true;
     }
 
-    // 只阻止ContextMenu事件
+    // Block ContextMenu events only
     if (event->type() == QEvent::ContextMenu) return true;
 
-    // 明确不拦截 Wheel 事件，让 VTK 交互器正常处理滚轮操作
+    // Do not intercept Wheel events; let the VTK interactor handle scroll zoom
     if (event->type() == QEvent::Wheel) {
         if (activateSubViewForWidget(qobject_cast<QWidget*>(obj),
                                      Qt::OtherFocusReason)) {
@@ -801,10 +805,11 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
                 emit requestToolRebind(m_activeSubView);
             }
         }
-        return false;  // 返回 false 表示不拦截，传递给子 widget
+        return false;  // Return false = do not intercept; pass through to child
+                       // widget
     }
 
-    // 处理鼠标按下：更新活跃子视窗并发出信号
+    // Mouse press: update active sub-view and emit signals
     if (event->type() == QEvent::MouseButtonPress) {
         if (activateSubViewForWidget(qobject_cast<QWidget*>(obj),
                                      Qt::MouseFocusReason) &&
@@ -842,7 +847,7 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
         }
     }
 
-    // 处理 Resize 事件
+    // Handle Resize events
     if (event->type() == QEvent::Resize) {
         auto* w = qobject_cast<QWidget*>(obj);
         if (w && m_pendingFirstResize.contains(w)) {
@@ -863,7 +868,8 @@ bool vtkComparativeViewWidget::eventFilter(QObject* obj, QEvent* event) {
         }
     }
 
-    // 对于所有其他事件，调用父类默认实现，确保完全透明
+    // For all other events, use the base default implementation (fully
+    // transparent)
     return QWidget::eventFilter(obj, event);
 }
 
@@ -1998,8 +2004,8 @@ void vtkComparativeViewWidget::buildToolbar() {
     connect(refreshBtn, &QPushButton::clicked, this,
             &vtkComparativeViewWidget::refreshSubViews);
 
-    // 对所有类型都启用 entity 选择（不仅是图表类型）
-    if (true) {  // 原来是 if (m_type != RENDER)
+    // Enable entity selection for all types (not just chart types)
+    if (true) {  // formerly: if (m_type != RENDER)
         lay->addWidget(new QLabel(QStringLiteral("|"), m_toolbar));
         auto* showLabel = new QLabel(tr("<b>Showing:</b>"), m_toolbar);
         lay->addWidget(showLabel);

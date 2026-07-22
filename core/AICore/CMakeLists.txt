@@ -117,6 +117,10 @@ target_compile_definitions(${PROJECT_NAME}
     INTERFACE AICore_SHARED
     PUBLIC AICore_ENABLED
 )
+if(MSVC)
+    # M_PI and other math constants (pose.cpp, tests); same as CloudViewerSetGlobalProperties.cmake
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+endif()
 
 include(CheckCXXCompilerFlag)
 if(ENABLE_AVX512)
@@ -188,6 +192,9 @@ if(AICore_BUILD_TESTS)
         target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
     endif()
     target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
+    if(MSVC)
+        target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
+    endif()
 
     enable_testing()
     add_subdirectory(tests)
