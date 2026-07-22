@@ -510,8 +510,9 @@ void AutomaticReconstructionWidget::Run() {
             };
 
         try {
+          auto target = std::filesystem::path(cache_dir) / m.filename;
           std::string downloaded_path =
-              DownloadAndCacheFile(m.url, progress_callback);
+              DownloadAndCacheFile(m.url, target, progress_callback);
           progress_dialog.close();
 
           if (download_canceled || downloaded_path.empty()) {
@@ -519,17 +520,7 @@ void AutomaticReconstructionWidget::Run() {
                                  tr("DA3 model download was canceled."));
             return;
           }
-          auto target = std::filesystem::path(cache_dir) / m.filename;
-          if (downloaded_path != target.string()) {
-            std::error_code ec;
-            std::filesystem::rename(downloaded_path, target, ec);
-            if (ec) {
-              std::filesystem::copy_file(
-                  downloaded_path, target,
-                  std::filesystem::copy_options::overwrite_existing, ec);
-              if (!ec) std::filesystem::remove(downloaded_path, ec);
-            }
-          }
+
           if (m.dest_path) {
             *m.dest_path = target.string();
           }

@@ -183,7 +183,8 @@ bool DA3Worker::runDepthSingle() {
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
         res.width = w;
         res.height = h;
-        res.depth = QVector<float>(depth, depth + h * w);
+        res.depth.resize(h * w);
+        std::copy(depth, depth + h * w, res.depth.begin());
         res.hasPose = false;
         aicore_depth_free_floats(depth);
 
@@ -251,9 +252,12 @@ bool DA3Worker::runDepthPose() {
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
         res.width = w;
         res.height = h;
-        res.depth = QVector<float>(depth_ptr, depth_ptr + h * w);
-        if (conf_ptr)
-            res.confidence = QVector<float>(conf_ptr, conf_ptr + h * w);
+        res.depth.resize(h * w);
+        std::copy(depth_ptr, depth_ptr + h * w, res.depth.begin());
+        if (conf_ptr) {
+            res.confidence.resize(h * w);
+            std::copy(conf_ptr, conf_ptr + h * w, res.confidence.begin());
+        }
         res.hasPose = true;
         std::copy(ext, ext + 12, res.extrinsics);
         std::copy(intr, intr + 9, res.intrinsics);
@@ -322,7 +326,8 @@ bool DA3Worker::runDepthMultiView() {
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName() + "_mv";
         res.width = w;
         res.height = h;
-        res.depth = QVector<float>(depth + i * h * w, depth + (i + 1) * h * w);
+        res.depth.resize(h * w);
+        std::copy(depth + i * h * w, depth + (i + 1) * h * w, res.depth.begin());
         res.hasPose = true;
         std::copy(ext.data() + i * 12, ext.data() + (i + 1) * 12,
                   res.extrinsics);

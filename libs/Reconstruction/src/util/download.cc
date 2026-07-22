@@ -370,6 +370,37 @@ std::string DownloadAndCacheFile(
   return path.string();
 }
 
+std::string DownloadAndCacheFile(
+    const std::string& url,
+    const std::filesystem::path& target_path,
+    DownloadProgressCallback progress_callback) {
+  if (std::filesystem::exists(target_path)) {
+    std::cout << "File already cached. Using cached file at: " << target_path
+              << std::endl;
+    return target_path.string();
+  }
+
+  std::filesystem::create_directories(target_path.parent_path());
+
+  std::cout << "Downloading from: " << url << std::endl;
+  std::cout << "Target path: " << target_path << std::endl;
+  const std::optional<std::string> blob = DownloadFile(url, progress_callback);
+  if (!blob.has_value()) {
+    return "";
+  }
+
+  std::ofstream ofs(target_path.string(),
+                    std::ios::binary | std::ios::trunc);
+  if (!ofs) {
+    LOG(ERROR) << "Cannot write to " << target_path;
+    return "";
+  }
+  ofs.write(blob->data(), static_cast<std::streamsize>(blob->size()));
+  ofs.close();
+  std::cout << "File successfully cached at: " << target_path << std::endl;
+  return target_path.string();
+}
+
 void OverwriteDownloadCacheDir(std::filesystem::path path) {
   download_cache_dir_overwrite = std::move(path);
 }
