@@ -388,6 +388,20 @@ class CCBundler:
                                 libs_to_check.append(abs_lib)
                             break
 
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.dylib, etc.)
+        # are loaded at runtime and NOT in the otool dependency chain.
+        # Discover them alongside libAICore.dylib so they get bundled.
+        for lib in list(libs_found):
+            if lib.name.startswith("libAICore"):
+                src_dir = lib.parent
+                for ggml_mod in src_dir.glob("libggml-*.dylib"):
+                    if ggml_mod not in libs_found:
+                        if should_skip_cuda_runtime_lib(ggml_mod):
+                            continue
+                        logger.info("Adding ggml backend module: %s", ggml_mod)
+                        libs_found.add(ggml_mod)
+                break
+
         logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
         logger.info("libs_found to add to Frameworks: %i", len(libs_found))
 
@@ -520,6 +534,20 @@ class CCBundler:
             # TODO: handle lib_ex here
             # for dependency in lib_ex:...
             # TODO: add to libTOcheck executable_path/dep
+
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.dylib, etc.)
+        # are loaded at runtime and NOT in the otool dependency chain.
+        # Discover them alongside libAICore.dylib so they get bundled.
+        for lib in list(libs_found):
+            if lib.name.startswith("libAICore"):
+                src_dir = lib.parent
+                for ggml_mod in src_dir.glob("libggml-*.dylib"):
+                    if ggml_mod not in libs_found:
+                        if should_skip_cuda_runtime_lib(ggml_mod):
+                            continue
+                        logger.info("Adding ggml backend module: %s", ggml_mod)
+                        libs_found.add(ggml_mod)
+                break
 
         return libs_found, lib_ex_found, libs_in_cv_plugins, libs_in_plugins
 

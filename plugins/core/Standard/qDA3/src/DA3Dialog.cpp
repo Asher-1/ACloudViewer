@@ -22,6 +22,7 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 
 namespace {
@@ -199,21 +200,13 @@ void DA3Dialog::setupUi() {
 
     modelLayout->addWidget(new QLabel("Device:"), 4, 0);
     m_deviceCombo = new QComboBox;
-#if defined(__APPLE__)
-    m_deviceCombo->addItem(tr("Auto (Metal → CUDA → CPU)"), "auto");
-    m_deviceCombo->addItem("GPU (Metal)", "metal");
-    m_deviceCombo->addItem("GPU (CUDA)", "cuda");
-    m_deviceCombo->setCurrentIndex(1);
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* d = aicore_device_at(i);
+        m_deviceCombo->addItem(tr(d->label), QString::fromUtf8(d->id));
+        if (d->is_default) m_deviceCombo->setCurrentIndex(i);
+    }
     m_deviceCombo->setToolTip(
-            tr("Auto tries Metal first, then CUDA, then CPU."));
-#else
-    m_deviceCombo->addItem(tr("Auto (CUDA → OpenCL → CPU)"), "auto");
-    m_deviceCombo->addItem("GPU (CUDA)", "cuda");
-    m_deviceCombo->addItem("GPU (OpenCL)", "opencl");
-    m_deviceCombo->setToolTip(
-            tr("Auto tries CUDA first, then OpenCL, then CPU."));
-#endif
-    m_deviceCombo->addItem("CPU", "cpu");
+            tr("Auto tries %1.").arg(aicore_auto_device_order()));
     modelLayout->addWidget(m_deviceCombo, 4, 1);
 
     modelLayout->addWidget(new QLabel("Threads:"), 5, 0);

@@ -16,9 +16,14 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <thread>
+
+#if defined(__APPLE__) || defined(__linux__)
+#include <dlfcn.h>
+#endif
 
 namespace ggml_common {
 
@@ -51,9 +56,32 @@ inline void parse_device(const std::string& req, std::string& name, int& index) 
 }
 
 // Discover dynamically-loadable backends. For a GGML_BACKEND_DL build this
-// loads every libggml-cpu-<isa>.so. No-op for a statically-linked build.
+// loads every libggml-cpu-<isa>.so/dylib from the library directory.
+// On macOS app bundles the executable is inside Contents/MacOS/ while backend
+// dylibs live alongside libAICore.dylib, so we resolve our own dylib's
+// directory and pass it to ggml_backend_load_all_from_path().
 inline void load_backends_once() {
-    static const bool done = [] { ggml_backend_load_all(); return true; }();
+    static const bool done = [] {
+#if defined(GGML_BACKEND_DL) && (defined(__APPLE__) || defined(__linux__))
+        const char* search_dir = nullptr;
+        // Resolve directory containing this shared library (libAICore).
+        Dl_info info;
+        if (dladdr((void*)&load_backends_once, &info) && info.dli_fname) {
+            static std::string dir;
+            dir = info.dli_fname;
+            auto pos = dir.find_last_of('/');
+            if (pos != std::string::npos) {
+                dir.resize(pos);
+                search_dir = dir.c_str();
+                fprintf(stderr, "[ggml_common] load_backends_once: search_dir='%s'\n", search_dir);
+            }
+        }
+        ggml_backend_load_all_from_path(search_dir);
+#else
+        ggml_backend_load_all();
+#endif
+        return true;
+    }();
     (void)done;
 }
 
@@ -128,8 +156,8 @@ inline ggml_backend_t find_auto_gpu_backend(std::string& resolved_name) {
 #else
     static const char* kAutoOrder[] = {"cuda", "opencl", nullptr};
 #endif
-    for (const char* try_name : kAutoOrder) {
-        ggml_backend_t be = find_gpu_backend(try_name, 0, resolved_name);
+    for (const char** p = kAutoOrder; *p; ++p) {
+        ggml_backend_t be = find_gpu_backend(*p, 0, resolved_name);
         if (be) return be;
     }
     return nullptr;

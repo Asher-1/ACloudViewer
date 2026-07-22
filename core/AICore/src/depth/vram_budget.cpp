@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "backend.hpp"
 #include "common.hpp"
@@ -42,15 +43,46 @@ GpuMemoryInfo query_gpu_memory(const Backend& be) {
     return info;
 }
 
+namespace {
+
+bool is_metal_device(const std::string& name) {
+    if (name.empty()) return false;
+    for (size_t i = 0; i + 2 < name.size(); ++i) {
+        char c0 = (char)std::tolower((unsigned char)name[i]);
+        char c1 = (char)std::tolower((unsigned char)name[i + 1]);
+        char c2 = (char)std::tolower((unsigned char)name[i + 2]);
+        if (c0 == 'm' && c1 == 't' && c2 == 'l') return true;
+    }
+    if (name.find("etal") != std::string::npos) return true;
+    if (name.find("Apple") != std::string::npos) return true;
+    return false;
+}
+
+}  // namespace
+
 int cap_resize_target_for_vram(int requested,
                                bool nested_metric,
-                               const GpuMemoryInfo& mem) {
+                               const GpuMemoryInfo& mem,
+                               const std::string& device_name) {
     constexpr int kPatchSize = 14;
     constexpr int kMinTarget = 504;
 
     if (requested <= 0) {
         return requested;
     }
+
+    // Metal's conv_transpose_2d kernel is orders of magnitude slower than CUDA;
+    // large DPT head activations can hang the GPU (macOS command buffer timeout).
+    // Cap to 1008 (72 ViT patches per side) which is empirically safe on M-series.
+    constexpr int kMetalMaxTarget = 1008;
+    if (is_metal_device(device_name) && requested > kMetalMaxTarget) {
+        DA_DEBUG_LOG(
+                "Metal perf cap: img_resize_target %d -> %d "
+                "(conv_transpose_2d slow on Metal; reduce to avoid GPU timeout)",
+                requested, kMetalMaxTarget);
+        requested = kMetalMaxTarget;
+    }
+
     if (!mem.valid) {
         return requested;
     }
