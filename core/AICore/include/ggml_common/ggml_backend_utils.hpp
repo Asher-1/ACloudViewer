@@ -76,10 +76,18 @@ inline bool is_cpu_backend(ggml_backend_t be) {
     return be && ggml_backend_dev_type(ggml_backend_get_device(be)) == GGML_BACKEND_DEVICE_TYPE_CPU;
 }
 
-// Find a GPU backend by name (e.g. "cuda", "vulkan") and optional index.
+// Normalize user-facing device names to ggml registry names.
+// ggml registers backends under short names (e.g. "Metal" → "MTL") that differ
+// from the human-readable names used in our UI and config strings.
+inline std::string normalize_backend_name(const std::string& name) {
+    if (name == "metal") return "mtl";
+    return name;
+}
+
+// Find a GPU backend by name (e.g. "cuda", "metal", "vulkan") and optional index.
 // "gpu" picks the first available GPU of any compiled-in backend.
 inline ggml_backend_t find_gpu_backend(const std::string& want_name, int want_idx, std::string& resolved_name) {
-    const std::string want_reg = (want_name == "gpu") ? "" : want_name;
+    const std::string want_reg = (want_name == "gpu") ? "" : normalize_backend_name(want_name);
     int gpu_idx = 0;
     for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
         ggml_backend_dev_t dev = ggml_backend_dev_get(i);

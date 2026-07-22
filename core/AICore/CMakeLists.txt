@@ -86,17 +86,36 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include/AICore>
 )
 
-set_source_files_properties(
-    ${AICORE_DEPTH_SRC_DIR}/capi.cpp
-    ${AICORE_DEPTH_SRC_DIR}/image_depth.cpp
-    ${AICORE_GAUSSIAN_SRC_DIR}/capi.cpp
-    PROPERTIES COMPILE_OPTIONS "-fvisibility=default"
-)
+if(NOT MSVC)
+    set_source_files_properties(
+        ${AICORE_DEPTH_SRC_DIR}/capi.cpp
+        ${AICORE_DEPTH_SRC_DIR}/image_depth.cpp
+        ${AICORE_GAUSSIAN_SRC_DIR}/capi.cpp
+        PROPERTIES COMPILE_OPTIONS "-fvisibility=default"
+    )
+endif()
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)
 if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PUBLIC ${GGML_INCLUDE_DIRS})
+endif()
+
+# When CUDA is enabled, ggml-cuda static archives are embedded into libAICore.so
+# and pull in CUDA driver API (libcuda.so) as a DT_NEEDED dep.  In Docker/CI
+# environments the real driver isn't installed; the CUDA toolkit ships a stub at
+# <toolkit>/lib64/stubs/.  Expose that path so downstream executables (colmap_exe,
+# ACloudViewer) can resolve libcuda.so at link time.
+if(GGML_CUDA_ENABLED AND CUDAToolkit_FOUND)
+    get_target_property(_cuda_driver_loc CUDA::cuda_driver IMPORTED_LOCATION)
+    if(_cuda_driver_loc)
+        get_filename_component(_cuda_driver_dir "${_cuda_driver_loc}" DIRECTORY)
+        target_link_directories(${PROJECT_NAME} PUBLIC "${_cuda_driver_dir}")
+    elseif(CUDAToolkit_LIBRARY_DIR)
+        if(EXISTS "${CUDAToolkit_LIBRARY_DIR}/stubs")
+            target_link_directories(${PROJECT_NAME} PUBLIC "${CUDAToolkit_LIBRARY_DIR}/stubs")
+        endif()
+    endif()
 endif()
 
 if(TARGET CVCoreLib)
