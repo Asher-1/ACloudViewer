@@ -23,6 +23,7 @@
 #include "path_util.hpp"
 #include "preprocess.hpp"
 #include "reconstruct.hpp"
+#include "quantize.hpp"
 #if defined(GGML_USE_CUDA)
 #include <cuda_runtime.h>
 #endif
@@ -735,6 +736,88 @@ int AICORE_CAPI aicore_depth_cap_img_resize_target(aicore_depth_ctx* ctx,
         return requested;
     }
     return ctx->engine->cap_img_resize_target(requested);
+}
+
+static float* dup_floats(const std::vector<float>& v) {
+    if (v.empty()) {
+        return nullptr;
+    }
+    float* p = (float*)std::malloc(v.size() * sizeof(float));
+    if (p) {
+        std::memcpy(p, v.data(), v.size() * sizeof(float));
+    }
+    return p;
+}
+
+int AICORE_CAPI aicore_depth_reconstruct_path(const char* gguf_path,
+                                              int n_threads,
+                                              const char* image_path,
+                                              int* out_h,
+                                              int* out_w,
+                                              int* out_n,
+                                              float** out_means,
+                                              float** out_scales,
+                                              float** out_harmonics,
+                                              float** out_opacities) {
+    if (!gguf_path || !image_path || !out_h || !out_w || !out_n || !out_means ||
+        !out_scales || !out_harmonics || !out_opacities) {
+        return -1;
+    }
+    *out_means = nullptr;
+    *out_scales = nullptr;
+    *out_harmonics = nullptr;
+    *out_opacities = nullptr;
+    *out_h = 0;
+    *out_w = 0;
+    *out_n = 0;
+
+    auto eng = aicore::depth::Engine::load(gguf_path, n_threads);
+    if (!eng) {
+        return -1;
+    }
+
+    aicore::depth::Gaussians g;
+    int H = 0;
+    int W = 0;
+    if (!eng->reconstruct_path(image_path, g, H, W)) {
+        return -1;
+    }
+
+    *out_h = H;
+    *out_w = W;
+    *out_n = g.N;
+    if (g.N <= 0) {
+        return 0;
+    }
+
+    *out_means = dup_floats(g.means);
+    *out_scales = dup_floats(g.scales);
+    *out_harmonics = dup_floats(g.harmonics);
+    *out_opacities = dup_floats(g.opacities);
+    if (!*out_means || !*out_scales || !*out_harmonics || !*out_opacities) {
+        std::free(*out_means);
+        std::free(*out_scales);
+        std::free(*out_harmonics);
+        std::free(*out_opacities);
+        *out_means = nullptr;
+        *out_scales = nullptr;
+        *out_harmonics = nullptr;
+        *out_opacities = nullptr;
+        *out_h = 0;
+        *out_w = 0;
+        *out_n = 0;
+        return -1;
+    }
+    return 0;
+}
+
+int AICORE_CAPI aicore_depth_quantize_gguf(const char* in_gguf,
+                                           const char* out_gguf,
+                                           const char* type) {
+    if (!in_gguf || !out_gguf || !type) {
+        return -1;
+    }
+    return aicore::depth::quantize_gguf(in_gguf, out_gguf, type) ? 0 : -1;
 }
 
 int AICORE_CAPI aicore_depth_warmup_backend(const char* device) {

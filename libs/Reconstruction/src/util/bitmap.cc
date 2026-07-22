@@ -615,15 +615,18 @@ bool Bitmap::ReadExifTag(const FREE_IMAGE_MDMODEL model,
   if (tag == nullptr) {
     *result = "";
     return false;
-  } else {
-    if (tag_name == "FocalPlaneXResolution") {
-      // This tag seems to be in the wrong category.
-      *result = std::string(FreeImage_TagToString(FIMD_EXIF_INTEROP, tag));
-    } else {
-      *result = FreeImage_TagToString(model, tag);
-    }
-    return true;
   }
+
+  // FreeImage_TagToString may return nullptr even when the tag exists.
+  const FREE_IMAGE_MDMODEL tag_model =
+      tag_name == "FocalPlaneXResolution" ? FIMD_EXIF_INTEROP : model;
+  const char* tag_str = FreeImage_TagToString(tag_model, tag);
+  if (tag_str == nullptr) {
+    *result = "";
+    return false;
+  }
+  *result = tag_str;
+  return true;
 }
 
 void Bitmap::SetPtr(FIBITMAP* data) {

@@ -179,13 +179,16 @@ def copy_release_site_packages(src: Path, dest: Path) -> None:
 
 def copy_python_stdlib(src: Path, dest: Path) -> None:
     dest.mkdir(parents=True, exist_ok=True)
+    skip_dirs = {"site-packages", "test", "idle_test", "ensurepip"}
     for item in src.iterdir():
-        if item.name == "site-packages":
+        if item.name in skip_dirs:
+            continue
+        if item.name.startswith("config-"):
             continue
         target = dest / item.name
         if item.is_dir():
             shutil.copytree(item, target, ignore=_python_tree_ignore, dirs_exist_ok=True)
-        else:
+        elif item.suffix != ".a":
             shutil.copy2(item, target)
 
 

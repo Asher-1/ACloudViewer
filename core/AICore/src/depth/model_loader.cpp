@@ -74,7 +74,11 @@ static std::vector<float> kv_f32_arr(gguf_context* g, const char* k) {
 }
 static std::string kv_str(gguf_context* g, const char* k, const char* d = "") {
     int64_t id = gguf_find_key(g, k);
-    return id < 0 ? std::string(d) : std::string(gguf_get_val_str(g, id));
+    if (id < 0) {
+        return d ? std::string(d) : std::string();
+    }
+    const char* v = gguf_get_val_str(g, id);
+    return v ? std::string(v) : std::string();
 }
 
 ModelLoader::~ModelLoader() {

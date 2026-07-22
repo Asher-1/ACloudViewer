@@ -165,6 +165,25 @@ int AICORE_CAPI aicore_depth_cap_img_resize_target(aicore_depth_ctx* ctx,
 /* Lightweight main-thread backend warmup: register ggml backends and clear
  * sticky CUDA errors. Returns 0 on success. */
 int AICORE_CAPI aicore_depth_warmup_backend(const char* device);
+/* Single-image 3D Gaussian reconstruction (anyview/GIANT branch). On success
+   sets *out_h,*out_w,*out_n and malloc'd flat arrays (caller frees via
+   aicore_depth_free_floats): *out_means[n*3], *out_scales[n*3],
+   *out_harmonics[n*3*9], *out_opacities[n]. Returns 0 ok, -1 error. */
+int AICORE_CAPI aicore_depth_reconstruct_path(const char* gguf_path,
+                                              int n_threads,
+                                              const char* image_path,
+                                              int* out_h,
+                                              int* out_w,
+                                              int* out_n,
+                                              float** out_means,
+                                              float** out_scales,
+                                              float** out_harmonics,
+                                              float** out_opacities);
+/* Quantize GGUF matmul weights to type (f16/q8_0/q6_k/q5_k/q4_k). Returns 0
+ * ok, -1 error. */
+int AICORE_CAPI aicore_depth_quantize_gguf(const char* in_gguf,
+                                           const char* out_gguf,
+                                           const char* type);
 #ifdef __cplusplus
 }
 #endif

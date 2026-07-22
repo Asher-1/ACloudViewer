@@ -13,8 +13,6 @@
 
 #ifdef AICore_ENABLED
 #include "aicore/depth_capi.h"
-#include "engine.hpp"
-#include "quantize.hpp"
 #endif
 
 #include <algorithm>
@@ -345,50 +343,57 @@ bool DA3Worker::runReconstruct() {
     }
     emit logMessage("[DA3] Reconstructing 3D Gaussians...");
 
-    // Gaussian reconstruction only uses the anyview (GIANT) branch — skip
-    // loading the metric model even if one is configured.
-    std::unique_ptr<aicore::depth::Engine> eng = aicore::depth::Engine::load(
-            m_settings.modelPath.toStdString(), m_settings.threads);
-    if (!eng) {
-        emit logMessage("[Error] Failed to load model.");
-        return false;
-    }
-
-    aicore::depth::Gaussians g;
-    int H, W;
-    if (!eng->reconstruct_path(m_settings.inputPaths[0].toStdString(), g, H,
-                               W)) {
+    int H = 0;
+    int W = 0;
+    int N = 0;
+    float* means = nullptr;
+    float* scales = nullptr;
+    float* harmonics = nullptr;
+    float* opacities = nullptr;
+    const int ret = aicore_depth_reconstruct_path(
+            m_settings.modelPath.toStdString().c_str(), m_settings.threads,
+            m_settings.inputPaths[0].toStdString().c_str(), &H, &W, &N, &means,
+            &scales, &harmonics, &opacities);
+    if (ret != 0) {
         emit logMessage("[Error] Reconstruction failed.");
         return false;
     }
 
     emit logMessage(QString("[DA3] Reconstructed %1 gaussians (%2x%3)")
-                            .arg(g.N)
+                            .arg(N)
                             .arg(W)
                             .arg(H));
 
     DA3ReconResult res;
     res.sourceName = QFileInfo(m_settings.inputPaths[0]).baseName();
-    res.count = g.N;
-    res.positions.resize(g.N * 3);
-    res.colors.resize(g.N * 3);
-    res.scales.resize(g.N * 3);
-    res.opacities.resize(g.N);
+    res.count = N;
+    if (N > 0 && means && scales && harmonics && opacities) {
+        res.positions.resize(N * 3);
+        res.colors.resize(N * 3);
+        res.scales.resize(N * 3);
+        res.opacities.resize(N);
 
-    for (int i = 0; i < g.N; ++i) {
-        res.positions[i * 3 + 0] = g.means[i * 3 + 0];
-        res.positions[i * 3 + 1] = g.means[i * 3 + 1];
-        res.positions[i * 3 + 2] = g.means[i * 3 + 2];
-        if (g.harmonics.size() >= static_cast<size_t>((i + 1) * 3 * 9)) {
-            res.colors[i * 3 + 0] = g.harmonics[i * 3 * 9 + 0];
-            res.colors[i * 3 + 1] = g.harmonics[i * 3 * 9 + 1];
-            res.colors[i * 3 + 2] = g.harmonics[i * 3 * 9 + 2];
+        for (int i = 0; i < N; ++i) {
+            res.positions[i * 3 + 0] = means[i * 3 + 0];
+            res.positions[i * 3 + 1] = means[i * 3 + 1];
+            res.positions[i * 3 + 2] = means[i * 3 + 2];
+            if (harmonics) {
+                const int shBase = i * 3 * 9;
+                res.colors[i * 3 + 0] = harmonics[shBase + 0];
+                res.colors[i * 3 + 1] = harmonics[shBase + 1];
+                res.colors[i * 3 + 2] = harmonics[shBase + 2];
+            }
+            res.scales[i * 3 + 0] = scales[i * 3 + 0];
+            res.scales[i * 3 + 1] = scales[i * 3 + 1];
+            res.scales[i * 3 + 2] = scales[i * 3 + 2];
+            res.opacities[i] = opacities[i];
         }
-        res.scales[i * 3 + 0] = g.scales[i * 3 + 0];
-        res.scales[i * 3 + 1] = g.scales[i * 3 + 1];
-        res.scales[i * 3 + 2] = g.scales[i * 3 + 2];
-        res.opacities[i] = g.opacities[i];
     }
+
+    aicore_depth_free_floats(means);
+    aicore_depth_free_floats(scales);
+    aicore_depth_free_floats(harmonics);
+    aicore_depth_free_floats(opacities);
 
     emit reconResultReady(res);
     emit logMessage("[DA3] Reconstruction complete.");
@@ -457,9 +462,11 @@ bool DA3Worker::runQuantize() {
                             .arg(m_settings.quantOutputPath)
                             .arg(m_settings.quantType));
 
-    if (aicore::depth::quantize_gguf(m_settings.quantInputPath.toStdString(),
-                                     m_settings.quantOutputPath.toStdString(),
-                                     m_settings.quantType.toStdString())) {
+    const int ret = aicore_depth_quantize_gguf(
+            m_settings.quantInputPath.toStdString().c_str(),
+            m_settings.quantOutputPath.toStdString().c_str(),
+            m_settings.quantType.toStdString().c_str());
+    if (ret == 0) {
         emit logMessage("[DA3] Quantization complete: " +
                         m_settings.quantOutputPath);
         return true;

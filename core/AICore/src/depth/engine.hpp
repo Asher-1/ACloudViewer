@@ -1,4 +1,5 @@
 #pragma once
+#include "aicore/export.h"
 #include "model_loader.hpp"
 #include "backend.hpp"
 #include "image_io.hpp"
@@ -20,7 +21,7 @@ struct ViewResult {
     std::array<float,9>  intr;       // 3x3 row-major
 };
 
-class Engine {
+class AICORE_CXX_API Engine {
 public:
     static std::unique_ptr<Engine> load(const std::string& gguf_path, int n_threads);
     // Nested metric: loads BOTH the anyview (GIANT) GGUF and the metric (ViT-L

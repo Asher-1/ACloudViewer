@@ -1,4 +1,5 @@
 #pragma once
+#include "aicore/export.h"
 #include "ggml.h"
 #include "gguf.h"
 #include <string>
@@ -29,7 +30,7 @@ struct Config {
     std::string arch = "depthanything3";          // route discriminator ("depthanything2" = DA2)
 };
 
-class ModelLoader {
+class AICORE_CXX_API ModelLoader {
 public:
     ModelLoader() = default;
     ~ModelLoader();

@@ -344,6 +344,10 @@ function(copy_linux_python_env_minimal INSTALL_DIR)
         "${PYTHON_VERSION_DIR}/"
         "${INSTALL_PYVER_DIR}/"
         PATTERN "site-packages" EXCLUDE
+        PATTERN "test" EXCLUDE
+        PATTERN "idle_test" EXCLUDE
+        PATTERN "config-*" EXCLUDE
+        PATTERN "ensurepip" EXCLUDE
     )
 
     copy_python_release_site_packages(
