@@ -27,9 +27,9 @@ struct GraphInputPool {
 
 class Backend {
 public:
-    // Selects the compute device via the registry. Default (DA_DEVICE unset) uses
-    // auto priority: CUDA -> OpenCL -> Vulkan -> CPU. DA_DEVICE overrides:
-    //   - "cpu" / "auto" / "cuda[:N]" / "opencl[:N]" / "vulkan[:N]" / "gpu[:N]"
+    // auto priority: macOS Metal -> CUDA -> CPU; else CUDA -> OpenCL -> CPU.
+    // DA_DEVICE overrides: "cpu" / "auto" / "cuda[:N]" / "opencl[:N]" /
+    // "metal[:N]" / "gpu[:N]" ("vulkan" is rejected — not built by default).
     //   - explicit registry name (case-insensitive, e.g. "CUDA0").
     Backend();
     ~Backend();

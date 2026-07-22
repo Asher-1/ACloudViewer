@@ -11,7 +11,7 @@
     <message>
         <location filename="../ui_templates/aboutDlg.ui" line="47"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Resources/images/icon/cloudviewer_128.png&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;ACloudViewer&lt;/span&gt;&lt;br/&gt;Version: %1&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/donation.html&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot; width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;License: GNU GPL (General Public Licence)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Resources/images/icon/cloudviewer_128.png&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;ACloudViewer&lt;/span&gt;&lt;br/&gt;Version: %1&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/donation.html&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot; width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;License: GNU GPL (General Public Licence)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;palign=&quot;center&quot;&gt;&lt;img src=&quot;:/资源/图像/icon/cloudviewer_128.png&quot;/&gt;&lt;br/&gt;&lt;span样式=&quot; 字体大小：14pt；字体粗细：600;&quot;&gt;ACloudViewer&lt;/span&gt;&lt;br/&gt;版本：%1&lt;/p&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/donation.html&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot;宽度=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/&quot;&gt;&lt;span style=&quot; 文本装饰：下划线；颜色：#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;许可证：GNU GPL（通用公共许可证）&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Resources/images/icon/cloudviewer_128.png&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;ACloudViewer&lt;/span&gt;&lt;br/&gt;Version: %1&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/donation.html&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot; width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://asher-1.github.io/ACloudViewer/donation.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;License: GNU GPL (General Public Licence)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -30,12 +30,12 @@
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/AboutDialog.ui" line="28"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Python Runtime&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Python Runtime&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;span 样式=&quot; 字体大小：16pt；字体粗细：600;&quot;&gt;Python运行时&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/AboutDialog.ui" line="37"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/AboutDialog.ui" line="47"/>
@@ -45,12 +45,11 @@
        href=&quot;https://www.geo-sat.com/en&quot;&gt;&lt;img src=&quot;:/CC/plugin/PythonRuntime/images/geo-sat-logo.png&quot;
        width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
       </source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Initially developed at &lt;a
-       href=&quot;https://www.geo-sat.com/fr/&quot;&gt;&lt;span style=&quot; text-decoration:
-       underline; color:#0000ff;&quot;&gt;Geosat&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;a
-       href=&quot;https://www.geo-sat.com/en&quot;&gt;&lt;img src=&quot;:/CC/plugin/PythonRuntime/images/geo-sat-logo.png&quot;
-       width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-      </translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;palign=&quot;center&quot;&gt;最初在&lt;a
+href=&quot;https://www.geo-sat.com/fr/&quot;&gt;&lt;span style=&quot;开发文本修饰：
+ 下划线；颜色：#0000ff;&quot;&gt;Geosat&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;br/&gt;&lt;a
+ href=&quot;https://www.geo-sat.com/en&quot;&gt;&lt;img src=&quot;:/CC/plugin/PythonRuntime/images/geo-sat-logo.png&quot;
+宽度=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/AboutDialog.ui" line="93"/>
@@ -380,12 +379,12 @@ reduce the flicker that is often present in animations). Super resolution is onl
 applied on the output video (= not visible in Preview mode)
 - Zoom: render the frame and the animation at a higher resolution (2, 3 or 4 times
 larger). You may have to increase the points size beforehand.</source>
-        <translation>- Super resolution: render the frame at a higher resolution (2, 3 or 4 times larger)
-and then shrink it back down to size (this makes some noisy pixels drop off and
-reduce the flicker that is often present in animations). Super resolution is only
-applied on the output video (= not visible in Preview mode)
-- Zoom: render the frame and the animation at a higher resolution (2, 3 or 4 times
-larger). You may have to increase the points size beforehand.</translation>
+        <translation>- 超分辨率：以更高分辨率渲染帧（大 2、3 或 4 倍）
+，然后将其缩小回原来的尺寸（这会使一些嘈杂的像素消失并
+减少动画中经常出现的闪烁）。超分辨率仅
+应用于输出视频（=在预览模式下不可见）
+- 缩放：以更高分辨率渲染帧和动画（2、3或4倍
+更大）。您可能必须事先增加点大小。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qAnimation/ui/animationDlg.ui" line="364"/>
@@ -916,29 +915,29 @@ Let P be a 3D point, the transformed point P&apos; will be such that: P&apos; = 
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="197"/>
         <source>use comma as decimal character</source>
-        <translation>use comma as decimal character</translation>
+        <translation>使用逗号作为小数点</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="204"/>
         <source>Show labels in 2D (not recommended over 50).
 Otherwise labels are shown in 3D.</source>
-        <translation>Show labels in 2D (not recommended over 50).
-Otherwise labels are shown in 3D.</translation>
+        <translation>在 2D 中显示标签（超过 50 个时不推荐）。
+否则标签在 3D 中显示。</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="208"/>
         <source>Show labels in 2D</source>
-        <translation>Show labels in 2D</translation>
+        <translation>在 2D 中显示标签</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="221"/>
         <source>Skip lines</source>
-        <translation>Skip lines</translation>
+        <translation>跳过行</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="235"/>
         <source>+ comment/header lines skipped: 0</source>
-        <translation>+ comment/header lines skipped: 0</translation>
+        <translation>+ 已跳过的注释/表头行：0</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openAsciiFileDlg.ui" line="261"/>
@@ -1021,12 +1020,12 @@ Otherwise labels are shown in 3D.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="95"/>
         <source>[ASC] point, color, SF(s), normal</source>
-        <translation>[ASC] point, color, SF(s), normal</translation>
+        <translation>[ASC] 点、颜色、SF、正常</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="100"/>
         <source>[PTS] point, SF(s), color, normal</source>
-        <translation>[PTS] point, SF(s), color, normal</translation>
+        <translation>[PTS] 点、SF、颜色、正常</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="110"/>
@@ -1036,7 +1035,7 @@ Otherwise labels are shown in 3D.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="116"/>
         <source>columns title</source>
-        <translation>columns title</translation>
+        <translation>列标题</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="123"/>
@@ -1052,17 +1051,17 @@ Otherwise labels are shown in 3D.</translation>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="139"/>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="149"/>
         <source>Save RGB color components as floats values between 0 and 1</source>
-        <translation>Save RGB color components as floats values between 0 and 1</translation>
+        <translation>将 RGB 颜色分量保存为 0 到 1 之间的浮点值</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="142"/>
         <source>Save colors as float values (0-1)</source>
-        <translation>Save colors as float values (0-1)</translation>
+        <translation>将颜色保存为浮点值 (0-1)</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveAsciiFileDlg.ui" line="152"/>
         <source>Save alpha channel</source>
-        <translation>Save alpha channel</translation>
+        <translation>保存 Alpha 通道</translation>
     </message>
 </context>
 <context>
@@ -1149,22 +1148,22 @@ Otherwise labels are shown in 3D.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/BasePclModule.cpp" line="236"/>
         <source>Dialog was not correctly filled in</source>
-        <translation>Dialog was not correctly filled in</translation>
+        <translation>对话框未正确填写</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/BasePclModule.cpp" line="241"/>
         <source>Errors while computing</source>
-        <translation>Errors while computing</translation>
+        <translation>计算时出错</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/BasePclModule.cpp" line="244"/>
         <source>Thread already in use!</source>
-        <translation>Thread already in use!</translation>
+        <translation>线程已被占用！</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/BasePclModule.cpp" line="249"/>
         <source>Undefined error in %1 module</source>
-        <translation>Undefined error in %1 module</translation>
+        <translation>%1 模块中发生未定义错误</translation>
     </message>
 </context>
 <context>
@@ -1260,7 +1259,7 @@ Otherwise labels are shown in 3D.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="14"/>
         <source>Cloth Simulation Filter</source>
-        <translation>Cloth Simulation Filter</translation>
+        <translation>布料模拟滤波</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="27"/>
@@ -1300,7 +1299,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="62"/>
         <source>General parameter setting</source>
-        <translation>General parameter setting</translation>
+        <translation>常规参数设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="68"/>
@@ -1325,12 +1324,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="176"/>
         <source> Slope processing</source>
-        <translation> Slope processing</translation>
+        <translation>坡度处理</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="212"/>
         <source>Advanced parameter setting</source>
-        <translation>Advanced parameter setting</translation>
+        <translation>高级参数设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/ui/CSFDlg.ui" line="220"/>
@@ -1700,7 +1699,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="810"/>
         <source>The separation between eyes (in degrees). This is used when rendering in stereo mode.</source>
-        <translation>The separation between eyes (in degrees). This is used when rendering in stereo mode.</translation>
+        <translation>双眼间距（度）。立体渲染模式下使用。</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="817"/>
@@ -1762,7 +1761,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="1042"/>
         <source>Apply a manipulation to the current camera using the buttons on the left.</source>
-        <translation>Apply a manipulation to the current camera using the buttons on the left.</translation>
+        <translation>使用左侧按钮对当前相机进行操作。</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/cameraParamDlg.ui" line="1052"/>
@@ -1810,7 +1809,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="24"/>
         <source>You can manually edit the boundary ( left click: select or add vertex / long press: move / right click: remove vertex)</source>
-        <translation>You can manually edit the boundary ( left click: select or add vertex / long press: move / right click: remove vertex)</translation>
+        <translation>您可以手动编辑边界（左键单击：选择或添加顶点/长按：移动/右键单击：删除顶点）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="50"/>
@@ -1820,12 +1819,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="78"/>
         <source>Cloud1 name</source>
-        <translation>Cloud1 name</translation>
+        <translation>点云1名称</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="107"/>
         <source>Cloud2 name</source>
-        <translation>Cloud2 name</translation>
+        <translation>点云2名称</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="117"/>
@@ -1835,12 +1834,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="126"/>
         <source>In order to get a faster classifier, you can decrease the number of scales used (keeping only the smallest)</source>
-        <translation>In order to get a faster classifier, you can decrease the number of scales used (keeping only the smallest)</translation>
+        <translation>为了获得更快的分类器，您可以减少使用的尺度数量（仅保留最小的）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="140"/>
         <source>reset boundary</source>
-        <translation>reset boundary</translation>
+        <translation>重置边界</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="150"/>
@@ -1850,7 +1849,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="157"/>
         <source>points size</source>
-        <translation>points size</translation>
+        <translation>点大小</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupo2DViewDialog.ui" line="189"/>
@@ -1952,12 +1951,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="140"/>
         <source>MSC files are generated by the original CANUPO tool (by N. Brodu)</source>
-        <translation>MSC files are generated by the original CANUPO tool (by N. Brodu)</translation>
+        <translation>MSC 文件由原始 CANUPO 工具（N. Brodu）生成</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="143"/>
         <source>from MSC file</source>
-        <translation>from MSC file</translation>
+        <translation>从 MSC 文件</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="184"/>
@@ -1967,7 +1966,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="193"/>
         <source>Use confidence threshold for classification</source>
-        <translation>Use confidence threshold for classification</translation>
+        <translation>使用置信度阈值进行分类</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="207"/>
@@ -1987,12 +1986,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="251"/>
         <source>use active SF to locally refine the classification</source>
-        <translation>use active SF to locally refine the classification</translation>
+        <translation>使用活动标量场局部细化分类</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="261"/>
         <source>For test purpose!</source>
-        <translation>For test purpose!</translation>
+        <translation>仅供测试！</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="264"/>
@@ -2002,7 +2001,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="271"/>
         <source>generate one SF per scale with roughness</source>
-        <translation>generate one SF per scale with roughness</translation>
+        <translation>为每个尺度生成带粗糙度的标量场</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoClassifDialog.ui" line="299"/>
@@ -2145,7 +2144,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoTrainingDialog.ui" line="291"/>
         <source>Show classifier behavior on </source>
-        <translation>Show classifier behavior on </translation>
+        <translation>显示分类器行为于</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/qCanupoTrainingDialog.ui" line="307"/>
@@ -2315,12 +2314,12 @@ Output facet normals may be randomly oriented
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/classificationParamsDlg.ui" line="54"/>
         <source>angular step</source>
-        <translation>angular step</translation>
+        <translation>角度步长</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/classificationParamsDlg.ui" line="61"/>
         <source>max distance</source>
-        <translation>max distance</translation>
+        <translation>最大距离</translation>
     </message>
 </context>
 <context>
@@ -2328,12 +2327,12 @@ Output facet normals may be randomly oriented
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="14"/>
         <source>3DMASC Classify</source>
-        <translation>3DMASC Classify</translation>
+        <translation>3DMASC 分类</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="35"/>
         <source>Classifier file</source>
-        <translation>Classifier file</translation>
+        <translation>分类器文件</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="52"/>
@@ -2356,12 +2355,12 @@ Output facet normals may be randomly oriented
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="95"/>
         <source>TEST on (optional)</source>
-        <translation>TEST on (optional)</translation>
+        <translation>测试对象（可选）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="105"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Role as defined in the parameter file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Role as defined in the parameter file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;参数文件中定义的角色.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Classify3DMASCDialog.ui" line="108"/>
@@ -2449,7 +2448,7 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/classifyDisclaimerDlg.ui" line="14"/>
         <source>qCANUPO (disclaimer)</source>
-        <translation>qCANUPO (disclaimer)</translation>
+        <translation>qCANUPO（免责声明）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/classifyDisclaimerDlg.ui" line="48"/>
@@ -2734,20 +2733,20 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/CodeEditor.cpp" line="189"/>
         <source>Cannot read file %1:
 %2.</source>
-        <translation>Cannot read file %1:
-%2.</translation>
+        <translation>无法读取文件 %1：
+%2。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/CodeEditor.cpp" line="219"/>
         <source>Save As</source>
-        <translation>Save As</translation>
+        <translation>另存为</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/CodeEditor.cpp" line="233"/>
         <source>Cannot write file %1:
 %2.</source>
-        <translation>Cannot write file %1:
-%2.</translation>
+        <translation>无法写入文件 %1：
+%2。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/CodeEditor.cpp" line="276"/>
@@ -3195,7 +3194,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/confusionmatrix.ui" line="67"/>
         <source>Overall accuracy</source>
-        <translation>Overall accuracy</translation>
+        <translation>总体精度</translation>
     </message>
 </context>
 <context>
@@ -3251,22 +3250,22 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="54"/>
         <source>Show Nodes</source>
-        <translation>Show Nodes</translation>
+        <translation>显示节点</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="57"/>
         <source>Show/hide contour control nodes</source>
-        <translation>Show/hide contour control nodes</translation>
+        <translation>显示/隐藏轮廓控制节点</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="67"/>
         <source>Closed Loop</source>
-        <translation>Closed Loop</translation>
+        <translation>闭合环</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="70"/>
         <source>Close the contour to form a loop</source>
-        <translation>Close the contour to form a loop</translation>
+        <translation>闭合轮廓形成环</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="85"/>
@@ -3276,7 +3275,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourToolDlg.ui" line="92"/>
         <source>Width of the contour line</source>
-        <translation>Width of the contour line</translation>
+        <translation>轮廓线宽度</translation>
     </message>
 </context>
 <context>
@@ -3294,7 +3293,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/ConvexConcaveHullDlg.ui" line="76"/>
         <source>Alpha(0 ? Convex : Concave)</source>
-        <translation>Alpha(0 ? Convex : Concave)</translation>
+        <translation>Alpha（0 ? 凸 : 凹）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/ConvexConcaveHullDlg.ui" line="83"/>
@@ -3308,7 +3307,7 @@ to help you set the general parameters</source>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="33"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="34"/>
         <source>ConvexConcaveHull Reconstruction</source>
-        <translation>ConvexConcaveHull Reconstruction</translation>
+        <translation>凸凹船体重建</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="35"/>
@@ -3323,7 +3322,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="119"/>
         <source>Concave Reconstruction</source>
-        <translation>Concave Reconstruction</translation>
+        <translation>凹面重建</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="121"/>
@@ -3333,7 +3332,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="124"/>
         <source>Convex Reconstruction</source>
-        <translation>Convex Reconstruction</translation>
+        <translation>凸重建</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="144"/>
@@ -3343,12 +3342,12 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="148"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/ConvexConcaveHullReconstruction.cpp" line="152"/>
         <source>Convex Concave Hull Reconstruction does not returned any point. Try relaxing your parameters</source>
-        <translation>Convex Concave Hull Reconstruction does not returned any point. Try relaxing your parameters</translation>
+        <translation>凸凹船体重建不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -3361,7 +3360,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="39"/>
         <source>Image courtesy of Autodesk(r)</source>
-        <translation>Image courtesy of Autodesk(r)</translation>
+        <translation>图片由 Autodesk(r) 提供</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="93"/>
@@ -3376,7 +3375,7 @@ to help you set the general parameters</source>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="141"/>
         <source>Merge two objects into one</source>
-        <translation>Merge two objects into one</translation>
+        <translation>将两个对象合并为一个</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="144"/>
@@ -3388,7 +3387,7 @@ A+B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="152"/>
         <source>Subtract one object from another</source>
-        <translation>Subtract one object from another</translation>
+        <translation>从一个对象中减去另一个对象</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="155"/>
@@ -3400,24 +3399,24 @@ A-B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="163"/>
         <source>Return the portion common to both objects</source>
-        <translation>Return the portion common to both objects</translation>
+        <translation>返回两个对象共有的部分</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="166"/>
         <source>Intersection
 A n B</source>
-        <translation>Intersection
+        <translation>交叉点
 A n B</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="187"/>
         <source>Subtract one object from another (inverse result)</source>
-        <translation>Subtract one object from another (inverse result)</translation>
+        <translation>将一个对象从另一个对象中减去（结果相反）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCork/ui/corkDlg.ui" line="190"/>
         <source>Symmetric Difference</source>
-        <translation>Symmetric Difference</translation>
+        <translation>对称差</translation>
     </message>
 </context>
 <context>
@@ -3456,52 +3455,52 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="268"/>
         <source>Correspondences found for model %1 : %2</source>
-        <translation>Correspondences found for model %1 : %2</translation>
+        <translation>找到型号 %1 的对应信息：%2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="333"/>
         <source>No instances found in Model %1 </source>
-        <translation>No instances found in Model %1 </translation>
+        <translation>在模型 %1 中找不到实例</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="337"/>
         <source>Model %1 instances found number : %2</source>
-        <translation>Model %1 instances found number : %2</translation>
+        <translation>型号 %1 实例找到编号：%2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="364"/>
         <source>--- ICP Start ---------</source>
-        <translation>--- ICP Start ---------</translation>
+        <translation>--- ICP启动---------</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="372"/>
         <source>Model %1 Instances %2 Aligned!</source>
-        <translation>Model %1 Instances %2 Aligned!</translation>
+        <translation>模型 %1 实例 %2 已对齐！</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="376"/>
         <source>Model %1 Instances %2 Not Aligned!</source>
-        <translation>Model %1 Instances %2 Not Aligned!</translation>
+        <translation>模型 %1 实例 %2 未对齐！</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="382"/>
         <source>--- ICP End ---------</source>
-        <translation>--- ICP End ---------</translation>
+        <translation>--- ICP结束---------</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="389"/>
         <source>--- Hypotheses bugs and do not support! ---------</source>
-        <translation>--- Hypotheses bugs and do not support! ---------</translation>
+        <translation>---假设有bug且不支持！ ---------</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="429"/>
         <source>correspondence-grouping-cluster(s)</source>
-        <translation>correspondence-grouping-cluster(s)</translation>
+        <translation>对应分组簇</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="458"/>
         <source>%1-correspondence-%2-%3</source>
-        <translation>%1-correspondence-%2-%3</translation>
+        <translation>%1-对应-%2-%3</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="503"/>
@@ -3511,12 +3510,12 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="505"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/CorrespondenceMatching.cpp" line="509"/>
         <source>Correspondence Matching does not returned any point. Try relaxing your parameters</source>
-        <translation>Correspondence Matching does not returned any point. Try relaxing your parameters</translation>
+        <translation>对应匹配不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -3762,7 +3761,7 @@ A n B</translation>
     <message>
         <location filename="../../libs/CVAppCommon/ui/customViewpointButtonDlg.ui" line="128"/>
         <source>Add new custom viewpoint</source>
-        <translation>Add new custom viewpoint</translation>
+        <translation>添加新的自定义视点</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/customViewpointButtonDlg.ui" line="142"/>
@@ -3790,7 +3789,7 @@ A n B</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="49"/>
         <source>Cut Type</source>
-        <translation>Cut Type</translation>
+        <translation>切割类型</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="57"/>
@@ -3837,7 +3836,7 @@ A n B</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="106"/>
         <source>Inverse Cutting region</source>
-        <translation>Inverse Cutting region</translation>
+        <translation>逆切区域</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="116"/>
@@ -3847,7 +3846,7 @@ A n B</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="220"/>
         <source>Show Plane</source>
-        <translation>Show Plane</translation>
+        <translation>显示平面</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="274"/>
@@ -3862,7 +3861,7 @@ A n B</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="288"/>
         <source>Show Contour Lines</source>
-        <translation>Show Contour Lines</translation>
+        <translation>显示轮廓线</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvCutFilterDlg.ui" line="360"/>
@@ -3891,7 +3890,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="222"/>
         <source>-Tolerance(%1)-ClusterSize(%2-%3)</source>
-        <translation>-Tolerance(%1)-ClusterSize(%2-%3)</translation>
+        <translation>-公差(%1)-簇大小(%2-%3)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="228"/>
@@ -3901,7 +3900,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="234"/>
         <source>Error(s) occurred during the generation of clusters! Result may be incomplete</source>
-        <translation>Error(s) occurred during the generation of clusters! Result may be incomplete</translation>
+        <translation>生成簇时发生错误！结果可能不完整</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="258"/>
@@ -3911,12 +3910,12 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="262"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="266"/>
         <source>Difference of Normals Segmentation could not get any cluster or the clusters are more than 300 for the given dataset. Try relaxing your parameters</source>
-        <translation>Difference of Normals Segmentation could not get any cluster or the clusters are more than 300 for the given dataset. Try relaxing your parameters</translation>
+        <translation>对于给定数据集，法线差异分割无法获得任何聚类或聚类超过 300 个。尝试放宽参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/DONSegmentation.cpp" line="272"/>
@@ -3944,7 +3943,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="58"/>
         <source>Minimum DoN Magnitude</source>
-        <translation>Minimum DoN Magnitude</translation>
+        <translation>最小 DoN 幅度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="84"/>
@@ -3954,7 +3953,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="110"/>
         <source>Maximum DoN Magnitude</source>
-        <translation>Maximum DoN Magnitude</translation>
+        <translation>最大 DoN 幅度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="136"/>
@@ -4004,7 +4003,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="224"/>
         <source>Euclidean Cluster Parameters</source>
-        <translation>Euclidean Cluster Parameters</translation>
+        <translation>欧几里得簇参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="230"/>
@@ -4024,7 +4023,7 @@ A n B</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/DONSegmentationDlg.ui" line="290"/>
         <source>Random Cluster Color</source>
-        <translation>Random Cluster Color</translation>
+        <translation>随机簇颜色</translation>
     </message>
 </context>
 <context>
@@ -4313,8 +4312,8 @@ but should ideally be smaller (e.g. a subsampled version of cloud #1)</source>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="275"/>
         <source>Use previously computed features
 (only if the cloud has already been processed)</source>
-        <translation>Use previously computed features
-(only if the cloud has already been processed)</translation>
+        <translation>使用先前计算的特征
+（仅当云已被处理时）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="279"/>
@@ -4382,7 +4381,7 @@ and model testing</source>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="480"/>
         <source>&lt;a href=&quot;https://www.cloudcompare.org/doc/wiki&quot;&gt;see documentation&lt;/a&gt;</source>
-        <translation>&lt;a href=&quot;https://www.cloudcompare.org/doc/wiki&quot;&gt;see documentation&lt;/a&gt;</translation>
+        <translation>&lt;a href=&quot;https://www.cloudcompare.org/doc/wiki&quot;&gt;请参阅文档&lt;/a&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="493"/>
@@ -4591,8 +4590,8 @@ and model testing</source>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="1016"/>
         <source>Select the most contributive features and scales
 (in order to reduce computation time and reduce the classifier size)</source>
-        <translation>Select the most contributive features and scales
-(in order to reduce computation time and reduce the classifier size)</translation>
+        <translation>选择贡献最大的特征和尺度
+（以减少计算时间并减少分类器大小）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="936"/>
@@ -4682,7 +4681,7 @@ and model testing</source>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="1209"/>
         <source>Can be re-used in 3DMASC &quot;Create&quot; to avoid re-computing the features</source>
-        <translation>Can be re-used in 3DMASC &quot;Create&quot; to avoid re-computing the features</translation>
+        <translation>可以在 3DMASC &quot;Create&quot; 中重复使用，以避免重新计算特征</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/training.ui" line="1212"/>
@@ -4724,7 +4723,7 @@ and model testing</source>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/disclaimerDlg.ui" line="20"/>
         <source>qFacets (disclaimer)</source>
-        <translation>qFacets (disclaimer)</translation>
+        <translation>qFacets（免责声明）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/disclaimerDlg.ui" line="58"/>
@@ -4756,7 +4755,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qM3C2/ui/disclaimerDlg.ui" line="14"/>
         <source>qM3C2 (disclaimer)</source>
-        <translation>qM3C2 (disclaimer)</translation>
+        <translation>qM3C2（免责声明）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qM3C2/ui/disclaimerDlg.ui" line="48"/>
@@ -4784,7 +4783,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/disclaimerDlg.ui" line="14"/>
         <source>qVoxFall (disclaimer)</source>
-        <translation>qVoxFall (disclaimer)</translation>
+        <translation>qVoxFall（免责声明）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/disclaimerDlg.ui" line="48"/>
@@ -4845,7 +4844,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="139"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to use a double-sided light model or not&lt;/p&gt;&lt;p&gt;(if disabled, triangles will appear black when looked from behind)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to use a double-sided light model or not&lt;/p&gt;&lt;p&gt;(if disabled, triangles will appear black when looked from behind)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;是否使用双面灯光模型&lt;/p&gt;&lt;p&gt;(如果禁用，三角形从正面看会呈现黑色后面）&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="142"/>
@@ -4936,7 +4935,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="487"/>
         <source>Enable shader for faster display (ATI cards: use at your own risk ;)</source>
-        <translation>Enable shader for faster display (ATI cards: use at your own risk ;)</translation>
+        <translation>启用着色器以加快显示速度（ATI 卡：使用风险自负；）</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="496"/>
@@ -5001,7 +5000,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="766"/>
         <source>Zoom/walk speed in perspective mode (default = 1.0)</source>
-        <translation>Zoom/walk speed in perspective mode (default = 1.0)</translation>
+        <translation>透视模式下的缩放/行走速度（默认 = 1.0）</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="802"/>
@@ -5022,7 +5021,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="843"/>
         <source>points when moved</source>
-        <translation>points when moved</translation>
+        <translation>移动时的点</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="867"/>
@@ -5043,7 +5042,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="911"/>
         <source>triangles when moved</source>
-        <translation>triangles when moved</translation>
+        <translation>移动时的三角形</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="933"/>
@@ -5059,7 +5058,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="950"/>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="953"/>
         <source>A cross is displayed in the middle of the screen</source>
-        <translation>A cross is displayed in the middle of the screen</translation>
+        <translation>屏幕中间会显示一个十字</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="956"/>
@@ -5084,7 +5083,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="992"/>
         <source>Set the verbosity level for log messages displayed in the console</source>
-        <translation>Set the verbosity level for log messages displayed in the console</translation>
+        <translation>设置控制台中显示的日志消息的详细级别</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/displayOptionsDlg.ui" line="996"/>
@@ -5653,11 +5652,11 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos;/&apos;L&apos; to constrain the mov
     color: #333;
 }</source>
         <translation>QLabel {
-    background-color: #FFF9E6;
-    border: 1px solid #FFD700;
-    border-radius: 2px;
-    padding: 3px;
-    color: #333;
+ 背景颜色：#FFF9E6；
+ 边框：1px 实线#FFD700；
+ 边框半径：2px；
+ 填充：3px；
+ 颜色：#333；
 }</translation>
     </message>
     <message>
@@ -5737,7 +5736,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos;/&apos;L&apos; to constrain the mov
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="498"/>
         <source>Distance between major tick marks (when Ruler Mode is on)</source>
-        <translation>Distance between major tick marks (when Ruler Mode is on)</translation>
+        <translation>主要刻度线之间的距离（标尺模式打开时）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="527"/>
@@ -5747,7 +5746,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos;/&apos;L&apos; to constrain the mov
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="546"/>
         <source>Number of tick marks (when Ruler Mode is off)</source>
-        <translation>Number of tick marks (when Ruler Mode is off)</translation>
+        <translation>刻度线数量（标尺模式关闭时）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="569"/>
@@ -5757,7 +5756,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos;/&apos;L&apos; to constrain the mov
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="588"/>
         <source>Scale factor to convert VTK world units (e.g., 2.54 to convert inches to cm)</source>
-        <translation>Scale factor to convert VTK world units (e.g., 2.54 to convert inches to cm)</translation>
+        <translation>用于转换 VTK 世界单位的比例因子（例如，2.54 用于将英寸转换为厘米）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="617"/>
@@ -5767,7 +5766,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos;/&apos;L&apos; to constrain the mov
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="626"/>
         <source>Printf-style format string for distance label (e.g., %6.3g, %.2f)</source>
-        <translation>Printf-style format string for distance label (e.g., %6.3g, %.2f)</translation>
+        <translation>距离标签的 Printf 样式格式字符串（例如 %6.3g、%.2f）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="639"/>
@@ -5776,11 +5775,11 @@ Examples:
   %-#6.3g - General format, 6 chars wide, 3 significant digits
   %.2f - Fixed point, 2 decimal places
   %.4e - Scientific notation, 4 decimal places</source>
-        <translation>Printf-style format string for distance label
-Examples:
-  %-#6.3g - General format, 6 chars wide, 3 significant digits
-  %.2f - Fixed point, 2 decimal places
-  %.4e - Scientific notation, 4 decimal places</translation>
+        <translation>距离标签的 Printf 样式格式字符串
+示例：
+ %-#6.3g - 通用格式，6 个字符宽，3 位有效数字
+ %.2f - 定点，2 位小数
+ %.4e - 科学计数法，4 位小数</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="646"/>
@@ -5801,7 +5800,7 @@ Examples:
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="685"/>
         <source>Show/hide the distance widget</source>
-        <translation>Show/hide the distance widget</translation>
+        <translation>显示/隐藏距离小部件</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="695"/>
@@ -5811,7 +5810,7 @@ Examples:
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="698"/>
         <source>Show/hide the distance label</source>
-        <translation>Show/hide the distance label</translation>
+        <translation>显示/隐藏距离标签</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceToolDlg.ui" line="713"/>
@@ -5829,7 +5828,7 @@ Examples:
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="14"/>
         <source>Buttons</source>
-        <translation type="unfinished"></translation>
+        <translation>Buttons</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="27"/>
@@ -5987,7 +5986,7 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="414"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="442"/>
         <source>This is a tool tip</source>
-        <translation type="unfinished"></translation>
+        <translation>这是一个工具提示</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="68"/>
@@ -6122,7 +6121,7 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="417"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="445"/>
         <source>This is a status tip</source>
-        <translation type="unfinished"></translation>
+        <translation>这是状态提示</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="71"/>
@@ -6257,14 +6256,14 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="420"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="448"/>
         <source>This is &quot;what is this&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>这是&quot;这是什么&quot;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="74"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="149"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="197"/>
         <source>PushButton</source>
-        <translation type="unfinished"></translation>
+        <translation>PushButton</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="102"/>
@@ -6284,7 +6283,7 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="991"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1004"/>
         <source>Checked</source>
-        <translation type="unfinished"></translation>
+        <translation>Checked</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="204"/>
@@ -6294,12 +6293,12 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1069"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1103"/>
         <source>Unchecked</source>
-        <translation type="unfinished"></translation>
+        <translation>Unchecked</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="254"/>
         <source>ToolButton (Both/Text/Icon)</source>
-        <translation type="unfinished"></translation>
+        <translation>工具按钮（两者/文本/图标）</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="261"/>
@@ -6311,24 +6310,24 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="578"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="595"/>
         <source>Tool</source>
-        <translation type="unfinished"></translation>
+        <translation>Tool</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="310"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="379"/>
         <source>Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Icon</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="390"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton (Both/Text/Icon)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton （两者/文本/图标）&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="440"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="509"/>
         <source>Icon Checked</source>
-        <translation type="unfinished"></translation>
+        <translation>图标已选中</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="526"/>
@@ -6349,75 +6348,75 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="728"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="741"/>
         <source>...</source>
-        <translation type="unfinished">...</translation>
+        <translation>...</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="626"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton (Arrows)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton （箭头）&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="750"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton (Menus)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ToolButton （菜单）&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="759"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="796"/>
         <source>Delayed</source>
-        <translation type="unfinished"></translation>
+        <translation>Delayed</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="769"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="809"/>
         <source>Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Menu</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="779"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="822"/>
         <source>Instant</source>
-        <translation type="unfinished"></translation>
+        <translation>Instant</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="840"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="903"/>
         <source>RadioButton</source>
-        <translation type="unfinished"></translation>
+        <translation>RadioButton</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="984"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1041"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1113"/>
         <source>CheckBox</source>
-        <translation type="unfinished"></translation>
+        <translation>CheckBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1120"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1139"/>
         <source>Tristate</source>
-        <translation type="unfinished"></translation>
+        <translation>Tristate</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1179"/>
         <source>CommandLinkButton</source>
-        <translation type="unfinished"></translation>
+        <translation>CommandLinkButton</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1207"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1223"/>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Command</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1257"/>
         <source>ButtonBox</source>
-        <translation type="unfinished"></translation>
+        <translation>ButtonBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1302"/>
         <source>Vertical Spacer &apos;verticalSpacer&apos;, 20 x 4</source>
-        <translation type="unfinished"></translation>
+        <translation>垂直垫片 &apos;verticalSpacer&apos;，20 x 4</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_buttons.ui" line="1333"/>
@@ -6425,24 +6424,24 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="971"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="560"/>
         <source>Inside DockWidget</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 DockWidget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="14"/>
         <source>Containers - No Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>容器 - 无选项卡</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="51"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="153"/>
         <source>Inside Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>内框</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="82"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="187"/>
         <source>Inside Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>内部小部件</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="101"/>
@@ -6450,7 +6449,7 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="639"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="1041"/>
         <source>GroupBox</source>
-        <translation type="unfinished"></translation>
+        <translation>GroupBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="116"/>
@@ -6458,12 +6457,12 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="1028"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="1047"/>
         <source>Inside GroupBox</source>
-        <translation type="unfinished"></translation>
+        <translation>组框内</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="206"/>
         <source>GroupBox Checkable</source>
-        <translation type="unfinished"></translation>
+        <translation>分组框可勾选</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="279"/>
@@ -6474,7 +6473,7 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="574"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="606"/>
         <source>ScroolArea</source>
-        <translation type="unfinished"></translation>
+        <translation>ScroolArea</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="319"/>
@@ -6486,75 +6485,75 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="590"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="622"/>
         <source>Inside ScroolArea</source>
-        <translation type="unfinished"></translation>
+        <translation>滚动区域内</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="335"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="510"/>
         <source>ScroolArea </source>
-        <translation type="unfinished"></translation>
+        <translation>ScroolArea </translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="351"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="526"/>
         <source>Inside ScroolArea </source>
-        <translation type="unfinished"></translation>
+        <translation>滚动区域内</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="662"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="797"/>
         <source>Inside Stacked Page 1</source>
-        <translation type="unfinished"></translation>
+        <translation>内叠页 1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="682"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="817"/>
         <source>Inside Stacked Page 2</source>
-        <translation type="unfinished"></translation>
+        <translation>内叠页 2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="717"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="920"/>
         <source>Page 1</source>
-        <translation type="unfinished"></translation>
+        <translation>第1页</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="723"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="926"/>
         <source>Inside ToolBox Page 1</source>
-        <translation type="unfinished"></translation>
+        <translation>工具箱内部第 1 页</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="739"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="942"/>
         <source>Page 2</source>
-        <translation type="unfinished"></translation>
+        <translation>第2页</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="754"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="957"/>
         <source>Inside ToolBox Page 2</source>
-        <translation type="unfinished"></translation>
+        <translation>工具箱内部第 2 页</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="771"/>
         <source>MDI Area</source>
-        <translation type="unfinished"></translation>
+        <translation>计量吸入器区</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="834"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="847"/>
         <source>Stacked</source>
-        <translation type="unfinished"></translation>
+        <translation>Stacked</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="860"/>
         <source>ToolBox</source>
-        <translation type="unfinished"></translation>
+        <translation>ToolBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="868"/>
@@ -6562,34 +6561,34 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="985"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="999"/>
         <source>Subwindow</source>
-        <translation type="unfinished"></translation>
+        <translation>Subwindow</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="874"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="991"/>
         <source>Inside MDI Area 1</source>
-        <translation type="unfinished"></translation>
+        <translation>MDI 区域 1 内</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="888"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="1005"/>
         <source>Inside MDI Area 2 </source>
-        <translation type="unfinished"></translation>
+        <translation>MDI 区域 2 内</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="974"/>
         <source>Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Widget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_no_tabs.ui" line="1019"/>
         <source>GroupBox Checkeable</source>
-        <translation type="unfinished"></translation>
+        <translation>分组框可检查</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="14"/>
         <source>Containers - Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>容器 - 选项卡</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="57"/>
@@ -6601,13 +6600,13 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="300"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="344"/>
         <source>Tab 1</source>
-        <translation type="unfinished"></translation>
+        <translation>选项卡1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="63"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="107"/>
         <source>Inside TabWidget North Closable Tab 1</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget North 可关闭选项卡 1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="71"/>
@@ -6619,54 +6618,54 @@ Examples:
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="314"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="358"/>
         <source>Tab 2</source>
-        <translation type="unfinished"></translation>
+        <translation>选项卡2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="77"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="121"/>
         <source>Inside TabWidget North Closable Tab 2</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget North 可关闭选项卡 2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="145"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="186"/>
         <source>Inside TabWidget West Tab 1</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 西选项卡 1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="159"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="200"/>
         <source>Inside TabWidget West Tab 2</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 西选项卡 2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="224"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="265"/>
         <source>Inside TabWidget East Tab 1</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 东选项卡 1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="238"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="279"/>
         <source>Inside TabWidget East Tab 2</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 东选项卡 2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="306"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="350"/>
         <source>Inside TabWidget South Closable Tab 1</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 南可关闭选项卡 1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="320"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_containers_tabs.ui" line="364"/>
         <source>Inside TabWidget South Closable Tab 2</source>
-        <translation type="unfinished"></translation>
+        <translation>内部 TabWidget 南可关闭选项卡 2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="14"/>
         <source>Displays</source>
-        <translation type="unfinished"></translation>
+        <translation>Displays</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="48"/>
@@ -6676,7 +6675,12 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Cantarell&apos;;&quot;&gt;Testing&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:&apos;Cantarell&apos;;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { 空白：预换行； }
+&lt;/style&gt;&lt;/head&gt;&lt;body 样式=&quot; 字体系列：&apos;Ubuntu&apos;;字体大小：11pt；字体粗细：400；字体样式：正常；&quot;&gt;
+&lt;p 样式=&quot; 边距顶部：0px；下边距：0px；左边距：0px；右边距：0px； -qt-块缩进：0；文本缩进：0px;&quot;&gt;&lt;span样式=&quot;字体系列：&apos;Cantarell&apos;;&quot;&gt;Testing&lt;/span&gt;&lt;/p&gt;
+&lt;p样式=&quot;-qt-段落类型：空;顶部边距：0px；下边距：0px；左边距：0px；右边距：0px； -qt-块缩进：0；文本缩进：0px；字体系列：&apos;Cantarell&apos;;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="131"/>
@@ -6687,12 +6691,12 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="147"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="816"/>
         <source>Testing</source>
-        <translation type="unfinished"></translation>
+        <translation>Testing</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="187"/>
         <source>TextBrowser</source>
-        <translation type="unfinished"></translation>
+        <translation>TextBrowser</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="203"/>
@@ -6701,99 +6705,103 @@ p, li { white-space: pre-wrap; }
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Cantarell&apos;;&quot;&gt;Testing&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { 空白：预换行； }
+&lt;/style&gt;&lt;/head&gt;&lt;body 样式=&quot; 字体系列：&apos;Ubuntu&apos;;字体大小：11pt；字体粗细：400；字体样式：正常；&quot;&gt;
+&lt;p 样式=&quot; 边距顶部：0px；下边距：0px；左边距：0px；右边距：0px； -qt-块缩进：0；文本缩进：0px;&quot;&gt;&lt;span样式=&quot;字体系列：&apos;Cantarell&apos;;&quot;&gt;Testing&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="247"/>
         <source>GraphicsView</source>
-        <translation type="unfinished"></translation>
+        <translation>GraphicsView</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="331"/>
         <source>CalendarWidget</source>
-        <translation type="unfinished"></translation>
+        <translation>CalendarWidget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="422"/>
         <source>LCDNumber</source>
-        <translation type="unfinished"></translation>
+        <translation>LCDNumber</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="493"/>
         <source>ProgressBar</source>
-        <translation type="unfinished"></translation>
+        <translation>ProgressBar</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="583"/>
         <source>Line - H</source>
-        <translation type="unfinished"></translation>
+        <translation>线-H</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_displays.ui" line="673"/>
         <source>Line - V</source>
-        <translation type="unfinished"></translation>
+        <translation>线-V</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="14"/>
         <source>Inputs - Fields</source>
-        <translation type="unfinished"></translation>
+        <translation>输入 - 字段</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="74"/>
         <source>FontComboBox</source>
-        <translation type="unfinished"></translation>
+        <translation>FontComboBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="134"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ComboBox&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span 样式=&quot;字体粗细：600;&quot;&gt;ComboBox&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="145"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="188"/>
         <source>ComboBoxEditable</source>
-        <translation type="unfinished"></translation>
+        <translation>ComboBoxEditable</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="150"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="473"/>
         <source>Option 1 No Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>选项 1 无图标</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="155"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="478"/>
         <source>Option 2 No Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>选项 2 无图标</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="160"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="483"/>
         <source>Option 1 With Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>选项 1 带图标</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="169"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="492"/>
         <source>Option 2 With Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>选项 2 带图标</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="193"/>
         <source>Second option</source>
-        <translation type="unfinished"></translation>
+        <translation>第二个选择</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="233"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="267"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="304"/>
         <source>LineEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>LineEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="338"/>
         <source>TextEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>TextEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="366"/>
@@ -6803,125 +6811,129 @@ p, li { white-space: pre-wrap; }
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:8.15094pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Cantarell&apos;; font-size:11pt;&quot;&gt;TextEdit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { 空白：预换行； }
+&lt;/style&gt;&lt;/head&gt;&lt;body 样式=&quot; 字体系列：&apos;MS Shell Dlg 2&apos;；字体大小：8.15094pt；字体粗细：400；字体样式：正常；&quot;&gt;
+&lt;p 样式=&quot; 边距顶部：0px；下边距：0px；左边距：0px；右边距：0px； -qt-块缩进：0；文本缩进：0px;&quot;&gt;&lt;span 样式=&quot; 字体系列：&apos;Cantarell&apos;;字体大小：11pt;&quot;&gt;TextEdit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="439"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="467"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="498"/>
         <source>PlainTextEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>PlainTextEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="532"/>
         <source>SpinBox</source>
-        <translation type="unfinished"></translation>
+        <translation>SpinBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="619"/>
         <source>DoubleSpinBox</source>
-        <translation type="unfinished"></translation>
+        <translation>DoubleSpinBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="706"/>
         <source>TimeEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>TimeEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="793"/>
         <source>DateEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>DateEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_fields.ui" line="880"/>
         <source>TimeDateEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>TimeDateEdit</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="14"/>
         <source>Inputs - No Fields</source>
-        <translation type="unfinished"></translation>
+        <translation>输入 - 无字段</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="76"/>
         <source>VerticalSlider</source>
-        <translation type="unfinished"></translation>
+        <translation>VerticalSlider</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="175"/>
         <source>HorizontalSlider</source>
-        <translation type="unfinished"></translation>
+        <translation>HorizontalSlider</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="274"/>
         <source>VerticalScroolBar</source>
-        <translation type="unfinished"></translation>
+        <translation>VerticalScroolBar</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="355"/>
         <source>Dial</source>
-        <translation type="unfinished"></translation>
+        <translation>Dial</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="468"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="694"/>
         <source>ComboBoxNotEditable</source>
-        <translation type="unfinished"></translation>
+        <translation>ComboBoxNotEditable</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="531"/>
         <source>HorizontalScroolBar</source>
-        <translation type="unfinished"></translation>
+        <translation>HorizontalScroolBar</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="597"/>
         <source>ComboBox</source>
-        <translation type="unfinished"></translation>
+        <translation>ComboBox</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="699"/>
         <source>ComboBox B</source>
-        <translation type="unfinished"></translation>
+        <translation>组合框B</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_inputs_no_fields.ui" line="704"/>
         <source>ComboBox C</source>
-        <translation type="unfinished"></translation>
+        <translation>组合框C</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_views.ui" line="14"/>
         <source>Views</source>
-        <translation type="unfinished"></translation>
+        <translation>Views</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_views.ui" line="53"/>
         <source>ListView</source>
-        <translation type="unfinished"></translation>
+        <translation>ListView</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_views.ui" line="76"/>
         <source>TreeView</source>
-        <translation type="unfinished"></translation>
+        <translation>TreeView</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_views.ui" line="99"/>
         <source>TableView</source>
-        <translation type="unfinished"></translation>
+        <translation>TableView</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_views.ui" line="122"/>
         <source>ColunmView</source>
-        <translation type="unfinished"></translation>
+        <translation>ColunmView</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="14"/>
         <source>Widgets</source>
-        <translation type="unfinished"></translation>
+        <translation>Widgets</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="74"/>
         <source>ListWidget</source>
-        <translation type="unfinished"></translation>
+        <translation>ListWidget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="103"/>
@@ -6948,12 +6960,12 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="359"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="383"/>
         <source>New Item</source>
-        <translation type="unfinished"></translation>
+        <translation>新商品</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="180"/>
         <source>TreeWidget</source>
-        <translation type="unfinished"></translation>
+        <translation>TreeWidget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="212"/>
@@ -6966,7 +6978,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="529"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="534"/>
         <source>New Column</source>
-        <translation type="unfinished"></translation>
+        <translation>新专栏</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="234"/>
@@ -6980,18 +6992,18 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="373"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="387"/>
         <source>New Subitem</source>
-        <translation type="unfinished"></translation>
+        <translation>新子项目</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="237"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="369"/>
         <source>Test</source>
-        <translation type="unfinished">测试</translation>
+        <translation>测试</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="423"/>
         <source>TableWidget</source>
-        <translation type="unfinished"></translation>
+        <translation>TableWidget</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="452"/>
@@ -7001,43 +7013,43 @@ p, li { white-space: pre-wrap; }
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="519"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="524"/>
         <source>New Row</source>
-        <translation type="unfinished"></translation>
+        <translation>新行</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="477"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="539"/>
         <source>1.23</source>
-        <translation type="unfinished">1.23</translation>
+        <translation>1.23</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="482"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="544"/>
         <source>Hello</source>
-        <translation type="unfinished"></translation>
+        <translation>Hello</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="487"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="549"/>
         <source>1,45</source>
-        <translation type="unfinished">1,45</translation>
+        <translation>1,45</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="492"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="554"/>
         <source>Olá</source>
-        <translation type="unfinished"></translation>
+        <translation>Olá</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="497"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="559"/>
         <source>12/12/2012</source>
-        <translation type="unfinished">12/12/2012</translation>
+        <translation>12/12/2012</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="502"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/dw_widgets.ui" line="564"/>
         <source>Oui</source>
-        <translation type="unfinished"></translation>
+        <translation>Oui</translation>
     </message>
 </context>
 <context>
@@ -7152,7 +7164,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../QSimpleUpdater/src/Downloader.cpp" line="305"/>
         <location filename="../QSimpleUpdater/src/Downloader.cpp" line="314"/>
         <source>%1 KB</source>
-        <translation>%1 KB</translation>
+        <translation>%1 知识库</translation>
     </message>
     <message>
         <location filename="../QSimpleUpdater/src/Downloader.cpp" line="308"/>
@@ -7341,7 +7353,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/EditorSettings.ui" line="69"/>
         <source>Highlight current line</source>
-        <translation>Highlight current line</translation>
+        <translation>突出显示当前行</translation>
     </message>
 </context>
 <context>
@@ -7372,7 +7384,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/EuclideanClusterDlg.ui" line="20"/>
         <source>EuclideanCluster Segmentation</source>
-        <translation>EuclideanCluster Segmentation</translation>
+        <translation>欧氏聚类分割</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/EuclideanClusterDlg.ui" line="30"/>
@@ -7392,7 +7404,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/EuclideanClusterDlg.ui" line="69"/>
         <source>Random Cluster Color</source>
-        <translation>Random Cluster Color</translation>
+        <translation>随机簇颜色</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/EuclideanClusterDlg.ui" line="92"/>
@@ -7406,7 +7418,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="32"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="33"/>
         <source>EuclideanCluster Segmentation</source>
-        <translation>EuclideanCluster Segmentation</translation>
+        <translation>欧氏聚类分割</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="34"/>
@@ -7416,7 +7428,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="123"/>
         <source>-Tolerance(%1)-ClusterSize(%2-%3)</source>
-        <translation>-Tolerance(%1)-ClusterSize(%2-%3)</translation>
+        <translation>-公差(%1)-簇大小(%2-%3)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="129"/>
@@ -7426,7 +7438,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="135"/>
         <source>Error(s) occurred during the generation of clusters! Result may be incomplete</source>
-        <translation>Error(s) occurred during the generation of clusters! Result may be incomplete</translation>
+        <translation>生成簇时发生错误！结果可能不完整</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="159"/>
@@ -7436,12 +7448,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="163"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="167"/>
         <source>EuclideanCluster Segmentation could not get any cluster or the clusters are more than 300 for the given dataset. Try relaxing your parameters</source>
-        <translation>EuclideanCluster Segmentation could not get any cluster or the clusters are more than 300 for the given dataset. Try relaxing your parameters</translation>
+        <translation>EuclideanCluster Segmentation 无法获取任何聚类，或者给定数据集的聚类超过 300 个。尝试放宽参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/EuclideanClusterSegmentation.cpp" line="173"/>
@@ -7472,12 +7484,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" line="31"/>
         <source>Extract SIFT</source>
-        <translation>Extract SIFT</translation>
+        <translation>提取SIFT</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" line="32"/>
         <source>Extract SIFT Keypoints</source>
-        <translation>Extract SIFT Keypoints</translation>
+        <translation>提取 SIFT 关键点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" line="33"/>
@@ -7487,12 +7499,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" line="209"/>
         <source>SIFT Keypoints_%1_rgb_%2_%3_%4</source>
-        <translation>SIFT Keypoints_%1_rgb_%2_%3_%4</translation>
+        <translation>SIFT 关键点_%1_rgb_%2_%3_%4</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" line="215"/>
         <source>SIFT Keypoints_%1_%2_%3_%4_%5</source>
-        <translation>SIFT Keypoints_%1_%2_%3_%4_%5</translation>
+        <translation>SIFT 关键点_%1_%2_%3_%4_%5</translation>
     </message>
 </context>
 <context>
@@ -7520,7 +7532,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/facetsExportDlg.ui" line="54"/>
         <source>Mean normal</source>
-        <translation>Mean normal</translation>
+        <translation>平均正常值</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/facetsExportDlg.ui" line="64"/>
@@ -7573,7 +7585,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/FastGlobalRegistrationDlg.ui" line="106"/>
         <source>Feature descriptor radius</source>
-        <translation>Feature descriptor radius</translation>
+        <translation>特征描述符半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/FastGlobalRegistrationDlg.ui" line="132"/>
@@ -7601,7 +7613,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/FastGlobalRegistrationFilter.cpp" line="39"/>
         <source>Fast Global Registration, by Zhou et al.</source>
-        <translation>Fast Global Registration, by Zhou et al.</translation>
+        <translation>快速全球注册，作者：Zhou 等人。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/FastGlobalRegistrationFilter.cpp" line="40"/>
@@ -7634,7 +7646,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/FileRunner.ui" line="23"/>
         <source>Simple Dialog to select an run a file without having it open it the bundled editor</source>
-        <translation>Simple Dialog to select an run a file without having it open it the bundled editor</translation>
+        <translation>用于选择运行文件的简单对话框，无需使用捆绑编辑器打开它</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/FileRunner.ui" line="40"/>
@@ -8143,7 +8155,7 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qG3Point/ui/G3PointDisclaimer.ui" line="52"/>
         <source>Compilation information: -</source>
-        <translation>Compilation information: -</translation>
+        <translation>编译信息：-</translation>
     </message>
 </context>
 <context>
@@ -8151,7 +8163,7 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qG3Point/ui/G3PointPlots.ui" line="14"/>
         <source>G3Point plots</source>
-        <translation>G3Point plots</translation>
+        <translation>G3点图</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qG3Point/ui/G3PointPlots.ui" line="29"/>
@@ -8270,7 +8282,7 @@ li.checked::marker { content: &quot;±2&quot;; }
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/GeneralFilters.cpp" line="29"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/GeneralFilters.cpp" line="30"/>
         <source>General Filters</source>
-        <translation>General Filters</translation>
+        <translation>通用过滤器</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/GeneralFilters.cpp" line="31"/>
@@ -8315,12 +8327,12 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/GeneralFilters.cpp" line="400"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/GeneralFilters.cpp" line="404"/>
         <source>General Filter does not returned any point. Try relaxing your parameters</source>
-        <translation>General Filter does not returned any point. Try relaxing your parameters</translation>
+        <translation>通用过滤器不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -8328,7 +8340,7 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/GeneralFiltersDlg.ui" line="20"/>
         <source>General Filters</source>
-        <translation>General Filters</translation>
+        <translation>通用过滤器</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/GeneralFiltersDlg.ui" line="55"/>
@@ -8533,7 +8545,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvGenericMeasurementToolDlg.ui" line="20"/>
         <source>Measurement Tool</source>
-        <translation>Measurement Tool</translation>
+        <translation>测量工具</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvGenericMeasurementToolDlg.ui" line="41"/>
@@ -8801,7 +8813,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleAboutDlg.ui" line="14"/>
         <source>Issue with big coordinates</source>
-        <translation>Issue with big coordinates</translation>
+        <translation>大坐标问题</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleAboutDlg.ui" line="20"/>
@@ -8886,24 +8898,24 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="168"/>
         <source>shift/scale information is stored and used to restore the original coordinates at export time</source>
-        <translation>shift/scale information is stored and used to restore the original coordinates at export time</translation>
+        <translation>存储移位/比例信息并用于在导出时恢复原始坐标</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="213"/>
         <source>This version corresponds to the input (or output) file</source>
-        <translation>This version corresponds to the input (or output) file</translation>
+        <translation>该版本对应于输入（或输出）文件</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="237"/>
         <source>Point in original
 coordinate system (on disk)</source>
-        <translation>Point in original
-coordinate system (on disk)</translation>
+        <translation>原始
+坐标系中的点（在磁盘上）</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="315"/>
         <source>diagonal = 3213132123.3215</source>
-        <translation>diagonal = 3213132123.3215</translation>
+        <translation>对角线 = 3213132123.3215</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="423"/>
@@ -8918,24 +8930,24 @@ coordinate system (on disk)</translation>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="563"/>
         <source>You can add default items to this list by placing a text file named &lt;span style=&quot; font-weight:600;&quot;&gt;global_shift_list.txt&lt;/span&gt; next to the application executable file. On each line you should define 5 items separated by semicolon characters: name ; ShiftX ; ShiftY ; ShiftZ ; scale</source>
-        <translation>You can add default items to this list by placing a text file named &lt;span style=&quot; font-weight:600;&quot;&gt;global_shift_list.txt&lt;/span&gt; next to the application executable file. On each line you should define 5 items separated by semicolon characters: name ; ShiftX ; ShiftY ; ShiftZ ; scale</translation>
+        <translation>您可以通过在应用程序可执行文件旁边放置一个名为 &lt;span style=&quot; font-weight:600;&quot;&gt;global_shift_list.txt&lt;/span&gt; 的文本文件来将默认项目添加到此列表中。在每一行中，您应该定义 5 个项目，并用分号字符分隔： name ; ShiftX ;左移； ShiftZ ;规模</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="605"/>
         <source>This version is the one CLOUDVIEWER  will work with. Mind the digits!</source>
-        <translation>This version is the one CLOUDVIEWER  will work with. Mind the digits!</translation>
+        <translation>此版本是 CLOUDVIEWER 可以使用的版本。注意数字！</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="629"/>
         <source>Point in local
 coordinate system</source>
-        <translation>Point in local
-coordinate system</translation>
+        <translation>局部
+坐标系中的点</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="707"/>
         <source>diagonal = 321313</source>
-        <translation>diagonal = 321313</translation>
+        <translation>对角线 = 321313</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="730"/>
@@ -8950,12 +8962,12 @@ coordinate system</translation>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="784"/>
         <source>The local coordinates will be changed so as to keep the global coordinates the same</source>
-        <translation>The local coordinates will be changed so as to keep the global coordinates the same</translation>
+        <translation>局部坐标将发生变化，以保持全局坐标相同</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/globalShiftAndScaleDlg.ui" line="787"/>
         <source>Keep original position fixed</source>
-        <translation>Keep original position fixed</translation>
+        <translation>保持原位置固定</translation>
     </message>
 </context>
 <context>
@@ -9409,7 +9421,7 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/GreedyTriangulation.cpp" line="163"/>
         <source>greedy-triangulation searchRadius[%1]</source>
-        <translation>greedy-triangulation searchRadius[%1]</translation>
+        <translation>贪婪三角剖分 searchRadius[%1]</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/GreedyTriangulation.cpp" line="182"/>
@@ -9419,12 +9431,12 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/GreedyTriangulation.cpp" line="186"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/GreedyTriangulation.cpp" line="190"/>
         <source>Greedy Triangulation does not returned any point. Try relaxing your parameters</source>
-        <translation>Greedy Triangulation does not returned any point. Try relaxing your parameters</translation>
+        <translation>贪心三角剖分不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -9452,42 +9464,42 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="105"/>
         <source>Normal Consistency</source>
-        <translation>Normal Consistency</translation>
+        <translation>正常浓度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="121"/>
         <source>Greedy Triangulation Parameters</source>
-        <translation>Greedy Triangulation Parameters</translation>
+        <translation>贪心三角剖分参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="133"/>
         <source>Maximum Surface Angle</source>
-        <translation>Maximum Surface Angle</translation>
+        <translation>最大表面角度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="153"/>
         <source>Minimum Angle</source>
-        <translation>Minimum Angle</translation>
+        <translation>最小角度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="173"/>
         <source>Maximum Nearest Neighbors</source>
-        <translation>Maximum Nearest Neighbors</translation>
+        <translation>最大最近邻</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="193"/>
         <source>Maximum Angle</source>
-        <translation>Maximum Angle</translation>
+        <translation>最大角度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="213"/>
         <source>Triangulation Search Radius</source>
-        <translation>Triangulation Search Radius</translation>
+        <translation>三角测量搜索半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/GreedyTriangulationDlg.ui" line="252"/>
         <source>Weighting Factor</source>
-        <translation>Weighting Factor</translation>
+        <translation>权重因子</translation>
     </message>
 </context>
 <context>
@@ -9495,7 +9507,7 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/HSVDialog.ui" line="20"/>
         <source>HSV color setting</source>
-        <translation>HSV color setting</translation>
+        <translation>HSV 颜色设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/HSVDialog.ui" line="31"/>
@@ -9505,7 +9517,7 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/HSVDialog.ui" line="233"/>
         <source>Pick the plane center (click again to cancel)</source>
-        <translation>Pick the plane center (click again to cancel)</translation>
+        <translation>拾取平面中心（再次单击取消）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/HSVDialog.ui" line="268"/>
@@ -9566,42 +9578,42 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="48"/>
         <source>Number of planes (T)</source>
-        <translation>Number of planes (T)</translation>
+        <translation>飞机数量（T）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="55"/>
         <source>Plane number to draw</source>
-        <translation>Plane number to draw</translation>
+        <translation>绘制的平面数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="74"/>
         <source>Accumulator steps (nPhi)</source>
-        <translation>Accumulator steps (nPhi)</translation>
+        <translation>累加器步数 (nPhi)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="81"/>
         <source>Accumulator discretization parameter</source>
-        <translation>Accumulator discretization parameter</translation>
+        <translation>累加器离散化参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="100"/>
         <source>Number of rotations (nRot)</source>
-        <translation>Number of rotations (nRot)</translation>
+        <translation>旋转数 (nRot)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="107"/>
         <source>Rotation number</source>
-        <translation>Rotation number</translation>
+        <translation>旋转数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="126"/>
         <source>Tolerance angle</source>
-        <translation>Tolerance angle</translation>
+        <translation>公差角度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="133"/>
         <source>Angle parameter for cluster normal selection</source>
-        <translation>Angle parameter for cluster normal selection</translation>
+        <translation>簇法线选择的角度参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="136"/>
@@ -9611,22 +9623,22 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="155"/>
         <source>Neighborhood size for density estimation</source>
-        <translation>Neighborhood size for density estimation</translation>
+        <translation>用于密度估计的邻域大小</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="162"/>
         <source>Size of the neighborhood for density estimation</source>
-        <translation>Size of the neighborhood for density estimation</translation>
+        <translation>用于密度估计的邻域大小</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="178"/>
         <source>use a density estimation of triplets generation</source>
-        <translation>use a density estimation of triplets generation</translation>
+        <translation>使用三元组生成的密度估计</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qHoughNormals/ui/qHoughNormalsDlg.ui" line="181"/>
         <source>Use density of triplets estimation</source>
-        <translation>Use density of triplets estimation</translation>
+        <translation>使用三元组密度估计</translation>
     </message>
 </context>
 <context>
@@ -9634,17 +9646,17 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../libs/CV_io/ui/importDBFFieldDlg.ui" line="14"/>
         <source>Choose altitude field</source>
-        <translation>Choose altitude field</translation>
+        <translation>选择海拔高度字段</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/importDBFFieldDlg.ui" line="20"/>
         <source>Do you wish to use one of the DBF field as altitude?</source>
-        <translation>Do you wish to use one of the DBF field as altitude?</translation>
+        <translation>您希望使用 DBF 字段之一作为高度吗？</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/importDBFFieldDlg.ui" line="32"/>
         <source>Values scaling</source>
-        <translation>Values scaling</translation>
+        <translation>价值缩放</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/importDBFFieldDlg.ui" line="72"/>
@@ -9662,12 +9674,12 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/InstallDialog.ui" line="20"/>
         <source>Install Package</source>
-        <translation>Install Package</translation>
+        <translation>安装包</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/InstallDialog.ui" line="35"/>
         <source>Package name</source>
-        <translation>Package name</translation>
+        <translation>套餐名称</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/InstallDialog.ui" line="45"/>
@@ -9805,17 +9817,17 @@ Note: the diagonal is not tested at loading time.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/KmeansDlg.ui" line="14"/>
         <source>Kmeans clustering setting</source>
-        <translation>Kmeans clustering setting</translation>
+        <translation>Kmeans聚类设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/KmeansDlg.ui" line="22"/>
         <source>Number of colors</source>
-        <translation>Number of colors</translation>
+        <translation>颜色数量</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/KmeansDlg.ui" line="72"/>
         <source>Max number of iterations</source>
-        <translation>Max number of iterations</translation>
+        <translation>最大迭代次数</translation>
     </message>
 </context>
 <context>
@@ -10238,65 +10250,65 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="77"/>
         <source>Polynomial Order</source>
-        <translation>Polynomial Order</translation>
+        <translation>多项式阶次</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="94"/>
         <source>Squared Gaussian 
 Parameter</source>
-        <translation>Squared Gaussian 
-Parameter</translation>
+        <translation>平方高斯 
+参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="118"/>
         <source>Upsampling Method</source>
-        <translation>Upsampling Method</translation>
+        <translation>上采样方法</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="138"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="37"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="50"/>
         <source>Sample Local Plane</source>
-        <translation>Sample Local Plane</translation>
+        <translation>当地平面样本</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="147"/>
         <source>Upsampling Radius</source>
-        <translation>Upsampling Radius</translation>
+        <translation>上采样半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="176"/>
         <source>Upsampling Step Size</source>
-        <translation>Upsampling Step Size</translation>
+        <translation>上采样步长</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="205"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="40"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="52"/>
         <source>Random Uniform Density</source>
-        <translation>Random Uniform Density</translation>
+        <translation>随机均匀密度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="214"/>
         <source>Step Point Density</source>
-        <translation>Step Point Density</translation>
+        <translation>阶跃点密度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="237"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="43"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="54"/>
         <source>Voxel Grid Dilation</source>
-        <translation>Voxel Grid Dilation</translation>
+        <translation>体素网格扩张</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="246"/>
         <source>Dilation Voxel Size</source>
-        <translation>Dilation Voxel Size</translation>
+        <translation>扩张体素大小</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.ui" line="272"/>
         <source>Dilation Iterations</source>
-        <translation>Dilation Iterations</translation>
+        <translation>膨胀迭代</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/MLSDialog.cpp" line="35"/>
@@ -10309,12 +10321,12 @@ Parameter</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/MLSSmoothingUpsampling.cpp" line="33"/>
         <source>MLS smoothing</source>
-        <translation>MLS smoothing</translation>
+        <translation>MLS平滑</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/MLSSmoothingUpsampling.cpp" line="34"/>
         <source>Smooth using MLS, optionally upsample</source>
-        <translation>Smooth using MLS, optionally upsample</translation>
+        <translation>使用 MLS 进行平滑，可选上采样</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/MLSSmoothingUpsampling.cpp" line="35"/>
@@ -10905,7 +10917,7 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2247"/>
         <source>Iso 1</source>
-        <translation>Iso 1</translation>
+        <translation>ISO 1</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2250"/>
@@ -10916,7 +10928,7 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2268"/>
         <source>Iso 2</source>
-        <translation>Iso 2</translation>
+        <translation>ISO 2</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2271"/>
@@ -11292,7 +11304,7 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2850"/>
         <source>SNE test</source>
-        <translation>SNE test</translation>
+        <translation>SNE测试</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="2853"/>
@@ -12516,12 +12528,12 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3529"/>
         <source>Material Dark</source>
-        <translation>Material Dark</translation>
+        <translation>材质深色</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3534"/>
         <source>Material Light</source>
-        <translation>Material Light</translation>
+        <translation>材质光</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3539"/>
@@ -12536,17 +12548,17 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3549"/>
         <source>Fluent Design</source>
-        <translation>Fluent Design</translation>
+        <translation>流畅的设计</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3554"/>
         <source>macOS Big Sur</source>
-        <translation>macOS Big Sur</translation>
+        <translation>macOS 大苏尔</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3559"/>
         <source>One Dark</source>
-        <translation>One Dark</translation>
+        <translation>一暗</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3564"/>
@@ -12556,7 +12568,7 @@ Parameter</translation>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3569"/>
         <source>Tokyo Night</source>
-        <translation>Tokyo Night</translation>
+        <translation>东京之夜</translation>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="3574"/>
@@ -13390,7 +13402,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="547"/>
         <source>[ACloudViewer Software start], Welcome to use ACloudViewer</source>
-        <translation>[ACloudViewer Software start], Welcome to use ACloudViewer</translation>
+        <translation>[ACloudViewer软件启动]，欢迎使用ACloudViewer</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="2133"/>
@@ -14137,7 +14149,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="8601"/>
         <source>[Register] %1</source>
-        <translation>[Register] %1</translation>
+        <translation>[注册] %1</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="8605"/>
@@ -14242,7 +14254,7 @@ Parameter</translation>
         <location filename="../MainWindow.cpp" line="2726"/>
         <location filename="../MainWindow.cpp" line="2843"/>
         <source>This file can be loaded by ACloudViewer version %1 and later</source>
-        <translation>This file can be loaded by ACloudViewer version %1 and later</translation>
+        <translation>该文件可由ACloudViewer版本%1及更高版本加载</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="2807"/>
@@ -14373,7 +14385,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="7321"/>
         <source>[ACloudViewer help] https://asher-1.github.io/ACloudViewer/docs!</source>
-        <translation>[ACloudViewer help] https://asher-1.github.io/ACloudViewer/docs!</translation>
+        <translation>[ACloudViewer帮助] https://asher-1.github.io/ACloudViewer/docs！</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="7871"/>
@@ -14435,7 +14447,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="8840"/>
         <source>SNE test</source>
-        <translation>SNE test</translation>
+        <translation>SNE测试</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="8840"/>
@@ -14573,7 +14585,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="9396"/>
         <source>Histogram [%1]</source>
-        <translation>Histogram [%1]</translation>
+        <translation>直方图 [%1]</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="9408"/>
@@ -14955,7 +14967,7 @@ Parameter</translation>
     <message>
         <location filename="../MainWindow.cpp" line="12258"/>
         <source>Quadric (%1)</source>
-        <translation>Quadric (%1)</translation>
+        <translation>二次 (%1)</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="12263"/>
@@ -14995,22 +15007,22 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="21"/>
         <source>Inside Central Widget</source>
-        <translation>Inside Central Widget</translation>
+        <translation>中央小部件内部</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="31"/>
         <source>Issue #115 - Tabs scroller buttons</source>
-        <translation>Issue #115 - Tabs scroller buttons</translation>
+        <translation>问题 #115 - 选项卡滚动按钮</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="41"/>
         <source>Tab 1</source>
-        <translation>Tab 1</translation>
+        <translation>选项卡1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="47"/>
         <source>Issue #123 - Missing borders</source>
-        <translation>Issue #123 - Missing borders</translation>
+        <translation>问题 #123 - 缺少边框</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="53"/>
@@ -15022,12 +15034,12 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="60"/>
         <source>Inside tab, outside frame</source>
-        <translation>Inside tab, outside frame</translation>
+        <translation>内标签，外框架</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="86"/>
         <source>Inside tab and frame</source>
-        <translation>Inside tab and frame</translation>
+        <translation>内部标签和框架</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="94"/>
@@ -15038,17 +15050,17 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="118"/>
         <source>Tab 2</source>
-        <translation>Tab 2</translation>
+        <translation>选项卡2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="132"/>
         <source>Tab 3</source>
-        <translation>Tab 3</translation>
+        <translation>选项卡 3</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="137"/>
         <source>Colored tab text</source>
-        <translation>Colored tab text</translation>
+        <translation>彩色标签文本</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="142"/>
@@ -15065,12 +15077,12 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="189"/>
         <source>Issue #112 - Hyperlinks color</source>
-        <translation>Issue #112 - Hyperlinks color</translation>
+        <translation>问题 #112 - 超链接颜色</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="198"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/ColinDuquesnoy/QDarkStyleSheet/issues/112&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0000ff;&quot;&gt;Hyperlink Example&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#7d7d7d;&quot;&gt;CSS for the documents (RichText) is not the same as the application. We cannot change the internal content CSS, e.g., hyperlinks. We suggest you use the middle tons (0-255, use 125), so this works for both white and dark theme (this color). The original color is the blue link on top.&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/ColinDuquesnoy/QDarkStyleSheet/issues/112&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0000ff;&quot;&gt;Hyperlink Example&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#7d7d7d;&quot;&gt;CSS for the documents (RichText) is not the same as the application. We cannot change the internal content CSS, e.g., hyperlinks. We suggest you use the middle tons (0-255, use 125), so this works for both white and dark theme (this color). The original color is the blue link on top.&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p 对齐=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/ColinDuquesnoy/QDarkStyleSheet/issues/112&quot;&gt;&lt;span 样式=&quot;字体大小：10pt；文本装饰：下划线； color:#0000ff;&quot;&gt;超链接示例&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;palign=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#7d7d7d;&quot;&gt;文档（RichText）的 CSS 与应用程序不同。我们无法更改内部内容 CSS，例如超链接。我们建议您使用中吨（0-255，使用 125），因此这适用于白色和深色主题（此颜色）。原始颜色是顶部的蓝色链接。&lt;/span&gt;&lt;/p&gt;&lt;palign=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="223"/>
@@ -15135,12 +15147,12 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="325"/>
         <source>Menu Delayed</source>
-        <translation>Menu Delayed</translation>
+        <translation>菜单延迟</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="329"/>
         <source>Menu Sub Delayed</source>
-        <translation>Menu Sub Delayed</translation>
+        <translation>菜单子延迟</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="339"/>
@@ -15155,7 +15167,7 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="361"/>
         <source>About QDarkStyle</source>
-        <translation>About QDarkStyle</translation>
+        <translation>关于 QDarkStyle</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="366"/>
@@ -15175,152 +15187,152 @@ Parameter</translation>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="393"/>
         <source>Menu Transp. Icon</source>
-        <translation>Menu Transp. Icon</translation>
+        <translation>菜单传输。图标</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="413"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="416"/>
         <source>Tool bar actions</source>
-        <translation>Tool bar actions</translation>
+        <translation>工具栏动作</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="441"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="444"/>
         <source>Tool bar actions delayed</source>
-        <translation>Tool bar actions delayed</translation>
+        <translation>工具栏操作延迟</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="458"/>
         <source>Tool bar action checkable</source>
-        <translation>Tool bar action checkable</translation>
+        <translation>工具栏动作可检查</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="461"/>
         <source>Toolbar actions checkable</source>
-        <translation>Toolbar actions checkable</translation>
+        <translation>工具栏操作可检查</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="476"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="479"/>
         <source>Toolbar with actions disabled</source>
-        <translation>Toolbar with actions disabled</translation>
+        <translation>禁用操作的工具栏</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="493"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="496"/>
         <source>Toolbar with menu</source>
-        <translation>Toolbar with menu</translation>
+        <translation>带菜单的工具栏</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="510"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="513"/>
         <source>Toolbar disabled</source>
-        <translation>Toolbar disabled</translation>
+        <translation>工具栏已禁用</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="527"/>
         <source>Action A</source>
-        <translation>Action A</translation>
+        <translation>动作A</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="532"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="535"/>
         <source>Action A Sub</source>
-        <translation>Action A Sub</translation>
+        <translation>动作 A 子</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="540"/>
         <source>Action B Sub</source>
-        <translation>Action B Sub</translation>
+        <translation>动作 B 子</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="545"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="548"/>
         <source>Action Delayed A</source>
-        <translation>Action Delayed A</translation>
+        <translation>行动延迟 A</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="553"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="556"/>
         <source>Action Delayed Sub A</source>
-        <translation>Action Delayed Sub A</translation>
+        <translation>动作延迟子 A</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="567"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="570"/>
         <source>Action Checkable A</source>
-        <translation>Action Checkable A</translation>
+        <translation>行动可检查A</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="581"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="584"/>
         <source>Action Checkable Sub A Checked</source>
-        <translation>Action Checkable Sub A Checked</translation>
+        <translation>操作可检查子 A 已检查</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="592"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="595"/>
         <source>Action Checkable Sub A Unchecked</source>
-        <translation>Action Checkable Sub A Unchecked</translation>
+        <translation>操作可检查子 A 未选中</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="600"/>
         <source>New B</source>
-        <translation>New B</translation>
+        <translation>新B</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="605"/>
         <source>New C</source>
-        <translation>New C</translation>
+        <translation>新C</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="610"/>
         <source>New D</source>
-        <translation>New D</translation>
+        <translation>新D</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="615"/>
         <source>New E</source>
-        <translation>New E</translation>
+        <translation>新E</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="627"/>
         <source>Action Icon A</source>
-        <translation>Action Icon A</translation>
+        <translation>动作图标 A</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="639"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="642"/>
         <source>Action Icon B</source>
-        <translation>Action Icon B</translation>
+        <translation>动作图标 B</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="651"/>
         <source>Action Icon C</source>
-        <translation>Action Icon C</translation>
+        <translation>行动图标 C</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="659"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="662"/>
         <source>Action Disabled</source>
-        <translation>Action Disabled</translation>
+        <translation>动作已禁用</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="676"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="679"/>
         <source>Action Checkable Checked Disabled</source>
-        <translation>Action Checkable Checked Disabled</translation>
+        <translation>操作 可检查 已检查 已禁用</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="690"/>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="693"/>
         <source>Action Checkable Unchecked Disabled</source>
-        <translation>Action Checkable Unchecked Disabled</translation>
+        <translation>操作 可检查 未检查 已禁用</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/QDarkStyleSheet/qdarkstyle/example/ui/mw_menus.ui" line="702"/>
         <source>Action Transp. Icon</source>
-        <translation>Action Transp. Icon</translation>
+        <translation>行动传输。图标</translation>
     </message>
 </context>
 <context>
@@ -15343,22 +15355,22 @@ Parameter</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="92"/>
         <source>Normal Search RadiusNormal (Auto Radius)</source>
-        <translation>Normal Search RadiusNormal (Auto Radius)</translation>
+        <translation>法线搜索半径法线（自动半径）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="116"/>
         <source>Marching Cube Parameters</source>
-        <translation>Marching Cube Parameters</translation>
+        <translation>行进立方体参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="135"/>
         <source>Marching Method</source>
-        <translation>Marching Method</translation>
+        <translation>行军方法</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="142"/>
         <source>Iso Level</source>
-        <translation>Iso Level</translation>
+        <translation>ISO等级</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="181"/>
@@ -15368,12 +15380,12 @@ Parameter</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="188"/>
         <source>Grid Resolution</source>
-        <translation>Grid Resolution</translation>
+        <translation>网格分辨率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="214"/>
         <source>Percentage Extend Grid</source>
-        <translation>Percentage Extend Grid</translation>
+        <translation>百分比扩展网格</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/MarchingCubeDlg.ui" line="241"/>
@@ -15427,12 +15439,12 @@ Parameter</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/MarchingCubeReconstruction.cpp" line="176"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/MarchingCubeReconstruction.cpp" line="180"/>
         <source>Marching Cube Reconstruction does not returned any point. Try relaxing your parameters</source>
-        <translation>Marching Cube Reconstruction does not returned any point. Try relaxing your parameters</translation>
+        <translation>行进立方体重建不会返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -15679,12 +15691,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/MinimumCutSegmentation.cpp" line="166"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/MinimumCutSegmentation.cpp" line="170"/>
         <source>Min Cut Segmentation does not returned any point. Try relaxing your parameters</source>
-        <translation>Min Cut Segmentation does not returned any point. Try relaxing your parameters</translation>
+        <translation>最小切割分割不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -15707,27 +15719,27 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="59"/>
         <source>Smooth Sigma</source>
-        <translation>Smooth Sigma</translation>
+        <translation>平滑西格玛</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="85"/>
         <source>Backgroud Weight Radius</source>
-        <translation>Backgroud Weight Radius</translation>
+        <translation>背景重量半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="111"/>
         <source>Foreground Weight</source>
-        <translation>Foreground Weight</translation>
+        <translation>前景权重</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="140"/>
         <source>Foreground Center</source>
-        <translation>Foreground Center</translation>
+        <translation>前景中心</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="200"/>
         <source>select from labels</source>
-        <translation>select from labels</translation>
+        <translation>从标签中选择</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/MinimumCutSegmentationDlg.ui" line="216"/>
@@ -15755,12 +15767,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../libs/CVAppCommon/devices/3dConnexion/Mouse3DInput.cpp" line="115"/>
         <source>[3D Mouse] Device: %1 (%2 buttons) - firmware v%3.%4</source>
-        <translation>[3D Mouse] Device: %1 (%2 buttons) - firmware v%3.%4</translation>
+        <translation>[3D 鼠标] 设备：%1（%2 按钮）- 固件 v%3.%4</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/devices/3dConnexion/Mouse3DInput.cpp" line="126"/>
         <source>[3D Mouse] Notification-only device will be ignored</source>
-        <translation>[3D Mouse] Notification-only device will be ignored</translation>
+        <translation>[3D 鼠标] 仅通知设备将被忽略</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/devices/3dConnexion/Mouse3DInput.cpp" line="133"/>
@@ -15937,7 +15949,7 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../ui_templates/normalComputationDlg.ui" line="376"/>
         <source>+ Barycenter</source>
-        <translation>+ Barycenter</translation>
+        <translation>+ 重心</translation>
     </message>
     <message>
         <location filename="../ui_templates/normalComputationDlg.ui" line="381"/>
@@ -15970,12 +15982,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/NormalEstimation.cpp" line="29"/>
         <source>Estimate Normals</source>
-        <translation>Estimate Normals</translation>
+        <translation>估计法线</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/NormalEstimation.cpp" line="30"/>
         <source>Estimate Normals and Curvature</source>
-        <translation>Estimate Normals and Curvature</translation>
+        <translation>估计法线和曲率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/NormalEstimation.cpp" line="31"/>
@@ -15993,7 +16005,7 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/NormalEstimationDlg.ui" line="32"/>
         <source>Search Radius (Auto Radius)</source>
-        <translation>Search Radius (Auto Radius)</translation>
+        <translation>搜索半径（自动半径）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/NormalEstimationDlg.ui" line="65"/>
@@ -16003,12 +16015,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/NormalEstimationDlg.ui" line="84"/>
         <source>Overwrite Curvature</source>
-        <translation>Overwrite Curvature</translation>
+        <translation>覆盖曲率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/NormalEstimationDlg.ui" line="96"/>
         <source>Search Surface</source>
-        <translation>Search Surface</translation>
+        <translation>搜索界面</translation>
     </message>
 </context>
 <context>
@@ -16027,22 +16039,22 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="133"/>
         <source>Start Point: X1= %1, Y1= %2, Z1= %3</source>
-        <translation>Start Point: X1= %1, Y1= %2, Z1= %3</translation>
+        <translation>起点：X1= %1，Y1= %2，Z1= %3</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="135"/>
         <source>End Point: X2= %1, Y2= %2, Z2= %3</source>
-        <translation>End Point: X2= %1, Y2= %2, Z2= %3</translation>
+        <translation>终点：X2= %1，Y2= %2，Z2= %3</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="136"/>
         <source>space polynomial curve equation: z = %1 * (x^2+y^2) + %2 * sqrt(x^2+y^2) + %3</source>
-        <translation>space polynomial curve equation: z = %1 * (x^2+y^2) + %2 * sqrt(x^2+y^2) + %3</translation>
+        <translation>空间多项式曲线方程： z = %1 * (x^2+y^2) + %2 * sqrt(x^2+y^2) + %3</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="153"/>
         <source>	- plane fitting RMS: %1</source>
-        <translation>	- plane fitting RMS: %1</translation>
+        <translation>- plane fitting 均方根: %1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="195"/>
@@ -16062,12 +16074,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="273"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsCurveFitting.cpp" line="277"/>
         <source>Nurbs Curve Fitting does not returned any point. Try relaxing your parameters</source>
-        <translation>Nurbs Curve Fitting does not returned any point. Try relaxing your parameters</translation>
+        <translation>Nurbs 曲线拟合不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -16163,12 +16175,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="20"/>
         <source>Nurbs Surface</source>
-        <translation>Nurbs Surface</translation>
+        <translation>Nurbs 曲面</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="26"/>
         <source>General Parameters</source>
-        <translation>General Parameters</translation>
+        <translation>一般参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="32"/>
@@ -16183,7 +16195,7 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="46"/>
         <source>Mesh Resolution</source>
-        <translation>Mesh Resolution</translation>
+        <translation>网格分辨率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="53"/>
@@ -16193,17 +16205,17 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="60"/>
         <source>Two Dimensions</source>
-        <translation>Two Dimensions</translation>
+        <translation>二维</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="70"/>
         <source>Resolution = </source>
-        <translation>Resolution = </translation>
+        <translation>分辨率=</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="109"/>
         <source>Fit B-spline Curve</source>
-        <translation>Fit B-spline Curve</translation>
+        <translation>拟合 B 样条曲线</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="122"/>
@@ -16213,27 +16225,27 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="171"/>
         <source>Surface Fitting Parameters</source>
-        <translation>Surface Fitting Parameters</translation>
+        <translation>曲面拟合参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="177"/>
         <source>Interior Smoothness</source>
-        <translation>Interior Smoothness</translation>
+        <translation>内部光滑度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="184"/>
         <source>Boundary Smoothness</source>
-        <translation>Boundary Smoothness</translation>
+        <translation>边界平滑度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="191"/>
         <source>Interior Weight</source>
-        <translation>Interior Weight</translation>
+        <translation>内部重量</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/NurbsSurfaceDlg.ui" line="198"/>
         <source>Boundary Weight</source>
-        <translation>Boundary Weight</translation>
+        <translation>边界重量</translation>
     </message>
 </context>
 <context>
@@ -16242,7 +16254,7 @@ Should be used after one of the previous methods!</source>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsSurfaceReconstruction.cpp" line="33"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsSurfaceReconstruction.cpp" line="34"/>
         <source>Nurbs Surface Triangulation</source>
-        <translation>Nurbs Surface Triangulation</translation>
+        <translation>Nurbs 曲面三角剖分</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsSurfaceReconstruction.cpp" line="35"/>
@@ -16272,12 +16284,12 @@ Should be used after one of the previous methods!</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsSurfaceReconstruction.cpp" line="210"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/NurbsSurfaceReconstruction.cpp" line="214"/>
         <source>Nurbs Surface Triangulation does not returned any point. Try relaxing your parameters</source>
-        <translation>Nurbs Surface Triangulation does not returned any point. Try relaxing your parameters</translation>
+        <translation>Nurbs 曲面三角测量不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -16533,12 +16545,12 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="30"/>
         <source>Light rays</source>
-        <translation>Light rays</translation>
+        <translation>光线</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="36"/>
         <source>Samples rays on a sphere</source>
-        <translation>Samples rays on a sphere</translation>
+        <translation>对球体上的射线进行采样</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="49"/>
@@ -16548,17 +16560,17 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="56"/>
         <source>number of rays to cast</source>
-        <translation>number of rays to cast</translation>
+        <translation>要投射的光线数量</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="88"/>
         <source>rays are cast from the whole sphere (instrad of the Z+ hemisphere)</source>
-        <translation>rays are cast from the whole sphere (instrad of the Z+ hemisphere)</translation>
+        <translation>光线从整个球体投射（而不是 Z+ 半球）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="91"/>
         <source>Only northern hemisphere (+Z)</source>
-        <translation>Only northern hemisphere (+Z)</translation>
+        <translation>仅北半球 (+Z)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="104"/>
@@ -16573,12 +16585,12 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="142"/>
         <source>Render context resolution</source>
-        <translation>Render context resolution</translation>
+        <translation>渲染上下文分辨率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="149"/>
         <source>rendering buffer resolution</source>
-        <translation>rendering buffer resolution</translation>
+        <translation>渲染缓冲区分辨率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCV/ui/pcvDlg.ui" line="185"/>
@@ -16620,7 +16632,7 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PathVariableEditor.ui" line="17"/>
         <source>Edit Paths</source>
-        <translation>Edit Paths</translation>
+        <translation>编辑路径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PathVariableEditor.ui" line="30"/>
@@ -16646,7 +16658,7 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CVAppCommon/ui/pickOneElementDlg.ui" line="32"/>
         <source>Choose parameter</source>
-        <translation>Choose parameter</translation>
+        <translation>选择参数</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/ui/pickOneElementDlg.ui" line="49"/>
@@ -16732,7 +16744,7 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="14"/>
         <source>Ply File Open</source>
-        <translation>Ply File Open</translation>
+        <translation>打开层文件</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="22"/>
@@ -16757,17 +16769,17 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="131"/>
         <source>Point X</source>
-        <translation>Point X</translation>
+        <translation>X点</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="141"/>
         <source>Point Y</source>
-        <translation>Point Y</translation>
+        <translation>Y点</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="151"/>
         <source>Point Z</source>
-        <translation>Point Z</translation>
+        <translation>Z点</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="161"/>
@@ -16797,12 +16809,12 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="241"/>
         <source>Texture coordinates</source>
-        <translation>Texture coordinates</translation>
+        <translation>纹理坐标</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="251"/>
         <source>Texture index</source>
-        <translation>Texture index</translation>
+        <translation>纹理指数</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="263"/>
@@ -16812,7 +16824,7 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="274"/>
         <source>Add a single standard property to be loaded as a Scalar Field</source>
-        <translation>Add a single standard property to be loaded as a Scalar Field</translation>
+        <translation>添加要作为标量字段加载的单个标准属性</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="277"/>
@@ -16822,12 +16834,12 @@ It will be saved as multiple tiles on the disk.</translation>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="284"/>
         <source>Add all unused standard properties to be loaded as Scalar Fields</source>
-        <translation>Add all unused standard properties to be loaded as Scalar Fields</translation>
+        <translation>添加所有未使用的标准属性以作为标量字段加载</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="287"/>
         <source>Add all</source>
-        <translation>Add all</translation>
+        <translation>添加全部</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/openPlyFileDlg.ui" line="359"/>
@@ -17244,12 +17256,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/PoissonReconstruction.cpp" line="188"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/PoissonReconstruction.cpp" line="192"/>
         <source>Poisson Reconstruction does not returned any point. Try relaxing your parameters</source>
-        <translation>Poisson Reconstruction does not returned any point. Try relaxing your parameters</translation>
+        <translation>泊松重建不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -17267,7 +17279,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="47"/>
         <source>Normal Search Radius (Auto Radius)</source>
-        <translation>Normal Search Radius (Auto Radius)</translation>
+        <translation>正常搜索半径（自动半径）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="79"/>
@@ -17277,7 +17289,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="118"/>
         <source>Poisson Reconstruction Parameters</source>
-        <translation>Poisson Reconstruction Parameters</translation>
+        <translation>泊松重建参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="143"/>
@@ -17312,7 +17324,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="254"/>
         <source>Tree Depth</source>
-        <translation>Tree Depth</translation>
+        <translation>树深</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Surfaces/dialogs/PoissonReconstructionDlg.ui" line="287"/>
@@ -17523,7 +17535,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qMasonry/qManualSeg/profileImportDlg.ui" line="14"/>
         <location filename="../../plugins/core/Standard/qSRA/ui/profileImportDlg.ui" line="14"/>
         <source>Import profile</source>
-        <translation>Import profile</translation>
+        <translation>导入配置文件</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="44"/>
@@ -17533,48 +17545,48 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="53"/>
         <source>Align wall to XZ (vertical)</source>
-        <translation>Align wall to XZ (vertical)</translation>
+        <translation>将墙与 XZ 对齐（垂直）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="60"/>
         <source>Automatic segmentation</source>
-        <translation>Automatic segmentation</translation>
+        <translation>自动分割</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="67"/>
         <source>Mortar maps</source>
-        <translation>Mortar maps</translation>
+        <translation>迫击炮地图</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="89"/>
         <source>Segmentation settings</source>
-        <translation>Segmentation settings</translation>
+        <translation>分段设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="97"/>
         <source>Estimated width of mortar joints (cm): </source>
-        <translation>Estimated width of mortar joints (cm): </translation>
+        <translation>预计灰缝宽度（厘米）：</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="132"/>
         <source>Window (only advanced users)</source>
-        <translation>Window (only advanced users)</translation>
+        <translation>窗口（仅限高级用户）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="144"/>
         <source>Vertical (m):</source>
-        <translation>Vertical (m):</translation>
+        <translation>垂直（米）：</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qAutoSeg/profileImportDlg.ui" line="177"/>
         <source>Horizontal (m):</source>
-        <translation>Horizontal (m):</translation>
+        <translation>水平（米）：</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qManualSeg/profileImportDlg.ui" line="20"/>
         <location filename="../../plugins/core/Standard/qSRA/ui/profileImportDlg.ui" line="20"/>
         <source>Profile file</source>
-        <translation>Profile file</translation>
+        <translation>配置文件</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qManualSeg/profileImportDlg.ui" line="43"/>
@@ -17618,13 +17630,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qMasonry/qManualSeg/profileImportDlg.ui" line="71"/>
         <location filename="../../plugins/core/Standard/qSRA/ui/profileImportDlg.ui" line="71"/>
         <source>profile axis</source>
-        <translation>profile axis</translation>
+        <translation>轮廓轴</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMasonry/qManualSeg/profileImportDlg.ui" line="100"/>
         <location filename="../../plugins/core/Standard/qSRA/ui/profileImportDlg.ui" line="100"/>
         <source>height values are absolute (i.e. not relative to profile origin)</source>
-        <translation>height values are absolute (i.e. not relative to profile origin)</translation>
+        <translation>高度值是绝对的（即不相对于轮廓原点）</translation>
     </message>
 </context>
 <context>
@@ -17640,7 +17652,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/ProjectViewContextMenu.cpp" line="73"/>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/ProjectViewContextMenu.cpp" line="111"/>
         <source>new name</source>
-        <translation>new name</translation>
+        <translation>新名字</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/ProjectViewContextMenu.cpp" line="131"/>
@@ -17654,7 +17666,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/ProjectionFilter.cpp" line="28"/>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/ProjectionFilter.cpp" line="29"/>
         <source>Projection Filter</source>
-        <translation>Projection Filter</translation>
+        <translation>投影滤光片</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/ProjectionFilter.cpp" line="30"/>
@@ -17679,12 +17691,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/ProjectionFilter.cpp" line="204"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/ProjectionFilter.cpp" line="208"/>
         <source>Projection extraction does not returned any point. Try relaxing your parameters</source>
-        <translation>Projection extraction does not returned any point. Try relaxing your parameters</translation>
+        <translation>投影提取不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -17692,7 +17704,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/ProjectionFilterDlg.ui" line="20"/>
         <source>Projection Filter</source>
-        <translation>Projection Filter</translation>
+        <translation>投影滤光片</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/ProjectionFilterDlg.ui" line="47"/>
@@ -17742,12 +17754,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/ProjectionFilterDlg.ui" line="260"/>
         <source>Normal Search Radius (Auto Radius)</source>
-        <translation>Normal Search Radius (Auto Radius)</translation>
+        <translation>正常搜索半径（自动半径）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/ProjectionFilterDlg.ui" line="267"/>
         <source>Boundary Angle Threshold（degree）</source>
-        <translation>Boundary Angle Threshold（degree）</translation>
+        <translation>边界角度阈值（度）</translation>
     </message>
 </context>
 <context>
@@ -17779,11 +17791,11 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
    color: #333;
 }</source>
         <translation>QLabel {
-   background-color: #FFF9E6;
-   border: 1px solid #FFD700;
-   border-radius: 2px;
-   padding: 3px;
-   color: #333;
+ 背景颜色：#FFF9E6；
+ 边框：1px 实线#FFD700；
+ 边框半径：2px；
+ 填充：3px；
+ 颜色：#333；
 }</translation>
     </message>
     <message>
@@ -17842,7 +17854,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorToolDlg.ui" line="289"/>
         <source>Pick Center Point (Shift + Left Mouse)</source>
-        <translation>Pick Center Point (Shift + Left Mouse)</translation>
+        <translation>选取中心点（Shift + 鼠标左键）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorToolDlg.ui" line="407"/>
@@ -17867,17 +17879,17 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorToolDlg.ui" line="556"/>
         <source>Show/hide the protractor widget</source>
-        <translation>Show/hide the protractor widget</translation>
+        <translation>显示/隐藏量角器小部件</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorToolDlg.ui" line="570"/>
         <source>Show Arc</source>
-        <translation>Show Arc</translation>
+        <translation>显示弧线</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorToolDlg.ui" line="573"/>
         <source>Show/hide the angle arc</source>
-        <translation>Show/hide the angle arc</translation>
+        <translation>显示/隐藏角度圆弧</translation>
     </message>
 </context>
 <context>
@@ -18031,7 +18043,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonEditor.ui" line="333"/>
         <source>Ctrl+K, Ctrl+C</source>
-        <translation>Ctrl+K, Ctrl+C</translation>
+        <translation>Ctrl+K、Ctrl+C</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonEditor.ui" line="342"/>
@@ -18041,7 +18053,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonEditor.ui" line="345"/>
         <source>Ctrl+K, Ctrl+U</source>
-        <translation>Ctrl+K, Ctrl+U</translation>
+        <translation>Ctrl+K、Ctrl+U</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonEditor.ui" line="354"/>
@@ -18108,7 +18120,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="415"/>
         <source>Close all the windows</source>
-        <translation>Close all the windows</translation>
+        <translation>关闭所有窗户</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="418"/>
@@ -18138,7 +18150,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="428"/>
         <source>Move the focus to the next window</source>
-        <translation>Move the focus to the next window</translation>
+        <translation>将焦点移动到下一个窗口</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="431"/>
@@ -18148,7 +18160,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="433"/>
         <source>Move the focus to the previous window</source>
-        <translation>Move the focus to the previous window</translation>
+        <translation>将焦点移至上一个窗口</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/CodeEditor/PythonEditor.cpp" line="511"/>
@@ -18176,7 +18188,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonREPL.ui" line="75"/>
         <source>Reset the REPL</source>
-        <translation>Reset the REPL</translation>
+        <translation>重置 REPL</translation>
     </message>
 </context>
 <context>
@@ -18184,17 +18196,17 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="14"/>
         <source>Python Runtime Settings</source>
-        <translation>Python Runtime Settings</translation>
+        <translation>Python 运行时设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="20"/>
         <source>ACloudViewer needs to be restarted for changes to take effect</source>
-        <translation>ACloudViewer needs to be restarted for changes to take effect</translation>
+        <translation>ACloudViewer需要重启才能生效</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="36"/>
         <source>Enter the path where custom Python plugins are stored. Requires restating ACloudViewer when changed</source>
-        <translation>Enter the path where custom Python plugins are stored. Requires restating ACloudViewer when changed</translation>
+        <translation>输入存储自定义 Python 插件的路径。更改时需要重新声明 ACloudViewer</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="39"/>
@@ -18209,7 +18221,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="70"/>
         <source>Python Environment</source>
-        <translation>Python Environment</translation>
+        <translation>Python环境</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPythonRuntime/src/Ui/PythonRuntimeSettings.ui" line="93"/>
@@ -18292,7 +18304,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
         <location filename="../main.cpp" line="537"/>
         <location filename="../main.cpp" line="542"/>
         <source>ECV crashed!</source>
-        <translation>ECV crashed!</translation>
+        <translation>ECV坠毁！</translation>
     </message>
     <message>
         <location filename="../main.cpp" line="538"/>
@@ -18314,7 +18326,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../ecvVolumeCalcTool.cpp" line="620"/>
         <source>Cells: %1 x %2</source>
-        <translation>Cells: %1 x %2</translation>
+        <translation>细胞：%1 x %2</translation>
     </message>
     <message>
         <location filename="../ecvLibAlgorithms.cpp" line="591"/>
@@ -19284,7 +19296,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../ecvCommandLineCommands.cpp" line="2310"/>
         <source>Mesh &apos;%1&apos;</source>
-        <translation>Mesh &apos;%1&apos;</translation>
+        <translation>网格 &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../ecvCommandLineCommands.cpp" line="2312"/>
@@ -19495,7 +19507,7 @@ Use &apos;X&apos;/&apos;Y&apos;/&apos;Z&apos; to constrain the movement to the X
     <message>
         <location filename="../ecvCommandLineCommands.cpp" line="2789"/>
         <source>Filename: %1</source>
-        <translation>Filename: %1</translation>
+        <translation>文件名：%1</translation>
     </message>
     <message>
         <location filename="../ecvCommandLineCommands.cpp" line="2791"/>
@@ -20863,7 +20875,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="120"/>
         <source>Fifty shades of grey</source>
-        <translation>Fifty shades of grey</translation>
+        <translation>五十度灰</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="123"/>
@@ -20873,7 +20885,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="126"/>
         <source>Miami Dolphins</source>
-        <translation>Miami Dolphins</translation>
+        <translation>迈阿密海豚队</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="129"/>
@@ -20914,7 +20926,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="150"/>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="174"/>
         <source>Calm Darya</source>
-        <translation>Calm Darya</translation>
+        <translation>平静的达里亚</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="153"/>
@@ -20934,27 +20946,27 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="162"/>
         <source>Rose Water</source>
-        <translation>Rose Water</translation>
+        <translation>玫瑰水</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="165"/>
         <source>Harmonic Energy</source>
-        <translation>Harmonic Energy</translation>
+        <translation>谐波能量</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="168"/>
         <source>Purple Paradise</source>
-        <translation>Purple Paradise</translation>
+        <translation>紫色天堂</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="171"/>
         <source>Aqua Marine</source>
-        <translation>Aqua Marine</translation>
+        <translation>海洋之水</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="177"/>
         <source>Bora Bora</source>
-        <translation>Bora Bora</translation>
+        <translation>波拉波拉岛</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="180"/>
@@ -20964,7 +20976,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="183"/>
         <source>Bright Vault</source>
-        <translation>Bright Vault</translation>
+        <translation>光明穹顶</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="186"/>
@@ -20980,7 +20992,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="192"/>
         <source>Deep Sea Space</source>
-        <translation>Deep Sea Space</translation>
+        <translation>深海空间</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="195"/>
@@ -21005,7 +21017,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="207"/>
         <source>Minnesota Vikings</source>
-        <translation>Minnesota Vikings</translation>
+        <translation>明尼苏达维京人队</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="210"/>
@@ -21020,17 +21032,17 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="216"/>
         <source>Green and Blue</source>
-        <translation>Green and Blue</translation>
+        <translation>绿色和蓝色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="219"/>
         <source>Fresh Turboscent</source>
-        <translation>Fresh Turboscent</translation>
+        <translation>新鲜涡轮</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="222"/>
         <source>Purple Bliss</source>
-        <translation>Purple Bliss</translation>
+        <translation>紫极乐</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="225"/>
@@ -21055,12 +21067,12 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="237"/>
         <source>Sun on the Horizon</source>
-        <translation>Sun on the Horizon</translation>
+        <translation>地平线上的太阳</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="240"/>
         <source>Grapefruit Sunset</source>
-        <translation>Grapefruit Sunset</translation>
+        <translation>葡萄柚日落</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="243"/>
@@ -21070,7 +21082,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="246"/>
         <source>Sweet Morning</source>
-        <translation>Sweet Morning</translation>
+        <translation>甜蜜的早晨</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="249"/>
@@ -21080,27 +21092,27 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="252"/>
         <source>Back to the Future</source>
-        <translation>Back to the Future</translation>
+        <translation>回到未来</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="255"/>
         <source>Dark Knight</source>
-        <translation>Dark Knight</translation>
+        <translation>黑暗骑士</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="258"/>
         <source>Green to dark</source>
-        <translation>Green to dark</translation>
+        <translation>绿色至深色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="261"/>
         <source>Virgin America</source>
-        <translation>Virgin America</translation>
+        <translation>维珍美国航空</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="264"/>
         <source>Turquoise flow</source>
-        <translation>Turquoise flow</translation>
+        <translation>绿松石流</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="267"/>
@@ -21120,7 +21132,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="276"/>
         <source>Crazy Orange I</source>
-        <translation>Crazy Orange I</translation>
+        <translation>疯狂橙子I</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="279"/>
@@ -21130,12 +21142,12 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="282"/>
         <source>Cheer Up Emo Kid</source>
-        <translation>Cheer Up Emo Kid</translation>
+        <translation>加油情绪小子</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="285"/>
         <source>Man of Steel</source>
-        <translation>Man of Steel</translation>
+        <translation>钢铁之躯</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="288"/>
@@ -21145,7 +21157,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="291"/>
         <source>Forever Lost</source>
-        <translation>Forever Lost</translation>
+        <translation>永远迷失</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="294"/>
@@ -21160,7 +21172,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="300"/>
         <source>Lemon Twist</source>
-        <translation>Lemon Twist</translation>
+        <translation>柠檬味</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="303"/>
@@ -21170,7 +21182,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="306"/>
         <source>Emerald Water</source>
-        <translation>Emerald Water</translation>
+        <translation>翡翠水</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="309"/>
@@ -21180,12 +21192,12 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="312"/>
         <source>Shroom Haze</source>
-        <translation>Shroom Haze</translation>
+        <translation>蘑菇雾霾</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="315"/>
         <source>Venice Blue</source>
-        <translation>Venice Blue</translation>
+        <translation>威尼斯蓝</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="320"/>
@@ -21265,17 +21277,17 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="365"/>
         <source>South West</source>
-        <translation>South West</translation>
+        <translation>西南</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="368"/>
         <source>Deep Sea</source>
-        <translation>Deep Sea</translation>
+        <translation>深海</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="371"/>
         <source>Starry Night</source>
-        <translation>Starry Night</translation>
+        <translation>星夜</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="374"/>
@@ -21285,7 +21297,7 @@ Do you want to take the risk to load them? (CC could crash)</source>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="380"/>
         <source>Fruit Punch</source>
-        <translation>Fruit Punch</translation>
+        <translation>水果潘趣酒</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/gradientcombobox.cpp" line="383"/>
@@ -21407,8 +21419,8 @@ Do you want to take the risk to load them? (CC could crash)</source>
         <location filename="../../plugins/core/Standard/qCanupo/src/qCanupoProcess.cpp" line="533"/>
         <source>Remaining points to classify: %1
 Source points: %2</source>
-        <translation>Remaining points to classify: %1
-Source points: %2</translation>
+        <translation>剩余的分类点：%1
+源点：%2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/src/qCanupoProcess.cpp" line="537"/>
@@ -21563,7 +21575,7 @@ Source points: %2</source>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="111"/>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="128"/>
         <source>	Epsilon : %1</source>
-        <translation>	Epsilon : %1</translation>
+        <translation>埃普西隆：%1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="142"/>
@@ -21610,22 +21622,19 @@ Source points: %2</source>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="458"/>
         <source>
 Missing parameter: Directory after &quot;-%1 %2&quot;</source>
-        <translation>
-Missing parameter: Directory after &quot;-%1 %2&quot;</translation>
+        <translation>缺少参数：&quot;-%1 %2&quot; 之后的目录</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="467"/>
         <source>
 %1 Does not exist	creating path</source>
-        <translation>
-%1 Does not exist	creating path</translation>
+        <translation>%1 不存在创建路径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/include/qRANSAC_SD_Commands.h" line="475"/>
         <source>
 %1 path could not be created, skipping %2</source>
-        <translation>
-%1 path could not be created, skipping %2</translation>
+        <translation>无法创建 %1 路径，跳过 %2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSRA/src/distanceMapGenerationTool.cpp" line="306"/>
@@ -21654,7 +21663,7 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCameraParamEditDlg.cpp" line="60"/>
         <source>Add Current Viewpoint</source>
-        <translation>Add Current Viewpoint</translation>
+        <translation>添加当前观点</translation>
     </message>
 </context>
 <context>
@@ -21671,21 +21680,37 @@ Cloud: %2 points</source>
     </message>
 </context>
 <context>
+    <name>QUIMessageBox</name>
+    <message>
+        <location filename="../ecvUIManager.cpp" line="1939"/>
+        <source>Closing in %1 s</source>
+        <translation>%1 秒后关闭</translation>
+    </message>
+</context>
+<context>
+    <name>QUIInputBox</name>
+    <message>
+        <location filename="../ecvUIManager.cpp" line="2225"/>
+        <source>Closing in %1 s</source>
+        <translation>%1 秒后关闭</translation>
+    </message>
+</context>
+<context>
     <name>QuantiDialog</name>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/QuantiDialog.ui" line="14"/>
         <source>Histogram Clustering setting</source>
-        <translation>Histogram Clustering setting</translation>
+        <translation>直方图聚类设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/QuantiDialog.ui" line="22"/>
         <source>Quantification index</source>
-        <translation>Quantification index</translation>
+        <translation>量化指标</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/QuantiDialog.ui" line="78"/>
         <source>Colors available :</source>
-        <translation>Colors available :</translation>
+        <translation>可选颜色：</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/QuantiDialog.ui" line="104"/>
@@ -21698,7 +21723,7 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="14"/>
         <source>Ransac Shape Detection</source>
-        <translation>Ransac Shape Detection</translation>
+        <translation>Ransac形状检测</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="26"/>
@@ -21745,7 +21770,7 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="119"/>
         <source>Advanced parameters</source>
-        <translation>Advanced parameters</translation>
+        <translation>高级参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="127"/>
@@ -21755,12 +21780,12 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="134"/>
         <source>Maximum distance of samples to the ideal shape</source>
-        <translation>Maximum distance of samples to the ideal shape</translation>
+        <translation>样品与理想形状的最大距离</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="160"/>
         <source>sampling resolution</source>
-        <translation>sampling resolution</translation>
+        <translation>采样分辨率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="167"/>
@@ -21770,22 +21795,22 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="193"/>
         <source>max normal deviation</source>
-        <translation>max normal deviation</translation>
+        <translation>最大正常偏差</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="200"/>
         <source>Maximum deviation from the ideal shape normal vector (in degrees)</source>
-        <translation>Maximum deviation from the ideal shape normal vector (in degrees)</translation>
+        <translation>与理想形状法线向量的最大偏差（以度为单位）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="226"/>
         <source>overlooking probability</source>
-        <translation>overlooking probability</translation>
+        <translation>忽视概率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="233"/>
         <source>Probability that no better candidate was overlooked during sampling (the lower the better!)</source>
-        <translation>Probability that no better candidate was overlooked during sampling (the lower the better!)</translation>
+        <translation>抽样期间没有忽略更好候选者的概率（越低越好！）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="256"/>
@@ -21800,7 +21825,7 @@ Cloud: %2 points</source>
     <message>
         <location filename="../../plugins/core/Standard/qRANSAC_SD/ui/ransacSDDlg.ui" line="314"/>
         <source>Random Color</source>
-        <translation>Random Color</translation>
+        <translation>随机颜色</translation>
     </message>
 </context>
 <context>
@@ -22327,12 +22352,12 @@ replaced by the cell&apos;s average height!</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/RegionGrowingSegmentation.cpp" line="187"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/RegionGrowingSegmentation.cpp" line="191"/>
         <source>Region Growing Segmentation does not returned any point. Try relaxing your parameters</source>
-        <translation>Region Growing Segmentation does not returned any point. Try relaxing your parameters</translation>
+        <translation>区域增长分割不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -22677,23 +22702,23 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="20"/>
         <source>RGB color setting</source>
-        <translation>RGB color setting</translation>
+        <translation>RGB颜色设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="30"/>
         <source>Choose the first point </source>
-        <translation>Choose the first point </translation>
+        <translation>选择第一个点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="55"/>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="216"/>
         <source>Pick the plane center (click again to cancel)</source>
-        <translation>Pick the plane center (click again to cancel)</translation>
+        <translation>拾取平面中心（再次单击取消）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="191"/>
         <source>Choose the second point </source>
-        <translation>Choose the second point </translation>
+        <translation>选择第二个点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="341"/>
@@ -22718,7 +22743,7 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/RgbDialog.ui" line="385"/>
         <source>Deviation from RGB limits  (%) :</source>
-        <translation>Deviation from RGB limits  (%) :</translation>
+        <translation>与 RGB 限制的偏差 (%)：</translation>
     </message>
 </context>
 <context>
@@ -22760,12 +22785,12 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="168"/>
         <source>-MaxRemainingRatio[%1]</source>
-        <translation>-MaxRemainingRatio[%1]</translation>
+        <translation>-最大剩余比率[%1]</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="171"/>
         <source>-SingleSegmentation[Distance Threshold %1]</source>
-        <translation>-SingleSegmentation[Distance Threshold %1]</translation>
+        <translation>-SingleSegmentation[距离阈值 %1]</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="176"/>
@@ -22775,7 +22800,7 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="182"/>
         <source>Error(s) occurred during the generation of segments! Result may be incomplete</source>
-        <translation>Error(s) occurred during the generation of segments! Result may be incomplete</translation>
+        <translation>生成段期间发生错误！结果可能不完整</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="261"/>
@@ -22785,12 +22810,12 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="265"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="269"/>
         <source>SAC Segmentation could not estimate a model for the given dataset. Try relaxing your parameters</source>
-        <translation>SAC Segmentation could not estimate a model for the given dataset. Try relaxing your parameters</translation>
+        <translation>SAC Segmentation 无法估计给定数据集的模型。尝试放宽参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/SACSegmentation.cpp" line="273"/>
@@ -22943,7 +22968,7 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/SACSegmentationDlg.cpp" line="68"/>
         <source>SACMODEL_REGISTRATION</source>
-        <translation>SACMODEL_REGISTRATION</translation>
+        <translation>SACMODEL_注册</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Segmentations/dialogs/SACSegmentationDlg.cpp" line="69"/>
@@ -23137,32 +23162,32 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="38"/>
         <source>ULR Viewer Options</source>
-        <translation>ULR Viewer Options</translation>
+        <translation>ULR 查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="41"/>
         <source>ULR v2/v3 Viewer Options</source>
-        <translation>ULR v2/v3 Viewer Options</translation>
+        <translation>ULR v2/v3 查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="44"/>
         <source>Textured Mesh Viewer Options</source>
-        <translation>Textured Mesh Viewer Options</translation>
+        <translation>纹理网格查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="47"/>
         <source>Point-Based Viewer Options</source>
-        <translation>Point-Based Viewer Options</translation>
+        <translation>基于点的查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="50"/>
         <source>3D Gaussian Splatting Viewer Options</source>
-        <translation>3D Gaussian Splatting Viewer Options</translation>
+        <translation>3D 高斯喷溅查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="53"/>
         <source>Remote Gaussian Viewer Options</source>
-        <translation>Remote Gaussian Viewer Options</translation>
+        <translation>远程高斯查看器选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBROptionsDialog.cpp" line="61"/>
@@ -23281,23 +23306,23 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="296"/>
         <source>ULR Scene Mesh</source>
-        <translation>ULR Scene Mesh</translation>
+        <translation>ULR 场景网格</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="383"/>
         <source>ULR v2 Scene Mesh</source>
-        <translation>ULR v2 Scene Mesh</translation>
+        <translation>ULR v2 场景网格</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="520"/>
         <source>Textured Mesh</source>
-        <translation>Textured Mesh</translation>
+        <translation>纹理网格</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="600"/>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="784"/>
         <source>SfM Point Cloud</source>
-        <translation>SfM Point Cloud</translation>
+        <translation>SfM 点云</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="780"/>
@@ -23307,7 +23332,7 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/SIBRViewerThread.cpp" line="946"/>
         <source>Remote Scene Point Cloud</source>
-        <translation>Remote Scene Point Cloud</translation>
+        <translation>远程场景点云</translation>
     </message>
 </context>
 <context>
@@ -23315,32 +23340,32 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="20"/>
         <source>SIFT Extraction</source>
-        <translation>SIFT Extraction</translation>
+        <translation>SIFT提取</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="32"/>
         <source>Intensity Field</source>
-        <translation>Intensity Field</translation>
+        <translation>强度场</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="42"/>
         <source>Scales per Octave</source>
-        <translation>Scales per Octave</translation>
+        <translation>每个八度音阶</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="59"/>
         <source>Minimum Scale</source>
-        <translation>Minimum Scale</translation>
+        <translation>最小规模</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="82"/>
         <source>Number of Octaves</source>
-        <translation>Number of Octaves</translation>
+        <translation>八度音阶数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Features/dialogs/SIFTExtractDlg.ui" line="102"/>
         <source>Minimum Contrast</source>
-        <translation>Minimum Contrast</translation>
+        <translation>最低对比度</translation>
     </message>
 </context>
 <context>
@@ -23348,32 +23373,32 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="14"/>
         <source>LAS/LAZ scale</source>
-        <translation>LAS/LAZ scale</translation>
+        <translation>LAS/LAZ 量表</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="22"/>
         <source>Choose the output LAS/LAZ scale/resolution:</source>
-        <translation>Choose the output LAS/LAZ scale/resolution:</translation>
+        <translation>选择输出 LAS/LAZ 比例/分辨率：</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="46"/>
         <source>Optimal resolution</source>
-        <translation>Optimal resolution</translation>
+        <translation>最佳分辨率</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="80"/>
         <source>Ensures optimal accuracy (up to 10^-7 absolute)</source>
-        <translation>Ensures optimal accuracy (up to 10^-7 absolute)</translation>
+        <translation>确保最佳精度（高达 10^-7 绝对精度）</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="83"/>
         <source>will decrease LAZ compression efficiency</source>
-        <translation>will decrease LAZ compression efficiency</translation>
+        <translation>会降低 LAZ 压缩效率</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="95"/>
         <source>Original resolution</source>
-        <translation>Original resolution</translation>
+        <translation>原始分辨率</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="108"/>
@@ -23384,28 +23409,28 @@ the cloud from sinking under the mesh surface.</source>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="135"/>
         <source>might not preserve data accuracy
 (especially if you have transformed the original data)</source>
-        <translation>might not preserve data accuracy
-(especially if you have transformed the original data)</translation>
+        <translation>可能无法保持数据准确性
+（特别是如果您已经转换了原始数据）</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="148"/>
         <source>Custom resolution</source>
-        <translation>Custom resolution</translation>
+        <translation>自定义分辨率</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="197"/>
         <source>bigger scale = best LAZ compression = lower resolution(*)</source>
-        <translation>bigger scale = best LAZ compression = lower resolution(*)</translation>
+        <translation>更大的比例 = 最好的 LAZ 压缩 = 更低的分辨率(*)</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="215"/>
         <source>(*) careful, if chosen too low coordinates will loose accuracy</source>
-        <translation>(*) careful, if chosen too low coordinates will loose accuracy</translation>
+        <translation>(*) 小心，如果选择太低的坐标会降低精度</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveLASFileDlg.ui" line="225"/>
         <source>Save additional field(s)</source>
-        <translation>Save additional field(s)</translation>
+        <translation>保存附加字段</translation>
     </message>
 </context>
 <context>
@@ -23413,17 +23438,17 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="14"/>
         <source>Save SHP file</source>
-        <translation>Save SHP file</translation>
+        <translation>保存 SHP 文件</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="20"/>
         <source>3D polylines</source>
-        <translation>3D polylines</translation>
+        <translation>3D 折线</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="28"/>
         <source>Vertical dimension</source>
-        <translation>Vertical dimension</translation>
+        <translation>垂直尺寸</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="62"/>
@@ -23433,17 +23458,17 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="65"/>
         <source>save as 2D polylines</source>
-        <translation>save as 2D polylines</translation>
+        <translation>另存为二维折线</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="72"/>
         <source>The height of each polyline (considered as constant!) will be saved as a field in the associated DBF file</source>
-        <translation>The height of each polyline (considered as constant!) will be saved as a field in the associated DBF file</translation>
+        <translation>每条折线的高度（视为常量！）将作为字段保存在关联的 DBF 文件中</translation>
     </message>
     <message>
         <location filename="../../libs/CV_io/ui/saveSHPFileDlg.ui" line="75"/>
         <source>save (constant) height of polylines as a DBF field</source>
-        <translation>save (constant) height of polylines as a DBF field</translation>
+        <translation>将折线的（恒定）高度保存为 DBF 字段</translation>
     </message>
 </context>
 <context>
@@ -23451,23 +23476,23 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="20"/>
         <source>Scalar color setting</source>
-        <translation>Scalar color setting</translation>
+        <translation>标量颜色设置</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="30"/>
         <source>Choose the lowest point</source>
-        <translation>Choose the lowest point</translation>
+        <translation>选择最低点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="39"/>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="171"/>
         <source>Pick the plane center (click again to cancel)</source>
-        <translation>Pick the plane center (click again to cancel)</translation>
+        <translation>拾取平面中心（再次单击取消）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="146"/>
         <source>Choose the highest point </source>
-        <translation>Choose the highest point </translation>
+        <translation>选择最高点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="251"/>
@@ -23492,7 +23517,7 @@ the cloud from sinking under the mesh surface.</source>
     <message>
         <location filename="../../plugins/core/Standard/qColorimetricSegmenter/ScalarDialog.ui" line="295"/>
         <source>Deviation from limits (%) :</source>
-        <translation>Deviation from limits (%) :</translation>
+        <translation>与限值的偏差（%）：</translation>
     </message>
 </context>
 <context>
@@ -23813,7 +23838,7 @@ multiplier threshold (nSigma)</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/StatisticalOutliersRemover.cpp" line="29"/>
         <source>Filter outlier data based on point neighborhood statistics</source>
-        <translation>Filter outlier data based on point neighborhood statistics</translation>
+        <translation>根据点邻域统计数据过滤离群数据</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/StatisticalOutliersRemover.cpp" line="30"/>
@@ -23826,21 +23851,21 @@ multiplier threshold (nSigma)</source>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/StatisticalOutliersRemoverDlg.ui" line="14"/>
         <source>Statistical Outliers Removal</source>
-        <translation>Statistical Outliers Removal</translation>
+        <translation>统计异常值去除</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/StatisticalOutliersRemoverDlg.ui" line="26"/>
         <source>Number of points to use for 
 mean distance estimation</source>
-        <translation>Number of points to use for 
-mean distance estimation</translation>
+        <translation>用于 
+ 平均距离估计的点数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/StatisticalOutliersRemoverDlg.ui" line="51"/>
         <source>Standard deviation
  multiplier threshold (nSigma)</source>
-        <translation>Standard deviation
- multiplier threshold (nSigma)</translation>
+        <translation>标准差
+乘数阈值(nSigma)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Filters/dialogs/StatisticalOutliersRemoverDlg.ui" line="76"/>
@@ -23906,12 +23931,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="50"/>
         <source>dip direction: 0°</source>
-        <translation>dip direction: 0°</translation>
+        <translation>倾角方向：0°</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="202"/>
         <source>[Mean] dip direction: 0° - dip 0°</source>
-        <translation>[Mean] dip direction: 0° - dip 0°</translation>
+        <translation>【平均】倾角方向：0°-倾角0°</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="224"/>
@@ -23926,7 +23951,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="271"/>
         <source>Density color scale</source>
-        <translation>Density color scale</translation>
+        <translation>密度色标</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="286"/>
@@ -23941,27 +23966,27 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="335"/>
         <source>Ticks frequency</source>
-        <translation>Ticks frequency</translation>
+        <translation>刻度频率</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="371"/>
         <source>Show families color (on the stereogram outer edge)</source>
-        <translation>Show families color (on the stereogram outer edge)</translation>
+        <translation>显示族颜色（在立体图外边缘）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="374"/>
         <source>Show families color</source>
-        <translation>Show families color</translation>
+        <translation>显示家庭颜色</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="387"/>
         <source>Interactive filter</source>
-        <translation>Interactive filter</translation>
+        <translation>交互式过滤器</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="405"/>
         <source>Filter facets by orientation</source>
-        <translation>Filter facets by orientation</translation>
+        <translation>按方向过滤面</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="420"/>
@@ -23984,7 +24009,7 @@ mean distance estimation</translation>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="447"/>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="497"/>
         <source>dip dir.</source>
-        <translation>dip dir.</translation>
+        <translation>浸入方向。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramDlg.ui" line="467"/>
@@ -24007,7 +24032,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramParamsDlg.ui" line="22"/>
         <source>main sectors step</source>
-        <translation>main sectors step</translation>
+        <translation>主要部门步骤</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/ui/stereogramParamsDlg.ui" line="29"/>
@@ -24115,12 +24140,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/TemplateAlignment.cpp" line="199"/>
         <source>(values less than 0.00002 are good) Best fitness score: %1</source>
-        <translation>(values less than 0.00002 are good) Best fitness score: %1</translation>
+        <translation>（小于 0.00002 的值较好）最佳健身得分：%1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/TemplateAlignment.cpp" line="257"/>
         <source>[ApplyTransformation] Applied transformation matrix:</source>
-        <translation>[ApplyTransformation] Applied transformation matrix:</translation>
+        <translation>[应用变换ation] Applied transformation matrix:</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/TemplateAlignment.cpp" line="260"/>
@@ -24135,12 +24160,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/TemplateAlignment.cpp" line="274"/>
         <source>Wrong Parameters. One or more parameters cannot be accepted</source>
-        <translation>Wrong Parameters. One or more parameters cannot be accepted</translation>
+        <translation>参数错误。不能接受一个或多个参数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/TemplateAlignment.cpp" line="278"/>
         <source>Template Alignment does not returned any point. Try relaxing your parameters</source>
-        <translation>Template Alignment does not returned any point. Try relaxing your parameters</translation>
+        <translation>模板对齐不返回任何点。尝试放宽参数</translation>
     </message>
 </context>
 <context>
@@ -24168,7 +24193,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="44"/>
         <source>template #1</source>
-        <translation>template #1</translation>
+        <translation>模板#1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="57"/>
@@ -24178,12 +24203,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="64"/>
         <source>Template 1</source>
-        <translation>Template 1</translation>
+        <translation>模板1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="74"/>
         <source>template #2</source>
-        <translation>template #2</translation>
+        <translation>模板#2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="90"/>
@@ -24193,7 +24218,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="97"/>
         <source>Template 2</source>
-        <translation>Template 2</translation>
+        <translation>模板2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="104"/>
@@ -24273,12 +24298,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="288"/>
         <source>Minimum Sample Distance</source>
-        <translation>Minimum Sample Distance</translation>
+        <translation>最小采样距离</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="311"/>
         <source>Feature Radius</source>
-        <translation>Feature Radius</translation>
+        <translation>特征半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="321"/>
@@ -24288,7 +24313,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="331"/>
         <source>Maximum Correspondence Distance</source>
-        <translation>Maximum Correspondence Distance</translation>
+        <translation>最大通信距离</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="370"/>
@@ -24303,7 +24328,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="424"/>
         <source>Normal Radius</source>
-        <translation>Normal Radius</translation>
+        <translation>法向半径</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qPCL/PclAlgorithms/Recognitions/dialogs/TemplateAlignmentDialog.ui" line="431"/>
@@ -24396,7 +24421,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="26"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The maximum possible depth of the tree. That is the training algorithms attempts to split a node while its depth is less than maxDepth. The root node has zero depth. The actual depth may be smaller if the other termination criteria are met, and/or if the tree is pruned.&lt;/p&gt;&lt;p&gt;[default 25]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The maximum possible depth of the tree. That is the training algorithms attempts to split a node while its depth is less than maxDepth. The root node has zero depth. The actual depth may be smaller if the other termination criteria are met, and/or if the tree is pruned.&lt;/p&gt;&lt;p&gt;[default 25]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV参数&lt;/p&gt;&lt;p&gt;树的最大可能深度。也就是说，训练算法尝试在深度小于 maxDepth 时分割节点。根节点的深度为零。如果满足其他终止条件和/或修剪树，则实际深度可能会更小。&lt;/p&gt;&lt;p&gt;[默认 25]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="29"/>
@@ -24406,12 +24431,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="36"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum possible depth of the tree.&lt;/p&gt;&lt;p&gt;That is the training algorithms attempts to split a node while its depth is less than maxDepth.&lt;/p&gt;&lt;p&gt;The root node has zero depth. The actual depth may be smaller if the other termination criteria are met and/or if the tree is pruned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum possible depth of the tree.&lt;/p&gt;&lt;p&gt;That is the training algorithms attempts to split a node while its depth is less than maxDepth.&lt;/p&gt;&lt;p&gt;The root node has zero depth. The actual depth may be smaller if the other termination criteria are met and/or if the tree is pruned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;树的最大可能深度。&lt;/p&gt;&lt;p&gt;即训练算法尝试在深度小于 maxDepth 时分裂节点。&lt;/p&gt;&lt;p&gt;根节点为零深度。如果满足其他终止条件和/或修剪树，则实际深度可能会更小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="49"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The number of trees in the forest!&lt;/p&gt;&lt;p&gt;[default 100]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The number of trees in the forest!&lt;/p&gt;&lt;p&gt;[default 100]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV参数&lt;/p&gt;&lt;p&gt;森林中树木的数量！&lt;/p&gt;&lt;p&gt;[默认100]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="52"/>
@@ -24421,12 +24446,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="59"/>
         <source>The maximum number of iterations/elements</source>
-        <translation>The maximum number of iterations/elements</translation>
+        <translation>最大迭代次数/元素数</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="78"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The size of the randomly selected subset of features at each tree node and that are used to find the best split(s). If you set it to 0 then the size will be set to the square root of the total number of features.&lt;/p&gt;&lt;p&gt;[default 0]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;The size of the randomly selected subset of features at each tree node and that are used to find the best split(s). If you set it to 0 then the size will be set to the square root of the total number of features.&lt;/p&gt;&lt;p&gt;[default 0]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV 参数&lt;/p&gt;&lt;p&gt;每个树节点处随机选择的特征子集的大小，用于查找最佳分割。如果将其设置为 0，则大小将设置为特征总数的平方根。&lt;/p&gt;&lt;p&gt;[默认 0]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="81"/>
@@ -24436,12 +24461,12 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="88"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The size of the randomly selected subset of features at each tree node and that are used to find the best split(s).&lt;/p&gt;&lt;p&gt;If you set it to 0 then the size will be set to the square root of the total number of features.&lt;/p&gt;&lt;p&gt;Default value is 0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The size of the randomly selected subset of features at each tree node and that are used to find the best split(s).&lt;/p&gt;&lt;p&gt;If you set it to 0 then the size will be set to the square root of the total number of features.&lt;/p&gt;&lt;p&gt;Default value is 0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;每个树节点处随机选择的特征子集的大小，用于查找最佳分割。&lt;/p&gt;&lt;p&gt;如果将其设置为 0，则大小将设置为总数的平方根功能.&lt;/p&gt;&lt;p&gt;默认值为 0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="95"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;If the number of samples in a node is less than this parameter then the node will not be split.&lt;/p&gt;&lt;p&gt;[default 10]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV parameter&lt;/p&gt;&lt;p&gt;If the number of samples in a node is less than this parameter then the node will not be split.&lt;/p&gt;&lt;p&gt;[default 10]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;OpenCV参数&lt;/p&gt;&lt;p&gt;如果节点中的样本数小于此参数则不会分割该节点。&lt;/p&gt;&lt;p&gt;[默认10]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="98"/>
@@ -24451,7 +24476,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="105"/>
         <source>If the number of samples in a node is less than this parameter then the node will not be split</source>
-        <translation>If the number of samples in a node is less than this parameter then the node will not be split</translation>
+        <translation>如果节点中的样本数小于该参数，则该节点不会被分裂</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="121"/>
@@ -24481,7 +24506,7 @@ mean distance estimation</translation>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="160"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked : &lt;/p&gt;&lt;p&gt;* A directory is created near the parameter file, with name 3dmasc_yyyymmdd_HHhMM.&lt;/p&gt;&lt;p&gt;* A file 3dmasc_yyyymmdd_HHhMM.txt is created in this directory. &lt;/p&gt;&lt;p&gt;* Each time you train the classifier, the feature list and the classifier are stored and an entry is created in the trace file to save the overall accuracy.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked : &lt;/p&gt;&lt;p&gt;* A directory is created near the parameter file, with name 3dmasc_yyyymmdd_HHhMM.&lt;/p&gt;&lt;p&gt;* A file 3dmasc_yyyymmdd_HHhMM.txt is created in this directory. &lt;/p&gt;&lt;p&gt;* Each time you train the classifier, the feature list and the classifier are stored and an entry is created in the trace file to save the overall accuracy.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;如果选中：&lt;/p&gt;&lt;p&gt;* 在参数文件附近创建一个目录，名称为3dmasc_yyyymmdd_HHhMM.&lt;/p&gt;&lt;p&gt;* 在此目录中创建文件 3dmasc_yyyymmdd_HHhMM.txt。 &lt;/p&gt;&lt;p&gt;* 每次训练分类器时，都会存储特征列表和分类器，并在跟踪文件中创建一个条目以保存总体精度。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/q3DMASC/Train3DMASCDialog.ui" line="163"/>
@@ -24611,7 +24636,7 @@ li.checked::marker { content: &quot;±2&quot;; }
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/trainDisclaimerDlg.ui" line="14"/>
         <source>qCANUPO (disclaimer)</source>
-        <translation>qCANUPO (disclaimer)</translation>
+        <translation>qCANUPO（免责声明）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/ui/trainDisclaimerDlg.ui" line="48"/>
@@ -24688,21 +24713,19 @@ piecewise constant functions on general weighted graphs. SIAM Journal on
 Imaging Sciences. 2017, 10.4, 1724-1766.`
 
 </source>
-        <translation>`TreeIso Plugin Instruction`
+        <translation>`TreeIso 插件指令`
 
-`A graph-based tree point cloud isolator`
+`基于图的树点云隔离器`
 
-`Reference`
+`参考`
 
-`Xi, Z.; Hopkinson, C. 3D Graph-Based Individual-Tree Isolation (Treeiso) from
-Terrestrial Laser Scanning Point Clouds. Remote Sens. 2022, 14, 6116.
+`Xi, Z.; Hopkinson, C. 基于 3D 图的单树隔离 (Treeiso)，来自 
+ 地面激光扫描点云。遥感。2022, 14, 6116.
 https://doi.org/10.3390/rs14236116`
 
-`Landrieu, Loic, and Guillaume Obozinski. Cut pursuit: Fast algorithms to learn
-piecewise constant functions on general weighted graphs. SIAM Journal on
-Imaging Sciences. 2017, 10.4, 1724-1766.`
-
-</translation>
+`Landrieu、Loic 和 Guillaume Obozinski。切入追求：学习一般加权图上的
+分段常数函数的快速算法。 SIAM 期刊
+成像科学。 2017 年，10.4，1724-1766。`</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="75"/>
@@ -24712,30 +24735,30 @@ Imaging Sciences. 2017, 10.4, 1724-1766.`
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="85"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;1. 3D Cut-pursuit algorithm&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;1. 3D Cut-pursuit algorithm&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色：#aa0000;&quot;&gt;1。 3D剪切追踪算法&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="92"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This step takes a bit long time, please be patient. &lt;br&gt;It will create small clusters with natural breaks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This step takes a bit long time, please be patient. &lt;br&gt;It will create small clusters with natural breaks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;这一步需要的时间有点长，请耐心等待。 &lt;br&gt;它将创建具有自然断裂的小簇。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="112"/>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="297"/>
         <source>&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;K: Nearest neighbors to search&lt;/span&gt;</source>
-        <translation>&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;K: Nearest neighbors to search&lt;/span&gt;</translation>
+        <translation>&lt;span 样式=&quot; 字体大小：10pt；字体粗细：600； color:#aa0000;&quot;&gt;K：要搜索的最近邻居&lt;/span&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="145"/>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="327"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;λ: Regularization strength&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;λ: Regularization strength&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600； color:#aa0000;&quot;&gt;λ：正则化强度&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="181"/>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="393"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Decimated resolution (m) to speed up&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Decimated resolution (m) to speed up&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600； color:#aa0000;&quot;&gt;加速分辨率（米）&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="217"/>
@@ -24752,17 +24775,17 @@ Imaging Sciences. 2017, 10.4, 1724-1766.`
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="270"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;2. 2D Cut-pursuit algorithm&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;2. 2D Cut-pursuit algorithm&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色：#aa0000;&quot;&gt;2。 2D切割追踪算法&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="277"/>
         <source>This step merges previous clusters horizontally.</source>
-        <translation>This step merges previous clusters horizontally.</translation>
+        <translation>此步骤水平合并先前的集群。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="360"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Max gap (m)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Max gap (m)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色:#aa0000;&quot;&gt;最大间隙（米）&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="472"/>
@@ -24772,22 +24795,22 @@ Imaging Sciences. 2017, 10.4, 1724-1766.`
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="482"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;3. Global refinement&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;3. Global refinement&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色：#aa0000;&quot;&gt;3。全局细化&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="489"/>
         <source>Final merging based on gaps and overlapping ratio.</source>
-        <translation>Final merging based on gaps and overlapping ratio.</translation>
+        <translation>基于间隙和重叠率的最终合并。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="509"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Vertical weight&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Vertical weight&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色:#aa0000;&quot;&gt;垂直重量&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qTreeIso/ui/TreeIsoDlg.ui" line="542"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Relative height length ratio&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; color:#aa0000;&quot;&gt;Relative height length ratio&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;字体粗细：600；颜色:#aa0000;&quot;&gt;相对高长比&lt;/跨度&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -25242,27 +25265,27 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="14"/>
         <source>VoxFall Detection</source>
-        <translation>VoxFall Detection</translation>
+        <translation>VoxFall 检测</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="28"/>
         <source>Mesh #1</source>
-        <translation>Mesh #1</translation>
+        <translation>网格#1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="41"/>
         <source>Mesh #2</source>
-        <translation>Mesh #2</translation>
+        <translation>网格#2</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="68"/>
         <source>Model properties</source>
-        <translation>Model properties</translation>
+        <translation>模型属性</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="80"/>
         <source>Voxel size</source>
-        <translation>Voxel size</translation>
+        <translation>体素大小</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="109"/>
@@ -25272,7 +25295,7 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="122"/>
         <source>Azimuth (deg)</source>
-        <translation>Azimuth (deg)</translation>
+        <translation>方位角（度）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="151"/>
@@ -25282,7 +25305,7 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="161"/>
         <source>Output options</source>
-        <translation>Output options</translation>
+        <translation>输出选项</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qVoxFall/ui/qVoxFallDialog.ui" line="167"/>
@@ -25305,22 +25328,22 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="93"/>
         <source>load %1 classes from %2</source>
-        <translation>load %1 classes from %2</translation>
+        <translation>从 %2 加载 %1 类</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="125"/>
         <source>drop annotaion[%1] which is out of range or current classSets</source>
-        <translation>drop annotaion[%1] which is out of range or current classSets</translation>
+        <translation>删除超出范围或当前类集的注释[%1]</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="230"/>
         <source>%1: load %2 boxes</source>
-        <translation>%1: load %2 boxes</translation>
+        <translation>%1：加载 %2 盒子</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="234"/>
         <source>%1: load %2 classes</source>
-        <translation>%1: load %2 classes</translation>
+        <translation>%1：加载 %2 类</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="420"/>
@@ -25335,7 +25358,7 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="494"/>
         <source>Change current picked annotation type from [%1] to [%2].</source>
-        <translation>Change current picked annotation type from [%1] to [%2].</translation>
+        <translation>将当前选取的注释类型从 [%1] 更改为 [%2]。</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="501"/>
@@ -25345,7 +25368,7 @@ You should fill the empty cells...</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="507"/>
         <source>Change last annotation type from [%1] to [%2]</source>
-        <translation>Change last annotation type from [%1] to [%2]</translation>
+        <translation>将最后一个注释类型从 [%1] 更改为 [%2]</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/AnnotationTools/VtkAnnotationTool.cpp" line="513"/>
@@ -25573,7 +25596,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="357"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="454"/>
         <source>Dark red</source>
-        <translation>Dark red</translation>
+        <translation>深红色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="358"/>
@@ -25585,7 +25608,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="359"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="456"/>
         <source>Dark green</source>
-        <translation>Dark green</translation>
+        <translation>深绿色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="360"/>
@@ -25597,7 +25620,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="361"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="458"/>
         <source>Dark blue</source>
-        <translation>Dark blue</translation>
+        <translation>深蓝色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="362"/>
@@ -25609,7 +25632,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="363"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="460"/>
         <source>Dark cyan</source>
-        <translation>Dark cyan</translation>
+        <translation>深青色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="364"/>
@@ -25621,7 +25644,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="365"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="462"/>
         <source>Dark magenta</source>
-        <translation>Dark magenta</translation>
+        <translation>深洋红色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="366"/>
@@ -25633,7 +25656,7 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="367"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="464"/>
         <source>Dark yellow</source>
-        <translation>Dark yellow</translation>
+        <translation>深黄色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="368"/>
@@ -25645,13 +25668,13 @@ You should fill the empty cells...</source>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="369"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="466"/>
         <source>Dark gray</source>
-        <translation>Dark gray</translation>
+        <translation>深灰色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="370"/>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="467"/>
         <source>Light gray</source>
-        <translation>Light gray</translation>
+        <translation>浅灰色</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/VtkUtils/qtcolorpicker.cpp" line="385"/>
@@ -25786,32 +25809,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="61"/>
         <source>apply and close dialog</source>
-        <translation>apply and close dialog</translation>
+        <translation>应用并关闭对话框</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="75"/>
         <source>close dialog</source>
-        <translation>close dialog</translation>
+        <translation>关闭对话框</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="95"/>
         <source>add new class</source>
-        <translation>add new class</translation>
+        <translation>添加新班级</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="112"/>
         <source>delete selected rows</source>
-        <translation>delete selected rows</translation>
+        <translation>删除选定的行</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="129"/>
         <source>start drawing circle</source>
-        <translation>start drawing circle</translation>
+        <translation>开始画圆</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="143"/>
         <source>return to transform camera mode</source>
-        <translation>return to transform camera mode</translation>
+        <translation>返回变换相机模式</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="172"/>
@@ -25821,12 +25844,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="192"/>
         <source>Input Class</source>
-        <translation>Input Class</translation>
+        <translation>输入类别</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCloudLayers/ui/ccCloudLayersDlg.ui" line="211"/>
         <source>Output Class</source>
-        <translation>Output Class</translation>
+        <translation>输出等级</translation>
     </message>
 </context>
 <context>
@@ -26232,7 +26255,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qCompass/src/ccCompass.cpp" line="3360"/>
         <source>[Compass] No polylines or traces converted - none found.</source>
-        <translation>[Compass] No polylines or traces converted - none found.</translation>
+        <translation>[指南针] 没有转换折线或轨迹 - 没有找到。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/src/ccCompass.cpp" line="3403"/>
@@ -26863,12 +26886,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../plugins/core/Standard/qMPlane/src/ccMPlaneDlgController.cpp" line="115"/>
         <source>Save Measurements</source>
-        <translation>Save Measurements</translation>
+        <translation>保存测量值</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qMPlane/src/ccMPlaneDlgController.cpp" line="116"/>
         <source>Comma-separated values (*.csv);;All Files (*)</source>
-        <translation>Comma-separated values (*.csv);;All Files (*)</translation>
+        <translation>逗号分隔值 (*.csv);;所有文件 (*)</translation>
     </message>
 </context>
 <context>
@@ -26950,7 +26973,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../pluginManager/ui/ecvPluginInfoDlg.ui" line="317"/>
         <source>ACloudViewer looks for plugins in the following directories:</source>
-        <translation>ACloudViewer looks for plugins in the following directories:</translation>
+        <translation>ACloudViewer 在以下目录中查找插件：</translation>
     </message>
     <message>
         <location filename="../pluginManager/ecvPluginInfoDlg.cpp" line="101"/>
@@ -27003,17 +27026,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="145"/>
         <source>[Plugin][%1] Disabled</source>
-        <translation>[Plugin][%1] Disabled</translation>
+        <translation>[插件][%1] 已禁用</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="184"/>
         <source>[Plugin][%1] New file extensions registered: %2</source>
-        <translation>[Plugin][%1] New file extensions registered: %2</translation>
+        <translation>[插件][%1] 已注册新文件扩展名：%2</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="255"/>
         <source>[Plugin] Searching: %1</source>
-        <translation>[Plugin] Searching: %1</translation>
+        <translation>[插件] 搜索：%1</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="274"/>
@@ -27023,7 +27046,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="288"/>
         <source>	%1 does not seem to be a valid plugin	(%2)</source>
-        <translation>	%1 does not seem to be a valid plugin	(%2)</translation>
+        <translation>%1 似乎不是一个有效的插件 (%2)</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="291"/>
@@ -27033,17 +27056,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="304"/>
         <source>	Plugin %1 has a blank name</source>
-        <translation>	Plugin %1 has a blank name</translation>
+        <translation>插件 %1 的名称为空</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="333"/>
         <source>	%1 overridden</source>
-        <translation>	%1 overridden</translation>
+        <translation>%1 被覆盖</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvPluginManager.cpp" line="340"/>
         <source>	Plugin found: %1 (%2)</source>
-        <translation>	Plugin found: %1 (%2)</translation>
+        <translation>找到插件：%1 (%2)</translation>
     </message>
 </context>
 <context>
@@ -27274,19 +27297,19 @@ p, li { white-space: pre-wrap; }
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="659"/>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="886"/>
         <source>Point Gaussian</source>
-        <translation>Point Gaussian</translation>
+        <translation>高斯点</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="662"/>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="889"/>
         <source>  Shader Preset</source>
-        <translation>  Shader Preset</translation>
+        <translation>着色器预设</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="664"/>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="891"/>
         <source>  Gaussian Radius</source>
-        <translation>  Gaussian Radius</translation>
+        <translation>高斯半径</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="666"/>
@@ -27486,7 +27509,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1799"/>
         <source>Gaussian Blur</source>
-        <translation>Gaussian Blur</translation>
+        <translation>高斯模糊</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1800"/>
@@ -27496,12 +27519,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1801"/>
         <source>Black-edged Circle</source>
-        <translation>Black-edged Circle</translation>
+        <translation>黑边圆圈</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1802"/>
         <source>Plain Circle</source>
-        <translation>Plain Circle</translation>
+        <translation>普通圆</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1803"/>
@@ -27511,7 +27534,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="1804"/>
         <source>Square Outline</source>
-        <translation>Square Outline</translation>
+        <translation>方形轮廓</translation>
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="3844"/>
@@ -27989,17 +28012,17 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvTranslationManager.cpp" line="81"/>
         <source>No Translation (English)</source>
-        <translation>No Translation (English)</translation>
+        <translation>无翻译（英文）</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvTranslationManager.cpp" line="175"/>
         <source>Language Change</source>
-        <translation>Language Change</translation>
+        <translation>语言变化</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvTranslationManager.cpp" line="176"/>
         <source>Language change will take effect when ACloudViewer is restarted</source>
-        <translation>Language change will take effect when ACloudViewer is restarted</translation>
+        <translation>语言更改将在ACloudViewer重启后生效</translation>
     </message>
 </context>
 <context>
@@ -28037,7 +28060,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="192"/>
         <source>Downloading vocabulary tree...</source>
-        <translation>Downloading vocabulary tree...</translation>
+        <translation>正在下载词汇树...</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="192"/>
@@ -28053,20 +28076,20 @@ Cells: %2 x %3</source>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="224"/>
         <source>Downloading vocabulary tree...
 %1 MB / %2 MB (%3%)</source>
-        <translation>Downloading vocabulary tree...
+        <translation>正在下载词汇树...
 %1 MB / %2 MB (%3%)</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="235"/>
         <source>Downloading vocabulary tree...
 %1 MB</source>
-        <translation>Downloading vocabulary tree...
+        <translation>正在下载词汇树...
 %1 MB</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="248"/>
         <source>Download Canceled</source>
-        <translation>Download Canceled</translation>
+        <translation>下载已取消</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="249"/>
@@ -28076,7 +28099,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="259"/>
         <source>Download Failed</source>
-        <translation>Download Failed</translation>
+        <translation>下载失败</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="260"/>
@@ -28086,7 +28109,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="266"/>
         <source>Download Disabled</source>
-        <translation>Download Disabled</translation>
+        <translation>下载已禁用</translation>
     </message>
     <message>
         <location filename="../reconstruction/AutomaticReconstructionWidget.cpp" line="267"/>
@@ -29135,7 +29158,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/automatic_reconstruction_widget.cc" line="204"/>
         <source>Imported the reconstructed sparse models for visualization. The models were also exported to the &lt;i&gt;sparse&lt;/i&gt; sub-folder in the workspace.</source>
-        <translation>Imported the reconstructed sparse models for visualization. The models were also exported to the &lt;i&gt;sparse&lt;/i&gt; sub-folder in the workspace.</translation>
+        <translation>导入ed the reconstructed sparse models for visualization. The models were also exported to the &lt;i&gt;sparse&lt;/i&gt; sub-folder in the workspace.</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/automatic_reconstruction_widget.cc" line="212"/>
@@ -29156,12 +29179,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="269"/>
         <source>Add camera</source>
-        <translation>Add camera</translation>
+        <translation>添加 camera</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="273"/>
         <source>Set model</source>
-        <translation>Set model</translation>
+        <translation>集合 model</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="371"/>
@@ -29177,7 +29200,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="422"/>
         <source>No camera selected.</source>
-        <translation>No camera selected.</translation>
+        <translation>否 camera selected.</translation>
     </message>
 </context>
 <context>
@@ -29216,12 +29239,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="757"/>
         <source>Clear Matches</source>
-        <translation>Clear Matches</translation>
+        <translation>清除 Matches</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="763"/>
         <source>Clear two-view geometries</source>
-        <translation>Clear two-view geometries</translation>
+        <translation>清除 two-view geometries</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="791"/>
@@ -29285,12 +29308,12 @@ Cells: %2 x %3</source>
         <location filename="../../libs/Reconstruction/src/ui/dense_reconstruction_widget.cc" line="455"/>
         <location filename="../../libs/Reconstruction/src/ui/dense_reconstruction_widget.cc" line="563"/>
         <source>No reconstruction selected in main window</source>
-        <translation>No reconstruction selected in main window</translation>
+        <translation>否 reconstruction selected in main window</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/dense_reconstruction_widget.cc" line="481"/>
         <source>Dense stereo reconstruction requires CUDA, which is not available on your system.</source>
-        <translation>Dense stereo reconstruction requires CUDA, which is not available on your system.</translation>
+        <translation>稠密立体重建需要CUDA，您的系统上不可用。</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/dense_reconstruction_widget.cc" line="499"/>
@@ -29354,17 +29377,17 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/feature_extraction_widget.cc" line="189"/>
         <source>Parameters from EXIF</source>
-        <translation>Parameters from EXIF</translation>
+        <translation>参数 from EXIF</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/feature_extraction_widget.cc" line="192"/>
         <source>Custom parameters</source>
-        <translation>Custom parameters</translation>
+        <translation>自定义 parameters</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/feature_extraction_widget.cc" line="208"/>
         <source>Camera model</source>
-        <translation>Camera model</translation>
+        <translation>相机 model</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/feature_extraction_widget.cc" line="289"/>
@@ -29423,22 +29446,22 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="467"/>
         <source>Set camera</source>
-        <translation>Set camera</translation>
+        <translation>集合 camera</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="472"/>
         <source>Split camera</source>
-        <translation>Split camera</translation>
+        <translation>分割 camera</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="477"/>
         <source>Show image</source>
-        <translation>Show image</translation>
+        <translation>显示 image</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="483"/>
         <source>Overlapping images</source>
-        <translation>Overlapping images</translation>
+        <translation>重叠ping images</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="584"/>
@@ -29453,13 +29476,13 @@ Cells: %2 x %3</source>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="668"/>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="702"/>
         <source>No image selected.</source>
-        <translation>No image selected.</translation>
+        <translation>否 image selected.</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="629"/>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="653"/>
         <source>Only one image may be selected.</source>
-        <translation>Only one image may be selected.</translation>
+        <translation>只能选择一张图像。</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="674"/>
@@ -29481,7 +29504,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/feature_extraction_widget.cc" line="131"/>
         <source>Path is not a directory</source>
-        <translation>Path is not a directory</translation>
+        <translation>路径 is not a directory</translation>
     </message>
 </context>
 <context>
@@ -29504,7 +29527,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/log_widget.cc" line="140"/>
         <source>Log (*.log)</source>
-        <translation>Log (*.log)</translation>
+        <translation>日志 (*.log)</translation>
     </message>
 </context>
 <context>
@@ -29855,7 +29878,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/main_window.cc" line="1306"/>
         <source>You must create a valid project using: &lt;i&gt;File &gt; New project&lt;/i&gt; or &lt;i&gt;File &gt; Edit project&lt;/i&gt;</source>
-        <translation>You must create a valid project using: &lt;i&gt;File &gt; New project&lt;/i&gt; or &lt;i&gt;File &gt; Edit project&lt;/i&gt;</translation>
+        <translation>You must create a valid project using: &lt;i&gt;文件 &gt; 新建项目&lt;/i&gt; or &lt;i&gt;文件 &gt; 编辑项目&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -29883,7 +29906,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="89"/>
         <source>Smooth transition</source>
-        <translation>Smooth transition</translation>
+        <translation>平滑 transition</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="94"/>
@@ -29893,7 +29916,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="102"/>
         <source>Assemble movie</source>
-        <translation>Assemble movie</translation>
+        <translation>组装电影</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="157"/>
@@ -29909,12 +29932,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="165"/>
         <source>You must use perspective projection.</source>
-        <translation>You must use perspective projection.</translation>
+        <translation>必须使用透视投影。</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/movie_grabber_widget.cc" line="170"/>
         <source>Choose destination...</source>
-        <translation>Choose destination...</translation>
+        <translation>选择目标路径...</translation>
     </message>
 </context>
 <context>
@@ -29942,7 +29965,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="235"/>
         <source>Two-view geometries</source>
-        <translation>Two-view geometries</translation>
+        <translation>双视图几何</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="239"/>
@@ -30020,7 +30043,7 @@ Cells: %2 x %3</source>
         <location filename="../../libs/Reconstruction/src/ui/project_widget.cc" line="123"/>
         <location filename="../../libs/Reconstruction/src/ui/project_widget.cc" line="135"/>
         <source>SQLite3 database (*.db)</source>
-        <translation>SQLite3 database (*.db)</translation>
+        <translation>SQLite3 数据库 (*.db)</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/project_widget.cc" line="143"/>
@@ -30089,17 +30112,17 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="58"/>
         <source>Show matches</source>
-        <translation>Show matches</translation>
+        <translation>显示 matches</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="82"/>
         <source>No image pair selected.</source>
-        <translation>No image pair selected.</translation>
+        <translation>否 image pair selected.</translation>
     </message>
     <message>
         <location filename="../../libs/Reconstruction/src/ui/database_management_widget.cc" line="87"/>
         <source>Only one image pair may be selected.</source>
-        <translation>Only one image pair may be selected.</translation>
+        <translation>只能选择一个图像对。</translation>
     </message>
 </context>
 <context>
@@ -30253,12 +30276,12 @@ Cells: %2 x %3</source>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourTool.cpp" line="47"/>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourTool.cpp" line="462"/>
         <source>Contour Measurement Tool</source>
-        <translation>Contour Measurement Tool</translation>
+        <translation>轮廓 测量 到ol</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvContourTool.cpp" line="176"/>
         <source>Contour Parameters</source>
-        <translation>Contour Parameters</translation>
+        <translation>轮廓参数</translation>
     </message>
 </context>
 <context>
@@ -30282,7 +30305,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="14"/>
         <source>Decimate Filter</source>
-        <translation>Decimate Filter</translation>
+        <translation>Decimate 滤波</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="48"/>
@@ -30292,22 +30315,22 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="71"/>
         <source>Boundary vertex deletion</source>
-        <translation>Boundary vertex deletion</translation>
+        <translation>边界顶点删除</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="78"/>
         <source>Feature angle</source>
-        <translation>Feature angle</translation>
+        <translation>特征角</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="85"/>
         <source>Inflection Point Ratio</source>
-        <translation>Inflection Point Ratio</translation>
+        <translation>拐点比率</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="92"/>
         <source>Target reduction</source>
-        <translation>Target reduction</translation>
+        <translation>目标减少</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="106"/>
@@ -30317,17 +30340,17 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="113"/>
         <source>Output Points Precision</source>
-        <translation>Output Points Precision</translation>
+        <translation>输出点数精度</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="120"/>
         <source>Split angle</source>
-        <translation>Split angle</translation>
+        <translation>分割角</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="137"/>
         <source>Preserve topology</source>
-        <translation>Preserve topology</translation>
+        <translation>保留拓扑</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="144"/>
@@ -30342,7 +30365,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvDecimateFilterDlg.ui" line="185"/>
         <source>Accumulate error</source>
-        <translation>Accumulate error</translation>
+        <translation>累积误差</translation>
     </message>
 </context>
 <context>
@@ -30350,12 +30373,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceTool.cpp" line="112"/>
         <source>Distance Measurement Tool</source>
-        <translation>Distance Measurement Tool</translation>
+        <translation>距离 测量 到ol</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceTool.cpp" line="285"/>
         <source>Distance Parameters</source>
-        <translation>Distance Parameters</translation>
+        <translation>距离参数</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvDistanceTool.cpp" line="1277"/>
@@ -30419,7 +30442,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvGenericMeasurementTool.cpp" line="43"/>
         <source>Generic Measurement Tool</source>
-        <translation>Generic Measurement Tool</translation>
+        <translation>通用测量工具</translation>
     </message>
 </context>
 <context>
@@ -30574,7 +30597,7 @@ Cells: %2 x %3</source>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="20"/>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="23"/>
         <source>IsoSurface Filter</source>
-        <translation>IsoSurface Filter</translation>
+        <translation>Iso表面 滤波</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="49"/>
@@ -30594,12 +30617,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="86"/>
         <source>Min Scalar</source>
-        <translation>Min Scalar</translation>
+        <translation>最小标量</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="109"/>
         <source>Number of Contours</source>
-        <translation>Number of Contours</translation>
+        <translation>轮廓数</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="117"/>
@@ -30624,17 +30647,17 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="156"/>
         <source>Max Scalar</source>
-        <translation>Max Scalar</translation>
+        <translation>最大标量</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="163"/>
         <source>Export Polylines</source>
-        <translation>Export Polylines</translation>
+        <translation>导出折线</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvIsoSurfaceFilterDlg.ui" line="170"/>
         <source>Export Cloud</source>
-        <translation>Export Cloud</translation>
+        <translation>导出云</translation>
     </message>
 </context>
 <context>
@@ -30647,7 +30670,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilter.cpp" line="333"/>
         <source>export current plot figure</source>
-        <translation>export current plot figure</translation>
+        <translation>导出当前绘图</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilter.cpp" line="358"/>
@@ -30657,7 +30680,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilter.cpp" line="361"/>
         <source>failed to export probe figure!</source>
-        <translation>failed to export probe figure!</translation>
+        <translation>导出探针图失败！</translation>
     </message>
 </context>
 <context>
@@ -30688,7 +30711,7 @@ Cells: %2 x %3</source>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilterDlg.ui" line="56"/>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilterDlg.ui" line="64"/>
         <source>Implicit Plane</source>
-        <translation>Implicit Plane</translation>
+        <translation>隐式平面</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvProbeFilterDlg.ui" line="103"/>
@@ -30736,12 +30759,12 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorTool.cpp" line="104"/>
         <source>Protractor Measurement Tool</source>
-        <translation>Protractor Measurement Tool</translation>
+        <translation>量角器测量工具</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorTool.cpp" line="292"/>
         <source>Protractor Parameters</source>
-        <translation>Protractor Parameters</translation>
+        <translation>量角器参数</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/MeasurementTools/cvProtractorTool.cpp" line="451"/>
@@ -30802,7 +30825,7 @@ Cells: %2 x %3</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvQueryWidgets.cpp" line="73"/>
         <source>comma separated values</source>
-        <translation>comma separated values</translation>
+        <translation>逗号分隔值</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvQueryWidgets.cpp" line="90"/>
@@ -30846,7 +30869,7 @@ Cells: %2 x %3</source>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvRenderViewSelectionReaction.cpp" line="2085"/>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvRenderViewSelectionReaction.cpp" line="2099"/>
         <source>Tooltip Selection Information</source>
-        <translation>Tooltip Selection Information</translation>
+        <translation>工具提示选择信息</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvRenderViewSelectionReaction.cpp" line="2086"/>
@@ -30869,7 +30892,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvRenderViewSelectionReaction.cpp" line="2114"/>
         <source>Interactive Selection Information</source>
-        <translation>Interactive Selection Information</translation>
+        <translation>互动选择信息</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvRenderViewSelectionReaction.cpp" line="2116"/>
@@ -30965,7 +30988,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionLabelPropertiesDialog.cpp" line="189"/>
         <source>Save as default</source>
-        <translation>Save as default</translation>
+        <translation>保存为默认值</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionLabelPropertiesDialog.cpp" line="195"/>
@@ -31023,7 +31046,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="853"/>
         <source>&lt;b&gt;Selected Data&lt;/b&gt;</source>
-        <translation>&lt;b&gt;Selected Data&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;所选数据&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="862"/>
@@ -31174,7 +31197,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1082"/>
         <source>&lt;b&gt;Selection Criteria&lt;/b&gt;</source>
-        <translation>&lt;b&gt;Selection Criteria&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;选择标准&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1090"/>
@@ -31225,7 +31248,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1131"/>
         <source>&lt;b&gt;Selection Qualifiers&lt;/b&gt;</source>
-        <translation>&lt;b&gt;Selection Qualifiers&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;选择限定符&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1141"/>
@@ -31284,7 +31307,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1201"/>
         <source>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Selection Labels&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Selection Labels&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span 样式=&quot;font-weight:600;&quot;&gt;选择标签&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1216"/>
@@ -31294,7 +31317,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1219"/>
         <source>Set the array to label selected cells with</source>
-        <translation>Set the array to label selected cells with</translation>
+        <translation>设置数组以标记选定的单元格</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1228"/>
@@ -31319,7 +31342,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1256"/>
         <source>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Selection Appearance&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Selection Appearance&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;选择外观&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1269"/>
@@ -31334,7 +31357,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1292"/>
         <source>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Interactive Selection&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Interactive Selection&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;交互式选择&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1306"/>
@@ -31377,12 +31400,12 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1393"/>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1400"/>
         <source>Specify the expression which defines the relation between saved selections using boolean operators: !(NOT), &amp;(AND), |(OR), ^(XOR) and ().</source>
-        <translation>Specify the expression which defines the relation between saved selections using boolean operators: !(NOT), &amp;(AND), |(OR), ^(XOR) and ().</translation>
+        <translation>使用布尔运算符指定定义已保存选择之间关系的表达式：!(NOT)、&amp;(AND)、|(OR)、^(XOR) 和 ()。</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1398"/>
         <source>e.g., (s0|s1)&amp;s2|(s3&amp;s4)|s5|s6|s7</source>
-        <translation>e.g., (s0|s1)&amp;s2|(s3&amp;s4)|s5|s6|s7</translation>
+        <translation>例如，(s0|s1)&amp;s2|(s3&amp;s4)|s5|s6|s7</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1417"/>
@@ -31409,7 +31432,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1468"/>
         <source>Remove selected selection from the saved selections. Remember to edit the Expression.</source>
-        <translation>Remove selected selection from the saved selections. Remember to edit the Expression.</translation>
+        <translation>从保存的选择中删除选定的选择。请记住编辑表达式。</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1487"/>
@@ -31433,7 +31456,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1531"/>
         <source>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Attribute:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;font-weight:600;&quot;&gt;Attribute:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;span样式=&quot;font-weight:600;&quot;&gt;属性:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1542"/>
@@ -31454,7 +31477,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1579"/>
         <source>Toggle field data visibility (show raw data arrays)</source>
-        <translation>Toggle field data visibility (show raw data arrays)</translation>
+        <translation>切换字段数据可见性（显示原始数据数组）</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="1587"/>
@@ -31475,7 +31498,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2083"/>
         <source>Showing %1 %2</source>
-        <translation>Showing %1 %2</translation>
+        <translation>显示 %1 %2</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2092"/>
@@ -31513,7 +31536,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2215"/>
         <source>Showing %1 of %2 %3</source>
-        <translation>Showing %1 of %2 %3</translation>
+        <translation>显示 %2 %3 的 %1</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2322"/>
@@ -31584,7 +31607,7 @@ Use the 'Esc' key or the same toolbar button to exit this mode.</translation>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2498"/>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2734"/>
         <source>An unknown error occurred during export.</source>
-        <translation>An unknown error occurred during export.</translation>
+        <translation>导出期间发生未知错误。</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="2527"/>
@@ -31687,14 +31710,14 @@ Are you sure you want to continue?</source>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="3755"/>
         <source>Expression evaluation failed: %1</source>
-        <translation>Expression evaluation failed: %1</translation>
+        <translation>表达式求值失败：%1</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="3762"/>
         <source>Expression evaluation resulted in empty selection.
 Please check your expression syntax.</source>
-        <translation>Expression evaluation resulted in empty selection.
-Please check your expression syntax.</translation>
+        <translation>表达式求值导致选择为空。
+请检查您的表达式语法。</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="4074"/>
@@ -31902,7 +31925,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="4943"/>
         <source>Selected %1 %2(s) matching %3 condition(s)</source>
-        <translation>Selected %1 %2(s) matching %3 condition(s)</translation>
+        <translation>所选 %1 %2 匹配 %3 条件</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="4945"/>
@@ -31959,7 +31982,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5104"/>
         <source>X coo...</source>
-        <translation>X coo...</translation>
+        <translation>X 咕...</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5105"/>
@@ -31969,7 +31992,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5111"/>
         <source>Y coo...</source>
-        <translation>Y coo...</translation>
+        <translation>你咕...</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5112"/>
@@ -31979,7 +32002,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5118"/>
         <source>Z coo...</source>
-        <translation>Z coo...</translation>
+        <translation>Z 咕...</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.cpp" line="5119"/>
@@ -32213,27 +32236,27 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="17"/>
         <source>Smooth Filter</source>
-        <translation>Smooth Filter</translation>
+        <translation>平滑 滤波</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="67"/>
         <source>Feature Angle</source>
-        <translation>Feature Angle</translation>
+        <translation>特征角</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="74"/>
         <source>Number of Iterations</source>
-        <translation>Number of Iterations</translation>
+        <translation>迭代次数</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="81"/>
         <source>Boundary Smoothing</source>
-        <translation>Boundary Smoothing</translation>
+        <translation>边界平滑</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="88"/>
         <source>Edge Angle</source>
-        <translation>Edge Angle</translation>
+        <translation>边缘角度</translation>
     </message>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="102"/>
@@ -32243,7 +32266,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/VtkEngine/Tools/FilterTools/cvSmoothFilterDlg.ui" line="109"/>
         <source>Feature Edge Smoothing</source>
-        <translation>Feature Edge Smoothing</translation>
+        <translation>特征边缘平滑</translation>
     </message>
 </context>
 <context>
@@ -32626,7 +32649,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCameraParamEditDlg.cpp" line="821"/>
         <source>Save Custom Viewpoints Configuration</source>
-        <translation>Save Custom Viewpoints Configuration</translation>
+        <translation>保存自定义视点配置</translation>
     </message>
 </context>
 <context>
@@ -32657,7 +32680,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCustomViewpointButtonDlg.cpp" line="361"/>
         <source>Save Custom Viewpoints Configuration</source>
-        <translation>Save Custom Viewpoints Configuration</translation>
+        <translation>保存自定义视点配置</translation>
     </message>
 </context>
 <context>
@@ -32665,17 +32688,17 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCustomViewpointsToolbar.cpp" line="46"/>
         <source>Custom Viewpoints Toolbar</source>
-        <translation>Custom Viewpoints Toolbar</translation>
+        <translation>自定义视点工具栏</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCustomViewpointsToolbar.cpp" line="71"/>
         <source>Configure custom viewpoints</source>
-        <translation>Configure custom viewpoints</translation>
+        <translation>配置自定义视点</translation>
     </message>
     <message>
         <location filename="../../libs/CVAppCommon/src/ecvCustomViewpointsToolbar.cpp" line="79"/>
         <source>Add current viewpoint as custom viewpoint</source>
-        <translation>Add current viewpoint as custom viewpoint</translation>
+        <translation>添加当前视点作为自定义视点</translation>
     </message>
 </context>
 <context>
@@ -32717,7 +32740,7 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="16"/>
         <source>Font Properties</source>
-        <translation>Font Properties</translation>
+        <translation>Font 属性</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="43"/>
@@ -32742,17 +32765,17 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="74"/>
         <source>Set font size</source>
-        <translation>Set font size</translation>
+        <translation>设置字体大小</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="102"/>
         <source>Set font color</source>
-        <translation>Set font color</translation>
+        <translation>设置字体颜色</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="121"/>
         <source>Set font opacity</source>
-        <translation>Set font opacity</translation>
+        <translation>设置字体不透明度</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="149"/>
@@ -32772,12 +32795,12 @@ Please check your expression syntax.</translation>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="218"/>
         <source>Horizontal justification</source>
-        <translation>Horizontal justification</translation>
+        <translation>水平对齐</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/ui_templates/ecvFontPropertyWidget.ui" line="234"/>
         <source>Vertical justification</source>
-        <translation>Vertical justification</translation>
+        <translation>垂直对齐</translation>
     </message>
     <message>
         <location filename="../../libs/CV_db/src/widgets/ecvFontPropertyWidget.cpp" line="372"/>
@@ -34034,7 +34057,7 @@ Please choose a different shortcut.</source>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="48"/>
         <source>Create new GeoObject</source>
-        <translation>Create new GeoObject</translation>
+        <translation>创建新的地理对象</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="86"/>
@@ -34044,7 +34067,7 @@ Please choose a different shortcut.</source>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="176"/>
         <source>Digitise to lower-contact of GeoObject</source>
-        <translation>Digitise to lower-contact of GeoObject</translation>
+        <translation>对 GeoObject 进行数字化以降低接触度</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="179"/>
@@ -34054,7 +34077,7 @@ Please choose a different shortcut.</source>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="259"/>
         <source>Digitise to upper-contact of GeoObject</source>
-        <translation>Digitise to upper-contact of GeoObject</translation>
+        <translation>数字化至 GeoObject 的上接触点</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="262"/>
@@ -34064,7 +34087,7 @@ Please choose a different shortcut.</source>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="284"/>
         <source>Digitise to interior of geo-object</source>
-        <translation>Digitise to interior of geo-object</translation>
+        <translation>数字化地质物体的内部</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCompass/ui/mapDlg.ui" line="287"/>
@@ -34221,7 +34244,7 @@ Please choose a different shortcut.</source>
         <source>%1
 At least 2 viewports must be selected.</source>
         <translation>%1
-At least 2 viewports must be selected.</translation>
+必须至少选择 2 个视口。</translation>
     </message>
 </context>
 <context>
@@ -34229,17 +34252,17 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qAnimation/src/qAnimationDlg.cpp" line="867"/>
         <source>Output animation file</source>
-        <translation>Output animation file</translation>
+        <translation>输出动画文件</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qAnimation/src/qAnimationDlg.cpp" line="870"/>
         <source>Open Directory</source>
-        <translation>Open Directory</translation>
+        <translation>开放目录</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qAnimation/src/qAnimationDlg.cpp" line="884"/>
         <source>Input textures Directory</source>
-        <translation>Input textures Directory</translation>
+        <translation>输入纹理目录</translation>
     </message>
 </context>
 <context>
@@ -34277,7 +34300,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/src/qCSF.cpp" line="185"/>
         <source>[CSF] Timing: %1 s.</source>
-        <translation>[CSF] Timing: %1 s.</translation>
+        <translation>[CSF] 时间：%1 秒。</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qCSF/src/qCSF.cpp" line="201"/>
@@ -34414,7 +34437,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qCanupo/src/qCanupo.cpp" line="499"/>
         <source>[qCanupo] Classifier training failed...</source>
-        <translation>[qCanupo] Classifier training failed...</translation>
+        <translation>[qCanupo] 分类器训练失败...</translation>
     </message>
 </context>
 <context>
@@ -34452,7 +34475,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="120"/>
         <source>Exports one or several facets to a shapefile</source>
-        <translation>Exports one or several facets to a shapefile</translation>
+        <translation>将一个或多个面导出到 shapefile</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="130"/>
@@ -34462,7 +34485,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="132"/>
         <source>Exports various information on a set of facets (ASCII CSV file)</source>
-        <translation>Exports various information on a set of facets (ASCII CSV file)</translation>
+        <translation>导出一组方面的各种信息（ASCII CSV 文件）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="143"/>
@@ -34472,7 +34495,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="145"/>
         <source>Classifies facets based on their orienation (dip &amp; dip direction)</source>
-        <translation>Classifies facets based on their orienation (dip &amp; dip direction)</translation>
+        <translation>根据面的方向对面进行分类（倾角 &amp; 倾角方向）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="155"/>
@@ -34482,7 +34505,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="157"/>
         <source>Computes and displays a stereogram (+ interactive filtering)</source>
-        <translation>Computes and displays a stereogram (+ interactive filtering)</translation>
+        <translation>计算并显示立体图（+交互式过滤）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="216"/>
@@ -34502,7 +34525,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="322"/>
         <source>[qFacets] Kd-tree construction timing: %1 s</source>
-        <translation>[qFacets] Kd-tree construction timing: %1 s</translation>
+        <translation>[qFacets] Kd 树构建时间：%1 s</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qFacets/src/qFacets.cpp" line="335"/>
@@ -34767,7 +34790,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="56"/>
         <source>ULR (Unstructured Lumigraph Rendering) - full IBR rendering pipeline</source>
-        <translation>ULR (Unstructured Lumigraph Rendering) - full IBR rendering pipeline</translation>
+        <translation>ULR（非结构化 Lumigraph 渲染）- 完整的 IBR 渲染管道</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="65"/>
@@ -34777,7 +34800,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="67"/>
         <source>ULR v2/v3 with texture arrays, masks and Poisson</source>
-        <translation>ULR v2/v3 with texture arrays, masks and Poisson</translation>
+        <translation>具有纹理数组、掩模和泊松的 ULR v2/v3</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="75"/>
@@ -34817,7 +34840,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="112"/>
         <source>Connect to remote Gaussian Splatting training server</source>
-        <translation>Connect to remote Gaussian Splatting training server</translation>
+        <translation>连接到远程 Gaussian Splatting 训练服务器</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="121"/>
@@ -34948,7 +34971,7 @@ At least 2 viewports must be selected.</translation>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="209"/>
         <source>[SIBR] %1 started</source>
-        <translation>[SIBR] %1 started</translation>
+        <translation>[SIBR] %1 开始</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="219"/>
@@ -34976,7 +34999,7 @@ File: %2</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="273"/>
         <source>[SIBR] Imported: %1</source>
-        <translation>[SIBR] Imported: %1</translation>
+        <translation>[SIBR] 导入：%1</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="277"/>
@@ -35005,12 +35028,12 @@ File: %2</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="381"/>
         <source>[SIBR] CUDA not available - Gaussian viewer disabled</source>
-        <translation>[SIBR] CUDA not available - Gaussian viewer disabled</translation>
+        <translation>[SIBR] CUDA 不可用 - 高斯查看器已禁用</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="414"/>
         <source>[SIBR] Remote viewer not available in this build</source>
-        <translation>[SIBR] Remote viewer not available in this build</translation>
+        <translation>[SIBR] 远程查看器在此版本中不可用</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="423"/>
@@ -35026,7 +35049,7 @@ File: %2</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="471"/>
         <source>[SIBR] Launching %1 ...</source>
-        <translation>[SIBR] Launching %1 ...</translation>
+        <translation>[SIBR] 启动 %1 ...</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="484"/>
@@ -35075,7 +35098,7 @@ auto-discover one in the dataset directory.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="671"/>
         <source>OBJ (*.obj)</source>
-        <translation>OBJ (*.obj)</translation>
+        <translation>对象 (*.obj)</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSIBR/src/qSIBR.cpp" line="680"/>
@@ -35129,7 +35152,7 @@ auto-discover one in the dataset directory.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSRA/src/qSRA.cpp" line="52"/>
         <source>Loads the 2D profile of a Surface of Revolution (from a dedicated ASCII file)</source>
-        <translation>Loads the 2D profile of a Surface of Revolution (from a dedicated ASCII file)</translation>
+        <translation>加载旋转表面的 2D 轮廓（来自专用 ASCII 文件）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSRA/src/qSRA.cpp" line="62"/>
@@ -35149,7 +35172,7 @@ auto-discover one in the dataset directory.</source>
     <message>
         <location filename="../../plugins/core/Standard/qSRA/src/qSRA.cpp" line="76"/>
         <source>Creates the 2D deviation map (radial distances) from a Surface or Revolution (unroll)</source>
-        <translation>Creates the 2D deviation map (radial distances) from a Surface or Revolution (unroll)</translation>
+        <translation>从曲面或旋转（展开）创建 2D 偏差图（径向距离）</translation>
     </message>
     <message>
         <location filename="../../plugins/core/Standard/qSRA/src/qSRA.cpp" line="178"/>
@@ -35394,7 +35417,7 @@ auto-discover one in the dataset directory.</source>
     </message>
     <message>
         <source>ROS Bag (*.bag)</source>
-        <translation>ROS Bag (*.bag)</translation>
+        <translation>ROS 包 (*.bag)</translation>
     </message>
     <message>
         <source>Opening bag file...</source>

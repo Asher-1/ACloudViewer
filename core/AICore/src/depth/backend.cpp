@@ -77,9 +77,9 @@ Backend::Backend() : impl_(new Impl()) {
     clear_sticky_cuda_errors();
 
     // Optional override via DA_DEVICE: "cpu", "auto", "cuda[:N]", "opencl[:N]",
-    // "vulkan[:N]", "gpu[:N]", or an explicit registry name (e.g. "CUDA0").
-    // Unset defaults to auto: Linux/Win CUDA -> OpenCL -> Vulkan -> CPU;
-    // macOS Metal -> Vulkan -> CUDA -> CPU.
+    // "gpu[:N]", or an explicit registry name (e.g. "CUDA0").
+    // Unset defaults to auto: Linux/Win CUDA -> OpenCL -> CPU;
+    // macOS Metal -> CUDA -> CPU.
     const char* force = std::getenv("DA_DEVICE");
     const std::string want = force ? force : "";
 
@@ -113,7 +113,7 @@ Backend::Backend() : impl_(new Impl()) {
             adopt_gpu(be, resolved);
         }
     } else if (parsed_name == "gpu" || parsed_name == "cuda" ||
-               parsed_name == "opencl" || parsed_name == "vulkan") {
+               parsed_name == "opencl" || parsed_name == "metal") {
         clear_sticky_cuda_errors();
         std::string resolved;
         if (ggml_backend_t be = ggml_common::find_gpu_backend(
@@ -123,6 +123,11 @@ Backend::Backend() : impl_(new Impl()) {
             DA_WARN("aicore::depth::Backend: DA_DEVICE=%s not found; falling "
                     "back",
                     want.c_str());
+        }
+    } else if (parsed_name == "vulkan") {
+        if (!want.empty()) {
+            DA_WARN("aicore::depth::Backend: Vulkan is disabled in this build; "
+                    "falling back");
         }
     } else if (!want.empty()) {
         // Explicit registry device name (e.g. CUDA0, Vulkan0).

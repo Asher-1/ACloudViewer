@@ -20,7 +20,7 @@ public:
     double static findHeightValByNeighbor(Particle *p, Cloth &cloth);
     double static findHeightValByScanline(Particle *p, Cloth &cloth);
 
-    // 对点云进行最临近搜索，寻找周围最近的N个点  避免求交运算
+    // K-nearest search on the point cloud (avoids ray intersection).
     static bool RasterTerrain(Cloth &cloth,
                               const wl::PointCloud &pc,
                               std::vector<double> &heightVal,

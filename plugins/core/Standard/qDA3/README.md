@@ -2,20 +2,22 @@
 
 ![Plugin icon](images/qDA3.svg)
 
-在 ACloudViewer 中集成 [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3)，通过 C++17 / [ggml](https://github.com/ggml-org/ggml) 引擎（源自 [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)）运行 **GGUF 模型**，无需 Python/PyTorch 即可推理。
+Integrates [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) into ACloudViewer. Runs **GGUF models** via C++17 / [ggml](https://github.com/ggml-org/ggml) (derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) with no Python/PyTorch runtime.
 
-> **构建索引：** 见 [plugins/README.md](../../README.md)。
+> **Build index:** see [plugins/README.md](../../README.md).
 
 [![Model on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-md.svg)](https://huggingface.co/mudler/depth-anything.cpp-gguf)
 
+User guide (Sphinx): [docs/guides/plugins/qDA3.md](../../../../docs/guides/plugins/qDA3.md)
+
 ---
 
-## 架构
+## Architecture
 
 ```mermaid
 flowchart TB
     subgraph ACloudViewer
-        GUI[qDA3 插件 GUI]
+        GUI[qDA3 plugin GUI]
         AR[Automatic Reconstruction]
     end
     subgraph libAICore
@@ -28,97 +30,102 @@ flowchart TB
     CAPI --> ENG --> GGML
 ```
 
-| 组件 | 路径 | 作用 |
-|------|------|------|
-| `libAICore.so` | `core/AICore/` | DA3 + FreeSplatter 统一推理库 |
-| `QDA3_PLUGIN` | 本目录 | 交互式深度 / 位姿 / 导出 |
-| `DA3DepthController` | `libs/Reconstruction/` | 自动重建流水线 hook |
+| Component | Path | Role |
+|-----------|------|------|
+| `libAICore.so` | `core/AICore/` | Shared inference library (DA3 + FreeSplatter) |
+| `QDA3_PLUGIN` | This directory | Interactive depth / pose / export |
+| `DA3DepthController` | `libs/Reconstruction/` | Automatic reconstruction pipeline hook |
 
 ---
 
-## GUI 使用
+## GUI usage
 
-**菜单：** Plugins → **Depth Anything V3 (DA3)** → **DA3 Depth Estimation**
+**Menu:** Plugins → **Depth Anything V3 (DA3)** → **DA3 Depth Estimation**
 
 ```mermaid
 flowchart TD
-    START[打开 DA3 对话框] --> MODE{选择模式}
-    MODE --> D1[Depth 单图]
+    START[Open DA3 dialog] --> MODE{Select mode}
+    MODE --> D1[Depth single]
     MODE --> D2[Depth + Pose]
     MODE --> D3[Multi-view Depth + Pose]
     MODE --> D4[3D Reconstruct Giant]
     MODE --> D5[Export GLB / COLMAP]
     MODE --> D6[Quantize / Model Info]
-    D1 --> MODEL[选择或下载 GGUF]
+    D1 --> MODEL[Select or download GGUF]
     D2 --> MODEL
     D3 --> MODEL
-    MODEL --> INPUT[输入：文件 或 DB Tree 图像]
+    MODEL --> INPUT[Input: files or DB tree images]
     INPUT --> RUN[Run]
-    RUN --> OUT[深度图 / 点云 / 导出文件 → DB]
+    RUN --> OUT[Depth / point cloud / exports → DB]
 ```
 
-### 模式一览
+### Modes
 
-| 模式 | 输出 |
-|------|------|
-| **Depth (single)** | 灰度 / 伪彩色深度图 → DB Tree |
-| **Depth + Pose** | 深度 + 外参 3×4 / 内参 3×3 |
-| **Multi-view depth + pose** | 多视图深度与相机 |
-| **3D Reconstruct (Gaussian)** | Giant 模型点云 |
-| **Export GLB** | glTF 2.0 二进制点云 |
+| Mode | Output |
+|------|--------|
+| **Depth (single)** | Grayscale / pseudo-color depth → DB tree |
+| **Depth + Pose** | Depth + 3×4 extrinsics / 3×3 intrinsics |
+| **Multi-view depth + pose** | Multi-view depth and cameras |
+| **3D Reconstruct (Gaussian)** | Giant-model point cloud |
+| **Export GLB** | glTF 2.0 binary point cloud |
 | **Export COLMAP** | `cameras/` / `images/` / `points3D` |
-| **Quantize Model** | 转 f16 / q8_0 / q4_k GGUF |
-| **Model Info** | GGUF JSON 元数据 |
+| **Quantize Model** | Convert to f16 / q8_0 / q4_k GGUF |
+| **Model Info** | GGUF JSON metadata |
 
-### 典型工作流
+### Typical workflow
 
-1. 在 DB Tree 中选中一张或多张图像，或点击 **Browse** 选文件。
-2. 在 **Model** 下拉框选择内置模型（首次可 **Download**）。
-3. 设置 **Device**（`Auto` / `CUDA` / `Vulkan` / `CPU`）、**Threads**（0 = 自动）、**Invert depth**、**Unproject 3D** 等选项。
-4. 点击 **Run**；日志窗口显示进度。
-5. 深度结果以 `ccImage` 子节点加入 DB；可 **Export depth** 到磁盘。
+1. Select one or more images in the DB tree, or click **Browse**.
+2. Choose a **Model** from the combo box (use **Download** on first run).
+3. Set **Device** (`Auto` / Metal (macOS) / CUDA / OpenCL / CPU), **Threads** (0 = auto), **Invert depth**, **Unproject 3D**, etc.
+4. Click **Run**; progress appears in the log window.
+5. Depth results are added as `ccImage` child nodes; use **Export depth** to save to disk.
 
-### 推理设备（Device）
+### Inference device (Device)
 
-| 选项 | 行为 |
-|------|------|
-| **Auto** | 按平台优先级自动选择已编译的 GPU 后端，均不可用时回退 CPU（见下表） |
-| **GPU (CUDA)** | 强制 CUDA（需 `BUILD_CUDA_MODULE=ON` 或 `-DGGML_USE_CUDA=ON`） |
-| **GPU (Vulkan)** | 强制 Vulkan（macOS 上为 MoltenVK；Linux/Windows 需 `-DGGML_USE_VULKAN=ON`） |
-| **CPU** | 强制 CPU 推理 |
+| Option | Behavior |
+|--------|----------|
+| **Auto** | Pick the first compiled GPU backend by platform priority; fall back to CPU (see table below) |
+| **GPU (Metal)** | Force Metal (macOS only; `-DGGML_USE_METAL=ON`) |
+| **GPU (CUDA)** | Force CUDA (`BUILD_CUDA_MODULE=ON` or `-DGGML_USE_CUDA=ON`) |
+| **GPU (OpenCL)** | Force OpenCL (Linux/Windows; `-DGGML_USE_OPENCL=ON`) |
+| **CPU** | Force CPU inference |
 
-**Auto 优先级（运行时）：**
+**Auto priority (runtime):**
 
-| 平台 | 顺序 |
-|------|------|
-| **Linux / Windows** | CUDA → OpenCL → Vulkan → CPU |
-| **macOS** | Metal → Vulkan → CUDA → CPU（不编译 OpenCL） |
+| Platform | Order |
+|----------|-------|
+| **macOS** | Metal → CUDA → CPU (OpenCL not built; Vulkan off by default) |
+| **Linux / Windows** | CUDA → OpenCL → CPU (Vulkan off by default) |
 
-与 **qFreeSplatter** 一致：Run 前在 UI 线程执行 backend warmup；若 GPU 初始化失败且用户未强制 CPU，会自动改用 CPU 完成本次任务。
+Same as **qFreeSplatter**: backend warmup runs on the UI thread before **Run**; if GPU init fails and the user did not force CPU, the job completes on CPU.
 
-也可通过环境变量 `DA_DEVICE` 覆盖（CLI / 自动重建流水线）：`auto`、`cpu`、`cuda`、`vulkan`、`opencl[:N]`、`metal`（macOS）。
+Override with environment variable `DA_DEVICE` (CLI / automatic reconstruction): `auto`, `cpu`, `cuda`, `opencl[:N]`, `metal` (macOS).
 
-### Automatic Reconstruction 集成
+### Automatic Reconstruction integration
 
-**Reconstruction → Automatic Reconstruction** 中可选 DA3：
+**Reconstruction → Automatic Reconstruction** (requires `-DAICore_ENABLED=ON`):
 
-| 设置 | 选项 |
-|------|------|
-| Sparse model | **DA3 (depth+pose)** — 跳过 SIFT，用 DA3 多视图 + 反投影 |
-| Stereo / dense | **DA3 depth inference** — 需 Nested AnyView + Metric 与 DA3 sparse 模式 |
+| Setting | Options |
+|---------|---------|
+| Sparse model | **COLMAP (native SfM)** or **DA3 (depth+pose)** / hybrid (≥3 images: COLMAP poses + DA3 depth) |
+| Stereo / dense | **DA3 depth inference** (Nested AnyView/Metric) or **COLMAP PatchMatch** (CUDA only) |
 | Model | Base / Large / Giant / Nested Metric / Nested AnyView |
 
-**密集重建坐标系：** Fused 点云、Textured mesh、Delaunay mesh 均以 **COLMAP 世界坐标** 写入 DB Tree，旋转场景时应重合。此前 Fused 点云曾错误应用 display 变换 `(x, -y, -z)`，已与 mesh 对齐修复。
+**Full pipeline without CUDA (CPU / OpenCL / Metal):** when `AICore_ENABLED=ON` and `CUDA_ENABLED=OFF` (e.g. CPU wheel), defaults use DA3 for sparse and stereo; dense path is **undistort → DA3 depth → DA3 voxel fusion → Poisson/Delaunay mesh → texturing** without PatchMatch. If the UI still selects COLMAP PatchMatch, runtime switches to DA3 stereo via `EffectiveStereoPipelineMode`.
 
-模型缓存（与插件共用）：
+**With CUDA:** hybrid mode (≥3 images) can use COLMAP sparse poses + DA3 depth priors + optional PatchMatch geometric refine + StereoFusion.
 
-| 平台 | 默认路径 |
-|------|----------|
+**Dense coordinate frame:** fused point clouds, textured meshes, and Delaunay meshes are stored in **COLMAP world coordinates** in the DB tree so they align when the scene is rotated.
+
+Model cache (shared with the plugin):
+
+| Platform | Default path |
+|----------|--------------|
 | Linux | `$HOME/cloudViewer_data/extract/da3_models` |
 | Windows | `%USERPROFILE%\cloudViewer_data\extract\da3_models` |
-| 覆盖 | 环境变量 `CLOUDVIEWER_DATA_ROOT` → `<root>/extract/da3_models` |
+| Override | `CLOUDVIEWER_DATA_ROOT` → `<root>/extract/da3_models` |
 
-手动下载示例：
+Manual download example:
 
 ```bash
 pip install -U "huggingface_hub[cli]"
@@ -128,7 +135,7 @@ hf download mudler/depth-anything.cpp-gguf depth-anything-base-q8_0.gguf \
 
 ---
 
-## 构建
+## Build
 
 ```bash
 cmake -B build_app \
@@ -141,45 +148,47 @@ cmake -B build_app \
 cmake --build build_app --target QDA3_PLUGIN AICore -j$(nproc)
 ```
 
-### CMake 选项
+### CMake options
 
-| 选项 | 默认 | 说明 |
-|------|------|------|
-| `AICore_ENABLED` | OFF | 构建 `libAICore.so` |
-| `PLUGIN_STANDARD_QDA3` | OFF | 本插件 |
-| `BUILD_RECONSTRUCTION` | — | `DA3DepthController` / 自动重建 |
-| `BUILD_CUDA_MODULE` | — | ggml CUDA 后端（需 NVIDIA 工具链） |
-| `GGML_USE_METAL` | Apple: ON | Metal 后端（仅 macOS/iOS） |
-| `GGML_USE_VULKAN` | Apple: ON, 其他: OFF | 检测到依赖时自动编译 Vulkan |
-| `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | 检测到 OpenCL 3.0 + Python3 时自动编译；**macOS 不启用** |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `AICore_ENABLED` | OFF | Build `libAICore.so` |
+| `PLUGIN_STANDARD_QDA3` | OFF | This plugin |
+| `BUILD_RECONSTRUCTION` | — | `DA3DepthController` / automatic reconstruction |
+| `BUILD_CUDA_MODULE` | — | ggml CUDA backend (NVIDIA toolchain) |
+| `GGML_USE_METAL` | Apple: ON | Metal backend (macOS/iOS only) |
+| `GGML_USE_VULKAN` | OFF (all platforms) | Opt-in only (`-DGGML_USE_VULKAN=ON`) |
+| `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | Built when OpenCL 3.0 + Python3 are detected; **not on macOS** |
 
-**ggml 多 backend：** 可同时编译多个静态后端；配置结束会打印 `backends = ...` 与 Auto 顺序。Linux/Windows 上 OpenCL 需 OpenCL 3.0 头文件；Vulkan 需 loader + glslc + SPIRV-Headers（或完整 Vulkan SDK）。macOS 默认 Metal + Vulkan，不编译 OpenCL。
+**Multi-backend ggml:** several static backends can be compiled together; configure prints `backends = ...` and Auto order. OpenCL on Linux/Windows needs OpenCL 3.0 headers. macOS defaults to Metal; Vulkan is not built by default.
 
-**产物：**
+**Outputs:**
 
-- Linux: `build_app/bin/libAICore.so`、`build_app/bin/plugins/libQDA3_PLUGIN.so`
-- macOS: `build_app/bin/libAICore.dylib`、`build_app/CloudViewer.app/.../PlugIns/libQDA3_PLUGIN.dylib`
+- Linux: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PLUGIN.so`
+- macOS: `build_app/bin/libAICore.dylib`, `build_app/CloudViewer.app/.../PlugIns/libQDA3_PLUGIN.dylib`
 
-缩小 CUDA 体积：`-DCMAKE_CUDA_ARCHITECTURES=86-real`（仅目标 GPU 架构）。
-
----
-
-## 模型速查
-
-完整列表见 HuggingFace：[mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
-
-| 场景 | 推荐模型 |
-|------|----------|
-| 快速试用 / CPU | `depth-anything-base-q4_k.gguf` |
-| 默认质量 | `depth-anything-base-q8_0.gguf` |
-| 最高质量 + 3D Gaussians | `depth-anything-giant-f32.gguf` |
-| 自动重建 metric depth | `depth-anything-nested-anyview.gguf` + `depth-anything-nested-metric.gguf` |
+Smaller CUDA builds: `-DCMAKE_CUDA_ARCHITECTURES=86-real` (target GPU arch only).
 
 ---
 
-## C API 示例
+## Model quick reference
 
-头文件：`core/AICore/include/aicore/depth_capi.h`
+Full list: [mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
+
+| Use case | Recommended model |
+|----------|-------------------|
+| Quick try / CPU | `depth-anything-base-q4_k.gguf` |
+| Default quality | `depth-anything-base-q8_0.gguf` |
+| Best quality + 3D Gaussians | `depth-anything-giant-f32.gguf` |
+| Automatic reconstruction metric depth | `depth-anything-nested-anyview.gguf` + `depth-anything-nested-metric.gguf` |
+
+See also [models/MODEL_CARD.md](models/MODEL_CARD.md).
+
+---
+
+## C API example
+
+Header: `core/AICore/include/aicore/depth_capi.h`
 
 ```c
 #include "aicore/depth_capi.h"
@@ -195,13 +204,13 @@ aicore_depth_free(ctx);
 
 ---
 
-## 测试
+## Tests
 
-测试源码在 [`tests/`](tests/)（约 40+ 个 `test_*.cpp`）。测试链接 `AICore`，通过环境变量提供 GGUF 与 parity baseline；缺少资产时以退出码 **77** 跳过。
+Sources under [`tests/`](tests/) (~40+ `test_*.cpp` files). Tests link `AICore` and use environment variables for GGUF and parity baselines; exit code **77** skips when assets are missing.
 
-### 准备测试资产
+### Test assets
 
-在仓库根目录（或 `qDA3/` 下）准备：
+At repo root (or under `qDA3/`):
 
 ```text
 models/
@@ -209,7 +218,7 @@ models/
   depth-anything-giant-f32.gguf
   depth-anything-nested-metric.gguf
   depth-anything-nested-anyview.gguf
-  ...（见 tests/CMakeLists.txt ENVIRONMENT）
+  ... (see tests/CMakeLists.txt ENVIRONMENT)
 dumps/
   reference.gguf
   reference_mv.gguf
@@ -217,18 +226,16 @@ dumps/
   ...
 ```
 
-可从 HuggingFace 下载 GGUF；baseline 由 `scripts/` 下 Python 工具生成。
+Download GGUF from HuggingFace; baselines are generated with Python tools under `scripts/`.
 
-### 构建单个测试（示例）
+### Build a single test (example)
 
-当前主工程 CMake 未默认 `add_subdirectory(tests)`，可手动编译：
+The main CMake tree does not `add_subdirectory(tests)` by default; compile manually:
 
 ```bash
 cd build_app
-# 确保已构建 AICore
 cmake --build . --target AICore -j$(nproc)
 
-# 示例：编译 test_capi
 g++ -std=c++17 -O2 \
   plugins/core/Standard/qDA3/tests/test_capi.cpp \
   -I core/AICore/include -I core/AICore/src/depth \
@@ -240,7 +247,7 @@ export DA_TEST_NATIVE_PNG=plugins/core/Standard/qDA3/dumps/native_input.png
 ./build_app/bin/plugins/test_capi
 ```
 
-或在 `qDA3/CMakeLists.txt` 末尾添加 `add_subdirectory(tests)` 后：
+Or add `add_subdirectory(tests)` at the end of `qDA3/CMakeLists.txt`:
 
 ```bash
 cmake -B build_app -DAICore_ENABLED=ON -DBUILD_TESTING=ON ...
@@ -248,31 +255,31 @@ cmake --build build_app --target test_capi test_engine_depth -j$(nproc)
 ctest --test-dir build_app -R test_capi
 ```
 
-### 用例分类
+### Test categories
 
-| 类别 | 代表用例 | 验证内容 |
-|------|----------|----------|
-| **C API** | `test_capi`, `test_capi_da2`, `test_capi_dense` | `aicore_depth_*` 加载、info、导出 |
-| **Backbone** | `test_backbone`, `test_backbone_mv`, `test_backbone_giant`, `test_backbone_da2`, `test_backbone_metric` | ViT backbone 与 baseline tensor 对比 |
-| **Head / Blocks** | `test_dpt_head`, `test_dpt_blocks`, `test_metric_head`, `test_gs_head`, `test_gs_adapter` | 解码头数值 parity |
-| **Engine E2E** | `test_engine_depth`, `test_engine_pose`, `test_engine_mv`, `test_engine_metric`, `test_engine_mono`, `test_engine_da2` | 全图推理端到端 |
-| **Geometry** | `test_cam_pose`, `test_ray_pose`, `test_rope2d`, `test_uv_posembed`, `test_linalg` | 位姿与几何模块 |
-| **Preprocess** | `test_preprocess`, `test_preprocess_real` | 图像预处理 |
-| **Quantize** | `test_quantize`, `test_quantize_accuracy` | GGUF 量化 |
-| **Nested** | `test_nested_align`, `test_fused_depth` | 双模型 metric 对齐 |
-| **Reconstruct** | `test_reconstruct`, `test_giant_depth_pose` | 3D / Giant 输出 |
-| **Low-level** | `test_backend`, `test_ggml_extend`, `test_winograd`, `test_model_loader` | ggml 后端与加载器 |
+| Category | Examples | Validates |
+|----------|----------|-----------|
+| **C API** | `test_capi`, `test_capi_da2`, `test_capi_dense` | `aicore_depth_*` load, info, export |
+| **Backbone** | `test_backbone`, `test_backbone_mv`, `test_backbone_giant`, … | ViT backbone vs baseline tensors |
+| **Head / Blocks** | `test_dpt_head`, `test_dpt_blocks`, `test_metric_head`, … | Decoder numerical parity |
+| **Engine E2E** | `test_engine_depth`, `test_engine_pose`, `test_engine_mv`, … | Full-image inference |
+| **Geometry** | `test_cam_pose`, `test_ray_pose`, `test_rope2d`, … | Pose and geometry modules |
+| **Preprocess** | `test_preprocess`, `test_preprocess_real` | Image preprocessing |
+| **Quantize** | `test_quantize`, `test_quantize_accuracy` | GGUF quantization |
+| **Nested** | `test_nested_align`, `test_fused_depth` | Dual-model metric alignment |
+| **Reconstruct** | `test_reconstruct`, `test_giant_depth_pose` | 3D / Giant output |
+| **Low-level** | `test_backend`, `test_ggml_extend`, `test_winograd`, … | ggml backends and loader |
 
-### 独立 parity 工具（非 ctest）
+### Standalone parity tools (not ctest)
 
-| 工具 | 用途 |
-|------|------|
-| `glb_parity_dump` | 配合 `scripts/parity_glb.py` |
-| `colmap_parity_dump` | 配合 `scripts/parity_colmap.py` |
+| Tool | Use with |
+|------|----------|
+| `glb_parity_dump` | `scripts/parity_glb.py` |
+| `colmap_parity_dump` | `scripts/parity_colmap.py` |
 
-上游 benchmark 与 demo 资产：[`examples/demos/BENCHMARK.md`](examples/demos/BENCHMARK.md)。
+Upstream benchmarks: [`examples/demos/BENCHMARK.md`](examples/demos/BENCHMARK.md).
 
-### Python 脚本（转换 / 校验，非运行时依赖）
+### Python scripts (convert / validate; not runtime deps)
 
 ```bash
 cd plugins/core/Standard/qDA3
@@ -284,15 +291,15 @@ python scripts/convert_da3_to_gguf.py --model models/DA3-BASE --output models/de
 
 ---
 
-## 支持模型摘要
+## Supported model families
 
-| 系列 | 输出 |
-|------|------|
+| Family | Output |
+|--------|--------|
 | DA3-SMALL / BASE / LARGE | depth + conf + pose |
 | DA3-GIANT | depth + conf + pose + 3D Gaussians |
 | DA3MONO-LARGE | depth + sky |
 | DA3METRIC-LARGE | metric depth + sky |
-| DA3NESTED | 双 GGUF metric 对齐 depth + pose |
+| DA3NESTED | dual GGUF metric-aligned depth + pose |
 | Depth Anything V2 | depth only |
 
 ---
@@ -305,4 +312,4 @@ python scripts/convert_da3_to_gguf.py --model models/DA3-BASE --output models/de
 
 ## License
 
-集成代码遵循 ACloudViewer 项目许可证。DA3 权重为 **Apache-2.0**；上游 engine 为 **MIT**。
+Integration code follows the ACloudViewer project license. DA3 weights are **Apache-2.0**; upstream engine is **MIT**.

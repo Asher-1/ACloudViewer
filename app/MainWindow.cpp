@@ -6147,7 +6147,7 @@ void MainWindow::zoomOn(ccHObject* object) {
 void MainWindow::setView(CC_VIEW_ORIENTATION view) {
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
 #ifdef USE_VTK_BACKEND
-        // 检查是否在 Comparative View 中
+        // Check whether the active view is inside a Comparative View.
         vtkComparativeViewWidget* targetComp = nullptr;
         if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
             for (auto* comp : findChildren<vtkComparativeViewWidget*>()) {
@@ -6159,8 +6159,8 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
         }
 
         if (targetComp) {
-            // Comparative 模式：ParaView 标准流程 = SetDirection + ResetCamera
-            // + CameraLink传播
+            // Comparative mode: ParaView flow = SetDirection + ResetCamera
+            // + camera-link propagation.
             targetComp->removeCameraLink();
 
             {
@@ -6168,12 +6168,12 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
 
                 auto subViews = targetComp->subViews();
                 if (!subViews.isEmpty()) {
-                    // Step 1: 在第一个视窗上设方向
+                    // Step 1: set orientation on the first sub-view.
                     auto* first = subViews.first();
                     first->setView(view);
 
-                    // Step 2: 关键！调用 ResetCamera
-                    // 重新拟合数据（ParaView黄金法则）
+                    // Step 2: ResetCamera to refit bounds (ParaView
+                    // convention).
                     auto* firstRen =
                             vtkComparativeViewWidget::getSceneRenderer(first);
                     if (firstRen) {
@@ -6181,7 +6181,7 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
                         firstRen->ResetCameraClippingRange();
                     }
 
-                    // Step 3: 将正确拟合后的相机同步到其他子视窗
+                    // Step 3: copy the refitted camera to the other sub-views.
                     if (firstRen && firstRen->GetActiveCamera()) {
                         auto* srcCam = firstRen->GetActiveCamera();
                         for (int i = 1; i < subViews.size(); ++i) {
@@ -6220,10 +6220,10 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
             targetComp->installCameraLink();
             targetComp->forceRenderAllSubViews();
 
-            // 【关键修复】防止 performSubViewRefresh() 覆盖相机
+            // Prevent performSubViewRefresh() from overwriting the camera.
             targetComp->clearNeedsCameraReset();
         } else {
-            // 普通（非Comparative）模式：原始逻辑
+            // Non-comparative view: original single-view path.
             v->setView(view);
         }
 #else
@@ -7268,7 +7268,7 @@ void MainWindow::setGlobalZoom() {
             activeView->updateConstellationCenterAndZoom();
         }
 
-        // 对普通视图执行 zoomGlobal（排除Comparative子视窗）
+        // zoomGlobal on standalone views only (skip Comparative sub-views).
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView && !comparativeSubViews.contains(glView)) {

@@ -229,7 +229,8 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
   AddSpacer();
 
   AddOptionInt(&options_.num_threads, "num_threads", -1);
-  AddOptionBool(&options_.use_gpu, "GPU");
+  da3_ui_controls_.use_gpu_cb = AddOptionBool(&options_.use_gpu, "GPU");
+  da3_ui_controls_.use_gpu = &options_.use_gpu;
   AddOptionText(&options_.gpu_index, "gpu_index");
 
   fused_point_filter_label_ = new QLabel(tr("Fused point filter"), this);
@@ -269,6 +270,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
 
 #ifdef AICore_ENABLED
   DA3ReconstructionUiBindings::SetAICoreAvailable(da3_ui_controls_, true);
+  DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(da3_ui_controls_);
 #else
   DA3ReconstructionUiBindings::SetAICoreAvailable(da3_ui_controls_, false);
   HideOption(&options_.da3_sparse_model_path);
@@ -289,6 +291,9 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
 
 void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
   OptionsWidget::showEvent(event);
+#ifdef AICore_ENABLED
+  DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(da3_ui_controls_);
+#endif
   DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(da3_ui_controls_,
                                                         options_.image_path);
   DA3ReconstructionUiBindings::Sync(da3_ui_controls_);

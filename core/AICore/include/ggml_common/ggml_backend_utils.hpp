@@ -113,12 +113,12 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
 }
 
 // Runtime auto-pick. Order is platform-specific because macOS OpenCL is unusable
-// and Metal is the primary GPU path on Apple.
+// and Metal is the primary GPU path on Apple. Vulkan is not used (opt-in build only).
 inline ggml_backend_t find_auto_gpu_backend(std::string& resolved_name) {
 #if defined(__APPLE__)
-    static const char* kAutoOrder[] = {"metal", "vulkan", "cuda", nullptr};
+    static const char* kAutoOrder[] = {"metal", "cuda", nullptr};
 #else
-    static const char* kAutoOrder[] = {"cuda", "opencl", "vulkan", nullptr};
+    static const char* kAutoOrder[] = {"cuda", "opencl", nullptr};
 #endif
     for (const char* try_name : kAutoOrder) {
         ggml_backend_t be = find_gpu_backend(try_name, 0, resolved_name);

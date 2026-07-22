@@ -10,6 +10,7 @@
 #include <QStandardItemModel>
 
 #include "controllers/da3_depth_controller.h"
+#include "controllers/da3_pipeline_defaults.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -71,7 +72,9 @@ void DA3ReconstructionUiBindings::InitStereoModeComboBox(
     stereo_model->appendRow(
         new QStandardItem("DA3 Depth Inference (Nested only)"));
     stereo_mode_cb->setModel(stereo_model);
-    stereo_mode_cb->setCurrentIndex(kStereoPatchMatch);
+    stereo_mode_cb->setCurrentIndex(PreferDA3OverColmapPatchMatch()
+                                            ? kStereoDa3
+                                            : kStereoPatchMatch);
 }
 
 void DA3ReconstructionUiBindings::InitSparseModeComboBox(
@@ -82,7 +85,9 @@ void DA3ReconstructionUiBindings::InitSparseModeComboBox(
     sparse_mode_cb->clear();
     sparse_mode_cb->addItem("COLMAP (native SfM)");
     sparse_mode_cb->addItem("DA3 hybrid (≥3 img: COLMAP poses)");
-    sparse_mode_cb->setCurrentIndex(kSparseColmap);
+    sparse_mode_cb->setCurrentIndex(PreferDA3OverColmapPatchMatch()
+                                            ? kSparseDa3
+                                            : kSparseColmap);
 }
 
 void DA3ReconstructionUiBindings::InitSparseModelComboBox(
@@ -96,7 +101,9 @@ void DA3ReconstructionUiBindings::InitSparseModelComboBox(
     da3_sparse_model_cb->addItem("Giant (ViT-G, best quality)");
     da3_sparse_model_cb->addItem("Nested Metric");
     da3_sparse_model_cb->addItem("Nested AnyView");
-    da3_sparse_model_cb->setCurrentIndex(kSparseModelBase);
+    da3_sparse_model_cb->setCurrentIndex(
+            PreferDA3OverColmapPatchMatch() ? kSparseModelNestedAnyView
+                                            : kSparseModelBase);
 }
 
 void DA3ReconstructionUiBindings::InitStereoModelComboBox(
@@ -238,6 +245,39 @@ void DA3ReconstructionUiBindings::SetAICoreAvailable(
         }
     }
 
+    Sync(controls);
+}
+
+void DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(
+        const DA3ReconstructionUiControls& controls) {
+    if (!PreferDA3OverColmapPatchMatch()) {
+        return;
+    }
+    if (controls.sparse_mode_cb) {
+        BlockCombo(controls.sparse_mode_cb, kSparseDa3);
+    }
+    if (controls.stereo_mode_cb) {
+        BlockCombo(controls.stereo_mode_cb, kStereoDa3);
+    }
+    if (controls.dense_cb && !controls.dense_cb->isChecked()) {
+        controls.dense_cb->blockSignals(true);
+        controls.dense_cb->setChecked(true);
+        controls.dense_cb->blockSignals(false);
+    }
+    if (controls.da3_sparse_model_cb) {
+        BlockCombo(controls.da3_sparse_model_cb, kSparseModelNestedAnyView);
+    }
+    if (controls.da3_stereo_model_cb) {
+        BlockCombo(controls.da3_stereo_model_cb, kStereoModelNestedAnyView);
+    }
+    if (controls.use_gpu_cb && controls.use_gpu_cb->isChecked()) {
+        controls.use_gpu_cb->blockSignals(true);
+        controls.use_gpu_cb->setChecked(false);
+        controls.use_gpu_cb->blockSignals(false);
+    }
+    if (controls.use_gpu) {
+        *controls.use_gpu = false;
+    }
     Sync(controls);
 }
 

@@ -58,54 +58,54 @@ https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/
 
 The **qDA3** plugin dialog and automatic reconstruction pipeline use the same URLs. Each row below lists the **exact release asset size** (2026-07-11). CPU benchmark numbers for **Base** variants are from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp) on AMD Ryzen 9 9950X3D, 16 threads, **504×336** input; Large/Giant/Nested rows use relative ratings where no published numbers exist.
 
-### Base（ViT-B）— 日常深度 / 位姿
+### Base (ViT-B) — everyday depth / pose
 
-| 下载 | 量化 | 体积 | 输出 | CPU 推理* | CPU 加载* | 峰值内存* | 质量 | 推荐场景 |
+| Download | Quant | Size | Output | CPU infer* | CPU load* | Peak RAM* | Quality | Recommended use |
 |------|------|------|------|-----------|-----------|-----------|------|----------|
-| [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) | Q4_K | **99.1 MB** | depth + conf + pose | ~395 ms | ~25 ms | ~320 MB | 近无损量化 | 最小体积、快速试用、带宽受限 |
-| [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) | Q8_0 | **141.8 MB** | depth + conf + pose | **~319 ms** | ~40 ms | ~363 MB | 近无损 | **默认推荐**（质量/速度/体积均衡） |
-| [`depth-anything-base-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) | F16 | **222.0 MB** | depth + conf + pose | ~350 ms（估） | ~70 ms（估） | ~450 MB（估） | 高 | 需比 Q8 更稳的半精度 |
-| [`depth-anything-base-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) | F32 | **393.0 MB** | depth + conf + pose | ~346 ms | ~112 ms | ~614 MB | 参考精度 | 对标 / 量化源模型 |
+| [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) | Q4_K | **99.1 MB** | depth + conf + pose | ~395 ms | ~25 ms | ~320 MB | near-lossless quant | smallest size, quick try, bandwidth-limited |
+| [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) | Q8_0 | **141.8 MB** | depth + conf + pose | **~319 ms** | ~40 ms | ~363 MB | near-lossless | **default recommended** (quality / speed / size balance) |
+| [`depth-anything-base-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) | F16 | **222.0 MB** | depth + conf + pose | ~350 ms (est.) | ~70 ms (est.) | ~450 MB (est.) | high | half precision when you need more stability than Q8 |
+| [`depth-anything-base-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) | F32 | **393.0 MB** | depth + conf + pose | ~346 ms | ~112 ms | ~614 MB | reference precision | benchmarking / quantization source model |
 
-### Large（ViT-L）— 更高深度质量
+### Large (ViT-L) — higher depth quality
 
-| 下载 | 量化 | 体积 | 输出 | 相对速度 | 相对内存 | 质量 | 推荐场景 |
+| Download | Quant | Size | Output | Relative speed | Relative memory | Quality | Recommended use |
 |------|------|------|------|----------|----------|------|----------|
-| [`depth-anything-large-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) | Q4_K | **300.2 MB** | depth + conf + pose | 中等 | 中等 | 优于 Base | 大模型 + 小体积 |
-| [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) | Q8_0 | **448.2 MB** | depth + conf + pose | 较慢 | 较高 | 很好 | 高质量单图/多视图深度 |
+| [`depth-anything-large-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) | Q4_K | **300.2 MB** | depth + conf + pose | moderate | moderate | better than Base | large model + small footprint |
+| [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) | Q8_0 | **448.2 MB** | depth + conf + pose | slower | higher | very good | high-quality single- or multi-view depth |
 
-### Giant（ViT-g）— 最高质量 + 3D Gaussians
+### Giant (ViT-g) — best quality + 3D Gaussians
 
-| 下载 | 量化 | 体积 | 输出 | 相对速度 | 相对内存 | 质量 | 推荐场景 |
+| Download | Quant | Size | Output | Relative speed | Relative memory | Quality | Recommended use |
 |------|------|------|------|----------|----------|------|----------|
-| [`depth-anything-giant-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) | Q4_K | **904.6 MB** | depth + conf + pose + **3D Gaussians** | 慢 | 高 | 最佳（量化） | 3D 重建；建议 GPU |
-| [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) | Q8_0 | **1.42 GB** | depth + conf + pose + **3D Gaussians** | 很慢 | 很高 | 最佳 | **3D Reconstruct** 模式首选 |
+| [`depth-anything-giant-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) | Q4_K | **904.6 MB** | depth + conf + pose + **3D Gaussians** | slow | high | best (quantized) | 3D reconstruction; GPU recommended |
+| [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) | Q8_0 | **1.42 GB** | depth + conf + pose + **3D Gaussians** | very slow | very high | best | preferred for **3D Reconstruct** mode |
 
-### Nested（metric depth + pose）— 自动重建 metric 流水线
+### Nested (metric depth + pose) — automatic reconstruction metric pipeline
 
-需 **同时**下载 anyview 分支 + metric 分支；anyview 提供相对深度与位姿，metric 分支对齐到米制尺度。
+Download **both** the anyview branch and the metric branch; anyview provides relative depth and pose, and the metric branch aligns to metric scale in metres.
 
-| 下载 | 分支 | 量化 | 体积 | 输出 | 相对速度 | 相对内存 | 说明 |
+| Download | Branch | Quant | Size | Output | Relative speed | Relative memory | Notes |
 |------|------|------|------|------|----------|----------|------|
-| [`depth-anything-nested-anyview-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) | AnyView (ViT-g) | Q4_K | **904.6 MB** | depth + conf + pose | 慢 | 高 | 与 metric 配对；体积较小 |
-| [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) | AnyView (ViT-g) | Q8_0 | **1.42 GB** | depth + conf + pose | 很慢 | 很高 | **Automatic Reconstruction** 默认 anyview |
-| [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) | Metric (ViT-L) | F32 | **1.24 GB** | metric depth + sky | 慢 | 高 | 必须与 anyview 变体一起使用 |
+| [`depth-anything-nested-anyview-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) | AnyView (ViT-g) | Q4_K | **904.6 MB** | depth + conf + pose | slow | high | pair with metric; smaller footprint |
+| [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) | AnyView (ViT-g) | Q8_0 | **1.42 GB** | depth + conf + pose | very slow | very high | default anyview for **Automatic Reconstruction** |
+| [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) | Metric (ViT-L) | F32 | **1.24 GB** | metric depth + sky | slow | high | must be used together with an anyview variant |
 
-> \* **Base CPU benchmark**（504×336，16 线程）：PyTorch f32 基线为 infer ~417 ms / RAM ~1328 MB；C++ q8_0 为 **1.31×** 更快、RAM 约 **363 MB**。更高分辨率或 Giant/Nested 模型请优先选 **CUDA / Vulkan / Metal**。
+> \* **Base CPU benchmark** (504×336, 16 threads): PyTorch f32 baseline infer ~417 ms / RAM ~1328 MB; C++ q8_0 is **1.31×** faster with RAM ~**363 MB**. For higher resolutions or Giant/Nested models, prefer **CUDA / Vulkan / Metal**.
 >
-> **对比 PyTorch（Base q8_0）：** 模型 142 MB vs 516 MB；加载 40 ms vs 749 ms；推理 319 ms vs 417 ms；峰值 RAM 363 MB vs 1328 MB。
+> **vs PyTorch (Base q8_0):** model 142 MB vs 516 MB; load 40 ms vs 749 ms; infer 319 ms vs 417 ms; peak RAM 363 MB vs 1328 MB.
 
-### 选型速查
+### Quick selection guide
 
-| 用途 | 推荐模型（点击下载） |
+| Use case | Recommended model (click to download) |
 |------|---------------------|
-| 快速试用 / CPU | [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) |
-| 日常默认 | [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) |
-| 更高深度质量 | [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) |
-| 3D 点云 / Gaussians | [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) |
-| 自动重建 metric depth + pose | [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) + [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) |
+| Quick try / CPU | [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) |
+| Everyday default | [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) |
+| Higher depth quality | [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) |
+| 3D point cloud / Gaussians | [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) |
+| Automatic reconstruction metric depth + pose | [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) + [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) |
 
-手动下载示例：
+Manual download example:
 
 ```bash
 curl -L -O https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf
@@ -118,24 +118,24 @@ Additional variants (Small, Mono, standalone Metric, Depth Anything V2, etc.) ar
 Each GGUF is fully self-contained — every dimension, hyperparameter and preprocessing constant is
 baked into the file; the loader reads them, nothing is hardcoded.
 
-**CloudViewer 已发布模型**（含体积、性能与下载链接）见上文 [Download (CloudViewer)](#download-cloudviewer) 分表。
+**CloudViewer published models** (sizes, performance, and download links) are in the tables under [Download (CloudViewer)](#download-cloudviewer) above.
 
-| File | Source checkpoint | Backbone | Depth type | Output | CloudViewer 下载 |
+| File | Source checkpoint | Backbone | Depth type | Output | CloudViewer download |
 |------|-------------------|----------|-----------|--------|------------------|
 | `depth-anything-small-f32.gguf` | `DA3-SMALL` | ViT-S | relative | depth + conf + pose | — |
-| [`depth-anything-base-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) |
-| [`depth-anything-base-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) |
-| [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose (near-lossless) | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) |
-| [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) |
-| [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) | `DA3-LARGE` | ViT-L | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) |
-| [`depth-anything-large-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) | `DA3-LARGE` | ViT-L | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) |
-| [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) | `DA3-GIANT` | ViT-g | relative | depth + conf + pose + 3D Gaussians | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) |
-| [`depth-anything-giant-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) | `DA3-GIANT` | ViT-g | relative | depth + conf + pose + 3D Gaussians | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) |
+| [`depth-anything-base-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f32.gguf) |
+| [`depth-anything-base-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-f16.gguf) |
+| [`depth-anything-base-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose (near-lossless) | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q8_0.gguf) |
+| [`depth-anything-base-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) | `DA3-BASE` | ViT-B | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-base-q4_k.gguf) |
+| [`depth-anything-large-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) | `DA3-LARGE` | ViT-L | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q8_0.gguf) |
+| [`depth-anything-large-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) | `DA3-LARGE` | ViT-L | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-large-q4_k.gguf) |
+| [`depth-anything-giant-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) | `DA3-GIANT` | ViT-g | relative | depth + conf + pose + 3D Gaussians | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q8_0.gguf) |
+| [`depth-anything-giant-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) | `DA3-GIANT` | ViT-g | relative | depth + conf + pose + 3D Gaussians | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-giant-q4_k.gguf) |
 | `depth-anything-mono-large-f32.gguf` | `DA3MONO-LARGE` | ViT-L | relative (monocular) | depth + sky | — |
 | `depth-anything-metric-large-f32.gguf` | `DA3METRIC-LARGE` | ViT-L | **metric** | metric depth + sky | — |
-| [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) | `DA3NESTED-GIANT-LARGE` (anyview) | ViT-g | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) |
-| [`depth-anything-nested-anyview-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) | `DA3NESTED-GIANT-LARGE` (anyview) | ViT-g | relative | depth + conf + pose | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) |
-| [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) | `DA3NESTED-GIANT-LARGE` (metric) | ViT-L | **metric** | depth + sky | [下载](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) |
+| [`depth-anything-nested-anyview-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) | `DA3NESTED-GIANT-LARGE` (anyview) | ViT-g | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q8_0.gguf) |
+| [`depth-anything-nested-anyview-q4_k.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) | `DA3NESTED-GIANT-LARGE` (anyview) | ViT-g | relative | depth + conf + pose | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-anyview-q4_k.gguf) |
+| [`depth-anything-nested-metric.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) | `DA3NESTED-GIANT-LARGE` (metric) | ViT-L | **metric** | depth + sky | [Download](https://github.com/Asher-1/cloudViewer_downloads/releases/download/DA3/depth-anything-nested-metric.gguf) |
 
 > The nested model is a **two-file pair**: the engine loads the anyview (ViT-g) branch and the
 > metric (ViT-L) branch together and aligns them to produce metric-scale depth + pose. Download
@@ -176,7 +176,7 @@ fp-rounding noise by the widest metric scale on the smallest backbone. Absolute 
 
 ### Which one should I use?
 
-See the [选型速查](#选型速查) table in **Download (CloudViewer)** above for hosted models with sizes and benchmarks.
+See the [Quick selection guide](#quick-selection-guide) table in **Download (CloudViewer)** above for hosted models with sizes and benchmarks.
 
 ## Usage
 

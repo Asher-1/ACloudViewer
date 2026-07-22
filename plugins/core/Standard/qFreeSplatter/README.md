@@ -2,112 +2,117 @@
 
 ![Plugin icon](images/qFreeSplatter.svg)
 
-将普通照片转为 **3D Gaussian Splatting** 点云 — 无需相机位姿、无需 Python 运行时；支持 CPU / CUDA / OpenCL / Vulkan（Linux/Windows）或 Metal / Vulkan（macOS）推理。
+Turn ordinary photos into **3D Gaussian splatting** point clouds — no camera poses and no Python runtime. Inference on CPU / CUDA / OpenCL (Linux/Windows) or Metal / CUDA (macOS).
 
-> **构建索引：** 见 [plugins/README.md](../../README.md)（与 qDA3 共用 `libAICore.so`）。
+> **Build index:** see [plugins/README.md](../../README.md) (shares `libAICore.so` with qDA3).
+
+User guide (Sphinx): [docs/guides/plugins/qFreeSplatter.md](../../../../docs/guides/plugins/qFreeSplatter.md)
 
 ---
 
-## 概述
+## Overview
 
-qFreeSplatter 集成 [FreeSplatter](https://github.com/TencentARC/FreeSplatter) 神经网络，通过 [ggml](https://github.com/ggml-org/ggml) 在 `libAICore.so` 内推理，导出 **SIBR 兼容 PLY**，并可选一键启动 **qSIBR Gaussian Viewer**。
+qFreeSplatter integrates the [FreeSplatter](https://github.com/TencentARC/FreeSplatter) network via [ggml](https://github.com/ggml-org/ggml) inside `libAICore.so`, exports **SIBR-compatible PLY**, and can launch the **qSIBR Gaussian Viewer** in one click.
 
 ```mermaid
 flowchart LR
-    IMG[输入图像 2+ 张] --> UI[FreeSplatterDialog]
+    IMG[Input images 2+] --> UI[FreeSplatterDialog]
     UI --> WRK[FreeSplatterWorker]
     WRK --> AI[libAICore / aicore/gaussian_capi.h]
-    AI --> PLY[PLY 导出]
-    PLY --> DB[ACloudViewer DB Tree]
+    AI --> PLY[PLY export]
+    PLY --> DB[ACloudViewer DB tree]
     PLY --> SIBR[qSIBR Gaussian Viewer]
 ```
 
 ---
 
-## GUI 使用步骤
+## GUI workflow
 
-**菜单：** Plugins → **FreeSplatter 3D Reconstruction**
+**Menu:** Plugins → **FreeSplatter 3D Reconstruction**
 
 ```mermaid
 sequenceDiagram
-    participant U as 用户
+    participant U as User
     participant D as FreeSplatterDialog
     participant W as FreeSplatterWorker
     participant A as libAICore
 
-    U->>D: 选择 Scene/Object 模型
-    U->>D: 添加图像（文件/文件夹/DB）
-    U->>D: 选择设备 Auto / CUDA / Vulkan / CPU
-    U->>D: 点击 Run
+    U->>D: Choose Scene/Object model
+    U->>D: Add images (files/folder/DB)
+    U->>D: Device Auto / Metal|CUDA|OpenCL / CPU
+    U->>D: Run
     D->>W: Settings
-    W->>A: aicore_gaussian_* 推理
-    A-->>W: Gaussian 参数
-    W-->>D: PLY + 日志
-    U->>D: Visualize（需 qSIBR + CUDA）
+    W->>A: aicore_gaussian_* inference
+    A-->>W: Gaussian parameters
+    W-->>D: PLY + log
+    U->>D: Visualize (requires qSIBR build)
 ```
 
-| 步骤 | 操作 | 说明 |
-|------|------|------|
-| 1 | 选择 **Model** | Scene（2 视图场景）或 Object（3+ 视图物体） |
-| 2 | 选择 **GGUF 模型** | 内置 6 款；首次使用可自动从 GitHub Release 下载 |
-| 3 | **Add Images** | 文件、文件夹，或从 DB Tree 选图 |
-| 4 | **Device** | `Auto` / `cuda` / `vulkan` / `cpu`（Auto 顺序见下表） |
-| 5 | **Run** | 中心裁剪并缩放到 512×512 后推理 |
-| 6 | **Export PLY** | 写入 PLY 到磁盘；可选 Add to DB |
-| 6b | **Visualize (SIBR)** | 仅当构建时 `PLUGIN_STANDARD_QSIBR=ON` 显示；一键启动 qSIBR |
+| Step | Action | Notes |
+|------|--------|-------|
+| 1 | Choose **Model** | Scene (2 views) or Object (3+ views) |
+| 2 | Select **GGUF model** | Six built-in variants; auto-download from GitHub Release on first use |
+| 3 | **Add Images** | Files, folder, or DB tree selection |
+| 4 | **Device** | `Auto` / `metal` (macOS) / `cuda` / `opencl` / `cpu` (Auto order below) |
+| 5 | **Run** | Center-crop and resize to 512×512, then infer |
+| 6 | **Export PLY** | Write PLY to disk; optional **Add to DB** |
+| 6b | **Visualize (SIBR)** | Shown only when `PLUGIN_STANDARD_QSIBR=ON`; launches qSIBR |
 
-### 推理设备（Device）
+### Inference device (Device)
 
-| 选项 | 行为 |
-|------|------|
-| **Auto** | 按平台优先级选择已编译 GPU 后端，失败则 CPU |
-| **GPU (CUDA)** | 强制 ggml CUDA（需 `BUILD_CUDA_MODULE=ON`） |
-| **GPU (Vulkan)** | 强制 Vulkan |
-| **CPU** | 强制 CPU |
+| Option | Behavior |
+|--------|----------|
+| **Auto** | First compiled GPU backend by platform priority; CPU fallback |
+| **GPU (Metal)** | Force Metal (macOS only) |
+| **GPU (CUDA)** | Force ggml CUDA (`BUILD_CUDA_MODULE=ON`) |
+| **GPU (OpenCL)** | Force OpenCL (Linux/Windows) |
+| **CPU** | Force CPU |
 
-**Auto 优先级（运行时）：**
+**Auto priority (runtime):**
 
-| 平台 | 顺序 |
-|------|------|
-| **Linux / Windows** | CUDA → OpenCL → Vulkan → CPU |
-| **macOS** | Metal → Vulkan → CUDA → CPU（不编译 OpenCL） |
+| Platform | Order |
+|----------|-------|
+| **macOS** | Metal → CUDA → CPU (OpenCL not built; Vulkan off by default) |
+| **Linux / Windows** | CUDA → OpenCL → CPU (Vulkan off by default) |
 
-Run 前在 UI 线程调用 `aicore_gaussian_warmup_backend`；GPU 不可用时自动回退 CPU（与 qDA3 行为一致）。CLI 可用 `--device` 或 `aicore_gaussian_options_set_device()`（`auto` / `cpu` / `cuda` / `vulkan` / `opencl` / `metal`）。
+`aicore_gaussian_warmup_backend` runs on the UI thread before **Run**; GPU failure falls back to CPU (same as qDA3). CLI: `--device` or `aicore_gaussian_options_set_device()` (`auto` / `cpu` / `cuda` / `opencl` / `metal`).
 
-### 输入约束
+### Input constraints
 
-| 模型类型 | 最少图像数 | 典型用途 |
-|----------|------------|----------|
-| **Scene** | 恰好 **2** 张 | 室内 / 室外场景 |
-| **Object** | **3** 张及以上 | 物体重建 |
+| Model type | Minimum images | Typical use |
+|------------|----------------|-------------|
+| **Scene** | exactly **2** | Indoor / outdoor scenes |
+| **Object** | **3** or more | Single-object reconstruction |
 
-可选：**Estimate poses**（PnP 位姿估计）、**Opacity threshold**、导出字段 Basic / Full。
+Optional: **Estimate poses** (PnP), **Opacity threshold**, Basic / Full PLY fields.
 
 ---
 
-## 模型
+## Models
 
-模型自动缓存；下载源：[cloudViewer_downloads/3dgs](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/3dgs)。
+Models are cached automatically. Download source: [cloudViewer_downloads/3dgs](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/3dgs).
 
-### Scene（2-view）
+See [models/MODEL_CARD.md](models/MODEL_CARD.md) for sizes and recommendations.
 
-| 文件 | 精度 | 大小 |
-|------|------|------|
-| `freesplatter-scene-f16.gguf` | F16（推荐） | ~400 MB |
+### Scene (2-view)
+
+| File | Quant | Size |
+|------|-------|------|
+| `freesplatter-scene-f16.gguf` | F16 (recommended) | ~400 MB |
 | `freesplatter-scene-f32.gguf` | F32 | ~800 MB |
 | `freesplatter-scene-q8_0.gguf` | Q8_0 | ~200 MB |
 
-### Object（3+ view）
+### Object (3+ view)
 
-| 文件 | 精度 | 大小 |
-|------|------|------|
-| `freesplatter-object-f16.gguf` | F16（推荐） | ~400 MB |
+| File | Quant | Size |
+|------|-------|------|
+| `freesplatter-object-f16.gguf` | F16 (recommended) | ~400 MB |
 | `freesplatter-object-f32.gguf` | F32 | ~800 MB |
 | `freesplatter-object-q8_0.gguf` | Q8_0 | ~200 MB |
 
 ---
 
-## 构建
+## Build
 
 ```bash
 cmake -B build_app \
@@ -120,71 +125,71 @@ cmake -B build_app \
 cmake --build build_app --target QFREESPLATTER_PLUGIN -j$(nproc)
 ```
 
-| 选项 | 说明 |
-|------|------|
-| `AICore_ENABLED` | 构建 `libAICore.so`（含 FreeSplatter + ggml） |
-| `PLUGIN_STANDARD_QFREESPLATTER` | 本插件 |
-| `PLUGIN_STANDARD_QSIBR` | 可选；开启后编译 **Visualize (SIBR)** 按钮（无链接依赖，运行时调用 qSIBR） |
-| `BUILD_CUDA_MODULE` | ggml CUDA 后端（Linux/Windows NVIDIA 加速） |
-| `GGML_USE_OPENCL` | Linux/Win 默认 ON，自动检测 OpenCL 3.0；macOS 默认 OFF |
-| `GGML_USE_VULKAN` | Apple 默认 ON，其他平台默认 OFF；可 `-DGGML_USE_VULKAN=ON` 手动开启 |
-| `GGML_USE_METAL` | Apple 默认 ON（macOS 主 GPU 路径） |
+| Option | Description |
+|--------|-------------|
+| `AICore_ENABLED` | Build `libAICore.so` (FreeSplatter + ggml) |
+| `PLUGIN_STANDARD_QFREESPLATTER` | This plugin |
+| `PLUGIN_STANDARD_QSIBR` | Optional; enables **Visualize (SIBR)** (runtime call, no static link) |
+| `BUILD_CUDA_MODULE` | ggml CUDA backend (Linux/Windows NVIDIA) |
+| `GGML_USE_OPENCL` | ON by default on Linux/Win when OpenCL 3.0 is detected; OFF on macOS |
+| `GGML_USE_VULKAN` | OFF on all platforms; opt-in with `-DGGML_USE_VULKAN=ON` |
+| `GGML_USE_METAL` | ON by default on Apple (primary GPU path on macOS) |
 
 ---
 
-## 输出格式
+## Output format
 
-### 每像素 Gaussian（Scene，23 通道）
+### Per-pixel Gaussians (Scene, 23 channels)
 
-| 通道 | 字段 |
-|------|------|
-| 0–2 | xyz（OpenCV 坐标系） |
-| 3–14 | SH 系数（degree 1） |
+| Channels | Field |
+|----------|-------|
+| 0–2 | xyz (OpenCV coordinates) |
+| 3–14 | SH coefficients (degree 1) |
 | 15 | opacity |
 | 16–18 | scale |
-| 19–22 | 四元数 rotation |
+| 19–22 | quaternion rotation |
 
-### PLY（SIBR 兼容）
+### PLY (SIBR compatible)
 
-- 位置、SH DC + rest、opacity（logit）、scale（log）、rotation（四元数）
-- 坐标系转换为 OpenGL（y 向上）
+- Position, SH DC + rest, opacity (logit), scale (log), rotation (quaternion)
+- Coordinates converted to OpenGL (y up)
 
 ---
 
-## 测试与 CLI
+## Tests and CLI
 
-### CMake 开关（默认关闭）
+### CMake toggles (off by default)
 
 ```bash
 cmake -B build \
   -DAICore_ENABLED=ON \
-  -DAICore_BUILD_TESTS=ON \                    # FreeSplatter 白盒单元测试 → core/AICore/tests/
+  -DAICore_BUILD_TESTS=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
-  -DPLUGIN_STANDARD_QFREESPLATTER_TOOLS=ON \   # free_splatter-cli（需 BUILD_OPENCV=ON）
+  -DPLUGIN_STANDARD_QFREESPLATTER_TOOLS=ON \
   ...
 cmake --build build
 ```
 
-单元测试位于 [`core/AICore/tests/gaussian/`](../../../../core/AICore/tests/gaussian/)（按 **能力模块** 组织，非插件名）。CLI 位于 [`tools/free_splatter-cli.cpp`](tools/free_splatter-cli.cpp)（图像解码使用 OpenCV，与 AICore 插件路径一致）。
+Unit tests live under [`core/AICore/tests/gaussian/`](../../../../core/AICore/tests/gaussian/) (organized by capability, not plugin name). CLI: [`tools/free_splatter-cli.cpp`](tools/free_splatter-cli.cpp) (OpenCV image decode, same path as the plugin).
 
-### 测试分层
+### Test tiers
 
-| 可执行文件 | 标签 | 依赖 | 说明 |
-|------------|------|------|------|
-| `test_loader` | 快速 | 无模型 | 合成 GGUF KV 往返 |
-| `test_graph_blocks` | 快速 | 无模型 | ggml 算子 golden pin |
-| `test_image` | 快速 | 无模型 | 非信任图像输入校验 |
-| `test_pose` | 快速 | 无模型 | 焦距 / 对齐 / PnP 数学 |
-| `test_parity` | `model` | GGUF + fixtures | 与 PyTorch 参考逐层 parity |
+| Binary | Label | Requires | Description |
+|--------|-------|----------|-------------|
+| `test_loader` | fast | no model | Synthetic GGUF KV round-trip |
+| `test_graph_blocks` | fast | no model | ggml op golden pins |
+| `test_image` | fast | no model | Untrusted image input validation |
+| `test_pose` | fast | no model | Focal length / alignment / PnP math |
+| `test_parity` | `model` | GGUF + fixtures | Layer-wise parity vs PyTorch reference |
 
-**快速门禁（无模型资产）：**
+**Fast gate (no model assets):**
 
 ```bash
-ctest -LE model   # 仅运行 test_loader / test_graph_blocks / test_image / test_pose
-# 可执行文件在 build/bin/aicore_tests/
+ctest -LE model
+# Binaries under build/bin/aicore_tests/
 ```
 
-**完整 parity（需模型与 fixture）：**
+**Full parity (needs model + fixtures):**
 
 ```bash
 export FREE_SPLATTER_GGUF=/path/to/freesplatter-scene-f16.gguf
@@ -192,26 +197,26 @@ export FREE_SPLATTER_FIXTURES=/path/to/scripts/fixtures
 ctest -L model
 ```
 
-`test_parity` 可通过 `FREE_SPLATTER_MAX_BLOCKS` 限制 block 数以缩短耗时。
+Limit blocks with `FREE_SPLATTER_MAX_BLOCKS` to shorten `test_parity`.
 
 ---
 
-## 性能参考
+## Performance (reference)
 
-| 设备 | 2 视图 512×512 F16 |
-|------|---------------------|
-| GPU CUDA | ~0.1 s（视 GPU 而定） |
-| GPU OpenCL / Vulkan | ~0.2 s |
-| GPU Metal（macOS） | ~0.2 s |
-| CPU 12 线程 | ~14 s |
+| Device | 2 views 512×512 F16 |
+|--------|---------------------|
+| GPU CUDA | ~0.1 s (GPU dependent) |
+| GPU OpenCL | ~0.2 s |
+| GPU Metal (macOS) | ~0.2 s |
+| CPU 12 threads | ~14 s |
 
 ---
 
-## 与 qSIBR 联动
+## qSIBR integration
 
-1. 运行 FreeSplatter 得到 PLY
-2. 点击 **Visualize** 或手动：Plugins → SIBR → **3D Gaussian Splatting Viewer**
-3. 指定 `--model-path` 指向导出的 Gaussian 目录 / PLY
+1. Run FreeSplatter to produce a PLY
+2. Click **Visualize**, or manually: Plugins → SIBR → **3D Gaussian Splatting Viewer**
+3. Pass `--model-path` to the exported Gaussian directory / PLY
 
 ---
 
@@ -224,4 +229,4 @@ ctest -L model
 
 ## License
 
-Apache-2.0。模型权重源自 [TencentARC/FreeSplatter](https://github.com/TencentARC/FreeSplatter)（Apache-2.0）。
+Apache-2.0. Model weights from [TencentARC/FreeSplatter](https://github.com/TencentARC/FreeSplatter) (Apache-2.0).

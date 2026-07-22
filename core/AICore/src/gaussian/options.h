@@ -15,10 +15,16 @@ namespace aicore {
 namespace gaussian {
 
 struct options {
-    std::string device = "vulkan";  // "" | cpu | gpu | cuda | vulkan [:N];
-                                    // default GPU, fail-closed
-    int n_threads = 0;              // <= 0 => auto (CPU)
-    std::string dump_taps_dir;      // empty => tap dumping disabled
+#if defined(__APPLE__)
+    // macOS: Metal is the native ggml GPU backend (OpenCL is not built).
+    std::string device = "metal";  // metal | auto | cpu | cuda [:N]
+#else
+    // Auto order: CUDA -> OpenCL -> CPU (see
+    // ggml_common::find_auto_gpu_backend).
+    std::string device = "auto";  // auto | cpu | gpu | cuda | opencl [:N]
+#endif
+    int n_threads = 0;          // <= 0 => auto (CPU)
+    std::string dump_taps_dir;  // empty => tap dumping disabled
 };
 
 }  // namespace gaussian

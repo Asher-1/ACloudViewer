@@ -127,12 +127,13 @@ public:
 
     // implementing postpocessing to movable particles
     void movableFilter();
-    // 找到每组可移动点，这个连通分量周围的不可移动点。从四周向中间逼近
+    // Border immovable points around each movable connected component
+    // (edge-inward).
     void findUnmovablePoint(const std::vector<XY>& connected,
                             const std::vector<double>& heightvals,
                             std::vector<int>& edgePoints);
 
-    // 直接对联通分量进行边坡处理
+    // Apply slope handling on the connected component directly.
     void handle_slop_connected(const std::vector<int>& edgePoints,
                                const std::vector<XY>& connected,
                                const std::vector<std::vector<int>>& neighbors,

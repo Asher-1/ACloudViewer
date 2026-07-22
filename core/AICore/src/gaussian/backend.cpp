@@ -47,18 +47,17 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
     int want_idx = 0;
     ggml_common::parse_device(device_req, name, want_idx);
 
-    // Auto: Linux/Win CUDA -> OpenCL -> Vulkan -> CPU; macOS Metal -> Vulkan ->
-    // CUDA -> CPU.
+    // Auto: platform order from find_auto_gpu_backend (CUDA/OpenCL/Metal, no
+    // Vulkan).
     if (name.empty() || name == "auto") {
-        static const char* kAutoOrder[] = {"cuda", "opencl", "vulkan", nullptr};
-        for (const char* try_name : kAutoOrder) {
-            if (init(std::string(try_name), n_threads)) return true;
-            release();
+        std::string resolved;
+        if (ggml_backend_t gpu = ggml_common::find_auto_gpu_backend(resolved)) {
+            be = gpu;
+            device = resolved;
+        } else {
+            return init("cpu", n_threads);
         }
-        return init("cpu", n_threads);
-    }
-
-    if (name == "cpu") {
+    } else if (name == "cpu") {
         be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
         if (!be) {
             error = "CPU backend init failed";
@@ -72,20 +71,24 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
             n_threads = (int)ggml_common::default_cpu_threads();
         }
         ggml_common::set_cpu_threads(be, n_threads);
-    } else if (name == "gpu" || name == "cuda" || name == "vulkan" ||
-               name == "opencl") {
+    } else if (name == "gpu" || name == "cuda" || name == "opencl" ||
+               name == "metal") {
         clear_sticky_cuda_errors();
         be = ggml_common::find_gpu_backend(name, want_idx, device);
         if (!be) {
             error = "no usable '" + name +
-                    "' device (built with "
-                    "GGML_USE_CUDA/GGML_USE_OPENCL/GGML_USE_VULKAN? driver "
+                    "' device (built with GGML_USE_CUDA/GGML_USE_OPENCL? "
+                    "driver "
                     "present?)";
             return false;
         }
+    } else if (name == "vulkan") {
+        error = "Vulkan backend is disabled in this build (use "
+                "auto|cpu|cuda|opencl)";
+        return false;
     } else {
         error = "unknown device '" + device_req +
-                "' (want auto|cpu|gpu|cuda|opencl|vulkan)";
+                "' (want auto|cpu|gpu|cuda|opencl|metal)";
         return false;
     }
 

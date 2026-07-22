@@ -159,12 +159,21 @@ void FreeSplatterDialog::setupUi() {
 
     modelLayout->addWidget(new QLabel("Device:"), 2, 0);
     m_deviceCombo = new QComboBox;
-    m_deviceCombo->addItem(tr("Auto (CUDA → OpenCL → Vulkan → CPU)"), "auto");
+#if defined(__APPLE__)
+    m_deviceCombo->addItem(tr("Auto (Metal → CUDA → CPU)"), "auto");
+    m_deviceCombo->addItem("GPU (Metal)", "metal");
     m_deviceCombo->addItem("GPU (CUDA)", "cuda");
-    m_deviceCombo->addItem("GPU (Vulkan)", "vulkan");
-    m_deviceCombo->addItem("CPU", "cpu");
+    m_deviceCombo->setCurrentIndex(1);
     m_deviceCombo->setToolTip(
-            tr("Auto tries CUDA first, then OpenCL, then Vulkan, then CPU."));
+            tr("Auto tries Metal first, then CUDA, then CPU."));
+#else
+    m_deviceCombo->addItem(tr("Auto (CUDA → OpenCL → CPU)"), "auto");
+    m_deviceCombo->addItem("GPU (CUDA)", "cuda");
+    m_deviceCombo->addItem("GPU (OpenCL)", "opencl");
+    m_deviceCombo->setToolTip(
+            tr("Auto tries CUDA first, then OpenCL, then CPU."));
+#endif
+    m_deviceCombo->addItem("CPU", "cpu");
     modelLayout->addWidget(m_deviceCombo, 2, 1);
 
     modelLayout->addWidget(new QLabel("Threads:"), 3, 0);

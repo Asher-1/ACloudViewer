@@ -452,6 +452,7 @@ function Build-PipPackage {
         "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
         "-DUSE_VTK_BACKEND=OFF",
+        "-DAICore_ENABLED=ON",
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",

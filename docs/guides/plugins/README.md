@@ -1,21 +1,21 @@
-# AI 推理插件（AICore）
+# AI inference plugins (AICore)
 
-ACloudViewer 通过统一推理库 **`libAICore.so`**（ggml）提供两类 AI 插件，均**无需 Python/PyTorch 运行时**：
+ACloudViewer provides two AI plugins through the unified inference library **`libAICore.so`** (ggml). **No Python/PyTorch runtime is required.**
 
-| 插件 | 文档 | CMake 选项 | 功能摘要 |
-|------|------|------------|----------|
-| **qDA3** | [qDA3 使用指南](qDA3.md) | `PLUGIN_STANDARD_QDA3` | Depth Anything V3：单目/多视图深度、相机位姿、COLMAP/GLB 导出、自动重建集成 |
-| **qFreeSplatter** | [qFreeSplatter 使用指南](qFreeSplatter.md) | `PLUGIN_STANDARD_QFREESPLATTER` | FreeSplatter：无标定照片 → 3D Gaussian Splatting、SIBR 兼容 PLY、可选 qSIBR 预览 |
+| Plugin | Guide | CMake option | Summary |
+|--------|-------|--------------|---------|
+| **qDA3** | [qDA3 user guide](qDA3.md) | `PLUGIN_STANDARD_QDA3` | Depth Anything V3: monocular/multi-view depth, camera pose, COLMAP/GLB export, automatic reconstruction integration |
+| **qFreeSplatter** | [qFreeSplatter user guide](qFreeSplatter.md) | `PLUGIN_STANDARD_QFREESPLATTER` | FreeSplatter: uncalibrated photos → 3D Gaussian splats, SIBR-compatible PLY, optional qSIBR preview |
 
-## 前置条件
+## Prerequisites
 
-- `-DAICore_ENABLED=ON`（构建 `core/AICore` → `libAICore.so`）
-- GUI：`-DBUILD_GUI=ON`
-- **qDA3 + 自动重建**：`-DBUILD_RECONSTRUCTION=ON`
-- **FreeSplatter 一键 Visualize**：`-DPLUGIN_STANDARD_QSIBR=ON`（Linux/Windows；macOS CI 默认关闭 qSIBR）
-- **GPU 加速（推荐）**：`-DBUILD_CUDA_MODULE=ON`；可选 ggml OpenCL/Vulkan/Metal（见各插件文档）
+- `-DAICore_ENABLED=ON` (build `core/AICore` → `libAICore.so`)
+- GUI: `-DBUILD_GUI=ON`
+- **qDA3 + automatic reconstruction:** `-DBUILD_RECONSTRUCTION=ON`
+- **FreeSplatter one-click Visualize:** `-DPLUGIN_STANDARD_QSIBR=ON` (Linux/Windows; macOS CI disables qSIBR by default)
+- **GPU acceleration (recommended):** `-DBUILD_CUDA_MODULE=ON`; optional ggml OpenCL/Metal (see each plugin guide)
 
-## 典型构建
+## Typical build
 
 ```bash
 cmake -B build_app \
@@ -30,8 +30,8 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFREESPLATTER_PLUGIN -j$(nproc)
 ```
 
-## 更多资料
+## More resources
 
-- 插件目录完整 README（开发者细节、测试、C API）：[`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md)、[`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
-- 插件总索引：[`plugins/README.md`](../../../plugins/README.md)
-- Sphinx 构建时会将上述 README 同步到 `docs/source/plugins/`（见 `docs/source/conf.py`）
+- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
+- Plugin catalog: [`plugins/README.md`](../../../plugins/README.md)
+- Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)

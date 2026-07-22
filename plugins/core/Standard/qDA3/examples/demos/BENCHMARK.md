@@ -19,9 +19,9 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | **depth-anything-giant-q8_0** | **1.81s** | **1.85s** | **1.83s** | **1.82s** | **1.83s** |
 | **depth-anything-giant-q4_k** | **1.56s** | **1.63s** | **1.67s** | **1.63s** | **1.62s** |
 
-### Depth 效果图对比（含量化版本）
+### Depth visualization comparison (quantized variants included)
 
-3×3 网格，从左到右从上到下：Original | small | base-f32 | base-q8 | base-q4k | large-f32 | large-q8 | giant-f32 | giant-q8
+3×3 grid, left-to-right top-to-bottom: Original | small | base-f32 | base-q8 | base-q4k | large-f32 | large-q8 | giant-f32 | giant-q8
 
 **canyon.jpg**
 
@@ -110,12 +110,12 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | depth-anything-large-f32 | 1.82s | 1.75s | 1.82s | 1.78s |
 | depth-anything-giant-f32 | 4.14s | 4.22s | 4.21s | 4.24s |
 
-## 3. Nested Metric Depth（绝对深度，单位：米）
+## 3. Nested Metric Depth (absolute depth, unit: meters)
 
 > **Note**: Nested metric mode loads TWO models simultaneously. With anyview-f32 (4.6GB) + metric (1.3GB),
-> RTX 3060 (12GB) OOM。使用量化的 anyview + metric 可成功运行！
+> RTX 3060 (12GB) runs out of memory. Quantized anyview + metric runs successfully!
 
-### anyview-q4_k (905MB) + metric (1.3GB) — 推荐 12GB GPU 组合
+### anyview-q4_k (905MB) + metric (1.3GB) — recommended for 12GB GPU
 
 | Image | Time | min (m) | max (m) | scale_factor | Status |
 |-------|------|---------|---------|--------------|--------|
@@ -124,7 +124,7 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | mountains | 6.85s | 2.21 | 48.19 | 6.38 | OK |
 | street | 6.96s | 0.70 | 1.69 | 0.85 | OK |
 
-### anyview-q8_0 (1.5GB) + metric (1.3GB) — 需要 ≥16GB GPU
+### anyview-q8_0 (1.5GB) + metric (1.3GB) — requires ≥16GB GPU
 
 | Image | Time | min (m) | max (m) | scale_factor | Status |
 |-------|------|---------|---------|--------------|--------|
@@ -133,7 +133,7 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | mountains | ~7s | 2.17 | 47.47 | 6.20 | OK |
 | street | ~7s | 0.68 | 1.75 | 0.82 | OK |
 
-### Nested 量化精度对比（anyview-q8 作为高精度基准）
+### Nested quantization accuracy (anyview-q8 as high-precision baseline)
 
 | Image | corr(q8 vs q4k) | MAE (m) | q8 range (m) | q4k range (m) |
 |-------|-----------------|---------|--------------|---------------|
@@ -142,9 +142,9 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | mountains | 0.9999 | 0.400 | 2.17~47.47 | 2.21~48.19 |
 | street | 0.9984 | 0.033 | 0.68~1.75 | 0.70~1.69 |
 
-> - `nested-metric.gguf` 的权重尺寸太小，量化 0 个权重（q8/q4k 文件与原版完全一致），无需单独量化
-> - anyview-q4_k vs anyview-q8_0 精度差异极小（相关系数>0.998），推荐 q4_k 以节省显存
-> - 输出分辨率 1022×672，含 scale_factor 用于将相对深度对齐到绝对尺度
+> - `nested-metric.gguf` weights are too small to quantize (0 weights quantized); q8/q4k files are identical to the original — no separate quantization needed
+> - anyview-q4_k vs anyview-q8_0 accuracy difference is negligible (correlation > 0.998); q4_k is recommended to save VRAM
+> - Output resolution 1022×672; includes `scale_factor` to align relative depth to absolute scale
 
 ## 4. Multi-view Depth + Pose
 
@@ -164,8 +164,8 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | **depth-anything-giant-q8_0** | - | - | - | **8.03s** | **OK** | **37MB** |
 | **depth-anything-giant-q4_k** | - | - | - | **7.87s** | **OK** | **37MB** |
 
-> `reconstruct` 需要 GsHead 权重，仅 giant 系列模型支持。
-> 量化后 reconstruct 速度从 10.4s 降至 ~8s（1.3x 加速），PLY 大小不变（686784 个高斯点）。
+> `reconstruct` requires GsHead weights; only giant-series models support it.
+> After quantization, reconstruct time drops from 10.4s to ~8s (~1.3× speedup); PLY size unchanged (686,784 Gaussians).
 
 ## 6. Model Metadata
 
@@ -182,11 +182,11 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | depth-anything-nested-metric | 9 |
 
 
-## 7. 综合分析
+## 7. Summary analysis
 
-### 模型文件大小与推理速度对比
+### Model file size vs inference speed
 
-| 模型 | 文件大小 | Avg推理耗时 | 加速比(vs f32) | 精度评级 |
+| Model | File size | Avg inference | Speedup (vs f32) | Accuracy |
 |------|----------|-------------|----------------|----------|
 | depth-anything-small-f32 | 100 MB | 0.44s | - | ★★ |
 | depth-anything-base-q4_k | 99 MB | 0.55s | 1.44x | ★★★ |
@@ -200,17 +200,17 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | **depth-anything-giant-q8_0** | **1536 MB** | **1.83s** | **2.31x** | **★★★★★** |
 | depth-anything-giant-f32 | 4679 MB | 4.22s | 1.00x | ★★★★★ |
 
-### 深度输出类型说明
+### Depth output types
 
-| 模型类型 | 输出类型 | 单位 | 说明 |
+| Model type | Output type | Unit | Description |
 |----------|----------|------|------|
-| small / base / large / giant | **相对深度** (Relative) | 无单位 | 值仅表示远近关系，越大越远。不同图不可比 |
-| nested (anyview + metric) | **绝对深度** (Metric) | 米 (m) | 通过 scale_factor 对齐到真实尺度 |
+| small / base / large / giant | **Relative depth** | unitless | Values encode near/far ordering only; larger = farther. Not comparable across images |
+| nested (anyview + metric) | **Metric depth** | meters (m) | Aligned to real-world scale via `scale_factor` |
 
-> - 相对深度用途：场景理解、segmentation、渲染调焦、深度对比
-> - 绝对深度用途：3D测量、SLAM、避障、点云重建、需要真实距离的工程应用
+> - Relative depth: scene understanding, segmentation, rendering focus, depth comparison
+> - Metric depth: 3D measurement, SLAM, obstacle avoidance, point cloud reconstruction, engineering apps needing real distances
 
-### 像素级精度对比（相关系数 vs giant-f32 作为最高精度基准）
+### Pixel-level accuracy (correlation vs giant-f32 as highest-precision baseline)
 
 | Model | canyon | desk | mountains | street | **Avg corr** |
 |-------|--------|------|-----------|--------|--------------|
@@ -225,9 +225,9 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | giant-q8_0 | 1.0000 | 1.0000 | 0.9999 | 1.0000 | **0.9999** |
 | giant-q4_k | 0.9998 | 0.9999 | 0.9966 | 0.9998 | **0.9990** |
 
-### 同族量化 MAE（平均绝对误差，相对深度单位）
+### Intra-family quantization MAE (mean absolute error, relative depth units)
 
-| 模型族 | 量化 | canyon | desk | mountains | street | **Avg MAE** |
+| Family | Quantization | canyon | desk | mountains | street | **Avg MAE** |
 |--------|------|--------|------|-----------|--------|-------------|
 | base | q8_0 | 0.0037 | 0.0022 | 0.0052 | 0.0009 | **0.0030** |
 | base | q4_k | 0.0647 | 0.1352 | 0.0717 | 0.0199 | **0.0729** |
@@ -236,24 +236,24 @@ GPU: RTX 3060 12GB | CUDA 12.4
 | giant | q8_0 | 0.0031 | 0.0009 | 0.0186 | 0.0007 | **0.0058** |
 | giant | q4_k | 0.0118 | 0.0049 | 0.0941 | 0.0123 | **0.0308** |
 
-> **结论**: q8_0 量化精度损失极小（MAE < 0.007），几乎不可感知；q4_k 精度损失 ~3-7%，但速度提升显著。
+> **Conclusion**: q8_0 quantization loss is negligible (MAE < 0.007), barely perceptible; q4_k loses ~3–7% accuracy but with significant speed gains.
 
-### 推荐使用场景
+### Recommended use cases
 
-| 场景 | 推荐模型 | 理由 |
+| Scenario | Recommended model | Rationale |
 |------|----------|------|
-| 实时预览/嵌入式 | small-f32 / base-q4_k | 0.4-0.5s 极快推理 |
-| 通用深度估计 | base-q8_0 | 精度-速度最佳平衡，142MB |
-| **高精度深度** | **large-q4_k / large-q8_0** | **~1.07s，301-449MB，精度极高** |
-| **3D重建 (reconstruct)** | **giant-q4_k** | **7.9s，905MB，精度损失仅0.52%** |
-| **Nested metric depth** | **nested-anyview-q4_k + nested-metric** | **6.8s，仅需905MB+1.3GB，12GB GPU可跑** |
-| 极致精度 | giant-f32 | 无损精度，4.6GB |
-| 多视角一致性 | giant-q4_k / giant-q8_0 | multi-view 一致性最好 |
-| 工程部署(低显存) | base-q4_k / large-q4_k | 99-301MB，极低显存 |
+| Real-time preview / embedded | small-f32 / base-q4_k | 0.4–0.5s very fast inference |
+| General depth estimation | base-q8_0 | Best accuracy–speed balance, 142MB |
+| **High-precision depth** | **large-q4_k / large-q8_0** | **~1.07s, 301–449MB, very high accuracy** |
+| **3D reconstruction (reconstruct)** | **giant-q4_k** | **7.9s, 905MB, only 0.52% accuracy loss** |
+| **Nested metric depth** | **nested-anyview-q4_k + nested-metric** | **6.8s, only 905MB+1.3GB, runs on 12GB GPU** |
+| Maximum accuracy | giant-f32 | Lossless accuracy, 4.6GB |
+| Multi-view consistency | giant-q4_k / giant-q8_0 | Best multi-view consistency |
+| Deployment (low VRAM) | base-q4_k / large-q4_k | 99–301MB, minimal VRAM |
 
-### 模型架构信息
+### Model architecture
 
-| 模型 | 架构 | embed_dim | depth | num_heads | 参数量级 |
+| Model | Architecture | embed_dim | depth | num_heads | Parameter scale |
 |------|------|-----------|-------|-----------|----------|
 | depth-anything-small-f32 | DA3-SMALL | 384 | 12 | 6 | ~25M |
 | depth-anything-base-f32 | DA3-BASE | 768 | 12 | 12 | ~98M |

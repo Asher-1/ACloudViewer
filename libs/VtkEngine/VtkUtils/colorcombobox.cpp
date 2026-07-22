@@ -16,7 +16,7 @@
 namespace Widgets {
 /*!
   \class ColorBox
-  \brief ColorBox, 是对QComboBox的扩展.
+  \brief ColorBox, an extension of QComboBox.
 
   \ingroup Pictureui
   */
@@ -32,8 +32,8 @@ const QColor ColorComboBox::stColors[] = {
 };
 
 /*!
- * \brief 构造颜色下拉框类, 初始化颜色下拉框.
- * \param parent, 父窗口.
+ * \brief Constructs the color combo box and initializes it.
+ * \param parent Parent widget.
  */
 ColorComboBox::ColorComboBox(QWidget* parent) : QComboBox(parent) {
     setEditable(false);
@@ -41,7 +41,7 @@ ColorComboBox::ColorComboBox(QWidget* parent) : QComboBox(parent) {
 }
 
 /*!
- * \brief 初始化颜色下拉框.
+ * \brief Initializes the color combo box.
  */
 void ColorComboBox::init() {
     QList<QColor> indexedColors = colorList();
@@ -62,23 +62,23 @@ void ColorComboBox::init() {
 }
 
 /*!
- * \brief 设置当前颜色.
- * \param c 颜色.
+ * \brief Sets the current color.
+ * \param c Color.
  */
 void ColorComboBox::setColor(const QColor& c) {
     setCurrentIndex(colorIndex(c));
 }
 
 /*!
- * \brief 获取当前颜色.
- * \return 当前颜色.
+ * \brief Returns the current color.
+ * \return The current color.
  */
 QColor ColorComboBox::color() const { return color(this->currentIndex()); }
 
 /*!
- * \brief 获取颜色的索引值.
- * \param c，需要查找索引的颜色.
- * \return 颜色的索引位置值.
+ * \brief Returns the index of a color.
+ * \param c Color to look up.
+ * \return Index of the color.
  */
 int ColorComboBox::colorIndex(const QColor& c) {
     if (!isValidColor(c)) return 0;
@@ -87,10 +87,10 @@ int ColorComboBox::colorIndex(const QColor& c) {
 }
 
 /*!
- * \brief 获取给定索引值的颜色.
- * \param colorIndex，颜色的索引值.
- * \return 给定索引值的颜色,
- * 如果给定索引值超出范围，或者在颜色框中没有找到，也返回黑色.
+ * \brief Returns the color at the given index.
+ * \param colorIndex Color index.
+ * \return Color at the given index, or black if the index is out of range
+ * or not found in the combo box.
  */
 QColor ColorComboBox::color(int colorIndex) {
     QList<QColor> colorsList = colorList();
@@ -101,8 +101,8 @@ QColor ColorComboBox::color(int colorIndex) {
 }
 
 /*!
- * \brief 获取颜色下拉框的颜色列表.
- * \return 颜色下拉框的颜色列表.
+ * \brief Returns the color list for the combo box.
+ * \return List of colors in the combo box.
  */
 QList<QColor> ColorComboBox::colorList() {
     QSettings settings(QCoreApplication::applicationDirPath() + "\\config.ini",
@@ -123,8 +123,8 @@ QList<QColor> ColorComboBox::colorList() {
 }
 
 /*!
- * \brief 获取颜色下拉框的颜色名称列表.
- * \return 颜色下拉框的颜色名称列表.
+ * \brief Returns the color name list for the combo box.
+ * \return List of color names in the combo box.
  */
 QStringList ColorComboBox::colorNames() {
     QSettings settings(QCoreApplication::applicationDirPath() + "\\config.ini",
@@ -139,10 +139,10 @@ QStringList ColorComboBox::colorNames() {
 }
 
 /*!
- * \brief 获取给定索引值的颜色.
- * \param colorIndex，颜色的索引值.
- * \return 给定索引值的颜色,
- * 如果给定索引值超出范围，或者在颜色框中没有找到，也返回黑色.
+ * \brief Returns the default color at the given index.
+ * \param colorIndex Color index.
+ * \return Default color at the given index, or black if the index is out of
+ * range or not found in the combo box.
  */
 QColor ColorComboBox::defaultColor(int colorIndex) {
     if (colorIndex >= 0 && colorIndex < (int)sizeof(stColors))
@@ -152,23 +152,23 @@ QColor ColorComboBox::defaultColor(int colorIndex) {
 }
 
 /*!
- * \brief 判断是否是一个有效的颜色.
- * \param color 一个颜色.
- * \return 返回true表示是颜色有效, 否则无效.
+ * \brief Returns whether a color is valid.
+ * \param color Color to check.
+ * \return true if the color is valid, false otherwise.
  */
 bool ColorComboBox::isValidColor(const QColor& color) {
     return colorList().contains(color);
 }
 
 /*!
- * \brief 获取颜色下拉框内置颜色数.
- * \return 颜色下拉框内置颜色数.
+ * \brief Returns the number of predefined colors in the combo box.
+ * \return Number of predefined colors.
  */
 int ColorComboBox::numPredefinedColors() { return stColorsCount; }
 
 /*!
- * \brief 获取默认颜色名列表.
- * \return 默认颜色名列表.
+ * \brief Returns the default color name list.
+ * \return Default color name list.
  */
 QStringList ColorComboBox::defaultColorNames() {
     QStringList color_names = QStringList() << tr("black");
@@ -199,8 +199,8 @@ QStringList ColorComboBox::defaultColorNames() {
 }
 
 /*!
- * \brief 获取默认颜色列表.
- * \return 默认颜色列表.
+ * \brief Returns the default color list.
+ * \return Default color list.
  */
 QList<QColor> ColorComboBox::defaultColors() {
     QList<QColor> lst;

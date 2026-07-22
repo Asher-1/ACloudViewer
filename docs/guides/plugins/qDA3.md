@@ -1,22 +1,22 @@
-# qDA3 — Depth Anything V3 插件
+# qDA3 — Depth Anything V3 Plugin
 
-在 ACloudViewer 中运行 [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) 的 **GGUF 模型**（C++ / [ggml](https://github.com/ggml-org/ggml)，源自 [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)），用于深度估计、相机位姿与 3D 导出。
+Run [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) **GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml), derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) for depth estimation, camera pose, and 3D export.
 
-## 架构
+## Architecture
 
 ```
-GUI (qDA3 对话框) ──┐
+GUI (qDA3 dialog) ──┐
 Automatic Reconstruction (DA3DepthController) ──┼──► libAICore (depth_capi) ──► ggml
 ccImage::estimateDepth* ──────────────────────────┘
 ```
 
-| 组件 | 路径 |
-|------|------|
-| 推理库 | `core/AICore/` → `libAICore.so` |
-| 插件 | `plugins/core/Standard/qDA3/` |
-| 自动重建 | `libs/Reconstruction/`（`DA3DepthController`） |
+| Component | Path |
+|-----------|------|
+| Inference library | `core/AICore/` → `libAICore.so` |
+| Plugin | `plugins/core/Standard/qDA3/` |
+| Automatic reconstruction | `libs/Reconstruction/` (`DA3DepthController`) |
 
-## 启用与构建
+## Enable and build
 
 ```bash
 cmake -B build_app \
@@ -29,68 +29,72 @@ cmake -B build_app \
 cmake --build build_app --target QDA3_PLUGIN ACloudViewer -j$(nproc)
 ```
 
-| CMake 选项 | 说明 |
-|------------|------|
-| `AICore_ENABLED` | 构建 `libAICore.so`（与 qFreeSplatter 共用） |
-| `PLUGIN_STANDARD_QDA3` | 本插件 |
-| `BUILD_RECONSTRUCTION` | 自动重建流水线中的 DA3 稀疏/稠密模式 |
-| `BUILD_CUDA_MODULE` | ggml CUDA 后端 |
-| `GGML_USE_OPENCL` / `GGML_USE_VULKAN` / `GGML_USE_METAL` | 平台相关 GPU 后端（配置摘要会打印 `backends = ...`） |
+| CMake option | Description |
+|--------------|-------------|
+| `AICore_ENABLED` | Build `libAICore.so` (shared with qFreeSplatter) |
+| `PLUGIN_STANDARD_QDA3` | This plugin |
+| `BUILD_RECONSTRUCTION` | DA3 sparse/dense modes in the automatic reconstruction pipeline |
+| `BUILD_CUDA_MODULE` | ggml CUDA backend |
+| `GGML_USE_OPENCL` / `GGML_USE_METAL` | Linux/Windows: OpenCL ON by default; macOS: Metal ON by default |
+| `GGML_USE_VULKAN` | OFF by default on all platforms (not recommended for deployment) |
 
-产物示例：`build_app/bin/libAICore.so`、`build_app/bin/plugins/libQDA3_PLUGIN.so`。
+Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PLUGIN.so`.
 
-## GUI 使用
+## GUI usage
 
-**菜单：** Plugins → **Depth Anything V3 (DA3)** → **DA3 Depth Estimation**
+**Menu:** Plugins → **Depth Anything V3 (DA3)** → **DA3 Depth Estimation**
 
-1. 在 DB Tree 选中图像，或 **Browse** 选择文件。
-2. 选择 **Model**（首次可 **Download** GGUF）。
-3. 设置 **Device**（`Auto` / CUDA / Vulkan / CPU）、线程数、是否反投影 3D 等。
-4. 点击 **Run**；深度结果以 `ccImage` 子节点加入 DB Tree。
+1. Select image(s) in the DB tree, or use **Browse** to pick files.
+2. Choose a **Model** (use **Download** on first run for GGUF weights).
+3. Set **Device** (`Auto` / Metal (macOS) / CUDA / OpenCL / CPU), thread count, unproject-to-3D options, etc.
+4. Click **Run**; depth results appear as `ccImage` child nodes in the DB tree.
 
-### 模式一览
+### Modes
 
-| 模式 | 输出 |
-|------|------|
-| Depth (single) | 深度图 → DB Tree |
-| Depth + Pose | 深度 + 外参/内参 |
-| Multi-view depth + pose | 多视图深度与相机 |
-| 3D Reconstruct (Giant) | Giant 模型点云 |
-| Export GLB / COLMAP | glTF 2.0 / COLMAP 稀疏重建目录 |
-| Quantize / Model Info | GGUF 量化与元数据 |
+| Mode | Output |
+|------|--------|
+| Depth (single) | Depth map → DB tree |
+| Depth + Pose | Depth + extrinsics / intrinsics |
+| Multi-view depth + pose | Multi-view depth and cameras |
+| 3D Reconstruct (Giant) | Giant-model point cloud |
+| Export GLB / COLMAP | glTF 2.0 / COLMAP sparse reconstruction folder |
+| Quantize / Model Info | GGUF quantization and metadata |
 
-### 推理设备（Auto）
+### Inference device (Auto)
 
-| 平台 | Auto 优先级 |
-|------|-------------|
-| Linux / Windows | CUDA → OpenCL → Vulkan → CPU |
-| macOS | Metal → Vulkan → CUDA → CPU |
+| Platform | Auto priority |
+|----------|---------------|
+| macOS | Metal → CUDA → CPU |
+| Linux / Windows | CUDA → OpenCL → CPU |
 
-环境变量 `DA_DEVICE` 可覆盖：`auto`、`cpu`、`cuda`、`vulkan`、`opencl[:N]`、`metal`。
+Override with environment variable `DA_DEVICE`: `auto`, `cpu`, `cuda`, `opencl[:N]`, `metal`.
 
-### 模型缓存
+### Model cache
 
-| 平台 | 默认目录 |
-|------|----------|
+| Platform | Default directory |
+|----------|-------------------|
 | Linux | `$HOME/cloudViewer_data/extract/da3_models` |
 | Windows | `%USERPROFILE%\cloudViewer_data\extract\da3_models` |
-| 覆盖 | `CLOUDVIEWER_DATA_ROOT` → `<root>/extract/da3_models` |
+| Override | `CLOUDVIEWER_DATA_ROOT` → `<root>/extract/da3_models` |
 
-权重来源：[mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
+Weights: [mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
 
-## Automatic Reconstruction 集成
+## Automatic Reconstruction integration
 
-**Reconstruction → Automatic Reconstruction**：
+**Reconstruction → Automatic Reconstruction** (`libs/Reconstruction` + `app/reconstruction` share `colmap::AutomaticReconstructionController`):
 
-| 设置 | 说明 |
-|------|------|
-| Sparse model | **DA3 (depth+pose)** — 用 DA3 多视图替代 SIFT 稀疏 |
-| Stereo / dense | **DA3 depth inference** — 需 Nested AnyView + Metric 与 DA3 稀疏模式 |
-| Hybrid dense (≥3 视图) | COLMAP 位姿 + DA3 metric depth 作为 PatchMatch 光度先验，可选跳过几何 refine（UI / `DA3_SKIP_GEOMETRIC_REFINE`） |
+| Setting | Description |
+|---------|-------------|
+| Sparse model | COLMAP SfM or **DA3 (depth+pose)**; with ≥3 images, hybrid mode (COLMAP poses + DA3 depth) is available |
+| Stereo / dense | **DA3 depth inference** (Nested AnyView/Metric) or COLMAP PatchMatch (**CUDA only**) |
+| No CUDA + AICore | Defaults to DA3 sparse/stereo; full dense path: undistort → DA3 depth → voxel fusion → mesh → texturing |
+| Hybrid dense (≥3 views, CUDA) | COLMAP poses + DA3 priors + optional PatchMatch refine + StereoFusion |
 
-## C API（简要）
+If the UI still selects COLMAP PatchMatch but the build has no CUDA, runtime falls back to DA3 stereo via `EffectiveStereoPipelineMode`.
 
-头文件：`core/AICore/include/aicore/depth_capi.h`
+## C API (brief)
+
+Header: `core/AICore/include/aicore/depth_capi.h`
 
 ```c
 #include "aicore/depth_capi.h"
@@ -104,7 +108,7 @@ aicore_depth_free_floats(depth);
 aicore_depth_free(ctx);
 ```
 
-## 延伸阅读
+## Further reading
 
-- 完整插件 README（测试、parity、脚本）：[`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md)
+- Full plugin README (tests, parity, scripts): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md)
 - [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) · [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)

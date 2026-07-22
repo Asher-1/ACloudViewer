@@ -137,7 +137,7 @@ cmake --build . --config Release --target install
 | `AICore_ENABLED` | OFF | Build unified AI core (`libAICore.so`) — DA3 depth/pose + FreeSplatter 3D Gaussians (auto-enables `GGML_ENABLED`) |
 | `GGML_ENABLED` | OFF | Build ggml inference library (auto-enabled when `AICore_ENABLED=ON`) |
 | `GGML_USE_CUDA` | OFF | Enable ggml CUDA backend on Linux/Windows (also on when `BUILD_CUDA_MODULE=ON`) |
-| `GGML_USE_VULKAN` | Apple: ON, else OFF | Auto-detect Vulkan when ON (loader + glslc + SPIRV-Headers; MoltenVK on macOS) |
+| `GGML_USE_VULKAN` | OFF (all platforms) | Opt-in only; disabled by default (Vulkan deployment is not supported) |
 | `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | Auto-detect OpenCL 3.0 headers + ICD + Python3 when ON; **not built on macOS** |
 | `GGML_USE_METAL` | Apple: ON, else OFF | ggml Metal backend (Apple only) |
 
@@ -414,6 +414,22 @@ cmake -DDEVELOPER_BUILD=OFF \
       ..
 cmake --build . --config Release --target install
 ```
+
+> **Linux installer (`PACKAGE=ON`):** `pack_ubuntu.sh` does **not** bundle NVIDIA CUDA runtime libraries (`libcublas`, `libcublasLt`, `libcudart`, etc.) — same as the Windows packager (`pack_windows.ps1` already filtered CUDA DLLs before the Linux fix). GPU / AICore features require an NVIDIA driver and a **matching CUDA toolkit/runtime** on the target machine.
+
+> **Python plugin (`PLUGIN_PYTHON=ON`):** By default only a **minimal** embedded runtime is installed (`PLUGIN_PYTHON_COPY_MINIMAL_ENV=ON`): Python stdlib + packages listed in `plugins/core/Standard/qPythonRuntime/requirements-release.txt`. It does **not** copy your entire pyenv/conda `site-packages` (which can be several GB if torch/Jupyter/etc. are installed). For release installers, point CMake at a **clean** interpreter:
+>
+> ```bash
+> python -m venv /tmp/acloudviewer-python-pack
+> /tmp/acloudviewer-python-pack/bin/pip install -r plugins/core/Standard/qPythonRuntime/requirements-release.txt
+> cmake ... -DPython3_EXECUTABLE=/tmp/acloudviewer-python-pack/bin/python \
+>             -DPLUGIN_PYTHON=ON -DPLUGIN_PYTHON_COPY_MINIMAL_ENV=ON \
+>             -DPLUGIN_PYTHON_COPY_ENV=OFF
+> ```
+>
+> To copy a larger dev environment (with bloat packages filtered), set `-DPLUGIN_PYTHON_COPY_ENV=ON`. To ship **no** bundled Python tree (embedded pycc/cccorelib only), set both `PLUGIN_PYTHON_COPY_ENV=OFF` and `PLUGIN_PYTHON_COPY_MINIMAL_ENV=OFF`.
+
+> **macOS `.app` bundle (`lib_bundle_app.py --embed_python`):** Default **`--python_minimal`** embeds the same minimal set (stdlib + `requirements-release.txt`). NVIDIA CUDA runtime dylibs are **not** copied into `Frameworks/` (aligned with Linux/Windows packagers). Use `--python_full` only for local dev debugging with a complete conda env.
 
 ---
 

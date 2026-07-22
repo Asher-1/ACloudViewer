@@ -25,9 +25,14 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
   mark_as_advanced(PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
 
   option(PLUGIN_PYTHON_COPY_ENV
-    "Should the content of the current python site-package be copied on install" ON
+    "Copy the entire active Python prefix/site-packages into the installer (can be multi-GB with pyenv/conda dev envs)" OFF
   )
   mark_as_advanced(PLUGIN_PYTHON_COPY_ENV)
+
+  option(PLUGIN_PYTHON_COPY_MINIMAL_ENV
+    "Copy stdlib + requirements-release.txt packages only (recommended for PACKAGE=ON)" ON
+  )
+  mark_as_advanced(PLUGIN_PYTHON_COPY_MINIMAL_ENV)
   
   add_subdirectory(wrapper)
   add_subdirectory(src)
