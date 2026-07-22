@@ -22,8 +22,8 @@
 #include "image_io.hpp"
 #include "path_util.hpp"
 #include "preprocess.hpp"
-#include "reconstruct.hpp"
 #include "quantize.hpp"
+#include "reconstruct.hpp"
 #if defined(GGML_USE_CUDA)
 #include <cuda_runtime.h>
 #endif
