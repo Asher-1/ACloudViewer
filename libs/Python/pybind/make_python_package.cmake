@@ -84,15 +84,34 @@ endforeach()
 # any platform-specific packaging runs. These are loaded at runtime by
 # ggml_backend_load_all() and allow GPU backends to be optional (graceful
 # fallback to CPU if drivers are missing).
+#
+# Layout with GGML_BACKEND_DL:
+#   lib/  -> SHARED core libs (libggml, libggml-base)
+#   bin/  -> MODULE backends (libggml-cpu.so, libggml-metal.so, etc.)
+# MODULE libraries always use .so extension (even on macOS).
 if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
-    file(GLOB _ggml_backend_modules
+    file(GLOB _ggml_shared_libs
         "${GGML_BACKEND_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
     )
-    foreach(_mod ${_ggml_backend_modules})
+    foreach(_mod ${_ggml_shared_libs})
         get_filename_component(_mod_name "${_mod}" NAME)
-        message(STATUS "Packaging ggml backend module: ${_mod_name}")
+        message(STATUS "Packaging ggml shared lib: ${_mod_name}")
         configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
     endforeach()
+    # MODULE backends are installed to bin/ by ggml_add_backend_library().
+    get_filename_component(_ggml_install_prefix "${GGML_BACKEND_DIR}" DIRECTORY)
+    set(_GGML_MODULE_DIR "${_ggml_install_prefix}/bin")
+    if(IS_DIRECTORY "${_GGML_MODULE_DIR}")
+        file(GLOB _ggml_module_backends "${_GGML_MODULE_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*.so")
+        if(WIN32)
+            file(GLOB _ggml_module_backends "${_GGML_MODULE_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*.dll")
+        endif()
+        foreach(_mod ${_ggml_module_backends})
+            get_filename_component(_mod_name "${_mod}" NAME)
+            message(STATUS "Packaging ggml backend module: ${_mod_name}")
+            configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
+        endforeach()
+    endif()
 endif()
 
 if (WIN32)

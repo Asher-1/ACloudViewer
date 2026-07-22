@@ -12,7 +12,9 @@
 #include "backend.hpp"
 
 #include <ggml-backend.h>
+#if !defined(GGML_BACKEND_DL)
 #include <ggml-cpu.h>
+#endif
 
 #include <algorithm>
 #include <cctype>
