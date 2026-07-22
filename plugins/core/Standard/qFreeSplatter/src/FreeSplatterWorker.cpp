@@ -121,9 +121,13 @@ bool FreeSplatterWorker::runReconstruct() {
 
     const int n = m_settings.inputPaths.size();
     emit progressUpdate(25, 100);
-    emit logMessage(QString("[FS] [3/4] Running inference on %1 image(s)... "
-                            "(this may take a while on CPU)")
-                            .arg(n));
+    const QString devLabel =
+            m_settings.device.isEmpty() ? QStringLiteral("auto")
+                                        : m_settings.device;
+    emit logMessage(
+            QString("[FS] [3/4] Running inference on %1 image(s) [%2]...")
+                    .arg(n)
+                    .arg(devLabel));
 
     std::vector<std::string> paths(n);
     std::vector<const char*> cpaths(n);

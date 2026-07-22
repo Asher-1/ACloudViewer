@@ -1326,8 +1326,8 @@ void qFreeSplatter::onTaskFinished(bool success) {
     }
 }
 
-void qFreeSplatter::onVisualizeRequested() {
 #ifdef HAS_QSIBR
+void qFreeSplatter::onVisualizeRequested() {
     if (m_lastPlyBytes.isEmpty()) {
         QMessageBox::information(
                 m_dialog, "FreeSplatter",
@@ -1363,10 +1363,8 @@ void qFreeSplatter::onVisualizeRequested() {
                            "%1 bytes, cameras %2 bytes)")
                                 .arg(m_lastPlyBytes.size())
                                 .arg(camerasJson.size()));
-#else
-    Q_UNREACHABLE();
-#endif
 }
+#endif
 
 void qFreeSplatter::onExportPlyRequested() {
     if (m_lastResult.gaussians.isEmpty()) {
