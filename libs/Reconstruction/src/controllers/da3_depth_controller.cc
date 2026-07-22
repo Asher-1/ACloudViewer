@@ -1013,7 +1013,7 @@ bool WriteDenseSparseFromMultiview(
         return false;
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: synced dense sparse model (cameras/poses) to %s\n", sparse_dir);
+    RECON_LOG_DEBUG("DA3 depth export: synced dense sparse model (cameras/poses) to %s\n", sparse_dir.c_str());
     return true;
 }
 
