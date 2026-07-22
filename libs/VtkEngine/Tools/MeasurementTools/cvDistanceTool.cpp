@@ -1257,8 +1257,8 @@ void cvDistanceTool::on_labelVisibilityCheckBox_toggled(bool checked) {
 void cvDistanceTool::on_lineWidthSpinBox_valueChanged(double value) {
     if (!m_configUi) return;
 
-    // vtkLineRepresentation 使用 GetLineProperty (与 ParaView vtkLineWidget2
-    // 一致)
+    // vtkLineRepresentation uses GetLineProperty (same as ParaView
+    // vtkLineWidget2)
     if (m_rep) {
         if (auto* prop = m_rep->GetLineProperty()) {
             prop->SetLineWidth(value);

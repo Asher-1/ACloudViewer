@@ -44,15 +44,12 @@ public:
             neighborsList;  // record all the neighbors in cloth grid
 
     // for rasterlization
-    std::vector<int>
-            correspondingLidarPointList;  // 每个布料节点对应的Lidar点的列表 the
-                                          // correspoinding lidar point list
-    std::size_t nearestPointIndex;  // 对应的lidar点最临近点的索引 index nearest
-                                    // lidar point
-    double nearestPointHeight;  // 该点的y轴值  the height(y) of the nearest
-                                // lidar point
-    double tmpDist;  // 临时变量，用于计算lidar点再水平面上距离布料点直接的距离
-                     // only for inner computation
+    std::vector<int> correspondingLidarPointList;  // Lidar points mapped to
+                                                   // this cloth node.
+    std::size_t nearestPointIndex;  // Index of the nearest lidar point.
+    double nearestPointHeight;      // Height (y) of the nearest lidar point.
+    double tmpDist;  // Scratch: horizontal distance lidar-to-cloth (inner use
+                     // only).
 
 public:
     Particle()

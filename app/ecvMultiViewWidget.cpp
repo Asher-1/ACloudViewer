@@ -999,15 +999,17 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                             mw->removeEventFilter(w);
                         }
                     });
-                    // ParaView模式: 不自动复制表示，保持空视窗
+                    // ParaView mode: do not auto-copy representations; start
+                    // empty.
                     compView->setSubViewInitCallback(
                             [](vtkGLView* /*subView*/) {
-                                // 不再自动复制，用户通过Showing下拉框选择实体
+                                // User picks entities via the Showing combo
+                                // box.
                             });
                     compView->setRenderViewFactory([this]() -> vtkGLView* {
                         return m_viewFactory ? m_viewFactory() : nullptr;
                     });
-                    // ✅ 为RENDER类型也设置EntityListProvider
+                    // EntityListProvider for RENDER layout type as well.
                     compView->setEntityListProvider(collectDisplayableEntities);
                 } else {
                     compView->setEntityListProvider(collectDisplayableEntities);

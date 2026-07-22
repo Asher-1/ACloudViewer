@@ -11,6 +11,7 @@
 
 #include "base/reconstruction_manager.h"
 #include "controllers/da3_depth_controller.h"
+#include "controllers/da3_pipeline_defaults.h"
 #include "retrieval/resources.h"
 #include "util/option_manager.h"
 #include "util/ply_point_filter.h"
@@ -52,12 +53,9 @@ public:
         // Whether to perform sparse mapping.
         bool sparse = true;
 
-// Whether to perform dense mapping.
-#ifdef CUDA_ENABLED
-        bool dense = true;
-#else
-        bool dense = false;
-#endif
+        // Dense: COLMAP PatchMatch when CUDA is available; otherwise DA3 via
+        // AICore.
+        bool dense = DefaultDenseReconstructionEnabled();
 
         // The meshing algorithm to be used.
 #ifdef CGAL_ENABLED
@@ -90,18 +88,25 @@ public:
         // --- DA3 (Depth Anything V3) integration options ---
 
         // Sparse model generation mode:
-        //   COLMAP_NATIVE  - traditional COLMAP SfM pipeline (default)
-        //   DA3_DEPTH_POSE - DA3 monocular depth+pose estimation
-        SparseModelMode sparse_mode = SparseModelMode::COLMAP_NATIVE;
+        //   COLMAP_NATIVE  - traditional COLMAP SfM pipeline
+        //   DA3_DEPTH_POSE - DA3 monocular depth+pose estimation (default when
+        //   AICore is available but COLMAP CUDA / PatchMatch is not)
+        SparseModelMode sparse_mode = PreferDA3OverColmapPatchMatch()
+                                              ? SparseModelMode::DA3_DEPTH_POSE
+                                              : SparseModelMode::COLMAP_NATIVE;
 
         // Dense/stereo pipeline mode:
-        //   COLMAP_PATCH_MATCH  - traditional COLMAP PatchMatch stereo
-        //   (default) DA3_DEPTH_INFERENCE - DA3 ggml-based depth inference
-        //   (faster)
-        StereoPipelineMode stereo_mode = StereoPipelineMode::COLMAP_PATCH_MATCH;
+        //   COLMAP_PATCH_MATCH - traditional COLMAP PatchMatch stereo (CUDA)
+        //   DA3_DEPTH_INFERENCE - DA3 ggml-based depth inference (AICore)
+        StereoPipelineMode stereo_mode =
+                PreferDA3OverColmapPatchMatch()
+                        ? StereoPipelineMode::DA3_DEPTH_INFERENCE
+                        : StereoPipelineMode::COLMAP_PATCH_MATCH;
 
         // DA3 sparse-step model (when sparse_mode == DA3_DEPTH_POSE)
-        DA3ModelType da3_sparse_model_type = DA3ModelType::BASE;
+        DA3ModelType da3_sparse_model_type =
+                PreferDA3OverColmapPatchMatch() ? DA3ModelType::NESTED_ANYVIEW
+                                                : DA3ModelType::BASE;
         DA3QuantType da3_sparse_quant_type = DA3QuantType::Q8_0;
         std::string da3_sparse_model_path;
         std::string da3_sparse_metric_model_path;

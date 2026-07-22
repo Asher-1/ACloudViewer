@@ -941,7 +941,8 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
         const QString d = device.trimmed().toLower();
         return d.isEmpty() || d == QLatin1String("auto") ||
                d == QLatin1String("gpu") || d == QLatin1String("cuda") ||
-               d == QLatin1String("vulkan") || d == QLatin1String("opencl");
+               d == QLatin1String("cuda") || d == QLatin1String("opencl") ||
+               d == QLatin1String("metal");
     };
     if (!warmupInferenceBackend(resolvedSettings.device, &warmupMsg)) {
         if (!warmupMsg.isEmpty()) {

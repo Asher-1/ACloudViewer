@@ -872,7 +872,8 @@ void ccGraphicalSegmentationTool::updateSegmentation() {
         return;
     }
 
-    // ACloudViewer 2D 折线走 ImageVis（WIDGET_POLYLINE_2D），不能走 ownDB。
+    // ACloudViewer 2D polylines render via ImageVis (WIDGET_POLYLINE_2D), not
+    // ownDB.
     resetSegmentation();
 
     WIDGETS_PARAMETER param(m_segmentationPoly,
@@ -882,7 +883,8 @@ void ccGraphicalSegmentationTool::updateSegmentation() {
     param.context.viewID = param.viewID;
     param.context.display = view;
     view->drawWidgets(param);
-    // refresh() 仅在 m_shouldBeRefreshed 时生效，无法驱动橡皮筋预览。
+    // refresh() only runs when m_shouldBeRefreshed is set; use redraw for
+    // rubber-band preview.
     view->redraw(true, false);
 }
 

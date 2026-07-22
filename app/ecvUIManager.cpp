@@ -1936,7 +1936,7 @@ void QUIMessageBox::checkSec() {
         this->close();
     }
 
-    QString str = QString("关闭倒计时 %1 s").arg(closeSec - currentSec + 1);
+    QString str = tr("Closing in %1 s").arg(closeSec - currentSec + 1);
     this->labTime->setText(str);
 }
 
@@ -2222,7 +2222,7 @@ void QUIInputBox::checkSec() {
         this->close();
     }
 
-    QString str = QString("关闭倒计时 %1 s").arg(closeSec - currentSec + 1);
+    QString str = tr("Closing in %1 s").arg(closeSec - currentSec + 1);
     this->labTime->setText(str);
 }
 

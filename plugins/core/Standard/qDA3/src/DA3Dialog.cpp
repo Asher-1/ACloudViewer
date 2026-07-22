@@ -7,6 +7,8 @@
 
 #include "DA3Dialog.h"
 
+#include <QtCompat.h>
+
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -197,12 +199,21 @@ void DA3Dialog::setupUi() {
 
     modelLayout->addWidget(new QLabel("Device:"), 4, 0);
     m_deviceCombo = new QComboBox;
-    m_deviceCombo->addItem(tr("Auto (CUDA → OpenCL → Vulkan → CPU)"), "auto");
+#if defined(__APPLE__)
+    m_deviceCombo->addItem(tr("Auto (Metal → CUDA → CPU)"), "auto");
+    m_deviceCombo->addItem("GPU (Metal)", "metal");
     m_deviceCombo->addItem("GPU (CUDA)", "cuda");
-    m_deviceCombo->addItem("GPU (Vulkan)", "vulkan");
-    m_deviceCombo->addItem("CPU", "cpu");
+    m_deviceCombo->setCurrentIndex(1);
     m_deviceCombo->setToolTip(
-            tr("Auto tries CUDA first, then OpenCL, then Vulkan, then CPU."));
+            tr("Auto tries Metal first, then CUDA, then CPU."));
+#else
+    m_deviceCombo->addItem(tr("Auto (CUDA → OpenCL → CPU)"), "auto");
+    m_deviceCombo->addItem("GPU (CUDA)", "cuda");
+    m_deviceCombo->addItem("GPU (OpenCL)", "opencl");
+    m_deviceCombo->setToolTip(
+            tr("Auto tries CUDA first, then OpenCL, then CPU."));
+#endif
+    m_deviceCombo->addItem("CPU", "cpu");
     modelLayout->addWidget(m_deviceCombo, 4, 1);
 
     modelLayout->addWidget(new QLabel("Threads:"), 5, 0);
@@ -776,7 +787,7 @@ DA3Dialog::Settings DA3Dialog::getSettings() const {
     s.modelPath = resolveModelPath(m_modelCombo, m_customModelPath);
     s.metricModelPath =
             resolveModelPath(m_metricModelCombo, m_customMetricPath);
-    s.inputPaths = m_inputPath->text().split(";", Qt::SkipEmptyParts);
+    s.inputPaths = m_inputPath->text().split(";", QtCompat::SkipEmptyParts);
     s.outputDir = m_outputDir->text();
     s.threads = m_threads->value();
     s.device = m_deviceCombo->currentData().toString();

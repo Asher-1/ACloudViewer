@@ -24,13 +24,14 @@ void vtkBoxWidgetCustomCallback::Execute(vtkObject *caller,
                                          unsigned long,
                                          void *) {
     if (m_preview) {
-        // 将调用该回调函数的调用者caller指针，转换为vtkBoxWidget2类型对象指针
+        // Cast the callback caller pointer to vtkBoxWidget2
         vtkSmartPointer<vtkBoxWidget> boxWidget =
                 vtkBoxWidget::SafeDownCast(caller);
         // vtkSmartPointer<vtkBoxWidget2>
-        // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller);这样转换不可以，vtkBoxWidget可以
+        // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller); this cast is
+        // invalid; vtkBoxWidget works
         vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
-        // 将boxWidget中的变换矩阵保存在t中
+        // Store the box widget transform matrix in t
         //  vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())->GetTransform(t);
         boxWidget->GetTransform(t);
         // this->m_actor->SetUserTransform(t);

@@ -227,7 +227,8 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddSpacer();
 
     AddOptionInt(&options_.num_threads, "num_threads", -1);
-    AddOptionBool(&options_.use_gpu, "GPU");
+    da3_ui_controls_.use_gpu_cb = AddOptionBool(&options_.use_gpu, "GPU");
+    da3_ui_controls_.use_gpu = &options_.use_gpu;
     AddOptionText(&options_.gpu_index, "gpu_index");
 
     fused_point_filter_label_ = new QLabel(tr("Fused point filter"), this);
@@ -697,6 +698,8 @@ void AutomaticReconstructionWidget::applyAICoreUiAvailability() {
     if (available) {
         ShowOption(&options_.da3_sparse_model_path);
         ShowOption(&options_.da3_stereo_model_path);
+        colmap::DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(
+                da3_ui_controls_);
     } else {
         HideOption(&options_.da3_sparse_model_path);
         HideOption(&options_.da3_stereo_model_path);
