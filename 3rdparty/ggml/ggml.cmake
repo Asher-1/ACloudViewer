@@ -11,9 +11,9 @@ if(NOT GGML_ENABLED)
     return()
 endif()
 
-set(GGML_VERSION "0.15.1")
+set(GGML_VERSION "0.17.0")
 set(GGML_URL "https://github.com/ggml-org/ggml/archive/refs/tags/v${GGML_VERSION}.tar.gz")
-set(GGML_SHA256 "b2fd615a552c0aeba35be361fd7e59c55623c94bffe5ca1acc5162e5d98e15ec")
+set(GGML_SHA256 "49ed958226dd75ea13b3b493150181e3a3ca7dc28c20a3d1f00d23e94cbf7a47")
 
 # Dynamic backend mode (default ON): GPU backends (CUDA, Vulkan, OpenCL) are
 # built as separate shared libraries loaded at runtime via
@@ -232,38 +232,75 @@ else()
 endif()
 
 # --- Build byproducts ---
-# Core libs are always byproducts (static or shared depending on GGML_BUILD_SHARED).
+# ggml and ggml-base are always SHARED/STATIC libs in lib/.
 set(GGML_BUILD_BYPRODUCTS
     <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
     <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
-    <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}
 )
-# GPU backend byproducts: always listed so ExternalProject knows about them.
-# In shared mode they are dynamic modules loaded at runtime (not linked into 3rdparty_ggml).
-if(_GGML_CUDA_ENABLED)
+if(GGML_BUILD_SHARED)
+    # GGML_BACKEND_DL mode: all backends (including ggml-cpu) are MODULE
+    # libraries installed to bin/ with .so extension (even on macOS).
+    set(_GGML_MODULE_SUFFIX ".so")
+    if(WIN32)
+        set(_GGML_MODULE_SUFFIX ".dll")
+    endif()
     list(APPEND GGML_BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cuda${_GGML_LIB_SUFFIX}
+        <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_MODULE_SUFFIX}
     )
+    if(_GGML_CUDA_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-cuda${_GGML_MODULE_SUFFIX})
+    endif()
+    if(_GGML_METAL_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-metal${_GGML_MODULE_SUFFIX})
+    endif()
+    if(GGML_USE_BLAS OR APPLE)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-blas${_GGML_MODULE_SUFFIX})
+    endif()
+    if(_GGML_VULKAN_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-vulkan${_GGML_MODULE_SUFFIX})
+    endif()
+    if(_GGML_OPENCL_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-opencl${_GGML_MODULE_SUFFIX})
+    endif()
+else()
+    # Static mode: all backends are regular static libs in lib/.
+    list(APPEND GGML_BUILD_BYPRODUCTS
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}
+    )
+    if(_GGML_CUDA_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cuda${_GGML_LIB_SUFFIX})
+    endif()
+    if(_GGML_METAL_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-metal${_GGML_LIB_SUFFIX})
+    endif()
+    if(GGML_USE_BLAS OR APPLE)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-blas${_GGML_LIB_SUFFIX})
+    endif()
+    if(_GGML_VULKAN_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-vulkan${_GGML_LIB_SUFFIX})
+    endif()
+    if(_GGML_OPENCL_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-opencl${_GGML_LIB_SUFFIX})
+    endif()
 endif()
-if(_GGML_METAL_ENABLED)
-    list(APPEND GGML_BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-metal${_GGML_LIB_SUFFIX}
-    )
-endif()
-if(GGML_USE_BLAS OR APPLE)
-    list(APPEND GGML_BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-blas${_GGML_LIB_SUFFIX}
-    )
-endif()
-if(_GGML_VULKAN_ENABLED)
-    list(APPEND GGML_BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-vulkan${_GGML_LIB_SUFFIX}
-    )
-endif()
-if(_GGML_OPENCL_ENABLED)
-    list(APPEND GGML_BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-opencl${_GGML_LIB_SUFFIX}
-    )
+
+if(APPLE AND _GGML_METAL_ENABLED)
+    set(_GGML_PATCH_COMMAND
+        ${CMAKE_COMMAND} -E env python3
+            "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py"
+            "<SOURCE_DIR>")
+else()
+    set(_GGML_PATCH_COMMAND "")
 endif()
 
 ExternalProject_Add(ext_ggml
@@ -273,6 +310,7 @@ ExternalProject_Add(ext_ggml
     URL_HASH SHA256=${GGML_SHA256}
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ggml"
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${_GGML_PATCH_COMMAND}
     CMAKE_ARGS ${GGML_CMAKE_ARGS}
     BUILD_BYPRODUCTS ${GGML_BUILD_BYPRODUCTS}
 )
@@ -287,12 +325,22 @@ add_dependencies(3rdparty_ggml ext_ggml)
 
 target_include_directories(3rdparty_ggml INTERFACE ${GGML_INCLUDE_DIRS})
 
-# Link order matters: ggml -> ggml-cpu -> ggml-base
-target_link_libraries(3rdparty_ggml INTERFACE
-    ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
-    ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}
-    ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
-)
+# In SHARED + GGML_BACKEND_DL mode, ggml-cpu is a MODULE library loaded at
+# runtime by ggml_backend_load_all_from_path().  We only link the core shared
+# libs (ggml + ggml-base).  In STATIC mode, ggml-cpu is a regular static lib
+# and must be linked explicitly.
+if(GGML_BUILD_SHARED)
+    target_link_libraries(3rdparty_ggml INTERFACE
+        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
+        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
+    )
+else()
+    target_link_libraries(3rdparty_ggml INTERFACE
+        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
+        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}
+        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
+    )
+endif()
 
 # --- GPU backend linking ---
 # In SHARED mode, GPU backends are separate .so/.dylib files loaded at runtime

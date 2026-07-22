@@ -2,7 +2,6 @@
 #include "aicore/export.h"
 #include "ggml.h"
 #include "ggml-backend.h"
-#include "ggml-cpu.h"
 #include <functional>
 #include <vector>
 #include <memory>
