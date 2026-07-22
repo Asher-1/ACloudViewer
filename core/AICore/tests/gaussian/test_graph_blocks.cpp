@@ -9,8 +9,8 @@
 // hand-computed f64 references, so a wrong op (or a ggml version that renames /
 // changes one) fails instantly with no fixtures. New graph ops get a pin here
 // BEFORE any fixture-based parity claim.
-#include <ggml.h>
 #include <ggml-backend.h>
+#include <ggml.h>
 
 #include <cmath>
 #include <cstdio>

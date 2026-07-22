@@ -167,8 +167,8 @@ Backend::Backend() : impl_(new Impl()) {
             error_ = "device '" + want + "' init failed";
             return;
         }
-        impl_->backend = ggml_backend_init_by_type(
-            GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+        impl_->backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                                   nullptr);
         device_name_ = "cpu";
         offloading_ = false;
         if (!impl_->backend) {
@@ -180,7 +180,7 @@ Backend::Backend() : impl_(new Impl()) {
 
     if (impl_->use_sched) {
         impl_->cpu_backend = ggml_backend_init_by_type(
-            GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+                GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
         if (!impl_->cpu_backend) {
             DA_WARN("aicore::depth::Backend: CPU fallback init failed; "
                     "disabling sched");
@@ -216,7 +216,8 @@ void Backend::drop_transient_allocators() {
 
 void Backend::set_n_threads(int n) {
     n_threads_ = n > 0 ? n : 1;
-    if (impl_ && impl_->backend && ggml_common::is_cpu_backend(impl_->backend)) {
+    if (impl_ && impl_->backend &&
+        ggml_common::is_cpu_backend(impl_->backend)) {
         ggml_common::set_cpu_threads(impl_->backend, n_threads_);
     }
     if (impl_ && impl_->cpu_backend) {
