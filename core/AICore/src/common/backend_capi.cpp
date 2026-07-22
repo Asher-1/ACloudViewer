@@ -7,9 +7,9 @@
 
 #include "aicore/backend_capi.h"
 
-#include "ggml_common/ggml_backend_utils.hpp"
-
 #include <cstring>
+
+#include "ggml_common/ggml_backend_utils.hpp"
 
 #if (defined(GGML_USE_CUDA) || defined(GGML_CUDA)) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
@@ -19,18 +19,18 @@ namespace {
 
 #if defined(__APPLE__)
 static const aicore_device_info kDevices[] = {
-    {"auto",  "Auto (Metal \xe2\x86\x92 CUDA \xe2\x86\x92 CPU)", 0},
-    {"metal", "GPU (Metal)",                                      1},
-    {"cuda",  "GPU (CUDA)",                                       0},
-    {"cpu",   "CPU",                                              0},
+        {"auto", "Auto (Metal \xe2\x86\x92 CUDA \xe2\x86\x92 CPU)", 0},
+        {"metal", "GPU (Metal)", 1},
+        {"cuda", "GPU (CUDA)", 0},
+        {"cpu", "CPU", 0},
 };
 static const char* kAutoOrder = "Metal \xe2\x86\x92 CUDA \xe2\x86\x92 CPU";
 #else
 static const aicore_device_info kDevices[] = {
-    {"auto",   "Auto (CUDA \xe2\x86\x92 OpenCL \xe2\x86\x92 CPU)", 0},
-    {"cuda",   "GPU (CUDA)",                                        0},
-    {"opencl", "GPU (OpenCL)",                                      0},
-    {"cpu",    "CPU",                                                0},
+        {"auto", "Auto (CUDA \xe2\x86\x92 OpenCL \xe2\x86\x92 CPU)", 0},
+        {"cuda", "GPU (CUDA)", 0},
+        {"opencl", "GPU (OpenCL)", 0},
+        {"cpu", "CPU", 0},
 };
 static const char* kAutoOrder = "CUDA \xe2\x86\x92 OpenCL \xe2\x86\x92 CPU";
 #endif

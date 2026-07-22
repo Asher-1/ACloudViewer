@@ -21,7 +21,7 @@ extern "C" {
 /* ---- device enumeration ---- */
 
 typedef struct {
-    const char* id;    /* device string passed to load/warmup: "auto" "cpu" … */
+    const char* id; /* device string passed to load/warmup: "auto" "cpu" … */
     const char* label; /* human-readable: "Auto (Metal → CUDA → CPU)" */
     int is_default;    /* 1 if this entry should be pre-selected in UI */
 } aicore_device_info;
