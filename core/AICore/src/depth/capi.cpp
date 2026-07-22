@@ -24,7 +24,7 @@
 #include "preprocess.hpp"
 #include "quantize.hpp"
 #include "reconstruct.hpp"
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
 #endif
 
@@ -823,7 +823,7 @@ int AICORE_CAPI aicore_depth_quantize_gguf(const char* in_gguf,
 int AICORE_CAPI aicore_depth_warmup_backend(const char* device) {
     (void)device;
     ggml_common::load_backends_once();
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
     cudaGetLastError();
 #endif
     return 0;

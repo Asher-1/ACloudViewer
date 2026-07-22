@@ -30,7 +30,7 @@
 #include "ply_export.hpp"
 #include "pose.h"
 
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
 #endif
 
@@ -322,7 +322,7 @@ int AICORE_CAPI aicore_gaussian_warmup_backend(const char* device) {
     // ggml/CUDA teardown crashes when the worker freed the model context.
     (void)device;
     ggml_common::load_backends_once();
-#if defined(GGML_USE_CUDA)
+#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
     cudaGetLastError();
 #endif
     return 0;

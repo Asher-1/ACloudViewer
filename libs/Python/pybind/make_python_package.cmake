@@ -80,6 +80,21 @@ foreach( qt_plugins_folder ${QT_PLUGINS_PATH_LIST} )
          DESTINATION "${PYTHON_INSTALL_LIB_DESTINATION}/")
 endforeach()
 
+# Copy ggml dynamic backend modules into the wheel's lib directory BEFORE
+# any platform-specific packaging runs. These are loaded at runtime by
+# ggml_backend_load_all() and allow GPU backends to be optional (graceful
+# fallback to CPU if drivers are missing).
+if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
+    file(GLOB _ggml_backend_modules
+        "${GGML_BACKEND_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
+    )
+    foreach(_mod ${_ggml_backend_modules})
+        get_filename_component(_mod_name "${_mod}" NAME)
+        message(STATUS "Packaging ggml backend module: ${_mod_name}")
+        configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
+    endforeach()
+endif()
+
 if (WIN32)
    SET(PACK_SCRIPTS "windows/pack_windows.ps1")
 elseif (UNIX AND NOT APPLE)

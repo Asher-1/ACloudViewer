@@ -455,9 +455,14 @@ def _setup_linux_libraries():
 
     # 5. Load project-specific core libraries
     try_load_cdll('libCVCoreLib*')
-    # libCV_DB_LIB depends on libAICore.so when AICore is enabled; preload it
-    # (and its CVCoreLib dependency) before CV_db so ctypes dlopen succeeds.
+    # When AICore is enabled with dynamic ggml backends (GGML_BUILD_SHARED),
+    # load ggml core shared libs first, then libAICore.so. The GPU backend
+    # modules (libggml-cuda.so etc.) are NOT preloaded here — ggml loads them
+    # at runtime via ggml_backend_load_all(), falling back to CPU if unavailable.
     if _build_config.get("AICore_ENABLED", False):
+        try_load_cdll('libggml-base*')
+        try_load_cdll('libggml-cpu*')
+        try_load_cdll('libggml.*')
         try_load_cdll('libAICore*')
     try_load_cdll('libCV_DB_LIB*')
     try_load_cdll('libCV_IO_LIB*')
