@@ -15,9 +15,11 @@
 #include "common.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
-#include "ggml-cpu.h"
 #include "ggml.h"
 #include "ggml_common/ggml_backend_utils.hpp"
+#if !defined(GGML_BACKEND_DL)
+#include "ggml-cpu.h"
+#endif
 
 #if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
@@ -165,22 +167,20 @@ Backend::Backend() : impl_(new Impl()) {
             error_ = "device '" + want + "' init failed";
             return;
         }
-        impl_->backend = ggml_backend_cpu_init();
+        impl_->backend = ggml_backend_init_by_type(
+            GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
         device_name_ = "cpu";
         offloading_ = false;
         if (!impl_->backend) {
-            DA_ERR("aicore::depth::Backend: ggml_backend_cpu_init failed");
+            DA_ERR("aicore::depth::Backend: CPU backend init failed");
             return;
         }
     }
     DA_LOG("ggml backend initialized: device=%s", device_name_.c_str());
 
-    // GPU path: create a CPU fallback backend so ops the device lacks a kernel
-    // for are offloaded to CPU by the scheduler instead of aborting. The
-    // CPU/single-backend path keeps using the persistent gallocr and is
-    // untouched.
     if (impl_->use_sched) {
-        impl_->cpu_backend = ggml_backend_cpu_init();
+        impl_->cpu_backend = ggml_backend_init_by_type(
+            GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
         if (!impl_->cpu_backend) {
             DA_WARN("aicore::depth::Backend: CPU fallback init failed; "
                     "disabling sched");
@@ -216,12 +216,11 @@ void Backend::drop_transient_allocators() {
 
 void Backend::set_n_threads(int n) {
     n_threads_ = n > 0 ? n : 1;
-    // Only the CPU backend(s) take a thread count; GPU backends ignore it.
-    if (impl_ && impl_->backend && ggml_backend_is_cpu(impl_->backend)) {
-        ggml_backend_cpu_set_n_threads(impl_->backend, n_threads_);
+    if (impl_ && impl_->backend && ggml_common::is_cpu_backend(impl_->backend)) {
+        ggml_common::set_cpu_threads(impl_->backend, n_threads_);
     }
     if (impl_ && impl_->cpu_backend) {
-        ggml_backend_cpu_set_n_threads(impl_->cpu_backend, n_threads_);
+        ggml_common::set_cpu_threads(impl_->cpu_backend, n_threads_);
     }
 }
 

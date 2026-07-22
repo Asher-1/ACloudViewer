@@ -11,7 +11,9 @@
 
 #include "ggml.h"
 #include "ggml-backend.h"
+#if !defined(GGML_BACKEND_DL)
 #include "ggml-cpu.h"
+#endif
 
 #include <algorithm>
 #include <cctype>
@@ -80,6 +82,15 @@ inline void load_backends_once() {
 #else
         ggml_backend_load_all();
 #endif
+        fprintf(stderr, "[ggml_common] load_backends_once: %zu devices available\n",
+                ggml_backend_dev_count());
+        for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
+            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+            fprintf(stderr, "[ggml_common]   dev[%zu]: name='%s' type=%d reg='%s'\n",
+                    i, ggml_backend_dev_name(dev),
+                    (int)ggml_backend_dev_type(dev),
+                    ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev)));
+        }
         return true;
     }();
     (void)done;

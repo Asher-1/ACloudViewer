@@ -184,10 +184,15 @@ endif()
 # Ship ggml shared libs and dynamic backend modules alongside libAICore.
 # file(GLOB) runs at configure time before ExternalProject builds, so we use a
 # POST_BUILD script that globs at build time when the dylibs exist.
-# On macOS, ggml's dynamic loader searches the executable directory
-# (_NSGetExecutablePath). For app bundles that's Contents/MacOS/, not the
-# directory containing libAICore.dylib, so we copy to both locations.
+#
+# IMPORTANT: In GGML_BACKEND_DL mode, ggml installs dynamic backend modules as
+# .so files (MODULE libraries) into the bin/ subdirectory of the install prefix,
+# even on macOS.  ggml's runtime loader (ggml-backend-reg.cpp) searches for .so
+# extensions on all UNIX platforms.  We must copy both:
+#   - .dylib from lib/  (shared libs for linking: ggml, ggml-base, ggml-cpu)
+#   - .so    from bin/  (loadable modules for runtime: ggml-metal, ggml-blas, etc.)
 if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
+    # Copy shared libraries (.dylib / .so depending on platform)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND}
             -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
@@ -195,7 +200,20 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
             -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
             -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
-        COMMENT "Copying ggml dynamic backends to libAICore directory"
+        COMMENT "Copying ggml shared libraries to libAICore directory"
+    )
+    # Copy loadable backend modules (.so on all UNIX platforms, .dll on Windows)
+    # ggml installs these to <prefix>/bin/ as MODULE libraries with .so extension.
+    get_filename_component(_ggml_install_prefix "${GGML_BACKEND_DIR}" DIRECTORY)
+    set(_GGML_MODULE_DIR "${_ggml_install_prefix}/bin")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DGGML_BACKEND_DIR="${_GGML_MODULE_DIR}"
+            -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+            -DLIB_SUFFIX=".so"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
+        COMMENT "Copying ggml dynamic backend modules (.so) to libAICore directory"
     )
 endif()
 
