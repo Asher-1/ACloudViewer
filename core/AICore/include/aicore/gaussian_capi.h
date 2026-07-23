@@ -19,32 +19,32 @@ extern "C" {
 #endif
 
 /* ABI version. */
-int AICORE_CAPI aicore_gaussian_abi_version(void);
+AICORE_CAPI int aicore_gaussian_abi_version(void);
 
 typedef struct aicore_gaussian_ctx aicore_gaussian_ctx;
 
 /* ---- options builder ---- */
 typedef struct aicore_gaussian_options aicore_gaussian_options;
-aicore_gaussian_options* AICORE_CAPI aicore_gaussian_options_new(void);
-void AICORE_CAPI aicore_gaussian_options_free(aicore_gaussian_options* opts);
+AICORE_CAPI aicore_gaussian_options* aicore_gaussian_options_new(void);
+AICORE_CAPI void aicore_gaussian_options_free(aicore_gaussian_options* opts);
 /* device: NULL or "cpu", "gpu", "cuda", "vulkan" (optionally ":N"). */
-void AICORE_CAPI aicore_gaussian_options_set_device(
+AICORE_CAPI void aicore_gaussian_options_set_device(
         aicore_gaussian_options* opts, const char* device);
 /* n_threads <= 0 picks a default (CPU only). */
-void AICORE_CAPI aicore_gaussian_options_set_threads(
+AICORE_CAPI void aicore_gaussian_options_set_threads(
         aicore_gaussian_options* opts, int n_threads);
-void AICORE_CAPI aicore_gaussian_options_set_dump_taps_dir(
+AICORE_CAPI void aicore_gaussian_options_set_dump_taps_dir(
         aicore_gaussian_options* opts, const char* dir);
 
 /* ---- lifecycle ---- */
 /* Load a GGUF model. Returns NULL on failure (see aicore_gaussian_last_error).
  */
-aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load(const char* gguf_path,
+AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load(const char* gguf_path,
                                                       int n_threads);
-aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load_opts(
+AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
         const char* gguf_path, const aicore_gaussian_options* opts);
-void AICORE_CAPI aicore_gaussian_free(aicore_gaussian_ctx* ctx);
-const char* AICORE_CAPI
+AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx);
+AICORE_CAPI const char*
 aicore_gaussian_last_error(const aicore_gaussian_ctx* ctx);
 
 /* ---- model geometry ---- */
@@ -55,7 +55,7 @@ typedef struct {
     int32_t gaussian_channels;
     int32_t sh_degree;
 } aicore_gaussian_geometry;
-int AICORE_CAPI aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
                                             aicore_gaussian_geometry* out);
 
 /* ---- inference from raw float images ---- */
@@ -63,30 +63,30 @@ int AICORE_CAPI aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
    On success *out is malloc'd: n_views * height * width * gaussian_channels
    float32. Free with aicore_gaussian_free_floats. Returns 0 on success, -1 on
    failure. */
-int AICORE_CAPI aicore_gaussian_run(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
                                     const float* images,
                                     int32_t n_views,
                                     int32_t height,
                                     int32_t width,
                                     float** out,
                                     size_t* n_out);
-void AICORE_CAPI aicore_gaussian_free_floats(float* p);
+AICORE_CAPI void aicore_gaussian_free_floats(float* p);
 
 /* ---- inference from image files ---- */
 /* Load N image files, preprocess (center-crop, resize to model resolution),
    run inference. image_paths has n_images entries. On success *out is malloc'd.
  */
-int AICORE_CAPI aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
                                           const char** image_paths,
                                           int32_t n_images,
                                           float** out,
                                           size_t* n_out);
-void AICORE_CAPI aicore_gaussian_free_bytes(unsigned char* p);
+AICORE_CAPI void aicore_gaussian_free_bytes(unsigned char* p);
 
 /* ---- pose recovery ---- */
 /* Recover each view's camera from engine output. cam2world_out: n_views*16
  * float32. */
-int AICORE_CAPI aicore_gaussian_estimate_poses(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_estimate_poses(const float* gaussians,
                                                int32_t n_views,
                                                int32_t height,
                                                int32_t width,
@@ -100,7 +100,7 @@ int AICORE_CAPI aicore_gaussian_estimate_poses(const float* gaussians,
    gaussians: n*height*width*gaussian_channels float32.
    sh_degree: SH degree of the model (0-3). opacity_threshold: prune threshold.
    Returns 0 on success, -1 on failure. */
-int AICORE_CAPI aicore_gaussian_export_ply(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_ply(const float* gaussians,
                                            int32_t n_views,
                                            int32_t height,
                                            int32_t width,
@@ -111,7 +111,7 @@ int AICORE_CAPI aicore_gaussian_export_ply(const float* gaussians,
 
 /* Export SIBR-compatible binary PLY into memory. Caller frees with
  * aicore_gaussian_free_bytes. */
-int AICORE_CAPI aicore_gaussian_export_ply_bytes(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_ply_bytes(const float* gaussians,
                                                  int32_t n_views,
                                                  int32_t height,
                                                  int32_t width,
@@ -122,7 +122,7 @@ int AICORE_CAPI aicore_gaussian_export_ply_bytes(const float* gaussians,
                                                  size_t* out_size);
 
 /* Convenience: run inference from image files and export PLY in one call. */
-int AICORE_CAPI aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
                                                    const char** image_paths,
                                                    int32_t n_images,
                                                    float opacity_threshold,
@@ -131,18 +131,18 @@ int AICORE_CAPI aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
 /* Initialize ggml backends on the calling thread (CUDA-safe when invoked from
  * the UI thread before worker inference). Returns 0 on success, -1 on failure.
  */
-int AICORE_CAPI aicore_gaussian_warmup_backend(const char* device);
+AICORE_CAPI int aicore_gaussian_warmup_backend(const char* device);
 
 /* ---- model cache directory ---- */
 /* Default cross-platform GGUF model cache directory (UTF-8). Free with
  * aicore_gaussian_free_string. */
-char* AICORE_CAPI aicore_gaussian_model_cache_dir(void);
-void AICORE_CAPI aicore_gaussian_free_string(char* s);
+AICORE_CAPI char* aicore_gaussian_model_cache_dir(void);
+AICORE_CAPI void aicore_gaussian_free_string(char* s);
 
 /* ---- model info ---- */
 /* malloc'd JSON describing model config; free via aicore_gaussian_free_string.
  */
-char* AICORE_CAPI aicore_gaussian_info_json(aicore_gaussian_ctx* ctx);
+AICORE_CAPI char* aicore_gaussian_info_json(aicore_gaussian_ctx* ctx);
 
 /* ---- CLI helpers (accumulate / parallax / splat export pipeline) ---- */
 typedef struct {
@@ -165,7 +165,26 @@ typedef struct {
 
 typedef struct aicore_gaussian_accumulator aicore_gaussian_accumulator;
 
-int AICORE_CAPI aicore_gaussian_pair_parallax(const float* gaussians,
+/* Export activated model output to an antimatter15 .splat file. `count` is
+ * the number of gaussian records, not the number of floats. max_splats=0 keeps
+ * all records that pass opacity_threshold. */
+AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
+                                             size_t count,
+                                             int32_t gaussian_channels,
+                                             float opacity_threshold,
+                                             size_t max_splats,
+                                             const char* output_path);
+
+/* Export an accumulated/fused cloud to .splat. scale_multiplier=1 preserves
+ * the predicted anisotropic radii; max_splats=0 keeps all points. */
+AICORE_CAPI int aicore_gaussian_export_cloud_splat(
+        const aicore_gaussian_point* cloud,
+        size_t count,
+        size_t max_splats,
+        float scale_multiplier,
+        const char* output_path);
+
+AICORE_CAPI int aicore_gaussian_pair_parallax(const float* gaussians,
                                               int32_t n_views,
                                               int32_t height,
                                               int32_t width,
@@ -173,24 +192,24 @@ int AICORE_CAPI aicore_gaussian_pair_parallax(const float* gaussians,
                                               float opacity_threshold,
                                               aicore_gaussian_parallax* out);
 
-aicore_gaussian_accumulator* AICORE_CAPI
+AICORE_CAPI aicore_gaussian_accumulator*
 aicore_gaussian_accumulator_new(int height, int width, float opacity_threshold);
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_free(aicore_gaussian_accumulator* acc);
-void AICORE_CAPI aicore_gaussian_accumulator_add_pair(
+AICORE_CAPI void aicore_gaussian_accumulator_add_pair(
         aicore_gaussian_accumulator* acc, const float* gaussians, int gc);
-int AICORE_CAPI
+AICORE_CAPI int
 aicore_gaussian_accumulator_frame_count(aicore_gaussian_accumulator* acc);
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
                                   aicore_gaussian_point** out,
                                   size_t* n_out);
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_refine(aicore_gaussian_accumulator* acc,
                                    float voxel_frac,
                                    int iters,
                                    float alpha);
-int AICORE_CAPI
+AICORE_CAPI int
 aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
                                  float voxel_frac,
                                  int fuse_k,
@@ -198,7 +217,7 @@ aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
                                  aicore_gaussian_point** out,
                                  size_t* n_out);
 
-int AICORE_CAPI aicore_gaussian_tree_overlap(const float** pairs,
+AICORE_CAPI int aicore_gaussian_tree_overlap(const float** pairs,
                                              int n_pairs,
                                              int gc,
                                              int height,
@@ -213,7 +232,7 @@ int AICORE_CAPI aicore_gaussian_tree_overlap(const float** pairs,
                                              size_t* n_out,
                                              int* n_nodes_out);
 
-int AICORE_CAPI aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
+AICORE_CAPI int aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
                                            size_t n,
                                            float voxel_frac,
                                            int fuse_k,
@@ -221,7 +240,7 @@ int AICORE_CAPI aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
                                            aicore_gaussian_point** out,
                                            size_t* n_out);
 
-double AICORE_CAPI aicore_gaussian_refine_cloud(aicore_gaussian_point* cloud,
+AICORE_CAPI double aicore_gaussian_refine_cloud(aicore_gaussian_point* cloud,
                                                 size_t n,
                                                 float voxel_frac,
                                                 int iters,

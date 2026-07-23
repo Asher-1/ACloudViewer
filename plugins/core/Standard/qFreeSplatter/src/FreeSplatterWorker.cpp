@@ -9,6 +9,8 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
@@ -121,9 +123,17 @@ bool FreeSplatterWorker::runReconstruct() {
 
     const int n = m_settings.inputPaths.size();
     emit progressUpdate(25, 100);
-    const QString devLabel = m_settings.device.isEmpty()
-                                     ? QStringLiteral("auto")
-                                     : m_settings.device;
+    QString devLabel = m_settings.device.isEmpty()
+                               ? QStringLiteral("auto")
+                               : m_settings.device;
+    if (char* info = aicore_gaussian_info_json(ctx)) {
+        const QJsonObject modelInfo =
+                QJsonDocument::fromJson(QByteArray(info)).object();
+        const QString resolvedDevice =
+                modelInfo.value(QStringLiteral("device")).toString();
+        if (!resolvedDevice.isEmpty()) devLabel = resolvedDevice;
+        aicore_gaussian_free_string(info);
+    }
     emit logMessage(
             QString("[FS] [3/4] Running inference on %1 image(s) [%2]...")
                     .arg(n)

@@ -12,9 +12,9 @@
  * Each inference capability is a self-contained unit:
  *
  *   include/aicore/<cap>_capi.h   Stable extern-C surface: aicore_<cap>_*
- *   include/aicore/<cap>_*.h      Optional helpers (Qt, GGUF keys, …)
+ *   include/aicore/<cap>_*.h      Optional public helpers (for example Qt)
  *   src/<cap>/                    C++ engine in namespace aicore::<cap>
- *   tests/<cap>/                  White-box tests (AICore_BUILD_TESTS)
+ *   tests/<cap>/                  ABI tests; optional private white-box tests
  *
  * Naming rules (all modules follow the same pattern):
  *   C API:     aicore_<cap>_<verb>   e.g. aicore_depth_load,
@@ -35,3 +35,4 @@
 #include "aicore/depth_image.h"
 #include "aicore/export.h"
 #include "aicore/gaussian_capi.h"
+#include "aicore/lightglue_capi.h"

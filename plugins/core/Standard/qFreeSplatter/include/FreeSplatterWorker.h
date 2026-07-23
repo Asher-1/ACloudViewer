@@ -41,7 +41,7 @@ public:
         QString modelPath;
         QStringList inputPaths;
         int threads = 0;
-        QString device = "auto";  // auto | cpu | cuda | vulkan | opencl
+        QString device = "auto";  // auto | cpu | sycl | vulkan | cuda | metal
         float opacityThreshold = 0.05f;
         bool estimatePoses = false;
     };

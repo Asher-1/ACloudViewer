@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // AUTO-GENERATED from plugins/core/Standard/qDA3/scripts/gguf_keys.py
-// Canonical GGUF KV strings for the depth module. Do not edit by hand.
+// Private canonical GGUF KV strings for the depth module. Do not edit by hand.
 #pragma once
 
 #define AICORE_DEPTH_KV_ARCH "depthanything3.arch"

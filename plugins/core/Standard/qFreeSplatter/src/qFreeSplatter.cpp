@@ -38,6 +38,7 @@
 #include <QSet>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QTimer>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -643,6 +644,16 @@ qFreeSplatter::qFreeSplatter(QObject* parent)
     m_action->setIcon(
             QIcon(":/CC/plugin/qFreeSplatter/images/qFreeSplatter.svg"));
     connect(m_action, &QAction::triggered, this, &qFreeSplatter::showDialog);
+
+    m_inferenceHeartbeat = new QTimer(this);
+    m_inferenceHeartbeat->setInterval(10000);
+    connect(m_inferenceHeartbeat, &QTimer::timeout, this, [this]() {
+        if (!m_worker || !m_worker->isRunning() || !m_dialog) return;
+        m_inferenceElapsedSeconds += 10;
+        m_dialog->appendLog(
+                tr("[FS] Task is running (%1 s elapsed)...")
+                        .arg(m_inferenceElapsedSeconds));
+    });
 }
 
 void qFreeSplatter::onNewSelection(
@@ -975,6 +986,8 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
 
     m_dialog->setRunning(true);
     m_dialog->appendLog("[FS] Starting task...");
+    m_inferenceElapsedSeconds = 0;
+    m_inferenceHeartbeat->start();
     m_worker->start();
 }
 
@@ -1281,6 +1294,7 @@ void qFreeSplatter::onModelInfo(const QString& info) {
 }
 
 void qFreeSplatter::onTaskFinished(bool success) {
+    if (m_inferenceHeartbeat) m_inferenceHeartbeat->stop();
     if (success) {
         m_dialog->appendLog("[FS] Task finished.");
         m_dialog->setProgress(100, 100);

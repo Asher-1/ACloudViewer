@@ -7,13 +7,26 @@
 
 #include <cstring>
 
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "common/test_macros.hpp"
 
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_depth_abi_version() >= 4);
+    AICORE_CHECK(aicore_backend_abi_version() == 1);
+    AICORE_CHECK(aicore_device_count() >= 2);
+    AICORE_CHECK(aicore_device_at(0) != nullptr);
+    AICORE_CHECK(std::strcmp(aicore_device_at(0)->id, "auto") == 0);
+    AICORE_CHECK(aicore_device_available("cpu") == 1);
+    AICORE_CHECK(aicore_device_available("blas") == 0);
+    AICORE_CHECK(std::strstr(aicore_auto_device_order(), "blas") == nullptr);
+    AICORE_CHECK(aicore_warmup_backend("cpu") == 0);
+    AICORE_CHECK(aicore_warmup_backend("blas") != 0);
+    AICORE_CHECK(aicore_warmup_backend("not-a-backend") != 0);
+    AICORE_CHECK(aicore_backend_last_error()[0] != '\0');
+
+    AICORE_CHECK(aicore_depth_abi_version() >= 5);
 
     aicore_depth_free(nullptr);
     aicore_depth_free_string(nullptr);

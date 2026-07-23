@@ -60,6 +60,9 @@ jobs:
           echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
       - name: Checkout source code
         uses: actions/checkout@v4
+      - name: Set up Vulkan SDK
+        shell: bash
+        run: util/install_vulkan_sdk_macos.sh
       - name: Setup cache
         uses: actions/cache@v4
         with:
@@ -279,6 +282,10 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up Vulkan SDK
+        shell: bash
+        run: util/install_vulkan_sdk_macos.sh
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4

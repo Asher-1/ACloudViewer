@@ -2,7 +2,7 @@
 
 ![Plugin icon](images/qFreeSplatter.svg)
 
-Turn ordinary photos into **3D Gaussian splatting** point clouds — no camera poses and no Python runtime. Inference on CPU / CUDA / OpenCL (Linux/Windows) or Metal / CUDA (macOS).
+Turn ordinary photos into **3D Gaussian splatting** point clouds — no camera poses and no Python runtime. Distribution builds use Vulkan/CPU on Linux/Windows and Metal/CPU on macOS.
 
 > **Build index:** see [plugins/README.md](../../README.md) (shares `libAICore.so` with qDA3).
 
@@ -39,7 +39,7 @@ sequenceDiagram
 
     U->>D: Choose Scene/Object model
     U->>D: Add images (files/folder/DB)
-    U->>D: Device Auto / Metal|CUDA|OpenCL / CPU
+    U->>D: Device Auto / Metal|SYCL|Vulkan / CPU
     U->>D: Run
     D->>W: Settings
     W->>A: aicore_gaussian_* inference
@@ -53,7 +53,7 @@ sequenceDiagram
 | 1 | Choose **Model** | Scene (2 views) or Object (3+ views) |
 | 2 | Select **GGUF model** | Six built-in variants; auto-download from GitHub Release on first use |
 | 3 | **Add Images** | Files, folder, or DB tree selection |
-| 4 | **Device** | `Auto` / `metal` (macOS) / `cuda` / `opencl` / `cpu` (Auto order below) |
+| 4 | **Device** | `Auto` / `metal` / `sycl` / `vulkan` / `cuda` / `cpu` (available entries only) |
 | 5 | **Run** | Center-crop and resize to 512×512, then infer |
 | 6 | **Export PLY** | Write PLY to disk; optional **Add to DB** |
 | 6b | **Visualize (SIBR)** | Shown only when `PLUGIN_STANDARD_QSIBR=ON`; launches qSIBR |
@@ -64,18 +64,19 @@ sequenceDiagram
 |--------|----------|
 | **Auto** | First compiled GPU backend by platform priority; CPU fallback |
 | **GPU (Metal)** | Force Metal (macOS only) |
-| **GPU (CUDA)** | Force ggml CUDA (`BUILD_CUDA_MODULE=ON`) |
-| **GPU (OpenCL)** | Force OpenCL (Linux/Windows) |
-| **CPU** | Force CPU |
+| **GPU (SYCL)** | Force Intel GPU SYCL |
+| **GPU (Vulkan)** | Force cross-vendor Vulkan |
+| **GPU (CUDA)** | Developer opt-in (`GGML_USE_CUDA=ON`) |
+| **CPU** | Force the pure ggml CPU backend |
 
 **Auto priority (runtime):**
 
 | Platform | Order |
 |----------|-------|
-| **macOS** | Metal → CUDA → CPU (OpenCL not built; Vulkan off by default) |
-| **Linux / Windows** | CUDA → OpenCL → CPU (Vulkan off by default) |
+| **macOS** | Metal → CPU |
+| **Linux / Windows** | Vulkan → CPU |
 
-`aicore_gaussian_warmup_backend` runs on the UI thread before **Run**; GPU failure falls back to CPU (same as qDA3). CLI: `--device` or `aicore_gaussian_options_set_device()` (`auto` / `cpu` / `cuda` / `opencl` / `metal`).
+`aicore_gaussian_warmup_backend` runs on the UI thread before **Run**; an unavailable release GPU backend falls through to CPU in Auto mode. SYCL/CUDA are explicit developer selections.
 
 ### Input constraints
 
@@ -130,9 +131,10 @@ cmake --build build_app --target QFREESPLATTER_PLUGIN -j$(nproc)
 | `AICore_ENABLED` | Build `libAICore.so` (FreeSplatter + ggml) |
 | `PLUGIN_STANDARD_QFREESPLATTER` | This plugin |
 | `PLUGIN_STANDARD_QSIBR` | Optional; enables **Visualize (SIBR)** (runtime call, no static link) |
-| `BUILD_CUDA_MODULE` | ggml CUDA backend (Linux/Windows NVIDIA) |
-| `GGML_USE_OPENCL` | ON by default on Linux/Win when OpenCL 3.0 is detected; OFF on macOS |
-| `GGML_USE_VULKAN` | OFF on all platforms; opt-in with `-DGGML_USE_VULKAN=ON` |
+| `GGML_USE_CUDA` | OFF; developer NVIDIA backend |
+| `GGML_USE_OPENCL` | OFF; legacy/Adreno developer backend |
+| `GGML_USE_VULKAN` | ON on Linux/Windows when build tools are available |
+| `GGML_USE_SYCL` | OFF; Intel GPU with validated oneAPI runtime |
 | `GGML_USE_METAL` | ON by default on Apple (primary GPU path on macOS) |
 
 ---
@@ -206,7 +208,6 @@ Limit blocks with `FREE_SPLATTER_MAX_BLOCKS` to shorten `test_parity`.
 | Device | 2 views 512×512 F16 |
 |--------|---------------------|
 | GPU CUDA | ~0.1 s (GPU dependent) |
-| GPU OpenCL | ~0.2 s |
 | GPU Metal (macOS) | ~0.2 s |
 | CPU 12 threads | ~14 s |
 

@@ -2,6 +2,7 @@
 # Capability modules (not plugin names):
 #   src/depth/    — multi-view monocular depth (DA3-family GGUF)
 #   src/gaussian/ — image-to-3D Gaussian splatting (FreeSplatter-family GGUF)
+#   src/lightglue/ — sparse feature matching (LightGlue GGUF)
 #   src/common/   — shared utilities (data paths, ggml helpers)
 #
 # Build:   libAICore.so
@@ -13,7 +14,7 @@ if(NOT DEFINED AICore_ENABLED)
 endif()
 
 if(NOT DEFINED AICore_BUILD_TESTS)
-    option(AICore_BUILD_TESTS "Build AICore unit tests (white-box; links AICore_test static lib)" OFF)
+    option(AICore_BUILD_TESTS "Build AICore public ABI/runtime contract tests" OFF)
 endif()
 
 if(NOT AICore_ENABLED)
@@ -28,7 +29,7 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth estimation + 3D Gaussians"
+    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue"
     LANGUAGES CXX
 )
 
@@ -36,6 +37,7 @@ set(AICORE_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(AICORE_COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
 set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/depth)
 set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/gaussian)
+set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/lightglue)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -49,18 +51,27 @@ if(NOT EXISTS ${AICORE_GAUSSIAN_SRC_DIR}/model.cpp)
     return()
 endif()
 
+if(NOT EXISTS ${AICORE_LIGHTGLUE_SRC_DIR}/matcher.cpp)
+    message(WARNING "AICore: lightglue module not found at ${AICORE_LIGHTGLUE_SRC_DIR}")
+    set(AICore_ENABLED OFF CACHE BOOL "" FORCE)
+    return()
+endif()
+
 file(GLOB AICORE_COMMON_SOURCES ${AICORE_COMMON_SRC_DIR}/*.cpp)
 file(GLOB AICORE_COMMON_HEADERS ${AICORE_COMMON_SRC_DIR}/*.hpp)
 file(GLOB DEPTH_SOURCES ${AICORE_DEPTH_SRC_DIR}/*.cpp)
 file(GLOB DEPTH_HEADERS ${AICORE_DEPTH_SRC_DIR}/*.hpp)
 file(GLOB GAUSSIAN_SOURCES ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
 file(GLOB GAUSSIAN_HEADERS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
+file(GLOB LIGHTGLUE_SOURCES ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
+file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
     ${GAUSSIAN_SOURCES} ${GAUSSIAN_HEADERS}
+    ${LIGHTGLUE_SOURCES} ${LIGHTGLUE_HEADERS}
     ${AICORE_API_HEADERS}
 )
 
@@ -73,33 +84,41 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     VISIBILITY_INLINES_HIDDEN ON
 )
 
-if(WIN32)
-    set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+# AICore and its private ggml runtime files are always deployed together. Use
+# only a loader-relative runtime path so build-machine directories cannot leak
+# into installers or wheels.
+if(APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        BUILD_WITH_INSTALL_RPATH ON
+        INSTALL_RPATH "@loader_path")
+elseif(UNIX)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        BUILD_WITH_INSTALL_RPATH ON
+        INSTALL_RPATH "$ORIGIN")
+endif()
+
+if(UNIX AND NOT APPLE)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/aicore.exports.map")
+    set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
+        LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/aicore.exports.map)
 endif()
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${AICORE_INC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
         $<INSTALL_INTERFACE:include/AICore>
+    PRIVATE
+        ${AICORE_COMMON_SRC_DIR}
+        ${AICORE_DEPTH_SRC_DIR}
+        ${AICORE_GAUSSIAN_SRC_DIR}
+        ${AICORE_LIGHTGLUE_SRC_DIR}
 )
-
-if(NOT MSVC)
-    set_source_files_properties(
-        ${AICORE_COMMON_SRC_DIR}/backend_capi.cpp
-        ${AICORE_DEPTH_SRC_DIR}/capi.cpp
-        ${AICORE_DEPTH_SRC_DIR}/image_depth.cpp
-        ${AICORE_GAUSSIAN_SRC_DIR}/capi.cpp
-        PROPERTIES COMPILE_OPTIONS "-fvisibility=default"
-    )
-endif()
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)
 if(DEFINED GGML_INCLUDE_DIRS)
-    target_include_directories(${PROJECT_NAME} PUBLIC ${GGML_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PRIVATE ${GGML_INCLUDE_DIRS})
 endif()
 
 # Dynamic backend mode: GPU backends are separate .so files loaded at runtime
@@ -172,7 +191,7 @@ endif()
 
 set(AICore_FOUND TRUE CACHE BOOL "AICore module found" FORCE)
 set(AICore_INCLUDE_DIRS
-    "${AICORE_INC_DIR};${AICORE_DEPTH_SRC_DIR};${AICORE_GAUSSIAN_SRC_DIR}"
+    "${AICORE_INC_DIR}"
     CACHE PATH "AICore include dirs" FORCE)
 set(AICore_LIBRARIES AICore CACHE STRING "AICore library target" FORCE)
 
@@ -180,6 +199,9 @@ if(NOT APPLE)
     cloudViewer_install_targets(${PROJECT_NAME})
     InstallSharedLibrary(TARGET ${PROJECT_NAME})
 endif()
+install(DIRECTORY ${AICORE_INC_DIR}/aicore
+        DESTINATION include/AICore
+        FILES_MATCHING PATTERN "*.h")
 
 # Ship ggml shared libs and dynamic backend modules alongside libAICore.
 # file(GLOB) runs at configure time before ExternalProject builds, so we use a
@@ -189,13 +211,15 @@ endif()
 # .so files (MODULE libraries) into the bin/ subdirectory of the install prefix,
 # even on macOS.  ggml's runtime loader (ggml-backend-reg.cpp) searches for .so
 # extensions on all UNIX platforms.  We must copy both:
-#   - .dylib from lib/  (shared libs for linking: ggml, ggml-base, ggml-cpu)
-#   - .so    from bin/  (loadable modules for runtime: ggml-metal, ggml-blas, etc.)
-if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
+#   - .dylib from lib/  (shared core: ggml, ggml-base)
+#   - .so    from bin/  (loadable modules for runtime: ggml-metal, ggml-vulkan, etc.)
+if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
+    string(REPLACE ";" "|" _aicore_backend_files_pipe
+        "${GGML_BACKEND_MODULE_FILES}")
     # Copy shared libraries (.dylib / .so depending on platform)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+            -DGGML_BACKEND_DIR="${GGML_RUNTIME_LIB_DIR}"
             -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
             -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
@@ -204,65 +228,112 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
     )
     # Copy loadable backend modules (.so on all UNIX platforms, .dll on Windows)
     # ggml installs these to <prefix>/bin/ as MODULE libraries with .so extension.
-    get_filename_component(_ggml_install_prefix "${GGML_BACKEND_DIR}" DIRECTORY)
-    set(_GGML_MODULE_DIR "${_ggml_install_prefix}/bin")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-            -DGGML_BACKEND_DIR="${_GGML_MODULE_DIR}"
+            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
             -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
-            -DLIB_SUFFIX=".so"
+            -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
+            -DREQUIRED_FILE="${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}"
+            -DREQUESTED_FILES_PIPE="${_aicore_backend_files_pipe}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
-        COMMENT "Copying ggml dynamic backend modules (.so) to libAICore directory"
+        COMMENT "Copying ggml dynamic backend modules to libAICore directory"
     )
+
+    # `cmake --install` only ships libAICore.so by default; backend MODULE libs
+    # (libggml-cpu.so, libggml-cuda.so, …) must be installed alongside it or
+    # ggml_backend_load_all_from_path() finds dev_count=0 at runtime.
+    if(POLICY CMP0087)
+        cmake_policy(SET CMP0087 NEW)
+    endif()
+    if(WIN32)
+        set(_aicore_ggml_install_subdir "${ACloudViewer_DEST_FOLDER}")
+    else()
+        set(_aicore_ggml_install_subdir "${CloudViewer_INSTALL_LIB_DIR}")
+    endif()
+    install(CODE "
+        set(_ggml_src_dir \"$<TARGET_FILE_DIR:AICore>\")
+        file(GLOB _ggml_libs
+            \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml${CMAKE_SHARED_LIBRARY_SUFFIX}*\"
+            \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-base${CMAKE_SHARED_LIBRARY_SUFFIX}*\")
+        set(_ggml_backend_files \"${GGML_BACKEND_MODULE_FILES}\")
+        foreach(_name IN LISTS _ggml_backend_files)
+            if(NOT EXISTS \"\${_ggml_src_dir}/\${_name}\")
+                message(FATAL_ERROR
+                    \"InstallGgmlBackends: configured backend missing: \${_name}\")
+            endif()
+            list(APPEND _ggml_libs \"\${_ggml_src_dir}/\${_name}\")
+        endforeach()
+        if(NOT _ggml_libs)
+            message(FATAL_ERROR \"InstallGgmlBackends: no ggml libs in \${_ggml_src_dir}\")
+        endif()
+        if(NOT EXISTS \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}\")
+            message(FATAL_ERROR
+                \"InstallGgmlBackends: required CPU backend missing in \${_ggml_src_dir}\")
+        endif()
+        foreach(_lib \${_ggml_libs})
+            file(INSTALL \"\${_lib}\"
+                DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_aicore_ggml_install_subdir}\"
+                TYPE FILE FOLLOW_SYMLINK_CHAIN)
+            message(STATUS \"InstallGgmlBackends: \${_lib}\")
+        endforeach()
+    ")
 endif()
 
 if(AICore_BUILD_TESTS)
-    set(AICORE_TEST_SOURCES
-        ${AICORE_COMMON_SOURCES}
-        ${DEPTH_SOURCES}
-        ${GAUSSIAN_SOURCES}
-    )
-    list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX ".*/(capi|image_depth)\\.cpp$")
+    if(AICore_BUILD_WHITEBOX_TESTS)
+        set(AICORE_TEST_SOURCES
+            ${AICORE_COMMON_SOURCES}
+            ${DEPTH_SOURCES}
+            ${GAUSSIAN_SOURCES}
+            ${LIGHTGLUE_SOURCES}
+        )
+        list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
+             ".*/(capi|image_depth)\\.cpp$")
 
-    add_library(AICore_test STATIC
-        ${AICORE_TEST_SOURCES}
-        ${AICORE_COMMON_HEADERS} ${DEPTH_HEADERS} ${GAUSSIAN_HEADERS}
-    )
-    set_target_properties(AICore_test PROPERTIES
-        POSITION_INDEPENDENT_CODE ON
-        FOLDER "core/tests"
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED ON
-    )
-    target_include_directories(AICore_test PUBLIC
-        $<BUILD_INTERFACE:${AICORE_INC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
-        $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
-    )
-    add_dependencies(AICore_test 3rdparty_ggml)
-    target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
-    if(DEFINED GGML_INCLUDE_DIRS)
-        target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
-    endif()
-    if(TARGET Qt::Core AND TARGET Qt::Gui)
-        target_link_libraries(AICore_test PUBLIC Qt::Core Qt::Gui)
-    elseif(Qt5_FOUND)
-        target_link_libraries(AICore_test PUBLIC Qt5::Core Qt5::Gui)
-    endif()
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
-    endif()
-    target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
-    if(MSVC)
-        target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
+        add_library(AICore_test STATIC
+            ${AICORE_TEST_SOURCES}
+            ${AICORE_COMMON_HEADERS} ${DEPTH_HEADERS} ${GAUSSIAN_HEADERS}
+            ${LIGHTGLUE_HEADERS}
+        )
+        set_target_properties(AICore_test PROPERTIES
+            POSITION_INDEPENDENT_CODE ON
+            FOLDER "core/tests"
+            CXX_STANDARD 17
+            CXX_STANDARD_REQUIRED ON
+        )
+        target_include_directories(AICore_test PUBLIC
+            $<BUILD_INTERFACE:${AICORE_INC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
+        )
+        add_dependencies(AICore_test 3rdparty_ggml)
+        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
+        if(DEFINED GGML_INCLUDE_DIRS)
+            target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
+        endif()
+        if(TARGET Qt::Core AND TARGET Qt::Gui)
+            target_link_libraries(AICore_test PUBLIC Qt::Core Qt::Gui)
+        elseif(Qt5_FOUND)
+            target_link_libraries(AICore_test PUBLIC Qt5::Core Qt5::Gui)
+        endif()
+        find_package(OpenMP)
+        if(OpenMP_CXX_FOUND)
+            target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
+        endif()
+        target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
+        if(GGML_DYNAMIC_BACKENDS)
+            target_compile_definitions(AICore_test PRIVATE GGML_BACKEND_DL)
+        endif()
+        if(MSVC)
+            target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
+        endif()
     endif()
 
-    enable_testing()
     add_subdirectory(tests)
-    message(STATUS "AICore: unit tests enabled (AICore_test + tests/)")
+    message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): depth + gaussian modules, ggml linked once")
+message(STATUS "AICore (SHARED): depth + gaussian + lightglue modules, ggml linked once")

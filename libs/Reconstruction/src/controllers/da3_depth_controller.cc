@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -658,13 +659,18 @@ bool WriteStereoMapsFromMultiview(
 
 #ifdef AICore_ENABLED
 aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
+    const char* requested_device = std::getenv("DA_DEVICE");
+    if (!requested_device || requested_device[0] == '\0') {
+        requested_device = "auto";
+    }
     if (config.model_type != DA3ModelType::NESTED_METRIC &&
         config.model_type != DA3ModelType::NESTED_ANYVIEW) {
         const std::string model_path = DA3DepthController::ResolveModelPath(config);
         if (model_path.empty()) {
             return nullptr;
         }
-        return aicore_depth_load(model_path.c_str(), n_threads);
+        return aicore_depth_load_device(model_path.c_str(), n_threads,
+                                        requested_device);
     }
 
     std::string anyview_path;
@@ -692,7 +698,9 @@ aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
     if (anyview_path.empty() || metric_path.empty()) {
         return nullptr;
     }
-    return aicore_depth_load_nested(anyview_path.c_str(), metric_path.c_str(), n_threads);
+    return aicore_depth_load_nested_device(anyview_path.c_str(),
+                                           metric_path.c_str(), n_threads,
+                                           requested_device);
 }
 
 float BilinearSampleDepth(const float* depth, int w, int h, float x, float y) {

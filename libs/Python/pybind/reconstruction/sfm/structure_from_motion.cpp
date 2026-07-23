@@ -7,8 +7,11 @@
 
 #include "pybind/reconstruction/sfm/structure_from_motion.h"
 
+#include <stdexcept>
+#include <string>
+
 #ifdef AICore_ENABLED
-#include "aicore/depth_image.h"
+#include "aicore/backend_capi.h"
 #endif
 
 #include "pipelines/sfm.h"
@@ -23,9 +26,46 @@ namespace {
 
 bool IsAICoreAvailable() {
 #ifdef AICore_ENABLED
-    return aicore::depth::ImageDepth::isAvailable();
+    return aicore_device_available("cpu") != 0;
 #else
     return false;
+#endif
+}
+
+py::list AICoreDevices() {
+    py::list result;
+#ifdef AICore_ENABLED
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* device = aicore_device_at(i);
+        if (!device) continue;
+        py::dict item;
+        item["id"] = device->id;
+        item["label"] = device->label;
+        item["is_default"] = device->is_default != 0;
+        item["is_gpu"] = aicore_is_gpu_device(device->id) != 0;
+        result.append(std::move(item));
+    }
+#endif
+    return result;
+}
+
+std::string AICoreAutoDeviceOrder() {
+#ifdef AICore_ENABLED
+    return aicore_auto_device_order();
+#else
+    return "unavailable";
+#endif
+}
+
+void WarmupAICoreBackend(const std::string& device) {
+#ifdef AICore_ENABLED
+    if (aicore_warmup_backend(device.c_str()) == 0) return;
+    const char* error = aicore_backend_last_error();
+    throw std::runtime_error(error && error[0] ? error
+                                               : "AICore backend unavailable");
+#else
+    (void)device;
+    throw std::runtime_error("AICore was disabled at build time");
 #endif
 }
 
@@ -133,8 +173,13 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_sfm_methods(py::module &m) {
     m.def("is_aicore_available", &IsAICoreAvailable,
-          "Returns True when libAICore is linked (``AICore_ENABLED`` at "
-          "build time).");
+          "Returns True when AICore's required CPU backend is available.");
+    m.def("aicore_devices", &AICoreDevices,
+          "Returns AICore devices discovered from the runtime backend registry.");
+    m.def("aicore_auto_device_order", &AICoreAutoDeviceOrder,
+          "Returns the active AICore automatic backend preference order.");
+    m.def("warmup_aicore_backend", &WarmupAICoreBackend, "device"_a = "auto",
+          "Validates an AICore backend or raises RuntimeError.");
 
     m.def("auto_reconstruction", &AutomaticReconstruct,
           py::call_guard<py::gil_scoped_release>(),

@@ -49,7 +49,7 @@ public:
         QStringList inputPaths;
         QString outputDir;
         int threads = 0;
-        QString device = "auto";  // auto | cpu | cuda | vulkan | opencl
+        QString device = "auto";  // auto | cpu | sycl | vulkan | cuda | metal
         bool invertDepth = true;
         bool unproject3D = true;
         int downsampleStep = 1;

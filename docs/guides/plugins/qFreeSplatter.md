@@ -39,7 +39,7 @@ cmake --build build_app --target QFREESPLATTER_PLUGIN ACloudViewer -j$(nproc)
 | 1 | Choose **Model** type: Scene (2 views) or Object (3+ views) |
 | 2 | Select **GGUF model** (F16/F32/Q8_0; auto-download on first run) |
 | 3 | **Add Images:** files, folder, or multi-select from DB tree |
-| 4 | **Device:** `Auto` / Metal (macOS) / CUDA / OpenCL / CPU |
+| 4 | **Device:** `Auto` / Metal / SYCL / Vulkan / CPU |
 | 5 | **Run** → export PLY, optionally **Add to DB** |
 | 6 | **Visualize** (requires `PLUGIN_STANDARD_QSIBR=ON`) → launch qSIBR Gaussian Viewer |
 
@@ -54,7 +54,7 @@ Optional: **Estimate poses** (PnP), **Opacity threshold**, Basic/Full PLY fields
 
 ### Inference device (Auto)
 
-Same as qDA3: macOS **Metal → CUDA → CPU**; Linux/Windows **CUDA → OpenCL → CPU**. Vulkan is disabled in this build.
+Same as qDA3: Auto uses macOS **Metal → CPU** or Linux/Windows **Vulkan → CPU**. SYCL and CUDA remain explicit developer devices when built.
 
 ### Models and cache
 

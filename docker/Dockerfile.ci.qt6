@@ -179,7 +179,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libwayland-dev \
         libwayland-egl1 \
         libxkbcommon-dev \
-        libvulkan-dev \
         libinput-dev \
         libmtdev-dev \
         libts-dev \
@@ -511,4 +510,3 @@ RUN echo "Start Build ACloudViewer apps installer..."                           
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker ci build done with Qt6, VTK 9.4.2, and PCL 1.15.1."
-

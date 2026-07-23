@@ -47,10 +47,11 @@ if (USE_SIMD)
     target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
 endif ()
 if(AICore_ENABLED AND TARGET AICore)
-    # Static CUDA archives + libAICore.so on the same link line embed ~400MB nv_fatbin.
+    # ecvImage uses AICore internally. Its public headers expose no AICore
+    # types, so keep the inference dependency out of CV_db consumers.
     cloudViewer_link_3rdparty_libraries(${PROJECT_NAME} EXCLUDE_CUDA_STATIC)
-    target_link_libraries(${PROJECT_NAME} PUBLIC AICore)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC AICore_ENABLED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE AICore)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AICore_ENABLED)
 else()
     cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 endif()

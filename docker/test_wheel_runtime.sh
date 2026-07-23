@@ -210,6 +210,43 @@ echo "Starting $WHEEL_TYPE wheel test..."
 test_wheel "$WHEEL_FILE"
 TEST_EXIT_CODE=$?
 
+echo "Verifying packaged AICore runtime..."
+AICORE_LIB_DIR=$(python - <<'PY'
+import pathlib
+import cloudViewer
+print(pathlib.Path(cloudViewer.__file__).resolve().parent / "lib")
+PY
+)
+test -f "$AICORE_LIB_DIR/libAICore.so"
+test -f "$AICORE_LIB_DIR/libggml-cpu.so"
+test -f "$AICORE_LIB_DIR/libggml-vulkan.so"
+test ! -e "$AICORE_LIB_DIR/libggml-blas.so"
+if readelf -d "$AICORE_LIB_DIR/libAICore.so" \
+    | grep -Eq 'NEEDED.*(libcuda|libcudart|libcublas|libvulkan)'; then
+    echo "Error: libAICore.so has a hard GPU dependency" >&2
+    exit 1
+fi
+if ! readelf -d "$AICORE_LIB_DIR/libAICore.so" \
+    | grep -Eq 'RUNPATH.*\$ORIGIN'; then
+    echo "Error: libAICore.so is not loader-relative" >&2
+    exit 1
+fi
+
+# Hosted CI uses Mesa lavapipe so the Vulkan smoke test does not depend on the
+# runner's physical GPU or container device forwarding.
+LVP_ICD=$(find /usr/share/vulkan/icd.d -maxdepth 1 -iname '*lvp*.json' -print -quit)
+if [ -z "$LVP_ICD" ]; then
+    echo "Error: Mesa lavapipe ICD is missing" >&2
+    exit 1
+fi
+export VK_DRIVER_FILES="$LVP_ICD"
+unset VK_ICD_FILENAMES
+if ! vulkaninfo --summary >/dev/null 2>&1; then
+    vulkaninfo >/dev/null
+fi
+python "$CLOUDVIEWER_SOURCE_ROOT/util/check_aicore_runtime.py" \
+    "$AICORE_LIB_DIR/libAICore.so" --expect-device vulkan
+
 # Explicit cleanup before exit (trap will also handle it)
 cd "$ORIGINAL_DIR" 2>/dev/null || cd / 2>/dev/null || true
 if [ -n "$TEST_DIR" ] && [ -d "$TEST_DIR" ] && [[ "$TEST_DIR" == /tmp/* ]]; then

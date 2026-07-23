@@ -30,7 +30,17 @@
 namespace aicore {
 namespace depth {
 std::unique_ptr<Engine> Engine::load(const std::string& path, int n_threads) {
-    std::unique_ptr<Engine> e(new Engine());
+    const char* device = std::getenv("DA_DEVICE");
+    return load_device(path, n_threads, device ? device : "auto");
+}
+std::unique_ptr<Engine> Engine::load_device(const std::string& path,
+                                            int n_threads,
+                                            const std::string& device) {
+    std::unique_ptr<Engine> e(new Engine(device));
+    if (e->be_.has_error()) {
+        DA_ERR("engine: backend init failed: %s", e->be_.error().c_str());
+        return nullptr;
+    }
     if (!e->ml_.load(path)) {
         DA_ERR("engine: load failed");
         return nullptr;
@@ -48,7 +58,16 @@ std::unique_ptr<Engine> Engine::load(const std::string& path, int n_threads) {
 std::unique_ptr<Engine> Engine::load_nested(const std::string& anyview_gguf,
                                             const std::string& metric_gguf,
                                             int n_threads) {
-    auto e = load(anyview_gguf, n_threads);
+    const char* device = std::getenv("DA_DEVICE");
+    return load_nested_device(anyview_gguf, metric_gguf, n_threads,
+                              device ? device : "auto");
+}
+std::unique_ptr<Engine> Engine::load_nested_device(
+        const std::string& anyview_gguf,
+        const std::string& metric_gguf,
+        int n_threads,
+        const std::string& device) {
+    auto e = load_device(anyview_gguf, n_threads, device);
     if (!e) {
         DA_ERR("engine: anyview load failed");
         return nullptr;
