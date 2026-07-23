@@ -107,6 +107,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Set up Vulkan SDK
+        shell: powershell
+        run: .\util\install_vulkan_sdk_windows.ps1
+
       - name: Set up python version
         run: |
           (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
@@ -495,6 +499,10 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up Vulkan SDK
+        shell: powershell
+        run: .\util\install_vulkan_sdk_windows.ps1
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4

@@ -270,6 +270,9 @@ build_mac_wheel() {
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
         "-DAICore_ENABLED=ON"
+        "-DAICore_BUILD_TESTS=ON"
+        "-DGGML_USE_VULKAN=ON"
+        "-DAICORE_REQUIRE_VULKAN=ON"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -448,6 +451,9 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_G3POINT=ON"
                 "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"
                 "-DAICore_ENABLED=ON"
+                "-DAICore_BUILD_TESTS=ON"
+                "-DGGML_USE_VULKAN=ON"
+                "-DAICORE_REQUIRE_VULKAN=ON"
                 "-DPLUGIN_STANDARD_QDA3=ON"
                 "-DPLUGIN_STANDARD_QFREESPLATTER=ON"
                 "-DPLUGIN_PYTHON=ON"
@@ -467,6 +473,7 @@ build_gui_app() {
 
     echo "Build & install ACloudViewer..."
     make -j"$NPROC"
+    cmake --build . --target aicore-contract-tests -j "$NPROC"
     make install -j"$NPROC"
     ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
@@ -502,7 +509,7 @@ build_pip_package() {
         BUILD_AZURE_KINECT=ON
     else
         echo "Azure Kinect disabled in Python wheel."
-        BUILD_AZURE_KINECT=OFFVERBOSE=1 
+        BUILD_AZURE_KINECT=OFF
     fi
     if [[ "build_realsense" =~ ^($options)$ ]]; then
         echo "Realsense enabled in Python wheel."
@@ -558,7 +565,9 @@ build_pip_package() {
         "-DUSE_VTK_BACKEND=OFF" # no need vtk for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DAICore_ENABLED=ON"
-        "-DGGML_USE_VULKAN=OFF"
+        "-DAICore_BUILD_TESTS=ON"
+        "-DGGML_USE_VULKAN=ON"
+        "-DAICORE_REQUIRE_VULKAN=ON"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -637,6 +646,8 @@ test_wheel() {
     python -m pip install "$wheel_path"
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
+    python -W default -c "import pathlib, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); modules=list(root.glob('*ggml-vulkan*')); assert not enabled or modules, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', modules)"
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
     # cloudViewer example reconstruction/gui
     echo

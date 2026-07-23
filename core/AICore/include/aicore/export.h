@@ -7,14 +7,14 @@
 
 #pragma once
 
-/* Unified symbol export macro for all AICore C API headers.
-   On Windows the library uses WINDOWS_EXPORT_ALL_SYMBOLS so no __declspec is
-   needed.  On GCC/Clang the visibility attribute is only applied when building
-   AICore itself (AICore_BUILD); consumers get an empty macro because visibility
-   on declarations is meaningless and older GCC warns about attribute placement
-   after the return type. */
-#if defined(_WIN32)
-#define AICORE_CAPI
+/* Unified symbol export macro for the narrow AICore ABI. Internal C++ and ggml
+   symbols remain hidden on every platform. */
+#if defined(_WIN32) && defined(AICore_SHARED)
+#ifdef AICore_BUILD
+#define AICORE_CAPI __declspec(dllexport)
+#else
+#define AICORE_CAPI __declspec(dllimport)
+#endif
 #elif defined(AICore_BUILD)
 #define AICORE_CAPI __attribute__((visibility("default")))
 #else

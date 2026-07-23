@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #endif
 
@@ -70,19 +71,6 @@ void DA3Worker::run() {
 
 #ifdef AICore_ENABLED
 
-namespace {
-
-void applyDepthDeviceEnv(const QString& device) {
-    const QString d = device.trimmed().toLower();
-    if (d.isEmpty() || d == QLatin1String("auto")) {
-        qunsetenv("DA_DEVICE");
-    } else {
-        qputenv("DA_DEVICE", device.trimmed().toUtf8());
-    }
-}
-
-}  // namespace
-
 DA3Worker::CtxGuard::~CtxGuard() {
     if (ctx) {
         aicore_depth_free(ctx);
@@ -110,14 +98,17 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
     }
 
     emit progressUpdate(5, 100);
-    applyDepthDeviceEnv(m_settings.device);
+    const QByteArray device = m_settings.device.trimmed().isEmpty()
+                                      ? QByteArray("auto")
+                                      : m_settings.device.trimmed().toUtf8();
     if (!m_settings.device.isEmpty() &&
         m_settings.device.trimmed().toLower() != QLatin1String("auto")) {
         emit logMessage(
                 QString("[DA3] Using device: %1").arg(m_settings.device));
     } else {
-        emit logMessage(
-                "[DA3] Using device: auto (CUDA → OpenCL → Vulkan → CPU)");
+        emit logMessage(QString("[DA3] Using device: auto (%1)")
+                                .arg(QString::fromUtf8(
+                                        aicore_auto_device_order())));
     }
     if (!m_settings.metricModelPath.isEmpty()) {
         if (!QFile::exists(m_settings.metricModelPath)) {
@@ -126,14 +117,15 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
             return g;
         }
         emit logMessage("[DA3] Loading nested model (anyview + metric)...");
-        g.ctx = aicore_depth_load_nested(
+        g.ctx = aicore_depth_load_nested_device(
                 modelPath.toStdString().c_str(),
                 m_settings.metricModelPath.toStdString().c_str(),
-                m_settings.threads);
+                m_settings.threads, device.constData());
     } else {
         emit logMessage("[DA3] Loading model: " + modelPath);
-        g.ctx = aicore_depth_load(modelPath.toStdString().c_str(),
-                                  m_settings.threads);
+        g.ctx = aicore_depth_load_device(modelPath.toStdString().c_str(),
+                                         m_settings.threads,
+                                         device.constData());
     }
     if (!g.ctx) {
         emit logMessage(QString("[Error] Failed to load model (GGUF parse or "

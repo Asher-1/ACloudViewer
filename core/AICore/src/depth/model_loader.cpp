@@ -9,7 +9,7 @@
 
 #include <utility>
 
-#include "aicore/depth_gguf_keys.h"
+#include "depth_gguf_keys.h"
 #include "backend.hpp"
 #include "common.hpp"
 #include "compute_mode.hpp"

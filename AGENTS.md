@@ -325,3 +325,12 @@ Full table: [plugins/README.md](plugins/README.md) and [BUILD.md](BUILD.md).
 - Workflows: `.github/workflows/ubuntu.yml`, `macos.yml`, `windows.yml`, `documentation.yml`, `agent-integration.yml`, `codeql.yml`
 - Local CI helpers: `util/ci_utils.sh` (Linux), `util/ci_utils.ps1` (Windows)
 - Version: `libs/cloudViewer/version.txt`; changelog: `CHANGELOG.md`
+
+
+<claude-mem-context>
+# Memory Context
+
+# [ACloudViewer] recent context, 2026-07-23 7:27pm GMT+8
+
+No previous sessions found.
+</claude-mem-context>

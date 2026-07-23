@@ -12,6 +12,8 @@
 #include <ggml-backend.h>
 #include <ggml.h>
 
+#include "ggml_backend_utils.hpp"
+
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -31,6 +33,25 @@ static double erf_gelu(double x) {
     return 0.5 * x * (1.0 + std::erf(x / std::sqrt(2.0)));
 }
 
+static void graph_compute_cpu(ggml_cgraph* gf, int n_threads) {
+    ggml_common::load_backends_once();
+    ggml_backend_t be =
+            ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+    if (!be) {
+        std::fprintf(stderr, "FAIL %s:%d: CPU backend init failed\n", __FILE__,
+                     __LINE__);
+        failures++;
+        return;
+    }
+    ggml_common::set_cpu_threads(be, n_threads);
+    if (ggml_backend_graph_compute(be, gf) != GGML_STATUS_SUCCESS) {
+        std::fprintf(stderr, "FAIL %s:%d: ggml_backend_graph_compute failed\n",
+                     __FILE__, __LINE__);
+        failures++;
+    }
+    ggml_backend_free(be);
+}
+
 // GELU must be the exact erf variant (nn.GELU()), NOT the tanh approximation:
 // the error compounds across 24 transformer blocks. This proves ggml_gelu_erf
 // is available and is the erf form.
@@ -46,7 +67,7 @@ static void test_gelu_erf() {
     ggml_tensor *y = ggml_gelu_erf(ctx, x);
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, y);
-    ggml_graph_compute_with_ctx(ctx, gf, 1);
+    graph_compute_cpu(gf, 1);
 
     for (int i = 0; i < n; i++) {
         const double ref = erf_gelu(xs[i]);
@@ -78,7 +99,7 @@ static void test_mul_mat_orientation() {
     ggml_tensor *C = ggml_mul_mat(ctx, A, B);  // ne=[m,n]
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, C);
-    ggml_graph_compute_with_ctx(ctx, gf, 1);
+    graph_compute_cpu(gf, 1);
 
     CHECK(C->ne[0] == m && C->ne[1] == n);
     const float *c = (float *)C->data;
@@ -119,7 +140,7 @@ static void test_patchify_order() {
     ggml_tensor *conv = ggml_mul_mat(ctx, wflat, cols);  // [OC, OW, OH, N]
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, conv);
-    ggml_graph_compute_with_ctx(ctx, gf, 1);
+    graph_compute_cpu(gf, 1);
 
     CHECK(conv->ne[0] == OC && conv->ne[1] == OW && conv->ne[2] == OH);
     auto kat = [&](int kw, int kh, int ic, int oc) {

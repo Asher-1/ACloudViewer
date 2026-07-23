@@ -21,13 +21,21 @@ struct ViewResult {
     std::array<float,9>  intr;       // 3x3 row-major
 };
 
-class AICORE_CXX_API Engine {
+class Engine {
 public:
     static std::unique_ptr<Engine> load(const std::string& gguf_path, int n_threads);
+    static std::unique_ptr<Engine> load_device(const std::string& gguf_path,
+                                               int n_threads,
+                                               const std::string& device);
     // Nested metric: loads BOTH the anyview (GIANT) GGUF and the metric (ViT-L
     // + DPT/sky) GGUF. depth_metric() then runs both branches + alignment.
     static std::unique_ptr<Engine> load_nested(const std::string& anyview_gguf,
                                                const std::string& metric_gguf, int n_threads);
+    static std::unique_ptr<Engine> load_nested_device(
+            const std::string& anyview_gguf,
+            const std::string& metric_gguf,
+            int n_threads,
+            const std::string& device);
     const Config& config() const { return ml_.config(); }
     // Override preprocess longest-side target (multiple of patch_size recommended).
     void set_img_resize_target(uint32_t target);
@@ -125,6 +133,7 @@ public:
                              const std::vector<std::string>& image_names,
                              const std::string& dir, bool binary = true);
 private:
+    explicit Engine(const std::string& device) : be_(device) {}
     // Fused single-image depth: backbone feats + DPT head built into ONE ggml graph
     // (feats stay device-resident — no GPU->host->GPU round-trip). Parity-exact with
     // the unfused path. cat_token=true only; depth_native_image falls back to unfused

@@ -31,7 +31,9 @@ from cloudViewer._build_config import _build_config
 MAIN_LIB_PATH = Path(__file__).parent / "lib"
 
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
-    _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
+    # Keep handles alive for the process lifetime. AICore loads optional ggml
+    # backends lazily, long after this module has finished importing.
+    _win32_dll_dirs = [os.add_dll_directory(str(Path(__file__).parent))]
 
 # Cache for loaded libraries to prevent duplicate loading
 _loaded_libs_cache = {}
@@ -455,14 +457,9 @@ def _setup_linux_libraries():
 
     # 5. Load project-specific core libraries
     try_load_cdll('libCVCoreLib*')
-    # When AICore is enabled with dynamic ggml backends (GGML_BUILD_SHARED),
-    # load ggml core shared libs first, then libAICore.so. The GPU backend
-    # modules (libggml-cuda.so etc.) are NOT preloaded here — ggml loads them
-    # at runtime via ggml_backend_load_all(), falling back to CPU if unavailable.
+    # AICore uses a loader-relative RPATH and owns loading its private ggml
+    # core/backend libraries. Python must not preload or otherwise expose them.
     if _build_config.get("AICore_ENABLED", False):
-        try_load_cdll('libggml-base*')
-        try_load_cdll('libggml-cpu*')
-        try_load_cdll('libggml.*')
         try_load_cdll('libAICore*')
     try_load_cdll('libCV_DB_LIB*')
     try_load_cdll('libCV_IO_LIB*')
@@ -520,6 +517,7 @@ if os.path.exists(MAIN_LIB_PATH):
 
     if sys.platform == "win32":
         # Windows: Set PATH and Qt plugin paths
+        _win32_dll_dirs.append(os.add_dll_directory(LIB_PATH))
         _setup_path(LIB_PATH,
                     path_separator=';',
                     env_var='path',
@@ -560,7 +558,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
                     break
 
             if cuda_bin_path:
-                os.add_dll_directory(cuda_bin_path)
+                _win32_dll_dirs.append(os.add_dll_directory(cuda_bin_path))
 
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
@@ -742,8 +740,6 @@ def _jupyter_nbextension_paths():
     }]
 
 
-if sys.platform == "win32":
-    _win32_dll_dir.close()
 del (os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings,
      _insert_pybind_names, _loaded_libs_cache, _detect_qt_version,
      _load_qt_library, _load_qt_libraries, _qt_version_cache, _setup_path,

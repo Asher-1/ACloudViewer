@@ -13,7 +13,7 @@
 int main() {
     const char* gguf = std::getenv("DA_TEST_GGUF");
     if (!gguf) return 77;
-    if (aicore_depth_abi_version() != 4) return 1;
+    if (aicore_depth_abi_version() < 5) return 1;
     aicore_depth_ctx* c = aicore_depth_load(gguf, 1);
     if (!c) {
         std::fprintf(stderr, "load failed\n");

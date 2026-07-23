@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qLightGlue">
+        <file>info.json</file>
+        <file>images/qLightGlue.svg</file>
+    </qresource>
+</RCC>

@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cstring>
+#include <filesystem>
 
 #include "aicore/gaussian_capi.h"
 #include "common/test_macros.hpp"
@@ -53,6 +54,39 @@ int main() {
                                                   &bytes, &byte_len) != 0);
     AICORE_CHECK(aicore_gaussian_run_and_export_ply(nullptr, nullptr, 0, 0.f,
                                                     "/tmp/x.ply") != 0);
+
+    const std::filesystem::path tensor_splat =
+            std::filesystem::temp_directory_path() /
+            "aicore_gaussian_contract_tensor.splat";
+    float gaussian[23]{};
+    gaussian[0] = 1.0f;
+    gaussian[1] = 2.0f;
+    gaussian[2] = 3.0f;
+    gaussian[15] = 0.75f;
+    gaussian[16] = gaussian[17] = gaussian[18] = 1.0f;
+    gaussian[19] = 1.0f;
+    AICORE_CHECK(aicore_gaussian_export_splat(
+                         gaussian, 1, 23, 0.1f, 0,
+                         tensor_splat.string().c_str()) == 0);
+    std::error_code file_error;
+    AICORE_CHECK(std::filesystem::file_size(tensor_splat, file_error) == 32 &&
+                 !file_error);
+    std::filesystem::remove(tensor_splat);
+
+    const std::filesystem::path cloud_splat =
+            std::filesystem::temp_directory_path() /
+            "aicore_gaussian_contract_cloud.splat";
+    aicore_gaussian_point point{};
+    point.opacity = 0.75f;
+    point.sx = point.sy = point.sz = 1.0f;
+    point.qw = 1.0f;
+    AICORE_CHECK(aicore_gaussian_export_cloud_splat(
+                         &point, 1, 0, 1.0f,
+                         cloud_splat.string().c_str()) == 0);
+    file_error.clear();
+    AICORE_CHECK(std::filesystem::file_size(cloud_splat, file_error) == 32 &&
+                 !file_error);
+    std::filesystem::remove(cloud_splat);
 
     aicore_gaussian_parallax px{};
     AICORE_CHECK(aicore_gaussian_pair_parallax(nullptr, 0, 0, 0, 0, 0.f, &px) !=
