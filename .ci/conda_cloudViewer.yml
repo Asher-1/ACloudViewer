@@ -14,6 +14,10 @@ dependencies:
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN
   - laszip # PLUGIN_IO_QLAS
+  - vulkan-headers
+  - vulkan-loader
+  - shaderc # glslc, used only while embedding ggml Vulkan shaders
+  - spirv-headers
   - pip: # for python plugins
     - numpy>=1.18.0
     - pybind11>=2.6.0

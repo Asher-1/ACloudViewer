@@ -214,9 +214,15 @@ option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    
 # When ON: auto-enables GGML and builds libAICore.so containing both modules.
 # Plugins (qDA3, qFreeSplatter) must be separately enabled via their PLUGIN_STANDARD_* options.
 option(AICore_ENABLED "Enable unified AI inference core (auto-enables GGML)"     OFF)
+option(AICore_BUILD_TESTS "Build AICore contract and inference tests"            OFF)
+option(AICore_BUILD_WHITEBOX_TESTS "Build AICore private implementation tests"   OFF)
+option(AICORE_REQUIRE_VULKAN "Fail configure when AICore Vulkan cannot be built" OFF)
 if(AICore_ENABLED AND NOT GGML_ENABLED)
     message(STATUS "AICore_ENABLED — auto-enabling GGML_ENABLED")
     set(GGML_ENABLED ON CACHE BOOL "Enable ggml ML inference library" FORCE)
+endif()
+if(AICore_BUILD_TESTS)
+    enable_testing()
 endif()
 
 option(PACKAGE "Package the build results with zip or not"                      OFF)

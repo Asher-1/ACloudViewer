@@ -17,6 +17,10 @@ dependencies:
   - laszip # PLUGIN_IO_QLAS
   - openssl # For curl build on Windows
   - libcurl=8.14.* # For curl support
+  - vulkan-headers
+  - vulkan-loader
+  - shaderc # glslc, used only while embedding ggml Vulkan shaders
+  - spirv-headers
   - pip: # for python plugins
     - numpy==1.26.4
     - pybind11>=2.6.0

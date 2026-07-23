@@ -9,18 +9,20 @@
 // Adapted from free-splatter.cpp/src/free_splatter.cpp to use the project's
 // ggml_common, Qt image I/O, and PLY export modules.
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <ggml_common/ggml_backend_utils.hpp>
+#include "ggml_backend_utils.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "aicore/gaussian_capi.h"
+#include "aicore/backend_capi.h"
 #include "backend.hpp"
 #include "image.h"
 #include "image_io.hpp"
@@ -29,6 +31,7 @@
 #include "path_util.hpp"
 #include "ply_export.hpp"
 #include "pose.h"
+#include "splat.h"
 
 #if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
 #include <cuda_runtime.h>
@@ -50,33 +53,33 @@ struct aicore_gaussian_ctx {
 
 extern "C" {
 
-int AICORE_CAPI aicore_gaussian_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_gaussian_abi_version(void) { return 1; }
 
 // ---- options builder ----
 
-aicore_gaussian_options* AICORE_CAPI aicore_gaussian_options_new(void) {
+AICORE_CAPI aicore_gaussian_options* aicore_gaussian_options_new(void) {
     return new aicore_gaussian_options();
 }
-void AICORE_CAPI aicore_gaussian_options_free(aicore_gaussian_options* opts) {
+AICORE_CAPI void aicore_gaussian_options_free(aicore_gaussian_options* opts) {
     delete opts;
 }
 
-void AICORE_CAPI aicore_gaussian_options_set_device(
+AICORE_CAPI void aicore_gaussian_options_set_device(
         aicore_gaussian_options* opts, const char* device) {
     if (opts) opts->o.device = device ? device : "";
 }
-void AICORE_CAPI aicore_gaussian_options_set_threads(
+AICORE_CAPI void aicore_gaussian_options_set_threads(
         aicore_gaussian_options* opts, int n_threads) {
     if (opts) opts->o.n_threads = n_threads;
 }
-void AICORE_CAPI aicore_gaussian_options_set_dump_taps_dir(
+AICORE_CAPI void aicore_gaussian_options_set_dump_taps_dir(
         aicore_gaussian_options* opts, const char* dir) {
     if (opts) opts->o.dump_taps_dir = dir ? dir : "";
 }
 
 // ---- lifecycle ----
 
-aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load(const char* gguf_path,
+AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load(const char* gguf_path,
                                                       int n_threads) {
     if (!gguf_path) return nullptr;
     auto* ctx = new (std::nothrow) aicore_gaussian_ctx();
@@ -89,7 +92,7 @@ aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load(const char* gguf_path,
     return ctx;
 }
 
-aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load_opts(
+AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
         const char* gguf_path, const aicore_gaussian_options* opts) {
     if (!gguf_path) return nullptr;
     auto* ctx = new (std::nothrow) aicore_gaussian_ctx();
@@ -102,9 +105,9 @@ aicore_gaussian_ctx* AICORE_CAPI aicore_gaussian_load_opts(
     return ctx;
 }
 
-void AICORE_CAPI aicore_gaussian_free(aicore_gaussian_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx) { delete ctx; }
 
-const char* AICORE_CAPI
+AICORE_CAPI const char*
 aicore_gaussian_last_error(const aicore_gaussian_ctx* ctx) {
     if (!ctx) return "NULL context";
     return ctx->error.empty() ? nullptr : ctx->error.c_str();
@@ -112,7 +115,7 @@ aicore_gaussian_last_error(const aicore_gaussian_ctx* ctx) {
 
 // ---- model geometry ----
 
-int AICORE_CAPI aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
                                             aicore_gaussian_geometry* out) {
     if (!ctx || !out || !ctx->error.empty()) return -1;
     const aicore::gaussian::hparams& hp = ctx->m.hp();
@@ -126,7 +129,7 @@ int AICORE_CAPI aicore_gaussian_geometry_of(const aicore_gaussian_ctx* ctx,
 
 // ---- inference from raw float images ----
 
-int AICORE_CAPI aicore_gaussian_run(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
                                     const float* images,
                                     int32_t n_views,
                                     int32_t height,
@@ -160,12 +163,12 @@ int AICORE_CAPI aicore_gaussian_run(aicore_gaussian_ctx* ctx,
     return 0;
 }
 
-void AICORE_CAPI aicore_gaussian_free_floats(float* p) { free(p); }
-void AICORE_CAPI aicore_gaussian_free_bytes(unsigned char* p) { free(p); }
+AICORE_CAPI void aicore_gaussian_free_floats(float* p) { free(p); }
+AICORE_CAPI void aicore_gaussian_free_bytes(unsigned char* p) { free(p); }
 
 // ---- inference from image files ----
 
-int AICORE_CAPI aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
                                           const char** image_paths,
                                           int32_t n_images,
                                           float** out,
@@ -192,7 +195,7 @@ int AICORE_CAPI aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
 
 // ---- pose recovery ----
 
-int AICORE_CAPI aicore_gaussian_estimate_poses(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_estimate_poses(const float* gaussians,
                                                int32_t n_views,
                                                int32_t height,
                                                int32_t width,
@@ -242,7 +245,7 @@ int AICORE_CAPI aicore_gaussian_estimate_poses(const float* gaussians,
 
 // ---- PLY export ----
 
-int AICORE_CAPI aicore_gaussian_export_ply(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_ply(const float* gaussians,
                                            int32_t n_views,
                                            int32_t height,
                                            int32_t width,
@@ -260,7 +263,7 @@ int AICORE_CAPI aicore_gaussian_export_ply(const float* gaussians,
     return 0;
 }
 
-int AICORE_CAPI aicore_gaussian_export_ply_bytes(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_ply_bytes(const float* gaussians,
                                                  int32_t n_views,
                                                  int32_t height,
                                                  int32_t width,
@@ -288,7 +291,7 @@ int AICORE_CAPI aicore_gaussian_export_ply_bytes(const float* gaussians,
     return 0;
 }
 
-int AICORE_CAPI aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
+AICORE_CAPI int aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
                                                    const char** image_paths,
                                                    int32_t n_images,
                                                    float opacity_threshold,
@@ -315,22 +318,17 @@ int AICORE_CAPI aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
 
 // ---- backend warmup (main-thread CUDA init) ----
 
-int AICORE_CAPI aicore_gaussian_warmup_backend(const char* device) {
+AICORE_CAPI int aicore_gaussian_warmup_backend(const char* device) {
     // Lightweight probe on the UI thread: register ggml backends and clear any
     // sticky CUDA errors from BEV/SIBR/COLMAP. Do NOT keep a backend alive here
     // — a persistent warmup backend plus the worker's backend was implicated in
     // ggml/CUDA teardown crashes when the worker freed the model context.
-    (void)device;
-    ggml_common::load_backends_once();
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
-    cudaGetLastError();
-#endif
-    return 0;
+    return aicore_warmup_backend(device);
 }
 
 // ---- model cache directory ----
 
-char* AICORE_CAPI aicore_gaussian_model_cache_dir(void) {
+AICORE_CAPI char* aicore_gaussian_model_cache_dir(void) {
     std::string dir = aicore::gaussian::default_model_cache_dir();
     char* result = static_cast<char*>(std::malloc(dir.size() + 1));
     if (result) {
@@ -339,11 +337,11 @@ char* AICORE_CAPI aicore_gaussian_model_cache_dir(void) {
     return result;
 }
 
-void AICORE_CAPI aicore_gaussian_free_string(char* s) { free(s); }
+AICORE_CAPI void aicore_gaussian_free_string(char* s) { free(s); }
 
 // ---- model info ----
 
-char* AICORE_CAPI aicore_gaussian_info_json(aicore_gaussian_ctx* ctx) {
+AICORE_CAPI char* aicore_gaussian_info_json(aicore_gaussian_ctx* ctx) {
     if (!ctx) return nullptr;
     const auto& hp = ctx->m.hp();
     char buf[1024];
@@ -463,7 +461,103 @@ std::vector<aicore::gaussian::pose::AccumPoint> fs_points_to_accum(
 
 }  // namespace
 
-int AICORE_CAPI aicore_gaussian_pair_parallax(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
+                                             size_t count,
+                                             int32_t gaussian_channels,
+                                             float opacity_threshold,
+                                             size_t max_splats,
+                                             const char* output_path) {
+    if (!gaussians || gaussian_channels < 23 || !output_path ||
+        output_path[0] == '\0') {
+        return -1;
+    }
+
+    std::vector<std::pair<float, size_t>> keep;
+    keep.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        const float* record = gaussians + i * gaussian_channels;
+        const float opacity = record[15];
+        if (opacity <= opacity_threshold) continue;
+        const float volume = std::max(record[16], 1e-9f) *
+                             std::max(record[17], 1e-9f) *
+                             std::max(record[18], 1e-9f);
+        keep.emplace_back(opacity * volume, i);
+    }
+    std::sort(keep.begin(), keep.end(),
+              [](const auto& lhs, const auto& rhs) {
+                  return lhs.first > rhs.first;
+              });
+    if (max_splats > 0 && keep.size() > max_splats) {
+        keep.resize(max_splats);
+    }
+
+    std::ofstream stream(output_path, std::ios::binary);
+    if (!stream) return -1;
+    constexpr float kShC0 = 0.28209479177387814f;
+    for (const auto& item : keep) {
+        const float* value =
+                gaussians + item.second * gaussian_channels;
+        const float position[3] = {value[0], value[1], value[2]};
+        const float scale[3] = {value[16], value[17], value[18]};
+        const float quaternion[4] = {value[19], value[20], value[21],
+                                     value[22]};
+        const float rgb[3] = {0.5f + kShC0 * value[3],
+                              0.5f + kShC0 * value[4],
+                              0.5f + kShC0 * value[5]};
+        unsigned char encoded[32];
+        aicore::gaussian::encode_splat_record(
+                encoded, position, scale, quaternion, rgb, value[15]);
+        stream.write(reinterpret_cast<const char*>(encoded), sizeof(encoded));
+    }
+    return stream ? 0 : -1;
+}
+
+AICORE_CAPI int aicore_gaussian_export_cloud_splat(
+        const aicore_gaussian_point* cloud,
+        size_t count,
+        size_t max_splats,
+        float scale_multiplier,
+        const char* output_path) {
+    if (!cloud || !output_path || output_path[0] == '\0' ||
+        scale_multiplier < 0.0f) {
+        return -1;
+    }
+
+    std::vector<size_t> order(count);
+    for (size_t i = 0; i < count; ++i) order[i] = i;
+    const auto importance = [&](size_t i) {
+        const aicore_gaussian_point& point = cloud[i];
+        return static_cast<double>(std::max(point.opacity, 0.0f)) *
+               std::max(point.sx, 1e-9f) * std::max(point.sy, 1e-9f) *
+               std::max(point.sz, 1e-9f);
+    };
+    if (max_splats > 0 && order.size() > max_splats) {
+        std::partial_sort(order.begin(), order.begin() + max_splats,
+                          order.end(), [&](size_t lhs, size_t rhs) {
+                              return importance(lhs) > importance(rhs);
+                          });
+        order.resize(max_splats);
+    }
+
+    std::ofstream stream(output_path, std::ios::binary);
+    if (!stream) return -1;
+    for (size_t i : order) {
+        const aicore_gaussian_point& point = cloud[i];
+        const float position[3] = {point.x, point.y, point.z};
+        const float scale[3] = {scale_multiplier * point.sx,
+                                scale_multiplier * point.sy,
+                                scale_multiplier * point.sz};
+        const float quaternion[4] = {point.qw, point.qx, point.qy, point.qz};
+        const float rgb[3] = {point.r, point.g, point.b};
+        unsigned char encoded[32];
+        aicore::gaussian::encode_splat_record(
+                encoded, position, scale, quaternion, rgb, point.opacity);
+        stream.write(reinterpret_cast<const char*>(encoded), sizeof(encoded));
+    }
+    return stream ? 0 : -1;
+}
+
+AICORE_CAPI int aicore_gaussian_pair_parallax(const float* gaussians,
                                               int32_t n_views,
                                               int32_t height,
                                               int32_t width,
@@ -489,7 +583,7 @@ int AICORE_CAPI aicore_gaussian_pair_parallax(const float* gaussians,
     return 0;
 }
 
-aicore_gaussian_accumulator* AICORE_CAPI aicore_gaussian_accumulator_new(
+AICORE_CAPI aicore_gaussian_accumulator* aicore_gaussian_accumulator_new(
         int height, int width, float opacity_threshold) {
     try {
         return new aicore_gaussian_accumulator{
@@ -500,22 +594,22 @@ aicore_gaussian_accumulator* AICORE_CAPI aicore_gaussian_accumulator_new(
     }
 }
 
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_free(aicore_gaussian_accumulator* acc) {
     delete acc;
 }
 
-void AICORE_CAPI aicore_gaussian_accumulator_add_pair(
+AICORE_CAPI void aicore_gaussian_accumulator_add_pair(
         aicore_gaussian_accumulator* acc, const float* gaussians, int gc) {
     if (acc && gaussians) acc->acc.add_pair(gaussians, gc);
 }
 
-int AICORE_CAPI
+AICORE_CAPI int
 aicore_gaussian_accumulator_frame_count(aicore_gaussian_accumulator* acc) {
     return acc ? acc->acc.frame_count() : 0;
 }
 
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
                                   aicore_gaussian_point** out,
                                   size_t* n_out) {
@@ -527,7 +621,7 @@ aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
     copy_accum_points(acc->acc.cloud(), out, n_out);
 }
 
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_gaussian_accumulator_refine(aicore_gaussian_accumulator* acc,
                                    float voxel_frac,
                                    int iters,
@@ -535,7 +629,7 @@ aicore_gaussian_accumulator_refine(aicore_gaussian_accumulator* acc,
     if (acc) acc->acc.refine(voxel_frac, iters, alpha);
 }
 
-int AICORE_CAPI
+AICORE_CAPI int
 aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
                                  float voxel_frac,
                                  int fuse_k,
@@ -550,7 +644,7 @@ aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
     return (*out && *n_out > 0) ? 0 : -1;
 }
 
-int AICORE_CAPI aicore_gaussian_tree_overlap(const float** pairs,
+AICORE_CAPI int aicore_gaussian_tree_overlap(const float** pairs,
                                              int n_pairs,
                                              int gc,
                                              int height,
@@ -575,7 +669,7 @@ int AICORE_CAPI aicore_gaussian_tree_overlap(const float** pairs,
     return (*out && *n_out > 0) ? 0 : -1;
 }
 
-int AICORE_CAPI aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
+AICORE_CAPI int aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
                                            size_t n,
                                            float voxel_frac,
                                            int fuse_k,
@@ -590,7 +684,7 @@ int AICORE_CAPI aicore_gaussian_fuse_cloud(const aicore_gaussian_point* cloud,
     return (*out && *n_out > 0) ? 0 : -1;
 }
 
-double AICORE_CAPI aicore_gaussian_refine_cloud(aicore_gaussian_point* cloud,
+AICORE_CAPI double aicore_gaussian_refine_cloud(aicore_gaussian_point* cloud,
                                                 size_t n,
                                                 float voxel_frac,
                                                 int iters,

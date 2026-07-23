@@ -15,7 +15,7 @@ set(GGML_VERSION "0.17.0")
 set(GGML_URL "https://github.com/ggml-org/ggml/archive/refs/tags/v${GGML_VERSION}.tar.gz")
 set(GGML_SHA256 "49ed958226dd75ea13b3b493150181e3a3ca7dc28c20a3d1f00d23e94cbf7a47")
 
-# Dynamic backend mode (default ON): GPU backends (CUDA, Vulkan, OpenCL) are
+# Dynamic backend mode (default ON): accelerator backends are
 # built as separate shared libraries loaded at runtime via
 # ggml_backend_load_all(). This avoids hard GPU runtime dependencies (e.g.
 # libcuda.so.1) in libAICore.so, following the same pattern as PyTorch
@@ -35,36 +35,49 @@ set(GGML_CMAKE_ARGS
 if(GGML_BUILD_SHARED)
     list(APPEND GGML_CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DGGML_STATIC=OFF)
     list(APPEND GGML_CMAKE_ARGS -DGGML_BACKEND_DL=ON)
-    set(_GGML_LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
-    set(_GGML_LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    if(WIN32)
+        # MSVC links import libraries from lib/, while the corresponding
+        # runtime DLLs are installed to bin/.
+        set(_GGML_LIB_PREFIX ${CMAKE_IMPORT_LIBRARY_PREFIX})
+        set(_GGML_LIB_SUFFIX ${CMAKE_IMPORT_LIBRARY_SUFFIX})
+        set(_GGML_RUNTIME_SUBDIR bin)
+    else()
+        set(_GGML_LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+        set(_GGML_LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+        set(_GGML_RUNTIME_SUBDIR ${CloudViewer_INSTALL_LIB_DIR})
+    endif()
 else()
     list(APPEND GGML_CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON)
     set(_GGML_LIB_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
     set(_GGML_LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(_GGML_RUNTIME_SUBDIR ${CloudViewer_INSTALL_LIB_DIR})
 endif()
 
 # --- Backend selection ---
-# ggml can compile multiple backends into one build (CUDA + OpenCL + Vulkan + CPU).
+# ggml can compile multiple backends into one build (Vulkan + SYCL + CUDA + CPU).
 # CPU is always built. GPU backends below are enabled when ON and dependencies are found.
 #
 # Platform defaults (override with -DGGML_USE_*=ON/OFF):
-#   Apple:     Metal ON, Vulkan OFF, OpenCL OFF
-#   Linux/Win: Metal OFF, Vulkan OFF, OpenCL ON  (auto-detect when dependencies exist)
+#   Apple:     Metal ON, Vulkan/SYCL/OpenCL OFF
+#   Linux/Win: Vulkan ON (auto-detect), SYCL/OpenCL OFF
 if(APPLE)
     set(_GGML_METAL_DEFAULT ON)
+    set(_GGML_VULKAN_DEFAULT OFF)
     set(_GGML_OPENCL_DEFAULT OFF)
 elseif(WIN32 OR UNIX)
     set(_GGML_METAL_DEFAULT OFF)
-    set(_GGML_OPENCL_DEFAULT ON)
+    set(_GGML_VULKAN_DEFAULT ON)
+    set(_GGML_OPENCL_DEFAULT OFF)
 else()
     set(_GGML_METAL_DEFAULT OFF)
+    set(_GGML_VULKAN_DEFAULT OFF)
     set(_GGML_OPENCL_DEFAULT OFF)
 endif()
 
 # CUDA backend (opt-in: NVIDIA toolchain required)
 option(GGML_USE_CUDA "Enable ggml CUDA backend" OFF)
 set(_GGML_CUDA_ENABLED OFF)
-if(BUILD_CUDA_MODULE OR GGML_USE_CUDA)
+if(GGML_USE_CUDA)
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=ON)
     if(DEFINED CUDAToolkit_ROOT)
         list(APPEND GGML_CMAKE_ARGS -DCUDAToolkit_ROOT=${CUDAToolkit_ROOT})
@@ -107,19 +120,58 @@ else()
     endif()
 endif()
 
-# Vulkan backend (opt-in: requires Vulkan SDK + glslc + SPIRV-Headers)
-option(GGML_USE_VULKAN "Enable ggml Vulkan backend (opt-in; requires Vulkan SDK)" OFF)
+# Vulkan backend (portable release default: build-time Vulkan headers, glslc,
+# and SPIR-V headers; end users still need a working driver/ICD).
+option(GGML_USE_VULKAN "Enable ggml Vulkan backend (default ON on Linux/Windows when build tools exist)" ${_GGML_VULKAN_DEFAULT})
 set(_GGML_VULKAN_ENABLED OFF)
 if(GGML_USE_VULKAN)
+    set(_GGML_VULKAN_HINTS)
     if(DEFINED ENV{VULKAN_SDK})
         list(APPEND CMAKE_PREFIX_PATH "$ENV{VULKAN_SDK}")
+        list(APPEND _GGML_VULKAN_HINTS
+            "$ENV{VULKAN_SDK}"
+            "$ENV{VULKAN_SDK}/include"
+            "$ENV{VULKAN_SDK}/Include")
     endif()
-    find_package(Vulkan COMPONENTS glslc QUIET)
+
+    # Older FindVulkan modules do not expose the glslc component. Locate the
+    # loader/headers and shader compiler independently so Ubuntu 20.04 and the
+    # official Windows/macOS SDKs follow the same contract.
+    find_package(Vulkan QUIET)
+    if(NOT Vulkan_GLSLC_EXECUTABLE)
+        find_program(Vulkan_GLSLC_EXECUTABLE NAMES glslc
+            HINTS ${_GGML_VULKAN_HINTS}
+            PATH_SUFFIXES bin Bin)
+    endif()
+
     find_package(SPIRV-Headers CONFIG QUIET)
-    if(Vulkan_FOUND AND Vulkan_GLSLC_EXECUTABLE AND SPIRV-Headers_FOUND)
+    set(_GGML_SPIRV_HEADERS_FOUND ${SPIRV-Headers_FOUND})
+    set(_GGML_SPIRV_INCLUDE_DIR)
+    if(NOT _GGML_SPIRV_HEADERS_FOUND)
+        set(_GGML_VULKAN_INCLUDE_HINTS ${_GGML_VULKAN_HINTS})
+        if(Vulkan_INCLUDE_DIR)
+            list(APPEND _GGML_VULKAN_INCLUDE_HINTS "${Vulkan_INCLUDE_DIR}")
+        endif()
+        if(Vulkan_INCLUDE_DIRS)
+            list(APPEND _GGML_VULKAN_INCLUDE_HINTS ${Vulkan_INCLUDE_DIRS})
+        endif()
+        find_path(_GGML_SPIRV_INCLUDE_DIR
+            NAMES spirv/unified1/spirv.hpp
+            HINTS ${_GGML_VULKAN_INCLUDE_HINTS}
+            PATH_SUFFIXES include Include)
+        if(_GGML_SPIRV_INCLUDE_DIR)
+            set(_GGML_SPIRV_HEADERS_FOUND ON)
+        endif()
+    endif()
+
+    if(Vulkan_FOUND AND Vulkan_GLSLC_EXECUTABLE AND _GGML_SPIRV_HEADERS_FOUND)
         list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=ON)
         if(SPIRV-Headers_DIR)
             list(APPEND GGML_CMAKE_ARGS -DSPIRV-Headers_DIR=${SPIRV-Headers_DIR})
+        endif()
+        if(_GGML_SPIRV_INCLUDE_DIR)
+            list(APPEND GGML_CMAKE_ARGS
+                -DCMAKE_INCLUDE_PATH=${_GGML_SPIRV_INCLUDE_DIR})
         endif()
         if(Vulkan_INCLUDE_DIR)
             list(APPEND GGML_CMAKE_ARGS -DVulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
@@ -131,25 +183,80 @@ if(GGML_USE_VULKAN)
             list(APPEND GGML_CMAKE_ARGS -DVulkan_GLSLC_EXECUTABLE=${Vulkan_GLSLC_EXECUTABLE})
         endif()
         set(_GGML_VULKAN_ENABLED ON)
-        message(STATUS "ggml: Vulkan backend enabled (glslc=${Vulkan_GLSLC_EXECUTABLE})")
+        message(STATUS "ggml: Vulkan backend enabled "
+                       "(glslc=${Vulkan_GLSLC_EXECUTABLE}, SPIR-V headers=${_GGML_SPIRV_INCLUDE_DIR}${SPIRV-Headers_DIR})")
     else()
         list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=OFF)
+        set(_GGML_VULKAN_MISSING)
         if(NOT Vulkan_FOUND)
-            message(STATUS "ggml: Vulkan loader not found — skipping Vulkan backend")
-        elseif(NOT Vulkan_GLSLC_EXECUTABLE)
-            message(STATUS "ggml: glslc not found — skipping Vulkan backend "
-                            "(install Vulkan SDK or vulkan-tools)")
-        elseif(NOT SPIRV-Headers_FOUND)
-            message(STATUS "ggml: SPIRV-Headers not found — skipping Vulkan backend "
-                            "(install spirv-headers / Vulkan SDK, or set VULKAN_SDK)")
+            list(APPEND _GGML_VULKAN_MISSING "Vulkan loader/headers")
         endif()
+        if(NOT Vulkan_GLSLC_EXECUTABLE)
+            list(APPEND _GGML_VULKAN_MISSING "glslc")
+        endif()
+        if(NOT _GGML_SPIRV_HEADERS_FOUND)
+            list(APPEND _GGML_VULKAN_MISSING "spirv/unified1/spirv.hpp")
+        endif()
+        string(JOIN ", " _GGML_VULKAN_MISSING_TEXT ${_GGML_VULKAN_MISSING})
+        if(AICore_ENABLED AND AICORE_REQUIRE_VULKAN)
+            message(FATAL_ERROR
+                "AICORE_REQUIRE_VULKAN=ON but Vulkan dependencies are missing: "
+                "${_GGML_VULKAN_MISSING_TEXT}. Run the platform Vulkan setup script "
+                "or set VULKAN_SDK.")
+        endif()
+        message(STATUS "ggml: skipping Vulkan backend; missing ${_GGML_VULKAN_MISSING_TEXT}")
     endif()
 else()
+    if(AICore_ENABLED AND AICORE_REQUIRE_VULKAN)
+        message(FATAL_ERROR
+            "AICORE_REQUIRE_VULKAN=ON requires GGML_USE_VULKAN=ON")
+    endif()
     list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=OFF)
 endif()
 
-# OpenCL backend — default ON on Linux/Windows, OFF on macOS; auto-detect OpenCL 3.0 + Python3
-option(GGML_USE_OPENCL "Enable ggml OpenCL backend (default ON on Linux/Windows; auto-detect when ON)" ${_GGML_OPENCL_DEFAULT})
+# SYCL backend (Intel GPU). Keep this explicitly opt-in until release packages
+# carry and validate the matching oneAPI runtime; upstream does not promise a
+# standalone binary that works without it.
+option(GGML_USE_SYCL "Enable ggml SYCL backend (Intel oneAPI; developer/validated distribution builds)" OFF)
+option(GGML_SYCL_USE_DNN "Enable oneDNN kernels in the ggml SYCL backend" ON)
+set(_GGML_SYCL_ENABLED OFF)
+if(GGML_USE_SYCL)
+    if(APPLE)
+        message(FATAL_ERROR "ggml SYCL is not supported on macOS; use Metal")
+    elseif(NOT GGML_BUILD_SHARED)
+        message(FATAL_ERROR "GGML_USE_SYCL requires GGML_BUILD_SHARED=ON so oneAPI remains an optional runtime backend")
+    else()
+        find_program(_GGML_SYCL_CXX_COMPILER NAMES icpx dpcpp)
+        find_program(_GGML_SYCL_C_COMPILER NAMES icx)
+        if(_GGML_SYCL_CXX_COMPILER AND _GGML_SYCL_C_COMPILER)
+            list(APPEND GGML_CMAKE_ARGS
+                -DCMAKE_C_COMPILER=${_GGML_SYCL_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${_GGML_SYCL_CXX_COMPILER}
+                -DGGML_SYCL=ON
+                -DGGML_SYCL_TARGET=INTEL
+                -DGGML_SYCL_DNN=${GGML_SYCL_USE_DNN}
+                -DGGML_SYCL_SUPPORT_LEVEL_ZERO_API=ON)
+            set(_GGML_SYCL_ENABLED ON)
+            message(STATUS "ggml: SYCL backend enabled (${_GGML_SYCL_CXX_COMPILER})")
+        else()
+            list(APPEND GGML_CMAKE_ARGS -DGGML_SYCL=OFF)
+            message(STATUS "ggml: oneAPI compiler not found - skipping SYCL backend")
+        endif()
+    endif()
+else()
+    list(APPEND GGML_CMAKE_ARGS -DGGML_SYCL=OFF)
+endif()
+
+# OpenCL is retained only as an explicit Adreno/legacy developer backend.
+# Upstream's desktop operation coverage is substantially below SYCL/Vulkan.
+option(GGML_USE_OPENCL "Enable ggml OpenCL backend (legacy/Adreno opt-in)" ${_GGML_OPENCL_DEFAULT})
+set(GGML_OPENCL_TARGET_VERSION "200" CACHE STRING
+    "OpenCL host API target for ggml (120, 200, or 300)")
+set_property(CACHE GGML_OPENCL_TARGET_VERSION PROPERTY STRINGS 120 200 300)
+if(NOT GGML_OPENCL_TARGET_VERSION MATCHES "^(120|200|300)$")
+    message(FATAL_ERROR
+        "GGML_OPENCL_TARGET_VERSION must be one of 120, 200, or 300")
+endif()
 set(_GGML_OPENCL_ENABLED OFF)
 if(GGML_USE_OPENCL)
     if(APPLE)
@@ -159,6 +266,13 @@ if(GGML_USE_OPENCL)
         find_package(OpenCL QUIET)
         find_package(Python3 QUIET COMPONENTS Interpreter)
         set(_GGML_OPENCL_HEADERS_OK OFF)
+        if(GGML_OPENCL_TARGET_VERSION STREQUAL "300")
+            set(_GGML_OPENCL_REQUIRED_MACRO "CL_VERSION_3_0")
+        elseif(GGML_OPENCL_TARGET_VERSION STREQUAL "200")
+            set(_GGML_OPENCL_REQUIRED_MACRO "CL_VERSION_2_0")
+        else()
+            set(_GGML_OPENCL_REQUIRED_MACRO "CL_VERSION_1_2")
+        endif()
         if(OpenCL_FOUND)
             set(_ocl_include_dir "")
             if(OpenCL_INCLUDE_DIRS)
@@ -171,24 +285,26 @@ if(GGML_USE_OPENCL)
                     file(READ "${_ocl_include_dir}/CL/cl_version.h" _ggml_opencl_ver_h LIMIT 8192)
                 endif()
                 file(READ "${_ocl_include_dir}/CL/cl.h" _ggml_opencl_cl_h LIMIT 16384)
-                if(_ggml_opencl_cl_h MATCHES "#define CL_VERSION_3_0"
-                   OR _ggml_opencl_ver_h MATCHES "#define CL_VERSION_3_0")
+                if(_ggml_opencl_cl_h MATCHES "#define ${_GGML_OPENCL_REQUIRED_MACRO}"
+                   OR _ggml_opencl_ver_h MATCHES "#define ${_GGML_OPENCL_REQUIRED_MACRO}")
                     set(_GGML_OPENCL_HEADERS_OK ON)
                 endif()
             endif()
         endif()
         if(OpenCL_FOUND AND Python3_FOUND AND _GGML_OPENCL_HEADERS_OK)
-            list(APPEND GGML_CMAKE_ARGS -DGGML_OPENCL=ON)
+            list(APPEND GGML_CMAKE_ARGS
+                -DGGML_OPENCL=ON
+                -DGGML_OPENCL_TARGET_VERSION=${GGML_OPENCL_TARGET_VERSION})
             set(_GGML_OPENCL_ENABLED ON)
-            message(STATUS "ggml: OpenCL backend enabled (OpenCL 3.0 headers)")
+            message(STATUS "ggml: OpenCL backend enabled (API target ${GGML_OPENCL_TARGET_VERSION})")
         else()
             list(APPEND GGML_CMAKE_ARGS -DGGML_OPENCL=OFF)
             if(NOT OpenCL_FOUND)
                 message(STATUS "ggml: OpenCL not found — skipping OpenCL backend "
                                 "(install ocl-icd-opencl-dev / OpenCL ICD)")
             elseif(NOT _GGML_OPENCL_HEADERS_OK)
-                message(STATUS "ggml: OpenCL 3.0 headers not found — skipping OpenCL backend "
-                                "(install Khronos OpenCL-Headers; Ubuntu 20.04 apt only ships 2.2)")
+                message(STATUS "ggml: ${_GGML_OPENCL_REQUIRED_MACRO} headers not found — skipping OpenCL backend "
+                                "(install Khronos OpenCL-Headers or lower GGML_OPENCL_TARGET_VERSION)")
             endif()
             if(NOT Python3_FOUND)
                 message(STATUS "ggml: Python3 not found — skipping OpenCL backend "
@@ -201,16 +317,19 @@ else()
     message(STATUS "ggml: OpenCL backend disabled (GGML_USE_OPENCL=OFF)")
 endif()
 
-# BLAS / Accelerate backend
-option(GGML_USE_BLAS "Enable ggml BLAS backend" OFF)
-if(GGML_USE_BLAS OR APPLE)
-    list(APPEND GGML_CMAKE_ARGS -DGGML_BLAS=ON)
-    if(APPLE)
-        list(APPEND GGML_CMAKE_ARGS -DGGML_ACCELERATE=ON)
-    endif()
-    message(STATUS "ggml: BLAS backend enabled")
-else()
-    list(APPEND GGML_CMAKE_ARGS -DGGML_BLAS=OFF)
+# The standalone ggml BLAS backend is deliberately disabled. It implements only
+# a subset of graph operations, so DA3/FreeSplatter require a mixed BLAS + CPU
+# scheduler that is slower than ggml's optimized CPU backend and has caused
+# allocator failures. CPU inference uses only ggml-cpu (including its portable
+# llamafile kernels); GPU acceleration is provided by Vulkan/Metal.
+set(GGML_USE_BLAS OFF CACHE BOOL
+    "Standalone ggml BLAS backend is unsupported by AICore" FORCE)
+set(_GGML_EXTERNAL_DEPENDS)
+list(APPEND GGML_CMAKE_ARGS -DGGML_BLAS=OFF)
+if(APPLE)
+    # Accelerate is a system CPU framework used by ggml-cpu, not the separate
+    # partial-graph ggml-blas backend.
+    list(APPEND GGML_CMAKE_ARGS -DGGML_ACCELERATE=ON)
 endif()
 
 # tinyBLAS (llamafile) for optimized CPU matmul
@@ -218,7 +337,11 @@ option(GGML_USE_LLAMAFILE "Enable ggml tinyBLAS (llamafile) matmul kernels" ON)
 list(APPEND GGML_CMAKE_ARGS -DGGML_LLAMAFILE=${GGML_USE_LLAMAFILE})
 
 # CPU optimizations
-if(NOT CMAKE_CROSSCOMPILING)
+# GGML v0.17+ forbids GGML_NATIVE with GGML_BACKEND_DL (shared/dynamic mode).
+# Use runtime CPU feature detection in a single ggml-cpu module instead.
+if(GGML_BUILD_SHARED)
+    list(APPEND GGML_CMAKE_ARGS -DGGML_NATIVE=OFF)
+elseif(NOT CMAKE_CROSSCOMPILING)
     list(APPEND GGML_CMAKE_ARGS -DGGML_NATIVE=ON)
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_NATIVE=OFF)
@@ -232,7 +355,8 @@ else()
 endif()
 
 # --- Build byproducts ---
-# ggml and ggml-base are always SHARED/STATIC libs in lib/.
+# Link artifacts are import libraries on Windows shared builds, otherwise the
+# shared/static libraries themselves.
 set(GGML_BUILD_BYPRODUCTS
     <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
     <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
@@ -243,6 +367,10 @@ if(GGML_BUILD_SHARED)
     set(_GGML_MODULE_SUFFIX ".so")
     if(WIN32)
         set(_GGML_MODULE_SUFFIX ".dll")
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${CMAKE_SHARED_LIBRARY_PREFIX}ggml${CMAKE_SHARED_LIBRARY_SUFFIX}
+            <INSTALL_DIR>/bin/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-base${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
     endif()
     list(APPEND GGML_BUILD_BYPRODUCTS
         <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_MODULE_SUFFIX}
@@ -255,10 +383,6 @@ if(GGML_BUILD_SHARED)
         list(APPEND GGML_BUILD_BYPRODUCTS
             <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-metal${_GGML_MODULE_SUFFIX})
     endif()
-    if(GGML_USE_BLAS OR APPLE)
-        list(APPEND GGML_BUILD_BYPRODUCTS
-            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-blas${_GGML_MODULE_SUFFIX})
-    endif()
     if(_GGML_VULKAN_ENABLED)
         list(APPEND GGML_BUILD_BYPRODUCTS
             <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-vulkan${_GGML_MODULE_SUFFIX})
@@ -266,6 +390,10 @@ if(GGML_BUILD_SHARED)
     if(_GGML_OPENCL_ENABLED)
         list(APPEND GGML_BUILD_BYPRODUCTS
             <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-opencl${_GGML_MODULE_SUFFIX})
+    endif()
+    if(_GGML_SYCL_ENABLED)
+        list(APPEND GGML_BUILD_BYPRODUCTS
+            <INSTALL_DIR>/bin/${_GGML_LIB_PREFIX}ggml-sycl${_GGML_MODULE_SUFFIX})
     endif()
 else()
     # Static mode: all backends are regular static libs in lib/.
@@ -279,10 +407,6 @@ else()
     if(_GGML_METAL_ENABLED)
         list(APPEND GGML_BUILD_BYPRODUCTS
             <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-metal${_GGML_LIB_SUFFIX})
-    endif()
-    if(GGML_USE_BLAS OR APPLE)
-        list(APPEND GGML_BUILD_BYPRODUCTS
-            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-blas${_GGML_LIB_SUFFIX})
     endif()
     if(_GGML_VULKAN_ENABLED)
         list(APPEND GGML_BUILD_BYPRODUCTS
@@ -303,6 +427,11 @@ else()
     set(_GGML_PATCH_COMMAND "")
 endif()
 
+set(_GGML_EXTERNAL_DEPENDS_ARGS)
+if(_GGML_EXTERNAL_DEPENDS)
+    set(_GGML_EXTERNAL_DEPENDS_ARGS DEPENDS ${_GGML_EXTERNAL_DEPENDS})
+endif()
+
 ExternalProject_Add(ext_ggml
     PREFIX ggml
     INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
@@ -313,11 +442,14 @@ ExternalProject_Add(ext_ggml
     PATCH_COMMAND ${_GGML_PATCH_COMMAND}
     CMAKE_ARGS ${GGML_CMAKE_ARGS}
     BUILD_BYPRODUCTS ${GGML_BUILD_BYPRODUCTS}
+    ${_GGML_EXTERNAL_DEPENDS_ARGS}
 )
 
 set(GGML_INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
 set(GGML_INCLUDE_DIRS ${GGML_INSTALL_DIR}/include)
 set(GGML_LIB_DIR ${GGML_INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+set(GGML_RUNTIME_LIB_DIR ${GGML_INSTALL_DIR}/${_GGML_RUNTIME_SUBDIR})
+set(GGML_MODULE_DIR ${GGML_INSTALL_DIR}/bin)
 
 # --- Create imported interface target ---
 add_library(3rdparty_ggml INTERFACE)
@@ -349,8 +481,9 @@ endif()
 # libcuda.so.1, etc.). This is what enables the Python wheel to be imported
 # on machines without GPU drivers.
 #
-# In STATIC mode (default, for the ACloudViewer app), backends are statically
-# linked as before — all GPU symbols are resolved at link time.
+# In explicit STATIC mode, backends are linked into AICore and all GPU symbols
+# must resolve at process load time. Release app and wheel builds use dynamic
+# backends so optional accelerators can fail without breaking CPU inference.
 
 if(NOT GGML_BUILD_SHARED)
     # CUDA: reuse CUDAToolkit already found by the parent project
@@ -413,26 +546,11 @@ if(NOT GGML_BUILD_SHARED)
         endif()
     endif()
 
-    # BLAS / Accelerate
-    if(GGML_USE_BLAS OR APPLE)
-        target_link_libraries(3rdparty_ggml INTERFACE
-            ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-blas${_GGML_LIB_SUFFIX}
-        )
-        if(APPLE)
-            target_link_libraries(3rdparty_ggml INTERFACE "-framework Accelerate")
-        else()
-            find_package(BLAS QUIET)
-            if(BLAS_FOUND)
-                target_link_libraries(3rdparty_ggml INTERFACE ${BLAS_LIBRARIES})
-            endif()
-        endif()
-    endif()
 else()
-    # SHARED + GGML_BACKEND_DL mode: ALL backends (Metal, BLAS, CUDA, OpenCL,
+    # SHARED + GGML_BACKEND_DL mode: all configured backends (Metal, CUDA, OpenCL,
     # Vulkan) are standalone dynamic modules loaded at runtime via
     # ggml_backend_load_all_from_path(). They are NOT linked into
-    # 3rdparty_ggml. Each backend .so/.dylib is self-contained (e.g.
-    # libggml-metal.dylib links Metal.framework itself).
+    # 3rdparty_ggml. Each backend module links its own platform dependencies.
     # CopyGgmlBackends.cmake copies them alongside libAICore, and
     # load_backends_once() resolves the search directory at runtime.
 endif()
@@ -458,9 +576,27 @@ set(GGML_LIBRARIES 3rdparty_ggml CACHE STRING "ggml libraries" FORCE)
 set(GGML_CUDA_ENABLED ${_GGML_CUDA_ENABLED} CACHE BOOL "ggml CUDA backend built" FORCE)
 set(GGML_VULKAN_ENABLED ${_GGML_VULKAN_ENABLED} CACHE BOOL "ggml Vulkan backend built" FORCE)
 set(GGML_OPENCL_ENABLED ${_GGML_OPENCL_ENABLED} CACHE BOOL "ggml OpenCL backend built" FORCE)
+set(GGML_SYCL_ENABLED ${_GGML_SYCL_ENABLED} CACHE BOOL "ggml SYCL backend built" FORCE)
 set(GGML_METAL_ENABLED ${_GGML_METAL_ENABLED} CACHE BOOL "ggml Metal backend built" FORCE)
 set(GGML_DYNAMIC_BACKENDS ${GGML_BUILD_SHARED} CACHE BOOL "ggml backends are dynamic modules" FORCE)
-set(GGML_BACKEND_DIR "${GGML_LIB_DIR}" CACHE PATH "ggml backend modules directory" FORCE)
+set(GGML_RUNTIME_LIB_DIR "${GGML_RUNTIME_LIB_DIR}" CACHE PATH
+    "ggml core runtime library directory" FORCE)
+set(GGML_BACKEND_DIR "${GGML_MODULE_DIR}" CACHE PATH
+    "ggml dynamic backend module directory" FORCE)
+set(GGML_MODULE_SUFFIX "${_GGML_MODULE_SUFFIX}" CACHE STRING
+    "ggml dynamic backend module suffix" FORCE)
+
+set(GGML_BACKEND_MODULE_FILES
+    "${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${_GGML_MODULE_SUFFIX}")
+foreach(_backend IN ITEMS cuda metal vulkan opencl sycl)
+    string(TOUPPER "${_backend}" _backend_upper)
+    if(_GGML_${_backend_upper}_ENABLED)
+        list(APPEND GGML_BACKEND_MODULE_FILES
+            "${CMAKE_SHARED_LIBRARY_PREFIX}ggml-${_backend}${_GGML_MODULE_SUFFIX}")
+    endif()
+endforeach()
+set(GGML_BACKEND_MODULE_FILES "${GGML_BACKEND_MODULE_FILES}" CACHE STRING
+    "Configured ggml runtime backend module files" FORCE)
 
 set(_GGML_BACKEND_LIST "CPU")
 if(_GGML_CUDA_ENABLED)
@@ -469,17 +605,27 @@ endif()
 if(_GGML_OPENCL_ENABLED)
     list(APPEND _GGML_BACKEND_LIST "OpenCL")
 endif()
+if(_GGML_SYCL_ENABLED)
+    list(APPEND _GGML_BACKEND_LIST "SYCL")
+endif()
 if(_GGML_VULKAN_ENABLED)
     list(APPEND _GGML_BACKEND_LIST "Vulkan")
 endif()
 if(_GGML_METAL_ENABLED)
     list(APPEND _GGML_BACKEND_LIST "Metal")
 endif()
+set(_GGML_AUTO_ORDER_LIST)
 if(APPLE)
-    set(_GGML_AUTO_ORDER "Metal -> CUDA -> CPU")
+    if(_GGML_METAL_ENABLED)
+        list(APPEND _GGML_AUTO_ORDER_LIST "Metal")
+    endif()
 else()
-    set(_GGML_AUTO_ORDER "CUDA -> OpenCL -> CPU")
+    if(_GGML_VULKAN_ENABLED)
+        list(APPEND _GGML_AUTO_ORDER_LIST "Vulkan")
+    endif()
 endif()
+list(APPEND _GGML_AUTO_ORDER_LIST "CPU")
+string(JOIN " -> " _GGML_AUTO_ORDER ${_GGML_AUTO_ORDER_LIST})
 if(GGML_BUILD_SHARED)
     set(_GGML_LINK_MODE "shared (dynamic backend loading)")
 else()

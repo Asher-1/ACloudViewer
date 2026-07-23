@@ -15,9 +15,10 @@
 #include <vector>
 
 #include "aicore/depth_capi.h"
+#include "aicore/backend_capi.h"
 #include "colmap_export.hpp"
 #include "engine.hpp"
-#include "ggml_common/ggml_backend_utils.hpp"
+#include "ggml_backend_utils.hpp"
 #include "glb_export.hpp"
 #include "image_io.hpp"
 #include "path_util.hpp"
@@ -106,8 +107,8 @@ static bool capi_run_nested(aicore_depth_ctx* c,
 }
 
 extern "C" {
-int AICORE_CAPI aicore_depth_abi_version(void) { return 4; }
-aicore_depth_ctx* AICORE_CAPI aicore_depth_load(const char* path,
+AICORE_CAPI int aicore_depth_abi_version(void) { return 5; }
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load(const char* path,
                                                 int n_threads) {
     if (!path) return nullptr;
     auto e = aicore::depth::Engine::load(path, n_threads);
@@ -116,7 +117,18 @@ aicore_depth_ctx* AICORE_CAPI aicore_depth_load(const char* path,
     c->engine = std::move(e);
     return c;
 }
-aicore_depth_ctx* AICORE_CAPI aicore_depth_load_nested(const char* anyview,
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_device(const char* path,
+                                                       int n_threads,
+                                                       const char* device) {
+    if (!path) return nullptr;
+    auto e = aicore::depth::Engine::load_device(
+            path, n_threads, device && device[0] ? device : "auto");
+    if (!e) return nullptr;
+    auto* c = new aicore_depth_ctx();
+    c->engine = std::move(e);
+    return c;
+}
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested(const char* anyview,
                                                        const char* metric,
                                                        int n_threads) {
     if (!anyview || !metric) return nullptr;
@@ -126,13 +138,26 @@ aicore_depth_ctx* AICORE_CAPI aicore_depth_load_nested(const char* anyview,
     c->engine = std::move(e);
     return c;
 }
-void AICORE_CAPI aicore_depth_free(aicore_depth_ctx* c) {
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_device(
+        const char* anyview,
+        const char* metric,
+        int n_threads,
+        const char* device) {
+    if (!anyview || !metric) return nullptr;
+    auto e = aicore::depth::Engine::load_nested_device(
+            anyview, metric, n_threads, device && device[0] ? device : "auto");
+    if (!e) return nullptr;
+    auto* c = new aicore_depth_ctx();
+    c->engine = std::move(e);
+    return c;
+}
+AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* c) {
     if (c && c->engine) {
         c->engine->release_gpu_working_memory();
     }
     delete c;
 }
-char* AICORE_CAPI aicore_depth_info_json(aicore_depth_ctx* c) {
+AICORE_CAPI char* aicore_depth_info_json(aicore_depth_ctx* c) {
     if (!c || !c->engine) return nullptr;
     const auto& cfg = c->engine->config();
     std::string j = "{\"checkpoint\":\"" + json_escape(cfg.checkpoint_name) +
@@ -141,11 +166,11 @@ char* AICORE_CAPI aicore_depth_info_json(aicore_depth_ctx* c) {
                     ",\"num_heads\":" + std::to_string(cfg.num_heads) + "}";
     return dup_cstr(j);
 }
-void AICORE_CAPI aicore_depth_free_string(char* s) { std::free(s); }
-const char* AICORE_CAPI aicore_depth_last_error(aicore_depth_ctx* c) {
+AICORE_CAPI void aicore_depth_free_string(char* s) { std::free(s); }
+AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* c) {
     return c ? c->last_error.c_str() : "";
 }
-float* AICORE_CAPI aicore_depth_depth_path(aicore_depth_ctx* c,
+AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
                                            const char* image_path,
                                            int* out_h,
                                            int* out_w) {
@@ -179,8 +204,8 @@ float* AICORE_CAPI aicore_depth_depth_path(aicore_depth_ctx* c,
     if (out_w) *out_w = W;
     return p;
 }
-void AICORE_CAPI aicore_depth_free_floats(float* p) { std::free(p); }
-int AICORE_CAPI aicore_depth_pose_path(aicore_depth_ctx* c,
+AICORE_CAPI void aicore_depth_free_floats(float* p) { std::free(p); }
+AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
                                        const char* image_path,
                                        float out_ext[12],
                                        float out_intr[9]) {
@@ -207,7 +232,7 @@ int AICORE_CAPI aicore_depth_pose_path(aicore_depth_ctx* c,
     if (out_intr) std::memcpy(out_intr, intr.data(), 9 * sizeof(float));
     return 0;
 }
-float* AICORE_CAPI aicore_depth_depth_pose_multi(aicore_depth_ctx* c,
+AICORE_CAPI float* aicore_depth_depth_pose_multi(aicore_depth_ctx* c,
                                                  const char** image_paths,
                                                  int n_images,
                                                  int* out_h,
@@ -330,7 +355,7 @@ static bool capi_export_prep(aicore_depth_ctx* c,
     E = {ext4};
     return true;
 }
-int AICORE_CAPI aicore_depth_export_glb(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_export_glb(aicore_depth_ctx* c,
                                         const char* image_path,
                                         const char* out_glb) {
     if (!c || !c->engine || !image_path || !out_glb) {
@@ -353,7 +378,7 @@ int AICORE_CAPI aicore_depth_export_glb(aicore_depth_ctx* c,
     }
     return 0;
 }
-int AICORE_CAPI aicore_depth_export_colmap(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_export_colmap(aicore_depth_ctx* c,
                                            const char* image_path,
                                            const char* out_dir,
                                            int binary) {
@@ -382,7 +407,7 @@ int AICORE_CAPI aicore_depth_export_colmap(aicore_depth_ctx* c,
     }
     return 0;
 }
-int AICORE_CAPI aicore_depth_export_colmap_multi(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_export_colmap_multi(aicore_depth_ctx* c,
                                                  const char** image_paths,
                                                  int n_images,
                                                  const char* out_dir,
@@ -390,7 +415,7 @@ int AICORE_CAPI aicore_depth_export_colmap_multi(aicore_depth_ctx* c,
     return aicore_depth_export_colmap_multi_named(c, image_paths, nullptr,
                                                   n_images, out_dir, binary);
 }
-int AICORE_CAPI aicore_depth_export_colmap_multi_named(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_export_colmap_multi_named(aicore_depth_ctx* c,
                                                        const char** image_paths,
                                                        const char** image_names,
                                                        int n_images,
@@ -427,7 +452,7 @@ int AICORE_CAPI aicore_depth_export_colmap_multi_named(aicore_depth_ctx* c,
     }
     return 0;
 }
-int AICORE_CAPI
+AICORE_CAPI int
 aicore_depth_write_colmap_from_multiview(aicore_depth_ctx* c,
                                          const char** image_paths,
                                          const char** image_names,
@@ -514,7 +539,7 @@ aicore_depth_write_colmap_from_multiview(aicore_depth_ctx* c,
     }
     return 0;
 }
-int AICORE_CAPI aicore_depth_depth_dense(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_depth_dense(aicore_depth_ctx* c,
                                          const char* image_path,
                                          int* out_h,
                                          int* out_w,
@@ -653,7 +678,7 @@ int AICORE_CAPI aicore_depth_depth_dense(aicore_depth_ctx* c,
         *out_is_metric = capi_is_metric(c->engine->config()) ? 1 : 0;
     return 0;
 }
-int AICORE_CAPI aicore_depth_points(aicore_depth_ctx* c,
+AICORE_CAPI int aicore_depth_points(aicore_depth_ctx* c,
                                     const char* image_path,
                                     float conf_thresh,
                                     int* out_n,
@@ -709,12 +734,12 @@ int AICORE_CAPI aicore_depth_points(aicore_depth_ctx* c,
     if (out_n) *out_n = (int)n;
     return 0;
 }
-void AICORE_CAPI aicore_depth_free_bytes(unsigned char* p) { std::free(p); }
-char* AICORE_CAPI aicore_depth_model_cache_dir(void) {
+AICORE_CAPI void aicore_depth_free_bytes(unsigned char* p) { std::free(p); }
+AICORE_CAPI char* aicore_depth_model_cache_dir(void) {
     return dup_cstr(aicore::depth::default_model_cache_dir());
 }
 
-void AICORE_CAPI aicore_depth_set_img_resize_target(aicore_depth_ctx* ctx,
+AICORE_CAPI void aicore_depth_set_img_resize_target(aicore_depth_ctx* ctx,
                                                     int target) {
     if (!ctx || !ctx->engine || target <= 0) {
         return;
@@ -722,7 +747,7 @@ void AICORE_CAPI aicore_depth_set_img_resize_target(aicore_depth_ctx* ctx,
     ctx->engine->set_img_resize_target(static_cast<uint32_t>(target));
 }
 
-void AICORE_CAPI
+AICORE_CAPI void
 aicore_depth_release_gpu_working_memory(aicore_depth_ctx* ctx) {
     if (!ctx || !ctx->engine) {
         return;
@@ -730,7 +755,7 @@ aicore_depth_release_gpu_working_memory(aicore_depth_ctx* ctx) {
     ctx->engine->release_gpu_working_memory();
 }
 
-int AICORE_CAPI aicore_depth_cap_img_resize_target(aicore_depth_ctx* ctx,
+AICORE_CAPI int aicore_depth_cap_img_resize_target(aicore_depth_ctx* ctx,
                                                    int requested) {
     if (!ctx || !ctx->engine || requested <= 0) {
         return requested;
@@ -749,7 +774,7 @@ static float* dup_floats(const std::vector<float>& v) {
     return p;
 }
 
-int AICORE_CAPI aicore_depth_reconstruct_path(const char* gguf_path,
+AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
                                               int n_threads,
                                               const char* image_path,
                                               int* out_h,
@@ -811,7 +836,7 @@ int AICORE_CAPI aicore_depth_reconstruct_path(const char* gguf_path,
     return 0;
 }
 
-int AICORE_CAPI aicore_depth_quantize_gguf(const char* in_gguf,
+AICORE_CAPI int aicore_depth_quantize_gguf(const char* in_gguf,
                                            const char* out_gguf,
                                            const char* type) {
     if (!in_gguf || !out_gguf || !type) {
@@ -820,12 +845,7 @@ int AICORE_CAPI aicore_depth_quantize_gguf(const char* in_gguf,
     return aicore::depth::quantize_gguf(in_gguf, out_gguf, type) ? 0 : -1;
 }
 
-int AICORE_CAPI aicore_depth_warmup_backend(const char* device) {
-    (void)device;
-    ggml_common::load_backends_once();
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
-    cudaGetLastError();
-#endif
-    return 0;
+AICORE_CAPI int aicore_depth_warmup_backend(const char* device) {
+    return aicore_warmup_backend(device);
 }
 }

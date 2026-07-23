@@ -76,7 +76,7 @@ flowchart TD
 
 1. Select one or more images in the DB tree, or click **Browse**.
 2. Choose a **Model** from the combo box (use **Download** on first run).
-3. Set **Device** (`Auto` / Metal (macOS) / CUDA / OpenCL / CPU), **Threads** (0 = auto), **Invert depth**, **Unproject 3D**, etc.
+3. Set **Device** (`Auto` / Metal / SYCL / Vulkan / CUDA / CPU, available entries only), **Threads** (0 = auto), **Invert depth**, **Unproject 3D**, etc.
 4. Click **Run**; progress appears in the log window.
 5. Depth results are added as `ccImage` child nodes; use **Export depth** to save to disk.
 
@@ -86,20 +86,21 @@ flowchart TD
 |--------|----------|
 | **Auto** | Pick the first compiled GPU backend by platform priority; fall back to CPU (see table below) |
 | **GPU (Metal)** | Force Metal (macOS only; `-DGGML_USE_METAL=ON`) |
-| **GPU (CUDA)** | Force CUDA (`BUILD_CUDA_MODULE=ON` or `-DGGML_USE_CUDA=ON`) |
-| **GPU (OpenCL)** | Force OpenCL (Linux/Windows; `-DGGML_USE_OPENCL=ON`) |
-| **CPU** | Force CPU inference |
+| **GPU (SYCL)** | Force Intel GPU SYCL (`-DGGML_USE_SYCL=ON`) |
+| **GPU (Vulkan)** | Force cross-vendor Vulkan |
+| **GPU (CUDA)** | Developer opt-in (`-DGGML_USE_CUDA=ON`) |
+| **CPU** | Force the pure ggml CPU backend |
 
 **Auto priority (runtime):**
 
 | Platform | Order |
 |----------|-------|
-| **macOS** | Metal → CUDA → CPU (OpenCL not built; Vulkan off by default) |
-| **Linux / Windows** | CUDA → OpenCL → CPU (Vulkan off by default) |
+| **macOS** | Metal → CPU |
+| **Linux / Windows** | Vulkan → CPU |
 
 Same as **qFreeSplatter**: backend warmup runs on the UI thread before **Run**; if GPU init fails and the user did not force CPU, the job completes on CPU.
 
-Override with environment variable `DA_DEVICE` (CLI / automatic reconstruction): `auto`, `cpu`, `cuda`, `opencl[:N]`, `metal` (macOS).
+Override with `DA_DEVICE`: `auto`, `cpu`, `sycl[:N]`, `vulkan[:N]`, `cuda[:N]`, or `metal`. SYCL/CUDA are explicit developer devices and are not selected by Auto.
 
 ### Automatic Reconstruction integration
 
@@ -111,7 +112,7 @@ Override with environment variable `DA_DEVICE` (CLI / automatic reconstruction):
 | Stereo / dense | **DA3 depth inference** (Nested AnyView/Metric) or **COLMAP PatchMatch** (CUDA only) |
 | Model | Base / Large / Giant / Nested Metric / Nested AnyView |
 
-**Full pipeline without CUDA (CPU / OpenCL / Metal):** when `AICore_ENABLED=ON` and `CUDA_ENABLED=OFF` (e.g. CPU wheel), defaults use DA3 for sparse and stereo; dense path is **undistort → DA3 depth → DA3 voxel fusion → Poisson/Delaunay mesh → texturing** without PatchMatch. If the UI still selects COLMAP PatchMatch, runtime switches to DA3 stereo via `EffectiveStereoPipelineMode`.
+**Portable pipeline (Vulkan / CPU / Metal):** when `AICore_ENABLED=ON`, DA3 sparse and stereo do not require CUDA; dense processing is **undistort → DA3 depth → DA3 voxel fusion → Poisson/Delaunay mesh → texturing** without PatchMatch. If the UI still selects COLMAP PatchMatch, runtime switches to DA3 stereo via `EffectiveStereoPipelineMode`.
 
 **With CUDA:** hybrid mode (≥3 images) can use COLMAP sparse poses + DA3 depth priors + optional PatchMatch geometric refine + StereoFusion.
 
@@ -155,12 +156,13 @@ cmake --build build_app --target QDA3_PLUGIN AICore -j$(nproc)
 | `AICore_ENABLED` | OFF | Build `libAICore.so` |
 | `PLUGIN_STANDARD_QDA3` | OFF | This plugin |
 | `BUILD_RECONSTRUCTION` | — | `DA3DepthController` / automatic reconstruction |
-| `BUILD_CUDA_MODULE` | — | ggml CUDA backend (NVIDIA toolchain) |
+| `GGML_USE_CUDA` | OFF | Developer CUDA backend (NVIDIA toolchain) |
 | `GGML_USE_METAL` | Apple: ON | Metal backend (macOS/iOS only) |
-| `GGML_USE_VULKAN` | OFF (all platforms) | Opt-in only (`-DGGML_USE_VULKAN=ON`) |
-| `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | Built when OpenCL 3.0 + Python3 are detected; **not on macOS** |
+| `GGML_USE_VULKAN` | Linux/Win: ON | Default distributable cross-vendor GPU backend |
+| `GGML_USE_SYCL` | OFF | Intel GPU; enable only with a validated oneAPI runtime bundle |
+| `GGML_USE_OPENCL` | OFF | Legacy/Adreno developer backend |
 
-**Multi-backend ggml:** several static backends can be compiled together; configure prints `backends = ...` and Auto order. OpenCL on Linux/Windows needs OpenCL 3.0 headers. macOS defaults to Metal; Vulkan is not built by default.
+**Multi-backend ggml:** backends are private runtime modules and configure prints the actual packaged set and Auto order. macOS packages Metal/CPU; desktop OpenCL and the partial-graph BLAS backend are disabled.
 
 **Outputs:**
 

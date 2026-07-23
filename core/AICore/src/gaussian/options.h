@@ -15,14 +15,9 @@ namespace aicore {
 namespace gaussian {
 
 struct options {
-#if defined(__APPLE__)
-    // macOS: Metal is the native ggml GPU backend (OpenCL is not built).
-    std::string device = "metal";  // metal | auto | cpu | cuda [:N]
-#else
-    // Auto order: CUDA -> OpenCL -> CPU (see
-    // ggml_common::find_auto_gpu_backend).
-    std::string device = "auto";  // auto | cpu | gpu | cuda | opencl [:N]
-#endif
+    // Platform auto order is owned by the private backend registry. On macOS
+    // this preserves CPU fallback when Metal is unavailable.
+    std::string device = "auto";
     int n_threads = 0;          // <= 0 => auto (CPU)
     std::string dump_taps_dir;  // empty => tap dumping disabled
 };

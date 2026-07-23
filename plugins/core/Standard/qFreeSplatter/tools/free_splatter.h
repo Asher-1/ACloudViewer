@@ -126,6 +126,18 @@ double free_splatter_refine_cloud(free_splatter_point* cloud,
                                   int iters,
                                   float alpha);
 
+int free_splatter_export_splat(const float* gaussians,
+                               size_t count,
+                               int gaussian_channels,
+                               float opacity_threshold,
+                               size_t max_splats,
+                               const char* output_path);
+int free_splatter_export_cloud_splat(const free_splatter_point* cloud,
+                                     size_t count,
+                                     size_t max_splats,
+                                     float scale_multiplier,
+                                     const char* output_path);
+
 #ifdef __cplusplus
 }
 #endif

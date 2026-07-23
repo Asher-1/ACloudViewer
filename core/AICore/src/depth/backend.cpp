@@ -16,7 +16,7 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_common/ggml_backend_utils.hpp"
+#include "ggml_backend_utils.hpp"
 #if !defined(GGML_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
@@ -62,7 +62,7 @@ struct Backend::Impl {
     ggml_gallocr_t galloc = nullptr;  // CPU / single-backend path (unchanged)
     ggml_backend_sched_t sched =
             nullptr;         // GPU path: schedules over {backend, cpu_backend}
-    bool use_sched = false;  // true only when `backend` is a GPU device
+    bool use_sched = false;  // primary accelerator plus CPU fallback
     // Inputs registered by the build lambda for the in-flight compute. Copied
     // into the allocated tensors after the graph is allocated, then cleared.
     // Never overlaps across calls (compute is not re-entrant).
@@ -74,16 +74,11 @@ struct Backend::Impl {
     std::vector<ggml_tensor*> roots;
 };
 
-Backend::Backend() : impl_(new Impl()) {
+Backend::Backend(const std::string& device) : impl_(new Impl()) {
     ggml_common::load_backends_once();
     clear_sticky_cuda_errors();
 
-    // Optional override via DA_DEVICE: "cpu", "auto", "cuda[:N]", "opencl[:N]",
-    // "gpu[:N]", or an explicit registry name (e.g. "CUDA0").
-    // Unset defaults to auto: Linux/Win CUDA -> OpenCL -> CPU;
-    // macOS Metal -> CUDA -> CPU.
-    const char* force = std::getenv("DA_DEVICE");
-    const std::string want = force ? force : "";
+    const std::string want = device.empty() ? "auto" : device;
 
     std::string parsed_name;
     int want_idx = 0;
@@ -107,17 +102,18 @@ Backend::Backend() : impl_(new Impl()) {
                      device_name_.c_str());
     };
 
-    const bool explicit_device = !want.empty() && parsed_name != "auto";
+    const bool explicit_device = parsed_name != "auto";
 
     if (parsed_name == "cpu") {
         // CPU forced below.
-    } else if (want.empty() || parsed_name.empty() || parsed_name == "auto") {
+    } else if (parsed_name.empty() || parsed_name == "auto") {
         std::string resolved;
-        if (ggml_backend_t be = ggml_common::find_auto_gpu_backend(resolved)) {
+        if (ggml_backend_t be = ggml_common::find_auto_backend(resolved)) {
             adopt_gpu(be, resolved);
         }
     } else if (parsed_name == "gpu" || parsed_name == "cuda" ||
-               parsed_name == "opencl" || parsed_name == "metal") {
+               parsed_name == "opencl" || parsed_name == "metal" ||
+               parsed_name == "sycl" || parsed_name == "vulkan") {
         clear_sticky_cuda_errors();
         std::string resolved;
         if (ggml_backend_t be = ggml_common::find_gpu_backend(
@@ -130,11 +126,6 @@ Backend::Backend() : impl_(new Impl()) {
             error_ = "device '" + want + "' not available";
             return;
         }
-    } else if (parsed_name == "vulkan") {
-        DA_ERR("Vulkan backend is disabled in this build. Please select a "
-               "different device (auto|cpu|cuda|opencl|metal).");
-        error_ = "vulkan backend disabled";
-        return;
     } else if (!want.empty()) {
         // Explicit registry device name (e.g. CUDA0, Vulkan0).
         for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
@@ -160,7 +151,7 @@ Backend::Backend() : impl_(new Impl()) {
     }
 
     if (!impl_->backend) {
-        if (explicit_device) {
+        if (explicit_device && parsed_name != "cpu") {
             DA_ERR("Device '%s' initialization failed. Please select a "
                    "different device.",
                    want.c_str());
@@ -173,6 +164,7 @@ Backend::Backend() : impl_(new Impl()) {
         offloading_ = false;
         if (!impl_->backend) {
             DA_ERR("aicore::depth::Backend: CPU backend init failed");
+            error_ = "CPU backend init failed";
             return;
         }
     }

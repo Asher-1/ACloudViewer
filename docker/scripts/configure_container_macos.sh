@@ -146,6 +146,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_G3POINT=ON
                 -DPLUGIN_STANDARD_QSIBR=OFF # qSIBR is not supported on macOS
                 -DAICore_ENABLED=ON
+                -DAICore_BUILD_TESTS=ON
                 -DPLUGIN_STANDARD_QDA3=ON
                 -DPLUGIN_STANDARD_QFREESPLATTER=ON
                 -DPLUGIN_PYTHON=ON
@@ -164,6 +165,7 @@ cmake "/opt/ACloudViewer/ACloudViewer" \
       -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install
 
 make "-j$(nproc)"
+cmake --build . --target aicore-contract-tests "-j$(nproc)"
 make install "-j$(nproc)"
 
 DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \

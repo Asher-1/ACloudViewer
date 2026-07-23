@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "free_splatter.h"
-#include "splat.h"  // the single shared .splat record encoder
 
 static bool ends_with(const std::string &s, const char *suf) {
     const size_t n = std::strlen(suf);
@@ -76,42 +75,11 @@ static bool write_splat(const float *g,
                         float opac_thr,
                         size_t max_splats,
                         const char *path) {
-    const double C0 = 0.28209479177387814;
-    std::vector<std::pair<float, size_t>> keep;  // (importance, index)
-    keep.reserve(n);
-    for (size_t i = 0; i < n; i++) {
-        const float op = g[i * gc + 15];
-        if (op <= opac_thr) continue;
-        const float vol = std::max(g[i * gc + 16], 1e-9f) *
-                          std::max(g[i * gc + 17], 1e-9f) *
-                          std::max(g[i * gc + 18], 1e-9f);
-        keep.push_back({op * vol, i});
-    }
-    std::sort(keep.begin(), keep.end(),
-              [](auto &a, auto &b) { return a.first > b.first; });
-    const size_t m =
-            (max_splats > 0) ? std::min(max_splats, keep.size()) : keep.size();
-
-    std::ofstream f(path, std::ios::binary);
-    if (!f) {
+    if (free_splatter_export_splat(g, n, gc, opac_thr, max_splats, path) != 0) {
         std::fprintf(stderr, "cannot write %s\n", path);
         return false;
     }
-    for (size_t k = 0; k < m; k++) {
-        const float *x = &g[keep[k].second * gc];
-        const float pos[3] = {x[0], x[1],
-                              x[2]};  // OpenCV; the encoder flips y,z
-        const float scale[3] = {x[16], x[17], x[18]};
-        const float quat[4] = {x[19], x[20], x[21], x[22]};  // (w,x,y,z)
-        const float rgb[3] = {0.5f + (float)C0 * x[3], 0.5f + (float)C0 * x[4],
-                              0.5f + (float)C0 * x[5]};
-        unsigned char rec[32];
-        aicore::gaussian::encode_splat_record(rec, pos, scale, quat, rgb,
-                                              x[15]);
-        f.write((const char *)rec, 32);
-    }
-    std::printf("wrote %s: %zu splats (pruned/cap of %zu kept)\n", path, m,
-                keep.size());
+    std::printf("wrote %s\n", path);
     return true;
 }
 
@@ -127,41 +95,13 @@ static bool write_cloud_splat(const free_splatter_point *pts,
                               size_t max_splats,
                               float scale_mult,
                               const char *path) {
-    auto importance = [&](size_t i) -> double {
-        const free_splatter_point &p = pts[i];
-        const double vol = (double)std::max(p.sx, 1e-9f) *
-                           std::max(p.sy, 1e-9f) * std::max(p.sz, 1e-9f);
-        return (double)std::max(p.opacity, 0.0f) * vol;
-    };
-    std::vector<size_t> idx(n);
-    for (size_t i = 0; i < n; i++) idx[i] = i;
-    if (max_splats > 0 && n > max_splats) {
-        std::partial_sort(idx.begin(), idx.begin() + max_splats, idx.end(),
-                          [&](size_t a, size_t b) {
-                              return importance(a) > importance(b);
-                          });
-        idx.resize(max_splats);
-    }
-
-    std::ofstream f(path, std::ios::binary);
-    if (!f) {
+    if (free_splatter_export_cloud_splat(pts, n, max_splats, scale_mult,
+                                         path) != 0) {
         std::fprintf(stderr, "cannot write %s\n", path);
         return false;
     }
-    for (size_t i : idx) {
-        const free_splatter_point &p = pts[i];
-        const float pos[3] = {p.x, p.y, p.z};  // OpenCV; the encoder flips y,z
-        const float scale[3] = {scale_mult * p.sx, scale_mult * p.sy,
-                                scale_mult * p.sz};
-        const float quat[4] = {p.qw, p.qx, p.qy, p.qz};  // (w,x,y,z)
-        const float rgb[3] = {p.r, p.g, p.b};
-        unsigned char rec[32];
-        aicore::gaussian::encode_splat_record(rec, pos, scale, quat, rgb,
-                                              p.opacity);
-        f.write((const char *)rec, 32);
-    }
-    std::printf("wrote %s: %zu splats (of %zu cloud points)\n", path,
-                idx.size(), n);
+    std::printf("wrote %s: up to %zu splats (of %zu cloud points)\n", path,
+                max_splats > 0 ? std::min(max_splats, n) : n, n);
     return true;
 }
 
@@ -172,9 +112,9 @@ static int usage(const char *a0) {
             "          [--opacity-threshold T] [--max-splats N] [--dump-taps "
             "DIR]\n"
             "          MODEL.gguf (IMAGES... | INPUT.f32)\n"
-            "  --device defaults to GPU/vulkan and FAILS if none is present; "
-            "pass\n"
-            "  --device cpu to run on CPU explicitly.\n"
+            "  --device defaults to auto (Vulkan then CPU; Metal then CPU on "
+            "macOS).\n"
+            "  Use --device cpu to force the portable pure CPU backend.\n"
             "\n"
             "accumulate mode (>=2 images -> one world from the photo stream):\n"
             "  %s --accumulate [--splat-prefix P] [--fuse] [--voxel V] "

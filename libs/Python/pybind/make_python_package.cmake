@@ -86,32 +86,50 @@ endforeach()
 # fallback to CPU if drivers are missing).
 #
 # Layout with GGML_BACKEND_DL:
-#   lib/  -> SHARED core libs (libggml, libggml-base)
-#   bin/  -> MODULE backends (libggml-cpu.so, libggml-metal.so, etc.)
-# MODULE libraries always use .so extension (even on macOS).
-if(GGML_DYNAMIC_BACKENDS AND GGML_BACKEND_DIR)
+#   GGML_RUNTIME_LIB_DIR -> shared core libs (ggml, ggml-base)
+#   GGML_BACKEND_DIR     -> loadable backends (ggml-cpu, ggml-metal, etc.)
+if(AICore_ENABLED AND GGML_DYNAMIC_BACKENDS)
+    if(NOT IS_DIRECTORY "${GGML_RUNTIME_LIB_DIR}")
+        message(FATAL_ERROR
+            "AICore packaging: ggml runtime dir missing: ${GGML_RUNTIME_LIB_DIR}")
+    endif()
+    if(NOT IS_DIRECTORY "${GGML_BACKEND_DIR}")
+        message(FATAL_ERROR
+            "AICore packaging: ggml backend dir missing: ${GGML_BACKEND_DIR}")
+    endif()
+    # Package generation is incremental. Remove every known backend module
+    # before copying the configured set so a backend disabled since the last
+    # build (notably the unsupported ggml-blas module) cannot leak into a wheel.
+    foreach(_backend IN ITEMS cpu blas cuda metal vulkan opencl sycl)
+        file(REMOVE
+            "${PYTHON_INSTALL_LIB_DESTINATION}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-${_backend}${GGML_MODULE_SUFFIX}")
+    endforeach()
     file(GLOB _ggml_shared_libs
-        "${GGML_BACKEND_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
+        "${GGML_RUNTIME_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
     )
+    if(NOT _ggml_shared_libs)
+        message(FATAL_ERROR "AICore packaging: ggml core runtime is missing")
+    endif()
     foreach(_mod ${_ggml_shared_libs})
         get_filename_component(_mod_name "${_mod}" NAME)
         message(STATUS "Packaging ggml shared lib: ${_mod_name}")
         configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
     endforeach()
-    # MODULE backends are installed to bin/ by ggml_add_backend_library().
-    get_filename_component(_ggml_install_prefix "${GGML_BACKEND_DIR}" DIRECTORY)
-    set(_GGML_MODULE_DIR "${_ggml_install_prefix}/bin")
-    if(IS_DIRECTORY "${_GGML_MODULE_DIR}")
-        file(GLOB _ggml_module_backends "${_GGML_MODULE_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*.so")
-        if(WIN32)
-            file(GLOB _ggml_module_backends "${_GGML_MODULE_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*.dll")
-        endif()
-        foreach(_mod ${_ggml_module_backends})
-            get_filename_component(_mod_name "${_mod}" NAME)
-            message(STATUS "Packaging ggml backend module: ${_mod_name}")
-            configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
-        endforeach()
+    set(_ggml_cpu_backend
+        "${GGML_BACKEND_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}")
+    if(NOT EXISTS "${_ggml_cpu_backend}")
+        message(FATAL_ERROR
+            "AICore packaging: required CPU backend missing: ${_ggml_cpu_backend}")
     endif()
+    foreach(_mod_name IN LISTS GGML_BACKEND_MODULE_FILES)
+        set(_mod "${GGML_BACKEND_DIR}/${_mod_name}")
+        if(NOT EXISTS "${_mod}")
+            message(FATAL_ERROR
+                "AICore packaging: configured backend missing: ${_mod}")
+        endif()
+        message(STATUS "Packaging ggml backend module: ${_mod_name}")
+        configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
+    endforeach()
 endif()
 
 if (WIN32)

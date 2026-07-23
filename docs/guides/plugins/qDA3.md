@@ -34,9 +34,8 @@ cmake --build build_app --target QDA3_PLUGIN ACloudViewer -j$(nproc)
 | `AICore_ENABLED` | Build `libAICore.so` (shared with qFreeSplatter) |
 | `PLUGIN_STANDARD_QDA3` | This plugin |
 | `BUILD_RECONSTRUCTION` | DA3 sparse/dense modes in the automatic reconstruction pipeline |
-| `BUILD_CUDA_MODULE` | ggml CUDA backend |
-| `GGML_USE_OPENCL` / `GGML_USE_METAL` | Linux/Windows: OpenCL ON by default; macOS: Metal ON by default |
-| `GGML_USE_VULKAN` | OFF by default on all platforms (not recommended for deployment) |
+| `GGML_USE_VULKAN` / `GGML_USE_METAL` | Linux/Windows: Vulkan ON; macOS: Metal ON |
+| `GGML_USE_SYCL` / `GGML_USE_CUDA` | Optional Intel/NVIDIA developer backends |
 
 Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PLUGIN.so`.
 
@@ -46,7 +45,7 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PL
 
 1. Select image(s) in the DB tree, or use **Browse** to pick files.
 2. Choose a **Model** (use **Download** on first run for GGUF weights).
-3. Set **Device** (`Auto` / Metal (macOS) / CUDA / OpenCL / CPU), thread count, unproject-to-3D options, etc.
+3. Set **Device** (`Auto` / Metal / SYCL / Vulkan / CUDA / CPU, available entries only), thread count, unproject-to-3D options, etc.
 4. Click **Run**; depth results appear as `ccImage` child nodes in the DB tree.
 
 ### Modes
@@ -64,10 +63,10 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PL
 
 | Platform | Auto priority |
 |----------|---------------|
-| macOS | Metal → CUDA → CPU |
-| Linux / Windows | CUDA → OpenCL → CPU |
+| macOS | Metal → CPU |
+| Linux / Windows | Vulkan → CPU |
 
-Override with environment variable `DA_DEVICE`: `auto`, `cpu`, `cuda`, `opencl[:N]`, `metal`.
+Override with `DA_DEVICE`: `auto`, `cpu`, `sycl[:N]`, `vulkan[:N]`, `cuda[:N]`, `metal`. SYCL/CUDA are explicit developer devices and are not selected by Auto.
 
 ### Model cache
 

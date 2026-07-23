@@ -135,10 +135,15 @@ cmake --build . --config Release --target install
 | `BUILD_PYTORCH_OPS` | OFF | Build PyTorch operators |
 | `BUNDLE_CLOUDVIEWER_ML` | OFF | Include CloudViewer-ML repo in Python wheel |
 | `AICore_ENABLED` | OFF | Build unified AI core (`libAICore.so`) — DA3 depth/pose + FreeSplatter 3D Gaussians (auto-enables `GGML_ENABLED`) |
+| `AICore_BUILD_TESTS` | OFF | Build the lightweight public ABI/runtime contract suite |
+| `AICore_BUILD_WHITEBOX_TESTS` | OFF | Also build private implementation tests (slower; duplicates AICore objects) |
+| `AICORE_REQUIRE_VULKAN` | OFF | Fail configuration unless AICore can build its Vulkan backend; CI/release helpers set this to ON |
 | `GGML_ENABLED` | OFF | Build ggml inference library (auto-enabled when `AICore_ENABLED=ON`) |
-| `GGML_USE_CUDA` | OFF | Enable ggml CUDA backend on Linux/Windows (also on when `BUILD_CUDA_MODULE=ON`) |
-| `GGML_USE_VULKAN` | OFF (all platforms) | Opt-in only; disabled by default (Vulkan deployment is not supported) |
-| `GGML_USE_OPENCL` | Linux/Win: ON, macOS: OFF | Auto-detect OpenCL 3.0 headers + ICD + Python3 when ON; **not built on macOS** |
+| `GGML_USE_CUDA` | OFF | Developer opt-in ggml CUDA backend; independent of `BUILD_CUDA_MODULE` |
+| `GGML_USE_VULKAN` | Linux/Win: ON, macOS: OFF | Cross-vendor backend; auto-skips when build tools are missing |
+| `GGML_USE_SYCL` | OFF | Intel GPU backend; requires oneAPI compiler and a validated runtime bundle |
+| `GGML_USE_OPENCL` | OFF | Legacy/Adreno developer opt-in; not part of desktop distributions |
+| `GGML_OPENCL_TARGET_VERSION` | 200 | ggml OpenCL host API target: 120, 200, or 300 |
 | `GGML_USE_METAL` | Apple: ON, else OFF | ggml Metal backend (Apple only) |
 
 ### Sensor Support
@@ -216,6 +221,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
+| qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | LightGlue sparse feature matching — ALIKED/SIFT descriptor pairs via GGUF, LGINP01 fixture I/O ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -301,7 +307,7 @@ cmake --build . --config Release
 
 #### AICore (qDA3 + qFreeSplatter) Build
 
-Builds `libAICore.so` (shared ggml inference core for DA3 and FreeSplatter) and the selected GUI plugins. Multiple ggml backends can be compiled into one build; runtime **Auto** selects CUDA → OpenCL → Vulkan → CPU (first available). CUDA requires `BUILD_CUDA_MODULE=ON` or `-DGGML_USE_CUDA=ON`; Vulkan/OpenCL are auto-detected when dependencies are present.
+Builds `libAICore.so` (shared ggml inference core for DA3 and FreeSplatter) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows. SYCL and CUDA remain explicit developer devices and never alter the portable automatic path. CUDA is only enabled by `-DGGML_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -309,12 +315,40 @@ cmake -DBUILD_GUI=ON \
       -DAICore_ENABLED=ON \
       -DPLUGIN_STANDARD_QDA3=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
-      -DBUILD_CUDA_MODULE=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```
 
-**Outputs:** `bin/libAICore.so`, `bin/libQDA3_PLUGIN.so`, `bin/libQFREESPLATTER_PLUGIN.so` (when enabled)
+Release and CI builds require Vulkan explicitly:
+
+```bash
+cmake -DAICore_ENABLED=ON \
+      -DGGML_USE_VULKAN=ON \
+      -DAICORE_REQUIRE_VULKAN=ON \
+      ...
+```
+
+Vulkan development environment setup does not use Conda:
+
+```bash
+# Ubuntu 20.04, 22.04, or 24.04. Builds pinned shaderc when apt has no glslc.
+util/install_deps_ubuntu.sh assume-yes
+
+# macOS, fixed/checksummed LunarG SDK installed in copy-only mode.
+util/install_vulkan_sdk_macos.sh
+
+# Windows PowerShell, fixed/checksummed LunarG SDK installed in copy-only mode.
+.\util\install_vulkan_sdk_windows.ps1
+```
+
+`glslc`, Vulkan headers, and SPIR-V headers are build-only dependencies. The
+package contains the generated shaders and `ggml-vulkan` module, not the SDK or
+validation layers. Linux/Windows users still need a Vulkan-capable display
+driver. macOS production Auto remains Metal -> CPU; Vulkan/MoltenVK is built in
+CI for compatibility testing and is selected only by explicit device name.
+
+**Outputs:** `bin/libAICore.so`, private `libggml` core libraries,
+`libggml-cpu` (required), optional backend modules, and the selected plugins.
 
 **Models:**
 - **DA3** GGUF: downloaded on first use to `~/cloudViewer_data/extract/da3_models` — [mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf)
@@ -322,8 +356,12 @@ cmake --build . --config Release --target ACloudViewer
 
 **Notes:**
 - `AICore_ENABLED=ON` auto-enables `GGML_ENABLED`.
-- With CUDA, `libAICore.so` is large (~200–250 MB) because `libggml-cuda.a` CUDA kernels for `CMAKE_CUDA_ARCHITECTURES` are linked statically into AICore only. **`libCV_DB_LIB.so` does not link AICore** — use `aicore::depth::ImageDepth` from `aicore/depth_image.h` in code that already links `libAICore.so`.
-- CPU-only AICore: omit `-DBUILD_CUDA_MODULE=ON`.
+- ggml core and backends are private runtime files. Consumers never include or
+  link ggml. `libAICore` has no hard CUDA dependency; `libggml-cuda` is loaded
+  only when its driver and matching CUDA-major runtime are available.
+- `libCV_DB_LIB` links AICore for the existing `ccImage` Qt adapter. COLMAP,
+  pybind, qDA3, and qFreeSplatter otherwise use the public AICore API directly.
+- CUDA is a developer backend: add `-DGGML_USE_CUDA=ON` explicitly.
 - qFreeSplatter **Visualize** button requires `-DPLUGIN_STANDARD_QSIBR=ON` (not supported on macOS by default).
 
 See [plugins/README.md](plugins/README.md), [qDA3 README](plugins/core/Standard/qDA3/README.md), and [qFreeSplatter README](plugins/core/Standard/qFreeSplatter/README.md).
@@ -415,7 +453,10 @@ cmake -DDEVELOPER_BUILD=OFF \
 cmake --build . --config Release --target install
 ```
 
-> **Linux installer (`PACKAGE=ON`):** `pack_ubuntu.sh` does **not** bundle NVIDIA CUDA runtime libraries (`libcublas`, `libcublasLt`, `libcudart`, etc.) — same as the Windows packager (`pack_windows.ps1` already filtered CUDA DLLs before the Linux fix). GPU / AICore features require an NVIDIA driver and a **matching CUDA toolkit/runtime** on the target machine.
+> **Linux/Windows installer (`PACKAGE=ON`):** release packages contain
+> Vulkan/CPU when their build tools are available. CUDA is excluded unless
+> explicitly requested with `GGML_USE_CUDA=ON`; NVIDIA runtime libraries are
+> never bundled. Vulkan users need only a compatible GPU driver/ICD.
 
 > **Python plugin (`PLUGIN_PYTHON=ON`):** By default only a **minimal** embedded runtime is installed (`PLUGIN_PYTHON_COPY_MINIMAL_ENV=ON`): Python stdlib + packages listed in `plugins/core/Standard/qPythonRuntime/requirements-release.txt`. It does **not** copy your entire pyenv/conda `site-packages` (which can be several GB if torch/Jupyter/etc. are installed). For release installers, point CMake at a **clean** interpreter:
 >

@@ -8,6 +8,7 @@
 // Thin CLI adapter — forwards to exported aicore_gaussian_* symbols in
 // libAICore.so.
 #include <new>
+#include <vector>
 
 #include "aicore/gaussian_capi.h"
 #include "free_splatter.h"
@@ -250,6 +251,36 @@ double free_splatter_refine_cloud(free_splatter_point* cloud,
     return aicore_gaussian_refine_cloud(
             reinterpret_cast<aicore_gaussian_point*>(cloud), n, voxel_frac,
             iters, alpha);
+}
+
+int free_splatter_export_splat(const float* gaussians,
+                               size_t count,
+                               int gaussian_channels,
+                               float opacity_threshold,
+                               size_t max_splats,
+                               const char* output_path) {
+    return aicore_gaussian_export_splat(gaussians, count, gaussian_channels,
+                                        opacity_threshold, max_splats,
+                                        output_path);
+}
+
+int free_splatter_export_cloud_splat(const free_splatter_point* cloud,
+                                     size_t count,
+                                     size_t max_splats,
+                                     float scale_multiplier,
+                                     const char* output_path) {
+    if (!cloud) return -1;
+    std::vector<aicore_gaussian_point> points(count);
+    for (size_t i = 0; i < count; ++i) {
+        points[i] = {cloud[i].x,  cloud[i].y,       cloud[i].z,
+                     cloud[i].r,  cloud[i].g,       cloud[i].b,
+                     cloud[i].opacity, cloud[i].sx, cloud[i].sy,
+                     cloud[i].sz, cloud[i].qw,      cloud[i].qx,
+                     cloud[i].qy, cloud[i].qz,      cloud[i].frame};
+    }
+    return aicore_gaussian_export_cloud_splat(
+            points.data(), points.size(), max_splats, scale_multiplier,
+            output_path);
 }
 
 }  // extern "C"

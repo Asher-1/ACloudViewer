@@ -28,7 +28,9 @@ function(cloudViewer_make_cuda_architectures cuda_archs)
             if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.0")
                 set(${cuda_archs} 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
-                set(${cuda_archs} 75-real 80-real 86-real)               # Turing, Ampere (SM 89/90 need CUDA 12+)
+                # Keep PTX for the highest supported ISA so newer GPUs can JIT
+                # the backend when the installed NVIDIA driver supports it.
+                set(${cuda_archs} 75-real 80-real 86)                    # Turing, Ampere + forward-compatible PTX
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
                 set(${cuda_archs} 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")

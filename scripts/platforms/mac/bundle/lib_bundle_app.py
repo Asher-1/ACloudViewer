@@ -388,13 +388,15 @@ class CCBundler:
                                 libs_to_check.append(abs_lib)
                             break
 
-        # With GGML_BACKEND_DL, backend modules (libggml-metal.dylib, etc.)
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
         # Discover them alongside libAICore.dylib so they get bundled.
         for lib in list(libs_found):
             if lib.name.startswith("libAICore"):
                 src_dir = lib.parent
-                for ggml_mod in src_dir.glob("libggml-*.dylib"):
+                ggml_modules = list(src_dir.glob("libggml-*.so"))
+                ggml_modules.extend(src_dir.glob("libggml-*.dylib"))
+                for ggml_mod in ggml_modules:
                     if ggml_mod not in libs_found:
                         if should_skip_cuda_runtime_lib(ggml_mod):
                             continue
@@ -535,13 +537,15 @@ class CCBundler:
             # for dependency in lib_ex:...
             # TODO: add to libTOcheck executable_path/dep
 
-        # With GGML_BACKEND_DL, backend modules (libggml-metal.dylib, etc.)
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
         # Discover them alongside libAICore.dylib so they get bundled.
         for lib in list(libs_found):
             if lib.name.startswith("libAICore"):
                 src_dir = lib.parent
-                for ggml_mod in src_dir.glob("libggml-*.dylib"):
+                ggml_modules = list(src_dir.glob("libggml-*.so"))
+                ggml_modules.extend(src_dir.glob("libggml-*.dylib"))
+                for ggml_mod in ggml_modules:
                     if ggml_mod not in libs_found:
                         if should_skip_cuda_runtime_lib(ggml_mod):
                             continue

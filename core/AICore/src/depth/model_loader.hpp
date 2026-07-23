@@ -30,7 +30,7 @@ struct Config {
     std::string arch = "depthanything3";          // route discriminator ("depthanything2" = DA2)
 };
 
-class AICORE_CXX_API ModelLoader {
+class ModelLoader {
 public:
     ModelLoader() = default;
     ~ModelLoader();

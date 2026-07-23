@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Shared ggml graph-level utility ops for all ggml-based inference modules
+// Private ggml graph-level utility ops for all ggml-based inference modules
 // (DA3, FreeSplatter, etc.). Extracted from core/DA3/src/ggml_extend.hpp.
 #pragma once
 #include "ggml.h"

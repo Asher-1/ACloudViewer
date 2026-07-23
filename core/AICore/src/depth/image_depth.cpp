@@ -9,6 +9,7 @@
 #include <QTemporaryFile>
 #include <cstring>
 
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/depth_image.h"
 
@@ -40,7 +41,9 @@ bool writeTempPng(const QImage& image, QTemporaryFile& tmp) {
 
 }  // namespace
 
-bool ImageDepth::isAvailable() { return true; }
+bool ImageDepth::isAvailable() {
+    return aicore_device_available("cpu") != 0;
+}
 
 bool ImageDepth::estimateDepth(const QImage& image,
                                const QString& model_path,

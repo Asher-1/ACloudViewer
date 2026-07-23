@@ -342,6 +342,9 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_G3POINT=ON",
         "-DPLUGIN_STANDARD_QSIBR=ON",
         "-DAICore_ENABLED=ON",
+        "-DAICore_BUILD_TESTS=ON",
+        "-DGGML_USE_VULKAN=ON",
+        "-DAICORE_REQUIRE_VULKAN=ON",
         "-DPLUGIN_STANDARD_QDA3=ON",
         "-DPLUGIN_STANDARD_QFREESPLATTER=ON",
         "-DPLUGIN_PYTHON=ON",
@@ -367,6 +370,12 @@ function Build-GuiApp {
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
+    }
+
+    & cmake --build . --target aicore-contract-tests --config Release --parallel $env:NPROC
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "AICore contract tests failed with exit code $LASTEXITCODE"
     }
 
     & cmake --install . --config Release --verbose
@@ -491,6 +500,9 @@ function Build-PipPackage {
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
         "-DUSE_VTK_BACKEND=OFF",
         "-DAICore_ENABLED=ON",
+        "-DAICore_BUILD_TESTS=ON",
+        "-DGGML_USE_VULKAN=ON",
+        "-DAICORE_REQUIRE_VULKAN=ON",
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",
@@ -604,6 +616,8 @@ function Test-Wheel {
 
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
+    python -W default -c "import pathlib, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); modules=list(root.glob('*ggml-vulkan*')); assert not enabled or modules, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', modules)"
 
     Write-Host ""
     $HAVE_PYTORCH_OPS = $false

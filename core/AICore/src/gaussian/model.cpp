@@ -358,7 +358,7 @@ bool model::forward(const float *images,
     for (ggml_tensor *t : tap_list) ggml_build_forward_expand(gf, t);
     lap("graph_build");
 
-    if (!ggml_gallocr_alloc_graph(be.galloc, gf)) {
+    if (!be.alloc_graph(gf, graph_nodes)) {
         error = "graph alloc failed";
         ggml_free(ctx);
         return false;
@@ -369,7 +369,7 @@ bool model::forward(const float *images,
                             (size_t)N * C * IMG * IMG * sizeof(float));
     lap("upload");
 
-    if (ggml_backend_graph_compute(be.be, gf) != GGML_STATUS_SUCCESS) {
+    if (be.compute_graph(gf) != GGML_STATUS_SUCCESS) {
         error = "graph compute failed";
         ggml_free(ctx);
         return false;

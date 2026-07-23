@@ -25,13 +25,11 @@ struct GraphInputPool {
     }
 };
 
-class AICORE_CXX_API Backend {
+class Backend {
 public:
-    // auto priority: macOS Metal -> CUDA -> CPU; else CUDA -> OpenCL -> CPU.
-    // DA_DEVICE overrides: "cpu" / "auto" / "cuda[:N]" / "opencl[:N]" /
-    // "metal[:N]" / "gpu[:N]" ("vulkan" is rejected — not built by default).
-    //   - explicit registry name (case-insensitive, e.g. "CUDA0").
-    Backend();
+    // auto priority: macOS Metal -> CPU; elsewhere Vulkan -> CPU. Optional
+    // developer devices remain available only when explicitly requested.
+    explicit Backend(const std::string& device = "auto");
     ~Backend();
     Backend(const Backend&) = delete;
     Backend& operator=(const Backend&) = delete;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate core/AICore/include/aicore/depth_gguf_keys.h from gguf_keys.py."""
+"""Generate core/AICore/src/depth/depth_gguf_keys.h from gguf_keys.py."""
 import sys
 from pathlib import Path
 
@@ -8,7 +8,7 @@ REPO = QDA3.parents[3]
 sys.path.insert(0, str(QDA3))
 import scripts.gguf_keys as K
 
-CANONICAL = REPO / "core/AICore/include/aicore/depth_gguf_keys.h"
+CANONICAL = REPO / "core/AICore/src/depth/depth_gguf_keys.h"
 
 
 def cident_canonical(short: str) -> str:

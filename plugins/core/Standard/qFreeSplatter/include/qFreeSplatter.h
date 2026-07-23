@@ -20,6 +20,7 @@ Q_DECLARE_METATYPE(FreeSplatterDialog::Settings)
 
 class ccPointCloud;
 class ccImage;
+class QTimer;
 
 class qFreeSplatter : public QObject, public ccStdPluginInterface {
     Q_OBJECT
@@ -74,6 +75,8 @@ private:
     QAction* m_action = nullptr;
     FreeSplatterDialog* m_dialog = nullptr;
     FreeSplatterWorker* m_worker = nullptr;
+    QTimer* m_inferenceHeartbeat = nullptr;
+    int m_inferenceElapsedSeconds = 0;
     FreeSplatterDialog::Settings m_currentSettings;
     ccHObject::Container m_selectedEntities;
 

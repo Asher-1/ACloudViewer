@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "aicore/depth_gguf_keys.h"
+#include "depth_gguf_keys.h"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \
