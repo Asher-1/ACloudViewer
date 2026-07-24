@@ -106,9 +106,9 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
         emit logMessage(
                 QString("[DA3] Using device: %1").arg(m_settings.device));
     } else {
-        emit logMessage(QString("[DA3] Using device: auto (%1)")
-                                .arg(QString::fromUtf8(
-                                        aicore_auto_device_order())));
+        emit logMessage(
+                QString("[DA3] Using device: auto (%1)")
+                        .arg(QString::fromUtf8(aicore_auto_device_order())));
     }
     if (!m_settings.metricModelPath.isEmpty()) {
         if (!QFile::exists(m_settings.metricModelPath)) {

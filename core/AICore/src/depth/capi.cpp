@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "aicore/depth_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/depth_capi.h"
 #include "colmap_export.hpp"
 #include "engine.hpp"
 #include "ggml_backend_utils.hpp"
@@ -452,18 +452,18 @@ AICORE_CAPI int aicore_depth_export_colmap_multi_named(aicore_depth_ctx* c,
     }
     return 0;
 }
-AICORE_CAPI int
-aicore_depth_write_colmap_from_multiview(aicore_depth_ctx* c,
-                                         const char** image_paths,
-                                         const char** image_names,
-                                         int n_images,
-                                         const float* depth,
-                                         const float* ext,
-                                         const float* intr,
-                                         int h,
-                                         int w,
-                                         const char* out_dir,
-                                         int binary) {
+AICORE_CAPI int aicore_depth_write_colmap_from_multiview(
+        aicore_depth_ctx* c,
+        const char** image_paths,
+        const char** image_names,
+        int n_images,
+        const float* depth,
+        const float* ext,
+        const float* intr,
+        int h,
+        int w,
+        const char* out_dir,
+        int binary) {
     if (!c || !c->engine || !image_paths || !depth || !ext || !intr ||
         n_images <= 0 || h <= 0 || w <= 0 || !out_dir) {
         if (c) c->last_error = "write_colmap_from_multiview: bad args";
@@ -747,8 +747,8 @@ AICORE_CAPI void aicore_depth_set_img_resize_target(aicore_depth_ctx* ctx,
     ctx->engine->set_img_resize_target(static_cast<uint32_t>(target));
 }
 
-AICORE_CAPI void
-aicore_depth_release_gpu_working_memory(aicore_depth_ctx* ctx) {
+AICORE_CAPI void aicore_depth_release_gpu_working_memory(
+        aicore_depth_ctx* ctx) {
     if (!ctx || !ctx->engine) {
         return;
     }

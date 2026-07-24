@@ -650,9 +650,8 @@ qFreeSplatter::qFreeSplatter(QObject* parent)
     connect(m_inferenceHeartbeat, &QTimer::timeout, this, [this]() {
         if (!m_worker || !m_worker->isRunning() || !m_dialog) return;
         m_inferenceElapsedSeconds += 10;
-        m_dialog->appendLog(
-                tr("[FS] Task is running (%1 s elapsed)...")
-                        .arg(m_inferenceElapsedSeconds));
+        m_dialog->appendLog(tr("[FS] Task is running (%1 s elapsed)...")
+                                    .arg(m_inferenceElapsedSeconds));
     });
 }
 

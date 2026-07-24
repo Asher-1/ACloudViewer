@@ -171,11 +171,12 @@ static const std::unordered_map<std::string, std::string>
                  "Whether to optimize the relative poses of the camera "
                  "rigs."}};
 
-void pybind_sfm_methods(py::module &m) {
+void pybind_sfm_methods(py::module& m) {
     m.def("is_aicore_available", &IsAICoreAvailable,
           "Returns True when AICore's required CPU backend is available.");
     m.def("aicore_devices", &AICoreDevices,
-          "Returns AICore devices discovered from the runtime backend registry.");
+          "Returns AICore devices discovered from the runtime backend "
+          "registry.");
     m.def("aicore_auto_device_order", &AICoreAutoDeviceOrder,
           "Returns the active AICore automatic backend preference order.");
     m.def("warmup_aicore_backend", &WarmupAICoreBackend, "device"_a = "auto",
@@ -259,7 +260,7 @@ void pybind_sfm_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 }
 
-void pybind_structure_from_motion(py::module &m) {
+void pybind_structure_from_motion(py::module& m) {
     py::module m_submodule =
             m.def_submodule("sfm", "Reconstruction structure from motion.");
     pybind_sfm_methods(m_submodule);

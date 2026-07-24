@@ -21,8 +21,8 @@ typedef struct aicore_depth_ctx aicore_depth_ctx;
    per-context device selection without process-global environment mutation.
  */
 AICORE_CAPI int aicore_depth_abi_version(void);
-AICORE_CAPI aicore_depth_ctx*
-aicore_depth_load(const char* gguf_path, int n_threads); /* NULL on failure */
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load(
+        const char* gguf_path, int n_threads); /* NULL on failure */
 AICORE_CAPI aicore_depth_ctx* aicore_depth_load_device(
         const char* gguf_path,
         int n_threads,
@@ -32,10 +32,9 @@ AICORE_CAPI aicore_depth_ctx* aicore_depth_load_device(
    metric alignment: aicore_depth_depth_dense / aicore_depth_depth_path /
    aicore_depth_pose_path all produce the final metric-scale depth + scaled
    extrinsics (is_metric=1, conf/sky = NULL). NULL on failure. */
-AICORE_CAPI aicore_depth_ctx*
-aicore_depth_load_nested(const char* anyview_gguf,
-                         const char* metric_gguf,
-                         int n_threads);
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested(const char* anyview_gguf,
+                                                       const char* metric_gguf,
+                                                       int n_threads);
 AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_device(
         const char* anyview_gguf,
         const char* metric_gguf,
@@ -65,15 +64,14 @@ AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* ctx,
    out_intr[i*9]. Returns a malloc'd float[n*H*W] depth (view-major), sets
    *out_h,*out_w,*out_n; NULL on error. Caller frees the returned buffer via
    aicore_depth_free_floats. */
-AICORE_CAPI float* aicore_depth_depth_pose_multi(
-        aicore_depth_ctx* ctx,
-        const char** image_paths,
-        int n_images,
-        int* out_h,
-        int* out_w,
-        int* out_n,
-        float* out_ext /* n*12 */,
-        float* out_intr /* n*9 */);
+AICORE_CAPI float* aicore_depth_depth_pose_multi(aicore_depth_ctx* ctx,
+                                                 const char** image_paths,
+                                                 int n_images,
+                                                 int* out_h,
+                                                 int* out_w,
+                                                 int* out_n,
+                                                 float* out_ext /* n*12 */,
+                                                 float* out_intr /* n*9 */);
 /* Single-image 3D export. Runs the native depth+pose pipeline, captures the
    processed-resolution RGB colors, and writes a glTF-2.0 binary point cloud to
    out_glb. Returns 0 ok, -1 error (see aicore_depth_last_error). */
@@ -98,13 +96,12 @@ AICORE_CAPI int aicore_depth_export_colmap_multi(aicore_depth_ctx* ctx,
 /* Same as aicore_depth_export_colmap_multi but image_names[i] is COLMAP
    Image.Name() (relative to the image root). NULL names fall back to
    basename(image_paths[i]). */
-AICORE_CAPI int aicore_depth_export_colmap_multi_named(
-        aicore_depth_ctx* ctx,
-        const char** image_paths,
-        const char** image_names,
-        int n_images,
-        const char* out_dir,
-        int binary);
+AICORE_CAPI int aicore_depth_export_colmap_multi_named(aicore_depth_ctx* ctx,
+                                                       const char** image_paths,
+                                                       const char** image_names,
+                                                       int n_images,
+                                                       const char* out_dir,
+                                                       int binary);
 /* Write COLMAP sparse from an existing multiview depth+pose result (no
    re-inference). depth is n*h*w row-major; ext is n*12 row-major 3x4; intr is
    n*9 row-major 3x3. */

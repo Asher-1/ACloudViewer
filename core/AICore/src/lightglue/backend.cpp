@@ -1,11 +1,18 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Backend initialization for LightGlue — uses shared AICore ggml utilities.
 
 #include "backend.hpp"
 
+#include <ggml-backend.h>
+
 #include "common.hpp"
 #include "ggml_backend_utils.hpp"
-
-#include <ggml-backend.h>
 #if !defined(AICORE_BACKEND_DL)
 #include <ggml-cpu.h>
 #endif

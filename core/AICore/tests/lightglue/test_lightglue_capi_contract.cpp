@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Contract tests for aicore_lightglue_* (no GGUF required).
 
 #include <cstring>
@@ -35,7 +42,7 @@ int main() {
     aicore_lightglue_match* matches = nullptr;
     int32_t n_matches = 0;
     AICORE_CHECK(aicore_lightglue_run_match(nullptr, nullptr, nullptr, &matches,
-                                        &n_matches) != 0);
+                                            &n_matches) != 0);
 
     aicore_lightglue_features f0{}, f1{};
     AICORE_CHECK(aicore_lightglue_load_fixture("/nonexistent.bin", &f0, &f1) !=
