@@ -16,10 +16,10 @@
 
 //! User-visible status (also emitted via glog for the reconstruction Log
 //! widget).
-#define RECON_LOG_INFO(...)                      \
-    do {                                         \
-        LOG(INFO) << StringPrintf(__VA_ARGS__);  \
-        CVLog::Print(StringPrintf(__VA_ARGS__)); \
+#define RECON_LOG_INFO(...)                            \
+    do {                                               \
+        LOG(INFO) << StringPrintf(__VA_ARGS__);         \
+        CVLog::Print(StringPrintf(__VA_ARGS__).c_str()); \
     } while (0)
 
 //! User-visible warnings (quality gates, fallbacks, skipped stages).

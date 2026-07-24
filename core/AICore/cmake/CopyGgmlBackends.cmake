@@ -37,7 +37,9 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
 
     file(GLOB _stale
         "${dest_dir}/${lib_prefix}ggml${lib_suffix}*"
-        "${dest_dir}/${lib_prefix}ggml-base${lib_suffix}*")
+        "${dest_dir}/${lib_prefix}ggml-base${lib_suffix}*"
+        "${dest_dir}/${lib_prefix}ggml.*${lib_suffix}"
+        "${dest_dir}/${lib_prefix}ggml-base.*${lib_suffix}")
     if(_stale)
         file(REMOVE ${_stale})
     endif()
@@ -45,13 +47,16 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
     set(_versioned_files "")
     foreach(_base IN ITEMS ggml ggml-base)
         file(GLOB _matches
-            "${src_dir}/${lib_prefix}${_base}${lib_suffix}*")
+            "${src_dir}/${lib_prefix}${_base}${lib_suffix}*"
+            "${src_dir}/${lib_prefix}${_base}.*${lib_suffix}")
         foreach(_path IN LISTS _matches)
             if(NOT EXISTS "${_path}")
                 continue()
             endif()
             get_filename_component(_name "${_path}" NAME)
-            if(_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$")
+            # Match both Linux (libggml.so.0.17.0) and macOS (libggml.0.17.0.dylib)
+            if(_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+               OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
                 if(IS_SYMLINK "${_path}")
                     get_filename_component(_path "${_path}" REALPATH)
                     get_filename_component(_name "${_path}" NAME)
@@ -76,23 +81,32 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
             "${_path}" "${dest_dir}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
 
+        # Linux: libggml.so.0.17.0 → soname libggml.so.0 → link libggml.so
         if(_name MATCHES "^${lib_prefix}(ggml-base|ggml)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}${lib_suffix}.${_soname_major}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
-            foreach(_alias IN ITEMS "${_soname}" "${_link_name}")
-                if(EXISTS "${dest_dir}/${_alias}")
-                    file(REMOVE "${dest_dir}/${_alias}")
-                endif()
-            endforeach()
-            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${_name}" "${dest_dir}/${_soname}")
-            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${_soname}" "${dest_dir}/${_link_name}")
-            message(STATUS "CopyGgmlBackends: ${_soname} -> ${_name}")
-            message(STATUS "CopyGgmlBackends: ${_link_name} -> ${_soname}")
+        # macOS: libggml.0.17.0.dylib → soname libggml.0.dylib → link libggml.dylib
+        elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
+            set(_soname_major "${CMAKE_MATCH_2}")
+            set(_base_name "${CMAKE_MATCH_1}")
+            set(_soname "${lib_prefix}${_base_name}.${_soname_major}${lib_suffix}")
+            set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
+        else()
+            continue()
         endif()
+        foreach(_alias IN ITEMS "${_soname}" "${_link_name}")
+            if(EXISTS "${dest_dir}/${_alias}")
+                file(REMOVE "${dest_dir}/${_alias}")
+            endif()
+        endforeach()
+        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${_name}" "${dest_dir}/${_soname}")
+        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${_soname}" "${dest_dir}/${_link_name}")
+        message(STATUS "CopyGgmlBackends: ${_soname} -> ${_name}")
+        message(STATUS "CopyGgmlBackends: ${_link_name} -> ${_soname}")
     endforeach()
 endfunction()
 

@@ -26,6 +26,12 @@ set(OPENCV_CONTRIB_SOURCE_DIR "${SOURCE_DIR}/modules")
 
 set(SHARED_BUILD_OPENCV ON)
 
+if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QLIGHTGLUE)
+    set(_OPENCV_NEED_FEATURES2D ON)
+else()
+    set(_OPENCV_NEED_FEATURES2D OFF)
+endif()
+
 ExternalProject_Add(ext_opencv
         PREFIX opencv
         URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
@@ -62,8 +68,8 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_highgui=ON
             -DBUILD_opencv_imgcodecs=ON
             -DBUILD_opencv_imgproc=ON
-            -DBUILD_opencv_features2d=${PLUGIN_STANDARD_QSIBR}
-            -DBUILD_opencv_flann=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_features2d=${_OPENCV_NEED_FEATURES2D}
+            -DBUILD_opencv_flann=${_OPENCV_NEED_FEATURES2D}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF

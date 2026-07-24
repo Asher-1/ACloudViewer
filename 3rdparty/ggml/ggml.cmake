@@ -252,7 +252,23 @@ if(GGML_USE_VULKAN)
     find_package(SPIRV-Headers CONFIG QUIET)
     set(_GGML_SPIRV_HEADERS_FOUND ${SPIRV-Headers_FOUND})
     set(_GGML_SPIRV_INCLUDE_DIR)
-    if(NOT _GGML_SPIRV_HEADERS_FOUND)
+    if(_GGML_SPIRV_HEADERS_FOUND)
+        # Extract include dir from the imported target so we can forward it
+        # to the ExternalProject (ggml-vulkan uses #include <spirv/unified1/spirv.hpp>
+        # but doesn't link SPIRV-Headers::SPIRV-Headers).
+        if(TARGET SPIRV-Headers::SPIRV-Headers)
+            get_target_property(_GGML_SPIRV_INCLUDE_DIR
+                SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
+        endif()
+        if(NOT _GGML_SPIRV_INCLUDE_DIR AND SPIRV-Headers_DIR)
+            get_filename_component(_GGML_SPIRV_INCLUDE_DIR
+                "${SPIRV-Headers_DIR}/../../.." ABSOLUTE)
+            set(_GGML_SPIRV_INCLUDE_DIR "${_GGML_SPIRV_INCLUDE_DIR}/include")
+            if(NOT EXISTS "${_GGML_SPIRV_INCLUDE_DIR}/spirv/unified1/spirv.hpp")
+                set(_GGML_SPIRV_INCLUDE_DIR)
+            endif()
+        endif()
+    else()
         set(_GGML_VULKAN_INCLUDE_HINTS ${_GGML_VULKAN_HINTS})
         if(DEFINED ENV{ACLOUDVIEWER_SPIRV_INCLUDE_DIR})
             list(APPEND _GGML_VULKAN_INCLUDE_HINTS "$ENV{ACLOUDVIEWER_SPIRV_INCLUDE_DIR}")
@@ -286,7 +302,9 @@ if(GGML_USE_VULKAN)
         endif()
         if(_GGML_SPIRV_INCLUDE_DIR)
             list(APPEND GGML_CMAKE_ARGS
-                -DCMAKE_INCLUDE_PATH=${_GGML_SPIRV_INCLUDE_DIR})
+                -DCMAKE_INCLUDE_PATH=${_GGML_SPIRV_INCLUDE_DIR}
+                -DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES=${_GGML_SPIRV_INCLUDE_DIR}
+                -DCMAKE_C_STANDARD_INCLUDE_DIRECTORIES=${_GGML_SPIRV_INCLUDE_DIR})
         endif()
         if(Vulkan_INCLUDE_DIR)
             list(APPEND GGML_CMAKE_ARGS -DVulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})

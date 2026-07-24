@@ -87,6 +87,46 @@ def _patch_alderlake_gate(content):
     return content.replace(old_alderlake, new_alderlake, 1), True
 
 
+MARKER_APPLE_M4 = "GGML_CXX_APPLE_M4_NOSVE_OK"
+
+OLD_APPLE_M4 = """            ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)"""
+
+NEW_APPLE_M4 = """\
+            # apple_m4 uses +nosve+sme; some compilers define __ARM_FEATURE_SVE
+            # via streaming SVE (SME) but reject non-streaming intrinsics in vec.h.
+            # Detect the conflict: if __ARM_FEATURE_SVE is defined with +nosve+sme,
+            # the SVE code paths in vec.h/quants.c will be active but cannot compile.
+            include(CheckCXXSourceCompiles)
+            set(_CMAKE_REQUIRED_FLAGS_SAVE "${CMAKE_REQUIRED_FLAGS}")
+            set(CMAKE_REQUIRED_FLAGS "-march=armv9.2-a+dotprod+i8mm+nosve+sme")
+            check_cxx_source_compiles("
+                int main() {
+                #if defined(__ARM_FEATURE_SVE)
+                    // Conflict: SVE feature macro active but +nosve prevents SVE intrinsics
+                    return fail_on_purpose;
+                #endif
+                    return 0;
+                }
+            " GGML_CXX_APPLE_M4_NOSVE_OK)
+            set(CMAKE_REQUIRED_FLAGS "${_CMAKE_REQUIRED_FLAGS_SAVE}")
+            if (GGML_CXX_APPLE_M4_NOSVE_OK)
+                ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
+            else()
+                message(STATUS "Skipping apple_m4 CPU backend: __ARM_FEATURE_SVE conflicts with +nosve+sme")
+            endif()"""
+
+
+def _patch_apple_m4_gate(content):
+    if MARKER_APPLE_M4 in content:
+        return content, False
+
+    if OLD_APPLE_M4 not in content:
+        print("[ggml-patch] apple_m4 CPU backend line not found; ggml version may differ")
+        return content, False
+
+    return content.replace(OLD_APPLE_M4, NEW_APPLE_M4, 1), True
+
+
 def patch_cpu_variants(src_dir):
     cmake_path = os.path.join(src_dir, "src", "CMakeLists.txt")
     if not os.path.exists(cmake_path):
@@ -109,10 +149,14 @@ def patch_cpu_variants(src_dir):
     if applied_alderlake:
         print("[ggml-patch] Applied alderlake AVX-VNNI compiler check")
 
+    content, applied_apple_m4 = _patch_apple_m4_gate(content)
+    if applied_apple_m4:
+        print("[ggml-patch] Applied apple_m4 SVE/SME compiler check")
+
     with open(cmake_path, "w", encoding="utf-8") as handle:
         handle.write(content)
 
-    if MARKER in content or applied_alderlake:
+    if MARKER in content or applied_alderlake or applied_apple_m4:
         return True
 
     return False
