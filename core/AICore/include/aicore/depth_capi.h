@@ -44,7 +44,10 @@ AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* ctx); /* safe on NULL */
 /* malloc'd JSON describing model config; free via aicore_depth_free_string. */
 AICORE_CAPI char* aicore_depth_info_json(aicore_depth_ctx* ctx);
 AICORE_CAPI void aicore_depth_free_string(char* s);
-AICORE_CAPI const char* aicore_depth_last_error(
+AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* ctx);
+/* Active ggml backend after load (e.g. "cpu", "CUDA0", "Vulkan0"). Empty when
+   ctx is null. Pointer valid until aicore_depth_free(ctx). */
+AICORE_CAPI const char* aicore_depth_device_name(
         aicore_depth_ctx* ctx); /* owned by ctx, "" if none */
 /* Run depth on an image file. On success writes *out_h,*out_w and returns a
    malloc'd float[H*W] depth map (row-major); caller frees via

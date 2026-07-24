@@ -43,6 +43,12 @@ if (-not $InstallRoot) {
     $InstallRoot = Join-Path ${env:ProgramData} "ACloudViewer\VulkanSDK\$Version"
 }
 
+if ((Test-Path $InstallRoot) -and -not (Test-VulkanSdkTree $InstallRoot)) {
+    Write-Host "Removing incomplete Vulkan SDK tree at $InstallRoot (common when SDK >= 1.4.313 was 7z-extracted)."
+    Remove-Item $InstallRoot -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
+}
+
 if ((Test-VulkanSdkTree $InstallRoot) -and -not $Force) {
     $env:VULKAN_SDK = $InstallRoot
     Write-Host "Reusing existing Vulkan SDK at $InstallRoot"

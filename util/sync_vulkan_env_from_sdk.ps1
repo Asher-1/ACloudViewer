@@ -12,20 +12,38 @@ function Resolve-VulkanSdkPath {
         throw "VULKAN_SDK is empty."
     }
 
-    $candidates = @(
-        $Root,
-        (Join-Path $Root "x86_64")
-    )
-    foreach ($candidate in @($candidates)) {
-        $header = Join-Path $candidate "Include\vulkan\vulkan_core.h"
-        if (-not (Test-Path $header)) {
-            $header = Join-Path $candidate "include\vulkan\vulkan_core.h"
-        }
-        if (Test-Path $header) {
-            return $candidate
+    $candidates = New-Object System.Collections.Generic.List[string]
+    foreach ($item in @(
+            $Root,
+            $(if ($env:VULKAN_SDK_VERSION) { Join-Path $Root $env:VULKAN_SDK_VERSION }),
+            (Join-Path $Root "x86_64")
+        )) {
+        if ($item -and -not $candidates.Contains($item)) {
+            [void]$candidates.Add($item)
         }
     }
-    throw "Vulkan headers not found under VULKAN_SDK=$Root"
+
+    foreach ($candidate in $candidates) {
+        foreach ($includeDir in @("Include", "include")) {
+            $header = Join-Path $candidate "$includeDir\vulkan\vulkan_core.h"
+            if (Test-Path $header) {
+                return $candidate
+            }
+        }
+    }
+
+    $headerFiles = Get-ChildItem -Path $Root -Filter "vulkan_core.h" -Recurse -Depth 5 -ErrorAction SilentlyContinue |
+        Where-Object { $_.DirectoryName -match '\\[Ii]nclude\\vulkan$' }
+    if ($headerFiles) {
+        $includeDir = $headerFiles[0].Directory.Parent.FullName
+        return $includeDir
+    }
+
+    throw @(
+        "Vulkan headers not found under VULKAN_SDK=$Root."
+        "Vulkan SDK 1.4.313+ on Windows requires the silent installer (7z extract only yields Bin/)."
+        "Run: .\util\install_vulkan_sdk_windows.ps1 -InstallRoot `$env:VULKAN_SDK -SkipProfile"
+    ) -join ' '
 }
 
 function Resolve-GlslcPath {
@@ -68,7 +86,9 @@ if (-not $env:VULKAN_SDK) {
     throw "VULKAN_SDK is not set. Install the SDK first or run util/install_vulkan_sdk_windows.ps1."
 }
 
+Write-Host "Resolving Vulkan SDK from VULKAN_SDK=$($env:VULKAN_SDK)"
 $SdkRoot = Resolve-VulkanSdkPath -Root $env:VULKAN_SDK
+Write-Host "Resolved VULKAN_SDK=$SdkRoot"
 $glslc = Resolve-GlslcPath -SdkRoot $SdkRoot
 $spirvInclude = Resolve-SpirvIncludeDir -SdkRoot $SdkRoot
 $vulkanLib = Resolve-VulkanImportLib -SdkRoot $SdkRoot

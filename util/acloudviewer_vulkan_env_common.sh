@@ -16,7 +16,11 @@ resolve_vulkan_sdk_from_setup_script() {
 
     sdk_tree="$(cd "$(dirname "${setup_script}")" && pwd)"
     arch="$(uname -m)"
-    for candidate in "${sdk_tree}/${arch}" "${sdk_tree}"; do
+    for candidate in \
+        "${sdk_tree}/${arch}" \
+        "${sdk_tree}/macOS" \
+        "${sdk_tree}/x86_64" \
+        "${sdk_tree}"; do
         if [[ -f "${candidate}/include/vulkan/vulkan_core.h" ]]; then
             printf '%s\n' "${candidate}"
             return 0

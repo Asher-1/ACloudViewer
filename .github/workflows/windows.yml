@@ -109,10 +109,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
-        with:
-          version: ${{ env.VULKAN_SDK_VERSION }}
-          cache: true
+        shell: powershell
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
 
       - name: Sync ACloudViewer Vulkan env
         shell: powershell
@@ -508,10 +511,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
-        with:
-          version: ${{ env.VULKAN_SDK_VERSION }}
-          cache: true
+        shell: powershell
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
 
       - name: Sync ACloudViewer Vulkan env
         shell: powershell
