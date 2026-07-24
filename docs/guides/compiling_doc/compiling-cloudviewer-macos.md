@@ -28,6 +28,7 @@
     - [C++ library](#c-library)
     - [Python library](#python-library)
   - [Compilation Options Reference](#compilation-options-reference)
+    - [AICore GPU (Metal, default)](#aicore-gpu-metal-default)
     - [OpenMP on macOS](#openmp-on-macos)
     - [ML Module (PyTorch)](#ml-module-pytorch)
     - [CUDA / GPU](#cuda--gpu)
@@ -44,6 +45,7 @@
 | **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
 | **Python**       | 3.10 – 3.12 (via Conda)                           |
 | **Conda**        | Miniconda or Anaconda                              |
+| **AICore GPU (default)** | **Metal → CPU** (not Vulkan); keep `-DAICore_USE_VULKAN=OFF` (CMake default on macOS) |
 | **Homebrew**     | https://brew.sh                                    |
 
 ---
@@ -91,6 +93,10 @@ export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cma
 > **qSIBR note:** The CI workflow sets `PLUGIN_STANDARD_QSIBR=OFF` on macOS.
 > The example below matches that default. To experiment locally, add
 > `-DPLUGIN_STANDARD_QSIBR=ON`.
+
+> **AICore note:** macOS production **Auto** uses **Metal**, not Vulkan. CMake defaults
+> `-DAICore_USE_VULKAN=OFF` on Apple platforms. Optional MoltenVK/Vulkan dev setup:
+> `util/install_vulkan_env.sh` (not required for typical GUI builds).
 
 ```bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
@@ -175,8 +181,10 @@ cmake \
     -DPLUGIN_STANDARD_G3POINT=ON \
     -DPLUGIN_STANDARD_QSIBR=OFF \
     -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
     -DPLUGIN_STANDARD_QDA3=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -259,6 +267,7 @@ cmake \
     -DBUILD_WEBRTC=OFF \
     -DBUILD_JUPYTER_EXTENSION=OFF \
     -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
     -DBUILD_RECONSTRUCTION=ON \
     -DBUILD_CUDA_MODULE=OFF \
     -DBUILD_PYTORCH_OPS=ON \
@@ -355,6 +364,22 @@ python -c "import cloudViewer; print(cloudViewer.__version__)"
 
 ## Compilation Options Reference
 
+### AICore GPU (Metal, default)
+
+macOS does **not** use Vulkan for portable AICore **Auto** inference. CMake defaults
+`-DAICore_USE_VULKAN=OFF`; device order is **Metal → CPU**. Keep this in all `cmake`
+examples when `-DAICore_ENABLED=ON`.
+
+Optional Vulkan/MoltenVK developer builds:
+
+```bash
+util/install_vulkan_env.sh
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+cmake -DAICore_USE_VULKAN=ON -DAICore_ENABLED=ON ..
+```
+
+See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
+
 ### OpenMP on macOS
 
 The default Apple Clang does **not** support OpenMP. Workaround:
@@ -382,7 +407,8 @@ make -j"$(sysctl -n hw.logicalcpu)" install-pip-package
 
 ### CUDA / GPU
 
-macOS does **not** support CUDA since macOS 10.14+. Set `-DBUILD_CUDA_MODULE=OFF`.
+macOS does **not** support CUDA since macOS 10.14+. Set `-DBUILD_CUDA_MODULE=OFF` and
+do not enable `-DAICore_USE_CUDA=ON`.
 
 ---
 

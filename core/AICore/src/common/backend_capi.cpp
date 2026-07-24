@@ -17,7 +17,7 @@
 
 #include "ggml_backend_utils.hpp"
 
-#if (defined(GGML_USE_CUDA) || defined(GGML_CUDA)) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
 #endif
 
@@ -48,6 +48,26 @@ const char* device_type_label(enum ggml_backend_dev_type type) {
     return "GPU";
 }
 
+std::string backend_display_name(const std::string& backend) {
+    if (backend.empty()) return backend;
+    std::string out = backend;
+    out[0] = (char)std::toupper((unsigned char)out[0]);
+    return out;
+}
+
+std::string format_device_label(const std::string& backend,
+                                enum ggml_backend_dev_type type,
+                                const char* description) {
+    std::string label = backend_display_name(backend) + " — " +
+                        device_type_label(type);
+    if (description && description[0] != '\0') {
+        label += " (";
+        label += description;
+        label += ")";
+    }
+    return label;
+}
+
 std::vector<OwnedDevice> build_devices() {
     ggml_common::load_backends_once();
 
@@ -75,38 +95,20 @@ std::vector<OwnedDevice> build_devices() {
         if (index > 0) id += ":" + std::to_string(index);
         ++index;
 
-        std::string label = device_type_label(type);
-        const char* description = ggml_backend_dev_description(dev);
-        if (description && description[0] != '\0') {
-            label += " (";
-            label += description;
-            label += ")";
-        }
+        std::string label = format_device_label(backend, type,
+                                                ggml_backend_dev_description(dev));
         result.push_back({std::move(id), std::move(label), {}});
     }
 
-    struct PreferredDevice {
-        const char* id;
-        const char* label;
-    };
     std::string order;
-#if defined(__APPLE__)
-    static const PreferredDevice kPreferred[] = {{"metal", "Metal"},
-                                                  {"cpu", "CPU"}};
-#else
-    static const PreferredDevice kPreferred[] = {{"vulkan", "Vulkan"},
-                                                  {"cpu", "CPU"}};
-#endif
-    for (const PreferredDevice& preferred : kPreferred) {
-        const auto found = std::find_if(
-                result.begin() + 1, result.end(), [&](const OwnedDevice& item) {
-                    return item.id == preferred.id;
-                });
-        if (found == result.end()) continue;
+    for (const char* const* p = ggml_common::auto_backend_ids(); *p; ++p) {
+        std::string resolved;
+        if (!ggml_common::find_gpu_backend(*p, 0, resolved)) continue;
         if (!order.empty()) order += " -> ";
-        order += preferred.label;
+        order += backend_display_name(*p);
     }
-    if (order.empty()) order = "unavailable";
+    if (!order.empty()) order += " -> ";
+    order += "CPU";
     result.front().label = "Auto (" + order + ")";
 
     for (size_t i = 0; i < result.size(); ++i) {
@@ -132,22 +134,31 @@ const std::string& auto_order() {
 }
 
 bool has_device(const char* device) {
+    ggml_common::load_backends_once();
     const std::string requested =
             ggml_common::to_lower(device && device[0] ? device : "auto");
-    const auto& available = devices();
-    if (requested == "auto") return available.size() > 1;
-    if (requested == "gpu") {
-        return std::any_of(available.begin() + 1, available.end(),
-                           [](const OwnedDevice& item) {
-                               return item.id != "cpu";
-                           });
+    if (requested == "cpu") return true;
+    if (requested == "auto") {
+        std::string resolved;
+        if (ggml_common::find_auto_backend(resolved)) return true;
+        return ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                       nullptr) != nullptr;
     }
-    return std::any_of(available.begin() + 1, available.end(),
-                       [&](const OwnedDevice& item) {
-                           return item.id == requested ||
-                                  (item.id.find(':') == std::string::npos &&
-                                   requested == item.id + ":0");
-                       });
+    if (requested == "gpu") {
+        std::string resolved;
+        return ggml_common::find_gpu_backend("gpu", 0, resolved) != nullptr;
+    }
+
+    std::string parsed_name;
+    int want_idx = 0;
+    ggml_common::parse_device(requested, parsed_name, want_idx);
+    if (parsed_name.empty() || parsed_name == "auto") {
+        std::string resolved;
+        return ggml_common::find_auto_backend(resolved) != nullptr;
+    }
+    std::string resolved;
+    return ggml_common::find_gpu_backend(parsed_name, want_idx, resolved) !=
+           nullptr;
 }
 
 }  // namespace
@@ -213,7 +224,7 @@ AICORE_CAPI int aicore_device_available(const char* device) {
 
 AICORE_CAPI int aicore_warmup_backend(const char* device) {
     if (aicore_device_available(device)) {
-#if (defined(GGML_USE_CUDA) || defined(GGML_CUDA)) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
         cudaGetLastError();
 #endif
         return 0;

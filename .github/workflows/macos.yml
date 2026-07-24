@@ -119,7 +119,7 @@ jobs:
           ccache -s
           echo "Start to build GUI package On MacOS..."
           source util/ci_utils.sh
-          build_gui_app with_conda package_installer
+          build_gui_app with_conda package_installer with_vulkan
           ccache -s
 
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
@@ -351,7 +351,7 @@ jobs:
           ccache -s
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
-          build_mac_wheel with_conda build_realsense
+          build_mac_wheel with_conda build_realsense with_vulkan
           ccache -s
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"

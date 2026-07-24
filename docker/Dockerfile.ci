@@ -221,7 +221,7 @@ COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer C++ dependencies (eigen / metslib / laszip / xerces-c / VTK / PCL)
 # Built once per Ubuntu release and published as a prebuilt tarball

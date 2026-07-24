@@ -73,6 +73,92 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    })();
    </script>
 
+AICore AI Plugins
+-----------------
+
+Three GUI plugins share one native inference library — **libAICore.so** (`ggml <https://github.com/ggml-org/ggml>`_).
+Run quantized **GGUF** models on **CUDA / Vulkan / Metal / CPU** with **no Python or PyTorch** at runtime.
+Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+
+.. list-table:: Plugin comparison
+   :header-rows: 1
+   :widths: 18 27 27 28
+
+   * -
+     - **qDA3**
+     - **qLightGlue**
+     - **qFreeSplatter**
+   * - Task
+     - Monocular & multi-view depth, camera pose
+     - Sparse feature matching
+     - Uncalibrated photos → 3D Gaussian splats
+   * - Model
+     - Depth Anything V3 GGUF
+     - SIFT + LightGlue GGUF
+     - FreeSplatter GGUF
+   * - Standout
+     - Single-image depth cloud in one click
+     - 300+ matches in **< 1 s** on GPU
+     - **2 photos** → 3D scene + SIBR PLY
+   * - CMake
+     - ``PLUGIN_STANDARD_QDA3``
+     - ``PLUGIN_STANDARD_QLIGHTGLUE``
+     - ``PLUGIN_STANDARD_QFREESPLATTER``
+
+.. raw:: html
+
+   <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin:28px 0;">
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qDA3.png" alt="Depth Anything V3" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>Depth Anything V3</strong> — depth maps &amp; 3D unprojection from a single photo</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qLightGlue.png" alt="LightGlue Feature Matching" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>LightGlue</strong> — sub-second SIFT feature matching with live visualization</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>FreeSplatter</strong> — sparse-view 3D Gaussian reconstruction, optional qSIBR preview</figcaption>
+     </figure>
+   </div>
+
+Why AICore?
+~~~~~~~~~~~
+
+* **Native C++ end-to-end** — GUI, automatic reconstruction, and COLMAP pipelines without a Python stack
+* **Compact GGUF weights** — e.g. DA3 Base ~142 MB, LightGlue SIFT ~22 MB; one-click download in the dialog
+* **Multi-backend GPU** — Auto picks CUDA → Vulkan → CPU (Linux/Windows) or Metal → CPU (macOS)
+* **DB-tree integration** — depth clouds, match lines, Gaussian PLY, and camera frustums appear as first-class entities
+
+.. code-block:: bash
+
+   cmake -B build_app \
+     -DBUILD_GUI=ON \
+     -DAICore_ENABLED=ON \
+     -DPLUGIN_STANDARD_QDA3=ON \
+     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+     -DBUILD_RECONSTRUCTION=ON \
+     -DPLUGIN_STANDARD_QSIBR=ON \
+     .
+
+   cmake --build build_app --target ACloudViewer -j$(nproc)
+
+See :doc:`guides/plugins/README` for an overview,
+:doc:`guides/plugins/qDA3`,
+:doc:`plugins/qLightGlue/README`,
+and :doc:`guides/plugins/qFreeSplatter` for usage and build instructions.
+Full build options: :doc:`getting_started/build_from_source`.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: AI Plugins (AICore)
+
+   guides/plugins/README
+   guides/plugins/qDA3
+   guides/plugins/qFreeSplatter
+   plugins/qLightGlue/README
+
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started

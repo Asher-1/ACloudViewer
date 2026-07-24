@@ -23,6 +23,16 @@
 #include "match_visualization.h"
 #include "feature_extractor.h"
 
+namespace {
+
+bool isLightGlueOutputImage(const ccImage* img) {
+    if (!img) return false;
+    if (img->getName().startsWith(QStringLiteral("LG_"))) return true;
+    return img->getMetaData(QStringLiteral("Matches")).isValid();
+}
+
+}  // namespace
+
 qLightGlue::qLightGlue(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qLightGlue/info.json") {
     qRegisterMetaType<LightGlueRunResult>("LightGlueRunResult");
@@ -39,9 +49,10 @@ void qLightGlue::onNewSelection(const ccHObject::Container& selectedEntities) {
 
     QStringList imageNames;
     for (ccHObject* obj : selectedEntities) {
-        if (obj && obj->isA(CV_TYPES::IMAGE)) {
-            imageNames.append(obj->getName());
-        }
+        if (!obj || !obj->isA(CV_TYPES::IMAGE)) continue;
+        ccImage* img = dynamic_cast<ccImage*>(obj);
+        if (img && isLightGlueOutputImage(img)) continue;
+        imageNames.append(obj->getName());
     }
     if (!imageNames.isEmpty()) {
         m_dialog->applyDbTreeSelection(imageNames);
@@ -112,9 +123,10 @@ ccImage* qLightGlue::findDbImage(const QString& name) const {
 QStringList qLightGlue::selectedDbImageNames() const {
     QStringList names;
     for (ccHObject* obj : m_selectedEntities) {
-        if (obj && obj->isA(CV_TYPES::IMAGE)) {
-            names.append(obj->getName());
-        }
+        if (!obj || !obj->isA(CV_TYPES::IMAGE)) continue;
+        ccImage* img = dynamic_cast<ccImage*>(obj);
+        if (img && isLightGlueOutputImage(img)) continue;
+        names.append(obj->getName());
     }
     return names;
 }
@@ -179,7 +191,7 @@ void qLightGlue::refreshDbImages() {
     for (ccHObject* obj : images) {
         if (!obj || !obj->isEnabled()) continue;
         ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (!img) continue;
+        if (!img || isLightGlueOutputImage(img)) continue;
         LightGlueDialog::DbImageEntry entry;
         entry.name = obj->getName();
         entry.preview = img->data();
@@ -343,6 +355,7 @@ void qLightGlue::addVisualizationToDb(const LightGlueRunResult& result) {
     m_app->addToDB(matchImage, true, true, false, true);
     m_app->setSelectedInDB(matchImage, true);
     m_app->zoomOnEntities(matchImage);
+    refreshDbImages();
     m_dialog->appendLog(
             tr("[LG] Added match visualization '%1' to DB (%2 matches, %3 ms)")
                     .arg(matchImage->getName())

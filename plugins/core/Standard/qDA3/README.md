@@ -85,10 +85,10 @@ flowchart TD
 | Option | Behavior |
 |--------|----------|
 | **Auto** | Pick the first compiled GPU backend by platform priority; fall back to CPU (see table below) |
-| **GPU (Metal)** | Force Metal (macOS only; `-DGGML_USE_METAL=ON`) |
-| **GPU (SYCL)** | Force Intel GPU SYCL (`-DGGML_USE_SYCL=ON`) |
+| **GPU (Metal)** | Force Metal (macOS only; `-DAICore_USE_METAL=ON`) |
+| **GPU (SYCL)** | Force Intel GPU SYCL (`-DAICore_USE_SYCL=ON`) |
 | **GPU (Vulkan)** | Force cross-vendor Vulkan |
-| **GPU (CUDA)** | Developer opt-in (`-DGGML_USE_CUDA=ON`) |
+| **GPU (CUDA)** | Developer opt-in (`-DAICore_USE_CUDA=ON`) |
 | **CPU** | Force the pure ggml CPU backend |
 
 **Auto priority (runtime):**
@@ -156,11 +156,11 @@ cmake --build build_app --target QDA3_PLUGIN AICore -j$(nproc)
 | `AICore_ENABLED` | OFF | Build `libAICore.so` |
 | `PLUGIN_STANDARD_QDA3` | OFF | This plugin |
 | `BUILD_RECONSTRUCTION` | — | `DA3DepthController` / automatic reconstruction |
-| `GGML_USE_CUDA` | OFF | Developer CUDA backend (NVIDIA toolchain) |
-| `GGML_USE_METAL` | Apple: ON | Metal backend (macOS/iOS only) |
-| `GGML_USE_VULKAN` | Linux/Win: ON | Default distributable cross-vendor GPU backend |
-| `GGML_USE_SYCL` | OFF | Intel GPU; enable only with a validated oneAPI runtime bundle |
-| `GGML_USE_OPENCL` | OFF | Legacy/Adreno developer backend |
+| `AICore_USE_METAL` | Apple: ON | Metal backend (macOS/iOS only) |
+| `AICore_USE_VULKAN` | Linux/Win: ON | Default distributable cross-vendor GPU backend |
+| `AICore_USE_CUDA` | OFF | Developer NVIDIA CUDA backend |
+| `AICore_USE_SYCL` | OFF | Intel GPU; enable only with a validated oneAPI runtime bundle |
+| `AICore_USE_OPENCL` | OFF | Legacy/Adreno developer backend |
 
 **Multi-backend ggml:** backends are private runtime modules and configure prints the actual packaged set and Auto order. macOS packages Metal/CPU; desktop OpenCL and the partial-graph BLAS backend are disabled.
 
@@ -252,7 +252,7 @@ export DA_TEST_NATIVE_PNG=plugins/core/Standard/qDA3/dumps/native_input.png
 Or add `add_subdirectory(tests)` at the end of `qDA3/CMakeLists.txt`:
 
 ```bash
-cmake -B build_app -DAICore_ENABLED=ON -DBUILD_TESTING=ON ...
+cmake -B build_app -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON -DAICore_BUILD_WHITEBOX_TESTS=ON ...
 cmake --build build_app --target test_capi test_engine_depth -j$(nproc)
 ctest --test-dir build_app -R test_capi
 ```

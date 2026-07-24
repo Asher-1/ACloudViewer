@@ -17,11 +17,11 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "ggml_backend_utils.hpp"
-#if !defined(GGML_BACKEND_DL)
+#if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
 
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
 #endif
 
@@ -31,7 +31,7 @@ namespace depth {
 namespace {
 
 void clear_sticky_cuda_errors() {
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
     cudaGetLastError();
 #endif
 }

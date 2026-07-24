@@ -2,6 +2,7 @@
 set SCRIPT_PATH=%~dp0
 cd /d "%SCRIPT_PATH%"
 set PATH=%SCRIPT_PATH%;%SCRIPT_PATH%lib;%PATH%
+if exist "%SCRIPT_PATH%lib\cuda-runtime" set PATH=%SCRIPT_PATH%lib\cuda-runtime;%PATH%
 
 rem Check if any argument requires CLI/headless mode (foreground execution).
 set _CLI_MODE=0

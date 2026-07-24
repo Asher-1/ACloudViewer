@@ -74,9 +74,12 @@ export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+# shellcheck source=acloudviewer_vulkan_env_common.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/acloudviewer_vulkan_env_common.sh
+source_acloudviewer_vulkan_env || true
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-jupyter with-unit-test
-build_pip_package with_conda build_realsense build_azure_kinect build_jupyter
+build_pip_package with_conda with_vulkan build_realsense build_azure_kinect build_jupyter
 # build_pip_package with_conda build_azure_kinect build_jupyter
 
 set -x # Echo commands on

@@ -162,70 +162,132 @@ void LightGlueDialog::setupUi() {
 
     auto* ioGroup = new QGroupBox(tr("Input Images"));
     m_ioGroup = ioGroup;
-    auto* ioLayout = new QGridLayout(ioGroup);
+    auto* ioLayout = new QVBoxLayout(ioGroup);
 
-    int row = 0;
-    ioLayout->addWidget(new QLabel(tr("Input:")), row, 0, Qt::AlignTop);
-    auto* inputCol = new QVBoxLayout;
+    auto* hintLabel = new QLabel(
+            tr("Pick two images above to match. "
+               "Load Folder fills Image 1/2 with the first two files and lists "
+               "all folder images below — select one, then → Image 1/2 or double-click."));
+    hintLabel->setWordWrap(true);
+    hintLabel->setStyleSheet("color: #555;");
+    ioLayout->addWidget(hintLabel);
+
+    auto* slotRow = new QHBoxLayout;
+    for (int slot = 0; slot < kSlotCount; ++slot) {
+        auto* slotGroup = new QGroupBox(tr("Image %1").arg(slot + 1));
+        m_slotGroups[slot] = slotGroup;
+        auto* slotLayout = new QVBoxLayout(slotGroup);
+
+        m_slotPreview[slot] = new QLabel;
+        m_slotPreview[slot]->setFixedSize(kThumbSize + 16, kThumbSize + 16);
+        m_slotPreview[slot]->setAlignment(Qt::AlignCenter);
+        m_slotPreview[slot]->setFrameShape(QFrame::StyledPanel);
+        m_slotPreview[slot]->setStyleSheet("background: #f4f4f4;");
+        slotLayout->addWidget(m_slotPreview[slot], 0, Qt::AlignHCenter);
+
+        m_slotNameLabel[slot] = new QLabel(tr("(not set)"));
+        m_slotNameLabel[slot]->setAlignment(Qt::AlignCenter);
+        m_slotNameLabel[slot]->setWordWrap(true);
+        m_slotNameLabel[slot]->setMinimumHeight(36);
+        slotLayout->addWidget(m_slotNameLabel[slot]);
+
+        auto* slotBtnRow = new QHBoxLayout;
+        auto* browseSlotBtn = new QPushButton(tr("Browse..."));
+        browseSlotBtn->setProperty("slotIndex", slot);
+        connect(browseSlotBtn, &QPushButton::clicked, this,
+                &LightGlueDialog::onBrowseSlotImage);
+        slotBtnRow->addWidget(browseSlotBtn);
+        auto* clearSlotBtn = new QPushButton(tr("Clear"));
+        clearSlotBtn->setProperty("slotIndex", slot);
+        connect(clearSlotBtn, &QPushButton::clicked, this,
+                &LightGlueDialog::onClearSlot);
+        slotBtnRow->addWidget(clearSlotBtn);
+        slotLayout->addLayout(slotBtnRow);
+
+        slotRow->addWidget(slotGroup, 1);
+    }
+    ioLayout->addLayout(slotRow);
+
     auto* inputBtnLayout = new QHBoxLayout;
-    auto* browseFileBtn = new QPushButton(tr("File..."));
-    browseFileBtn->setToolTip(tr("Add one or more image files"));
+    auto* browseFileBtn = new QPushButton(tr("Add Files..."));
+    browseFileBtn->setToolTip(tr("Add one or more image files (first two fill the slots)"));
     connect(browseFileBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onBrowseFile);
     inputBtnLayout->addWidget(browseFileBtn);
-    auto* browseFolderBtn = new QPushButton(tr("Folder..."));
-    browseFolderBtn->setToolTip(tr("Load all images from a folder"));
+    auto* browseFolderBtn = new QPushButton(tr("Load Folder..."));
+    browseFolderBtn->setToolTip(
+            tr("Load all images from a folder into the list below; "
+               "the first two fill Image 1 and Image 2"));
     connect(browseFolderBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onBrowseFolder);
     inputBtnLayout->addWidget(browseFolderBtn);
-    auto* clearBtn = new QPushButton(tr("Clear"));
+    auto* clearBtn = new QPushButton(tr("Clear All"));
     connect(clearBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onClearImages);
     inputBtnLayout->addWidget(clearBtn);
     inputBtnLayout->addStretch();
-    inputCol->addLayout(inputBtnLayout);
+    ioLayout->addLayout(inputBtnLayout);
 
-    m_thumbScroll = new QScrollArea;
-    m_thumbScroll->setWidgetResizable(true);
-    m_thumbScroll->setMinimumHeight(kThumbSize + 52);
-    m_thumbScroll->setMaximumHeight(kThumbSize + 52);
-    m_thumbScroll->setFrameShape(QFrame::StyledPanel);
-    m_thumbContainer = new QWidget;
-    auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
-    thumbLayout->setContentsMargins(4, 4, 4, 4);
-    m_thumbScroll->setWidget(m_thumbContainer);
-    inputCol->addWidget(m_thumbScroll);
-    ioLayout->addLayout(inputCol, row, 1, 1, 2);
+    m_filePoolGroup = new QWidget;
+    auto* filePoolLayout = new QVBoxLayout(m_filePoolGroup);
+    filePoolLayout->setContentsMargins(0, 0, 0, 0);
+    auto* filePoolHeader = new QHBoxLayout;
+    filePoolHeader->addWidget(new QLabel(tr("Loaded files:")));
+    filePoolHeader->addStretch();
+    auto* assign1Btn = new QPushButton(tr("→ Image 1"));
+    assign1Btn->setToolTip(tr("Assign the selected loaded file to Image 1"));
+    connect(assign1Btn, &QPushButton::clicked, this,
+            &LightGlueDialog::onAssignToSlot1);
+    filePoolHeader->addWidget(assign1Btn);
+    auto* assign2Btn = new QPushButton(tr("→ Image 2"));
+    assign2Btn->setToolTip(tr("Assign the selected loaded file to Image 2"));
+    connect(assign2Btn, &QPushButton::clicked, this,
+            &LightGlueDialog::onAssignToSlot2);
+    filePoolHeader->addWidget(assign2Btn);
+    filePoolLayout->addLayout(filePoolHeader);
 
-    row++;
-    ioLayout->addWidget(new QLabel(tr("DB Images:")), row, 0, Qt::AlignTop);
-    auto* dbCol = new QVBoxLayout;
+    m_filePoolList = new QListWidget;
+    m_filePoolList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_filePoolList->setMinimumHeight(100);
+    m_filePoolList->setMaximumHeight(140);
+    m_filePoolList->setToolTip(
+            tr("Images from Add Files / Load Folder. "
+               "Select an entry, click → Image 1/2, or double-click to assign."));
+    connect(m_filePoolList, &QListWidget::itemActivated, this,
+            &LightGlueDialog::onFilePoolActivated);
+    filePoolLayout->addWidget(m_filePoolList);
+    m_filePoolGroup->setVisible(false);
+    ioLayout->addWidget(m_filePoolGroup);
+
+    auto* dbHeader = new QHBoxLayout;
+    dbHeader->addWidget(new QLabel(tr("DB source images (optional):")));
+    dbHeader->addStretch();
+    ioLayout->addLayout(dbHeader);
+
     m_dbImageList = new QListWidget;
-    m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_dbImageList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_dbImageList->setMinimumHeight(100);
     m_dbImageList->setMaximumHeight(140);
     m_dbImageList->setToolTip(
-            tr("ccImage entities from the DB tree — check/uncheck to add or "
-               "remove from input"));
-    connect(m_dbImageList, &QListWidget::itemChanged, this,
-            &LightGlueDialog::onDbListItemChanged);
-    dbCol->addWidget(m_dbImageList);
+            tr("ccImage entities from the DB tree (match outputs are hidden). "
+               "Double-click to assign to Image 1 or Image 2."));
+    connect(m_dbImageList, &QListWidget::itemActivated, this,
+            &LightGlueDialog::onDbListActivated);
+    ioLayout->addWidget(m_dbImageList);
+
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     connect(refreshBtn, &QPushButton::clicked, this,
             &LightGlueDialog::refreshDbImagesRequested);
-    dbCol->addWidget(refreshBtn);
-    ioLayout->addLayout(dbCol, row, 1, 1, 2);
+    ioLayout->addWidget(refreshBtn);
 
-    row++;
     m_imageStatusLabel = new QLabel;
     m_imageStatusLabel->setStyleSheet("font-weight: bold;");
-    ioLayout->addWidget(m_imageStatusLabel, row, 0, 1, 3);
+    ioLayout->addWidget(m_imageStatusLabel);
 
-    row++;
     m_addToDbCheck = new QCheckBox(
             tr("Add match visualization to DB tree after run"));
     m_addToDbCheck->setChecked(true);
-    ioLayout->addWidget(m_addToDbCheck, row, 0, 1, 3);
+    ioLayout->addWidget(m_addToDbCheck);
 
     mainLayout->addWidget(ioGroup);
 
@@ -264,7 +326,7 @@ void LightGlueDialog::setupUi() {
     actionRow->addWidget(m_exportBtn);
     mainLayout->addLayout(actionRow);
 
-    refreshThumbnailStrip();
+    refreshSlotWidgets();
     updateImageStatus();
     updateRunButtonState();
     onModeChanged(m_modeCombo->currentIndex());
@@ -316,7 +378,7 @@ LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     Settings s;
     s.mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     s.modelPath = resolveModelPath();
-    s.inputPaths = m_matchPaths;
+    s.inputPaths = QStringList() << m_slotPaths[0] << m_slotPaths[1];
     s.threads = m_threads->value();
     s.device = m_deviceCombo->currentData().toString();
     s.minScore = m_minScore->value();
@@ -359,24 +421,31 @@ bool LightGlueDialog::isModelReady() const {
 }
 
 bool LightGlueDialog::isInputValid() const {
-    return m_matchPaths.size() == 2;
+    return !m_slotPaths[0].isEmpty() && !m_slotPaths[1].isEmpty();
 }
 
 void LightGlueDialog::updateImageStatus() {
     if (!m_imageStatusLabel) return;
-    const int matchCount = m_matchPaths.size();
-    const int totalCount = m_inputPaths.size();
-    if (matchCount == 2) {
+    const bool slot0 = !m_slotPaths[0].isEmpty();
+    const bool slot1 = !m_slotPaths[1].isEmpty();
+    if (slot0 && slot1) {
         m_imageStatusLabel->setText(
-                tr("Ready: 2/2 images selected for matching (%1 loaded).")
-                        .arg(totalCount));
+                tr("Ready: %1 × %2")
+                        .arg(displayNameForPath(m_slotPaths[0]),
+                             displayNameForPath(m_slotPaths[1])));
         m_imageStatusLabel->setStyleSheet("font-weight: bold; color: #006600;");
+    } else if (slot0) {
+        m_imageStatusLabel->setText(
+                tr("Image 1 set — choose Image 2 to run matching."));
+        m_imageStatusLabel->setStyleSheet("font-weight: bold; color: #aa6600;");
+    } else if (slot1) {
+        m_imageStatusLabel->setText(
+                tr("Image 2 set — choose Image 1 to run matching."));
+        m_imageStatusLabel->setStyleSheet("font-weight: bold; color: #aa6600;");
     } else {
         m_imageStatusLabel->setText(
-                tr("Check Match on exactly 2 images (%1/2 matched, %2 loaded).")
-                        .arg(matchCount)
-                        .arg(totalCount));
-        m_imageStatusLabel->setStyleSheet("font-weight: bold; color: #aa3300;");
+                tr("Select two images (files, folder, or DB list)."));
+        m_imageStatusLabel->setStyleSheet("font-weight: bold; color: #666666;");
     }
 }
 
@@ -423,146 +492,287 @@ QImage LightGlueDialog::previewForPath(const QString& path) const {
     return lightglue_plugin::load_oriented_qimage(path);
 }
 
-void LightGlueDialog::refreshThumbnailStrip() {
-    if (!m_thumbContainer) return;
-    auto* thumbLayout = qobject_cast<QHBoxLayout*>(m_thumbContainer->layout());
-    if (!thumbLayout) return;
-    QLayoutItem* child;
-    while ((child = thumbLayout->takeAt(0)) != nullptr) {
-        if (child->widget()) child->widget()->deleteLater();
-        delete child;
+QString LightGlueDialog::displayNameForPath(const QString& path) const {
+    if (path.startsWith("db://")) {
+        return path.mid(5);
     }
+    return QFileInfo(path).fileName();
+}
 
-    if (m_inputPaths.isEmpty()) {
-        auto* placeholder = new QLabel(
-                tr("(no images — use File/Folder or DB Images)"));
-        placeholder->setAlignment(Qt::AlignCenter);
-        placeholder->setStyleSheet("color: gray;");
-        thumbLayout->addWidget(placeholder);
-        thumbLayout->addStretch();
-        return;
-    }
+void LightGlueDialog::refreshSlotWidgets() {
+    for (int slot = 0; slot < kSlotCount; ++slot) {
+        if (!m_slotPreview[slot] || !m_slotNameLabel[slot]) continue;
+        const QString& path = m_slotPaths[slot];
+        if (path.isEmpty()) {
+            m_slotPreview[slot]->clear();
+            m_slotPreview[slot]->setText(tr("Drop\nor\nBrowse"));
+            m_slotNameLabel[slot]->setText(tr("(not set)"));
+            if (m_slotGroups[slot]) {
+                m_slotGroups[slot]->setStyleSheet(QString());
+            }
+            continue;
+        }
 
-    for (const QString& path : m_inputPaths) {
-        auto* tile = new QWidget;
-        auto* tileLayout = new QVBoxLayout(tile);
-        tileLayout->setContentsMargins(2, 2, 2, 2);
-        tileLayout->setSpacing(2);
-
-        auto* imgLabel = new QLabel;
         const QImage img = previewForPath(path);
         if (!img.isNull()) {
-            imgLabel->setPixmap(QPixmap::fromImage(
+            m_slotPreview[slot]->setText(QString());
+            m_slotPreview[slot]->setPixmap(QPixmap::fromImage(
                     img.scaled(kThumbSize, kThumbSize, Qt::KeepAspectRatio,
                                Qt::SmoothTransformation)));
         } else {
-            imgLabel->setFixedSize(kThumbSize, kThumbSize);
-            imgLabel->setAlignment(Qt::AlignCenter);
-            imgLabel->setText("?");
-            imgLabel->setFrameShape(QFrame::Box);
+            m_slotPreview[slot]->setPixmap(QPixmap());
+            m_slotPreview[slot]->setText("?");
         }
-        imgLabel->setToolTip(path);
-        tileLayout->addWidget(imgLabel, 0, Qt::AlignHCenter);
-
-        const QString caption = path.startsWith("db://")
-                                        ? path.mid(5)
-                                        : QFileInfo(path).fileName();
-        auto* nameLabel = new QLabel(caption);
-        nameLabel->setMaximumWidth(kThumbSize + 8);
-        nameLabel->setAlignment(Qt::AlignCenter);
-        nameLabel->setWordWrap(true);
-        tileLayout->addWidget(nameLabel);
-
-        auto* matchCheck = new QCheckBox(tr("Match"));
-        matchCheck->setProperty("inputPath", path);
-        matchCheck->setChecked(m_matchPaths.contains(path));
-        connect(matchCheck, &QCheckBox::toggled, this,
-                &LightGlueDialog::onMatchToggled);
-        tileLayout->addWidget(matchCheck, 0, Qt::AlignHCenter);
-
-        auto* removeBtn = new QPushButton(QStringLiteral("×"));
-        removeBtn->setFixedSize(20, 20);
-        removeBtn->setToolTip(tr("Remove this image"));
-        removeBtn->setProperty("inputPath", path);
-        connect(removeBtn, &QPushButton::clicked, this,
-                &LightGlueDialog::onRemoveInputItem);
-        tileLayout->addWidget(removeBtn, 0, Qt::AlignHCenter);
-
-        thumbLayout->addWidget(tile);
+        m_slotPreview[slot]->setToolTip(path);
+        m_slotNameLabel[slot]->setText(displayNameForPath(path));
+        if (m_slotGroups[slot]) {
+            m_slotGroups[slot]->setStyleSheet(
+                    "QGroupBox { border: 2px solid #0066aa; }");
+        }
     }
-    thumbLayout->addStretch();
+    syncDbListHighlight();
+    syncFilePoolHighlight();
 }
 
-void LightGlueDialog::addInputPaths(const QStringList& paths, bool replace) {
-    if (replace) m_inputPaths.clear();
-    for (const QString& p : paths) {
-        if (p.isEmpty()) continue;
-        if (!m_inputPaths.contains(p)) m_inputPaths.append(p);
+void LightGlueDialog::setFilePoolPaths(const QStringList& paths) {
+    m_filePoolPaths.clear();
+    for (const QString& path : paths) {
+        if (path.isEmpty() || m_filePoolPaths.contains(path)) continue;
+        m_filePoolPaths.append(path);
     }
-    QStringList keptMatches;
-    for (const QString& p : m_matchPaths) {
-        if (m_inputPaths.contains(p)) keptMatches.append(p);
+    refreshFilePoolList();
+}
+
+void LightGlueDialog::refreshFilePoolList() {
+    if (!m_filePoolList || !m_filePoolGroup) return;
+    m_filePoolList->clear();
+    if (m_filePoolPaths.isEmpty()) {
+        m_filePoolGroup->setVisible(false);
+        return;
     }
-    m_matchPaths = keptMatches;
-    refreshThumbnailStrip();
+
+    m_filePoolGroup->setVisible(true);
+    for (const QString& path : m_filePoolPaths) {
+        auto* item = new QListWidgetItem(QFileInfo(path).fileName());
+        item->setData(Qt::UserRole, path);
+        item->setToolTip(path);
+        const QImage img = previewForPath(path);
+        if (!img.isNull()) {
+            item->setIcon(QIcon(QPixmap::fromImage(
+                    img.scaled(48, 48, Qt::KeepAspectRatio,
+                               Qt::SmoothTransformation))));
+        }
+        m_filePoolList->addItem(item);
+    }
+    syncFilePoolHighlight();
+}
+
+void LightGlueDialog::syncFilePoolHighlight() {
+    if (!m_filePoolList) return;
+    for (int i = 0; i < m_filePoolList->count(); ++i) {
+        QListWidgetItem* item = m_filePoolList->item(i);
+        if (!item) continue;
+        const QString path = item->data(Qt::UserRole).toString();
+        const bool inSlot0 = (m_slotPaths[0] == path);
+        const bool inSlot1 = (m_slotPaths[1] == path);
+        QFont font = item->font();
+        font.setBold(inSlot0 || inSlot1);
+        item->setFont(font);
+        QString label = QFileInfo(path).fileName();
+        if (inSlot0 && inSlot1) {
+            label += tr("  [Image 1 & 2]");
+        } else if (inSlot0) {
+            label += tr("  [Image 1]");
+        } else if (inSlot1) {
+            label += tr("  [Image 2]");
+        }
+        item->setText(label);
+    }
+}
+
+bool LightGlueDialog::assignSelectedToSlot(int slot) {
+    if (slot < 0 || slot >= kSlotCount) return false;
+
+    if (m_filePoolList && m_filePoolList->currentItem()) {
+        const QString path =
+                m_filePoolList->currentItem()->data(Qt::UserRole).toString();
+        if (!path.isEmpty()) {
+            assignToSlot(slot, path);
+            return true;
+        }
+    }
+
+    if (m_dbImageList && m_dbImageList->currentItem() &&
+        (m_dbImageList->currentItem()->flags() & Qt::ItemIsSelectable)) {
+        const QString name =
+                m_dbImageList->currentItem()->data(Qt::UserRole).toString();
+        if (!name.isEmpty()) {
+            assignToSlot(slot, QStringLiteral("db://") + name);
+            return true;
+        }
+    }
+
+    appendLog(tr("[Hint] Select an image in Loaded files or DB source images, "
+                 "then click → Image %1.")
+                      .arg(slot + 1));
+    return false;
+}
+
+void LightGlueDialog::assignToSlot(int slot, const QString& path) {
+    if (slot < 0 || slot >= kSlotCount || path.isEmpty()) return;
+    m_slotPaths[slot] = path;
+    refreshSlotWidgets();
+    syncFilePoolHighlight();
     updateImageStatus();
     updateRunButtonState();
 }
 
-void LightGlueDialog::removeInputPath(const QString& path) {
-    m_inputPaths.removeAll(path);
-    m_matchPaths.removeAll(path);
-    if (m_dbImageList && path.startsWith("db://")) {
-        const QString name = path.mid(5);
-        m_dbImageList->blockSignals(true);
-        for (int i = 0; i < m_dbImageList->count(); ++i) {
-            QListWidgetItem* item = m_dbImageList->item(i);
-            if (item && item->data(Qt::UserRole).toString() == name) {
-                item->setCheckState(Qt::Unchecked);
-            }
-        }
-        m_dbImageList->blockSignals(false);
-    }
-    refreshThumbnailStrip();
+void LightGlueDialog::clearSlot(int slot) {
+    if (slot < 0 || slot >= kSlotCount) return;
+    m_slotPaths[slot].clear();
+    refreshSlotWidgets();
     updateImageStatus();
     updateRunButtonState();
 }
 
-void LightGlueDialog::onRemoveInputItem() {
-    auto* btn = qobject_cast<QPushButton*>(sender());
-    if (!btn) return;
-    removeInputPath(btn->property("inputPath").toString());
+void LightGlueDialog::clearAllSlots() {
+    for (int slot = 0; slot < kSlotCount; ++slot) {
+        m_slotPaths[slot].clear();
+    }
+    m_filePoolPaths.clear();
+    refreshFilePoolList();
+    refreshSlotWidgets();
+    updateImageStatus();
+    updateRunButtonState();
 }
 
-void LightGlueDialog::onMatchToggled(bool checked) {
-    auto* cb = qobject_cast<QCheckBox*>(sender());
-    if (!cb) return;
-    const QString path = cb->property("inputPath").toString();
+void LightGlueDialog::autoAssignPaths(const QStringList& paths) {
+    QStringList unique;
+    for (const QString& path : paths) {
+        if (path.isEmpty() || unique.contains(path)) continue;
+        unique.append(path);
+    }
+    if (unique.isEmpty()) return;
+
+    if (unique.size() == 1) {
+        if (m_slotPaths[0].isEmpty()) {
+            assignToSlot(0, unique[0]);
+        } else if (m_slotPaths[1].isEmpty()) {
+            assignToSlot(1, unique[0]);
+        } else {
+            assignToSlot(1, unique[0]);
+        }
+        return;
+    }
+
+    assignToSlot(0, unique[0]);
+    assignToSlot(1, unique[1]);
+    if (unique.size() > 2) {
+        appendLog(tr("[Info] Using first two of %1 images for matching; "
+                     "select others in Loaded files and click → Image 1/2.")
+                          .arg(unique.size()));
+    }
+}
+
+int LightGlueDialog::senderSlotIndex() const {
+    const auto* btn = qobject_cast<const QPushButton*>(sender());
+    if (!btn) return -1;
+    bool ok = false;
+    const int slot = btn->property("slotIndex").toInt(&ok);
+    return ok ? slot : -1;
+}
+
+void LightGlueDialog::syncDbListHighlight() {
+    if (!m_dbImageList) return;
+    for (int i = 0; i < m_dbImageList->count(); ++i) {
+        QListWidgetItem* item = m_dbImageList->item(i);
+        if (!item || !(item->flags() & Qt::ItemIsSelectable)) continue;
+        const QString dbPath =
+                QStringLiteral("db://") + item->data(Qt::UserRole).toString();
+        const bool inSlot0 = (m_slotPaths[0] == dbPath);
+        const bool inSlot1 = (m_slotPaths[1] == dbPath);
+        QFont font = item->font();
+        font.setBold(inSlot0 || inSlot1);
+        item->setFont(font);
+        if (inSlot0 && inSlot1) {
+            item->setText(item->data(Qt::UserRole).toString() +
+                          tr("  [Image 1 & 2]"));
+        } else if (inSlot0) {
+            item->setText(item->data(Qt::UserRole).toString() + tr("  [Image 1]"));
+        } else if (inSlot1) {
+            item->setText(item->data(Qt::UserRole).toString() + tr("  [Image 2]"));
+        } else {
+            item->setText(item->data(Qt::UserRole).toString());
+        }
+    }
+}
+
+void LightGlueDialog::onBrowseSlotImage() {
+    const int slot = senderSlotIndex();
+    if (slot < 0) return;
+
+    QSettings settings;
+    const QString lastDir =
+            settings.value("qLightGlue/lastImageFileDir", QDir::homePath())
+                    .toString();
+    const QString path = QFileDialog::getOpenFileName(
+            this, tr("Select Image %1").arg(slot + 1), lastDir,
+            imageFileDialogFilter());
     if (path.isEmpty()) return;
-
-    if (checked) {
-        if (!m_matchPaths.contains(path)) {
-            m_matchPaths.append(path);
-        }
-        while (m_matchPaths.size() > 2) {
-            m_matchPaths.removeFirst();
-        }
-        refreshThumbnailStrip();
-    } else {
-        m_matchPaths.removeAll(path);
+    if (!isSupportedImageFile(path)) {
+        appendLog(tr("[Warning] Unsupported image file: %1").arg(path));
+        return;
     }
-    updateImageStatus();
-    updateRunButtonState();
+    settings.setValue("qLightGlue/lastImageFileDir",
+                      QFileInfo(path).absolutePath());
+    assignToSlot(slot, path);
 }
+
+void LightGlueDialog::onClearSlot() {
+    const int slot = senderSlotIndex();
+    if (slot < 0) return;
+    clearSlot(slot);
+}
+
+void LightGlueDialog::onFilePoolActivated(QListWidgetItem* item) {
+    if (!item) return;
+    const QString path = item->data(Qt::UserRole).toString();
+    if (path.isEmpty()) return;
+    if (m_slotPaths[0].isEmpty()) {
+        assignToSlot(0, path);
+    } else if (m_slotPaths[1].isEmpty()) {
+        assignToSlot(1, path);
+    } else {
+        assignToSlot(1, path);
+    }
+}
+
+void LightGlueDialog::onDbListActivated(QListWidgetItem* item) {
+    if (!item || !(item->flags() & Qt::ItemIsSelectable)) return;
+    const QString name = item->data(Qt::UserRole).toString();
+    if (name.isEmpty()) return;
+    const QString dbPath = QStringLiteral("db://") + name;
+    if (m_slotPaths[0].isEmpty()) {
+        assignToSlot(0, dbPath);
+    } else if (m_slotPaths[1].isEmpty()) {
+        assignToSlot(1, dbPath);
+    } else {
+        assignToSlot(1, dbPath);
+    }
+}
+
+void LightGlueDialog::onAssignToSlot1() { assignSelectedToSlot(0); }
+
+void LightGlueDialog::onAssignToSlot2() { assignSelectedToSlot(1); }
 
 void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
     if (!m_dbImageList) return;
     m_dbPreviews.clear();
-    m_dbImageList->blockSignals(true);
     m_dbImageList->clear();
     if (images.isEmpty()) {
-        m_dbImageList->addItem(tr("(no ccImage entities in DB)"));
-        m_dbImageList->item(0)->setFlags(Qt::NoItemFlags);
+        auto* item = new QListWidgetItem(tr("(no source ccImage entities in DB)"));
+        item->setFlags(Qt::NoItemFlags);
+        m_dbImageList->addItem(item);
         m_dbImageList->setEnabled(false);
     } else {
         m_dbImageList->setEnabled(true);
@@ -570,10 +780,6 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
             m_dbPreviews.insert(entry.name, entry.preview);
             auto* item = new QListWidgetItem(entry.name);
             item->setData(Qt::UserRole, entry.name);
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            const QString dbPath = QStringLiteral("db://") + entry.name;
-            item->setCheckState(m_inputPaths.contains(dbPath) ? Qt::Checked
-                                                              : Qt::Unchecked);
             if (!entry.preview.isNull()) {
                 item->setIcon(QIcon(QPixmap::fromImage(
                         entry.preview.scaled(48, 48, Qt::KeepAspectRatio,
@@ -582,75 +788,27 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
             m_dbImageList->addItem(item);
         }
     }
-    m_dbImageList->blockSignals(false);
-    refreshThumbnailStrip();
+    syncDbListHighlight();
 }
 
 void LightGlueDialog::applyDbTreeSelection(const QStringList& imageNames) {
     if (imageNames.isEmpty()) return;
-    QStringList dbPaths;
-    for (const QString& name : imageNames) {
-        dbPaths << QStringLiteral("db://") + name;
+    QStringList names = imageNames;
+    while (names.size() > kSlotCount) {
+        names.removeLast();
     }
-    addInputPaths(dbPaths, false);
-
-    for (const QString& p : dbPaths) {
-        if (m_matchPaths.size() >= 2) break;
-        if (!m_matchPaths.contains(p)) {
-            m_matchPaths.append(p);
-        }
+    if (names.size() >= 1) {
+        assignToSlot(0, QStringLiteral("db://") + names[0]);
     }
-    while (m_matchPaths.size() > 2) {
-        m_matchPaths.removeFirst();
+    if (names.size() >= 2) {
+        assignToSlot(1, QStringLiteral("db://") + names[1]);
     }
-
-    if (m_dbImageList) {
-        m_dbImageList->blockSignals(true);
-        for (int i = 0; i < m_dbImageList->count(); ++i) {
-            QListWidgetItem* item = m_dbImageList->item(i);
-            if (!item || !(item->flags() & Qt::ItemIsUserCheckable)) continue;
-            const QString name = item->data(Qt::UserRole).toString();
-            if (imageNames.contains(name)) {
-                item->setCheckState(Qt::Checked);
-            }
-        }
-        m_dbImageList->blockSignals(false);
-    }
-
-    refreshThumbnailStrip();
-    updateImageStatus();
-    updateRunButtonState();
-    appendLog(tr("[Info] Added %1 image(s) from DB tree selection.")
-                      .arg(imageNames.size()));
-}
-
-void LightGlueDialog::onDbListItemChanged(QListWidgetItem* item) {
-    if (!item || !(item->flags() & Qt::ItemIsUserCheckable)) return;
-    const QString name = item->data(Qt::UserRole).toString();
-    if (name.isEmpty()) return;
-    const QString dbPath = QStringLiteral("db://") + name;
-    if (item->checkState() == Qt::Checked) {
-        addInputPaths({dbPath}, false);
-    } else {
-        removeInputPath(dbPath);
-    }
+    appendLog(tr("[Info] Assigned %1 image(s) from DB tree selection.")
+                      .arg(names.size()));
 }
 
 void LightGlueDialog::onClearImages() {
-    m_inputPaths.clear();
-    m_matchPaths.clear();
-    if (m_dbImageList) {
-        m_dbImageList->blockSignals(true);
-        for (int i = 0; i < m_dbImageList->count(); ++i) {
-            if (QListWidgetItem* item = m_dbImageList->item(i)) {
-                item->setCheckState(Qt::Unchecked);
-            }
-        }
-        m_dbImageList->blockSignals(false);
-    }
-    refreshThumbnailStrip();
-    updateImageStatus();
-    updateRunButtonState();
+    clearAllSlots();
 }
 
 void LightGlueDialog::onBrowseFile() {
@@ -678,7 +836,12 @@ void LightGlueDialog::onBrowseFile() {
         return;
     }
 
-    addInputPaths(accepted, false);
+    autoAssignPaths(accepted);
+    QStringList pool = m_filePoolPaths;
+    for (const QString& path : accepted) {
+        if (!pool.contains(path)) pool.append(path);
+    }
+    setFilePoolPaths(pool);
     appendLog(tr("[Info] Added %1 file(s).").arg(accepted.size()));
 }
 
@@ -699,7 +862,9 @@ void LightGlueDialog::onBrowseFolder() {
         return;
     }
 
-    addInputPaths(files, true);
+    clearAllSlots();
+    setFilePoolPaths(files);
+    autoAssignPaths(files);
     appendLog(tr("[Info] Loaded %1 image(s) from folder: %2")
                       .arg(files.size())
                       .arg(dir));

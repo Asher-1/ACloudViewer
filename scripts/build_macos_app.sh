@@ -72,6 +72,6 @@ source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 
 echo "Start to build GUI package On MacOS..."
 echo
-build_gui_app with_conda package_installer
+build_gui_app with_conda package_installer with_vulkan
 echo "Install ACloudViewer package to ${ACloudViewer_INSTALL}"
 echo

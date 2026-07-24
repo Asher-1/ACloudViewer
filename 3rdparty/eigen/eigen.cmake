@@ -1,8 +1,5 @@
 include(ExternalProject)
 
-# just for compatibility with older versions of Eigen
-set(EIGEN_ALIGN_FLAGS "")
-
 ExternalProject_Add(ext_eigen
         PREFIX eigen
         # fix error: a space is required between consecutive right angle brackets (use '> >') on macos
@@ -15,8 +12,6 @@ ExternalProject_Add(ext_eigen
         UPDATE_COMMAND ""
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-            ${EIGEN_ALIGN_FLAGS}
-            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -26,6 +21,6 @@ ExternalProject_Add(ext_eigen
 
 ExternalProject_Get_Property(ext_eigen INSTALL_DIR)
 set(EIGEN_INCLUDE_DIRS ${INSTALL_DIR}/include/eigen3/) # "/" is critical.
-set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} ${MAC_OMP_FLAGS} -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+set(EIGEN_CMAKE_FLAGS ${MAC_OMP_FLAGS} -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
 
 

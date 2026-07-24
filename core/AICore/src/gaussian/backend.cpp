@@ -12,28 +12,18 @@
 #include "backend.hpp"
 
 #include <ggml-backend.h>
-#if !defined(GGML_BACKEND_DL)
+#if !defined(AICORE_BACKEND_DL)
 #include <ggml-cpu.h>
 #endif
 
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include "common.hpp"
 #include "ggml_backend_utils.hpp"
 #include <thread>
 
-#ifdef AICore_HAS_CVLOG
-#include <CVLog.h>
-#define FS_LOG(...) CVLog::Print("[FS] " __VA_ARGS__)
-#else
-#define FS_LOG(...)                                \
-    do {                                           \
-        std::fprintf(stderr, "[FS] " __VA_ARGS__); \
-        std::fprintf(stderr, "\n");                \
-    } while (0)
-#endif
-
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
 #endif
 
@@ -43,7 +33,7 @@ namespace gaussian {
 namespace {
 
 void clear_sticky_cuda_errors() {
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
     cudaGetLastError();
 #endif
 }

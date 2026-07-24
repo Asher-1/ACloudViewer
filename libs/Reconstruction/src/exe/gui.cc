@@ -31,6 +31,8 @@
 
 #include "exe/gui.h"
 
+#include <cstdlib>
+
 #include "util/opengl_utils.h"
 #include "util/option_manager.h"
 
@@ -58,6 +60,26 @@ int RunGraphicalUserInterface(int argc, char** argv) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
+#if defined(AICore_ENABLED) && defined(__linux__)
+  // Python wheels link AICore/ggml (Vulkan). COLMAP Qt also uses OpenGL on the
+  // same GPU; some NVIDIA drivers reset the device (Xid 13) and the shell
+  // prints "Terminated". Prefer Mesa software GL unless the user opts in.
+  if (std::getenv("ACV_QT_USE_NATIVE_OPENGL") == nullptr) {
+    if (std::getenv("QT_OPENGL") == nullptr) {
+      setenv("QT_OPENGL", "software", 0);
+    }
+    if (std::getenv("LIBGL_ALWAYS_SOFTWARE") == nullptr) {
+      setenv("LIBGL_ALWAYS_SOFTWARE", "1", 0);
+    }
+    if (std::getenv("GALLIUM_DRIVER") == nullptr) {
+      setenv("GALLIUM_DRIVER", "llvmpipe", 0);
+    }
+    if (std::getenv("__GLX_VENDOR_LIBRARY_NAME") == nullptr) {
+      setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 0);
+    }
+  }
 #endif
 
   QApplication app(argc, argv);

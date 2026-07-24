@@ -85,10 +85,21 @@ endforeach()
 # ggml_backend_load_all() and allow GPU backends to be optional (graceful
 # fallback to CPU if drivers are missing).
 #
-# Layout with GGML_BACKEND_DL:
-#   GGML_RUNTIME_LIB_DIR -> shared core libs (ggml, ggml-base)
-#   GGML_BACKEND_DIR     -> loadable backends (ggml-cpu, ggml-metal, etc.)
+# ggml dynamic-backend runtime layout (internal paths from ggml.cmake — see
+# cmake/AICoreRuntimeLayout.cmake). Required to bundle libggml*.so + ggml-cpu*.so
+# next to libAICore in the Python wheel; ordinary libs do not split core vs module.
 if(AICore_ENABLED AND GGML_DYNAMIC_BACKENDS)
+    if(NOT AICORE_COPY_GGML_SCRIPT)
+        get_filename_component(_ggml_copy_script
+            "${CMAKE_CURRENT_LIST_DIR}/../../../core/AICore/cmake/CopyGgmlBackends.cmake"
+            ABSOLUTE)
+    else()
+        set(_ggml_copy_script "${AICORE_COPY_GGML_SCRIPT}")
+    endif()
+    if(NOT EXISTS "${_ggml_copy_script}")
+        message(FATAL_ERROR
+            "AICore packaging: CopyGgmlBackends.cmake not found: ${_ggml_copy_script}")
+    endif()
     if(NOT IS_DIRECTORY "${GGML_RUNTIME_LIB_DIR}")
         message(FATAL_ERROR
             "AICore packaging: ggml runtime dir missing: ${GGML_RUNTIME_LIB_DIR}")
@@ -97,39 +108,43 @@ if(AICore_ENABLED AND GGML_DYNAMIC_BACKENDS)
         message(FATAL_ERROR
             "AICore packaging: ggml backend dir missing: ${GGML_BACKEND_DIR}")
     endif()
-    # Package generation is incremental. Remove every known backend module
-    # before copying the configured set so a backend disabled since the last
-    # build (notably the unsupported ggml-blas module) cannot leak into a wheel.
-    foreach(_backend IN ITEMS cpu blas cuda metal vulkan opencl sycl)
-        file(REMOVE
-            "${PYTHON_INSTALL_LIB_DESTINATION}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-${_backend}${GGML_MODULE_SUFFIX}")
-    endforeach()
-    file(GLOB _ggml_shared_libs
-        "${GGML_RUNTIME_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
-    )
-    if(NOT _ggml_shared_libs)
-        message(FATAL_ERROR "AICore packaging: ggml core runtime is missing")
-    endif()
-    foreach(_mod ${_ggml_shared_libs})
-        get_filename_component(_mod_name "${_mod}" NAME)
-        message(STATUS "Packaging ggml shared lib: ${_mod_name}")
-        configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
-    endforeach()
-    set(_ggml_cpu_backend
-        "${GGML_BACKEND_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}")
-    if(NOT EXISTS "${_ggml_cpu_backend}")
+    get_filename_component(_ggml_runtime_lib_dir "${GGML_RUNTIME_LIB_DIR}" ABSOLUTE)
+    get_filename_component(_ggml_backend_dir "${GGML_BACKEND_DIR}" ABSOLUTE)
+    get_filename_component(_ggml_wheel_lib_dir "${PYTHON_INSTALL_LIB_DESTINATION}" ABSOLUTE)
+    # execute_process passes each COMMAND argument literally; do not wrap -D values
+    # in quotes or nested cmake -P sees quote characters inside GGML_BACKEND_DIR.
+    execute_process(COMMAND ${CMAKE_COMMAND}
+        -DCOPY_CORE_SHARED=ON
+        -DGGML_BACKEND_DIR=${_ggml_runtime_lib_dir}
+        -DDEST_DIR=${_ggml_wheel_lib_dir}
+        -DLIB_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}
+        -DLIB_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX}
+        -P ${_ggml_copy_script}
+        RESULT_VARIABLE _ggml_core_copy_result
+        ERROR_VARIABLE _ggml_core_copy_error)
+    if(_ggml_core_copy_result)
         message(FATAL_ERROR
-            "AICore packaging: required CPU backend missing: ${_ggml_cpu_backend}")
+            "AICore packaging: failed to copy ggml core libs: ${_ggml_core_copy_error}")
     endif()
-    foreach(_mod_name IN LISTS GGML_BACKEND_MODULE_FILES)
-        set(_mod "${GGML_BACKEND_DIR}/${_mod_name}")
-        if(NOT EXISTS "${_mod}")
-            message(FATAL_ERROR
-                "AICore packaging: configured backend missing: ${_mod}")
-        endif()
-        message(STATUS "Packaging ggml backend module: ${_mod_name}")
-        configure_file("${_mod}" "${PYTHON_INSTALL_LIB_DESTINATION}/${_mod_name}" COPYONLY)
-    endforeach()
+    string(REPLACE ";" "|" _ggml_gpu_backend_files_pipe "${GGML_GPU_BACKEND_MODULE_FILES}")
+    set(_ggml_backend_copy_args
+        -DCOPY_BACKEND_MODULES=ON
+        -DGGML_BACKEND_DIR=${_ggml_backend_dir}
+        -DDEST_DIR=${_ggml_wheel_lib_dir}
+        -DLIB_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}
+        -DLIB_SUFFIX=${GGML_MODULE_SUFFIX}
+        -DGPU_FILES_PIPE=${_ggml_gpu_backend_files_pipe})
+    if(GGML_CPU_ALL_VARIANTS)
+        list(APPEND _ggml_backend_copy_args -DCPU_ALL_VARIANTS=ON)
+    endif()
+    list(APPEND _ggml_backend_copy_args -P ${_ggml_copy_script})
+    execute_process(COMMAND ${CMAKE_COMMAND} ${_ggml_backend_copy_args}
+        RESULT_VARIABLE _ggml_backend_copy_result
+        ERROR_VARIABLE _ggml_backend_copy_error)
+    if(_ggml_backend_copy_result)
+        message(FATAL_ERROR
+            "AICore packaging: failed to copy ggml backend modules: ${_ggml_backend_copy_error}")
+    endif()
 endif()
 
 if (WIN32)
