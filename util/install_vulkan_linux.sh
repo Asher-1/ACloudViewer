@@ -105,10 +105,15 @@ install_glslc_from_source() {
     (cd "${source_dir}" && ./utils/git-sync-deps)
     "${cmake_bin}" -S "${source_dir}" -B "${build_dir}" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SKIP_INSTALL_RULES=ON \
         -DSHADERC_SKIP_TESTS=ON \
         -DSHADERC_SKIP_EXAMPLES=ON \
         -DSHADERC_SKIP_COPYRIGHT_CHECK=ON \
-        -DSHADERC_SKIP_INSTALL=ON
+        -DSHADERC_SKIP_INSTALL=ON \
+        -DSKIP_GLSLANG_INSTALL=ON \
+        -DGLSLANG_ENABLE_INSTALL=OFF \
+        -DSKIP_SPIRV_TOOLS_INSTALL=ON \
+        -DSPIRV_SKIP_EXECUTABLES=ON
     "${cmake_bin}" --build "${build_dir}" --target glslc_exe \
         --parallel "${VULKAN_BUILD_JOBS:-4}"
     mkdir -p "${install_dir}"

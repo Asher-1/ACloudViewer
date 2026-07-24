@@ -91,19 +91,34 @@ fi
 ${end_marker}
 EOF
 
+    local targets=()
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        targets=("${HOME}/.bash_profile" "${HOME}/.zprofile")
+    else
+        targets=("${HOME}/.bashrc" "${HOME}/.profile")
+    fi
+
     local target
-    for target in "${HOME}/.bashrc" "${HOME}/.profile"; do
+    for target in "${targets[@]}"; do
         remove_vulkan_hook_block "${target}" "${marker}" "${end_marker}"
         prepend_vulkan_hook_block "${target}" "${hook_file}"
         echo "Installed Vulkan env hook at top of ${target}"
     done
     rm -f "${hook_file}"
 
-    cat <<EOF
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        cat <<EOF
+Note: On macOS the hook is installed in ~/.bash_profile (for bash) and
+~/.zprofile (for zsh). For scripts, prefer:
+  source ${env_script}
+EOF
+    else
+        cat <<EOF
 Note: Ubuntu/Debian ~/.bashrc returns early in non-interactive shells, so
   source ~/.bashrc
 does not load hooks appended at the bottom. The hook is now at the top of
 ~/.bashrc and ~/.profile. For scripts, prefer:
   source ${env_script}
 EOF
+    fi
 }
