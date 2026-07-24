@@ -41,6 +41,7 @@ env:
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
   NPROC: 8
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  VULKAN_SDK_VERSION: 1.4.350.0
 
 jobs:
   windows:
@@ -107,9 +108,15 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up Vulkan SDK
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          cache: true
+
+      - name: Sync ACloudViewer Vulkan env
         shell: powershell
-        run: .\util\install_vulkan_sdk_windows.ps1
+        run: .\util\sync_vulkan_env_from_sdk.ps1
 
       - name: Set up python version
         run: |
@@ -500,9 +507,16 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up Vulkan SDK
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          cache: true
+
+      - name: Sync ACloudViewer Vulkan env
         shell: powershell
-        run: .\util\install_vulkan_sdk_windows.ps1
+        working-directory: ${{ env.SRC_DIR }}
+        run: .\util\sync_vulkan_env_from_sdk.ps1
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
