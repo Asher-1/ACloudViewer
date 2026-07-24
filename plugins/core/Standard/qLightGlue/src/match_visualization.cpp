@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "match_visualization.h"
 
 #include <QPainter>
@@ -10,7 +17,8 @@ QImage scale_to_height(const QImage& src, int target_h) {
     return src.scaledToHeight(target_h, Qt::SmoothTransformation);
 }
 
-QPointF map_keypoint(const QPointF& kp, const QSize& sourceSize,
+QPointF map_keypoint(const QPointF& kp,
+                     const QSize& sourceSize,
                      const QSize& targetSize) {
     if (sourceSize.width() <= 0 || sourceSize.height() <= 0) return kp;
     const double sx =
@@ -68,11 +76,9 @@ QImage renderMatchVisualization(const QImage& image0,
             m.idx2 >= keypoints1.size()) {
             continue;
         }
-        const QPointF p0 =
-                map_keypoint(keypoints0[m.idx1], src0, dst0);
-        const QPointF p1 =
-                map_keypoint(keypoints1[m.idx2], src1, dst1) +
-                QPointF(x_offset1, 0);
+        const QPointF p0 = map_keypoint(keypoints0[m.idx1], src0, dst0);
+        const QPointF p1 = map_keypoint(keypoints1[m.idx2], src1, dst1) +
+                           QPointF(x_offset1, 0);
         painter.drawLine(p0, p1);
     }
 

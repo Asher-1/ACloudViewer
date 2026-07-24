@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // LightGlue worker — native feature extraction + AICore GGML matching.
 
 #include "LightGlueWorker.h"
@@ -6,12 +13,12 @@
 #include <QFileInfo>
 
 #ifdef AICore_ENABLED
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
 #include "feature_extractor.h"
-
-#include <QJsonDocument>
-#include <QJsonObject>
 #endif
 
 LightGlueWorker::LightGlueWorker(const Settings& settings, QObject* parent)
@@ -50,12 +57,12 @@ QString formatResolvedDeviceLog(aicore_lightglue_ctx* ctx) {
     if (!ctx) return {};
     char* info = aicore_lightglue_info_json(ctx);
     if (!info) return {};
-    const QJsonObject obj =
-            QJsonDocument::fromJson(QByteArray(info)).object();
+    const QJsonObject obj = QJsonDocument::fromJson(QByteArray(info)).object();
     aicore_lightglue_free_string(info);
     const QString resolved = obj.value(QStringLiteral("device")).toString();
     if (resolved.isEmpty()) return {};
-    return QStringLiteral("[LG] ggml backend ready on device: %1").arg(resolved);
+    return QStringLiteral("[LG] ggml backend ready on device: %1")
+            .arg(resolved);
 }
 
 bool extract_feature_pair(const LightGlueWorker::Settings& settings,
@@ -82,13 +89,13 @@ bool extract_feature_pair(const LightGlueWorker::Settings& settings,
         return false;
     }
 
-    if (!lightglue_plugin::extract_sift_opencv(
-                p0, settings.maxKeypoints, settings.maxResize, f0, &err)) {
+    if (!lightglue_plugin::extract_sift_opencv(p0, settings.maxKeypoints,
+                                               settings.maxResize, f0, &err)) {
         if (log) *log = QString::fromStdString(err);
         return false;
     }
-    if (!lightglue_plugin::extract_sift_opencv(
-                p1, settings.maxKeypoints, settings.maxResize, f1, &err)) {
+    if (!lightglue_plugin::extract_sift_opencv(p1, settings.maxKeypoints,
+                                               settings.maxResize, f1, &err)) {
         if (log) *log = QString::fromStdString(err);
         return false;
     }
@@ -212,12 +219,14 @@ bool LightGlueWorker::runMatch() {
     LightGlueRunResult result;
     result.imagePath0 = m_settings.inputPaths[0];
     result.imagePath1 = m_settings.inputPaths[1];
-    result.imageName0 = result.imagePath0.startsWith("db://")
-                                ? result.imagePath0.mid(5)
-                                : QFileInfo(result.imagePath0).completeBaseName();
-    result.imageName1 = result.imagePath1.startsWith("db://")
-                                ? result.imagePath1.mid(5)
-                                : QFileInfo(result.imagePath1).completeBaseName();
+    result.imageName0 =
+            result.imagePath0.startsWith("db://")
+                    ? result.imagePath0.mid(5)
+                    : QFileInfo(result.imagePath0).completeBaseName();
+    result.imageName1 =
+            result.imagePath1.startsWith("db://")
+                    ? result.imagePath1.mid(5)
+                    : QFileInfo(result.imagePath1).completeBaseName();
     result.sourceName = result.imageName0 + "_x_" + result.imageName1;
     result.nKeypoints0 = f0.view.n_keypoints;
     result.nKeypoints1 = f1.view.n_keypoints;

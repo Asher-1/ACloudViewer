@@ -123,9 +123,8 @@ bool FreeSplatterWorker::runReconstruct() {
 
     const int n = m_settings.inputPaths.size();
     emit progressUpdate(25, 100);
-    QString devLabel = m_settings.device.isEmpty()
-                               ? QStringLiteral("auto")
-                               : m_settings.device;
+    QString devLabel = m_settings.device.isEmpty() ? QStringLiteral("auto")
+                                                   : m_settings.device;
     if (char* info = aicore_gaussian_info_json(ctx)) {
         const QJsonObject modelInfo =
                 QJsonDocument::fromJson(QByteArray(info)).object();

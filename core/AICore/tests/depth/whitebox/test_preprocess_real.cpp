@@ -22,7 +22,8 @@ int main() {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_PREPROC");
     if (!base) {
         std::fprintf(stderr,
-                     "[preproc_real] no AICORE_TEST_DEPTH_BASELINE_PREPROC -> SKIP\n");
+                     "[preproc_real] no AICORE_TEST_DEPTH_BASELINE_PREPROC -> "
+                     "SKIP\n");
         return 77;
     }
 

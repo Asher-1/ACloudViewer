@@ -58,8 +58,8 @@ std::string backend_display_name(const std::string& backend) {
 std::string format_device_label(const std::string& backend,
                                 enum ggml_backend_dev_type type,
                                 const char* description) {
-    std::string label = backend_display_name(backend) + " — " +
-                        device_type_label(type);
+    std::string label =
+            backend_display_name(backend) + " — " + device_type_label(type);
     if (description && description[0] != '\0') {
         label += " (";
         label += description;
@@ -95,8 +95,8 @@ std::vector<OwnedDevice> build_devices() {
         if (index > 0) id += ":" + std::to_string(index);
         ++index;
 
-        std::string label = format_device_label(backend, type,
-                                                ggml_backend_dev_description(dev));
+        std::string label = format_device_label(
+                backend, type, ggml_backend_dev_description(dev));
         result.push_back({std::move(id), std::move(label), {}});
     }
 
@@ -142,7 +142,7 @@ bool has_device(const char* device) {
         std::string resolved;
         if (ggml_common::find_auto_backend(resolved)) return true;
         return ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                       nullptr) != nullptr;
+                                         nullptr) != nullptr;
     }
     if (requested == "gpu") {
         std::string resolved;

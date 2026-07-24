@@ -21,10 +21,10 @@
 
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF_AUX");
-    const char* base =
-            std::getenv("AICORE_TEST_DEPTH_BASELINE");  // feats (reference.gguf)
-    const char* rays =
-            std::getenv("AICORE_TEST_DEPTH_BASELINE_RAYS");  // gold ray/ray_conf
+    const char* base = std::getenv(
+            "AICORE_TEST_DEPTH_BASELINE");  // feats (reference.gguf)
+    const char* rays = std::getenv(
+            "AICORE_TEST_DEPTH_BASELINE_RAYS");  // gold ray/ray_conf
     if (!gguf || !base || !rays) return 77;
     aicore::depth::ModelLoader ml;
     if (!ml.load(gguf)) return 1;

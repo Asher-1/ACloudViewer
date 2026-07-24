@@ -1,9 +1,15 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "feature_extractor.h"
 
 #include <QFileInfo>
 #include <QImageReader>
 #include <QtGlobal>
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -29,7 +35,9 @@ void set_error(std::string* error, const std::string& msg) {
 }
 
 #ifdef QLIGHTGLUE_HAS_OPENCV
-cv::Mat load_gray_resized(const QString& path, int max_resize, int* out_w,
+cv::Mat load_gray_resized(const QString& path,
+                          int max_resize,
+                          int* out_w,
                           int* out_h) {
     const QImage oriented = load_oriented_qimage(path);
     if (oriented.isNull()) return {};
@@ -110,14 +118,14 @@ bool fill_from_cv(const cv::Mat& gray,
 }
 #endif
 
-bool copy_fixture_side(const aicore_lightglue_features& src, OwnedFeatures* out) {
+bool copy_fixture_side(const aicore_lightglue_features& src,
+                       OwnedFeatures* out) {
     if (!out || !src.keypoints || src.n_keypoints <= 0 || !src.descriptors) {
         return false;
     }
     out->keypoints.assign(src.keypoints, src.keypoints + src.n_keypoints);
-    const size_t n_desc =
-            static_cast<size_t>(src.n_keypoints) *
-            static_cast<size_t>(std::max(1, src.descriptor_dim));
+    const size_t n_desc = static_cast<size_t>(src.n_keypoints) *
+                          static_cast<size_t>(std::max(1, src.descriptor_dim));
     out->descriptors.assign(src.descriptors, src.descriptors + n_desc);
     out->view = src;
     out->view.keypoints = out->keypoints.data();
@@ -184,7 +192,8 @@ bool load_fixture_pair(const QString& fixture_path,
     aicore_lightglue_features f1{};
     if (aicore_lightglue_load_fixture(fixture_path.toUtf8().constData(), &f0,
                                       &f1) != 0) {
-        set_error(error, "invalid LGINP01 fixture: " + fixture_path.toStdString());
+        set_error(error,
+                  "invalid LGINP01 fixture: " + fixture_path.toStdString());
         return false;
     }
     const bool ok = copy_fixture_side(f0, out0) && copy_fixture_side(f1, out1);

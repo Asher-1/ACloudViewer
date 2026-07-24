@@ -65,9 +65,9 @@ int main() {
     gaussian[15] = 0.75f;
     gaussian[16] = gaussian[17] = gaussian[18] = 1.0f;
     gaussian[19] = 1.0f;
-    AICORE_CHECK(aicore_gaussian_export_splat(
-                         gaussian, 1, 23, 0.1f, 0,
-                         tensor_splat.string().c_str()) == 0);
+    AICORE_CHECK(aicore_gaussian_export_splat(gaussian, 1, 23, 0.1f, 0,
+                                              tensor_splat.string().c_str()) ==
+                 0);
     std::error_code file_error;
     AICORE_CHECK(std::filesystem::file_size(tensor_splat, file_error) == 32 &&
                  !file_error);
@@ -81,8 +81,8 @@ int main() {
     point.sx = point.sy = point.sz = 1.0f;
     point.qw = 1.0f;
     AICORE_CHECK(aicore_gaussian_export_cloud_splat(
-                         &point, 1, 0, 1.0f,
-                         cloud_splat.string().c_str()) == 0);
+                         &point, 1, 0, 1.0f, cloud_splat.string().c_str()) ==
+                 0);
     file_error.clear();
     AICORE_CHECK(std::filesystem::file_size(cloud_splat, file_error) == 32 &&
                  !file_error);

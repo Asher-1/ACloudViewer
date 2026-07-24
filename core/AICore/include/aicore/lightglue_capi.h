@@ -56,8 +56,7 @@ typedef struct {
 
 /* ---- options ---- */
 AICORE_CAPI aicore_lightglue_options* aicore_lightglue_options_new(void);
-AICORE_CAPI void aicore_lightglue_options_free(
-        aicore_lightglue_options* opts);
+AICORE_CAPI void aicore_lightglue_options_free(aicore_lightglue_options* opts);
 AICORE_CAPI void aicore_lightglue_options_set_device(
         aicore_lightglue_options* opts, const char* device);
 AICORE_CAPI void aicore_lightglue_options_set_threads(
@@ -74,8 +73,8 @@ AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load(const char* gguf_path,
 AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
         const char* gguf_path, const aicore_lightglue_options* opts);
 AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx);
-AICORE_CAPI const char*
-aicore_lightglue_last_error(const aicore_lightglue_ctx* ctx);
+AICORE_CAPI const char* aicore_lightglue_last_error(
+        const aicore_lightglue_ctx* ctx);
 
 /* ---- model info ---- */
 AICORE_CAPI int aicore_lightglue_geometry_of(const aicore_lightglue_ctx* ctx,
@@ -95,9 +94,10 @@ AICORE_CAPI void aicore_lightglue_free_matches(aicore_lightglue_match* matches);
 
 /* Load LGINP01 binary fixture (two feature sets). Caller frees with
  * aicore_lightglue_free_features. Returns 0 on success. */
-AICORE_CAPI int aicore_lightglue_load_fixture(const char* path,
-                                              aicore_lightglue_features* image0,
-                                              aicore_lightglue_features* image1);
+AICORE_CAPI int aicore_lightglue_load_fixture(
+        const char* path,
+        aicore_lightglue_features* image0,
+        aicore_lightglue_features* image1);
 AICORE_CAPI void aicore_lightglue_free_features(
         aicore_lightglue_features* features);
 

@@ -25,7 +25,8 @@
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     if (!gguf) {
-        std::fprintf(stderr, "[fused_depth] no AICORE_TEST_DEPTH_GGUF -> SKIP\n");
+        std::fprintf(stderr,
+                     "[fused_depth] no AICORE_TEST_DEPTH_GGUF -> SKIP\n");
         return 77;
     }
     std::string png = "dumps/native_input.png";

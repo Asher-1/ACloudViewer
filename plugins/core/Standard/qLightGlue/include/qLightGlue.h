@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <ecvHObject.h>
@@ -33,7 +40,8 @@ private slots:
 
 private:
     bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
-    bool resolveInputPaths(const QStringList& rawPaths, QStringList& outPaths,
+    bool resolveInputPaths(const QStringList& rawPaths,
+                           QStringList& outPaths,
                            QString* errorMsg) const;
     void refreshDbImages();
     ccImage* findDbImage(const QString& name) const;

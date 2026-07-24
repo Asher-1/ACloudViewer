@@ -1,7 +1,14 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
-#include <QThread>
 #include <QPointF>
+#include <QThread>
 #include <QVector>
 
 struct LightGlueMatchResult {
@@ -46,7 +53,8 @@ public:
         int maxResize = 1024;
     };
 
-    explicit LightGlueWorker(const Settings& settings, QObject* parent = nullptr);
+    explicit LightGlueWorker(const Settings& settings,
+                             QObject* parent = nullptr);
 
     void releaseContextOnMainThread();
 

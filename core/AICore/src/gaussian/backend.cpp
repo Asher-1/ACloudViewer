@@ -19,9 +19,10 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <thread>
+
 #include "common.hpp"
 #include "ggml_backend_utils.hpp"
-#include <thread>
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
@@ -98,8 +99,8 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
 
     if (ggml_backend_dev_type(ggml_backend_get_device(be)) !=
         GGML_BACKEND_DEVICE_TYPE_CPU) {
-        cpu_be =
-                ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+        cpu_be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                           nullptr);
         if (!cpu_be) {
             error = "CPU fallback init failed";
             release();

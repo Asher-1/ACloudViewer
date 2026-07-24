@@ -44,8 +44,8 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load(const char* gguf_path,
 AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
         const char* gguf_path, const aicore_gaussian_options* opts);
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx);
-AICORE_CAPI const char*
-aicore_gaussian_last_error(const aicore_gaussian_ctx* ctx);
+AICORE_CAPI const char* aicore_gaussian_last_error(
+        const aicore_gaussian_ctx* ctx);
 
 /* ---- model geometry ---- */
 typedef struct {
@@ -192,30 +192,30 @@ AICORE_CAPI int aicore_gaussian_pair_parallax(const float* gaussians,
                                               float opacity_threshold,
                                               aicore_gaussian_parallax* out);
 
-AICORE_CAPI aicore_gaussian_accumulator*
-aicore_gaussian_accumulator_new(int height, int width, float opacity_threshold);
-AICORE_CAPI void
-aicore_gaussian_accumulator_free(aicore_gaussian_accumulator* acc);
+AICORE_CAPI aicore_gaussian_accumulator* aicore_gaussian_accumulator_new(
+        int height, int width, float opacity_threshold);
+AICORE_CAPI void aicore_gaussian_accumulator_free(
+        aicore_gaussian_accumulator* acc);
 AICORE_CAPI void aicore_gaussian_accumulator_add_pair(
         aicore_gaussian_accumulator* acc, const float* gaussians, int gc);
-AICORE_CAPI int
-aicore_gaussian_accumulator_frame_count(aicore_gaussian_accumulator* acc);
-AICORE_CAPI void
-aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
-                                  aicore_gaussian_point** out,
-                                  size_t* n_out);
-AICORE_CAPI void
-aicore_gaussian_accumulator_refine(aicore_gaussian_accumulator* acc,
-                                   float voxel_frac,
-                                   int iters,
-                                   float alpha);
-AICORE_CAPI int
-aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
-                                 float voxel_frac,
-                                 int fuse_k,
-                                 int fuse_mode,
-                                 aicore_gaussian_point** out,
-                                 size_t* n_out);
+AICORE_CAPI int aicore_gaussian_accumulator_frame_count(
+        aicore_gaussian_accumulator* acc);
+AICORE_CAPI void aicore_gaussian_accumulator_cloud(
+        aicore_gaussian_accumulator* acc,
+        aicore_gaussian_point** out,
+        size_t* n_out);
+AICORE_CAPI void aicore_gaussian_accumulator_refine(
+        aicore_gaussian_accumulator* acc,
+        float voxel_frac,
+        int iters,
+        float alpha);
+AICORE_CAPI int aicore_gaussian_accumulator_fuse(
+        aicore_gaussian_accumulator* acc,
+        float voxel_frac,
+        int fuse_k,
+        int fuse_mode,
+        aicore_gaussian_point** out,
+        size_t* n_out);
 
 AICORE_CAPI int aicore_gaussian_tree_overlap(const float** pairs,
                                              int n_pairs,

@@ -16,14 +16,14 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include "ggml_backend_utils.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "aicore/gaussian_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/gaussian_capi.h"
 #include "backend.hpp"
+#include "ggml_backend_utils.hpp"
 #include "image.h"
 #include "image_io.hpp"
 #include "model.h"
@@ -107,8 +107,8 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
 
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx) { delete ctx; }
 
-AICORE_CAPI const char*
-aicore_gaussian_last_error(const aicore_gaussian_ctx* ctx) {
+AICORE_CAPI const char* aicore_gaussian_last_error(
+        const aicore_gaussian_ctx* ctx) {
     if (!ctx) return "NULL context";
     return ctx->error.empty() ? nullptr : ctx->error.c_str();
 }
@@ -483,10 +483,9 @@ AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
                              std::max(record[18], 1e-9f);
         keep.emplace_back(opacity * volume, i);
     }
-    std::sort(keep.begin(), keep.end(),
-              [](const auto& lhs, const auto& rhs) {
-                  return lhs.first > rhs.first;
-              });
+    std::sort(keep.begin(), keep.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs.first > rhs.first;
+    });
     if (max_splats > 0 && keep.size() > max_splats) {
         keep.resize(max_splats);
     }
@@ -495,18 +494,16 @@ AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
     if (!stream) return -1;
     constexpr float kShC0 = 0.28209479177387814f;
     for (const auto& item : keep) {
-        const float* value =
-                gaussians + item.second * gaussian_channels;
+        const float* value = gaussians + item.second * gaussian_channels;
         const float position[3] = {value[0], value[1], value[2]};
         const float scale[3] = {value[16], value[17], value[18]};
         const float quaternion[4] = {value[19], value[20], value[21],
                                      value[22]};
-        const float rgb[3] = {0.5f + kShC0 * value[3],
-                              0.5f + kShC0 * value[4],
+        const float rgb[3] = {0.5f + kShC0 * value[3], 0.5f + kShC0 * value[4],
                               0.5f + kShC0 * value[5]};
         unsigned char encoded[32];
-        aicore::gaussian::encode_splat_record(
-                encoded, position, scale, quaternion, rgb, value[15]);
+        aicore::gaussian::encode_splat_record(encoded, position, scale,
+                                              quaternion, rgb, value[15]);
         stream.write(reinterpret_cast<const char*>(encoded), sizeof(encoded));
     }
     return stream ? 0 : -1;
@@ -550,8 +547,8 @@ AICORE_CAPI int aicore_gaussian_export_cloud_splat(
         const float quaternion[4] = {point.qw, point.qx, point.qy, point.qz};
         const float rgb[3] = {point.r, point.g, point.b};
         unsigned char encoded[32];
-        aicore::gaussian::encode_splat_record(
-                encoded, position, scale, quaternion, rgb, point.opacity);
+        aicore::gaussian::encode_splat_record(encoded, position, scale,
+                                              quaternion, rgb, point.opacity);
         stream.write(reinterpret_cast<const char*>(encoded), sizeof(encoded));
     }
     return stream ? 0 : -1;
@@ -594,8 +591,8 @@ AICORE_CAPI aicore_gaussian_accumulator* aicore_gaussian_accumulator_new(
     }
 }
 
-AICORE_CAPI void
-aicore_gaussian_accumulator_free(aicore_gaussian_accumulator* acc) {
+AICORE_CAPI void aicore_gaussian_accumulator_free(
+        aicore_gaussian_accumulator* acc) {
     delete acc;
 }
 
@@ -604,15 +601,15 @@ AICORE_CAPI void aicore_gaussian_accumulator_add_pair(
     if (acc && gaussians) acc->acc.add_pair(gaussians, gc);
 }
 
-AICORE_CAPI int
-aicore_gaussian_accumulator_frame_count(aicore_gaussian_accumulator* acc) {
+AICORE_CAPI int aicore_gaussian_accumulator_frame_count(
+        aicore_gaussian_accumulator* acc) {
     return acc ? acc->acc.frame_count() : 0;
 }
 
-AICORE_CAPI void
-aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
-                                  aicore_gaussian_point** out,
-                                  size_t* n_out) {
+AICORE_CAPI void aicore_gaussian_accumulator_cloud(
+        aicore_gaussian_accumulator* acc,
+        aicore_gaussian_point** out,
+        size_t* n_out) {
     if (!acc) {
         if (out) *out = nullptr;
         if (n_out) *n_out = 0;
@@ -621,21 +618,21 @@ aicore_gaussian_accumulator_cloud(aicore_gaussian_accumulator* acc,
     copy_accum_points(acc->acc.cloud(), out, n_out);
 }
 
-AICORE_CAPI void
-aicore_gaussian_accumulator_refine(aicore_gaussian_accumulator* acc,
-                                   float voxel_frac,
-                                   int iters,
-                                   float alpha) {
+AICORE_CAPI void aicore_gaussian_accumulator_refine(
+        aicore_gaussian_accumulator* acc,
+        float voxel_frac,
+        int iters,
+        float alpha) {
     if (acc) acc->acc.refine(voxel_frac, iters, alpha);
 }
 
-AICORE_CAPI int
-aicore_gaussian_accumulator_fuse(aicore_gaussian_accumulator* acc,
-                                 float voxel_frac,
-                                 int fuse_k,
-                                 int fuse_mode,
-                                 aicore_gaussian_point** out,
-                                 size_t* n_out) {
+AICORE_CAPI int aicore_gaussian_accumulator_fuse(
+        aicore_gaussian_accumulator* acc,
+        float voxel_frac,
+        int fuse_k,
+        int fuse_mode,
+        aicore_gaussian_point** out,
+        size_t* n_out) {
     if (!acc || !out || !n_out) return -1;
     std::vector<aicore::gaussian::pose::AccumPoint> fused;
     aicore::gaussian::pose::consensus_fuse(acc->acc.cloud(), voxel_frac, fuse_k,

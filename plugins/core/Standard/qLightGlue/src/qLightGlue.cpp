@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "qLightGlue.h"
 
 #ifdef AICore_ENABLED
@@ -20,8 +27,8 @@
 #include <QMainWindow>
 #include <QMessageBox>
 
-#include "match_visualization.h"
 #include "feature_extractor.h"
+#include "match_visualization.h"
 
 namespace {
 
@@ -34,7 +41,8 @@ bool isLightGlueOutputImage(const ccImage* img) {
 }  // namespace
 
 qLightGlue::qLightGlue(QObject* parent)
-    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qLightGlue/info.json") {
+    : QObject(parent),
+      ccStdPluginInterface(":/CC/plugin/qLightGlue/info.json") {
     qRegisterMetaType<LightGlueRunResult>("LightGlueRunResult");
     m_action = new QAction(tr("LightGlue Feature Matching"), this);
     m_action->setToolTip(
@@ -240,12 +248,12 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
         m_dialog->appendLog(tr("[LG] Resolved 2 input images for matching."));
 
         if (resolvedSettings.matcherType == 2) {
-            m_dialog->appendLog(
-                    tr("[Error] ALIKED GGUF models are matcher-only. Interactive "
-                       "matching requires a native ALIKED extractor (COLMAP "
-                       "uses ONNX Runtime, not Python).\n"
-                       "[Hint] Select **SIFT LightGlue** for end-to-end C++ "
-                       "matching (OpenCV RootSIFT + GGML)."));
+            m_dialog->appendLog(tr(
+                    "[Error] ALIKED GGUF models are matcher-only. Interactive "
+                    "matching requires a native ALIKED extractor (COLMAP "
+                    "uses ONNX Runtime, not Python).\n"
+                    "[Hint] Select **SIFT LightGlue** for end-to-end C++ "
+                    "matching (OpenCV RootSIFT + GGML)."));
             return;
         }
 #ifndef QLIGHTGLUE_HAS_OPENCV
@@ -263,8 +271,8 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
         if (!warmupMsg.isEmpty()) m_dialog->appendLog(warmupMsg);
         if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
             workerDevice = QStringLiteral("cpu");
-            m_dialog->appendLog(
-                    tr("[LG] GPU backend unavailable — using CPU for this run."));
+            m_dialog->appendLog(tr(
+                    "[LG] GPU backend unavailable — using CPU for this run."));
         }
     } else {
         m_dialog->appendLog(tr("[LG] Inference backend ready on UI thread."));
@@ -308,17 +316,17 @@ void qLightGlue::cancelTask() {
 void qLightGlue::addVisualizationToDb(const LightGlueRunResult& result) {
     if (!m_app) return;
 
-    const QString path0 =
-            m_originalInputPaths.size() > 0 ? m_originalInputPaths[0]
-                                            : result.imagePath0;
-    const QString path1 =
-            m_originalInputPaths.size() > 1 ? m_originalInputPaths[1]
-                                            : result.imagePath1;
+    const QString path0 = m_originalInputPaths.size() > 0
+                                  ? m_originalInputPaths[0]
+                                  : result.imagePath0;
+    const QString path1 = m_originalInputPaths.size() > 1
+                                  ? m_originalInputPaths[1]
+                                  : result.imagePath1;
     const QImage img0 = loadImageForPath(path0);
     const QImage img1 = loadImageForPath(path1);
     if (img0.isNull() || img1.isNull()) {
-        m_dialog->appendLog(
-                tr("[Warning] Could not reload source images for visualization."));
+        m_dialog->appendLog(tr(
+                "[Warning] Could not reload source images for visualization."));
         return;
     }
 
@@ -327,12 +335,13 @@ void qLightGlue::addVisualizationToDb(const LightGlueRunResult& result) {
             result.imageWidth0, result.imageHeight0, result.imageWidth1,
             result.imageHeight1);
     if (viz.isNull()) {
-        m_dialog->appendLog(tr("[Warning] Failed to render match visualization."));
+        m_dialog->appendLog(
+                tr("[Warning] Failed to render match visualization."));
         return;
     }
 
-    const QString modelTag =
-            ecvPluginDbNaming::modelTagFromFilename(m_currentSettings.modelPath);
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            m_currentSettings.modelPath);
     const QString baseName = ecvPluginDbNaming::makeUnique(
             QStringLiteral("LG_%1_%2_x_%3_%4m")
                     .arg(modelTag,
@@ -411,11 +420,10 @@ void qLightGlue::onExportMatches() {
         return;
     }
 
-    const QString defaultName =
-            QStringLiteral("lightglue_%1_matches.json")
-                    .arg(m_lastResult.sourceName.isEmpty()
-                                 ? QStringLiteral("run")
-                                 : m_lastResult.sourceName);
+    const QString defaultName = QStringLiteral("lightglue_%1_matches.json")
+                                        .arg(m_lastResult.sourceName.isEmpty()
+                                                     ? QStringLiteral("run")
+                                                     : m_lastResult.sourceName);
     const QString path = QFileDialog::getSaveFileName(
             m_dialog, tr("Export matches"), defaultName,
             tr("JSON files (*.json);;All files (*)"));

@@ -12,12 +12,12 @@
 #include <ggml-backend.h>
 #include <ggml.h>
 
-#include "ggml_backend_utils.hpp"
-
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <vector>
+
+#include "ggml_backend_utils.hpp"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \
@@ -33,7 +33,7 @@ static double erf_gelu(double x) {
     return 0.5 * x * (1.0 + std::erf(x / std::sqrt(2.0)));
 }
 
-static void graph_compute_cpu(ggml_cgraph* gf, int n_threads) {
+static void graph_compute_cpu(ggml_cgraph *gf, int n_threads) {
     ggml_common::load_backends_once();
     ggml_backend_t be =
             ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);

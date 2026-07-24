@@ -272,15 +272,14 @@ int free_splatter_export_cloud_splat(const free_splatter_point* cloud,
     if (!cloud) return -1;
     std::vector<aicore_gaussian_point> points(count);
     for (size_t i = 0; i < count; ++i) {
-        points[i] = {cloud[i].x,  cloud[i].y,       cloud[i].z,
-                     cloud[i].r,  cloud[i].g,       cloud[i].b,
-                     cloud[i].opacity, cloud[i].sx, cloud[i].sy,
-                     cloud[i].sz, cloud[i].qw,      cloud[i].qx,
-                     cloud[i].qy, cloud[i].qz,      cloud[i].frame};
+        points[i] = {cloud[i].x,  cloud[i].y,  cloud[i].z,       cloud[i].r,
+                     cloud[i].g,  cloud[i].b,  cloud[i].opacity, cloud[i].sx,
+                     cloud[i].sy, cloud[i].sz, cloud[i].qw,      cloud[i].qx,
+                     cloud[i].qy, cloud[i].qz, cloud[i].frame};
     }
-    return aicore_gaussian_export_cloud_splat(
-            points.data(), points.size(), max_splats, scale_multiplier,
-            output_path);
+    return aicore_gaussian_export_cloud_splat(points.data(), points.size(),
+                                              max_splats, scale_multiplier,
+                                              output_path);
 }
 
 }  // extern "C"
