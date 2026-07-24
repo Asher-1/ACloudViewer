@@ -144,6 +144,13 @@ cpp_python_command_tools_test() {
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && test -f bin/libggml-vulkan.so \
+     && LVP_ICD=\$(find /usr/share/vulkan/icd.d -maxdepth 1 -iname '*lvp*.json' | head -n 1) \
+     && test -n \"\${LVP_ICD}\" \
+     && export VK_DRIVER_FILES=\"\${LVP_ICD}\" \
+     && unset VK_ICD_FILENAMES \
+     && (vulkaninfo --summary >/dev/null 2>&1 || vulkaninfo >/dev/null) \
+     && python ../util/check_aicore_runtime.py bin/libAICore.so --expect-device vulkan \
     "
 
     # Python test

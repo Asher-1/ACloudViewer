@@ -257,6 +257,7 @@ Documentation is automatically built and deployed via GitHub Actions:
 - **AI Plugins (AICore)**
   - [Overview](guides/plugins/README.md)
   - [qDA3 — Depth Anything V3](guides/plugins/qDA3.md)
+  - [qLightGlue — Feature Matching](../plugins/core/Standard/qLightGlue/README.md)
   - [qFreeSplatter — 3D Gaussian Splatting](guides/plugins/qFreeSplatter.md)
 - **Python API** → `/documentation/python_api/index.html`
 - **C++ API** → `/documentation/cpp_api/index.html`

@@ -1,15 +1,8 @@
 #pragma once
-#include <cstdio>
 
-#ifdef AICore_HAS_CVLOG
-#include <CVLog.h>
-#define DA_LOG(...)        CVLog::Print("[DA3] " __VA_ARGS__)
-#define DA_DEBUG_LOG(...)  CVLog::PrintDebug("[DA3] " __VA_ARGS__)
-#define DA_WARN(...)       CVLog::Warning("[DA3] " __VA_ARGS__)
-#define DA_ERR(...)        CVLog::Error("[DA3] " __VA_ARGS__)
-#else
-#define DA_LOG(...)        do { std::fprintf(stderr, "[da3] " __VA_ARGS__); std::fprintf(stderr, "\n"); } while (0)
-#define DA_DEBUG_LOG(...)  DA_LOG(__VA_ARGS__)
-#define DA_WARN(...)       DA_LOG(__VA_ARGS__)
-#define DA_ERR(...)        DA_LOG(__VA_ARGS__)
-#endif
+#include "aicore_log.hpp"
+
+#define DA_LOG(...) AICORE_LOG_PRINT("[DA3] ", __VA_ARGS__)
+#define DA_DEBUG_LOG(...) AICORE_LOG_DEBUG("[DA3] ", __VA_ARGS__)
+#define DA_WARN(...) AICORE_LOG_WARN("[DA3] ", __VA_ARGS__)
+#define DA_ERR(...) AICORE_LOG_ERROR("[DA3] ", __VA_ARGS__)

@@ -2251,17 +2251,20 @@ import_3rdparty_library(3rdparty_ransacSD
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
-# ggml: ML inference library for AI model support (DA3, etc.)
-# GGML_ENABLED option is defined in the root CMakeLists.txt
-# NOTE: ggml is NOT added to the global 3rdparty target lists because only
-# AICore needs it. AICore links 3rdparty_ggml directly (PRIVATE) in
-# core/AICore/CMakeLists.txt — consumers of AICore do NOT inherit ggml.
-if(GGML_ENABLED)
+# ggml: ML inference library for AI model support (AICore only)
+# GGML_* user switches are synced from AICore_* in cmake/AICoreOptions.cmake.
+if(AICore_ENABLED)
+    aicore_sync_options_to_ggml()
     include(${CloudViewer_3RDPARTY_DIR}/ggml/ggml.cmake)
+    aicore_sync_results_from_ggml()
     if(NOT GGML_FOUND)
-        message(WARNING "GGML_ENABLED is ON but ggml build failed — disabling AICore_ENABLED")
+        message(WARNING "AICore_ENABLED is ON but ggml build failed — disabling AICore")
         set(AICore_ENABLED OFF CACHE BOOL "" FORCE)
+        set(GGML_ENABLED OFF CACHE BOOL "Internal: synced from AICore_ENABLED" FORCE)
     endif()
+else()
+    set(GGML_ENABLED OFF CACHE BOOL "Internal: synced from AICore_ENABLED" FORCE)
+    aicore_sync_results_from_ggml()
 endif()
 
 if (BUILD_RECONSTRUCTION)

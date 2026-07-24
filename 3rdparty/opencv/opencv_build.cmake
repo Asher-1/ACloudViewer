@@ -98,6 +98,7 @@ ExternalProject_Add(ext_opencv
             -DWITH_CAROTENE=OFF
             -DWITH_OPENGL=OFF
             -DWITH_OPENCL=OFF
+            -DWITH_VULKAN=OFF
             -DWITH_LAPACK=OFF
             -DENABLE_PRECOMPILED_HEADERS=OFF
             -DINSTALL_C_EXAMPLES=OFF

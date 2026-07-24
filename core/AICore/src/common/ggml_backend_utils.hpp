@@ -11,7 +11,7 @@
 
 #include "ggml.h"
 #include "ggml-backend.h"
-#if !defined(GGML_BACKEND_DL)
+#if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
 
@@ -70,7 +70,7 @@ inline void parse_device(const std::string& req, std::string& name, int& index) 
 // directory and pass it to ggml_backend_load_all_from_path().
 inline void load_backends_once() {
     static const bool done = [] {
-#if defined(GGML_BACKEND_DL)
+#if defined(AICORE_BACKEND_DL)
         const char* search_dir = nullptr;
         static std::string dir;
         // Resolve directory containing this shared library (libAICore).
@@ -133,7 +133,7 @@ inline void load_backends_once() {
 // In a DL build the symbol lives in the variant .so, not the linked base;
 // in a static build ggml_backend_cpu_set_n_threads is directly available.
 inline void set_cpu_threads(ggml_backend_t be, int n_threads) {
-#if defined(GGML_BACKEND_DL)
+#if defined(AICORE_BACKEND_DL)
     ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(ggml_backend_get_device(be));
     auto set_fn = (ggml_backend_set_n_threads_t)
         ggml_backend_reg_get_proc_address(reg, "ggml_backend_set_n_threads");
@@ -199,15 +199,29 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
     return nullptr;
 }
 
-// Runtime auto-pick is intentionally restricted to release backends. Optional
-// developer backends such as CUDA and SYCL remain available by explicit name.
-inline ggml_backend_t find_auto_backend(std::string& resolved_name) {
+// Runtime auto-pick follows the release/developer order configured at build time.
+// When AICore_CUDA was built (AICORE_AUTO_INCLUDE_CUDA), CUDA precedes Vulkan on
+// Linux/Windows so Auto and explicit "cuda" agree on the same backend.
+inline const char* const* auto_backend_ids() {
 #if defined(__APPLE__)
-    static const char* kAutoOrder[] = {"metal", nullptr};
+    static const char* kOrder[] = {"metal", nullptr};
+#elif defined(AICORE_AUTO_INCLUDE_CUDA)
+    static const char* kOrder[] = {"cuda", "vulkan", nullptr};
 #else
-    static const char* kAutoOrder[] = {"vulkan", nullptr};
+    static const char* kOrder[] = {"vulkan", nullptr};
 #endif
-    for (const char** p = kAutoOrder; *p; ++p) {
+    return kOrder;
+}
+
+inline bool auto_includes_backend(const std::string& backend) {
+    for (const char* const* p = auto_backend_ids(); *p; ++p) {
+        if (backend == *p) return true;
+    }
+    return false;
+}
+
+inline ggml_backend_t find_auto_backend(std::string& resolved_name) {
+    for (const char* const* p = auto_backend_ids(); *p; ++p) {
         ggml_backend_t be = find_gpu_backend(*p, 0, resolved_name);
         if (be) return be;
     }

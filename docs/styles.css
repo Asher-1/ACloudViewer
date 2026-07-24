@@ -1092,6 +1092,109 @@ body {
     font-size: 0.95rem;
 }
 
+/* AICore AI Plugins Showcase */
+.aicore-showcase {
+    padding: 100px 0;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.aicore-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 30px 0 50px;
+}
+
+.aicore-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: white;
+    color: var(--primary-color, #2196F3);
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 14px rgba(33, 150, 243, 0.12);
+}
+
+.aicore-plugins {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.aicore-plugin {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.1fr) minmax(280px, 0.9fr);
+    gap: 32px;
+    align-items: center;
+    padding: 28px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.aicore-plugin-reverse {
+    direction: rtl;
+}
+
+.aicore-plugin-reverse > * {
+    direction: ltr;
+}
+
+.aicore-plugin-media img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: block;
+}
+
+.aicore-plugin-body h3 {
+    font-size: 1.6rem;
+    margin-bottom: 14px;
+    color: var(--text-color, #1e293b);
+}
+
+.aicore-plugin-body p {
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.aicore-plugin-points {
+    margin: 0;
+    padding-left: 20px;
+    color: #334155;
+    line-height: 1.8;
+}
+
+.aicore-cta {
+    margin-top: 50px;
+    text-align: center;
+}
+
+.aicore-cta p {
+    color: #475569;
+    margin-bottom: 24px;
+    line-height: 1.7;
+}
+
+.aicore-cta code {
+    background: rgba(33, 150, 243, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.aicore-cta-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+
 /* Resources Section */
 .resources {
     padding: 100px 0;
@@ -1326,6 +1429,17 @@ body {
         flex-shrink: 1;
         padding: 8px 16px;
         font-size: 0.85rem;
+    }
+
+    .aicore-plugin,
+    .aicore-plugin-reverse {
+        grid-template-columns: 1fr;
+        direction: ltr;
+    }
+
+    .aicore-badges {
+        flex-direction: column;
+        align-items: center;
     }
 
     .version-tabs {

@@ -155,6 +155,19 @@ if (UNIX AND NOT APPLE)
                     ${EXTERNAL_LIB_DIR2}
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
 
+    if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+        set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
+        set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
+        if(EXISTS "${_bundled_cuda_src}")
+            file(COPY "${_bundled_cuda_src}/"
+                DESTINATION "${_bundled_cuda_dst}"
+                USE_SOURCE_PERMISSIONS)
+            message(STATUS "Deployed bundled CUDA runtime to ${_bundled_cuda_dst}")
+        else()
+            message(WARNING "AICore_BUNDLE_CUDA_RUNTIME=ON but ${_bundled_cuda_src} is missing")
+        endif()
+    endif()
+
 elseif (WIN32)
     # deploy plugins and translations for ACloudViewer
     file(COPY 
@@ -207,24 +220,18 @@ elseif (WIN32)
         COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
                 -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS}) -Recursive"
     )
-endif()
 
-## deploy SIBR plugin runtime assets for macOS (.app bundle)
-if (APPLE)
-    set(_sibr_macos_dest "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents/MacOS")
-    foreach(_sibr_asset shaders sibr_resources)
-        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
-        if(EXISTS "${_sibr_asset_path}")
-            file(COPY "${_sibr_asset_path}"
-                DESTINATION "${_sibr_macos_dest}"
+    if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+        set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
+        set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
+        if(EXISTS "${_bundled_cuda_src}")
+            file(COPY "${_bundled_cuda_src}/"
+                DESTINATION "${_bundled_cuda_dst}"
                 USE_SOURCE_PERMISSIONS)
+            message(STATUS "Deployed bundled CUDA runtime to ${_bundled_cuda_dst}")
+        else()
+            message(WARNING "AICore_BUNDLE_CUDA_RUNTIME=ON but ${_bundled_cuda_src} is missing")
         endif()
-    endforeach()
-    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
-    if(EXISTS "${_ibr_ini}")
-        file(COPY "${_ibr_ini}"
-            DESTINATION "${_sibr_macos_dest}"
-            USE_SOURCE_PERMISSIONS)
     endif()
 endif()
 

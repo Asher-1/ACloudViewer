@@ -33,7 +33,7 @@
 #include "pose.h"
 #include "splat.h"
 
-#if defined(GGML_USE_CUDA) && !defined(GGML_BACKEND_DL)
+#if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
 #endif
 

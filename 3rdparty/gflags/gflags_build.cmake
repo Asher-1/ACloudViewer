@@ -1,13 +1,5 @@
 include(ExternalProject)
 
-if (${GLIBCXX_USE_CXX11_ABI})
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for gflags")
-else ()
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for gflags")
-endif ()
-
 set(GFLAGS_MAJOR_VERSION "2")
 set(GFLAGS_MINOR_VERSION "2.2")
 set(GFLAGS_FULL_VERSION ${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
@@ -24,9 +16,6 @@ ExternalProject_Add(ext_gflags
         UPDATE_COMMAND ""
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-            # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-            # checking CXX_COMPILER_ID is not supported.
-            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}

@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Bundle dependency .so files for Qt IFW deploy (Linux).
-# NVIDIA CUDA runtime libraries are NOT copied — same policy as
-# scripts/platforms/windows/pack_windows.ps1 Should-Filter (Windows was
-# already excluding cublas/cudart/etc.; this script was updated to match).
+# NVIDIA CUDA runtime libraries are NOT copied by default — same policy as
+# scripts/platforms/windows/pack_windows.ps1 Should-Filter.
+# Opt-in driver-only CUDA: cmake -DAICore_BUNDLE_CUDA_RUNTIME=ON copies runtime
+# libs via scripts/platforms/linux/bundle_cuda_runtime.sh into lib/cuda-runtime/.
 
 should_exclude_lib() {
     local base_name="$1"
@@ -27,6 +28,19 @@ should_exclude_lib() {
             ;;
     esac
 
+    return 1
+}
+
+# ggml dynamic backends (libggml-cpu*.so, libggml-vulkan.so, …) are copied by
+# CopyGgmlBackends / InstallGgmlBackends, not linked via DT_NEEDED. Running ldd
+# on them only flattens symlink chains and never discovers dlopen modules.
+should_skip_pack_target() {
+    local base_name="$1"
+    case "$base_name" in
+        libggml.so*|libggml-base.so*|libggml-cpu*.so|libggml-*.so)
+            return 0
+            ;;
+    esac
     return 1
 }
 
@@ -108,6 +122,11 @@ process_target() {
 
     # Get base name for tracking
     local target_basename=$(basename "$Target")
+
+    if should_skip_pack_target "$target_basename"; then
+        echo "Skip ggml runtime module (already packaged): $Target"
+        return
+    fi
     
     # Skip if already processed (avoid infinite recursion)
     if [ "${PROCESSED_LIBS[$target_basename]}" = "1" ]; then

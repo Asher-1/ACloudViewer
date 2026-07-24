@@ -383,7 +383,7 @@ ENV ACloudViewer_DEV=/root \
 
 # Only copy dependency installation scripts first (for better Docker cache utilization)
 # The full source code will be copied later before building
-COPY util/install_deps_ubuntu.sh ${ACloudViewer_DEV}/ACloudViewer/util/
+COPY util/install_deps_ubuntu.sh util/install_vulkan_env.sh util/install_vulkan_linux.sh util/acloudviewer_vulkan_env_common.sh ${ACloudViewer_DEV}/ACloudViewer/util/
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies

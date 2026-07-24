@@ -244,6 +244,7 @@ jobs:
             -DAICore_ENABLED=OFF \
             -DPLUGIN_STANDARD_QDA3=OFF \
             -DPLUGIN_STANDARD_QFREESPLATTER=OFF \
+            -DPLUGIN_STANDARD_QLIGHTGLUE=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

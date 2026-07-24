@@ -142,7 +142,7 @@ if ($env:BUILD_JUPYTER_EXTENSION -eq "ON") {
 Write-Host "Install options: $install_options"
 Install-PythonDependencies -options $install_options
 
-$build_options = @("with_conda")
+$build_options = @("with_conda", "with_vulkan")
 if ($env:BUILD_CUDA_MODULE -eq "ON") {
     $build_options += "with_cuda"
 }

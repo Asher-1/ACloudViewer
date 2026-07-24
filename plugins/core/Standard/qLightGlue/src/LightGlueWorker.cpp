@@ -6,8 +6,12 @@
 #include <QFileInfo>
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
 #include "feature_extractor.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
 #endif
 
 LightGlueWorker::LightGlueWorker(const Settings& settings, QObject* parent)
@@ -31,6 +35,28 @@ void LightGlueWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
 
 namespace {
+
+QString formatDeviceLog(const LightGlueWorker::Settings& settings) {
+    const QString req = settings.device.trimmed();
+    if (!req.isEmpty() &&
+        req.compare(QLatin1String("auto"), Qt::CaseInsensitive) != 0) {
+        return QStringLiteral("[LG] Using device: %1").arg(req);
+    }
+    return QStringLiteral("[LG] Using device: auto (%1)")
+            .arg(QString::fromUtf8(aicore_auto_device_order()));
+}
+
+QString formatResolvedDeviceLog(aicore_lightglue_ctx* ctx) {
+    if (!ctx) return {};
+    char* info = aicore_lightglue_info_json(ctx);
+    if (!info) return {};
+    const QJsonObject obj =
+            QJsonDocument::fromJson(QByteArray(info)).object();
+    aicore_lightglue_free_string(info);
+    const QString resolved = obj.value(QStringLiteral("device")).toString();
+    if (resolved.isEmpty()) return {};
+    return QStringLiteral("[LG] ggml backend ready on device: %1").arg(resolved);
+}
 
 bool extract_feature_pair(const LightGlueWorker::Settings& settings,
                           lightglue_plugin::OwnedFeatures* f0,
@@ -82,6 +108,7 @@ QVector<QPointF> keypoints_to_qt(const aicore_lightglue_features& f) {
 }  // namespace
 
 bool LightGlueWorker::runModelInfo() {
+    emit logMessage(formatDeviceLog(m_settings));
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
     emit progressUpdate(20, 100);
 
@@ -105,6 +132,7 @@ bool LightGlueWorker::runModelInfo() {
         m_pendingCtx = ctx;
         return false;
     }
+    emit logMessage(formatResolvedDeviceLog(ctx));
 
     char* json = aicore_lightglue_info_json(ctx);
     if (json) {
@@ -126,6 +154,7 @@ bool LightGlueWorker::runMatch() {
     timer.start();
 
     emit progressUpdate(5, 100);
+    emit logMessage(formatDeviceLog(m_settings));
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
 
     aicore_lightglue_options* opts = aicore_lightglue_options_new();
@@ -149,6 +178,7 @@ bool LightGlueWorker::runMatch() {
         m_pendingCtx = ctx;
         return false;
     }
+    emit logMessage(formatResolvedDeviceLog(ctx));
 
     emit progressUpdate(20, 100);
     emit logMessage("[LG] Extracting RootSIFT features (OpenCV)...");

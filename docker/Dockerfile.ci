@@ -216,7 +216,7 @@ COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer PCL+VTK dependencies
 

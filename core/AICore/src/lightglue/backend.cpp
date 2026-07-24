@@ -2,10 +2,11 @@
 
 #include "backend.hpp"
 
+#include "common.hpp"
 #include "ggml_backend_utils.hpp"
 
 #include <ggml-backend.h>
-#if !defined(GGML_BACKEND_DL)
+#if !defined(AICORE_BACKEND_DL)
 #include <ggml-cpu.h>
 #endif
 
@@ -24,6 +25,10 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
     if (n_threads <= 0) {
         n_threads = static_cast<int>(ggml_common::default_cpu_threads());
     }
+
+    LG_LOG("init: device_req='%s' parsed_name='%s' want_idx=%d dev_count=%zu",
+           device_req.c_str(), name.c_str(), want_idx,
+           ggml_backend_dev_count());
 
     if (name.empty() || name == "auto") {
         std::string resolved;
@@ -65,6 +70,7 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
         release();
         return false;
     }
+    LG_LOG("ggml backend initialized: device=%s", device.c_str());
     return true;
 }
 

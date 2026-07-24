@@ -15,7 +15,6 @@
 #include <QNetworkReply>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QSpinBox>
 #include <QTextEdit>
 
@@ -48,6 +47,8 @@ public:
         bool addResultToDb = true;
     };
 
+    static constexpr int kSlotCount = 2;
+
     explicit LightGlueDialog(QWidget* parent = nullptr);
 
     Settings getSettings() const;
@@ -72,11 +73,14 @@ private slots:
     void onBrowseFile();
     void onBrowseFolder();
     void onBrowseCustomModel();
+    void onBrowseSlotImage();
+    void onClearSlot();
+    void onDbListActivated(QListWidgetItem* item);
+    void onFilePoolActivated(QListWidgetItem* item);
+    void onAssignToSlot1();
+    void onAssignToSlot2();
     void onModelComboChanged(int index);
-    void onDbListItemChanged(QListWidgetItem* item);
     void onClearImages();
-    void onRemoveInputItem();
-    void onMatchToggled(bool checked);
     void onModeChanged(int index);
     void onRun();
     void onCancel();
@@ -92,10 +96,19 @@ private:
     void cancelDownload();
     void updateImageStatus();
     void updateRunButtonState();
-    void refreshThumbnailStrip();
-    void addInputPaths(const QStringList& paths, bool replace);
-    void removeInputPath(const QString& path);
+    void refreshSlotWidgets();
+    void assignToSlot(int slot, const QString& path);
+    void clearSlot(int slot);
+    void clearAllSlots();
+    void autoAssignPaths(const QStringList& paths);
+    int senderSlotIndex() const;
     QImage previewForPath(const QString& path) const;
+    QString displayNameForPath(const QString& path) const;
+    void syncDbListHighlight();
+    void setFilePoolPaths(const QStringList& paths);
+    void refreshFilePoolList();
+    void syncFilePoolHighlight();
+    bool assignSelectedToSlot(int slot);
     bool isModelReady() const;
     bool isInputValid() const;
 
@@ -109,14 +122,17 @@ private:
     QWidget* m_customModelRow = nullptr;
     QPushButton* m_browseCustomModelBtn = nullptr;
 
-    QStringList m_inputPaths;
-    QStringList m_matchPaths;
+    QString m_slotPaths[kSlotCount];
 
-    QScrollArea* m_thumbScroll = nullptr;
-    QWidget* m_thumbContainer = nullptr;
+    QGroupBox* m_slotGroups[kSlotCount] = {nullptr, nullptr};
+    QLabel* m_slotPreview[kSlotCount] = {nullptr, nullptr};
+    QLabel* m_slotNameLabel[kSlotCount] = {nullptr, nullptr};
     QLabel* m_imageStatusLabel = nullptr;
 
+    QWidget* m_filePoolGroup = nullptr;
+    QListWidget* m_filePoolList = nullptr;
     QListWidget* m_dbImageList = nullptr;
+    QStringList m_filePoolPaths;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
     QDoubleSpinBox* m_minScore = nullptr;
