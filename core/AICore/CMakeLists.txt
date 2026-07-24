@@ -3,19 +3,11 @@
 #   src/depth/    — multi-view monocular depth (DA3-family GGUF)
 #   src/gaussian/ — image-to-3D Gaussian splatting (FreeSplatter-family GGUF)
 #   src/lightglue/ — sparse feature matching (LightGlue GGUF)
-#   src/common/   — shared utilities (data paths, ggml helpers)
+#   src/common/   — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
 # Exports: all public headers under include/aicore/
 # Depends: 3rdparty_ggml (PRIVATE), CVCoreLib, Qt::Core + Qt::Gui
-
-if(NOT DEFINED AICore_ENABLED)
-    option(AICore_ENABLED "Enable unified AI inference core (depth + gaussian)" OFF)
-endif()
-
-if(NOT DEFINED AICore_BUILD_TESTS)
-    option(AICore_BUILD_TESTS "Build AICore public ABI/runtime contract tests" OFF)
-endif()
 
 if(NOT AICore_ENABLED)
     message(STATUS "AICore module is disabled (set AICore_ENABLED=ON to enable)")
@@ -121,20 +113,19 @@ if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PRIVATE ${GGML_INCLUDE_DIRS})
 endif()
 
-# Dynamic backend mode: GPU backends are separate .so files loaded at runtime
-# via ggml_backend_load_all(). libAICore.so has NO hard GPU deps (no DT_NEEDED
-# for libcuda.so.1, etc.), so the Python wheel works on non-GPU machines.
+# Dynamic backend mode: GPU backends are separate modules loaded at runtime.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AICoreCompileDefinitions.cmake)
 if(GGML_DYNAMIC_BACKENDS)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE GGML_BACKEND_DL)
-    message(STATUS "AICore: using dynamic ggml backends (GGML_BACKEND_DL)")
+    message(STATUS "AICore: using dynamic ggml backends (AICORE_BACKEND_DL)")
 endif()
+aicore_apply_compile_definitions(${PROJECT_NAME})
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
 # and pull in CUDA driver API (libcuda.so) as a DT_NEEDED dep.  In Docker/CI
 # environments the real driver isn't installed; the CUDA toolkit ships a stub at
 # <toolkit>/lib64/stubs/.  Expose that path so downstream executables (colmap_exe,
 # ACloudViewer) can resolve libcuda.so at link time.
-if(NOT GGML_DYNAMIC_BACKENDS AND GGML_CUDA_ENABLED AND CUDAToolkit_FOUND)
+if(NOT GGML_DYNAMIC_BACKENDS AND AICore_CUDA_ENABLED AND CUDAToolkit_FOUND)
     get_target_property(_cuda_driver_loc CUDA::cuda_driver IMPORTED_LOCATION)
     if(_cuda_driver_loc)
         get_filename_component(_cuda_driver_dir "${_cuda_driver_loc}" DIRECTORY)
@@ -214,29 +205,35 @@ install(DIRECTORY ${AICORE_INC_DIR}/aicore
 #   - .dylib from lib/  (shared core: ggml, ggml-base)
 #   - .so    from bin/  (loadable modules for runtime: ggml-metal, ggml-vulkan, etc.)
 if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
-    string(REPLACE ";" "|" _aicore_backend_files_pipe
-        "${GGML_BACKEND_MODULE_FILES}")
+    string(REPLACE ";" "|" _aicore_gpu_backend_files_pipe
+        "${GGML_GPU_BACKEND_MODULE_FILES}")
+    set(_aicore_copy_ggml_script
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake")
+    set(_aicore_backend_copy_args
+        -DCOPY_BACKEND_MODULES=ON
+        -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+        -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+        -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
+        -DGPU_FILES_PIPE="${_aicore_gpu_backend_files_pipe}")
+    if(GGML_CPU_ALL_VARIANTS)
+        list(APPEND _aicore_backend_copy_args -DCPU_ALL_VARIANTS=ON)
+    endif()
+    list(APPEND _aicore_backend_copy_args -P "${_aicore_copy_ggml_script}")
     # Copy shared libraries (.dylib / .so depending on platform)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND}
+            -DCOPY_CORE_SHARED=ON
             -DGGML_BACKEND_DIR="${GGML_RUNTIME_LIB_DIR}"
             -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
             -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
+            -P "${_aicore_copy_ggml_script}"
         COMMENT "Copying ggml shared libraries to libAICore directory"
     )
     # Copy loadable backend modules (.so on all UNIX platforms, .dll on Windows)
-    # ggml installs these to <prefix>/bin/ as MODULE libraries with .so extension.
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
-            -DDEST_DIR="$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
-            -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
-            -DREQUIRED_FILE="${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}"
-            -DREQUESTED_FILES_PIPE="${_aicore_backend_files_pipe}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake"
+        COMMAND ${CMAKE_COMMAND} ${_aicore_backend_copy_args}
         COMMENT "Copying ggml dynamic backend modules to libAICore directory"
     )
 
@@ -251,33 +248,20 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
     else()
         set(_aicore_ggml_install_subdir "${CloudViewer_INSTALL_LIB_DIR}")
     endif()
-    install(CODE "
-        set(_ggml_src_dir \"$<TARGET_FILE_DIR:AICore>\")
-        file(GLOB _ggml_libs
-            \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml${CMAKE_SHARED_LIBRARY_SUFFIX}*\"
-            \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-base${CMAKE_SHARED_LIBRARY_SUFFIX}*\")
-        set(_ggml_backend_files \"${GGML_BACKEND_MODULE_FILES}\")
-        foreach(_name IN LISTS _ggml_backend_files)
-            if(NOT EXISTS \"\${_ggml_src_dir}/\${_name}\")
-                message(FATAL_ERROR
-                    \"InstallGgmlBackends: configured backend missing: \${_name}\")
-            endif()
-            list(APPEND _ggml_libs \"\${_ggml_src_dir}/\${_name}\")
-        endforeach()
-        if(NOT _ggml_libs)
-            message(FATAL_ERROR \"InstallGgmlBackends: no ggml libs in \${_ggml_src_dir}\")
-        endif()
-        if(NOT EXISTS \"\${_ggml_src_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cpu${GGML_MODULE_SUFFIX}\")
-            message(FATAL_ERROR
-                \"InstallGgmlBackends: required CPU backend missing in \${_ggml_src_dir}\")
-        endif()
-        foreach(_lib \${_ggml_libs})
-            file(INSTALL \"\${_lib}\"
-                DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_aicore_ggml_install_subdir}\"
-                TYPE FILE FOLLOW_SYMLINK_CHAIN)
-            message(STATUS \"InstallGgmlBackends: \${_lib}\")
-        endforeach()
-    ")
+    if(GGML_CPU_ALL_VARIANTS)
+        set(_aicore_install_cpu_all_variants ON)
+    else()
+        set(_aicore_install_cpu_all_variants OFF)
+    endif()
+    set(_AICORE_GPU_PIPE "${_aicore_gpu_backend_files_pipe}")
+    set(_AICORE_CPU_ALL_VARIANTS "${_aicore_install_cpu_all_variants}")
+    set(_AICORE_COPY_GGML_SCRIPT "${_aicore_copy_ggml_script}")
+    set(_AICORE_GGML_INSTALL_SUBDIR "${_aicore_ggml_install_subdir}")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/InstallGgmlBackends.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/InstallGgmlBackends.cmake"
+        @ONLY)
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallGgmlBackends.cmake")
 endif()
 
 if(AICore_BUILD_TESTS)
@@ -324,9 +308,7 @@ if(AICore_BUILD_TESTS)
             target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
         endif()
         target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
-        if(GGML_DYNAMIC_BACKENDS)
-            target_compile_definitions(AICore_test PRIVATE GGML_BACKEND_DL)
-        endif()
+        aicore_apply_compile_definitions(AICore_test)
         if(MSVC)
             target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
         endif()

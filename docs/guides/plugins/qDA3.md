@@ -34,8 +34,8 @@ cmake --build build_app --target QDA3_PLUGIN ACloudViewer -j$(nproc)
 | `AICore_ENABLED` | Build `libAICore.so` (shared with qFreeSplatter) |
 | `PLUGIN_STANDARD_QDA3` | This plugin |
 | `BUILD_RECONSTRUCTION` | DA3 sparse/dense modes in the automatic reconstruction pipeline |
-| `GGML_USE_VULKAN` / `GGML_USE_METAL` | Linux/Windows: Vulkan ON; macOS: Metal ON |
-| `GGML_USE_SYCL` / `GGML_USE_CUDA` | Optional Intel/NVIDIA developer backends |
+| `AICore_USE_VULKAN` / `AICore_USE_METAL` | Linux/Windows: Vulkan ON; macOS: Metal ON |
+| `AICore_USE_SYCL` / `AICore_USE_CUDA` | Optional Intel/NVIDIA developer backends |
 
 Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PLUGIN.so`.
 

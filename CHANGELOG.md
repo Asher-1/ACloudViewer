@@ -221,7 +221,7 @@ v3.9.5-Beta (Asher) - 07/21/2026
       - Reuses ACloudViewer 3rdparty targets (OpenGL, OpenMP, Boost, OpenCV, GLEW, GLFW, Assimp, Embree, Eigen, zlib, tinyfiledialogs)
     - Add qDA3 plugin: Depth Anything V3 monocular depth + camera pose (based on
       [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp) / ggml)
-      - Shares unified `core/AICore` → `libAICore.so` (ggml linked once with qFreeSplatter)
+      - Shares unified `core/AICore` → `libAICore.so` (ggml linked once with qFreeSplatter and qLightGlue)
       - Public C API: `aicore/depth_capi.h` (`aicore_depth_*`); Qt helper `aicore/depth_image.h`
       - GUI plugin: single/multi-view depth, pose export, Gaussian reconstruction,
         GLB/COLMAP export, GGUF quantization, model info; DB-tree image input
@@ -252,9 +252,11 @@ v3.9.5-Beta (Asher) - 07/21/2026
         now requires ≥3% multi-view consensus acceptance (not just point count);
         tighter direct-prior profile (`point_dist=0.07m`, `depth_err=0.06`); poor
         consensus skips relaxed retry and falls back to PatchMatch geometric refine
-      - Depth backend auto picks CUDA→OpenCL→Vulkan→iGPU→CPU at runtime; ggml can compile
-        multiple backends in parallel with platform-specific defaults (Metal/Vulkan on Apple,
-        OpenCL on Linux/Windows) and runtime Auto selection
+      - Runtime **Auto** backend fallback in `libAICore`: default **Vulkan → CPU**
+        (Linux/Windows) or **Metal → CPU** (macOS); with `-DAICore_USE_CUDA=ON`,
+        Auto becomes **CUDA → Vulkan → CPU**; SYCL/CUDA/OpenCL remain explicit device IDs
+      - All AICore CMake switches use `AICore_*` (`cmake/AICoreOptions.cmake`); internal
+        `GGML_*` synced automatically; stale `-DGGML_*` cache entries cleared with warning
       - GGUF model cache: `~/cloudViewer_data/extract/da3_models`
         ([mudler/depth-anything.cpp-gguf](https://huggingface.co/mudler/depth-anything.cpp-gguf))
       - Python: `_build_config.AICore_ENABLED` + preload `libAICore.so` in `cloudViewer/__init__.py`
@@ -272,11 +274,31 @@ v3.9.5-Beta (Asher) - 07/21/2026
       - GGUF model auto-download from [cloudViewer_downloads/3dgs](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/3dgs);
         cache dir `~/cloudViewer_data/extract/freesplatter_models`
       - Optional CLI `free_splatter-cli` (`PLUGIN_STANDARD_QFREESPLATTER_TOOLS=ON`, OpenCV decode)
-      - White-box tests under `core/AICore/tests/gaussian/` (`AICore_BUILD_TESTS=ON`):
+      - White-box tests under `core/AICore/tests/gaussian/` (`AICore_BUILD_TESTS=ON`);
+        depth implementation tests under `core/AICore/tests/depth/whitebox/`
+        (`AICore_BUILD_WHITEBOX_TESTS=ON`, requires `AICore_BUILD_TESTS=ON`):
         loader, graph blocks, image ingest, pose math, optional GGUF parity tier
       - CMake: `PLUGIN_STANDARD_QFREESPLATTER=ON` + `AICore_ENABLED=ON`
+    - Add qLightGlue plugin: sparse feature matching via GGML LightGlue
+      - Native C++ **SIFT** path: OpenCV RootSIFT → AICore LightGlue matcher — no Python,
+        no ONNX at runtime (COLMAP-aligned two-stage pipeline)
+      - Inference in `libAICore` lightglue module via `aicore/lightglue_capi.h`
+        (`aicore_lightglue_*`)
+      - GUI: **Plugins → LightGlue Feature Matching** — dual image preview, built-in GGUF
+        download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
+        JSON export, Model Info mode
+      - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
   
 - New features:
+    - Unified AICore inference core (`core/AICore` → `libAICore.so`)
+      - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules
+      - Public C APIs: `depth_capi.h`, `gaussian_capi.h`, `lightglue_capi.h`
+      - User CMake switches consolidated in `cmake/AICoreOptions.cmake` (`AICore_ENABLED`,
+        tests, backends, packaging); `-DGGML_*` no longer user-facing
+      - Dynamic ggml backend modules with runtime Auto fallback; optional CUDA runtime
+        redist for driver-only installers (`AICore_BUNDLE_CUDA_RUNTIME`)
+      - Intel SYCL tuning: `AICore_SYCL_USE_DNN` (oneDNN kernels, default ON when SYCL enabled)
+      - Contract + whitebox test tiers: `AICore_BUILD_TESTS` / `AICore_BUILD_WHITEBOX_TESTS`
     - Add Point Gaussian rendering support for point clouds and meshes
       - 6 shader presets: Gaussian Blur, Sphere, Black-edged Circle, Plain Circle, Triangle, Square Outline
       - Configurable Gaussian Radius with Slider + SpinBox UI (like Light Intensity)

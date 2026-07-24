@@ -66,7 +66,7 @@ sequenceDiagram
 | **GPU (Metal)** | Force Metal (macOS only) |
 | **GPU (SYCL)** | Force Intel GPU SYCL |
 | **GPU (Vulkan)** | Force cross-vendor Vulkan |
-| **GPU (CUDA)** | Developer opt-in (`GGML_USE_CUDA=ON`) |
+| **GPU (CUDA)** | Developer opt-in (`AICore_USE_CUDA=ON`) |
 | **CPU** | Force the pure ggml CPU backend |
 
 **Auto priority (runtime):**
@@ -131,11 +131,11 @@ cmake --build build_app --target QFREESPLATTER_PLUGIN -j$(nproc)
 | `AICore_ENABLED` | Build `libAICore.so` (FreeSplatter + ggml) |
 | `PLUGIN_STANDARD_QFREESPLATTER` | This plugin |
 | `PLUGIN_STANDARD_QSIBR` | Optional; enables **Visualize (SIBR)** (runtime call, no static link) |
-| `GGML_USE_CUDA` | OFF; developer NVIDIA backend |
-| `GGML_USE_OPENCL` | OFF; legacy/Adreno developer backend |
-| `GGML_USE_VULKAN` | ON on Linux/Windows when build tools are available |
-| `GGML_USE_SYCL` | OFF; Intel GPU with validated oneAPI runtime |
-| `GGML_USE_METAL` | ON by default on Apple (primary GPU path on macOS) |
+| `AICore_USE_CUDA` | OFF; developer NVIDIA backend |
+| `AICore_USE_OPENCL` | OFF; legacy/Adreno developer backend |
+| `AICore_USE_VULKAN` | ON on Linux/Windows when build tools are available |
+| `AICore_USE_SYCL` | OFF; Intel GPU with validated oneAPI runtime |
+| `AICore_USE_METAL` | ON by default on Apple (primary GPU path on macOS) |
 
 ---
 

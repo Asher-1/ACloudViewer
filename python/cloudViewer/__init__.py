@@ -316,6 +316,25 @@ def _filter_qt_paths(paths, path_separator=':'):
     return filtered_paths
 
 
+def _apply_linux_reconstruction_gui_env():
+    """Avoid Qt OpenGL + NVIDIA driver resets (Xid 13 → SIGTERM/Terminated)."""
+    if sys.platform != 'linux':
+        return
+    if not _build_config.get('BUILD_RECONSTRUCTION'):
+        return
+    if not _build_config.get('AICore_ENABLED'):
+        return
+    if os.environ.get('ACV_QT_USE_NATIVE_OPENGL') is not None:
+        return
+    if os.environ.get('QT_OPENGL') is None:
+        os.environ['QT_OPENGL'] = 'software'
+    # QT_OPENGL=software alone still hits the NVIDIA GL stack on many drivers.
+    # Force Mesa llvmpipe so COLMAP Qt and later DA3 Vulkan do not share NV GL.
+    os.environ.setdefault('LIBGL_ALWAYS_SOFTWARE', '1')
+    os.environ.setdefault('GALLIUM_DRIVER', 'llvmpipe')
+    os.environ.setdefault('__GLX_VENDOR_LIBRARY_NAME', 'mesa')
+
+
 def _setup_library_paths_early(lib_path):
     """
     Set up library search paths for all platforms BEFORE loading any libraries.
@@ -458,9 +477,8 @@ def _setup_linux_libraries():
     # 5. Load project-specific core libraries
     try_load_cdll('libCVCoreLib*')
     # AICore uses a loader-relative RPATH and owns loading its private ggml
-    # core/backend libraries. Python must not preload or otherwise expose them.
-    if _build_config.get("AICore_ENABLED", False):
-        try_load_cdll('libAICore*')
+    # core/backend libraries. Do not ctypes-preload libAICore/libggml here:
+    # early ggml/Vulkan init races COLMAP Qt OpenGL in run_graphical_gui().
     try_load_cdll('libCV_DB_LIB*')
     try_load_cdll('libCV_IO_LIB*')
 
@@ -501,6 +519,8 @@ if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
 # to prevent mixing system Qt libraries with package Qt libraries
 if os.path.exists(MAIN_LIB_PATH):
     LIB_PATH = str(MAIN_LIB_PATH)
+
+    _apply_linux_reconstruction_gui_env()
 
     # Set up library paths FIRST to prevent loading system Qt libraries
     # This must be done before loading any libraries to avoid version conflicts

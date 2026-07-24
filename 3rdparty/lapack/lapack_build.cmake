@@ -1,13 +1,5 @@
 include(ExternalProject)
 
-if (${GLIBCXX_USE_CXX11_ABI})
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for lapack")
-else ()
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for lapack")
-endif ()
-
 ExternalProject_Add(ext_lapack
         PREFIX lapack
         #   http://www.netlib.org/lapack/lapack-3.9.0.tar.gz
@@ -23,9 +15,6 @@ ExternalProject_Add(ext_lapack
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-            # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-            # checking CXX_COMPILER_ID is not supported.
-            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}

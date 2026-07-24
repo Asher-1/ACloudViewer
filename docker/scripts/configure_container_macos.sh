@@ -149,6 +149,7 @@ cmakeGuiOptions=(
                 -DAICore_BUILD_TESTS=ON
                 -DPLUGIN_STANDARD_QDA3=ON
                 -DPLUGIN_STANDARD_QFREESPLATTER=ON
+                -DPLUGIN_STANDARD_QLIGHTGLUE=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON

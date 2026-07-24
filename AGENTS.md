@@ -213,7 +213,7 @@ python .\scripts\build_win.py
 | `BUILD_WITH_CONDA` | ON = Conda-managed deps; OFF = system apt + pyenv (Linux only) |
 | `AICore_ENABLED` | Build `libAICore.so`; auto-enables `GGML_ENABLED` |
 | `BUILD_RECONSTRUCTION` | COLMAP + automatic reconstruction UI |
-| `BUILD_CUDA_MODULE` | CUDA for core + ggml CUDA backend |
+| `BUILD_CUDA_MODULE` | CloudViewer core CUDA (algorithms, pybind, qSIBR); independent of `AICore_USE_CUDA` |
 | `PLUGIN_STANDARD_*` | Per-plugin toggles (see `BUILD.md`) |
 | `MCALIB_BUILD_TESTS` / `MCALIB_BUILD_TOOLS` | qManualCalib tests and CLI tools |
 

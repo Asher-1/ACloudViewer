@@ -90,7 +90,7 @@ Write-Host "echo Start to build GUI package on Windows..."
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
 # Build options - consistent with build_gui_app.sh
-$buildOptions = @("with_conda", "with_pcl_nurbs", "package_installer")
+$buildOptions = @("with_conda", "with_pcl_nurbs", "package_installer", "with_vulkan")
 
 if ($env:ONLY_BUILD_CUDA -eq "ON") {
     Write-Host "Start to build GUI package with CUDA only..."

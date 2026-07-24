@@ -88,19 +88,22 @@ set -x # Echo commands on
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+# shellcheck source=acloudviewer_vulkan_env_common.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/acloudviewer_vulkan_env_common.sh
+source_acloudviewer_vulkan_env || true
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_conda package_installer
+    build_gui_app with_conda package_installer with_vulkan
     echo
 else
     echo "Start to build GUI package with only CPU..."
     echo
     export BUILD_CUDA_MODULE=OFF
-    build_gui_app with_conda package_installer
+    build_gui_app with_conda package_installer with_vulkan
     echo
 
     # Building with cuda if cuda available
@@ -108,7 +111,7 @@ else
         echo "Start to build GUI package with CUDA..."
         echo
         export BUILD_CUDA_MODULE=ON
-        build_gui_app with_conda package_installer
+        build_gui_app with_conda package_installer with_vulkan
         echo
     fi
 fi
