@@ -19,6 +19,7 @@
 #include "util/reconstruction_log.h"
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #endif
 
@@ -38,6 +39,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -658,49 +660,74 @@ bool WriteStereoMapsFromMultiview(
     bool fast_depth_export = false);
 
 #ifdef AICore_ENABLED
+void LogDA3InferenceDevice(aicore_depth_ctx* ctx, const char* requested_device) {
+    if (!ctx) {
+        return;
+    }
+    const char* requested =
+        (requested_device && requested_device[0]) ? requested_device : "auto";
+    const char* active = aicore_depth_device_name(ctx);
+    if (!active || !active[0]) {
+        active = "cpu";
+    }
+    if (std::strcmp(requested, "auto") == 0) {
+        RECON_LOG_INFO(
+            "DA3: Using device: auto (%s), active backend: %s\n",
+            aicore_auto_device_order(), active);
+    } else {
+        RECON_LOG_INFO("DA3: Using device: %s, active backend: %s\n",
+                       requested, active);
+    }
+}
+
 aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
     const char* requested_device = std::getenv("DA_DEVICE");
     if (!requested_device || requested_device[0] == '\0') {
         requested_device = "auto";
     }
+    aicore_depth_ctx* ctx = nullptr;
     if (config.model_type != DA3ModelType::NESTED_METRIC &&
         config.model_type != DA3ModelType::NESTED_ANYVIEW) {
         const std::string model_path = DA3DepthController::ResolveModelPath(config);
         if (model_path.empty()) {
             return nullptr;
         }
-        return aicore_depth_load_device(model_path.c_str(), n_threads,
-                                        requested_device);
-    }
-
-    std::string anyview_path;
-    std::string metric_path;
-
-    if (config.model_type == DA3ModelType::NESTED_ANYVIEW) {
-        anyview_path = DA3DepthController::ResolveModelPath(config);
-        metric_path =
-            config.metric_model_path.empty()
-                ? DA3DepthController::ResolveModelPath(
-                      DA3Config{DA3ModelType::NESTED_METRIC, DA3QuantType::F32})
-                : config.metric_model_path;
+        ctx = aicore_depth_load_device(model_path.c_str(), n_threads,
+                                       requested_device);
     } else {
-        // NESTED_METRIC UI option selects the metric-branch GGUF; anyview is required.
-        metric_path = DA3DepthController::ResolveModelPath(config);
-        DA3Config anyview_config;
-        anyview_config.model_type = DA3ModelType::NESTED_ANYVIEW;
-        anyview_config.quant_type = DA3QuantType::Q8_0;
-        if (DA3ModelExists(DA3ModelType::NESTED_ANYVIEW, config.quant_type)) {
-            anyview_config.quant_type = config.quant_type;
-        }
-        anyview_path = DA3DepthController::ResolveModelPath(anyview_config);
-    }
+        std::string anyview_path;
+        std::string metric_path;
 
-    if (anyview_path.empty() || metric_path.empty()) {
-        return nullptr;
+        if (config.model_type == DA3ModelType::NESTED_ANYVIEW) {
+            anyview_path = DA3DepthController::ResolveModelPath(config);
+            metric_path =
+                config.metric_model_path.empty()
+                    ? DA3DepthController::ResolveModelPath(
+                          DA3Config{DA3ModelType::NESTED_METRIC, DA3QuantType::F32})
+                    : config.metric_model_path;
+        } else {
+            // NESTED_METRIC UI option selects the metric-branch GGUF; anyview is required.
+            metric_path = DA3DepthController::ResolveModelPath(config);
+            DA3Config anyview_config;
+            anyview_config.model_type = DA3ModelType::NESTED_ANYVIEW;
+            anyview_config.quant_type = DA3QuantType::Q8_0;
+            if (DA3ModelExists(DA3ModelType::NESTED_ANYVIEW, config.quant_type)) {
+                anyview_config.quant_type = config.quant_type;
+            }
+            anyview_path = DA3DepthController::ResolveModelPath(anyview_config);
+        }
+
+        if (anyview_path.empty() || metric_path.empty()) {
+            return nullptr;
+        }
+        ctx = aicore_depth_load_nested_device(anyview_path.c_str(),
+                                              metric_path.c_str(), n_threads,
+                                              requested_device);
     }
-    return aicore_depth_load_nested_device(anyview_path.c_str(),
-                                           metric_path.c_str(), n_threads,
-                                           requested_device);
+    if (ctx) {
+        LogDA3InferenceDevice(ctx, requested_device);
+    }
+    return ctx;
 }
 
 float BilinearSampleDepth(const float* depth, int w, int h, float x, float y) {

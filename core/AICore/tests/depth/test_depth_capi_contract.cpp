@@ -38,6 +38,7 @@ int main() {
     AICORE_CHECK(aicore_depth_load_nested("a.gguf", nullptr, 1) == nullptr);
     AICORE_CHECK(aicore_depth_info_json(nullptr) == nullptr);
     AICORE_CHECK(std::strcmp(aicore_depth_last_error(nullptr), "") == 0);
+    AICORE_CHECK(std::strcmp(aicore_depth_device_name(nullptr), "") == 0);
 
     int h = 0, w = 0, n = 0, is_metric = 0;
     float ext[12] = {}, intr[9] = {};

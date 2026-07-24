@@ -170,6 +170,10 @@ AICORE_CAPI void aicore_depth_free_string(char* s) { std::free(s); }
 AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* c) {
     return c ? c->last_error.c_str() : "";
 }
+AICORE_CAPI const char* aicore_depth_device_name(aicore_depth_ctx* c) {
+    if (!c || !c->engine) return "";
+    return c->engine->device_name().c_str();
+}
 AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
                                            const char* image_path,
                                            int* out_h,

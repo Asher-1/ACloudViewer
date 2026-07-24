@@ -340,10 +340,11 @@ cmake -DAICore_ENABLED=ON `
 CPU-only build: `-DAICore_USE_VULKAN=OFF`. `util\ci_utils.ps1` wheel helpers default
 Vulkan ON unless you pass `without_vulkan`.
 
-GitHub Actions Windows CI uses
-[humbletim/install-vulkan-sdk](https://github.com/marketplace/actions/install-vulkan-sdk)
-(pinned to a post-v1.2 commit) plus `util\sync_vulkan_env_from_sdk.ps1`.
-Local builds can still use `util\install_vulkan_sdk_windows.ps1`.
+GitHub Actions Windows CI runs `util\install_vulkan_sdk_windows.ps1` (silent
+LunarG installer; required for SDK **1.4.313+** where 7z extract no longer
+includes `Include\`) then `util\sync_vulkan_env_from_sdk.ps1`. macOS CI still
+uses [humbletim/install-vulkan-sdk](https://github.com/marketplace/actions/install-vulkan-sdk).
+Local builds can use the same Windows scripts.
 
 See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
 

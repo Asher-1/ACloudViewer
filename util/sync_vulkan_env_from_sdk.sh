@@ -17,14 +17,31 @@ fi
 
 resolve_existing_vulkan_sdk() {
     local candidate="$1"
-    if [[ -f "${candidate}/include/vulkan/vulkan_core.h" ]]; then
-        printf '%s\n' "${candidate}"
-        return 0
-    fi
+    local sub root header
+
+    for sub in "" "${VULKAN_SDK_VERSION:-}" macOS x86_64; do
+        root="${candidate}"
+        if [[ -n "${sub}" ]]; then
+            root="${candidate}/${sub}"
+        fi
+        header="${root}/include/vulkan/vulkan_core.h"
+        if [[ -f "${header}" ]]; then
+            printf '%s\n' "${root}"
+            return 0
+        fi
+    done
+
     local setup_script
-    setup_script="$(find "${candidate}" -maxdepth 3 -name setup-env.sh -type f -print -quit 2>/dev/null || true)"
+    setup_script="$(find "${candidate}" -maxdepth 4 -name setup-env.sh -type f -print -quit 2>/dev/null || true)"
     if [[ -n "${setup_script}" ]]; then
         resolve_vulkan_sdk_from_setup_script "${setup_script}"
+        return 0
+    fi
+
+    header="$(find "${candidate}" -path '*/include/vulkan/vulkan_core.h' -print -quit 2>/dev/null || true)"
+    if [[ -n "${header}" ]]; then
+        root="$(cd "$(dirname "${header}")/../.." && pwd)"
+        printf '%s\n' "${root}"
         return 0
     fi
     return 1
@@ -35,7 +52,14 @@ if [[ -z "${VULKAN_SDK:-}" ]]; then
     exit 1
 fi
 
-VULKAN_SDK="$(resolve_existing_vulkan_sdk "${VULKAN_SDK}")"
+echo "Resolving Vulkan SDK from VULKAN_SDK=${VULKAN_SDK}" >&2
+VULKAN_SDK="$(resolve_existing_vulkan_sdk "${VULKAN_SDK}")" || {
+    echo "ERROR: Vulkan headers not found under VULKAN_SDK=${VULKAN_SDK:-}." >&2
+    echo "macOS CI: humbletim/install-vulkan-sdk should flatten macOS/* into \$VULKAN_SDK (include/, bin/, lib/)." >&2
+    echo "Windows CI: use util/install_vulkan_sdk_windows.ps1 (SDK >= 1.4.313 needs silent install, not 7z)." >&2
+    exit 1
+}
+echo "Resolved VULKAN_SDK=${VULKAN_SDK}" >&2
 glslc_path="${VULKAN_SDK}/bin/glslc"
 if [[ ! -x "${glslc_path}" ]]; then
     glslc_path="$(command -v glslc || true)"

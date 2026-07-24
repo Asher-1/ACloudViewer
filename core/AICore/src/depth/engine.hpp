@@ -37,6 +37,7 @@ public:
             int n_threads,
             const std::string& device);
     const Config& config() const { return ml_.config(); }
+    const std::string& device_name() const { return be_.device_name(); }
     // Override preprocess longest-side target (multiple of patch_size recommended).
     void set_img_resize_target(uint32_t target);
     // True iff this engine was created via load_nested() (anyview + metric
