@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Validate the packaged AICore backend contract without importing pybind."""
 
 from __future__ import annotations
@@ -38,19 +45,18 @@ def main() -> int:
         device = library.aicore_device_at(index)
         if not device:
             raise RuntimeError(f"null device entry at index {index}")
-        devices.append(
-            (
-                device.contents.id.decode("utf-8"),
-                device.contents.label.decode("utf-8"),
-            )
-        )
+        devices.append((
+            device.contents.id.decode("utf-8"),
+            device.contents.label.decode("utf-8"),
+        ))
 
     ids = {device_id.split(":", 1)[0] for device_id, _ in devices}
     if "cpu" not in ids or "blas" in ids:
         raise RuntimeError(f"invalid baseline devices: {devices}")
     for expected in args.expect_device:
         if library.aicore_device_available(expected.encode("utf-8")) != 1:
-            raise RuntimeError(f"required device {expected!r} is unavailable: {devices}")
+            raise RuntimeError(
+                f"required device {expected!r} is unavailable: {devices}")
 
     print("AICore devices:")
     for device_id, label in devices:

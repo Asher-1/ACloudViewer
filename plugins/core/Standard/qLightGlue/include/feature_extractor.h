@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <QImage>
@@ -9,7 +16,8 @@
 
 namespace lightglue_plugin {
 
-/** Load image with EXIF orientation applied (matches ccImage / dialog preview). */
+/** Load image with EXIF orientation applied (matches ccImage / dialog preview).
+ */
 QImage load_oriented_qimage(const QString& path);
 
 struct OwnedFeatures {
@@ -18,7 +26,8 @@ struct OwnedFeatures {
     aicore_lightglue_features view{};
 };
 
-/** RootSIFT via OpenCV — native C++ path (COLMAP-style classical extraction). */
+/** RootSIFT via OpenCV — native C++ path (COLMAP-style classical extraction).
+ */
 bool extract_sift_opencv(const QString& image_path,
                          int max_keypoints,
                          int max_resize,

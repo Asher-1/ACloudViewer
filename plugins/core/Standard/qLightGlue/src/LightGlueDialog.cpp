@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "LightGlueDialog.h"
 
 #include <QDir>
@@ -167,7 +174,8 @@ void LightGlueDialog::setupUi() {
     auto* hintLabel = new QLabel(
             tr("Pick two images above to match. "
                "Load Folder fills Image 1/2 with the first two files and lists "
-               "all folder images below — select one, then → Image 1/2 or double-click."));
+               "all folder images below — select one, then → Image 1/2 or "
+               "double-click."));
     hintLabel->setWordWrap(true);
     hintLabel->setStyleSheet("color: #555;");
     ioLayout->addWidget(hintLabel);
@@ -210,7 +218,8 @@ void LightGlueDialog::setupUi() {
 
     auto* inputBtnLayout = new QHBoxLayout;
     auto* browseFileBtn = new QPushButton(tr("Add Files..."));
-    browseFileBtn->setToolTip(tr("Add one or more image files (first two fill the slots)"));
+    browseFileBtn->setToolTip(
+            tr("Add one or more image files (first two fill the slots)"));
     connect(browseFileBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onBrowseFile);
     inputBtnLayout->addWidget(browseFileBtn);
@@ -250,9 +259,9 @@ void LightGlueDialog::setupUi() {
     m_filePoolList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_filePoolList->setMinimumHeight(100);
     m_filePoolList->setMaximumHeight(140);
-    m_filePoolList->setToolTip(
-            tr("Images from Add Files / Load Folder. "
-               "Select an entry, click → Image 1/2, or double-click to assign."));
+    m_filePoolList->setToolTip(tr(
+            "Images from Add Files / Load Folder. "
+            "Select an entry, click → Image 1/2, or double-click to assign."));
     connect(m_filePoolList, &QListWidget::itemActivated, this,
             &LightGlueDialog::onFilePoolActivated);
     filePoolLayout->addWidget(m_filePoolList);
@@ -284,8 +293,8 @@ void LightGlueDialog::setupUi() {
     m_imageStatusLabel->setStyleSheet("font-weight: bold;");
     ioLayout->addWidget(m_imageStatusLabel);
 
-    m_addToDbCheck = new QCheckBox(
-            tr("Add match visualization to DB tree after run"));
+    m_addToDbCheck =
+            new QCheckBox(tr("Add match visualization to DB tree after run"));
     m_addToDbCheck->setChecked(true);
     ioLayout->addWidget(m_addToDbCheck);
 
@@ -344,9 +353,9 @@ void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     for (const auto& m : builtinModels()) {
         const QString cached = cacheDir + "/" + m.filename;
         const QFileInfo fi(cached);
-        const QString suffix = fi.exists()
-                                       ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
-                                       : QString(" [download]");
+        const QString suffix =
+                fi.exists() ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
+                            : QString(" [download]");
         m_modelCombo->addItem(m.displayName + suffix, m.filename);
     }
     m_modelCombo->insertSeparator(m_modelCombo->count());
@@ -393,8 +402,10 @@ LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     }
     if (data == "CUSTOM") {
         const QString name = m_customModelPath->text().toLower();
-        if (name.contains("sift")) s.matcherType = 1;
-        else if (name.contains("aliked")) s.matcherType = 2;
+        if (name.contains("sift"))
+            s.matcherType = 1;
+        else if (name.contains("aliked"))
+            s.matcherType = 2;
     }
     return s;
 }
@@ -471,8 +482,7 @@ void LightGlueDialog::updateRunButtonState() {
 }
 
 void LightGlueDialog::onModeChanged(int index) {
-    const auto mode =
-            static_cast<Mode>(m_modeCombo->itemData(index).toInt());
+    const auto mode = static_cast<Mode>(m_modeCombo->itemData(index).toInt());
     const bool isMatch = (mode == Mode::Match);
     if (m_ioGroup) m_ioGroup->setVisible(isMatch);
     if (m_addToDbCheck) m_addToDbCheck->setVisible(isMatch);
@@ -558,9 +568,8 @@ void LightGlueDialog::refreshFilePoolList() {
         item->setToolTip(path);
         const QImage img = previewForPath(path);
         if (!img.isNull()) {
-            item->setIcon(QIcon(QPixmap::fromImage(
-                    img.scaled(48, 48, Qt::KeepAspectRatio,
-                               Qt::SmoothTransformation))));
+            item->setIcon(QIcon(QPixmap::fromImage(img.scaled(
+                    48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation))));
         }
         m_filePoolList->addItem(item);
     }
@@ -698,9 +707,11 @@ void LightGlueDialog::syncDbListHighlight() {
             item->setText(item->data(Qt::UserRole).toString() +
                           tr("  [Image 1 & 2]"));
         } else if (inSlot0) {
-            item->setText(item->data(Qt::UserRole).toString() + tr("  [Image 1]"));
+            item->setText(item->data(Qt::UserRole).toString() +
+                          tr("  [Image 1]"));
         } else if (inSlot1) {
-            item->setText(item->data(Qt::UserRole).toString() + tr("  [Image 2]"));
+            item->setText(item->data(Qt::UserRole).toString() +
+                          tr("  [Image 2]"));
         } else {
             item->setText(item->data(Qt::UserRole).toString());
         }
@@ -770,7 +781,8 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
     m_dbPreviews.clear();
     m_dbImageList->clear();
     if (images.isEmpty()) {
-        auto* item = new QListWidgetItem(tr("(no source ccImage entities in DB)"));
+        auto* item =
+                new QListWidgetItem(tr("(no source ccImage entities in DB)"));
         item->setFlags(Qt::NoItemFlags);
         m_dbImageList->addItem(item);
         m_dbImageList->setEnabled(false);
@@ -807,9 +819,7 @@ void LightGlueDialog::applyDbTreeSelection(const QStringList& imageNames) {
                       .arg(names.size()));
 }
 
-void LightGlueDialog::onClearImages() {
-    clearAllSlots();
-}
+void LightGlueDialog::onClearImages() { clearAllSlots(); }
 
 void LightGlueDialog::onBrowseFile() {
     QSettings settings;
@@ -946,7 +956,8 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
     connect(m_currentDownload, &QNetworkReply::downloadProgress, this,
             [this](qint64 received, qint64 total) {
                 if (total > 0) {
-                    m_progress->setValue(static_cast<int>(received * 100 / total));
+                    m_progress->setValue(
+                            static_cast<int>(received * 100 / total));
                     m_downloadLabel->setText(
                             tr("Downloading... %1 / %2")
                                     .arg(formatFileSize(received))
@@ -960,9 +971,9 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
                     m_downloadOutFile->deleteLater();
                     m_downloadOutFile = nullptr;
                 }
-                const bool ok = m_currentDownload &&
-                                m_currentDownload->error() ==
-                                        QNetworkReply::NoError;
+                const bool ok =
+                        m_currentDownload &&
+                        m_currentDownload->error() == QNetworkReply::NoError;
                 if (ok) {
                     QFile::remove(dest);
                     QFile::rename(tmpDest, dest);

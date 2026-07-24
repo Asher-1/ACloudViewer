@@ -36,9 +36,8 @@ int main() {
         AICORE_CHECK(depth != nullptr);
         AICORE_CHECK(height > 0 && width > 0);
         aicore_depth_free_floats(depth);
-        std::fprintf(stderr,
-                     "depth inference ok: device=%s size=%dx%d\n", device,
-                     width, height);
+        std::fprintf(stderr, "depth inference ok: device=%s size=%dx%d\n",
+                     device, width, height);
     }
 
     aicore_depth_release_gpu_working_memory(ctx);

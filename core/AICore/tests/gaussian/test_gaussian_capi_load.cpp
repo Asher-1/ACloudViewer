@@ -44,8 +44,8 @@ int main() {
         const char* paths[] = {image0, image1};
         float* output = nullptr;
         size_t output_count = 0;
-        AICORE_CHECK(aicore_gaussian_run_paths(
-                             ctx, paths, 2, &output, &output_count) == 0);
+        AICORE_CHECK(aicore_gaussian_run_paths(ctx, paths, 2, &output,
+                                               &output_count) == 0);
         AICORE_CHECK(output != nullptr && output_count > 0);
         aicore_gaussian_free_floats(output);
         std::fprintf(stderr,

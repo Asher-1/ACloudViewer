@@ -41,9 +41,7 @@ bool writeTempPng(const QImage& image, QTemporaryFile& tmp) {
 
 }  // namespace
 
-bool ImageDepth::isAvailable() {
-    return aicore_device_available("cpu") != 0;
-}
+bool ImageDepth::isAvailable() { return aicore_device_available("cpu") != 0; }
 
 bool ImageDepth::estimateDepth(const QImage& image,
                                const QString& model_path,

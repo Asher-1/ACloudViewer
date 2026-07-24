@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // C API implementation for LightGlue feature matching.
 
 #include <algorithm>
@@ -22,10 +29,12 @@ bool read_bin(std::istream& stream, T* value) {
             stream.read(reinterpret_cast<char*>(value), sizeof(T)));
 }
 
-bool read_floats(std::istream& stream, std::vector<float>* values, size_t count) {
+bool read_floats(std::istream& stream,
+                 std::vector<float>* values,
+                 size_t count) {
     values->resize(count);
-    return static_cast<bool>(stream.read(reinterpret_cast<char*>(values->data()),
-                                         count * sizeof(float)));
+    return static_cast<bool>(stream.read(
+            reinterpret_cast<char*>(values->data()), count * sizeof(float)));
 }
 
 aicore::lightglue::Features to_native(const aicore_lightglue_features* in) {
@@ -76,8 +85,7 @@ AICORE_CAPI aicore_lightglue_options* aicore_lightglue_options_new(void) {
     return new aicore_lightglue_options();
 }
 
-AICORE_CAPI void aicore_lightglue_options_free(
-        aicore_lightglue_options* opts) {
+AICORE_CAPI void aicore_lightglue_options_free(aicore_lightglue_options* opts) {
     delete opts;
 }
 
@@ -101,7 +109,8 @@ AICORE_CAPI void aicore_lightglue_options_set_matcher_type(
     if (!opts) return;
     switch (matcher_type) {
         case 1:
-            opts->o.type = aicore::lightglue::FeatureMatcherType::kSiftLightGlue;
+            opts->o.type =
+                    aicore::lightglue::FeatureMatcherType::kSiftLightGlue;
             break;
         case 2:
             opts->o.type =
@@ -141,16 +150,18 @@ AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
     return load_internal(gguf_path, opts);
 }
 
-AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx) {
+    delete ctx;
+}
 
-AICORE_CAPI const char*
-aicore_lightglue_last_error(const aicore_lightglue_ctx* ctx) {
+AICORE_CAPI const char* aicore_lightglue_last_error(
+        const aicore_lightglue_ctx* ctx) {
     if (!ctx) return "NULL context";
     return ctx->error.empty() ? nullptr : ctx->error.c_str();
 }
 
-AICORE_CAPI int aicore_lightglue_geometry_of(
-        const aicore_lightglue_ctx* ctx, aicore_lightglue_geometry* out) {
+AICORE_CAPI int aicore_lightglue_geometry_of(const aicore_lightglue_ctx* ctx,
+                                             aicore_lightglue_geometry* out) {
     if (!ctx || !out || !ctx->matcher) return -1;
     aicore::lightglue::ModelGeometry geo{};
     if (!ctx->matcher->geometry(&geo)) return -1;
@@ -231,7 +242,8 @@ AICORE_CAPI void aicore_lightglue_free_matches(
 }
 
 AICORE_CAPI int aicore_lightglue_load_fixture(
-        const char* path, aicore_lightglue_features* image0,
+        const char* path,
+        aicore_lightglue_features* image0,
         aicore_lightglue_features* image1) {
     if (!path || !image0 || !image1) return -1;
     std::ifstream stream(path, std::ios::binary);
@@ -254,8 +266,9 @@ AICORE_CAPI int aicore_lightglue_load_fixture(
         !read_floats(stream, &keypoints1, static_cast<size_t>(n) * 2) ||
         !read_floats(stream, &desc0, static_cast<size_t>(m) * dim) ||
         !read_floats(stream, &desc1, static_cast<size_t>(n) * dim) ||
-        !read_floats(stream, &scales0, m) || !read_floats(stream, &scales1, n) ||
-        !read_floats(stream, &oris0, m) || !read_floats(stream, &oris1, n)) {
+        !read_floats(stream, &scales0, m) ||
+        !read_floats(stream, &scales1, n) || !read_floats(stream, &oris0, m) ||
+        !read_floats(stream, &oris1, n)) {
         return -1;
     }
 
@@ -293,8 +306,10 @@ AICORE_CAPI int aicore_lightglue_load_fixture(
         image1->keypoints[i].scale = scales1[i];
         image1->keypoints[i].orientation = oris1[i];
     }
-    std::memcpy(image0->descriptors, desc0.data(), desc0.size() * sizeof(float));
-    std::memcpy(image1->descriptors, desc1.data(), desc1.size() * sizeof(float));
+    std::memcpy(image0->descriptors, desc0.data(),
+                desc0.size() * sizeof(float));
+    std::memcpy(image1->descriptors, desc1.data(),
+                desc1.size() * sizeof(float));
     return 0;
 }
 
