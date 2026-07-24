@@ -10,8 +10,11 @@
 #include <string>
 
 #include "base/reconstruction_manager.h"
+#include "controllers/da3_depth_controller.h"
+#include "controllers/da3_pipeline_defaults.h"
 #include "retrieval/resources.h"
 #include "util/option_manager.h"
+#include "util/ply_point_filter.h"
 #include "util/threading.h"
 
 namespace colmap {
@@ -50,12 +53,9 @@ public:
         // Whether to perform sparse mapping.
         bool sparse = true;
 
-// Whether to perform dense mapping.
-#ifdef CUDA_ENABLED
-        bool dense = true;
-#else
-        bool dense = false;
-#endif
+        // Dense: COLMAP PatchMatch when CUDA is available; otherwise DA3 via
+        // AICore.
+        bool dense = DefaultDenseReconstructionEnabled();
 
         // The meshing algorithm to be used.
 #ifdef CGAL_ENABLED
@@ -63,6 +63,9 @@ public:
 #else
         Mesher mesher = Mesher::POISSON;
 #endif
+
+        // Whether to perform surface meshing (Poisson / Delaunay).
+        bool meshing = true;
 
         // Whether to perform surface texturing.
         bool texturing = true;
@@ -81,6 +84,49 @@ public:
         // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".
         // By default, all GPUs will be used in all stages.
         std::string gpu_index = "-1";
+
+        // --- DA3 (Depth Anything V3) integration options ---
+
+        // Sparse model generation mode:
+        //   COLMAP_NATIVE  - traditional COLMAP SfM pipeline
+        //   DA3_DEPTH_POSE - DA3 monocular depth+pose estimation (default when
+        //   AICore is available but COLMAP CUDA / PatchMatch is not)
+        SparseModelMode sparse_mode = PreferDA3OverColmapPatchMatch()
+                                              ? SparseModelMode::DA3_DEPTH_POSE
+                                              : SparseModelMode::COLMAP_NATIVE;
+
+        // Dense/stereo pipeline mode:
+        //   COLMAP_PATCH_MATCH - traditional COLMAP PatchMatch stereo (CUDA)
+        //   DA3_DEPTH_INFERENCE - DA3 ggml-based depth inference (AICore)
+        StereoPipelineMode stereo_mode =
+                PreferDA3OverColmapPatchMatch()
+                        ? StereoPipelineMode::DA3_DEPTH_INFERENCE
+                        : StereoPipelineMode::COLMAP_PATCH_MATCH;
+
+        // DA3 sparse-step model (when sparse_mode == DA3_DEPTH_POSE)
+        DA3ModelType da3_sparse_model_type =
+                PreferDA3OverColmapPatchMatch() ? DA3ModelType::NESTED_ANYVIEW
+                                                : DA3ModelType::BASE;
+        DA3QuantType da3_sparse_quant_type = DA3QuantType::Q8_0;
+        std::string da3_sparse_model_path;
+        std::string da3_sparse_metric_model_path;
+
+        // DA3 stereo-step model (when stereo_mode == DA3_DEPTH_INFERENCE;
+        // nested only)
+        DA3ModelType da3_stereo_model_type = DA3ModelType::NESTED_ANYVIEW;
+        DA3QuantType da3_stereo_quant_type = DA3QuantType::Q8_0;
+        std::string da3_stereo_model_path;
+        std::string da3_stereo_metric_model_path;
+
+        // When true, ignore cached sparse/stereo/fusion outputs and recompute.
+        bool da3_force_recompute = false;
+
+        // Hybrid dense: fuse DA3 priors directly (skip PatchMatch geometric).
+        // Auto-fallback to geometric refine when fusion point count is low.
+        bool da3_skip_geometric_refine = false;
+
+        // Optional voxel + SOR cleanup on fused.ply before Poisson meshing.
+        FusedPointFilterOptions fused_point_filter;
     };
 
     AutomaticReconstructionController(
@@ -111,6 +157,22 @@ private:
     void RunFeatureExtraction();
     void RunFeatureMatching();
     void RunSparseMapper();
+    void RunDA3SparseMapper();
+    void RunDA3DepthMaps();
+
+    bool use_da3_stereo_maps_ = false;
+    bool da3_reuse_sparse_stereo_ = false;
+    // Single multiview on undistorted images; workspace sparse synced from
+    // dense.
+    bool da3_unified_undistorted_ = false;
+    // Large sets: COLMAP SfM sparse + DA3 sequential depth (not DA3 joint
+    // sparse).
+    bool da3_auto_colmap_sparse_ = false;
+    // COLMAP SfM + DA3 photometric priors + PatchMatch refine + StereoFusion.
+    bool da3_patchmatch_refine_ = false;
+    // StereoFusion on DA3 priors only (DA3_SKIP_GEOMETRIC_REFINE=1).
+    bool da3_skip_geometric_refine_ = false;
+    DA3MultiviewCache da3_multiview_cache_;
 
     std::unique_ptr<Thread> feature_extractor_;
     std::unique_ptr<Thread> exhaustive_matcher_;

@@ -13,6 +13,12 @@ from pathlib import Path
 
 import multiprocessing
 
+_BUNDLE_DIR = Path(__file__).resolve().parent
+if str(_BUNDLE_DIR) not in sys.path:
+    sys.path.insert(0, str(_BUNDLE_DIR))
+
+from bundle_slim import should_skip_cuda_runtime_lib
+
 logger = logging.getLogger(__name__)
 
 # Be sure to use system codesign and not one embedded into the conda env
@@ -368,6 +374,9 @@ class CCWheelBundler:
                 for abs_rp in abs_search_paths:
                     abslib_path = abs_rp / dependency
                     if abslib_path.is_file():
+                        if should_skip_cuda_runtime_lib(abslib_path):
+                            logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
+                            break
                         if abslib_path not in libs_to_check and abslib_path not in libs_found:
                             # if this lib was not checked for dependencies yet, we append it to the list of lib to check
                             libs_to_check.append(abslib_path)
@@ -405,6 +414,9 @@ class CCWheelBundler:
         nb_libs_added = 0
         for lib in libs_found:
             if lib in self.config.cpu_bin_list or lib in self.config.cuda_bin_list:
+                continue
+            if should_skip_cuda_runtime_lib(lib):
+                logger.info("Skip NVIDIA CUDA runtime in wheel lib/: %s", lib)
                 continue
             base = self.config.lib_path / lib.name
             if base not in libs_in_frameworks and (lib not in libs_in_plugins):

@@ -227,6 +227,10 @@ void InteractiveCameraHandler::switchMode(const InteractionMode mode) {
     if (_currentMode == mode) {
         return;
     }
+    if (_cameraRecorder.isPlaying()) {
+        _cameraRecorder.stop();
+        fromCamera(_currentCamera, false);
+    }
     _currentMode = mode;
 
     // Synchronize internal cameras.
@@ -520,6 +524,15 @@ void InteractiveCameraHandler::update(const sibr::Input& input,
         }
     }
 
+    if (_cameraRecorder.isPlaying()) {
+        const auto& mouse = input.mouseButton();
+        if (mouse.isPressed(Mouse::Left) || mouse.isPressed(Mouse::Right) ||
+            mouse.isPressed(Mouse::Middle) || input.mouseScroll() != 0.0) {
+            _cameraRecorder.stop();
+            fromCamera(_currentCamera, false);
+        }
+    }
+
     // If the camera recorder is currently playing, don't update the various
     // camera modes.
     if (!_cameraRecorder.isPlaying()) {
@@ -712,6 +725,7 @@ void InteractiveCameraHandler::onGUI(const std::string& suffix) {
             ImGui::SameLine();
             if (ImGui::Button("Stop")) {
                 _cameraRecorder.stop();
+                fromCamera(_currentCamera, false);
             }
             ImGui::SameLine();
             if (ImGui::InputFloat("Speed##CamRecorder",

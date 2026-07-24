@@ -7,6 +7,13 @@
 
 #include "pybind/reconstruction/sfm/structure_from_motion.h"
 
+#include <stdexcept>
+#include <string>
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#endif
+
 #include "pipelines/sfm.h"
 #include "pybind/docstring.h"
 #include "pybind/reconstruction/reconstruction_options.h"
@@ -14,6 +21,55 @@
 namespace cloudViewer {
 namespace reconstruction {
 namespace sfm {
+
+namespace {
+
+bool IsAICoreAvailable() {
+#ifdef AICore_ENABLED
+    return aicore_device_available("cpu") != 0;
+#else
+    return false;
+#endif
+}
+
+py::list AICoreDevices() {
+    py::list result;
+#ifdef AICore_ENABLED
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* device = aicore_device_at(i);
+        if (!device) continue;
+        py::dict item;
+        item["id"] = device->id;
+        item["label"] = device->label;
+        item["is_default"] = device->is_default != 0;
+        item["is_gpu"] = aicore_is_gpu_device(device->id) != 0;
+        result.append(std::move(item));
+    }
+#endif
+    return result;
+}
+
+std::string AICoreAutoDeviceOrder() {
+#ifdef AICore_ENABLED
+    return aicore_auto_device_order();
+#else
+    return "unavailable";
+#endif
+}
+
+void WarmupAICoreBackend(const std::string& device) {
+#ifdef AICore_ENABLED
+    if (aicore_warmup_backend(device.c_str()) == 0) return;
+    const char* error = aicore_backend_last_error();
+    throw std::runtime_error(error && error[0] ? error
+                                               : "AICore backend unavailable");
+#else
+    (void)device;
+    throw std::runtime_error("AICore was disabled at build time");
+#endif
+}
+
+}  // namespace
 
 // Reconstruction structure from motion functions have similar arguments,
 // sharing arg docstrings
@@ -48,6 +104,41 @@ static const std::unordered_map<std::string, std::string>
                  "computation, you should separate multiple GPU indices by "
                  "comma, e.g., ``0,1,2,3``. By default, all GPUs will be used "
                  "in all stages."},
+                {"sparse_mode",
+                 "Sparse model mode: ``colmap`` (native SfM) or ``da3`` (DA3 "
+                 "depth+pose / hybrid). Requires AICore when ``da3``."},
+                {"stereo_mode",
+                 "Dense stereo mode: ``colmap`` (PatchMatch) or ``da3`` "
+                 "(nested metric depth inference). Requires AICore when "
+                 "``da3``."},
+                {"da3_model",
+                 "Legacy alias for ``da3_sparse_model``: ``base``, ``large``, "
+                 "``giant``, ``nested_metric``, ``nested_anyview``."},
+                {"da3_quant",
+                 "Legacy alias for ``da3_sparse_quant``: ``f32``, ``f16``, "
+                 "``q8_0``, ``q4_k``."},
+                {"da3_sparse_model",
+                 "DA3 sparse-step model name (see CLI ``colmap automatic_"
+                 "reconstructor``)."},
+                {"da3_sparse_quant", "DA3 sparse-step quantization."},
+                {"da3_stereo_model",
+                 "DA3 stereo-step nested model: ``nested_metric`` or "
+                 "``nested_anyview``."},
+                {"da3_stereo_quant", "DA3 stereo-step quantization."},
+                {"da3_sparse_model_path",
+                 "Optional explicit GGUF path for DA3 sparse step."},
+                {"da3_sparse_metric_model_path",
+                 "Optional metric GGUF for nested DA3 sparse step."},
+                {"da3_stereo_model_path",
+                 "Optional explicit GGUF path for DA3 stereo step."},
+                {"da3_stereo_metric_model_path",
+                 "Optional metric GGUF for nested DA3 stereo step."},
+                {"da3_force_recompute",
+                 "Recompute DA3 sparse/stereo/fusion even when cached outputs "
+                 "exist."},
+                {"da3_skip_geometric_refine",
+                 "Hybrid dense: fuse DA3 priors directly (auto-fallback if "
+                 "sparse)."},
                 {"input_path",
                  "The input path containing cameras.bin/txt, images.bin/txt "
                  "and points3D.bin/txt."},
@@ -80,7 +171,17 @@ static const std::unordered_map<std::string, std::string>
                  "Whether to optimize the relative poses of the camera "
                  "rigs."}};
 
-void pybind_sfm_methods(py::module &m) {
+void pybind_sfm_methods(py::module& m) {
+    m.def("is_aicore_available", &IsAICoreAvailable,
+          "Returns True when AICore's required CPU backend is available.");
+    m.def("aicore_devices", &AICoreDevices,
+          "Returns AICore devices discovered from the runtime backend "
+          "registry.");
+    m.def("aicore_auto_device_order", &AICoreAutoDeviceOrder,
+          "Returns the active AICore automatic backend preference order.");
+    m.def("warmup_aicore_backend", &WarmupAICoreBackend, "device"_a = "auto",
+          "Validates an AICore backend or raises RuntimeError.");
+
     m.def("auto_reconstruction", &AutomaticReconstruct,
           py::call_guard<py::gil_scoped_release>(),
           "Function for the automatic reconstruction", "workspace_path"_a,
@@ -88,7 +189,15 @@ void pybind_sfm_methods(py::module &m) {
           "data_type"_a = "individual", "quality"_a = "high",
           "mesher"_a = "poisson", "camera_model"_a = "SIMPLE_RADIAL",
           "single_camera"_a = false, "sparse"_a = true, "dense"_a = true,
-          "num_threads"_a = -1, "use_gpu"_a = true, "gpu_index"_a = "-1");
+          "num_threads"_a = -1, "use_gpu"_a = true, "gpu_index"_a = "-1",
+          "sparse_mode"_a = "colmap", "stereo_mode"_a = "colmap",
+          "da3_model"_a = "base", "da3_quant"_a = "q8_0",
+          "da3_sparse_model"_a = "", "da3_sparse_quant"_a = "",
+          "da3_stereo_model"_a = "nested_anyview", "da3_stereo_quant"_a = "",
+          "da3_sparse_model_path"_a = "", "da3_sparse_metric_model_path"_a = "",
+          "da3_stereo_model_path"_a = "", "da3_stereo_metric_model_path"_a = "",
+          "da3_force_recompute"_a = false,
+          "da3_skip_geometric_refine"_a = false);
     docstring::FunctionDocInject(m, "auto_reconstruction",
                                  map_shared_argument_docstrings);
 
@@ -151,7 +260,7 @@ void pybind_sfm_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 }
 
-void pybind_structure_from_motion(py::module &m) {
+void pybind_structure_from_motion(py::module& m) {
     py::module m_submodule =
             m.def_submodule("sfm", "Reconstruction structure from motion.");
     pybind_sfm_methods(m_submodule);

@@ -47,27 +47,27 @@ Component.prototype.createOperations = function()
 			if (installer.value("os") == "mac") {
 				// no need to make shortcut on macos
 			} else if (installer.value("os") === "x11") {
-				/***************************************路径说明****************************************
-				系统自带变量
-				TargetDir   目标安装目录，由用户选择
-				DesktopDir  用户桌面目录名(路径)。仅在Windows上可用
-				RootDir 文件系统根目录
-				HomeDir 当前用户的home目录
-				ApplicationsDir 应用程序目录。例如,Windows上的C:\Program Files,Linux上/opt以及OS X上/Applications
-				InstallerDirPath    包含安装程序可执行文件的目录
-				InstallerFilePath   安装程序可执行文件的文件路径
+				/*************************************** Path variable reference ****************************************
+				Built-in variables
+				TargetDir   Target installation directory, chosen by the user
+				DesktopDir  User desktop directory name (path). Available on Windows only
+				RootDir     File system root directory
+				HomeDir     Current user's home directory
+				ApplicationsDir  Applications directory. e.g. C:\Program Files on Windows, /opt on Linux, /Applications on OS X
+				InstallerDirPath    Directory containing the installer executable
+				InstallerFilePath   File path of the installer executable
 				
-				注意：变量是包含在“@@”中的，以@开始，必须要以@结尾
+				Note: Variables are enclosed in "@@", starting with @ and must end with @
 				
-				具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
+				For more details see https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
 				**************************************************************************************/        
 				
-				/* 建立桌面图标 */
-				var exec = "Exec=" + "@TargetDir@/CloudViewer.sh %f" + "\n"; /* 执行程序 */
-				var icon = "Icon=" + "@TargetDir@/CloudViewer.png" + "\n"; /* 图标资源路径 */
-				var version =  "Version=" + "3.9.0" + "\n" ; /* 版本号 */
-				var name = "Name=" + "CloudViewer" + "\n"; /* 桌面图标显示名称 */
-				var desktop = "CloudViewer" + ".desktop";  /* 桌面图标名 */
+				/* Create desktop icon */
+				var exec = "Exec=" + "@TargetDir@/CloudViewer.sh %f" + "\n"; /* Executable command */
+				var icon = "Icon=" + "@TargetDir@/CloudViewer.png" + "\n"; /* Icon resource path */
+				var version =  "Version=" + "3.9.0" + "\n" ; /* Version number */
+				var name = "Name=" + "CloudViewer" + "\n"; /* Desktop icon display name */
+				var desktop = "CloudViewer" + ".desktop";  /* Desktop icon file name */
 				var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"
 				var extentions = "MimeType=" + "model/stl;model/obj;model/fbx;model/gltf-binary;model/gltf+json;model/x.stl-ascii;model/x.stl-binary;model/x-ply;application/x-off;application/x-xyz;application/x-xyzn;application/x-xyzrgb;application/x-pcd;application/x-pts" + "\n"
 				var comment = name + exec + icon + version + comments + "Terminal=false\nCategories=Graphics\nEncoding=UTF-8\nType=Application\n" + extentions;

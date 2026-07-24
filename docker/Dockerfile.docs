@@ -98,7 +98,7 @@ ENV QT_ROOT=${QT_BASE_DIR} \
 RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b main ${CLOUDVIEWER_ML_ROOT}
 
 # Always keep /root/ACloudViewer as the WORKDIR
-COPY util/ci_utils.sh util/install_deps_ubuntu.sh util/
+COPY util/ci_utils.sh util/install_deps_ubuntu.sh util/install_vulkan_env.sh util/install_vulkan_linux.sh util/acloudviewer_vulkan_env_common.sh util/
 COPY python/requirements*.txt python/
 COPY docs/requirements.txt docs/
 
@@ -109,7 +109,7 @@ RUN echo "📦 Installing documentation dependencies..." \
     && echo "✅ Documentation dependencies installed"
 
 # Install minimal C++ dependencies (for Python module)
-RUN ./util/install_deps_ubuntu.sh assume-yes \
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================================

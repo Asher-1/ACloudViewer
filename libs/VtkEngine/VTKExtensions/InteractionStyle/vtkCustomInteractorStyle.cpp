@@ -13,6 +13,7 @@
 #include "vtkCustomInteractorStyle.h"
 
 #include <FileSystem.h>
+#include <ecvCameraSensor.h>
 
 #include <cctype>
 
@@ -634,6 +635,7 @@ void vtkCustomInteractorStyle::OnRightButtonUp() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 void vtkCustomInteractorStyle::OnMouseWheelForward() {
+    clearAppliedViewportCameraPreview();
     int x = this->Interactor->GetEventPosition()[0];
     int y = this->Interactor->GetEventPosition()[1];
     VtkRendering::MouseEvent event(
@@ -660,6 +662,7 @@ void vtkCustomInteractorStyle::OnMouseWheelForward() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 void vtkCustomInteractorStyle::OnMouseWheelBackward() {
+    clearAppliedViewportCameraPreview();
     int x = this->Interactor->GetEventPosition()[0];
     int y = this->Interactor->GetEventPosition()[1];
     VtkRendering::MouseEvent event(

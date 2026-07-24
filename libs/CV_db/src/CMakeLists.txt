@@ -8,6 +8,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensor.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensorDisplayUtils.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCameraUndoCommand.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvTransformCommand.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCircle.cpp

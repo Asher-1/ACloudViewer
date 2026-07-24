@@ -185,6 +185,47 @@ QList<QAction*> qSIBR::getActions() {
     return group;
 }
 
+void qSIBR::launchInMemoryGaussianViewer(QByteArray plyBytes,
+                                         QByteArray camerasJson,
+                                         int shDegree) {
+#ifdef SIBR_HAS_CUDA
+    if (plyBytes.isEmpty() || camerasJson.isEmpty()) {
+        if (m_app) {
+            m_app->dispToConsole(
+                    tr("[SIBR] In-memory Gaussian payload is empty."),
+                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        }
+        return;
+    }
+
+    auto* thread = new SIBRViewerThread(
+            SIBRViewerThread::ViewerMode::GaussianSplatting, QString(), 1920,
+            1080, this);
+    thread->setGaussianLargePointView(true);
+    thread->setGaussianAutoTour(true);
+    thread->setGaussianShDegree(shDegree > 0 ? shDegree : 3);
+    thread->setGaussianWhiteBackground(false);
+    thread->setGaussianCamerasJson(camerasJson.toStdString());
+    std::vector<uint8_t> plyMemory(
+            reinterpret_cast<const uint8_t*>(plyBytes.constData()),
+            reinterpret_cast<const uint8_t*>(plyBytes.constData()) +
+                    static_cast<size_t>(plyBytes.size()));
+    thread->setGaussianPlyMemory(std::move(plyMemory));
+    thread->setObjectName("GS_MEM_" +
+                          QString::number(QDateTime::currentMSecsSinceEpoch()));
+    launchViewer(thread);
+#else
+    (void)plyBytes;
+    (void)camerasJson;
+    (void)shDegree;
+    if (m_app) {
+        m_app->dispToConsole(
+                tr("[SIBR] CUDA not available - Gaussian viewer disabled"),
+                ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
+    }
+#endif
+}
+
 void qSIBR::launchViewer(SIBRViewerThread* thread) {
     // GLFW and Input::global() are process-wide singletons that are
     // not thread-safe.  Only one SIBR viewer may be active at a time.

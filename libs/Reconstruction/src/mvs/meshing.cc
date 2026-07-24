@@ -442,7 +442,10 @@ struct DelaunayMeshingEdgeWeightComputer {
     }
 
     distance_sigma_ = distance_sigma_factor *
-                      std::max(std::sqrt(Percentile(edge_lengths, 25)), 1e-7f);
+                      std::max(std::sqrt(edge_lengths.empty()
+                                               ? 1e-7f
+                                               : Percentile(edge_lengths, 25)),
+                                1e-7f);
     distance_threshold_ = 5 * distance_sigma_;
     distance_normalization_ = -0.5 / (distance_sigma_ * distance_sigma_);
   }
@@ -702,6 +705,14 @@ PlyMesh DelaunayMeshing(const DelaunayMeshingOptions& options,
   std::cout << "Triangulating points..." << std::endl;
   const auto triangulation = input_data.CreateSubSampledDelaunayTriangulation(
       options.max_proj_dist, options.max_depth_dist);
+
+  if (triangulation.number_of_vertices() == 0 ||
+      triangulation.number_of_finite_edges() == 0) {
+    std::cout << "WARNING: Skipping Delaunay meshing because the input "
+                 "triangulation is empty (no fused points?)."
+              << std::endl;
+    return PlyMesh{};
+  }
 
   // Helper class to efficiently trace rays through the triangulation.
   std::cout << "Initializing ray tracer..." << std::endl;
@@ -979,9 +990,11 @@ PlyMesh DelaunayMeshing(const DelaunayMeshingOptions& options,
   }
 
   const float max_facet_side_length =
-      options.max_side_length_factor *
-      Percentile(surface_facet_side_lengths,
-                 options.max_side_length_percentile);
+      surface_facet_side_lengths.empty()
+          ? options.max_side_length_factor
+          : options.max_side_length_factor *
+                    Percentile(surface_facet_side_lengths,
+                               options.max_side_length_percentile);
 
   mesh.faces.reserve(surface_facets.size());
 

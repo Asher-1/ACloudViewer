@@ -169,6 +169,9 @@ namespace sibr
 		*/
 		Viewport & getIBRSubViewport(const std::string &title);
 
+		/** Set the ImGui layout rectangle for a subview and refresh on next frame. */
+		void layoutSubView(const std::string& title, const Viewport& vp);
+
 		/**
 		* \brief Unregister a subview.
 		* \param title the title of the view to remove.

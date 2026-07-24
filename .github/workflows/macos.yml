@@ -28,6 +28,7 @@ env:
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
   BUILD_CUDA_MODULE: OFF
+  VULKAN_SDK_VERSION: 1.4.350.0
 
 jobs:
   MacOS:
@@ -60,6 +61,19 @@ jobs:
           echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
       - name: Checkout source code
         uses: actions/checkout@v4
+      # LunarG lists 1.4.350.0 on macOS: https://vulkan.lunarg.com/sdk/versions/mac.json
+      # Marketplace action v1.2 tag predates vulkansdk-macOS-* bundles; pin commit with PR #20 fix.
+      # See https://github.com/marketplace/actions/install-vulkan-sdk
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          cache: true
+      - name: Sync ACloudViewer Vulkan env
+        shell: bash
+        env:
+          ACLOUDVIEWER_UPDATE_BASHRC: 0
+        run: util/sync_vulkan_env_from_sdk.sh
       - name: Setup cache
         uses: actions/cache@v4
         with:
@@ -116,7 +130,7 @@ jobs:
           ccache -s
           echo "Start to build GUI package On MacOS..."
           source util/ci_utils.sh
-          build_gui_app with_conda package_installer
+          build_gui_app with_conda package_installer with_vulkan
           ccache -s
 
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
@@ -280,6 +294,18 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@e7d6e7b937bde4503c7ba5c9584c9dc68f44c4b8
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          cache: true
+
+      - name: Sync ACloudViewer Vulkan env
+        shell: bash
+        env:
+          ACLOUDVIEWER_UPDATE_BASHRC: 0
+        run: util/sync_vulkan_env_from_sdk.sh
+
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
         with:
@@ -344,7 +370,7 @@ jobs:
           ccache -s
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
-          build_mac_wheel with_conda build_realsense
+          build_mac_wheel with_conda build_realsense with_vulkan
           ccache -s
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"

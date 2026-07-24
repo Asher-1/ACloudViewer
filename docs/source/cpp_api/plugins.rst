@@ -180,6 +180,15 @@ Available Standard Plugins
 
 * **qSIBR**: SIBR framework integration — real-time 3D Gaussian Splatting (CUDA), ULR novel-view synthesis, textured mesh and point-based viewing, remote training viewer, and dataset preprocessing tools. Bidirectional interaction with ACloudViewer: entity selection auto-fills viewer paths, results import back with zoom-to-fit. Enable with ``-DPLUGIN_STANDARD_QSIBR=ON`` (not supported on macOS due to OpenGL-on-Metal limitations 4.1 +).
 
+**AI inference (AICore)**
+
+Both plugins require ``-DAICore_ENABLED=ON`` (builds ``libAICore.so`` with a single ggml copy). User-facing guides live in the repository at ``docs/guides/plugins/`` (synced into Sphinx at build time). The full developer README for each plugin is under ``plugins/core/Standard/``.
+
+* **qDA3**: Depth Anything V3 — monocular/multiview depth, camera pose, GLB/COLMAP export, Automatic Reconstruction sparse/dense hooks. CMake: ``PLUGIN_STANDARD_QDA3``.
+* **qFreeSplatter**: FreeSplatter 3D Gaussian Splatting — uncalibrated images to per-pixel 3D Gaussians, PnP pose recovery, SIBR-compatible PLY export; optional in-app viewer when qSIBR is enabled. CMake: ``PLUGIN_STANDARD_QFREESPLATTER``.
+
+See :doc:`../guides/plugins/qDA3` and :doc:`../guides/plugins/qFreeSplatter` for usage and build instructions.
+
 **Advanced Processing**
 
 * **qPCL**: Integration with Point Cloud Library (PCL) algorithms
@@ -525,7 +534,18 @@ Plugin Documentation
 --------------------
 
 Detailed documentation for each plugin, including CLI usage, parameters, and references.
-Each plugin's README is maintained alongside its source code.
+Each plugin's README is maintained alongside its source code under ``plugins/core/``.
+The catalog and build index is at ``plugins/README.md`` in the repository root.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: AI Inference (AICore)
+
+   ../guides/plugins/README
+   ../guides/plugins/qDA3
+   ../guides/plugins/qFreeSplatter
+   ../plugins/qDA3/README
+   ../plugins/qFreeSplatter/README
 
 .. toctree::
    :maxdepth: 1
@@ -594,6 +614,7 @@ Further Reading
 
 * :doc:`../getting_started/build_from_source` - Build ACloudViewer with plugins
 * :doc:`overview` - C++ API overview
+* `Plugin catalog (plugins/README.md) <https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md>`_
 * `Plugin Examples <https://github.com/Asher-1/ACloudViewer/tree/main/plugins/example>`_
 * `CVPluginAPI Documentation <api/>`_
 

@@ -231,6 +231,20 @@ Viewport& MultiViewBase::getIBRSubViewport(const std::string& title) {
     return _subViews.begin()->second.viewport;
 }
 
+void MultiViewBase::layoutSubView(const std::string& title,
+                                  const Viewport& vp) {
+    if (_subViews.count(title) > 0) {
+        _subViews.at(title).viewport = vp;
+        _subViews.at(title).shouldUpdateLayout = true;
+    } else if (_ibrSubViews.count(title) > 0) {
+        _ibrSubViews.at(title).viewport = vp;
+        _ibrSubViews.at(title).shouldUpdateLayout = true;
+    } else {
+        SIBR_WRG << "No view named <" << title << "> found for layout."
+                 << std::endl;
+    }
+}
+
 void MultiViewBase::renderSubView(SubView& subview) {
     if (!_onPause) {
         const Viewport renderViewport(0.0, 0.0, (float)subview.rt->w(),

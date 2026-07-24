@@ -16,6 +16,11 @@
 #include <QImageReader>
 #include <QOpenGLTexture>
 #include <algorithm>
+#include <cstring>
+
+#ifdef AICore_ENABLED
+#include "aicore/depth_image.h"
+#endif
 
 ccImage::ccImage()
     : ccHObject("Not loaded"),
@@ -67,6 +72,7 @@ void ccImage::setData(const QImage& image) {
     m_width = m_image.width();
     m_height = m_image.height();
     updateAspectRatio();
+    setRedraw(true);
 }
 
 void ccImage::updateAspectRatio() {
@@ -82,54 +88,27 @@ void ccImage::drawMeOnly(CC_DRAW_CONTEXT& context) {
     if (!context.display) return;
 
     context.display->draw(context, this);
-    ////get the set of OpenGL functions (version 2.1)
-    // QOpenGLFunctions_2_1 *glFunc =
-    // context.glFunctions<QOpenGLFunctions_2_1>(); assert( glFunc != nullptr );
-    //
-    // if ( glFunc == nullptr )
-    //	return;
-
-    // glFunc->glPushAttrib(GL_COLOR_BUFFER_BIT);
-    // glFunc->glEnable(GL_BLEND);
-    // glFunc->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // glFunc->glPushAttrib(GL_ENABLE_BIT);
-    // glFunc->glEnable(GL_TEXTURE_2D);
-
-    // QOpenGLTexture texture(m_image);
-    // texture.bind();
-    //{
-    //	//we make the texture fit inside viewport
-    //	int realWidth = static_cast<int>(m_height * m_aspectRatio); //take
-    // aspect ratio into account! 	GLfloat cw =
-    // static_cast<GLfloat>(context.glW)
-    /// realWidth; 	GLfloat ch = static_cast<GLfloat>(context.glH)
-    /// /m_height;
-    //	GLfloat zoomFactor = (cw > ch ? ch : cw) / 2;
-    //	GLfloat dX = realWidth*zoomFactor;
-    //	GLfloat dY = m_height*zoomFactor;
-
-    //	glFunc->glColor4f(1, 1, 1, m_texAlpha);
-    //	glFunc->glBegin(GL_QUADS);
-    //	glFunc->glTexCoord2f(0, 1); glFunc->glVertex2f(-dX, -dY);
-    //	glFunc->glTexCoord2f(1, 1); glFunc->glVertex2f( dX, -dY);
-    //	glFunc->glTexCoord2f(1, 0); glFunc->glVertex2f( dX,  dY);
-    //	glFunc->glTexCoord2f(0, 0); glFunc->glVertex2f(-dX,  dY);
-    //	glFunc->glEnd();
-    //}
-    // texture.release();
-
-    // glFunc->glPopAttrib();
-    // glFunc->glPopAttrib();
 }
 
 void ccImage::setAlpha(float value) {
-    if (value <= 0)
-        m_texAlpha = 0;
-    else if (value > 1.0f)
-        m_texAlpha = 1.0f;
-    else
-        m_texAlpha = value;
+    const float clamped = value <= 0.0f ? 0.0f : (value > 1.0f ? 1.0f : value);
+    if (m_texAlpha == clamped) {
+        return;
+    }
+    m_texAlpha = clamped;
+    setRedraw(true);
+}
+
+ccBBox ccImage::getOwnBB(bool withGLFeatures /*=false*/) {
+    Q_UNUSED(withGLFeatures);
+    if (m_width == 0 || m_height == 0) {
+        return ccBBox();
+    }
+    ccBBox box;
+    box.add(CCVector3(0, 0, 0));
+    box.add(CCVector3(static_cast<PointCoordinateType>(m_width - 1),
+                      static_cast<PointCoordinateType>(m_height - 1), 0));
+    return box;
 }
 
 void ccImage::setAssociatedSensor(ccCameraSensor* sensor) {
@@ -215,4 +194,75 @@ bool ccImage::fromFile_MeOnly(QFile& in,
     inStream >> fakeString;  // formerly: 'complete filename'
 
     return true;
+}
+
+#ifdef AICore_ENABLED
+namespace {
+
+void copyDepthResult(const aicore::depth::ImageDepthResult& src,
+                     ccImage::DepthResult& out) {
+    out.width = src.width;
+    out.height = src.height;
+    out.depth = src.depth;
+    out.confidence = src.confidence;
+    out.has_pose = src.has_pose;
+    std::memcpy(out.extrinsics, src.extrinsics, sizeof(out.extrinsics));
+    std::memcpy(out.intrinsics, src.intrinsics, sizeof(out.intrinsics));
+}
+
+}  // namespace
+#endif
+
+bool ccImage::estimateDepth(const QString& model_path,
+                            int n_threads,
+                            DepthResult& out,
+                            const QString& metric_model_path) const {
+#ifndef AICore_ENABLED
+    Q_UNUSED(model_path);
+    Q_UNUSED(n_threads);
+    Q_UNUSED(out);
+    Q_UNUSED(metric_model_path);
+    return false;
+#else
+    if (m_image.isNull()) return false;
+
+    aicore::depth::ImageDepthResult result;
+    if (!aicore::depth::ImageDepth::estimateDepth(
+                m_image, model_path, n_threads, result, metric_model_path)) {
+        return false;
+    }
+    copyDepthResult(result, out);
+    return true;
+#endif
+}
+
+bool ccImage::estimateDepthAndPose(const QString& model_path,
+                                   int n_threads,
+                                   DepthResult& out,
+                                   const QString& metric_model_path) const {
+#ifndef AICore_ENABLED
+    Q_UNUSED(model_path);
+    Q_UNUSED(n_threads);
+    Q_UNUSED(out);
+    Q_UNUSED(metric_model_path);
+    return false;
+#else
+    if (m_image.isNull()) return false;
+
+    aicore::depth::ImageDepthResult result;
+    if (!aicore::depth::ImageDepth::estimateDepthAndPose(
+                m_image, model_path, n_threads, result, metric_model_path)) {
+        return false;
+    }
+    copyDepthResult(result, out);
+    return true;
+#endif
+}
+
+bool ccImage::isAICoreAvailable() {
+#ifdef AICore_ENABLED
+    return aicore::depth::ImageDepth::isAvailable();
+#else
+    return false;
+#endif
 }

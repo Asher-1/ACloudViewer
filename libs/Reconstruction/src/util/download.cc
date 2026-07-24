@@ -321,15 +321,27 @@ std::string DownloadAndCacheFile(
     const std::string& uri,
     DownloadProgressCallback progress_callback) {
   const std::vector<std::string> parts = StringSplit(uri, ";");
-  CHECK_EQ(parts.size(), 3)
-      << "Invalid URI format. Expected: <url>;<name>;<sha256>";
+  if (parts.size() != 3) {
+    throw std::runtime_error(
+        "Invalid URI format (got " + std::to_string(parts.size()) +
+        " part(s), expected 3). Expected: <url>;<name>;<sha256>. "
+        "Received: " + uri);
+  }
 
   const std::string& url = parts[0];
-  CHECK(!url.empty());
+  if (url.empty()) {
+    throw std::runtime_error("URI has empty URL component: " + uri);
+  }
   const std::string& name = parts[1];
-  CHECK(!name.empty());
+  if (name.empty()) {
+    throw std::runtime_error("URI has empty name component: " + uri);
+  }
   const std::string& sha256 = parts[2];
-  CHECK_EQ(sha256.size(), 64);
+  if (sha256.size() != 64) {
+    throw std::runtime_error(
+        "URI has invalid SHA256 (length " + std::to_string(sha256.size()) +
+        ", expected 64): " + uri);
+  }
 
   std::filesystem::path download_cache_dir;
   if (download_cache_dir_overwrite.has_value()) {
@@ -368,6 +380,37 @@ std::string DownloadAndCacheFile(
   }
 
   return path.string();
+}
+
+std::string DownloadAndCacheFile(
+    const std::string& url,
+    const std::filesystem::path& target_path,
+    DownloadProgressCallback progress_callback) {
+  if (std::filesystem::exists(target_path)) {
+    std::cout << "File already cached. Using cached file at: " << target_path
+              << std::endl;
+    return target_path.string();
+  }
+
+  std::filesystem::create_directories(target_path.parent_path());
+
+  std::cout << "Downloading from: " << url << std::endl;
+  std::cout << "Target path: " << target_path << std::endl;
+  const std::optional<std::string> blob = DownloadFile(url, progress_callback);
+  if (!blob.has_value()) {
+    return "";
+  }
+
+  std::ofstream ofs(target_path.string(),
+                    std::ios::binary | std::ios::trunc);
+  if (!ofs) {
+    LOG(ERROR) << "Cannot write to " << target_path;
+    return "";
+  }
+  ofs.write(blob->data(), static_cast<std::streamsize>(blob->size()));
+  ofs.close();
+  std::cout << "File successfully cached at: " << target_path << std::endl;
+  return target_path.string();
 }
 
 void OverwriteDownloadCacheDir(std::filesystem::path path) {
@@ -424,6 +467,14 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
 
 std::filesystem::path MaybeDownloadAndCacheFile(const std::string& uri) {
   if (!IsURI(uri)) {
+    return uri;
+  }
+  const auto parts = StringSplit(uri, ";");
+  if (parts.size() != 3) {
+    LOG(WARNING) << "URI starts with http(s):// but does not match "
+                    "<url>;<name>;<sha256> format (got "
+                 << parts.size() << " part(s)). Treating as local path: "
+                 << uri;
     return uri;
   }
 #ifdef COLMAP_DOWNLOAD_ENABLED

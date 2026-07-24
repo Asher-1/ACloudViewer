@@ -161,6 +161,8 @@ public:
     void removeWidgets(const WIDGETS_PARAMETER& param) override;
     bool hideShowEntities(const ccGLDrawContext& context) override;
     void removeEntities(const ccGLDrawContext& context) override;
+    void updateApplyViewportPreviewOverlay(unsigned sensorId) override;
+    void removeApplyViewportPreviewOverlay(unsigned sensorId) override;
     void changeEntityProperties(PROPERTY_PARAM& param) override;
     void updateCamera() override;
     void updateScene() override;
@@ -204,7 +206,8 @@ public:
     void setExclusiveFullScreenFlag(bool state) override;
     double getObjectLightIntensity(const QString& viewID) const override;
     void setObjectLightIntensity(const QString& viewID,
-                                 double intensity) override;
+                                 double intensity,
+                                 bool triggerRender = true) override;
     double getLightIntensity() const override;
     void setLightIntensity(double intensity) override;
     void getDataAxesGridProperties(const QString& viewID,

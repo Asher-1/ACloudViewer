@@ -1,13 +1,5 @@
 include(ExternalProject)
 
-if (${GLIBCXX_USE_CXX11_ABI})
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for pcl")
-else ()
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for pcl")
-endif ()
-
 set(PCL_RELEASE_SUFFIX "")
 set(PCL_DEBUG_SUFFIX "d")
 if(WIN32)
@@ -68,9 +60,6 @@ ExternalProject_Add(ext_pcl
             ${EIGEN_CMAKE_FLAGS}
             -DBUILD_SHARED_LIBS=ON
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-            # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-            # checking CXX_COMPILER_ID is not supported.
-            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             # Fix Failed to find shared boost libs installed with conda issues.
             -DPCL_ALLOW_BOTH_SHARED_AND_STATIC_DEPENDENCIES=ON
             -DPCL_BUILD_WITH_BOOST_DYNAMIC_LINKING_WIN32=ON

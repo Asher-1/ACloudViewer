@@ -22,6 +22,18 @@ class QDir;
 
 //! Camera (projective) sensor
 class CV_DB_LIB_API ccCameraSensor : public ccSensor {
+public:
+    //! World pose convention for rigidTransformation / VTK rendering.
+    enum class PoseFrame {
+        //! CloudCompare legacy: pose and local frustum both use OpenGL -Z
+        //! forward.
+        OpenGlLegacy,
+        //! COLMAP / VTK: pose and local frustum geometry both use +Z forward
+        //! and
+        //! Y down (OpenCV/COLMAP camera frame in reconstruction world coords).
+        VtkColmap,
+    };
+
 public:  // general
     //! Intrinsic parameters of the camera sensor
     struct CV_DB_LIB_API IntrinsicParameters {
@@ -197,6 +209,9 @@ public:  // general
     // inherited from ccSensor
     virtual bool applyViewport() override;
 
+    //! Remove cached VTK gizmo actors from one display (apply preview).
+    void removeViewportGizmoActors(ecvGenericGLDisplay* display);
+
 public:  // getters and setters
     //! Sets focal (in pixels)
     /** \warning Vertical dimension by default
@@ -217,6 +232,18 @@ public:  // getters and setters
     inline float getVerticalFov_rad() const {
         return m_intrinsicParams.vFOV_rad;
     }
+
+    //! FOV used by applyViewport (radians). When > 0, overrides vFOV_rad so
+    //! frustum display can keep a separate, scene-friendly scale.
+    void setApplyViewportVFov_rad(float fov_rad) {
+        m_applyViewportVFov_rad = fov_rad;
+    }
+    inline float getApplyViewportVFov_rad() const {
+        return m_applyViewportVFov_rad;
+    }
+
+    void setPoseFrame(PoseFrame frame);
+    inline PoseFrame getPoseFrame() const { return m_poseFrame; }
 
     //! Returns intrinsic parameters
     const IntrinsicParameters& getIntrinsicParameters() const {
@@ -249,6 +276,7 @@ public:  // frustum display
     inline void drawFrustum(bool state) {
         m_frustumInfos.drawFrustum = state;
         m_geometryDirty = true;
+        setRedraw(true);
     }
 
     //! Returns whether the frustum planes should be displayed or not
@@ -260,6 +288,7 @@ public:  // frustum display
     inline void drawFrustumPlanes(bool state) {
         m_frustumInfos.drawSidePlanes = state;
         m_geometryDirty = true;
+        setRedraw(true);
     }
 
 public:  // coordinate systems conversion methods
@@ -628,8 +657,15 @@ protected:
     double m_focalLength;
 
     bool m_geometryDirty{true};
+    //! Optional real pinhole vFOV for applyViewport (0 = use vFOV_rad).
+    float m_applyViewportVFov_rad{0.0f};
+    PoseFrame m_poseFrame{PoseFrame::OpenGlLegacy};
     double m_cachedTransformData[16]{};
 };
+
+//! End apply-viewport preview after user zoom (wheel). Pan/rotate keep preview.
+CV_DB_LIB_API void clearAppliedViewportCameraPreview(
+        ecvGenericGLDisplay* view = nullptr);
 
 class ccOctreeFrustumIntersector {
 public:

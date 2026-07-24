@@ -1784,7 +1784,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             drawNameIn3D();
         }
     } else if (!shouldDrawName && isDisplayedIn(context.display)) {
-        if (!isKindOf(CV_TYPES::LABEL_2D)) {
+        // IMAGE entities render through a dedicated 2D overlay (ImageVis)
+        // keyed by the same viewID.  The removeWidgets(WIDGET_T2D) call
+        // would cascade into removeEntities(ECV_TEXT2D) which blindly
+        // removes any 2D layer with that viewID — including the image
+        // layer.  Skip the cleanup for IMAGE since they never create
+        // T2D/RECTANGLE_2D widgets.
+        if (!isKindOf(CV_TYPES::LABEL_2D) && !isKindOf(CV_TYPES::IMAGE)) {
             WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getViewId());
             wpTxt.context.display = mergeDisplay(context.display, this);
             if (wpTxt.context.display)

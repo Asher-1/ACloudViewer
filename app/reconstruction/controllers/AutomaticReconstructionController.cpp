@@ -40,7 +40,18 @@ void AutomaticReconstructionController::OnFusedPointsGenerated(
         size_t reconstruction_idx,
         const std::vector<colmap::PlyPoint>& points) {
     // app-specific: Collect fused points for visualization
-    fused_points_.push_back(points);
+    constexpr size_t kMaxVizPoints = 500000;
+    if (points.size() > kMaxVizPoints) {
+        std::vector<colmap::PlyPoint> subsampled;
+        subsampled.reserve(kMaxVizPoints);
+        const size_t stride = points.size() / kMaxVizPoints + 1;
+        for (size_t i = 0; i < points.size(); i += stride) {
+            subsampled.push_back(points[i]);
+        }
+        fused_points_.push_back(std::move(subsampled));
+    } else {
+        fused_points_.push_back(points);
+    }
 }
 
 void AutomaticReconstructionController::OnMeshGenerated(

@@ -853,7 +853,7 @@ The following gaps are **architectural** — they stem from the fundamental diff
 - **Convert To Locale Safety**: `convertCell()` and `quickCreateViewInNewTab()` now use `VIEW_TYPE_ID` property matching instead of `btn->text()` string comparison
   - Each Create View button stores its canonical English name in a `VIEW_TYPE_ID` Qt property
   - Convert To menu passes canonical names (via `QStringLiteral`) — never translated labels
-  - Fixes: Convert To was broken in Chinese locale because `MainWindow::tr("Render View")` → "渲染视图" but `ecvMultiViewWidget::tr("Render View")` was untranslated (different Qt context)
+  - Fixes: Convert To was broken in Chinese locale because `MainWindow::tr("Render View")` resolved to the localized label while `ecvMultiViewWidget::tr("Render View")` was untranslated (different Qt context)
   - Pattern matches ParaView's proxy-name-driven approach (`availableViewTypes()` uses SM proxy names, not labels)
 - **ViewType struct refactored**: `{canonicalName, label, available}` triple replaces previous `{label, available}` pair
   - `canonicalName` = `QStringLiteral` English name (never changes with locale)

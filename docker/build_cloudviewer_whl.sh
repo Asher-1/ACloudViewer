@@ -62,9 +62,12 @@ export USE_QT6=${USE_QT6}
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+# shellcheck source=acloudviewer_vulkan_env_common.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/acloudviewer_vulkan_env_common.sh
+source_acloudviewer_vulkan_env || true
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-jupyter with-unit-test
-build_pip_package build_realsense build_azure_kinect build_jupyter
+build_pip_package with_vulkan build_realsense build_azure_kinect build_jupyter
 
 # Note: Wheel testing is now done at runtime using test_wheel_runtime.sh
 # This allows testing with GPU support (--gpus all) which is not available during build

@@ -126,9 +126,10 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
     const bool use_sf_colors = has_valid_sf && active_sf != nullptr;
     const bool use_rgb_colors = !use_sf_colors && cloud->hasColors();
 
-    // Hide out-of-range points when the display range has been narrowed.
-    // Uses displayRange.isInRange() directly so that hiding is independent
-    // of the "NaN in grey" checkbox — matches CloudCompare visual behavior.
+    // Hide out-of-range points when the display range has been narrowed
+    // AND "show NaN/out of range in grey" is OFF.  When the grey flag is ON,
+    // out-of-range points stay in the polydata and receive lightGrey colour
+    // from ccScalarField::getColor(), matching CloudCompare behaviour.
     const ccScalarField* active_cc_sf =
             use_sf_colors ? static_cast<const ccScalarField*>(active_sf)
                           : nullptr;
@@ -136,8 +137,10 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::PointCloudToPolyData(
     bool sf_hides_points = false;
     if (active_cc_sf) {
         sf_disp_range = &active_cc_sf->displayRange();
-        sf_hides_points = (sf_disp_range->start() > sf_disp_range->min() ||
-                           sf_disp_range->stop() < sf_disp_range->max());
+        bool range_narrowed = (sf_disp_range->start() > sf_disp_range->min() ||
+                               sf_disp_range->stop() < sf_disp_range->max());
+        sf_hides_points =
+                range_narrowed && !active_cc_sf->areNaNValuesShownInGrey();
     }
 
     unsigned visible_count = point_count;
@@ -439,16 +442,19 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::MeshToPolyData(
     const bool has_normals_export = mesh->hasTriNormals() || mesh->hasNormals();
 
     // SF hiding: skip triangles when any vertex is outside the narrowed
-    // display range.  Uses displayRange.isInRange() directly so that hiding
-    // works regardless of the "NaN in grey" checkbox.
+    // display range AND "show NaN/out of range in grey" is OFF.
+    // When the grey flag is ON, out-of-range faces stay and receive
+    // lightGrey vertex colours, matching CloudCompare behaviour.
     const ccScalarField* displayed_sf =
             show_sf ? vertex_cloud->getCurrentDisplayedScalarField() : nullptr;
     const ccScalarField::Range* mesh_sf_disp = nullptr;
     bool sf_hides_faces = false;
     if (displayed_sf) {
         mesh_sf_disp = &displayed_sf->displayRange();
-        sf_hides_faces = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
-                          mesh_sf_disp->stop() < mesh_sf_disp->max());
+        bool range_narrowed = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
+                               mesh_sf_disp->stop() < mesh_sf_disp->max());
+        sf_hides_faces =
+                range_narrowed && !displayed_sf->areNaNValuesShownInGrey();
     }
 
     const bool may_skip = vis_filter || sf_hides_faces;
@@ -808,8 +814,10 @@ bool Cc2Vtk::TextureMeshToPolyData(
     bool sf_hides_faces = false;
     if (displayed_sf) {
         mesh_sf_disp = &displayed_sf->displayRange();
-        sf_hides_faces = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
-                          mesh_sf_disp->stop() < mesh_sf_disp->max());
+        bool range_narrowed = (mesh_sf_disp->start() > mesh_sf_disp->min() ||
+                               mesh_sf_disp->stop() < mesh_sf_disp->max());
+        sf_hides_faces =
+                range_narrowed && !displayed_sf->areNaNValuesShownInGrey();
     }
 
     const ccMaterialSet* materials = mesh->getMaterialSet();

@@ -96,22 +96,23 @@ public:
     /// Toggle orientation marker on all sub-views atomically.
     void toggleOrientationMarkerOnAllSubViews(bool state);
 
-    // 相机链接管理（供 MainWindow 等外部调用）
+    // Camera link management (for external callers such as MainWindow)
     void removeCameraLink();
     void installCameraLink();
     void setCameraLinkEnabled(bool enabled) { m_cameraLinkEnabled = enabled; }
     bool isCameraLinkEnabled() const { return m_cameraLinkEnabled; }
 
-    // 获取场景 renderer（静态方法，供外部使用）
+    // Get the scene renderer (static; for external use)
     static vtkRenderer* getSceneRenderer(vtkGLView* view);
 
-    // 获取 source view（供外部信号阻塞使用）
+    // Get source view (for external signal blocking)
     vtkGLView* sourceView() const { return m_sourceView; }
 
-    // 检查是否正在关闭（供外部使用）
+    // Whether shutdown is in progress (for external use)
     bool isClosing() const { return m_closing; }
 
-    // 清除 camera reset 待处理标志（供外部在手动设置相机后调用）
+    // Clear pending camera-reset flag (call externally after manual camera
+    // setup)
     void clearNeedsCameraReset() { m_needsCameraReset = false; }
 
 protected:

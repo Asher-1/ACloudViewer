@@ -38,6 +38,150 @@ function Check-CondaEnv {
     }
 }
 
+function Get-DefaultAicoreUseVulkan {
+    return "ON"
+}
+
+function Resolve-AicoreEnvOnOff {
+    param([string]$Value)
+    switch ($Value.ToUpper()) {
+        { $_ -in @("ON", "1", "TRUE", "YES") } { return "ON" }
+        default { return "OFF" }
+    }
+}
+
+function Resolve-AicoreUseVulkan {
+    param([string]$Options)
+    if ($env:AICore_USE_VULKAN) {
+        return (Resolve-AicoreEnvOnOff $env:AICore_USE_VULKAN)
+    }
+    if ($Options -match "without_vulkan") { return "OFF" }
+    if ($Options -match "with_vulkan") { return "ON" }
+    return (Get-DefaultAicoreUseVulkan)
+}
+
+function Set-AicoreUseVulkanOption {
+    param([string]$Options)
+    $fromEnv = if ($env:AICore_USE_VULKAN) { $env:AICore_USE_VULKAN } else { "" }
+    $env:AICore_USE_VULKAN = Resolve-AicoreUseVulkan -Options $Options
+    if ($fromEnv) {
+        Write-Host "AICore_USE_VULKAN is $($env:AICore_USE_VULKAN) (from environment: $fromEnv)"
+    } elseif ($Options -match "without_vulkan") {
+        Write-Host "AICore_USE_VULKAN is OFF (without_vulkan)"
+    } elseif ($Options -match "with_vulkan") {
+        Write-Host "AICore_USE_VULKAN is ON (with_vulkan)"
+    } else {
+        Write-Host "AICore_USE_VULKAN uses platform default: $($env:AICore_USE_VULKAN)"
+    }
+}
+
+function Import-ACloudViewerVulkanBuildEnv {
+    if ($env:AICore_USE_VULKAN -ne "ON") {
+        Write-Host "Skipping Vulkan build env (AICore_USE_VULKAN=$($env:AICore_USE_VULKAN))"
+        return
+    }
+    $envScript = Join-Path $env:LOCALAPPDATA "acloudviewer\acloudviewer-vulkan-env.ps1"
+    if (Test-Path $envScript) {
+        . $envScript
+        Write-Host "Loaded Vulkan build env from $envScript"
+    }
+}
+
+function Resolve-AicoreUseCuda {
+    param([string]$Options)
+    if ($env:AICore_USE_CUDA) {
+        return (Resolve-AicoreEnvOnOff $env:AICore_USE_CUDA)
+    }
+    if ($Options -match "with_aicore_cuda") { return "ON" }
+    return "OFF"
+}
+
+function Set-AicoreUseCudaOption {
+    param([string]$Options)
+    $fromEnv = if ($env:AICore_USE_CUDA) { $env:AICore_USE_CUDA } else { "" }
+    $env:AICore_USE_CUDA = Resolve-AicoreUseCuda -Options $Options
+    if ($fromEnv) {
+        Write-Host "AICore_USE_CUDA is $($env:AICore_USE_CUDA) (from environment: $fromEnv)"
+    } elseif ($Options -match "with_aicore_cuda") {
+        Write-Host "AICore_USE_CUDA is ON (with_aicore_cuda)"
+    } else {
+        Write-Host "AICore_USE_CUDA is OFF (default; pass with_aicore_cuda to enable)"
+    }
+}
+
+function Resolve-AicoreBundleCudaRuntime {
+    param([string]$Options)
+    if ($env:AICore_BUNDLE_CUDA_RUNTIME) {
+        return (Resolve-AicoreEnvOnOff $env:AICore_BUNDLE_CUDA_RUNTIME)
+    }
+    if ($Options -match "bundle_cuda_runtime") { return "ON" }
+    return "OFF"
+}
+
+function Set-AicoreBundleCudaRuntimeOption {
+    param([string]$Options)
+    $fromEnv = if ($env:AICore_BUNDLE_CUDA_RUNTIME) { $env:AICore_BUNDLE_CUDA_RUNTIME } else { "" }
+    $env:AICore_BUNDLE_CUDA_RUNTIME = Resolve-AicoreBundleCudaRuntime -Options $Options
+    if ($env:AICore_BUNDLE_CUDA_RUNTIME -eq "ON" -and $env:AICore_USE_CUDA -ne "ON") {
+        Write-Warning "bundle_cuda_runtime requires AICore_USE_CUDA=ON (add with_aicore_cuda)"
+    }
+    if ($fromEnv) {
+        Write-Host "AICore_BUNDLE_CUDA_RUNTIME is $($env:AICore_BUNDLE_CUDA_RUNTIME) (from environment: $fromEnv)"
+    } elseif ($Options -match "bundle_cuda_runtime") {
+        Write-Host "AICore_BUNDLE_CUDA_RUNTIME is ON (bundle_cuda_runtime)"
+    } else {
+        Write-Host "AICore_BUNDLE_CUDA_RUNTIME is OFF (default)"
+    }
+}
+
+function Resolve-AicoreCpuAllVariants {
+    param([string]$Options)
+    if ($env:AICore_CPU_ALL_VARIANTS) {
+        return (Resolve-AicoreEnvOnOff $env:AICore_CPU_ALL_VARIANTS)
+    }
+    if ($Options -match "no_cpu_all_variants") { return "OFF" }
+    return "ON"
+}
+
+function Set-AicoreCpuAllVariantsOption {
+    param([string]$Options)
+    $fromEnv = if ($env:AICore_CPU_ALL_VARIANTS) { $env:AICore_CPU_ALL_VARIANTS } else { "" }
+    $env:AICore_CPU_ALL_VARIANTS = Resolve-AicoreCpuAllVariants -Options $Options
+    if ($fromEnv) {
+        Write-Host "AICore_CPU_ALL_VARIANTS is $($env:AICore_CPU_ALL_VARIANTS) (from environment: $fromEnv)"
+    } elseif ($Options -match "no_cpu_all_variants") {
+        Write-Host "AICore_CPU_ALL_VARIANTS is OFF (no_cpu_all_variants)"
+    } else {
+        Write-Host "AICore_CPU_ALL_VARIANTS is ON (release/wheel default)"
+    }
+}
+
+function Install-PythonReleaseDeps {
+    $reqFile = Join-Path $CLOUDVIEWER_SOURCE_ROOT "plugins\core\Standard\qPythonRuntime\requirements-release.txt"
+    Write-Host "Installing Python release deps for qPythonRuntime..."
+    python -m pip install -r $reqFile
+    if ($LASTEXITCODE -ne 0) {
+        throw "pip install requirements-release.txt failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Test-PythonReleaseDepsRequired {
+    $pluginPython = if ($env:PLUGIN_PYTHON) { $env:PLUGIN_PYTHON } else { "ON" }
+    if ($pluginPython -eq "OFF") { return $false }
+
+    $buildPythonModule = if ($env:BUILD_PYTHON_MODULE) { $env:BUILD_PYTHON_MODULE } else { "ON" }
+    if ($buildPythonModule -eq "OFF") { return $false }
+
+    # Full env copy skips verify_python_release_packages_available().
+    $copyEnv = if ($env:PLUGIN_PYTHON_COPY_ENV) { $env:PLUGIN_PYTHON_COPY_ENV } else { "OFF" }
+    if ($copyEnv -eq "ON") { return $false }
+
+    $copyMinimal = if ($env:PLUGIN_PYTHON_COPY_MINIMAL_ENV) { $env:PLUGIN_PYTHON_COPY_MINIMAL_ENV } else { "ON" }
+    if ($copyMinimal -eq "OFF") { return $false }
+
+    return $true
+}
+
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
@@ -176,6 +320,18 @@ function Build-GuiApp {
     )
 
     Check-CondaEnv
+
+    $PLUGIN_PYTHON = if ($env:PLUGIN_PYTHON) { $env:PLUGIN_PYTHON } else { "ON" }
+    $BUILD_PYTHON_MODULE = if ($env:BUILD_PYTHON_MODULE) { $env:BUILD_PYTHON_MODULE } else { "ON" }
+    $PLUGIN_PYTHON_COPY_MINIMAL_ENV = if ($env:PLUGIN_PYTHON_COPY_MINIMAL_ENV) { $env:PLUGIN_PYTHON_COPY_MINIMAL_ENV } else { "ON" }
+    $PLUGIN_PYTHON_COPY_ENV = if ($env:PLUGIN_PYTHON_COPY_ENV) { $env:PLUGIN_PYTHON_COPY_ENV } else { "OFF" }
+
+    if (Test-PythonReleaseDepsRequired) {
+        Install-PythonReleaseDeps
+    } else {
+        Write-Host "Skipping Python release deps (PLUGIN_PYTHON/minimal env disabled)"
+    }
+
     Write-Host "Building ACloudViewer gui app"
     $options = $Arguments -join "|"
     Write-Host "Using cmake: $(Get-Command cmake -ErrorAction SilentlyContinue)"
@@ -226,6 +382,12 @@ function Build-GuiApp {
         Write-Host "BUILD_CUDA_MODULE is off"
         "OFF"
     }
+
+    Set-AicoreUseVulkanOption -Options $options
+    Set-AicoreUseCudaOption -Options $options
+    Set-AicoreBundleCudaRuntimeOption -Options $options
+    Set-AicoreCpuAllVariantsOption -Options $options
+    Import-ACloudViewerVulkanBuildEnv
 
     Write-Host ""
     Write-Host "Start building with ACloudViewer GUI..."
@@ -282,6 +444,7 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_QCLOUDLAYERS=ON",
         "-DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON",
         "-DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON",
+        "-DPLUGIN_STANDARD_QBROOM=ON",
         "-DPLUGIN_STANDARD_QANIMATION=ON",
         "-DQANIMATION_WITH_FFMPEG_SUPPORT=ON",
         "-DPLUGIN_STANDARD_QCANUPO=ON",
@@ -302,6 +465,15 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_QVOXFALL=ON",
         "-DPLUGIN_STANDARD_G3POINT=ON",
         "-DPLUGIN_STANDARD_QSIBR=ON",
+        "-DAICore_ENABLED=ON",
+        "-DAICore_BUILD_TESTS=ON",
+        "-DAICore_USE_VULKAN=$($env:AICore_USE_VULKAN)",
+        "-DAICore_USE_CUDA=$($env:AICore_USE_CUDA)",
+        "-DAICore_BUNDLE_CUDA_RUNTIME=$($env:AICore_BUNDLE_CUDA_RUNTIME)",
+        "-DAICore_CPU_ALL_VARIANTS=$($env:AICore_CPU_ALL_VARIANTS)",
+        "-DPLUGIN_STANDARD_QDA3=ON",
+        "-DPLUGIN_STANDARD_QFREESPLATTER=ON",
+        "-DPLUGIN_STANDARD_QLIGHTGLUE=ON",
         "-DPLUGIN_PYTHON=ON",
         "-DBUILD_PYTHON_MODULE=ON",
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
@@ -325,6 +497,12 @@ function Build-GuiApp {
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
+    }
+
+    & cmake --build . --target aicore-contract-tests --config Release --parallel $env:NPROC
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "AICore contract tests failed with exit code $LASTEXITCODE"
     }
 
     & cmake --install . --config Release --verbose
@@ -426,6 +604,12 @@ function Build-PipPackage {
         "OFF"
     }
 
+    Set-AicoreUseVulkanOption -Options ($options -join "|")
+    Set-AicoreUseCudaOption -Options ($options -join "|")
+    Set-AicoreBundleCudaRuntimeOption -Options ($options -join "|")
+    Set-AicoreCpuAllVariantsOption -Options ($options -join "|")
+    Import-ACloudViewerVulkanBuildEnv
+
     Write-Host "`nBuilding with CPU only..."
     
     New-Item -ItemType Directory -Force -Path "build"
@@ -448,6 +632,12 @@ function Build-PipPackage {
         "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
         "-DUSE_VTK_BACKEND=OFF",
+        "-DAICore_ENABLED=ON",
+        "-DAICore_BUILD_TESTS=ON",
+        "-DAICore_USE_VULKAN=$($env:AICore_USE_VULKAN)",
+        "-DAICore_USE_CUDA=$($env:AICore_USE_CUDA)",
+        "-DAICore_BUNDLE_CUDA_RUNTIME=$($env:AICore_BUNDLE_CUDA_RUNTIME)",
+        "-DAICore_CPU_ALL_VARIANTS=$($env:AICore_CPU_ALL_VARIANTS)",
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",
@@ -561,6 +751,8 @@ function Test-Wheel {
 
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
+    python -W default -c "import pathlib, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); modules=list(root.glob('*ggml-vulkan*')); assert not enabled or modules, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', modules)"
 
     Write-Host ""
     $HAVE_PYTORCH_OPS = $false

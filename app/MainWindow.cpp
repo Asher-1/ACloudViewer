@@ -24,6 +24,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QShortcut>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QTabBar>
 #include <QThread>
@@ -2300,6 +2301,108 @@ void MainWindow::initPlugins() {
     updateAllToolbarIconSizes();
 }
 
+namespace {
+
+void collectImageViewerState(const ccHObject* node,
+                             bool& hasDisplayedImage,
+                             bool& hasDisplayedNonImage) {
+    if (!node) return;
+    for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
+        const ccHObject* child = node->getChild(i);
+        if (!child || !child->isEnabled()) continue;
+        if (child->isA(CV_TYPES::IMAGE)) {
+            if (child->isDisplayed()) hasDisplayedImage = true;
+        } else if (child->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) {
+            collectImageViewerState(child, hasDisplayedImage,
+                                    hasDisplayedNonImage);
+        } else if (child->isDisplayed()) {
+            hasDisplayedNonImage = true;
+        }
+    }
+}
+
+bool shouldUse2DImageViewer(const ccHObject* obj) {
+    if (!obj) return false;
+    if (obj->isA(CV_TYPES::IMAGE)) return true;
+    if (!obj->isKindOf(CV_TYPES::HIERARCHY_OBJECT)) return false;
+
+    bool hasDisplayedImage = false;
+    bool hasDisplayedNonImage = false;
+    collectImageViewerState(obj, hasDisplayedImage, hasDisplayedNonImage);
+    return hasDisplayedImage && !hasDisplayedNonImage;
+}
+
+void fitActiveViewForImageEntity(ccHObject* obj, ecvGenericGLDisplay* view) {
+    if (!obj || !view || !shouldUse2DImageViewer(obj)) {
+        return;
+    }
+
+    auto* glView = dynamic_cast<vtkGLView*>(view);
+    if (!glView) {
+        return;
+    }
+
+    glView->toggle2Dviewer(true);
+    if (auto imgVis = glView->getImageVis()) {
+        imgVis->setImageInteractionMode(true);
+        // ImageVis owns 2D zoom-fit; do not call
+        // updateConstellationCenterAndZoom (3D camera reset distorts an already
+        // fitted image view).
+        imgVis->fitImagesToWindow();
+    }
+}
+
+QWidget* outerFrameForViewWidget(QWidget* viewWidget) {
+    if (!viewWidget) return nullptr;
+    QWidget* frame = viewWidget;
+    while (frame && frame->objectName() != "CentralWidgetFrame")
+        frame = frame->parentWidget();
+    if (!frame) return viewWidget->window();
+    QWidget* outer = frame->parentWidget();
+    return outer ? outer : frame;
+}
+
+QAction* findView3DToggleAction(QWidget* viewWidget) {
+    QWidget* outer = outerFrameForViewWidget(viewWidget);
+    if (!outer) return nullptr;
+    auto* tb = outer->findChild<QWidget*>("ViewSelectionToolBar");
+    if (!tb) return nullptr;
+    for (auto* btn : tb->findChildren<QToolButton*>()) {
+        if (auto* act = btn->defaultAction()) {
+            if (act->objectName() == QLatin1String("view3DToggleAction"))
+                return act;
+        }
+    }
+    return nullptr;
+}
+
+void syncView3DToggleButton(QWidget* viewWidget, bool threeDModeActive) {
+    if (auto* act = findView3DToggleAction(viewWidget)) {
+        const QSignalBlocker blocker(act);
+        act->setChecked(threeDModeActive);
+    }
+}
+
+void applyViewInteractionModeForEntity(vtkGLView* glView, bool use2D) {
+    if (!glView) return;
+
+    // ImageVis installs vtkPVImageInteractorStyle while viewing images; restore
+    // before switching VtkVis mode so 3D trackball is not left stuck on 2D pan.
+    if (auto imgVis = glView->getImageVis()) {
+        imgVis->setImageInteractionMode(use2D);
+    }
+
+    glView->toggle2Dviewer(use2D);
+
+    if (auto* vis = glView->getVisualizer3D()) {
+        vis->ensureInteractorStyleMatchesMode();
+    }
+
+    syncView3DToggleButton(glView->asWidget(), !use2D);
+}
+
+}  // namespace
+
 void MainWindow::initDBRoot() {
     // db-tree
     {
@@ -2319,6 +2422,33 @@ void MainWindow::initDBRoot() {
             auto* ownerView = vm.findViewForEntity(first);
             if (ownerView && ownerView != vm.getActiveView()) {
                 vm.setActiveView(ownerView);
+            }
+
+            const bool imageSelected = shouldUse2DImageViewer(first);
+            auto* glView = dynamic_cast<vtkGLView*>(vm.getActiveView());
+            if (glView) {
+                bool was2D = false;
+                if (auto* vis = glView->getVisualizer3D()) {
+                    was2D = (vis->getInteractionMode() ==
+                             Visualization::VtkVis::INTERACTION_MODE_2D);
+                }
+                if (!was2D) {
+                    if (auto* act = findView3DToggleAction(glView->asWidget()))
+                        was2D = !act->isChecked();
+                }
+
+                applyViewInteractionModeForEntity(glView, imageSelected);
+
+                if (imageSelected) {
+                    fitActiveViewForImageEntity(first, glView);
+                } else if (was2D) {
+                    const ccBBox bbox = first->getDisplayBB_recursive(false);
+                    if (bbox.isValid()) {
+                        glView->updateConstellationCenterAndZoom(&bbox);
+                    }
+                }
+                // ccDBRoot emits selectionChanged before its single
+                // refreshAll().
             }
         });
         connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() {
@@ -3382,6 +3512,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
         auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
                                       tr("3D View"), viewToolBar);
+        view3DAct->setObjectName("view3DToggleAction");
         view3DAct->setCheckable(true);
         view3DAct->setChecked(true);
         connect(view3DAct, &QAction::toggled, this,
@@ -4372,6 +4503,13 @@ void MainWindow::addToDB(const QStringList& filenames,
                              2000);
 }
 
+static bool is2DOnlyEntity(const ccHObject* obj) {
+    return obj->isKindOf(CV_TYPES::LABEL_2D) ||
+           obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
+           obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT) ||
+           obj->isA(CV_TYPES::IMAGE);
+}
+
 void MainWindow::addToDB(ccHObject* obj,
                          bool updateZoom /*=false*/,
                          bool autoExpandDBTree /*=true*/,
@@ -4450,11 +4588,14 @@ void MainWindow::addToDB(ccHObject* obj,
             updateZoom = true;
         }
 
-        ccHObject::Container childs;
-        obj->filterChildren(childs, true, CV_TYPES::IMAGE);
-        if (!childs.empty()) {
+        if (obj->isA(CV_TYPES::IMAGE)) {
             updateZoom = false;
-            autoRedraw = true;
+        } else {
+            ccHObject::Container imgs;
+            obj->filterChildren(imgs, true, CV_TYPES::IMAGE);
+            if (!imgs.empty()) {
+                updateZoom = false;
+            }
         }
 
         m_ccRoot->addElement(obj, autoExpandDBTree);
@@ -4501,31 +4642,26 @@ void MainWindow::addToDB(ccHObject* obj,
         if (updateZoom) {
             v->updateConstellationCenterAndZoom();
         } else {
-            bool skip = obj->isKindOf(CV_TYPES::LABEL_2D) ||
-                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_LABEL) ||
-                        obj->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT);
+            bool skip = is2DOnlyEntity(obj);
             // Point-list picking container (may be empty on first addToDB)
             if (!skip &&
                 obj->getName() == QLatin1String("Picked points list")) {
                 skip = true;
             }
             if (!skip) {
-                ccHObject::Container labels2D;
-                obj->filterChildren(labels2D, true, CV_TYPES::LABEL_2D);
-                if (!labels2D.empty()) {
-                    // Label-only groups must not move the rotation center.
-                    ccHObject::Container allChildren;
-                    obj->filterChildren(allChildren, true);
-                    bool onlyLabels = !allChildren.empty();
-                    for (ccHObject* child : allChildren) {
-                        if (!child->isKindOf(CV_TYPES::LABEL_2D)) {
-                            onlyLabels = false;
-                            break;
-                        }
+                ccHObject::Container allChildren;
+                obj->filterChildren(allChildren, true);
+                bool has2D = false;
+                bool only2D = !allChildren.empty();
+                for (ccHObject* child : allChildren) {
+                    if (is2DOnlyEntity(child)) {
+                        has2D = true;
+                    } else {
+                        only2D = false;
                     }
-                    if (onlyLabels || !obj->getBB_recursive().isValid()) {
-                        skip = true;
-                    }
+                }
+                if (has2D && (only2D || !obj->getBB_recursive().isValid())) {
+                    skip = true;
                 }
             }
             if (!skip) {
@@ -4538,6 +4674,19 @@ void MainWindow::addToDB(ccHObject* obj,
     // QVTKOpenGLNativeWidget surface.  Force a full redraw after Qt processes
     // pending layout/paint events so the framebuffer is flushed to screen.
     QTimer::singleShot(0, this, [this]() { refreshAll(); });
+
+    // ccImage renders as a pixel-space vtkImageSlice; zoom-fit only runs in 2D
+    // image mode (ImageVis::updateImageSliceTransform). Defer until actors
+    // exist.
+    if (shouldUse2DImageViewer(obj)) {
+        ccHObject* objPtr = obj;
+        ecvGenericGLDisplay* targetView =
+                ecvViewManager::instance().getActiveView();
+        QTimer::singleShot(50, this, [this, objPtr, targetView]() {
+            fitActiveViewForImageEntity(objPtr, targetView);
+            refreshAll();
+        });
+    }
 
 #ifdef USE_VTK_BACKEND
     // ParaView-style: When new entities are added, refresh Data Producer combo
@@ -5998,7 +6147,7 @@ void MainWindow::zoomOn(ccHObject* object) {
 void MainWindow::setView(CC_VIEW_ORIENTATION view) {
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
 #ifdef USE_VTK_BACKEND
-        // 检查是否在 Comparative View 中
+        // Check whether the active view is inside a Comparative View.
         vtkComparativeViewWidget* targetComp = nullptr;
         if (auto* glView = dynamic_cast<vtkGLView*>(v)) {
             for (auto* comp : findChildren<vtkComparativeViewWidget*>()) {
@@ -6010,8 +6159,8 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
         }
 
         if (targetComp) {
-            // Comparative 模式：ParaView 标准流程 = SetDirection + ResetCamera
-            // + CameraLink传播
+            // Comparative mode: ParaView flow = SetDirection + ResetCamera
+            // + camera-link propagation.
             targetComp->removeCameraLink();
 
             {
@@ -6019,12 +6168,12 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
 
                 auto subViews = targetComp->subViews();
                 if (!subViews.isEmpty()) {
-                    // Step 1: 在第一个视窗上设方向
+                    // Step 1: set orientation on the first sub-view.
                     auto* first = subViews.first();
                     first->setView(view);
 
-                    // Step 2: 关键！调用 ResetCamera
-                    // 重新拟合数据（ParaView黄金法则）
+                    // Step 2: ResetCamera to refit bounds (ParaView
+                    // convention).
                     auto* firstRen =
                             vtkComparativeViewWidget::getSceneRenderer(first);
                     if (firstRen) {
@@ -6032,7 +6181,7 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
                         firstRen->ResetCameraClippingRange();
                     }
 
-                    // Step 3: 将正确拟合后的相机同步到其他子视窗
+                    // Step 3: copy the refitted camera to the other sub-views.
                     if (firstRen && firstRen->GetActiveCamera()) {
                         auto* srcCam = firstRen->GetActiveCamera();
                         for (int i = 1; i < subViews.size(); ++i) {
@@ -6071,10 +6220,10 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
             targetComp->installCameraLink();
             targetComp->forceRenderAllSubViews();
 
-            // 【关键修复】防止 performSubViewRefresh() 覆盖相机
+            // Prevent performSubViewRefresh() from overwriting the camera.
             targetComp->clearNeedsCameraReset();
         } else {
-            // 普通（非Comparative）模式：原始逻辑
+            // Non-comparative view: original single-view path.
             v->setView(view);
         }
 #else
@@ -6987,12 +7136,16 @@ void MainWindow::removeFromDB(ccHObject* obj, bool autoDelete) {
 
     obj->removeFromRenderScreen(true);
 
+    ecvRepresentationManager::instance().removeRepresentationsForEntity(obj);
+
     // remove dependency to avoid deleting the object when removing it from DB
     // tree
     if (!autoDelete && obj->getParent())
         obj->getParent()->removeDependencyWith(obj);
 
     if (m_ccRoot) m_ccRoot->removeElement(obj);
+
+    ecvViewManager::instance().refreshAll(true);
 }
 
 void MainWindow::setSelectedInDB(ccHObject* obj, bool selected) {
@@ -7115,7 +7268,7 @@ void MainWindow::setGlobalZoom() {
             activeView->updateConstellationCenterAndZoom();
         }
 
-        // 对普通视图执行 zoomGlobal（排除Comparative子视窗）
+        // zoomGlobal on standalone views only (skip Comparative sub-views).
         for (auto* v : ecvViewManager::instance().getAllViews()) {
             auto* glView = dynamic_cast<vtkGLView*>(v);
             if (glView && !comparativeSubViews.contains(glView)) {
@@ -13556,15 +13709,8 @@ void MainWindow::activateSegmentationMode() {
         deactivateSegmentationMode(false);
     } else {
         updateOverlayDialogsPlacement();
-        auto* activeViewForSeg = getActiveGLView();
-        bool perspectiveEnabled =
-                activeViewForSeg ? activeViewForSeg->perspectiveView() : false;
-        if (!perspectiveEnabled) {
-            doActionPerspectiveProjection();
-            m_lastViewMode = VIEWMODE::ORTHOGONAL;
-        } else {
-            m_lastViewMode = VIEWMODE::PERSPECTIVE;
-        }
+        // Keep the current camera (CloudCompare does not zoom on segment
+        // start).
     }
 }
 

@@ -1,0 +1,9 @@
+checkpoint: DA3NESTED-GIANT-LARGE-metric
+embed_dim: 1024
+depth: 24
+num_heads: 16
+status: loaded ok
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12015 MiB):
+  Device 0: NVIDIA GeForce RTX 3060, compute capability 8.6, VMM: yes, VRAM: 12015 MiB
+[da3] da::Backend using device: CUDA0
+[da3] offload_weights: 406 weights -> CUDA0 (406 host-read tensors kept on CPU)

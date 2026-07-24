@@ -25,6 +25,7 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+#include <ecvViewContext.h>
 #include <ecvViewManager.h>
 
 #include <QMouseEvent>
@@ -115,6 +116,7 @@
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
+#include <vtkImageSlice.h>
 #include <vtkInteractorObserver.h>
 #include <vtkJPEGReader.h>
 #include <vtkLineSource.h>
@@ -478,6 +480,7 @@ void VtkVis::setInteractionMode(int mode) {
     if (m_interactionMode == mode) return;
     if (mode != INTERACTION_MODE_3D && mode != INTERACTION_MODE_2D) return;
     m_interactionMode = mode;
+    GeometryBoundsDirty = true;
 
     vtkRenderWindowInteractor* iren = getRenderWindowInteractor();
     vtkRenderer* ren = getCurrentRenderer();
@@ -488,18 +491,62 @@ void VtkVis::setInteractionMode(int mode) {
                 iren->SetInteractorStyle(ThreeDInteractorStyle);
             }
             if (ren && ren->GetActiveCamera()) {
-                ren->GetActiveCamera()->SetParallelProjection(
-                        m_savedParallelProjection);
+                auto* cam = ren->GetActiveCamera();
+                if (m_saved3DCameraState.valid) {
+                    cam->SetPosition(m_saved3DCameraState.position);
+                    cam->SetFocalPoint(m_saved3DCameraState.focalPoint);
+                    cam->SetViewUp(m_saved3DCameraState.viewUp);
+                    cam->SetParallelScale(m_saved3DCameraState.parallelScale);
+                    cam->SetViewAngle(m_saved3DCameraState.viewAngle);
+                    cam->SetParallelProjection(m_savedParallelProjection);
+                } else {
+                    cam->SetParallelProjection(m_savedParallelProjection);
+                }
             }
             break;
         case INTERACTION_MODE_2D:
             if (ren && ren->GetActiveCamera()) {
-                m_savedParallelProjection =
-                        ren->GetActiveCamera()->GetParallelProjection();
-                ren->GetActiveCamera()->SetParallelProjection(1);
+                auto* cam = ren->GetActiveCamera();
+                m_savedParallelProjection = cam->GetParallelProjection();
+                cam->GetPosition(m_saved3DCameraState.position);
+                cam->GetFocalPoint(m_saved3DCameraState.focalPoint);
+                cam->GetViewUp(m_saved3DCameraState.viewUp);
+                m_saved3DCameraState.parallelScale = cam->GetParallelScale();
+                m_saved3DCameraState.viewAngle = cam->GetViewAngle();
+                m_saved3DCameraState.valid = true;
+                cam->SetParallelProjection(1);
             }
             if (iren && TwoDInteractorStyle) {
                 iren->SetInteractorStyle(TwoDInteractorStyle);
+            }
+            break;
+        default:
+            break;
+    }
+
+    if (m_interactionModeChangedCallback) {
+        m_interactionModeChangedCallback(mode);
+    }
+    this->resetCameraClippingRange(0);
+    UpdateScreen();
+}
+
+//----------------------------------------------------------------------------
+void VtkVis::ensureInteractorStyleMatchesMode() {
+    vtkRenderWindowInteractor* iren = getRenderWindowInteractor();
+    if (!iren) return;
+
+    switch (m_interactionMode) {
+        case INTERACTION_MODE_3D:
+            if (ThreeDInteractorStyle) {
+                iren->SetInteractorStyle(ThreeDInteractorStyle);
+                ThreeDInteractorStyle->Initialize();
+            }
+            break;
+        case INTERACTION_MODE_2D:
+            if (TwoDInteractorStyle) {
+                iren->SetInteractorStyle(TwoDInteractorStyle);
+                TwoDInteractorStyle->Initialize();
             }
             break;
         default:
@@ -693,6 +740,29 @@ void VtkVis::synchronizeGeometryBounds(int viewport) {
     }
     this->m_centerAxes->SetUseBounds(1);
 
+    // ParaView vtkImageSliceRepresentation: register image-plane bounds even
+    // when UseBounds(false), so zero-thickness planes participate in clipping
+    // during 3D rotation (ComputeVisiblePropBounds alone would miss them).
+    if (auto* ren = this->getCurrentRenderer(viewport)) {
+        auto* props = ren->GetViewProps();
+        if (props) {
+            props->InitTraversal();
+            while (auto* prop = props->GetNextProp()) {
+                auto* slice = vtkImageSlice::SafeDownCast(prop);
+                if (!slice || !slice->GetVisibility()) continue;
+                double image_bounds[6];
+                slice->GetBounds(image_bounds);
+                if (!vtkMath::AreBoundsInitialized(image_bounds)) continue;
+                if (image_bounds[5] - image_bounds[4] < 1e-6) {
+                    constexpr double z_pad = 0.5;
+                    image_bounds[4] -= z_pad;
+                    image_bounds[5] += z_pad;
+                }
+                this->GeometryBounds.AddBounds(image_bounds);
+            }
+        }
+    }
+
     // sync up bounds across all processes when doing distributed rendering.
     if (!this->GeometryBounds.IsValid()) {
         this->GeometryBounds.SetBounds(-1, 1, -1, 1, -1, 1);
@@ -791,6 +861,30 @@ void VtkVis::resetCamera(const ccBBox* bbox) {
     resetCamera(bounds);
 }
 
+namespace {
+
+void enforceViewMinNearClip(vtkRenderer* ren) {
+    if (!ren) {
+        return;
+    }
+    const double minNear =
+            ecvViewManager::instance().resolveViewContext().minVtkNearClip;
+    if (minNear <= 0.0) {
+        return;
+    }
+    vtkCamera* cam = ren->GetActiveCamera();
+    if (!cam) {
+        return;
+    }
+    double clip[2] = {0.0, 0.0};
+    cam->GetClippingRange(clip);
+    if (clip[0] < minNear) {
+        cam->SetClippingRange(minNear, std::max(clip[1], minNear * 10.0));
+    }
+}
+
+}  // namespace
+
 void VtkVis::resetCameraClippingRange(int viewport) {
     // Full recompute: synchronize geometry bounds from all visible props,
     // then reset clipping.  Called when scene content changes (add/remove
@@ -803,6 +897,7 @@ void VtkVis::resetCameraClippingRange(int viewport) {
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
         ren->ResetCameraClippingRange(bounds);
+        enforceViewMinNearClip(ren);
     }
 }
 
@@ -822,6 +917,7 @@ void VtkVis::resetCameraClippingCached(int viewport) {
         double bounds[6];
         this->GeometryBounds.GetBounds(bounds);
         ren->ResetCameraClippingRange(bounds);
+        enforceViewMinNearClip(ren);
     }
 }
 
@@ -2540,11 +2636,30 @@ bool VtkVis::addCube(double xMin,
         return false;
     }
 
-    auto cube = vtkSmartPointer<vtkCubeSource>::New();
-    cube->SetBounds(xMin, xMax, yMin, yMax, zMin, zMax);
-    cube->Update();
-    vtkSmartPointer<vtkPolyData> data = cube->GetOutput();
-    if (!data) return false;
+    // Draw only the 12 bbox edges. vtkCubeSource wireframe also triangulates
+    // each face and shows diagonal grid lines when the view rotates.
+    auto pts = vtkSmartPointer<vtkPoints>::New();
+    auto lines = vtkSmartPointer<vtkCellArray>::New();
+    const double corners[8][3] = {
+            {xMin, yMin, zMin}, {xMax, yMin, zMin}, {xMax, yMax, zMin},
+            {xMin, yMax, zMin}, {xMin, yMin, zMax}, {xMax, yMin, zMax},
+            {xMax, yMax, zMax}, {xMin, yMax, zMax},
+    };
+    for (const auto& c : corners) {
+        pts->InsertNextPoint(c[0], c[1], c[2]);
+    }
+    static constexpr int kEdges[12][2] = {
+            {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
+            {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
+    };
+    for (const auto& edge : kEdges) {
+        lines->InsertNextCell(2);
+        lines->InsertCellPoint(edge[0]);
+        lines->InsertCellPoint(edge[1]);
+    }
+    auto data = vtkSmartPointer<vtkPolyData>::New();
+    data->SetPoints(pts);
+    data->SetLines(lines);
 
     vtkSmartPointer<vtkPVLODActor> actor;
     VtkRendering::CreateActorFromVTKDataSet(data, actor, false);
@@ -4531,7 +4646,7 @@ void VtkVis::registerAreaPicking() {
     cb->SetClientData(this);
     cb->SetCallback(&VtkVis::OnAreaPicking);
     if (interactor_) interactor_->AddObserver(vtkCommand::EndPickEvent, cb);
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[global areaPicking] press A to start or ending picking!");
     m_cloud_mutex.unlock();
 }
@@ -4832,19 +4947,22 @@ void VtkVis::applyLightPropertiesToActor(vtkActor* actor,
 
 void VtkVis::setObjectLightIntensity(const std::string& viewID,
                                      double intensity,
-                                     int viewport) {
+                                     int viewport,
+                                     bool triggerRender) {
+    Q_UNUSED(viewport);
     intensity = std::max(0.0, std::min(1.0, intensity));
     m_objectLightIntensity[viewID] = intensity;
 
-    // Apply to the actor immediately if it exists
     vtkActor* actor = getActorById(viewID);
     if (actor) {
         applyLightPropertiesToActor(actor, viewID);
     }
 
-    UpdateScreen();
-    if (auto rw = getRenderWindow()) {
-        rw->Render();
+    if (triggerRender) {
+        UpdateScreen();
+        if (auto rw = getRenderWindow()) {
+            rw->Render();
+        }
     }
 }
 

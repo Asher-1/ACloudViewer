@@ -17,6 +17,7 @@
 #include <QJsonObject>
 #include <QMouseEvent>
 #include <deque>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -913,12 +914,33 @@ public:
      */
     void setInteractionMode(int mode);
 
+    /** Re-apply the interactor style for the current mode (no early return).
+     *  Use after ImageVis or other code replaces the VTK interactor style.
+     */
+    void ensureInteractorStyleMatchesMode();
+
     /** @return Current interaction mode (INTERACTION_MODE_3D or _2D). */
     int getInteractionMode() const { return m_interactionMode; }
+
+    using InteractionModeChangedFn = std::function<void(int mode)>;
+    /** Notify ImageVis etc. when interaction mode changes (ParaView-style). */
+    void setInteractionModeChangedCallback(InteractionModeChangedFn fn) {
+        m_interactionModeChangedCallback = std::move(fn);
+    }
 
 protected:
     int m_interactionMode = INTERACTION_MODE_3D;
     int m_savedParallelProjection = 0;
+
+    struct SavedCameraState {
+        double position[3] = {0, 0, 1};
+        double focalPoint[3] = {0, 0, 0};
+        double viewUp[3] = {0, 1, 0};
+        double parallelScale = 1.0;
+        double viewAngle = 30.0;
+        bool valid = false;
+    };
+    SavedCameraState m_saved3DCameraState;
 
     /** \brief Internal list with actor pointers and name IDs for widgets. */
     WidgetActorMapPtr m_widget_map;
@@ -928,6 +950,7 @@ protected:
 
     vtkBoundingBox GeometryBounds;
     bool GeometryBoundsDirty = true;
+    InteractionModeChangedFn m_interactionModeChangedCallback;
     vtkSmartPointer<VTKExtensions::vtkPVCenterAxesActor> m_centerAxes;
     vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
             TwoDInteractorStyle;
@@ -1063,7 +1086,8 @@ public:
      */
     void setObjectLightIntensity(const std::string& viewID,
                                  double intensity,
-                                 int viewport = 0);
+                                 int viewport = 0,
+                                 bool triggerRender = true);
 
     /**
      * @brief Get per-object light intensity

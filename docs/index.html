@@ -19,6 +19,7 @@
             <ul class="nav-menu">
                 <li><a href="#home" data-i18n="nav.home">Home</a></li>
                 <li><a href="#features" data-i18n="nav.features">Features</a></li>
+                <li><a href="#aicore" data-i18n="nav.aicore">AICore AI</a></li>
                 <li><a href="#download" data-i18n="nav.download">Download</a></li>
                 <li><a href="#quickstart" data-i18n="nav.quickstart">Quick Start</a></li>
                 <li><a href="#gallery" data-i18n="nav.gallery">Gallery</a></li>
@@ -169,10 +170,91 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <h3 data-i18n="features.aicore.title">AICore AI Plugins</h3>
+                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), feature matching (LightGlue), and 3D Gaussian splats (FreeSplatter) — no Python runtime</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
                         <i class="fas fa-plug"></i>
                     </div>
                     <h3 data-i18n="features.plugins.title">Plugin System</h3>
                     <p data-i18n="features.plugins.desc">Rich plugin ecosystem, supporting custom feature extensions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AICore AI Plugins Section -->
+    <section id="aicore" class="aicore-showcase">
+        <div class="container">
+            <h2 class="section-title" data-i18n="aicore.title">AICore AI Plugins</h2>
+            <p class="section-subtitle" data-i18n="aicore.subtitle">Depth estimation, feature matching, and 3D Gaussian splats — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
+
+            <div class="aicore-badges">
+                <span class="aicore-badge"><i class="fas fa-bolt"></i> <span data-i18n="aicore.badge.gpu">CUDA / Vulkan / Metal</span></span>
+                <span class="aicore-badge"><i class="fas fa-box"></i> <span data-i18n="aicore.badge.gguf">Compact GGUF models</span></span>
+                <span class="aicore-badge"><i class="fas fa-code"></i> <span data-i18n="aicore.badge.native">No Python runtime</span></span>
+            </div>
+
+            <div class="aicore-plugins">
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="aicore.da3.title">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3 data-i18n="aicore.da3.title">Depth Anything V3 (qDA3)</h3>
+                        <p data-i18n="aicore.da3.desc">Turn a single photo into a depth map and 3D point cloud. Multi-view depth, camera pose, COLMAP export, and automatic reconstruction integration — all from quantized GGUF weights (~142 MB Base).</p>
+                        <ul class="aicore-plugin-points">
+                            <li data-i18n="aicore.da3.point1">Single-image depth + optional 3D unprojection in the DB tree</li>
+                            <li data-i18n="aicore.da3.point2">Plugs into COLMAP sparse/dense reconstruction pipelines</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="aicore.lightglue.title">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3 data-i18n="aicore.lightglue.title">LightGlue Feature Matching (qLightGlue)</h3>
+                        <p data-i18n="aicore.lightglue.desc">Match corresponding features between two images in under a second. OpenCV RootSIFT + GGUF LightGlue matcher on GPU — hundreds of mutual matches with live green-line visualization.</p>
+                        <ul class="aicore-plugin-points">
+                            <li data-i18n="aicore.lightglue.point1">SIFT LightGlue path: native C++, no ONNX or Python at runtime</li>
+                            <li data-i18n="aicore.lightglue.point2">Export matches as JSON; results added to the DB tree automatically</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="aicore.freesplatter.title">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3 data-i18n="aicore.freesplatter.title">FreeSplatter 3D Gaussian Splats (qFreeSplatter)</h3>
+                        <p data-i18n="aicore.freesplatter.desc">Reconstruct a 3D Gaussian scene from as few as two uncalibrated photos. Optional camera pose estimation, SIBR-compatible PLY export, and one-click qSIBR preview.</p>
+                        <ul class="aicore-plugin-points">
+                            <li data-i18n="aicore.freesplatter.point1">Sparse-view 3DGS — no COLMAP preprocessing required</li>
+                            <li data-i18n="aicore.freesplatter.point2">Full export with spherical harmonics, scale, and normals</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+
+            <div class="aicore-cta">
+                <p>
+                    <span data-i18n="aicore.build_hint_prefix">Enable with</span>
+                    <code>-DAICore_ENABLED=ON</code>
+                    <span data-i18n="aicore.build_hint_suffix">plus individual PLUGIN_STANDARD_Q* flags. See the build guide for Vulkan/Metal/CUDA options.</span>
+                </p>
+                <div class="aicore-cta-links">
+                    <a href="https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/README.md" class="btn btn-secondary" target="_blank">
+                        <i class="fas fa-book"></i> <span data-i18n="aicore.guide_link">Plugin user guides</span>
+                    </a>
+                    <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-hammer"></i> <span data-i18n="aicore.build_link">Build from source</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -3126,11 +3208,11 @@ mesh.compute_vertex_normals()
 cv3d.visualization.draw(mesh, raw_mode=True)</code>
                                 <button class="copy-btn" data-clipboard='import cloudViewer as cv3d
 
-# 创建球体网格
+# Create sphere mesh
 mesh = cv3d.geometry.ccMesh.create_sphere()
 mesh.compute_vertex_normals()
 
-# 可视化
+# Visualize
 cv3d.visualization.draw(mesh, raw_mode=True)'>
                                     <i class="fas fa-copy"></i>
                                 </button>
@@ -3235,6 +3317,7 @@ make -j$(nproc)">
             <div class="gallery-tabs">
                 <button class="gallery-tab active" data-gallery="ui" data-i18n="gallery.ui">User Interface</button>
                 <button class="gallery-tab" data-gallery="reconstruction" data-i18n="gallery.reconstruction">3D Reconstruction</button>
+                <button class="gallery-tab" data-gallery="aicore" data-i18n="gallery.aicore">AICore AI</button>
                 <button class="gallery-tab" data-gallery="annotation" data-i18n="gallery.annotation">Semantic Annotation</button>
                 <button class="gallery-tab" data-gallery="tools" data-i18n="gallery.tools">Selection & Measurement</button>
                 <button class="gallery-tab" data-gallery="ml" data-i18n="gallery.ml">Machine Learning</button>
@@ -3297,6 +3380,33 @@ make -j$(nproc)">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.icp.title">ICP Point Cloud Registration</h3>
                             <p data-i18n="gallery.icp.desc">High-performance iterative closest point algorithm, supporting multi-scale registration</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AICore AI Gallery -->
+            <div class="gallery-content" id="gallery-aicore">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="gallery.qda3.title">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.qda3.title">Depth Anything V3</h3>
+                            <p data-i18n="gallery.qda3.desc">Monocular depth maps and 3D point clouds from a single photo — GGUF models, GPU-accelerated, DB-tree integration</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="gallery.qlightglue.title">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.qlightglue.title">LightGlue Matching</h3>
+                            <p data-i18n="gallery.qlightglue.desc">Sub-second sparse feature matching with SIFT + GGUF LightGlue — live match visualization in the viewport</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="gallery.qfreesplatter.title">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.qfreesplatter.title">FreeSplatter 3DGS</h3>
+                            <p data-i18n="gallery.qfreesplatter.desc">Two photos to a 3D Gaussian scene — optional pose estimation, SIBR PLY export, one-click preview</p>
                         </div>
                     </div>
                 </div>
@@ -3483,16 +3593,15 @@ make -j$(nproc)">
             
             <!-- Donation Section -->
             <div id="donation" class="footer-donation" style="text-align: center; margin: 40px 0 20px 0; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); scroll-margin-top: 80px;">
-                <h4 style="color: #fff; margin-bottom: 15px; font-size: 18px;">💝 支持项目开发 | Support Development</h4>
+                <h4 style="color: #fff; margin-bottom: 15px; font-size: 18px;">💝 Support Development</h4>
                 <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px; font-size: 14px;">
-                    如果您觉得 ACloudViewer 有用，请考虑支持我们的开发工作<br>
                     If you find ACloudViewer useful, please consider supporting our development
                 </p>
                 <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
                     <div style="display: inline-block; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                         <img src="images/donation.png" alt="WeChat Pay QR Code" style="width: 180px; height: auto; display: block;">
                         <p style="color: #333; margin-top: 10px; font-size: 12px; font-weight: 500;">
-                            微信支付 | WeChat Pay
+                            WeChat Pay
                         </p>
                     </div>
                     <div style="display: inline-block; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
@@ -3500,12 +3609,12 @@ make -j$(nproc)">
                             <i class="fab fa-paypal"></i> PayPal Donate
                         </a>
                         <p style="color: #333; margin-top: 10px; font-size: 12px; font-weight: 500;">
-                            PayPal 国际支付
+                            PayPal
                         </p>
                     </div>
                 </div>
                 <p style="color: rgba(255,255,255,0.6); margin-top: 15px; font-size: 13px;">
-                    <a href="donation.html" style="color: #4a9eff; text-decoration: none; font-weight: 600;">💳 查看所有捐赠方式 | View All Donation Options →</a>
+                    <a href="donation.html" style="color: #4a9eff; text-decoration: none; font-weight: 600;">💳 View All Donation Options →</a>
                 </p>
             </div>
             

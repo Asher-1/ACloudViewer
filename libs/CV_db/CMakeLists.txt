@@ -46,7 +46,15 @@ if (USE_SIMD)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
     target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
 endif ()
-cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
+if(AICore_ENABLED AND TARGET AICore)
+    # ecvImage uses AICore internally. Its public headers expose no AICore
+    # types, so keep the inference dependency out of CV_db consumers.
+    cloudViewer_link_3rdparty_libraries(${PROJECT_NAME} EXCLUDE_CUDA_STATIC)
+    target_link_libraries(${PROJECT_NAME} PRIVATE AICore)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AICore_ENABLED)
+else()
+    cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
+endif()
 
 option(OPTION_USE_RANSAC_LIB "Build with Ransac Lib" ON)
 if (${OPTION_USE_RANSAC_LIB})

@@ -264,6 +264,11 @@ if (DOWNLOAD_ENABLED)
     add_compile_definitions(COLMAP_DOWNLOAD_ENABLED)
 endif ()
 
+# DA3 depth estimation integration (AICore from core/DA3)
+if(AICore_ENABLED AND TARGET AICore)
+    message(STATUS "DA3 depth estimation integration enabled (AICore)")
+endif()
+
 if (Qt5_FOUND)
     # Qt5 was built with -reduce-relocations.
     if (Qt5_POSITION_INDEPENDENT_CODE)

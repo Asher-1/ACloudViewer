@@ -1,0 +1,7 @@
+AICORE_1 {
+    global:
+        aicore_*;
+        _ZN6aicore5depth10ImageDepth*;
+    local:
+        *;
+};

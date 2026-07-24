@@ -11,6 +11,7 @@
 #include <QStringList>
 #include <QThread>
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <regex>
@@ -55,6 +56,20 @@ public:
         m_remoteIP = ip;
         m_remotePort = port;
     }
+    void setGaussianPlyMemory(std::vector<uint8_t> data) {
+        m_gaussianPlyMemory = std::move(data);
+    }
+    void setGaussianShDegree(int degree) { m_gaussianShDegree = degree; }
+    void setGaussianWhiteBackground(bool val) {
+        m_gaussianWhiteBackground = val;
+    }
+    void setGaussianCamerasJson(std::string json) {
+        m_gaussianCamerasJson = std::move(json);
+    }
+    /** Enlarge main window + Point view layout (FreeSplatter embed only). */
+    void setGaussianLargePointView(bool val) { m_gaussianLargePointView = val; }
+    /** Auto-play camera tour on open (FreeSplatter embed only). */
+    void setGaussianAutoTour(bool val) { m_gaussianAutoTour = val; }
 
 signals:
     void viewerStarted(const QString& modeName);
@@ -107,4 +122,10 @@ private:
     bool m_noInterop = false;
     QString m_remoteIP = "127.0.0.1";
     int m_remotePort = 6009;
+    std::vector<uint8_t> m_gaussianPlyMemory;
+    std::string m_gaussianCamerasJson;
+    int m_gaussianShDegree = -1;
+    bool m_gaussianWhiteBackground = false;
+    bool m_gaussianLargePointView = false;
+    bool m_gaussianAutoTour = false;
 };

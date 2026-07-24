@@ -199,8 +199,8 @@ ENV ACloudViewer_DEV=/root \
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-# ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes \
+# ACloudViewer C++ dependencies (Vulkan scripts copied with repo; install_deps runs install_vulkan_env)
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes \
 && rm -rf /var/lib/apt/lists/*
 
 # ACloudViewer Jupyter dependencies

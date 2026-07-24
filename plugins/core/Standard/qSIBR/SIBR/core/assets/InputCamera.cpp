@@ -1466,24 +1466,14 @@ std::vector<InputCamera::Ptr> InputCamera::loadColmapBin(
     return cameras;
 }
 
-std::vector<InputCamera::Ptr> InputCamera::loadJSON(const std::string& jsonPath,
-                                                    const float zNear,
-                                                    const float zFar) {
-    std::ifstream json_file(jsonPath, std::ios::in);
+namespace {
 
-    if (!json_file) {
-        std::cerr << "file loading failed: " << jsonPath << std::endl;
-        return std::vector<InputCamera::Ptr>();
-    }
-
+std::vector<InputCamera::Ptr> parseGaussianCamerasJSON(picojson::value& v,
+                                                       const float zNear,
+                                                       const float zFar) {
     std::vector<InputCamera::Ptr> cameras;
-
-    picojson::value v;
-    picojson::set_last_error(std::string());
-    std::string err = picojson::parse(v, json_file);
-    if (!err.empty()) {
-        picojson::set_last_error(err);
-        json_file.setstate(std::ios::failbit);
+    if (!v.is<picojson::array>()) {
+        return cameras;
     }
 
     picojson::array& frames = v.get<picojson::array>();
@@ -1503,21 +1493,16 @@ std::vector<InputCamera::Ptr> InputCamera::loadJSON(const std::string& jsonPath,
         sibr::Vector3f position(pos[0].get<double>(), pos[1].get<double>(),
                                 pos[2].get<double>());
 
-        // position.x() = 0;
-        // position.y() = 0;
-        // position.z() = 1;
-
         picojson::array& rot = frames[i].get("rotation").get<picojson::array>();
         sibr::Matrix3f orientation;
-        for (int i = 0; i < 3; i++) {
-            picojson::array& row = rot[i].get<picojson::array>();
+        for (int r = 0; r < 3; r++) {
+            picojson::array& row = rot[r].get<picojson::array>();
             for (int j = 0; j < 3; j++) {
-                orientation(i, j) = row[j].get<double>();
+                orientation(r, j) = row[j].get<double>();
             }
         }
         orientation.col(1) = -orientation.col(1);
         orientation.col(2) = -orientation.col(2);
-        // orientation = sibr::Matrix3f::Identity();
 
         camera->name(imgname);
         camera->position(position);
@@ -1527,6 +1512,44 @@ std::vector<InputCamera::Ptr> InputCamera::loadJSON(const std::string& jsonPath,
         cameras.push_back(camera);
     }
     return cameras;
+}
+
+}  // namespace
+
+std::vector<InputCamera::Ptr> InputCamera::loadJSONFromString(
+        const std::string& jsonContent, const float zNear, const float zFar) {
+    picojson::value v;
+    picojson::set_last_error(std::string());
+    const std::string err = picojson::parse(v, jsonContent);
+    if (!err.empty()) {
+        picojson::set_last_error(err);
+        std::cerr << "in-memory cameras.json parse failed: " << err
+                  << std::endl;
+        return {};
+    }
+    return parseGaussianCamerasJSON(v, zNear, zFar);
+}
+
+std::vector<InputCamera::Ptr> InputCamera::loadJSON(const std::string& jsonPath,
+                                                    const float zNear,
+                                                    const float zFar) {
+    std::ifstream json_file(jsonPath, std::ios::in);
+
+    if (!json_file) {
+        std::cerr << "file loading failed: " << jsonPath << std::endl;
+        return std::vector<InputCamera::Ptr>();
+    }
+
+    picojson::value v;
+    picojson::set_last_error(std::string());
+    std::string err = picojson::parse(v, json_file);
+    if (!err.empty()) {
+        picojson::set_last_error(err);
+        json_file.setstate(std::ios::failbit);
+        return {};
+    }
+
+    return parseGaussianCamerasJSON(v, zNear, zFar);
 }
 
 std::vector<InputCamera::Ptr> InputCamera::loadTransform(

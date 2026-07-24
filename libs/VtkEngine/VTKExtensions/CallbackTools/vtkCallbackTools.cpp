@@ -71,7 +71,7 @@ void vtkBoxCallback::SetActors(const std::vector<vtkActor *> actors) {
 }
 
 void vtkBoxCallback::Execute(vtkObject *caller, unsigned long, void *) {
-    // 将调用该回调函数的调用者caller指针，转换为vtkBoxWidget2类型对象指针
+    // Cast the callback caller pointer to vtkBoxWidget2
     //  vtkSmartPointer<vtkBoxWidget2> boxWidget =
     //  vtkBoxWidget2::SafeDownCast(caller);
     vtkSmartPointer<CustomVtkBoxWidget> boxWidget =
@@ -79,7 +79,7 @@ void vtkBoxCallback::Execute(vtkObject *caller, unsigned long, void *) {
     // vtkSmartPointer<vtkBoxWidget2>
     // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller);
     vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
-    // 将boxWidget中的变换矩阵保存在t中
+    // Store the box widget transform matrix in t
     boxWidget->GetTransform(t);
     for (vtkActor *actor : this->m_actors) {
         if (actor) {
@@ -99,13 +99,14 @@ void vtkBoxCallback2::SetActor(vtkSmartPointer<vtkActor> actor) {
 }
 
 void vtkBoxCallback2::Execute(vtkObject *caller, unsigned long, void *) {
-    // 将调用该回调函数的调用者caller指针，转换为vtkBoxWidget2类型对象指针
+    // Cast the callback caller pointer to vtkBoxWidget2
     vtkSmartPointer<vtkBoxWidget2> boxWidget =
             vtkBoxWidget2::SafeDownCast(caller);
     // vtkSmartPointer<vtkBoxWidget2>
-    // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller);这样转换不可以，vtkBoxWidget可以
+    // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller); this cast is invalid;
+    // vtkBoxWidget works
     vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
-    // 将boxWidget中的变换矩阵保存在t中
+    // Store the box widget transform matrix in t
     vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())
             ->GetTransform(t);
     this->m_actor->SetUserTransform(t);

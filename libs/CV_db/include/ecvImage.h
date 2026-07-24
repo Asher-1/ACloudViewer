@@ -12,6 +12,8 @@
 
 // Qt
 #include <QImage>
+#include <memory>
+#include <vector>
 
 class ccCameraSensor;
 
@@ -75,6 +77,39 @@ public:
     const ccCameraSensor* getAssociatedSensor() const {
         return m_associatedSensor;
     }
+
+    ccBBox getOwnBB(bool withGLFeatures = false) override;
+
+    // --- AICore depth estimation (via libAICore.so) ---
+    // Declared unconditionally: implementations return false when AICore is
+    // disabled. Use isAICoreAvailable() for runtime feature detection.
+
+    //! Depth estimation result for a single image
+    struct DepthResult {
+        std::vector<float> depth;
+        std::vector<float> confidence;
+        int width = 0;
+        int height = 0;
+        bool has_pose = false;
+        float extrinsics[12] = {};
+        float intrinsics[9] = {};
+    };
+
+    //! Estimates monocular depth from the loaded image.
+    bool estimateDepth(const QString& model_path,
+                       int n_threads,
+                       DepthResult& out,
+                       const QString& metric_model_path = QString()) const;
+
+    //! Estimates depth + camera pose from the loaded image.
+    bool estimateDepthAndPose(
+            const QString& model_path,
+            int n_threads,
+            DepthResult& out,
+            const QString& metric_model_path = QString()) const;
+
+    //! Returns true when built with AICore and libAICore.so is linked.
+    static bool isAICoreAvailable();
 
 protected:
     // inherited from ccHObject

@@ -106,8 +106,8 @@ RUN apt-get install -y apt-utils software-properties-common tzdata gnupg ca-cert
 
 # C++ dependencies
 WORKDIR /opt
-COPY ./util/install_deps_ubuntu.sh /opt
-RUN /opt/install_deps_ubuntu.sh assume-yes
+COPY ./util/install_deps_ubuntu.sh ./util/install_vulkan_env.sh ./util/install_vulkan_linux.sh ./util/acloudviewer_vulkan_env_common.sh /opt/
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 /opt/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer Jupyter dependencies
 RUN mkdir -p /etc/apt/keyrings \

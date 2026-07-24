@@ -7,6 +7,8 @@
 
 #include "pipelines/application_gui.h"
 
+#include <cstdlib>
+
 #include "exe/gui.h"
 #include "pipelines/option_utils.h"
 
@@ -21,6 +23,22 @@ namespace cloudViewer {
 int GraphicalUserInterface(const std::string& database_path,
                            const std::string& image_path,
                            const std::string& import_path) {
+#if defined(AICore_ENABLED) && defined(__linux__)
+    if (std::getenv("ACV_QT_USE_NATIVE_OPENGL") == nullptr) {
+        if (std::getenv("QT_OPENGL") == nullptr) {
+            setenv("QT_OPENGL", "software", 0);
+        }
+        if (std::getenv("LIBGL_ALWAYS_SOFTWARE") == nullptr) {
+            setenv("LIBGL_ALWAYS_SOFTWARE", "1", 0);
+        }
+        if (std::getenv("GALLIUM_DRIVER") == nullptr) {
+            setenv("GALLIUM_DRIVER", "llvmpipe", 0);
+        }
+        if (std::getenv("__GLX_VENDOR_LIBRARY_NAME") == nullptr) {
+            setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 0);
+        }
+    }
+#endif
     InitQtResources();
     OptionsParser parser;
     if (!database_path.empty()) {

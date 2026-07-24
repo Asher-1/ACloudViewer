@@ -49,13 +49,13 @@ ExternalProject_Add(ext_opencv
             -DWITH_TBB=OFF
             -DWITH_FFMPEG=OFF
             -DBUILD_JASPER=ON
-            -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
-            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            #macOS使用系统libpng避免SDK冲突，其他平台使用内置版本
-            -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
-            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           #macOS使用系统zlib避免SDK冲突，其他平台使用内置版本
-            -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
-            -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
-            # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf
+            -DBUILD_JPEG=ON            # Build OpenCV bundled libjpeg from 3rdparty
+            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            # macOS: use system libpng to avoid SDK conflicts; other platforms: bundled version
+            -DBUILD_TIFF=ON            # Build OpenCV bundled libtiff from 3rdparty
+            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           # macOS: use system zlib to avoid SDK conflicts; other platforms: bundled version
+            -DBUILD_WEBP=ON            # Build OpenCV bundled libwebp from 3rdparty
+            -DBUILD_OPENEXR=ON         # Build OpenCV bundled openexr from 3rdparty
+            # -DBUILD_PROTOBUF=OFF      # Build OpenCV bundled libprotobuf from 3rdparty
             # -DWITH_OPENEXR=ON  # Build error on IlmBase includes without "OpenEXR/" prefix
             -DBUILD_opencv_world=ON
             -DBUILD_opencv_core=ON
@@ -67,7 +67,7 @@ ExternalProject_Add(ext_opencv
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
-            -DBUILD_opencv_calib3d=OFF
+            -DBUILD_opencv_calib3d=${PLUGIN_STANDARD_QMANUAL_CALIB}
             -DBUILD_JAVA=OFF
             -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
             -DBUILD_opencv_apps=OFF
@@ -81,7 +81,7 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_js=OFF
             -DBUILD_opencv_dnn=OFF
             -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
-            -DBUILD_opencv_objdetect=OFF
+            -DBUILD_opencv_objdetect=${PLUGIN_STANDARD_QMANUAL_CALIB}
             -DBUILD_opencv_xobjdetect=OFF
             -DBUILD_opencv_dnn_objdetect=OFF
             -DBUILD_opencv_optflow=OFF
@@ -98,6 +98,7 @@ ExternalProject_Add(ext_opencv
             -DWITH_CAROTENE=OFF
             -DWITH_OPENGL=OFF
             -DWITH_OPENCL=OFF
+            -DWITH_VULKAN=OFF
             -DWITH_LAPACK=OFF
             -DENABLE_PRECOMPILED_HEADERS=OFF
             -DINSTALL_C_EXAMPLES=OFF

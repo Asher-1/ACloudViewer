@@ -79,3 +79,11 @@ if (CUDA_ENABLED)
 else ()
     target_link_libraries(${COLMAP_LIB_NAME} PUBLIC ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif ()
+
+# DA3: dynamic link to libAICore.so (PUBLIC so static ColmapLib consumers resolve symbols)
+if(AICore_ENABLED AND TARGET AICore)
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC AICore)
+    # Propagate to ColmapLib translation units — PUBLIC link interface alone does not
+    # always define AICore_ENABLED when compiling this static library's .cc files.
+    target_compile_definitions(${COLMAP_LIB_NAME} PUBLIC AICore_ENABLED)
+endif()

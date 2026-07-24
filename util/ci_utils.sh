@@ -23,6 +23,169 @@ fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 NPROC=$((NPROC + 2))                         # run nproc+2 jobs to speed up the build
+_ci_utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${_ci_utils_dir}/acloudviewer_vulkan_env_common.sh"
+
+_ci_load_vulkan_build_env() {
+    if [[ "${AICore_USE_VULKAN:-OFF}" != "ON" ]]; then
+        echo "Skipping Vulkan build env (AICore_USE_VULKAN=${AICore_USE_VULKAN:-OFF})"
+        return 0
+    fi
+    if source_acloudviewer_vulkan_env; then
+        echo "Loaded Vulkan build env from ${ACLOUDVIEWER_VULKAN_ENV:-$(acloudviewer_vulkan_env_script_path)}"
+    fi
+}
+
+_ci_default_aicore_use_vulkan() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS CI installs MoltenVK/Vulkan build deps; local default stays Metal-first.
+        if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+            echo ON
+        else
+            echo OFF
+        fi
+    else
+        echo ON
+    fi
+}
+
+# Resolve AICore_USE_* from environment or build option tokens.
+_ci_env_on_off() {
+    local val="$1"
+    case "${val}" in
+        ON|on|1|true|TRUE|yes|YES) echo ON ;;
+        *) echo OFF ;;
+    esac
+}
+
+_ci_resolve_aicore_use_vulkan() {
+    local options="$1"
+    if [[ -n "${AICore_USE_VULKAN:-}" ]]; then
+        _ci_env_on_off "${AICore_USE_VULKAN}"
+        return
+    fi
+    if [[ "without_vulkan" =~ ^($options)$ ]]; then
+        echo OFF
+    elif [[ "with_vulkan" =~ ^($options)$ ]]; then
+        echo ON
+    else
+        _ci_default_aicore_use_vulkan
+    fi
+}
+
+_ci_apply_aicore_use_vulkan_option() {
+    local options="$1"
+    local from_env=""
+    if [[ -n "${AICore_USE_VULKAN:-}" ]]; then
+        from_env="${AICore_USE_VULKAN}"
+    fi
+    AICore_USE_VULKAN="$(_ci_resolve_aicore_use_vulkan "$options")"
+    export AICore_USE_VULKAN
+    if [[ -n "$from_env" ]]; then
+        echo "AICore_USE_VULKAN is ${AICore_USE_VULKAN} (from environment: ${from_env})"
+    elif [[ "without_vulkan" =~ ^($options)$ ]]; then
+        echo "AICore_USE_VULKAN is OFF (without_vulkan)"
+    elif [[ "with_vulkan" =~ ^($options)$ ]]; then
+        echo "AICore_USE_VULKAN is ON (with_vulkan)"
+    else
+        echo "AICore_USE_VULKAN uses platform default: ${AICore_USE_VULKAN}"
+    fi
+}
+
+_ci_resolve_aicore_use_cuda() {
+    local options="$1"
+    if [[ -n "${AICore_USE_CUDA:-}" ]]; then
+        _ci_env_on_off "${AICore_USE_CUDA}"
+        return
+    fi
+    if [[ "with_aicore_cuda" =~ ^($options)$ ]]; then
+        echo ON
+    else
+        echo OFF
+    fi
+}
+
+_ci_apply_aicore_use_cuda_option() {
+    local options="$1"
+    local from_env=""
+    if [[ -n "${AICore_USE_CUDA:-}" ]]; then
+        from_env="${AICore_USE_CUDA}"
+    fi
+    AICore_USE_CUDA="$(_ci_resolve_aicore_use_cuda "$options")"
+    export AICore_USE_CUDA
+    if [[ -n "$from_env" ]]; then
+        echo "AICore_USE_CUDA is ${AICore_USE_CUDA} (from environment: ${from_env})"
+    elif [[ "with_aicore_cuda" =~ ^($options)$ ]]; then
+        echo "AICore_USE_CUDA is ON (with_aicore_cuda)"
+    else
+        echo "AICore_USE_CUDA is OFF (default; pass with_aicore_cuda to enable)"
+    fi
+}
+
+_ci_resolve_aicore_bundle_cuda_runtime() {
+    local options="$1"
+    if [[ -n "${AICore_BUNDLE_CUDA_RUNTIME:-}" ]]; then
+        _ci_env_on_off "${AICore_BUNDLE_CUDA_RUNTIME}"
+        return
+    fi
+    if [[ "bundle_cuda_runtime" =~ ^($options)$ ]]; then
+        echo ON
+    else
+        echo OFF
+    fi
+}
+
+_ci_apply_aicore_bundle_cuda_runtime_option() {
+    local options="$1"
+    local from_env=""
+    if [[ -n "${AICore_BUNDLE_CUDA_RUNTIME:-}" ]]; then
+        from_env="${AICore_BUNDLE_CUDA_RUNTIME}"
+    fi
+    AICore_BUNDLE_CUDA_RUNTIME="$(_ci_resolve_aicore_bundle_cuda_runtime "$options")"
+    export AICore_BUNDLE_CUDA_RUNTIME
+    if [[ "${AICore_BUNDLE_CUDA_RUNTIME}" == "ON" && "${AICore_USE_CUDA:-OFF}" != "ON" ]]; then
+        echo "WARNING: bundle_cuda_runtime requires AICore_USE_CUDA=ON (add with_aicore_cuda)" >&2
+    fi
+    if [[ -n "$from_env" ]]; then
+        echo "AICore_BUNDLE_CUDA_RUNTIME is ${AICore_BUNDLE_CUDA_RUNTIME} (from environment: ${from_env})"
+    elif [[ "bundle_cuda_runtime" =~ ^($options)$ ]]; then
+        echo "AICore_BUNDLE_CUDA_RUNTIME is ON (bundle_cuda_runtime)"
+    else
+        echo "AICore_BUNDLE_CUDA_RUNTIME is OFF (default)"
+    fi
+}
+
+_ci_resolve_aicore_cpu_all_variants() {
+    local options="$1"
+    if [[ -n "${AICore_CPU_ALL_VARIANTS:-}" ]]; then
+        _ci_env_on_off "${AICore_CPU_ALL_VARIANTS}"
+        return
+    fi
+    if [[ "no_cpu_all_variants" =~ ^($options)$ ]]; then
+        echo OFF
+    else
+        echo ON
+    fi
+}
+
+_ci_apply_aicore_cpu_all_variants_option() {
+    local options="$1"
+    local from_env=""
+    if [[ -n "${AICore_CPU_ALL_VARIANTS:-}" ]]; then
+        from_env="${AICore_CPU_ALL_VARIANTS}"
+    fi
+    AICore_CPU_ALL_VARIANTS="$(_ci_resolve_aicore_cpu_all_variants "$options")"
+    export AICore_CPU_ALL_VARIANTS
+    if [[ -n "$from_env" ]]; then
+        echo "AICore_CPU_ALL_VARIANTS is ${AICore_CPU_ALL_VARIANTS} (from environment: ${from_env})"
+    elif [[ "no_cpu_all_variants" =~ ^($options)$ ]]; then
+        echo "AICore_CPU_ALL_VARIANTS is OFF (no_cpu_all_variants)"
+    else
+        echo "AICore_CPU_ALL_VARIANTS is ON (release/wheel default)"
+    fi
+}
+
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -91,6 +254,20 @@ else # do not support windows
 fi
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+install_python_release_deps() {
+    local req_file="${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt"
+    echo "Installing Python release deps for qPythonRuntime..."
+    python -m pip install -r "${req_file}"
+}
+
+python_release_deps_required() {
+    [[ "${PLUGIN_PYTHON:-ON}" != "OFF" ]] || return 1
+    [[ "${BUILD_PYTHON_MODULE:-ON}" != "OFF" ]] || return 1
+    [[ "${PLUGIN_PYTHON_COPY_ENV:-OFF}" == "ON" ]] && return 1
+    [[ "${PLUGIN_PYTHON_COPY_MINIMAL_ENV:-ON}" != "OFF" ]] || return 1
+    return 0
+}
 
 install_python_dependencies() {
     echo "Installing Python dependencies"
@@ -230,7 +407,13 @@ build_mac_wheel() {
         echo "Realsense disabled in Python wheel."
         BUILD_LIBREALSENSE=OFF
     fi
+    _ci_apply_aicore_use_vulkan_option "$options"
+    _ci_apply_aicore_use_cuda_option "$options"
+    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
+    _ci_apply_aicore_cpu_all_variants_option "$options"
     set -u
+
+    _ci_load_vulkan_build_env || true
 
     mkdir -p build
     # echo "Clean last build cache if possible."
@@ -255,6 +438,12 @@ build_mac_wheel() {
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
+        "-DAICore_ENABLED=ON"
+        "-DAICore_BUILD_TESTS=ON"
+        "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
+        "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
+        "-DAICore_BUNDLE_CUDA_RUNTIME=${AICore_BUNDLE_CUDA_RUNTIME:-OFF}"
+        "-DAICore_CPU_ALL_VARIANTS=${AICore_CPU_ALL_VARIANTS:-ON}"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -278,6 +467,17 @@ build_gui_app() {
 
     echo "Building ACloudViewer gui app"
     options="$(echo "$@" | tr ' ' '|')"
+
+    PLUGIN_PYTHON="${PLUGIN_PYTHON:-ON}"
+    BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE:-ON}"
+    PLUGIN_PYTHON_COPY_MINIMAL_ENV="${PLUGIN_PYTHON_COPY_MINIMAL_ENV:-ON}"
+    PLUGIN_PYTHON_COPY_ENV="${PLUGIN_PYTHON_COPY_ENV:-OFF}"
+
+    if python_release_deps_required; then
+        install_python_release_deps
+    else
+        echo "Skipping Python release deps (PLUGIN_PYTHON/minimal env disabled)"
+    fi
     
     echo "Using cmake: $(command -v cmake)"
     cmake --version
@@ -347,7 +547,13 @@ build_gui_app() {
         PLUGIN_STANDARD_QSIBR=ON
         echo "PLUGIN_STANDARD_QSIBR is ON"
     fi
+    _ci_apply_aicore_use_vulkan_option "$options"
+    _ci_apply_aicore_use_cuda_option "$options"
+    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
+    _ci_apply_aicore_cpu_all_variants_option "$options"
     set -u
+
+    _ci_load_vulkan_build_env || true
 
     echo
     echo "Start building with ACloudViewer GUI..."
@@ -400,6 +606,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QCLOUDLAYERS=ON"
                 "-DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON"
                 "-DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON"
+                "-DPLUGIN_STANDARD_QBROOM=ON"
                 "-DPLUGIN_STANDARD_QANIMATION=ON"
                 "-DQANIMATION_WITH_FFMPEG_SUPPORT=ON"
                 "-DPLUGIN_STANDARD_QCANUPO=ON"
@@ -420,6 +627,15 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
                 "-DPLUGIN_STANDARD_G3POINT=ON"
                 "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"
+                "-DAICore_ENABLED=ON"
+                "-DAICore_BUILD_TESTS=ON"
+                "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
+                "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
+                "-DAICore_BUNDLE_CUDA_RUNTIME=${AICore_BUNDLE_CUDA_RUNTIME:-OFF}"
+                "-DAICore_CPU_ALL_VARIANTS=${AICore_CPU_ALL_VARIANTS:-ON}"
+                "-DPLUGIN_STANDARD_QDA3=ON"
+                "-DPLUGIN_STANDARD_QFREESPLATTER=ON"
+                "-DPLUGIN_STANDARD_QLIGHTGLUE=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
@@ -437,6 +653,7 @@ build_gui_app() {
 
     echo "Build & install ACloudViewer..."
     make -j"$NPROC"
+    cmake --build . --target aicore-contract-tests -j "$NPROC"
     make install -j"$NPROC"
     ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
@@ -472,7 +689,7 @@ build_pip_package() {
         BUILD_AZURE_KINECT=ON
     else
         echo "Azure Kinect disabled in Python wheel."
-        BUILD_AZURE_KINECT=OFFVERBOSE=1 
+        BUILD_AZURE_KINECT=OFF
     fi
     if [[ "build_realsense" =~ ^($options)$ ]]; then
         echo "Realsense enabled in Python wheel."
@@ -504,6 +721,10 @@ build_pip_package() {
     else
         echo "USE_QT6 is set to: $USE_QT6"
     fi
+    _ci_apply_aicore_use_vulkan_option "$options"
+    _ci_apply_aicore_use_cuda_option "$options"
+    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
+    _ci_apply_aicore_cpu_all_variants_option "$options"
     set -u
 
     echo
@@ -527,6 +748,12 @@ build_pip_package() {
         "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_VTK_BACKEND=OFF" # no need vtk for wheel
         "-DBUILD_RECONSTRUCTION=ON"
+        "-DAICore_ENABLED=ON"
+        "-DAICore_BUILD_TESTS=ON"
+        "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
+        "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
+        "-DAICore_BUNDLE_CUDA_RUNTIME=${AICore_BUNDLE_CUDA_RUNTIME:-OFF}"
+        "-DAICore_CPU_ALL_VARIANTS=${AICore_CPU_ALL_VARIANTS:-ON}"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -537,6 +764,7 @@ build_pip_package() {
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
         "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
     )
+    _ci_load_vulkan_build_env || true
     set -x # Echo commands on
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     set +x # Echo commands off
@@ -605,6 +833,12 @@ test_wheel() {
     python -m pip install "$wheel_path"
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
+    python -W default -c "import pathlib, sys, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); \
+vulkan=list(root.glob('*ggml-vulkan*')); assert not enabled or vulkan, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', vulkan); \
+metal=list(root.glob('*ggml-metal*')) if sys.platform=='darwin' else []; \
+assert not enabled or sys.platform!='darwin' or metal, f'ggml Metal module missing from {root}'; \
+print('AICore Metal modules:', metal) if metal else None"
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
     # cloudViewer example reconstruction/gui
     echo

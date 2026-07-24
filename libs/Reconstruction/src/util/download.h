@@ -52,6 +52,15 @@ std::string DownloadAndCacheFile(
         const std::string& uri,
         DownloadProgressCallback progress_callback = nullptr);
 
+// Downloads a file from `url` and saves it to `target_path`.
+// No SHA256 verification is performed. If the file already exists at
+// `target_path` the download is skipped and the existing path is returned.
+// Returns the target path on success, empty string on failure.
+std::string DownloadAndCacheFile(
+        const std::string& url,
+        const std::filesystem::path& target_path,
+        DownloadProgressCallback progress_callback = nullptr);
+
 // Overwrites the default download cache directory at $HOME/.cache/colmap/.
 void OverwriteDownloadCacheDir(std::filesystem::path path);
 

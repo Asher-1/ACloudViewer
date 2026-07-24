@@ -268,6 +268,16 @@ void ParseData::getParsedGaussianData(const std::string& dataset_path) {
     populateFromCamInfos();
 
     _meshPath = dataset_path + "/input.ply";
+    _datasetType = Type::GAUSSIAN;
+}
+
+void ParseData::getParsedGaussianDataFromJSON(const std::string& camerasJson) {
+    _camInfos = InputCamera::loadJSONFromString(camerasJson);
+    _basePathName = ".";
+    _meshPath = "";
+    _imgPath = ".";
+    _datasetType = Type::GAUSSIAN;
+    populateFromCamInfos();
 }
 
 void ParseData::getParsedColmap2Data(const std::string& dataset_path,

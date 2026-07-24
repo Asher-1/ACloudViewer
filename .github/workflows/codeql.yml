@@ -230,6 +230,7 @@ jobs:
             -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=OFF \
             -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=OFF \
             -DPLUGIN_STANDARD_QANIMATION=OFF \
+            -DPLUGIN_STANDARD_QBROOM=OFF \
             -DPLUGIN_STANDARD_QCANUPO=OFF \
             -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=OFF \
             -DPLUGIN_STANDARD_QCOMPASS=OFF \
@@ -239,6 +240,11 @@ jobs:
             -DPLUGIN_STANDARD_3DMASC=OFF \
             -DPLUGIN_STANDARD_QVOXFALL=OFF \
             -DPLUGIN_STANDARD_G3POINT=OFF \
+            -DPLUGIN_STANDARD_QSIBR=OFF \
+            -DAICore_ENABLED=OFF \
+            -DPLUGIN_STANDARD_QDA3=OFF \
+            -DPLUGIN_STANDARD_QFREESPLATTER=OFF \
+            -DPLUGIN_STANDARD_QLIGHTGLUE=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

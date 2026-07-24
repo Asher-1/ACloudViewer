@@ -75,6 +75,9 @@ void PatchMatchOptions::Print() const {
   PrintOption(filter_geom_consistency_max_cost);
   PrintOption(write_consistency_graph);
   PrintOption(allow_missing_files);
+  PrintOption(photometric_force_recompute);
+  PrintOption(photometric_use_existing_as_init);
+  PrintOption(skip_photometric_pass);
 }
 
 void PatchMatch::Problem::Print() const {
@@ -202,8 +205,9 @@ void PatchMatchController::Run() {
   thread_pool_.reset(new ThreadPool(gpu_indices_.size()));
 
   // If geometric consistency is enabled, then photometric output must be
-  // computed first for all images without filtering.
-  if (options_.geom_consistency) {
+  // computed first for all images without filtering (unless DA3 priors replace
+  // the photometric pass).
+  if (options_.geom_consistency && !options_.skip_photometric_pass) {
     auto photometric_options = options_;
     photometric_options.geom_consistency = false;
     photometric_options.filter = false;
@@ -435,7 +439,11 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
   if (ExistsFile(depth_map_path) && ExistsFile(normal_map_path) &&
       (!options.write_consistency_graph ||
        ExistsFile(consistency_graph_path))) {
-    return;
+    const bool skip_existing_photometric =
+        output_type == "photometric" && options.photometric_force_recompute;
+    if (!skip_existing_photometric) {
+      return;
+    }
   }
 
   PrintHeading1(StringPrintf("Processing view %d / %d for %s", problem_idx + 1,
@@ -466,11 +474,19 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
   if (options.geom_consistency) {
     depth_maps.resize(model.images.size());
     normal_maps.resize(model.images.size());
+  } else if (options.photometric_use_existing_as_init &&
+             ExistsFile(depth_map_path)) {
+    depth_maps.resize(model.images.size());
+    depth_maps.at(problem.ref_image_idx).Read(depth_map_path);
+    if (ExistsFile(normal_map_path)) {
+      normal_maps.resize(model.images.size());
+      normal_maps.at(problem.ref_image_idx).Read(normal_map_path);
+    }
   }
 
   problem.images = &images;
-  problem.depth_maps = &depth_maps;
-  problem.normal_maps = &normal_maps;
+  problem.depth_maps = depth_maps.empty() ? nullptr : &depth_maps;
+  problem.normal_maps = normal_maps.empty() ? nullptr : &normal_maps;
 
   {
     // Collect all used images in current problem.

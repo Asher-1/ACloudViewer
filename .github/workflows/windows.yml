@@ -41,6 +41,7 @@ env:
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
   NPROC: 8
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  VULKAN_SDK_VERSION: 1.4.350.0
 
 jobs:
   windows:
@@ -106,6 +107,19 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install Vulkan SDK
+        shell: powershell
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+
+      - name: Sync ACloudViewer Vulkan env
+        shell: powershell
+        run: .\util\sync_vulkan_env_from_sdk.ps1
 
       - name: Set up python version
         run: |
@@ -495,6 +509,21 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install Vulkan SDK
+        shell: powershell
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+
+      - name: Sync ACloudViewer Vulkan env
+        shell: powershell
+        working-directory: ${{ env.SRC_DIR }}
+        run: .\util\sync_vulkan_env_from_sdk.ps1
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
