@@ -9,8 +9,18 @@
 
 #include <CVLog.h>
 
+#include "util/logging.h"
+
 //! Verbose reconstruction / DA3 pipeline diagnostics (debug builds only).
 #define RECON_LOG_DEBUG(...) CVLog::PrintDebug(__VA_ARGS__)
+
+//! User-visible status (also emitted via glog for the reconstruction Log
+//! widget).
+#define RECON_LOG_INFO(...)                      \
+    do {                                         \
+        LOG(INFO) << StringPrintf(__VA_ARGS__);  \
+        CVLog::Print(StringPrintf(__VA_ARGS__)); \
+    } while (0)
 
 //! User-visible warnings (quality gates, fallbacks, skipped stages).
 #define RECON_LOG_WARN(...) CVLog::Warning(__VA_ARGS__)
