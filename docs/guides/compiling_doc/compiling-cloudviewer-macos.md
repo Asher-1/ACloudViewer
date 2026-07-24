@@ -378,6 +378,12 @@ source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
 cmake -DAICore_USE_VULKAN=ON -DAICore_ENABLED=ON ..
 ```
 
+GitHub Actions macOS CI uses
+[humbletim/install-vulkan-sdk](https://github.com/marketplace/actions/install-vulkan-sdk)
+(pinned to a post-v1.2 commit with `vulkansdk-macOS-*` support) plus
+`util/sync_vulkan_env_from_sdk.sh`, with `with_vulkan` so `libggml-vulkan` is built
+alongside Metal. Local macOS builds can still use `util/install_vulkan_sdk_macos.sh`.
+
 See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
 
 ### OpenMP on macOS
