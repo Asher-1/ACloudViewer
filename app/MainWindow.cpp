@@ -9,8 +9,8 @@
 
 // Local
 #include "ecvLayoutManager.h"
-#include "ecvMultiViewWidget.h"
 #include "ecvLogManagerDlg.h"
+#include "ecvMultiViewWidget.h"
 #include "ecvShortcutDialog.h"
 #include "ecvTabbedMultiViewWidget.h"
 
