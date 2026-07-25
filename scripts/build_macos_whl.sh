@@ -75,7 +75,7 @@ install_python_dependencies with-unit-test purge-cache
 echo "Start to build wheel On MacOS..."
 echo
 # build_mac_wheel with_conda
-build_mac_wheel with_conda build_realsense with_vulkan
+build_mac_wheel with_conda build_realsense
 echo
 
 set -x # Echo commands on

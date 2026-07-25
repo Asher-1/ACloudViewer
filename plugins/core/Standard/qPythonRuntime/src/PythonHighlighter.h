@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QSyntaxHighlighter>
+#include <QTextCharFormat>
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>

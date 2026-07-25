@@ -1485,15 +1485,15 @@ public:  // Main interface accessors
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->saveCameraParameters(file);
     }
-    inline virtual void saveCameraParameters(
-            const std::string& file) { /* do nothing */ }
+    inline void saveCameraParameters(
+            const std::string& file) override { /* do nothing */ }
 
     inline static void LoadCameraParameters(const std::string& file) {
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->loadCameraParameters(file);
     }
-    inline virtual void loadCameraParameters(
-            const std::string& file) { /* do nothing */ }
+    inline void loadCameraParameters(
+            const std::string& file) override { /* do nothing */ }
 
     inline static void ShowOrientationMarker() {
         if (auto* dt = ecvViewManager::instance().displayTools())
@@ -1844,10 +1844,10 @@ public:  // visualization matrix transformation
                                      viewport);
         return QImage();
     }
-    inline virtual QImage renderToImage(int zoomFactor = 1,
+    inline QImage renderToImage(int zoomFactor = 1,
                                         bool renderOverlayItems = false,
                                         bool silent = false,
-                                        int viewport = 0) {
+                                        int viewport = 0) override {
         return QImage(); /* do nothing */
     }
 

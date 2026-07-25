@@ -234,7 +234,7 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
             "QPlainTextEdit { background: #1e1e1e; color: #d4d4d4; "
             "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
             "font-size: 12px; border: none; }");
-    m_scriptEditor->setTabStopDistance(32);
+    qtCompatSetTabStopWidth(m_scriptEditor, 32);
     splitter->addWidget(m_scriptEditor);
 
     auto* outputSplitter = new QSplitter(Qt::Horizontal, splitter);

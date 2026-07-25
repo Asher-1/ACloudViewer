@@ -34,7 +34,7 @@ cmake --build build_app --target QDA3_PLUGIN ACloudViewer -j$(nproc)
 | `AICore_ENABLED` | Build `libAICore.so` (shared with qFreeSplatter) |
 | `PLUGIN_STANDARD_QDA3` | This plugin |
 | `BUILD_RECONSTRUCTION` | DA3 sparse/dense modes in the automatic reconstruction pipeline |
-| `AICore_USE_VULKAN` / `AICore_USE_METAL` | Linux/Windows: Vulkan ON; macOS: Metal ON |
+| `AICore_USE_VULKAN` / `AICore_USE_METAL` | Linux/Windows: Vulkan ON; macOS: Metal ON (Vulkan unsupported — MoltenVK limitations) |
 | `AICore_USE_SYCL` / `AICore_USE_CUDA` | Optional Intel/NVIDIA developer backends |
 
 Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PLUGIN.so`.
@@ -45,7 +45,7 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQDA3_PL
 
 1. Select image(s) in the DB tree, or use **Browse** to pick files.
 2. Choose a **Model** (use **Download** on first run for GGUF weights).
-3. Set **Device** (`Auto` / Metal / SYCL / Vulkan / CUDA / CPU, available entries only), thread count, unproject-to-3D options, etc.
+3. Set **Device** (`Auto` / Metal / SYCL / Vulkan (Linux/Windows) / CUDA / CPU, available entries only), thread count, unproject-to-3D options, etc.
 4. Click **Run**; depth results appear as `ccImage` child nodes in the DB tree.
 
 ### Modes

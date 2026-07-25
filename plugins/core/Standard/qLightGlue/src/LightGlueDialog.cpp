@@ -269,14 +269,18 @@ void LightGlueDialog::setupUi() {
     ioLayout->addWidget(m_filePoolGroup);
 
     auto* dbHeader = new QHBoxLayout;
+    dbHeader->setContentsMargins(0, 4, 0, 0);
     m_dbToggleBtn = new QToolButton;
     m_dbToggleBtn->setArrowType(Qt::RightArrow);
     m_dbToggleBtn->setCheckable(true);
     m_dbToggleBtn->setChecked(false);
     m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_dbToggleBtn->setText(tr("DB source images (optional)"));
+    m_dbToggleBtn->setText(tr("DB Source Images (optional)"));
+    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
     m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; }");
+            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
+            "  border-radius: 3px; color: palette(text); }"
+            "QToolButton:hover { background: palette(midlight); }");
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
         m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
         m_dbContentWidget->setVisible(checked);
@@ -286,13 +290,21 @@ void LightGlueDialog::setupUi() {
     ioLayout->addLayout(dbHeader);
 
     m_dbContentWidget = new QWidget;
+    m_dbContentWidget->setStyleSheet(
+            "QWidget#dbContent { "
+            "  border: 1px solid palette(mid); "
+            "  border-radius: 4px; "
+            "  background: palette(base); }");
+    m_dbContentWidget->setObjectName("dbContent");
     auto* dbContentLayout = new QVBoxLayout(m_dbContentWidget);
-    dbContentLayout->setContentsMargins(0, 0, 0, 0);
+    dbContentLayout->setContentsMargins(4, 4, 4, 4);
+    dbContentLayout->setSpacing(4);
 
     m_dbImageList = new QListWidget;
     m_dbImageList->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_dbImageList->setMinimumHeight(100);
+    m_dbImageList->setMinimumHeight(80);
     m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setAlternatingRowColors(true);
     m_dbImageList->setToolTip(
             tr("ccImage entities from the DB tree (match outputs are hidden). "
                "Double-click to assign to Image 1 or Image 2."));
@@ -805,7 +817,10 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
         item->setFlags(Qt::NoItemFlags);
         m_dbImageList->addItem(item);
         m_dbImageList->setEnabled(false);
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(tr("DB Source Images (optional)"));
+            m_dbToggleBtn->setChecked(false);
+        }
     } else {
         m_dbImageList->setEnabled(true);
         for (const auto& entry : images) {
@@ -819,7 +834,11 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
             }
             m_dbImageList->addItem(item);
         }
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(
+                    tr("DB Source Images (%1)").arg(images.size()));
+            m_dbToggleBtn->setChecked(true);
+        }
     }
     syncDbListHighlight();
 }

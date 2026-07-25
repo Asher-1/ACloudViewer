@@ -253,13 +253,16 @@ void DA3Dialog::setupUi() {
     m_dbToggleBtn->setChecked(false);
     m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_dbToggleBtn->setText(tr("DB Images"));
+    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
     m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; }");
+            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
+            "  border-radius: 3px; color: palette(text); }"
+            "QToolButton:hover { background: palette(midlight); }");
     ioLayout->addWidget(m_dbToggleBtn, row, 0);
 
     m_dbContentWidget = new QWidget;
     auto* dbContentLayout = new QHBoxLayout(m_dbContentWidget);
-    dbContentLayout->setContentsMargins(0, 0, 0, 0);
+    dbContentLayout->setContentsMargins(2, 2, 2, 2);
     m_dbImageCombo = new QComboBox;
     m_dbImageCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_dbImageCombo->setToolTip(
@@ -725,7 +728,10 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
     if (imageNames.isEmpty()) {
         m_dbImageCombo->addItem(tr("(no images in DB)"));
         m_dbImageCombo->setEnabled(false);
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(tr("DB Images"));
+            m_dbToggleBtn->setChecked(false);
+        }
     } else {
         m_dbImageCombo->addItem(
                 tr("-- Select from DB (%1 images) --").arg(imageNames.size()));
@@ -733,7 +739,11 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
             m_dbImageCombo->addItem(name, name);
         }
         m_dbImageCombo->setEnabled(true);
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(
+                    tr("DB Images (%1)").arg(imageNames.size()));
+            m_dbToggleBtn->setChecked(true);
+        }
     }
     m_dbImageCombo->blockSignals(false);
 }

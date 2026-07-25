@@ -341,13 +341,16 @@ cmake -DBUILD_GUI=ON \
 cmake --build . --config Release --target ACloudViewer
 ```
 
-Release and CI builds require Vulkan explicitly:
+Release and CI builds on Linux/Windows require Vulkan explicitly:
 
 ```bash
 cmake -DAICore_ENABLED=ON \
       -DAICore_USE_VULKAN=ON \
       ...
 ```
+
+On macOS, use `-DAICore_USE_METAL=ON` (default) and `-DAICore_USE_VULKAN=OFF`.
+Vulkan is unsupported on macOS due to MoltenVK SPIR-V translation limitations.
 
 CPU-only build (no Vulkan SDK on the machine): `-DAICore_USE_VULKAN=OFF`.
 
@@ -361,12 +364,14 @@ Linux path. Use one platform script; all write the same env variable names.
 |----------|----------------|----------------------------------|
 | **Linux** | `util/install_deps_ubuntu.sh assume-yes` | `~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` |
 | **Linux** (Vulkan only) | `util/install_vulkan_env.sh` | same |
-| **macOS** | `util/install_vulkan_env.sh` | same path under `$HOME` |
 | **Windows** | `.\util\install_vulkan_sdk_windows.ps1` | `%LOCALAPPDATA%\acloudviewer\acloudviewer-vulkan-env.ps1` |
+
+macOS builds use **Metal + CPU only**; no Vulkan SDK setup is required or supported.
+See [compiling-cloudviewer-macos.md](docs/guides/compiling_doc/compiling-cloudviewer-macos.md).
 
 Shared variables set by all scripts: `VULKAN_SDK`, `ACLOUDVIEWER_GLSLC`,
 `ACLOUDVIEWER_SPIRV_HEADERS_DIR` (Linux SPIRV-Headers CMake package) or
-`ACLOUDVIEWER_SPIRV_INCLUDE_DIR` (macOS/Windows SDK `Include`), and on Linux
+`ACLOUDVIEWER_SPIRV_INCLUDE_DIR` (Windows SDK `Include`), and on Linux
 `ACLOUDVIEWER_VULKAN_LIBRARY` (system `libvulkan.so`). CMake reads these
 automatically; no manual `-DVulkan_*` flags after setup.
 
@@ -385,18 +390,18 @@ as other Linux images (with `ACLOUDVIEWER_UPDATE_BASHRC=0` in containers).
 | LunarG **Vulkan SDK** | Yes (or apt+scripts on Linux) | **No** | **No** |
 | **`glslc`** | Yes | **No** | **No** |
 | **SPIR-V / Vulkan headers** | Yes | **No** (shaders already embedded) | **No** |
-| **`libggml-vulkan.so`** | Built locally | **Yes** (bundled) | **Yes** (from your build) |
+| **`libggml-vulkan.so`** | Built locally (Linux/Windows) | **Yes** (bundled on Linux/Windows) | **Yes** (Linux/Windows only) |
 | **GPU Vulkan driver / ICD** | Optional (for tests) | **No** | **Yes** (NVIDIA/AMD/Intel/Mesa) |
 | **`libAICore.so`** | — | **Yes** | **Yes** |
 
 **Can you copy the installer/wheel to another machine and run?** Yes, **if** the
 target has a compatible OS/GPU driver and the same CPU architecture. The package
 does **not** include the Vulkan SDK; it includes precompiled SPIR-V inside
-`libggml-vulkan.so`. Without a working Vulkan ICD the app still runs on **CPU**
-(Auto fallback). macOS production **Auto** uses Metal, not Vulkan.
+`libggml-vulkan.so` on Linux/Windows. Without a working Vulkan ICD the app still runs on **CPU**
+(Auto fallback). macOS production **Auto** uses Metal + CPU only; Vulkan is unsupported.
 
 ```bash
-# Linux / macOS
+# Linux
 util/install_vulkan_env.sh
 # or Linux full deps:
 util/install_deps_ubuntu.sh assume-yes
@@ -405,7 +410,7 @@ util/install_deps_ubuntu.sh assume-yes
 .\util\install_vulkan_sdk_windows.ps1
 ```
 
-Optional: skip shell profile hooks — Linux/macOS:
+Optional: skip shell profile hooks — Linux:
 `ACLOUDVIEWER_UPDATE_BASHRC=0 util/install_vulkan_env.sh`; Windows:
 `.\util\install_vulkan_sdk_windows.ps1 -SkipProfile`
 
@@ -433,11 +438,12 @@ cd build_app && cmake .. -DAICore_ENABLED=ON -DAICore_USE_VULKAN=ON
 make -j"$(nproc)"
 ```
 
-**GitHub CI (Linux / macOS / Windows):** workflows install the Vulkan SDK
+**GitHub CI (Linux / Windows):** workflows install the Vulkan SDK
 (`install_vulkan_*` scripts). Build scripts pass `with_vulkan` to
 `build_gui_app` / `build_pip_package` (maps to `-DAICore_USE_VULKAN=ON`; use
-`without_vulkan` or `export AICore_USE_VULKAN=OFF` to disable). Linux Docker CI
-runs `install_deps_ubuntu.sh`, which includes the same Vulkan setup.
+`without_vulkan` or `export AICore_USE_VULKAN=OFF` to disable). macOS CI builds
+Metal + CPU only (no Vulkan). Linux Docker CI runs `install_deps_ubuntu.sh`,
+which includes the same Vulkan setup.
 
 Example:
 
@@ -448,10 +454,9 @@ build_pip_package with_vulkan build_realsense build_jupyter
 ```
 
 `glslc`, Vulkan headers, and SPIR-V headers are build-only dependencies. The
-package contains the generated shaders and `ggml-vulkan` module, not the SDK or
-validation layers. Linux/Windows users still need a Vulkan-capable display
-driver. macOS production Auto remains Metal -> CPU; Vulkan/MoltenVK is built in
-CI for compatibility testing and is selected only by explicit device name.
+Linux/Windows package contains the generated shaders and `ggml-vulkan` module,
+not the SDK or validation layers. Linux/Windows users still need a Vulkan-capable display
+driver. macOS uses Metal + CPU only.
 
 **Outputs:** `bin/libAICore.so`, private `libggml` core libraries,
 `libggml-cpu` (required), optional backend modules, and the selected plugins.

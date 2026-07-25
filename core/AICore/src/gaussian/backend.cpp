@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <stdexcept>
 #include <thread>
 
 #include "common.hpp"
@@ -155,8 +156,20 @@ bool engine_backend::alloc_graph(ggml_cgraph* graph, size_t graph_size) {
 }
 
 enum ggml_status engine_backend::compute_graph(ggml_cgraph* graph) {
-    return use_sched ? ggml_backend_sched_graph_compute(sched, graph)
-                     : ggml_backend_graph_compute(be, graph);
+    try {
+        return use_sched ? ggml_backend_sched_graph_compute(sched, graph)
+                         : ggml_backend_graph_compute(be, graph);
+    } catch (const std::exception& e) {
+        FS_ERR("backend threw exception during graph_compute: %s "
+               "(device=%s). Try switching to a different device.",
+               e.what(), device.c_str());
+        return GGML_STATUS_FAILED;
+    } catch (...) {
+        FS_ERR("unknown exception during graph_compute (device=%s). "
+               "Try switching to a different device.",
+               device.c_str());
+        return GGML_STATUS_FAILED;
+    }
 }
 
 }  // namespace gaussian

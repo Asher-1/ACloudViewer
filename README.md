@@ -143,7 +143,7 @@ See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/ma
 
 ## AICore AI Plugins — Depth, Matching & 3D Gaussian Splats
 
-Three GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan / Metal / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Three GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
 | | **qDA3** | **qLightGlue** | **qFreeSplatter** |
 |---|----------|----------------|-------------------|

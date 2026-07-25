@@ -7,6 +7,8 @@
 
 #include "FreeSplatterWorker.h"
 
+#include <algorithm>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonDocument>
@@ -181,7 +183,8 @@ bool FreeSplatterWorker::runReconstruct() {
     result.width = W;
     result.gaussianChannels = gc;
     result.shDegree = geom.sh_degree;
-    result.gaussians = QVector<float>(gaussians, gaussians + n_out);
+    result.gaussians.resize(static_cast<int>(n_out));
+    std::copy(gaussians, gaussians + n_out, result.gaussians.begin());
 
     if (m_settings.estimatePoses && n >= 2) {
         emit logMessage("[FS] Estimating camera poses...");

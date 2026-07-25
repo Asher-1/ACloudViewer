@@ -204,7 +204,7 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
 // Linux/Windows so Auto and explicit "cuda" agree on the same backend.
 inline const char* const* auto_backend_ids() {
 #if defined(__APPLE__)
-    static const char* kOrder[] = {"metal", "vulkan", nullptr};
+    static const char* kOrder[] = {"metal", nullptr};
 #elif defined(AICORE_AUTO_INCLUDE_CUDA)
     static const char* kOrder[] = {"cuda", "vulkan", nullptr};
 #else

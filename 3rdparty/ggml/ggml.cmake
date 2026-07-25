@@ -343,7 +343,7 @@ if(GGML_USE_VULKAN)
                 "Run: .\\util\\install_vulkan_sdk_windows.ps1 (or . \$env:LOCALAPPDATA\\acloudviewer\\acloudviewer-vulkan-env.ps1)")
         elseif(APPLE)
             set(_GGML_VULKAN_SETUP_HINT
-                "Run: util/install_vulkan_env.sh (macOS) or util/install_vulkan_sdk_macos.sh")
+                "Vulkan is not supported on macOS; use Metal (-DAICore_USE_VULKAN=OFF)")
         else()
             set(_GGML_VULKAN_SETUP_HINT
                 "Run: util/install_deps_ubuntu.sh assume-yes or util/install_vulkan_env.sh")
@@ -607,21 +607,32 @@ else()
     endif()
 endif()
 
-set(_GGML_PATCH_PARTS)
+set(_GGML_PATCH_SCRIPTS)
 if(GGML_CPU_ALL_VARIANTS)
-    list(APPEND _GGML_PATCH_PARTS
-        "\"${CMAKE_COMMAND}\" -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py\" \"<SOURCE_DIR>\"")
+    list(APPEND _GGML_PATCH_SCRIPTS
+        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py")
 endif()
 if(APPLE AND _GGML_METAL_ENABLED)
-    list(APPEND _GGML_PATCH_PARTS
-        "\"${CMAKE_COMMAND}\" -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py\" \"<SOURCE_DIR>\"")
+    list(APPEND _GGML_PATCH_SCRIPTS
+        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py")
 endif()
-if(_GGML_PATCH_PARTS)
-    list(JOIN _GGML_PATCH_PARTS " && " _GGML_PATCH_SHELL)
-    if(WIN32)
-        set(_GGML_PATCH_COMMAND cmd /c "${_GGML_PATCH_SHELL}")
+if(_GGML_PATCH_SCRIPTS)
+    list(LENGTH _GGML_PATCH_SCRIPTS _num_patches)
+    if(_num_patches EQUAL 1)
+        list(GET _GGML_PATCH_SCRIPTS 0 _single_patch)
+        set(_GGML_PATCH_COMMAND "${CMAKE_COMMAND}" -E env python3
+            "${_single_patch}" "<SOURCE_DIR>")
     else()
-        set(_GGML_PATCH_COMMAND bash -c "${_GGML_PATCH_SHELL}")
+        set(_GGML_PATCH_RUNNER "${CMAKE_CURRENT_BINARY_DIR}/ggml_run_patches.py")
+        set(_runner_content "import subprocess, sys\n")
+        foreach(_script IN LISTS _GGML_PATCH_SCRIPTS)
+            string(REPLACE "\\" "/" _script_fwd "${_script}")
+            string(APPEND _runner_content
+                "subprocess.check_call([sys.executable, r'${_script_fwd}', sys.argv[1]])\n")
+        endforeach()
+        file(WRITE "${_GGML_PATCH_RUNNER}" "${_runner_content}")
+        set(_GGML_PATCH_COMMAND "${CMAKE_COMMAND}" -E env python3
+            "${_GGML_PATCH_RUNNER}" "<SOURCE_DIR>")
     endif()
 else()
     set(_GGML_PATCH_COMMAND "")
@@ -654,14 +665,8 @@ set(GGML_MODULE_DIR ${GGML_INSTALL_DIR}/bin)
 # --- macOS: fix rpath for backend MODULE libraries ---
 # Backend .so modules are dlopen'd at runtime.  On macOS, MODULE targets get
 # no LC_RPATH by default.  All backends need @loader_path so they can resolve
-# @rpath/libggml-base.0.dylib regardless of who does the dlopen.  The Vulkan
-# backend additionally needs the Vulkan loader's directory so
-# @rpath/libvulkan.1.dylib (MoltenVK) can be resolved.
+# @rpath/libggml-base.0.dylib regardless of who does the dlopen.
 if(APPLE AND GGML_BUILD_SHARED)
-    set(_GGML_VK_RPATH "")
-    if(_GGML_VULKAN_ENABLED AND Vulkan_LIBRARY)
-        get_filename_component(_GGML_VK_RPATH "${Vulkan_LIBRARY}" DIRECTORY)
-    endif()
     set(_GGML_FIX_RPATH_SCRIPT
         "${CMAKE_CURRENT_BINARY_DIR}/fix_macos_backend_rpath.sh")
     file(WRITE "${_GGML_FIX_RPATH_SCRIPT}" "\
@@ -670,13 +675,9 @@ set -e\n\
 for f in \"$1\"/libggml-*${_GGML_MODULE_SUFFIX}; do\n\
     [ -f \"$f\" ] || continue\n\
     install_name_tool -add_rpath @loader_path \"$f\" 2>/dev/null || true\n\
-    case \"$f\" in *ggml-vulkan*)\n\
-        [ -n \"$2\" ] && install_name_tool -add_rpath \"$2\" \"$f\" 2>/dev/null || true;;\n\
-    esac\n\
 done\n")
     ExternalProject_Add_Step(ext_ggml fix_macos_rpath
-        COMMAND bash "${_GGML_FIX_RPATH_SCRIPT}"
-            "${GGML_MODULE_DIR}" "${_GGML_VK_RPATH}"
+        COMMAND bash "${_GGML_FIX_RPATH_SCRIPT}" "${GGML_MODULE_DIR}"
         DEPENDEES install
         COMMENT "Fixing macOS rpath for ggml backend modules"
     )
