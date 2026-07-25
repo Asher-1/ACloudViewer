@@ -4,7 +4,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 
 ## Project Overview
 
-ACloudViewer is an open-source **3D point cloud and mesh processing** application and library, descended from CloudCompare with integrations for Open3D, ParaView-style visualization, **COLMAP** reconstruction, VTK rendering, Python bindings, and optional **AI inference** (Depth Anything V3, FreeSplatter via ggml). Primary language: **C++17**. GUI: **Qt 5/6**. Optional **CUDA**, **Vulkan/Metal/OpenCL** (ggml backends), and **Python 3.10+**.
+ACloudViewer is an open-source **3D point cloud and mesh processing** application and library, descended from CloudCompare with integrations for Open3D, ParaView-style visualization, **COLMAP** reconstruction, VTK rendering, Python bindings, and optional **AI inference** (Depth Anything V3, FreeSplatter via ggml). Primary language: **C++17**. GUI: **Qt 5/6**. Optional **CUDA**, **Vulkan** (Linux/Windows), **Metal** (macOS), and **Python 3.10+**.
 
 Main deliverables:
 
@@ -302,11 +302,21 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 | VTK | Rendering (`libs/VtkEngine/`) |
 | OpenCV | Optional; required for qManualCalib, some reconstruction / image paths |
 | ggml | ML inference backend in AICore |
-| CUDA / Vulkan / Metal / OpenCL | Optional GPU (core, ggml, BEV in qManualCalib, qSIBR) |
+| CUDA / Vulkan / Metal | Optional GPU (core, ggml, BEV in qManualCalib, qSIBR); Vulkan Linux/Windows only, Metal macOS only |
 | FFmpeg | Optional H.264/HEVC in qManualCalib bag decode |
 | COLMAP stack | Bundled under `libs/Reconstruction/` when `BUILD_RECONSTRUCTION=ON` |
 
 Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_downloads) (GGUF releases `DA3`, `3dgs`; test assets in repo or `examples/test_data/download_file_list.json`).
+
+### Platform ggml Backend Support
+
+| Platform | Default GPU | Auto Device Order | Vulkan | Metal | CUDA | Notes |
+|----------|------------|-------------------|--------|-------|------|-------|
+| **macOS** | Metal | Metal → CPU | OFF (unsupported) | ON | OFF | MoltenVK translation limitations prevent Vulkan use |
+| **Linux** | Vulkan | Vulkan → CPU | ON | OFF | Optional | CUDA priority when enabled: CUDA → Vulkan → CPU |
+| **Windows** | Vulkan | Vulkan → CPU | ON | OFF | Optional | Same priority as Linux |
+
+> **macOS Vulkan defect:** MoltenVK SPIR-V → MSL translation fails for complex ggml compute shaders (conv_transpose, quantized matmul). Metal is both native and faster. Vulkan support was removed from macOS builds in v3.9.5.
 
 ## Notable Plugins (quick index)
 
