@@ -1,0 +1,83 @@
+---
+description: Rules for debugging CI failures across Ubuntu, macOS, and Windows platforms
+globs:
+  - .github/workflows/**
+  - docker/**
+  - util/ci_utils.sh
+  - util/ci_utils.ps1
+  - util/install_deps_ubuntu.sh
+  - util/install_vulkan_linux.sh
+  - util/install_vulkan_sdk_windows.ps1
+  - scripts/build_macos.sh
+  - scripts/build_win.py
+alwaysApply: false
+---
+
+# ACloudViewer CI Debugging Rules
+
+## CI Matrix
+
+| Platform | Workflow | Docker | Key Issues |
+|----------|----------|--------|------------|
+| Ubuntu focal (20.04) | `ubuntu.yml` | `Dockerfile.ci` | Old GLIBC, shaderc from source |
+| Ubuntu jammy (22.04) | `ubuntu.yml` | `Dockerfile.ci` | Vulkan device check on CPU-only |
+| Ubuntu noble (24.04) | `ubuntu.yml` | `Dockerfile.ci` | Qt6, Vulkan device check |
+| macOS | `macos.yml` | None | OpenMP conflicts, qSIBR OFF |
+| Windows | `windows.yml` | None | Path spaces, MSBuild quoting |
+| CUDA variants | `ubuntu.yml` | `Dockerfile.ci` | focal+jammy+noble with CUDA |
+
+## Common Failure Patterns
+
+### "glslc is missing after setup" (Ubuntu focal/CUDA focal)
+- Root cause: `install_vulkan_linux.sh` captures build stdout in command substitution
+- Fix: All verbose build output in `resolve_glslc()` MUST go to stderr (`>&2`)
+- The function uses `printf '%s\n' "<path>"` to return the glslc path via stdout
+
+### "required device 'vulkan' is unavailable" (Ubuntu jammy/noble/CUDA)
+- Root cause: CPU-only CI runners load libggml-vulkan.so but have no Vulkan ICD
+- Fix: `docker_test.sh` and `test_wheel_runtime.sh` must check gracefully
+- Pattern: check file exists → check LVP ICD → check `vulkaninfo` → only then `--expect-device vulkan`
+
+### "'C:/Program' is not recognized" (Windows)
+- Root cause: `CMAKE_COMMAND` contains spaces, unquoted in ExternalProject PATCH_COMMAND
+- Fix: Always quote `"${CMAKE_COMMAND}"` in patch command construction
+
+### OMP crash on macOS
+- Root cause: Duplicate libomp.dylib loading (host vs ggml-cpu)
+- Fix: `GGML_OPENMP=OFF` on Apple in ggml.cmake
+- Verify: `otool -L libggml-cpu.so | grep omp` should show nothing
+
+## Shell Script Conventions
+
+- CI scripts use `set -euo pipefail`; any unguarded failure exits the build
+- `find` in command substitution: always append `2>/dev/null` for missing dirs
+- Build output that could pollute a captured variable: redirect to `>&2`
+- Graceful checks pattern: `if condition; then action; else echo "WARNING: ..."; fallback; fi`
+
+## Docker Build Layers
+
+```
+Dockerfile.ci layer order:
+  1. Base image (Ubuntu + optional CUDA)
+  2. System packages (apt)
+  3. install_deps_ubuntu.sh (C++ deps, Vulkan, shaderc)  ← focal glslc failure here
+  4. Conda / Python setup
+  5. CMake configure
+  6. CMake build
+  7. Tests (docker_test.sh)  ← Vulkan device check failure here
+```
+
+## Debugging Workflow
+
+1. Read the CI log bottom-up: find the FIRST error, not the last cascade
+2. Check if the error is in Docker build (layer number) or test phase
+3. For Docker build failures: the script runs with `set -euo pipefail` in `/bin/bash -o pipefail`
+4. For test failures: check `docker_test.sh` function (`cpp_test_only` vs `cpp_python_command_tools_test`)
+5. Always test changes locally before pushing:
+   ```bash
+   # Test install_vulkan_linux.sh logic
+   bash -x util/install_vulkan_linux.sh assume-yes 2>&1 | tail -20
+   
+   # Test docker_test.sh Vulkan check logic (dry run)
+   bash -n docker/docker_test.sh
+   ```

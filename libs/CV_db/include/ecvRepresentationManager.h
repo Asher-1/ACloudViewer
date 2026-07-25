@@ -35,6 +35,7 @@ class CV_DB_LIB_API ecvRepresentationManager : public QObject {
 
 public:
     static ecvRepresentationManager& instance();
+    static bool isAlive();
 
     // -- Lookup --
 
@@ -77,6 +78,7 @@ signals:
 
 private:
     ecvRepresentationManager();
+    ~ecvRepresentationManager() override;
 
     using Key = QPair<ccHObject*, ecvGenericGLDisplay*>;
     QHash<Key, std::shared_ptr<ecvViewRepresentation>> m_representations;

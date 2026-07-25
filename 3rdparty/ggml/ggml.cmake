@@ -516,7 +516,13 @@ else()
 endif()
 
 # OpenMP
-if(WITH_OPENMP)
+# On macOS the ggml-cpu dynamic module links its own libomp.dylib.  When the
+# host process (ACloudViewer / Python) already loaded a copy, the duplicate
+# triggers "OMP: Error #15 … already initialized" and aborts.  Disable ggml's
+# own OpenMP on Apple; Accelerate + Metal cover the workload.
+if(APPLE)
+    list(APPEND GGML_CMAKE_ARGS -DGGML_OPENMP=OFF)
+elseif(WITH_OPENMP)
     list(APPEND GGML_CMAKE_ARGS -DGGML_OPENMP=ON)
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_OPENMP=OFF)
@@ -604,11 +610,11 @@ endif()
 set(_GGML_PATCH_PARTS)
 if(GGML_CPU_ALL_VARIANTS)
     list(APPEND _GGML_PATCH_PARTS
-        "${CMAKE_COMMAND} -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py\" \"<SOURCE_DIR>\"")
+        "\"${CMAKE_COMMAND}\" -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py\" \"<SOURCE_DIR>\"")
 endif()
 if(APPLE AND _GGML_METAL_ENABLED)
     list(APPEND _GGML_PATCH_PARTS
-        "${CMAKE_COMMAND} -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py\" \"<SOURCE_DIR>\"")
+        "\"${CMAKE_COMMAND}\" -E env python3 \"${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py\" \"<SOURCE_DIR>\"")
 endif()
 if(_GGML_PATCH_PARTS)
     list(JOIN _GGML_PATCH_PARTS " && " _GGML_PATCH_SHELL)
@@ -644,6 +650,37 @@ set(GGML_INCLUDE_DIRS ${GGML_INSTALL_DIR}/include)
 set(GGML_LIB_DIR ${GGML_INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
 set(GGML_RUNTIME_LIB_DIR ${GGML_INSTALL_DIR}/${_GGML_RUNTIME_SUBDIR})
 set(GGML_MODULE_DIR ${GGML_INSTALL_DIR}/bin)
+
+# --- macOS: fix rpath for backend MODULE libraries ---
+# Backend .so modules are dlopen'd at runtime.  On macOS, MODULE targets get
+# no LC_RPATH by default.  All backends need @loader_path so they can resolve
+# @rpath/libggml-base.0.dylib regardless of who does the dlopen.  The Vulkan
+# backend additionally needs the Vulkan loader's directory so
+# @rpath/libvulkan.1.dylib (MoltenVK) can be resolved.
+if(APPLE AND GGML_BUILD_SHARED)
+    set(_GGML_VK_RPATH "")
+    if(_GGML_VULKAN_ENABLED AND Vulkan_LIBRARY)
+        get_filename_component(_GGML_VK_RPATH "${Vulkan_LIBRARY}" DIRECTORY)
+    endif()
+    set(_GGML_FIX_RPATH_SCRIPT
+        "${CMAKE_CURRENT_BINARY_DIR}/fix_macos_backend_rpath.sh")
+    file(WRITE "${_GGML_FIX_RPATH_SCRIPT}" "\
+#!/bin/bash\n\
+set -e\n\
+for f in \"$1\"/libggml-*${_GGML_MODULE_SUFFIX}; do\n\
+    [ -f \"$f\" ] || continue\n\
+    install_name_tool -add_rpath @loader_path \"$f\" 2>/dev/null || true\n\
+    case \"$f\" in *ggml-vulkan*)\n\
+        [ -n \"$2\" ] && install_name_tool -add_rpath \"$2\" \"$f\" 2>/dev/null || true;;\n\
+    esac\n\
+done\n")
+    ExternalProject_Add_Step(ext_ggml fix_macos_rpath
+        COMMAND bash "${_GGML_FIX_RPATH_SCRIPT}"
+            "${GGML_MODULE_DIR}" "${_GGML_VK_RPATH}"
+        DEPENDEES install
+        COMMENT "Fixing macOS rpath for ggml backend modules"
+    )
+endif()
 
 # --- Create imported interface target ---
 add_library(3rdparty_ggml INTERFACE)

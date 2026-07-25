@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTextEdit>
+#include <QToolButton>
 
 struct LightGlueBuiltinModel {
     QString displayName;
@@ -138,6 +139,8 @@ private:
 
     QWidget* m_filePoolGroup = nullptr;
     QListWidget* m_filePoolList = nullptr;
+    QToolButton* m_dbToggleBtn = nullptr;
+    QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;
     QStringList m_filePoolPaths;
     QComboBox* m_deviceCombo = nullptr;

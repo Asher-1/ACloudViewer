@@ -269,9 +269,25 @@ void LightGlueDialog::setupUi() {
     ioLayout->addWidget(m_filePoolGroup);
 
     auto* dbHeader = new QHBoxLayout;
-    dbHeader->addWidget(new QLabel(tr("DB source images (optional):")));
+    m_dbToggleBtn = new QToolButton;
+    m_dbToggleBtn->setArrowType(Qt::RightArrow);
+    m_dbToggleBtn->setCheckable(true);
+    m_dbToggleBtn->setChecked(false);
+    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_dbToggleBtn->setText(tr("DB source images (optional)"));
+    m_dbToggleBtn->setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; }");
+    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
+        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+        m_dbContentWidget->setVisible(checked);
+    });
+    dbHeader->addWidget(m_dbToggleBtn);
     dbHeader->addStretch();
     ioLayout->addLayout(dbHeader);
+
+    m_dbContentWidget = new QWidget;
+    auto* dbContentLayout = new QVBoxLayout(m_dbContentWidget);
+    dbContentLayout->setContentsMargins(0, 0, 0, 0);
 
     m_dbImageList = new QListWidget;
     m_dbImageList->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -282,12 +298,15 @@ void LightGlueDialog::setupUi() {
                "Double-click to assign to Image 1 or Image 2."));
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &LightGlueDialog::onDbListActivated);
-    ioLayout->addWidget(m_dbImageList);
+    dbContentLayout->addWidget(m_dbImageList);
 
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     connect(refreshBtn, &QPushButton::clicked, this,
             &LightGlueDialog::refreshDbImagesRequested);
-    ioLayout->addWidget(refreshBtn);
+    dbContentLayout->addWidget(refreshBtn);
+
+    m_dbContentWidget->setVisible(false);
+    ioLayout->addWidget(m_dbContentWidget);
 
     m_imageStatusLabel = new QLabel;
     m_imageStatusLabel->setStyleSheet("font-weight: bold;");
@@ -786,6 +805,7 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
         item->setFlags(Qt::NoItemFlags);
         m_dbImageList->addItem(item);
         m_dbImageList->setEnabled(false);
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
     } else {
         m_dbImageList->setEnabled(true);
         for (const auto& entry : images) {
@@ -799,6 +819,7 @@ void LightGlueDialog::setDbImages(const QList<DbImageEntry>& images) {
             }
             m_dbImageList->addItem(item);
         }
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
     }
     syncDbListHighlight();
 }

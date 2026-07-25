@@ -88,6 +88,12 @@ public:
     //! Returns the parent widget (if any)
     inline QWidget* parentWidget() { return m_parentWidget; }
 
+    //! Returns the current log file path (empty if no log file is open)
+    QString currentLogFilePath() const;
+
+    //! Get appropriate log directory path (handles permissions on Ubuntu)
+    static QString getLogDirectory();
+
 public slots:
 
     //! Refreshes console (display all messages still in queue)
@@ -97,8 +103,6 @@ protected:
     //! Generate log file name with timestamp and pid
     static QString generateLogFileName(const QString& prefix);
 
-    //! Get appropriate log directory path (handles permissions on Ubuntu)
-    static QString getLogDirectory();
     //! Default constructor
     /** Constructor is protected to avoid using this object as a non static
      *class.

@@ -24,6 +24,7 @@
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QTextEdit>
+#include <QToolButton>
 
 struct FreeSplatterBuiltinModel {
     QString displayName;
@@ -141,8 +142,9 @@ private:
 
     QLabel* m_imageCountLabel = nullptr;
 
+    QToolButton* m_dbToggleBtn = nullptr;
+    QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;
-    QLabel* m_dbImageLabel = nullptr;
 
     QScrollArea* m_thumbScroll = nullptr;
     QWidget* m_thumbContainer = nullptr;

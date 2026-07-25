@@ -159,8 +159,8 @@ resolve_glslc() {
             return 0
         fi
     fi
-    echo "Building pinned shaderc (glslc) for this Ubuntu release."
-    install_glslc_from_source
+    echo "Building pinned shaderc (glslc) for this Ubuntu release." >&2
+    install_glslc_from_source >&2
     printf '%s\n' "${HOME}/.local/bin/glslc"
 }
 

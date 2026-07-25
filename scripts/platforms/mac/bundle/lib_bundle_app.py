@@ -18,6 +18,7 @@ if str(_BUNDLE_DIR) not in sys.path:
 from bundle_slim import (
     copy_python_env_filtered,
     copy_python_env_minimal,
+    discover_moltenvk,
     should_skip_cuda_runtime_lib,
 )
 
@@ -131,6 +132,45 @@ class CCBundler:
             print(f"symlink created：{target} -> {source}")
         except OSError as e:
             print(f"Failed to create symlink: {e}")
+
+    def _bundle_moltenvk(self, libs_found: set[Path]) -> None:
+        """Bundle MoltenVK (Vulkan ICD) for self-contained Vulkan support.
+
+        Discovery follows the Vulkan loader's own ICD mechanism: scan
+        JSON manifests to locate ``libMoltenVK.dylib`` and its actual
+        ``api_version``, then create a bundle-local manifest under
+        ``Contents/Resources/vulkan/icd.d/`` where the macOS Vulkan
+        loader searches automatically.
+        """
+        moltenvk_lib, icd_data = discover_moltenvk()
+        if moltenvk_lib is None:
+            logger.warning(
+                "MoltenVK (libMoltenVK.dylib) not found; "
+                "Vulkan backend will only work if MoltenVK is installed on the target system"
+            )
+            return
+
+        libs_found.add(moltenvk_lib)
+        logger.info("Bundling MoltenVK: %s", moltenvk_lib)
+
+        icd_dir = self.config.bundle_abs_path / "Contents" / "Resources" / "vulkan" / "icd.d"
+        icd_dir.mkdir(parents=True, exist_ok=True)
+
+        api_version = "1.2.0"
+        if icd_data:
+            api_version = icd_data.get("ICD", {}).get("api_version", api_version)
+
+        icd_manifest = {
+            "file_format_version": "1.0.0",
+            "ICD": {
+                "library_path": "../../../Frameworks/libMoltenVK.dylib",
+                "api_version": api_version,
+                "is_portability_driver": True,
+            },
+        }
+        icd_path = icd_dir / "MoltenVK_icd.json"
+        icd_path.write_text(json.dumps(icd_manifest, indent=4) + "\n")
+        logger.info("Created MoltenVK ICD manifest: %s (api_version=%s)", icd_path, api_version)
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
@@ -391,6 +431,7 @@ class CCBundler:
         # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
         # Discover them alongside libAICore.dylib so they get bundled.
+        has_vulkan_backend = False
         for lib in list(libs_found):
             if lib.name.startswith("libAICore"):
                 src_dir = lib.parent
@@ -402,7 +443,12 @@ class CCBundler:
                             continue
                         logger.info("Adding ggml backend module: %s", ggml_mod)
                         libs_found.add(ggml_mod)
+                    if "ggml-vulkan" in ggml_mod.name:
+                        has_vulkan_backend = True
                 break
+
+        if has_vulkan_backend:
+            self._bundle_moltenvk(libs_found)
 
         logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
         logger.info("libs_found to add to Frameworks: %i", len(libs_found))
@@ -540,6 +586,7 @@ class CCBundler:
         # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
         # Discover them alongside libAICore.dylib so they get bundled.
+        has_vulkan_backend = False
         for lib in list(libs_found):
             if lib.name.startswith("libAICore"):
                 src_dir = lib.parent
@@ -551,7 +598,12 @@ class CCBundler:
                             continue
                         logger.info("Adding ggml backend module: %s", ggml_mod)
                         libs_found.add(ggml_mod)
+                    if "ggml-vulkan" in ggml_mod.name:
+                        has_vulkan_backend = True
                 break
+
+        if has_vulkan_backend:
+            self._bundle_moltenvk(libs_found)
 
         return libs_found, lib_ex_found, libs_in_cv_plugins, libs_in_plugins
 
