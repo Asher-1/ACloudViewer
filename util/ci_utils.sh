@@ -39,12 +39,8 @@ _ci_load_vulkan_build_env() {
 
 _ci_default_aicore_use_vulkan() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS CI installs MoltenVK/Vulkan build deps; local default stays Metal-first.
-        if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-            echo ON
-        else
-            echo OFF
-        fi
+        # Vulkan is unsupported on macOS (MoltenVK translation limitations).
+        echo OFF
     else
         echo ON
     fi
