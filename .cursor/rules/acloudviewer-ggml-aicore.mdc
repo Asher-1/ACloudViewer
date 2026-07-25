@@ -24,36 +24,43 @@ alwaysApply: false
 - ggml backends (cpu, metal, vulkan, cuda) are MODULE libraries (`.so` even on macOS)
 - `GGML_BACKEND_DL=ON` (shared mode): backends are `dlopen`'d at runtime, NOT linked into AICore
 - `libAICore.{so,dylib}` only links `libggml.{so,dylib}` + `libggml-base.{so,dylib}`
+- `PATCH_COMMAND` uses a generated Python runner script to avoid shell quoting issues on Windows
+
+## Platform Backend Support
+
+| Platform | Default GPU | Auto Order | Vulkan | Metal | CUDA |
+|----------|------------|------------|--------|-------|------|
+| macOS | Metal | Metal → CPU | OFF (unsupported) | ON | OFF |
+| Linux | Vulkan | Vulkan → CPU | ON | OFF | Optional |
+| Windows | Vulkan | Vulkan → CPU | ON | OFF | Optional |
 
 ## Platform-Specific Backend Issues
 
 ### macOS
-- Metal is native and preferred; Vulkan goes through MoltenVK translation → slower
+- Metal is native and preferred; **Vulkan is NOT supported** (MoltenVK SPIR-V→MSL translation fails for ggml compute shaders)
+- `AICore_USE_VULKAN` defaults to OFF on macOS and must not be enabled
+- `_ci_default_aicore_use_vulkan()` in `ci_utils.sh` returns OFF for Darwin
 - MODULE libraries get NO `LC_RPATH` by default; `fix_macos_rpath` step adds `@loader_path`
-- Vulkan backend additionally needs the Vulkan loader directory rpath (e.g., `/usr/local/lib`)
 - OpenMP MUST be OFF for ggml on Apple (`-DGGML_OPENMP=OFF`) to prevent duplicate libomp crash
 - `libAICore.dylib` already links `libomp.dylib` from conda; a second copy from ggml-cpu aborts
 
 ### Linux CI
 - Ubuntu focal (20.04): GLIBC too old for LunarG SDK binaries; shaderc is built from source
 - `install_vulkan_linux.sh` captures glslc path via command substitution — build output MUST go to stderr
-- Docker CI runners have no GPU; Vulkan device check must be graceful (warn + skip)
-- `docker_test.sh` and `test_wheel_runtime.sh` use `--expect-device vulkan` only when:
-  1. `libggml-vulkan.so` exists AND
-  2. LVP ICD JSON is found AND
-  3. `vulkaninfo` succeeds
+- Docker CI runners have no GPU; Vulkan device check is graceful (CPU-only is acceptable)
+- `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` without `--expect-device vulkan`
 
 ### Windows CI
-- `CMAKE_COMMAND` on CI contains spaces (e.g., `C:/Program Files/...`)
-- All `PATCH_COMMAND` uses of `${CMAKE_COMMAND}` must be quoted: `"${CMAKE_COMMAND}"`
-- Without quoting, MSBuild reports `MSB8066` / `'C:/Program' is not recognized`
+- `PATCH_COMMAND` uses a generated Python script (`ggml_run_patches.py`) to avoid `cmd /c` quoting issues
+- `CMAKE_COMMAND` on CI contains spaces (e.g., `C:/Program Files/...`) — never pass it to cmd shell
 
 ## Key CMake Variables
 
 | Variable | Purpose |
 |----------|---------|
 | `AICore_ENABLED` | Master switch for AICore (auto-enables ggml) |
-| `GGML_USE_VULKAN` | Request Vulkan backend build |
+| `AICore_USE_VULKAN` | Request Vulkan backend (auto OFF on macOS) |
+| `GGML_USE_VULKAN` | Internal: Vulkan backend build flag |
 | `GGML_VULKAN_ENABLED` | Read-only: ON when all Vulkan deps found |
 | `GGML_USE_METAL` | Request Metal backend (macOS only) |
 | `GGML_OPENMP` | OpenMP in ggml-cpu (OFF on Apple) |
@@ -74,11 +81,11 @@ alwaysApply: false
 # (run ACloudViewer, look for "load_backend:" lines in console)
 
 # Verify rpath (macOS):
-otool -l libggml-vulkan.so | grep -A3 LC_RPATH
+otool -l libggml-metal.so | grep -A3 LC_RPATH
 
 # Test dlopen:
-python3 -c "import ctypes; ctypes.CDLL('./libggml-vulkan.so')"
+python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
 
-# Check OpenMP linkage (macOS):
+# Check OpenMP linkage (macOS, should show nothing):
 otool -L libggml-cpu.so | grep omp
 ```

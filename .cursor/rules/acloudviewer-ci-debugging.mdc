@@ -9,6 +9,8 @@ globs:
   - util/install_vulkan_linux.sh
   - util/install_vulkan_sdk_windows.ps1
   - scripts/build_macos.sh
+  - scripts/build_macos_app.sh
+  - scripts/build_macos_whl.sh
   - scripts/build_win.py
 alwaysApply: false
 ---
@@ -20,11 +22,19 @@ alwaysApply: false
 | Platform | Workflow | Docker | Key Issues |
 |----------|----------|--------|------------|
 | Ubuntu focal (20.04) | `ubuntu.yml` | `Dockerfile.ci` | Old GLIBC, shaderc from source |
-| Ubuntu jammy (22.04) | `ubuntu.yml` | `Dockerfile.ci` | Vulkan device check on CPU-only |
-| Ubuntu noble (24.04) | `ubuntu.yml` | `Dockerfile.ci` | Qt6, Vulkan device check |
-| macOS | `macos.yml` | None | OpenMP conflicts, qSIBR OFF |
-| Windows | `windows.yml` | None | Path spaces, MSBuild quoting |
+| Ubuntu jammy (22.04) | `ubuntu.yml` | `Dockerfile.ci` | CPU-only runner, no Vulkan device |
+| Ubuntu noble (24.04) | `ubuntu.yml` | `Dockerfile.ci` | Qt6, CPU-only runner |
+| macOS | `macos.yml` | None | Metal only (no Vulkan), OpenMP OFF, qSIBR OFF |
+| Windows | `windows.yml` | None | Path spaces, Python patch runner |
 | CUDA variants | `ubuntu.yml` | `Dockerfile.ci` | focal+jammy+noble with CUDA |
+
+## Platform GPU Backend Policy
+
+| Platform | GPU Backend | Vulkan | Notes |
+|----------|------------|--------|-------|
+| macOS | Metal | OFF (unsupported) | MoltenVK fails for ggml SPIR-V shaders |
+| Linux | Vulkan | ON | CPU-only in Docker CI (graceful fallback) |
+| Windows | Vulkan | ON | Patch scripts use Python runner for quoting |
 
 ## Common Failure Patterns
 
@@ -33,19 +43,25 @@ alwaysApply: false
 - Fix: All verbose build output in `resolve_glslc()` MUST go to stderr (`>&2`)
 - The function uses `printf '%s\n' "<path>"` to return the glslc path via stdout
 
-### "required device 'vulkan' is unavailable" (Ubuntu jammy/noble/CUDA)
+### "required device 'vulkan' is unavailable" (Ubuntu Docker)
 - Root cause: CPU-only CI runners load libggml-vulkan.so but have no Vulkan ICD
-- Fix: `docker_test.sh` and `test_wheel_runtime.sh` must check gracefully
-- Pattern: check file exists → check LVP ICD → check `vulkaninfo` → only then `--expect-device vulkan`
+- Fix: `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` **without** `--expect-device vulkan`
+- Docker CI is CPU-only; Vulkan device availability is never required
 
 ### "'C:/Program' is not recognized" (Windows)
-- Root cause: `CMAKE_COMMAND` contains spaces, unquoted in ExternalProject PATCH_COMMAND
-- Fix: Always quote `"${CMAKE_COMMAND}"` in patch command construction
+- Root cause: `PATCH_COMMAND` passed to `cmd /c` shell breaks on spaces in paths
+- Fix: `ggml.cmake` generates a Python runner script (`ggml_run_patches.py`) that calls patch scripts directly
+- Never use `cmd /c` with chained `&&` for patch commands
 
 ### OMP crash on macOS
 - Root cause: Duplicate libomp.dylib loading (host vs ggml-cpu)
 - Fix: `GGML_OPENMP=OFF` on Apple in ggml.cmake
 - Verify: `otool -L libggml-cpu.so | grep omp` should show nothing
+
+### macOS build with Vulkan flags
+- `AICore_USE_VULKAN` defaults to OFF on macOS via `_ci_default_aicore_use_vulkan()` in `ci_utils.sh`
+- macOS CI MUST NOT pass `with_vulkan` to build functions
+- `install_vulkan_env.sh` exits with error on Darwin
 
 ## Shell Script Conventions
 
@@ -64,7 +80,7 @@ Dockerfile.ci layer order:
   4. Conda / Python setup
   5. CMake configure
   6. CMake build
-  7. Tests (docker_test.sh)  ← Vulkan device check failure here
+  7. Tests (docker_test.sh)  ← AICore runtime check here (CPU-only OK)
 ```
 
 ## Debugging Workflow

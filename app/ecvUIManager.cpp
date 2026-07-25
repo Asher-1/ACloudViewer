@@ -972,7 +972,7 @@ QStringList QUIWidget::getFolderFileNames(const QStringList &filter) {
     QStringList fileList;
     QString strFolder = QFileDialog::getExistingDirectory();
 
-    if (!strFolder.length() == 0) {
+    if (!strFolder.isEmpty()) {
         QDir myFolder(strFolder);
 
         if (myFolder.exists()) {
@@ -1378,6 +1378,8 @@ void QUIWidget::activeTray(QSystemTrayIcon::ActivationReason reason) {
                                                                 // window icon
                     5000);  // Message window display duration
             break;
+        default:
+            break;
     }
 }
 
@@ -1662,7 +1664,7 @@ bool QUIWidget::eventFilter(QObject *obj, QEvent *evt) {
         mousePressed = false;
         return true;
     } else if (event->type() == QEvent::MouseMove) {
-        if (!max && mousePressed && (event->buttons() && Qt::LeftButton)) {
+        if (!max && mousePressed && (event->buttons() & Qt::LeftButton)) {
             this->move(event->globalPos() - mousePoint);
             return true;
         }
@@ -1987,7 +1989,7 @@ bool QUIMessageBox::eventFilter(QObject *obj, QEvent *evt) {
         mousePressed = false;
         return true;
     } else if (event->type() == QEvent::MouseMove) {
-        if (mousePressed && (event->buttons() && Qt::LeftButton)) {
+        if (mousePressed && (event->buttons() & Qt::LeftButton)) {
             this->move(event->globalPos() - mousePoint);
             return true;
         }
@@ -2273,7 +2275,7 @@ bool QUIInputBox::eventFilter(QObject *obj, QEvent *evt) {
         mousePressed = false;
         return true;
     } else if (event->type() == QEvent::MouseMove) {
-        if (mousePressed && (event->buttons() && Qt::LeftButton)) {
+        if (mousePressed && (event->buttons() & Qt::LeftButton)) {
             this->move(event->globalPos() - mousePoint);
             return true;
         }
