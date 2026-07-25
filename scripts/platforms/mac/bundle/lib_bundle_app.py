@@ -391,18 +391,9 @@ class CCBundler:
         # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
         # Discover them alongside libAICore.dylib so they get bundled.
-        for lib in list(libs_found):
-            if lib.name.startswith("libAICore"):
-                src_dir = lib.parent
-                ggml_modules = list(src_dir.glob("libggml-*.so"))
-                ggml_modules.extend(src_dir.glob("libggml-*.dylib"))
-                for ggml_mod in ggml_modules:
-                    if ggml_mod not in libs_found:
-                        if should_skip_cuda_runtime_lib(ggml_mod):
-                            continue
-                        logger.info("Adding ggml backend module: %s", ggml_mod)
-                        libs_found.add(ggml_mod)
-                break
+        # libAICore may already be resolved in Frameworks (not the install dir),
+        # so also search its rpath-resolved directories and extra_pathlib.
+        self._discover_ggml_backends(libs_found)
 
         logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
         logger.info("libs_found to add to Frameworks: %i", len(libs_found))
@@ -439,6 +430,53 @@ class CCBundler:
                 ["install_name_tool", "-add_rpath", rpath, str(file)],
                 check=False,
             )
+
+    def _discover_ggml_backends(self, libs_found: set[Path]) -> None:
+        """Find ggml backend MODULE libs that are dlopen'd at runtime.
+
+        They are not in the otool dependency chain.  Search order:
+        1. Same directory as the resolved libAICore path
+        2. Rpath-resolved directories of libAICore
+        3. Install prefix lib dir (derived from app bundle path)
+        4. extra_pathlib (conda/install lib dir)
+        """
+        aicore_path: Path | None = None
+        for lib in list(libs_found):
+            if lib.name.startswith("libAICore"):
+                aicore_path = lib
+                break
+        if aicore_path is None:
+            return
+
+        search_dirs: list[Path] = [aicore_path.parent]
+        rpaths = CCBundler._get_rpath(aicore_path)
+        search_dirs.extend(CCBundler._convert_rpaths(aicore_path, rpaths))
+        # Derive install prefix lib dir: <prefix>/bin/<app>/<app>.app → <prefix>/lib
+        install_lib = self.config.bundle_abs_path.parent.parent.parent / "lib"
+        if install_lib.is_dir() and install_lib not in search_dirs:
+            search_dirs.append(install_lib)
+        if self.config.extra_pathlib not in search_dirs:
+            search_dirs.append(self.config.extra_pathlib)
+
+        added = 0
+        for search_dir in search_dirs:
+            if not search_dir.is_dir():
+                continue
+            for pattern in ("libggml-*.so", "libggml-*.dylib"):
+                for ggml_mod in search_dir.glob(pattern):
+                    if not ggml_mod.is_file() or ggml_mod.is_symlink():
+                        continue
+                    if ggml_mod in libs_found:
+                        continue
+                    if should_skip_cuda_runtime_lib(ggml_mod):
+                        continue
+                    # Skip core shared libs (already handled by otool chain)
+                    if ggml_mod.name.startswith("libggml.") or ggml_mod.name.startswith("libggml-base."):
+                        continue
+                    logger.info("Adding ggml backend module: %s", ggml_mod)
+                    libs_found.add(ggml_mod)
+                    added += 1
+        logger.info("ggml backend modules discovered: %d", added)
 
     def _collect_dependencies(self):
         """Collect dependencies of ACloudViewer binary and QT libs
@@ -539,19 +577,7 @@ class CCBundler:
 
         # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
         # are loaded at runtime and NOT in the otool dependency chain.
-        # Discover them alongside libAICore.dylib so they get bundled.
-        for lib in list(libs_found):
-            if lib.name.startswith("libAICore"):
-                src_dir = lib.parent
-                ggml_modules = list(src_dir.glob("libggml-*.so"))
-                ggml_modules.extend(src_dir.glob("libggml-*.dylib"))
-                for ggml_mod in ggml_modules:
-                    if ggml_mod not in libs_found:
-                        if should_skip_cuda_runtime_lib(ggml_mod):
-                            continue
-                        logger.info("Adding ggml backend module: %s", ggml_mod)
-                        libs_found.add(ggml_mod)
-                break
+        self._discover_ggml_backends(libs_found)
 
         return libs_found, lib_ex_found, libs_in_cv_plugins, libs_in_plugins
 

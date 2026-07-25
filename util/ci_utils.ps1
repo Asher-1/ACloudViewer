@@ -752,7 +752,7 @@ function Test-Wheel {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
     python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
-    python -W default -c "import pathlib, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); modules=list(root.glob('*ggml-vulkan*')); assert not enabled or modules, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', modules)"
+    python -W default -c "import pathlib, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; bc=cv._build_config; vulkan=list(root.glob('*ggml-vulkan*')); cuda=list(root.glob('*ggml-cuda*')); assert not bc.get('AICore_VULKAN_ENABLED',False) or vulkan, f'ggml Vulkan missing from {root}'; assert not bc.get('AICore_CUDA_ENABLED',False) or cuda, f'ggml CUDA missing from {root}'; print('AICore backends: Vulkan=%s CUDA=%s' % (vulkan, cuda))"
 
     Write-Host ""
     $HAVE_PYTORCH_OPS = $false

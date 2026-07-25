@@ -5,7 +5,7 @@ ACloudViewer provides three AI plugins through the unified inference library **`
 | Plugin | Guide | CMake option | Summary |
 |--------|-------|--------------|---------|
 | **qDA3** | [qDA3 user guide](qDA3.md) | `PLUGIN_STANDARD_QDA3` | Depth Anything V3: monocular/multi-view depth, camera pose, COLMAP/GLB export, automatic reconstruction integration |
-| **qLightGlue** | [qLightGlue README](../../../plugins/core/Standard/qLightGlue/README.md) | `PLUGIN_STANDARD_QLIGHTGLUE` | LightGlue sparse matching: OpenCV RootSIFT + GGUF matcher, sub-second GPU matching, DB-tree visualization |
+| **qLightGlue** | [qLightGlue user guide](qLightGlue.md) | `PLUGIN_STANDARD_QLIGHTGLUE` | LightGlue sparse matching: OpenCV RootSIFT + GGUF matcher, sub-second GPU matching, DB-tree visualization |
 | **qFreeSplatter** | [qFreeSplatter user guide](qFreeSplatter.md) | `PLUGIN_STANDARD_QFREESPLATTER` | FreeSplatter: uncalibrated photos → 3D Gaussian splats, SIBR-compatible PLY, optional qSIBR preview |
 
 ## Prerequisites

@@ -71,21 +71,22 @@ int cap_resize_target_for_vram(int requested,
         return requested;
     }
 
-    // Metal's conv_transpose_2d kernel is orders of magnitude slower than CUDA;
-    // large DPT head activations can hang the GPU (macOS command buffer
-    // timeout). Cap to 1008 (72 ViT patches per side) which is empirically safe
-    // on M-series.
-    constexpr int kMetalMaxTarget = 1008;
-    if (is_metal_device(device_name) && requested > kMetalMaxTarget) {
-        DA_DEBUG_LOG(
-                "Metal perf cap: img_resize_target %d -> %d "
-                "(conv_transpose_2d slow on Metal; reduce to avoid GPU "
-                "timeout)",
-                requested, kMetalMaxTarget);
-        requested = kMetalMaxTarget;
-    }
+    const bool is_metal = is_metal_device(device_name);
+
+    // Metal's conv_transpose_2d is significantly slower than CUDA/Vulkan.
+    // When VRAM info is unavailable, fall back to a conservative hard cap.
+    // When VRAM info IS available, use dynamic calculation with a Metal-
+    // specific overhead factor instead.
+    constexpr int kMetalFallbackMax = 1008;
 
     if (!mem.valid) {
+        if (is_metal && requested > kMetalFallbackMax) {
+            DA_DEBUG_LOG(
+                    "Metal fallback cap (no VRAM info): img_resize_target "
+                    "%d -> %d",
+                    requested, kMetalFallbackMax);
+            return kMetalFallbackMax;
+        }
         return requested;
     }
 
@@ -102,17 +103,22 @@ int cap_resize_target_for_vram(int requested,
             static_cast<double>(mem.free_bytes - weight_reserve - safety);
     // Empirical: GIANT q8 single-view activation peak ~9e8 bytes at target=504
     // on RTX 3060-class GPUs (scales ~ (target/504)^2 ).
-    constexpr double kPeakAt504 = 9.0e8;
-    const double ratio = std::sqrt(std::max(0.0, usable / kPeakAt504));
+    // Metal conv_transpose_2d uses ~1.8x more intermediate memory than CUDA.
+    constexpr double kPeakAt504_default = 9.0e8;
+    constexpr double kMetalOverhead = 1.8;
+    const double peak_at_504 =
+            is_metal ? kPeakAt504_default * kMetalOverhead : kPeakAt504_default;
+    const double ratio = std::sqrt(std::max(0.0, usable / peak_at_504));
     int cap = static_cast<int>(504.0 * ratio);
     cap = std::max(kMinTarget, (cap / kPatchSize) * kPatchSize);
     cap = std::min(cap, requested);
 
     if (cap < requested) {
         DA_DEBUG_LOG(
-                "VRAM cap: img_resize_target %d -> %d (GPU free %.1f GiB / "
+                "VRAM cap%s: img_resize_target %d -> %d (GPU free %.1f GiB / "
                 "total %.1f GiB, single-view peak)",
-                requested, cap, mem.free_bytes / (1024.0 * 1024.0 * 1024.0),
+                is_metal ? " (Metal)" : "", requested, cap,
+                mem.free_bytes / (1024.0 * 1024.0 * 1024.0),
                 mem.total_bytes / (1024.0 * 1024.0 * 1024.0));
     }
     return cap;

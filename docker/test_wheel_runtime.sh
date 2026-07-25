@@ -218,9 +218,23 @@ print(pathlib.Path(cloudViewer.__file__).resolve().parent / "lib")
 PY
 )
 test -f "$AICORE_LIB_DIR/libAICore.so"
-test -f "$AICORE_LIB_DIR/libggml-cpu.so"
-test -f "$AICORE_LIB_DIR/libggml-vulkan.so"
+test -n "$(ls "$AICORE_LIB_DIR"/libggml-cpu*.so 2>/dev/null)"
 test ! -e "$AICORE_LIB_DIR/libggml-blas.so"
+# GPU backend modules (Vulkan, Metal, CUDA) are optional and depend on
+# build configuration.  Validate them via _build_config in Python instead
+# of hardcoding file paths.
+python -c "
+import pathlib, cloudViewer as cv
+root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
+bc = cv._build_config
+for backend, flag in [('vulkan','AICore_VULKAN_ENABLED'),('metal','AICore_METAL_ENABLED'),('cuda','AICore_CUDA_ENABLED')]:
+    if bc.get(flag, False):
+        found = list(root.glob(f'*ggml-{backend}*'))
+        assert found, f'ggml {backend} module missing from {root} (build_config {flag}=True)'
+        print(f'  {backend}: {found}')
+    else:
+        print(f'  {backend}: not built (skipped)')
+"
 if readelf -d "$AICORE_LIB_DIR/libAICore.so" \
     | grep -Eq 'NEEDED.*(libcuda|libcudart|libcublas|libvulkan)'; then
     echo "Error: libAICore.so has a hard GPU dependency" >&2

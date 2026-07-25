@@ -830,11 +830,18 @@ test_wheel() {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
     python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
-    python -W default -c "import pathlib, sys, cloudViewer as cv; root=pathlib.Path(cv.__file__).resolve().parent/'lib'; enabled=cv._build_config.get('AICore_ENABLED', False); \
-vulkan=list(root.glob('*ggml-vulkan*')); assert not enabled or vulkan, f'ggml Vulkan module missing from {root}'; print('AICore Vulkan modules:', vulkan); \
-metal=list(root.glob('*ggml-metal*')) if sys.platform=='darwin' else []; \
-assert not enabled or sys.platform!='darwin' or metal, f'ggml Metal module missing from {root}'; \
-print('AICore Metal modules:', metal) if metal else None"
+    python -W default -c "
+import pathlib, cloudViewer as cv
+root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
+bc = cv._build_config
+for name, flag in [('Vulkan','AICore_VULKAN_ENABLED'),
+                   ('Metal','AICore_METAL_ENABLED'),
+                   ('CUDA','AICore_CUDA_ENABLED')]:
+    mod = list(root.glob(f'*ggml-{name.lower()}*'))
+    if bc.get(flag, False):
+        assert mod, f'ggml {name} module missing from {root}'
+    print(f'  {name}: enabled={bc.get(flag,False)}, modules={mod}')
+"
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
     # cloudViewer example reconstruction/gui
     echo
