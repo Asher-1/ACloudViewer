@@ -876,8 +876,7 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
             m_dbImageList->addItem(item);
         }
         if (m_dbToggleBtn) {
-            m_dbToggleBtn->setText(
-                    tr("DB Images (%1)").arg(images.size()));
+            m_dbToggleBtn->setText(tr("DB Images (%1)").arg(images.size()));
             m_dbToggleBtn->setChecked(true);
         }
     }

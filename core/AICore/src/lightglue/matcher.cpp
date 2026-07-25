@@ -690,11 +690,10 @@ public:
         ggml_status status = GGML_STATUS_FAILED;
         try {
             status = ggml_backend_graph_compute(backend_.be, graph);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             error_ = std::string(
                              "backend threw exception during graph_compute: ") +
-                     e.what() +
-                     " (device=" + backend_.device +
+                     e.what() + " (device=" + backend_.device +
                      "). Try switching to a different device.";
             LG_ERR("%s", error_.c_str());
             ggml_free(context);

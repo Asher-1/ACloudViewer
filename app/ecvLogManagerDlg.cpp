@@ -53,23 +53,22 @@ LogLevelHighlighter::LogLevelHighlighter(QTextDocument* parent)
     rule.format = errorFmt;
     m_rules.append(rule);
 
-    rule.pattern = QRegularExpression(
-            R"(^\s*\[mvk-error\].*)",
-            QRegularExpression::CaseInsensitiveOption);
+    rule.pattern =
+            QRegularExpression(R"(^\s*\[mvk-error\].*)",
+                               QRegularExpression::CaseInsensitiveOption);
     rule.format = errorFmt;
     m_rules.append(rule);
 
     QTextCharFormat warnFmt;
     warnFmt.setForeground(QColor("#E65100"));
-    rule.pattern = QRegularExpression(
-            R"(\[.*?\]\s*(warning|WARNING|Warning|WARN).*)",
-            QRegularExpression::CaseInsensitiveOption);
+    rule.pattern =
+            QRegularExpression(R"(\[.*?\]\s*(warning|WARNING|Warning|WARN).*)",
+                               QRegularExpression::CaseInsensitiveOption);
     rule.format = warnFmt;
     m_rules.append(rule);
 
     rule.pattern = QRegularExpression(
-            R"(^WARNING:.*)",
-            QRegularExpression::CaseInsensitiveOption);
+            R"(^WARNING:.*)", QRegularExpression::CaseInsensitiveOption);
     rule.format = warnFmt;
     m_rules.append(rule);
 
@@ -161,15 +160,13 @@ void ecvLogManagerDlg::setupUI() {
     searchLayout->addWidget(m_searchEdit, 1);
 
     auto* findPrevBtn = new QToolButton(searchBar);
-    findPrevBtn->setIcon(
-            style()->standardIcon(QStyle::SP_ArrowUp));
+    findPrevBtn->setIcon(style()->standardIcon(QStyle::SP_ArrowUp));
     findPrevBtn->setToolTip(tr("Find Previous (Shift+F3)"));
     findPrevBtn->setAutoRaise(true);
     searchLayout->addWidget(findPrevBtn);
 
     auto* findNextBtn = new QToolButton(searchBar);
-    findNextBtn->setIcon(
-            style()->standardIcon(QStyle::SP_ArrowDown));
+    findNextBtn->setIcon(style()->standardIcon(QStyle::SP_ArrowDown));
     findNextBtn->setToolTip(tr("Find Next (F3)"));
     findNextBtn->setAutoRaise(true);
     searchLayout->addWidget(findNextBtn);
@@ -204,8 +201,7 @@ void ecvLogManagerDlg::setupUI() {
     leftLayout->setContentsMargins(0, 0, 0, 0);
     leftLayout->setSpacing(4);
 
-    auto* listHeader = new QLabel(
-            tr("<b>Log Files</b>"), leftPanel);
+    auto* listHeader = new QLabel(tr("<b>Log Files</b>"), leftPanel);
     listHeader->setStyleSheet("padding: 2px 4px;");
     leftLayout->addWidget(listHeader);
 
@@ -227,8 +223,7 @@ void ecvLogManagerDlg::setupUI() {
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(4);
 
-    auto* viewerHeader = new QLabel(
-            tr("<b>Log Content</b>"), rightPanel);
+    auto* viewerHeader = new QLabel(tr("<b>Log Content</b>"), rightPanel);
     viewerHeader->setStyleSheet("padding: 2px 4px;");
     rightLayout->addWidget(viewerHeader);
 
@@ -328,35 +323,28 @@ void ecvLogManagerDlg::setupToolbar() {
             "QToolButton:hover { background: palette(midlight); }");
 
     m_actRefresh = m_toolbar->addAction(
-            style()->standardIcon(QStyle::SP_BrowserReload),
-            tr("Refresh"));
+            style()->standardIcon(QStyle::SP_BrowserReload), tr("Refresh"));
     m_actRefresh->setShortcut(QKeySequence::Refresh);
     m_actRefresh->setToolTip(tr("Refresh log file list (F5)"));
 
     m_actOpenFolder = m_toolbar->addAction(
-            style()->standardIcon(QStyle::SP_DirOpenIcon),
-            tr("Open Folder"));
-    m_actOpenFolder->setToolTip(
-            tr("Open log directory in file manager"));
+            style()->standardIcon(QStyle::SP_DirOpenIcon), tr("Open Folder"));
+    m_actOpenFolder->setToolTip(tr("Open log directory in file manager"));
 
     m_actExport = m_toolbar->addAction(
-            style()->standardIcon(QStyle::SP_DialogSaveButton),
-            tr("Export"));
+            style()->standardIcon(QStyle::SP_DialogSaveButton), tr("Export"));
     m_actExport->setToolTip(tr("Export selected log to a file"));
 
     m_toolbar->addSeparator();
 
     m_actDelete = m_toolbar->addAction(
-            style()->standardIcon(QStyle::SP_TrashIcon),
-            tr("Delete"));
-    m_actDelete->setToolTip(
-            tr("Delete selected log files"));
+            style()->standardIcon(QStyle::SP_TrashIcon), tr("Delete"));
+    m_actDelete->setToolTip(tr("Delete selected log files"));
 
     m_actDeleteOld = m_toolbar->addAction(
             style()->standardIcon(QStyle::SP_DialogDiscardButton),
             tr("Clean Old"));
-    m_actDeleteOld->setToolTip(
-            tr("Delete log files older than 30 days"));
+    m_actDeleteOld->setToolTip(tr("Delete log files older than 30 days"));
 
     m_toolbar->addSeparator();
 
@@ -365,8 +353,7 @@ void ecvLogManagerDlg::setupToolbar() {
     m_toolbar->addWidget(spacer);
 
     auto* closeAction = m_toolbar->addAction(
-            style()->standardIcon(QStyle::SP_DialogCloseButton),
-            tr("Close"));
+            style()->standardIcon(QStyle::SP_DialogCloseButton), tr("Close"));
     closeAction->setShortcut(QKeySequence::Close);
 
     connect(m_actRefresh, &QAction::triggered, this,
@@ -395,9 +382,8 @@ qint64 ecvLogManagerDlg::totalLogSize() const {
 }
 
 void ecvLogManagerDlg::updateStatusBar() {
-    m_statusLabel->setText(tr("%1 log file(s) in %2")
-                                   .arg(m_totalFiles)
-                                   .arg(logDirectory()));
+    m_statusLabel->setText(
+            tr("%1 log file(s) in %2").arg(m_totalFiles).arg(logDirectory()));
     m_sizeLabel->setText(
             tr("Total: %1").arg(QLocale().formattedDataSize(m_totalSize)));
 }
@@ -437,12 +423,10 @@ void ecvLogManagerDlg::refreshLogList() {
     }
 
     for (const QFileInfo& fi : files) {
-        bool isCurrent =
-                !currentLogPath.isEmpty() &&
-                fi.absoluteFilePath() == currentLogPath;
+        bool isCurrent = !currentLogPath.isEmpty() &&
+                         fi.absoluteFilePath() == currentLogPath;
 
-        QString dateStr =
-                fi.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
+        QString dateStr = fi.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
         QString sizeStr = QLocale().formattedDataSize(fi.size());
         QString label;
         if (isCurrent) {
@@ -464,11 +448,9 @@ void ecvLogManagerDlg::refreshLogList() {
             QFont f = item->font();
             f.setBold(true);
             item->setFont(f);
-            item->setIcon(
-                    style()->standardIcon(QStyle::SP_MediaPlay));
+            item->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
         } else {
-            item->setIcon(
-                    style()->standardIcon(QStyle::SP_FileIcon));
+            item->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
         }
 
         m_totalSize += fi.size();
@@ -594,9 +576,9 @@ void ecvLogManagerDlg::exportLog() {
     if (QFile::copy(srcPath, destPath)) {
         m_statusLabel->setText(tr("Exported to: %1").arg(destPath));
     } else {
-        QMessageBox::warning(this, tr("Export Failed"),
-                             tr("Could not export log file to:\n%1")
-                                     .arg(destPath));
+        QMessageBox::warning(
+                this, tr("Export Failed"),
+                tr("Could not export log file to:\n%1").arg(destPath));
     }
 }
 
@@ -655,7 +637,6 @@ void ecvLogManagerDlg::onFilterChanged(int index) {
     }
 
     m_logViewer->setPlainText(
-            tr("--- Filtered: %1 matching lines ---\n\n")
-                    .arg(filtered.size()) +
+            tr("--- Filtered: %1 matching lines ---\n\n").arg(filtered.size()) +
             filtered.join('\n'));
 }
