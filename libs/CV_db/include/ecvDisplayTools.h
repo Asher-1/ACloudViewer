@@ -1845,9 +1845,9 @@ public:  // visualization matrix transformation
         return QImage();
     }
     inline QImage renderToImage(int zoomFactor = 1,
-                                        bool renderOverlayItems = false,
-                                        bool silent = false,
-                                        int viewport = 0) override {
+                                bool renderOverlayItems = false,
+                                bool silent = false,
+                                int viewport = 0) override {
         return QImage(); /* do nothing */
     }
 

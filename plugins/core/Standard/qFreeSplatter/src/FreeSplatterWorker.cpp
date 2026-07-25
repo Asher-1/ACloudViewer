@@ -7,12 +7,11 @@
 
 #include "FreeSplatterWorker.h"
 
-#include <algorithm>
-
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <algorithm>
 
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"

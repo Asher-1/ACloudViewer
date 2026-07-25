@@ -740,8 +740,7 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
         }
         m_dbImageCombo->setEnabled(true);
         if (m_dbToggleBtn) {
-            m_dbToggleBtn->setText(
-                    tr("DB Images (%1)").arg(imageNames.size()));
+            m_dbToggleBtn->setText(tr("DB Images (%1)").arg(imageNames.size()));
             m_dbToggleBtn->setChecked(true);
         }
     }

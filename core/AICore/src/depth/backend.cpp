@@ -419,9 +419,8 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
 
     enum ggml_status status = GGML_STATUS_FAILED;
     try {
-        status = need_sched
-                         ? ggml_backend_sched_graph_compute(impl_->sched, gf)
-                         : ggml_backend_graph_compute(impl_->backend, gf);
+        status = need_sched ? ggml_backend_sched_graph_compute(impl_->sched, gf)
+                            : ggml_backend_graph_compute(impl_->backend, gf);
     } catch (const std::exception& e) {
         DA_ERR("Backend::compute: backend threw exception during "
                "graph_compute: %s  (device=%s). "
