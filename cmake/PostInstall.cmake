@@ -281,14 +281,84 @@ endif()
 set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
     set(PACKAGE_TOOL "binarycreator")
-    set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-    message(STATUS "Package with command: " ${SHELL_CMD})
-    execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-    message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
-    # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}
-    #                 WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})
-    # message(STATUS "Package ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip created")
+    if (APPLE)
+        # Qt IFW ≥4.x on macOS may create a nested app bundle where
+        # CFBundleExecutable points to a directory instead of a binary.
+        # Work around: create the .app first, fix the bundle, then wrap in DMG.
+        set(_QTIFW_APP_PATH "${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.app")
+        set(_QTIFW_BUNDLE_EXE "${ACLOUDVIEWER_PACKAGE_NAME}")
+        message(STATUS "Creating macOS installer app: ${_QTIFW_APP_PATH}")
+        execute_process(COMMAND ${PACKAGE_TOOL}
+            -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH}
+            "${_QTIFW_APP_PATH}"
+            WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY}
+            RESULT_VARIABLE _QTIFW_RESULT)
+        if(_QTIFW_RESULT)
+            message(FATAL_ERROR "binarycreator failed with code ${_QTIFW_RESULT}")
+        endif()
+
+        # Fix nested bundle: if CFBundleExecutable is a directory (Qt IFW bug),
+        # flatten it by moving the inner installerbase binary to the expected path.
+        set(_BUNDLE_MACOS "${_QTIFW_APP_PATH}/Contents/MacOS")
+        set(_BUNDLE_EXE "${_BUNDLE_MACOS}/${_QTIFW_BUNDLE_EXE}")
+        if(IS_DIRECTORY "${_BUNDLE_EXE}")
+            # Find the real binary inside the nested bundle
+            set(_NESTED_BIN "${_BUNDLE_EXE}/Contents/MacOS/installerbase")
+            if(NOT EXISTS "${_NESTED_BIN}")
+                file(GLOB _NESTED_BIN "${_BUNDLE_EXE}/Contents/MacOS/*")
+                list(GET _NESTED_BIN 0 _NESTED_BIN)
+            endif()
+            if(EXISTS "${_NESTED_BIN}")
+                message(STATUS "Fixing nested Qt IFW bundle: ${_NESTED_BIN} -> ${_BUNDLE_EXE}")
+                set(_TMP_BIN "${_BUNDLE_MACOS}/_installerbase_tmp")
+                file(COPY "${_NESTED_BIN}" DESTINATION "${_BUNDLE_MACOS}"
+                     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                     GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                get_filename_component(_NESTED_NAME "${_NESTED_BIN}" NAME)
+                file(RENAME "${_BUNDLE_MACOS}/${_NESTED_NAME}" "${_TMP_BIN}")
+                file(REMOVE_RECURSE "${_BUNDLE_EXE}")
+                # Also remove the .QaTwuZ temporary directory if present
+                file(GLOB _QTIFW_TEMPS "${_BUNDLE_MACOS}/${_QTIFW_BUNDLE_EXE}.*")
+                foreach(_tmp IN LISTS _QTIFW_TEMPS)
+                    if(IS_DIRECTORY "${_tmp}")
+                        file(REMOVE_RECURSE "${_tmp}")
+                    endif()
+                endforeach()
+                file(RENAME "${_TMP_BIN}" "${_BUNDLE_EXE}")
+                message(STATUS "Fixed macOS installer bundle executable")
+            else()
+                message(WARNING "Cannot fix nested bundle: no binary found under ${_BUNDLE_EXE}")
+            endif()
+        endif()
+
+        # Ad-hoc sign the installer app
+        execute_process(COMMAND codesign --deep --force -s - --timestamp "${_QTIFW_APP_PATH}"
+            RESULT_VARIABLE _SIGN_RESULT)
+        if(_SIGN_RESULT)
+            message(WARNING "Ad-hoc signing failed (code ${_SIGN_RESULT}), installer may not launch on some macOS versions")
+        endif()
+
+        # Create compressed DMG from the fixed app bundle
+        message(STATUS "Creating DMG: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        file(REMOVE "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        execute_process(COMMAND hdiutil create
+            -volname "${ACLOUDVIEWER_PACKAGE_NAME}"
+            -srcfolder "${_QTIFW_APP_PATH}"
+            -ov -format UDZO
+            "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}"
+            RESULT_VARIABLE _DMG_RESULT)
+        if(_DMG_RESULT)
+            message(FATAL_ERROR "hdiutil create failed with code ${_DMG_RESULT}")
+        endif()
+        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+    else()
+        # Linux / Windows: create installer directly
+        set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        message(STATUS "Package with command: " ${SHELL_CMD})
+        execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
+                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
+        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+    endif()
 else() # Do not package
     message(STATUS "Continue to publish installer package: cd ${MAIN_WORKING_DIRECTORY}.")
     message(STATUS "Then please execute: ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
