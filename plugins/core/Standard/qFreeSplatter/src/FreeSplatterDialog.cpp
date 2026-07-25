@@ -215,9 +215,19 @@ void FreeSplatterDialog::setupUi() {
     ioLayout->addLayout(inputCol, row, 1, 1, 2);
 
     row++;
-    m_dbImageLabel = new QLabel("DB Images:");
-    ioLayout->addWidget(m_dbImageLabel, row, 0, Qt::AlignTop);
-    auto* dbCol = new QVBoxLayout;
+    m_dbToggleBtn = new QToolButton;
+    m_dbToggleBtn->setArrowType(Qt::RightArrow);
+    m_dbToggleBtn->setCheckable(true);
+    m_dbToggleBtn->setChecked(false);
+    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_dbToggleBtn->setText(tr("DB Images"));
+    m_dbToggleBtn->setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; }");
+    ioLayout->addWidget(m_dbToggleBtn, row, 0, Qt::AlignTop);
+
+    m_dbContentWidget = new QWidget;
+    auto* dbCol = new QVBoxLayout(m_dbContentWidget);
+    dbCol->setContentsMargins(0, 0, 0, 0);
     m_dbImageList = new QListWidget;
     m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_dbImageList->setMinimumHeight(100);
@@ -236,7 +246,13 @@ void FreeSplatterDialog::setupUi() {
     dbBtnLayout->addWidget(refreshDbBtn);
     dbBtnLayout->addStretch();
     dbCol->addLayout(dbBtnLayout);
-    ioLayout->addLayout(dbCol, row, 1, 1, 2);
+    m_dbContentWidget->setVisible(false);
+    ioLayout->addWidget(m_dbContentWidget, row, 1, 1, 2);
+
+    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
+        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+        m_dbContentWidget->setVisible(checked);
+    });
 
     row++;
     ioLayout->addWidget(new QLabel("Opacity Threshold:"), row, 0);
@@ -827,6 +843,7 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
         m_dbImageList->addItem(tr("(no ccImage entities in DB)"));
         m_dbImageList->item(0)->setFlags(Qt::NoItemFlags);
         m_dbImageList->setEnabled(false);
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
     } else {
         m_dbImageList->setEnabled(true);
         for (const auto& entry : images) {
@@ -844,6 +861,7 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
             }
             m_dbImageList->addItem(item);
         }
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
     }
     m_dbImageList->blockSignals(false);
     refreshThumbnailStrip();
@@ -893,8 +911,8 @@ void FreeSplatterDialog::onModeChanged(int index) {
         m_exportFieldModeCombo->setVisible(isReconstruct);
     m_addToDbCheck->setVisible(isReconstruct);
     m_estimatePosesCheck->setVisible(isReconstruct);
-    m_dbImageLabel->setVisible(isReconstruct);
-    m_dbImageList->setVisible(isReconstruct);
+    m_dbToggleBtn->setVisible(isReconstruct);
+    m_dbContentWidget->setVisible(isReconstruct && m_dbToggleBtn->isChecked());
     m_imageCountLabel->setVisible(isReconstruct);
     if (isReconstruct) updateImageCountStatus();
     updateRunButtonState();

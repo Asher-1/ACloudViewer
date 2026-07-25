@@ -143,6 +143,13 @@ ecvConsole::~ecvConsole() {
     setLogFile(QString());  // to close/delete any active stream
 }
 
+QString ecvConsole::currentLogFilePath() const {
+    if (m_logFile.isOpen()) {
+        return m_logFile.fileName();
+    }
+    return {};
+}
+
 void myMessageOutput(QtMsgType type,
                      const QMessageLogContext& context,
                      const QString& msg) {

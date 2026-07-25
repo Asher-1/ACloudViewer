@@ -11,12 +11,22 @@
 #include "ecvViewManager.h"
 #include "ecvViewRepresentation.h"
 
-ecvRepresentationManager::ecvRepresentationManager() : QObject(nullptr) {}
+static bool s_repManagerAlive = false;
+
+ecvRepresentationManager::ecvRepresentationManager() : QObject(nullptr) {
+    s_repManagerAlive = true;
+}
+
+ecvRepresentationManager::~ecvRepresentationManager() {
+    s_repManagerAlive = false;
+}
 
 ecvRepresentationManager& ecvRepresentationManager::instance() {
     static ecvRepresentationManager s_instance;
     return s_instance;
 }
+
+bool ecvRepresentationManager::isAlive() { return s_repManagerAlive; }
 
 ecvViewRepresentation* ecvRepresentationManager::getRepresentation(
         ccHObject* entity, ecvGenericGLDisplay* view) const {

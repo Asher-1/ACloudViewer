@@ -10,6 +10,7 @@
 // Local
 #include "ecvLayoutManager.h"
 #include "ecvMultiViewWidget.h"
+#include "ecvLogManagerDlg.h"
 #include "ecvShortcutDialog.h"
 #include "ecvTabbedMultiViewWidget.h"
 
@@ -1800,6 +1801,10 @@ void MainWindow::connectActions() {
             &MainWindow::doActionToggleCameraOrientationWidget);
     connect(m_ui->actionGlobalShiftSettings, &QAction::triggered, this,
             &MainWindow::doActionGlobalShiftSeetings);
+    connect(m_ui->actionLogManager, &QAction::triggered, this, [this]() {
+        ecvLogManagerDlg dlg(this);
+        dlg.exec();
+    });
 
     // About (connect)
     connect(m_ui->helpAction, &QAction::triggered, this, &MainWindow::help);

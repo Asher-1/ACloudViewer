@@ -20,6 +20,7 @@
 #include <QSpinBox>
 #include <QStackedWidget>
 #include <QTextEdit>
+#include <QToolButton>
 
 struct DA3BuiltinModel {
     QString displayName;
@@ -134,8 +135,9 @@ private:
     QLabel* m_downsampleLabel = nullptr;
     QCheckBox* m_colmapBinaryCheck = nullptr;
 
+    QToolButton* m_dbToggleBtn = nullptr;
+    QWidget* m_dbContentWidget = nullptr;
     QComboBox* m_dbImageCombo = nullptr;
-    QLabel* m_dbImageLabel = nullptr;
 
     QWidget* m_quantGroup = nullptr;
     QLineEdit* m_quantInput = nullptr;

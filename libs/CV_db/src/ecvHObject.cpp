@@ -160,9 +160,12 @@ ccHObject::ccHObject(const ccHObject& object)
 ccHObject::~ccHObject() {
     m_isDeleting = true;
 
-    // Clean up per-view representations so that the representation
-    // manager does not hold dangling entity pointers after deletion.
-    ecvRepresentationManager::instance().removeRepresentationsForEntity(this);
+    // Guard: during process exit the singleton may already be destroyed
+    // (static destruction order); accessing it would crash in QHash.
+    if (ecvRepresentationManager::isAlive()) {
+        ecvRepresentationManager::instance().removeRepresentationsForEntity(
+                this);
+    }
 
     // process dependencies
     for (std::map<ccHObject*, int>::const_iterator it = m_dependencies.begin();

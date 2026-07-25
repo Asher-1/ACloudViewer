@@ -247,8 +247,19 @@ void DA3Dialog::setupUi() {
     ioLayout->addWidget(inputBtnWidget, row, 2);
 
     row++;
-    m_dbImageLabel = new QLabel("DB Images:");
-    ioLayout->addWidget(m_dbImageLabel, row, 0);
+    m_dbToggleBtn = new QToolButton;
+    m_dbToggleBtn->setArrowType(Qt::RightArrow);
+    m_dbToggleBtn->setCheckable(true);
+    m_dbToggleBtn->setChecked(false);
+    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_dbToggleBtn->setText(tr("DB Images"));
+    m_dbToggleBtn->setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; }");
+    ioLayout->addWidget(m_dbToggleBtn, row, 0);
+
+    m_dbContentWidget = new QWidget;
+    auto* dbContentLayout = new QHBoxLayout(m_dbContentWidget);
+    dbContentLayout->setContentsMargins(0, 0, 0, 0);
     m_dbImageCombo = new QComboBox;
     m_dbImageCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_dbImageCombo->setToolTip(
@@ -257,12 +268,19 @@ void DA3Dialog::setupUi() {
     m_dbImageCombo->setEnabled(false);
     connect(m_dbImageCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DA3Dialog::onDbImageSelected);
-    ioLayout->addWidget(m_dbImageCombo, row, 1);
+    dbContentLayout->addWidget(m_dbImageCombo, 1);
     auto* refreshDbBtn = new QPushButton("Refresh");
     refreshDbBtn->setToolTip("Refresh list of images from DB tree");
     connect(refreshDbBtn, &QPushButton::clicked, this,
             &DA3Dialog::refreshDbImagesRequested);
-    ioLayout->addWidget(refreshDbBtn, row, 2);
+    dbContentLayout->addWidget(refreshDbBtn);
+    m_dbContentWidget->setVisible(false);
+    ioLayout->addWidget(m_dbContentWidget, row, 1, 1, 2);
+
+    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
+        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+        m_dbContentWidget->setVisible(checked);
+    });
 
     row++;
     ioLayout->addWidget(new QLabel("Output Dir:"), row, 0);
@@ -707,6 +725,7 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
     if (imageNames.isEmpty()) {
         m_dbImageCombo->addItem(tr("(no images in DB)"));
         m_dbImageCombo->setEnabled(false);
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
     } else {
         m_dbImageCombo->addItem(
                 tr("-- Select from DB (%1 images) --").arg(imageNames.size()));
@@ -714,6 +733,7 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
             m_dbImageCombo->addItem(name, name);
         }
         m_dbImageCombo->setEnabled(true);
+        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
     }
     m_dbImageCombo->blockSignals(false);
 }
@@ -749,8 +769,8 @@ void DA3Dialog::onModeChanged(int index) {
     m_downsampleStep->setVisible(isDepth);
 
     bool showDbImages = isDepth || (mode == Mode::Reconstruct);
-    m_dbImageLabel->setVisible(showDbImages);
-    m_dbImageCombo->setVisible(showDbImages);
+    m_dbToggleBtn->setVisible(showDbImages);
+    m_dbContentWidget->setVisible(showDbImages && m_dbToggleBtn->isChecked());
 
     bool showOutput =
             isExport || isQuantize || isDepth || (mode == Mode::Reconstruct);

@@ -158,6 +158,8 @@
     <addaction name="actionGlobalShiftSettings"/>
     <addaction name="separator"/>
     <addaction name="actionShortcutSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionLogManager"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
     <property name="title">
@@ -3078,6 +3080,17 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Configure keyboard shortcuts</string>
+   </property>
+  </action>
+  <action name="actionLogManager">
+   <property name="text">
+    <string>Log Manager...</string>
+   </property>
+   <property name="toolTip">
+    <string>View and manage application log files</string>
+   </property>
+   <property name="statusTip">
+    <string>View and manage application log files</string>
    </property>
   </action>
   <action name="GrayThemeAction">
