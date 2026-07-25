@@ -3083,6 +3083,10 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionLogManager">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/logManager.svg</normaloff>:/Resources/images/svg/logManager.svg</iconset>
+   </property>
    <property name="text">
     <string>Log Manager...</string>
    </property>

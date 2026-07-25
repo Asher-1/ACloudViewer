@@ -48,7 +48,7 @@ resolve_existing_vulkan_sdk() {
 }
 
 if [[ -z "${VULKAN_SDK:-}" ]]; then
-    echo "ERROR: VULKAN_SDK is not set. Install the SDK first or run util/install_vulkan_sdk_macos.sh." >&2
+    echo "ERROR: VULKAN_SDK is not set. Install the SDK first (Linux: util/install_vulkan_linux.sh, Windows: util/install_vulkan_sdk_windows.ps1)." >&2
     exit 1
 fi
 

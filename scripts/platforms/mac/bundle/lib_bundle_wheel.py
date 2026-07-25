@@ -17,7 +17,7 @@ _BUNDLE_DIR = Path(__file__).resolve().parent
 if str(_BUNDLE_DIR) not in sys.path:
     sys.path.insert(0, str(_BUNDLE_DIR))
 
-from bundle_slim import discover_moltenvk, should_skip_cuda_runtime_lib
+from bundle_slim import should_skip_cuda_runtime_lib
 
 logger = logging.getLogger(__name__)
 
@@ -162,45 +162,6 @@ class CCWheelBundler:
         logger.info("Sign cloudViewer dynamic libraries")
         process_pool.map(self._add_signature, all_libs)
         return 0
-
-    def _bundle_moltenvk(self, libs_found: set[Path]) -> None:
-        """Bundle MoltenVK for self-contained Vulkan support in the wheel.
-
-        For a wheel the layout is flat (everything under ``lib/``), so
-        the ICD manifest sits at ``<package>/vulkan/icd.d/`` and the
-        ``library_path`` points to ``../../lib/libMoltenVK.dylib``.
-        At runtime, the cloudViewer package's ``__init__.py`` sets
-        ``VK_ICD_FILENAMES`` so the Vulkan loader finds it.
-        """
-        moltenvk_lib, icd_data = discover_moltenvk()
-        if moltenvk_lib is None:
-            logger.warning(
-                "MoltenVK not found; wheel Vulkan backend requires "
-                "MoltenVK on the target system"
-            )
-            return
-
-        libs_found.add(moltenvk_lib)
-        logger.info("Bundling MoltenVK for wheel: %s", moltenvk_lib)
-
-        icd_dir = self.config.install_path / "vulkan" / "icd.d"
-        icd_dir.mkdir(parents=True, exist_ok=True)
-
-        api_version = "1.2.0"
-        if icd_data:
-            api_version = icd_data.get("ICD", {}).get("api_version", api_version)
-
-        icd_manifest = {
-            "file_format_version": "1.0.0",
-            "ICD": {
-                "library_path": "../../lib/libMoltenVK.dylib",
-                "api_version": api_version,
-                "is_portability_driver": True,
-            },
-        }
-        icd_path = icd_dir / "MoltenVK_icd.json"
-        icd_path.write_text(json.dumps(icd_manifest, indent=4) + "\n")
-        logger.info("Created wheel ICD manifest: %s (api_version=%s)", icd_path, api_version)
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
@@ -428,8 +389,7 @@ class CCWheelBundler:
         # ggml backend modules are dlopen'd at runtime and NOT in the otool
         # dependency chain.  They are pre-copied into lib/ by CMake's
         # CopyGgmlBackends.cmake, but we still need to traverse their
-        # dependencies (e.g. libvulkan.1.dylib) so they get bundled.
-        has_vulkan_backend = False
+        # dependencies so they get bundled.
         for lib in list(libs_found):
             if lib.name.startswith("libAICore"):
                 src_dir = lib.parent
@@ -439,12 +399,7 @@ class CCWheelBundler:
                             continue
                         logger.info("Adding ggml backend module: %s", ggml_mod)
                         libs_found.add(ggml_mod)
-                    if "ggml-vulkan" in ggml_mod.name:
-                        has_vulkan_backend = True
                 break
-
-        if has_vulkan_backend:
-            self._bundle_moltenvk(libs_found)
 
         return libs_found, lib_ex_found, libs_in_plugins
 

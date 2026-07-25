@@ -221,17 +221,28 @@ void FreeSplatterDialog::setupUi() {
     m_dbToggleBtn->setChecked(false);
     m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_dbToggleBtn->setText(tr("DB Images"));
+    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
     m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; }");
+            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
+            "  border-radius: 3px; color: palette(text); }"
+            "QToolButton:hover { background: palette(midlight); }");
     ioLayout->addWidget(m_dbToggleBtn, row, 0, Qt::AlignTop);
 
     m_dbContentWidget = new QWidget;
+    m_dbContentWidget->setStyleSheet(
+            "QWidget#dbContent { "
+            "  border: 1px solid palette(mid); "
+            "  border-radius: 4px; "
+            "  background: palette(base); }");
+    m_dbContentWidget->setObjectName("dbContent");
     auto* dbCol = new QVBoxLayout(m_dbContentWidget);
-    dbCol->setContentsMargins(0, 0, 0, 0);
+    dbCol->setContentsMargins(4, 4, 4, 4);
+    dbCol->setSpacing(4);
     m_dbImageList = new QListWidget;
     m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_dbImageList->setMinimumHeight(100);
+    m_dbImageList->setMinimumHeight(80);
     m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setAlternatingRowColors(true);
     m_dbImageList->setToolTip(
             tr("ccImage entities from the DB tree — check/uncheck to add or "
                "remove from input"));
@@ -843,7 +854,10 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
         m_dbImageList->addItem(tr("(no ccImage entities in DB)"));
         m_dbImageList->item(0)->setFlags(Qt::NoItemFlags);
         m_dbImageList->setEnabled(false);
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(false);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(tr("DB Images"));
+            m_dbToggleBtn->setChecked(false);
+        }
     } else {
         m_dbImageList->setEnabled(true);
         for (const auto& entry : images) {
@@ -861,7 +875,11 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
             }
             m_dbImageList->addItem(item);
         }
-        if (m_dbToggleBtn) m_dbToggleBtn->setChecked(true);
+        if (m_dbToggleBtn) {
+            m_dbToggleBtn->setText(
+                    tr("DB Images (%1)").arg(images.size()));
+            m_dbToggleBtn->setChecked(true);
+        }
     }
     m_dbImageList->blockSignals(false);
     refreshThumbnailStrip();

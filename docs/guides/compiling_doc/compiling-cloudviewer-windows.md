@@ -342,9 +342,9 @@ Vulkan ON unless you pass `without_vulkan`.
 
 GitHub Actions Windows CI runs `util\install_vulkan_sdk_windows.ps1` (silent
 LunarG installer; required for SDK **1.4.313+** where 7z extract no longer
-includes `Include\`) then `util\sync_vulkan_env_from_sdk.ps1`. macOS CI still
-uses [humbletim/install-vulkan-sdk](https://github.com/marketplace/actions/install-vulkan-sdk).
-Local builds can use the same Windows scripts.
+includes `Include\`) then `util\sync_vulkan_env_from_sdk.ps1`. macOS CI builds
+AICore with **Metal + CPU only** (Vulkan is unsupported on macOS). Local builds
+can use the same Windows scripts.
 
 See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
 

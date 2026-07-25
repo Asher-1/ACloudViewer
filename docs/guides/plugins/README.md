@@ -14,7 +14,7 @@ ACloudViewer provides three AI plugins through the unified inference library **`
 - GUI: `-DBUILD_GUI=ON`
 - **qDA3 + automatic reconstruction:** `-DBUILD_RECONSTRUCTION=ON`
 - **FreeSplatter one-click Visualize:** `-DPLUGIN_STANDARD_QSIBR=ON` (Linux/Windows; macOS CI disables qSIBR by default)
-- **Inference acceleration:** Vulkan on Linux/Windows, Metal on macOS, and a bundled CPU fallback; SYCL/CUDA are optional developer backends
+- **Inference acceleration:** Vulkan on Linux/Windows, Metal + CPU on macOS (Vulkan unsupported — MoltenVK SPIR-V translation limitations); SYCL/CUDA are optional developer backends
 
 ## Typical build
 

@@ -45,7 +45,7 @@
 | **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
 | **Python**       | 3.10 – 3.12 (via Conda)                           |
 | **Conda**        | Miniconda or Anaconda                              |
-| **AICore GPU (default)** | **Metal → CPU** (not Vulkan); keep `-DAICore_USE_VULKAN=OFF` (CMake default on macOS) |
+| **AICore GPU (default)** | **Metal → CPU** (Vulkan is not supported on macOS) |
 | **Homebrew**     | https://brew.sh                                    |
 
 ---
@@ -94,9 +94,8 @@ export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cma
 > The example below matches that default. To experiment locally, add
 > `-DPLUGIN_STANDARD_QSIBR=ON`.
 
-> **AICore note:** macOS production **Auto** uses **Metal**, not Vulkan. CMake defaults
-> `-DAICore_USE_VULKAN=OFF` on Apple platforms. Optional MoltenVK/Vulkan dev setup:
-> `util/install_vulkan_env.sh` (not required for typical GUI builds).
+> **AICore note:** macOS uses **Metal** for GPU acceleration (Auto order: Metal -> CPU).
+> Vulkan is not supported on macOS due to MoltenVK translation limitations.
 
 ```bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
@@ -181,7 +180,7 @@ cmake \
     -DPLUGIN_STANDARD_G3POINT=ON \
     -DPLUGIN_STANDARD_QSIBR=OFF \
     -DAICore_ENABLED=ON \
-    -DAICore_USE_VULKAN=ON \
+
     -DPLUGIN_STANDARD_QDA3=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
@@ -267,7 +266,7 @@ cmake \
     -DBUILD_WEBRTC=OFF \
     -DBUILD_JUPYTER_EXTENSION=OFF \
     -DAICore_ENABLED=ON \
-    -DAICore_USE_VULKAN=ON \
+
     -DBUILD_RECONSTRUCTION=ON \
     -DBUILD_CUDA_MODULE=OFF \
     -DBUILD_PYTORCH_OPS=ON \
@@ -366,25 +365,25 @@ python -c "import cloudViewer; print(cloudViewer.__version__)"
 
 ### AICore GPU (Metal, default)
 
-macOS does **not** use Vulkan for portable AICore **Auto** inference. CMake defaults
-`-DAICore_USE_VULKAN=OFF`; device order is **Metal → CPU**. Keep this in all `cmake`
-examples when `-DAICore_ENABLED=ON`.
-
-Optional Vulkan/MoltenVK developer builds:
+macOS uses **Metal** as its native GPU backend. The AICore Auto device order is
+**Metal → CPU**.  Vulkan is **not supported** on macOS due to MoltenVK SPIR-V
+translation limitations that cause inference crashes.
 
 ```bash
-util/install_vulkan_env.sh
-source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
-cmake -DAICore_USE_VULKAN=ON -DAICore_ENABLED=ON ..
+cmake -DAICore_ENABLED=ON ..
+# Metal + CPU are automatically enabled; no Vulkan setup needed.
 ```
 
-GitHub Actions macOS CI uses
-[humbletim/install-vulkan-sdk](https://github.com/marketplace/actions/install-vulkan-sdk)
-(pinned to a post-v1.2 commit with `vulkansdk-macOS-*` support) plus
-`util/sync_vulkan_env_from_sdk.sh`, with `with_vulkan` so `libggml-vulkan` is built
-alongside Metal. Local macOS builds can still use `util/install_vulkan_sdk_macos.sh`.
+#### Platform ggml Backend Support
+
+| Platform | Default GPU | Auto Device Order | Vulkan | Metal | CUDA | Notes |
+|----------|------------|-------------------|--------|-------|------|-------|
+| **macOS** | Metal | Metal → CPU | OFF (unsupported) | ON | OFF (unsupported since 10.14+) | MoltenVK translation limitations prevent Vulkan use |
+| **Linux** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | CUDA takes priority when enabled: CUDA → Vulkan → CPU |
+| **Windows** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | Same priority as Linux |
 
 See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
+
 
 ### OpenMP on macOS
 

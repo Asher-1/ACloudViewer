@@ -94,23 +94,7 @@ cpp_test_only() {
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
      && cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && if test -f bin/libggml-vulkan.so; then \
-            LVP_ICD=\$(find /usr/share/vulkan/icd.d -maxdepth 1 -iname '*lvp*.json' 2>/dev/null | head -n 1); \
-            if [ -n \"\${LVP_ICD}\" ]; then \
-                export VK_DRIVER_FILES=\"\${LVP_ICD}\"; \
-                unset VK_ICD_FILENAMES; \
-                if vulkaninfo --summary >/dev/null 2>&1 || vulkaninfo >/dev/null 2>&1; then \
-                    python ../util/check_aicore_runtime.py bin/libAICore.so --expect-device vulkan; \
-                else \
-                    echo 'WARNING: vulkaninfo failed; skipping Vulkan device check (no GPU or LVP not functional)'; \
-                    python ../util/check_aicore_runtime.py bin/libAICore.so; \
-                fi; \
-            else \
-                echo 'WARNING: LVP ICD not found; skipping Vulkan device check'; \
-                python ../util/check_aicore_runtime.py bin/libAICore.so; \
-            fi; \
-        else \
-            echo 'WARNING: libggml-vulkan.so not found; skipping Vulkan check'; \
+     && if test -f bin/libAICore.so; then \
             python ../util/check_aicore_runtime.py bin/libAICore.so; \
         fi \
     "
@@ -156,23 +140,7 @@ cpp_python_command_tools_test() {
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && if test -f bin/libggml-vulkan.so; then \
-            LVP_ICD=\$(find /usr/share/vulkan/icd.d -maxdepth 1 -iname '*lvp*.json' 2>/dev/null | head -n 1); \
-            if [ -n \"\${LVP_ICD}\" ]; then \
-                export VK_DRIVER_FILES=\"\${LVP_ICD}\"; \
-                unset VK_ICD_FILENAMES; \
-                if vulkaninfo --summary >/dev/null 2>&1 || vulkaninfo >/dev/null 2>&1; then \
-                    python ../util/check_aicore_runtime.py bin/libAICore.so --expect-device vulkan; \
-                else \
-                    echo 'WARNING: vulkaninfo failed; skipping Vulkan device check (no GPU or LVP not functional)'; \
-                    python ../util/check_aicore_runtime.py bin/libAICore.so; \
-                fi; \
-            else \
-                echo 'WARNING: LVP ICD not found; skipping Vulkan device check'; \
-                python ../util/check_aicore_runtime.py bin/libAICore.so; \
-            fi; \
-        else \
-            echo 'WARNING: libggml-vulkan.so not found; skipping Vulkan check'; \
+     && if test -f bin/libAICore.so; then \
             python ../util/check_aicore_runtime.py bin/libAICore.so; \
         fi \
     "

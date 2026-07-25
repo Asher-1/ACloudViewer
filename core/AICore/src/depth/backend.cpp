@@ -9,6 +9,7 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -416,9 +417,31 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
     }
     impl_->pending.clear();
 
-    enum ggml_status status =
-            need_sched ? ggml_backend_sched_graph_compute(impl_->sched, gf)
-                       : ggml_backend_graph_compute(impl_->backend, gf);
+    enum ggml_status status = GGML_STATUS_FAILED;
+    try {
+        status = need_sched
+                         ? ggml_backend_sched_graph_compute(impl_->sched, gf)
+                         : ggml_backend_graph_compute(impl_->backend, gf);
+    } catch (const std::exception& e) {
+        DA_ERR("Backend::compute: backend threw exception during "
+               "graph_compute: %s  (device=%s). "
+               "Try switching to a different device.",
+               e.what(), device_name_.c_str());
+        drop_transient_allocators();
+        impl_->captures.clear();
+        impl_->roots.clear();
+        ggml_free(ctx);
+        return false;
+    } catch (...) {
+        DA_ERR("Backend::compute: unknown exception during graph_compute "
+               "(device=%s). Try switching to a different device.",
+               device_name_.c_str());
+        drop_transient_allocators();
+        impl_->captures.clear();
+        impl_->roots.clear();
+        ggml_free(ctx);
+        return false;
+    }
     if (status != GGML_STATUS_SUCCESS) {
         DA_ERR("Backend::compute: ggml_backend_graph_compute failed "
                "(status=%d)",

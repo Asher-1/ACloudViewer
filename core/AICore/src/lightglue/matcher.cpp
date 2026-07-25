@@ -21,11 +21,13 @@
 #include <fstream>
 #include <functional>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
 
 #include "backend.hpp"
+#include "common.hpp"
 #include "types.hpp"
 
 namespace aicore {
@@ -685,8 +687,26 @@ public:
                                 image2.descriptors.data(), 0,
                                 image2.descriptors.size() * sizeof(float));
 
-        const ggml_status status =
-                ggml_backend_graph_compute(backend_.be, graph);
+        ggml_status status = GGML_STATUS_FAILED;
+        try {
+            status = ggml_backend_graph_compute(backend_.be, graph);
+        } catch (const std::exception& e) {
+            error_ = std::string(
+                             "backend threw exception during graph_compute: ") +
+                     e.what() +
+                     " (device=" + backend_.device +
+                     "). Try switching to a different device.";
+            LG_ERR("%s", error_.c_str());
+            ggml_free(context);
+            return false;
+        } catch (...) {
+            error_ = "unknown exception during graph_compute (device=" +
+                     backend_.device +
+                     "). Try switching to a different device.";
+            LG_ERR("%s", error_.c_str());
+            ggml_free(context);
+            return false;
+        }
         if (status != GGML_STATUS_SUCCESS) {
             error_ = "ggml backend failed while computing LightGlue";
             ggml_free(context);

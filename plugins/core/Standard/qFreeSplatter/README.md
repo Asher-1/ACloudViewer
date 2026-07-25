@@ -39,7 +39,7 @@ sequenceDiagram
 
     U->>D: Choose Scene/Object model
     U->>D: Add images (files/folder/DB)
-    U->>D: Device Auto / Metal|SYCL|Vulkan / CPU
+    U->>D: Device Auto / Metal (macOS) | SYCL|Vulkan (Linux/Win) / CPU
     U->>D: Run
     D->>W: Settings
     W->>A: aicore_gaussian_* inference
@@ -65,7 +65,7 @@ sequenceDiagram
 | **Auto** | First compiled GPU backend by platform priority; CPU fallback |
 | **GPU (Metal)** | Force Metal (macOS only) |
 | **GPU (SYCL)** | Force Intel GPU SYCL |
-| **GPU (Vulkan)** | Force cross-vendor Vulkan |
+| **GPU (Vulkan)** | Force cross-vendor Vulkan (Linux/Windows only; unsupported on macOS) |
 | **GPU (CUDA)** | Developer opt-in (`AICore_USE_CUDA=ON`) |
 | **CPU** | Force the pure ggml CPU backend |
 

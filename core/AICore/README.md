@@ -28,7 +28,7 @@ types must not cross the C ABI.
 | `AICore` shared library | yes | the only library linked by consumers |
 | `ggml` and `ggml-base` | yes | private, version-locked AICore runtime |
 | `ggml-cpu` backend | yes | packaging fails if absent; guarantees CPU fallback |
-| Vulkan backend | Linux/Windows default | cross-vendor; shaders are embedded at build time |
+| Vulkan backend | Linux/Windows default | cross-vendor; shaders are embedded at build time; **not built on macOS** |
 | Metal backend | macOS default | Apple GPU path; CPU remains available |
 | SYCL backend | opt-in | Intel GPU; requires a validated matching oneAPI runtime bundle |
 | CUDA/OpenCL backend | developer opt-in | never required for a distributed AICore runtime |
@@ -46,8 +46,9 @@ and [backend loader](https://github.com/ggml-org/ggml/blob/v0.17.0/src/ggml-back
   (CUDA backend built), Auto becomes **CUDA → Vulkan → CPU**. Vulkan build still
   requires `glslc`/headers; end users need a Vulkan-capable display driver, not
   the Vulkan SDK.
-- macOS: Auto uses native **Metal → CPU**. CI may build Vulkan/MoltenVK for
-  explicit testing; it does not replace Metal in Auto.
+- macOS: Auto uses native **Metal → CPU** only. Vulkan is **unsupported** on
+  macOS due to MoltenVK SPIR-V translation limitations that cause inference
+  crashes; `-DAICore_USE_VULKAN=OFF` is the default.
 - SYCL remains explicit-only (never in Auto).
 - OpenCL: disabled by default. Upstream targets recent Adreno GPUs and its
   desktop operation coverage is too limited for AICore's default distribution.
@@ -119,14 +120,15 @@ and packaging use the lighter public contract suite by default.
 
 Hosted Ubuntu 20.04/22.04/24.04 builds install Vulkan through
 `util/install_deps_ubuntu.sh`; Mesa lavapipe supplies the deterministic software
-ICD smoke test. Windows and macOS builders use the fixed/checksummed LunarG SDK
-installers under `util/`. Every CI package must contain `ggml-vulkan`, while
-`libAICore` itself must have no hard Vulkan loader dependency.
+ICD smoke test. Windows builders use the fixed/checksummed LunarG SDK
+installers under `util/`. Linux/Windows CI packages must contain `ggml-vulkan`;
+macOS packages use Metal only (no Vulkan backend). `libAICore` itself must have
+no hard Vulkan loader dependency.
 
 Real model performance runs are manual through
 `.github/workflows/aicore-vulkan-hardware.yml`. Linux runners use the labels
-`aicore-vulkan` plus `intel`, `amd`, or `nvidia`; the macOS ARM64 runner uses
-`aicore-vulkan`. Each runner provides these file-path environment variables:
+`aicore-vulkan` plus `intel`, `amd`, or `nvidia`. Each runner provides these
+file-path environment variables:
 
 ```text
 AICORE_TEST_DEPTH_GGUF

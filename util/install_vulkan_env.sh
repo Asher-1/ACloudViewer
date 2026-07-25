@@ -13,7 +13,8 @@ case "$(uname -s)" in
         exec bash "${script_dir}/install_vulkan_linux.sh" "$@"
         ;;
     Darwin)
-        exec bash "${script_dir}/install_vulkan_sdk_macos.sh" "$@"
+        echo "Vulkan is not supported on macOS. Use Metal (-DAICore_USE_VULKAN=OFF)." >&2
+        exit 1
         ;;
     *)
         echo "Unsupported platform for ${0}." >&2
