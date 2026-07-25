@@ -23,8 +23,7 @@
 
 #include "ecvConsole.h"
 
-ecvLogManagerDlg::ecvLogManagerDlg(QWidget* parent)
-    : QDialog(parent) {
+ecvLogManagerDlg::ecvLogManagerDlg(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Log Manager"));
     resize(900, 600);
     setupUI();
@@ -87,16 +86,15 @@ void ecvLogManagerDlg::setupUI() {
     btnLayout->addWidget(closeBtn);
     mainLayout->addLayout(btnLayout);
 
-    connect(m_fileList, &QListWidget::currentItemChanged,
-            this, &ecvLogManagerDlg::onLogFileSelected);
-    connect(m_refreshBtn, &QPushButton::clicked,
-            this, &ecvLogManagerDlg::refreshLogList);
-    connect(m_openFolderBtn, &QPushButton::clicked,
-            this, &ecvLogManagerDlg::openLogFolder);
-    connect(m_deleteBtn, &QPushButton::clicked,
-            this, &ecvLogManagerDlg::deleteSelectedLogs);
-    connect(closeBtn, &QPushButton::clicked,
-            this, &QDialog::accept);
+    connect(m_fileList, &QListWidget::currentItemChanged, this,
+            &ecvLogManagerDlg::onLogFileSelected);
+    connect(m_refreshBtn, &QPushButton::clicked, this,
+            &ecvLogManagerDlg::refreshLogList);
+    connect(m_openFolderBtn, &QPushButton::clicked, this,
+            &ecvLogManagerDlg::openLogFolder);
+    connect(m_deleteBtn, &QPushButton::clicked, this,
+            &ecvLogManagerDlg::deleteSelectedLogs);
+    connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
 }
 
 QString ecvLogManagerDlg::logDirectory() const {
@@ -110,39 +108,44 @@ void ecvLogManagerDlg::refreshLogList() {
     QString logDir = logDirectory();
     QDir dir(logDir);
     if (!dir.exists()) {
-        m_statusLabel->setText(tr("Log directory does not exist: %1").arg(logDir));
+        m_statusLabel->setText(
+                tr("Log directory does not exist: %1").arg(logDir));
         return;
     }
 
-    QFileInfoList files = dir.entryInfoList(
-            QStringList() << "*.log", QDir::Files, QDir::Time);
+    QFileInfoList files = dir.entryInfoList(QStringList() << "*.log",
+                                            QDir::Files, QDir::Time);
 
     for (const QFileInfo& fi : files) {
-        QString label = QString("%1  (%2)").arg(
-                fi.fileName(),
-                QLocale().formattedDataSize(fi.size()));
+        QString label = QString("%1  (%2)")
+                                .arg(fi.fileName(),
+                                     QLocale().formattedDataSize(fi.size()));
         auto* item = new QListWidgetItem(label, m_fileList);
         item->setData(Qt::UserRole, fi.absoluteFilePath());
 
         if (ecvConsole::TheInstance(false)) {
             auto* console = ecvConsole::TheInstance(false);
             if (console && fi.absoluteFilePath() ==
-                    QFileInfo(console->currentLogFilePath()).absoluteFilePath()) {
+                                   QFileInfo(console->currentLogFilePath())
+                                           .absoluteFilePath()) {
                 QFont f = item->font();
                 f.setBold(true);
                 item->setFont(f);
-                item->setText(fi.fileName() + tr("  (current)  (%1)")
-                        .arg(QLocale().formattedDataSize(fi.size())));
+                item->setText(
+                        fi.fileName() +
+                        tr("  (current)  (%1)")
+                                .arg(QLocale().formattedDataSize(fi.size())));
             }
         }
     }
 
     m_statusLabel->setText(tr("Log directory: %1  |  %2 file(s)")
-            .arg(logDir).arg(files.size()));
+                                   .arg(logDir)
+                                   .arg(files.size()));
 }
 
 void ecvLogManagerDlg::onLogFileSelected(QListWidgetItem* current,
-                                          QListWidgetItem* /*prev*/) {
+                                         QListWidgetItem* /*prev*/) {
     m_logViewer->clear();
     if (!current) return;
 
@@ -160,8 +163,8 @@ void ecvLogManagerDlg::onLogFileSelected(QListWidgetItem* current,
         data = file.readAll();
         m_logViewer->setPlainText(
                 tr("--- File truncated (showing last %1) ---\n")
-                        .arg(QLocale().formattedDataSize(MAX_SIZE))
-                + QString::fromUtf8(data));
+                        .arg(QLocale().formattedDataSize(MAX_SIZE)) +
+                QString::fromUtf8(data));
     } else {
         data = file.readAll();
         m_logViewer->setPlainText(QString::fromUtf8(data));
