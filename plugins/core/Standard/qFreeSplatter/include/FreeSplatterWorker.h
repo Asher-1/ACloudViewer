@@ -45,6 +45,7 @@ public:
         float opacityThreshold = 0.05f;
         bool estimatePoses = false;
         bool removeBackground = false;
+        int maxViews = 0;  // 0 = auto (Scene:2, Object:16)
     };
 
     explicit FreeSplatterWorker(const Settings& settings,

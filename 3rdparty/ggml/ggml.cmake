@@ -614,7 +614,8 @@ if(GGML_CPU_ALL_VARIANTS)
 endif()
 if(APPLE AND _GGML_METAL_ENABLED)
     list(APPEND _GGML_PATCH_SCRIPTS
-        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py")
+        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py"
+        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_fa_large_seq.py")
 endif()
 if(_GGML_PATCH_SCRIPTS)
     if(NOT Python3_EXECUTABLE)

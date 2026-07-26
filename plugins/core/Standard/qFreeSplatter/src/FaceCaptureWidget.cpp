@@ -42,7 +42,7 @@ void FaceCaptureWidget::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
 
     m_previewLabel = new QLabel(this);
-    m_previewLabel->setFixedSize(480, 360);
+    m_previewLabel->setFixedSize(320, 240);
     m_previewLabel->setAlignment(Qt::AlignCenter);
     m_previewLabel->setStyleSheet(
             QStringLiteral("QLabel { background-color: #1a1a1a; "

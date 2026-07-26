@@ -122,12 +122,28 @@ bool FreeSplatterWorker::runReconstruct() {
         return false;
     }
 
-    emit logMessage(
-            QString("[FS] Model: %1x%2, %3 gaussian channels, SH degree %4")
-                    .arg(geom.image_width)
-                    .arg(geom.image_height)
-                    .arg(geom.gaussian_channels)
-                    .arg(geom.sh_degree));
+    if (char* infoJ = aicore_gaussian_info_json(ctx)) {
+        const QJsonObject mi =
+                QJsonDocument::fromJson(QByteArray(infoJ)).object();
+        const bool use2dgs = mi.value(QStringLiteral("use_2dgs")).toBool();
+        const bool shRes = mi.value(QStringLiteral("sh_residual")).toBool();
+        emit logMessage(
+                QString("[FS] Model: %1x%2, %3ch (%4), SH%5 %6")
+                        .arg(geom.image_width)
+                        .arg(geom.image_height)
+                        .arg(geom.gaussian_channels)
+                        .arg(use2dgs ? "2DGS" : "3DGS")
+                        .arg(geom.sh_degree)
+                        .arg(shRes ? "+residual" : ""));
+        aicore_gaussian_free_string(infoJ);
+    } else {
+        emit logMessage(
+                QString("[FS] Model: %1x%2, %3 gaussian channels, SH degree %4")
+                        .arg(geom.image_width)
+                        .arg(geom.image_height)
+                        .arg(geom.gaussian_channels)
+                        .arg(geom.sh_degree));
+    }
 
     QStringList effectivePaths = m_settings.inputPaths;
     QString bgTmpDir;
@@ -169,6 +185,33 @@ bool FreeSplatterWorker::runReconstruct() {
         effectivePaths = processed;
     }
 #endif
+
+    {
+        const bool isObject = m_settings.modelPath.contains(
+                "object", Qt::CaseInsensitive);
+        const int autoMax = isObject ? 16 : 2;
+        const int maxViews =
+                (m_settings.maxViews > 0) ? m_settings.maxViews : autoMax;
+        if (effectivePaths.size() > maxViews) {
+            const int hardMax = 64;
+            const int cap = qMin(maxViews, hardMax);
+            QStringList sampled;
+            sampled.reserve(cap);
+            for (int i = 0; i < cap; ++i) {
+                int src = i * effectivePaths.size() / cap;
+                sampled.append(effectivePaths[src]);
+            }
+            emit logMessage(
+                    QString("[FS] %1 input images exceed model limit "
+                            "\u2014 uniformly subsampled to %2 "
+                            "(cap %3, hard max %4).")
+                            .arg(effectivePaths.size())
+                            .arg(cap)
+                            .arg(maxViews)
+                            .arg(hardMax));
+            effectivePaths = sampled;
+        }
+    }
 
     const int n = effectivePaths.size();
     emit progressUpdate(25, 100);

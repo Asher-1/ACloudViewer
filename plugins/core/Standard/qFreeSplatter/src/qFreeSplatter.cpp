@@ -971,6 +971,7 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
     workerSettings.opacityThreshold = resolvedSettings.opacityThreshold;
     workerSettings.estimatePoses = resolvedSettings.estimatePoses;
     workerSettings.removeBackground = resolvedSettings.removeBackground;
+    workerSettings.maxViews = resolvedSettings.maxViews;
 
     m_worker = new FreeSplatterWorker(workerSettings, this);
     connect(m_worker, &FreeSplatterWorker::logMessage, m_dialog,
@@ -1009,16 +1010,26 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
     const float* g = result.gaussians.constData();
     if (gc < 16) return nullptr;
 
-    int validCount = 0;
+    std::vector<int> validIndices;
+    validIndices.reserve(N / 2);
     for (int i = 0; i < N; ++i) {
-        if (g[i * gc + 15] > opacityThreshold) validCount++;
+        if (g[i * gc + 15] > opacityThreshold) validIndices.push_back(i);
     }
+    int validCount = static_cast<int>(validIndices.size());
     if (validCountOut) *validCountOut = validCount;
     if (validCount == 0) return nullptr;
 
+    static constexpr int kMaxDisplayPoints = 500000;
+    int step = 1;
+    int displayCount = validCount;
+    if (validCount > kMaxDisplayPoints) {
+        step = (validCount + kMaxDisplayPoints - 1) / kMaxDisplayPoints;
+        displayCount = (validCount + step - 1) / step;
+    }
+
     auto* cloud = new ccPointCloud(
             cloudName.isEmpty() ? QStringLiteral("FS_Gaussians") : cloudName);
-    if (!cloud->reserve(static_cast<unsigned>(validCount))) {
+    if (!cloud->reserve(static_cast<unsigned>(displayCount))) {
         delete cloud;
         if (validCountOut) *validCountOut = 0;
         return nullptr;
@@ -1038,7 +1049,7 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
     QHash<int, ccScalarField*> scalarFields;
     auto* opacitySF = new ccScalarField("Opacity");
     const bool hasOpacitySF =
-            opacitySF->reserveSafe(static_cast<unsigned>(validCount));
+            opacitySF->reserveSafe(static_cast<unsigned>(displayCount));
     if (hasOpacitySF) {
         applyOpacityGreyColorScale(opacitySF);
         scalarFields.insert(15, opacitySF);
@@ -1048,7 +1059,7 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
 
     for (int ch : extraChannels) {
         auto* sf = new ccScalarField(qPrintable(gaussianChannelScalarName(ch)));
-        if (sf->reserveSafe(static_cast<unsigned>(validCount))) {
+        if (sf->reserveSafe(static_cast<unsigned>(displayCount))) {
             scalarFields.insert(ch, sf);
         } else {
             sf->release();
@@ -1061,9 +1072,9 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
     const CompressedNormType defaultNormalIndex =
             ccNormalVectors::GetNormIndex(CCVector3(0.0f, 0.0f, 1.0f));
 
-    for (int i = 0; i < N; ++i) {
+    for (int vi = 0; vi < static_cast<int>(validIndices.size()); vi += step) {
+        const int i = validIndices[vi];
         const float* p = g + i * gc;
-        if (p[15] <= opacityThreshold) continue;
 
         cloud->addPoint(CCVector3(static_cast<PointCoordinateType>(p[0]),
                                   static_cast<PointCoordinateType>(p[1]),
@@ -1131,10 +1142,17 @@ void qFreeSplatter::addResultToDb(const FreeSplatterResult& result) {
 
     const bool fullExport = m_currentSettings.exportFieldMode ==
                             FreeSplatterDialog::ExportFieldMode::Full;
+    const unsigned displayed = cloud->size();
+    QString countMsg = QString::number(validCount);
+    if (static_cast<int>(displayed) < validCount) {
+        countMsg = QString("%1 displayed / %2 total")
+                           .arg(displayed)
+                           .arg(validCount);
+    }
     m_dialog->appendLog(
             QString("[FS] Added '%1' to DB tree (%2 gaussians, %3 export)")
                     .arg(cloud->getName())
-                    .arg(validCount)
+                    .arg(countMsg)
                     .arg(fullExport ? tr("full attributes") : tr("basic")));
 
     if (m_currentSettings.estimatePoses) {

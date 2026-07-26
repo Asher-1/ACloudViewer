@@ -235,5 +235,6 @@ add_custom_target(aicore-contract-tests
             -C $<CONFIG>
     DEPENDS ${_aicore_contract_targets}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    USES_TERMINAL
     COMMENT "Running AICore public contract tests"
 )
