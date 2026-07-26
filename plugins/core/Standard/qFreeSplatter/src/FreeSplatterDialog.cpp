@@ -273,7 +273,8 @@ void FreeSplatterDialog::setupUi() {
                     m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
                                                         : Qt::RightArrow);
                     m_dbContentWidget->setVisible(checked);
-                    QTimer::singleShot(0, this, &FreeSplatterDialog::adjustSize);
+                    QTimer::singleShot(0, this,
+                                       &FreeSplatterDialog::adjustSize);
                 });
 
         m_inputTabWidget->addTab(imagesTab, tr("Images"));
@@ -336,10 +337,9 @@ void FreeSplatterDialog::setupUi() {
         m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
     }
 
-    connect(m_inputTabWidget, &QTabWidget::currentChanged, this,
-            [this](int) {
-                QTimer::singleShot(0, this, &FreeSplatterDialog::adjustSize);
-            });
+    connect(m_inputTabWidget, &QTabWidget::currentChanged, this, [this](int) {
+        QTimer::singleShot(0, this, &FreeSplatterDialog::adjustSize);
+    });
     ioMainLayout->addWidget(m_inputTabWidget);
 
     // --- Output settings (compact dual-column) ---
