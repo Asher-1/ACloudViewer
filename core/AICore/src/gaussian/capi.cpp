@@ -372,6 +372,8 @@ AICORE_CAPI char* aicore_gaussian_info_json(aicore_gaussian_ctx* ctx) {
 
 // ---- CLI helpers (accumulate / parallax) ------------------------------------
 
+}  // extern "C"  — pause C-linkage for C++ helper types and functions
+
 struct aicore_gaussian_accumulator {
     aicore::gaussian::pose::Accumulator acc;
 };
@@ -460,6 +462,8 @@ std::vector<aicore::gaussian::pose::AccumPoint> fs_points_to_accum(
 }
 
 }  // namespace
+
+extern "C" {  // resume C-linkage for remaining AICORE_CAPI functions
 
 AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
                                              size_t count,

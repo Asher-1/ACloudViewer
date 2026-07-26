@@ -45,6 +45,7 @@ jobs:
 
   build-and-run-docker:
     name: Build and run
+    timeout-minutes: 300
     permissions:
       contents: write   # upload
       actions: write    # release

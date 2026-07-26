@@ -134,7 +134,7 @@ class CCBundler:
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
-        if config.embed_python:
+        if self.config.embed_python:
             self._embed_python()
 
         libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins = self._collect_dependencies()
@@ -142,18 +142,13 @@ class CCBundler:
 
         # output debug files if needed
         if self.config.output_dependencies:
-            logger.info("write debug files (macos_bundle_dependencies.json and macos_bundle_warnings.json)")
+            logger.info("write debug files")
             with open(
-                    Path.cwd() / "macos_bundle_dependencies.json",
-                    "w",
-                    encoding="utf-8",
+                    Path.cwd() / "macos_bundle_dependencies.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.dependencies, f, sort_keys=True, indent=4)
-
             with open(
-                    Path.cwd() / "macos_bundle_warnings.json",
-                    "w",
-                    encoding="utf-8",
+                    Path.cwd() / "macos_bundle_warnings.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
 
