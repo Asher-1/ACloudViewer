@@ -180,112 +180,188 @@ void FreeSplatterDialog::setupUi() {
 
     // --- I/O configuration ---
     auto* ioGroup = new QGroupBox("Input / Output");
-    auto* ioLayout = new QGridLayout(ioGroup);
+    auto* ioMainLayout = new QVBoxLayout(ioGroup);
 
+    m_inputTabWidget = new QTabWidget;
+
+    // ---- Tab 0: Images ----
+    {
+        auto* imagesTab = new QWidget;
+        auto* imagesLayout = new QVBoxLayout(imagesTab);
+        imagesLayout->setContentsMargins(6, 6, 6, 6);
+
+        auto* inputBtnLayout = new QHBoxLayout;
+        auto* browseFileBtn = new QPushButton("File...");
+        browseFileBtn->setToolTip(tr("Add one or more image files"));
+        connect(browseFileBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onBrowseFile);
+        inputBtnLayout->addWidget(browseFileBtn);
+        auto* browseFolderBtn = new QPushButton("Folder...");
+        browseFolderBtn->setToolTip(tr("Load all images from a folder"));
+        connect(browseFolderBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onBrowseFolder);
+        inputBtnLayout->addWidget(browseFolderBtn);
+        auto* clearInputBtn = new QPushButton("Clear");
+        connect(clearInputBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onClearInput);
+        inputBtnLayout->addWidget(clearInputBtn);
+        inputBtnLayout->addStretch();
+        imagesLayout->addLayout(inputBtnLayout);
+
+        m_thumbScroll = new QScrollArea;
+        m_thumbScroll->setWidgetResizable(true);
+        m_thumbScroll->setMinimumHeight(kThumbSize + 24);
+        m_thumbScroll->setMaximumHeight(kThumbSize + 24);
+        m_thumbScroll->setFrameShape(QFrame::StyledPanel);
+        m_thumbContainer = new QWidget;
+        auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
+        thumbLayout->setContentsMargins(4, 4, 4, 4);
+        m_thumbScroll->setWidget(m_thumbContainer);
+        imagesLayout->addWidget(m_thumbScroll);
+
+        // DB Images collapsible
+        auto* dbRow = new QHBoxLayout;
+        m_dbToggleBtn = new QToolButton;
+        m_dbToggleBtn->setArrowType(Qt::RightArrow);
+        m_dbToggleBtn->setCheckable(true);
+        m_dbToggleBtn->setChecked(false);
+        m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        m_dbToggleBtn->setText(tr("DB Images"));
+        m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
+        m_dbToggleBtn->setStyleSheet(
+                "QToolButton { border: none; font-weight: bold; padding: 4px "
+                "6px; "
+                "  border-radius: 3px; color: palette(text); }"
+                "QToolButton:hover { background: palette(midlight); }");
+        dbRow->addWidget(m_dbToggleBtn);
+        dbRow->addStretch();
+        imagesLayout->addLayout(dbRow);
+
+        m_dbContentWidget = new QWidget;
+        m_dbContentWidget->setStyleSheet(
+                "QWidget#dbContent { "
+                "  border: 1px solid palette(mid); "
+                "  border-radius: 4px; "
+                "  background: palette(base); }");
+        m_dbContentWidget->setObjectName("dbContent");
+        auto* dbCol = new QVBoxLayout(m_dbContentWidget);
+        dbCol->setContentsMargins(4, 4, 4, 4);
+        dbCol->setSpacing(4);
+        m_dbImageList = new QListWidget;
+        m_dbImageList->setSelectionMode(
+                QAbstractItemView::ExtendedSelection);
+        m_dbImageList->setMinimumHeight(80);
+        m_dbImageList->setMaximumHeight(140);
+        m_dbImageList->setAlternatingRowColors(true);
+        m_dbImageList->setToolTip(
+                tr("ccImage entities from the DB tree \u2014 check/uncheck to "
+                   "add or remove from input"));
+        connect(m_dbImageList, &QListWidget::itemChanged, this,
+                &FreeSplatterDialog::onDbListItemChanged);
+        dbCol->addWidget(m_dbImageList);
+        auto* dbBtnLayout = new QHBoxLayout;
+        auto* refreshDbBtn = new QPushButton("Refresh");
+        refreshDbBtn->setToolTip(tr("Refresh ccImage list from DB tree"));
+        connect(refreshDbBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::refreshDbImagesRequested);
+        dbBtnLayout->addWidget(refreshDbBtn);
+        dbBtnLayout->addStretch();
+        dbCol->addLayout(dbBtnLayout);
+        m_dbContentWidget->setVisible(false);
+        imagesLayout->addWidget(m_dbContentWidget);
+
+        connect(m_dbToggleBtn, &QToolButton::toggled, this,
+                [this](bool checked) {
+                    m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
+                                                       : Qt::RightArrow);
+                    m_dbContentWidget->setVisible(checked);
+                });
+
+        imagesLayout->addStretch();
+        m_inputTabWidget->addTab(imagesTab, tr("Images"));
+    }
+
+    // ---- Tab 1: Face Capture ----
+    if (FaceCaptureWidget::isAvailable()) {
+        auto* faceTab = new QWidget;
+        auto* faceLayout = new QVBoxLayout(faceTab);
+        faceLayout->setContentsMargins(6, 6, 6, 6);
+
+        m_faceCaptureWidget = new FaceCaptureWidget(faceTab);
+        faceLayout->addWidget(m_faceCaptureWidget);
+
+        auto* faceBtnLayout = new QHBoxLayout;
+        m_faceStartBtn = new QPushButton(tr("Start Camera"));
+        m_faceStopBtn = new QPushButton(tr("Stop Camera"));
+        m_faceStopBtn->setEnabled(false);
+        m_faceResetBtn = new QPushButton(tr("Reset"));
+        m_faceResetBtn->setEnabled(false);
+        faceBtnLayout->addWidget(m_faceStartBtn);
+        faceBtnLayout->addWidget(m_faceStopBtn);
+        faceBtnLayout->addWidget(m_faceResetBtn);
+        faceBtnLayout->addStretch();
+        faceLayout->addLayout(faceBtnLayout);
+
+        connect(m_faceStartBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onFaceStartCamera);
+        connect(m_faceStopBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onFaceStopCamera);
+        connect(m_faceResetBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onFaceReset);
+        connect(m_faceCaptureWidget,
+                &FaceCaptureWidget::captureComplete, this,
+                &FreeSplatterDialog::onFaceCaptureComplete);
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStarted,
+                this, [this]() {
+                    m_faceStartBtn->setEnabled(false);
+                    m_faceStopBtn->setEnabled(true);
+                    m_faceCaptureWidget->startGuidedCapture({
+                            FaceCaptureWidget::CaptureAngle::Front,
+                            FaceCaptureWidget::CaptureAngle::Left45,
+                            FaceCaptureWidget::CaptureAngle::Right45,
+                            FaceCaptureWidget::CaptureAngle::Up15,
+                            FaceCaptureWidget::CaptureAngle::Down15,
+                    });
+                    m_faceResetBtn->setEnabled(true);
+                });
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStopped,
+                this, [this]() {
+                    m_faceStartBtn->setEnabled(true);
+                    m_faceStopBtn->setEnabled(false);
+                });
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::frameCaptured,
+                this, [this](int idx, int total) {
+                    appendLog(tr("[FaceCapture] Auto-captured %1/%2")
+                                      .arg(idx)
+                                      .arg(total));
+                });
+
+        m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
+    }
+
+    ioMainLayout->addWidget(m_inputTabWidget);
+
+    // --- Output settings (shared by both input tabs) ---
+    auto* outputGrid = new QGridLayout;
     int row = 0;
-    ioLayout->addWidget(new QLabel("Input:"), row, 0, Qt::AlignTop);
-    auto* inputCol = new QVBoxLayout;
-    auto* inputBtnLayout = new QHBoxLayout;
-    auto* browseFileBtn = new QPushButton("File...");
-    browseFileBtn->setToolTip(tr("Add one or more image files"));
-    connect(browseFileBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onBrowseFile);
-    inputBtnLayout->addWidget(browseFileBtn);
-    auto* browseFolderBtn = new QPushButton("Folder...");
-    browseFolderBtn->setToolTip(tr("Load all images from a folder"));
-    connect(browseFolderBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onBrowseFolder);
-    inputBtnLayout->addWidget(browseFolderBtn);
-    auto* clearInputBtn = new QPushButton("Clear");
-    connect(clearInputBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onClearInput);
-    inputBtnLayout->addWidget(clearInputBtn);
-    inputBtnLayout->addStretch();
-    inputCol->addLayout(inputBtnLayout);
 
-    m_thumbScroll = new QScrollArea;
-    m_thumbScroll->setWidgetResizable(true);
-    m_thumbScroll->setMinimumHeight(kThumbSize + 24);
-    m_thumbScroll->setMaximumHeight(kThumbSize + 24);
-    m_thumbScroll->setFrameShape(QFrame::StyledPanel);
-    m_thumbContainer = new QWidget;
-    auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
-    thumbLayout->setContentsMargins(4, 4, 4, 4);
-    m_thumbScroll->setWidget(m_thumbContainer);
-    inputCol->addWidget(m_thumbScroll);
-    ioLayout->addLayout(inputCol, row, 1, 1, 2);
-
-    row++;
-    m_dbToggleBtn = new QToolButton;
-    m_dbToggleBtn->setArrowType(Qt::RightArrow);
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
-    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_dbToggleBtn->setText(tr("DB Images"));
-    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
-    m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
-    ioLayout->addWidget(m_dbToggleBtn, row, 0, Qt::AlignTop);
-
-    m_dbContentWidget = new QWidget;
-    m_dbContentWidget->setStyleSheet(
-            "QWidget#dbContent { "
-            "  border: 1px solid palette(mid); "
-            "  border-radius: 4px; "
-            "  background: palette(base); }");
-    m_dbContentWidget->setObjectName("dbContent");
-    auto* dbCol = new QVBoxLayout(m_dbContentWidget);
-    dbCol->setContentsMargins(4, 4, 4, 4);
-    dbCol->setSpacing(4);
-    m_dbImageList = new QListWidget;
-    m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(140);
-    m_dbImageList->setAlternatingRowColors(true);
-    m_dbImageList->setToolTip(
-            tr("ccImage entities from the DB tree — check/uncheck to add or "
-               "remove from input"));
-    connect(m_dbImageList, &QListWidget::itemChanged, this,
-            &FreeSplatterDialog::onDbListItemChanged);
-    dbCol->addWidget(m_dbImageList);
-    auto* dbBtnLayout = new QHBoxLayout;
-    auto* refreshDbBtn = new QPushButton("Refresh");
-    refreshDbBtn->setToolTip(tr("Refresh ccImage list from DB tree"));
-    connect(refreshDbBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::refreshDbImagesRequested);
-    dbBtnLayout->addWidget(refreshDbBtn);
-    dbBtnLayout->addStretch();
-    dbCol->addLayout(dbBtnLayout);
-    m_dbContentWidget->setVisible(false);
-    ioLayout->addWidget(m_dbContentWidget, row, 1, 1, 2);
-
-    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
-        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
-        m_dbContentWidget->setVisible(checked);
-    });
-
-    row++;
-    setupFaceCaptureUi(ioLayout, row);
-
-    row++;
-    ioLayout->addWidget(new QLabel("Opacity Threshold:"), row, 0);
+    outputGrid->addWidget(new QLabel("Opacity Threshold:"), row, 0);
     m_opacityThreshold = new QDoubleSpinBox;
     m_opacityThreshold->setRange(0.0, 1.0);
     m_opacityThreshold->setSingleStep(0.01);
     m_opacityThreshold->setValue(0.05);
     m_opacityThreshold->setToolTip("Prune gaussians with opacity <= threshold");
-    ioLayout->addWidget(m_opacityThreshold, row, 1);
+    outputGrid->addWidget(m_opacityThreshold, row, 1);
 
     row++;
     m_exportFieldLabel = new QLabel("Point cloud export:");
-    ioLayout->addWidget(m_exportFieldLabel, row, 0);
+    outputGrid->addWidget(m_exportFieldLabel, row, 0);
     m_exportFieldModeCombo = new QComboBox;
-    m_exportFieldModeCombo->addItem(tr("Basic — XYZ + RGB + Opacity"),
+    m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ + RGB + Opacity"),
                                     static_cast<int>(ExportFieldMode::Basic));
-    m_exportFieldModeCombo->addItem(tr("Full — SH + scale + thin-axis normals"),
-                                    static_cast<int>(ExportFieldMode::Full));
+    m_exportFieldModeCombo->addItem(
+            tr("Full \u2014 SH + scale + thin-axis normals"),
+            static_cast<int>(ExportFieldMode::Full));
     m_exportFieldModeCombo->setToolTip(
 #ifdef HAS_QSIBR
             tr("Applies to Add to DB tree and Export PLY.\n"
@@ -304,7 +380,7 @@ void FreeSplatterDialog::setupUi() {
                "points get a default normal.")
 #endif
     );
-    ioLayout->addWidget(m_exportFieldModeCombo, row, 1, 1, 2);
+    outputGrid->addWidget(m_exportFieldModeCombo, row, 1, 1, 2);
 
     row++;
     m_addToDbCheck = new QCheckBox("Add result to DB tree (main 3D view)");
@@ -312,17 +388,19 @@ void FreeSplatterDialog::setupUi() {
     m_addToDbCheck->setToolTip(
             "After inference, add a colored point cloud to the database tree "
             "and zoom the main rendering window to it.");
-    ioLayout->addWidget(m_addToDbCheck, row, 0, 1, 2);
+    outputGrid->addWidget(m_addToDbCheck, row, 0, 1, 2);
 
     row++;
     m_estimatePosesCheck = new QCheckBox("Estimate camera poses (multi-view)");
     m_estimatePosesCheck->setChecked(false);
-    ioLayout->addWidget(m_estimatePosesCheck, row, 0, 1, 2);
+    outputGrid->addWidget(m_estimatePosesCheck, row, 0, 1, 2);
 
     row++;
     m_imageCountLabel = new QLabel;
     m_imageCountLabel->setStyleSheet("font-weight: bold;");
-    ioLayout->addWidget(m_imageCountLabel, row, 0, 1, 3);
+    outputGrid->addWidget(m_imageCountLabel, row, 0, 1, 3);
+
+    ioMainLayout->addLayout(outputGrid);
 
     mainLayout->addWidget(ioGroup);
 
@@ -925,15 +1003,13 @@ void FreeSplatterDialog::onModeChanged(int index) {
     auto mode = static_cast<Mode>(m_modeCombo->itemData(index).toInt());
     bool isReconstruct = (mode == Mode::Reconstruct);
 
-    m_thumbScroll->setVisible(isReconstruct);
+    if (m_inputTabWidget) m_inputTabWidget->setVisible(isReconstruct);
     m_opacityThreshold->setVisible(isReconstruct);
     if (m_exportFieldLabel) m_exportFieldLabel->setVisible(isReconstruct);
     if (m_exportFieldModeCombo)
         m_exportFieldModeCombo->setVisible(isReconstruct);
     m_addToDbCheck->setVisible(isReconstruct);
     m_estimatePosesCheck->setVisible(isReconstruct);
-    m_dbToggleBtn->setVisible(isReconstruct);
-    m_dbContentWidget->setVisible(isReconstruct && m_dbToggleBtn->isChecked());
     m_imageCountLabel->setVisible(isReconstruct);
     if (isReconstruct) updateImageCountStatus();
     updateRunButtonState();
@@ -1110,105 +1186,6 @@ void FreeSplatterDialog::onRun() {
 
 // ---- Face Capture integration ----
 
-void FreeSplatterDialog::setupFaceCaptureUi(QGridLayout* ioLayout, int& row) {
-    if (!FaceCaptureWidget::isAvailable()) return;
-
-    m_faceToggleBtn = new QToolButton;
-    m_faceToggleBtn->setArrowType(Qt::RightArrow);
-    m_faceToggleBtn->setCheckable(true);
-    m_faceToggleBtn->setChecked(false);
-    m_faceToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_faceToggleBtn->setText(tr("Face Capture"));
-    m_faceToggleBtn->setCursor(Qt::PointingHandCursor);
-    m_faceToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
-    ioLayout->addWidget(m_faceToggleBtn, row, 0, Qt::AlignTop);
-
-    m_faceContentWidget = new QWidget;
-    m_faceContentWidget->setObjectName("faceContent");
-    m_faceContentWidget->setStyleSheet(
-            "QWidget#faceContent { "
-            "  border: 1px solid palette(mid); "
-            "  border-radius: 4px; "
-            "  background: palette(base); }");
-    auto* faceLayout = new QVBoxLayout(m_faceContentWidget);
-    faceLayout->setContentsMargins(6, 6, 6, 6);
-    faceLayout->setSpacing(6);
-
-    m_faceCaptureWidget = new FaceCaptureWidget(m_faceContentWidget);
-    faceLayout->addWidget(m_faceCaptureWidget);
-
-    auto* faceBtnLayout = new QHBoxLayout;
-    m_faceStartBtn = new QPushButton(tr("Start Camera"));
-    m_faceStopBtn = new QPushButton(tr("Stop Camera"));
-    m_faceStopBtn->setEnabled(false);
-    m_faceStartCaptureBtn = new QPushButton(tr("Start Guided Capture"));
-    m_faceStartCaptureBtn->setEnabled(false);
-    m_faceResetBtn = new QPushButton(tr("Reset"));
-    m_faceResetBtn->setEnabled(false);
-    faceBtnLayout->addWidget(m_faceStartBtn);
-    faceBtnLayout->addWidget(m_faceStopBtn);
-    faceBtnLayout->addWidget(m_faceStartCaptureBtn);
-    faceBtnLayout->addWidget(m_faceResetBtn);
-    faceBtnLayout->addStretch();
-    faceLayout->addLayout(faceBtnLayout);
-
-    m_faceCaptureStatus = new QLabel;
-    m_faceCaptureStatus->setStyleSheet("font-weight: bold;");
-    faceLayout->addWidget(m_faceCaptureStatus);
-
-    m_faceUseCapturedBtn = new QPushButton(
-            tr("Use Captured Images for Reconstruction"));
-    m_faceUseCapturedBtn->setEnabled(false);
-    m_faceUseCapturedBtn->setStyleSheet(
-            "QPushButton { background: #2d7d46; color: white; padding: 6px; "
-            "border-radius: 3px; }"
-            "QPushButton:disabled { background: #666; }");
-    faceLayout->addWidget(m_faceUseCapturedBtn);
-
-    m_faceContentWidget->setVisible(false);
-    ioLayout->addWidget(m_faceContentWidget, row, 1, 1, 2);
-
-    connect(m_faceToggleBtn, &QToolButton::toggled, this,
-            [this](bool checked) {
-                m_faceToggleBtn->setArrowType(
-                        checked ? Qt::DownArrow : Qt::RightArrow);
-                m_faceContentWidget->setVisible(checked);
-            });
-
-    connect(m_faceStartBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onFaceStartCamera);
-    connect(m_faceStopBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onFaceStopCamera);
-    connect(m_faceStartCaptureBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onFaceStartCapture);
-    connect(m_faceResetBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onFaceReset);
-    connect(m_faceUseCapturedBtn, &QPushButton::clicked, this,
-            &FreeSplatterDialog::onFaceUseCaptured);
-    connect(m_faceCaptureWidget, &FaceCaptureWidget::captureComplete, this,
-            &FreeSplatterDialog::onFaceCaptureComplete);
-    connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStarted, this,
-            [this]() {
-                m_faceStartBtn->setEnabled(false);
-                m_faceStopBtn->setEnabled(true);
-                m_faceStartCaptureBtn->setEnabled(true);
-            });
-    connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStopped, this,
-            [this]() {
-                m_faceStartBtn->setEnabled(true);
-                m_faceStopBtn->setEnabled(false);
-                m_faceStartCaptureBtn->setEnabled(false);
-            });
-    connect(m_faceCaptureWidget, &FaceCaptureWidget::frameCaptured, this,
-            [this](int idx, int total) {
-                m_faceCaptureStatus->setText(
-                        tr("Captured %1/%2").arg(idx).arg(total));
-            });
-}
-
 void FreeSplatterDialog::onFaceStartCamera() {
     if (!m_faceCaptureWidget) return;
     m_faceCaptureWidget->startCamera(0);
@@ -1219,29 +1196,13 @@ void FreeSplatterDialog::onFaceStopCamera() {
     m_faceCaptureWidget->stopCamera();
 }
 
-void FreeSplatterDialog::onFaceStartCapture() {
-    if (!m_faceCaptureWidget) return;
-    m_faceCaptureWidget->startGuidedCapture({
-            FaceCaptureWidget::CaptureAngle::Front,
-            FaceCaptureWidget::CaptureAngle::Left45,
-            FaceCaptureWidget::CaptureAngle::Right45,
-            FaceCaptureWidget::CaptureAngle::Up15,
-            FaceCaptureWidget::CaptureAngle::Down15,
-    });
-    m_faceResetBtn->setEnabled(true);
-    m_faceUseCapturedBtn->setEnabled(false);
-    m_faceCaptureStatus->setText(tr("Guided capture active (5 angles)"));
-}
-
 void FreeSplatterDialog::onFaceReset() {
     if (!m_faceCaptureWidget) return;
     m_faceCaptureWidget->resetCapture();
-    m_faceUseCapturedBtn->setEnabled(false);
-    m_faceResetBtn->setEnabled(false);
-    m_faceCaptureStatus->clear();
+    if (m_faceResetBtn) m_faceResetBtn->setEnabled(false);
 }
 
-void FreeSplatterDialog::onFaceUseCaptured() {
+void FreeSplatterDialog::onFaceCaptureComplete() {
     if (!m_faceCaptureWidget || m_faceCaptureWidget->capturedCount() == 0)
         return;
 
@@ -1255,14 +1216,17 @@ void FreeSplatterDialog::onFaceUseCaptured() {
     }
 
     addInputPaths(saved, true);
-    appendLog(tr("[FaceCapture] Added %1 captured face images to input")
+    appendLog(tr("[FaceCapture] %1 face images captured and added to input")
                       .arg(saved.size()));
-    updateRunButtonState();
-}
 
-void FreeSplatterDialog::onFaceCaptureComplete() {
-    m_faceUseCapturedBtn->setEnabled(true);
-    m_faceCaptureStatus->setText(
-            tr("Capture complete \u2014 click \"Use Captured Images\" to run "
-               "reconstruction"));
+    m_faceCaptureWidget->stopCamera();
+
+    if (m_inputTabWidget) m_inputTabWidget->setCurrentIndex(0);
+
+    updateRunButtonState();
+
+    if (isModelReady() && isInputValid()) {
+        appendLog(tr("[FaceCapture] Auto-starting reconstruction..."));
+        onRun();
+    }
 }

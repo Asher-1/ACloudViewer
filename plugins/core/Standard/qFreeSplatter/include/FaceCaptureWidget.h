@@ -111,4 +111,9 @@ private:
     int m_currentAngleIndex = 0;
     bool m_capturingMode = false;
     int m_consecutiveDetections = 0;
+    int m_postCaptureCooldown = 0;
+    int m_noCascadeCounter = 0;
+    static constexpr int kAutoCaptureTrigger = 20;
+    static constexpr int kPostCaptureCooldown = 45;
+    static constexpr int kNoCascadeAutoInterval = 90;
 };

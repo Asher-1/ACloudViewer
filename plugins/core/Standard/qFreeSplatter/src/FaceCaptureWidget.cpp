@@ -328,6 +328,8 @@ void FaceCaptureWidget::resetCapture() {
     m_currentAngleIndex = 0;
     m_capturingMode = false;
     m_consecutiveDetections = 0;
+    m_postCaptureCooldown = 0;
+    m_noCascadeCounter = 0;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     m_lastFaceRect = cv::Rect();
@@ -419,23 +421,40 @@ void FaceCaptureWidget::processFrame() {
                                                Qt::KeepAspectRatio,
                                                Qt::SmoothTransformation));
 
-    if (m_capturingMode && m_captureBtn) {
-        if (m_cascadeLoaded) {
-            const bool stable = m_consecutiveDetections >= 3;
-            m_captureBtn->setEnabled(stable);
+    if (m_capturingMode) {
+        if (m_postCaptureCooldown > 0) {
+            --m_postCaptureCooldown;
+            m_statusLabel->setText(
+                    tr("Repositioning... (%1)").arg(m_postCaptureCooldown / 30 + 1));
+            if (m_captureBtn) m_captureBtn->setEnabled(false);
+        } else if (m_cascadeLoaded) {
+            const bool stable = m_consecutiveDetections >= kAutoCaptureTrigger;
             if (stable) {
+                captureCurrentFrame();
+                m_postCaptureCooldown = kPostCaptureCooldown;
+                return;
+            }
+            if (m_captureBtn) m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
+            if (faceRect.width > 0) {
+                int pct = std::min(100, m_consecutiveDetections * 100 / kAutoCaptureTrigger);
                 m_statusLabel->setText(
-                        tr("Face stable \u2014 press Capture"));
-            } else if (faceRect.width > 0) {
-                m_statusLabel->setText(
-                        tr("Hold still \u2014 stabilizing (%1/3)")
-                                .arg(m_consecutiveDetections));
+                        tr("Stabilizing... %1%").arg(pct));
             } else {
                 m_statusLabel->setText(
-                        tr("No face detected \u2014 center your face"));
+                        tr("No face detected \u2014 center your face in frame"));
             }
         } else {
-            m_captureBtn->setEnabled(true);
+            ++m_noCascadeCounter;
+            if (m_noCascadeCounter >= kNoCascadeAutoInterval) {
+                m_noCascadeCounter = 0;
+                captureCurrentFrame();
+                m_postCaptureCooldown = kPostCaptureCooldown;
+                return;
+            }
+            if (m_captureBtn) m_captureBtn->setEnabled(true);
+            m_statusLabel->setText(
+                    tr("Auto-capture in %1s (or click Capture)")
+                            .arg((kNoCascadeAutoInterval - m_noCascadeCounter) / 30 + 1));
         }
     }
 #endif

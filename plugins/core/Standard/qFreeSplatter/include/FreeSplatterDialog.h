@@ -23,11 +23,11 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QTextEdit>
 #include <QToolButton>
 
 class FaceCaptureWidget;
-class QGridLayout;
 
 struct FreeSplatterBuiltinModel {
     QString displayName;
@@ -175,21 +175,14 @@ private:
 
     QHash<QString, QImage> m_dbPreviews;
 
-    // --- Face capture (conditional on HAS_OPENCV_FACE_CAPTURE) ---
-    QToolButton* m_faceToggleBtn = nullptr;
-    QWidget* m_faceContentWidget = nullptr;
+    // --- Face capture tab (conditional on HAS_OPENCV_FACE_CAPTURE) ---
+    QTabWidget* m_inputTabWidget = nullptr;
     FaceCaptureWidget* m_faceCaptureWidget = nullptr;
     QPushButton* m_faceStartBtn = nullptr;
     QPushButton* m_faceStopBtn = nullptr;
-    QPushButton* m_faceStartCaptureBtn = nullptr;
     QPushButton* m_faceResetBtn = nullptr;
-    QPushButton* m_faceUseCapturedBtn = nullptr;
-    QLabel* m_faceCaptureStatus = nullptr;
-    void setupFaceCaptureUi(QGridLayout* ioLayout, int& row);
     void onFaceStartCamera();
     void onFaceStopCamera();
-    void onFaceStartCapture();
     void onFaceReset();
-    void onFaceUseCaptured();
     void onFaceCaptureComplete();
 };
