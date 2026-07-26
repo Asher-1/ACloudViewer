@@ -406,17 +406,31 @@ if (${PACKAGE} STREQUAL "ON") # package
             message(WARNING "Ad-hoc signing failed (code ${_SIGN_RESULT}), installer may not launch on some macOS versions")
         endif()
 
-        # Create compressed DMG from the fixed app bundle
+        # Create compressed DMG from the fixed app bundle.
+        # Detach any leftover mounts and pause briefly so codesign/Spotlight
+        # release file handles (avoids "Resource busy" on CI runners).
         message(STATUS "Creating DMG: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
         file(REMOVE "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-        execute_process(COMMAND hdiutil create
-            -volname "${ACLOUDVIEWER_PACKAGE_NAME}"
-            -srcfolder "${_QTIFW_APP_PATH}"
-            -ov -format UDZO
-            "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}"
-            RESULT_VARIABLE _DMG_RESULT)
+        execute_process(COMMAND hdiutil detach "/Volumes/${ACLOUDVIEWER_PACKAGE_NAME}"
+                        ERROR_QUIET OUTPUT_QUIET RESULT_VARIABLE _DETACH_IGNORE)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 2)
+        set(_DMG_RETRIES 3)
+        set(_DMG_RESULT 1)
+        foreach(_try RANGE 1 ${_DMG_RETRIES})
+            execute_process(COMMAND hdiutil create
+                -volname "${ACLOUDVIEWER_PACKAGE_NAME}"
+                -srcfolder "${_QTIFW_APP_PATH}"
+                -ov -format UDZO
+                "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}"
+                RESULT_VARIABLE _DMG_RESULT)
+            if(NOT _DMG_RESULT)
+                break()
+            endif()
+            message(WARNING "hdiutil create attempt ${_try}/${_DMG_RETRIES} failed, retrying...")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 3)
+        endforeach()
         if(_DMG_RESULT)
-            message(FATAL_ERROR "hdiutil create failed with code ${_DMG_RESULT}")
+            message(FATAL_ERROR "hdiutil create failed after ${_DMG_RETRIES} attempts (code ${_DMG_RESULT})")
         endif()
         message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
 

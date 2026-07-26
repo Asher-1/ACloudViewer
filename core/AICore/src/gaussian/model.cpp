@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <thread>
 #include <vector>
@@ -195,18 +196,51 @@ bool model::forward(const float *images,
                     std::vector<float> &out,
                     const tap_sink &sink) {
     const hparams &h = file.hp;
-    const int64_t N = n_views;
+    int64_t N = n_views;
     const int64_t D = h.n_embd;                       // 1024
     const int64_t P = h.patch_size;                   // 8
     const int64_t IMG = h.image_size;                 // 512
     const int64_t C = h.in_channels;                  // 3
     const int64_t G = IMG / P;                        // 64 patches per side
     const int64_t TPV = G * G;                        // 4096 tokens / view
-    const int64_t S = N * TPV;                        // global sequence length
+    int64_t S = N * TPV;                              // global sequence length
     const int64_t nh = h.n_head;                      // 16
     const int64_t dh = h.head_dim;                    // 64
     const float scale = 1.0f / std::sqrt((float)dh);  // 1/8
     const float eps = h.ln_eps;
+
+    // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched
+    // (apply_metal_fa_large_seq.py) to remove the assert and auto-tune
+    // command-buffer splitting, so only non-Apple GPU backends need capping.
+#ifndef __APPLE__
+    static constexpr int64_t kMaxFASeq = 65535;
+    std::vector<float> subsampled_buf;
+    if (!be.is_cpu()) {
+        const int64_t limit_N = kMaxFASeq / TPV;
+        if (N > limit_N) {
+            const int64_t vf = C * IMG * IMG;
+            subsampled_buf.resize((size_t)limit_N * vf);
+            for (int64_t i = 0; i < limit_N; ++i) {
+                int64_t src = i * N / limit_N;
+                std::memcpy(subsampled_buf.data() + i * vf,
+                            images + src * vf, vf * sizeof(float));
+            }
+#ifdef AICore_HAS_CVLOG
+            CVLog::Warning("[FS] Subsampled %lld -> %lld views "
+                           "(GPU FA sequence limit)",
+                           (long long)N, (long long)limit_N);
+#else
+            std::fprintf(stderr,
+                         "[FS] Subsampled %lld -> %lld views "
+                         "(GPU FA sequence limit)\n",
+                         (long long)N, (long long)limit_N);
+#endif
+            images = subsampled_buf.data();
+            N = limit_N;
+            S = N * TPV;
+        }
+    }
+#endif
 
     // Optional host-phase timing (FREE_SPLATTER_PROFILE=1) to stderr.
     const bool prof = std::getenv("FREE_SPLATTER_PROFILE") != nullptr;

@@ -68,6 +68,7 @@ public:
         bool addToDb = true;
         bool estimatePoses = false;
         bool removeBackground = false;
+        int maxViews = 0;  // 0 = auto (Scene:2, Object:16)
     };
 
     explicit FreeSplatterDialog(QWidget* parent = nullptr);
@@ -128,6 +129,7 @@ private:
     bool isModelReady() const;
     bool isInputValid() const;
     QImage previewForPath(const QString& path) const;
+    void adaptTabWidgetHeight();
 
     QComboBox* m_modeCombo = nullptr;
     QComboBox* m_modelCombo = nullptr;
@@ -137,6 +139,7 @@ private:
 
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
+    QSpinBox* m_maxViewsSpin = nullptr;
     QStringList m_inputPaths;
     QDoubleSpinBox* m_opacityThreshold = nullptr;
     QComboBox* m_exportFieldModeCombo = nullptr;

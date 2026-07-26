@@ -126,6 +126,7 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
 void FreeSplatterDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(4);
+    mainLayout->setSizeConstraint(QLayout::SetMinimumSize);
 
     // --- Model & Mode (merged into one group) ---
     auto* modelGroup = new QGroupBox("Model");
@@ -189,6 +190,17 @@ void FreeSplatterDialog::setupUi() {
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
     modelLayout->addWidget(m_threads, 4, 3);
+
+    modelLayout->addWidget(new QLabel("Views:"), 5, 0);
+    m_maxViewsSpin = new QSpinBox;
+    m_maxViewsSpin->setRange(0, 64);
+    m_maxViewsSpin->setSpecialValueText("Auto");
+    m_maxViewsSpin->setToolTip(
+            tr("Max input views for inference.\n"
+               "Auto: Scene=2, Object=16.\n"
+               "Fewer views = faster inference (O(N\u00b2) scaling).\n"
+               "Object model: 8 views recommended for Metal GPU."));
+    modelLayout->addWidget(m_maxViewsSpin, 5, 1);
 
     mainLayout->addWidget(modelGroup);
 
@@ -290,8 +302,7 @@ void FreeSplatterDialog::setupUi() {
                     m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
                                                         : Qt::RightArrow);
                     m_dbContentWidget->setVisible(checked);
-                    QTimer::singleShot(0, this,
-                                       &FreeSplatterDialog::adjustSize);
+                    adaptTabWidgetHeight();
                 });
 
         m_inputTabWidget->addTab(imagesTab, tr("Images"));
@@ -354,9 +365,8 @@ void FreeSplatterDialog::setupUi() {
         m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
     }
 
-    connect(m_inputTabWidget, &QTabWidget::currentChanged, this, [this](int) {
-        QTimer::singleShot(0, this, &FreeSplatterDialog::adjustSize);
-    });
+    connect(m_inputTabWidget, &QTabWidget::currentChanged, this,
+            [this](int) { adaptTabWidgetHeight(); });
     ioMainLayout->addWidget(m_inputTabWidget);
 
     // --- Output settings (compact dual-column) ---
@@ -397,6 +407,7 @@ void FreeSplatterDialog::setupUi() {
     row++;
     m_removeBgCheck = new QCheckBox("Remove background (Object model)");
     m_removeBgCheck->setChecked(false);
+    m_removeBgCheck->setVisible(false);
     m_removeBgCheck->setToolTip(
             tr("Auto-remove backgrounds using GrabCut before inference.\n"
                "Recommended for Object models with non-white backgrounds."));
@@ -478,6 +489,62 @@ void FreeSplatterDialog::setupUi() {
     onModeChanged(0);
     refreshThumbnailStrip();
     updateRunButtonState();
+    adaptTabWidgetHeight();
+}
+
+void FreeSplatterDialog::adaptTabWidgetHeight() {
+    if (!m_inputTabWidget) return;
+    const int idx = m_inputTabWidget->currentIndex();
+    QWidget* current = m_inputTabWidget->widget(idx);
+    if (!current) return;
+
+    for (int i = 0; i < m_inputTabWidget->count(); ++i) {
+        QWidget* w = m_inputTabWidget->widget(i);
+        if (!w) continue;
+        QSizePolicy sp = w->sizePolicy();
+        sp.setVerticalPolicy(i == idx ? QSizePolicy::Preferred
+                                      : QSizePolicy::Ignored);
+        w->setSizePolicy(sp);
+    }
+
+    int contentH = 0;
+    if (QLayout* lay = current->layout()) {
+        const int sp = lay->spacing() >= 0 ? lay->spacing() : 6;
+        int visibleItems = 0;
+        for (int i = 0; i < lay->count(); ++i) {
+            QLayoutItem* item = lay->itemAt(i);
+            if (!item) continue;
+            QWidget* w = item->widget();
+            if (w && !w->isVisible()) continue;
+            int h = 0;
+            if (w) {
+                int hint = qMax(w->sizeHint().height(),
+                                w->minimumSizeHint().height());
+                if (w->maximumHeight() < QWIDGETSIZE_MAX)
+                    hint = qMin(w->maximumHeight(), hint);
+                h = qMax(w->minimumHeight(), hint);
+            } else if (item->layout()) {
+                h = item->layout()->sizeHint().height();
+            }
+            contentH += h;
+            ++visibleItems;
+        }
+        if (visibleItems > 1) contentH += (visibleItems - 1) * sp;
+        const auto m = lay->contentsMargins();
+        contentH += m.top() + m.bottom();
+    } else {
+        contentH = current->minimumSizeHint().height();
+    }
+
+    const int tabBarH = m_inputTabWidget->tabBar()->sizeHint().height();
+    const auto cm = m_inputTabWidget->contentsMargins();
+    const int total = tabBarH + contentH + cm.top() + cm.bottom() + 2;
+    m_inputTabWidget->setFixedHeight(total);
+
+    QTimer::singleShot(0, this, [this]() {
+        layout()->activate();
+        resize(width(), layout()->minimumSize().height());
+    });
 }
 
 void FreeSplatterDialog::populateModelCombo(const QString& keepFilename) {
@@ -527,7 +594,10 @@ void FreeSplatterDialog::onModelComboChanged(int index) {
             (data == "CUSTOM" && m_customModelPath &&
              m_customModelPath->text().contains("object", Qt::CaseInsensitive));
     if (m_objectHintLabel) m_objectHintLabel->setVisible(isObject);
-    if (m_removeBgCheck) m_removeBgCheck->setChecked(isObject);
+    if (m_removeBgCheck) {
+        m_removeBgCheck->setVisible(isObject);
+        if (!isObject) m_removeBgCheck->setChecked(false);
+    }
 
     updateImageCountStatus();
     updateRunButtonState();
@@ -1038,7 +1108,10 @@ void FreeSplatterDialog::onModeChanged(int index) {
         m_exportFieldModeCombo->setVisible(isReconstruct);
     m_addToDbCheck->setVisible(isReconstruct);
     m_estimatePosesCheck->setVisible(isReconstruct);
-    if (m_removeBgCheck) m_removeBgCheck->setVisible(isReconstruct);
+    if (m_removeBgCheck) {
+        const bool isObject = currentModelType() == ModelType::Object;
+        m_removeBgCheck->setVisible(isReconstruct && isObject);
+    }
     m_imageCountLabel->setVisible(isReconstruct);
     if (isReconstruct) updateImageCountStatus();
     updateRunButtonState();
@@ -1094,6 +1167,7 @@ FreeSplatterDialog::Settings FreeSplatterDialog::getSettings() const {
     s.addToDb = m_addToDbCheck->isChecked();
     s.estimatePoses = m_estimatePosesCheck->isChecked();
     s.removeBackground = m_removeBgCheck && m_removeBgCheck->isChecked();
+    s.maxViews = m_maxViewsSpin ? m_maxViewsSpin->value() : 0;
     return s;
 }
 
