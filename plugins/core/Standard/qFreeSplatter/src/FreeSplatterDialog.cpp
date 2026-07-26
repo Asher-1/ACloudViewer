@@ -82,16 +82,20 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
              base + "freesplatter-scene-f16.gguf"},
             {tr("Scene F32 (full precision)"), "freesplatter-scene-f32.gguf",
              base + "freesplatter-scene-f32.gguf"},
-            {tr("Object Q8_0"), "freesplatter-object-q8_0.gguf",
-             base + "freesplatter-object-q8_0.gguf"},
-            {tr("Object F16"), "freesplatter-object-f16.gguf",
-             base + "freesplatter-object-f16.gguf"},
-            {tr("Object F32"), "freesplatter-object-f32.gguf",
-             base + "freesplatter-object-f32.gguf"},
-            {tr("Object-2DGS Q8_0"), "freesplatter-object-2dgs-q8_0.gguf",
+            {tr("Object-2DGS Q8_0 (recommended)"),
+             "freesplatter-object-2dgs-q8_0.gguf",
              base + "freesplatter-object-2dgs-q8_0.gguf"},
             {tr("Object-2DGS F16"), "freesplatter-object-2dgs-f16.gguf",
              base + "freesplatter-object-2dgs-f16.gguf"},
+            {tr("Object-3DGS Q8_0 (deprecated)"),
+             "freesplatter-object-q8_0.gguf",
+             base + "freesplatter-object-q8_0.gguf"},
+            {tr("Object-3DGS F16 (deprecated)"),
+             "freesplatter-object-f16.gguf",
+             base + "freesplatter-object-f16.gguf"},
+            {tr("Object-3DGS F32 (deprecated)"),
+             "freesplatter-object-f32.gguf",
+             base + "freesplatter-object-f32.gguf"},
     };
 }
 
@@ -197,9 +201,9 @@ void FreeSplatterDialog::setupUi() {
     m_maxViewsSpin->setSpecialValueText("Auto");
     m_maxViewsSpin->setToolTip(
             tr("Max input views for inference.\n"
-               "Auto: Scene=2, Object=16.\n"
-               "Fewer views = faster inference (O(N\u00b2) scaling).\n"
-               "Object model: 8 views recommended for Metal GPU."));
+               "Auto: Scene=2, Object-3DGS=16, Object-2DGS=24.\n"
+               "Trained with up to 32 views; more views = better quality.\n"
+               "O(N\u00b2) compute scaling; 16 views \u2248 30-60s on Metal."));
     modelLayout->addWidget(m_maxViewsSpin, 5, 1);
 
     mainLayout->addWidget(modelGroup);
@@ -238,10 +242,14 @@ void FreeSplatterDialog::setupUi() {
 
         m_thumbScroll = new QScrollArea;
         m_thumbScroll->setWidgetResizable(true);
-        m_thumbScroll->setMinimumHeight(kThumbSize + 12);
-        m_thumbScroll->setMaximumHeight(kThumbSize + 12);
+        m_thumbScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_thumbScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        const int thumbTileH = kThumbSize + 48;
+        m_thumbScroll->setMinimumHeight(thumbTileH);
+        m_thumbScroll->setMaximumHeight(thumbTileH);
         m_thumbScroll->setFrameShape(QFrame::StyledPanel);
         m_thumbContainer = new QWidget;
+        m_thumbContainer->setMinimumHeight(thumbTileH - 4);
         auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
         thumbLayout->setContentsMargins(4, 4, 4, 4);
         m_thumbScroll->setWidget(m_thumbContainer);
@@ -546,6 +554,8 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         resize(width(), layout()->minimumSize().height());
     });
 }
+
+void FreeSplatterDialog::refreshModelList() { populateModelCombo(); }
 
 void FreeSplatterDialog::populateModelCombo(const QString& keepFilename) {
     const QString cacheDir = modelCacheDir();
@@ -1280,10 +1290,10 @@ void FreeSplatterDialog::onRun() {
                    "images will be uniformly subsampled before run."));
     } else if (mode == Mode::Reconstruct &&
                currentModelType() == ModelType::Object &&
-               currentImageCount() > 16) {
+               currentImageCount() > 24) {
         appendLog(
-                tr("[Warning] Object model works best with ~8–16 views; "
-                   "inputs above 16 will be uniformly subsampled."));
+                tr("[Warning] Object model trained with up to 32 views; "
+                   "inputs above 24 will be uniformly subsampled."));
     }
     emit runRequested(getSettings());
 }

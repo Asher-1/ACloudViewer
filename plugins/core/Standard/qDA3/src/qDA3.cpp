@@ -110,6 +110,7 @@ void qDA3::showDialog() {
         connect(m_dialog, &DA3Dialog::refreshDbImagesRequested, this,
                 [this]() { refreshDbImages(); });
     }
+    m_dialog->refreshModelList();
     refreshDbImages();
     m_dialog->show();
     m_dialog->raise();

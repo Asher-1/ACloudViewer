@@ -99,7 +99,9 @@ QString LightGlueDialog::formatFileSize(qint64 bytes) {
     if (bytes < 1024) return QString("%1 B").arg(bytes);
     if (bytes < 1024LL * 1024)
         return QString("%1 KB").arg(bytes / 1024.0, 0, 'f', 1);
-    return QString("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
+    if (bytes < 1024LL * 1024 * 1024)
+        return QString("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
+    return QString("%1 GB").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
 }
 
 LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
@@ -374,6 +376,8 @@ void LightGlueDialog::setupUi() {
     updateRunButtonState();
     onModeChanged(m_modeCombo->currentIndex());
 }
+
+void LightGlueDialog::refreshModelList() { populateModelCombo(); }
 
 void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     const QString cacheDir = modelCacheDir();

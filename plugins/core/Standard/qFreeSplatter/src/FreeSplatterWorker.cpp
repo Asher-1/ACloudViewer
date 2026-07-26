@@ -8,12 +8,15 @@
 #include "FreeSplatterWorker.h"
 
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
 #include <QUuid>
 #include <algorithm>
+#include <cmath>
+#include <future>
 
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
@@ -70,7 +73,13 @@ void FreeSplatterWorker::releaseContextOnMainThread() {
 }
 
 aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
-    emit logMessage("[FS] Loading model: " + m_settings.modelPath);
+    {
+        QFileInfo fi(m_settings.modelPath);
+        const double sizeMB = fi.size() / (1024.0 * 1024.0);
+        emit logMessage(QString("[FS] Loading: %1 (%2 MB)")
+                                .arg(fi.fileName())
+                                .arg(sizeMB, 0, 'f', 1));
+    }
 
     aicore_gaussian_options* opts = aicore_gaussian_options_new();
     if (!m_settings.device.isEmpty()) {
@@ -189,7 +198,9 @@ bool FreeSplatterWorker::runReconstruct() {
     {
         const bool isObject = m_settings.modelPath.contains(
                 "object", Qt::CaseInsensitive);
-        const int autoMax = isObject ? 16 : 2;
+        const bool is2dgs = m_settings.modelPath.contains(
+                "2dgs", Qt::CaseInsensitive);
+        const int autoMax = isObject ? (is2dgs ? 24 : 16) : 2;
         const int maxViews =
                 (m_settings.maxViews > 0) ? m_settings.maxViews : autoMax;
         if (effectivePaths.size() > maxViews) {
@@ -239,8 +250,30 @@ bool FreeSplatterWorker::runReconstruct() {
 
     float* gaussians = nullptr;
     size_t n_out = 0;
-    int ret = aicore_gaussian_run_paths(ctx, cpaths.data(), n, &gaussians,
+
+    auto inferFuture = std::async(std::launch::async, [&]() {
+        return aicore_gaussian_run_paths(ctx, cpaths.data(), n, &gaussians,
                                         &n_out);
+    });
+
+    {
+        QElapsedTimer elapsed;
+        elapsed.start();
+        const int64_t expectedMs =
+                (n <= 2) ? 15000 : static_cast<int64_t>(n) * 7000;
+        while (inferFuture.wait_for(std::chrono::milliseconds(1500)) !=
+               std::future_status::ready) {
+            const double t = elapsed.elapsed() / static_cast<double>(expectedMs);
+            const int pct =
+                    25 + static_cast<int>(50.0 * (1.0 - std::exp(-2.5 * t)));
+            emit progressUpdate(qMin(pct, 74), 100);
+            const int sec = static_cast<int>(elapsed.elapsed() / 1000);
+            emit logMessage(
+                    QString("[FS] Task is running (%1 s elapsed)...").arg(sec));
+        }
+    }
+
+    int ret = inferFuture.get();
     if (ret != 0 || !gaussians) {
         const char* err = aicore_gaussian_last_error(ctx);
         emit logMessage(QString("[Error] Inference failed: %1")

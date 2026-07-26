@@ -7,16 +7,17 @@
 
 #include "DA3Worker.h"
 
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <algorithm>
+#include <cmath>
+#include <future>
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #endif
-
-#include <algorithm>
 
 DA3Worker::DA3Worker(const DA3Dialog::Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
@@ -153,13 +154,33 @@ bool DA3Worker::runDepthSingle() {
             emit logMessage("[DA3] Cancelled.");
             break;
         }
-        emit progressUpdate(10 + (i * 80) / std::max(total, 1), 100);
+        const int pctBase = 10 + (i * 80) / std::max(total, 1);
+        const int pctNext = 10 + ((i + 1) * 80) / std::max(total, 1);
+        emit progressUpdate(pctBase, 100);
         emit logMessage("[DA3] Processing: " + m_settings.inputPaths[i]);
 
         int h = 0, w = 0;
-        float* depth = aicore_depth_depth_path(
-                guard.ctx, m_settings.inputPaths[i].toStdString().c_str(), &h,
-                &w);
+        const std::string pathStr = m_settings.inputPaths[i].toStdString();
+        float* depth = nullptr;
+        auto fut = std::async(std::launch::async, [&]() {
+            return aicore_depth_depth_path(guard.ctx, pathStr.c_str(), &h, &w);
+        });
+        {
+            QElapsedTimer elapsed;
+            elapsed.start();
+            const int64_t expectedMs = 20000;
+            while (fut.wait_for(std::chrono::milliseconds(1500)) !=
+                   std::future_status::ready) {
+                const double t = elapsed.elapsed() /
+                                 static_cast<double>(expectedMs);
+                const int pct =
+                        pctBase + static_cast<int>(
+                                          (pctNext - pctBase) *
+                                          (1.0 - std::exp(-2.5 * t)));
+                emit progressUpdate(qMin(pct, pctNext - 1), 100);
+            }
+        }
+        depth = fut.get();
         if (!depth) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth estimation failed for: %1%2")
@@ -215,7 +236,9 @@ bool DA3Worker::runDepthPose() {
     int okCount = 0;
     for (int i = 0; i < total; ++i) {
         if (isInterruptionRequested()) break;
-        emit progressUpdate(10 + (i * 80) / std::max(total, 1), 100);
+        const int pctBase = 10 + (i * 80) / std::max(total, 1);
+        const int pctNext = 10 + ((i + 1) * 80) / std::max(total, 1);
+        emit progressUpdate(pctBase, 100);
 
         int h = 0, w = 0, is_metric = 0;
         float* depth_ptr = nullptr;
@@ -223,9 +246,28 @@ bool DA3Worker::runDepthPose() {
         float* sky_ptr = nullptr;
         float ext[12] = {}, intr[9] = {};
 
-        int ret = aicore_depth_depth_dense(
-                guard.ctx, m_settings.inputPaths[i].toStdString().c_str(), &h,
-                &w, &depth_ptr, &conf_ptr, &sky_ptr, ext, intr, &is_metric);
+        const std::string pathStr = m_settings.inputPaths[i].toStdString();
+        auto fut = std::async(std::launch::async, [&]() {
+            return aicore_depth_depth_dense(
+                    guard.ctx, pathStr.c_str(), &h, &w, &depth_ptr, &conf_ptr,
+                    &sky_ptr, ext, intr, &is_metric);
+        });
+        {
+            QElapsedTimer elapsed;
+            elapsed.start();
+            const int64_t expectedMs = 25000;
+            while (fut.wait_for(std::chrono::milliseconds(1500)) !=
+                   std::future_status::ready) {
+                const double t = elapsed.elapsed() /
+                                 static_cast<double>(expectedMs);
+                const int pct =
+                        pctBase + static_cast<int>(
+                                          (pctNext - pctBase) *
+                                          (1.0 - std::exp(-2.5 * t)));
+                emit progressUpdate(qMin(pct, pctNext - 1), 100);
+            }
+        }
+        int ret = fut.get();
         if (ret != 0 || !depth_ptr) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth+pose failed for: %1%2")

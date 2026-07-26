@@ -72,6 +72,7 @@ public:
     void setDbImages(const QStringList& imageNames);
 
     static QString modelCacheDir();
+    void refreshModelList();
 
 signals:
     void runRequested(const DA3Dialog::Settings& settings);

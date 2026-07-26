@@ -11,6 +11,8 @@
 
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <cmath>
+#include <future>
 
 #ifdef AICore_ENABLED
 #include <QJsonDocument>
@@ -207,8 +209,26 @@ bool LightGlueWorker::runMatch() {
 
     aicore_lightglue_match* matches = nullptr;
     int32_t n_matches = 0;
-    if (aicore_lightglue_run_match(ctx, &f0.view, &f1.view, &matches,
-                                   &n_matches) != 0) {
+    int matchRet = 0;
+    auto matchFut = std::async(std::launch::async, [&]() {
+        return aicore_lightglue_run_match(ctx, &f0.view, &f1.view, &matches,
+                                          &n_matches);
+    });
+    {
+        QElapsedTimer elapsed;
+        elapsed.start();
+        const int64_t expectedMs = 15000;
+        while (matchFut.wait_for(std::chrono::milliseconds(1500)) !=
+               std::future_status::ready) {
+            const double t =
+                    elapsed.elapsed() / static_cast<double>(expectedMs);
+            const int pct =
+                    45 + static_cast<int>(50.0 * (1.0 - std::exp(-2.5 * t)));
+            emit progressUpdate(qMin(pct, 94), 100);
+        }
+    }
+    matchRet = matchFut.get();
+    if (matchRet != 0) {
         const char* matchErr = aicore_lightglue_last_error(ctx);
         emit logMessage(QString("[Error] Matching failed: %1")
                                 .arg(matchErr ? matchErr : "unknown"));
