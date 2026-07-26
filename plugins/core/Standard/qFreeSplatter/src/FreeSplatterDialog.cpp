@@ -85,6 +85,10 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
              base + "freesplatter-object-f16.gguf"},
             {tr("Object F32"), "freesplatter-object-f32.gguf",
              base + "freesplatter-object-f32.gguf"},
+            {tr("Object-2DGS Q8_0"), "freesplatter-object-2dgs-q8_0.gguf",
+             base + "freesplatter-object-2dgs-q8_0.gguf"},
+            {tr("Object-2DGS F16"), "freesplatter-object-2dgs-f16.gguf",
+             base + "freesplatter-object-2dgs-f16.gguf"},
     };
 }
 
@@ -388,6 +392,14 @@ void FreeSplatterDialog::setupUi() {
     outputGrid->addWidget(m_estimatePosesCheck, row, 2, 1, 2);
 
     row++;
+    m_removeBgCheck = new QCheckBox("Remove background (Object model)");
+    m_removeBgCheck->setChecked(false);
+    m_removeBgCheck->setToolTip(
+            tr("Auto-remove backgrounds using GrabCut before inference.\n"
+               "Recommended for Object models with non-white backgrounds."));
+    outputGrid->addWidget(m_removeBgCheck, row, 0, 1, 4);
+
+    row++;
     m_imageCountLabel = new QLabel;
     m_imageCountLabel->setStyleSheet("font-weight: bold;");
     outputGrid->addWidget(m_imageCountLabel, row, 0, 1, 4);
@@ -512,6 +524,7 @@ void FreeSplatterDialog::onModelComboChanged(int index) {
             (data == "CUSTOM" && m_customModelPath &&
              m_customModelPath->text().contains("object", Qt::CaseInsensitive));
     if (m_objectHintLabel) m_objectHintLabel->setVisible(isObject);
+    if (m_removeBgCheck) m_removeBgCheck->setChecked(isObject);
 
     updateImageCountStatus();
     updateRunButtonState();
@@ -1009,6 +1022,7 @@ void FreeSplatterDialog::onModeChanged(int index) {
         m_exportFieldModeCombo->setVisible(isReconstruct);
     m_addToDbCheck->setVisible(isReconstruct);
     m_estimatePosesCheck->setVisible(isReconstruct);
+    if (m_removeBgCheck) m_removeBgCheck->setVisible(isReconstruct);
     m_imageCountLabel->setVisible(isReconstruct);
     if (isReconstruct) updateImageCountStatus();
     updateRunButtonState();
@@ -1063,6 +1077,7 @@ FreeSplatterDialog::Settings FreeSplatterDialog::getSettings() const {
                     : static_cast<int>(ExportFieldMode::Basic));
     s.addToDb = m_addToDbCheck->isChecked();
     s.estimatePoses = m_estimatePosesCheck->isChecked();
+    s.removeBackground = m_removeBgCheck && m_removeBgCheck->isChecked();
     return s;
 }
 

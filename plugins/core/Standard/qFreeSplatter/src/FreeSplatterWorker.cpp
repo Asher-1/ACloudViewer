@@ -11,10 +11,17 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QStandardPaths>
+#include <QUuid>
 #include <algorithm>
 
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
+#endif
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #endif
 
 FreeSplatterWorker::FreeSplatterWorker(const Settings& settings,
@@ -122,7 +129,44 @@ bool FreeSplatterWorker::runReconstruct() {
                     .arg(geom.gaussian_channels)
                     .arg(geom.sh_degree));
 
-    const int n = m_settings.inputPaths.size();
+    QStringList effectivePaths = m_settings.inputPaths;
+    QString bgTmpDir;
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (m_settings.removeBackground) {
+        emit logMessage("[FS] Removing backgrounds (GrabCut)...");
+        bgTmpDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                   + "/freesplatter_bg_" + QUuid::createUuid().toString(QUuid::Id128);
+        QDir().mkpath(bgTmpDir);
+        QStringList processed;
+        for (int i = 0; i < effectivePaths.size(); ++i) {
+            cv::Mat img = cv::imread(effectivePaths[i].toStdString());
+            if (img.empty()) {
+                processed.append(effectivePaths[i]);
+                continue;
+            }
+            cv::Mat mask(img.size(), CV_8UC1, cv::Scalar(cv::GC_BGD));
+            const int mx = std::max(1, img.cols / 10);
+            const int my = std::max(1, img.rows / 10);
+            cv::Rect roi(mx, my, img.cols - 2 * mx, img.rows - 2 * my);
+            mask(roi).setTo(cv::Scalar(cv::GC_PR_FGD));
+            cv::Mat bgModel, fgModel;
+            cv::grabCut(img, mask, roi, bgModel, fgModel, 5, cv::GC_INIT_WITH_MASK);
+            cv::Mat fg = (mask == cv::GC_FGD) | (mask == cv::GC_PR_FGD);
+            cv::Mat result(img.size(), img.type(), cv::Scalar(255, 255, 255));
+            img.copyTo(result, fg);
+            const QString outPath = bgTmpDir + "/" +
+                    QFileInfo(effectivePaths[i]).fileName();
+            cv::imwrite(outPath.toStdString(), result);
+            processed.append(outPath);
+            emit logMessage(QString("[FS]   bg-removed %1/%2")
+                                    .arg(i + 1).arg(effectivePaths.size()));
+        }
+        effectivePaths = processed;
+    }
+#endif
+
+    const int n = effectivePaths.size();
     emit progressUpdate(25, 100);
     QString devLabel = m_settings.device.isEmpty() ? QStringLiteral("auto")
                                                    : m_settings.device;
@@ -142,7 +186,7 @@ bool FreeSplatterWorker::runReconstruct() {
     std::vector<std::string> paths(n);
     std::vector<const char*> cpaths(n);
     for (int i = 0; i < n; ++i) {
-        paths[i] = m_settings.inputPaths[i].toStdString();
+        paths[i] = effectivePaths[i].toStdString();
         cpaths[i] = paths[i].c_str();
     }
 
@@ -203,6 +247,10 @@ bool FreeSplatterWorker::runReconstruct() {
     }
 
     aicore_gaussian_free_floats(gaussians);
+
+    if (!bgTmpDir.isEmpty()) {
+        QDir(bgTmpDir).removeRecursively();
+    }
 
     emit progressUpdate(100, 100);
     emit resultReady(result);
