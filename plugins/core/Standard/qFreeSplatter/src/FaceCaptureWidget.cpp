@@ -59,16 +59,7 @@ void FaceCaptureWidget::setupUi() {
     controlsLayout->addWidget(new QLabel(tr("Device:"), this));
 
     m_cameraCombo = new QComboBox(this);
-    for (int i = 0; i < 10; ++i) {
-        cv::VideoCapture testCap(i, cv::CAP_ANY);
-        if (testCap.isOpened()) {
-            m_cameraCombo->addItem(tr("Camera %1").arg(i), i);
-            testCap.release();
-        }
-    }
-    if (m_cameraCombo->count() == 0) {
-        m_cameraCombo->addItem(tr("No camera"), 0);
-    }
+    m_cameraCombo->addItem(tr("Camera 0 (default)"), 0);
     controlsLayout->addWidget(m_cameraCombo, 1);
 
     m_captureBtn = new QPushButton(tr("Capture"), this);
@@ -168,6 +159,22 @@ bool FaceCaptureWidget::loadCascade() {
 bool FaceCaptureWidget::startCamera(int deviceIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     stopCamera();
+
+    if (m_cameraCombo && m_cameraCombo->count() <= 1) {
+        m_cameraCombo->blockSignals(true);
+        m_cameraCombo->clear();
+        for (int i = 0; i < 10; ++i) {
+            cv::VideoCapture testCap(i, cv::CAP_ANY);
+            if (testCap.isOpened()) {
+                m_cameraCombo->addItem(tr("Camera %1").arg(i), i);
+                testCap.release();
+            }
+        }
+        if (m_cameraCombo->count() == 0) {
+            m_cameraCombo->addItem(tr("No camera"), 0);
+        }
+        m_cameraCombo->blockSignals(false);
+    }
 
     if (!m_camera.open(deviceIndex, cv::CAP_ANY)) {
         m_cameraActive = false;
