@@ -135,8 +135,10 @@ bool FreeSplatterWorker::runReconstruct() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (m_settings.removeBackground) {
         emit logMessage("[FS] Removing backgrounds (GrabCut)...");
-        bgTmpDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-                   + "/freesplatter_bg_" + QUuid::createUuid().toString(QUuid::Id128);
+        bgTmpDir =
+                QStandardPaths::writableLocation(QStandardPaths::TempLocation) +
+                "/freesplatter_bg_" +
+                QUuid::createUuid().toString(QUuid::Id128);
         QDir().mkpath(bgTmpDir);
         QStringList processed;
         for (int i = 0; i < effectivePaths.size(); ++i) {
@@ -151,16 +153,18 @@ bool FreeSplatterWorker::runReconstruct() {
             cv::Rect roi(mx, my, img.cols - 2 * mx, img.rows - 2 * my);
             mask(roi).setTo(cv::Scalar(cv::GC_PR_FGD));
             cv::Mat bgModel, fgModel;
-            cv::grabCut(img, mask, roi, bgModel, fgModel, 5, cv::GC_INIT_WITH_MASK);
+            cv::grabCut(img, mask, roi, bgModel, fgModel, 5,
+                        cv::GC_INIT_WITH_MASK);
             cv::Mat fg = (mask == cv::GC_FGD) | (mask == cv::GC_PR_FGD);
             cv::Mat result(img.size(), img.type(), cv::Scalar(255, 255, 255));
             img.copyTo(result, fg);
-            const QString outPath = bgTmpDir + "/" +
-                    QFileInfo(effectivePaths[i]).fileName();
+            const QString outPath =
+                    bgTmpDir + "/" + QFileInfo(effectivePaths[i]).fileName();
             cv::imwrite(outPath.toStdString(), result);
             processed.append(outPath);
             emit logMessage(QString("[FS]   bg-removed %1/%2")
-                                    .arg(i + 1).arg(effectivePaths.size()));
+                                    .arg(i + 1)
+                                    .arg(effectivePaths.size()));
         }
         effectivePaths = processed;
     }
