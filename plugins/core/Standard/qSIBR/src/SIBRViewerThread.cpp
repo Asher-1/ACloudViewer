@@ -102,6 +102,21 @@ static void drainPendingGLErrors() {
     }
 }
 
+#ifdef SIBR_HAS_CUDA
+#include <cuda_runtime.h>
+
+// Drain pending CUDA work and clear sticky errors from other GPU users
+// (ggml/AICore, COLMAP, BEV, etc.) that shared the same device before
+// this viewer started.  Without this, a stale cudaError left in the
+// per-thread error state causes every subsequent CUDA call to fail with
+// "illegal memory access" or similar.
+static void drainPendingCudaErrors(int device = 0) {
+    cudaSetDevice(device);
+    cudaDeviceSynchronize();
+    cudaGetLastError();
+}
+#endif
+
 namespace {
 class PointBasedIBRView : public sibr::ViewBase {
 public:
@@ -918,6 +933,8 @@ int SIBRViewerThread::runGaussianViewer() {
                                    : rendering_height;
         usedRes = sibr::Vector2u(rendering_width, rendering_height);
     }
+
+    drainPendingCudaErrors(device);
 
     bool messageRead = false;
     GaussianView::Ptr gaussianView;

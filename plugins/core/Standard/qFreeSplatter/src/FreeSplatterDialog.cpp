@@ -19,6 +19,9 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QTimer>
+#include <QSslConfiguration>
+#include <QSslError>
+#include <QSslSocket>
 #include <QVBoxLayout>
 
 #include "FaceCaptureWidget.h"
@@ -843,7 +846,20 @@ void FreeSplatterDialog::startDownload(const FreeSplatterBuiltinModel& model) {
     QNetworkRequest req(QUrl(model.downloadUrl));
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::NoLessSafeRedirectPolicy);
+
+    auto sslConfig = QSslConfiguration::defaultConfiguration();
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    req.setSslConfiguration(sslConfig);
+
     m_currentDownload = m_netManager->get(req);
+
+    connect(m_currentDownload, &QNetworkReply::sslErrors, this,
+            [this](const QList<QSslError>& errors) {
+                for (const auto& e : errors)
+                    appendLog(tr("[FS] SSL warning (ignored): %1")
+                                      .arg(e.errorString()));
+                m_currentDownload->ignoreSslErrors();
+            });
 
     m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
     if (!m_downloadOutFile->open(QIODevice::WriteOnly)) {

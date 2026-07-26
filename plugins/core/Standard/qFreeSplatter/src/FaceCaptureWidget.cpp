@@ -7,6 +7,10 @@
 
 #include "FaceCaptureWidget.h"
 
+#ifdef HAS_OPENCV_FACE_CAPTURE
+#include <opencv2/core/utils/logger.hpp>
+#endif
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -59,7 +63,7 @@ void FaceCaptureWidget::setupUi() {
     controlsLayout->addWidget(new QLabel(tr("Device:"), this));
 
     m_cameraCombo = new QComboBox(this);
-    m_cameraCombo->addItem(tr("Camera 0 (default)"), 0);
+    m_cameraCombo->addItem(tr("Default (0)"), 0);
     controlsLayout->addWidget(m_cameraCombo, 1);
 
     m_captureBtn = new QPushButton(tr("Capture"), this);
@@ -160,9 +164,15 @@ bool FaceCaptureWidget::startCamera(int deviceIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     stopCamera();
 
-    if (m_cameraCombo && m_cameraCombo->count() <= 1) {
+    if (!m_camerasEnumerated && m_cameraCombo) {
+        m_camerasEnumerated = true;
         m_cameraCombo->blockSignals(true);
         m_cameraCombo->clear();
+
+        namespace cvlog = cv::utils::logging;
+        const auto prevLevel = cvlog::getLogLevel();
+        cvlog::setLogLevel(cvlog::LOG_LEVEL_SILENT);
+
         for (int i = 0; i < 10; ++i) {
             cv::VideoCapture testCap(i, cv::CAP_ANY);
             if (testCap.isOpened()) {
@@ -170,8 +180,17 @@ bool FaceCaptureWidget::startCamera(int deviceIndex) {
                 testCap.release();
             }
         }
+
+        cvlog::setLogLevel(prevLevel);
+
         if (m_cameraCombo->count() == 0) {
-            m_cameraCombo->addItem(tr("No camera"), 0);
+            m_cameraCombo->addItem(tr("No camera found"), -1);
+            m_cameraCombo->blockSignals(false);
+            m_statusLabel->setText(tr("No camera devices detected"));
+            return false;
+        }
+        if (deviceIndex == 0 && m_cameraCombo->count() > 0) {
+            deviceIndex = m_cameraCombo->itemData(0).toInt();
         }
         m_cameraCombo->blockSignals(false);
     }

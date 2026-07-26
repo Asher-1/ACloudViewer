@@ -19,6 +19,9 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
+#include <QSslConfiguration>
+#include <QSslError>
+#include <QSslSocket>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
@@ -617,7 +620,20 @@ void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
     QNetworkRequest req(QUrl(model.downloadUrl));
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::NoLessSafeRedirectPolicy);
+
+    auto sslConfig = QSslConfiguration::defaultConfiguration();
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    req.setSslConfiguration(sslConfig);
+
     m_currentDownload = m_netManager->get(req);
+
+    connect(m_currentDownload, &QNetworkReply::sslErrors, this,
+            [this](const QList<QSslError>& errors) {
+                for (const auto& e : errors)
+                    appendLog(tr("[DA3] SSL warning (ignored): %1")
+                                      .arg(e.errorString()));
+                m_currentDownload->ignoreSslErrors();
+            });
 
     m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
     if (!m_downloadOutFile->open(QIODevice::WriteOnly)) {
