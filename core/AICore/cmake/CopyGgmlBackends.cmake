@@ -70,6 +70,16 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
         endforeach()
     endforeach()
 
+    # Windows: ggml ships plain DLLs without version numbers.
+    if(NOT _versioned_files AND lib_suffix STREQUAL ".dll")
+        foreach(_base IN ITEMS ggml ggml-base)
+            set(_plain "${src_dir}/${lib_prefix}${_base}${lib_suffix}")
+            if(EXISTS "${_plain}" AND NOT IS_SYMLINK "${_plain}")
+                list(APPEND _versioned_files "${_plain}")
+            endif()
+        endforeach()
+    endif()
+
     if(NOT _versioned_files)
         message(FATAL_ERROR
             "CopyGgmlBackends: no versioned ggml core libs in ${src_dir}")
@@ -94,6 +104,7 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
             set(_soname "${lib_prefix}${_base_name}.${_soname_major}${lib_suffix}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
         else()
+            # Plain DLL (Windows) — no symlinks needed.
             continue()
         endif()
         foreach(_alias IN ITEMS "${_soname}" "${_link_name}")

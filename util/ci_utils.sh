@@ -22,7 +22,12 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
-NPROC=$((NPROC + 2))                         # run nproc+2 jobs to speed up the build
+if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS CI runners have limited RAM (~7 GB); cap at NPROC to avoid OOM
+    NPROC=$((NPROC > 4 ? 4 : NPROC))
+else
+    NPROC=$((NPROC + 2))
+fi
 _ci_utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${_ci_utils_dir}/acloudviewer_vulkan_env_common.sh"

@@ -55,6 +55,39 @@ function(copy_rename_files src_dir src_name dst_dir dst_name)
     )
 endfunction()
 
+# macOS: ggml backend MODULE libs (.so) are dlopen'd at runtime and may not
+# be inside the .app bundle after macdeployqt + lib_bundle_app.py runs.
+# Explicitly copy them from the install lib dir into each deploy app's
+# Frameworks directory so the DMG is self-contained.
+function(ensure_ggml_backends_in_app app_frameworks_dir install_lib_dir module_suffix)
+    if(NOT IS_DIRECTORY "${install_lib_dir}" OR NOT IS_DIRECTORY "${app_frameworks_dir}")
+        return()
+    endif()
+    file(GLOB _ggml_backends "${install_lib_dir}/libggml-*${module_suffix}")
+    set(_added 0)
+    foreach(_mod IN LISTS _ggml_backends)
+        if(IS_SYMLINK "${_mod}" OR NOT IS_REGULAR_FILE "${_mod}")
+            continue()
+        endif()
+        get_filename_component(_name "${_mod}" NAME)
+        # Skip core shared libs (handled by otool / macdeployqt)
+        if("${_name}" MATCHES "^libggml\\." OR "${_name}" MATCHES "^libggml-base\\.")
+            continue()
+        endif()
+        set(_dst "${app_frameworks_dir}/${_name}")
+        if(NOT EXISTS "${_dst}")
+            file(COPY "${_mod}" DESTINATION "${app_frameworks_dir}"
+                 FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                                  GROUP_READ GROUP_EXECUTE
+                                  WORLD_READ WORLD_EXECUTE)
+            math(EXPR _added "${_added} + 1")
+        endif()
+    endforeach()
+    if(_added GREATER 0)
+        message(STATUS "PostInstall: copied ${_added} ggml backend(s) into ${app_frameworks_dir}")
+    endif()
+endfunction()
+
 # 1. Config
 ## update ACloudViewer version and build time
 replace_version_in_file("${CONFIG_FILE_PATH}")
@@ -76,10 +109,21 @@ endif()
 
 # 2. Deploy
 set(SOURCE_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
+if (APPLE AND GGML_MODULE_SUFFIX)
+    set(_GGML_SRC_DIR "${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}")
+endif()
 ## deploy ACloudViewer
 file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}"
     DESTINATION "${MAIN_DEPLOY_PATH}"
     USE_SOURCE_PERMISSIONS)
+if (APPLE AND GGML_MODULE_SUFFIX)
+    ensure_ggml_backends_in_app(
+        "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+        "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    ensure_ggml_backends_in_app(
+        "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+        "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+endif()
 if (UNIX AND NOT APPLE)
     # deploy libs, plugins and translations for ACloudViewer
     file(COPY 
@@ -240,6 +284,11 @@ if (${BUILD_GUI} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
+    if (APPLE AND GGML_MODULE_SUFFIX)
+        ensure_ggml_backends_in_app(
+            "${CLOUDVIEWER_DEPLOY_PATH}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    endif()
     if ((WIN32 OR UNIX) AND NOT APPLE)
         file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
                 DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
@@ -251,6 +300,11 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
                 DESTINATION "${COLMAP_DEPLOY_PATH}"
                 USE_SOURCE_PERMISSIONS)
+    if (APPLE AND GGML_MODULE_SUFFIX)
+        ensure_ggml_backends_in_app(
+            "${COLMAP_DEPLOY_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    endif()
 
     if (UNIX AND NOT APPLE)
         # for Colmap deps
