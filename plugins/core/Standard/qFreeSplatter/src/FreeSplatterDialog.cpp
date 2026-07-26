@@ -157,7 +157,17 @@ void FreeSplatterDialog::setupUi() {
     m_customModelRow->setVisible(false);
     modelLayout->addWidget(m_customModelRow, 1, 0, 1, 4);
 
-    modelLayout->addWidget(new QLabel("Device:"), 2, 0);
+    m_objectHintLabel = new QLabel(
+            tr("\u26a0 Object model requires background-removed images for "
+               "best results. Scene model is recommended for general photos."));
+    m_objectHintLabel->setWordWrap(true);
+    m_objectHintLabel->setStyleSheet(
+            "QLabel { color: #b58900; font-size: 11px; padding: 2px 4px; "
+            "background: #fffde7; border-radius: 3px; }");
+    m_objectHintLabel->setVisible(false);
+    modelLayout->addWidget(m_objectHintLabel, 3, 0, 1, 4);
+
+    modelLayout->addWidget(new QLabel("Device:"), 4, 0);
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* d = aicore_device_at(i);
@@ -166,12 +176,12 @@ void FreeSplatterDialog::setupUi() {
     }
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
-    modelLayout->addWidget(m_deviceCombo, 2, 1);
-    modelLayout->addWidget(new QLabel("Threads:"), 2, 2);
+    modelLayout->addWidget(m_deviceCombo, 4, 1);
+    modelLayout->addWidget(new QLabel("Threads:"), 4, 2);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
-    modelLayout->addWidget(m_threads, 2, 3);
+    modelLayout->addWidget(m_threads, 4, 3);
 
     mainLayout->addWidget(modelGroup);
 
@@ -496,6 +506,13 @@ bool FreeSplatterDialog::selectModelByFilename(const QString& filename) {
 void FreeSplatterDialog::onModelComboChanged(int index) {
     QString data = m_modelCombo->itemData(index).toString();
     m_customModelRow->setVisible(data == "CUSTOM");
+
+    const bool isObject =
+            data.contains("object", Qt::CaseInsensitive) ||
+            (data == "CUSTOM" && m_customModelPath &&
+             m_customModelPath->text().contains("object", Qt::CaseInsensitive));
+    if (m_objectHintLabel) m_objectHintLabel->setVisible(isObject);
+
     updateImageCountStatus();
     updateRunButtonState();
 }
