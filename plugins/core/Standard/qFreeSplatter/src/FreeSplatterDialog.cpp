@@ -110,35 +110,32 @@ QString FreeSplatterDialog::formatFileSize(qint64 bytes) {
 
 FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("FreeSplatter 3D Reconstruction");
-    setMinimumWidth(640);
+    setMinimumWidth(560);
     m_netManager = new QNetworkAccessManager(this);
     setupUi();
 }
 
 void FreeSplatterDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(4);
 
-    // --- Mode selection ---
-    auto* modeGroup = new QGroupBox("Operation Mode");
-    auto* modeLayout = new QHBoxLayout(modeGroup);
+    // --- Model & Mode (merged into one group) ---
+    auto* modelGroup = new QGroupBox("Model");
+    auto* modelLayout = new QGridLayout(modelGroup);
+    modelLayout->setVerticalSpacing(4);
+
+    modelLayout->addWidget(new QLabel("Mode:"), 0, 0);
     m_modeCombo = new QComboBox;
     m_modeCombo->addItem("3D Reconstruct (Gaussian)",
                          static_cast<int>(Mode::Reconstruct));
     m_modeCombo->addItem("Model Info", static_cast<int>(Mode::ModelInfo));
-    modeLayout->addWidget(new QLabel("Mode:"));
-    modeLayout->addWidget(m_modeCombo, 1);
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FreeSplatterDialog::onModeChanged);
-    mainLayout->addWidget(modeGroup);
-
-    // --- Model selection ---
-    auto* modelGroup = new QGroupBox("Model");
-    auto* modelLayout = new QGridLayout(modelGroup);
-
-    modelLayout->addWidget(new QLabel("GGUF Model:"), 0, 0);
+    modelLayout->addWidget(m_modeCombo, 0, 1);
+    modelLayout->addWidget(new QLabel("GGUF:"), 0, 2);
     m_modelCombo = new QComboBox;
     m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 2);
+    modelLayout->addWidget(m_modelCombo, 0, 3);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FreeSplatterDialog::onModelComboChanged);
 
@@ -157,7 +154,7 @@ void FreeSplatterDialog::setupUi() {
             &FreeSplatterDialog::onBrowseCustomModel);
     customModelLayout->addWidget(m_browseCustomModelBtn);
     m_customModelRow->setVisible(false);
-    modelLayout->addWidget(m_customModelRow, 1, 0, 1, 3);
+    modelLayout->addWidget(m_customModelRow, 1, 0, 1, 4);
 
     modelLayout->addWidget(new QLabel("Device:"), 2, 0);
     m_deviceCombo = new QComboBox;
@@ -169,18 +166,19 @@ void FreeSplatterDialog::setupUi() {
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
     modelLayout->addWidget(m_deviceCombo, 2, 1);
-
-    modelLayout->addWidget(new QLabel("Threads:"), 3, 0);
+    modelLayout->addWidget(new QLabel("Threads:"), 2, 2);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
-    modelLayout->addWidget(m_threads, 3, 1);
+    modelLayout->addWidget(m_threads, 2, 3);
 
     mainLayout->addWidget(modelGroup);
 
     // --- I/O configuration ---
     auto* ioGroup = new QGroupBox("Input / Output");
     auto* ioMainLayout = new QVBoxLayout(ioGroup);
+    ioMainLayout->setSpacing(4);
+    ioMainLayout->setContentsMargins(6, 6, 6, 6);
 
     m_inputTabWidget = new QTabWidget;
 
@@ -210,8 +208,8 @@ void FreeSplatterDialog::setupUi() {
 
         m_thumbScroll = new QScrollArea;
         m_thumbScroll->setWidgetResizable(true);
-        m_thumbScroll->setMinimumHeight(kThumbSize + 24);
-        m_thumbScroll->setMaximumHeight(kThumbSize + 24);
+        m_thumbScroll->setMinimumHeight(kThumbSize + 12);
+        m_thumbScroll->setMaximumHeight(kThumbSize + 12);
         m_thumbScroll->setFrameShape(QFrame::StyledPanel);
         m_thumbContainer = new QWidget;
         auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
@@ -339,64 +337,46 @@ void FreeSplatterDialog::setupUi() {
 
     ioMainLayout->addWidget(m_inputTabWidget);
 
-    // --- Output settings (shared by both input tabs) ---
+    // --- Output settings (compact dual-column) ---
     auto* outputGrid = new QGridLayout;
+    outputGrid->setVerticalSpacing(2);
     int row = 0;
 
-    outputGrid->addWidget(new QLabel("Opacity Threshold:"), row, 0);
+    outputGrid->addWidget(new QLabel("Opacity:"), row, 0);
     m_opacityThreshold = new QDoubleSpinBox;
     m_opacityThreshold->setRange(0.0, 1.0);
     m_opacityThreshold->setSingleStep(0.01);
     m_opacityThreshold->setValue(0.05);
     m_opacityThreshold->setToolTip("Prune gaussians with opacity <= threshold");
     outputGrid->addWidget(m_opacityThreshold, row, 1);
-
-    row++;
-    m_exportFieldLabel = new QLabel("Point cloud export:");
-    outputGrid->addWidget(m_exportFieldLabel, row, 0);
+    m_exportFieldLabel = new QLabel("Export:");
+    outputGrid->addWidget(m_exportFieldLabel, row, 2);
     m_exportFieldModeCombo = new QComboBox;
-    m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ + RGB + Opacity"),
+    m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ+RGB+Opacity"),
                                     static_cast<int>(ExportFieldMode::Basic));
     m_exportFieldModeCombo->addItem(
-            tr("Full \u2014 SH + scale + thin-axis normals"),
+            tr("Full \u2014 SH+scale+normals"),
             static_cast<int>(ExportFieldMode::Full));
     m_exportFieldModeCombo->setToolTip(
-#ifdef HAS_QSIBR
-            tr("Applies to Add to DB tree and Export PLY.\n"
-               "Basic: XYZ + RGB + Opacity (grey ramp).\n"
-               "Full: also exports SH and scale as scalar fields, plus "
-               "normals\n"
-               "from the thinnest Gaussian axis (quat+scale). Near-spherical\n"
-               "points get a default normal. Use Visualize (SIBR) for full "
-               "3DGS.")
-#else
-            tr("Applies to Add to DB tree and Export PLY.\n"
-               "Basic: XYZ + RGB + Opacity (grey ramp).\n"
-               "Full: also exports SH and scale as scalar fields, plus "
-               "normals\n"
-               "from the thinnest Gaussian axis (quat+scale). Near-spherical\n"
-               "points get a default normal.")
-#endif
-    );
-    outputGrid->addWidget(m_exportFieldModeCombo, row, 1, 1, 2);
+            tr("Basic: XYZ + RGB + Opacity.\n"
+               "Full: also SH, scale scalar fields and thin-axis normals."));
+    outputGrid->addWidget(m_exportFieldModeCombo, row, 3);
 
     row++;
-    m_addToDbCheck = new QCheckBox("Add result to DB tree (main 3D view)");
+    m_addToDbCheck = new QCheckBox("Add to DB tree");
     m_addToDbCheck->setChecked(true);
     m_addToDbCheck->setToolTip(
-            "After inference, add a colored point cloud to the database tree "
-            "and zoom the main rendering window to it.");
+            "Add colored point cloud to the database tree after inference.");
     outputGrid->addWidget(m_addToDbCheck, row, 0, 1, 2);
-
-    row++;
-    m_estimatePosesCheck = new QCheckBox("Estimate camera poses (multi-view)");
+    m_estimatePosesCheck = new QCheckBox("Estimate poses");
     m_estimatePosesCheck->setChecked(false);
-    outputGrid->addWidget(m_estimatePosesCheck, row, 0, 1, 2);
+    m_estimatePosesCheck->setToolTip("Estimate camera poses (multi-view)");
+    outputGrid->addWidget(m_estimatePosesCheck, row, 2, 1, 2);
 
     row++;
     m_imageCountLabel = new QLabel;
     m_imageCountLabel->setStyleSheet("font-weight: bold;");
-    outputGrid->addWidget(m_imageCountLabel, row, 0, 1, 3);
+    outputGrid->addWidget(m_imageCountLabel, row, 0, 1, 4);
 
     ioMainLayout->addLayout(outputGrid);
 
@@ -422,7 +402,7 @@ void FreeSplatterDialog::setupUi() {
     // --- Log ---
     m_logOutput = new QTextEdit;
     m_logOutput->setReadOnly(true);
-    m_logOutput->setMaximumHeight(150);
+    m_logOutput->setMaximumHeight(100);
     mainLayout->addWidget(m_logOutput);
 
     // --- Buttons ---
