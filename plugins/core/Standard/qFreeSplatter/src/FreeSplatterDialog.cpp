@@ -354,9 +354,8 @@ void FreeSplatterDialog::setupUi() {
     m_exportFieldModeCombo = new QComboBox;
     m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ+RGB+Opacity"),
                                     static_cast<int>(ExportFieldMode::Basic));
-    m_exportFieldModeCombo->addItem(
-            tr("Full \u2014 SH+scale+normals"),
-            static_cast<int>(ExportFieldMode::Full));
+    m_exportFieldModeCombo->addItem(tr("Full \u2014 SH+scale+normals"),
+                                    static_cast<int>(ExportFieldMode::Full));
     m_exportFieldModeCombo->setToolTip(
             tr("Basic: XYZ + RGB + Opacity.\n"
                "Full: also SH, scale scalar fields and thin-axis normals."));
