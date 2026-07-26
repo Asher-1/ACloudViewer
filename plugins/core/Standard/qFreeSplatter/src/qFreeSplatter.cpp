@@ -55,9 +55,10 @@ constexpr ecvColor::Rgb kColmapCameraFrameColor(204, 25, 0);
 // COLMAP viewer frustum half-width ≈ this fraction of adaptive scene diameter.
 constexpr float kCameraFrustumSceneExtentFraction = 0.03f;
 
-constexpr int kMaxInferenceViews = 64;  // AICore ingest_images hard cap
-constexpr int kSceneTargetViews = 2;    // scene GGUF recipe
-constexpr int kObjectTargetViews = 16;  // object: practical multi-view cap
+constexpr int kMaxInferenceViews = 64;   // AICore ingest_images hard cap
+constexpr int kSceneTargetViews = 2;     // scene GGUF recipe
+constexpr int kObject3dgsTargetViews = 16;  // 3DGS object: practical cap
+constexpr int kObject2dgsTargetViews = 24;  // 2DGS: trained@32, eval@24
 // ply_export always writes 45 f_rest coeffs (standard 3DGS SH degree 3 layout).
 constexpr int kSibrPlyShDegree = 3;
 
@@ -82,7 +83,9 @@ int inferenceViewCap(const QString& modelPath) {
         case FreeSplatterDialog::ModelType::Scene:
             return kSceneTargetViews;
         case FreeSplatterDialog::ModelType::Object:
-            return kObjectTargetViews;
+            if (modelPath.contains("2dgs", Qt::CaseInsensitive))
+                return kObject2dgsTargetViews;
+            return kObject3dgsTargetViews;
         default:
             return kMaxInferenceViews;
     }
@@ -859,6 +862,7 @@ void qFreeSplatter::showDialog() {
         connect(m_dialog, &FreeSplatterDialog::refreshDbImagesRequested, this,
                 [this]() { refreshDbImages(); });
     }
+    m_dialog->refreshModelList();
     refreshDbImages();
     const QStringList selectedNames = selectedDbImageNames();
     if (!selectedNames.isEmpty()) {
@@ -1131,6 +1135,25 @@ void qFreeSplatter::addResultToDb(const FreeSplatterResult& result) {
         m_dialog->appendLog("[Warning] No valid gaussians after pruning.");
         delete cloud;
         return;
+    }
+
+    {
+        ccBBox bbox = cloud->getOwnBB();
+        if (bbox.isValid()) {
+            CCVector3 diag = bbox.maxCorner() - bbox.minCorner();
+            float maxExt = std::max({std::abs(diag.x), std::abs(diag.y),
+                                     std::abs(diag.z), 1e-6f});
+            m_dialog->appendLog(
+                    QString("[FS] BBox: [%1,%2,%3] -> [%4,%5,%6]  "
+                            "extent=%7")
+                            .arg(bbox.minCorner().x, 0, 'f', 3)
+                            .arg(bbox.minCorner().y, 0, 'f', 3)
+                            .arg(bbox.minCorner().z, 0, 'f', 3)
+                            .arg(bbox.maxCorner().x, 0, 'f', 3)
+                            .arg(bbox.maxCorner().y, 0, 'f', 3)
+                            .arg(bbox.maxCorner().z, 0, 'f', 3)
+                            .arg(maxExt, 0, 'f', 3));
+        }
     }
 
     m_app->addToDB(cloud, true, true, false, true);

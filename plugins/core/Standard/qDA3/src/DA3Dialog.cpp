@@ -399,6 +399,8 @@ void DA3Dialog::setupUi() {
     onModeChanged(0);
 }
 
+void DA3Dialog::refreshModelList() { populateModelCombos(); }
+
 void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
                                     const QString& keepMetricFilename) {
     const QString cacheDir = modelCacheDir();

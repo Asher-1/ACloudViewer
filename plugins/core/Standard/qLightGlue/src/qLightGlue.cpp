@@ -103,6 +103,7 @@ void qLightGlue::showDialog() {
         connect(m_dialog, &LightGlueDialog::refreshDbImagesRequested, this,
                 [this]() { refreshDbImages(); });
     }
+    m_dialog->refreshModelList();
     refreshDbImages();
     const QStringList selectedNames = selectedDbImageNames();
     if (!selectedNames.isEmpty()) {

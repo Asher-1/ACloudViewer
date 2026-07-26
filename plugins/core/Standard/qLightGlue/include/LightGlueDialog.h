@@ -70,6 +70,7 @@ public:
     void applyDbTreeSelection(const QStringList& imageNames);
 
     static QString modelCacheDir();
+    void refreshModelList();
 
 signals:
     void runRequested(const LightGlueDialog::Settings& settings);
