@@ -105,6 +105,7 @@ private:
     QTimer* m_frameTimer = nullptr;
     bool m_cameraActive = false;
     bool m_cascadeLoaded = false;
+    bool m_camerasEnumerated = false;
 
     std::vector<CaptureAngle> m_targetAngles;
     std::vector<CapturedFrame> m_capturedFrames;

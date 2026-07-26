@@ -96,7 +96,7 @@ CMake option reference: **[BUILD.md](BUILD.md)**.
 | Platform | Recommended path | Key CMake flags |
 |----------|------------------|-----------------|
 | **Linux** | **Option A — pyenv + apt** (CI, clean env) | `-DBUILD_WITH_CONDA=OFF`, explicit `-DPython3_EXECUTABLE` / `-DPython3_LIBRARY`, `-DCMAKE_PREFIX_PATH=<Qt>` |
-| **Linux** | **Option B — Conda** (reproducible Qt/VTK/CGAL) | `-DBUILD_WITH_CONDA=ON`, `-DCONDA_PREFIX=$CONDA_PREFIX`, `-DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib` |
+| **Linux** | **Option B — Conda** (reproducible Qt/VTK/CGAL) | `-DBUILD_WITH_CONDA=ON`, `-DCONDA_PREFIX=$CONDA_PREFIX`, `-DCMAKE_PREFIX_PATH=$CONDA_PREFIX` |
 | **macOS** | **Conda only** (see guide) | Same as Linux Option B; env from `.ci/conda_macos_cloudViewer.yml` |
 | **Windows** | **Conda only** (see guide) | Same as Linux Option B; run `scripts/setup_conda_env.ps1`; env from `.ci/conda_windows_cloudViewer.yml` |
 
@@ -166,7 +166,7 @@ cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_WITH_CONDA=ON \
     -DCONDA_PREFIX=$CONDA_PREFIX \
-    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
     -DBUILD_OPENCV=ON \
     -DBUILD_RECONSTRUCTION=ON \
     -DAICore_ENABLED=ON \
