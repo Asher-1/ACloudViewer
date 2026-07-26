@@ -174,6 +174,7 @@ class CCBundler:
 
         libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins = self._collect_dependencies()
         self._embed_libraries(libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins)
+        self._repair_qt_version_mismatch()
 
         # output debug files if needed
         if self.config.output_dependencies:
@@ -186,6 +187,60 @@ class CCBundler:
                     Path.cwd() / "macos_bundle_warnings.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
+
+    def _repair_qt_version_mismatch(self) -> None:
+        """Replace Qt libs whose version doesn't match QtCore.
+
+        macdeployqt may copy Qt plugin dependencies (DBus, Qml, Quick,
+        Svg, VirtualKeyboard) from a different Qt installation, causing
+        'Cannot mix incompatible Qt library' crashes at startup.
+        """
+        import re
+        fw = self.config.frameworks_path
+        core = fw / "libQt5Core.5.dylib"
+        if not core.is_file():
+            return
+
+        def _qt_current_version(lib: Path) -> str | None:
+            out = subprocess.run(
+                ["otool", "-L", str(lib)],
+                capture_output=True, text=True, check=False,
+            ).stdout
+            for line in out.splitlines():
+                m = re.search(r"current version (\d+\.\d+\.\d+)", line)
+                if m:
+                    return m.group(1)
+            return None
+
+        target_ver = _qt_current_version(core)
+        if not target_ver:
+            return
+        logger.info("Qt target version (from QtCore): %s", target_ver)
+
+        qt_src_dir = self.config.extra_pathlib
+        replaced = 0
+        for qt_lib in fw.glob("libQt5*.dylib"):
+            ver = _qt_current_version(qt_lib)
+            if ver and ver != target_ver:
+                src = qt_src_dir / qt_lib.name
+                if not src.is_file():
+                    src_glob = list(qt_src_dir.glob(qt_lib.stem + ".*dylib"))
+                    src = src_glob[0] if src_glob else None
+                if src and src.is_file():
+                    src_ver = _qt_current_version(src)
+                    if src_ver == target_ver:
+                        logger.info("Replacing %s (%s -> %s)", qt_lib.name, ver, target_ver)
+                        shutil.copy2(src, qt_lib)
+                        subprocess.run(
+                            ["install_name_tool", "-add_rpath", "@loader_path", str(qt_lib)],
+                            stdout=subprocess.PIPE, check=False,
+                        )
+                        replaced += 1
+                    else:
+                        logger.warning("Source %s version %s also mismatches target %s", src.name, src_ver, target_ver)
+                else:
+                    logger.warning("No replacement found for %s (version %s)", qt_lib.name, ver)
+        logger.info("Qt version repair: replaced %d libraries", replaced)
 
     def _get_lib_dependencies(self, mainlib: Path) -> tuple[list[str], list[str]]:
         """List dependencies of mainlib (using otool -L).
