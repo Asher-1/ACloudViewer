@@ -64,6 +64,10 @@ static bool collect_sibr_gaussians(const float* gaussians,
     valid.clear();
     valid.reserve(static_cast<size_t>(P / 4));
 
+    const bool is_2dgs = (gc == 22);
+    const int n_scale = is_2dgs ? 2 : 3;
+    const int rot_start = 16 + n_scale;
+
     for (int64_t i = 0; i < P; i++) {
         const float* g = gaussians + i * gc;
         const float op = g[15];
@@ -88,11 +92,13 @@ static bool collect_sibr_gaussians(const float* gaussians,
         v.opacity = logit(sane_f(op, 0.5f));
         v.scale[0] = std::log(std::max(sane_f(g[16], 1e-4f), 1e-8f));
         v.scale[1] = std::log(std::max(sane_f(g[17], 1e-4f), 1e-8f));
-        v.scale[2] = std::log(std::max(sane_f(g[18], 1e-4f), 1e-8f));
-        v.rot[0] = sane_f(g[19], 1.0f);
-        v.rot[1] = sane_f(g[20]);
-        v.rot[2] = sane_f(g[21]);
-        v.rot[3] = sane_f(g[22]);
+        v.scale[2] = is_2dgs
+                             ? std::log(1e-4f)
+                             : std::log(std::max(sane_f(g[18], 1e-4f), 1e-8f));
+        v.rot[0] = sane_f(g[rot_start], 1.0f);
+        v.rot[1] = sane_f(g[rot_start + 1]);
+        v.rot[2] = sane_f(g[rot_start + 2]);
+        v.rot[3] = sane_f(g[rot_start + 3]);
         valid.push_back(v);
     }
 

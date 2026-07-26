@@ -67,6 +67,7 @@ public:
         ExportFieldMode exportFieldMode = ExportFieldMode::Basic;
         bool addToDb = true;
         bool estimatePoses = false;
+        bool removeBackground = false;
     };
 
     explicit FreeSplatterDialog(QWidget* parent = nullptr);
@@ -145,6 +146,7 @@ private:
 
     QLabel* m_imageCountLabel = nullptr;
     QLabel* m_objectHintLabel = nullptr;
+    QCheckBox* m_removeBgCheck = nullptr;
 
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;

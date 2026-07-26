@@ -970,6 +970,7 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
     workerSettings.device = workerDevice;
     workerSettings.opacityThreshold = resolvedSettings.opacityThreshold;
     workerSettings.estimatePoses = resolvedSettings.estimatePoses;
+    workerSettings.removeBackground = resolvedSettings.removeBackground;
 
     m_worker = new FreeSplatterWorker(workerSettings, this);
     connect(m_worker, &FreeSplatterWorker::logMessage, m_dialog,

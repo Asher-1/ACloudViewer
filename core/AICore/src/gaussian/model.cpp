@@ -411,19 +411,20 @@ bool model::forward(const float *images,
     if (sink) sink("gaussians_raw", raw.data(), PIX, Gc);
     const float smin = h.scale_min_act, smax = h.scale_max_act;
     auto sigmoid = [](float v) { return 1.0f / (1.0f + std::exp(-v)); };
+    const int n_scale = h.use_2dgs ? 2 : 3;
+    const int scale_end = 16 + n_scale;
+    const int rot_start = scale_end;
+    const int rot_end = rot_start + 4;
     parallel_for(PIX, [&](int64_t r0, int64_t r1) {
         for (int64_t r = r0; r < r1; r++) {
             float *g = raw.data() + (size_t)r * Gc;
-            // xyz (0:3) and SH (3:15) pass through; opacity sigmoid; scale
-            // mapped sigmoid; rotation (19:23) L2-normalized (quat order
-            // w,x,y,z).
             g[15] = sigmoid(g[15]);
-            for (int c = 16; c < 19; c++)
+            for (int c = 16; c < scale_end; c++)
                 g[c] = smin + (smax - smin) * sigmoid(g[c]);
             float nrm = 0.0f;
-            for (int c = 19; c < 23; c++) nrm += g[c] * g[c];
+            for (int c = rot_start; c < rot_end; c++) nrm += g[c] * g[c];
             nrm = std::sqrt(nrm) + 1e-12f;
-            for (int c = 19; c < 23; c++) g[c] /= nrm;
+            for (int c = rot_start; c < rot_end; c++) g[c] /= nrm;
         }
     });
     lap("activation");

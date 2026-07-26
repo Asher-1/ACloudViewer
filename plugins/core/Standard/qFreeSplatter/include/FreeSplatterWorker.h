@@ -44,6 +44,7 @@ public:
         QString device = "auto";  // auto | cpu | sycl | vulkan | cuda | metal
         float opacityThreshold = 0.05f;
         bool estimatePoses = false;
+        bool removeBackground = false;
     };
 
     explicit FreeSplatterWorker(const Settings& settings,
