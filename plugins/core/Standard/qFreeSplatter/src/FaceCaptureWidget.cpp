@@ -17,7 +17,6 @@
 #include <QPixmap>
 #include <QStandardPaths>
 #include <QTemporaryFile>
-
 #include <algorithm>
 #include <cstring>
 
@@ -25,9 +24,7 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
     setupUi();
 }
 
-FaceCaptureWidget::~FaceCaptureWidget() {
-    stopCamera();
-}
+FaceCaptureWidget::~FaceCaptureWidget() { stopCamera(); }
 
 bool FaceCaptureWidget::isAvailable() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
@@ -95,7 +92,8 @@ void FaceCaptureWidget::setupUi() {
                 startCamera(idx);
             });
 
-    m_statusLabel->setText(tr("Ready \u2014 select a camera and start capture"));
+    m_statusLabel->setText(
+            tr("Ready \u2014 select a camera and start capture"));
 #else
     m_statusLabel->setText(
             tr("Face capture unavailable (OpenCV not built with videoio "
@@ -108,20 +106,19 @@ bool FaceCaptureWidget::loadCascade() {
     if (m_cascadeLoaded) return true;
 
     // 1. Try embedded Qt resource (guaranteed to exist if compiled in)
-    const QString qrcPath =
-            QStringLiteral(":/CC/plugin/qFreeSplatter/"
-                           "data/haarcascade_frontalface_alt2.xml");
+    const QString qrcPath = QStringLiteral(
+            ":/CC/plugin/qFreeSplatter/"
+            "data/haarcascade_frontalface_alt2.xml");
     if (QFile::exists(qrcPath)) {
         // CascadeClassifier needs a real file path; extract from resource
         const QString tmpDir =
                 QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-        const QString tmpPath = tmpDir + QStringLiteral(
-                                                 "/cv_haarcascade_frontalface_alt2.xml");
+        const QString tmpPath =
+                tmpDir + QStringLiteral("/cv_haarcascade_frontalface_alt2.xml");
         if (!QFile::exists(tmpPath)) {
             QFile::copy(qrcPath, tmpPath);
-            QFile::setPermissions(tmpPath,
-                                  QFileDevice::ReadOwner |
-                                          QFileDevice::WriteOwner);
+            QFile::setPermissions(
+                    tmpPath, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
         }
         if (m_faceCascade.load(tmpPath.toStdString())) {
             m_cascadeLoaded = true;
@@ -134,9 +131,9 @@ bool FaceCaptureWidget::loadCascade() {
     {
         const QString path =
                 QString(OPENCV_DATA_DIR) +
-                QStringLiteral("/haarcascades/haarcascade_frontalface_alt2.xml");
-        if (QFile::exists(path) &&
-            m_faceCascade.load(path.toStdString())) {
+                QStringLiteral(
+                        "/haarcascades/haarcascade_frontalface_alt2.xml");
+        if (QFile::exists(path) && m_faceCascade.load(path.toStdString())) {
             m_cascadeLoaded = true;
             return true;
         }
@@ -146,9 +143,8 @@ bool FaceCaptureWidget::loadCascade() {
     // 3. Common system paths
     const QStringList systemPaths = {
             QCoreApplication::applicationDirPath() +
-                    QStringLiteral(
-                            "/../share/opencv4/haarcascades/"
-                            "haarcascade_frontalface_alt2.xml"),
+                    QStringLiteral("/../share/opencv4/haarcascades/"
+                                   "haarcascade_frontalface_alt2.xml"),
             QStringLiteral("/usr/share/opencv4/haarcascades/"
                            "haarcascade_frontalface_alt2.xml"),
             QStringLiteral("/usr/local/share/opencv4/haarcascades/"
@@ -221,9 +217,7 @@ void FaceCaptureWidget::stopCamera() {
     m_consecutiveDetections = 0;
 }
 
-bool FaceCaptureWidget::isCameraActive() const {
-    return m_cameraActive;
-}
+bool FaceCaptureWidget::isCameraActive() const { return m_cameraActive; }
 
 void FaceCaptureWidget::startGuidedCapture(
         const std::vector<CaptureAngle>& angles) {
@@ -241,8 +235,7 @@ void FaceCaptureWidget::startGuidedCapture(
                 tr("Angle: %1 (1/%2)")
                         .arg(angleToString(m_targetAngles.front()))
                         .arg(m_targetAngles.size()));
-        m_statusLabel->setText(
-                tr("Position your face and capture each angle"));
+        m_statusLabel->setText(tr("Position your face and capture each angle"));
     }
 }
 
@@ -263,19 +256,16 @@ void FaceCaptureWidget::captureCurrentFrame() {
         return;
     }
 
-    const auto angle =
-            m_targetAngles[static_cast<size_t>(m_currentAngleIndex)];
+    const auto angle = m_targetAngles[static_cast<size_t>(m_currentAngleIndex)];
 
     CapturedFrame captured;
     captured.image = cvMatToQImage(frame);
     captured.angle = angle;
 
     if (m_cascadeLoaded && m_lastFaceRect.width > 0) {
-        captured.croppedFace =
-                cropAndResizeFace(frame, m_lastFaceRect, 512);
+        captured.croppedFace = cropAndResizeFace(frame, m_lastFaceRect, 512);
         captured.faceRect = QRect(m_lastFaceRect.x, m_lastFaceRect.y,
-                                  m_lastFaceRect.width,
-                                  m_lastFaceRect.height);
+                                  m_lastFaceRect.width, m_lastFaceRect.height);
     } else {
         // No face detection -- use full frame resized to 512x512
         cv::Mat resized;
@@ -338,9 +328,9 @@ void FaceCaptureWidget::resetCapture() {
     if (m_captureBtn) m_captureBtn->setEnabled(false);
     if (m_angleLabel) m_angleLabel->setText(QString());
     if (m_statusLabel) {
-        m_statusLabel->setText(m_cameraActive
-                                       ? tr("Camera active \u2014 detecting faces")
-                                       : tr("Ready"));
+        m_statusLabel->setText(
+                m_cameraActive ? tr("Camera active \u2014 detecting faces")
+                               : tr("Ready"));
     }
 }
 
@@ -416,16 +406,16 @@ void FaceCaptureWidget::processFrame() {
                 m_targetAngles[static_cast<size_t>(m_currentAngleIndex)]);
     }
 
-    m_previewLabel->setPixmap(
-            QPixmap::fromImage(preview).scaled(m_previewLabel->size(),
-                                               Qt::KeepAspectRatio,
-                                               Qt::SmoothTransformation));
+    m_previewLabel->setPixmap(QPixmap::fromImage(preview).scaled(
+            m_previewLabel->size(), Qt::KeepAspectRatio,
+            Qt::SmoothTransformation));
 
     if (m_capturingMode) {
         if (m_postCaptureCooldown > 0) {
             --m_postCaptureCooldown;
             m_statusLabel->setText(
-                    tr("Repositioning... (%1)").arg(m_postCaptureCooldown / 30 + 1));
+                    tr("Repositioning... (%1)")
+                            .arg(m_postCaptureCooldown / 30 + 1));
             if (m_captureBtn) m_captureBtn->setEnabled(false);
         } else if (m_cascadeLoaded) {
             const bool stable = m_consecutiveDetections >= kAutoCaptureTrigger;
@@ -434,14 +424,15 @@ void FaceCaptureWidget::processFrame() {
                 m_postCaptureCooldown = kPostCaptureCooldown;
                 return;
             }
-            if (m_captureBtn) m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
+            if (m_captureBtn)
+                m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
             if (faceRect.width > 0) {
-                int pct = std::min(100, m_consecutiveDetections * 100 / kAutoCaptureTrigger);
-                m_statusLabel->setText(
-                        tr("Stabilizing... %1%").arg(pct));
+                int pct = std::min(100, m_consecutiveDetections * 100 /
+                                                kAutoCaptureTrigger);
+                m_statusLabel->setText(tr("Stabilizing... %1%").arg(pct));
             } else {
-                m_statusLabel->setText(
-                        tr("No face detected \u2014 center your face in frame"));
+                m_statusLabel->setText(tr(
+                        "No face detected \u2014 center your face in frame"));
             }
         } else {
             ++m_noCascadeCounter;
@@ -454,7 +445,9 @@ void FaceCaptureWidget::processFrame() {
             if (m_captureBtn) m_captureBtn->setEnabled(true);
             m_statusLabel->setText(
                     tr("Auto-capture in %1s (or click Capture)")
-                            .arg((kNoCascadeAutoInterval - m_noCascadeCounter) / 30 + 1));
+                            .arg((kNoCascadeAutoInterval - m_noCascadeCounter) /
+                                         30 +
+                                 1));
         }
     }
 #endif
@@ -491,15 +484,13 @@ cv::Rect FaceCaptureWidget::detectFace(const cv::Mat& frame) {
     cv::equalizeHist(gray, gray);
 
     std::vector<cv::Rect> faces;
-    m_faceCascade.detectMultiScale(gray, faces, 1.1, 5, 0,
-                                  cv::Size(80, 80));
+    m_faceCascade.detectMultiScale(gray, faces, 1.1, 5, 0, cv::Size(80, 80));
     if (faces.empty()) return cv::Rect();
 
-    return *std::max_element(
-            faces.begin(), faces.end(),
-            [](const cv::Rect& a, const cv::Rect& b) {
-                return a.area() < b.area();
-            });
+    return *std::max_element(faces.begin(), faces.end(),
+                             [](const cv::Rect& a, const cv::Rect& b) {
+                                 return a.area() < b.area();
+                             });
 }
 
 QImage FaceCaptureWidget::cropAndResizeFace(const cv::Mat& frame,
@@ -510,9 +501,8 @@ QImage FaceCaptureWidget::cropAndResizeFace(const cv::Mat& frame,
 
     const int expandW = static_cast<int>(faceRect.width * 0.5);
     const int expandH = static_cast<int>(faceRect.height * 0.5);
-    int side =
-            std::max(faceRect.width + 2 * expandW,
-                     faceRect.height + 2 * expandH);
+    int side = std::max(faceRect.width + 2 * expandW,
+                        faceRect.height + 2 * expandH);
 
     int cx = faceRect.x + faceRect.width / 2;
     int cy = faceRect.y + faceRect.height / 2;
@@ -524,15 +514,14 @@ QImage FaceCaptureWidget::cropAndResizeFace(const cv::Mat& frame,
 
     cv::Mat cropped = frame(cv::Rect(x, y, side, side)).clone();
     cv::Mat resized;
-    int interp = (cropped.cols > targetSize) ? cv::INTER_AREA
-                                             : cv::INTER_LINEAR;
+    int interp =
+            (cropped.cols > targetSize) ? cv::INTER_AREA : cv::INTER_LINEAR;
     cv::resize(cropped, resized, cv::Size(targetSize, targetSize), 0, 0,
                interp);
     return cvMatToQImage(resized);
 }
 
-void FaceCaptureWidget::drawOverlay(QImage& image,
-                                    const cv::Rect& faceRect) {
+void FaceCaptureWidget::drawOverlay(QImage& image, const cv::Rect& faceRect) {
     if (image.isNull() || faceRect.width <= 0) return;
 
     QPainter painter(&image);
@@ -540,8 +529,7 @@ void FaceCaptureWidget::drawOverlay(QImage& image,
     QPen pen(QColor(0, 220, 80));
     pen.setWidth(3);
     painter.setPen(pen);
-    painter.drawRect(faceRect.x, faceRect.y, faceRect.width,
-                     faceRect.height);
+    painter.drawRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height);
 }
 
 void FaceCaptureWidget::drawAngleGuide(QImage& image, CaptureAngle angle) {
@@ -568,13 +556,20 @@ void FaceCaptureWidget::drawAngleGuide(QImage& image, CaptureAngle angle) {
 
 QString FaceCaptureWidget::angleToString(CaptureAngle angle) const {
     switch (angle) {
-        case CaptureAngle::Front: return tr("Look straight ahead");
-        case CaptureAngle::Left45: return tr("Turn head 45\u00B0 left");
-        case CaptureAngle::Right45: return tr("Turn head 45\u00B0 right");
-        case CaptureAngle::Left90: return tr("Turn head 90\u00B0 left");
-        case CaptureAngle::Right90: return tr("Turn head 90\u00B0 right");
-        case CaptureAngle::Up15: return tr("Tilt head up ~15\u00B0");
-        case CaptureAngle::Down15: return tr("Tilt head down ~15\u00B0");
+        case CaptureAngle::Front:
+            return tr("Look straight ahead");
+        case CaptureAngle::Left45:
+            return tr("Turn head 45\u00B0 left");
+        case CaptureAngle::Right45:
+            return tr("Turn head 45\u00B0 right");
+        case CaptureAngle::Left90:
+            return tr("Turn head 90\u00B0 left");
+        case CaptureAngle::Right90:
+            return tr("Turn head 90\u00B0 right");
+        case CaptureAngle::Up15:
+            return tr("Tilt head up ~15\u00B0");
+        case CaptureAngle::Down15:
+            return tr("Tilt head down ~15\u00B0");
     }
     return tr("Unknown angle");
 }

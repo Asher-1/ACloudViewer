@@ -248,8 +248,7 @@ void FreeSplatterDialog::setupUi() {
         dbCol->setContentsMargins(4, 4, 4, 4);
         dbCol->setSpacing(4);
         m_dbImageList = new QListWidget;
-        m_dbImageList->setSelectionMode(
-                QAbstractItemView::ExtendedSelection);
+        m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
         m_dbImageList->setMinimumHeight(80);
         m_dbImageList->setMaximumHeight(140);
         m_dbImageList->setAlternatingRowColors(true);
@@ -273,7 +272,7 @@ void FreeSplatterDialog::setupUi() {
         connect(m_dbToggleBtn, &QToolButton::toggled, this,
                 [this](bool checked) {
                     m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
-                                                       : Qt::RightArrow);
+                                                        : Qt::RightArrow);
                     m_dbContentWidget->setVisible(checked);
                 });
 
@@ -308,11 +307,10 @@ void FreeSplatterDialog::setupUi() {
                 &FreeSplatterDialog::onFaceStopCamera);
         connect(m_faceResetBtn, &QPushButton::clicked, this,
                 &FreeSplatterDialog::onFaceReset);
-        connect(m_faceCaptureWidget,
-                &FaceCaptureWidget::captureComplete, this,
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::captureComplete, this,
                 &FreeSplatterDialog::onFaceCaptureComplete);
-        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStarted,
-                this, [this]() {
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStarted, this,
+                [this]() {
                     m_faceStartBtn->setEnabled(false);
                     m_faceStopBtn->setEnabled(true);
                     m_faceCaptureWidget->startGuidedCapture({
@@ -324,13 +322,13 @@ void FreeSplatterDialog::setupUi() {
                     });
                     m_faceResetBtn->setEnabled(true);
                 });
-        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStopped,
-                this, [this]() {
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStopped, this,
+                [this]() {
                     m_faceStartBtn->setEnabled(true);
                     m_faceStopBtn->setEnabled(false);
                 });
-        connect(m_faceCaptureWidget, &FaceCaptureWidget::frameCaptured,
-                this, [this](int idx, int total) {
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::frameCaptured, this,
+                [this](int idx, int total) {
                     appendLog(tr("[FaceCapture] Auto-captured %1/%2")
                                       .arg(idx)
                                       .arg(total));
@@ -1208,8 +1206,7 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
 
     const QString tmpDir =
             QDir::tempPath() + QStringLiteral("/freesplatter_face_capture");
-    const QStringList saved =
-            m_faceCaptureWidget->exportCapturedImages(tmpDir);
+    const QStringList saved = m_faceCaptureWidget->exportCapturedImages(tmpDir);
     if (saved.isEmpty()) {
         appendLog(tr("[Error] Failed to export captured face images"));
         return;
