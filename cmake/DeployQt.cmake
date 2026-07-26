@@ -88,7 +88,15 @@ function( DeployQt )
 		set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
 		set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
 		if (PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
-			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python)")
+			# Resolve the Python prefix that was configured at CMake time so the
+			# bundler embeds the correct Python even when make install is run
+			# from a different conda env or system Python.
+			execute_process(
+				COMMAND "${Python3_EXECUTABLE}" -c "import sys; print(sys.exec_prefix, end='')"
+				OUTPUT_VARIABLE _PY_BUNDLE_PREFIX
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python --python_prefix \"${_PY_BUNDLE_PREFIX}\")")
 			install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python)")
 		else()
 			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH})")

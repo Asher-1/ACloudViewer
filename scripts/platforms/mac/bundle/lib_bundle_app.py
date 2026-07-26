@@ -51,6 +51,7 @@ class CCAppBundleConfig:
             embed_python: bool,
             python_minimal: bool = True,
             python_full: bool = False,
+            python_prefix: Path = None,
     ) -> None:
         """Construct a configuration.
 
@@ -61,6 +62,7 @@ class CCAppBundleConfig:
             output_dependencies (bool): boolean that control the level of debug. If true some extra
             files will be created (macos_bundle_warnings.json macos_bundle_dependencies.json).
             embed_python (bool): Whether python should be embedded into the bundle or not.
+            python_prefix (Path): Explicit Python prefix (overrides sys.exec_prefix).
 
         """
         self.app_name = app_name
@@ -80,7 +82,7 @@ class CCAppBundleConfig:
         else:
             self.embed_python = False
         if embed_python:
-            self._query_python()
+            self._query_python(python_prefix)
             self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"
             self.embedded_python_path = self.embedded_python_rootpath / "bin"
             self.embedded_python_binary = self.embedded_python_path / "python"
@@ -103,11 +105,44 @@ class CCAppBundleConfig:
         )
         return res
 
-    def _query_python(self):
-        """Query for python paths and configuration."""
+    def _query_python(self, python_prefix: Path = None):
+        """Query for python paths and configuration.
+
+        When python_prefix is supplied (from --python_prefix), it overrides
+        sys.exec_prefix so that the correct Python env is bundled even when
+        make install is run from a different conda env.
+        """
+        prefix = Path(python_prefix) if python_prefix else Path(sys.exec_prefix)
+
         self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        self.base_python_binary = Path(sys.exec_prefix) / "bin" / "python"
-        self.base_python_libs = Path(sys.exec_prefix) / "lib" / f"python{self.python_version}"
+
+        # When using an explicit prefix, detect the actual Python version
+        # from the lib/ directory in case it differs from the running Python.
+        if python_prefix:
+            lib_dir = prefix / "lib"
+            if lib_dir.is_dir():
+                for d in sorted(lib_dir.iterdir(), reverse=True):
+                    if d.is_dir() and d.name.startswith("python3."):
+                        self.python_version = d.name.replace("python", "")
+                        break
+
+        # Resolve the actual python binary: bin/python, bin/python3, or bin/python<ver>
+        bin_dir = prefix / "bin"
+        candidates = [
+            bin_dir / "python",
+            bin_dir / "python3",
+            bin_dir / f"python{self.python_version}",
+        ]
+        self.base_python_binary = None
+        for c in candidates:
+            if c.exists():
+                self.base_python_binary = c
+                break
+        if self.base_python_binary is None:
+            self.base_python_binary = bin_dir / "python"
+            logger.warning("Python binary not found at %s; bundling may fail", bin_dir)
+
+        self.base_python_libs = prefix / "lib" / f"python{self.python_version}"
 
 
 class CCBundler:
@@ -729,6 +764,12 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--python_prefix",
+        help="Python prefix to bundle (overrides sys.exec_prefix). "
+             "Pass the conda env or pyenv prefix used at configure time.",
+        type=Path,
+    )
+    parser.add_argument(
         "--output_dependencies",
         help="Output a json files in order to debug dependency graph",
         action="store_true",
@@ -755,6 +796,7 @@ if __name__ == "__main__":
         arguments.embed_python,
         python_minimal=arguments.python_minimal,
         python_full=arguments.python_full,
+        python_prefix=arguments.python_prefix,
     )
 
     bundler = CCBundler(config)
