@@ -2,5 +2,6 @@
     <qresource prefix="/CC/plugin/qFreeSplatter">
         <file>info.json</file>
         <file>images/qFreeSplatter.svg</file>
+        <file>data/haarcascade_frontalface_alt2.xml</file>
     </qresource>
 </RCC>

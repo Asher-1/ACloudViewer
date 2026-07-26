@@ -57,23 +57,31 @@ endfunction()
 
 # macOS: ggml backend MODULE libs (.so) are dlopen'd at runtime and may not
 # be inside the .app bundle after macdeployqt + lib_bundle_app.py runs.
+# Core shared libs (.dylib) may also be missing if lib_bundle_app.py
+# didn't discover them via otool (since they're loaded by dlopen).
 # Explicitly copy them from the install lib dir into each deploy app's
 # Frameworks directory so the DMG is self-contained.
 function(ensure_ggml_backends_in_app app_frameworks_dir install_lib_dir module_suffix)
     if(NOT IS_DIRECTORY "${install_lib_dir}" OR NOT IS_DIRECTORY "${app_frameworks_dir}")
         return()
     endif()
-    file(GLOB _ggml_backends "${install_lib_dir}/libggml-*${module_suffix}")
+    # Collect both backend modules (.so on macOS) and core shared libs (.dylib)
+    file(GLOB _ggml_modules "${install_lib_dir}/libggml-*${module_suffix}")
+    file(GLOB _ggml_dylibs  "${install_lib_dir}/libggml*.dylib")
+    list(APPEND _ggml_all ${_ggml_modules} ${_ggml_dylibs})
+    list(REMOVE_DUPLICATES _ggml_all)
     set(_added 0)
-    foreach(_mod IN LISTS _ggml_backends)
-        if(IS_SYMLINK "${_mod}" OR NOT IS_REGULAR_FILE "${_mod}")
+    foreach(_mod IN LISTS _ggml_all)
+        if(NOT EXISTS "${_mod}" OR IS_DIRECTORY "${_mod}")
+            continue()
+        endif()
+        # Skip symlinks: resolve the real path and skip if different
+        # (compatible with CMake < 3.28 which lacks IS_SYMLINK)
+        get_filename_component(_realpath "${_mod}" REALPATH)
+        if(NOT "${_realpath}" STREQUAL "${_mod}")
             continue()
         endif()
         get_filename_component(_name "${_mod}" NAME)
-        # Skip core shared libs (handled by otool / macdeployqt)
-        if("${_name}" MATCHES "^libggml\\." OR "${_name}" MATCHES "^libggml-base\\.")
-            continue()
-        endif()
         set(_dst "${app_frameworks_dir}/${_name}")
         if(NOT EXISTS "${_dst}")
             file(COPY "${_mod}" DESTINATION "${app_frameworks_dir}"
@@ -288,6 +296,9 @@ if (${BUILD_GUI} STREQUAL "ON")
         ensure_ggml_backends_in_app(
             "${CLOUDVIEWER_DEPLOY_PATH}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+        ensure_ggml_backends_in_app(
+            "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
     if ((WIN32 OR UNIX) AND NOT APPLE)
         file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
@@ -303,6 +314,9 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     if (APPLE AND GGML_MODULE_SUFFIX)
         ensure_ggml_backends_in_app(
             "${COLMAP_DEPLOY_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+        ensure_ggml_backends_in_app(
+            "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
 
