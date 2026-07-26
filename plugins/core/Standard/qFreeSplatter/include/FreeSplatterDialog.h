@@ -144,6 +144,7 @@ private:
     QCheckBox* m_estimatePosesCheck = nullptr;
 
     QLabel* m_imageCountLabel = nullptr;
+    QLabel* m_objectHintLabel = nullptr;
 
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;
