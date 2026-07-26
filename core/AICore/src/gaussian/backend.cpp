@@ -92,10 +92,12 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
         // Metal users in the process keep their defaults.
         const bool disable_metal_opt =
                 (name == "metal" || name == "gpu" || name == "auto");
-        const char* saved_opt = disable_metal_opt
-                ? getenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE") : nullptr;
+        const char* saved_opt =
+                disable_metal_opt ? getenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE")
+                                  : nullptr;
         const char* saved_fuse = disable_metal_opt
-                ? getenv("GGML_METAL_FUSION_DISABLE") : nullptr;
+                                         ? getenv("GGML_METAL_FUSION_DISABLE")
+                                         : nullptr;
         if (disable_metal_opt) {
             setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", "1", 1);
             setenv("GGML_METAL_FUSION_DISABLE", "1", 1);
@@ -104,12 +106,14 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
         be = ggml_common::find_gpu_backend(name, want_idx, device);
 #ifdef __APPLE__
         if (disable_metal_opt) {
-            if (saved_opt) setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
-                                  saved_opt, 1);
-            else           unsetenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE");
-            if (saved_fuse) setenv("GGML_METAL_FUSION_DISABLE",
-                                   saved_fuse, 1);
-            else            unsetenv("GGML_METAL_FUSION_DISABLE");
+            if (saved_opt)
+                setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", saved_opt, 1);
+            else
+                unsetenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE");
+            if (saved_fuse)
+                setenv("GGML_METAL_FUSION_DISABLE", saved_fuse, 1);
+            else
+                unsetenv("GGML_METAL_FUSION_DISABLE");
         }
 #endif
         if (!be) {
