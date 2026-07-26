@@ -171,12 +171,11 @@ bool DA3Worker::runDepthSingle() {
             const int64_t expectedMs = 20000;
             while (fut.wait_for(std::chrono::milliseconds(1500)) !=
                    std::future_status::ready) {
-                const double t = elapsed.elapsed() /
-                                 static_cast<double>(expectedMs);
+                const double t =
+                        elapsed.elapsed() / static_cast<double>(expectedMs);
                 const int pct =
-                        pctBase + static_cast<int>(
-                                          (pctNext - pctBase) *
-                                          (1.0 - std::exp(-2.5 * t)));
+                        pctBase + static_cast<int>((pctNext - pctBase) *
+                                                   (1.0 - std::exp(-2.5 * t)));
                 emit progressUpdate(qMin(pct, pctNext - 1), 100);
             }
         }
@@ -248,9 +247,9 @@ bool DA3Worker::runDepthPose() {
 
         const std::string pathStr = m_settings.inputPaths[i].toStdString();
         auto fut = std::async(std::launch::async, [&]() {
-            return aicore_depth_depth_dense(
-                    guard.ctx, pathStr.c_str(), &h, &w, &depth_ptr, &conf_ptr,
-                    &sky_ptr, ext, intr, &is_metric);
+            return aicore_depth_depth_dense(guard.ctx, pathStr.c_str(), &h, &w,
+                                            &depth_ptr, &conf_ptr, &sky_ptr,
+                                            ext, intr, &is_metric);
         });
         {
             QElapsedTimer elapsed;
@@ -258,12 +257,11 @@ bool DA3Worker::runDepthPose() {
             const int64_t expectedMs = 25000;
             while (fut.wait_for(std::chrono::milliseconds(1500)) !=
                    std::future_status::ready) {
-                const double t = elapsed.elapsed() /
-                                 static_cast<double>(expectedMs);
+                const double t =
+                        elapsed.elapsed() / static_cast<double>(expectedMs);
                 const int pct =
-                        pctBase + static_cast<int>(
-                                          (pctNext - pctBase) *
-                                          (1.0 - std::exp(-2.5 * t)));
+                        pctBase + static_cast<int>((pctNext - pctBase) *
+                                                   (1.0 - std::exp(-2.5 * t)));
                 emit progressUpdate(qMin(pct, pctNext - 1), 100);
             }
         }

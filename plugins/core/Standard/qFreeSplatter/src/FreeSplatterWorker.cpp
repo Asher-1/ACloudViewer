@@ -195,10 +195,10 @@ bool FreeSplatterWorker::runReconstruct() {
 #endif
 
     {
-        const bool isObject = m_settings.modelPath.contains(
-                "object", Qt::CaseInsensitive);
-        const bool is2dgs = m_settings.modelPath.contains(
-                "2dgs", Qt::CaseInsensitive);
+        const bool isObject =
+                m_settings.modelPath.contains("object", Qt::CaseInsensitive);
+        const bool is2dgs =
+                m_settings.modelPath.contains("2dgs", Qt::CaseInsensitive);
         const int autoMax = isObject ? (is2dgs ? 24 : 16) : 2;
         const int maxViews =
                 (m_settings.maxViews > 0) ? m_settings.maxViews : autoMax;
@@ -251,7 +251,7 @@ bool FreeSplatterWorker::runReconstruct() {
 
     auto inferFuture = std::async(std::launch::async, [&]() {
         return aicore_gaussian_run_paths(ctx, cpaths.data(), n, &gaussians,
-                                        &n_out);
+                                         &n_out);
     });
 
     {
@@ -261,7 +261,8 @@ bool FreeSplatterWorker::runReconstruct() {
                 (n <= 2) ? 15000 : static_cast<int64_t>(n) * 7000;
         while (inferFuture.wait_for(std::chrono::milliseconds(1500)) !=
                std::future_status::ready) {
-            const double t = elapsed.elapsed() / static_cast<double>(expectedMs);
+            const double t =
+                    elapsed.elapsed() / static_cast<double>(expectedMs);
             const int pct =
                     25 + static_cast<int>(50.0 * (1.0 - std::exp(-2.5 * t)));
             emit progressUpdate(qMin(pct, 74), 100);

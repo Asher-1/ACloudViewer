@@ -90,11 +90,9 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
             {tr("Object-3DGS Q8_0 (deprecated)"),
              "freesplatter-object-q8_0.gguf",
              base + "freesplatter-object-q8_0.gguf"},
-            {tr("Object-3DGS F16 (deprecated)"),
-             "freesplatter-object-f16.gguf",
+            {tr("Object-3DGS F16 (deprecated)"), "freesplatter-object-f16.gguf",
              base + "freesplatter-object-f16.gguf"},
-            {tr("Object-3DGS F32 (deprecated)"),
-             "freesplatter-object-f32.gguf",
+            {tr("Object-3DGS F32 (deprecated)"), "freesplatter-object-f32.gguf",
              base + "freesplatter-object-f32.gguf"},
     };
 }
