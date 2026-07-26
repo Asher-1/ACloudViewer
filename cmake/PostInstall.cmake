@@ -419,6 +419,12 @@ if (${PACKAGE} STREQUAL "ON") # package
             message(FATAL_ERROR "hdiutil create failed with code ${_DMG_RESULT}")
         endif()
         message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+
+        # Remove the intermediate .app bundle now that the DMG is ready
+        if(EXISTS "${_QTIFW_APP_PATH}")
+            message(STATUS "Removing intermediate app bundle: ${_QTIFW_APP_PATH}")
+            file(REMOVE_RECURSE "${_QTIFW_APP_PATH}")
+        endif()
     else()
         # Linux / Windows: create installer directly
         set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
