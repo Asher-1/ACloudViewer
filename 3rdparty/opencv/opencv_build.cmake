@@ -32,6 +32,20 @@ else()
     set(_OPENCV_NEED_FEATURES2D OFF)
 endif()
 
+set(_opencv_videoio OFF)
+if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QFREESPLATTER)
+    set(_opencv_videoio ON)
+endif()
+set(_opencv_objdetect OFF)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QFREESPLATTER)
+    set(_opencv_objdetect ON)
+endif()
+# objdetect requires calib3d in OpenCV 4.7+ (ArUco was moved from contrib)
+set(_opencv_calib3d OFF)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR _opencv_objdetect)
+    set(_opencv_calib3d ON)
+endif()
+
 ExternalProject_Add(ext_opencv
         PREFIX opencv
         URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
@@ -73,7 +87,7 @@ ExternalProject_Add(ext_opencv
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
-            -DBUILD_opencv_calib3d=${PLUGIN_STANDARD_QMANUAL_CALIB}
+            -DBUILD_opencv_calib3d=${_opencv_calib3d}
             -DBUILD_JAVA=OFF
             -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
             -DBUILD_opencv_apps=OFF
@@ -87,14 +101,14 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_js=OFF
             -DBUILD_opencv_dnn=OFF
             -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
-            -DBUILD_opencv_objdetect=${PLUGIN_STANDARD_QMANUAL_CALIB}
+            -DBUILD_opencv_objdetect=${_opencv_objdetect}
             -DBUILD_opencv_xobjdetect=OFF
             -DBUILD_opencv_dnn_objdetect=OFF
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
             -DBUILD_opencv_video=${PLUGIN_STANDARD_QSIBR}
-            -DBUILD_opencv_videoio=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_videoio=${_opencv_videoio}
             -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF
             -DWITH_GSTREAMER=OFF

@@ -29,6 +29,15 @@ if( PLUGIN_STANDARD_QFREESPLATTER )
         target_link_libraries(${PROJECT_NAME} CVAppCommon)
     endif()
 
+    # Face capture: enabled when OpenCV provides videoio + objdetect
+    if(TARGET 3rdparty_opencv)
+        target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE HAS_OPENCV_FACE_CAPTURE)
+        message(STATUS "qFreeSplatter: Face capture enabled (HAS_OPENCV_FACE_CAPTURE)")
+    else()
+        message(STATUS "qFreeSplatter: Face capture disabled (no 3rdparty_opencv)")
+    endif()
+
     # SIBR in-app viewer: enabled only when qSIBR is built (PLUGIN_STANDARD_QSIBR=ON).
     # No link-time dependency on QSIBR_PLUGIN — runtime invoke via plugin manager.
     if(PLUGIN_STANDARD_QSIBR AND TARGET QSIBR_PLUGIN)
