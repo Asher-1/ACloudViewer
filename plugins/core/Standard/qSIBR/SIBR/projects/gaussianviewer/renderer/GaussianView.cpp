@@ -416,22 +416,21 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
         const size_t perSplatBytes = sizeof(Pos) + sizeof(Rot) +
                                      sizeof(SHs<3>) + sizeof(float) +
                                      sizeof(Scale) + 2 * sizeof(int);
-        const size_t perPixelBytes = 3 * sizeof(float) + sizeof(float) +
-                                     sizeof(uint32_t);
+        const size_t perPixelBytes =
+                3 * sizeof(float) + sizeof(float) + sizeof(uint32_t);
         const size_t splatVram = perSplatBytes * P;
         const size_t fixedVram =
                 2 * sizeof(sibr::Matrix4f) + 6 * sizeof(float) +
                 static_cast<size_t>(render_w) * render_h * 3 * sizeof(float);
-        size_t totalEstimate = splatVram +
-                               perPixelBytes * render_w * render_h +
+        size_t totalEstimate = splatVram + perPixelBytes * render_w * render_h +
                                fixedVram + 128 * 1024 * 1024;
 
         size_t freeMem = 0, totalMem = 0;
         cudaMemGetInfo(&freeMem, &totalMem);
         SIBR_LOG << "VRAM: " << (freeMem >> 20) << " / " << (totalMem >> 20)
-                 << " MiB free | need ~" << (totalEstimate >> 20)
-                 << " MiB for " << P << " splats @ " << render_w << "x"
-                 << render_h << std::endl;
+                 << " MiB free | need ~" << (totalEstimate >> 20) << " MiB for "
+                 << P << " splats @ " << render_w << "x" << render_h
+                 << std::endl;
 
         if (totalEstimate > freeMem && freeMem > splatVram + fixedVram) {
             const size_t budgetForPixels = freeMem - splatVram - fixedVram;
@@ -513,9 +512,9 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
                      << " (falling back to host-copy path)" << std::endl;
             useInterop = false;
         } else {
-            SIBR_LOG << "CUDA-GL interop: registered GL buffer "
-                     << imageBuffer << " for " << render_w << "x" << render_h
-                     << " (" << (render_w * render_h * 3 * sizeof(float) >> 20)
+            SIBR_LOG << "CUDA-GL interop: registered GL buffer " << imageBuffer
+                     << " for " << render_w << "x" << render_h << " ("
+                     << (render_w * render_h * 3 * sizeof(float) >> 20)
                      << " MiB)" << std::endl;
         }
     }
@@ -619,8 +618,8 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
                                  sizeof(float) + sizeof(Scale) +
                                  2 * sizeof(int);
     // Per-pixel render buffers: out_color(3f) + accum_alpha(f) + n_contrib(u32)
-    const size_t perPixelBytes = 3 * sizeof(float) + sizeof(float) +
-                                 sizeof(uint32_t);
+    const size_t perPixelBytes =
+            3 * sizeof(float) + sizeof(float) + sizeof(uint32_t);
     const size_t splatVram = perSplatBytes * P;
     size_t pixelVram = perPixelBytes * render_w * render_h;
     // Fixed overhead: view/proj/cam_pos/bg matrices + interop or fallback buf
@@ -634,9 +633,8 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
     size_t freeMem = 0, totalMem = 0;
     cudaMemGetInfo(&freeMem, &totalMem);
     SIBR_LOG << "VRAM: " << (freeMem >> 20) << " / " << (totalMem >> 20)
-             << " MiB free | need ~" << (totalEstimate >> 20)
-             << " MiB for " << P << " splats @ " << render_w << "x"
-             << render_h << std::endl;
+             << " MiB free | need ~" << (totalEstimate >> 20) << " MiB for "
+             << P << " splats @ " << render_w << "x" << render_h << std::endl;
 
     if (totalEstimate > freeMem && freeMem > splatVram + fixedVram) {
         // Clamp resolution to fit remaining VRAM after splat data.
@@ -649,9 +647,9 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
         // Round down to multiples of 16 (CUDA tile size).
         newW = std::max(640u, newW & ~15u);
         newH = std::max(360u, newH & ~15u);
-        SIBR_WRG << "VRAM tight: clamping render resolution from "
-                 << render_w << "x" << render_h << " to " << newW << "x"
-                 << newH << std::endl;
+        SIBR_WRG << "VRAM tight: clamping render resolution from " << render_w
+                 << "x" << render_h << " to " << newW << "x" << newH
+                 << std::endl;
         render_w = newW;
         render_h = newH;
         _resolution = sibr::Vector2i(render_w, render_h);
@@ -717,9 +715,9 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
                      << " (falling back to host-copy path)" << std::endl;
             useInterop = false;
         } else {
-            SIBR_LOG << "CUDA-GL interop: registered GL buffer "
-                     << imageBuffer << " for " << render_w << "x" << render_h
-                     << " (" << (render_w * render_h * 3 * sizeof(float) >> 20)
+            SIBR_LOG << "CUDA-GL interop: registered GL buffer " << imageBuffer
+                     << " for " << render_w << "x" << render_h << " ("
+                     << (render_w * render_h * 3 * sizeof(float) >> 20)
                      << " MiB)" << std::endl;
         }
     }
