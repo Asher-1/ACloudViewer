@@ -18,10 +18,10 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QTimer>
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "FaceCaptureWidget.h"
