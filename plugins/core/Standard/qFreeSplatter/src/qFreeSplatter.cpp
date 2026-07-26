@@ -55,8 +55,8 @@ constexpr ecvColor::Rgb kColmapCameraFrameColor(204, 25, 0);
 // COLMAP viewer frustum half-width ≈ this fraction of adaptive scene diameter.
 constexpr float kCameraFrustumSceneExtentFraction = 0.03f;
 
-constexpr int kMaxInferenceViews = 64;   // AICore ingest_images hard cap
-constexpr int kSceneTargetViews = 2;     // scene GGUF recipe
+constexpr int kMaxInferenceViews = 64;      // AICore ingest_images hard cap
+constexpr int kSceneTargetViews = 2;        // scene GGUF recipe
 constexpr int kObject3dgsTargetViews = 16;  // 3DGS object: practical cap
 constexpr int kObject2dgsTargetViews = 24;  // 2DGS: trained@32, eval@24
 // ply_export always writes 45 f_rest coeffs (standard 3DGS SH degree 3 layout).
@@ -1143,16 +1143,15 @@ void qFreeSplatter::addResultToDb(const FreeSplatterResult& result) {
             CCVector3 diag = bbox.maxCorner() - bbox.minCorner();
             float maxExt = std::max({std::abs(diag.x), std::abs(diag.y),
                                      std::abs(diag.z), 1e-6f});
-            m_dialog->appendLog(
-                    QString("[FS] BBox: [%1,%2,%3] -> [%4,%5,%6]  "
-                            "extent=%7")
-                            .arg(bbox.minCorner().x, 0, 'f', 3)
-                            .arg(bbox.minCorner().y, 0, 'f', 3)
-                            .arg(bbox.minCorner().z, 0, 'f', 3)
-                            .arg(bbox.maxCorner().x, 0, 'f', 3)
-                            .arg(bbox.maxCorner().y, 0, 'f', 3)
-                            .arg(bbox.maxCorner().z, 0, 'f', 3)
-                            .arg(maxExt, 0, 'f', 3));
+            m_dialog->appendLog(QString("[FS] BBox: [%1,%2,%3] -> [%4,%5,%6]  "
+                                        "extent=%7")
+                                        .arg(bbox.minCorner().x, 0, 'f', 3)
+                                        .arg(bbox.minCorner().y, 0, 'f', 3)
+                                        .arg(bbox.minCorner().z, 0, 'f', 3)
+                                        .arg(bbox.maxCorner().x, 0, 'f', 3)
+                                        .arg(bbox.maxCorner().y, 0, 'f', 3)
+                                        .arg(bbox.maxCorner().z, 0, 'f', 3)
+                                        .arg(maxExt, 0, 'f', 3));
         }
     }
 
