@@ -136,14 +136,13 @@ bool FreeSplatterWorker::runReconstruct() {
                 QJsonDocument::fromJson(QByteArray(infoJ)).object();
         const bool use2dgs = mi.value(QStringLiteral("use_2dgs")).toBool();
         const bool shRes = mi.value(QStringLiteral("sh_residual")).toBool();
-        emit logMessage(
-                QString("[FS] Model: %1x%2, %3ch (%4), SH%5 %6")
-                        .arg(geom.image_width)
-                        .arg(geom.image_height)
-                        .arg(geom.gaussian_channels)
-                        .arg(use2dgs ? "2DGS" : "3DGS")
-                        .arg(geom.sh_degree)
-                        .arg(shRes ? "+residual" : ""));
+        emit logMessage(QString("[FS] Model: %1x%2, %3ch (%4), SH%5 %6")
+                                .arg(geom.image_width)
+                                .arg(geom.image_height)
+                                .arg(geom.gaussian_channels)
+                                .arg(use2dgs ? "2DGS" : "3DGS")
+                                .arg(geom.sh_degree)
+                                .arg(shRes ? "+residual" : ""));
         aicore_gaussian_free_string(infoJ);
     } else {
         emit logMessage(
@@ -212,14 +211,13 @@ bool FreeSplatterWorker::runReconstruct() {
                 int src = i * effectivePaths.size() / cap;
                 sampled.append(effectivePaths[src]);
             }
-            emit logMessage(
-                    QString("[FS] %1 input images exceed model limit "
-                            "\u2014 uniformly subsampled to %2 "
-                            "(cap %3, hard max %4).")
-                            .arg(effectivePaths.size())
-                            .arg(cap)
-                            .arg(maxViews)
-                            .arg(hardMax));
+            emit logMessage(QString("[FS] %1 input images exceed model limit "
+                                    "\u2014 uniformly subsampled to %2 "
+                                    "(cap %3, hard max %4).")
+                                    .arg(effectivePaths.size())
+                                    .arg(cap)
+                                    .arg(maxViews)
+                                    .arg(hardMax));
             effectivePaths = sampled;
         }
     }

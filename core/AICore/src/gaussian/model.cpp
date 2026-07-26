@@ -222,13 +222,14 @@ bool model::forward(const float *images,
             subsampled_buf.resize((size_t)limit_N * vf);
             for (int64_t i = 0; i < limit_N; ++i) {
                 int64_t src = i * N / limit_N;
-                std::memcpy(subsampled_buf.data() + i * vf,
-                            images + src * vf, vf * sizeof(float));
+                std::memcpy(subsampled_buf.data() + i * vf, images + src * vf,
+                            vf * sizeof(float));
             }
 #ifdef AICore_HAS_CVLOG
-            CVLog::Warning("[FS] Subsampled %lld -> %lld views "
-                           "(GPU FA sequence limit)",
-                           (long long)N, (long long)limit_N);
+            CVLog::Warning(
+                    "[FS] Subsampled %lld -> %lld views "
+                    "(GPU FA sequence limit)",
+                    (long long)N, (long long)limit_N);
 #else
             std::fprintf(stderr,
                          "[FS] Subsampled %lld -> %lld views "
