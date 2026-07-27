@@ -14,6 +14,10 @@
 #include <cmath>
 #include <cstring>
 
+#ifdef AICore_ENABLED
+#include "aicore/aliked_capi.h"
+#endif
+
 #ifdef QLIGHTGLUE_HAS_OPENCV
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -180,6 +184,87 @@ bool extract_sift_opencv(const QString& image_path,
         set_error(error, "failed to pack SIFT features");
         return false;
     }
+    return true;
+#endif
+}
+
+bool extract_aliked_ggml(const QString& image_path,
+                         const QString& extractor_gguf,
+                         const QString& device,
+                         int max_keypoints,
+                         int max_resize,
+                         int threads,
+                         OwnedFeatures* out,
+                         std::string* error) {
+#ifndef AICore_ENABLED
+    set_error(error, "AICore not enabled — rebuild with AICore_ENABLED=ON");
+    return false;
+#else
+    if (!out) {
+        set_error(error, "null output");
+        return false;
+    }
+    if (extractor_gguf.isEmpty() || !QFileInfo(extractor_gguf).isFile()) {
+        set_error(error, "ALIKED extractor GGUF not found: " +
+                                 extractor_gguf.toStdString());
+        return false;
+    }
+    const QImage oriented = load_oriented_qimage(image_path);
+    if (oriented.isNull()) {
+        set_error(error, "failed to read image: " + image_path.toStdString());
+        return false;
+    }
+    QImage rgb = oriented.convertToFormat(QImage::Format_RGB888);
+    if (max_resize > 0) {
+        const int max_dim = std::max(rgb.width(), rgb.height());
+        if (max_dim > max_resize) {
+            rgb = rgb.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
+                             Qt::SmoothTransformation);
+        }
+    }
+
+    aicore_aliked_options* opts = aicore_aliked_options_new();
+    const QByteArray dev =
+            device.trimmed().isEmpty() ? QByteArray("auto") : device.toUtf8();
+    aicore_aliked_options_set_device(opts, dev.constData());
+    if (threads > 0) {
+        aicore_aliked_options_set_threads(opts, threads);
+    }
+    if (max_keypoints > 0) {
+        aicore_aliked_options_set_max_keypoints(opts, max_keypoints);
+    }
+    if (max_resize > 0) {
+        aicore_aliked_options_set_resize_long_edge(opts, max_resize);
+    }
+
+    aicore_aliked_ctx* ctx =
+            aicore_aliked_load_opts(extractor_gguf.toUtf8().constData(), opts);
+    aicore_aliked_options_free(opts);
+    if (!ctx) {
+        set_error(error, "failed to allocate ALIKED context");
+        return false;
+    }
+
+    aicore_lightglue_features raw{};
+    const int rc = aicore_aliked_extract_rgb(
+            ctx, rgb.constBits(), rgb.width(), rgb.height(),
+            static_cast<int32_t>(rgb.bytesPerLine()), &raw);
+    if (rc != 0) {
+        set_error(error, aicore_aliked_last_error(ctx));
+        aicore_aliked_free(ctx);
+        aicore_lightglue_free_features(&raw);
+        return false;
+    }
+
+    out->keypoints.assign(raw.keypoints, raw.keypoints + raw.n_keypoints);
+    const size_t nd = static_cast<size_t>(raw.n_keypoints) *
+                      static_cast<size_t>(std::max(1, raw.descriptor_dim));
+    out->descriptors.assign(raw.descriptors, raw.descriptors + nd);
+    out->view = raw;
+    out->view.keypoints = out->keypoints.data();
+    out->view.descriptors = out->descriptors.data();
+    aicore_lightglue_free_features(&raw);
+    aicore_aliked_free(ctx);
     return true;
 #endif
 }

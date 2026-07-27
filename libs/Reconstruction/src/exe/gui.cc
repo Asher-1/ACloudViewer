@@ -33,8 +33,14 @@
 
 #include <cstdlib>
 
+#include "FileIO.h"
 #include "util/opengl_utils.h"
 #include "util/option_manager.h"
+#include "util/version.h"
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#endif
 
 namespace colmap {
 
@@ -80,6 +86,15 @@ int RunGraphicalUserInterface(int argc, char** argv) {
       setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 0);
     }
   }
+#endif
+
+  FileIO::setWriterInfo(QStringLiteral("CloudViewer Reconstruction"),
+                        QString::fromStdString(COLMAP_VERSION));
+
+#if defined(AICore_ENABLED)
+  // Register ggml backends early so DA3 work does not defer dlopen logs to
+  // process teardown (pybind returns to Python after app.exec()).
+  (void)aicore_warmup_backend("auto");
 #endif
 
   QApplication app(argc, argv);

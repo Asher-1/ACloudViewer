@@ -31,4 +31,7 @@ if( PLUGIN_STANDARD_QLIGHTGLUE )
     endif()
 
     target_link_libraries(${PROJECT_NAME} AICore Qt::Network)
+    if(MSVC)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+    endif()
 endif()

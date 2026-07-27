@@ -244,7 +244,8 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers (**Linux/Windows**; CI and docs default **OFF on macOS**) |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
-| qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | LightGlue sparse feature matching — ALIKED/SIFT descriptor pairs via GGUF, LGINP01 fixture I/O ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
+| qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | LightGlue sparse feature matching — SIFT/ELoFTR e2e via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
+| qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/deeplsd`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 

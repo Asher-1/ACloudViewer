@@ -33,6 +33,7 @@ public:
     };
 
     void Setup();
+    void Release();
     void Upload(const std::vector<PointPainter::Data>& data);
     void Render(const QMatrix4x4& pmv_matrix, const float point_size);
 

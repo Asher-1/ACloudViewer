@@ -22,6 +22,7 @@ add_subdirectory( qSIBR )
 add_subdirectory( qDA3 )
 add_subdirectory( qFreeSplatter )
 add_subdirectory( qLightGlue )
+add_subdirectory( qDeepLSD )
 
 #plugins integrated as submodules
 set( submod_plugins

@@ -30,6 +30,10 @@ set(AICORE_COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
 set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/depth)
 set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/gaussian)
 set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/lightglue)
+set(AICORE_ELOFTR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/eloftr)
+set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/deeplsd)
+set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/aliked)
+set(AICORE_MATCHANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/matchanything)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -57,13 +61,34 @@ file(GLOB GAUSSIAN_SOURCES ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
 file(GLOB GAUSSIAN_HEADERS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
 file(GLOB LIGHTGLUE_SOURCES ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
 file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
+file(GLOB AICORE_ELOFTR_SOURCES ${AICORE_ELOFTR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_DEEPLSD_SOURCES ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_ALIKED_SOURCES ${AICORE_ALIKED_SRC_DIR}/*.cpp)
+file(GLOB AICORE_MATCHANYTHING_SOURCES ${AICORE_MATCHANYTHING_SRC_DIR}/*.cpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
+
+if(NOT EXISTS ${AICORE_ELOFTR_SRC_DIR}/repvgg_ggml.cpp)
+    message(FATAL_ERROR "AICore: missing ELoFTR module at ${AICORE_ELOFTR_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
+    message(FATAL_ERROR "AICore: missing DeepLSD module at ${AICORE_DEEPLSD_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_ALIKED_SRC_DIR}/aliked.cpp)
+    message(FATAL_ERROR "AICore: missing ALIKED module at ${AICORE_ALIKED_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_MATCHANYTHING_SRC_DIR}/matchanything_eloftr.cpp)
+    message(FATAL_ERROR "AICore: missing MatchAnything module at ${AICORE_MATCHANYTHING_SRC_DIR}")
+endif()
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
     ${GAUSSIAN_SOURCES} ${GAUSSIAN_HEADERS}
     ${LIGHTGLUE_SOURCES} ${LIGHTGLUE_HEADERS}
+    ${AICORE_ELOFTR_SOURCES}
+    ${AICORE_DEEPLSD_SOURCES}
+    ${AICORE_ALIKED_SOURCES}
+    ${AICORE_MATCHANYTHING_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -105,6 +130,11 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_DEPTH_SRC_DIR}
         ${AICORE_GAUSSIAN_SRC_DIR}
         ${AICORE_LIGHTGLUE_SRC_DIR}
+        ${AICORE_ELOFTR_SRC_DIR}
+        ${AICORE_DEEPLSD_SRC_DIR}
+        ${AICORE_ALIKED_SRC_DIR}
+        ${AICORE_ALIKED_SRC_DIR}/include
+        ${AICORE_MATCHANYTHING_SRC_DIR}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
@@ -119,6 +149,17 @@ if(GGML_DYNAMIC_BACKENDS)
     message(STATUS "AICore: using dynamic ggml backends (AICORE_BACKEND_DL)")
 endif()
 aicore_apply_compile_definitions(${PROJECT_NAME})
+
+if(AICore_CUDA_ENABLED)
+    target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/aliked_cuda.cu)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE LIGHTGLUE_HAS_CUDA=1)
+    if(TARGET CUDA::cudart)
+        target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
+    endif()
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+endif()
+# Vulkan ALIKED custom shaders live in LightGlue-GGML ggml fork only; AICore
+# uses CPU dense-map fallback on Vulkan until those ops are vendored.
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
 # and pull in CUDA driver API (libcuda.so) as a DT_NEEDED dep.  In Docker/CI
@@ -318,4 +359,33 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): depth + gaussian + lightglue modules, ggml linked once")
+message(STATUS "AICore (SHARED): depth + gaussian + lightglue + eloftr + deeplsd + matchanything, ggml linked once")
+
+add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
+target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
+set_target_properties(aicore_gguf_quantize PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    FOLDER "core/tools")
+if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
+        string(REPLACE ";" "|" _quantize_gpu_pipe "${GGML_GPU_BACKEND_MODULE_FILES}")
+        set(_copy_script "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake")
+        add_custom_command(TARGET aicore_gguf_quantize POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                -DCOPY_CORE_SHARED=ON
+                -DGGML_BACKEND_DIR="${GGML_RUNTIME_LIB_DIR}"
+                -DDEST_DIR="$<TARGET_FILE_DIR:aicore_gguf_quantize>"
+                -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+                -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+                -P "${_copy_script}"
+        )
+        add_custom_command(TARGET aicore_gguf_quantize POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                -DCOPY_BACKEND_MODULES=ON
+                -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+                -DDEST_DIR="$<TARGET_FILE_DIR:aicore_gguf_quantize>"
+                -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+                -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
+                -DGPU_FILES_PIPE="${_quantize_gpu_pipe}"
+                -P "${_copy_script}"
+        )
+endif()

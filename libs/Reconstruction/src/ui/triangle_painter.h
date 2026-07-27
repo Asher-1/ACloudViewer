@@ -32,6 +32,7 @@ public:
     };
 
     void Setup();
+    void Release();
     void Upload(const std::vector<TrianglePainter::Data>& data);
     void Render(const QMatrix4x4& pmv_matrix);
 

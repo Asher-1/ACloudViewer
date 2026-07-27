@@ -215,6 +215,25 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
   point_size_ = static_cast<float>(devicePixelRatio() * point_size_);
 }
 
+ModelViewerWidget::~ModelViewerWidget() {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  cleanupGL();
+#endif
+}
+
+void ModelViewerWidget::cleanupGL() {
+  coordinate_axes_painter_.Release();
+  coordinate_grid_painter_.Release();
+  point_painter_.Release();
+  point_connection_painter_.Release();
+  image_line_painter_.Release();
+  image_triangle_painter_.Release();
+  image_connection_painter_.Release();
+  movie_grabber_path_painter_.Release();
+  movie_grabber_line_painter_.Release();
+  movie_grabber_triangle_painter_.Release();
+}
+
 void ModelViewerWidget::initializeGL() {
   initializeOpenGLFunctions();
   glEnable(GL_DEPTH_TEST);

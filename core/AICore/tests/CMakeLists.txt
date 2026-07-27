@@ -115,6 +115,39 @@ function(aicore_add_lightglue_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_eloftr_capi_test name)
+    add_executable(${name} eloftr/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_deeplsd_capi_test name)
+    add_executable(${name} deeplsd/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_matchanything_capi_test name)
+    add_executable(${name} matchanything/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
 function(aicore_add_gaussian_capi_test name)
     add_executable(${name} gaussian/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
@@ -205,6 +238,18 @@ set_tests_properties(test_gaussian_capi_load PROPERTIES LABELS "capi;model")
 
 aicore_add_lightglue_capi_test(test_lightglue_capi_contract)
 
+aicore_add_eloftr_capi_test(test_eloftr_capi_contract)
+aicore_add_eloftr_capi_test(test_eloftr_capi_load)
+set_tests_properties(test_eloftr_capi_load PROPERTIES LABELS "capi;model")
+
+aicore_add_deeplsd_capi_test(test_deeplsd_capi_contract)
+aicore_add_deeplsd_capi_test(test_deeplsd_capi_load)
+set_tests_properties(test_deeplsd_capi_load PROPERTIES LABELS "capi;model")
+
+aicore_add_matchanything_capi_test(test_matchanything_capi_contract)
+aicore_add_matchanything_capi_test(test_matchanything_capi_load)
+set_tests_properties(test_matchanything_capi_load PROPERTIES LABELS "capi;model")
+
 add_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}
@@ -229,12 +274,14 @@ set(_aicore_contract_targets
     test_depth_capi_load
     test_gaussian_capi_contract
     test_gaussian_capi_load
-    test_lightglue_capi_contract)
+    test_lightglue_capi_contract
+    test_eloftr_capi_contract
+    test_deeplsd_capi_contract
+    test_matchanything_capi_contract)
 add_custom_target(aicore-contract-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi -j1
             -C $<CONFIG>
     DEPENDS ${_aicore_contract_targets}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    USES_TERMINAL
     COMMENT "Running AICore public contract tests"
 )

@@ -9,16 +9,22 @@
 
 #include "LightGlueWorker.h"
 
+#include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QImage>
 #include <cmath>
 #include <future>
 
 #ifdef AICore_ENABLED
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <cstring>
+#include <vector>
 
+#include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/eloftr_capi.h"
 #include "aicore/lightglue_capi.h"
 #include "feature_extractor.h"
 #endif
@@ -37,6 +43,10 @@ void LightGlueWorker::releaseContextOnMainThread() {
     if (m_pendingCtx) {
         aicore_lightglue_free(m_pendingCtx);
         m_pendingCtx = nullptr;
+    }
+    if (m_pendingElOftrCtx) {
+        aicore_eloftr_free(m_pendingElOftrCtx);
+        m_pendingElOftrCtx = nullptr;
     }
 #endif
 }
@@ -67,6 +77,31 @@ QString formatResolvedDeviceLog(aicore_lightglue_ctx* ctx) {
             .arg(resolved);
 }
 
+QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
+    QFileInfo matcher(matcher_model_path);
+    QString stem = matcher.fileName();
+    stem.replace(QStringLiteral("aliked-lightglue"),
+                 QStringLiteral("aliked-n16rot"));
+    char* cache = aicore_aliked_model_cache_dir();
+    QString base;
+    if (cache) {
+        base = QString::fromUtf8(cache);
+        aicore_aliked_free_string(cache);
+    } else {
+        base = QDir::homePath() +
+               QStringLiteral("/cloudViewer_data/extract/aliked_models");
+    }
+    const QString cached = QDir(base).filePath(stem);
+    if (QFileInfo(cached).isFile()) {
+        return cached;
+    }
+    const QString sibling = matcher.absoluteDir().filePath(stem);
+    if (QFileInfo(sibling).isFile()) {
+        return sibling;
+    }
+    return cached;
+}
+
 bool extract_feature_pair(const LightGlueWorker::Settings& settings,
                           lightglue_plugin::OwnedFeatures* f0,
                           lightglue_plugin::OwnedFeatures* f1,
@@ -79,16 +114,24 @@ bool extract_feature_pair(const LightGlueWorker::Settings& settings,
     std::string err;
 
     if (settings.matcherType != 1) {
+        const QString extractor =
+                resolve_aliked_extractor_gguf(settings.modelPath);
         if (log) {
-            *log = QStringLiteral(
-                    "ALIKED image matching requires a native feature extractor "
-                    "(COLMAP uses ONNX Runtime for aliked-n16rot.onnx — not "
-                    "Python/PyTorch).\n"
-                    "GGUF aliked-lightglue-* weights are matcher-only.\n"
-                    "[Hint] Select a SIFT LightGlue model for end-to-end C++ "
-                    "matching (OpenCV RootSIFT + GGML).");
+            *log = QStringLiteral("[LG] ALIKED extractor: %1").arg(extractor);
         }
-        return false;
+        if (!lightglue_plugin::extract_aliked_ggml(
+                    p0, extractor, settings.device, settings.maxKeypoints,
+                    settings.maxResize, settings.threads, f0, &err)) {
+            if (log) *log = QString::fromStdString(err);
+            return false;
+        }
+        if (!lightglue_plugin::extract_aliked_ggml(
+                    p1, extractor, settings.device, settings.maxKeypoints,
+                    settings.maxResize, settings.threads, f1, &err)) {
+            if (log) *log = QString::fromStdString(err);
+            return false;
+        }
+        return true;
     }
 
     if (!lightglue_plugin::extract_sift_opencv(p0, settings.maxKeypoints,
@@ -112,6 +155,34 @@ QVector<QPointF> keypoints_to_qt(const aicore_lightglue_features& f) {
         out.append(QPointF(f.keypoints[i].x, f.keypoints[i].y));
     }
     return out;
+}
+
+bool load_gray_same_size(const QString& p0,
+                         const QString& p1,
+                         std::vector<uint8_t>* g0,
+                         std::vector<uint8_t>* g1,
+                         int* width,
+                         int* height,
+                         QString* log) {
+    const QImage img0 = lightglue_plugin::load_oriented_qimage(p0);
+    const QImage img1 = lightglue_plugin::load_oriented_qimage(p1);
+    if (img0.isNull() || img1.isNull()) {
+        if (log) *log = QStringLiteral("failed to load input image(s)");
+        return false;
+    }
+    QImage gray0 = img0.convertToFormat(QImage::Format_Grayscale8);
+    QImage gray1 = img1.convertToFormat(QImage::Format_Grayscale8);
+    if (gray0.size() != gray1.size()) {
+        gray1 = gray1.scaled(gray0.size(), Qt::IgnoreAspectRatio,
+                             Qt::SmoothTransformation);
+    }
+    *width = gray0.width();
+    *height = gray0.height();
+    g0->resize(static_cast<size_t>(*width) * *height);
+    g1->resize(static_cast<size_t>(*width) * *height);
+    std::memcpy(g0->data(), gray0.constBits(), g0->size());
+    std::memcpy(g1->data(), gray1.constBits(), g1->size());
+    return true;
 }
 
 }  // namespace
@@ -274,6 +345,109 @@ bool LightGlueWorker::runMatch() {
     return true;
 }
 
+bool LightGlueWorker::runMatchElOftr() {
+    if (m_settings.inputPaths.size() != 2) {
+        emit logMessage("[Error] ELoFTR requires exactly two input images.");
+        return false;
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+
+    emit progressUpdate(5, 100);
+    emit logMessage(formatDeviceLog(m_settings));
+    emit logMessage("[ELoFTR] Loading model: " + m_settings.modelPath);
+
+    aicore_eloftr_options* opts = aicore_eloftr_options_new();
+    if (!m_settings.device.isEmpty()) {
+        aicore_eloftr_options_set_device(
+                opts, m_settings.device.toStdString().c_str());
+    }
+    aicore_eloftr_options_set_threads(opts, m_settings.threads);
+
+    aicore_eloftr_ctx* ctx = aicore_eloftr_load_opts(
+            m_settings.modelPath.toStdString().c_str(), opts);
+    aicore_eloftr_options_free(opts);
+    if (!ctx) {
+        emit logMessage("[Error] Failed to allocate ELoFTR context.");
+        return false;
+    }
+    if (const char* err = aicore_eloftr_last_error(ctx)) {
+        emit logMessage(QString("[Error] Failed to load model: %1").arg(err));
+        m_pendingElOftrCtx = ctx;
+        return false;
+    }
+
+    emit progressUpdate(20, 100);
+    std::vector<uint8_t> gray0;
+    std::vector<uint8_t> gray1;
+    int width = 0;
+    int height = 0;
+    QString loadLog;
+    if (!load_gray_same_size(m_settings.inputPaths[0], m_settings.inputPaths[1],
+                             &gray0, &gray1, &width, &height, &loadLog)) {
+        emit logMessage(QString("[Error] %1").arg(loadLog));
+        m_pendingElOftrCtx = ctx;
+        return false;
+    }
+
+    emit logMessage(QString("[ELoFTR] Matching %1×%2 grayscale pair (GGML)...")
+                            .arg(width)
+                            .arg(height));
+    emit progressUpdate(45, 100);
+
+    aicore_eloftr_match* matches = nullptr;
+    int32_t n_matches = 0;
+    if (aicore_eloftr_match_gray(ctx, gray0.data(), gray1.data(), width, height,
+                                 width, &matches, &n_matches) != 0) {
+        const char* matchErr = aicore_eloftr_last_error(ctx);
+        emit logMessage(QString("[Error] ELoFTR matching failed: %1")
+                                .arg(matchErr ? matchErr : "unknown"));
+        m_pendingElOftrCtx = ctx;
+        return false;
+    }
+
+    LightGlueRunResult result;
+    result.imagePath0 = m_settings.inputPaths[0];
+    result.imagePath1 = m_settings.inputPaths[1];
+    result.imageName0 =
+            result.imagePath0.startsWith("db://")
+                    ? result.imagePath0.mid(5)
+                    : QFileInfo(result.imagePath0).completeBaseName();
+    result.imageName1 =
+            result.imagePath1.startsWith("db://")
+                    ? result.imagePath1.mid(5)
+                    : QFileInfo(result.imagePath1).completeBaseName();
+    result.sourceName = result.imageName0 + "_x_" + result.imageName1;
+    result.imageWidth0 = width;
+    result.imageHeight0 = height;
+    result.imageWidth1 = width;
+    result.imageHeight1 = height;
+    result.keypoints0.reserve(n_matches);
+    result.keypoints1.reserve(n_matches);
+    result.runtimeMs = timer.elapsed();
+    result.matches.reserve(n_matches);
+    for (int32_t i = 0; i < n_matches; ++i) {
+        result.keypoints0.append(QPointF(matches[i].x0, matches[i].y0));
+        result.keypoints1.append(QPointF(matches[i].x1, matches[i].y1));
+        if (matches[i].score >= m_settings.minScore) {
+            result.matches.append({i, i, matches[i].score});
+        }
+    }
+    result.nKeypoints0 = result.keypoints0.size();
+    result.nKeypoints1 = result.keypoints1.size();
+
+    aicore_eloftr_free_matches(matches);
+    m_pendingElOftrCtx = ctx;
+
+    emit progressUpdate(100, 100);
+    emit logMessage(QString("[ELoFTR] Found %1 matches in %2 ms.")
+                            .arg(result.matches.size())
+                            .arg(result.runtimeMs, 0, 'f', 1));
+    emit resultReady(result);
+    return true;
+}
+
 #endif
 
 void LightGlueWorker::run() {
@@ -289,7 +463,11 @@ void LightGlueWorker::run() {
     bool ok = false;
     switch (m_settings.mode) {
         case Mode::Match:
-            ok = runMatch();
+            if (m_settings.pipelineType == 1) {
+                ok = runMatchElOftr();
+            } else {
+                ok = runMatch();
+            }
             break;
         case Mode::ModelInfo:
             ok = runModelInfo();

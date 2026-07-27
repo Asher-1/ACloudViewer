@@ -23,6 +23,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QTextEdit>
 #include <QToolButton>
 
@@ -31,6 +32,8 @@ struct LightGlueBuiltinModel {
     QString filename;
     QString downloadUrl;
     int matcherType = 2;
+    /** 0 = LightGlue matcher GGUF, 1 = EfficientLoFTR GGUF */
+    int pipelineType = 0;
 };
 
 class LightGlueDialog : public QDialog {
@@ -46,6 +49,8 @@ public:
 
     struct Settings {
         Mode mode = Mode::Match;
+        /** 0 = LightGlue (SIFT + matcher), 1 = EfficientLoFTR end-to-end */
+        int pipelineType = 0;
         QString modelPath;
         QStringList inputPaths;
         int threads = 0;
@@ -71,6 +76,8 @@ public:
 
     static QString modelCacheDir();
     void refreshModelList();
+    static QString eloftrModelCacheDir();
+    static QString cacheDirForPipeline(int pipelineType);
 
 signals:
     void runRequested(const LightGlueDialog::Settings& settings);
@@ -120,11 +127,14 @@ private:
     bool assignSelectedToSlot(int slot);
     bool isModelReady() const;
     bool isInputValid() const;
+    int currentPipeline() const;
 
     static QVector<LightGlueBuiltinModel> builtinModels();
     static QString formatFileSize(qint64 bytes);
 
     QComboBox* m_modeCombo = nullptr;
+    QTabWidget* m_pipelineTabs = nullptr;
+    QWidget* m_minScoreRow = nullptr;
     QGroupBox* m_ioGroup = nullptr;
     QComboBox* m_modelCombo = nullptr;
     QLineEdit* m_customModelPath = nullptr;
