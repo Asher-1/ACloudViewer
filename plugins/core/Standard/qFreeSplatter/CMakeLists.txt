@@ -25,6 +25,9 @@ if( PLUGIN_STANDARD_QFREESPLATTER )
 
     # Link to libAICore.so — ggml is PRIVATE inside AICore, not needed here
     target_link_libraries(${PROJECT_NAME} AICore Qt::Network)
+    if(MSVC)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+    endif()
     if(TARGET CVAppCommon)
         target_link_libraries(${PROJECT_NAME} CVAppCommon)
     endif()

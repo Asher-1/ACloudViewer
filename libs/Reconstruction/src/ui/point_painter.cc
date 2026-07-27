@@ -37,9 +37,20 @@ namespace colmap {
 
 PointPainter::PointPainter() : num_geoms_(0) {}
 
-PointPainter::~PointPainter() {
-  vao_.destroy();
-  vbo_.destroy();
+PointPainter::~PointPainter() = default;
+
+void PointPainter::Release() {
+  if (vao_.isCreated()) {
+    vao_.destroy();
+  }
+  if (vbo_.isCreated()) {
+    vbo_.destroy();
+  }
+  if (shader_program_.isLinked()) {
+    shader_program_.release();
+    shader_program_.removeAllShaders();
+  }
+  num_geoms_ = 0;
 }
 
 void PointPainter::Setup() {

@@ -87,6 +87,9 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
              base + "freesplatter-object-2dgs-q8_0.gguf"},
             {tr("Object-2DGS F16"), "freesplatter-object-2dgs-f16.gguf",
              base + "freesplatter-object-2dgs-f16.gguf"},
+            {tr("Object-2DGS F32 (full precision)"),
+             "freesplatter-object-2dgs-f32.gguf",
+             base + "freesplatter-object-2dgs-f32.gguf"},
             {tr("Object-3DGS Q8_0 (deprecated)"),
              "freesplatter-object-q8_0.gguf",
              base + "freesplatter-object-q8_0.gguf"},
@@ -156,6 +159,7 @@ void FreeSplatterDialog::setupUi() {
     m_customModelPath = new QLineEdit;
     m_customModelPath->setPlaceholderText("Path to custom .gguf file");
     connect(m_customModelPath, &QLineEdit::textChanged, this, [this]() {
+        updateObjectModelHint();
         updateImageCountStatus();
         updateRunButtonState();
     });
@@ -167,9 +171,8 @@ void FreeSplatterDialog::setupUi() {
     m_customModelRow->setVisible(false);
     modelLayout->addWidget(m_customModelRow, 1, 0, 1, 4);
 
-    m_objectHintLabel = new QLabel(
-            tr("\u26a0 Object model requires background-removed images for "
-               "best results. Scene model is recommended for general photos."));
+    m_objectHintLabel = new QLabel;
+    m_objectHintLabel->setTextFormat(Qt::RichText);
     m_objectHintLabel->setWordWrap(true);
     m_objectHintLabel->setStyleSheet(
             "QLabel { color: #b58900; font-size: 11px; padding: 2px 4px; "
@@ -601,11 +604,11 @@ void FreeSplatterDialog::onModelComboChanged(int index) {
             data.contains("object", Qt::CaseInsensitive) ||
             (data == "CUSTOM" && m_customModelPath &&
              m_customModelPath->text().contains("object", Qt::CaseInsensitive));
-    if (m_objectHintLabel) m_objectHintLabel->setVisible(isObject);
     if (m_removeBgCheck) {
         m_removeBgCheck->setVisible(isObject);
         if (!isObject) m_removeBgCheck->setChecked(false);
     }
+    updateObjectModelHint();
 
     updateImageCountStatus();
     updateRunButtonState();
@@ -618,6 +621,67 @@ FreeSplatterDialog::ModelType FreeSplatterDialog::modelTypeFromFilename(
     if (filename.contains("object", Qt::CaseInsensitive))
         return ModelType::Object;
     return ModelType::Unknown;
+}
+
+bool FreeSplatterDialog::isObject2dgsModel(const QString& filename) {
+    return filename.contains("object", Qt::CaseInsensitive) &&
+           filename.contains("2dgs", Qt::CaseInsensitive);
+}
+
+QString FreeSplatterDialog::currentModelFilename() const {
+    QString data = m_modelCombo->currentData().toString();
+    if (data == "CUSTOM") {
+        return m_customModelPath ? m_customModelPath->text().trimmed()
+                                 : QString();
+    }
+    return data;
+}
+
+void FreeSplatterDialog::updateObjectModelHint() {
+    if (!m_objectHintLabel) return;
+
+    const QString filename = currentModelFilename();
+    const bool isObject = filename.contains("object", Qt::CaseInsensitive);
+    if (!isObject) {
+        m_objectHintLabel->setVisible(false);
+        if (m_modelCombo) m_modelCombo->setToolTip(QString());
+        return;
+    }
+
+    m_objectHintLabel->setVisible(true);
+    const bool is2dgs = isObject2dgsModel(filename);
+    if (is2dgs) {
+        m_objectHintLabel->setText(
+                tr("\u26a0 <b>Object-2DGS (recommended)</b>: use "
+                   "background-removed photos (Remove BG). Oriented 2D surfels "
+                   "\u2014 sharper surfaces, fewer floaters on thin edges. "
+                   "Best with <b>8\u201324 views</b> (Auto=24). Ideal for "
+                   "products, props, and multi-view object capture."));
+        if (m_modelCombo) {
+            m_modelCombo->setToolTip(
+                    tr("Object-2DGS: 22-channel 2D Gaussian surfels.\n"
+                       "Pros: cleaner surfaces, scales to more views.\n"
+                       "Cons: slower with 16+ views (O(N\u00b2)); needs clean "
+                       "background.\n"
+                       "Use Object-3DGS only for legacy / quick 3\u20138 view "
+                       "tests."));
+        }
+    } else {
+        m_objectHintLabel->setText(
+                tr("\u26a0 <b>Object-3DGS (deprecated)</b>: prefer "
+                   "<b>Object-2DGS</b> for new work. Full 3D ellipsoid "
+                   "Gaussians \u2014 OK for quick tests with "
+                   "<b>3\u20138 views</b> (Auto=16) but more floaters on thin "
+                   "geometry. Background removal still recommended."));
+        if (m_modelCombo) {
+            m_modelCombo->setToolTip(
+                    tr("Object-3DGS (legacy): 23-channel full 3D Gaussians.\n"
+                       "Pros: works with fewer views, slightly faster total "
+                       "run.\n"
+                       "Cons: blobbier thin parts, more floaters.\n"
+                       "Switch to Object-2DGS when you have 8+ clean views."));
+        }
+    }
 }
 
 FreeSplatterDialog::ModelType FreeSplatterDialog::currentModelType() const {
@@ -680,10 +744,22 @@ void FreeSplatterDialog::updateImageCountStatus() {
     QString typeName = (type == ModelType::Scene)    ? "Scene"
                        : (type == ModelType::Object) ? "Object"
                                                      : "Unknown";
+    const QString filename = currentModelFilename();
+    if (type == ModelType::Object && isObject2dgsModel(filename)) {
+        typeName = "Object-2DGS";
+    } else if (type == ModelType::Object) {
+        typeName = "Object-3DGS";
+    }
     QString reqStr =
             (type == ModelType::Scene)
                     ? QString("at least %1 (recommended %1)").arg(required)
-                    : QString("at least %1").arg(required);
+            : (type == ModelType::Object && isObject2dgsModel(filename))
+                    ? QString("at least %1 (recommended 8\u201324, "
+                              "Auto=24)")
+                              .arg(required)
+                    : QString("at least %1 (recommended 3\u20138, "
+                              "Auto=16)")
+                              .arg(required);
     QString color = "gray";
     if (type == ModelType::Scene) {
         if (current >= required && current <= required)

@@ -248,7 +248,8 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
         resolvedSettings.inputPaths = resolvedPaths;
         m_dialog->appendLog(tr("[LG] Resolved 2 input images for matching."));
 
-        if (resolvedSettings.matcherType == 2) {
+        if (resolvedSettings.matcherType == 2 &&
+            resolvedSettings.pipelineType == 0) {
             m_dialog->appendLog(tr(
                     "[Error] ALIKED GGUF models are matcher-only. Interactive "
                     "matching requires a native ALIKED extractor (COLMAP "
@@ -258,9 +259,11 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
             return;
         }
 #ifndef QLIGHTGLUE_HAS_OPENCV
-        m_dialog->appendLog(
-                tr("[Error] SIFT extraction requires BUILD_OPENCV=ON."));
-        return;
+        if (resolvedSettings.pipelineType == 0) {
+            m_dialog->appendLog(
+                    tr("[Error] SIFT extraction requires BUILD_OPENCV=ON."));
+            return;
+        }
 #endif
     } else {
         m_originalInputPaths.clear();
@@ -288,6 +291,7 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
     workerSettings.device = workerDevice;
     workerSettings.minScore = resolvedSettings.minScore;
     workerSettings.matcherType = resolvedSettings.matcherType;
+    workerSettings.pipelineType = resolvedSettings.pipelineType;
 
     m_currentSettings = resolvedSettings;
     m_worker = new LightGlueWorker(workerSettings, this);

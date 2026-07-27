@@ -34,7 +34,15 @@ bool extract_sift_opencv(const QString& image_path,
                          OwnedFeatures* out,
                          std::string* error);
 
-/** LGINP01 dev/CI fixtures only (not used for interactive image matching). */
+/** ALIKED feature extraction via AICore GGML (128-D descriptors). */
+bool extract_aliked_ggml(const QString& image_path,
+                         const QString& extractor_gguf,
+                         const QString& device,
+                         int max_keypoints,
+                         int max_resize,
+                         int threads,
+                         OwnedFeatures* out,
+                         std::string* error);
 bool load_fixture_pair(const QString& fixture_path,
                        OwnedFeatures* out0,
                        OwnedFeatures* out1,

@@ -33,6 +33,7 @@ Both plugins link **`libAICore.so`**, which bundles DA3, FreeSplatter, and Light
 | **qDA3** | `PLUGIN_STANDARD_QDA3` | [docs/guides/plugins/qDA3.md](../docs/guides/plugins/qDA3.md) | [qDA3/README.md](core/Standard/qDA3/README.md) |
 | **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [docs/guides/plugins/qFreeSplatter.md](../docs/guides/plugins/qFreeSplatter.md) | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) |
 | **qLightGlue** | `PLUGIN_STANDARD_QLIGHTGLUE` | — | [qLightGlue/README.md](core/Standard/qLightGlue/README.md) |
+| **qDeepLSD** | `PLUGIN_STANDARD_QDEEPLSD` | — | [qDeepLSD/README.md](core/Standard/qDeepLSD/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 

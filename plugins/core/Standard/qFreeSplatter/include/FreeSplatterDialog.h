@@ -68,7 +68,7 @@ public:
         bool addToDb = true;
         bool estimatePoses = false;
         bool removeBackground = false;
-        int maxViews = 0;  // 0 = auto (Scene:2, Object:16)
+        int maxViews = 0;  // 0 = auto (Scene:2, Object-3DGS:16, Object-2DGS:24)
     };
 
     explicit FreeSplatterDialog(QWidget* parent = nullptr);
@@ -119,7 +119,10 @@ private:
     static QVector<FreeSplatterBuiltinModel> builtinModels();
     static QString formatFileSize(qint64 bytes);
     static ModelType modelTypeFromFilename(const QString& filename);
+    static bool isObject2dgsModel(const QString& filename);
     ModelType currentModelType() const;
+    QString currentModelFilename() const;
+    void updateObjectModelHint();
     int requiredImageCount() const;
     int currentImageCount() const;
     void updateImageCountStatus();

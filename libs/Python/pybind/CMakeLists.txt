@@ -225,9 +225,8 @@ endif()
 if(TARGET ext_ggml)
     list(APPEND PYTHON_PACKAGE_DEPENDS ext_ggml)
 endif()
-if(AICore_BUILD_TESTS AND TARGET aicore-contract-tests)
-    list(APPEND PYTHON_PACKAGE_DEPENDS aicore-contract-tests)
-endif()
+# Contract tests run separately in CI (util/ci_utils.*); do not gate wheel
+# packaging on ctest — parallel make + jobserver caused macOS wheel failures.
 add_custom_target(python-package
         COMMAND ${CMAKE_COMMAND}
         -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}

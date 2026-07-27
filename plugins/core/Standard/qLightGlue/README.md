@@ -11,8 +11,9 @@ Same architectural split as [COLMAP](https://github.com/colmap/colmap) and [Ligh
 ## Features
 
 - Two-image matching from DB tree or disk (dual preview panels)
-- Built-in GGUF model download & cache (SIFT / ALIKED matcher weights)
+- Built-in GGUF model download & cache (SIFT / ALIKED matcher / ELoFTR weights)
 - **SIFT LightGlue**: OpenCV RootSIFT + GGML — no Python, no ONNX at runtime
+- **EfficientLoFTR**: end-to-end grayscale pair matching via GGML (RepVGG + coarse match)
 - Match visualization entity in DB tree (green keypoint lines)
 - Export matches as JSON; Model Info mode for any GGUF
 

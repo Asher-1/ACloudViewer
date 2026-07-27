@@ -16,4 +16,20 @@ inline std::string lightglue_model_cache_dir() {
     return extract_model_dir("lightglue_models");
 }
 
+inline std::string eloftr_model_cache_dir() {
+    return extract_model_dir("eloftr_models");
+}
+
+inline std::string deeplsd_model_cache_dir() {
+    return extract_model_dir("deeplsd_models");
+}
+
+inline std::string aliked_model_cache_dir() {
+    return extract_model_dir("aliked_models");
+}
+
+inline std::string matchanything_model_cache_dir() {
+    return extract_model_dir("matchanything_models");
+}
+
 }  // namespace aicore

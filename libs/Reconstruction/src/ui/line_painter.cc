@@ -37,9 +37,20 @@ namespace colmap {
 
 LinePainter::LinePainter() : num_geoms_(0) {}
 
-LinePainter::~LinePainter() {
-  vao_.destroy();
-  vbo_.destroy();
+LinePainter::~LinePainter() = default;
+
+void LinePainter::Release() {
+  if (vao_.isCreated()) {
+    vao_.destroy();
+  }
+  if (vbo_.isCreated()) {
+    vbo_.destroy();
+  }
+  if (shader_program_.isLinked()) {
+    shader_program_.release();
+    shader_program_.removeAllShaders();
+  }
+  num_geoms_ = 0;
 }
 
 void LinePainter::Setup() {

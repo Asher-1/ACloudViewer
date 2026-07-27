@@ -23,12 +23,17 @@
 #include <QVBoxLayout>
 
 #include "aicore/backend_capi.h"
+#include "aicore/eloftr_capi.h"
 #include "aicore/lightglue_capi.h"
 #include "feature_extractor.h"
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "LightGlue/";
+
+static const char* kDownloadBaseELoFTR =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "ELoFTR/";
 
 static const int kThumbSize = 72;
 
@@ -68,19 +73,26 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 
 QVector<LightGlueBuiltinModel> LightGlueDialog::builtinModels() {
     const QString base = QString::fromLatin1(kDownloadBase);
+    const QString baseEl = QString::fromLatin1(kDownloadBaseELoFTR);
     return {
             {tr("SIFT F16 (recommended)"), "sift-lightglue-f16.gguf",
-             base + "sift-lightglue-f16.gguf", 1},
+             base + "sift-lightglue-f16.gguf", 1, 0},
             {tr("SIFT Q8_0 (smaller)"), "sift-lightglue-q8_0.gguf",
-             base + "sift-lightglue-q8_0.gguf", 1},
+             base + "sift-lightglue-q8_0.gguf", 1, 0},
             {tr("SIFT F32"), "sift-lightglue-f32.gguf",
-             base + "sift-lightglue-f32.gguf", 1},
-            {tr("ALIKED F16 (matcher only)"), "aliked-lightglue-f16.gguf",
-             base + "aliked-lightglue-f16.gguf", 2},
-            {tr("ALIKED Q8_0 (matcher only)"), "aliked-lightglue-q8_0.gguf",
-             base + "aliked-lightglue-q8_0.gguf", 2},
-            {tr("ALIKED F32 (matcher only)"), "aliked-lightglue-f32.gguf",
-             base + "aliked-lightglue-f32.gguf", 2},
+             base + "sift-lightglue-f32.gguf", 1, 0},
+            {tr("ALIKED F16 (recommended)"), "aliked-lightglue-f16.gguf",
+             base + "aliked-lightglue-f16.gguf", 2, 0},
+            {tr("ALIKED Q8_0 (smaller)"), "aliked-lightglue-q8_0.gguf",
+             base + "aliked-lightglue-q8_0.gguf", 2, 0},
+            {tr("ALIKED F32"), "aliked-lightglue-f32.gguf",
+             base + "aliked-lightglue-f32.gguf", 2, 0},
+            {tr("ELoFTR Outdoor F16 (recommended)"), "eloftr_outdoor-f16.gguf",
+             baseEl + "eloftr_outdoor-f16.gguf", 0, 1},
+            {tr("ELoFTR Outdoor Q8_0 (smaller)"), "eloftr_outdoor-q8_0.gguf",
+             baseEl + "eloftr_outdoor-q8_0.gguf", 0, 1},
+            {tr("ELoFTR Outdoor F32"), "eloftr_outdoor-f32.gguf",
+             baseEl + "eloftr_outdoor-f32.gguf", 0, 1},
     };
 }
 
@@ -95,6 +107,21 @@ QString LightGlueDialog::modelCacheDir() {
     return result;
 }
 
+QString LightGlueDialog::eloftrModelCacheDir() {
+    char* dir = aicore_eloftr_model_cache_dir();
+    if (dir) {
+        QString result = QString::fromUtf8(dir);
+        aicore_eloftr_free_string(dir);
+        return result;
+    }
+    return QDir::homePath() +
+           QStringLiteral("/cloudViewer_data/extract/eloftr_models");
+}
+
+QString LightGlueDialog::cacheDirForPipeline(int pipelineType) {
+    return pipelineType == 1 ? eloftrModelCacheDir() : modelCacheDir();
+}
+
 QString LightGlueDialog::formatFileSize(qint64 bytes) {
     if (bytes < 1024) return QString("%1 B").arg(bytes);
     if (bytes < 1024LL * 1024)
@@ -105,29 +132,68 @@ QString LightGlueDialog::formatFileSize(qint64 bytes) {
 }
 
 LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
-    setWindowTitle(tr("LightGlue Feature Matching"));
-    setMinimumWidth(760);
+    setWindowTitle(tr("Feature Matching (LightGlue / ELoFTR)"));
+    setMinimumWidth(720);
     m_netManager = new QNetworkAccessManager(this);
     setupUi();
     populateModelCombo();
 }
 
+int LightGlueDialog::currentPipeline() const {
+    return m_pipelineTabs ? m_pipelineTabs->currentIndex() : 0;
+}
+
 void LightGlueDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(6);
 
-    auto* modeGroup = new QGroupBox(tr("Operation Mode"));
-    auto* modeLayout = new QHBoxLayout(modeGroup);
+    auto* modeRow = new QHBoxLayout;
+    modeRow->addWidget(new QLabel(tr("Mode:")));
     m_modeCombo = new QComboBox;
     m_modeCombo->addItem(tr("Match two images"), static_cast<int>(Mode::Match));
     m_modeCombo->addItem(tr("Model Info"), static_cast<int>(Mode::ModelInfo));
-    modeLayout->addWidget(new QLabel(tr("Mode:")));
-    modeLayout->addWidget(m_modeCombo, 1);
+    modeRow->addWidget(m_modeCombo, 1);
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &LightGlueDialog::onModeChanged);
-    mainLayout->addWidget(modeGroup);
+    mainLayout->addLayout(modeRow);
 
-    auto* modelGroup = new QGroupBox(tr("Model"));
+    m_pipelineTabs = new QTabWidget;
+    auto* lgTab = new QWidget;
+    auto* lgLayout = new QVBoxLayout(lgTab);
+    lgLayout->setContentsMargins(4, 4, 4, 4);
+    auto* lgHint = new QLabel(
+            tr("Sparse local features + LightGlue GGML matcher. "
+               "SIFT uses OpenCV RootSIFT; ALIKED uses AICore GGML extractor "
+               "(download matching aliked-n16rot-*.gguf)."));
+    lgHint->setWordWrap(true);
+    lgHint->setStyleSheet("color: #555; font-size: 11px;");
+    lgLayout->addWidget(lgHint);
+    lgLayout->addStretch();
+    m_pipelineTabs->addTab(lgTab, tr("LightGlue"));
+
+    auto* elTab = new QWidget;
+    auto* elLayout = new QVBoxLayout(elTab);
+    elLayout->setContentsMargins(4, 4, 4, 4);
+    auto* elHint = new QLabel(
+            tr("EfficientLoFTR semi-dense matching (RepVGG + coarse GGML). "
+               "Needs two images; exports match visualization to DB."));
+    elHint->setWordWrap(true);
+    elHint->setStyleSheet("color: #555; font-size: 11px;");
+    elLayout->addWidget(elHint);
+    elLayout->addStretch();
+    m_pipelineTabs->addTab(elTab, tr("ELoFTR"));
+    connect(m_pipelineTabs, &QTabWidget::currentChanged, this, [this](int idx) {
+        populateModelCombo();
+        if (m_minScoreRow) {
+            m_minScoreRow->setVisible(idx == 0);
+        }
+    });
+    mainLayout->addWidget(m_pipelineTabs);
+
+    auto* modelGroup = new QGroupBox(tr("Model & Runtime"));
     auto* modelLayout = new QGridLayout(modelGroup);
+    modelLayout->setHorizontalSpacing(8);
+    modelLayout->setVerticalSpacing(4);
     m_modelCombo = new QComboBox;
     modelLayout->addWidget(new QLabel(tr("GGUF Model:")), 0, 0);
     modelLayout->addWidget(m_modelCombo, 0, 1, 1, 2);
@@ -163,26 +229,30 @@ void LightGlueDialog::setupUi() {
     m_threads->setSpecialValueText(tr("Auto"));
     modelLayout->addWidget(m_threads, 3, 1);
 
-    modelLayout->addWidget(new QLabel(tr("Min score:")), 4, 0);
+    m_minScoreRow = new QWidget;
+    auto* minScoreLayout = new QHBoxLayout(m_minScoreRow);
+    minScoreLayout->setContentsMargins(0, 0, 0, 0);
+    minScoreLayout->addWidget(new QLabel(tr("Min score:")));
     m_minScore = new QDoubleSpinBox;
     m_minScore->setRange(0.0, 1.0);
     m_minScore->setSingleStep(0.05);
     m_minScore->setValue(0.1);
-    modelLayout->addWidget(m_minScore, 4, 1);
+    minScoreLayout->addWidget(m_minScore);
+    minScoreLayout->addStretch();
+    modelLayout->addWidget(m_minScoreRow, 4, 0, 1, 2);
 
     mainLayout->addWidget(modelGroup);
 
     auto* ioGroup = new QGroupBox(tr("Input Images"));
     m_ioGroup = ioGroup;
     auto* ioLayout = new QVBoxLayout(ioGroup);
+    ioLayout->setSpacing(4);
 
     auto* hintLabel = new QLabel(
-            tr("Pick two images above to match. "
-               "Load Folder fills Image 1/2 with the first two files and lists "
-               "all folder images below — select one, then → Image 1/2 or "
-               "double-click."));
+            tr("Select Image 1 and Image 2. Load Folder fills both slots; "
+               "use the list below to reassign."));
     hintLabel->setWordWrap(true);
-    hintLabel->setStyleSheet("color: #555;");
+    hintLabel->setStyleSheet("color: #555; font-size: 11px;");
     ioLayout->addWidget(hintLabel);
 
     auto* slotRow = new QHBoxLayout;
@@ -351,7 +421,7 @@ void LightGlueDialog::setupUi() {
 
     m_log = new QTextEdit;
     m_log->setReadOnly(true);
-    m_log->setMaximumHeight(160);
+    m_log->setMaximumHeight(120);
     mainLayout->addWidget(m_log);
 
     auto* actionRow = new QHBoxLayout;
@@ -380,7 +450,8 @@ void LightGlueDialog::setupUi() {
 void LightGlueDialog::refreshModelList() { populateModelCombo(); }
 
 void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
-    const QString cacheDir = modelCacheDir();
+    const int pipeline = currentPipeline();
+    const QString cacheDir = cacheDirForPipeline(pipeline);
     QString selected = keepFilename;
     if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
         selected = m_modelCombo->currentData().toString();
@@ -389,6 +460,9 @@ void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     m_modelCombo->blockSignals(true);
     m_modelCombo->clear();
     for (const auto& m : builtinModels()) {
+        if (m.pipelineType != pipeline) {
+            continue;
+        }
         const QString cached = cacheDir + "/" + m.filename;
         const QFileInfo fi(cached);
         const QString suffix =
@@ -398,8 +472,10 @@ void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     }
     m_modelCombo->insertSeparator(m_modelCombo->count());
     m_modelCombo->addItem(tr("Custom..."), "CUSTOM");
-    selectModelByFilename(selected.isEmpty() ? "sift-lightglue-f16.gguf"
-                                             : selected);
+    const QString defaultModel =
+            pipeline == 1 ? QStringLiteral("eloftr_outdoor-f16.gguf")
+                          : QStringLiteral("sift-lightglue-f16.gguf");
+    selectModelByFilename(selected.isEmpty() ? defaultModel : selected);
     m_modelCombo->blockSignals(false);
     onModelComboChanged(m_modelCombo->currentIndex());
 }
@@ -424,6 +500,7 @@ void LightGlueDialog::onModelComboChanged(int index) {
 LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     Settings s;
     s.mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
+    s.pipelineType = currentPipeline();
     s.modelPath = resolveModelPath();
     s.inputPaths = QStringList() << m_slotPaths[0] << m_slotPaths[1];
     s.threads = m_threads->value();
@@ -435,15 +512,21 @@ LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     for (const auto& model : builtinModels()) {
         if (model.filename == data) {
             s.matcherType = model.matcherType;
+            s.pipelineType = model.pipelineType;
             break;
         }
     }
     if (data == "CUSTOM") {
         const QString name = m_customModelPath->text().toLower();
-        if (name.contains("sift"))
+        if (name.contains("eloftr")) {
+            s.pipelineType = 1;
+        } else if (name.contains("sift")) {
             s.matcherType = 1;
-        else if (name.contains("aliked"))
+            s.pipelineType = 0;
+        } else if (name.contains("aliked")) {
             s.matcherType = 2;
+            s.pipelineType = 0;
+        }
     }
     return s;
 }
@@ -452,7 +535,8 @@ QString LightGlueDialog::resolveModelPath() const {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return m_customModelPath->text().trimmed();
     if (data.isEmpty()) return QString();
-    return modelCacheDir() + "/" + data;
+    const int pipeline = currentPipeline();
+    return cacheDirForPipeline(pipeline) + "/" + data;
 }
 
 bool LightGlueDialog::isModelReady() const {
@@ -462,7 +546,8 @@ bool LightGlueDialog::isModelReady() const {
         return !path.isEmpty() && QFile::exists(path);
     }
     if (data.isEmpty()) return false;
-    if (QFile::exists(modelCacheDir() + "/" + data)) return true;
+    const int pipeline = currentPipeline();
+    if (QFile::exists(cacheDirForPipeline(pipeline) + "/" + data)) return true;
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -945,7 +1030,9 @@ bool LightGlueDialog::ensureModelAvailable() {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return isModelReady();
 
-    const QString cached = modelCacheDir() + "/" + data;
+    const int pipeline = currentPipeline();
+    const QString cache = cacheDirForPipeline(pipeline);
+    const QString cached = cache + "/" + data;
     if (QFile::exists(cached)) return true;
 
     for (const auto& bm : builtinModels()) {
@@ -971,8 +1058,10 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
         return;
     }
 
-    QDir().mkpath(modelCacheDir());
-    const QString dest = modelCacheDir() + "/" + model.filename;
+    const int pipeline = model.pipelineType;
+    const QString cache = cacheDirForPipeline(pipeline);
+    QDir().mkpath(cache);
+    const QString dest = cache + "/" + model.filename;
     const QString tmpDest = dest + ".part";
 
     m_downloadInProgress = true;
