@@ -161,12 +161,34 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
         set(_cpu_name "${lib_prefix}ggml-cpu${lib_suffix}")
         set(_cpu_path "${src_dir}/${_cpu_name}")
         if(NOT EXISTS "${_cpu_path}")
-            message(FATAL_ERROR
-                "CopyGgmlBackends: required CPU backend missing: ${_cpu_path}")
+            # macOS / AICore_CPU_ALL_VARIANTS builds ship libggml-cpu-<arch>.so
+            # instead of a single libggml-cpu.so.  Fall back to globbing variants.
+            file(GLOB _cpu_variants
+                "${src_dir}/${lib_prefix}ggml-cpu-*${lib_suffix}")
+            list(FILTER _cpu_variants EXCLUDE REGEX "\\.so\\.")
+            if(_cpu_variants)
+                list(LENGTH _cpu_variants _cpu_variant_count)
+                message(STATUS
+                    "CopyGgmlBackends: ${_cpu_name} not found; "
+                    "copying ${_cpu_variant_count} CPU variant(s) instead")
+                foreach(_path IN LISTS _cpu_variants)
+                    if(IS_SYMLINK "${_path}")
+                        continue()
+                    endif()
+                    get_filename_component(_name "${_path}" NAME)
+                    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${_path}" "${dest_dir}/${_name}")
+                    message(STATUS "CopyGgmlBackends: ${_name}")
+                endforeach()
+            else()
+                message(FATAL_ERROR
+                    "CopyGgmlBackends: required CPU backend missing: ${_cpu_path}")
+            endif()
+        else()
+            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_cpu_path}" "${dest_dir}/${_cpu_name}")
+            message(STATUS "CopyGgmlBackends: ${_cpu_name}")
         endif()
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${_cpu_path}" "${dest_dir}/${_cpu_name}")
-        message(STATUS "CopyGgmlBackends: ${_cpu_name}")
     endif()
 
     if(gpu_files_pipe)
