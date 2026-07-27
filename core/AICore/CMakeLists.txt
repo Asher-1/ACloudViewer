@@ -378,14 +378,18 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
                 -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
                 -P "${_copy_script}"
         )
+        set(_quantize_backend_copy_args
+            -DCOPY_BACKEND_MODULES=ON
+            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+            -DDEST_DIR="$<TARGET_FILE_DIR:aicore_gguf_quantize>"
+            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+            -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
+            -DGPU_FILES_PIPE="${_quantize_gpu_pipe}")
+        if(GGML_CPU_ALL_VARIANTS)
+            list(APPEND _quantize_backend_copy_args -DCPU_ALL_VARIANTS=ON)
+        endif()
+        list(APPEND _quantize_backend_copy_args -P "${_copy_script}")
         add_custom_command(TARGET aicore_gguf_quantize POST_BUILD
-            COMMAND ${CMAKE_COMMAND}
-                -DCOPY_BACKEND_MODULES=ON
-                -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
-                -DDEST_DIR="$<TARGET_FILE_DIR:aicore_gguf_quantize>"
-                -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
-                -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
-                -DGPU_FILES_PIPE="${_quantize_gpu_pipe}"
-                -P "${_copy_script}"
+            COMMAND ${CMAKE_COMMAND} ${_quantize_backend_copy_args}
         )
 endif()
