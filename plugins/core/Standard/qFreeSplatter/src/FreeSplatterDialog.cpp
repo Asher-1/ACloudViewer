@@ -7,6 +7,9 @@
 
 #include "FreeSplatterDialog.h"
 
+#include <CVLog.h>
+
+#include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -22,16 +25,13 @@
 #include <QTabBar>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QCloseEvent>
 
 #include "FaceCaptureWidget.h"
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
-#include "ecvModelDownloader.h"
-#include "ecvClickableImageLabel.h"
-
 #include "aicore/inference_log.h"
-#include <CVLog.h>
+#include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -168,7 +168,8 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
                     m_autoRunAfterDownload = false;
                 }
             });
-    CVLog::Print(QString("[FreeSplatter] Model cache: %1").arg(modelCacheDir()));
+    CVLog::Print(
+            QString("[FreeSplatter] Model cache: %1").arg(modelCacheDir()));
     aicore_inference_log::log_backend_probe(QStringLiteral("FS"));
 }
 
@@ -186,9 +187,9 @@ void FreeSplatterDialog::setupUi() {
     auto* modelLayout = new QGridLayout(modelGroup);
     modelLayout->setVerticalSpacing(4);
 
-    auto* pipelineHint = new QLabel(
-            tr("<b>Pipeline:</b> <i>Face detect</i> → <i>Multi-view capture</i> "
-               "→ <i>Gaussian 3D reconstruct</i> → <i>Export / SIBR</i>"));
+    auto* pipelineHint = new QLabel(tr(
+            "<b>Pipeline:</b> <i>Face detect</i> → <i>Multi-view capture</i> "
+            "→ <i>Gaussian 3D reconstruct</i> → <i>Export / SIBR</i>"));
     pipelineHint->setWordWrap(true);
     pipelineHint->setStyleSheet(
             "color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; "
@@ -309,7 +310,8 @@ void FreeSplatterDialog::setupUi() {
         m_thumbScroll->setWidgetResizable(true);
         m_thumbScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_thumbScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_thumbScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_thumbScroll->setSizePolicy(QSizePolicy::Expanding,
+                                     QSizePolicy::Fixed);
         m_thumbScroll->setFixedHeight(kThumbStripHeight);
         m_thumbScroll->setFrameShape(QFrame::StyledPanel);
         m_thumbContainer = new QWidget;
@@ -754,7 +756,8 @@ bool FreeSplatterDialog::isModelReady() const {
                QFile::exists(m_customModelPath->text().trimmed());
     }
     if (data.isEmpty()) return false;
-    if (ecvModelDownloader::isValidCachedFile(modelCacheDir() + "/" + data)) return true;
+    if (ecvModelDownloader::isValidCachedFile(modelCacheDir() + "/" + data))
+        return true;
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -893,9 +896,9 @@ void FreeSplatterDialog::refreshThumbnailStrip() {
             imgLabel->setFrameShape(QFrame::Box);
         }
         imgLabel->setToolTip(path);
-        tileLayout->addWidget(
-                ecvClickableImageLabel::wrapWithTapToPreviewHint(imgLabel, tile),
-                0, Qt::AlignHCenter);
+        tileLayout->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
+                                      imgLabel, tile),
+                              0, Qt::AlignHCenter);
 
         QString caption = path.startsWith("db://") ? path.mid(5)
                                                    : QFileInfo(path).fileName();
@@ -907,7 +910,8 @@ void FreeSplatterDialog::refreshThumbnailStrip() {
         nameLabel->setTextFormat(Qt::PlainText);
         nameLabel->setToolTip(caption);
         const QFontMetrics fm(nameLabel->font());
-        nameLabel->setText(fm.elidedText(caption, Qt::ElideMiddle, kThumbSize + 8));
+        nameLabel->setText(
+                fm.elidedText(caption, Qt::ElideMiddle, kThumbSize + 8));
 
         auto* removeBtn = new QPushButton("×");
         removeBtn->setFixedSize(20, 20);

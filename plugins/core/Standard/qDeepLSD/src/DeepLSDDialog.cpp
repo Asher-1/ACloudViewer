@@ -7,6 +7,9 @@
 
 #include "DeepLSDDialog.h"
 
+#include <CVLog.h>
+
+#include <QCloseEvent>
 #include <QDir>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -15,14 +18,11 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QVBoxLayout>
-#include <QCloseEvent>
 
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
-#include "ecvModelDownloader.h"
-
 #include "aicore/inference_log.h"
-#include <CVLog.h>
+#include "ecvModelDownloader.h"
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -96,8 +96,9 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
                     m_downloadLabel->setText(
                             tr("Downloading %1 — %2")
                                     .arg(m_modelCombo->currentData().toString())
-                                    .arg(ecvModelDownloader::formatDownloadProgress(
-                                            received, total)));
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
                 }
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -120,9 +121,7 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
     populateModelCombo();
 }
 
-void DeepLSDDialog::setAppInterface(ecvMainAppInterface* app) {
-    m_app = app;
-}
+void DeepLSDDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void DeepLSDDialog::setupUi() {
     auto* main = new QVBoxLayout(this);
@@ -239,8 +238,8 @@ void DeepLSDDialog::setupUi() {
     m_dbContentWidget->setVisible(false);
     ioLayout->addWidget(m_dbContentWidget);
 
-    m_addLineVizCheck = new QCheckBox(
-            tr("Add line overlay ccImage to DB tree after run"));
+    m_addLineVizCheck =
+            new QCheckBox(tr("Add line overlay ccImage to DB tree after run"));
     m_addLineVizCheck->setToolTip(
             tr("Raster overlay: detected segments drawn on the source image "
                "(ccImage, 2D). Good for quick visual QA."));
@@ -255,8 +254,8 @@ void DeepLSDDialog::setupUi() {
     m_addDistanceOverlayCheck->setChecked(false);
     ioLayout->addWidget(m_addDistanceOverlayCheck);
 
-    m_exportPolylinesCheck = new QCheckBox(
-            tr("Export detected segments as LineSet in DB tree"));
+    m_exportPolylinesCheck =
+            new QCheckBox(tr("Export detected segments as LineSet in DB tree"));
     m_exportPolylinesCheck->setToolTip(
             tr("Vector export: one 2D LineSet entity with segment endpoints "
                "(editable wireframe geometry, not ccPolyline)."));
@@ -416,13 +415,11 @@ void DeepLSDDialog::onBrowseImage() {
 void DeepLSDDialog::onBrowseCustomModel() {
     QSettings settings;
     const QString lastDir =
-            settings.value("qDeepLSD/lastModelDir", modelCacheDir())
-                    .toString();
+            settings.value("qDeepLSD/lastModelDir", modelCacheDir()).toString();
     const QString path = QFileDialog::getOpenFileName(
             this, tr("Select GGUF"), lastDir, tr("GGUF (*.gguf)"));
     if (path.isEmpty()) return;
-    settings.setValue("qDeepLSD/lastModelDir",
-                      QFileInfo(path).absolutePath());
+    settings.setValue("qDeepLSD/lastModelDir", QFileInfo(path).absolutePath());
     m_customModelPath->setText(path);
     onModelComboChanged(m_modelCombo->currentIndex());
 }
@@ -484,7 +481,8 @@ bool DeepLSDDialog::ensureModelAvailable() {
     if (isValidCachedGguf(cachedInfo)) return true;
     if (cachedInfo.exists()) {
         QFile::remove(cached);
-        appendLog(tr("[Warning] Removed incomplete model cache: %1").arg(cached));
+        appendLog(
+                tr("[Warning] Removed incomplete model cache: %1").arg(cached));
     }
     for (const auto& bm : builtinModels()) {
         if (bm.filename != data) continue;

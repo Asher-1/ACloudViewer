@@ -7,16 +7,15 @@
 
 #include "FaceDetectTestDataWorker.h"
 
-#include "FaceDetectEmbedHelpers.h"
-#include "FaceDetectModelContext.h"
-#include "FaceDetectTestData.h"
-
 #include <QDir>
 #include <QFileInfo>
 #include <QImageReader>
 #include <QSet>
-
 #include <algorithm>
+
+#include "FaceDetectEmbedHelpers.h"
+#include "FaceDetectModelContext.h"
+#include "FaceDetectTestData.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/facedetect_capi.h"
@@ -27,23 +26,27 @@ namespace {
 QStringList imagesInPersonDir(const QString& personDir) {
     QDir dir(personDir);
     if (!dir.exists()) return {};
-    const QStringList filters = {QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
-                                 QStringLiteral("*.png"),  QStringLiteral("*.webp")};
+    const QStringList filters = {
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
     QStringList paths;
     for (const QString& fn : dir.entryList(filters, QDir::Files)) {
         paths << dir.filePath(fn);
     }
-    std::sort(paths.begin(), paths.end(), [](const QString& a, const QString& b) {
-        QImageReader ra(a);
-        QImageReader rb(b);
-        ra.setAutoTransform(true);
-        rb.setAutoTransform(true);
-        const QSize sa = ra.size();
-        const QSize sb = rb.size();
-        const qint64 areaA = sa.isValid() ? qint64(sa.width()) * sa.height() : 0;
-        const qint64 areaB = sb.isValid() ? qint64(sb.width()) * sb.height() : 0;
-        return areaA > areaB;
-    });
+    std::sort(paths.begin(), paths.end(),
+              [](const QString& a, const QString& b) {
+                  QImageReader ra(a);
+                  QImageReader rb(b);
+                  ra.setAutoTransform(true);
+                  rb.setAutoTransform(true);
+                  const QSize sa = ra.size();
+                  const QSize sb = rb.size();
+                  const qint64 areaA =
+                          sa.isValid() ? qint64(sa.width()) * sa.height() : 0;
+                  const qint64 areaB =
+                          sb.isValid() ? qint64(sb.width()) * sb.height() : 0;
+                  return areaA > areaB;
+              });
     return paths;
 }
 
@@ -84,9 +87,11 @@ constexpr int kVerifyFaceEstimate = 6;
 
 class WeightedProgress {
 public:
-    using Reporter = std::function<void(int completed, int total, const QString& label)>;
+    using Reporter =
+            std::function<void(int completed, int total, const QString& label)>;
 
-    explicit WeightedProgress(Reporter reporter) : m_report(std::move(reporter)) {}
+    explicit WeightedProgress(Reporter reporter)
+        : m_report(std::move(reporter)) {}
 
     void setTotal(int total) { m_total = std::max(1, total); }
 
@@ -111,7 +116,9 @@ public:
 
     void bumpTotal(int extra) { m_total += std::max(0, extra); }
 
-    void adjustTotal(int delta) { m_total = std::max(m_completed, m_total + delta); }
+    void adjustTotal(int delta) {
+        m_total = std::max(m_completed, m_total + delta);
+    }
 
 private:
     Reporter m_report;
@@ -119,12 +126,14 @@ private:
     int m_total = 1;
 };
 
-QVector<FaceDetectGalleryEntry> resolveRegistrationEntries(const FaceDetectTestDataWorker::Job& job) {
+QVector<FaceDetectGalleryEntry> resolveRegistrationEntries(
+        const FaceDetectTestDataWorker::Job& job) {
     if (!job.bundle.galleryEntries.isEmpty()) {
         return job.bundle.galleryEntries;
     }
     if (!job.bundle.extractRoot.isEmpty()) {
-        return FaceDetectTestData::registrationEntriesForBundle(job.bundle.extractRoot);
+        return FaceDetectTestData::registrationEntriesForBundle(
+                job.bundle.extractRoot);
     }
     return {};
 }
@@ -164,21 +173,26 @@ void FaceDetectTestDataWorker::run() {
     Job job = m_job;
 
     const int extractEntries =
-            job.extractZipFirst ? FaceDetectTestData::zipEntryCount(job.zipPath) : 0;
-    const QVector<FaceDetectGalleryEntry> plannedEntries = resolveRegistrationEntries(job);
+            job.extractZipFirst ? FaceDetectTestData::zipEntryCount(job.zipPath)
+                                : 0;
+    const QVector<FaceDetectGalleryEntry> plannedEntries =
+            resolveRegistrationEntries(job);
     const int registerCountEstimate =
             job.registerGallery ? plannedEntries.size() : 0;
 
-    WeightedProgress progress([this](int completed, int total, const QString& label) {
-        emit phaseProgress(completed, total, label);
-    });
-    progress.setTotal(estimateTotalWeight(job, extractEntries, registerCountEstimate));
+    WeightedProgress progress(
+            [this](int completed, int total, const QString& label) {
+                emit phaseProgress(completed, total, label);
+            });
+    progress.setTotal(
+            estimateTotalWeight(job, extractEntries, registerCountEstimate));
 
     if (job.extractZipFirst) {
         const int extractBase = progress.completed();
         int extractFileTotal = extractEntries;
         const int extractWeight =
-                (extractFileTotal > 0 ? extractFileTotal : 1) * kWeightExtractEntry;
+                (extractFileTotal > 0 ? extractFileTotal : 1) *
+                kWeightExtractEntry;
         if (!FaceDetectTestData::extractZip(
                     job.zipPath, job.extractParentDir,
                     [&](int current, int total) {
@@ -186,24 +200,28 @@ void FaceDetectTestDataWorker::run() {
                             extractFileTotal = total;
                         }
                         const int weight =
-                                (extractFileTotal > 0 ? extractFileTotal : total) *
+                                (extractFileTotal > 0 ? extractFileTotal
+                                                      : total) *
                                 kWeightExtractEntry;
-                        const int done =
-                                extractBase + weight * current / std::max(1, total);
-                        progress.report(done, tr("Extracting archive (%1/%2 files)…")
-                                                    .arg(current)
-                                                    .arg(total));
+                        const int done = extractBase +
+                                         weight * current / std::max(1, total);
+                        progress.report(done,
+                                        tr("Extracting archive (%1/%2 files)…")
+                                                .arg(current)
+                                                .arg(total));
                     })) {
             emit logMessage(tr("[Test data] Failed to extract archive."));
             emit finished(false, 0, 0, 0);
             return;
         }
-        progress.setCompleted(extractBase + extractWeight,
-                              tr("Extract complete (%1 files).")
-                                      .arg(extractFileTotal > 0 ? extractFileTotal
-                                                                : extractEntries));
+        progress.setCompleted(
+                extractBase + extractWeight,
+                tr("Extract complete (%1 files).")
+                        .arg(extractFileTotal > 0 ? extractFileTotal
+                                                  : extractEntries));
 
-        progress.report(progress.completed(), tr("Resolving FriendsFaces bundle…"));
+        progress.report(progress.completed(),
+                        tr("Resolving FriendsFaces bundle…"));
         FaceDetectFriendsBundle resolved;
         if (!FaceDetectTestData::resolveBundle(&resolved)) {
             emit logMessage(tr("[Test data] Extracted but bundle not found."));
@@ -216,7 +234,8 @@ void FaceDetectTestDataWorker::run() {
 
     const QVector<FaceDetectGalleryEntry> registrationEntries =
             resolveRegistrationEntries(job);
-    const int registerCount = job.registerGallery ? registrationEntries.size() : 0;
+    const int registerCount =
+            job.registerGallery ? registrationEntries.size() : 0;
     progress.setTotal(estimateTotalWeight(job, extractEntries, registerCount));
 
     if (!job.registerGallery && !job.runVerify) {
@@ -226,7 +245,8 @@ void FaceDetectTestDataWorker::run() {
     }
 
     if (job.modelPath.isEmpty() || !QFileInfo::exists(job.modelPath)) {
-        emit logMessage(tr("[Test data] Face model not available for registration."));
+        emit logMessage(
+                tr("[Test data] Face model not available for registration."));
         emit finished(false, 0, 0, 0);
         return;
     }
@@ -244,7 +264,8 @@ void FaceDetectTestDataWorker::run() {
 
     FaceRegistryStore store(job.registryPath);
     if (!store.open()) {
-        emit logMessage(tr("[Test data] Failed to open registry: %1").arg(job.registryPath));
+        emit logMessage(tr("[Test data] Failed to open registry: %1")
+                                .arg(job.registryPath));
         emit finished(false, 0, 0, 0);
         return;
     }
@@ -269,17 +290,19 @@ void FaceDetectTestDataWorker::run() {
             if (!job.clearExistingEntries) {
                 bool alreadyRegistered = false;
                 for (const FaceRegistryEntry& existing : store.entries()) {
-                    if (existing.name.compare(entry.name, Qt::CaseInsensitive) == 0) {
+                    if (existing.name.compare(entry.name,
+                                              Qt::CaseInsensitive) == 0) {
                         alreadyRegistered = true;
                         break;
                     }
                 }
                 if (alreadyRegistered) {
-                    progress.advance(kWeightRegisterEmbed,
-                                     tr("Skipped %1 — already registered (%2/%3).")
-                                             .arg(entry.name)
-                                             .arg(i + 1)
-                                             .arg(total));
+                    progress.advance(
+                            kWeightRegisterEmbed,
+                            tr("Skipped %1 — already registered (%2/%3).")
+                                    .arg(entry.name)
+                                    .arg(i + 1)
+                                    .arg(total));
                     continue;
                 }
             }
@@ -294,8 +317,9 @@ void FaceDetectTestDataWorker::run() {
 
             QString imagePath = entry.imagePath;
             if (!job.bundle.extractRoot.isEmpty()) {
-                const QString fixed = FaceDetectTestData::fixedRegistrationImagePath(
-                        job.bundle.extractRoot, entry.name);
+                const QString fixed =
+                        FaceDetectTestData::fixedRegistrationImagePath(
+                                job.bundle.extractRoot, entry.name);
                 if (!fixed.isEmpty()) {
                     imagePath = fixed;
                 }
@@ -313,8 +337,8 @@ void FaceDetectTestDataWorker::run() {
 
             const QStringList candidates =
                     !job.bundle.extractRoot.isEmpty()
-                            ? registrationCandidatesForName(job.bundle.extractRoot,
-                                                            entry.name)
+                            ? registrationCandidatesForName(
+                                      job.bundle.extractRoot, entry.name)
                             : QStringList{imagePath};
 
             for (const QString& candidate : candidates) {
@@ -342,17 +366,21 @@ void FaceDetectTestDataWorker::run() {
             }
 
             if (!ok) {
-                err = QString::fromUtf8(aicore_facedetect_last_error(ctx) ?: "embed failed");
+                err = QString::fromUtf8(aicore_facedetect_last_error(ctx)
+                                                ?: "embed failed");
             }
             if (ok && registeredPath != imagePath) {
-                emit logMessage(tr("[Registry] %1: using registration photo %2")
-                                        .arg(entry.name, QFileInfo(registeredPath).fileName()));
+                emit logMessage(
+                        tr("[Registry] %1: using registration photo %2")
+                                .arg(entry.name,
+                                     QFileInfo(registeredPath).fileName()));
             }
             if (ok && usedTemplate) {
-                emit logMessage(tr("[Registry] %1: warning — template fallback embed "
-                                   "(%2); try query portrait for better matches.")
-                                        .arg(entry.name,
-                                             QFileInfo(registeredPath).fileName()));
+                emit logMessage(
+                        tr("[Registry] %1: warning — template fallback embed "
+                           "(%2); try query portrait for better matches.")
+                                .arg(entry.name,
+                                     QFileInfo(registeredPath).fileName()));
             }
             if (!ok) {
                 emit logMessage(tr("[Registry] %1: %2").arg(entry.name, err));
@@ -372,13 +400,13 @@ void FaceDetectTestDataWorker::run() {
             reg.thumbnail = thumb;
             if (store.addEntry(std::move(reg))) {
                 ++registered;
-                emit logMessage(tr("[Registry] Registered '%1'.").arg(entry.name));
+                emit logMessage(
+                        tr("[Registry] Registered '%1'.").arg(entry.name));
             }
-            progress.advance(kWeightRegisterEmbed,
-                             tr("Registered %1 (%2/%3).")
-                                     .arg(entry.name)
-                                     .arg(i + 1)
-                                     .arg(total));
+            progress.advance(kWeightRegisterEmbed, tr("Registered %1 (%2/%3).")
+                                                           .arg(entry.name)
+                                                           .arg(i + 1)
+                                                           .arg(total));
         }
     }
 
@@ -386,34 +414,42 @@ void FaceDetectTestDataWorker::run() {
     int authMatched = 0;
     if (job.runVerify && !job.bundle.authProbeImage.isEmpty()) {
         const QString probePath = job.bundle.authProbeImage;
-        progress.report(progress.completed(), tr("Detecting faces in probe image…"));
+        progress.report(progress.completed(),
+                        tr("Detecting faces in probe image…"));
         QImage rgb = FaceDetectEmbed::loadRgbForInference(probePath);
         const std::vector<FaceDetectBox> boxes =
                 FaceDetectEmbed::detectBoxesFromRgb(ctx, rgb);
 
         if (boxes.empty()) {
-            progress.advance(kWeightVerifyDetect,
-                             tr("No faces detected — fallback embed on probe…"));
+            progress.advance(
+                    kWeightVerifyDetect,
+                    tr("No faces detected — fallback embed on probe…"));
             std::vector<float> emb;
             QString err;
-            if (FaceDetectEmbed::embedImagePathWithFallback(ctx, probePath, &emb,
-                                                            job.minDetectionScore)) {
+            if (FaceDetectEmbed::embedImagePathWithFallback(
+                        ctx, probePath, &emb, job.minDetectionScore)) {
                 authFaces = 1;
-                progress.advance(kWeightVerifyEmbed, tr("Matching probe face…"));
-                if (store.bestMatch(emb, job.authThreshold).has_value()) ++authMatched;
+                progress.advance(kWeightVerifyEmbed,
+                                 tr("Matching probe face…"));
+                if (store.bestMatch(emb, job.authThreshold).has_value())
+                    ++authMatched;
             } else {
-                progress.advance(kWeightVerifyEmbed, tr("Verify embed failed."));
+                progress.advance(kWeightVerifyEmbed,
+                                 tr("Verify embed failed."));
             }
         } else {
             authFaces = static_cast<int>(boxes.size());
             const int plannedVerifyFaces = kVerifyFaceEstimate;
             if (authFaces > plannedVerifyFaces) {
-                progress.bumpTotal((authFaces - plannedVerifyFaces) * kWeightVerifyEmbed);
+                progress.bumpTotal((authFaces - plannedVerifyFaces) *
+                                   kWeightVerifyEmbed);
             } else if (authFaces < plannedVerifyFaces) {
-                progress.adjustTotal(-(plannedVerifyFaces - authFaces) * kWeightVerifyEmbed);
+                progress.adjustTotal(-(plannedVerifyFaces - authFaces) *
+                                     kWeightVerifyEmbed);
             }
-            progress.advance(kWeightVerifyDetect,
-                             tr("Detected %1 face(s) — matching…").arg(authFaces));
+            progress.advance(
+                    kWeightVerifyDetect,
+                    tr("Detected %1 face(s) — matching…").arg(authFaces));
 
             for (int i = 0; i < authFaces; ++i) {
                 const FaceDetectBox& box = boxes[static_cast<size_t>(i)];
@@ -439,25 +475,27 @@ void FaceDetectTestDataWorker::run() {
                                              .arg(authFaces));
                     continue;
                 }
-                const bool matched = store.bestMatch(emb, job.authThreshold).has_value();
+                const bool matched =
+                        store.bestMatch(emb, job.authThreshold).has_value();
                 if (matched) ++authMatched;
-                progress.advance(kWeightVerifyEmbed,
-                                 tr("Face %1/%2 %3.")
-                                         .arg(i + 1)
-                                         .arg(authFaces)
-                                         .arg(matched ? tr("matched") : tr("no match")));
+                progress.advance(
+                        kWeightVerifyEmbed,
+                        tr("Face %1/%2 %3.")
+                                .arg(i + 1)
+                                .arg(authFaces)
+                                .arg(matched ? tr("matched") : tr("no match")));
             }
         }
-        emit logMessage(tr("[Test data] Verify: %1 face(s), %2 matched (threshold %3).")
-                                .arg(authFaces)
-                                .arg(authMatched)
-                                .arg(job.authThreshold, 0, 'f', 2));
+        emit logMessage(
+                tr("[Test data] Verify: %1 face(s), %2 matched (threshold %3).")
+                        .arg(authFaces)
+                        .arg(authMatched)
+                        .arg(job.authThreshold, 0, 'f', 2));
     }
 
     progress.report(progress.total(), tr("Test data setup complete."));
-    const bool registerOk =
-            !job.registerGallery || registered > 0 ||
-            (allSkippedAlready && registerCount > 0);
+    const bool registerOk = !job.registerGallery || registered > 0 ||
+                            (allSkippedAlready && registerCount > 0);
     emit finished(registerOk, registered, authFaces, authMatched);
 #endif
 }

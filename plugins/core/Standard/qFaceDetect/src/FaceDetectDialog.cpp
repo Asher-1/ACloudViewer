@@ -7,13 +7,9 @@
 
 #include "FaceDetectDialog.h"
 
-#include "FaceDetectEmbedHelpers.h"
-#include "FaceDetectTestData.h"
-#include "FaceDetectTestDataWorker.h"
-#include "FaceDetectUiHelpers.h"
-#include "FaceLiveDetectWidget.h"
-#include "FaceRegistryWidget.h"
+#include <CVLog.h>
 
+#include <QCloseEvent>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -22,21 +18,23 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QSet>
 #include <QSettings>
 #include <QTabWidget>
-#include <QVBoxLayout>
-#include <QCloseEvent>
 #include <QTimer>
-#include <QSet>
-
+#include <QVBoxLayout>
 #include <algorithm>
 
+#include "FaceDetectEmbedHelpers.h"
+#include "FaceDetectTestData.h"
+#include "FaceDetectTestDataWorker.h"
+#include "FaceDetectUiHelpers.h"
+#include "FaceLiveDetectWidget.h"
+#include "FaceRegistryWidget.h"
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
-#include "ecvModelDownloader.h"
-
 #include "aicore/inference_log.h"
-#include <CVLog.h>
+#include "ecvModelDownloader.h"
 
 namespace {
 
@@ -59,7 +57,9 @@ bool isValidCachedGguf(const QFileInfo& fi) {
 
 }  // namespace
 
-QString FaceDetectDialog::modelCacheDir() { return FaceDetectEmbed::modelCacheDir(); }
+QString FaceDetectDialog::modelCacheDir() {
+    return FaceDetectEmbed::modelCacheDir();
+}
 
 QString FaceDetectDialog::registryPath() {
     return modelCacheDir() + QStringLiteral("/face_registry.db");
@@ -80,8 +80,10 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     QString savedVideo = savedManualVideo;
     if (savedVideo.isEmpty()) {
         const QString legacy =
-                settings.value(QStringLiteral("qFaceDetect/liveVideoPath")).toString();
-        if (!legacy.isEmpty() && !FaceDetectTestData::isFriendsBundlePath(legacy)) {
+                settings.value(QStringLiteral("qFaceDetect/liveVideoPath"))
+                        .toString();
+        if (!legacy.isEmpty() &&
+            !FaceDetectTestData::isFriendsBundlePath(legacy)) {
             savedVideo = legacy;
         }
     }
@@ -175,15 +177,15 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                         m_registryWidget->setRegistryPath(path, true);
                     }
                 });
-        connect(m_liveWidget, &FaceLiveDetectWidget::modelSelectionChanged, this,
-                [this](const QString& modelFilename) {
+        connect(m_liveWidget, &FaceLiveDetectWidget::modelSelectionChanged,
+                this, [this](const QString& modelFilename) {
                     if (!m_modelCombo || modelFilename.isEmpty()) return;
                     const int idx = m_modelCombo->findData(modelFilename);
                     if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
                     syncLiveConfig();
                 });
-        connect(m_liveWidget, &FaceLiveDetectWidget::deviceSelectionChanged, this,
-                [this](const QString& deviceId) {
+        connect(m_liveWidget, &FaceLiveDetectWidget::deviceSelectionChanged,
+                this, [this](const QString& deviceId) {
                     if (!m_deviceCombo) return;
                     const int idx = m_deviceCombo->findData(deviceId);
                     if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
@@ -195,17 +197,18 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     syncLiveConfig();
                 });
     } else {
-        liveLayout->addWidget(new QLabel(
-                tr("Live detect requires OpenCV videoio (enable BUILD_OPENCV).")));
+        liveLayout->addWidget(new QLabel(tr(
+                "Live detect requires OpenCV videoio (enable BUILD_OPENCV).")));
     }
     m_tabWidget->addTab(liveTab, tr("Live (camera / video)"));
 
     if (m_registryWidget && m_liveWidget) {
-        connect(m_registryWidget, &FaceRegistryWidget::registryPathChanged, this,
-                [this](const QString& path) {
+        connect(m_registryWidget, &FaceRegistryWidget::registryPathChanged,
+                this, [this](const QString& path) {
                     if (m_liveWidget) {
                         m_liveWidget->setRegistryPath(
-                                path, m_registryWidget->isRegistryPathUserChosen());
+                                path,
+                                m_registryWidget->isRegistryPathUserChosen());
                     }
                 });
     }
@@ -244,15 +247,17 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 }
                 if (!ok) {
                     if (wasRegistryJob) {
-                        QMessageBox::warning(
-                                this, tr("Test data setup failed"),
-                                tr("FriendsFaces registration did not complete.\n\n"
-                                   "Check the console log for details (registry path, "
-                                   "model availability)."));
+                        QMessageBox::warning(this, tr("Test data setup failed"),
+                                             tr("FriendsFaces registration did "
+                                                "not complete.\n\n"
+                                                "Check the console log for "
+                                                "details (registry path, "
+                                                "model availability)."));
                     } else {
                         QMessageBox::warning(
                                 this, tr("Test data setup failed"),
-                                tr("Could not extract FriendsFaces sample data.\n\n"
+                                tr("Could not extract FriendsFaces sample "
+                                   "data.\n\n"
                                    "Check the console log for details."));
                     }
                 } else {
@@ -267,20 +272,26 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                         }
                     }
                     if (wasRegistryJob && m_liveWidget && m_registryWidget) {
-                        m_liveWidget->setRegistryStore(m_registryWidget->store());
+                        m_liveWidget->setRegistryStore(
+                                m_registryWidget->store());
                     }
                     FaceDetectFriendsBundle bundle;
                     if (tryResolveFriendsTestBundle(&bundle)) {
                         if (wasRegistryJob && m_registryWidget) {
-                            m_registryWidget->fillFriendsTestBundleFields(bundle);
+                            m_registryWidget->fillFriendsTestBundleFields(
+                                    bundle);
                         }
-                        if (wasRegistryJob && m_liveWidget && m_registryWidget) {
+                        if (wasRegistryJob && m_liveWidget &&
+                            m_registryWidget) {
                             m_liveWidget->setRegistryPath(
                                     m_registryWidget->registryPath(),
-                                    m_registryWidget->isRegistryPathUserChosen());
+                                    m_registryWidget
+                                            ->isRegistryPathUserChosen());
                         }
-                        if (m_testPostFillLiveVideo || m_testPostFillBatchImage) {
-                            applyFriendsTestDataPaths(bundle, m_testPostFillLiveVideo,
+                        if (m_testPostFillLiveVideo ||
+                            m_testPostFillBatchImage) {
+                            applyFriendsTestDataPaths(bundle,
+                                                      m_testPostFillLiveVideo,
                                                       m_testPostFillBatchImage);
                         }
                     }
@@ -289,7 +300,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 m_testPostFillLiveVideo = false;
                 m_testPostFillBatchImage = false;
                 if (wasRegistryJob) {
-                    appendLog(tr("[Test data] Done — registered %1, verify %2/%3 face(s).")
+                    appendLog(tr("[Test data] Done — registered %1, verify "
+                                 "%2/%3 face(s).")
                                       .arg(registered)
                                       .arg(authMatched)
                                       .arg(authFaces));
@@ -297,8 +309,9 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     appendLog(tr("[Test data] Done — sample paths ready."));
                 }
                 QTimer::singleShot(1500, this, [this]() {
-                    if (!m_testDataDownloadInProgress && !m_downloadInProgress &&
-                        !m_testDataProcessing && m_downloadLabel) {
+                    if (!m_testDataDownloadInProgress &&
+                        !m_downloadInProgress && !m_testDataProcessing &&
+                        m_downloadLabel) {
                         m_downloadLabel->setVisible(false);
                     }
                     if (m_progress && !m_testDataDownloadInProgress &&
@@ -321,8 +334,9 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     m_downloadLabel->setText(
                             tr("Downloading %1 — %2")
                                     .arg(m_modelCombo->currentData().toString())
-                                    .arg(ecvModelDownloader::formatDownloadProgress(
-                                            received, total)));
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
                 }
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -346,20 +360,22 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             &FaceDetectDialog::appendLog);
     connect(m_testDataDownloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
-                if (!m_testDataDownloadInProgress || total <= 0 || !m_progress) {
+                if (!m_testDataDownloadInProgress || total <= 0 ||
+                    !m_progress) {
                     return;
                 }
                 if (m_progress) m_progress->setVisible(true);
                 if (m_downloadLabel) m_downloadLabel->setVisible(true);
                 m_progress->setMaximum(kTestDataOverallMax);
-                m_progress->setValue(
-                        static_cast<int>(received * kTestDataDownloadShare / total));
+                m_progress->setValue(static_cast<int>(
+                        received * kTestDataDownloadShare / total));
                 m_progress->setFormat(tr("%p%"));
                 if (m_downloadLabel) {
                     m_downloadLabel->setText(
                             tr("Downloading FriendsFaces test data — %1")
-                                    .arg(ecvModelDownloader::formatDownloadProgress(
-                                            received, total)));
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
                 }
             });
     connect(m_testDataDownloader, &ecvModelDownloader::finished, this,
@@ -383,13 +399,16 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
                     if (m_progress) m_progress->setVisible(false);
-                    appendLog(tr("[Test data] Download rejected: friends_faces.zip "
-                                 "failed MD5 integrity check (incomplete or corrupted)."));
-                    QMessageBox::warning(
-                            this, tr("Test data download"),
-                            tr("The downloaded friends_faces.zip failed integrity "
-                               "verification and was removed.\n\nPlease retry the "
-                               "download."));
+                    appendLog(tr(
+                            "[Test data] Download rejected: friends_faces.zip "
+                            "failed MD5 integrity check (incomplete or "
+                            "corrupted)."));
+                    QMessageBox::warning(this, tr("Test data download"),
+                                         tr("The downloaded friends_faces.zip "
+                                            "failed integrity "
+                                            "verification and was "
+                                            "removed.\n\nPlease retry the "
+                                            "download."));
                     return;
                 }
                 appendLog(tr("[Test data] Downloaded %1 (MD5 OK)").arg(dest));
@@ -397,8 +416,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 FaceDetectFriendsBundle bundle;
                 m_testDataPostProgressBase = kTestDataDownloadShare;
                 const bool clearExisting = m_testClearExistingEntries;
-                startTestDataPostProcess(bundle, fillRegistry, fillLive, fillBatch,
-                                         true, dest, clearExisting);
+                startTestDataPostProcess(bundle, fillRegistry, fillLive,
+                                         fillBatch, true, dest, clearExisting);
             });
     CVLog::Print(QString("[FaceDetect] Model cache: %1").arg(modelCacheDir()));
     aicore_inference_log::log_backend_probe(QStringLiteral("FaceDetect"));
@@ -427,12 +446,13 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     testRow->setContentsMargins(0, 0, 0, 0);
     testRow->setSpacing(6);
     auto* testDataBtn = new QPushButton(tr("Use test data"));
-    testDataBtn->setToolTip(
-            tr("Download FriendsFaces sample pack and fill batch image path "
-               "(does not register identities — use Registry / Auth tab for that).\n\n"
-               "Downloads the FriendsFaces sample pack and fills the batch image "
-               "path (group photo). Does not register identities — use "
-               "Registry / Auth for enrollment and authentication."));
+    testDataBtn->setToolTip(tr(
+            "Download FriendsFaces sample pack and fill batch image path "
+            "(does not register identities — use Registry / Auth tab for "
+            "that).\n\n"
+            "Downloads the FriendsFaces sample pack and fills the batch image "
+            "path (group photo). Does not register identities — use "
+            "Registry / Auth for enrollment and authentication."));
     connect(testDataBtn, &QPushButton::clicked, this,
             [this]() { ensureFriendsTestData(false, false, true); });
     testRow->addWidget(testDataBtn, 0);
@@ -454,7 +474,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     modelLayout->addWidget(pipelineHint, 0, 0, 1, 4);
 
     m_modelCombo = new QComboBox;
-    modelLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 1, 0);
+    modelLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 1,
+                           0);
     modelLayout->addWidget(m_modelCombo, 1, 1);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FaceDetectDialog::onModelComboChanged);
@@ -475,7 +496,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
 
     m_variantHintLabel = new QLabel;
     m_variantHintLabel->setWordWrap(true);
-    m_variantHintLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    m_variantHintLabel->setSizePolicy(QSizePolicy::Preferred,
+                                      QSizePolicy::Maximum);
     m_variantHintLabel->setStyleSheet(
             "color: #333; background: #f3e8ff; border: 1px solid #c4b5fd; "
             "padding: 2px 6px; border-radius: 4px; font-size: 11px;");
@@ -484,7 +506,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_customModelRow = new QWidget;
     auto* customLayout = new QHBoxLayout(m_customModelRow);
     m_customModelPath = new QLineEdit;
-    auto* browseModel = FaceDetectUi::makeBrowseButton(tr("Browse…"), m_customModelRow);
+    auto* browseModel =
+            FaceDetectUi::makeBrowseButton(tr("Browse…"), m_customModelRow);
     connect(browseModel, &QPushButton::clicked, this,
             &FaceDetectDialog::onBrowseCustomModel);
     customLayout->addWidget(m_customModelPath, 1);
@@ -532,8 +555,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     modelLayout->addWidget(m_deviceCombo, 5, 1);
     modelLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Threads:")), 5, 2);
     modelLayout->addWidget(m_threads, 5, 3, Qt::AlignLeft);
-    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 syncRegistryModelControlsFromBatch();
                 syncLiveConfig();
             });
@@ -554,11 +577,11 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_linkMatchThresholdsCheck =
             new QCheckBox(tr("Link match threshold across tabs"), modelGroup);
     m_linkMatchThresholdsCheck->setChecked(true);
-    m_linkMatchThresholdsCheck->setToolTip(
-            tr("When enabled, changing match threshold on any tab updates Batch "
-               "Verify, Registry Auth, and Live Recognize."));
-    m_applyMatchThresholdBtn = new QPushButton(tr("Apply match threshold to all tabs"),
-                                               modelGroup);
+    m_linkMatchThresholdsCheck->setToolTip(tr(
+            "When enabled, changing match threshold on any tab updates Batch "
+            "Verify, Registry Auth, and Live Recognize."));
+    m_applyMatchThresholdBtn = new QPushButton(
+            tr("Apply match threshold to all tabs"), modelGroup);
     auto* matchThreshRow = new QHBoxLayout;
     matchThreshRow->setContentsMargins(0, 0, 0, 0);
     matchThreshRow->addWidget(m_linkMatchThresholdsCheck);
@@ -608,7 +631,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_secondImagePath->setPlaceholderText(tr("Second image for Verify mode"));
     connect(m_secondImagePath, &QLineEdit::textChanged, this,
             [this](const QString&) { updateSecondImagePreview(); });
-    auto* browseSecond = FaceDetectUi::makeBrowseButton(tr("Browse…"), m_secondImageRow);
+    auto* browseSecond =
+            FaceDetectUi::makeBrowseButton(tr("Browse…"), m_secondImageRow);
     connect(browseSecond, &QPushButton::clicked, this,
             &FaceDetectDialog::onBrowseSecondImage);
     secondLayout->addWidget(new QLabel(tr("Image B:")));
@@ -641,10 +665,12 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_verifyMinDetectionScore = FaceDetectUi::makeMinDetectionScoreSpin(
             m_verifyOptionsRow, m_minDetectionScore->toolTip());
     m_antiSpoofCheck = new QCheckBox(tr("Anti-spoof veto (MiniFASNet)"));
-    verifyLayout->addWidget(
-            FaceDetectUi::makeFormLabel(tr("Match threshold (max cosine dist):")), 0, 0);
+    verifyLayout->addWidget(FaceDetectUi::makeFormLabel(
+                                    tr("Match threshold (max cosine dist):")),
+                            0, 0);
     verifyLayout->addWidget(m_verifyThreshold, 0, 1);
-    verifyLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Min detection score:")), 0, 2);
+    verifyLayout->addWidget(
+            FaceDetectUi::makeFormLabel(tr("Min detection score:")), 0, 2);
     verifyLayout->addWidget(m_verifyMinDetectionScore, 0, 3);
     verifyLayout->addWidget(m_antiSpoofCheck, 1, 0, 1, 4);
     verifyLayout->setColumnStretch(1, 1);
@@ -694,7 +720,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_cancelBtn = new QPushButton(tr("Cancel"));
     m_cancelBtn->setEnabled(false);
     connect(m_runBtn, &QPushButton::clicked, this, &FaceDetectDialog::onRun);
-    connect(m_cancelBtn, &QPushButton::clicked, this, &FaceDetectDialog::onCancel);
+    connect(m_cancelBtn, &QPushButton::clicked, this,
+            &FaceDetectDialog::onCancel);
     btnRow->addStretch();
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
@@ -709,16 +736,17 @@ void FaceDetectDialog::populateModelCombo() {
         const aicore_facedetect_model_entry* m =
                 aicore_facedetect_detector_model_at(i);
         if (!m) continue;
-        const QFileInfo fi(cache + QLatin1Char('/') + QString::fromUtf8(m->filename));
+        const QFileInfo fi(cache + QLatin1Char('/') +
+                           QString::fromUtf8(m->filename));
         const QString suffix =
                 isValidCachedGguf(fi)
-                        ? QString(" [%1] ✓")
-                                  .arg(ecvModelDownloader::formatFileSize(fi.size()))
+                        ? QString(" [%1] ✓").arg(
+                                  ecvModelDownloader::formatFileSize(fi.size()))
                         : QString(" [download]");
-        m_modelCombo->addItem(
-                QCoreApplication::translate("FaceDetectModels", m->display_name) +
-                        suffix,
-                QString::fromUtf8(m->filename));
+        m_modelCombo->addItem(QCoreApplication::translate("FaceDetectModels",
+                                                          m->display_name) +
+                                      suffix,
+                              QString::fromUtf8(m->filename));
     }
     m_modelCombo->addItem(tr("Custom..."), "CUSTOM");
     onModelComboChanged(m_modelCombo->currentIndex());
@@ -726,11 +754,14 @@ void FaceDetectDialog::populateModelCombo() {
 }
 
 void FaceDetectDialog::syncRegistryModelControlsFromBatch() {
-    if (!m_registryWidget || !m_modelCombo || !m_deviceCombo || !m_threads) return;
-    m_registryWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo, m_threads);
+    if (!m_registryWidget || !m_modelCombo || !m_deviceCombo || !m_threads)
+        return;
+    m_registryWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
+                                            m_threads);
     m_registryWidget->setModelPath(resolveModelPath());
     if (m_liveWidget) {
-        m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo, m_threads);
+        m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
+                                            m_threads);
     }
 }
 
@@ -749,15 +780,17 @@ void FaceDetectDialog::populateLandmarkModelCombo() {
         const QFileInfo fi(cache + QLatin1Char('/') + fn);
         const QString suffix =
                 isValidCachedGguf(fi)
-                        ? QString(" [%1] ✓")
-                                  .arg(ecvModelDownloader::formatFileSize(fi.size()))
+                        ? QString(" [%1] ✓").arg(
+                                  ecvModelDownloader::formatFileSize(fi.size()))
                         : QString(" [download]");
         m_landmarkModelCombo->addItem(
-                QCoreApplication::translate("FaceDetectModels", m->display_name) +
+                QCoreApplication::translate("FaceDetectModels",
+                                            m->display_name) +
                         suffix,
                 fn);
     }
-    // Catalog may be empty in older AICore builds — still list GGUFs found on disk.
+    // Catalog may be empty in older AICore builds — still list GGUFs found on
+    // disk.
     const QString diskDefault = defaultLandmarkModelPathOnDisk();
     if (!diskDefault.isEmpty()) {
         const QString fn = QFileInfo(diskDefault).fileName();
@@ -780,7 +813,8 @@ void FaceDetectDialog::syncLandmarkPathFromCombo() {
     if (!m_landmarkModelCombo || !m_customLandmarkModelPath) return;
     const QString data = m_landmarkModelCombo->currentData().toString();
     if (data.isEmpty() || data == QStringLiteral("CUSTOM")) return;
-    m_customLandmarkModelPath->setText(modelCacheDir() + QLatin1Char('/') + data);
+    m_customLandmarkModelPath->setText(modelCacheDir() + QLatin1Char('/') +
+                                       data);
 }
 
 void FaceDetectDialog::selectDefaultLandmarkModel() {
@@ -822,7 +856,8 @@ FaceDetectDialog::Settings FaceDetectDialog::getSettings() const {
     s.mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     s.verifyThreshold = static_cast<float>(m_verifyThreshold->value());
     if (m_verifyMinDetectionScore && s.mode == Mode::Verify) {
-        s.minDetectionScore = static_cast<float>(m_verifyMinDetectionScore->value());
+        s.minDetectionScore =
+                static_cast<float>(m_verifyMinDetectionScore->value());
     } else if (m_minDetectionScore) {
         s.minDetectionScore = static_cast<float>(m_minDetectionScore->value());
     }
@@ -1107,7 +1142,8 @@ void FaceDetectDialog::syncLiveConfig() {
                                : QStringLiteral("auto");
     cfg.threads = m_threads ? m_threads->value() : 0;
     if (m_liveWidget && m_modelCombo) {
-        m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo, m_threads);
+        m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
+                                            m_threads);
         cfg.modelPath = m_liveWidget->resolveModelPath();
         cfg.device = m_liveWidget->deviceId();
         cfg.threads = m_liveWidget->threadCount();
@@ -1116,7 +1152,8 @@ void FaceDetectDialog::syncLiveConfig() {
         cfg.registry = m_registryWidget->store();
     }
     if (m_minDetectionScore) {
-        cfg.minDetectionScore = static_cast<float>(m_minDetectionScore->value());
+        cfg.minDetectionScore =
+                static_cast<float>(m_minDetectionScore->value());
     }
 
     m_liveWidget->setConfig(cfg);
@@ -1151,13 +1188,13 @@ void FaceDetectDialog::onLiveStreamModeChanged(int streamMode,
     syncLiveConfig();
     const FaceRegistryStore* store =
             m_registryWidget ? m_registryWidget->store() : nullptr;
-    const bool valid =
-            store && store->isOpen() && !store->entries().empty();
+    const bool valid = store && store->isOpen() && !store->entries().empty();
     if (valid) return;
 
-    appendLog(tr("[Live] Registry DB invalid or empty — Recognize mode requires "
-                 "registered identities. Open Registry / Auth tab and register "
-                 "faces (Use test data or manual)."));
+    appendLog(
+            tr("[Live] Registry DB invalid or empty — Recognize mode requires "
+               "registered identities. Open Registry / Auth tab and register "
+               "faces (Use test data or manual)."));
 
     if (showUserPrompt) {
         QMessageBox::information(
@@ -1199,9 +1236,12 @@ void FaceDetectDialog::onLiveStart() {
         if (!store || !store->isOpen() || store->entries().empty()) {
             QMessageBox::information(
                     this, tr("Recognize unavailable"),
-                    tr("Recognize mode is unavailable: the face registry database is "
-                       "missing, could not be opened, or has no enrolled identities.\n\n"
-                       "Open the Registry / Auth tab, click Use test data or register "
+                    tr("Recognize mode is unavailable: the face registry "
+                       "database is "
+                       "missing, could not be opened, or has no enrolled "
+                       "identities.\n\n"
+                       "Open the Registry / Auth tab, click Use test data or "
+                       "register "
                        "faces manually, then try Recognize again."));
             if (m_tabWidget && m_registryWidget) {
                 m_tabWidget->setCurrentWidget(m_registryWidget);
@@ -1210,7 +1250,8 @@ void FaceDetectDialog::onLiveStart() {
         }
     }
 
-    if (m_liveWidget->inputSource() == FaceLiveDetectWidget::InputSource::VideoFile) {
+    if (m_liveWidget->inputSource() ==
+        FaceLiveDetectWidget::InputSource::VideoFile) {
         const QString path = m_liveWidget->videoFilePath();
         if (path.isEmpty() || !QFile::exists(path)) {
             appendLog(tr("[Live] Select a valid video file first."));
@@ -1245,7 +1286,8 @@ void FaceDetectDialog::onModelComboChanged(int index) {
 
     QString hint;
     if (const aicore_facedetect_model_entry* m =
-                aicore_facedetect_model_by_filename(data.toUtf8().constData())) {
+                aicore_facedetect_model_by_filename(
+                        data.toUtf8().constData())) {
         hint = QCoreApplication::translate("FaceDetectModels", m->quant_note) +
                QStringLiteral(" — ") +
                QCoreApplication::translate("FaceDetectModels", m->license_note);
@@ -1261,7 +1303,8 @@ void FaceDetectDialog::onModelComboChanged(int index) {
 void FaceDetectDialog::onAuthResultImageReady(const QImage& annotated,
                                               const QString& summary) {
     if (annotated.isNull()) return;
-    appendLog(tr("[Registry] Exporting authentication visualization to DB tree."));
+    appendLog(tr(
+            "[Registry] Exporting authentication visualization to DB tree."));
     emit authVisualizationReady(annotated, summary);
 }
 
@@ -1273,8 +1316,9 @@ bool FaceDetectDialog::ensureModelAvailable() {
     if (!QFile::exists(path) || !isValidCachedGguf(QFileInfo(path))) {
         const QString data = m_modelCombo->currentData().toString();
         if (data == "CUSTOM") {
-            QMessageBox::warning(this, tr("Model missing"),
-                                 tr("Custom detector model not found:\n%1").arg(path));
+            QMessageBox::warning(
+                    this, tr("Model missing"),
+                    tr("Custom detector model not found:\n%1").arg(path));
             return false;
         }
         if (const aicore_facedetect_model_entry* m =
@@ -1291,7 +1335,8 @@ bool FaceDetectDialog::ensureModelAvailable() {
 
     const QString landmarkPath = resolveLandmarkModelPath();
     if (landmarkPath.isEmpty()) {
-        appendLog(tr("[Error] Landmark model required for Dense Landmarks mode."));
+        appendLog(tr(
+                "[Error] Landmark model required for Dense Landmarks mode."));
         return false;
     }
     if (QFile::exists(landmarkPath) &&
@@ -1314,7 +1359,8 @@ bool FaceDetectDialog::ensureModelAvailable() {
     }
 
     const aicore_facedetect_model_entry* m =
-            aicore_facedetect_model_by_filename(lmFilename.toUtf8().constData());
+            aicore_facedetect_model_by_filename(
+                    lmFilename.toUtf8().constData());
     if (!m) {
         appendLog(tr("[Error] No landmark model catalog entry for %1.")
                           .arg(lmFilename));
@@ -1336,9 +1382,8 @@ void FaceDetectDialog::startDownload(
         const aicore_facedetect_model_entry* model) {
     if (!model || m_downloadInProgress) return;
     QDir().mkpath(modelCacheDir());
-    const QString dest =
-            modelCacheDir() + QLatin1Char('/') +
-            QString::fromUtf8(model->filename);
+    const QString dest = modelCacheDir() + QLatin1Char('/') +
+                         QString::fromUtf8(model->filename);
     m_downloadInProgress = true;
     m_autoRunAfterDownload = true;
     m_downloadLabel->setVisible(true);
@@ -1376,13 +1421,16 @@ void FaceDetectDialog::onRun() {
         }
         const QString landmarkPath = resolveLandmarkModelPath();
         if (landmarkPath.isEmpty() || !QFileInfo::exists(landmarkPath)) {
-            appendLog(tr("[Error] Landmark model required for Dense Landmarks mode."));
+            appendLog(
+                    tr("[Error] Landmark model required for Dense Landmarks "
+                       "mode."));
             QMessageBox::warning(
                     this, tr("Landmark model required"),
                     tr("Select or download a landmark GGUF model.\n\n"
                        "Expected default:\n%1")
                             .arg(modelCacheDir() +
-                                 QStringLiteral("/landmarks-2d106-1k3d68.gguf")));
+                                 QStringLiteral(
+                                         "/landmarks-2d106-1k3d68.gguf")));
             return;
         }
     }
@@ -1412,8 +1460,10 @@ void FaceDetectDialog::loadBatchSettings() {
     m_batchImagePathUserChosen = !imagePath.isEmpty();
     if (imagePath.isEmpty()) {
         const QString legacy =
-                settings.value(QStringLiteral("qFaceDetect/batchImagePath")).toString();
-        if (!legacy.isEmpty() && !FaceDetectTestData::isFriendsBundlePath(legacy)) {
+                settings.value(QStringLiteral("qFaceDetect/batchImagePath"))
+                        .toString();
+        if (!legacy.isEmpty() &&
+            !FaceDetectTestData::isFriendsBundlePath(legacy)) {
             imagePath = legacy;
             m_batchImagePathUserChosen = true;
         }
@@ -1425,19 +1475,24 @@ void FaceDetectDialog::loadBatchSettings() {
             settings.value(QStringLiteral("qFaceDetect/model")).toString();
     const QString device =
             settings.value(QStringLiteral("qFaceDetect/device")).toString();
-    const int threads = settings.value(QStringLiteral("qFaceDetect/threads"), 0).toInt();
+    const int threads =
+            settings.value(QStringLiteral("qFaceDetect/threads"), 0).toInt();
     const double minScore =
             settings.value(QStringLiteral("qFaceDetect/minDetectionScore"), 0.5)
                     .toDouble();
     const double verifyThresh =
             settings.value(QStringLiteral("qFaceDetect/matchThreshold"),
-                           settings.value(QStringLiteral("qFaceDetect/verifyThreshold"),
-                                          0.52))
+                           settings.value(
+                                   QStringLiteral(
+                                           "qFaceDetect/verifyThreshold"),
+                                   0.52))
                     .toDouble();
     const bool antiSpoof =
-            settings.value(QStringLiteral("qFaceDetect/antiSpoof"), false).toBool();
+            settings.value(QStringLiteral("qFaceDetect/antiSpoof"), false)
+                    .toBool();
     const bool addAnnotated =
-            settings.value(QStringLiteral("qFaceDetect/addAnnotated"), true).toBool();
+            settings.value(QStringLiteral("qFaceDetect/addAnnotated"), true)
+                    .toBool();
 
     if (m_modeCombo) {
         const int idx = m_modeCombo->findData(mode);
@@ -1453,7 +1508,8 @@ void FaceDetectDialog::loadBatchSettings() {
     }
     if (m_threads) m_threads->setValue(threads);
     if (m_minDetectionScore) m_minDetectionScore->setValue(minScore);
-    if (m_verifyMinDetectionScore) m_verifyMinDetectionScore->setValue(minScore);
+    if (m_verifyMinDetectionScore)
+        m_verifyMinDetectionScore->setValue(minScore);
     if (m_verifyThreshold) m_verifyThreshold->setValue(verifyThresh);
     if (m_antiSpoofCheck) m_antiSpoofCheck->setChecked(antiSpoof);
     if (m_addAnnotatedCheck) m_addAnnotatedCheck->setChecked(addAnnotated);
@@ -1462,9 +1518,11 @@ void FaceDetectDialog::loadBatchSettings() {
         m_batchImagePathUserChosen = true;
     }
     const QString landmarkFn =
-            settings.value(QStringLiteral("qFaceDetect/landmarkModel")).toString();
+            settings.value(QStringLiteral("qFaceDetect/landmarkModel"))
+                    .toString();
     const QString landmarkPath =
-            settings.value(QStringLiteral("qFaceDetect/landmarkModelPath")).toString();
+            settings.value(QStringLiteral("qFaceDetect/landmarkModelPath"))
+                    .toString();
     if (m_landmarkModelCombo && !landmarkFn.isEmpty()) {
         const int idx = m_landmarkModelCombo->findData(landmarkFn);
         if (idx >= 0) {
@@ -1515,7 +1573,8 @@ void FaceDetectDialog::saveBatchSettings() const {
                           m_deviceCombo->currentData());
     }
     if (m_threads) {
-        settings.setValue(QStringLiteral("qFaceDetect/threads"), m_threads->value());
+        settings.setValue(QStringLiteral("qFaceDetect/threads"),
+                          m_threads->value());
     }
     if (m_minDetectionScore) {
         settings.setValue(QStringLiteral("qFaceDetect/minDetectionScore"),
@@ -1548,12 +1607,14 @@ void FaceDetectDialog::saveBatchSettings() const {
     }
 }
 
-bool FaceDetectDialog::tryResolveFriendsTestBundle(FaceDetectFriendsBundle* out) {
+bool FaceDetectDialog::tryResolveFriendsTestBundle(
+        FaceDetectFriendsBundle* out) {
     return out != nullptr && FaceDetectTestData::resolveBundle(out);
 }
 
 void FaceDetectDialog::applyFriendsTestDataPaths(
-        const FaceDetectFriendsBundle& bundle, bool fillLiveVideo,
+        const FaceDetectFriendsBundle& bundle,
+        bool fillLiveVideo,
         bool fillBatchImage) {
     if (fillLiveVideo && m_liveWidget && !bundle.videoPath.isEmpty()) {
         m_liveWidget->selectVideoFileSource();
@@ -1578,7 +1639,8 @@ void FaceDetectDialog::applyFriendsTestDataPaths(
             appendLog(tr("[Test data] Verify Image A: %1").arg(imageA));
             appendLog(tr("[Test data] Verify Image B: %1").arg(imageB));
         } else {
-            appendLog(tr("[Test data] Could not resolve verify portrait pair."));
+            appendLog(
+                    tr("[Test data] Could not resolve verify portrait pair."));
         }
         return;
     }
@@ -1587,7 +1649,8 @@ void FaceDetectDialog::applyFriendsTestDataPaths(
     if (!groupPhoto.isEmpty()) {
         m_imagePath->setText(groupPhoto);
         updateImagePreview();
-        appendLog(tr("[Test data] Batch image (group photo): %1").arg(groupPhoto));
+        appendLog(tr("[Test data] Batch image (group photo): %1")
+                          .arg(groupPhoto));
     } else if (!bundle.batchImage.isEmpty()) {
         m_imagePath->setText(bundle.batchImage);
         updateImagePreview();
@@ -1595,10 +1658,11 @@ void FaceDetectDialog::applyFriendsTestDataPaths(
     }
 }
 
-void FaceDetectDialog::applyFriendsTestBundle(const FaceDetectFriendsBundle& bundle,
-                                              bool fillRegistry,
-                                              bool fillLiveVideo,
-                                              bool fillBatchImage) {
+void FaceDetectDialog::applyFriendsTestBundle(
+        const FaceDetectFriendsBundle& bundle,
+        bool fillRegistry,
+        bool fillLiveVideo,
+        bool fillBatchImage) {
     if (!fillRegistry) {
         applyFriendsTestDataPaths(bundle, fillLiveVideo, fillBatchImage);
         return;
@@ -1622,17 +1686,22 @@ void FaceDetectDialog::applyFriendsTestBundle(const FaceDetectFriendsBundle& bun
             m_registryWidget->setRegistryPath(registryPath, false);
         }
 
-        const bool needsGallery =
-                !bundle.galleryEntries.isEmpty() || !bundle.extractRoot.isEmpty();
+        const bool needsGallery = !bundle.galleryEntries.isEmpty() ||
+                                  !bundle.extractRoot.isEmpty();
         if (needsGallery) {
             if (!ensureModelAvailable()) {
-                appendLog(tr("[Test data] Face model required before gallery registration."));
+                appendLog(
+                        tr("[Test data] Face model required before gallery "
+                           "registration."));
             } else {
-                startTestDataPostProcess(bundle, true, fillLiveVideo, fillBatchImage,
-                                         false, QString(), m_testClearExistingEntries);
+                startTestDataPostProcess(bundle, true, fillLiveVideo,
+                                         fillBatchImage, false, QString(),
+                                         m_testClearExistingEntries);
             }
         } else {
-            appendLog(tr("[Test data] Registry path ready — no gallery to register."));
+            appendLog(
+                    tr("[Test data] Registry path ready — no gallery to "
+                       "register."));
         }
     }
 }
@@ -1644,7 +1713,8 @@ void FaceDetectDialog::setTestDataBusy(bool busy) {
     if (m_liveWidget) m_liveWidget->setEnabled(!busy);
 }
 
-void FaceDetectDialog::updateTestDataProgress(int current, int total,
+void FaceDetectDialog::updateTestDataProgress(int current,
+                                              int total,
                                               const QString& label) {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
@@ -1655,9 +1725,9 @@ void FaceDetectDialog::updateTestDataProgress(int current, int total,
         m_progress->setMaximum(kTestDataOverallMax);
         if (total > 0) {
             const int span = kTestDataOverallMax - m_testDataPostProgressBase;
-            const int value =
-                    m_testDataPostProgressBase +
-                    static_cast<int>(static_cast<qint64>(current) * span / total);
+            const int value = m_testDataPostProgressBase +
+                              static_cast<int>(static_cast<qint64>(current) *
+                                               span / total);
             m_progress->setValue(std::min(value, kTestDataOverallMax));
             m_progress->setFormat(tr("%p%"));
         } else {
@@ -1667,13 +1737,14 @@ void FaceDetectDialog::updateTestDataProgress(int current, int total,
     }
 }
 
-void FaceDetectDialog::startTestDataPostProcess(const FaceDetectFriendsBundle& bundle,
-                                                bool fillRegistry,
-                                                bool fillLiveVideo,
-                                                bool fillBatchImage,
-                                                bool extractZipFirst,
-                                                const QString& zipPath,
-                                                bool clearExistingEntries) {
+void FaceDetectDialog::startTestDataPostProcess(
+        const FaceDetectFriendsBundle& bundle,
+        bool fillRegistry,
+        bool fillLiveVideo,
+        bool fillBatchImage,
+        bool extractZipFirst,
+        const QString& zipPath,
+        bool clearExistingEntries) {
     if (m_testDataProcessing) {
         appendLog(tr("[Test data] Setup already in progress."));
         return;
@@ -1702,7 +1773,9 @@ void FaceDetectDialog::startTestDataPostProcess(const FaceDetectFriendsBundle& b
 
     if (fillRegistry) {
         if (!ensureModelAvailable()) {
-            appendLog(tr("[Test data] Face model required before gallery registration."));
+            appendLog(
+                    tr("[Test data] Face model required before gallery "
+                       "registration."));
             return;
         }
         job.modelPath = resolveModelPath();
@@ -1717,9 +1790,8 @@ void FaceDetectDialog::startTestDataPostProcess(const FaceDetectFriendsBundle& b
         }
 
         if (job.registryPath.isEmpty() && !bundle.extractRoot.isEmpty()) {
-            job.registryPath =
-                    FaceDetectTestData::registryPathForModel(bundle.extractRoot,
-                                                             modelFilename);
+            job.registryPath = FaceDetectTestData::registryPathForModel(
+                    bundle.extractRoot, modelFilename);
         }
     }
 
@@ -1731,8 +1803,8 @@ void FaceDetectDialog::startTestDataPostProcess(const FaceDetectFriendsBundle& b
     if (fillRegistry && m_registryWidget) {
         m_registryWidget->releaseStoreConnection();
     }
-    if (extractZipFirst && m_testDataPostProgressBase == 0 &&
-        m_progress && m_progress->value() >= kTestDataDownloadShare) {
+    if (extractZipFirst && m_testDataPostProgressBase == 0 && m_progress &&
+        m_progress->value() >= kTestDataDownloadShare) {
         m_testDataPostProgressBase = kTestDataDownloadShare;
     } else if (!extractZipFirst) {
         m_testDataPostProgressBase = 0;
@@ -1763,9 +1835,12 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     m_testFillBatchImage = fillBatchImage;
     QDir().mkpath(FaceDetectTestData::downloadDir());
     const QString zipPath = FaceDetectTestData::zipPath();
-    if (QFileInfo::exists(zipPath) && !FaceDetectTestData::verifyZipFile(zipPath)) {
+    if (QFileInfo::exists(zipPath) &&
+        !FaceDetectTestData::verifyZipFile(zipPath)) {
         QFile::remove(zipPath);
-        appendLog(tr("[Test data] Removed cached friends_faces.zip (MD5 mismatch)."));
+        appendLog(
+                tr("[Test data] Removed cached friends_faces.zip (MD5 "
+                   "mismatch)."));
     }
     ecvModelDownloader::removeInvalidCacheFile(zipPath, 30 * 1024 * 1024);
     m_testDataDownloadInProgress = true;
@@ -1789,7 +1864,8 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     m_testDataDownloader->download(req);
 }
 
-void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry, bool fillLiveVideo,
+void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry,
+                                             bool fillLiveVideo,
                                              bool fillBatchImage) {
     if (m_testDataDownloadInProgress || m_testDataProcessing) {
         appendLog(tr("[Test data] Already in progress."));
@@ -1818,15 +1894,16 @@ void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry, bool fillLiveVid
         setTestDataBusy(true);
         if (m_downloadLabel) {
             m_downloadLabel->setVisible(true);
-            m_downloadLabel->setText(tr("Extracting cached FriendsFaces archive…"));
+            m_downloadLabel->setText(
+                    tr("Extracting cached FriendsFaces archive…"));
         }
         if (m_progress) {
             m_progress->setVisible(true);
             m_progress->setMaximum(0);
         }
-        startTestDataPostProcess(bundle, fillRegistry, fillLiveVideo, fillBatchImage,
-                                 true, FaceDetectTestData::zipPath(),
-                                 m_testClearExistingEntries);
+        startTestDataPostProcess(
+                bundle, fillRegistry, fillLiveVideo, fillBatchImage, true,
+                FaceDetectTestData::zipPath(), m_testClearExistingEntries);
         return;
     }
     startFriendsTestDataDownload(fillRegistry, fillLiveVideo, fillBatchImage);
@@ -1938,8 +2015,8 @@ void FaceDetectDialog::setupMatchThresholdLinks() {
                 });
     }
     if (m_registryWidget) {
-        connect(m_registryWidget, &FaceRegistryWidget::authThresholdChanged, this,
-                [this](float value) {
+        connect(m_registryWidget, &FaceRegistryWidget::authThresholdChanged,
+                this, [this](float value) {
                     if (m_syncingMatchThresholds) return;
                     if (m_linkMatchThresholdsCheck &&
                         m_linkMatchThresholdsCheck->isChecked()) {
@@ -1948,8 +2025,8 @@ void FaceDetectDialog::setupMatchThresholdLinks() {
                 });
     }
     if (m_liveWidget) {
-        connect(m_liveWidget, &FaceLiveDetectWidget::matchThresholdChanged, this,
-                [this](float value) {
+        connect(m_liveWidget, &FaceLiveDetectWidget::matchThresholdChanged,
+                this, [this](float value) {
                     if (m_syncingMatchThresholds) return;
                     if (m_linkMatchThresholdsCheck &&
                         m_linkMatchThresholdsCheck->isChecked()) {
@@ -1958,11 +2035,13 @@ void FaceDetectDialog::setupMatchThresholdLinks() {
                 });
     }
     if (m_applyMatchThresholdBtn && m_verifyThreshold) {
-        connect(m_applyMatchThresholdBtn, &QPushButton::clicked, this, [this]() {
-            if (m_verifyThreshold) {
-                applyMatchThresholdToAllTabs(m_verifyThreshold->value());
-            }
-        });
+        connect(m_applyMatchThresholdBtn, &QPushButton::clicked, this,
+                [this]() {
+                    if (m_verifyThreshold) {
+                        applyMatchThresholdToAllTabs(
+                                m_verifyThreshold->value());
+                    }
+                });
     }
 }
 
@@ -2008,15 +2087,15 @@ void FaceDetectDialog::setupMinScoreLinks() {
                 });
     }
     if (m_liveWidget) {
-        connect(m_liveWidget, &FaceLiveDetectWidget::minDetectionScoreChanged, this,
-                [this](float value) {
+        connect(m_liveWidget, &FaceLiveDetectWidget::minDetectionScoreChanged,
+                this, [this](float value) {
                     if (m_syncingMinScores) return;
                     applyMinDetectionScoreToAllTabs(value);
                 });
     }
     if (m_registryWidget) {
-        connect(m_registryWidget, &FaceRegistryWidget::minDetectionScoreChanged, this,
-                [this](float value) {
+        connect(m_registryWidget, &FaceRegistryWidget::minDetectionScoreChanged,
+                this, [this](float value) {
                     if (m_syncingMinScores) return;
                     applyMinDetectionScoreToAllTabs(value);
                 });

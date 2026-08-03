@@ -35,8 +35,8 @@ int main() {
     aicore_aliked_options_free(opts);
 
     aicore_lightglue_features features{};
-    AICORE_CHECK(aicore_aliked_extract_rgb(nullptr, nullptr, 0, 0, 0, &features) !=
-                 0);
+    AICORE_CHECK(aicore_aliked_extract_rgb(nullptr, nullptr, 0, 0, 0,
+                                           &features) != 0);
 
     char* dir = aicore_aliked_model_cache_dir();
     AICORE_CHECK(dir != nullptr);

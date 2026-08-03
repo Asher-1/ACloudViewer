@@ -24,8 +24,8 @@
 #include <QTabWidget>
 #include <QToolButton>
 
-#include "ecvModelDownloader.h"
 #include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 class ecvMainAppInterface;
 class FaceCaptureWidget;

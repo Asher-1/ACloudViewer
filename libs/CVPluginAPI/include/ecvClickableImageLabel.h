@@ -19,7 +19,8 @@ public:
     explicit ecvClickableImageLabel(QWidget* parent = nullptr);
 
     void setPreviewImage(const QImage& image, int thumbSize = 96);
-    /** Scale to \p displaySize while keeping the full-resolution click target. */
+    /** Scale to \p displaySize while keeping the full-resolution click target.
+     */
     void setPreviewImage(const QImage& image, const QSize& displaySize);
     void setPreviewPixmap(const QPixmap& pixmap, int thumbSize = 96);
     void clearPreview();
@@ -30,7 +31,8 @@ public:
                                   const QImage& image,
                                   const QString& title = QString());
 
-    /** Row widget: hint text + arrow (→) + thumbnail. \p label is reparented. */
+    /** Row widget: hint text + arrow (→) + thumbnail. \p label is reparented.
+     */
     static QWidget* wrapWithTapToPreviewHint(ecvClickableImageLabel* label,
                                              QWidget* parent = nullptr);
 

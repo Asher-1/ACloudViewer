@@ -1,6 +1,0 @@
-# Replace manifest.yaml aliked entries with:
-patches:
-  - file: aliked_merged/0001-vulkan-aliked-core.patch
-    note: ALIKED Vulkan core (shaders, dense-copy, DCN, C API, proc address)
-  - file: aliked_merged/0002-vulkan-aliked-gpu-followup.patch
-    note: ALIKED Vulkan SDDH+DKD parity (queue idle, readback, NMS/topk, barriers)

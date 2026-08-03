@@ -379,13 +379,13 @@ bool GpuPipelineCache::EnsureVulkanSddhScratch(int32_t count,
                                                int32_t feat_w,
                                                std::string *error) {
     const int32_t capacity = count > 0 ? count : 1;
-    const bool workspace_ok =
-            count <= vulkan_sddh_scratch_.capacity_count &&
-            dim == vulkan_sddh_scratch_.dim &&
-            kernel_size == vulkan_sddh_scratch_.kernel_size;
-    const bool feature_ok = feat_h == vulkan_sddh_scratch_.feat_h &&
-                            feat_w == vulkan_sddh_scratch_.feat_w &&
-                            vulkan_sddh_scratch_.feature_contig.tensor != nullptr;
+    const bool workspace_ok = count <= vulkan_sddh_scratch_.capacity_count &&
+                              dim == vulkan_sddh_scratch_.dim &&
+                              kernel_size == vulkan_sddh_scratch_.kernel_size;
+    const bool feature_ok =
+            feat_h == vulkan_sddh_scratch_.feat_h &&
+            feat_w == vulkan_sddh_scratch_.feat_w &&
+            vulkan_sddh_scratch_.feature_contig.tensor != nullptr;
     if (workspace_ok && feature_ok) {
         return true;
     }
@@ -394,8 +394,9 @@ bool GpuPipelineCache::EnsureVulkanSddhScratch(int32_t count,
                                    static_cast<size_t>(kernel_size) *
                                    static_cast<size_t>(kernel_size) +
                            64 + static_cast<size_t>(dim) * 3;
-        // Vulkan SSBO misalign can add up to 16 floats before tensor data; shader
-        // indexes workspace_off + k*stride — keep tail slack to avoid OOB writes.
+        // Vulkan SSBO misalign can add up to 16 floats before tensor data;
+        // shader indexes workspace_off + k*stride — keep tail slack to avoid
+        // OOB writes.
         constexpr size_t kMisalignSlack = 16;
         const size_t floats =
                 per * static_cast<size_t>(capacity) + kMisalignSlack;

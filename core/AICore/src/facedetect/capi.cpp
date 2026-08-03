@@ -172,8 +172,11 @@ void apply_facedetect_runtime(const char* device, int threads) {
     fd::set_num_threads(n_threads);
 }
 
-bool load_rgb_image(const uint8_t* rgb, int32_t width, int32_t height,
-                    fd::Image& img, std::string* err) {
+bool load_rgb_image(const uint8_t* rgb,
+                    int32_t width,
+                    int32_t height,
+                    fd::Image& img,
+                    std::string* err) {
     if (rgb == nullptr || width <= 0 || height <= 0) {
         if (err) *err = "invalid rgb buffer";
         return false;
@@ -273,8 +276,8 @@ AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
     if (!fd::load_image_rgb(image_path, img)) {
         return -1;
     }
-    const size_t nbytes =
-            static_cast<size_t>(img.width) * static_cast<size_t>(img.height) * 3;
+    const size_t nbytes = static_cast<size_t>(img.width) *
+                          static_cast<size_t>(img.height) * 3;
     uint8_t* buf = static_cast<uint8_t*>(std::malloc(nbytes));
     if (buf == nullptr) {
         return -1;
@@ -286,8 +289,8 @@ AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
     return 0;
 }
 
-AICORE_CAPI char* aicore_facedetect_detect_path_json(
-        aicore_facedetect_ctx* ctx, const char* image_path) {
+AICORE_CAPI char* aicore_facedetect_detect_path_json(aicore_facedetect_ctx* ctx,
+                                                     const char* image_path) {
     if (ctx == nullptr || ctx->model == nullptr || image_path == nullptr) {
         return nullptr;
     }
@@ -305,9 +308,10 @@ AICORE_CAPI char* aicore_facedetect_detect_path_json(
     }
 }
 
-AICORE_CAPI char* aicore_facedetect_detect_rgb_json(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height) {
+AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
+                                                    const uint8_t* rgb,
+                                                    int32_t width,
+                                                    int32_t height) {
     if (ctx == nullptr || ctx->model == nullptr) return nullptr;
     fd::Image img;
     if (!load_rgb_image(rgb, width, height, img, &ctx->last_error)) {
@@ -342,9 +346,11 @@ AICORE_CAPI char* aicore_facedetect_analyze_path_json(
     }
 }
 
-AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, float min_score) {
+AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
+                                                     const uint8_t* rgb,
+                                                     int32_t width,
+                                                     int32_t height,
+                                                     float min_score) {
     if (ctx == nullptr || ctx->model == nullptr) return nullptr;
     fd::Image img;
     if (!load_rgb_image(rgb, width, height, img, &ctx->last_error)) {
@@ -362,11 +368,15 @@ AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(
 
 AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         aicore_facedetect_ctx* detector_ctx,
-        aicore_facedetect_ctx* landmark_ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, float min_score) {
+        aicore_facedetect_ctx* landmark_ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height,
+        float min_score) {
     if (detector_ctx == nullptr || detector_ctx->model == nullptr ||
         landmark_ctx == nullptr || landmark_ctx->model == nullptr) {
-        if (detector_ctx) detector_ctx->last_error = "null detector/landmark ctx";
+        if (detector_ctx)
+            detector_ctx->last_error = "null detector/landmark ctx";
         return nullptr;
     }
     fd::Image img;
@@ -397,7 +407,8 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
 AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
                                              const char* image_path,
                                              float min_detection_score,
-                                             float** out_vec, int* out_dim) {
+                                             float** out_vec,
+                                             int* out_dim) {
     if (ctx == nullptr || ctx->model == nullptr || image_path == nullptr ||
         out_vec == nullptr || out_dim == nullptr) {
         return -1;
@@ -427,10 +438,12 @@ AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
 }
 
 AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
-                                            const uint8_t* rgb, int32_t width,
+                                            const uint8_t* rgb,
+                                            int32_t width,
                                             int32_t height,
                                             float min_detection_score,
-                                            float** out_vec, int* out_dim) {
+                                            float** out_vec,
+                                            int* out_dim) {
     if (ctx == nullptr || ctx->model == nullptr || rgb == nullptr ||
         width <= 0 || height <= 0 || out_vec == nullptr || out_dim == nullptr) {
         return -1;
@@ -458,8 +471,12 @@ AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
 }
 
 AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, const float* landmarks_xy10, float** out_vec,
+        aicore_facedetect_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height,
+        const float* landmarks_xy10,
+        float** out_vec,
         int* out_dim) {
     if (ctx == nullptr || ctx->model == nullptr || rgb == nullptr ||
         width <= 0 || height <= 0 || landmarks_xy10 == nullptr ||
@@ -492,18 +509,21 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
     }
 }
 
-AICORE_CAPI int aicore_facedetect_verify_paths(
-        aicore_facedetect_ctx* ctx, const char* a, const char* b,
-        float threshold, int anti_spoof, float* out_distance,
-        int* out_verified) {
-    if (ctx == nullptr || ctx->model == nullptr || a == nullptr || b == nullptr ||
-        out_distance == nullptr || out_verified == nullptr) {
+AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
+                                               const char* a,
+                                               const char* b,
+                                               float threshold,
+                                               int anti_spoof,
+                                               float* out_distance,
+                                               int* out_verified) {
+    if (ctx == nullptr || ctx->model == nullptr || a == nullptr ||
+        b == nullptr || out_distance == nullptr || out_verified == nullptr) {
         return -1;
     }
     try {
-        const float thr =
-                threshold > 0.0f ? threshold
-                                 : ctx->model->config().verify_threshold;
+        const float thr = threshold > 0.0f
+                                  ? threshold
+                                  : ctx->model->config().verify_threshold;
         fd::Image ia, ib;
         if (!fd::load_image_rgb(a, ia)) {
             ctx->last_error = std::string("failed to load image: ") + a;
@@ -517,7 +537,8 @@ AICORE_CAPI int aicore_facedetect_verify_paths(
         const std::vector<float> eb = ctx->model->embed(ib);
         double dot = 0.0;
         const size_t n = std::min(ea.size(), eb.size());
-        for (size_t i = 0; i < n; ++i) dot += static_cast<double>(ea[i]) * eb[i];
+        for (size_t i = 0; i < n; ++i)
+            dot += static_cast<double>(ea[i]) * eb[i];
         const float dist = static_cast<float>(1.0 - dot);
         *out_distance = dist;
         int verified = dist <= thr ? 1 : 0;
@@ -551,7 +572,8 @@ AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx) {
     const fd::FaceConfig& c = ctx->model->config();
     const std::string resolved_device = fd::global_backend().device_name();
     const std::string json =
-            std::string("{\n  \"architecture\": \"facedetect\",\n  \"pack\": \"") +
+            std::string(
+                    "{\n  \"architecture\": \"facedetect\",\n  \"pack\": \"") +
             c.arch + "\",\n  \"detector\": \"" + c.detector +
             "\",\n  \"recognizer\": \"" + c.recognizer +
             "\",\n  \"embed_dim\": " + std::to_string(c.embed_dim) +

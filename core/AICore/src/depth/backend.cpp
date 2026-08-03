@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
+#include "aicore/runtime_capi.h"
 #include "common.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "ggml_backend_utils.hpp"
-#include "aicore/runtime_capi.h"
 #if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
@@ -59,10 +59,11 @@ struct PendingCapture {
 }  // namespace
 
 struct Backend::Impl {
-    std::vector<ggml_backend_t> gpu_backends;  // all GPU devices (multi-GPU auto)
-    ggml_backend_t backend = nullptr;          // primary (= gpu_backends[0] or CPU)
-    ggml_backend_t cpu_backend = nullptr;      // CPU fallback (GPU path only)
-    ggml_gallocr_t galloc = nullptr;           // CPU / single-backend path
+    std::vector<ggml_backend_t>
+            gpu_backends;                  // all GPU devices (multi-GPU auto)
+    ggml_backend_t backend = nullptr;      // primary (= gpu_backends[0] or CPU)
+    ggml_backend_t cpu_backend = nullptr;  // CPU fallback (GPU path only)
+    ggml_gallocr_t galloc = nullptr;       // CPU / single-backend path
     ggml_backend_sched_t sched =
             nullptr;  // GPU path: schedules over {gpus..., cpu_backend}
     bool use_sched = false;
@@ -98,12 +99,13 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
 
     auto adopt_gpu_group = [&](ggml_common::GpuBackendGroup group) {
         impl_->gpu_backends = std::move(group.gpus);
-        impl_->backend =
-                impl_->gpu_backends.empty() ? nullptr : impl_->gpu_backends.front();
+        impl_->backend = impl_->gpu_backends.empty()
+                                 ? nullptr
+                                 : impl_->gpu_backends.front();
         device_name_ = group.primary_name();
         if (impl_->gpu_backends.size() > 1) {
             device_name_ += " (x" + std::to_string(impl_->gpu_backends.size()) +
-                           " GPUs)";
+                            " GPUs)";
         }
         impl_->use_sched = true;
         offloading_ = true;

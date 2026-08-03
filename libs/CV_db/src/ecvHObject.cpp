@@ -16,6 +16,7 @@
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
+#include "LineSet.h"
 #include "ecv2DLabel.h"
 #include "ecv2DViewportLabel.h"
 #include "ecvBox.h"
@@ -33,7 +34,6 @@
 #include "ecvGuiParameters.h"
 #include "ecvHObjectCaster.h"
 #include "ecvImage.h"
-#include "LineSet.h"
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvKdTree.h"
 #include "ecvMaterialSet.h"
@@ -1831,7 +1831,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         if (ecvGenericGLDisplay* axesDisp =
                     mergeDisplay(context.display, this)) {
             AxesGridProperties axesGridProps;
-            axesDisp->getDataAxesGridProperties(context.viewID, axesGridProps);
+            axesDisp->getDataAxesGridProperties(getViewId(), axesGridProps);
             if (axesGridProps.visible) {
                 shouldShowBB =
                         false;  // Force hide BBox when axes grid is visible

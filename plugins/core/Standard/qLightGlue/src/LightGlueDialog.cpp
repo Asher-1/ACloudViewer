@@ -7,6 +7,9 @@
 
 #include "LightGlueDialog.h"
 
+#include <CVLog.h>
+
+#include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
 #include <QFileDialog>
@@ -17,17 +20,14 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QCloseEvent>
 #include <QVBoxLayout>
 
 #include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/inference_log.h"
 #include "aicore/lightglue_capi.h"
 #include "ecvModelDownloader.h"
-
-#include "aicore/inference_log.h"
 #include "feature_extractor.h"
-#include <CVLog.h>
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -137,7 +137,8 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
                 populateModelCombo(m_downloadTargetFilename);
                 if (m_downloadTargetFilename.startsWith(
                             QStringLiteral("aliked-n16rot"))) {
-                    appendLog(tr("[OK] Downloaded ALIKED extractor: %1").arg(dest));
+                    appendLog(tr("[OK] Downloaded ALIKED extractor: %1")
+                                      .arg(dest));
                 } else {
                     selectModelByFilename(m_downloadTargetFilename);
                 }
@@ -154,9 +155,7 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
     populateModelCombo();
 }
 
-void LightGlueDialog::setAppInterface(ecvMainAppInterface* app) {
-    m_app = app;
-}
+void LightGlueDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void LightGlueDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
@@ -257,10 +256,9 @@ void LightGlueDialog::setupUi() {
         m_slotPreview[slot]->setFixedSize(kThumbSize + 16, kThumbSize + 16);
         m_slotPreview[slot]->setFrameShape(QFrame::StyledPanel);
         m_slotPreview[slot]->setStyleSheet("background: #f4f4f4;");
-        slotLayout->addWidget(
-                ecvClickableImageLabel::wrapWithTapToPreviewHint(
-                        m_slotPreview[slot], slotGroup),
-                0, Qt::AlignHCenter);
+        slotLayout->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
+                                      m_slotPreview[slot], slotGroup),
+                              0, Qt::AlignHCenter);
 
         m_slotNameLabel[slot] = new QLabel(tr("(not set)"));
         m_slotNameLabel[slot]->setAlignment(Qt::AlignCenter);
@@ -440,7 +438,8 @@ void LightGlueDialog::refreshModelList() { populateModelCombo(); }
 
 void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     const QString cacheDir = modelCacheDir();
-    QString selected = keepFilename.isEmpty() ? m_lastSelectedModel : keepFilename;
+    QString selected =
+            keepFilename.isEmpty() ? m_lastSelectedModel : keepFilename;
     if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
         selected = m_modelCombo->currentData().toString();
     }
@@ -1042,11 +1041,12 @@ bool LightGlueDialog::ensureAlikedExtractorAvailable(
                           .arg(cached));
     }
 
-    const auto answer = QMessageBox::question(
-            this, tr("Download ALIKED Extractor"),
-            tr("ALIKED matching also needs extractor model '%1'.\n\nDownload it "
-               "now?")
-                    .arg(extractorName));
+    const auto answer =
+            QMessageBox::question(this, tr("Download ALIKED Extractor"),
+                                  tr("ALIKED matching also needs extractor "
+                                     "model '%1'.\n\nDownload it "
+                                     "now?")
+                                          .arg(extractorName));
     if (answer != QMessageBox::Yes) {
         appendLog(tr("[Info] ALIKED extractor download declined."));
         return false;
@@ -1068,8 +1068,7 @@ void LightGlueDialog::startAlikedExtractorDownload(
     const QString cache = alikedExtractorCacheDir();
     QDir().mkpath(cache);
     const QString dest = cache + QLatin1Char('/') + extractorFilename;
-    const QString url =
-            QString::fromLatin1(kDownloadBase) + extractorFilename;
+    const QString url = QString::fromLatin1(kDownloadBase) + extractorFilename;
 
     m_downloadInProgress = true;
     m_downloadTargetFilename = extractorFilename;
@@ -1100,7 +1099,8 @@ bool LightGlueDialog::ensureModelAvailable() {
     }
     if (cachedInfo.exists()) {
         QFile::remove(cached);
-        appendLog(tr("[Warning] Removed incomplete model cache: %1").arg(cached));
+        appendLog(
+                tr("[Warning] Removed incomplete model cache: %1").arg(cached));
     }
 
     for (const auto& bm : builtinModels()) {

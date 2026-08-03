@@ -11,9 +11,9 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QImageReader>
-#include <QPainter>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPainter>
 #include <QPen>
 #include <algorithm>
 #include <cstdlib>
@@ -66,10 +66,9 @@ LoadedGray load_gray_resized(const QString& path, int max_resize) {
         const int max_dim =
                 std::max(out.original.width(), out.original.height());
         if (max_dim > max_resize) {
-            out.processed =
-                    out.original.scaled(max_resize, max_resize,
-                                        Qt::KeepAspectRatio,
-                                        Qt::SmoothTransformation);
+            out.processed = out.original.scaled(max_resize, max_resize,
+                                                Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation);
             out.scaleX = static_cast<double>(out.original.width()) /
                          out.processed.width();
             out.scaleY = static_cast<double>(out.original.height()) /
@@ -120,13 +119,11 @@ QImage make_distance_overlay(const QImage& gray,
 }
 
 QImage make_line_visualization(
-        const QImage& gray,
-        const std::vector<DeepLSDLineSegment>& segments) {
+        const QImage& gray, const std::vector<DeepLSDLineSegment>& segments) {
     QImage rgb = gray.convertToFormat(QImage::Format_RGB32);
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(QColor(DeepLSDLineStyle::kRed,
-                               DeepLSDLineStyle::kGreen,
+    painter.setPen(QPen(QColor(DeepLSDLineStyle::kRed, DeepLSDLineStyle::kGreen,
                                DeepLSDLineStyle::kBlue),
                         1));
     for (const DeepLSDLineSegment& seg : segments) {
@@ -158,7 +155,8 @@ bool DeepLSDWorker::runExtract() {
     QElapsedTimer timer;
     timer.start();
 
-    aicore_inference_log::log_device_request(QStringLiteral("DeepLSD"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("DeepLSD"),
+                                             m_settings.device);
     emit logMessage("[DeepLSD] Loading model: " + m_settings.modelPath);
 
     aicore_deeplsd_options* opts = aicore_deeplsd_options_new();
@@ -185,7 +183,8 @@ bool DeepLSDWorker::runExtract() {
                 QJsonDocument::fromJson(QByteArray(info)).object();
         aicore_deeplsd_free_string(info);
         const QString resolved = obj.value(QStringLiteral("device")).toString();
-        aicore_inference_log::log_device_resolved(QStringLiteral("DeepLSD"), resolved);
+        aicore_inference_log::log_device_resolved(QStringLiteral("DeepLSD"),
+                                                  resolved);
     }
 
     emit progressUpdate(30, 100);
@@ -235,9 +234,9 @@ bool DeepLSDWorker::runExtract() {
     if (m_settings.computeDistanceOverlay) {
         QImage procOverlay =
                 make_distance_overlay(loaded.processed, df, ow, oh);
-        result.distanceOverlay =
-                procOverlay.scaled(loaded.original.size(), Qt::IgnoreAspectRatio,
-                                   Qt::SmoothTransformation);
+        result.distanceOverlay = procOverlay.scaled(loaded.original.size(),
+                                                    Qt::IgnoreAspectRatio,
+                                                    Qt::SmoothTransformation);
     }
     result.runtimeMs = timer.elapsed();
 
@@ -247,7 +246,9 @@ bool DeepLSDWorker::runExtract() {
     m_pendingCtx = ctx;
 
     emit progressUpdate(100, 100);
-    aicore_inference_log::log_inference_done(QStringLiteral("DeepLSD"), result.resolvedDevice, result.runtimeMs, QStringLiteral("%1 segments on %2×%3")
+    aicore_inference_log::log_inference_done(
+            QStringLiteral("DeepLSD"), result.resolvedDevice, result.runtimeMs,
+            QStringLiteral("%1 segments on %2×%3")
                     .arg(result.segments.size())
                     .arg(result.originalWidth)
                     .arg(result.originalHeight));

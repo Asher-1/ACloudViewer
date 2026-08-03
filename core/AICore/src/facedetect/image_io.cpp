@@ -1,4 +1,12 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "image_io.hpp"
+
 #include "common.hpp"
 
 // Vendored public-domain single-header decoder. Used for PNG/BMP and as a
@@ -9,10 +17,10 @@
 #define STBI_ONLY_PNG
 #define STBI_ONLY_BMP
 #define STBI_NO_STDIO_GIF  // (no-op guard; GIF disabled by not enabling it)
-#include "stb_image.h"
-
 #include <cstdio>
 #include <cstring>
+
+#include "stb_image.h"
 
 #if FACEDETECT_HAVE_LIBJPEG
 #include <csetjmp>
@@ -43,8 +51,8 @@ void jpeg_error_exit_longjmp(j_common_ptr cinfo) {
 }
 
 // Decode a JPEG file to tightly-packed RGB using libjpeg-turbo with the same
-// settings OpenCV's imread uses (JDCT_ISLOW IDCT + fancy chroma upsampling, both
-// the libjpeg defaults), so the output matches cv2.imread pixel-for-pixel.
+// settings OpenCV's imread uses (JDCT_ISLOW IDCT + fancy chroma upsampling,
+// both the libjpeg defaults), so the output matches cv2.imread pixel-for-pixel.
 bool load_jpeg_rgb(const std::string& path, Image& out) {
     FILE* f = std::fopen(path.c_str(), "rb");
     if (!f) {
@@ -67,11 +75,11 @@ bool load_jpeg_rgb(const std::string& path, Image& out) {
     jpeg_stdio_src(&cinfo, f);
     jpeg_read_header(&cinfo, TRUE);
 
-    // Match cv2.imread / libjpeg defaults explicitly so the decode is reproducible
-    // regardless of any future libjpeg default changes.
-    cinfo.out_color_space     = JCS_RGB;     // 3-channel R,G,B output
-    cinfo.dct_method          = JDCT_ISLOW;  // accurate integer IDCT (default)
-    cinfo.do_fancy_upsampling = TRUE;        // smooth chroma upsampling (default)
+    // Match cv2.imread / libjpeg defaults explicitly so the decode is
+    // reproducible regardless of any future libjpeg default changes.
+    cinfo.out_color_space = JCS_RGB;   // 3-channel R,G,B output
+    cinfo.dct_method = JDCT_ISLOW;     // accurate integer IDCT (default)
+    cinfo.do_fancy_upsampling = TRUE;  // smooth chroma upsampling (default)
 
     jpeg_start_decompress(&cinfo);
 
@@ -79,7 +87,8 @@ bool load_jpeg_rgb(const std::string& path, Image& out) {
     const int h = (int)cinfo.output_height;
     const int comps = cinfo.output_components;  // == 3 for JCS_RGB
     if (comps != 3) {
-        FD_LOG("load_image_rgb: unexpected output_components=%d for %s", comps, path.c_str());
+        FD_LOG("load_image_rgb: unexpected output_components=%d for %s", comps,
+               path.c_str());
         jpeg_destroy_decompress(&cinfo);
         std::fclose(f);
         return false;
@@ -91,8 +100,9 @@ bool load_jpeg_rgb(const std::string& path, Image& out) {
 
     const int row_stride = w * comps;
     while ((int)cinfo.output_scanline < h) {
-        unsigned char* rowptr = out.rgb.data() + (size_t)cinfo.output_scanline * row_stride;
-        JSAMPROW rows[1] = { rowptr };
+        unsigned char* rowptr =
+                out.rgb.data() + (size_t)cinfo.output_scanline * row_stride;
+        JSAMPROW rows[1] = {rowptr};
         jpeg_read_scanlines(&cinfo, rows, 1);
     }
 
@@ -118,8 +128,9 @@ bool is_jpeg(const std::string& path) {
 
 bool load_image_rgb(const std::string& path, Image& out) {
 #if FACEDETECT_HAVE_LIBJPEG
-    // JPEG -> libjpeg-turbo (cv2.imread parity). Fall through to stb only if the
-    // libjpeg decode fails, so a non-fatal libjpeg quirk never blocks loading.
+    // JPEG -> libjpeg-turbo (cv2.imread parity). Fall through to stb only if
+    // the libjpeg decode fails, so a non-fatal libjpeg quirk never blocks
+    // loading.
     if (is_jpeg(path) && load_jpeg_rgb(path, out)) {
         return true;
     }
@@ -128,7 +139,8 @@ bool load_image_rgb(const std::string& path, Image& out) {
     // Request 3 components: stb converts grayscale/RGBA to RGB for us.
     unsigned char* data = stbi_load(path.c_str(), &w, &h, &c, 3);
     if (!data) {
-        FD_LOG("load_image_rgb: failed to decode %s (%s)", path.c_str(), stbi_failure_reason());
+        FD_LOG("load_image_rgb: failed to decode %s (%s)", path.c_str(),
+               stbi_failure_reason());
         return false;
     }
     out.width = w;
@@ -146,4 +158,4 @@ bool image_from_rgb(const uint8_t* rgb, int width, int height, Image& out) {
     return true;
 }
 
-} // namespace fd
+}  // namespace fd

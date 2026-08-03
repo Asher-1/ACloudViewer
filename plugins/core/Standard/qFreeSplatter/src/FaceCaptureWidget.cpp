@@ -26,8 +26,8 @@
 #include <QPen>
 #include <QPixmap>
 #include <QScrollArea>
-#include <QStandardPaths>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 #include <algorithm>
 #include <cstring>
@@ -68,8 +68,9 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
                     m_downloadLabel->setText(
                             tr("Downloading %1 — %2")
                                     .arg(currentGgmlFilename())
-                                    .arg(ecvModelDownloader::formatDownloadProgress(
-                                            received, total)));
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
                 }
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -78,8 +79,8 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
                 if (m_downloadProgress) m_downloadProgress->setVisible(false);
                 if (m_downloadLabel) m_downloadLabel->setVisible(false);
                 if (ok) {
-                    emit logMessage(tr("[FaceCapture] Downloaded model: %1")
-                                            .arg(dest));
+                    emit logMessage(
+                            tr("[FaceCapture] Downloaded model: %1").arg(dest));
                     populateDetectorCombo();
                     if (m_autoStartAfterDownload) {
                         m_autoStartAfterDownload = false;
@@ -97,24 +98,27 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
     populateDetectorCombo();
 
     m_ggmlLoadWatcher = new QFutureWatcher<aicore_facedetect_ctx*>(this);
-    connect(m_ggmlLoadWatcher, &QFutureWatcher<aicore_facedetect_ctx*>::finished,
-            this, [this]() {
+    connect(m_ggmlLoadWatcher,
+            &QFutureWatcher<aicore_facedetect_ctx*>::finished, this, [this]() {
                 m_ggmlModelLoading = false;
                 aicore_facedetect_ctx* ctx = m_ggmlLoadWatcher->result();
                 if (ctx == nullptr) {
-                    m_statusLabel->setText(tr("Failed to load face detector model"));
+                    m_statusLabel->setText(
+                            tr("Failed to load face detector model"));
                     emit cameraError(tr("Failed to load face detector GGUF"));
                     return;
                 }
                 releaseGgmlModel();
                 m_ggmlCtx = ctx;
                 m_loadedGgmlPath = facedetectCachePath(currentGgmlFilename());
-                emit logMessage(tr("[FaceCapture] Loaded face detector: %1")
-                                        .arg(QFileInfo(m_loadedGgmlPath).fileName()));
+                emit logMessage(
+                        tr("[FaceCapture] Loaded face detector: %1")
+                                .arg(QFileInfo(m_loadedGgmlPath).fileName()));
                 if (m_cameraActive) {
                     m_statusLabel->setText(
                             m_inputSource == InputSource::VideoFile
-                                    ? tr("Playing video — preview + face overlay")
+                                    ? tr("Playing video — preview + face "
+                                         "overlay")
                                     : tr("Camera active — detecting faces"));
                 }
             });
@@ -143,7 +147,8 @@ void FaceCaptureWidget::setupUi() {
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(320, 180);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
     m_previewLabel->setStyleSheet(
             QStringLiteral("QLabel { background-color: #1a1a1a; "
                            "border: 1px solid #444; border-radius: 4px; }"));
@@ -189,12 +194,15 @@ void FaceCaptureWidget::setupUi() {
     detectorInputRow->addWidget(m_detectorCombo, 2);
     detectorInputRow->addWidget(new QLabel(tr("Input:"), this));
     m_sourceCombo = new QComboBox(this);
-    m_sourceCombo->addItem(tr("Live camera"), static_cast<int>(InputSource::Camera));
-    m_sourceCombo->addItem(tr("Video file"), static_cast<int>(InputSource::VideoFile));
+    m_sourceCombo->addItem(tr("Live camera"),
+                           static_cast<int>(InputSource::Camera));
+    m_sourceCombo->addItem(tr("Video file"),
+                           static_cast<int>(InputSource::VideoFile));
     detectorInputRow->addWidget(m_sourceCombo, 1);
     mainLayout->addLayout(detectorInputRow);
-    connect(m_detectorCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &FaceCaptureWidget::onDetectorComboChanged);
+    connect(m_detectorCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &FaceCaptureWidget::onDetectorComboChanged);
     connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FaceCaptureWidget::onSourceChanged);
 
@@ -223,34 +231,38 @@ void FaceCaptureWidget::setupUi() {
     m_faceStrategyCombo->addItem(
             tr("Track same person"),
             static_cast<int>(FacePickStrategy::TrackSamePerson));
-    m_faceStrategyCombo->addItem(tr("Largest face"),
-                                 static_cast<int>(FacePickStrategy::LargestFace));
+    m_faceStrategyCombo->addItem(
+            tr("Largest face"),
+            static_cast<int>(FacePickStrategy::LargestFace));
     m_faceStrategyCombo->addItem(
             tr("Highest score"),
             static_cast<int>(FacePickStrategy::HighestScore));
-    m_faceStrategyCombo->setToolTip(
-            tr("When multiple faces appear, choose which one to capture. "
-               "In Track same person mode, one identity is kept across frames."));
+    m_faceStrategyCombo->setToolTip(tr(
+            "When multiple faces appear, choose which one to capture. "
+            "In Track same person mode, one identity is kept across frames."));
     settingsRow->addWidget(m_faceStrategyCombo, 1);
     mainLayout->addLayout(settingsRow);
 
-    connect(m_minScoreSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, [this](double) { saveFaceCaptureSettings(); });
-    connect(m_minCapturesSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
-            [this](int) {
+    connect(m_minScoreSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double) { saveFaceCaptureSettings(); });
+    connect(m_minCapturesSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, [this](int) {
                 saveFaceCaptureSettings();
                 updateCaptureProgressUi();
             });
-    connect(m_faceStrategyCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) { saveFaceCaptureSettings(); });
+    connect(m_faceStrategyCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) { saveFaceCaptureSettings(); });
 #else
     auto* detectorLayout = new QHBoxLayout();
     detectorLayout->addWidget(new QLabel(tr("Face detector:"), this));
     m_detectorCombo = new QComboBox(this);
     detectorLayout->addWidget(m_detectorCombo, 1);
     mainLayout->addLayout(detectorLayout);
-    connect(m_detectorCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &FaceCaptureWidget::onDetectorComboChanged);
+    connect(m_detectorCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &FaceCaptureWidget::onDetectorComboChanged);
 #endif
 
     m_downloadLabel = new QLabel(this);
@@ -325,7 +337,8 @@ void FaceCaptureWidget::setupUi() {
 
 void FaceCaptureWidget::onSourceChanged(int index) {
     if (!m_sourceCombo) return;
-    m_inputSource = static_cast<InputSource>(m_sourceCombo->itemData(index).toInt());
+    m_inputSource =
+            static_cast<InputSource>(m_sourceCombo->itemData(index).toInt());
     if (m_videoFileRow) {
         m_videoFileRow->setVisible(m_inputSource == InputSource::VideoFile);
     }
@@ -345,17 +358,16 @@ void FaceCaptureWidget::onSourceChanged(int index) {
 
 void FaceCaptureWidget::onBrowseVideoFile() {
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qFreeSplatter"),
-            QStringLiteral("lastVideoDir"), QDir::homePath());
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qFreeSplatter"),
+                             QStringLiteral("lastVideoDir"), QDir::homePath());
     const QString path = QFileDialog::getOpenFileName(
             this, tr("Select video file"), lastDir,
             tr("Video files (*.mp4 *.avi *.mkv *.mov *.webm *.m4v *.wmv *.ts "
                "*.mpg *.mpeg);;All files (*.*)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qFreeSplatter"),
-                                       QStringLiteral("lastVideoDir"),
-                                       path);
+                         QStringLiteral("lastVideoDir"), path);
     if (m_videoPathEdit) m_videoPathEdit->setText(path);
     m_videoFilePath = path;
 }
@@ -382,7 +394,8 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
 
     if (m_detectorKind == DetectorKind::Ggml) {
         if (!ensureGgmlModelReady()) {
-            m_statusLabel->setText(tr("Downloading face detector — video preview starting…"));
+            m_statusLabel->setText(
+                    tr("Downloading face detector — video preview starting…"));
         } else {
             scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
         }
@@ -436,7 +449,8 @@ void FaceCaptureWidget::populateDetectorCombo() {
     m_detectorCombo->blockSignals(true);
     m_detectorCombo->clear();
 
-    m_detectorCombo->addItem(tr("OpenCV Haar Cascade"), QStringLiteral("opencv"));
+    m_detectorCombo->addItem(tr("OpenCV Haar Cascade"),
+                             QStringLiteral("opencv"));
 
     const QString cache = facedetectModelCacheDir();
     for (int i = 0; i < aicore_facedetect_detector_model_count(); ++i) {
@@ -451,10 +465,10 @@ void FaceCaptureWidget::populateDetectorCombo() {
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
                         : QString(" [download]");
-        m_detectorCombo->addItem(
-                QCoreApplication::translate("FaceDetectModels", m->display_name) +
-                        suffix,
-                QString::fromUtf8(m->filename));
+        m_detectorCombo->addItem(QCoreApplication::translate("FaceDetectModels",
+                                                             m->display_name) +
+                                         suffix,
+                                 QString::fromUtf8(m->filename));
     }
 
     int restore = 0;
@@ -533,14 +547,16 @@ void FaceCaptureWidget::startModelDownload(
         const aicore_facedetect_model_entry* model) {
     if (!model || m_downloadInProgress) return;
     QDir().mkpath(facedetectModelCacheDir());
-    const QString dest = facedetectCachePath(QString::fromUtf8(model->filename));
+    const QString dest =
+            facedetectCachePath(QString::fromUtf8(model->filename));
 
     m_downloadInProgress = true;
     m_autoStartAfterDownload = true;
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
         m_downloadLabel->setText(
-                tr("Downloading %1 ...").arg(QString::fromUtf8(model->filename)));
+                tr("Downloading %1 ...")
+                        .arg(QString::fromUtf8(model->filename)));
     }
     if (m_downloadProgress) {
         m_downloadProgress->setVisible(true);
@@ -592,15 +608,17 @@ void FaceCaptureWidget::scheduleGgmlModelLoad(const QString& path) {
 
     m_ggmlModelLoading = true;
     m_statusLabel->setText(tr("Loading face detector model..."));
-    m_ggmlLoadWatcher->setFuture(QtConcurrent::run([path]() -> aicore_facedetect_ctx* {
-        aicore_facedetect_options* opts = aicore_facedetect_options_new();
-        aicore_facedetect_options_set_device(opts, "auto");
-        aicore_facedetect_options_set_threads(opts, 0);
-        aicore_facedetect_ctx* ctx =
-                aicore_facedetect_load_opts(path.toUtf8().constData(), opts);
-        aicore_facedetect_options_free(opts);
-        return ctx;
-    }));
+    m_ggmlLoadWatcher->setFuture(
+            QtConcurrent::run([path]() -> aicore_facedetect_ctx* {
+                aicore_facedetect_options* opts =
+                        aicore_facedetect_options_new();
+                aicore_facedetect_options_set_device(opts, "auto");
+                aicore_facedetect_options_set_threads(opts, 0);
+                aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(
+                        path.toUtf8().constData(), opts);
+                aicore_facedetect_options_free(opts);
+                return ctx;
+            }));
 }
 
 bool FaceCaptureWidget::loadCascade() {
@@ -783,9 +801,8 @@ void FaceCaptureWidget::startGuidedCapture(
     if (!m_targetAngles.empty()) {
         m_angleLabel->setText(
                 tr("Angle: %1 (capture 1/%2)")
-                        .arg(angleToString(
-                                m_targetAngles[static_cast<size_t>(
-                                        m_currentAngleIndex)]))
+                        .arg(angleToString(m_targetAngles[static_cast<size_t>(
+                                m_currentAngleIndex)]))
                         .arg(target));
     } else {
         m_angleLabel->setText(tr("Capture face snapshots (1/%1)").arg(target));
@@ -820,10 +837,8 @@ void FaceCaptureWidget::captureCurrentFrame() {
         return;
     }
 
-    const int angleCount =
-            std::max(1, static_cast<int>(m_targetAngles.size()));
-    const int angleIdx =
-            static_cast<int>(m_capturedFrames.size()) % angleCount;
+    const int angleCount = std::max(1, static_cast<int>(m_targetAngles.size()));
+    const int angleIdx = static_cast<int>(m_capturedFrames.size()) % angleCount;
     const auto angle = m_targetAngles.empty()
                                ? CaptureAngle::Front
                                : m_targetAngles[static_cast<size_t>(angleIdx)];
@@ -879,8 +894,9 @@ void FaceCaptureWidget::captureCurrentFrame() {
                                       .arg(index + 1)
                                       .arg(target));
     } else {
-        m_angleLabel->setText(
-                tr("Capture face snapshots (%1/%2)").arg(index + 1).arg(target));
+        m_angleLabel->setText(tr("Capture face snapshots (%1/%2)")
+                                      .arg(index + 1)
+                                      .arg(target));
     }
     if (m_captureBtn) m_captureBtn->setEnabled(false);
 #endif
@@ -959,7 +975,8 @@ int FaceCaptureWidget::minCapturesBeforeComplete() const {
     return m_minCapturesSpin ? m_minCapturesSpin->value() : 2;
 }
 
-FaceCaptureWidget::FacePickStrategy FaceCaptureWidget::facePickStrategy() const {
+FaceCaptureWidget::FacePickStrategy FaceCaptureWidget::facePickStrategy()
+        const {
     if (!m_faceStrategyCombo) return FacePickStrategy::TrackSamePerson;
     return static_cast<FacePickStrategy>(
             m_faceStrategyCombo->currentData().toInt());
@@ -1021,9 +1038,8 @@ void FaceCaptureWidget::processFrame() {
         }
         if (m_capturingMode && !m_targetAngles.empty()) {
             const int guideIdx = currentGuideAngleIndex();
-            drawAngleGuide(
-                    preview,
-                    m_targetAngles[static_cast<size_t>(guideIdx)]);
+            drawAngleGuide(preview,
+                           m_targetAngles[static_cast<size_t>(guideIdx)]);
         }
         m_previewLabel->setPreviewImage(preview, m_previewLabel->size());
     }
@@ -1057,7 +1073,8 @@ void FaceCaptureWidget::processFrame() {
                 m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
             }
             if (faceRect.width > 0) {
-                int pct = std::min(100, m_consecutiveDetections * 100 / trigger);
+                int pct =
+                        std::min(100, m_consecutiveDetections * 100 / trigger);
                 m_statusLabel->setText(
                         tr("Stabilizing... %1% (%2/%3 faces captured)")
                                 .arg(pct)
@@ -1152,22 +1169,23 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
 
     if (!rgb.isContinuous()) rgb = rgb.clone();
 
-    char* json = aicore_facedetect_detect_rgb_json(
-            m_ggmlCtx, rgb.data, rgb.cols, rgb.rows);
+    char* json = aicore_facedetect_detect_rgb_json(m_ggmlCtx, rgb.data,
+                                                   rgb.cols, rgb.rows);
     if (!json) return out;
 
     const QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
     aicore_facedetect_free_string(json);
     if (!doc.isObject()) return out;
 
-    const QJsonArray faces = doc.object().value(QStringLiteral("faces")).toArray();
+    const QJsonArray faces =
+            doc.object().value(QStringLiteral("faces")).toArray();
     out.reserve(static_cast<size_t>(faces.size()));
     for (const QJsonValue& v : faces) {
         const QJsonObject obj = v.toObject();
         const QJsonArray box = obj.value(QStringLiteral("box")).toArray();
         if (box.size() != 4) continue;
-        const float score =
-                static_cast<float>(obj.value(QStringLiteral("score")).toDouble());
+        const float score = static_cast<float>(
+                obj.value(QStringLiteral("score")).toDouble());
         const int x = static_cast<int>(std::floor(box.at(0).toDouble()));
         const int y = static_cast<int>(std::floor(box.at(1).toDouble()));
         const int w = static_cast<int>(
@@ -1186,7 +1204,8 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFaces(
     return detectFacesOpenCv(frame);
 }
 
-bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame, const cv::Rect& rect,
+bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
+                                      const cv::Rect& rect,
                                       std::vector<float>* embedding) {
     if (!embedding || !m_ggmlCtx || frame.empty() || rect.width <= 0 ||
         rect.height <= 0) {
@@ -1212,8 +1231,8 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame, const cv::Rect& rect
 
     float* vec = nullptr;
     int dim = 0;
-    if (aicore_facedetect_embed_rgb(m_ggmlCtx, rgb.data, rgb.cols, rgb.rows, 0.f,
-                                    &vec, &dim) != 0 ||
+    if (aicore_facedetect_embed_rgb(m_ggmlCtx, rgb.data, rgb.cols, rgb.rows,
+                                    0.f, &vec, &dim) != 0 ||
         vec == nullptr || dim <= 0) {
         return false;
     }
@@ -1226,7 +1245,8 @@ float FaceCaptureWidget::embeddingDistance(const std::vector<float>& a,
                                            const std::vector<float>& b) const {
     if (a.size() != b.size() || a.empty()) return 1.0f;
     double dot = 0.0;
-    for (size_t i = 0; i < a.size(); ++i) dot += static_cast<double>(a[i]) * b[i];
+    for (size_t i = 0; i < a.size(); ++i)
+        dot += static_cast<double>(a[i]) * b[i];
     return static_cast<float>(1.0 - dot);
 }
 
@@ -1250,40 +1270,40 @@ cv::Rect FaceCaptureWidget::pickFace(const cv::Mat& frame,
 
     const FacePickStrategy strategy = facePickStrategy();
     if (strategy == FacePickStrategy::LargestFace) {
-        const auto it = std::max_element(
-                candidates.begin(), candidates.end(),
-                [](const ScoredFace& a, const ScoredFace& b) {
-                    return a.rect.area() < b.rect.area();
-                });
+        const auto it =
+                std::max_element(candidates.begin(), candidates.end(),
+                                 [](const ScoredFace& a, const ScoredFace& b) {
+                                     return a.rect.area() < b.rect.area();
+                                 });
         m_lastFaceScore = it->score;
         return it->rect;
     }
     if (strategy == FacePickStrategy::HighestScore) {
-        const auto it = std::max_element(
-                candidates.begin(), candidates.end(),
-                [](const ScoredFace& a, const ScoredFace& b) {
-                    return a.score < b.score;
-                });
+        const auto it =
+                std::max_element(candidates.begin(), candidates.end(),
+                                 [](const ScoredFace& a, const ScoredFace& b) {
+                                     return a.score < b.score;
+                                 });
         m_lastFaceScore = it->score;
         return it->rect;
     }
 
     if (m_detectorKind != DetectorKind::Ggml || !m_ggmlCtx) {
-        const auto it = std::max_element(
-                candidates.begin(), candidates.end(),
-                [](const ScoredFace& a, const ScoredFace& b) {
-                    return a.rect.area() < b.rect.area();
-                });
+        const auto it =
+                std::max_element(candidates.begin(), candidates.end(),
+                                 [](const ScoredFace& a, const ScoredFace& b) {
+                                     return a.rect.area() < b.rect.area();
+                                 });
         m_lastFaceScore = it->score;
         return it->rect;
     }
 
     if (!m_hasReferenceEmbedding) {
-        const auto seedIt = std::max_element(
-                candidates.begin(), candidates.end(),
-                [](const ScoredFace& a, const ScoredFace& b) {
-                    return a.rect.area() < b.rect.area();
-                });
+        const auto seedIt =
+                std::max_element(candidates.begin(), candidates.end(),
+                                 [](const ScoredFace& a, const ScoredFace& b) {
+                                     return a.rect.area() < b.rect.area();
+                                 });
         if (seedIt == candidates.end()) return cv::Rect();
         if (embedFaceCrop(frame, seedIt->rect, &m_referenceEmbedding)) {
             m_hasReferenceEmbedding = true;
@@ -1441,9 +1461,9 @@ void FaceCaptureWidget::refreshCapturedGallery() {
         auto* thumb = new QLabel(m_capturedGalleryRow);
         thumb->setFixedSize(48, 48);
         thumb->setAlignment(Qt::AlignCenter);
-        thumb->setStyleSheet(
-                QStringLiteral("QLabel { background-color: #222; "
-                               "border: 1px solid #555; border-radius: 3px; }"));
+        thumb->setStyleSheet(QStringLiteral(
+                "QLabel { background-color: #222; "
+                "border: 1px solid #555; border-radius: 3px; }"));
         thumb->setPixmap(QPixmap::fromImage(frame.croppedFace)
                                  .scaled(48, 48, Qt::KeepAspectRatio,
                                          Qt::SmoothTransformation));
@@ -1478,7 +1498,8 @@ void FaceCaptureWidget::loadFaceCaptureSettings() {
         m_faceStrategyCombo->blockSignals(true);
         const int strategy =
                 settings.value(QStringLiteral("faceStrategy"),
-                               static_cast<int>(FacePickStrategy::TrackSamePerson))
+                               static_cast<int>(
+                                       FacePickStrategy::TrackSamePerson))
                         .toInt();
         for (int i = 0; i < m_faceStrategyCombo->count(); ++i) {
             if (m_faceStrategyCombo->itemData(i).toInt() == strategy) {
@@ -1508,7 +1529,8 @@ void FaceCaptureWidget::saveFaceCaptureSettings() {
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (m_minScoreSpin) {
-        settings.setValue(QStringLiteral("faceMinScore"), m_minScoreSpin->value());
+        settings.setValue(QStringLiteral("faceMinScore"),
+                          m_minScoreSpin->value());
     }
     if (m_minCapturesSpin) {
         settings.setValue(QStringLiteral("faceMinCaptures"),

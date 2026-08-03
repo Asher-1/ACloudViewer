@@ -97,8 +97,7 @@ void AlignWithGradAngle(const std::vector<double>& angle,
             const double neg_dist = std::min(
                     std::abs(img_grad_angle[i] - pred_grad + pi),
                     2.0 * pi - std::abs(img_grad_angle[i] - pred_grad + pi));
-            oriented[i] =
-                    pos_dist <= neg_dist ? pred_grad : pred_grad - pi;
+            oriented[i] = pos_dist <= neg_dist ? pred_grad : pred_grad - pi;
         }
     }
 }
@@ -157,7 +156,8 @@ bool DetectAfmLines(const uint8_t* gray,
             const size_t i = Idx(x, y, width);
             img[i] = static_cast<double>(
                     gray[static_cast<size_t>(y) * row_stride + x]);
-            df[i] = std::exp(-static_cast<double>(df_norm[i])) * kLineNeighborhood;
+            df[i] = std::exp(-static_cast<double>(df_norm[i])) *
+                    kLineNeighborhood;
             line_level[i] = static_cast<double>(angle_norm[i]) * pi;
             gradnorm[i] = std::max(kLineNeighborhood - df[i], 0.0);
         }
@@ -175,17 +175,16 @@ bool DetectAfmLines(const uint8_t* gray,
     }
 
     int n_out = 0;
-    double* raw = LineSegmentDetection(
-            &n_out, img.data(), width, height,
-            /*scale=*/1.0,
-            /*sigma_scale=*/0.6,
-            /*quant=*/2.0,
-            /*ang_th=*/22.5,
-            /*log_eps=*/0.0,
-            /*density_th=*/0.0,
-            /*n_bins=*/1024,
-            /*grad_nfa=*/true,
-            gradnorm.data(), gradangle.data());
+    double* raw = LineSegmentDetection(&n_out, img.data(), width, height,
+                                       /*scale=*/1.0,
+                                       /*sigma_scale=*/0.6,
+                                       /*quant=*/2.0,
+                                       /*ang_th=*/22.5,
+                                       /*log_eps=*/0.0,
+                                       /*density_th=*/0.0,
+                                       /*n_bins=*/1024,
+                                       /*grad_nfa=*/true, gradnorm.data(),
+                                       gradangle.data());
     if (raw == nullptr || n_out <= 0) {
         if (raw != nullptr) {
             std::free(raw);

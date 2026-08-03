@@ -36,11 +36,13 @@ inline QLabel* makeHelperCaption(const QString& text) {
     label->setWordWrap(true);
     label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    label->setStyleSheet(QStringLiteral("color: palette(mid); font-size: 11px;"));
+    label->setStyleSheet(
+            QStringLiteral("color: palette(mid); font-size: 11px;"));
     return label;
 }
 
-inline QPushButton* makeBrowseButton(const QString& text, QWidget* parent = nullptr) {
+inline QPushButton* makeBrowseButton(const QString& text,
+                                     QWidget* parent = nullptr) {
     auto* btn = new QPushButton(text, parent);
     btn->setFixedWidth(kBrowseButtonWidth);
     btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -48,8 +50,8 @@ inline QPushButton* makeBrowseButton(const QString& text, QWidget* parent = null
 }
 
 /** Uniform two-column form: label | field | label | field. */
-inline void setupTwoColumnFormGrid(QGridLayout* grid,
-                                   int labelColumnWidth = kFormLabelColumnWidth) {
+inline void setupTwoColumnFormGrid(
+        QGridLayout* grid, int labelColumnWidth = kFormLabelColumnWidth) {
     if (!grid) return;
     grid->setHorizontalSpacing(6);
     grid->setVerticalSpacing(2);
@@ -66,12 +68,14 @@ inline void setupCompactMainLayout(QVBoxLayout* layout) {
     layout->setSpacing(4);
 }
 
-/** Tab pane spacing so top controls (e.g. Use test data) do not overlap tabs. */
+/** Tab pane spacing so top controls (e.g. Use test data) do not overlap tabs.
+ */
 inline void applyTabWidgetPaneStyle(QTabWidget* tabs) {
     if (!tabs) return;
     tabs->setDocumentMode(false);
     tabs->setStyleSheet(QStringLiteral(
-            "QTabWidget::pane { border: 0; padding: 8px 4px 4px 4px; top: 0px; }"
+            "QTabWidget::pane { border: 0; padding: 8px 4px 4px 4px; top: 0px; "
+            "}"
             "QTabBar::tab { padding: 4px 10px; min-height: 18px; }"));
 }
 
@@ -107,7 +111,7 @@ inline void tightenFormGrid(QGridLayout* grid, int valueColumnStretch = 1) {
 }
 
 inline QDoubleSpinBox* makeMinDetectionScoreSpin(QWidget* parent = nullptr,
-                                               const QString& tooltip = {}) {
+                                                 const QString& tooltip = {}) {
     auto* spin = new QDoubleSpinBox(parent);
     spin->setRange(0.0, 1.0);
     spin->setSingleStep(0.05);

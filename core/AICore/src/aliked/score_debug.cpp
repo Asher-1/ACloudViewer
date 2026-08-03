@@ -1,13 +1,20 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Score-map / feature-map checksum diagnostics (LIGHTGLUE_ALIKED_DKD_DEBUG=1).
 
 #include "score_debug.hpp"
 
-#include "gpu_sync.hpp"
-
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <cmath>
 #include <cstring>
+
+#include "gpu_sync.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -26,11 +33,12 @@ uint64_t Fnv1a64(const float *data, size_t count) {
     return hash;
 }
 
-const std::vector<float> *FindScoreRef(int32_t h, int32_t w,
+const std::vector<float> *FindScoreRef(int32_t h,
+                                       int32_t w,
                                        const char **out_tag) {
     const size_t count = static_cast<size_t>(h) * static_cast<size_t>(w);
-    if (g_cpu_refs.score_padded.size() == count &&
-        g_cpu_refs.padded_h == h && g_cpu_refs.padded_w == w) {
+    if (g_cpu_refs.score_padded.size() == count && g_cpu_refs.padded_h == h &&
+        g_cpu_refs.padded_w == w) {
         if (out_tag) {
             *out_tag = "padded";
         }
@@ -75,8 +83,12 @@ ScoreMapStats StatsAgainstRef(const std::vector<float> &nchw,
     return stats;
 }
 
-void PrintStatsLine(const char *kind, const char *stage, int32_t c, int32_t h,
-                    int32_t w, const ScoreMapStats &stats) {
+void PrintStatsLine(const char *kind,
+                    const char *stage,
+                    int32_t c,
+                    int32_t h,
+                    int32_t w,
+                    const ScoreMapStats &stats) {
     std::fprintf(stderr,
                  "[dkd-debug] kind=%s stage=%s c=%d h=%d w=%d sum=%.6f "
                  "min=%.6f max=%.6f hash=%016llx",
@@ -96,23 +108,21 @@ bool DkdDebugEnabled() {
     return env != nullptr && env[0] != '0';
 }
 
-void ClearDkdDebugCpuRefs() {
-    g_cpu_refs = DkdDebugCpuRefs{};
-}
+void ClearDkdDebugCpuRefs() { g_cpu_refs = DkdDebugCpuRefs{}; }
 
-void SetDkdDebugCpuRefs(const DkdDebugCpuRefs &refs) {
-    g_cpu_refs = refs;
-}
+void SetDkdDebugCpuRefs(const DkdDebugCpuRefs &refs) { g_cpu_refs = refs; }
 
-void CaptureBackboneStage(DkdDebugCpuRefs *refs, const char *stage,
-                          const std::vector<float> &nchw, int32_t c, int32_t h,
+void CaptureBackboneStage(DkdDebugCpuRefs *refs,
+                          const char *stage,
+                          const std::vector<float> &nchw,
+                          int32_t c,
+                          int32_t h,
                           int32_t w) {
     if (refs == nullptr || stage == nullptr || stage[0] == '\0') {
         return;
     }
-    const size_t expected =
-            static_cast<size_t>(c) * static_cast<size_t>(h) *
-            static_cast<size_t>(w);
+    const size_t expected = static_cast<size_t>(c) * static_cast<size_t>(h) *
+                            static_cast<size_t>(w);
     if (nchw.size() != expected || expected == 0) {
         return;
     }
@@ -138,11 +148,12 @@ const BackboneStageRef *FindBackboneRef(const char *stage) {
     return &it->second;
 }
 
-ScoreMapStats ScoreMapStatsFromNchw(const std::vector<float> &nchw, int32_t h,
-                                    int32_t w, int32_t c) {
-    const size_t expected =
-            static_cast<size_t>(c) * static_cast<size_t>(h) *
-            static_cast<size_t>(w);
+ScoreMapStats ScoreMapStatsFromNchw(const std::vector<float> &nchw,
+                                    int32_t h,
+                                    int32_t w,
+                                    int32_t c) {
+    const size_t expected = static_cast<size_t>(c) * static_cast<size_t>(h) *
+                            static_cast<size_t>(w);
     if (nchw.size() != expected || expected == 0) {
         return ScoreMapStats{};
     }
@@ -161,8 +172,11 @@ ScoreMapStats ScoreMapStatsFromNchw(const std::vector<float> &nchw, int32_t h,
     return stats;
 }
 
-bool LogScoreMapStage(internal::Backend *backend, const GpuTensor &score,
-                      int32_t h, int32_t w, const char *stage,
+bool LogScoreMapStage(internal::Backend *backend,
+                      const GpuTensor &score,
+                      int32_t h,
+                      int32_t w,
+                      const char *stage,
                       std::string *error) {
     if (!DkdDebugEnabled() || stage == nullptr) {
         return true;
@@ -175,8 +189,12 @@ bool LogScoreMapStage(internal::Backend *backend, const GpuTensor &score,
     return true;
 }
 
-bool LogFeatureMapStage(internal::Backend *backend, const GpuTensor &feature,
-                        int32_t c, int32_t h, int32_t w, const char *stage,
+bool LogFeatureMapStage(internal::Backend *backend,
+                        const GpuTensor &feature,
+                        int32_t c,
+                        int32_t h,
+                        int32_t w,
+                        const char *stage,
                         std::string *error) {
     if (!DkdDebugEnabled() || stage == nullptr) {
         return true;
@@ -190,8 +208,12 @@ bool LogFeatureMapStage(internal::Backend *backend, const GpuTensor &feature,
     return true;
 }
 
-bool LogBackboneStage(internal::Backend *backend, const GpuTensor &tensor,
-                      int32_t c, int32_t h, int32_t w, const char *stage,
+bool LogBackboneStage(internal::Backend *backend,
+                      const GpuTensor &tensor,
+                      int32_t c,
+                      int32_t h,
+                      int32_t w,
+                      const char *stage,
                       std::string *error) {
     if (!DkdDebugEnabled() || stage == nullptr) {
         return true;
@@ -200,9 +222,8 @@ bool LogBackboneStage(internal::Backend *backend, const GpuTensor &tensor,
     if (!tensor.DownloadNchw(backend, &nchw, c, h, w, error)) {
         return false;
     }
-    const size_t expected =
-            static_cast<size_t>(c) * static_cast<size_t>(h) *
-            static_cast<size_t>(w);
+    const size_t expected = static_cast<size_t>(c) * static_cast<size_t>(h) *
+                            static_cast<size_t>(w);
     if (nchw.size() != expected) {
         if (error) {
             *error = std::string("backbone debug download size mismatch at ") +
@@ -212,8 +233,7 @@ bool LogBackboneStage(internal::Backend *backend, const GpuTensor &tensor,
     }
     const BackboneStageRef *ref = FindBackboneRef(stage);
     const char *tag = ref != nullptr ? stage : nullptr;
-    const std::vector<float> *ref_data =
-            ref != nullptr ? &ref->nchw : nullptr;
+    const std::vector<float> *ref_data = ref != nullptr ? &ref->nchw : nullptr;
     ScoreMapStats stats = StatsAgainstRef(nchw, ref_data);
     stats.ref_tag = tag;
     PrintStatsLine("backbone", stage, c, h, w, stats);

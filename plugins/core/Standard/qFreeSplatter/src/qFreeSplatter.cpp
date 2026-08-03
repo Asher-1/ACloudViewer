@@ -25,8 +25,6 @@
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
 
-#include "ecvPersistentSettings.h"
-
 #include <QAction>
 #include <QDir>
 #include <QFile>
@@ -50,6 +48,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/runtime_capi.h"
+#include "ecvPersistentSettings.h"
 
 namespace {
 
@@ -620,12 +619,12 @@ QString buildGaussianExportBaseName(
     QString source = ecvPluginDbNaming::sanitizeSegment(result.sourceName);
     if (source.isEmpty()) source = QStringLiteral("run");
 
-    QString name =
-            QStringLiteral("FS_%1_%2_%3_%4").arg(modelKind, modelQuant, source,
-                                                 ecvPluginDbNaming::deviceTagFromName(
-                                                         result.resolvedDevice.isEmpty()
-                                                                 ? settings.device
-                                                                 : result.resolvedDevice));
+    QString name = QStringLiteral("FS_%1_%2_%3_%4")
+                           .arg(modelKind, modelQuant, source,
+                                ecvPluginDbNaming::deviceTagFromName(
+                                        result.resolvedDevice.isEmpty()
+                                                ? settings.device
+                                                : result.resolvedDevice));
 
     if (result.nViews > 0) {
         name += QStringLiteral("_%1v").arg(result.nViews);

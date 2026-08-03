@@ -316,8 +316,8 @@ CC_FILE_ERROR IoAbstractLoader::loadFile(
     importer.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
     importer.SetPropertyBool(AI_CONFIG_PP_FID_IGNORE_TEXTURECOORDS, true);
 
-    const aiScene *cScene = importer.ReadFile(
-            inFileName.toStdString(), _assimpPostProcessFlags());
+    const aiScene *cScene = importer.ReadFile(inFileName.toStdString(),
+                                              _assimpPostProcessFlags());
 
     if (cScene == nullptr) {
         CVLog::Warning(QStringLiteral("[qMeshIO] The file '%1' has errors: %2")

@@ -31,8 +31,10 @@ public:
     explicit ecvModelDownloader(QObject* parent = nullptr);
     ~ecvModelDownloader() override;
 
-    static bool isValidCachedFile(const QString& path, qint64 minBytes = 1024 * 1024);
-    static void removeInvalidCacheFile(const QString& path, qint64 minBytes = 1024 * 1024);
+    static bool isValidCachedFile(const QString& path,
+                                  qint64 minBytes = 1024 * 1024);
+    static void removeInvalidCacheFile(const QString& path,
+                                       qint64 minBytes = 1024 * 1024);
 
     /** Human-readable size (B / KB / MB / GB). */
     static QString formatFileSize(qint64 bytes);

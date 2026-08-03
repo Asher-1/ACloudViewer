@@ -23,8 +23,8 @@
 
 #include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
-#include "aicore/lightglue_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/lightglue_capi.h"
 #include "aicore/runtime_capi.h"
 #include "feature_extractor.h"
 #endif
@@ -51,8 +51,7 @@ void LightGlueWorker::releaseContextOnMainThread() {
 
 namespace {
 
-QString resolvedDeviceFromInfoJson(char* info,
-                                   void (*freeFn)(char*)) {
+QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(char*)) {
     if (!info) return {};
     const QJsonObject obj = QJsonDocument::fromJson(QByteArray(info)).object();
     freeFn(info);
@@ -156,14 +155,12 @@ bool load_gray_same_size(const QString& p0,
     QImage gray0 = img0.convertToFormat(QImage::Format_Grayscale8);
     QImage gray1 = img1.convertToFormat(QImage::Format_Grayscale8);
     if (max_resize > 0) {
-        const int max_dim0 =
-                std::max(gray0.width(), gray0.height());
+        const int max_dim0 = std::max(gray0.width(), gray0.height());
         if (max_dim0 > max_resize) {
             gray0 = gray0.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
                                  Qt::SmoothTransformation);
         }
-        const int max_dim1 =
-                std::max(gray1.width(), gray1.height());
+        const int max_dim1 = std::max(gray1.width(), gray1.height());
         if (max_dim1 > max_resize) {
             gray1 = gray1.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
                                  Qt::SmoothTransformation);
@@ -191,7 +188,8 @@ bool load_gray_same_size(const QString& p0,
 }  // namespace
 
 bool LightGlueWorker::runModelInfo() {
-    aicore_inference_log::log_device_request(QStringLiteral("LG"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("LG"),
+                                             m_settings.device);
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
     emit progressUpdate(20, 100);
 
@@ -219,7 +217,8 @@ bool LightGlueWorker::runModelInfo() {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
                 resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
-        aicore_inference_log::log_device_resolved(QStringLiteral("LG"), resolved);
+        aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
+                                                  resolved);
     }
 
     char* json = aicore_lightglue_info_json(ctx);
@@ -242,7 +241,8 @@ bool LightGlueWorker::runMatch() {
     timer.start();
 
     emit progressUpdate(5, 100);
-    aicore_inference_log::log_device_request(QStringLiteral("LG"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("LG"),
+                                             m_settings.device);
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
 
     aicore_lightglue_options* opts = aicore_lightglue_options_new();
@@ -270,7 +270,8 @@ bool LightGlueWorker::runMatch() {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
                 resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
-        aicore_inference_log::log_device_resolved(QStringLiteral("LG"), resolved);
+        aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
+                                                  resolved);
     }
 
     emit progressUpdate(20, 100);
@@ -346,7 +347,9 @@ bool LightGlueWorker::runMatch() {
     m_pendingCtx = ctx;
 
     emit progressUpdate(100, 100);
-    aicore_inference_log::log_inference_done(QStringLiteral("LG"), result.resolvedDevice, result.runtimeMs, QStringLiteral("%1 mutual matches").arg(n_matches));
+    aicore_inference_log::log_inference_done(
+            QStringLiteral("LG"), result.resolvedDevice, result.runtimeMs,
+            QStringLiteral("%1 mutual matches").arg(n_matches));
     emit resultReady(result);
     return true;
 }

@@ -7,11 +7,6 @@
 
 #include "FaceRegistryWidget.h"
 
-#include "FaceDetectEmbedHelpers.h"
-#include "FaceDetectModelContext.h"
-#include "FaceDetectTestData.h"
-#include "FaceDetectUiHelpers.h"
-
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileDialog>
@@ -26,14 +21,19 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
+#include "FaceDetectEmbedHelpers.h"
+#include "FaceDetectModelContext.h"
+#include "FaceDetectTestData.h"
+#include "FaceDetectUiHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/facedetect_capi.h"
 #endif
 
+#include <CVLog.h>
+
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
-
-#include <CVLog.h>
 namespace {
 
 constexpr int kAuthPreviewSize = 96;
@@ -48,12 +48,14 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     testRow->setContentsMargins(0, 0, 0, 0);
     testRow->setSpacing(6);
     m_testDataBtn = new QPushButton(tr("Use test data"), this);
-    m_testDataBtn->setToolTip(
-            tr("Download FriendsFaces sample pack, register gallery identities, "
-               "then fill registry fields.\n\n"
-               "Downloads the FriendsFaces sample pack, registers six cast members "
-               "with curated gallery frontals (e.g. Joey00030.jpg), fills the "
-               "registry DB path, and sets the group-photo probe for authentication."));
+    m_testDataBtn->setToolTip(tr(
+            "Download FriendsFaces sample pack, register gallery identities, "
+            "then fill registry fields.\n\n"
+            "Downloads the FriendsFaces sample pack, registers six cast "
+            "members "
+            "with curated gallery frontals (e.g. Joey00030.jpg), fills the "
+            "registry DB path, and sets the group-photo probe for "
+            "authentication."));
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::testDataRequested);
     testRow->addWidget(m_testDataBtn, 0);
@@ -65,7 +67,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     FaceDetectUi::setupTwoColumnFormGrid(dbLayout);
     FaceDetectUi::tightenGroupBox(dbGroup);
     m_registryPathEdit = new QLineEdit(dbGroup);
-    m_registryPathEdit->setPlaceholderText(tr("SQLite registry path (face_registry.db)"));
+    m_registryPathEdit->setPlaceholderText(
+            tr("SQLite registry path (face_registry.db)"));
     auto* browseDb = FaceDetectUi::makeBrowseButton(tr("Browse…"), dbGroup);
     connect(browseDb, &QPushButton::clicked, this,
             &FaceRegistryWidget::onBrowseRegistryDb);
@@ -86,14 +89,14 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     m_threadsSpin->setRange(0, 128);
     m_threadsSpin->setSpecialValueText(tr("Auto"));
     FaceDetectUi::makeCompactSpin(m_threadsSpin);
-    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 if (m_syncingModelControls) return;
                 updateModelPathFromCombo();
                 emit modelSelectionChanged(modelFilename());
             });
-    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 if (m_syncingModelControls) return;
                 m_device = deviceId();
                 emit deviceSelectionChanged(m_device);
@@ -104,7 +107,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
                 m_threadCount = value;
                 emit threadCountChanged(value);
             });
-    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 1, 0);
+    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 1,
+                        0);
     dbLayout->addWidget(m_modelCombo, 1, 1);
     dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Device:")), 1, 2);
     dbLayout->addWidget(m_deviceCombo, 1, 3);
@@ -113,7 +117,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
 
     m_dbStatusLabel = new QLabel(tr("—"), dbGroup);
     m_dbStatusLabel->setWordWrap(true);
-    m_dbStatusLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    m_dbStatusLabel->setSizePolicy(QSizePolicy::Preferred,
+                                   QSizePolicy::Maximum);
     m_dbStatusLabel->setStyleSheet(
             "color: palette(mid); font-size: 11px; padding: 0;");
     dbLayout->addWidget(m_dbStatusLabel, 3, 0, 1, 4);
@@ -125,7 +130,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     FaceDetectUi::tightenGroupBox(regGroup);
 
     m_registerImagePath = new QLineEdit(regGroup);
-    m_registerImagePath->setPlaceholderText(tr("Image path (or capture from Live tab)"));
+    m_registerImagePath->setPlaceholderText(
+            tr("Image path (or capture from Live tab)"));
     auto* browseReg = FaceDetectUi::makeBrowseButton(tr("Browse…"), regGroup);
     connect(browseReg, &QPushButton::clicked, this,
             &FaceRegistryWidget::onBrowseRegisterImage);
@@ -140,7 +146,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     regLayout->addWidget(m_nameEdit, 1, 1, Qt::AlignLeft);
 
     auto* registerBtn = new QPushButton(tr("Register to database"), regGroup);
-    connect(registerBtn, &QPushButton::clicked, this, &FaceRegistryWidget::onRegister);
+    connect(registerBtn, &QPushButton::clicked, this,
+            &FaceRegistryWidget::onRegister);
     regLayout->addWidget(registerBtn, 1, 2, 1, 2, Qt::AlignRight);
     main->addWidget(regGroup);
 
@@ -152,7 +159,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     auto* browseAuth = FaceDetectUi::makeBrowseButton(tr("Browse…"), authGroup);
     connect(browseAuth, &QPushButton::clicked, this,
             &FaceRegistryWidget::onBrowseAuthImage);
-    authLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Probe image:")), 0, 0);
+    authLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Probe image:")), 0,
+                          0);
     authLayout->addWidget(m_authImagePath, 0, 1, 1, 2);
     authLayout->addWidget(browseAuth, 0, 3);
 
@@ -168,8 +176,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
                "register / authenticate."));
     FaceDetectUi::makeCompactDoubleSpin(m_authThreshold);
 
-    m_exportAuthToDbCheck = new QCheckBox(
-            tr("Export auth viz to DB tree"), authGroup);
+    m_exportAuthToDbCheck =
+            new QCheckBox(tr("Export auth viz to DB tree"), authGroup);
     m_exportAuthToDbCheck->setChecked(false);
     m_exportAuthToDbCheck->setToolTip(
             tr("When enabled, annotated probe image with match labels is added "
@@ -188,7 +196,8 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     authLayout->addLayout(threshRow, 1, 0, 1, 4);
 
     auto* authBtn = new QPushButton(tr("Run authentication"), authGroup);
-    connect(authBtn, &QPushButton::clicked, this, &FaceRegistryWidget::onAuthenticate);
+    connect(authBtn, &QPushButton::clicked, this,
+            &FaceRegistryWidget::onAuthenticate);
 
     m_authPreviewLabel = new ecvClickableImageLabel(authGroup);
     m_authPreviewLabel->setFixedSize(kAuthPreviewSize, kAuthPreviewSize);
@@ -199,16 +208,16 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     auto* authActionRow = new QHBoxLayout;
     authActionRow->setContentsMargins(0, 0, 0, 0);
     authActionRow->setSpacing(8);
-    authActionRow->addWidget(
-            ecvClickableImageLabel::wrapWithTapToPreviewHint(m_authPreviewLabel,
-                                                             authGroup));
+    authActionRow->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
+            m_authPreviewLabel, authGroup));
     authActionRow->addWidget(authBtn);
     authActionRow->addStretch();
     authLayout->addLayout(authActionRow, 2, 0, 1, 4);
 
     m_authResultLabel = new QLabel(tr("—"), authGroup);
     m_authResultLabel->setWordWrap(true);
-    m_authResultLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    m_authResultLabel->setSizePolicy(QSizePolicy::Preferred,
+                                     QSizePolicy::Maximum);
     m_authResultLabel->setStyleSheet(
             "padding: 2px 4px; border-radius: 3px; background: palette(base); "
             "border: 1px solid palette(mid); font-size: 11px;");
@@ -233,8 +242,10 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     auto* listBtnRow = new QHBoxLayout;
     auto* removeBtn = new QPushButton(tr("Remove selected"), listGroup);
     auto* clearBtn = new QPushButton(tr("Clear all"), listGroup);
-    connect(removeBtn, &QPushButton::clicked, this, &FaceRegistryWidget::onRemove);
-    connect(clearBtn, &QPushButton::clicked, this, &FaceRegistryWidget::onClear);
+    connect(removeBtn, &QPushButton::clicked, this,
+            &FaceRegistryWidget::onRemove);
+    connect(clearBtn, &QPushButton::clicked, this,
+            &FaceRegistryWidget::onClear);
     listBtnRow->addWidget(removeBtn);
     listBtnRow->addWidget(clearBtn);
     listBtnRow->addStretch();
@@ -268,7 +279,8 @@ float FaceRegistryWidget::minDetectionScore() const {
                    : m_minDetectionScore;
 }
 
-void FaceRegistryWidget::showVerifySummary(int faceCount, int matchedCount,
+void FaceRegistryWidget::showVerifySummary(int faceCount,
+                                           int matchedCount,
                                            float threshold) {
     if (!m_authResultLabel || faceCount <= 0) return;
     m_authResultLabel->setText(
@@ -317,7 +329,8 @@ int FaceRegistryWidget::registerGalleryEntries(
         const QVector<FaceDetectGalleryEntry>& entries) {
     if (entries.isEmpty()) return 0;
     if (!m_store.isOpen()) {
-        emit logMessage(tr("[Registry] Database not open — choose a valid path."));
+        emit logMessage(
+                tr("[Registry] Database not open — choose a valid path."));
         return 0;
     }
 
@@ -355,9 +368,11 @@ int FaceRegistryWidget::registerGalleryEntries(
         if (QDir(galleryPersonDir).exists()) {
             const QStringList filters = {
                     QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
-                    QStringLiteral("*.png"),  QStringLiteral("*.webp")};
-            for (const QString& fn : QDir(galleryPersonDir).entryList(filters, QDir::Files)) {
-                if (registerPersonFromImage(name, QDir(galleryPersonDir).filePath(fn),
+                    QStringLiteral("*.png"), QStringLiteral("*.webp")};
+            for (const QString& fn :
+                 QDir(galleryPersonDir).entryList(filters, QDir::Files)) {
+                if (registerPersonFromImage(name,
+                                            QDir(galleryPersonDir).filePath(fn),
                                             kGalleryMinScore)) {
                     ++added;
                     break;
@@ -370,7 +385,8 @@ int FaceRegistryWidget::registerGalleryEntries(
         refreshList();
         saveSettings();
         emit registryChanged();
-        emit logMessage(tr("[Registry] Registered %1 gallery identities.").arg(added));
+        emit logMessage(
+                tr("[Registry] Registered %1 gallery identities.").arg(added));
     }
     return added;
 }
@@ -389,8 +405,9 @@ bool FaceRegistryWidget::registerPersonFromImage(const QString& name,
     int dim = 0;
     QString err;
     if (!embedImage(imagePath, &emb, &dim, &err, minDetectionScore)) {
-        emit logMessage(tr("[Registry] %1 (%2): %3")
-                                .arg(name, QFileInfo(imagePath).fileName(), err));
+        emit logMessage(
+                tr("[Registry] %1 (%2): %3")
+                        .arg(name, QFileInfo(imagePath).fileName(), err));
         return false;
     }
 
@@ -411,8 +428,7 @@ bool FaceRegistryWidget::registerPersonFromImage(const QString& name,
 QString FaceRegistryWidget::registryPathForModel(const QString& baseDir,
                                                  const QString& modelFilename) {
     const QString stem = QFileInfo(modelFilename).completeBaseName();
-    const QString safeStem =
-            stem.isEmpty() ? QStringLiteral("default") : stem;
+    const QString safeStem = stem.isEmpty() ? QStringLiteral("default") : stem;
     return QDir(baseDir).filePath(
             QStringLiteral("face_registry_%1.db").arg(safeStem));
 }
@@ -475,7 +491,8 @@ void FaceRegistryWidget::rebuildModelCombo(const QStringList& labels,
     m_syncingModelControls = false;
 }
 
-void FaceRegistryWidget::rebuildDeviceCombo(const QComboBox* sourceDeviceCombo) {
+void FaceRegistryWidget::rebuildDeviceCombo(
+        const QComboBox* sourceDeviceCombo) {
     if (!m_deviceCombo || !sourceDeviceCombo) return;
     m_syncingModelControls = true;
     m_deviceCombo->clear();
@@ -531,12 +548,11 @@ void FaceRegistryWidget::setAuthThreshold(float value) {
 }
 
 float FaceRegistryWidget::authThreshold() const {
-    return m_authThreshold ? static_cast<float>(m_authThreshold->value()) : 0.52f;
+    return m_authThreshold ? static_cast<float>(m_authThreshold->value())
+                           : 0.52f;
 }
 
-QString FaceRegistryWidget::resolveModelPath() const {
-    return m_modelPath;
-}
+QString FaceRegistryWidget::resolveModelPath() const { return m_modelPath; }
 
 void FaceRegistryWidget::setDevice(const QString& device) {
     if (m_device != device) {
@@ -555,7 +571,8 @@ void FaceRegistryWidget::setDevice(const QString& device) {
 }
 
 QString FaceRegistryWidget::registryPath() const {
-    return m_registryPathEdit ? m_registryPathEdit->text().trimmed() : m_store.path();
+    return m_registryPathEdit ? m_registryPathEdit->text().trimmed()
+                              : m_store.path();
 }
 
 void FaceRegistryWidget::releaseStoreConnection() {
@@ -597,7 +614,8 @@ void FaceRegistryWidget::loadSettings() {
                         .toString();
         const QString legacy =
                 !legacyActive.isEmpty() ? legacyActive : legacyDb;
-        if (!legacy.isEmpty() && !FaceDetectTestData::isFriendsBundlePath(legacy)) {
+        if (!legacy.isEmpty() &&
+            !FaceDetectTestData::isFriendsBundlePath(legacy)) {
             dbPath = legacy;
             m_registryPathUserChosen = true;
         }
@@ -607,14 +625,18 @@ void FaceRegistryWidget::loadSettings() {
                     .toDouble();
     const double minScore =
             settings.value(QStringLiteral("qFaceDetect/minDetectionScore"),
-                           settings.value(QStringLiteral("qFaceDetect/registryMinDetectionScore"),
-                                          0.5))
+                           settings.value(
+                                   QStringLiteral("qFaceDetect/"
+                                                  "registryMinDetectionScore"),
+                                   0.5))
                     .toDouble();
     setAuthThreshold(static_cast<float>(thresh));
     setMinDetectionScore(static_cast<float>(minScore));
     if (m_exportAuthToDbCheck) {
         m_exportAuthToDbCheck->setChecked(
-                settings.value(QStringLiteral("qFaceDetect/exportAuthResultToDb"), false)
+                settings.value(QStringLiteral(
+                                       "qFaceDetect/exportAuthResultToDb"),
+                               false)
                         .toBool());
     }
     if (m_registryPathUserChosen && !dbPath.isEmpty()) {
@@ -648,11 +670,10 @@ void FaceRegistryWidget::saveSettings() const {
 void FaceRegistryWidget::refreshList() {
     m_entryList->clear();
     for (const FaceRegistryEntry& e : m_store.entries()) {
-        auto* item = new QListWidgetItem(
-                QStringLiteral("%1  (%2-d, %3)")
-                        .arg(e.name)
-                        .arg(e.embedDim)
-                        .arg(e.modelFile));
+        auto* item = new QListWidgetItem(QStringLiteral("%1  (%2-d, %3)")
+                                                 .arg(e.name)
+                                                 .arg(e.embedDim)
+                                                 .arg(e.modelFile));
         item->setData(Qt::UserRole, e.id);
         if (!e.thumbnail.isNull()) {
             item->setIcon(QIcon(QPixmap::fromImage(e.thumbnail)));
@@ -660,9 +681,10 @@ void FaceRegistryWidget::refreshList() {
         m_entryList->addItem(item);
     }
     if (m_dbStatusLabel && m_store.isOpen()) {
-        m_dbStatusLabel->setText(tr("%1 entries in %2")
-                                         .arg(m_store.entries().size())
-                                         .arg(QFileInfo(m_store.path()).fileName()));
+        m_dbStatusLabel->setText(
+                tr("%1 entries in %2")
+                        .arg(m_store.entries().size())
+                        .arg(QFileInfo(m_store.path()).fileName()));
     }
 }
 
@@ -673,7 +695,8 @@ void FaceRegistryWidget::onBrowseRegistryDb() {
                            FaceDetectEmbed::modelCacheDir())
                     .toString();
     const QString path = QFileDialog::getSaveFileName(
-            this, tr("Face registry database"), lastDir + QStringLiteral("/face_registry.db"),
+            this, tr("Face registry database"),
+            lastDir + QStringLiteral("/face_registry.db"),
             tr("SQLite database (*.db);;All files (*.*)"));
     if (path.isEmpty()) return;
     settings.setValue(QStringLiteral("qFaceDetect/lastRegistryDir"),
@@ -692,8 +715,7 @@ void FaceRegistryWidget::onBrowseRegisterImage() {
             tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qFaceDetect"),
-                                       QStringLiteral("lastImageFileDir"),
-                                       path);
+                         QStringLiteral("lastImageFileDir"), path);
     if (m_registerImagePath) m_registerImagePath->setText(path);
 }
 
@@ -707,15 +729,16 @@ void FaceRegistryWidget::onBrowseAuthImage() {
             tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qFaceDetect"),
-                                       QStringLiteral("lastImageFileDir"),
-                                       path);
+                         QStringLiteral("lastImageFileDir"), path);
     if (m_authImagePath) m_authImagePath->setText(path);
     updateAuthPreview();
 }
 
 bool FaceRegistryWidget::embedImage(const QString& imagePath,
-                                    std::vector<float>* out, int* outDim,
-                                    QString* err, float minDetectionScore) {
+                                    std::vector<float>* out,
+                                    int* outDim,
+                                    QString* err,
+                                    float minDetectionScore) {
 #ifdef AICore_ENABLED
     const QString path = resolveModelPath();
     if (path.isEmpty() || !QFileInfo::exists(path)) {
@@ -736,8 +759,8 @@ bool FaceRegistryWidget::embedImage(const QString& imagePath,
     }
     if (!ok && err) {
         *err = tr("Embedding failed: %1")
-                       .arg(aicore_facedetect_last_error(m_embedContext.get()) ?:
-                            "no face detected");
+                       .arg(aicore_facedetect_last_error(m_embedContext.get())
+                                    ?: "no face detected");
     }
     return ok;
 #else
@@ -828,31 +851,35 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
         if (!FaceDetectEmbed::embedImagePathWithFallback(ctx, imagePath, &emb,
                                                          minScore)) {
             emit logMessage(tr("[Registry] %1")
-                                    .arg(aicore_facedetect_last_error(ctx) ?:
-                                         tr("Embedding failed")));
+                                    .arg(aicore_facedetect_last_error(ctx)
+                                                 ?: tr("Embedding failed")));
             return;
         }
         const auto match = m_store.bestMatch(emb, thresh);
         const auto nearest = m_store.nearestMatch(emb);
         if (!match) {
             const QString distText =
-                    nearest ? QString::number(nearest->distance, 'f', 3) : QStringLiteral("?");
+                    nearest ? QString::number(nearest->distance, 'f', 3)
+                            : QStringLiteral("?");
             m_authResultLabel->setText(
                     tr("NO MATCH (threshold %1, %2)")
                             .arg(thresh, 0, 'f', 2)
                             .arg(FaceDetectEmbed::formatNoMatchLabel(
                                     nearest ? nearest->distance : 1.f,
-                                    nearest ? nearest->entry.name : QString())));
+                                    nearest ? nearest->entry.name
+                                            : QString())));
             m_authResultLabel->setStyleSheet(
                     "padding: 8px; border-radius: 4px; background: #fef2f2; "
                     "border: 1px solid #fecaca; color: #991b1b;");
-            emit logMessage(tr("[Registry] Authentication failed — no match (nearest d=%1).")
+            emit logMessage(tr("[Registry] Authentication failed — no match "
+                               "(nearest d=%1).")
                                     .arg(distText));
             return;
         }
         FaceDetectEmbed::AnnotatedFaceLabel draw;
         draw.labelOnly = true;
-        draw.label = FaceDetectEmbed::formatMatchLabel(match->entry.name, match->distance);
+        draw.label = FaceDetectEmbed::formatMatchLabel(match->entry.name,
+                                                       match->distance);
         draw.matched = true;
         drawFaces.push_back(draw);
         if (exportAuthResultToDb() && !rgb.isNull()) {
@@ -895,17 +922,22 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
             draw.matched = false;
             draw.dashed = true;
             drawFaces.push_back(draw);
-            lines << tr("Face %1: crop failed (det %2)").arg(index).arg(box.score, 0, 'f', 3);
+            lines << tr("Face %1: crop failed (det %2)")
+                             .arg(index)
+                             .arg(box.score, 0, 'f', 3);
             continue;
         }
 
         std::vector<float> emb;
-        if (!FaceDetectEmbed::embedFaceBoxFromFrame(ctx, rgb, box, minScore, &emb)) {
+        if (!FaceDetectEmbed::embedFaceBoxFromFrame(ctx, rgb, box, minScore,
+                                                    &emb)) {
             draw.label = tr("embed failed (det=%1)").arg(box.score, 0, 'f', 2);
             draw.matched = false;
             draw.dashed = true;
             drawFaces.push_back(draw);
-            lines << tr("Face %1: embed failed (det %2)").arg(index).arg(box.score, 0, 'f', 3);
+            lines << tr("Face %1: embed failed (det %2)")
+                             .arg(index)
+                             .arg(box.score, 0, 'f', 3);
             emit logMessage(tr("[Registry] Face %1: embed failed (det %2)")
                                     .arg(index)
                                     .arg(box.score, 0, 'f', 3));
@@ -915,14 +947,17 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
         {
             QStringList distParts;
             for (const FaceRegistryEntry& entry : m_store.entries()) {
-                const float d = FaceRegistryStore::cosineDistance(emb, entry.embedding);
-                distParts << QStringLiteral("%1=%2").arg(entry.name).arg(d, 0, 'f', 4);
+                const float d =
+                        FaceRegistryStore::cosineDistance(emb, entry.embedding);
+                distParts << QStringLiteral("%1=%2")
+                                     .arg(entry.name)
+                                     .arg(d, 0, 'f', 4);
             }
-            CVLog::Print(
-                    QString("[Registry] Face %1 cosine distances: [%2] (threshold %3)")
-                            .arg(index)
-                            .arg(distParts.join(QStringLiteral(", ")))
-                            .arg(thresh, 0, 'f', 2));
+            CVLog::Print(QString("[Registry] Face %1 cosine distances: [%2] "
+                                 "(threshold %3)")
+                                 .arg(index)
+                                 .arg(distParts.join(QStringLiteral(", ")))
+                                 .arg(thresh, 0, 'f', 2));
         }
 
         const auto match = m_store.bestMatch(emb, thresh);
@@ -964,10 +999,11 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
                     .arg(matched)
                     .arg(minScore, 0, 'f', 2)
                     .arg(thresh, 0, 'f', 2);
-    m_authResultLabel->setText(summary + QStringLiteral("\n") + lines.join(QStringLiteral("\n")));
+    m_authResultLabel->setText(summary + QStringLiteral("\n") +
+                               lines.join(QStringLiteral("\n")));
     if (exportAuthResultToDb() && !rgb.isNull() && !drawFaces.empty()) {
-        emit authResultImageReady(FaceDetectEmbed::annotateLabeledFaces(rgb, drawFaces),
-                                  summary);
+        emit authResultImageReady(
+                FaceDetectEmbed::annotateLabeledFaces(rgb, drawFaces), summary);
     }
     if (matched > 0) {
         m_authResultLabel->setStyleSheet(

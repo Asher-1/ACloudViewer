@@ -7,10 +7,10 @@
 
 #include "backend.h"
 
-#include "../common/ggml_backend_utils.hpp"
-
 #include <ggml-backend.h>
 #include <ggml-cpu.h>
+
+#include "../common/ggml_backend_utils.hpp"
 
 #if defined(AICORE_VULKAN_ALIKED)
 #include "gpu_sync.hpp"
@@ -19,8 +19,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <thread>
 #include <vector>
@@ -161,10 +161,10 @@ bool Backend::Init(const std::string &request, int num_threads) {
                 ggml_backend_get_default_buffer_type(handle),
                 ggml_backend_get_default_buffer_type(cpu_backend),
         };
-        sched = ggml_backend_sched_new(
-                backs.data(), bufts.data(), static_cast<int>(backs.size()),
-                /*graph_size=*/512, /*parallel=*/false,
-                /*op_offload=*/false);
+        sched = ggml_backend_sched_new(backs.data(), bufts.data(),
+                                       static_cast<int>(backs.size()),
+                                       /*graph_size=*/512, /*parallel=*/false,
+                                       /*op_offload=*/false);
         if (sched == nullptr) {
             error = "failed to create ggml backend scheduler for Vulkan";
             Release();

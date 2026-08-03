@@ -7,11 +7,10 @@
 
 #include "ggml_cnn.hpp"
 
-#include "gpu_sync.hpp"
-
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 
+#include "gpu_sync.hpp"
 #include "tensor_ops.hpp"
 #if defined(AICORE_VULKAN_ALIKED)
 #include "vulkan/vulkan_aliked_dispatch.hpp"
@@ -510,7 +509,8 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         if (!GpuTensor::Allocate(backend_, ow, oh, weights.oc, output, error)) {
             return false;
         }
-        return output->UploadNchw(backend_, out_nchw, weights.oc, oh, ow, error);
+        return output->UploadNchw(backend_, out_nchw, weights.oc, oh, ow,
+                                  error);
     }
 
     const int32_t oh = (input.h + 2 * pad - weights.kh) / stride + 1;
@@ -526,8 +526,8 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         return false;
     }
 
-  if (cache_key != nullptr && cache_key[0] != '\0' &&
-      cache_.count(cache_key) > 0) {
+    if (cache_key != nullptr && cache_key[0] != '\0' &&
+        cache_.count(cache_key) > 0) {
         CachedWeight &entry = cache_[cache_key];
         if (!EnsureDeviceGraph(&entry, weights, input, pad, stride, error)) {
             output->Release();
@@ -552,8 +552,9 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         SyncGpuPipeline(backend_);
         FlushGpuPipeline(backend_);
         if (cache_key != nullptr) {
-            LogTensorStrideIfDebug((std::string(cache_key) + ".graph_out").c_str(),
-                                   entry.graph_out, ow, oh, weights.oc);
+            LogTensorStrideIfDebug(
+                    (std::string(cache_key) + ".graph_out").c_str(),
+                    entry.graph_out, ow, oh, weights.oc);
         }
         BackendTensorCopyCompat(backend_, entry.graph_out, output->tensor);
         SyncGpuTensorMeta(output);

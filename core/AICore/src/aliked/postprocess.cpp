@@ -239,9 +239,8 @@ DkdOutput RunDkd(const std::vector<float> &score_map,
         float residual_y = 0.0f;
         for (int32_t i = 0; i < kernel_area; ++i) {
             const float weight =
-                    exp_sum > 0.0f
-                            ? x_exp[static_cast<size_t>(i)] / exp_sum
-                            : 0.0f;
+                    exp_sum > 0.0f ? x_exp[static_cast<size_t>(i)] / exp_sum
+                                   : 0.0f;
             residual_x += weight * hw_grid[static_cast<size_t>(i) * 2 + 0];
             residual_y += weight * hw_grid[static_cast<size_t>(i) * 2 + 1];
         }
@@ -416,7 +415,8 @@ bool RunSddhStages(const std::vector<float> &feature_map,
         const int32_t y0 = std::min(
                 std::max(static_cast<int32_t>(std::lround(out->y_wh)) - pad, 0),
                 h - kernel_size);
-        out->patch.assign(static_cast<size_t>(dim) * kernel_size * kernel_size, 0.0f);
+        out->patch.assign(static_cast<size_t>(dim) * kernel_size * kernel_size,
+                          0.0f);
         for (int32_t c = 0; c < dim; ++c) {
             for (int32_t ky = 0; ky < kernel_size; ++ky) {
                 for (int32_t kx = 0; kx < kernel_size; ++kx) {
@@ -428,9 +428,11 @@ bool RunSddhStages(const std::vector<float> &feature_map,
     } else {
         out->patch.assign(static_cast<size_t>(dim), 0.0f);
         const int32_t xi = std::min(
-                std::max(static_cast<int32_t>(std::lround(out->x_wh)), 0), w - 1);
+                std::max(static_cast<int32_t>(std::lround(out->x_wh)), 0),
+                w - 1);
         const int32_t yi = std::min(
-                std::max(static_cast<int32_t>(std::lround(out->y_wh)), 0), h - 1);
+                std::max(static_cast<int32_t>(std::lround(out->y_wh)), 0),
+                h - 1);
         for (int32_t c = 0; c < dim; ++c) {
             out->patch[static_cast<size_t>(c)] =
                     feature_map[IndexNchw(c, yi, xi, h, w)];
@@ -439,8 +441,9 @@ bool RunSddhStages(const std::vector<float> &feature_map,
 
     int32_t oh = 0;
     int32_t ow = 0;
-    Conv2d(out->patch, dim, kernel_size, kernel_size, offset_0_w, 32, kernel_size,
-           kernel_size, &offset_0_b, 0, 1, &out->offset_raw, &oh, &ow);
+    Conv2d(out->patch, dim, kernel_size, kernel_size, offset_0_w, 32,
+           kernel_size, kernel_size, &offset_0_b, 0, 1, &out->offset_raw, &oh,
+           &ow);
     ApplySelu(&out->offset_raw);
     Conv2d(out->offset_raw, 32, oh, ow, offset_2_w, 32, 1, 1, &offset_2_b, 0, 1,
            &out->offset_final, &oh, &ow);
@@ -451,9 +454,10 @@ bool RunSddhStages(const std::vector<float> &feature_map,
     out->transformed.assign(static_cast<size_t>(dim), 0.0f);
 
     for (int32_t p = 0; p < n_pos; ++p) {
-        const float off_x = std::max(
-                -max_offset,
-                std::min(max_offset, out->offset_final[static_cast<size_t>(p)]));
+        const float off_x =
+                std::max(-max_offset,
+                         std::min(max_offset,
+                                  out->offset_final[static_cast<size_t>(p)]));
         const float off_y = std::max(
                 -max_offset,
                 std::min(max_offset,
@@ -493,7 +497,8 @@ bool RunSddhStages(const std::vector<float> &feature_map,
     }
     norm = std::sqrt(std::max(norm, 1e-12f));
     for (int32_t c = 0; c < dim; ++c) {
-        out->desc[static_cast<size_t>(c)] = out->desc_pre_norm[static_cast<size_t>(c)] / norm;
+        out->desc[static_cast<size_t>(c)] =
+                out->desc_pre_norm[static_cast<size_t>(c)] / norm;
     }
     return true;
 }

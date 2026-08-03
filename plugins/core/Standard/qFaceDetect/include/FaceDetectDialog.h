@@ -22,14 +22,11 @@
 #include <QToolButton>
 #include <QWidget>
 
+#include "FaceDetectTestData.h"
+#include "FaceDetectWorker.h"
+#include "aicore/facedetect_capi.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
-
-#include "aicore/facedetect_capi.h"
-
-#include "FaceDetectWorker.h"
-
-#include "FaceDetectTestData.h"
 
 class FaceLiveDetectWidget;
 class FaceRegistryWidget;
@@ -79,7 +76,8 @@ signals:
     void cancelRequested();
     void refreshDbImagesRequested();
     void liveCaptureReady(const FaceDetectRunResult& result);
-    void authVisualizationReady(const QImage& annotated, const QString& summary);
+    void authVisualizationReady(const QImage& annotated,
+                                const QString& summary);
 
 private slots:
     void onBrowseImage();
@@ -95,7 +93,8 @@ private slots:
     void onLiveStart();
     void onLiveStop();
     void onLiveCapture(const FaceDetectRunResult& result);
-    void onAuthResultImageReady(const QImage& annotated, const QString& summary);
+    void onAuthResultImageReady(const QImage& annotated,
+                                const QString& summary);
     void onLiveStreamModeChanged(int streamMode, bool showUserPrompt = true);
     void validateLiveRecognizeModeFromSettings();
     void syncLiveConfig();
@@ -111,16 +110,21 @@ protected:
 private:
     void syncRegistryConfig();
     void syncRegistryModelControlsFromBatch();
-    void ensureFriendsTestData(bool fillRegistry, bool fillLiveVideo,
+    void ensureFriendsTestData(bool fillRegistry,
+                               bool fillLiveVideo,
                                bool fillBatchImage);
     void applyFriendsTestBundle(const FaceDetectFriendsBundle& bundle,
-                                bool fillRegistry, bool fillLiveVideo,
+                                bool fillRegistry,
+                                bool fillLiveVideo,
                                 bool fillBatchImage);
-    /** Fill Live/Batch sample paths only — never opens registry or registers faces. */
+    /** Fill Live/Batch sample paths only — never opens registry or registers
+     * faces. */
     void applyFriendsTestDataPaths(const FaceDetectFriendsBundle& bundle,
-                                   bool fillLiveVideo, bool fillBatchImage);
+                                   bool fillLiveVideo,
+                                   bool fillBatchImage);
     void startTestDataPostProcess(const FaceDetectFriendsBundle& bundle,
-                                  bool fillRegistry, bool fillLiveVideo,
+                                  bool fillRegistry,
+                                  bool fillLiveVideo,
                                   bool fillBatchImage,
                                   bool extractZipFirst = false,
                                   const QString& zipPath = QString(),
@@ -128,7 +132,8 @@ private:
     void setTestDataBusy(bool busy);
     void updateTestDataProgress(int current, int total, const QString& label);
     bool tryResolveFriendsTestBundle(FaceDetectFriendsBundle* out);
-    void startFriendsTestDataDownload(bool fillRegistry, bool fillLiveVideo,
+    void startFriendsTestDataDownload(bool fillRegistry,
+                                      bool fillLiveVideo,
                                       bool fillBatchImage);
     /** Append / Overwrite / Cancel when registry already has entries. */
     enum class TestDataRegistryMode { Cancel, Append, Overwrite };
@@ -140,7 +145,8 @@ private:
     void syncLandmarkPathFromCombo();
     void selectDefaultLandmarkModel();
     void ensureLandmarkModelPathFilled();
-    /** First existing landmark GGUF under model cache (catalog + known filenames). */
+    /** First existing landmark GGUF under model cache (catalog + known
+     * filenames). */
     QString defaultLandmarkModelPathOnDisk() const;
     QString resolveModelPath() const;
     QString resolveLandmarkModelPath() const;
@@ -214,6 +220,7 @@ private:
     bool m_autoRunAfterDownload = false;
 
     static constexpr int kTestDataOverallMax = 1000;
-    static constexpr int kTestDataDownloadShare = 300;  // 30% of bar when post-process follows
+    static constexpr int kTestDataDownloadShare =
+            300;  // 30% of bar when post-process follows
     int m_testDataPostProgressBase = 0;
 };

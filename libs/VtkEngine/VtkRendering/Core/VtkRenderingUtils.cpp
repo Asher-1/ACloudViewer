@@ -40,6 +40,8 @@
 
 // VTK
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 #include <vtkAbstractWidget.h>
 #include <vtkActor.h>
 #include <vtkAnnotatedCubeActor.h>
@@ -59,9 +61,6 @@
 #include <algorithm>
 #include <cmath>
 #include <list>
-
-#include <ecvDisplayTools.h>
-#include <ecvViewManager.h>
 
 namespace VtkRendering {
 namespace {

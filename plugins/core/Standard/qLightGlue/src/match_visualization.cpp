@@ -8,7 +8,6 @@
 #include "match_visualization.h"
 
 #include <QPainter>
-
 #include <algorithm>
 
 namespace {
@@ -97,7 +96,7 @@ QImage renderMatchVisualization(const QImage& image0,
     for (const auto& m : matches) {
         if (m.idx2 < 0 || m.idx2 >= keypoints1.size()) continue;
         const QPointF p = map_keypoint(keypoints1[m.idx2], src1, dst1) +
-                           QPointF(x_offset1, 0);
+                          QPointF(x_offset1, 0);
         painter.drawEllipse(p, r, r);
     }
 

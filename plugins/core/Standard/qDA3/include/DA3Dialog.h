@@ -19,8 +19,8 @@
 #include <QStackedWidget>
 #include <QToolButton>
 
-#include "ecvModelDownloader.h"
 #include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 class ecvMainAppInterface;
 

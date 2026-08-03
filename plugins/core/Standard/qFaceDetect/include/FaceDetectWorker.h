@@ -67,7 +67,8 @@ public:
         bool antiSpoof = false;
     };
 
-    explicit FaceDetectWorker(const Settings& settings, QObject* parent = nullptr);
+    explicit FaceDetectWorker(const Settings& settings,
+                              QObject* parent = nullptr);
     void releaseContextOnMainThread();
 
 signals:

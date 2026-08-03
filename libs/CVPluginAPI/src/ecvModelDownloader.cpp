@@ -23,7 +23,8 @@ ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
 
 ecvModelDownloader::~ecvModelDownloader() { cancel(); }
 
-bool ecvModelDownloader::isValidCachedFile(const QString& path, qint64 minBytes) {
+bool ecvModelDownloader::isValidCachedFile(const QString& path,
+                                           qint64 minBytes) {
     const QFileInfo fi(path);
     return fi.isFile() && fi.size() >= minBytes;
 }
@@ -47,10 +48,11 @@ QString ecvModelDownloader::formatFileSize(qint64 bytes) {
         return QStringLiteral("%1 KB").arg(bytes / 1024.0, 0, 'f', 1);
     }
     if (bytes < 1024LL * 1024 * 1024) {
-        return QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
+        return QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f',
+                                           1);
     }
-    return QStringLiteral("%1 GB")
-            .arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
+    return QStringLiteral("%1 GB").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0,
+                                       'f', 2);
 }
 
 QString ecvModelDownloader::formatDownloadProgress(qint64 received,
@@ -101,7 +103,8 @@ void ecvModelDownloader::download(const Request& request) {
     }
 
     m_destPath = request.destPath;
-    m_minValidBytes = request.minValidBytes > 0 ? request.minValidBytes : 1024 * 1024;
+    m_minValidBytes =
+            request.minValidBytes > 0 ? request.minValidBytes : 1024 * 1024;
     m_tmpPath = m_destPath + QStringLiteral(".part");
 
     QDir().mkpath(QFileInfo(m_destPath).absolutePath());
@@ -153,17 +156,18 @@ void ecvModelDownloader::download(const Request& request) {
             QFile::remove(m_destPath);
             ok = QFile::rename(m_tmpPath, m_destPath);
             if (!ok) {
-                emit logMessage(tr("[Download] Failed to finalize %1")
-                                        .arg(m_destPath));
+                emit logMessage(
+                        tr("[Download] Failed to finalize %1").arg(m_destPath));
             } else if (!isValidCachedFile(m_destPath, m_minValidBytes)) {
-                emit logMessage(tr("[Download] File too small after download: %1")
-                                        .arg(m_destPath));
+                emit logMessage(
+                        tr("[Download] File too small after download: %1")
+                                .arg(m_destPath));
                 QFile::remove(m_destPath);
                 ok = false;
             }
         } else if (m_reply) {
-            emit logMessage(tr("[Download] Failed: %1")
-                                    .arg(m_reply->errorString()));
+            emit logMessage(
+                    tr("[Download] Failed: %1").arg(m_reply->errorString()));
         }
 
         if (!ok && !m_tmpPath.isEmpty()) {

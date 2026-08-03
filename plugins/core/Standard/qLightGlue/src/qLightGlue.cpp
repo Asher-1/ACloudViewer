@@ -29,11 +29,10 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
-#include <QSettings>
 
+#include "ecvPersistentSettings.h"
 #include "feature_extractor.h"
 #include "match_visualization.h"
-#include "ecvPersistentSettings.h"
 
 namespace {
 
@@ -380,7 +379,8 @@ void qLightGlue::addVisualizationToDb(const LightGlueRunResult& result) {
     matchImage->setMetaData(QStringLiteral("Model"),
                             QFileInfo(m_currentSettings.modelPath).fileName());
     if (!result.resolvedDevice.isEmpty()) {
-        matchImage->setMetaData(QStringLiteral("Device"), result.resolvedDevice);
+        matchImage->setMetaData(QStringLiteral("Device"),
+                                result.resolvedDevice);
     }
     matchImage->setVisible(true);
     matchImage->setEnabled(true);
@@ -448,19 +448,18 @@ void qLightGlue::onExportMatches() {
                                                      ? QStringLiteral("run")
                                                      : m_lastResult.sourceName);
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qLightGlue"),
-            QStringLiteral("lastExportDir"),
-            QStandardPaths::writableLocation(
-                    QStandardPaths::DocumentsLocation));
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qLightGlue"),
+                             QStringLiteral("lastExportDir"),
+                             QStandardPaths::writableLocation(
+                                     QStandardPaths::DocumentsLocation));
     const QString path = QFileDialog::getSaveFileName(
             m_dialog, tr("Export matches"),
             lastDir + QLatin1Char('/') + defaultName,
             tr("JSON files (*.json);;All files (*)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qLightGlue"),
-                                       QStringLiteral("lastExportDir"),
-                                       path);
+                         QStringLiteral("lastExportDir"), path);
 
     QJsonObject root;
     root["source"] = m_lastResult.sourceName;

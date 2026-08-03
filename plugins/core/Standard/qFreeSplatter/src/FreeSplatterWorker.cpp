@@ -91,7 +91,8 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
         aicore_gaussian_options_set_device(
                 opts, m_settings.device.toStdString().c_str());
     }
-    aicore_inference_log::log_device_request(QStringLiteral("FS"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("FS"),
+                                             m_settings.device);
     aicore_gaussian_options_set_threads(opts, m_settings.threads);
 
     const std::string modelPath = m_settings.modelPath.toStdString();
@@ -114,7 +115,8 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
                 QJsonDocument::fromJson(QByteArray(infoJ)).object();
         aicore_gaussian_free_string(infoJ);
         const QString resolved = mi.value(QStringLiteral("device")).toString();
-        aicore_inference_log::log_device_resolved(QStringLiteral("FS"), resolved);
+        aicore_inference_log::log_device_resolved(QStringLiteral("FS"),
+                                                  resolved);
     }
     return ctx;
 }

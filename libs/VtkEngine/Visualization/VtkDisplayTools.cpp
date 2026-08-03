@@ -266,9 +266,13 @@ VtkVis* VtkDisplayTools::findVisByActorIdOrActive(
         const std::string& viewId) const {
     VtkVis* vis = findVisByActorId(viewId);
     if (vis) return vis;
-    auto* activeView = ecvViewManager::instance().getActiveView();
-    if (activeView) {
-        auto* glView = dynamic_cast<vtkGLView*>(activeView);
+    ecvGenericGLDisplay* targetView =
+            ecvViewManager::instance().getEffectiveView();
+    if (!targetView) {
+        targetView = ecvViewManager::instance().getActiveView();
+    }
+    if (targetView) {
+        auto* glView = dynamic_cast<vtkGLView*>(targetView);
         if (glView && glView->getVisualizer3D()) {
             return dynamic_cast<VtkVis*>(glView->getVisualizer3D());
         }
@@ -1569,10 +1573,9 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                 }
                 ctx.defaultViewPort = viewport;
                 ctx.viewID = lineSet->getViewId();
-                ctx.drawingFlags =
-                        lineSet->is2DMode()
-                                ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
-                                : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
+                ctx.drawingFlags = lineSet->is2DMode()
+                                           ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
+                                           : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
                 if (lineSet->isColorOverridden()) {
                     ctx.defaultPolylineColor = lineSet->getTempColor();
                 } else if (lineSet->colorsShown()) {
@@ -1628,34 +1631,32 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             break;
         case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
             if (m_visualizer2D) {
-                auto drawLineSet2D =
-                        [&](cloudViewer::geometry::LineSet* lineSet) {
-                            if (!lineSet || !lineSet->is2DMode() ||
-                                !lineSet->HasLines()) {
-                                return;
-                            }
+                auto drawLineSet2D = [&](cloudViewer::geometry::LineSet*
+                                                 lineSet) {
+                    if (!lineSet || !lineSet->is2DMode() ||
+                        !lineSet->HasLines()) {
+                        return;
+                    }
 
-                            const std::string lsViewID =
-                                    CVTools::FromQString(lineSet->getViewId());
-                            ecvColor::Rgbf color =
-                                    ecvColor::FromRgb(ecvColor::green);
-                            if (lineSet->isColorOverridden()) {
-                                color = ecvColor::FromRgb(lineSet->getTempColor());
-                            } else if (lineSet->colorsShown()) {
-                                color = ecvColor::FromRgb(lineSet->getColor());
-                            }
+                    const std::string lsViewID =
+                            CVTools::FromQString(lineSet->getViewId());
+                    ecvColor::Rgbf color = ecvColor::FromRgb(ecvColor::green);
+                    if (lineSet->isColorOverridden()) {
+                        color = ecvColor::FromRgb(lineSet->getTempColor());
+                    } else if (lineSet->colorsShown()) {
+                        color = ecvColor::FromRgb(lineSet->getColor());
+                    }
 
-                            for (size_t i = 0; i < lineSet->lines_.size(); ++i) {
-                                const auto seg = lineSet->GetLineCoordinate(i);
-                                m_visualizer2D->addLine(
-                                        static_cast<int>(seg.first.x()),
-                                        static_cast<int>(seg.first.y()),
-                                        static_cast<int>(seg.second.x()),
-                                        static_cast<int>(seg.second.y()),
-                                        color.r, color.g, color.b, lsViewID,
-                                        param.opacity);
-                            }
-                        };
+                    for (size_t i = 0; i < lineSet->lines_.size(); ++i) {
+                        const auto seg = lineSet->GetLineCoordinate(i);
+                        m_visualizer2D->addLine(
+                                static_cast<int>(seg.first.x()),
+                                static_cast<int>(seg.first.y()),
+                                static_cast<int>(seg.second.x()),
+                                static_cast<int>(seg.second.y()), color.r,
+                                color.g, color.b, lsViewID, param.opacity);
+                    }
+                };
 
                 if (param.entity &&
                     param.entity->isKindOf(CV_TYPES::POLY_LINE)) {
@@ -2205,7 +2206,9 @@ void VtkDisplayTools::setObjectLightIntensity(const QString& viewID,
 
 double VtkDisplayTools::getObjectLightIntensity(const QString& viewID) const {
     std::string id = CVTools::FromQString(viewID);
-    VtkVis* vis = findVisByActorId(id);
+    // Groups imported from formats such as GLB may own no VTK actor. Route
+    // their stored axes-grid state through the view that renders the children.
+    VtkVis* vis = findVisByActorIdOrActive(id);
     if (!vis) {
         return 1.0;
     }

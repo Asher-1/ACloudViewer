@@ -7,10 +7,6 @@
 
 #include "FaceLiveDetectWidget.h"
 
-#include "FaceDetectEmbedHelpers.h"
-#include "FaceDetectTestData.h"
-#include "FaceDetectUiHelpers.h"
-
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileDialog>
@@ -20,6 +16,10 @@
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QtMath>
+
+#include "FaceDetectEmbedHelpers.h"
+#include "FaceDetectTestData.h"
+#include "FaceDetectUiHelpers.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/facedetect_capi.h"
@@ -68,14 +68,16 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent) : QWidget(parent) {
     m_inferThread = new QThread(this);
     m_inferWorker = new FaceLiveDetectInferWorker;
     m_inferWorker->moveToThread(m_inferThread);
-    connect(m_inferThread, &QThread::finished, m_inferWorker, &QObject::deleteLater);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
     connect(m_inferWorker, &FaceLiveDetectInferWorker::inferComplete, this,
             &FaceLiveDetectWidget::onInferComplete, Qt::QueuedConnection);
     m_inferThread->start();
 
     m_frameTimer = new QTimer(this);
     m_frameTimer->setInterval(33);
-    connect(m_frameTimer, &QTimer::timeout, this, &FaceLiveDetectWidget::processFrame);
+    connect(m_frameTimer, &QTimer::timeout, this,
+            &FaceLiveDetectWidget::processFrame);
     loadSettings();
 }
 
@@ -87,7 +89,8 @@ FaceLiveDetectWidget::~FaceLiveDetectWidget() {
 
 void FaceLiveDetectWidget::shutdownInferThread() {
     if (m_inferWorker && m_inferThread) {
-        QMetaObject::invokeMethod(m_inferWorker, "releaseModel", Qt::BlockingQueuedConnection);
+        QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                                  Qt::BlockingQueuedConnection);
         m_inferThread->quit();
         m_inferThread->wait(3000);
         m_inferWorker = nullptr;
@@ -101,7 +104,8 @@ void FaceLiveDetectWidget::setupUi() {
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(480, 300);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: #111; color: #888;");
     m_previewLabel->setText(tr("Live preview"));
@@ -120,8 +124,8 @@ void FaceLiveDetectWidget::setupUi() {
     m_threadsSpin->setRange(0, 128);
     m_threadsSpin->setSpecialValueText(tr("Auto"));
     FaceDetectUi::makeCompactSpin(m_threadsSpin);
-    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 if (m_syncingModelControls) return;
                 updateModelPathFromCombo();
                 if (m_inferWorker) {
@@ -134,8 +138,8 @@ void FaceLiveDetectWidget::setupUi() {
                 emit modelSelectionChanged(modelFilename());
                 saveSettings();
             });
-    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 if (m_syncingModelControls) return;
                 m_config.device = deviceId();
                 if (m_inferWorker) {
@@ -204,7 +208,8 @@ void FaceLiveDetectWidget::setupUi() {
     m_registryPathEdit = new QLineEdit(m_registryRow);
     m_registryPathEdit->setPlaceholderText(
             tr("Face registry .db (required for Recognize mode)"));
-    auto* registryBrowse = FaceDetectUi::makeBrowseButton(tr("Browse…"), m_registryRow);
+    auto* registryBrowse =
+            FaceDetectUi::makeBrowseButton(tr("Browse…"), m_registryRow);
     connect(registryBrowse, &QPushButton::clicked, this, [this]() {
         QSettings settings;
         const QString lastDir =
@@ -268,7 +273,8 @@ void FaceLiveDetectWidget::setupUi() {
     m_testDataBtn = new QPushButton(tr("Use test data"), m_videoRow);
     m_testDataBtn->setToolTip(
             tr("Download FriendsFaces sample video and load it here."));
-    connect(browse, &QPushButton::clicked, this, &FaceLiveDetectWidget::onBrowseVideo);
+    connect(browse, &QPushButton::clicked, this,
+            &FaceLiveDetectWidget::onBrowseVideo);
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &FaceLiveDetectWidget::testDataRequested);
     connect(m_videoPathEdit, &QLineEdit::editingFinished, this, [this]() {
@@ -296,7 +302,8 @@ void FaceLiveDetectWidget::setupUi() {
     m_statusLabel = new QLabel(
             isAvailable()
                     ? tr("Configure stream, then press Start in the dialog.")
-                    : tr("Live detect unavailable (build with OpenCV videoio)."),
+                    : tr("Live detect unavailable (build with OpenCV "
+                         "videoio)."),
             this);
     m_statusLabel->setWordWrap(true);
     main->addWidget(m_statusLabel);
@@ -307,7 +314,8 @@ void FaceLiveDetectWidget::setupUi() {
 
 void FaceLiveDetectWidget::setConfig(const Config& config) {
     if (m_config.modelPath != config.modelPath && m_inferWorker) {
-        QMetaObject::invokeMethod(m_inferWorker, "releaseModel", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                                  Qt::QueuedConnection);
     }
     m_config = config;
     if (m_recognizeThreshold) {
@@ -322,7 +330,8 @@ void FaceLiveDetectWidget::setConfig(const Config& config) {
     }
     updateThresholdUi();
     if (m_modeCombo) {
-        const int idx = m_modeCombo->findData(static_cast<int>(config.streamMode));
+        const int idx =
+                m_modeCombo->findData(static_cast<int>(config.streamMode));
         if (idx >= 0) {
             m_modeCombo->blockSignals(true);
             m_modeCombo->setCurrentIndex(idx);
@@ -344,7 +353,8 @@ void FaceLiveDetectWidget::updateModelPathFromCombo() {
     if (!m_modelCombo) return;
     const QString fn = m_modelCombo->currentData().toString();
     if (fn.isEmpty()) return;
-    m_config.modelPath = FaceDetectEmbed::modelCacheDir() + QLatin1Char('/') + fn;
+    m_config.modelPath =
+            FaceDetectEmbed::modelCacheDir() + QLatin1Char('/') + fn;
 }
 
 QString FaceLiveDetectWidget::modelFilename() const {
@@ -383,7 +393,8 @@ void FaceLiveDetectWidget::rebuildModelCombo(const QStringList& labels,
     m_syncingModelControls = false;
 }
 
-void FaceLiveDetectWidget::rebuildDeviceCombo(const QComboBox* sourceDeviceCombo) {
+void FaceLiveDetectWidget::rebuildDeviceCombo(
+        const QComboBox* sourceDeviceCombo) {
     if (!m_deviceCombo || !sourceDeviceCombo) return;
     m_syncingModelControls = true;
     m_deviceCombo->clear();
@@ -420,7 +431,8 @@ void FaceLiveDetectWidget::syncModelControlsFrom(const QComboBox* modelCombo,
 
 void FaceLiveDetectWidget::setModelPath(const QString& path) {
     if (m_config.modelPath != path && m_inferWorker) {
-        QMetaObject::invokeMethod(m_inferWorker, "releaseModel", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                                  Qt::QueuedConnection);
     }
     m_config.modelPath = path;
     if (!m_modelCombo) return;
@@ -435,7 +447,8 @@ void FaceLiveDetectWidget::setModelPath(const QString& path) {
 
 void FaceLiveDetectWidget::setDevice(const QString& device) {
     if (m_config.device != device && m_inferWorker) {
-        QMetaObject::invokeMethod(m_inferWorker, "releaseModel", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                                  Qt::QueuedConnection);
     }
     m_config.device = device;
     if (!m_deviceCombo) return;
@@ -478,8 +491,7 @@ void FaceLiveDetectWidget::setRegistryStore(FaceRegistryStore* store) {
 }
 
 void FaceLiveDetectWidget::updateThresholdUi() {
-    const bool recognize =
-            m_config.streamMode == StreamMode::Recognize;
+    const bool recognize = m_config.streamMode == StreamMode::Recognize;
     if (m_matchDistLabel) m_matchDistLabel->setVisible(recognize);
     if (m_recognizeThreshold) m_recognizeThreshold->setVisible(recognize);
     if (m_minScoreLabel) m_minScoreLabel->setVisible(true);
@@ -488,12 +500,12 @@ void FaceLiveDetectWidget::updateThresholdUi() {
 }
 
 void FaceLiveDetectWidget::updateRegistryUi() {
-    const bool recognize =
-            m_config.streamMode == StreamMode::Recognize;
+    const bool recognize = m_config.streamMode == StreamMode::Recognize;
     if (m_registryRow) m_registryRow->setVisible(recognize);
 }
 
-void FaceLiveDetectWidget::setRegistryPath(const QString& path, bool userChosen) {
+void FaceLiveDetectWidget::setRegistryPath(const QString& path,
+                                           bool userChosen) {
     m_registryPathUserChosen = userChosen;
     if (m_registryPathEdit) {
         m_registryPathEdit->blockSignals(true);
@@ -503,7 +515,8 @@ void FaceLiveDetectWidget::setRegistryPath(const QString& path, bool userChosen)
 }
 
 QString FaceLiveDetectWidget::registryPath() const {
-    return m_registryPathEdit ? m_registryPathEdit->text().trimmed() : QString();
+    return m_registryPathEdit ? m_registryPathEdit->text().trimmed()
+                              : QString();
 }
 
 void FaceLiveDetectWidget::setStreamMode(StreamMode mode) {
@@ -523,21 +536,27 @@ void FaceLiveDetectWidget::setStreamMode(StreamMode mode) {
 
 void FaceLiveDetectWidget::loadSettings() {
     QSettings settings;
-    const int streamMode = settings.value(QStringLiteral("qFaceDetect/liveStreamMode"),
-                                          static_cast<int>(StreamMode::Detect))
-                                   .toInt();
+    const int streamMode =
+            settings.value(QStringLiteral("qFaceDetect/liveStreamMode"),
+                           static_cast<int>(StreamMode::Detect))
+                    .toInt();
     const double minScore =
             settings.value(QStringLiteral("qFaceDetect/minDetectionScore"),
-                           settings.value(QStringLiteral("qFaceDetect/liveMinDetectionScore"),
-                                          settings.value(
-                                                  QStringLiteral(
-                                                          "qFaceDetect/registryMinDetectionScore"),
-                                                  0.5)))
+                           settings.value(
+                                   QStringLiteral(
+                                           "qFaceDetect/liveMinDetectionScore"),
+                                   settings.value(
+                                           QStringLiteral(
+                                                   "qFaceDetect/"
+                                                   "registryMinDetectionScore"),
+                                           0.5)))
                     .toDouble();
     const double matchDist =
             settings.value(QStringLiteral("qFaceDetect/matchThreshold"),
-                           settings.value(QStringLiteral("qFaceDetect/liveMatchDistance"),
-                                          0.52))
+                           settings.value(
+                                   QStringLiteral(
+                                           "qFaceDetect/liveMatchDistance"),
+                                   0.52))
                     .toDouble();
     const int source = settings.value(QStringLiteral("qFaceDetect/liveSource"),
                                       static_cast<int>(InputSource::Camera))
@@ -547,8 +566,10 @@ void FaceLiveDetectWidget::loadSettings() {
                     .toString();
     if (videoPath.isEmpty()) {
         const QString legacy =
-                settings.value(QStringLiteral("qFaceDetect/liveVideoPath")).toString();
-        if (!legacy.isEmpty() && !FaceDetectTestData::isFriendsBundlePath(legacy)) {
+                settings.value(QStringLiteral("qFaceDetect/liveVideoPath"))
+                        .toString();
+        if (!legacy.isEmpty() &&
+            !FaceDetectTestData::isFriendsBundlePath(legacy)) {
             m_videoPathUserChosen = true;
             if (m_videoPathEdit) m_videoPathEdit->setText(legacy);
         }
@@ -565,7 +586,8 @@ void FaceLiveDetectWidget::loadSettings() {
         const QString legacy =
                 settings.value(QStringLiteral("qFaceDetect/liveRegistryDbPath"))
                         .toString();
-        if (!legacy.isEmpty() && !FaceDetectTestData::isFriendsBundlePath(legacy)) {
+        if (!legacy.isEmpty() &&
+            !FaceDetectTestData::isFriendsBundlePath(legacy)) {
             registryPath = legacy;
             m_registryPathUserChosen = true;
         }
@@ -640,7 +662,8 @@ void FaceLiveDetectWidget::saveSettings() const {
     if (m_videoPathUserChosen && m_videoPathEdit) {
         const QString path = m_videoPathEdit->text().trimmed();
         if (!path.isEmpty()) {
-            settings.setValue(FaceDetectTestData::manualLiveVideoSettingsKey(), path);
+            settings.setValue(FaceDetectTestData::manualLiveVideoSettingsKey(),
+                              path);
         } else {
             settings.remove(FaceDetectTestData::manualLiveVideoSettingsKey());
         }
@@ -652,7 +675,8 @@ void FaceLiveDetectWidget::saveSettings() const {
     if (m_registryPathUserChosen) {
         const QString path = registryPath();
         if (!path.isEmpty()) {
-            settings.setValue(FaceDetectTestData::manualRegistryDbSettingsKey(), path);
+            settings.setValue(FaceDetectTestData::manualRegistryDbSettingsKey(),
+                              path);
         } else {
             settings.remove(FaceDetectTestData::manualRegistryDbSettingsKey());
         }
@@ -680,7 +704,8 @@ void FaceLiveDetectWidget::onStreamModeChanged(int index) {
     if (mode == StreamMode::Recognize && m_config.registry &&
         !m_config.registry->isOpen()) {
         m_statusLabel->setText(
-                tr("Recognition mode — open Registry tab and ensure DB is loaded."));
+                tr("Recognition mode — open Registry tab and ensure DB is "
+                   "loaded."));
     }
 }
 
@@ -694,9 +719,9 @@ void FaceLiveDetectWidget::onSourceChanged(int index) {
 
 void FaceLiveDetectWidget::onBrowseVideo() {
     QSettings settings;
-    QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qFaceDetect"),
-            QStringLiteral("lastVideoFileDir"), QDir::homePath());
+    QString lastDir = ecvPS::browseDir(settings, QStringLiteral("qFaceDetect"),
+                                       QStringLiteral("lastVideoFileDir"),
+                                       QDir::homePath());
     if (lastDir.isEmpty() || !QFileInfo(lastDir).exists()) {
         const QString manual =
                 settings.value(FaceDetectTestData::manualLiveVideoSettingsKey())
@@ -716,15 +741,16 @@ void FaceLiveDetectWidget::onBrowseVideo() {
     saveSettings();
 }
 
-void FaceLiveDetectWidget::setVideoFilePath(const QString& path, bool userChosen) {
+void FaceLiveDetectWidget::setVideoFilePath(const QString& path,
+                                            bool userChosen) {
     m_videoPathUserChosen = userChosen;
     if (m_videoPathEdit) m_videoPathEdit->setText(path);
 }
 
 void FaceLiveDetectWidget::selectVideoFileSource() {
     if (!m_sourceCombo) return;
-    const int idx = m_sourceCombo->findData(
-            static_cast<int>(InputSource::VideoFile));
+    const int idx =
+            m_sourceCombo->findData(static_cast<int>(InputSource::VideoFile));
     if (idx >= 0) m_sourceCombo->setCurrentIndex(idx);
 }
 
@@ -742,9 +768,10 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& displayRgb,
     job.device = m_config.device;
     job.threads = m_config.threads;
     job.minDetectionScore = m_config.minDetectionScore;
-    job.matchThreshold = m_recognizeThreshold
-                                 ? static_cast<float>(m_recognizeThreshold->value())
-                                 : m_config.recognizeMaxDistance;
+    job.matchThreshold =
+            m_recognizeThreshold
+                    ? static_cast<float>(m_recognizeThreshold->value())
+                    : m_config.recognizeMaxDistance;
     job.streamMode = m_config.streamMode == StreamMode::Recognize
                              ? FaceLiveDetectInferWorker::StreamMode::Recognize
                              : FaceLiveDetectInferWorker::StreamMode::Detect;
@@ -754,7 +781,8 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& displayRgb,
                               Q_ARG(FaceLiveDetectInferWorker::Job, job));
 }
 
-void FaceLiveDetectWidget::onInferComplete(FaceLiveDetectInferWorker::Result result) {
+void FaceLiveDetectWidget::onInferComplete(
+        FaceLiveDetectInferWorker::Result result) {
     m_inferBusy = false;
     if (!m_streamActive) return;
     if (!result.ok) {
@@ -801,9 +829,8 @@ void FaceLiveDetectWidget::processFrame() {
     if (!m_streamActive || !m_capture.isOpened()) return;
     cv::Mat frame;
     if (!m_capture.read(frame) || frame.empty()) {
-        if (m_sourceCombo &&
-            m_sourceCombo->currentData().toInt() ==
-                    static_cast<int>(InputSource::VideoFile)) {
+        if (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                     static_cast<int>(InputSource::VideoFile)) {
             m_capture.set(cv::CAP_PROP_POS_FRAMES, 0);
             if (!m_capture.read(frame) || frame.empty()) {
                 stopStream();
@@ -829,15 +856,15 @@ void FaceLiveDetectWidget::processFrame() {
                 inferScale = static_cast<float>(kMaxInferDim) / maxDim;
                 inferRgb = rgb.scaled(
                         static_cast<int>(std::lround(rgb.width() * inferScale)),
-                        static_cast<int>(std::lround(rgb.height() * inferScale)),
+                        static_cast<int>(
+                                std::lround(rgb.height() * inferScale)),
                         Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             }
             submitInferJob(rgb, inferRgb, inferScale);
         }
-        const bool video =
-                m_sourceCombo &&
-                m_sourceCombo->currentData().toInt() ==
-                        static_cast<int>(InputSource::VideoFile);
+        const bool video = m_sourceCombo &&
+                           m_sourceCombo->currentData().toInt() ==
+                                   static_cast<int>(InputSource::VideoFile);
         m_inferSkip = video ? 4 : 2;
     } else {
         --m_inferSkip;
@@ -853,8 +880,10 @@ void FaceLiveDetectWidget::processFrame() {
 bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     stopStream();
-    if (m_config.modelPath.isEmpty() || !QFileInfo::exists(m_config.modelPath)) {
-        emit logMessage(tr("[Live] Set a detector GGUF on the Image / Batch tab."));
+    if (m_config.modelPath.isEmpty() ||
+        !QFileInfo::exists(m_config.modelPath)) {
+        emit logMessage(
+                tr("[Live] Set a detector GGUF on the Image / Batch tab."));
         return false;
     }
     if (!m_camerasEnumerated && m_cameraCombo) {
@@ -894,8 +923,10 @@ bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
 bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     stopStream();
-    if (m_config.modelPath.isEmpty() || !QFileInfo::exists(m_config.modelPath)) {
-        emit logMessage(tr("[Live] Set a detector GGUF on the Image / Batch tab."));
+    if (m_config.modelPath.isEmpty() ||
+        !QFileInfo::exists(m_config.modelPath)) {
+        emit logMessage(
+                tr("[Live] Set a detector GGUF on the Image / Batch tab."));
         return false;
     }
     if (!m_capture.open(path.toStdString(), cv::CAP_FFMPEG) &&

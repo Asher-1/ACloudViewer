@@ -7,13 +7,11 @@
 
 #include "FaceDetectWorker.h"
 
-#include "FaceDetectEmbedHelpers.h"
-
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QImage>
 #include <QImageReader>
-#include <QFontMetrics>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -21,6 +19,8 @@
 #include <QPointF>
 #include <QVector3D>
 #include <algorithm>
+
+#include "FaceDetectEmbedHelpers.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
@@ -59,9 +59,13 @@ QImage load_rgb_image(const QString& path) {
     return img.convertToFormat(QImage::Format_RGB888);
 }
 
-bool verifyPathsWithFallback(aicore_facedetect_ctx* ctx, const QString& pathA,
-                             const QString& pathB, float threshold, int antiSpoof,
-                             float minDetectionScore, float* outDistance,
+bool verifyPathsWithFallback(aicore_facedetect_ctx* ctx,
+                             const QString& pathA,
+                             const QString& pathB,
+                             float threshold,
+                             int antiSpoof,
+                             float minDetectionScore,
+                             float* outDistance,
                              int* outVerified) {
     if (aicore_facedetect_verify_paths(
                 ctx, pathA.toUtf8().constData(), pathB.toUtf8().constData(),
@@ -139,20 +143,18 @@ QImage draw_dense_annotations(const QImage& source,
         }
         painter.setBrush(Qt::NoBrush);
 
-        QString label =
-                QStringLiteral("score %1  2d=%2  3d=%3")
-                        .arg(f.score, 0, 'f', 3)
-                        .arg(f.denseLandmarks2d.size())
-                        .arg(f.denseLandmarks3d.size());
+        QString label = QStringLiteral("score %1  2d=%2  3d=%3")
+                                .arg(f.score, 0, 'f', 3)
+                                .arg(f.denseLandmarks2d.size())
+                                .arg(f.denseLandmarks3d.size());
         if (belowThreshold) {
             label += QStringLiteral("  (below min)");
         }
         const QFontMetrics fm(labelFont);
         constexpr int padH = 4;
         constexpr int padV = 3;
-        const QRect textBounds =
-                fm.boundingRect(QRect(0, 0, 10000, 10000), Qt::TextSingleLine,
-                                label);
+        const QRect textBounds = fm.boundingRect(QRect(0, 0, 10000, 10000),
+                                                 Qt::TextSingleLine, label);
         const int labelW = textBounds.width() + 2 * padH;
         const int labelH = textBounds.height() + 2 * padV;
         float labelY = f.y1 - static_cast<float>(labelH) - 2.0f;
@@ -162,7 +164,8 @@ QImage draw_dense_annotations(const QImage& source,
         painter.fillRect(textRect, QColor(15, 23, 42, 200));
         painter.setPen(labelColor);
         painter.drawText(textRect.adjusted(padH, padV, -padH, -padV),
-                         Qt::AlignLeft | Qt::AlignTop | Qt::TextDontClip, label);
+                         Qt::AlignLeft | Qt::AlignTop | Qt::TextDontClip,
+                         label);
     }
     return rgb;
 }
@@ -193,7 +196,8 @@ bool FaceDetectWorker::runInference() {
     QElapsedTimer timer;
     timer.start();
 
-    aicore_inference_log::log_device_request(QStringLiteral("FaceDetect"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("FaceDetect"),
+                                             m_settings.device);
     emit logMessage("[FaceDetect] Loading detector: " + m_settings.modelPath);
 
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
@@ -207,7 +211,8 @@ bool FaceDetectWorker::runInference() {
             m_settings.modelPath.toStdString().c_str(), opts);
     if (!ctx) {
         aicore_facedetect_options_free(opts);
-        emit logMessage("[Error] Failed to create FaceDetect detector context.");
+        emit logMessage(
+                "[Error] Failed to create FaceDetect detector context.");
         return false;
     }
 
@@ -242,7 +247,8 @@ bool FaceDetectWorker::runInference() {
                 QJsonDocument::fromJson(QByteArray(info)).object();
         aicore_facedetect_free_string(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
-        aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"), result.resolvedDevice);
+        aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
+                                                  result.resolvedDevice);
     }
 
     emit progressUpdate(20, 100);
@@ -260,9 +266,9 @@ bool FaceDetectWorker::runInference() {
                     ctx, m_settings.inputPath, m_settings.secondInputPath,
                     m_settings.verifyThreshold, m_settings.antiSpoof ? 1 : 0,
                     m_settings.minDetectionScore, &dist, &verified)) {
-            emit logMessage(
-                    QString("[Error] Verify failed: %1")
-                            .arg(aicore_facedetect_last_error(ctx) ?: "unknown"));
+            emit logMessage(QString("[Error] Verify failed: %1")
+                                    .arg(aicore_facedetect_last_error(ctx)
+                                                 ?: "unknown"));
             m_pendingCtx = ctx;
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
@@ -275,7 +281,8 @@ bool FaceDetectWorker::runInference() {
             root.insert(QStringLiteral("mode"), result.mode);
             root.insert(QStringLiteral("distance"), dist);
             root.insert(QStringLiteral("verified"), verified != 0);
-            root.insert(QStringLiteral("threshold"), m_settings.verifyThreshold);
+            root.insert(QStringLiteral("threshold"),
+                        m_settings.verifyThreshold);
             root.insert(QStringLiteral("anti_spoof"), m_settings.antiSpoof);
             root.insert(QStringLiteral("image_a"), m_settings.inputPath);
             root.insert(QStringLiteral("image_b"), m_settings.secondInputPath);
@@ -300,14 +307,14 @@ bool FaceDetectWorker::runInference() {
                     ctx, rgb.constBits(), rgb.width(), rgb.height(), 0.f);
             result.mode = QStringLiteral("analyze");
         } else {
-            json = aicore_facedetect_detect_rgb_json(
-                    ctx, rgb.constBits(), rgb.width(), rgb.height());
+            json = aicore_facedetect_detect_rgb_json(ctx, rgb.constBits(),
+                                                     rgb.width(), rgb.height());
             result.mode = QStringLiteral("detect");
         }
         if (json == nullptr) {
-            emit logMessage(
-                    QString("[Error] Inference failed: %1")
-                            .arg(aicore_facedetect_last_error(ctx) ?: "unknown"));
+            emit logMessage(QString("[Error] Inference failed: %1")
+                                    .arg(aicore_facedetect_last_error(ctx)
+                                                 ?: "unknown"));
             m_pendingCtx = ctx;
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
@@ -329,9 +336,10 @@ bool FaceDetectWorker::runInference() {
             result.totalDetected = static_cast<int>(allFaces.size());
             result.minDetectionScoreUsed = m_settings.minDetectionScore;
             result.faces = allFaces;
-            FaceDetectEmbed::filterFacesByScore(&result.faces, m_settings.minDetectionScore);
-            result.rejectedByScore =
-                    result.totalDetected - static_cast<int>(result.faces.size());
+            FaceDetectEmbed::filterFacesByScore(&result.faces,
+                                                m_settings.minDetectionScore);
+            result.rejectedByScore = result.totalDetected -
+                                     static_cast<int>(result.faces.size());
             result.annotatedImage = FaceDetectEmbed::annotateAnalyze(
                     rgb, allFaces, m_settings.minDetectionScore);
         } else {
@@ -339,20 +347,23 @@ bool FaceDetectWorker::runInference() {
             result.totalDetected = static_cast<int>(allFaces.size());
             result.minDetectionScoreUsed = m_settings.minDetectionScore;
             result.faces = allFaces;
-            FaceDetectEmbed::filterFacesByScore(&result.faces, m_settings.minDetectionScore);
-            result.rejectedByScore =
-                    result.totalDetected - static_cast<int>(result.faces.size());
+            FaceDetectEmbed::filterFacesByScore(&result.faces,
+                                                m_settings.minDetectionScore);
+            result.rejectedByScore = result.totalDetected -
+                                     static_cast<int>(result.faces.size());
             result.annotatedImage = FaceDetectEmbed::annotateDetect(
                     rgb, allFaces, m_settings.minDetectionScore);
         }
         if (result.faces.empty()) {
             if (m_settings.mode == Mode::DenseLandmarks) {
                 emit logMessage(
-                        QString("[FaceDetect] No dense landmarks (min score %1).")
+                        QString("[FaceDetect] No dense landmarks (min score "
+                                "%1).")
                                 .arg(m_settings.minDetectionScore, 0, 'f', 2));
             } else {
                 emit logMessage(
-                        QString("[FaceDetect] No faces passed min detection score "
+                        QString("[FaceDetect] No faces passed min detection "
+                                "score "
                                 "%1 (detected %2, rejected %3).")
                                 .arg(m_settings.minDetectionScore, 0, 'f', 2)
                                 .arg(result.totalDetected)
@@ -392,7 +403,9 @@ bool FaceDetectWorker::runInference() {
                           .arg(result.faces.size())
                           .arg(m_settings.minDetectionScore, 0, 'f', 2);
     }
-    aicore_inference_log::log_inference_done(QStringLiteral("FaceDetect"), result.resolvedDevice, result.runtimeMs, summary);
+    aicore_inference_log::log_inference_done(QStringLiteral("FaceDetect"),
+                                             result.resolvedDevice,
+                                             result.runtimeMs, summary);
     emit resultReady(result);
     return true;
 }

@@ -1,16 +1,24 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "model.hpp"
-#include "common.hpp"
-#include "align.hpp"
-#include "detect.hpp"
-#include "arcface_graph.hpp"
-#include "sface_graph.hpp"
-#include "genderage_graph.hpp"
-#include "antispoof_graph.hpp"
-#include "landmark_graph.hpp"
-#include "backend.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+
+#include "align.hpp"
+#include "antispoof_graph.hpp"
+#include "arcface_graph.hpp"
+#include "backend.hpp"
+#include "common.hpp"
+#include "detect.hpp"
+#include "genderage_graph.hpp"
+#include "landmark_graph.hpp"
+#include "sface_graph.hpp"
 
 namespace fd {
 
@@ -44,7 +52,8 @@ bool looksLikePortraitCrop(const Image& img) {
 
 Landmarks5 portraitTemplateLandmarks(int w, int h) {
     Landmarks5 lm{};
-    // InsightFace ArcFace reference layout scaled to the crop (frontal portrait).
+    // InsightFace ArcFace reference layout scaled to the crop (frontal
+    // portrait).
     lm[0] = {0.341916f * w, 0.461574f * h};
     lm[1] = {0.656534f * w, 0.459999f * h};
     lm[2] = {0.500000f * w, 0.640000f * h};
@@ -53,7 +62,8 @@ Landmarks5 portraitTemplateLandmarks(int w, int h) {
     return lm;
 }
 
-std::vector<float> embedAlignedPortrait(const Model& model, const Image& img,
+std::vector<float> embedAlignedPortrait(const Model& model,
+                                        const Image& img,
                                         const Landmarks5& landmarks) {
     Image aligned;
     if (!norm_crop(img, landmarks, aligned,
@@ -68,7 +78,8 @@ std::vector<float> embedAlignedPortrait(const Model& model, const Image& img,
 
 }  // namespace
 
-std::vector<float> Model::embed(const Image& img, float min_detection_score) const {
+std::vector<float> Model::embed(const Image& img,
+                                float min_detection_score) const {
     if (img.empty()) throw std::runtime_error("facedetect: empty image");
     std::vector<Detection> dets = scrfd_detect(loader_, img);
     if (min_detection_score > 0.0f) {
@@ -82,14 +93,15 @@ std::vector<float> Model::embed(const Image& img, float min_detection_score) con
         if (!looksLikePortraitCrop(img)) {
             throw std::runtime_error("facedetect: no face detected");
         }
-        return embedAlignedPortrait(*this, img,
-                                    portraitTemplateLandmarks(img.width,
-                                                              img.height));
+        return embedAlignedPortrait(
+                *this, img, portraitTemplateLandmarks(img.width, img.height));
     }
-    const Detection& primary = *std::max_element(
-        dets.begin(), dets.end(), [](const Detection& a, const Detection& b) {
-            return (a.x2 - a.x1) * (a.y2 - a.y1) < (b.x2 - b.x1) * (b.y2 - b.y1);
-        });
+    const Detection& primary =
+            *std::max_element(dets.begin(), dets.end(),
+                              [](const Detection& a, const Detection& b) {
+                                  return (a.x2 - a.x1) * (a.y2 - a.y1) <
+                                         (b.x2 - b.x1) * (b.y2 - b.y1);
+                              });
     return embedAlignedPortrait(*this, img, primary.landmarks);
 }
 
@@ -100,10 +112,11 @@ std::vector<float> Model::embed(const Image& img, const Detection& det) const {
 
 std::vector<Face> Model::analyze(const Image& img) const {
     if (img.empty()) throw std::runtime_error("facedetect: empty image");
-    // Per detected face, run the genderage head when the pack carries it (the `ga.`
-    // weights). Anti-spoof remains a later stage. Each face is independently warped
-    // to the 96x96 genderage crop (its own detection box), so multi-face images get
-    // per-face age/gender rather than only the primary's.
+    // Per detected face, run the genderage head when the pack carries it (the
+    // `ga.` weights). Anti-spoof remains a later stage. Each face is
+    // independently warped to the 96x96 genderage crop (its own detection box),
+    // so multi-face images get per-face age/gender rather than only the
+    // primary's.
     std::vector<Detection> dets = scrfd_detect(loader_, img);
     const bool have_ga = loader_.config().genderage_present;
     std::vector<Face> faces;
@@ -112,7 +125,8 @@ std::vector<Face> Model::analyze(const Image& img) const {
         Face f;
         f.det = d;
         if (have_ga) {
-            std::pair<int, int> ga = genderage(loader_, img, d, global_backend());
+            std::pair<int, int> ga =
+                    genderage(loader_, img, d, global_backend());
             f.gender = (ga.first == 1) ? 'M' : 'F';
             f.age = ga.second;
         }
@@ -122,7 +136,8 @@ std::vector<Face> Model::analyze(const Image& img) const {
 }
 
 bool Model::is_real(const Image& img, const Detection& d) const {
-    if (!loader_.config().antispoof_present) return true;  // no models -> no veto
+    if (!loader_.config().antispoof_present)
+        return true;  // no models -> no veto
     return antispoof_score(*this, img, d) >= 0.5f;
 }
 
@@ -147,4 +162,4 @@ std::vector<DenseLandmarkFace> Model::dense_landmarks(
     return out;
 }
 
-} // namespace fd
+}  // namespace fd

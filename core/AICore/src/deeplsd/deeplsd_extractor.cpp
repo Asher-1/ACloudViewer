@@ -187,23 +187,21 @@ void BilinearUpsamplePlane(const std::vector<float> &src,
         return;
     }
     for (int32_t y = 0; y < dst_h; ++y) {
-        const float src_y =
-                (static_cast<float>(y) + 0.5f) *
-                        static_cast<float>(src_h) / static_cast<float>(dst_h) -
-                0.5f;
-        const int32_t y0 =
-                std::clamp(static_cast<int32_t>(std::floor(src_y)), 0, src_h - 1);
+        const float src_y = (static_cast<float>(y) + 0.5f) *
+                                    static_cast<float>(src_h) /
+                                    static_cast<float>(dst_h) -
+                            0.5f;
+        const int32_t y0 = std::clamp(static_cast<int32_t>(std::floor(src_y)),
+                                      0, src_h - 1);
         const int32_t y1 = std::min(y0 + 1, src_h - 1);
         const float wy = src_y - static_cast<float>(y0);
         for (int32_t x = 0; x < dst_w; ++x) {
-            const float src_x =
-                    (static_cast<float>(x) + 0.5f) *
-                            static_cast<float>(src_w) /
-                            static_cast<float>(dst_w) -
-                    0.5f;
-            const int32_t x0 =
-                    std::clamp(static_cast<int32_t>(std::floor(src_x)), 0,
-                               src_w - 1);
+            const float src_x = (static_cast<float>(x) + 0.5f) *
+                                        static_cast<float>(src_w) /
+                                        static_cast<float>(dst_w) -
+                                0.5f;
+            const int32_t x0 = std::clamp(
+                    static_cast<int32_t>(std::floor(src_x)), 0, src_w - 1);
             const int32_t x1 = std::min(x0 + 1, src_w - 1);
             const float wx = src_x - static_cast<float>(x0);
             const auto sample = [&](int32_t sy, int32_t sx) {

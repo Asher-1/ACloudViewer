@@ -46,20 +46,23 @@ AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
                                                 int32_t* out_height);
 
 /** Detect all faces; JSON: {"faces":[{"score", "box", "landmarks"}, ...]}. */
-AICORE_CAPI char* aicore_facedetect_detect_path_json(
-        aicore_facedetect_ctx* ctx, const char* image_path);
-AICORE_CAPI char* aicore_facedetect_detect_rgb_json(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height);
+AICORE_CAPI char* aicore_facedetect_detect_path_json(aicore_facedetect_ctx* ctx,
+                                                     const char* image_path);
+AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
+                                                    const uint8_t* rgb,
+                                                    int32_t width,
+                                                    int32_t height);
 
 /** Age/gender JSON for every detected face.
- *  When min_score > 0, faces below that detection score are omitted (same rule as
- *  dense_landmarks). Pass 0 to return every face the detector found. */
+ *  When min_score > 0, faces below that detection score are omitted (same rule
+ * as dense_landmarks). Pass 0 to return every face the detector found. */
 AICORE_CAPI char* aicore_facedetect_analyze_path_json(
         aicore_facedetect_ctx* ctx, const char* image_path, float min_score);
-AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, float min_score);
+AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
+                                                     const uint8_t* rgb,
+                                                     int32_t width,
+                                                     int32_t height,
+                                                     float min_score);
 
 /** Detect + dense landmarks (106 2D + 68 3D) using detector_ctx + landmark_ctx.
  *  Faces below min_score are skipped. JSON:
@@ -67,8 +70,11 @@ AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(
  *   "landmarks_3d":[[x,y,z],...]}, ...]} */
 AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         aicore_facedetect_ctx* detector_ctx,
-        aicore_facedetect_ctx* landmark_ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, float min_score);
+        aicore_facedetect_ctx* landmark_ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height,
+        float min_score);
 
 /** Primary-face L2-normalized embedding (512-d ArcFace or 128-d SFace).
  *  Faces below min_detection_score are ignored when picking the primary face
@@ -76,26 +82,37 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
 AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
                                              const char* image_path,
                                              float min_detection_score,
-                                             float** out_vec, int* out_dim);
+                                             float** out_vec,
+                                             int* out_dim);
 AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
-                                              const uint8_t* rgb, int32_t width,
-                                              int32_t height,
-                                              float min_detection_score,
-                                              float** out_vec, int* out_dim);
+                                            const uint8_t* rgb,
+                                            int32_t width,
+                                            int32_t height,
+                                            float min_detection_score,
+                                            float** out_vec,
+                                            int* out_dim);
 
 /** L2-normalized embedding from a full RGB frame and SCRFD 5-point landmarks
  *  (10 floats: x0,y0,...,x4,y4 in pixel coordinates). Same alignment path as
  *  group-photo authentication when detection landmarks are available. */
 AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
-        aicore_facedetect_ctx* ctx, const uint8_t* rgb, int32_t width,
-        int32_t height, const float* landmarks_xy10, float** out_vec,
+        aicore_facedetect_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height,
+        const float* landmarks_xy10,
+        float** out_vec,
         int* out_dim);
 
-/** Cosine distance + match between two images (threshold <=0 → pack default). */
-AICORE_CAPI int aicore_facedetect_verify_paths(
-        aicore_facedetect_ctx* ctx, const char* a, const char* b,
-        float threshold, int anti_spoof, float* out_distance,
-        int* out_verified);
+/** Cosine distance + match between two images (threshold <=0 → pack default).
+ */
+AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
+                                               const char* a,
+                                               const char* b,
+                                               float threshold,
+                                               int anti_spoof,
+                                               float* out_distance,
+                                               int* out_verified);
 
 AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx);
 AICORE_CAPI int aicore_facedetect_warmup_backend(const char* device);

@@ -46,7 +46,8 @@ public:
     explicit DA3Worker(const DA3Dialog::Settings& settings,
                        QObject* parent = nullptr);
 
-    /** Call from the GUI thread after the worker finishes (ggml/CUDA teardown). */
+    /** Call from the GUI thread after the worker finishes (ggml/CUDA teardown).
+     */
     void releaseContextOnMainThread();
 
 signals:

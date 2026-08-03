@@ -890,8 +890,8 @@ __global__ void SddhKernel(const float *feature_map,
             for (int32_t ky = 0; ky < kernel_size; ++ky) {
                 for (int32_t kx = 0; kx < kernel_size; ++kx) {
                     patch[c * kernel_size * kernel_size + ky * kernel_size +
-                          kx] = feature_map[WhcnIndex(x0 + kx, y0 + ky, c, h,
-                                                        w)];
+                          kx] =
+                            feature_map[WhcnIndex(x0 + kx, y0 + ky, c, h, w)];
                 }
             }
         }

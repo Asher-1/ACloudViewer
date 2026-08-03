@@ -7,8 +7,10 @@
 
 #include "DA3Dialog.h"
 
+#include <CVLog.h>
 #include <QtCompat.h>
 
+#include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -19,19 +21,15 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QCloseEvent>
-
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
-#include "ecvModelDownloader.h"
-#include "ecvClickableImageLabel.h"
-#include "ecvPersistentSettings.h"
-
 #include "aicore/inference_log.h"
-#include <CVLog.h>
+#include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
+#include "ecvPersistentSettings.h"
 
 namespace {
 
@@ -122,8 +120,8 @@ QString DA3Dialog::modelCacheDir() {
 
 void DA3Dialog::updateInputPreview() {
     if (!m_inputPreview) return;
-    const QString path = m_inputPath ? m_inputPath->text().trimmed()
-                                     : QString();
+    const QString path =
+            m_inputPath ? m_inputPath->text().trimmed() : QString();
     if (path.isEmpty()) {
         m_inputPreview->clearPreview();
         m_inputPreview->setText(tr("Preview"));
@@ -166,8 +164,9 @@ DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
                     m_downloadLabel->setText(
                             tr("Downloading %1 — %2")
                                     .arg(m_downloadTargetFilename)
-                                    .arg(ecvModelDownloader::formatDownloadProgress(
-                                            received, total)));
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
                 }
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -201,9 +200,7 @@ DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
     aicore_inference_log::log_backend_probe(QStringLiteral("DA3"));
 }
 
-void DA3Dialog::setAppInterface(ecvMainAppInterface* app) {
-    m_app = app;
-}
+void DA3Dialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void DA3Dialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
@@ -332,9 +329,9 @@ void DA3Dialog::setupUi() {
     m_inputPreview->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_inputPreview->setText(tr("Preview"));
-    ioLayout->addWidget(
-            ecvClickableImageLabel::wrapWithTapToPreviewHint(m_inputPreview, this),
-            row, 0, 1, 3, Qt::AlignLeft);
+    ioLayout->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
+                                m_inputPreview, this),
+                        row, 0, 1, 3, Qt::AlignLeft);
 
     row++;
     m_dbToggleBtn = new QToolButton;
@@ -503,8 +500,9 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QFileInfo fi(cached);
         QString suffix;
         if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
-            suffix = QString(" [%1] \u2713")
-                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
+            suffix =
+                    QString(" [%1] \u2713")
+                            .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
         }
@@ -524,8 +522,9 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QFileInfo fi(cached);
         QString suffix;
         if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
-            suffix = QString(" [%1] \u2713")
-                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
+            suffix =
+                    QString(" [%1] \u2713")
+                            .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
         }
@@ -619,31 +618,29 @@ void DA3Dialog::onMetricModelComboChanged(int index) {
 
 void DA3Dialog::onBrowseCustomModel() {
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qDA3"), QStringLiteral("lastModelDir"),
-            modelCacheDir());
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qDA3"),
+                             QStringLiteral("lastModelDir"), modelCacheDir());
     const QString path = QFileDialog::getOpenFileName(
             this, tr("Select GGUF Model"), lastDir,
             tr("GGUF Models (*.gguf);;All Files (*)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
-                                       QStringLiteral("lastModelDir"),
-                                       path);
+                         QStringLiteral("lastModelDir"), path);
     m_customModelPath->setText(path);
 }
 
 void DA3Dialog::onBrowseCustomMetricModel() {
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qDA3"), QStringLiteral("lastModelDir"),
-            modelCacheDir());
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qDA3"),
+                             QStringLiteral("lastModelDir"), modelCacheDir());
     const QString path = QFileDialog::getOpenFileName(
             this, tr("Select Metric Model"), lastDir,
             tr("GGUF Models (*.gguf);;All Files (*)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
-                                       QStringLiteral("lastModelDir"),
-                                       path);
+                         QStringLiteral("lastModelDir"), path);
     m_customMetricPath->setText(path);
 }
 
@@ -938,14 +935,13 @@ void DA3Dialog::onExportAllDepths() {
     QString dir = m_outputDir->text();
     if (dir.isEmpty()) {
         const QString lastDir = ecvPS::browseDir(
-                settings, QStringLiteral("qDA3"), QStringLiteral("lastOutputDir"),
-                QDir::homePath());
+                settings, QStringLiteral("qDA3"),
+                QStringLiteral("lastOutputDir"), QDir::homePath());
         dir = QFileDialog::getExistingDirectory(
                 this, tr("Select Output Directory for Depth Maps"), lastDir);
         if (dir.isEmpty()) return;
         ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
-                                           QStringLiteral("lastOutputDir"),
-                                           dir);
+                             QStringLiteral("lastOutputDir"), dir);
         m_outputDir->setText(dir);
     }
     emit exportAllDepthsRequested(dir);
@@ -953,15 +949,14 @@ void DA3Dialog::onExportAllDepths() {
 
 void DA3Dialog::onBrowseOutput() {
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qDA3"), QStringLiteral("lastOutputDir"),
-            QDir::homePath());
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qDA3"),
+                             QStringLiteral("lastOutputDir"), QDir::homePath());
     const QString dir = QFileDialog::getExistingDirectory(
             this, tr("Select Output Directory"), lastDir);
     if (dir.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
-                                       QStringLiteral("lastOutputDir"),
-                                       dir);
+                         QStringLiteral("lastOutputDir"), dir);
     m_outputDir->setText(dir);
 }
 

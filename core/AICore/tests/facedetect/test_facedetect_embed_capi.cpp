@@ -1,10 +1,18 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // C API embed consistency: detect landmarks + embed_rgb_landmarks must match
 // embed_path on the same libjpeg-loaded buffer (InsightFace recognize path).
-// SKIP (77) when AICORE_TEST_FACEDETECT_GGUF or AICORE_TEST_FACEDETECT_IMAGE unset.
+// SKIP (77) when AICORE_TEST_FACEDETECT_GGUF or AICORE_TEST_FACEDETECT_IMAGE
+// unset.
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <cmath>
 #include <string>
 #include <vector>
 
@@ -20,12 +28,13 @@ float cosineDistance(const float* a, const float* b, int dim) {
     return static_cast<float>(1.0 - dot);
 }
 
-bool embedPath(aicore_facedetect_ctx* ctx, const char* path, float minDet,
+bool embedPath(aicore_facedetect_ctx* ctx,
+               const char* path,
+               float minDet,
                std::vector<float>* out) {
     float* vec = nullptr;
     int dim = 0;
-    const int rc =
-            aicore_facedetect_embed_path(ctx, path, minDet, &vec, &dim);
+    const int rc = aicore_facedetect_embed_path(ctx, path, minDet, &vec, &dim);
     if (rc != 0 || !vec || dim <= 0) {
         if (vec) aicore_facedetect_free_vec(vec);
         return false;
@@ -100,8 +109,7 @@ int main() {
         float box[4] = {};
         size_t i = facePos + 6;
         for (int bi = 0; bi < 4; ++bi) {
-            while (i < json.size() &&
-                   (json[i] < '0' || json[i] > '9') &&
+            while (i < json.size() && (json[i] < '0' || json[i] > '9') &&
                    json[i] != '-' && json[i] != '.') {
                 ++i;
             }
@@ -109,7 +117,8 @@ int main() {
             box[bi] = std::strtof(json.c_str() + i, &end);
             i = end ? static_cast<size_t>(end - json.c_str()) : i + 1;
         }
-        const float area = std::max(0.f, box[2] - box[0]) * std::max(0.f, box[3] - box[1]);
+        const float area =
+                std::max(0.f, box[2] - box[0]) * std::max(0.f, box[3] - box[1]);
 
         float candidate[10] = {};
         i = lmkPos + 12;
@@ -140,8 +149,8 @@ int main() {
 
     float* embLmk = nullptr;
     int dimLmk = 0;
-    const int rc = aicore_facedetect_embed_rgb_landmarks(ctx, rgb, w, h, landmarks,
-                                                         &embLmk, &dimLmk);
+    const int rc = aicore_facedetect_embed_rgb_landmarks(
+            ctx, rgb, w, h, landmarks, &embLmk, &dimLmk);
     aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
     if (rc != 0 || !embLmk || dimLmk <= 0) {
         std::fprintf(stderr, "embed_rgb_landmarks failed: %s\n",
@@ -164,6 +173,7 @@ int main() {
         return 1;
     }
 
-    std::fprintf(stderr, "test_facedetect_embed_capi ok (cross d=%f)\n", crossDist);
+    std::fprintf(stderr, "test_facedetect_embed_capi ok (cross d=%f)\n",
+                 crossDist);
     return 0;
 }
