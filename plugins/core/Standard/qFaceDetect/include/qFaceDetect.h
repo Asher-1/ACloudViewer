@@ -46,7 +46,8 @@ private:
     void addResultToDb(const FaceDetectRunResult& result,
                        const FaceDetectDialog::Settings& settings,
                        const QString& sourceLabel);
-    void onAuthVisualizationReady(const QImage& annotated, const QString& summary);
+    void onAuthVisualizationReady(const QImage& annotated,
+                                  const QString& summary);
 
     QAction* m_action = nullptr;
     FaceDetectDialog* m_dialog = nullptr;

@@ -19,8 +19,6 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
-#include "ecvPersistentSettings.h"
-
 #include <QAction>
 #include <QDir>
 #include <QFile>
@@ -32,6 +30,8 @@
 #include <QStandardPaths>
 #include <algorithm>
 #include <cmath>
+
+#include "ecvPersistentSettings.h"
 
 qDA3::qDA3(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qDA3/info.json") {
@@ -316,9 +316,9 @@ void applyDa3DepthMetadata(ccHObject* entity,
     entity->setMetaData(QStringLiteral("DA3/Width"), result.width);
     entity->setMetaData(QStringLiteral("DA3/Height"), result.height);
     entity->setMetaData(QStringLiteral("DA3/PointCount"), pointCount);
-    entity->setMetaData(QStringLiteral("DA3/Mode"),
-                        unproject ? QStringLiteral("unproject")
-                                  : QStringLiteral("grid"));
+    entity->setMetaData(
+            QStringLiteral("DA3/Mode"),
+            unproject ? QStringLiteral("unproject") : QStringLiteral("grid"));
 }
 
 }  // namespace
@@ -339,9 +339,9 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     const int sampledH = (H + step - 1) / step;
     const int N = sampledW * sampledH;
 
-    const QString cloudBase = buildDa3ExportBaseName(
-            m_currentSettings, QStringLiteral("Cloud"), result.sourceName,
-            result.resolvedDevice);
+    const QString cloudBase =
+            buildDa3ExportBaseName(m_currentSettings, QStringLiteral("Cloud"),
+                                   result.sourceName, result.resolvedDevice);
     const QString cloudName = ecvPluginDbNaming::makeUnique(cloudBase, m_app);
 
     auto* cloud = new ccPointCloud(cloudName);
@@ -640,16 +640,14 @@ void qDA3::exportDepthMap() {
     QSettings settings;
     const QString path = QFileDialog::getSaveFileName(
             m_dialog, tr("Save Depth Map"),
-            ecvPS::browseDir(
-                    settings, QStringLiteral("qDA3"),
-                    QStringLiteral("lastExportDir"),
-                    QStandardPaths::writableLocation(
-                            QStandardPaths::DocumentsLocation)),
+            ecvPS::browseDir(settings, QStringLiteral("qDA3"),
+                             QStringLiteral("lastExportDir"),
+                             QStandardPaths::writableLocation(
+                                     QStandardPaths::DocumentsLocation)),
             tr("PNG Image (*.png);;TIFF Image (*.tiff *.tif);;All Files (*)"));
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
-                                       QStringLiteral("lastExportDir"),
-                                       path);
+                         QStringLiteral("lastExportDir"), path);
 
     if (saveDepthAsImage(m_lastDepthResult, path)) {
         m_dialog->appendLog(QString("[DA3] Depth map saved: %1 (%2x%3)")

@@ -7,11 +7,6 @@
 
 #include "ggml_gpu_ops.hpp"
 
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_sync.hpp"
-#include "vulkan/vulkan_aliked_dispatch.hpp"
-#include "gpu_tensor.hpp"
-
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 #include <ggml.h>
@@ -20,7 +15,11 @@
 #include <string>
 #include <unordered_map>
 
+#include "gpu_pipeline_cache.hpp"
+#include "gpu_sync.hpp"
+#include "gpu_tensor.hpp"
 #include "tensor_ops.hpp"
+#include "vulkan/vulkan_aliked_dispatch.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -68,7 +67,8 @@ struct CachedBinaryInPlaceGraph {
 
 std::unordered_map<std::string, CachedOneInputGraph> g_one_input_graphs;
 std::unordered_map<std::string, CachedUnaryInPlaceGraph> g_unary_inplace_graphs;
-std::unordered_map<std::string, CachedBinaryInPlaceGraph> g_binary_inplace_graphs;
+std::unordered_map<std::string, CachedBinaryInPlaceGraph>
+        g_binary_inplace_graphs;
 
 ggml_gallocr_t NewGraphGallocr(internal::Backend *backend) {
     if (backend == nullptr || backend->handle == nullptr) {
@@ -86,7 +86,8 @@ void FreeGraphGallocr(ggml_gallocr_t *gallocr) {
     *gallocr = nullptr;
 }
 
-bool RunBoundGraphCompute(internal::Backend *backend, ggml_cgraph *graph,
+bool RunBoundGraphCompute(internal::Backend *backend,
+                          ggml_cgraph *graph,
                           std::string *error) {
     if (backend == nullptr || backend->handle == nullptr || graph == nullptr) {
         if (error) {
@@ -127,9 +128,11 @@ bool CachedGraphCompute(internal::Backend *backend,
     return RunBoundGraphCompute(backend, graph, error);
 }
 
-bool EphemeralGallocrCompute(internal::Backend *backend, ggml_cgraph *graph,
+bool EphemeralGallocrCompute(internal::Backend *backend,
+                             ggml_cgraph *graph,
                              std::string *error) {
-    if (backend == nullptr || backend->allocator == nullptr || graph == nullptr) {
+    if (backend == nullptr || backend->allocator == nullptr ||
+        graph == nullptr) {
         if (error) {
             *error = "invalid backend or graph for ephemeral compute";
         }
@@ -357,7 +360,8 @@ bool RunBinaryInPlaceOnGpuTensor(
             entry.h = accum->h;
             entry.c = accum->c;
         }
-        // Bind graph slots before uploading inputs — re-alloc after copy zeros lhs/rhs.
+        // Bind graph slots before uploading inputs — re-alloc after copy zeros
+        // lhs/rhs.
         if (!ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
             if (error) {
                 *error = "failed to bind cached binary in-place graph";
@@ -645,7 +649,8 @@ void RebindAllCachedGgmlOpGraphs(internal::Backend *backend) {
 void BeginVulkanExtract(internal::Backend *backend) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend != nullptr && backend->IsVulkan()) {
-        // Drop SELU/unary graphs from a prior ctx (e.g. CPU-then-Vulkan parity).
+        // Drop SELU/unary graphs from a prior ctx (e.g. CPU-then-Vulkan
+        // parity).
         ClearCachedGpuOpGraphs();
         VkAlikedQueueIdle(backend->handle);
         FlushGpuPipeline(backend);
@@ -984,9 +989,9 @@ bool RunCropWhcnGpu(internal::Backend *backend,
                                                       ggml_tensor *in) {
                     const size_t es = ggml_element_size(in);
                     const size_t offset = pad_left * es + pad_top * in->nb[1];
-                    ggml_tensor *view = ggml_view_4d(
-                            ctx, in, out_w, out_h, ic, 1, in->nb[1], in->nb[2],
-                            in->nb[3], offset);
+                    ggml_tensor *view = ggml_view_4d(ctx, in, out_w, out_h, ic,
+                                                     1, in->nb[1], in->nb[2],
+                                                     in->nb[3], offset);
                     ggml_tensor *out = ggml_new_tensor_4d(ctx, GGML_TYPE_F32,
                                                           out_w, out_h, ic, 1);
                     return ggml_cpy(ctx, view, out);

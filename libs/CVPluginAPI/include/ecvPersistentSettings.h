@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "CVPluginAPI.h"
-
 #include <QFileInfo>
 #include <QSettings>
 #include <QString>
+
+#include "CVPluginAPI.h"
 
 //! Persistent settings keys and QSettings helpers (app + plugins).
 class CVPLUGIN_LIB_API ecvPS {
@@ -108,7 +108,8 @@ public:
         return QStringLiteral("AppStyle");
     }
 
-    /** Register a QSettings group prefix (e.g. "qDA3") for resetAllRegistered(). */
+    /** Register a QSettings group prefix (e.g. "qDA3") for
+     * resetAllRegistered(). */
     static void registerSettingsGroup(const QString& groupPrefix);
 
     /** Clear every group registered via registerSettingsGroup(). */

@@ -54,8 +54,7 @@ public:
 
     ccBBox getOwnBB(bool withGLFeatures = false) override;
 
-    void drawBB(CC_DRAW_CONTEXT& context,
-                const ecvColor::Rgb& col) override;
+    void drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) override;
 
     void applyGLTransformation(const ccGLMatrix& trans) override;
 

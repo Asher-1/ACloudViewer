@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "aicore/facedetect_capi.h"
-
 #include <cstring>
+
+#include "aicore/facedetect_capi.h"
 
 namespace {
 
@@ -66,8 +66,8 @@ static constexpr ModelRow kModels[] = {
 };
 
 static aicore_facedetect_model_entry to_entry(const ModelRow& row) {
-    return {row.filename, row.download_url, row.display_name, row.quant_note,
-            row.license_note, row.detector_capable};
+    return {row.filename,   row.download_url, row.display_name,
+            row.quant_note, row.license_note, row.detector_capable};
 }
 
 static int detector_index_map(int detector_index) {
@@ -134,7 +134,8 @@ aicore_facedetect_landmark_model_at(int index) {
     int seen = -1;
     for (size_t i = 0; i < sizeof(kModels) / sizeof(kModels[0]); ++i) {
         if (kModels[i].detector_capable) continue;
-        if (seen == index) return aicore_facedetect_model_at(static_cast<int>(i));
+        if (seen == index)
+            return aicore_facedetect_model_at(static_cast<int>(i));
         ++seen;
     }
     return nullptr;

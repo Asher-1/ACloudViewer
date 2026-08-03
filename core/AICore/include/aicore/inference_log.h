@@ -7,17 +7,18 @@
 
 #pragma once
 
-#include "aicore/backend_capi.h"
-
 #include <CVLog.h>
 
 #include <QCoreApplication>
 #include <QString>
 #include <QStringList>
 
+#include "aicore/backend_capi.h"
+
 namespace aicore_inference_log {
 
-inline QString trText(const char* text, const char* disambiguation = nullptr,
+inline QString trText(const char* text,
+                      const char* disambiguation = nullptr,
                       int n = -1) {
     return QCoreApplication::translate("aicore_inference_log", text,
                                        disambiguation, n);
@@ -28,8 +29,10 @@ inline void log(const QString& line) {
     if (line.contains(QStringLiteral("[Error]"), Qt::CaseInsensitive) ||
         line.startsWith(QStringLiteral("Error"), Qt::CaseInsensitive)) {
         CVLog::Error(line);
-    } else if (line.contains(QStringLiteral("[Warning]"), Qt::CaseInsensitive) ||
-               line.startsWith(QStringLiteral("Warning"), Qt::CaseInsensitive)) {
+    } else if (line.contains(QStringLiteral("[Warning]"),
+                             Qt::CaseInsensitive) ||
+               line.startsWith(QStringLiteral("Warning"),
+                               Qt::CaseInsensitive)) {
         CVLog::Warning(line);
     } else {
         CVLog::Print(line);
@@ -55,8 +58,11 @@ inline QString backend_probe_line(const QString& tag) {
             names << QString::fromUtf8(d->id);
         }
     }
-    return trText("[%1] Backends available (%2): %3").arg(tag).arg(n).arg(
-            names.isEmpty() ? trText("(none)") : names.join(QStringLiteral(", ")));
+    return trText("[%1] Backends available (%2): %3")
+            .arg(tag)
+            .arg(n)
+            .arg(names.isEmpty() ? trText("(none)")
+                                 : names.join(QStringLiteral(", ")));
 }
 
 inline void log_backend_probe(const QString& tag) {
@@ -64,7 +70,8 @@ inline void log_backend_probe(const QString& tag) {
 }
 
 inline void log_device_request(const QString& tag, const QString& device) {
-    log(trText("[%1] Using device: %2").arg(tag, format_device_request(device)));
+    log(trText("[%1] Using device: %2")
+                .arg(tag, format_device_request(device)));
 }
 
 inline void log_device_resolved(const QString& tag,
@@ -78,9 +85,8 @@ inline void log_inference_done(const QString& tag,
                                const QString& resolved_device,
                                double runtime_ms,
                                const QString& summary) {
-    QString line = trText("[%1] Done in %2 ms")
-                           .arg(tag)
-                           .arg(runtime_ms, 0, 'f', 1);
+    QString line =
+            trText("[%1] Done in %2 ms").arg(tag).arg(runtime_ms, 0, 'f', 1);
     if (!resolved_device.trimmed().isEmpty()) {
         line += trText(" [%1]").arg(resolved_device);
     }

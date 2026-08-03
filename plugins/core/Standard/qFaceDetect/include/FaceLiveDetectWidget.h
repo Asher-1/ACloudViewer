@@ -17,7 +17,6 @@
 #include <QThread>
 #include <QTimer>
 #include <QWidget>
-
 #include <memory>
 
 #include "FaceDetectWorker.h"
@@ -83,7 +82,8 @@ public:
     void syncModelControlsFrom(const QComboBox* modelCombo,
                                const QComboBox* deviceCombo,
                                const QSpinBox* threadsSpin);
-    void rebuildModelCombo(const QStringList& labels, const QStringList& filenames,
+    void rebuildModelCombo(const QStringList& labels,
+                           const QStringList& filenames,
                            const QString& currentFilename);
     void rebuildDeviceCombo(const QComboBox* sourceDeviceCombo);
     void setModelPath(const QString& path);
@@ -129,7 +129,8 @@ private:
     void updateThresholdUi();
     void updateRegistryUi();
     void updateModelPathFromCombo();
-    void submitInferJob(const QImage& displayRgb, const QImage& inferRgb,
+    void submitInferJob(const QImage& displayRgb,
+                        const QImage& inferRgb,
                         float inferScale);
     void shutdownInferThread();
 

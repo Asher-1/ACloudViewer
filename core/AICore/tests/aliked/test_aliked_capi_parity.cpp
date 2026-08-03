@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // ALIKED GPU parity + latency gate: CPU F32 reference vs CUDA/Vulkan @1024.
 //
 // Env (optional if argv provided):
@@ -89,9 +96,9 @@ ExtractResult ExtractTimed(const char* gguf,
 
     aicore_lightglue_features features{};
     auto once = [&]() -> bool {
-        return aicore_aliked_extract_rgb(
-                       ctx, image.rgb.data(), image.width, image.height,
-                       image.width * 3, &features) == 0;
+        return aicore_aliked_extract_rgb(ctx, image.rgb.data(), image.width,
+                                         image.height, image.width * 3,
+                                         &features) == 0;
     };
 
     const bool skip_warmup =
@@ -251,9 +258,10 @@ int main(int argc, char** argv) {
     }
     if (gguf == nullptr || gguf[0] == '\0' || image_path == nullptr ||
         image_path[0] == '\0') {
-        std::fprintf(stderr,
-                     "SKIP: set AICORE_TEST_ALIKED_GGUF + AICORE_TEST_ALIKED_IMAGE "
-                     "or pass gguf image args\n");
+        std::fprintf(
+                stderr,
+                "SKIP: set AICORE_TEST_ALIKED_GGUF + AICORE_TEST_ALIKED_IMAGE "
+                "or pass gguf image args\n");
         return 77;
     }
 
@@ -280,19 +288,20 @@ int main(int argc, char** argv) {
     const char* bench_only = std::getenv("AICORE_ALIKED_BENCH_ONLY");
     if (only != nullptr && only[0] != '\0' && std::strcmp(only, "cpu") == 0 &&
         bench_only == nullptr) {
-        std::fprintf(stderr, "SKIP: set AICORE_TEST_DEVICE to cuda or vulkan\n");
+        std::fprintf(stderr,
+                     "SKIP: set AICORE_TEST_DEVICE to cuda or vulkan\n");
         return 77;
     }
 
     if (bench_only != nullptr && only != nullptr && only[0] != '\0') {
-        const ExtractResult gpu = ExtractTimed(
-                gguf, only, image, max_kpts, resize, BenchRuns(3));
+        const ExtractResult gpu =
+                ExtractTimed(gguf, only, image, max_kpts, resize, BenchRuns(3));
         if (!gpu.ok) {
             std::fprintf(stderr, "FAIL: %s extract failed\n", only);
             return 1;
         }
-        std::printf("%s: kpts=%d median_ms=%.2f (bench-only)\n", only, gpu.count,
-                    gpu.median_ms);
+        std::printf("%s: kpts=%d median_ms=%.2f (bench-only)\n", only,
+                    gpu.count, gpu.median_ms);
         return 0;
     }
 
@@ -317,8 +326,8 @@ int main(int argc, char** argv) {
             std::strcmp(only, backend) != 0) {
             continue;
         }
-        const ExtractResult gpu = ExtractTimed(
-                gguf, backend, image, max_kpts, resize, BenchRuns(3));
+        const ExtractResult gpu = ExtractTimed(gguf, backend, image, max_kpts,
+                                               resize, BenchRuns(3));
         if (!gpu.ok) {
             std::printf("SKIP backend=%s (load or extract failed)\n", backend);
             continue;

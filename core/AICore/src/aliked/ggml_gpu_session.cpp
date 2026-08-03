@@ -49,7 +49,8 @@ void PinTensorToGpu(internal::Backend *backend, ggml_tensor *tensor) {
                                           backend->handle);
 }
 
-void PinSchedScoreHeadGraph(internal::Backend *backend, ggml_cgraph *graph,
+void PinSchedScoreHeadGraph(internal::Backend *backend,
+                            ggml_cgraph *graph,
                             ggml_tensor *graph_in,
                             const std::vector<ggml_tensor *> &weights) {
     if (backend == nullptr || !backend->HasSched() || graph == nullptr) {
@@ -185,8 +186,8 @@ bool GgmlGpuSession::RunFusedConvChainGraph(
         return false;
     }
 
-    ggml_tensor *graph_in = ggml_new_tensor_4d(
-            ctx, GGML_TYPE_F32, input.w, input.h, input.c, 1);
+    ggml_tensor *graph_in = ggml_new_tensor_4d(ctx, GGML_TYPE_F32, input.w,
+                                               input.h, input.c, 1);
     ggml_tensor *x = graph_in;
     for (const ConvChainSpec &layer : layers) {
         const GgmlConvRunner::CachedWeight &cached =
@@ -342,8 +343,8 @@ bool GgmlGpuSession::RunScoreHeadSchedGraphImpl(
         return false;
     }
 
-    ggml_tensor *graph_in = ggml_new_tensor_4d(
-            ctx, GGML_TYPE_F32, input.w, input.h, input.c, 1);
+    ggml_tensor *graph_in = ggml_new_tensor_4d(ctx, GGML_TYPE_F32, input.w,
+                                               input.h, input.c, 1);
     ggml_tensor *x = graph_in;
     std::vector<ggml_tensor *> weight_tensors;
     weight_tensors.reserve(layers.size() * 2);
@@ -363,15 +364,14 @@ bool GgmlGpuSession::RunScoreHeadSchedGraphImpl(
     }
     if (opts.apply_crop) {
         const size_t es = ggml_element_size(x);
-        const size_t offset =
-                static_cast<size_t>(opts.crop_pad_left) * es +
-                static_cast<size_t>(opts.crop_pad_top) * x->nb[1];
-        ggml_tensor *view = ggml_view_4d(
-                ctx, x, opts.crop_out_w, opts.crop_out_h, x->ne[2], 1,
-                x->nb[1], x->nb[2], x->nb[3], offset);
-        ggml_tensor *cropped = ggml_new_tensor_4d(ctx, GGML_TYPE_F32,
-                                                  opts.crop_out_w,
-                                                  opts.crop_out_h, x->ne[2], 1);
+        const size_t offset = static_cast<size_t>(opts.crop_pad_left) * es +
+                              static_cast<size_t>(opts.crop_pad_top) * x->nb[1];
+        ggml_tensor *view =
+                ggml_view_4d(ctx, x, opts.crop_out_w, opts.crop_out_h, x->ne[2],
+                             1, x->nb[1], x->nb[2], x->nb[3], offset);
+        ggml_tensor *cropped =
+                ggml_new_tensor_4d(ctx, GGML_TYPE_F32, opts.crop_out_w,
+                                   opts.crop_out_h, x->ne[2], 1);
         x = ggml_cpy(ctx, view, cropped);
     }
 

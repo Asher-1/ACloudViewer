@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
+#include <QDoubleSpinBox>
 #include <QFile>
 #include <QLabel>
 #include <QLineEdit>
@@ -21,8 +21,8 @@
 #include <QToolButton>
 #include <QWidget>
 
-#include "ecvModelDownloader.h"
 #include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 class ecvMainAppInterface;
 

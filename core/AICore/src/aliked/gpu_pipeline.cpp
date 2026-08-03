@@ -10,6 +10,7 @@
 #include <ggml-backend.h>
 
 #include "aliked_gpu_ops.hpp"
+#include "aliked_stage_bench.hpp"
 #include "deform_conv.hpp"
 #include "ggml_cnn.hpp"
 #include "ggml_gpu_ops.hpp"
@@ -18,10 +19,9 @@
 #include "gpu_postprocess.hpp"
 #include "gpu_sync.hpp"
 #include "gpu_tensor.hpp"
-#include "score_debug.hpp"
 #include "model_weights.hpp"
+#include "score_debug.hpp"
 #include "tensor_ops.hpp"
-#include "aliked_stage_bench.hpp"
 #if defined(AICORE_VULKAN_ALIKED)
 #include "vulkan/vulkan_aliked_dispatch.hpp"
 #endif
@@ -84,8 +84,12 @@ float *DevPtr(const GpuTensor &tensor) {
     return reinterpret_cast<float *>(tensor.tensor->data);
 }
 
-bool LogBackboneIfDebug(internal::Backend *backend, const GpuTensor &tensor,
-                        int32_t c, int32_t h, int32_t w, const char *stage,
+bool LogBackboneIfDebug(internal::Backend *backend,
+                        const GpuTensor &tensor,
+                        int32_t c,
+                        int32_t h,
+                        int32_t w,
+                        const char *stage,
                         std::string *error);
 
 bool UseCudaCustomKernels(internal::Backend *backend) {
@@ -188,7 +192,7 @@ bool UpsampleGpu(internal::Backend *backend,
             return false;
         }
         if (!output->UploadNchw(backend, out_nchw, input.c, out_h, out_w,
-                              error)) {
+                                error)) {
             return false;
         }
         FlushGpuPipeline(backend);
@@ -427,6 +431,16 @@ bool L2NormalizeChannelsGpu(internal::Backend *backend,
                             int32_t h,
                             int32_t w,
                             std::string *error) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan() &&
+        VkAlikedAvailable(backend->handle)) {
+        SyncGpuTensorMeta(tensor);
+        if (VkAlikedL2NormInplace(backend->handle, tensor->tensor, channels, h,
+                                  w)) {
+            return true;
+        }
+    }
+#endif
     if (!UseCudaCustomKernels(backend)) {
         return RunL2NormalizeChannelsGpu(backend, tensor, channels, h, w,
                                          error);
@@ -526,9 +540,8 @@ bool ResBlockForwardGpu(GpuPipelineCache *compute,
     if (dcn && !SeluGpu(backend, &conv1, error)) {
         return false;
     }
-    if (dcn &&
-        !LogBackboneIfDebug(backend, conv1, oc, conv1.h, conv1.w,
-                            (prefix + ".selu1").c_str(), error)) {
+    if (dcn && !LogBackboneIfDebug(backend, conv1, oc, conv1.h, conv1.w,
+                                   (prefix + ".selu1").c_str(), error)) {
         return false;
     }
 
@@ -562,9 +575,8 @@ bool ResBlockForwardGpu(GpuPipelineCache *compute,
             return false;
         }
     }
-    if (dcn &&
-        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
-                            (prefix + ".dcn2_out").c_str(), error)) {
+    if (dcn && !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                                   (prefix + ".dcn2_out").c_str(), error)) {
         return false;
     }
 
@@ -591,9 +603,8 @@ bool ResBlockForwardGpu(GpuPipelineCache *compute,
                        (prefix + ".add").c_str())) {
         return false;
     }
-    if (dcn &&
-        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
-                            (prefix + ".add_out").c_str(), error)) {
+    if (dcn && !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                                   (prefix + ".add_out").c_str(), error)) {
         return false;
     }
     if (dcn) {
@@ -602,17 +613,20 @@ bool ResBlockForwardGpu(GpuPipelineCache *compute,
     if (!SeluGpu(backend, &conv2, error)) {
         return false;
     }
-    if (dcn &&
-        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
-                            (prefix + ".selu2").c_str(), error)) {
+    if (dcn && !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                                   (prefix + ".selu2").c_str(), error)) {
         return false;
     }
     *output = std::move(conv2);
     return true;
 }
 
-bool LogBackboneIfDebug(internal::Backend *backend, const GpuTensor &tensor,
-                        int32_t c, int32_t h, int32_t w, const char *stage,
+bool LogBackboneIfDebug(internal::Backend *backend,
+                        const GpuTensor &tensor,
+                        int32_t c,
+                        int32_t h,
+                        int32_t w,
+                        const char *stage,
                         std::string *error) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend != nullptr && backend->IsVulkan() && DkdDebugEnabled()) {
@@ -683,70 +697,85 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
     {
         StageBench bench("upload_input");
         if (!x1.UploadNchw(b, padded, 3, padder.padded_h, padder.padded_w,
-                             error)) {
+                           error)) {
             return false;
         }
     }
 
     {
         StageBench bench("backbone");
-        if (!ConvBnSeluGpu(runner, b, x1,
-                           RequireTensor(tensors, "block1_conv1_weight", error),
-                           16, 3, 3,
-                           RequireTensor(tensors, "block1_bn1_weight", error),
-                           RequireTensor(tensors, "block1_bn1_bias", error),
-                           RequireTensor(tensors, "block1_bn1_running_mean",
-                                         error),
-                           RequireTensor(tensors, "block1_bn1_running_var", error),
-                           1, 1, &x1, "block1.conv1", error)) {
-            return false;
-        }
-        if (!ConvBnSeluGpu(runner, b, x1,
-                           RequireTensor(tensors, "block1_conv2_weight", error),
-                           16, 3, 3,
-                           RequireTensor(tensors, "block1_bn2_weight", error),
-                           RequireTensor(tensors, "block1_bn2_bias", error),
-                           RequireTensor(tensors, "block1_bn2_running_mean",
-                                         error),
-                           RequireTensor(tensors, "block1_bn2_running_var", error),
-                           1, 1, &x1, "block1.conv2", error)) {
-            return false;
+        {
+            StageBench stage("backbone.block1");
+            if (!ConvBnSeluGpu(
+                        runner, b, x1,
+                        RequireTensor(tensors, "block1_conv1_weight", error),
+                        16, 3, 3,
+                        RequireTensor(tensors, "block1_bn1_weight", error),
+                        RequireTensor(tensors, "block1_bn1_bias", error),
+                        RequireTensor(tensors, "block1_bn1_running_mean",
+                                      error),
+                        RequireTensor(tensors, "block1_bn1_running_var", error),
+                        1, 1, &x1, "block1.conv1", error)) {
+                return false;
+            }
+            if (!ConvBnSeluGpu(
+                        runner, b, x1,
+                        RequireTensor(tensors, "block1_conv2_weight", error),
+                        16, 3, 3,
+                        RequireTensor(tensors, "block1_bn2_weight", error),
+                        RequireTensor(tensors, "block1_bn2_bias", error),
+                        RequireTensor(tensors, "block1_bn2_running_mean",
+                                      error),
+                        RequireTensor(tensors, "block1_bn2_running_var", error),
+                        1, 1, &x1, "block1.conv2", error)) {
+                return false;
+            }
         }
 
         GpuTensor x2;
-        if (!AvgPoolGpu(b, x1, 2, 2, 2, &x2, error)) {
-            return false;
-        }
-        if (!ResBlockForwardGpu(pipe, pipe, x2, 16, 32, tensors, "block2",
-                                false, &x2, error)) {
-            return false;
+        {
+            StageBench stage("backbone.block2");
+            if (!AvgPoolGpu(b, x1, 2, 2, 2, &x2, error)) {
+                return false;
+            }
+            if (!ResBlockForwardGpu(pipe, pipe, x2, 16, 32, tensors, "block2",
+                                    false, &x2, error)) {
+                return false;
+            }
         }
         if (!LogBackboneIfDebug(b, x2, 32, x2.h, x2.w, "block2_out", error)) {
             return false;
         }
 
         GpuTensor x3;
-        if (!AvgPoolGpu(b, x2, 4, 4, 4, &x3, error)) {
-            return false;
-        }
-        if (!ResBlockForwardGpu(pipe, pipe, x3, 32, 64, tensors, "block3",
-                                true, &x3, error)) {
-            return false;
+        {
+            StageBench stage("backbone.block3");
+            if (!AvgPoolGpu(b, x2, 4, 4, 4, &x3, error)) {
+                return false;
+            }
+            if (!ResBlockForwardGpu(pipe, pipe, x3, 32, 64, tensors, "block3",
+                                    true, &x3, error)) {
+                return false;
+            }
         }
         if (!LogBackboneIfDebug(b, x3, 64, x3.h, x3.w, "block3_out", error)) {
             return false;
         }
 
         GpuTensor x4;
-        if (!AvgPoolGpu(b, x3, 4, 4, 4, &x4, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, x4, 64, x4.h, x4.w, "block4.in", error)) {
-            return false;
-        }
-        if (!ResBlockForwardGpu(pipe, pipe, x4, 64, 128, tensors, "block4",
-                                true, &x4, error)) {
-            return false;
+        {
+            StageBench stage("backbone.block4");
+            if (!AvgPoolGpu(b, x3, 4, 4, 4, &x4, error)) {
+                return false;
+            }
+            if (!LogBackboneIfDebug(b, x4, 64, x4.h, x4.w, "block4.in",
+                                    error)) {
+                return false;
+            }
+            if (!ResBlockForwardGpu(pipe, pipe, x4, 64, 128, tensors, "block4",
+                                    true, &x4, error)) {
+                return false;
+            }
         }
         if (!LogBackboneIfDebug(b, x4, 128, x4.h, x4.w, "block4_out", error)) {
             return false;
@@ -762,49 +791,35 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
         const int32_t fh = x1.h;
         const int32_t fw = x1.w;
         GpuTensor f1;
-        if (!project(x1, "conv1_weight", &f1)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, f1, 32, fh, fw, "proj_f1", error)) {
-            return false;
-        }
         GpuTensor f2;
-        if (!project(x2, "conv2_weight", &f2)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, f2, 32, f2.h, f2.w, "proj_f2", error)) {
-            return false;
-        }
         GpuTensor f3;
-        if (!project(x3, "conv3_weight", &f3)) {
-            return false;
-        }
         GpuTensor f4;
-        if (!project(x4, "conv4_weight", &f4)) {
-            return false;
+        {
+            StageBench stage("backbone.project");
+            if (!project(x1, "conv1_weight", &f1) ||
+                !LogBackboneIfDebug(b, f1, 32, fh, fw, "proj_f1", error) ||
+                !project(x2, "conv2_weight", &f2) ||
+                !LogBackboneIfDebug(b, f2, 32, f2.h, f2.w, "proj_f2", error) ||
+                !project(x3, "conv3_weight", &f3) ||
+                !project(x4, "conv4_weight", &f4)) {
+                return false;
+            }
         }
 #if defined(AICORE_VULKAN_ALIKED)
         if (b != nullptr && b->IsVulkan()) {
             BarrierGpuPipeline(b);
         }
 #endif
-        if (!UpsampleGpu(b, f2, fw, fh, &f2, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, f2, 32, fh, fw, "upsample_f2", error)) {
-            return false;
-        }
-        if (!UpsampleGpu(b, f3, fw, fh, &f3, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, f3, 32, fh, fw, "upsample_f3", error)) {
-            return false;
-        }
-        if (!UpsampleGpu(b, f4, fw, fh, &f4, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, f4, 32, fh, fw, "upsample_f4", error)) {
-            return false;
+        {
+            StageBench stage("backbone.upsample");
+            if (!UpsampleGpu(b, f2, fw, fh, &f2, error) ||
+                !LogBackboneIfDebug(b, f2, 32, fh, fw, "upsample_f2", error) ||
+                !UpsampleGpu(b, f3, fw, fh, &f3, error) ||
+                !LogBackboneIfDebug(b, f3, 32, fh, fw, "upsample_f3", error) ||
+                !UpsampleGpu(b, f4, fw, fh, &f4, error) ||
+                !LogBackboneIfDebug(b, f4, 32, fh, fw, "upsample_f4", error)) {
+                return false;
+            }
         }
 #if defined(AICORE_VULKAN_ALIKED)
         if (b != nullptr && b->IsVulkan()) {
@@ -813,26 +828,21 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
 #endif
 
         GpuTensor fused;
-        if (!ConcatChannelGpu(b, f1, f2, &fused, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, fused, 64, fh, fw, "concat_f1_f2", error)) {
-            return false;
-        }
         GpuTensor fused2;
-        if (!ConcatChannelGpu(b, fused, f3, &fused2, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, fused2, 96, fh, fw, "concat_96", error)) {
-            return false;
-        }
         GpuTensor feature_gpu;
-        if (!ConcatChannelGpu(b, fused2, f4, &feature_gpu, error)) {
-            return false;
-        }
-        if (!LogBackboneIfDebug(b, feature_gpu, 128, fh, fw, "concat_out",
-                                error)) {
-            return false;
+        {
+            StageBench stage("backbone.concat");
+            if (!ConcatChannelGpu(b, f1, f2, &fused, error) ||
+                !LogBackboneIfDebug(b, fused, 64, fh, fw, "concat_f1_f2",
+                                    error) ||
+                !ConcatChannelGpu(b, fused, f3, &fused2, error) ||
+                !LogBackboneIfDebug(b, fused2, 96, fh, fw, "concat_96",
+                                    error) ||
+                !ConcatChannelGpu(b, fused2, f4, &feature_gpu, error) ||
+                !LogBackboneIfDebug(b, feature_gpu, 128, fh, fw, "concat_out",
+                                    error)) {
+                return false;
+            }
         }
 
         std::vector<GgmlGpuSession::ConvChainSpec> score_layers =
@@ -849,26 +859,29 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
             }
         }
 #endif
-        const bool use_score_sched =
-                b != nullptr && b->HasSched();
-        GgmlGpuSession::ScoreHeadSchedOptions sched_opts{};
-        if (use_score_sched) {
-            sched_opts.apply_sigmoid = true;
-            if (!compute->RunScoreHeadSchedGraph(score_layers, feature_gpu,
-                                                 &score_gpu, sched_opts,
-                                                 error)) {
+        const bool use_score_sched = b != nullptr && b->HasSched();
+        {
+            StageBench stage("backbone.score_head");
+            GgmlGpuSession::ScoreHeadSchedOptions sched_opts{};
+            if (use_score_sched) {
+                sched_opts.apply_sigmoid = true;
+                if (!compute->RunScoreHeadSchedGraph(score_layers, feature_gpu,
+                                                     &score_gpu, sched_opts,
+                                                     error)) {
+                    return false;
+                }
+            } else if (!compute->RunFusedConvChainGraph(
+                               score_layers, feature_gpu, &score_gpu, error)) {
                 return false;
             }
-        } else if (!compute->RunFusedConvChainGraph(score_layers, feature_gpu,
-                                                    &score_gpu, error)) {
-            return false;
         }
         BarrierGpuPipeline(b);
 #if defined(AICORE_VULKAN_ALIKED)
         if (b != nullptr && b->IsVulkan() && DkdDebugEnabled()) {
-            if (!LogScoreMapStage(b, score_gpu, score_gpu.h, score_gpu.w,
-                                  use_score_sched ? "sigmoid" : "score_head_out",
-                                  error)) {
+            if (!LogScoreMapStage(
+                        b, score_gpu, score_gpu.h, score_gpu.w,
+                        use_score_sched ? "sigmoid" : "score_head_out",
+                        error)) {
                 return false;
             }
         }
@@ -887,8 +900,11 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
             }
 #endif
         }
-        if (!L2NormalizeChannelsGpu(b, &feature_gpu, 128, fh, fw, error)) {
-            return false;
+        {
+            StageBench stage("backbone.normalize");
+            if (!L2NormalizeChannelsGpu(b, &feature_gpu, 128, fh, fw, error)) {
+                return false;
+            }
         }
 
         maps->height = orig_h;

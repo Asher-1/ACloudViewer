@@ -21,12 +21,11 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <thread>
+#include <vector>
 
+#include "aicore/runtime_capi.h"
 #include "common.hpp"
 #include "ggml_backend_utils.hpp"
-#include "aicore/runtime_capi.h"
-
-#include <vector>
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>

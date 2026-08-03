@@ -5,19 +5,20 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QTemporaryDir>
+#include <QThread>
+#include <atomic>
+#include <cmath>
+#include <thread>
+
 #include "FaceDetectEmbedHelpers.h"
 #include "FaceRegistryStore.h"
 #include "test_macros.hpp"
 
-#include <atomic>
-#include <QTemporaryDir>
-#include <QThread>
-#include <cmath>
-#include <thread>
-
 int g_test_failures = 0;
 
-static FaceDetectBox makeBox(float x1, float y1, float x2, float y2, float score) {
+static FaceDetectBox makeBox(
+        float x1, float y1, float x2, float y2, float score) {
     FaceDetectBox box;
     box.x1 = x1;
     box.y1 = y1;
@@ -72,9 +73,8 @@ static void test_filter_and_scale() {
 
 static void test_expand_face_box() {
     const FaceDetectBox box = makeBox(40, 40, 60, 60, 0.9f);
-    const FaceDetectBox expanded =
-            FaceDetectEmbed::expandFaceBox(box, FaceDetectEmbed::kDefaultCropMarginRatio,
-                                           100, 100);
+    const FaceDetectBox expanded = FaceDetectEmbed::expandFaceBox(
+            box, FaceDetectEmbed::kDefaultCropMarginRatio, 100, 100);
     FD_CHECK(expanded.x1 < box.x1);
     FD_CHECK(expanded.y1 < box.y1);
     FD_CHECK(expanded.x2 > box.x2);
@@ -84,11 +84,13 @@ static void test_expand_face_box() {
 }
 
 static void test_format_labels() {
-    const QString match = FaceDetectEmbed::formatMatchLabel(QStringLiteral("Ross"), 0.321f);
+    const QString match =
+            FaceDetectEmbed::formatMatchLabel(QStringLiteral("Ross"), 0.321f);
     FD_CHECK(match.contains(QStringLiteral("Ross")));
     FD_CHECK(match.contains(QStringLiteral("d=0.321")));
 
-    const QString miss = FaceDetectEmbed::formatNoMatchLabel(0.812f, QStringLiteral("Joey"));
+    const QString miss =
+            FaceDetectEmbed::formatNoMatchLabel(0.812f, QStringLiteral("Joey"));
     FD_CHECK(miss.contains(QStringLiteral("NO MATCH")));
     FD_CHECK(miss.contains(QStringLiteral("Joey")));
 }
@@ -126,7 +128,8 @@ static void test_registry_store_match() {
     FD_CHECK(match.has_value());
     FD_CHECK(match->entry.name == QStringLiteral("Alice"));
 
-    const float dist = FaceRegistryStore::cosineDistance(unitVec(4, 1.f), unitVec(4, 1.f));
+    const float dist =
+            FaceRegistryStore::cosineDistance(unitVec(4, 1.f), unitVec(4, 1.f));
     FD_CHECK(dist < 1e-5f);
 }
 

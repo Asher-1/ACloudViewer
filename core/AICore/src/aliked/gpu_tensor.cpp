@@ -7,16 +7,15 @@
 
 #include "gpu_tensor.hpp"
 
+#include <ggml-backend.h>
+#include <ggml.h>
+
 #include "gpu_pipeline_cache.hpp"
 #include "gpu_sync.hpp"
 #include "score_debug.hpp"
-#include <ggml-backend.h>
-#include <ggml.h>
 #if defined(AICORE_VULKAN_ALIKED)
 #include "vulkan/vulkan_aliked_dispatch.hpp"
 #endif
-
-#include "ggml_cnn.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -24,12 +23,17 @@
 #include <cstring>
 #include <vector>
 
+#include "ggml_cnn.hpp"
+
 namespace lightglue::aliked_internal {
 namespace {
 
 #if defined(AICORE_VULKAN_ALIKED)
-bool CopyScoreToVulkanScratch(internal::Backend *backend, GpuTensor *score,
-                              int32_t h, int32_t w, GpuPipelineCache *cache,
+bool CopyScoreToVulkanScratch(internal::Backend *backend,
+                              GpuTensor *score,
+                              int32_t h,
+                              int32_t w,
+                              GpuPipelineCache *cache,
                               std::string *error) {
     if (backend == nullptr || score == nullptr || cache == nullptr ||
         score->tensor == nullptr) {
@@ -87,14 +91,17 @@ bool CopyScoreToVulkanScratch(internal::Backend *backend, GpuTensor *score,
 }
 #endif
 
-bool DownloadWhcnDense(internal::Backend *backend, const ggml_tensor *tensor,
-                       int32_t w, int32_t h, int32_t c,
+bool DownloadWhcnDense(internal::Backend *backend,
+                       const ggml_tensor *tensor,
+                       int32_t w,
+                       int32_t h,
+                       int32_t c,
                        std::vector<float> *whcn) {
     if (tensor == nullptr || whcn == nullptr || w <= 0 || h <= 0 || c <= 0) {
         return false;
     }
-    const size_t count =
-            static_cast<size_t>(w) * static_cast<size_t>(h) * static_cast<size_t>(c);
+    const size_t count = static_cast<size_t>(w) * static_cast<size_t>(h) *
+                         static_cast<size_t>(c);
     whcn->resize(count);
     if (IsContiguousWhcn(tensor, w, h, c)) {
         ggml_backend_tensor_get(tensor, whcn->data(), 0, count * sizeof(float));
@@ -107,7 +114,8 @@ bool DownloadWhcnDense(internal::Backend *backend, const ggml_tensor *tensor,
                                         static_cast<size_t>(y) * tensor->nb[1] +
                                         static_cast<size_t>(ch) * tensor->nb[2];
                 float value = 0.0f;
-                ggml_backend_tensor_get(tensor, &value, byte_off, sizeof(float));
+                ggml_backend_tensor_get(tensor, &value, byte_off,
+                                        sizeof(float));
                 (*whcn)[static_cast<size_t>(x) + static_cast<size_t>(y) * w +
                         static_cast<size_t>(ch) * w * h] = value;
             }
@@ -240,12 +248,14 @@ bool SameTensorLayout(const ggml_tensor *a, const ggml_tensor *b) {
     return true;
 }
 
-bool TryVulkanDenseCopy(internal::Backend *backend, const ggml_tensor *src,
+bool TryVulkanDenseCopy(internal::Backend *backend,
+                        const ggml_tensor *src,
                         ggml_tensor *dst) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend == nullptr || !backend->IsVulkan() ||
         !VkAlikedAvailable(backend->handle) || src == nullptr ||
-        dst == nullptr || src->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_F32) {
+        dst == nullptr || src->type != GGML_TYPE_F32 ||
+        dst->type != GGML_TYPE_F32) {
         return false;
     }
     if (src->ne[3] != 1 || dst->ne[3] != 1) {
@@ -270,7 +280,10 @@ bool TryVulkanDenseCopy(internal::Backend *backend, const ggml_tensor *src,
 
 }  // namespace
 
-bool IsContiguousWhcn(const ggml_tensor *tensor, int32_t w, int32_t h, int32_t c) {
+bool IsContiguousWhcn(const ggml_tensor *tensor,
+                      int32_t w,
+                      int32_t h,
+                      int32_t c) {
     if (tensor == nullptr || w <= 0 || h <= 0 || c <= 0) {
         return false;
     }
@@ -280,10 +293,12 @@ bool IsContiguousWhcn(const ggml_tensor *tensor, int32_t w, int32_t h, int32_t c
     const size_t es = ggml_element_size(tensor);
     return tensor->nb[0] == es &&
            tensor->nb[1] == static_cast<size_t>(w) * es &&
-           tensor->nb[2] == static_cast<size_t>(w) * static_cast<size_t>(h) * es;
+           tensor->nb[2] ==
+                   static_cast<size_t>(w) * static_cast<size_t>(h) * es;
 }
 
-bool EnsureDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
+bool EnsureDenseWhcn(internal::Backend *backend,
+                     GpuTensor *tensor,
                      std::string *error) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend != nullptr && backend->IsVulkan()) {
@@ -301,7 +316,7 @@ bool EnsureDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
     }
     std::vector<float> nchw;
     if (!tensor->DownloadNchw(backend, &nchw, tensor->c, tensor->h, tensor->w,
-                            error)) {
+                              error)) {
         return false;
     }
     GpuTensor dense;
@@ -317,7 +332,8 @@ bool EnsureDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
     return true;
 }
 
-bool EnsureDenseWhcnGpu(internal::Backend *backend, GpuTensor *tensor,
+bool EnsureDenseWhcnGpu(internal::Backend *backend,
+                        GpuTensor *tensor,
                         std::string *error) {
     if (tensor == nullptr || tensor->tensor == nullptr) {
         if (error) {
@@ -365,8 +381,12 @@ bool EnsureDenseWhcnGpu(internal::Backend *backend, GpuTensor *tensor,
     return true;
 }
 
-bool PinVulkanScoreMap(internal::Backend *backend, GpuTensor *score, int32_t h,
-                       int32_t w, GpuPipelineCache *cache, std::string *error) {
+bool PinVulkanScoreMap(internal::Backend *backend,
+                       GpuTensor *score,
+                       int32_t h,
+                       int32_t w,
+                       GpuPipelineCache *cache,
+                       std::string *error) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend == nullptr || score == nullptr || cache == nullptr) {
         if (error) {
@@ -397,8 +417,11 @@ bool PinVulkanScoreMap(internal::Backend *backend, GpuTensor *score, int32_t h,
 #endif
 }
 
-bool PrepareScoreMapForDkd(internal::Backend *backend, GpuTensor *score,
-                           int32_t h, int32_t w, GpuPipelineCache *cache,
+bool PrepareScoreMapForDkd(internal::Backend *backend,
+                           GpuTensor *score,
+                           int32_t h,
+                           int32_t w,
+                           GpuPipelineCache *cache,
                            std::string *error) {
     if (backend == nullptr || score == nullptr || cache == nullptr) {
         if (error) {
@@ -432,7 +455,8 @@ bool PrepareScoreMapForDkd(internal::Backend *backend, GpuTensor *score,
     return EnsureDenseWhcnGpu(backend, score, error);
 }
 
-bool ForceDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
+bool ForceDenseWhcn(internal::Backend *backend,
+                    GpuTensor *tensor,
                     std::string *error) {
 #if defined(AICORE_VULKAN_ALIKED)
     if (backend != nullptr && backend->IsVulkan()) {
@@ -449,7 +473,7 @@ bool ForceDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
     FlushGpuPipeline(backend);
     std::vector<float> nchw;
     if (!tensor->DownloadNchw(backend, &nchw, tensor->c, tensor->h, tensor->w,
-                            error)) {
+                              error)) {
         return false;
     }
     GpuTensor dense;
@@ -474,14 +498,16 @@ void SyncGpuTensorMeta(GpuTensor *tensor) {
     tensor->c = static_cast<int32_t>(tensor->tensor->ne[2]);
 }
 
-void LogTensorStrideIfDebug(const char *label, const ggml_tensor *tensor,
-                            int32_t w, int32_t h, int32_t c) {
+void LogTensorStrideIfDebug(const char *label,
+                            const ggml_tensor *tensor,
+                            int32_t w,
+                            int32_t h,
+                            int32_t c) {
     if (tensor == nullptr || label == nullptr) {
         return;
     }
     const char *stride_env = std::getenv("LIGHTGLUE_ALIKED_CONV_STRIDE_DEBUG");
-    const bool stride_debug =
-            stride_env != nullptr && stride_env[0] != '0';
+    const bool stride_debug = stride_env != nullptr && stride_env[0] != '0';
     const bool offset_dkd =
             DkdDebugEnabled() && std::strstr(label, ".offset") != nullptr;
     if (!stride_debug && !offset_dkd) {
@@ -499,7 +525,8 @@ void LogTensorStrideIfDebug(const char *label, const ggml_tensor *tensor,
                  contiguous ? 1 : 0);
 }
 
-void BackendTensorCopyCompat(internal::Backend *backend, const ggml_tensor *src,
+void BackendTensorCopyCompat(internal::Backend *backend,
+                             const ggml_tensor *src,
                              ggml_tensor *dst) {
     if (src == nullptr || dst == nullptr || src == dst) {
         return;

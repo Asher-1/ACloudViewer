@@ -21,8 +21,8 @@
 #include <QSpinBox>
 #include <QToolButton>
 
-#include "ecvModelDownloader.h"
 #include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 class ecvMainAppInterface;
 
@@ -130,7 +130,8 @@ private:
     static QVector<LightGlueBuiltinModel> builtinModels();
     static QString formatFileSize(qint64 bytes);
     static QString alikedExtractorCacheDir();
-    static QString alikedExtractorFilenameForMatcher(const QString& matcherFilename);
+    static QString alikedExtractorFilenameForMatcher(
+            const QString& matcherFilename);
 
     QComboBox* m_modeCombo = nullptr;
     QWidget* m_minScoreRow = nullptr;

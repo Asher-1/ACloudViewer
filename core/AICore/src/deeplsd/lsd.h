@@ -1,38 +1,10 @@
-/*----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-  LSD - Line Segment Detector on digital images
-
-  This code is part of the following publication and was subject
-  to peer review:
-
-    "LSD: a Line Segment Detector" by Rafael Grompone von Gioi,
-    Jeremie Jakubowicz, Jean-Michel Morel, and Gregory Randall,
-    Image Processing On Line, 2012. DOI:10.5201/ipol.2012.gjmr-lsd
-    http://dx.doi.org/10.5201/ipol.2012.gjmr-lsd
-
-  Copyright (c) 2007-2011 rafael grompone von gioi <grompone@gmail.com>
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-  ----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/** @file lsd.h
-    LSD module header
-    @author rafael grompone von gioi <grompone@gmail.com>
- */
-/*----------------------------------------------------------------------------*/
 #ifndef LSD_HEADER
 #define LSD_HEADER
 
@@ -137,14 +109,23 @@
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * LineSegmentDetection( int * n_out,
-                               double * img, int X, int Y,
-                               double scale, double sigma_scale, double quant,
-                               double ang_th, double log_eps, double density_th,
-                               int n_bins, bool grad_nfa,
-                               double * modgrad = nullptr, double * angles = nullptr,
-                               int ** reg_img = nullptr,
-                               int * reg_x = nullptr, int * reg_y = nullptr);
+double *LineSegmentDetection(int *n_out,
+                             double *img,
+                             int X,
+                             int Y,
+                             double scale,
+                             double sigma_scale,
+                             double quant,
+                             double ang_th,
+                             double log_eps,
+                             double density_th,
+                             int n_bins,
+                             bool grad_nfa,
+                             double *modgrad = nullptr,
+                             double *angles = nullptr,
+                             int **reg_img = nullptr,
+                             int *reg_x = nullptr,
+                             int *reg_y = nullptr);
 
 /*----------------------------------------------------------------------------*/
 /** LSD Simple Interface with Scale and Region output.
@@ -207,9 +188,14 @@ double * LineSegmentDetection( int * n_out,
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * lsd_scale_region( int * n_out,
-                           double * img, int X, int Y, double scale,
-                           int ** reg_img, int * reg_x, int * reg_y );
+double *lsd_scale_region(int *n_out,
+                         double *img,
+                         int X,
+                         int Y,
+                         double scale,
+                         int **reg_img,
+                         int *reg_x,
+                         int *reg_y);
 
 /*----------------------------------------------------------------------------*/
 /** LSD Simple Interface with Scale
@@ -248,7 +234,7 @@ double * lsd_scale_region( int * n_out,
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * lsd_scale(int * n_out, double * img, int X, int Y, double scale);
+double *lsd_scale(int *n_out, double *img, int X, int Y, double scale);
 
 /*----------------------------------------------------------------------------*/
 /** LSD Simple Interface
@@ -279,7 +265,12 @@ double * lsd_scale(int * n_out, double * img, int X, int Y, double scale);
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double *lsd(int *n_out, double *img, int X, int Y, double gradientThreshold = 5.2262518595055063 , double log_eps=0);
+double *lsd(int *n_out,
+            double *img,
+            int X,
+            int Y,
+            double gradientThreshold = 5.2262518595055063,
+            double log_eps = 0);
 
 #endif /* !LSD_HEADER */
 /*----------------------------------------------------------------------------*/

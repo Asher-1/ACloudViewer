@@ -1,7 +1,14 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // norm_crop / umeyama alignment white-box tests (no GGUF required).
 
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
 #include <vector>
 
 #include "align.hpp"
@@ -19,10 +26,9 @@ fd::Image solidRgb(int w, int h, uint8_t r, uint8_t g, uint8_t b) {
     img.rgb.assign(static_cast<size_t>(w) * static_cast<size_t>(h) * 3, 0);
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            const size_t i =
-                    (static_cast<size_t>(y) * static_cast<size_t>(w) +
-                     static_cast<size_t>(x)) *
-                    3;
+            const size_t i = (static_cast<size_t>(y) * static_cast<size_t>(w) +
+                              static_cast<size_t>(x)) *
+                             3;
             img.rgb[i + 0] = r;
             img.rgb[i + 1] = g;
             img.rgb[i + 2] = b;
@@ -42,7 +48,8 @@ fd::Landmarks5 sampleFaceLandmarks() {
 }
 
 bool imagesEqual(const fd::Image& a, const fd::Image& b) {
-    if (a.width != b.width || a.height != b.height || a.rgb.size() != b.rgb.size()) {
+    if (a.width != b.width || a.height != b.height ||
+        a.rgb.size() != b.rgb.size()) {
         return false;
     }
     for (size_t i = 0; i < a.rgb.size(); ++i) {

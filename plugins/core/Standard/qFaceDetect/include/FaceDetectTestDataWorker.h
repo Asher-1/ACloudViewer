@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <QThread>
 #include <QString>
+#include <QThread>
 #include <QVector>
 
 #include "FaceDetectTestData.h"
@@ -41,7 +41,10 @@ public:
 signals:
     void phaseProgress(int current, int total, const QString& label);
     void logMessage(const QString& msg);
-    void finished(bool ok, int registeredCount, int authFaceCount, int authMatchCount);
+    void finished(bool ok,
+                  int registeredCount,
+                  int authFaceCount,
+                  int authMatchCount);
 
 protected:
     void run() override;

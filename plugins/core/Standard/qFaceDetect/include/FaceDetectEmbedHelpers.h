@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "FaceDetectWorker.h"
-#include "FaceRegistryStore.h"
-
 #include <QByteArray>
 #include <QImage>
 #include <QString>
 #include <QVector>
 #include <vector>
+
+#include "FaceDetectWorker.h"
+#include "FaceRegistryStore.h"
 
 struct aicore_facedetect_ctx;
 
@@ -29,12 +29,15 @@ struct AnnotatedFaceLabel {
     QString label;
     bool matched = false;
     bool dashed = false;
-    /** When true, skip face rect and draw a top banner (whole-image embed auth). */
+    /** When true, skip face rect and draw a top banner (whole-image embed
+     * auth). */
     bool labelOnly = false;
 };
 
 QImage padImageForDetection(const QImage& src);
-FaceDetectBox expandFaceBox(const FaceDetectBox& box, float marginRatio, int imgW,
+FaceDetectBox expandFaceBox(const FaceDetectBox& box,
+                            float marginRatio,
+                            int imgW,
                             int imgH);
 QImage cropFaceRgb(const QImage& rgb, const FaceDetectBox& face);
 
@@ -52,32 +55,46 @@ QString labelForEmbedding(const FaceRegistryStore* registry,
                           float matchThreshold);
 
 #ifdef AICore_ENABLED
-/** Load RGB via AICore (libjpeg/stb, cv2.imread parity). Use for detect+embed on
- *  the same buffer — avoids Qt JPEG decode / EXIF drift vs detect_path_json. */
+/** Load RGB via AICore (libjpeg/stb, cv2.imread parity). Use for detect+embed
+ * on the same buffer — avoids Qt JPEG decode / EXIF drift vs detect_path_json.
+ */
 QImage loadRgbForInference(const QString& path);
 std::vector<FaceDetectBox> detectBoxesFromRgb(aicore_facedetect_ctx* ctx,
                                               const QImage& rgb);
-bool embedCropWithFallback(aicore_facedetect_ctx* ctx, const QImage& crop,
-                           std::vector<float>* out, float minDetectionScore);
-bool embedImagePathWithFallback(aicore_facedetect_ctx* ctx, const QString& path,
-                                std::vector<float>* out, float minDetectionScore);
-/** Detect → largest face → embedFaceBoxFromFrame (same path as group-photo auth).
- *  Sets \p usedTemplateFallback true when portrait template alignment was used. */
-bool embedImagePathDetectAligned(aicore_facedetect_ctx* ctx, const QString& path,
-                                 std::vector<float>* out, float minDetectionScore,
+bool embedCropWithFallback(aicore_facedetect_ctx* ctx,
+                           const QImage& crop,
+                           std::vector<float>* out,
+                           float minDetectionScore);
+bool embedImagePathWithFallback(aicore_facedetect_ctx* ctx,
+                                const QString& path,
+                                std::vector<float>* out,
+                                float minDetectionScore);
+/** Detect → largest face → embedFaceBoxFromFrame (same path as group-photo
+ * auth). Sets \p usedTemplateFallback true when portrait template alignment was
+ * used. */
+bool embedImagePathDetectAligned(aicore_facedetect_ctx* ctx,
+                                 const QString& path,
+                                 std::vector<float>* out,
+                                 float minDetectionScore,
                                  bool* usedTemplateFallback = nullptr);
-bool embedFaceBoxFromFrame(aicore_facedetect_ctx* ctx, const QImage& rgb,
-                           const FaceDetectBox& box, float minDetectionScore,
+bool embedFaceBoxFromFrame(aicore_facedetect_ctx* ctx,
+                           const QImage& rgb,
+                           const FaceDetectBox& box,
+                           float minDetectionScore,
                            std::vector<float>* out);
 #endif
 
-QImage annotateDetect(const QImage& source, const std::vector<FaceDetectBox>& faces,
+QImage annotateDetect(const QImage& source,
+                      const std::vector<FaceDetectBox>& faces,
                       float minDetectionScore);
-QImage annotateAnalyze(const QImage& source, const std::vector<FaceDetectBox>& faces,
+QImage annotateAnalyze(const QImage& source,
+                       const std::vector<FaceDetectBox>& faces,
                        float minDetectionScore);
 QImage annotateLabeledFaces(const QImage& source,
                             const std::vector<AnnotatedFaceLabel>& faces);
-QImage annotateRecognize(const QImage& source, const std::vector<FaceDetectBox>& faces,
-                         const QVector<QString>& labels, float minDetectionScore);
+QImage annotateRecognize(const QImage& source,
+                         const std::vector<FaceDetectBox>& faces,
+                         const QVector<QString>& labels,
+                         float minDetectionScore);
 
 }  // namespace FaceDetectEmbed

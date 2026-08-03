@@ -81,6 +81,7 @@
 #include <SaitoSquaredDistanceTransform.h>
 
 // CV_DB_LIB
+#include <LineSet.h>
 #include <Shortcuts/ecvKeySequences.h>
 #include <Shortcuts/ecvModalShortcut.h>
 #include <ecv2DLabel.h>
@@ -100,7 +101,6 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <LineSet.h>
 #include <ecvProgressDialog.h>
 #include <ecvQuadric.h>
 #include <ecvRedrawScope.h>
@@ -6349,7 +6349,8 @@ void MainWindow::doActionResetGUIElementsPos() {
 void MainWindow::doActionResetRegisteredSettings() {
     const QMessageBox::StandardButton reply = QMessageBox::question(
             this, tr("Reset registered settings"),
-            tr("Clear all saved plugin settings (browse paths, dialog defaults, "
+            tr("Clear all saved plugin settings (browse paths, dialog "
+               "defaults, "
                "etc.) registered with the application?\n\n"
                "This cannot be undone."),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
@@ -6360,7 +6361,8 @@ void MainWindow::doActionResetRegisteredSettings() {
     QMessageBox::information(
             this, tr("Reset registered settings"),
             tr("Registered plugin settings have been cleared.\n\n"
-               "New defaults apply the next time each plugin reads its settings."));
+               "New defaults apply the next time each plugin reads its "
+               "settings."));
 }
 
 void MainWindow::doActionSaveCustomLayout() {

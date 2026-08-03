@@ -7,15 +7,16 @@
 
 #pragma once
 
-#include "FaceDetectWorker.h"
-#include "FaceRegistryStore.h"
-
 #include <QImage>
 #include <QObject>
 #include <QString>
 #include <atomic>
 
-/** Background AICore inference for live camera / video (serialized via inference lock). */
+#include "FaceDetectWorker.h"
+#include "FaceRegistryStore.h"
+
+/** Background AICore inference for live camera / video (serialized via
+ * inference lock). */
 class FaceLiveDetectInferWorker : public QObject {
     Q_OBJECT
 

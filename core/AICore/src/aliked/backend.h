@@ -31,7 +31,8 @@ struct Backend {
     bool IsCuda() const;
     bool IsVulkan() const;
     bool HasSched() const { return use_sched && sched != nullptr; }
-    // Vulkan [gpu, cpu] scheduler: reset → optional pin → alloc → inputs → compute → sync.
+    // Vulkan [gpu, cpu] scheduler: reset → optional pin → alloc → inputs →
+    // compute → sync.
     bool SchedRunGraph(ggml_cgraph *graph,
                        const std::function<void()> &set_inputs,
                        std::string *error,

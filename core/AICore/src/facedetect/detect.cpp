@@ -1,12 +1,20 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "detect.hpp"
+
+#include <algorithm>
+#include <numeric>
+
+#include "backend.hpp"
 #include "common.hpp"
 #include "model_loader.hpp"
 #include "scrfd_graph.hpp"
 #include "yunet_graph.hpp"
-#include "backend.hpp"
-
-#include <algorithm>
-#include <numeric>
 
 namespace fd {
 
@@ -50,13 +58,13 @@ std::vector<int> nms(const std::vector<Detection>& dets, float iou_thresh) {
 
 std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
     const FaceConfig& c = ml.config();
-    // YuNet (OpenCV-Zoo, Apache) is a different detector architecture/decode than
-    // SCRFD; dispatch to its dedicated path so all callers (Model::detect/embed/
-    // analyze) transparently use the configured detector.
+    // YuNet (OpenCV-Zoo, Apache) is a different detector architecture/decode
+    // than SCRFD; dispatch to its dedicated path so all callers
+    // (Model::detect/embed/ analyze) transparently use the configured detector.
     if (c.detector == "yunet") return yunet_detect(ml, img);
 
-    const int S = (int)c.det_input_size;            // 640
-    const int na = (int)c.det_num_anchors;          // 2
+    const int S = (int)c.det_input_size;    // 640
+    const int na = (int)c.det_num_anchors;  // 2
 
     // Production preprocess: stb-decoded source -> aspect-preserving letterbox
     // into the square detector input. det_scale maps decoded boxes back to
@@ -64,9 +72,9 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
     Image lb;
     float det_scale = 0.f;
     scrfd_letterbox(img, S, lb, det_scale);
-    // det_scale is geometry-only (derived from source dims, not pixels): it must
-    // be strictly positive or every decoded box collapses. Hard-assert it, per
-    // the Task 3.1 review (silent zero would map all boxes to +inf).
+    // det_scale is geometry-only (derived from source dims, not pixels): it
+    // must be strictly positive or every decoded box collapses. Hard-assert it,
+    // per the Task 3.1 review (silent zero would map all boxes to +inf).
     FD_ASSERT(det_scale > 0.0f);
 
     auto raw = scrfd_forward(ml, lb, global_backend());
@@ -87,27 +95,31 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
                     if (sc < c.det_score_thresh) continue;
 
                     // Anchor center: insightface mgrid grid is (x=col, y=row),
-                    // multiplied by stride; the same center serves all na anchors.
+                    // multiplied by stride; the same center serves all na
+                    // anchors.
                     const float cx = (float)col * stride;
                     const float cy = (float)r * stride;
 
                     // bbox/kps preds are scaled by `stride` here (scrfd_forward
-                    // captures the RAW per-stride heads, pre-stride-multiply, so
-                    // the Task 3.1 graph gate stays a clean compare vs raw ONNX).
-                    const float l  = o.bbox[idx * 4 + 0] * stride;
-                    const float t  = o.bbox[idx * 4 + 1] * stride;
+                    // captures the RAW per-stride heads, pre-stride-multiply,
+                    // so the Task 3.1 graph gate stays a clean compare vs raw
+                    // ONNX).
+                    const float l = o.bbox[idx * 4 + 0] * stride;
+                    const float t = o.bbox[idx * 4 + 1] * stride;
                     const float rr = o.bbox[idx * 4 + 2] * stride;
                     const float bb = o.bbox[idx * 4 + 3] * stride;
 
                     Detection d;
                     d.score = sc;
-                    d.x1 = (cx - l)  / det_scale;
-                    d.y1 = (cy - t)  / det_scale;
+                    d.x1 = (cx - l) / det_scale;
+                    d.y1 = (cy - t) / det_scale;
                     d.x2 = (cx + rr) / det_scale;
                     d.y2 = (cy + bb) / det_scale;
                     for (int k = 0; k < 5; ++k) {
-                        const float px = cx + o.kps[idx * 10 + k * 2 + 0] * stride;
-                        const float py = cy + o.kps[idx * 10 + k * 2 + 1] * stride;
+                        const float px =
+                                cx + o.kps[idx * 10 + k * 2 + 0] * stride;
+                        const float py =
+                                cy + o.kps[idx * 10 + k * 2 + 1] * stride;
                         d.landmarks[k][0] = px / det_scale;
                         d.landmarks[k][1] = py / det_scale;
                     }
@@ -122,4 +134,4 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
     return out;
 }
 
-} // namespace fd
+}  // namespace fd

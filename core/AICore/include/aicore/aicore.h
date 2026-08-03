@@ -35,7 +35,7 @@
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/depth_image.h"
-#include "aicore/facedetect_capi.h"
 #include "aicore/export.h"
+#include "aicore/facedetect_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/lightglue_capi.h"

@@ -31,12 +31,11 @@ void ecvClickableImageLabel::setPreviewImage(const QImage& image,
         clearPreview();
         return;
     }
-    const QSize target =
-            displaySize.isValid() && !displaySize.isEmpty()
-                    ? displaySize
-                    : QSize(96, 96);
-    setPixmap(QPixmap::fromImage(
-            image.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    const QSize target = displaySize.isValid() && !displaySize.isEmpty()
+                                 ? displaySize
+                                 : QSize(96, 96);
+    setPixmap(QPixmap::fromImage(image.scaled(target, Qt::KeepAspectRatio,
+                                              Qt::SmoothTransformation)));
     if (displaySize.isValid() && !displaySize.isEmpty()) {
         setFixedSize(target);
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -76,7 +75,7 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     QImage display = image;
     if (image.width() > kMaxPreviewW || image.height() > kMaxPreviewH) {
         display = image.scaled(kMaxPreviewW, kMaxPreviewH, Qt::KeepAspectRatio,
-                                 Qt::SmoothTransformation);
+                               Qt::SmoothTransformation);
     }
 
     auto* label = new QLabel;

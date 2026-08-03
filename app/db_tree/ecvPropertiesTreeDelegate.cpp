@@ -27,6 +27,7 @@
 
 // CV_DB_LIB
 #include <CVLog.h>
+#include <LineSet.h>
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
@@ -56,7 +57,6 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
-#include <LineSet.h>
 #include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
@@ -131,8 +131,8 @@ bool isOpacityRenderable(const ccHObject* obj) {
     return obj && obj->isEnabled() &&
            (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
             obj->isKindOf(CV_TYPES::MESH) ||
-            obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-            isLineEntity(obj) || obj->isKindOf(CV_TYPES::FACET));
+            obj->isKindOf(CV_TYPES::PRIMITIVE) || isLineEntity(obj) ||
+            obj->isKindOf(CV_TYPES::FACET));
 }
 
 ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
@@ -631,8 +631,7 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
             } else if (m_currentObject->isKindOf(CV_TYPES::LINESET)) {
                 cloudViewer::geometry::LineSet* lineSet =
                         ccHObjectCaster::ToLineSet(m_currentObject);
-                if (lineSet &&
-                    (!lineSet->HasLines() || lineSet->is2DMode())) {
+                if (lineSet && (!lineSet->HasLines() || lineSet->is2DMode())) {
                     hasValidBBox = false;
                 }
             } else {
@@ -2875,11 +2874,9 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                          : ccHObjectCaster::ToLineSet(m_currentObject);
             assert(poly || lineSet);
             if (poly) {
-                SetComboBoxIndex(editor,
-                                 static_cast<int>(poly->getWidth()));
+                SetComboBoxIndex(editor, static_cast<int>(poly->getWidth()));
             } else if (lineSet) {
-                SetComboBoxIndex(editor,
-                                 static_cast<int>(lineSet->getWidth()));
+                SetComboBoxIndex(editor, static_cast<int>(lineSet->getWidth()));
             }
             break;
         }

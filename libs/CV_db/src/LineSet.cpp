@@ -7,10 +7,9 @@
 
 #include "LineSet.h"
 
-#include <numeric>
-
 #include <QDataStream>
 #include <QFile>
+#include <numeric>
 
 #include "ecvBBox.h"
 #include "ecvDrawContext.h"
@@ -120,7 +119,8 @@ PointCoordinateType LineSet::computeLength() const {
     PointCoordinateType length = 0;
     for (size_t i = 0; i < lines_.size(); ++i) {
         const auto seg = GetLineCoordinate(i);
-        length += static_cast<PointCoordinateType>((seg.second - seg.first).norm());
+        length += static_cast<PointCoordinateType>(
+                (seg.second - seg.first).norm());
     }
     return length;
 }
@@ -143,7 +143,8 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT& context) {
     } else if (colorsShown()) {
         context.defaultPolylineColor = m_rgbColor;
     } else if (HasColors()) {
-        context.defaultPolylineColor = ecvColor::Rgb::FromEigen(colors_.front());
+        context.defaultPolylineColor =
+                ecvColor::Rgb::FromEigen(colors_.front());
     }
 
     if (m_width != 0) {
@@ -224,9 +225,9 @@ LineSet& LineSet::operator+=(const LineSet& lineset) {
     }
     lines_.resize(new_line_num);
     for (size_t i = 0; i < add_line_num; i++) {
-        lines_[old_line_num + i] =
-                Eigen::Vector2i(lineset.lines_[i](0) + static_cast<int>(old_point_num),
-                                lineset.lines_[i](1) + static_cast<int>(old_point_num));
+        lines_[old_line_num + i] = Eigen::Vector2i(
+                lineset.lines_[i](0) + static_cast<int>(old_point_num),
+                lineset.lines_[i](1) + static_cast<int>(old_point_num));
     }
     return (*this);
 }

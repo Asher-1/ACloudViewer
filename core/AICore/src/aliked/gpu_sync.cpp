@@ -6,9 +6,9 @@
 // ----------------------------------------------------------------------------
 
 #include "gpu_sync.hpp"
-#include <string>
 
 #include <cstdlib>
+#include <string>
 
 #if defined(AICORE_VULKAN_ALIKED)
 #include "vulkan/vulkan_aliked_dispatch.hpp"
@@ -56,8 +56,8 @@ void SyncBackendRaw(internal::Backend *backend) {
 
 void ApplyVulkanAlikedPerfDefaults() {
 #if defined(AICORE_VULKAN_ALIKED)
-    // Parity-gated full GPU path — no manual env required for GUI / C API users.
-    // Opt-out any flag with =0 (e.g. LIGHTGLUE_ALIKED_VULKAN_COMPUTE=0).
+    // Parity-gated full GPU path — no manual env required for GUI / C API
+    // users. Opt-out any flag with =0 (e.g. LIGHTGLUE_ALIKED_VULKAN_COMPUTE=0).
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE") == nullptr) {
         setenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE", "1", 0);
     }
@@ -65,22 +65,25 @@ void ApplyVulkanAlikedPerfDefaults() {
         setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH", "1", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED") == nullptr) {
-        // Legacy sched path paused; 0015 fence/buffer pin is the parity baseline.
+        // Legacy sched path paused; 0015 fence/buffer pin is the parity
+        // baseline.
         setenv("LIGHTGLUE_ALIKED_VULKAN_SCHED", "0", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC") == nullptr) {
-        // Correctness first: defer-sync caused score/descriptor readback races on
-        // same-ctx multi-extract. Opt-in DEFER_SYNC=1 for experiments.
+        // Correctness first: defer-sync caused score/descriptor readback races
+        // on same-ctx multi-extract. Opt-in DEFER_SYNC=1 for experiments.
         setenv("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC", "0", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE") == nullptr &&
         std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK") == nullptr) {
-        // Default single-dispatch SDDH; opt-in SINGLE=0 + CHUNK for batched experiments.
+        // Default single-dispatch SDDH; opt-in SINGLE=0 + CHUNK for batched
+        // experiments.
         setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE", "1", 0);
         setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK", "16", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_POST") == nullptr) {
-        // GPU DKD/NMS on device after PrepareScoreMapForDkd (0014); opt-out POST=0.
+        // GPU DKD/NMS on device after PrepareScoreMapForDkd (0014); opt-out
+        // POST=0.
         setenv("LIGHTGLUE_ALIKED_VULKAN_POST", "1", 0);
     }
 #endif
@@ -93,9 +96,7 @@ void SyncGpuPipeline(internal::Backend *backend) {
     SyncBackendRaw(backend);
 }
 
-void FlushGpuPipeline(internal::Backend *backend) {
-    SyncBackendRaw(backend);
-}
+void FlushGpuPipeline(internal::Backend *backend) { SyncBackendRaw(backend); }
 
 void BarrierGpuPipeline(internal::Backend *backend) {
 #if defined(AICORE_VULKAN_ALIKED)
@@ -108,8 +109,10 @@ void BarrierGpuPipeline(internal::Backend *backend) {
     SyncGpuPipeline(backend);
 }
 
-bool GallocrComputeGraph(internal::Backend *backend, ggml_cgraph *graph,
-                         std::string *error, ggml_gallocr_t graph_gallocr) {
+bool GallocrComputeGraph(internal::Backend *backend,
+                         ggml_cgraph *graph,
+                         std::string *error,
+                         ggml_gallocr_t graph_gallocr) {
     if (backend == nullptr || backend->handle == nullptr || graph == nullptr) {
         if (error) {
             *error = "invalid backend or graph for gallocr compute";
@@ -148,8 +151,10 @@ bool GallocrComputeGraph(internal::Backend *backend, ggml_cgraph *graph,
     return true;
 }
 
-bool RunCachedGraphCompute(internal::Backend *backend, ggml_cgraph *graph,
-                           std::string *error, ggml_gallocr_t graph_gallocr) {
+bool RunCachedGraphCompute(internal::Backend *backend,
+                           ggml_cgraph *graph,
+                           std::string *error,
+                           ggml_gallocr_t graph_gallocr) {
     if (backend == nullptr || backend->handle == nullptr || graph == nullptr) {
         if (error) {
             *error = "invalid backend or graph for cached compute";

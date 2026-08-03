@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Process-wide AICore inference runtime: cooperative cancel and serial execution.
-// Plugins call aicore_inference_lock() before inference and aicore_cancel_begin()
-// for each task; cancelTask() calls aicore_cancel_request().
+// Process-wide AICore inference runtime: cooperative cancel and serial
+// execution. Plugins call aicore_inference_lock() before inference and
+// aicore_cancel_begin() for each task; cancelTask() calls
+// aicore_cancel_request().
 
 #pragma once
 
@@ -39,7 +40,8 @@ AICORE_CAPI int aicore_inference_lock(void);
 /** Release the global inference lock. No-op if not held by this thread. */
 AICORE_CAPI void aicore_inference_unlock(void);
 
-/** Try to acquire the lock without blocking. Returns 0 if acquired, -1 if busy. */
+/** Try to acquire the lock without blocking. Returns 0 if acquired, -1 if busy.
+ */
 AICORE_CAPI int aicore_inference_try_lock(void);
 
 #ifdef __cplusplus

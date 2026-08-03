@@ -33,7 +33,8 @@ FaceDetectInferenceGuard::~FaceDetectInferenceGuard() {
 
 FaceDetectModelContext::~FaceDetectModelContext() { release(); }
 
-FaceDetectModelContext::FaceDetectModelContext(FaceDetectModelContext&& other) noexcept
+FaceDetectModelContext::FaceDetectModelContext(
+        FaceDetectModelContext&& other) noexcept
     : m_ctx(other.m_ctx),
       m_modelPath(std::move(other.m_modelPath)),
       m_device(std::move(other.m_device)),
@@ -66,7 +67,8 @@ void FaceDetectModelContext::release() {
     m_threads = 0;
 }
 
-bool FaceDetectModelContext::load(const QString& modelPath, const QString& device,
+bool FaceDetectModelContext::load(const QString& modelPath,
+                                  const QString& device,
                                   int threads) {
     release();
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
@@ -82,7 +84,8 @@ bool FaceDetectModelContext::load(const QString& modelPath, const QString& devic
 }
 
 bool FaceDetectModelContext::ensureLoaded(const QString& modelPath,
-                                          const QString& device, int threads) {
+                                          const QString& device,
+                                          int threads) {
     if (m_ctx && m_modelPath == modelPath && m_device == device &&
         m_threads == threads) {
         return true;

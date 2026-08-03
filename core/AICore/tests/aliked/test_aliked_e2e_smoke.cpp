@@ -1,5 +1,13 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // ALIKED end-to-end smoke: same C API path as qLightGlue extract_aliked_ggml().
-// Verifies Vulkan full GPU path auto-enables without manual LIGHTGLUE_ALIKED_* env.
+// Verifies Vulkan full GPU path auto-enables without manual LIGHTGLUE_ALIKED_*
+// env.
 //
 // Env (optional if argv provided):
 //   AICORE_TEST_ALIKED_GGUF, AICORE_TEST_ALIKED_IMAGE
@@ -67,9 +75,9 @@ bool ExtractOnce(const char* gguf,
         }
         return false;
     }
-    const int rc = aicore_aliked_extract_rgb(
-            ctx, image.rgb.data(), image.width, image.height,
-            image.width * 3, features);
+    const int rc =
+            aicore_aliked_extract_rgb(ctx, image.rgb.data(), image.width,
+                                      image.height, image.width * 3, features);
     if (rc != 0) {
         if (err) {
             *err = aicore_aliked_last_error(ctx);
@@ -82,7 +90,8 @@ bool ExtractOnce(const char* gguf,
 }
 
 bool FeaturesLookValid(const aicore_lightglue_features& f) {
-    if (f.n_keypoints <= 0 || f.descriptor_dim <= 0 || f.descriptors == nullptr) {
+    if (f.n_keypoints <= 0 || f.descriptor_dim <= 0 ||
+        f.descriptors == nullptr) {
         return false;
     }
     const size_t nd = static_cast<size_t>(f.n_keypoints) *
@@ -117,9 +126,10 @@ int main(int argc, char** argv) {
     }
     if (gguf == nullptr || gguf[0] == '\0' || image_path == nullptr ||
         image_path[0] == '\0') {
-        std::fprintf(stderr,
-                     "SKIP: set AICORE_TEST_ALIKED_GGUF + AICORE_TEST_ALIKED_IMAGE "
-                     "or pass gguf image args\n");
+        std::fprintf(
+                stderr,
+                "SKIP: set AICORE_TEST_ALIKED_GGUF + AICORE_TEST_ALIKED_IMAGE "
+                "or pass gguf image args\n");
         return 77;
     }
 
@@ -163,21 +173,24 @@ int main(int argc, char** argv) {
         return 77;
     }
     if (!FeaturesLookValid(vk)) {
-        std::fprintf(stderr, "FAIL: Vulkan features invalid (NaN/Inf or empty)\n");
+        std::fprintf(stderr,
+                     "FAIL: Vulkan features invalid (NaN/Inf or empty)\n");
         aicore_lightglue_free_features(&cpu);
         aicore_lightglue_free_features(&vk);
         return 1;
     }
 
     if (vk.n_keypoints != cpu.n_keypoints) {
-        std::fprintf(stderr,
-                     "WARN: kpt count cpu=%d vulkan=%d (smoke allows small drift)\n",
-                     cpu.n_keypoints, vk.n_keypoints);
+        std::fprintf(
+                stderr,
+                "WARN: kpt count cpu=%d vulkan=%d (smoke allows small drift)\n",
+                cpu.n_keypoints, vk.n_keypoints);
     }
 
-    std::printf("smoke PASS: cpu_kpts=%d vulkan_kpts=%d dim=%d resize=%d "
-                "(no manual VULKAN env)\n",
-                cpu.n_keypoints, vk.n_keypoints, vk.descriptor_dim, resize);
+    std::printf(
+            "smoke PASS: cpu_kpts=%d vulkan_kpts=%d dim=%d resize=%d "
+            "(no manual VULKAN env)\n",
+            cpu.n_keypoints, vk.n_keypoints, vk.descriptor_dim, resize);
 
     aicore_lightglue_free_features(&cpu);
     aicore_lightglue_free_features(&vk);

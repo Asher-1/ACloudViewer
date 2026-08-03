@@ -9,6 +9,7 @@
 
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QFutureWatcher>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
@@ -18,14 +19,11 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
-
 #include <QtConcurrent>
-#include <QFutureWatcher>
-
-#include "ecvClickableImageLabel.h"
-#include "ecvModelDownloader.h"
 
 #include "aicore/facedetect_capi.h"
+#include "ecvClickableImageLabel.h"
+#include "ecvModelDownloader.h"
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/imgproc.hpp>
@@ -145,8 +143,10 @@ private:
     std::vector<ScoredFace> detectFacesOpenCv(const cv::Mat& frame);
     std::vector<ScoredFace> detectFacesGgml(const cv::Mat& frame);
     std::vector<ScoredFace> detectFaces(const cv::Mat& frame);
-    cv::Rect pickFace(const cv::Mat& frame, const std::vector<ScoredFace>& faces);
-    bool embedFaceCrop(const cv::Mat& frame, const cv::Rect& rect,
+    cv::Rect pickFace(const cv::Mat& frame,
+                      const std::vector<ScoredFace>& faces);
+    bool embedFaceCrop(const cv::Mat& frame,
+                       const cv::Rect& rect,
                        std::vector<float>* embedding);
     float embeddingDistance(const std::vector<float>& a,
                             const std::vector<float>& b) const;

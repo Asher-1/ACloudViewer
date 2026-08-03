@@ -21,28 +21,84 @@ namespace lightglue::aliked_internal {
 namespace {
 
 using FnAvailable = bool (*)(ggml_backend_t);
-using FnWhcnToNchw = bool (*)(ggml_backend_t, const ggml_tensor *, ggml_tensor *,
-                              int32_t, int32_t, int32_t);
-using FnNchwToWhcn = bool (*)(ggml_backend_t, const ggml_tensor *, ggml_tensor *,
-                              int32_t, int32_t, int32_t);
-using FnDenseCopy = bool (*)(ggml_backend_t, const ggml_tensor *, ggml_tensor *,
-                             int32_t, int32_t, int32_t);
+using FnWhcnToNchw = bool (*)(ggml_backend_t,
+                              const ggml_tensor *,
+                              ggml_tensor *,
+                              int32_t,
+                              int32_t,
+                              int32_t);
+using FnNchwToWhcn = bool (*)(ggml_backend_t,
+                              const ggml_tensor *,
+                              ggml_tensor *,
+                              int32_t,
+                              int32_t,
+                              int32_t);
+using FnDenseCopy = bool (*)(ggml_backend_t,
+                             const ggml_tensor *,
+                             ggml_tensor *,
+                             int32_t,
+                             int32_t,
+                             int32_t);
 using FnClamp = bool (*)(ggml_backend_t, ggml_tensor *, size_t, float, float);
-using FnDeformConv = bool (*)(ggml_backend_t, const ggml_tensor *, const ggml_tensor *,
-                               const ggml_tensor *, const ggml_tensor *, ggml_tensor *,
-                               int32_t, int32_t, int32_t, int32_t, int32_t, int32_t,
-                               int32_t, int32_t);
-using FnRunDkd = bool (*)(ggml_backend_t, const ggml_tensor *, int32_t, int32_t,
-                          int32_t, int32_t, float, int32_t, ggml_tensor *, ggml_tensor *,
-                          int32_t *, ggml_tensor *, ggml_tensor *, ggml_tensor *,
-                          ggml_tensor *, ggml_tensor *, ggml_tensor *, ggml_tensor *);
-using FnRunSddh = bool (*)(ggml_backend_t, const ggml_tensor *, int32_t, int32_t,
-                           int32_t, const ggml_tensor *, int32_t, int32_t, int32_t,
-                           const ggml_tensor *, const ggml_tensor *, const ggml_tensor *,
-                           const ggml_tensor *, const ggml_tensor *, const ggml_tensor *,
-                           ggml_tensor *, ggml_tensor *);
-using FnUpsample = bool (*)(ggml_backend_t, const ggml_tensor *, ggml_tensor *,
-                             int32_t, int32_t, int32_t, int32_t, int32_t);
+using FnL2Norm =
+        bool (*)(ggml_backend_t, ggml_tensor *, int32_t, int32_t, int32_t);
+using FnDeformConv = bool (*)(ggml_backend_t,
+                              const ggml_tensor *,
+                              const ggml_tensor *,
+                              const ggml_tensor *,
+                              const ggml_tensor *,
+                              ggml_tensor *,
+                              int32_t,
+                              int32_t,
+                              int32_t,
+                              int32_t,
+                              int32_t,
+                              int32_t,
+                              int32_t,
+                              int32_t);
+using FnRunDkd = bool (*)(ggml_backend_t,
+                          const ggml_tensor *,
+                          int32_t,
+                          int32_t,
+                          int32_t,
+                          int32_t,
+                          float,
+                          int32_t,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          int32_t *,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          ggml_tensor *,
+                          ggml_tensor *);
+using FnRunSddh = bool (*)(ggml_backend_t,
+                           const ggml_tensor *,
+                           int32_t,
+                           int32_t,
+                           int32_t,
+                           const ggml_tensor *,
+                           int32_t,
+                           int32_t,
+                           int32_t,
+                           const ggml_tensor *,
+                           const ggml_tensor *,
+                           const ggml_tensor *,
+                           const ggml_tensor *,
+                           const ggml_tensor *,
+                           const ggml_tensor *,
+                           ggml_tensor *,
+                           ggml_tensor *);
+using FnUpsample = bool (*)(ggml_backend_t,
+                            const ggml_tensor *,
+                            ggml_tensor *,
+                            int32_t,
+                            int32_t,
+                            int32_t,
+                            int32_t,
+                            int32_t);
 using FnQueueIdle = bool (*)(ggml_backend_t);
 
 struct VulkanAlikedApi {
@@ -52,6 +108,7 @@ struct VulkanAlikedApi {
     FnNchwToWhcn nchw_to_whcn = nullptr;
     FnDenseCopy dense_copy = nullptr;
     FnClamp clamp = nullptr;
+    FnL2Norm l2norm = nullptr;
     FnDeformConv deform_conv = nullptr;
     FnRunDkd run_dkd = nullptr;
     FnRunSddh run_sddh = nullptr;
@@ -99,7 +156,8 @@ void EnsureResolved(ggml_backend_t backend) {
         }
     }
 
-    g_api.available = ResolveFn<FnAvailable>(reg, "ggml_vulkan_aliked_available");
+    g_api.available =
+            ResolveFn<FnAvailable>(reg, "ggml_vulkan_aliked_available");
     g_api.queue_idle =
             ResolveFn<FnQueueIdle>(reg, "ggml_vulkan_aliked_queue_idle");
     g_api.whcn_to_nchw =
@@ -109,6 +167,8 @@ void EnsureResolved(ggml_backend_t backend) {
     g_api.dense_copy =
             ResolveFn<FnDenseCopy>(reg, "ggml_vulkan_aliked_dense_copy_whcn");
     g_api.clamp = ResolveFn<FnClamp>(reg, "ggml_vulkan_aliked_clamp_inplace");
+    g_api.l2norm =
+            ResolveFn<FnL2Norm>(reg, "ggml_vulkan_aliked_l2norm_inplace");
     g_api.deform_conv =
             ResolveFn<FnDeformConv>(reg, "ggml_vulkan_aliked_deform_conv2d");
     g_api.run_dkd = ResolveFn<FnRunDkd>(reg, "ggml_vulkan_aliked_run_dkd");
@@ -131,10 +191,9 @@ void LogVkAlikedProbe(ggml_backend_t backend) {
     std::fprintf(stderr,
                  "[vk-aliked] available=%d dkd=%d sddh=%d upsample=%d "
                  "dense_copy=%d deform=%d\n",
-                 g_api.available != nullptr,
-                 g_api.run_dkd != nullptr, g_api.run_sddh != nullptr,
-                 g_api.upsample != nullptr, g_api.dense_copy != nullptr,
-                 g_api.deform_conv != nullptr);
+                 g_api.available != nullptr, g_api.run_dkd != nullptr,
+                 g_api.run_sddh != nullptr, g_api.upsample != nullptr,
+                 g_api.dense_copy != nullptr, g_api.deform_conv != nullptr);
     if (g_api.available != nullptr && backend != nullptr) {
         std::fprintf(stderr, "[vk-aliked] runtime=%d\n",
                      g_api.available(backend) ? 1 : 0);
@@ -154,8 +213,12 @@ bool VkAlikedAvailable(ggml_backend_t backend) {
 #endif
 }
 
-bool VkAlikedWhcnToNchw(ggml_backend_t backend, const ggml_tensor *whcn,
-                        ggml_tensor *nchw, int32_t c, int32_t h, int32_t w) {
+bool VkAlikedWhcnToNchw(ggml_backend_t backend,
+                        const ggml_tensor *whcn,
+                        ggml_tensor *nchw,
+                        int32_t c,
+                        int32_t h,
+                        int32_t w) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)whcn;
@@ -171,8 +234,12 @@ bool VkAlikedWhcnToNchw(ggml_backend_t backend, const ggml_tensor *whcn,
 #endif
 }
 
-bool VkAlikedNchwToWhcn(ggml_backend_t backend, const ggml_tensor *nchw,
-                        ggml_tensor *whcn, int32_t c, int32_t h, int32_t w) {
+bool VkAlikedNchwToWhcn(ggml_backend_t backend,
+                        const ggml_tensor *nchw,
+                        ggml_tensor *whcn,
+                        int32_t c,
+                        int32_t h,
+                        int32_t w) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)nchw;
@@ -188,8 +255,12 @@ bool VkAlikedNchwToWhcn(ggml_backend_t backend, const ggml_tensor *nchw,
 #endif
 }
 
-bool VkAlikedDenseCopyWhcn(ggml_backend_t backend, const ggml_tensor *src,
-                           ggml_tensor *dst, int32_t w, int32_t h, int32_t c) {
+bool VkAlikedDenseCopyWhcn(ggml_backend_t backend,
+                           const ggml_tensor *src,
+                           ggml_tensor *dst,
+                           int32_t w,
+                           int32_t h,
+                           int32_t c) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)src;
@@ -205,8 +276,11 @@ bool VkAlikedDenseCopyWhcn(ggml_backend_t backend, const ggml_tensor *src,
 #endif
 }
 
-bool VkAlikedClampInplace(ggml_backend_t backend, ggml_tensor *data, size_t count,
-                          float min_value, float max_value) {
+bool VkAlikedClampInplace(ggml_backend_t backend,
+                          ggml_tensor *data,
+                          size_t count,
+                          float min_value,
+                          float max_value) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)data;
@@ -221,11 +295,39 @@ bool VkAlikedClampInplace(ggml_backend_t backend, ggml_tensor *data, size_t coun
 #endif
 }
 
-bool VkAlikedDeformConv2d(ggml_backend_t backend, const ggml_tensor *input,
-                          const ggml_tensor *offset, const ggml_tensor *weight,
-                          const ggml_tensor *bias, ggml_tensor *output, int32_t ic,
-                          int32_t ih, int32_t iw, int32_t oc, int32_t kh, int32_t kw,
-                          int32_t pad, int32_t layout) {
+bool VkAlikedL2NormInplace(ggml_backend_t backend,
+                           ggml_tensor *data,
+                           int32_t channels,
+                           int32_t h,
+                           int32_t w) {
+#if !defined(AICORE_VULKAN_ALIKED)
+    (void)backend;
+    (void)data;
+    (void)channels;
+    (void)h;
+    (void)w;
+    return false;
+#else
+    EnsureResolved(backend);
+    return g_api.l2norm != nullptr &&
+           g_api.l2norm(backend, data, channels, h, w);
+#endif
+}
+
+bool VkAlikedDeformConv2d(ggml_backend_t backend,
+                          const ggml_tensor *input,
+                          const ggml_tensor *offset,
+                          const ggml_tensor *weight,
+                          const ggml_tensor *bias,
+                          ggml_tensor *output,
+                          int32_t ic,
+                          int32_t ih,
+                          int32_t iw,
+                          int32_t oc,
+                          int32_t kh,
+                          int32_t kw,
+                          int32_t pad,
+                          int32_t layout) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)input;
@@ -245,17 +347,29 @@ bool VkAlikedDeformConv2d(ggml_backend_t backend, const ggml_tensor *input,
 #else
     EnsureResolved(backend);
     return g_api.deform_conv != nullptr &&
-           g_api.deform_conv(backend, input, offset, weight, bias, output, ic, ih,
-                             iw, oc, kh, kw, pad, layout);
+           g_api.deform_conv(backend, input, offset, weight, bias, output, ic,
+                             ih, iw, oc, kh, kw, pad, layout);
 #endif
 }
 
-bool VkAlikedRunDkd(ggml_backend_t backend, const ggml_tensor *score_map, int32_t h,
-                    int32_t w, int32_t radius, int32_t top_k, float scores_th,
-                    int32_t n_limit, ggml_tensor *keypoints_norm, ggml_tensor *scores,
-                    int32_t *out_count, ggml_tensor *nms, ggml_tensor *tmp_a,
-                    ggml_tensor *tmp_b, ggml_tensor *tmp_c, ggml_tensor *block_keys,
-                    ggml_tensor *block_indices, ggml_tensor *indices_dev) {
+bool VkAlikedRunDkd(ggml_backend_t backend,
+                    const ggml_tensor *score_map,
+                    int32_t h,
+                    int32_t w,
+                    int32_t radius,
+                    int32_t top_k,
+                    float scores_th,
+                    int32_t n_limit,
+                    ggml_tensor *keypoints_norm,
+                    ggml_tensor *scores,
+                    int32_t *out_count,
+                    ggml_tensor *nms,
+                    ggml_tensor *tmp_a,
+                    ggml_tensor *tmp_b,
+                    ggml_tensor *tmp_c,
+                    ggml_tensor *block_keys,
+                    ggml_tensor *block_indices,
+                    ggml_tensor *indices_dev) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)score_map;
@@ -279,20 +393,29 @@ bool VkAlikedRunDkd(ggml_backend_t backend, const ggml_tensor *score_map, int32_
 #else
     EnsureResolved(backend);
     return g_api.run_dkd != nullptr &&
-           g_api.run_dkd(backend, score_map, h, w, radius, top_k, scores_th, n_limit,
-                         keypoints_norm, scores, out_count, nms, tmp_a, tmp_b, tmp_c,
-                         block_keys, block_indices, indices_dev);
+           g_api.run_dkd(backend, score_map, h, w, radius, top_k, scores_th,
+                         n_limit, keypoints_norm, scores, out_count, nms, tmp_a,
+                         tmp_b, tmp_c, block_keys, block_indices, indices_dev);
 #endif
 }
 
-bool VkAlikedRunSddh(ggml_backend_t backend, const ggml_tensor *feature_map,
-                     int32_t dim, int32_t h, int32_t w,
-                     const ggml_tensor *keypoints_norm, int32_t count,
-                     int32_t kernel_size, int32_t n_pos,
-                     const ggml_tensor *offset_0_w, const ggml_tensor *offset_0_b,
-                     const ggml_tensor *offset_2_w, const ggml_tensor *offset_2_b,
-                     const ggml_tensor *sf_conv_w, const ggml_tensor *agg_weights,
-                     ggml_tensor *workspace, ggml_tensor *descriptors) {
+bool VkAlikedRunSddh(ggml_backend_t backend,
+                     const ggml_tensor *feature_map,
+                     int32_t dim,
+                     int32_t h,
+                     int32_t w,
+                     const ggml_tensor *keypoints_norm,
+                     int32_t count,
+                     int32_t kernel_size,
+                     int32_t n_pos,
+                     const ggml_tensor *offset_0_w,
+                     const ggml_tensor *offset_0_b,
+                     const ggml_tensor *offset_2_w,
+                     const ggml_tensor *offset_2_b,
+                     const ggml_tensor *sf_conv_w,
+                     const ggml_tensor *agg_weights,
+                     ggml_tensor *workspace,
+                     ggml_tensor *descriptors) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)feature_map;
@@ -315,15 +438,21 @@ bool VkAlikedRunSddh(ggml_backend_t backend, const ggml_tensor *feature_map,
 #else
     EnsureResolved(backend);
     return g_api.run_sddh != nullptr &&
-           g_api.run_sddh(backend, feature_map, dim, h, w, keypoints_norm, count,
-                          kernel_size, n_pos, offset_0_w, offset_0_b, offset_2_w,
-                          offset_2_b, sf_conv_w, agg_weights, workspace, descriptors);
+           g_api.run_sddh(backend, feature_map, dim, h, w, keypoints_norm,
+                          count, kernel_size, n_pos, offset_0_w, offset_0_b,
+                          offset_2_w, offset_2_b, sf_conv_w, agg_weights,
+                          workspace, descriptors);
 #endif
 }
 
-bool VkAlikedUpsampleBilinear(ggml_backend_t backend, const ggml_tensor *input,
-                              ggml_tensor *output, int32_t ic, int32_t ih, int32_t iw,
-                              int32_t out_h, int32_t out_w) {
+bool VkAlikedUpsampleBilinear(ggml_backend_t backend,
+                              const ggml_tensor *input,
+                              ggml_tensor *output,
+                              int32_t ic,
+                              int32_t ih,
+                              int32_t iw,
+                              int32_t out_h,
+                              int32_t out_w) {
 #if !defined(AICORE_VULKAN_ALIKED)
     (void)backend;
     (void)input;

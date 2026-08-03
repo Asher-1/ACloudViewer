@@ -126,7 +126,8 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
     }
 
     emit progressUpdate(5, 100);
-    aicore_inference_log::log_device_request(QStringLiteral("DA3"), m_settings.device);
+    aicore_inference_log::log_device_request(QStringLiteral("DA3"),
+                                             m_settings.device);
     const QByteArray device = m_settings.device.trimmed().isEmpty()
                                       ? QByteArray("auto")
                                       : m_settings.device.trimmed().toUtf8();
@@ -155,7 +156,8 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
     }
     if (const char* resolved = aicore_depth_device_name(g.ctx)) {
         if (resolved[0] != '\0') {
-            aicore_inference_log::log_device_resolved(QStringLiteral("DA3"), QString::fromUtf8(resolved));
+            aicore_inference_log::log_device_resolved(
+                    QStringLiteral("DA3"), QString::fromUtf8(resolved));
         }
     }
     emit progressUpdate(10, 100);

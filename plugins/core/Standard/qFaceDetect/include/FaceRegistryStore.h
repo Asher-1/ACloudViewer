@@ -51,7 +51,8 @@ public:
     std::optional<FaceAuthMatch> bestMatch(const std::vector<float>& query,
                                            float maxDistance) const;
     /** Closest enrolled identity regardless of threshold (for diagnostics). */
-    std::optional<FaceAuthMatch> nearestMatch(const std::vector<float>& query) const;
+    std::optional<FaceAuthMatch> nearestMatch(
+            const std::vector<float>& query) const;
 
     static float cosineDistance(const std::vector<float>& a,
                                 const std::vector<float>& b);

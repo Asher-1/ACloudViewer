@@ -18,8 +18,8 @@
 #include <QVector>
 #include <QWidget>
 
-#include "FaceDetectTestData.h"
 #include "FaceDetectModelContext.h"
+#include "FaceDetectTestData.h"
 #include "FaceRegistryStore.h"
 #include "ecvClickableImageLabel.h"
 
@@ -38,7 +38,8 @@ public:
     void syncModelControlsFrom(const QComboBox* modelCombo,
                                const QComboBox* deviceCombo,
                                const QSpinBox* threadsSpin);
-    void rebuildModelCombo(const QStringList& labels, const QStringList& filenames,
+    void rebuildModelCombo(const QStringList& labels,
+                           const QStringList& filenames,
                            const QString& currentFilename);
     void rebuildDeviceCombo(const QComboBox* sourceDeviceCombo);
     bool exportAuthResultToDb() const;
@@ -89,10 +90,14 @@ private slots:
 
 private:
     void updateModelPathFromCombo();
-    bool registerPersonFromImage(const QString& name, const QString& imagePath,
+    bool registerPersonFromImage(const QString& name,
+                                 const QString& imagePath,
                                  float minDetectionScore);
-    bool embedImage(const QString& imagePath, std::vector<float>* out,
-                    int* outDim, QString* err, float minDetectionScore);
+    bool embedImage(const QString& imagePath,
+                    std::vector<float>* out,
+                    int* outDim,
+                    QString* err,
+                    float minDetectionScore);
     QString resolveModelPath() const;
     static QString registryPathForModel(const QString& baseDir,
                                         const QString& modelFilename);

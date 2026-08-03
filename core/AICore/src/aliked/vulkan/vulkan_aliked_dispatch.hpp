@@ -25,6 +25,8 @@ bool VkAlikedDenseCopyWhcn(ggml_backend_t backend, const ggml_tensor *src,
                            ggml_tensor *dst, int32_t w, int32_t h, int32_t c);
 bool VkAlikedClampInplace(ggml_backend_t backend, ggml_tensor *data, size_t count,
                           float min_value, float max_value);
+bool VkAlikedL2NormInplace(ggml_backend_t backend, ggml_tensor *data,
+                           int32_t channels, int32_t h, int32_t w);
 bool VkAlikedDeformConv2d(ggml_backend_t backend, const ggml_tensor *input,
                           const ggml_tensor *offset, const ggml_tensor *weight,
                           const ggml_tensor *bias, ggml_tensor *output, int32_t ic,

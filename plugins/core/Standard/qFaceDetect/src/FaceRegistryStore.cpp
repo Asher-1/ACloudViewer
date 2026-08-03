@@ -28,9 +28,10 @@ namespace {
 
 QString connectionNameForPath(const QString& path) {
     // Each thread needs its own QSQLITE connection (names are process-global).
-    return QStringLiteral("face_registry_") +
-           QString::number(qHash(path)) + QLatin1Char('_') +
-           QString::number(reinterpret_cast<quintptr>(QThread::currentThreadId()));
+    return QStringLiteral("face_registry_") + QString::number(qHash(path)) +
+           QLatin1Char('_') +
+           QString::number(
+                   reinterpret_cast<quintptr>(QThread::currentThreadId()));
 }
 
 QByteArray embeddingToBlob(const std::vector<float>& v) {
@@ -42,7 +43,8 @@ QByteArray embeddingToBlob(const std::vector<float>& v) {
 std::vector<float> embeddingFromBlob(const QByteArray& bytes) {
     std::vector<float> out(bytes.size() / static_cast<int>(sizeof(float)));
     if (!out.empty()) {
-        std::memcpy(out.data(), bytes.constData(), static_cast<size_t>(bytes.size()));
+        std::memcpy(out.data(), bytes.constData(),
+                    static_cast<size_t>(bytes.size()));
     }
     return out;
 }
@@ -79,7 +81,8 @@ bool FaceRegistryStore::openUnlocked() {
 
     const QString conn = connectionNameForPath(m_path);
     if (!QSqlDatabase::contains(conn)) {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
+        QSqlDatabase db =
+                QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
         db.setDatabaseName(m_path);
         if (!db.open()) return false;
     } else if (!QSqlDatabase::database(conn).isOpen()) {
@@ -133,21 +136,21 @@ std::vector<FaceRegistryEntry> FaceRegistryStore::entries() const {
 
 bool FaceRegistryStore::ensureSchema() {
     QSqlQuery q(QSqlDatabase::database(connectionNameForPath(m_path)));
-    return q.exec(QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS faces ("
-            "  id TEXT PRIMARY KEY,"
-            "  name TEXT NOT NULL,"
-            "  model TEXT,"
-            "  dim INTEGER NOT NULL,"
-            "  created TEXT,"
-            "  embedding BLOB NOT NULL,"
-            "  thumb BLOB"
-            ")"));
+    return q.exec(
+            QStringLiteral("CREATE TABLE IF NOT EXISTS faces ("
+                           "  id TEXT PRIMARY KEY,"
+                           "  name TEXT NOT NULL,"
+                           "  model TEXT,"
+                           "  dim INTEGER NOT NULL,"
+                           "  created TEXT,"
+                           "  embedding BLOB NOT NULL,"
+                           "  thumb BLOB"
+                           ")"));
 }
 
 bool FaceRegistryStore::migrateLegacyJson() const {
-    const QString jsonPath =
-            QFileInfo(m_path).absolutePath() + QStringLiteral("/face_registry.json");
+    const QString jsonPath = QFileInfo(m_path).absolutePath() +
+                             QStringLiteral("/face_registry.json");
     if (!QFile::exists(jsonPath) || QFile::exists(m_path)) {
         return true;
     }
@@ -160,24 +163,26 @@ bool FaceRegistryStore::migrateLegacyJson() const {
     QDir().mkpath(QFileInfo(m_path).absolutePath());
     const QString conn = connectionNameForPath(m_path);
     if (!QSqlDatabase::contains(conn)) {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
+        QSqlDatabase db =
+                QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
         db.setDatabaseName(m_path);
         if (!db.open()) return false;
     }
 
     QSqlQuery q(QSqlDatabase::database(conn));
-    q.exec(QStringLiteral(
-            "CREATE TABLE IF NOT EXISTS faces ("
-            "  id TEXT PRIMARY KEY,"
-            "  name TEXT NOT NULL,"
-            "  model TEXT,"
-            "  dim INTEGER NOT NULL,"
-            "  created TEXT,"
-            "  embedding BLOB NOT NULL,"
-            "  thumb BLOB"
-            ")"));
+    q.exec(
+            QStringLiteral("CREATE TABLE IF NOT EXISTS faces ("
+                           "  id TEXT PRIMARY KEY,"
+                           "  name TEXT NOT NULL,"
+                           "  model TEXT,"
+                           "  dim INTEGER NOT NULL,"
+                           "  created TEXT,"
+                           "  embedding BLOB NOT NULL,"
+                           "  thumb BLOB"
+                           ")"));
 
-    const QJsonArray arr = doc.object().value(QStringLiteral("entries")).toArray();
+    const QJsonArray arr =
+            doc.object().value(QStringLiteral("entries")).toArray();
     for (const QJsonValue& v : arr) {
         const QJsonObject o = v.toObject();
         const QString id = o.value(QStringLiteral("id")).toString();
@@ -185,7 +190,8 @@ bool FaceRegistryStore::migrateLegacyJson() const {
         if (id.isEmpty() || name.isEmpty()) continue;
 
         std::vector<float> emb;
-        const QJsonArray embArr = o.value(QStringLiteral("embedding")).toArray();
+        const QJsonArray embArr =
+                o.value(QStringLiteral("embedding")).toArray();
         emb.reserve(static_cast<size_t>(embArr.size()));
         for (const QJsonValue& ev : embArr) {
             emb.push_back(static_cast<float>(ev.toDouble()));
@@ -194,7 +200,8 @@ bool FaceRegistryStore::migrateLegacyJson() const {
 
         QSqlQuery ins(QSqlDatabase::database(conn));
         ins.prepare(QStringLiteral(
-                "INSERT OR IGNORE INTO faces(id,name,model,dim,created,embedding,thumb) "
+                "INSERT OR IGNORE INTO "
+                "faces(id,name,model,dim,created,embedding,thumb) "
                 "VALUES(?,?,?,?,?,?,?)"));
         ins.addBindValue(id);
         ins.addBindValue(name);
@@ -275,16 +282,18 @@ bool FaceRegistryStore::addEntry(FaceRegistryEntry entry) {
         entry.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     }
     if (entry.createdUtc.isEmpty()) {
-        entry.createdUtc = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+        entry.createdUtc =
+                QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
     }
     if (entry.embedDim <= 0) {
         entry.embedDim = static_cast<int>(entry.embedding.size());
     }
 
     QSqlQuery q(QSqlDatabase::database(connectionNameForPath(m_path)));
-    q.prepare(QStringLiteral(
-            "INSERT OR REPLACE INTO faces(id,name,model,dim,created,embedding,thumb) "
-            "VALUES(?,?,?,?,?,?,?)"));
+    q.prepare(
+            QStringLiteral("INSERT OR REPLACE INTO "
+                           "faces(id,name,model,dim,created,embedding,thumb) "
+                           "VALUES(?,?,?,?,?,?,?)"));
     q.addBindValue(entry.id);
     q.addBindValue(entry.name);
     q.addBindValue(entry.modelFile);

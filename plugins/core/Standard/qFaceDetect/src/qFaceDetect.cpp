@@ -11,12 +11,12 @@
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 
-#include "ecvPersistentSettings.h"
-
 #include <QDir>
 #include <QFile>
 #include <QMainWindow>
 #include <QMessageBox>
+
+#include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
@@ -34,11 +34,12 @@ bool isFaceDetectOutputImage(const ccImage* img) {
 }  // namespace
 
 qFaceDetect::qFaceDetect(QObject* parent)
-    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qFaceDetect/info.json") {
+    : QObject(parent),
+      ccStdPluginInterface(":/CC/plugin/qFaceDetect/info.json") {
     ecvPS::registerSettingsGroup(QStringLiteral("qFaceDetect"));
     m_action = new QAction(tr("Face Detect"), this);
-    m_action->setToolTip(
-            tr("InsightFace-style face detection, age/gender, and verify (GGML)"));
+    m_action->setToolTip(tr(
+            "InsightFace-style face detection, age/gender, and verify (GGML)"));
     m_action->setIcon(QIcon(":/CC/plugin/qFaceDetect/images/qFaceDetect.svg"));
     connect(m_action, &QAction::triggered, this, &qFaceDetect::showDialog);
 }
@@ -205,8 +206,9 @@ void qFaceDetect::executeTask(const FaceDetectDialog::Settings& settings) {
     if (aicore_warmup_backend(workerDevice.toUtf8().constData()) != 0) {
         if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
             workerDevice = QStringLiteral("cpu");
-            m_dialog->appendLog(tr(
-                    "[FaceDetect] GPU backend unavailable — using CPU for this run."));
+            m_dialog->appendLog(
+                    tr("[FaceDetect] GPU backend unavailable — using CPU for "
+                       "this run."));
         }
     }
 #endif
@@ -218,7 +220,8 @@ void qFaceDetect::executeTask(const FaceDetectDialog::Settings& settings) {
     ws.secondInputPath = workerSettings.secondInputPath;
     ws.threads = settings.threads;
     ws.device = workerDevice;
-    ws.mode = static_cast<FaceDetectWorker::Mode>(static_cast<int>(settings.mode));
+    ws.mode = static_cast<FaceDetectWorker::Mode>(
+            static_cast<int>(settings.mode));
     ws.verifyThreshold = settings.verifyThreshold;
     ws.antiSpoof = settings.antiSpoof;
     ws.minDetectionScore = settings.minDetectionScore;
@@ -253,9 +256,9 @@ void qFaceDetect::onResultReady(const FaceDetectRunResult& result) {
                         .arg(result.verifyDistance, 0, 'f', 4)
                         .arg(result.verifyMatched));
         if (!result.resultJson.isEmpty()) {
-            m_dialog->appendLog(tr("[FaceDetect] Verify JSON:\n%1")
-                                        .arg(QString::fromUtf8(
-                                                result.resultJson)));
+            m_dialog->appendLog(
+                    tr("[FaceDetect] Verify JSON:\n%1")
+                            .arg(QString::fromUtf8(result.resultJson)));
         }
         return;
     }
@@ -307,9 +310,8 @@ void qFaceDetect::addResultToDb(const FaceDetectRunResult& result,
                      result.rejectedByScore);
     img->setMetaData(QStringLiteral("FaceDetect/MinDetectionScore"),
                      static_cast<double>(result.minDetectionScoreUsed));
-    img->setMetaData(
-            QStringLiteral("FaceDetect/ScoreSemantics"),
-            tr("detector confidence in [0,1]; higher is better"));
+    img->setMetaData(QStringLiteral("FaceDetect/ScoreSemantics"),
+                     tr("detector confidence in [0,1]; higher is better"));
     img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
     if (!result.imagePath.isEmpty()) {
         img->setMetaData(QStringLiteral("Source"), result.imagePath);
@@ -332,8 +334,7 @@ void qFaceDetect::addResultToDb(const FaceDetectRunResult& result,
     }
     for (int i = 0; i < static_cast<int>(result.faces.size()); ++i) {
         const FaceDetectBox& f = result.faces[static_cast<size_t>(i)];
-        const QString prefix =
-                QStringLiteral("FaceDetect/Face%1/").arg(i + 1);
+        const QString prefix = QStringLiteral("FaceDetect/Face%1/").arg(i + 1);
         img->setMetaData(prefix + QStringLiteral("detection_score"), f.score);
         img->setMetaData(prefix + QStringLiteral("box"),
                          QStringLiteral("[%1,%2,%3,%4]")
@@ -363,7 +364,8 @@ void qFaceDetect::addResultToDb(const FaceDetectRunResult& result,
     }
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
-    m_dialog->appendLog(tr("[FaceDetect] Added annotated image '%1'.").arg(name));
+    m_dialog->appendLog(
+            tr("[FaceDetect] Added annotated image '%1'.").arg(name));
 }
 
 void qFaceDetect::onAuthVisualizationReady(const QImage& annotated,
@@ -382,7 +384,8 @@ void qFaceDetect::onAuthVisualizationReady(const QImage& annotated,
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
     if (m_dialog) {
-        m_dialog->appendLog(tr("[Registry] Added auth visualization '%1'.").arg(name));
+        m_dialog->appendLog(
+                tr("[Registry] Added auth visualization '%1'.").arg(name));
     }
 }
 

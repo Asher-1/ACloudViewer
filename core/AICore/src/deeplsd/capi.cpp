@@ -212,9 +212,8 @@ AICORE_CAPI int aicore_deeplsd_extract_segments(
         return 0;
     }
 
-    auto* segs = static_cast<aicore_deeplsd_segment*>(
-            std::malloc(static_cast<size_t>(count) *
-                        sizeof(aicore_deeplsd_segment)));
+    auto* segs = static_cast<aicore_deeplsd_segment*>(std::malloc(
+            static_cast<size_t>(count) * sizeof(aicore_deeplsd_segment)));
     if (segs == nullptr) {
         ctx->last_error = "out of memory";
         return -1;
